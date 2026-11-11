@@ -4,9 +4,30 @@ import type { LocalAction, SessionEvent, SessionViewState } from "./types";
 
 export interface SessionStoreState {
   sessions: Record<string, SessionViewState>;
+  /** Événements appliqués, par session : triés par `seq`, sans doublon. */
+  events: Record<string, SessionEvent[]>;
   ingest(sessionId: string, events: SessionEvent[]): void;
   local(sessionId: string, action: LocalAction): void;
   reset(sessionId: string): void;
+}
+
+type Stored = Pick<SessionStoreState, "sessions" | "events">;
+
+/** Applique un lot trié ; garde les seuls événements que le réducteur a acceptés (`seq` nouveau). */
+function ingestBatch(store: Stored, sessionId: string, batch: SessionEvent[]): Stored | null {
+  const current = store.sessions[sessionId] ?? initialSessionState;
+  const accepted: SessionEvent[] = [];
+  let state = current;
+  for (const event of [...batch].sort((a, b) => a.seq - b.seq)) {
+    const next = applyEvent(state, event);
+    if (next !== state) accepted.push(event);
+    state = next;
+  }
+  if (accepted.length === 0 && sessionId in store.sessions) return null;
+  return {
+    sessions: { ...store.sessions, [sessionId]: state },
+    events: { ...store.events, [sessionId]: [...(store.events[sessionId] ?? []), ...accepted] },
+  };
 }
 
 /**
@@ -24,16 +45,16 @@ export function createSessionStore() {
       });
     return {
       sessions: {},
-      ingest: (sessionId, events) =>
-        update(sessionId, (state) =>
-          [...events].sort((a, b) => a.seq - b.seq).reduce(applyEvent, state),
-        ),
+      events: {},
+      ingest: (sessionId, events) => set((store) => ingestBatch(store, sessionId, events) ?? store),
       local: (sessionId, action) => update(sessionId, (state) => applyLocal(state, action)),
       reset: (sessionId) =>
         set((store) => {
           const sessions = { ...store.sessions };
+          const events = { ...store.events };
           delete sessions[sessionId];
-          return { sessions };
+          delete events[sessionId];
+          return { sessions, events };
         }),
     };
   });
@@ -46,3 +67,11 @@ export const selectSession =
   (sessionId: string) =>
   (store: Pick<SessionStoreState, "sessions">): SessionViewState =>
     store.sessions[sessionId] ?? initialSessionState;
+
+const NO_EVENTS: SessionEvent[] = [];
+
+/** Sélecteur stable des événements d'une session (tableau vide partagé si aucun). */
+export const selectEvents =
+  (sessionId: string) =>
+  (store: Pick<SessionStoreState, "events">): SessionEvent[] =>
+    store.events[sessionId] ?? NO_EVENTS;

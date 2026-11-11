@@ -14,7 +14,8 @@ const SAME_FEATURE = { feature: "{{ from.captured.feature }}" };
  * - feature-components (présentationnels) -> ses propres components + shared/ui, shared/i18n,
  *   shared/lib (ni api.ts, ni hooks/, ni store, ni shared/api) ;
  * - app         -> tout.
- * `test-support` (src/test) n'est importé que par des fichiers de test ou d'infrastructure.
+ * `test-support` (src/test) n'est importé que par des fichiers de test ou d'infrastructure ; il
+ * peut importer `shared` (jamais `features` ni `app`).
  */
 const boundaryPolicies = [
   {
@@ -38,6 +39,8 @@ const boundaryPolicies = [
       { to: { element: { type: "feature-components", captured: SAME_FEATURE } } },
     ],
   },
+  // L'outillage de test (faux socket, etc.) s'appuie sur les types et modules partagés.
+  { from: { element: { type: "test-support" } }, allow: { to: { element: { type: "shared" } } } },
   // Les tests peuvent importer l'outillage de test.
   {
     from: { file: { categories: "test" } },

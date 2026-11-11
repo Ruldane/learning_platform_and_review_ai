@@ -46,6 +46,23 @@ export const fr = {
     network: "Impossible de joindre le serveur. Vérifie que Tremplin est démarré.",
     retry: "Réessayer",
   },
+  sessions: {
+    stream: {
+      not_found: "Cette session est introuvable.",
+      refused: "Le serveur a refusé la connexion au direct de la session.",
+      unreachable: "Connexion au direct perdue. Vérifie que Tremplin est démarré, puis réessaie.",
+    },
+    errors: {
+      stale_interrupt: "Cette question a déjà reçu une réponse.",
+      interrupt_required: "Réponds d'abord à la question en attente.",
+      session_not_resumable: "Cette session ne peut pas reprendre maintenant.",
+      session_not_pausable: "Cette session ne peut plus être mise en pause.",
+      session_not_cancellable: "Cette session est déjà terminée : rien à arrêter.",
+      session_closed: "Cette session est terminée : elle n'accepte plus de message.",
+      session_not_found: "Cette session est introuvable.",
+      server_stopping: "Le serveur est en train de s'arrêter. Réessaie dans un instant.",
+    },
+  },
   settings: {
     models: {
       navLabel: "Modèles et clés",
