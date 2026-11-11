@@ -132,6 +132,104 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AgentMessageEvent */
+        AgentMessageEvent: {
+            /**
+             * Agent
+             * @default null
+             */
+            agent: string | null;
+            /** Id */
+            id: string;
+            payload: components["schemas"]["AgentMessagePayload"];
+            /** Seq */
+            seq: number;
+            /** Session Id */
+            session_id: string;
+            /**
+             * Ts
+             * Format: date-time
+             */
+            ts: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "agent.message";
+        };
+        /** AgentMessagePayload */
+        AgentMessagePayload: {
+            /** Citations */
+            citations?: components["schemas"]["Citation"][];
+            /** Message Id */
+            message_id: string;
+            /** Text */
+            text: string;
+        };
+        /** AgentStartedEvent */
+        AgentStartedEvent: {
+            /**
+             * Agent
+             * @default null
+             */
+            agent: string | null;
+            /** Id */
+            id: string;
+            payload: components["schemas"]["AgentStartedPayload"];
+            /** Seq */
+            seq: number;
+            /** Session Id */
+            session_id: string;
+            /**
+             * Ts
+             * Format: date-time
+             */
+            ts: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "agent.started";
+        };
+        /** AgentStartedPayload */
+        AgentStartedPayload: {
+            /** Intent */
+            intent: string;
+            /** Step */
+            step: string;
+        };
+        /** AgentTokenEvent */
+        AgentTokenEvent: {
+            /**
+             * Agent
+             * @default null
+             */
+            agent: string | null;
+            /** Id */
+            id: string;
+            payload: components["schemas"]["AgentTokenPayload"];
+            /** Seq */
+            seq: number;
+            /** Session Id */
+            session_id: string;
+            /**
+             * Ts
+             * Format: date-time
+             */
+            ts: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "agent.token";
+        };
+        /** AgentTokenPayload */
+        AgentTokenPayload: {
+            /** Message Id */
+            message_id: string;
+            /** Text */
+            text: string;
+        };
         /** ApiKeyIn */
         ApiKeyIn: {
             /**
@@ -161,6 +259,45 @@ export interface components {
             readable: boolean;
             /** Source */
             source: ("ui" | "env") | null;
+        };
+        /** ArtifactReadyEvent */
+        ArtifactReadyEvent: {
+            /**
+             * Agent
+             * @default null
+             */
+            agent: string | null;
+            /** Id */
+            id: string;
+            payload: components["schemas"]["ArtifactReadyPayload"];
+            /** Seq */
+            seq: number;
+            /** Session Id */
+            session_id: string;
+            /**
+             * Ts
+             * Format: date-time
+             */
+            ts: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "artifact.ready";
+        };
+        /** ArtifactReadyPayload */
+        ArtifactReadyPayload: {
+            /** Artifact Id */
+            artifact_id: string;
+            /** Kind */
+            kind: string;
+            /** Title */
+            title: string;
+            /**
+             * Url
+             * @default null
+             */
+            url: string | null;
         };
         /** Availability */
         "Availability-Input": {
@@ -203,6 +340,91 @@ export interface components {
              */
             readonly weekly_budget_minutes: number;
         };
+        /** BoardUpdateEvent */
+        BoardUpdateEvent: {
+            /**
+             * Agent
+             * @default null
+             */
+            agent: string | null;
+            /** Id */
+            id: string;
+            payload: components["schemas"]["BoardUpdatePayload"];
+            /** Seq */
+            seq: number;
+            /** Session Id */
+            session_id: string;
+            /**
+             * Ts
+             * Format: date-time
+             */
+            ts: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "board.update";
+        };
+        /** BoardUpdatePayload */
+        BoardUpdatePayload: {
+            /** Mermaid */
+            mermaid: string;
+            /** Step */
+            step: number;
+        };
+        /** Citation */
+        Citation: {
+            /** Index */
+            index: number;
+            /**
+             * Memory Item Id
+             * @default null
+             */
+            memory_item_id: string | null;
+            /** Title */
+            title: string;
+            /**
+             * Url
+             * @default null
+             */
+            url: string | null;
+        };
+        /** CostUpdatedEvent */
+        CostUpdatedEvent: {
+            /**
+             * Agent
+             * @default null
+             */
+            agent: string | null;
+            /** Id */
+            id: string;
+            payload: components["schemas"]["CostUpdatedPayload"];
+            /** Seq */
+            seq: number;
+            /** Session Id */
+            session_id: string;
+            /**
+             * Ts
+             * Format: date-time
+             */
+            ts: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "cost.updated";
+        };
+        /** CostUpdatedPayload */
+        CostUpdatedPayload: {
+            /** Cap Tokens */
+            cap_tokens: number;
+            /** Cost Usd */
+            cost_usd: number;
+            /** Tokens In */
+            tokens_in: number;
+            /** Tokens Out */
+            tokens_out: number;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -233,6 +455,52 @@ export interface components {
             /** Ok */
             ok: boolean;
         };
+        /** InterruptOption */
+        InterruptOption: {
+            /** Label */
+            label: string;
+            /** Value */
+            value: string;
+        };
+        /** InterruptRequestedEvent */
+        InterruptRequestedEvent: {
+            /**
+             * Agent
+             * @default null
+             */
+            agent: string | null;
+            /** Id */
+            id: string;
+            payload: components["schemas"]["InterruptRequestedPayload"];
+            /** Seq */
+            seq: number;
+            /** Session Id */
+            session_id: string;
+            /**
+             * Ts
+             * Format: date-time
+             */
+            ts: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "interrupt.requested";
+        };
+        /**
+         * InterruptRequestedPayload
+         * @description `kind` et non `type` : `type` est déjà le discriminant de l'enveloppe (DECISIONS).
+         */
+        InterruptRequestedPayload: {
+            /** Interrupt Id */
+            interrupt_id: string;
+            /** Kind */
+            kind: string;
+            /** Options */
+            options?: components["schemas"]["InterruptOption"][];
+            /** Question */
+            question: string;
+        };
         /**
          * KeyTestResult
          * @description Résultat d'un test de clé : `message` est en français et ne contient jamais la clé.
@@ -253,6 +521,42 @@ export interface components {
             id: string;
             /** Name */
             name: string | null;
+        };
+        /** MemoryWrittenEvent */
+        MemoryWrittenEvent: {
+            /**
+             * Agent
+             * @default null
+             */
+            agent: string | null;
+            /** Id */
+            id: string;
+            payload: components["schemas"]["MemoryWrittenPayload"];
+            /** Seq */
+            seq: number;
+            /** Session Id */
+            session_id: string;
+            /**
+             * Ts
+             * Format: date-time
+             */
+            ts: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "memory.written";
+        };
+        /** MemoryWrittenPayload */
+        MemoryWrittenPayload: {
+            /** Item Id */
+            item_id: string;
+            /** Kind */
+            kind: string;
+            /** Reason */
+            reason: string;
+            /** Title */
+            title: string;
         };
         /**
          * ModelChoice
@@ -275,6 +579,38 @@ export interface components {
             /** Providers */
             providers: components["schemas"]["ProviderModels"][];
         };
+        /** ProposalReadyEvent */
+        ProposalReadyEvent: {
+            /**
+             * Agent
+             * @default null
+             */
+            agent: string | null;
+            /** Id */
+            id: string;
+            payload: components["schemas"]["ProposalReadyPayload"];
+            /** Seq */
+            seq: number;
+            /** Session Id */
+            session_id: string;
+            /**
+             * Ts
+             * Format: date-time
+             */
+            ts: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "proposal.ready";
+        };
+        /** ProposalReadyPayload */
+        ProposalReadyPayload: {
+            /** Proposal Id */
+            proposal_id: string;
+            /** Title */
+            title: string;
+        };
         /** ProviderModels */
         ProviderModels: {
             /** Has Key */
@@ -286,6 +622,72 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** RunCompletedEvent */
+        RunCompletedEvent: {
+            /**
+             * Agent
+             * @default null
+             */
+            agent: string | null;
+            /** Id */
+            id: string;
+            payload: components["schemas"]["RunCompletedPayload"];
+            /** Seq */
+            seq: number;
+            /** Session Id */
+            session_id: string;
+            /**
+             * Ts
+             * Format: date-time
+             */
+            ts: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "run.completed";
+        };
+        /** RunCompletedPayload */
+        RunCompletedPayload: {
+            /**
+             * Summary
+             * @default
+             */
+            summary: string;
+        };
+        /** RunFailedEvent */
+        RunFailedEvent: {
+            /**
+             * Agent
+             * @default null
+             */
+            agent: string | null;
+            /** Id */
+            id: string;
+            payload: components["schemas"]["RunFailedPayload"];
+            /** Seq */
+            seq: number;
+            /** Session Id */
+            session_id: string;
+            /**
+             * Ts
+             * Format: date-time
+             */
+            ts: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "run.failed";
+        };
+        /** RunFailedPayload */
+        RunFailedPayload: {
+            /** Code */
+            code: string;
+            /** Message */
+            message: string;
+        };
+        SessionEvent: components["schemas"]["AgentStartedEvent"] | components["schemas"]["AgentTokenEvent"] | components["schemas"]["AgentMessageEvent"] | components["schemas"]["ToolCalledEvent"] | components["schemas"]["ToolResultEvent"] | components["schemas"]["SourceFoundEvent"] | components["schemas"]["BoardUpdateEvent"] | components["schemas"]["MemoryWrittenEvent"] | components["schemas"]["InterruptRequestedEvent"] | components["schemas"]["ProposalReadyEvent"] | components["schemas"]["ArtifactReadyEvent"] | components["schemas"]["CostUpdatedEvent"] | components["schemas"]["RunCompletedEvent"] | components["schemas"]["RunFailedEvent"] | components["schemas"]["UserMessageEvent"];
         /**
          * SettingsOut
          * @description Réglages renvoyés par l'API : ajoute les valeurs calculées, jamais stockées.
@@ -341,6 +743,148 @@ export interface components {
              */
             readonly vision_enabled: boolean;
             weekly_review?: components["schemas"]["WeeklyReview"];
+        };
+        /** SourceFoundEvent */
+        SourceFoundEvent: {
+            /**
+             * Agent
+             * @default null
+             */
+            agent: string | null;
+            /** Id */
+            id: string;
+            payload: components["schemas"]["SourceFoundPayload"];
+            /** Seq */
+            seq: number;
+            /** Session Id */
+            session_id: string;
+            /**
+             * Ts
+             * Format: date-time
+             */
+            ts: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "source.found";
+        };
+        /** SourceFoundPayload */
+        SourceFoundPayload: {
+            /** Author */
+            author: string | null;
+            /** Date */
+            date: string | null;
+            /** Lang */
+            lang: string | null;
+            /** Score */
+            score: number | null;
+            /** Title */
+            title: string;
+            /** Url */
+            url: string;
+        };
+        /** ToolCalledEvent */
+        ToolCalledEvent: {
+            /**
+             * Agent
+             * @default null
+             */
+            agent: string | null;
+            /** Id */
+            id: string;
+            payload: components["schemas"]["ToolCalledPayload"];
+            /** Seq */
+            seq: number;
+            /** Session Id */
+            session_id: string;
+            /**
+             * Ts
+             * Format: date-time
+             */
+            ts: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "tool.called";
+        };
+        /** ToolCalledPayload */
+        ToolCalledPayload: {
+            /** Args */
+            args: {
+                [key: string]: unknown;
+            };
+            /** Call Id */
+            call_id: string;
+            /** Tool */
+            tool: string;
+        };
+        /** ToolResultEvent */
+        ToolResultEvent: {
+            /**
+             * Agent
+             * @default null
+             */
+            agent: string | null;
+            /** Id */
+            id: string;
+            payload: components["schemas"]["ToolResultPayload"];
+            /** Seq */
+            seq: number;
+            /** Session Id */
+            session_id: string;
+            /**
+             * Ts
+             * Format: date-time
+             */
+            ts: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "tool.result";
+        };
+        /** ToolResultPayload */
+        ToolResultPayload: {
+            /** Call Id */
+            call_id: string;
+            /** Ok */
+            ok: boolean;
+            /** Summary */
+            summary: string;
+            /** Tool */
+            tool: string;
+        };
+        /** UserMessageEvent */
+        UserMessageEvent: {
+            /**
+             * Agent
+             * @default null
+             */
+            agent: string | null;
+            /** Id */
+            id: string;
+            payload: components["schemas"]["UserMessagePayload"];
+            /** Seq */
+            seq: number;
+            /** Session Id */
+            session_id: string;
+            /**
+             * Ts
+             * Format: date-time
+             */
+            ts: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "user.message";
+        };
+        /** UserMessagePayload */
+        UserMessagePayload: {
+            /** Text */
+            text: string;
         };
         /** UserSettings */
         UserSettings: {

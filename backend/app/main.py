@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import OperationalError
 
+from app.agents.runtime.openapi import register_event_schemas
 from app.bootstrap import build_providers
 from app.config import Settings, get_settings
 from app.core.errors import register_error_handlers
@@ -101,4 +102,5 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     for router in FEATURE_ROUTERS:
         app.include_router(router, prefix=API_PREFIX)
+    register_event_schemas(app)
     return app

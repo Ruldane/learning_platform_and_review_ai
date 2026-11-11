@@ -1,6 +1,220 @@
 {
   "components": {
     "schemas": {
+      "AgentMessageEvent": {
+        "properties": {
+          "agent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Agent"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/AgentMessagePayload"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "ts": {
+            "format": "date-time",
+            "title": "Ts",
+            "type": "string"
+          },
+          "type": {
+            "const": "agent.message",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "seq",
+          "ts",
+          "type",
+          "payload"
+        ],
+        "title": "AgentMessageEvent",
+        "type": "object"
+      },
+      "AgentMessagePayload": {
+        "properties": {
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/Citation"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "message_id": {
+            "title": "Message Id",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message_id",
+          "text"
+        ],
+        "title": "AgentMessagePayload",
+        "type": "object"
+      },
+      "AgentStartedEvent": {
+        "properties": {
+          "agent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Agent"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/AgentStartedPayload"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "ts": {
+            "format": "date-time",
+            "title": "Ts",
+            "type": "string"
+          },
+          "type": {
+            "const": "agent.started",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "seq",
+          "ts",
+          "type",
+          "payload"
+        ],
+        "title": "AgentStartedEvent",
+        "type": "object"
+      },
+      "AgentStartedPayload": {
+        "properties": {
+          "intent": {
+            "title": "Intent",
+            "type": "string"
+          },
+          "step": {
+            "title": "Step",
+            "type": "string"
+          }
+        },
+        "required": [
+          "step",
+          "intent"
+        ],
+        "title": "AgentStartedPayload",
+        "type": "object"
+      },
+      "AgentTokenEvent": {
+        "properties": {
+          "agent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Agent"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/AgentTokenPayload"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "ts": {
+            "format": "date-time",
+            "title": "Ts",
+            "type": "string"
+          },
+          "type": {
+            "const": "agent.token",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "seq",
+          "ts",
+          "type",
+          "payload"
+        ],
+        "title": "AgentTokenEvent",
+        "type": "object"
+      },
+      "AgentTokenPayload": {
+        "properties": {
+          "message_id": {
+            "title": "Message Id",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message_id",
+          "text"
+        ],
+        "title": "AgentTokenPayload",
+        "type": "object"
+      },
       "ApiKeyIn": {
         "properties": {
           "key": {
@@ -98,6 +312,92 @@
         "title": "ApiKeyOut",
         "type": "object"
       },
+      "ArtifactReadyEvent": {
+        "properties": {
+          "agent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Agent"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/ArtifactReadyPayload"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "ts": {
+            "format": "date-time",
+            "title": "Ts",
+            "type": "string"
+          },
+          "type": {
+            "const": "artifact.ready",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "seq",
+          "ts",
+          "type",
+          "payload"
+        ],
+        "title": "ArtifactReadyEvent",
+        "type": "object"
+      },
+      "ArtifactReadyPayload": {
+        "properties": {
+          "artifact_id": {
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          }
+        },
+        "required": [
+          "artifact_id",
+          "kind",
+          "title"
+        ],
+        "title": "ArtifactReadyPayload",
+        "type": "object"
+      },
       "Availability-Input": {
         "properties": {
           "weekday_minutes": {
@@ -161,6 +461,196 @@
         "title": "Availability",
         "type": "object"
       },
+      "BoardUpdateEvent": {
+        "properties": {
+          "agent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Agent"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/BoardUpdatePayload"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "ts": {
+            "format": "date-time",
+            "title": "Ts",
+            "type": "string"
+          },
+          "type": {
+            "const": "board.update",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "seq",
+          "ts",
+          "type",
+          "payload"
+        ],
+        "title": "BoardUpdateEvent",
+        "type": "object"
+      },
+      "BoardUpdatePayload": {
+        "properties": {
+          "mermaid": {
+            "title": "Mermaid",
+            "type": "string"
+          },
+          "step": {
+            "title": "Step",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "mermaid",
+          "step"
+        ],
+        "title": "BoardUpdatePayload",
+        "type": "object"
+      },
+      "Citation": {
+        "properties": {
+          "index": {
+            "title": "Index",
+            "type": "integer"
+          },
+          "memory_item_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Memory Item Id"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          }
+        },
+        "required": [
+          "index",
+          "title"
+        ],
+        "title": "Citation",
+        "type": "object"
+      },
+      "CostUpdatedEvent": {
+        "properties": {
+          "agent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Agent"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/CostUpdatedPayload"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "ts": {
+            "format": "date-time",
+            "title": "Ts",
+            "type": "string"
+          },
+          "type": {
+            "const": "cost.updated",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "seq",
+          "ts",
+          "type",
+          "payload"
+        ],
+        "title": "CostUpdatedEvent",
+        "type": "object"
+      },
+      "CostUpdatedPayload": {
+        "properties": {
+          "cap_tokens": {
+            "title": "Cap Tokens",
+            "type": "integer"
+          },
+          "cost_usd": {
+            "title": "Cost Usd",
+            "type": "number"
+          },
+          "tokens_in": {
+            "title": "Tokens In",
+            "type": "integer"
+          },
+          "tokens_out": {
+            "title": "Tokens Out",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "tokens_in",
+          "tokens_out",
+          "cost_usd",
+          "cap_tokens"
+        ],
+        "title": "CostUpdatedPayload",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -218,6 +708,106 @@
           "detail"
         ],
         "title": "HealthStatus",
+        "type": "object"
+      },
+      "InterruptOption": {
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "InterruptOption",
+        "type": "object"
+      },
+      "InterruptRequestedEvent": {
+        "properties": {
+          "agent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Agent"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/InterruptRequestedPayload"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "ts": {
+            "format": "date-time",
+            "title": "Ts",
+            "type": "string"
+          },
+          "type": {
+            "const": "interrupt.requested",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "seq",
+          "ts",
+          "type",
+          "payload"
+        ],
+        "title": "InterruptRequestedEvent",
+        "type": "object"
+      },
+      "InterruptRequestedPayload": {
+        "description": "`kind` et non `type` : `type` est déjà le discriminant de l'enveloppe (DECISIONS).",
+        "properties": {
+          "interrupt_id": {
+            "title": "Interrupt Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/InterruptOption"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          }
+        },
+        "required": [
+          "interrupt_id",
+          "kind",
+          "question"
+        ],
+        "title": "InterruptRequestedPayload",
         "type": "object"
       },
       "KeyTestResult": {
@@ -279,6 +869,85 @@
           "auth_mode"
         ],
         "title": "MeOut",
+        "type": "object"
+      },
+      "MemoryWrittenEvent": {
+        "properties": {
+          "agent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Agent"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/MemoryWrittenPayload"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "ts": {
+            "format": "date-time",
+            "title": "Ts",
+            "type": "string"
+          },
+          "type": {
+            "const": "memory.written",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "seq",
+          "ts",
+          "type",
+          "payload"
+        ],
+        "title": "MemoryWrittenEvent",
+        "type": "object"
+      },
+      "MemoryWrittenPayload": {
+        "properties": {
+          "item_id": {
+            "title": "Item Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_id",
+          "kind",
+          "title",
+          "reason"
+        ],
+        "title": "MemoryWrittenPayload",
         "type": "object"
       },
       "ModelChoice": {
@@ -345,6 +1014,75 @@
         "title": "ModelsOut",
         "type": "object"
       },
+      "ProposalReadyEvent": {
+        "properties": {
+          "agent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Agent"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/ProposalReadyPayload"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "ts": {
+            "format": "date-time",
+            "title": "Ts",
+            "type": "string"
+          },
+          "type": {
+            "const": "proposal.ready",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "seq",
+          "ts",
+          "type",
+          "payload"
+        ],
+        "title": "ProposalReadyEvent",
+        "type": "object"
+      },
+      "ProposalReadyPayload": {
+        "properties": {
+          "proposal_id": {
+            "title": "Proposal Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "proposal_id",
+          "title"
+        ],
+        "title": "ProposalReadyPayload",
+        "type": "object"
+      },
       "ProviderModels": {
         "properties": {
           "has_key": {
@@ -382,6 +1120,206 @@
         ],
         "title": "ProviderModels",
         "type": "object"
+      },
+      "RunCompletedEvent": {
+        "properties": {
+          "agent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Agent"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/RunCompletedPayload"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "ts": {
+            "format": "date-time",
+            "title": "Ts",
+            "type": "string"
+          },
+          "type": {
+            "const": "run.completed",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "seq",
+          "ts",
+          "type",
+          "payload"
+        ],
+        "title": "RunCompletedEvent",
+        "type": "object"
+      },
+      "RunCompletedPayload": {
+        "properties": {
+          "summary": {
+            "default": "",
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "title": "RunCompletedPayload",
+        "type": "object"
+      },
+      "RunFailedEvent": {
+        "properties": {
+          "agent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Agent"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/RunFailedPayload"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "ts": {
+            "format": "date-time",
+            "title": "Ts",
+            "type": "string"
+          },
+          "type": {
+            "const": "run.failed",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "seq",
+          "ts",
+          "type",
+          "payload"
+        ],
+        "title": "RunFailedEvent",
+        "type": "object"
+      },
+      "RunFailedPayload": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "RunFailedPayload",
+        "type": "object"
+      },
+      "SessionEvent": {
+        "discriminator": {
+          "mapping": {
+            "agent.message": "#/components/schemas/AgentMessageEvent",
+            "agent.started": "#/components/schemas/AgentStartedEvent",
+            "agent.token": "#/components/schemas/AgentTokenEvent",
+            "artifact.ready": "#/components/schemas/ArtifactReadyEvent",
+            "board.update": "#/components/schemas/BoardUpdateEvent",
+            "cost.updated": "#/components/schemas/CostUpdatedEvent",
+            "interrupt.requested": "#/components/schemas/InterruptRequestedEvent",
+            "memory.written": "#/components/schemas/MemoryWrittenEvent",
+            "proposal.ready": "#/components/schemas/ProposalReadyEvent",
+            "run.completed": "#/components/schemas/RunCompletedEvent",
+            "run.failed": "#/components/schemas/RunFailedEvent",
+            "source.found": "#/components/schemas/SourceFoundEvent",
+            "tool.called": "#/components/schemas/ToolCalledEvent",
+            "tool.result": "#/components/schemas/ToolResultEvent",
+            "user.message": "#/components/schemas/UserMessageEvent"
+          },
+          "propertyName": "type"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/AgentStartedEvent"
+          },
+          {
+            "$ref": "#/components/schemas/AgentTokenEvent"
+          },
+          {
+            "$ref": "#/components/schemas/AgentMessageEvent"
+          },
+          {
+            "$ref": "#/components/schemas/ToolCalledEvent"
+          },
+          {
+            "$ref": "#/components/schemas/ToolResultEvent"
+          },
+          {
+            "$ref": "#/components/schemas/SourceFoundEvent"
+          },
+          {
+            "$ref": "#/components/schemas/BoardUpdateEvent"
+          },
+          {
+            "$ref": "#/components/schemas/MemoryWrittenEvent"
+          },
+          {
+            "$ref": "#/components/schemas/InterruptRequestedEvent"
+          },
+          {
+            "$ref": "#/components/schemas/ProposalReadyEvent"
+          },
+          {
+            "$ref": "#/components/schemas/ArtifactReadyEvent"
+          },
+          {
+            "$ref": "#/components/schemas/CostUpdatedEvent"
+          },
+          {
+            "$ref": "#/components/schemas/RunCompletedEvent"
+          },
+          {
+            "$ref": "#/components/schemas/RunFailedEvent"
+          },
+          {
+            "$ref": "#/components/schemas/UserMessageEvent"
+          }
+        ]
       },
       "SettingsOut": {
         "description": "Réglages renvoyés par l'API : ajoute les valeurs calculées, jamais stockées.",
@@ -489,6 +1427,341 @@
           "vision_enabled"
         ],
         "title": "SettingsOut",
+        "type": "object"
+      },
+      "SourceFoundEvent": {
+        "properties": {
+          "agent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Agent"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/SourceFoundPayload"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "ts": {
+            "format": "date-time",
+            "title": "Ts",
+            "type": "string"
+          },
+          "type": {
+            "const": "source.found",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "seq",
+          "ts",
+          "type",
+          "payload"
+        ],
+        "title": "SourceFoundEvent",
+        "type": "object"
+      },
+      "SourceFoundPayload": {
+        "properties": {
+          "author": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "lang": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lang"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "url",
+          "author",
+          "date",
+          "lang",
+          "score"
+        ],
+        "title": "SourceFoundPayload",
+        "type": "object"
+      },
+      "ToolCalledEvent": {
+        "properties": {
+          "agent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Agent"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/ToolCalledPayload"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "ts": {
+            "format": "date-time",
+            "title": "Ts",
+            "type": "string"
+          },
+          "type": {
+            "const": "tool.called",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "seq",
+          "ts",
+          "type",
+          "payload"
+        ],
+        "title": "ToolCalledEvent",
+        "type": "object"
+      },
+      "ToolCalledPayload": {
+        "properties": {
+          "args": {
+            "additionalProperties": true,
+            "title": "Args",
+            "type": "object"
+          },
+          "call_id": {
+            "title": "Call Id",
+            "type": "string"
+          },
+          "tool": {
+            "title": "Tool",
+            "type": "string"
+          }
+        },
+        "required": [
+          "call_id",
+          "tool",
+          "args"
+        ],
+        "title": "ToolCalledPayload",
+        "type": "object"
+      },
+      "ToolResultEvent": {
+        "properties": {
+          "agent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Agent"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/ToolResultPayload"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "ts": {
+            "format": "date-time",
+            "title": "Ts",
+            "type": "string"
+          },
+          "type": {
+            "const": "tool.result",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "seq",
+          "ts",
+          "type",
+          "payload"
+        ],
+        "title": "ToolResultEvent",
+        "type": "object"
+      },
+      "ToolResultPayload": {
+        "properties": {
+          "call_id": {
+            "title": "Call Id",
+            "type": "string"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "tool": {
+            "title": "Tool",
+            "type": "string"
+          }
+        },
+        "required": [
+          "call_id",
+          "tool",
+          "ok",
+          "summary"
+        ],
+        "title": "ToolResultPayload",
+        "type": "object"
+      },
+      "UserMessageEvent": {
+        "properties": {
+          "agent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Agent"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/UserMessagePayload"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "ts": {
+            "format": "date-time",
+            "title": "Ts",
+            "type": "string"
+          },
+          "type": {
+            "const": "user.message",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "seq",
+          "ts",
+          "type",
+          "payload"
+        ],
+        "title": "UserMessageEvent",
+        "type": "object"
+      },
+      "UserMessagePayload": {
+        "properties": {
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "UserMessagePayload",
         "type": "object"
       },
       "UserSettings": {
