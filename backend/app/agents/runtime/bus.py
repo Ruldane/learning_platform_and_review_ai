@@ -5,11 +5,15 @@
   session, numérote (`seq` = dernier connu + 1, cache initialisé par `max_seq`), écrit et valide
   la ligne, et la pousse dans la file de chaque abonné : l'ordre des files est celui des `seq`.
   L'unicité `(session_id, seq)` en base reste le filet de sécurité (cache périmé : on relit).
+  L'écriture elle-même vit dans `bus_write.py`.
+- `publish_with` ajoute une garde exécutée dans la transaction de l'événement : l'issue d'une
+  session (statut final) et son événement sont validés ensemble, ou pas du tout (D61).
 - `subscribe` inscrit sa file AVANT toute lecture, rejoue la base après `after_seq`, puis passe
   au direct en ignorant tout `seq` déjà émis : ni trou ni doublon.
 - File bornée : pleine, elle cesse de recevoir ; son abonné la vide puis repasse par le rejeu.
   De même si le direct saute un numéro (écrivain hors du bus) : rejeu depuis le dernier reçu.
-- `aclose` (arrêt du serveur) attend les écritures protégées encore en vol.
+- `flush` attend les écritures protégées en vol, de toutes les sessions ou d'une seule (N5) ;
+  `aclose` (arrêt du serveur) les attend toutes.
 
 Un seul bus par processus (`app.state`) : la diffusion en direct est en mémoire.
 """
@@ -19,20 +23,20 @@ from collections.abc import AsyncGenerator
 from typing import Any
 
 from pydantic import BaseModel
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.agents.runtime.bus_state import SessionState, Subscriber, to_event
+from app.agents.runtime.bus_write import EventWriter, Guard
 from app.agents.runtime.events import EventType, SessionEvent, validate_payload
-from app.agents.runtime.repositories import EventRepository, SessionRepository
-from app.core.errors import AppError
-from app.db.models.agents import SessionEventRecord
+from app.agents.runtime.repositories import EventRepository
+
+__all__ = ["EventBus", "Guard"]
 
 QUEUE_SIZE = 1000
 REPLAY_BATCH = 500
-_WRITE_ATTEMPTS = 3
 
 type _Key = tuple[str, str]  # (user_id, session_id) : l'isolation par utilisateur vaut aussi ici
+type _Publication = asyncio.Task[SessionEvent | None]
 
 
 class EventBus:
@@ -44,10 +48,11 @@ class EventBus:
         replay_batch: int = REPLAY_BATCH,
     ) -> None:
         self._factory = session_factory
+        self._writer = EventWriter(session_factory)
         self._queue_size = queue_size
         self._replay_batch = replay_batch
         self._states: dict[_Key, SessionState] = {}
-        self._inflight: set[asyncio.Task[SessionEvent]] = set()
+        self._inflight: dict[_Key, set[_Publication]] = {}
 
     # --- Publication ---------------------------------------------------------------------
 
@@ -66,16 +71,55 @@ class EventBus:
         L'écriture et la diffusion forment une tâche protégée : annuler l'appelant (session
         annulée en pleine publication) ne laisse jamais un événement écrit mais non diffusé.
         """
+        event = await self._protected(user_id, session_id, type, payload, agent, None)
+        if event is None:  # impossible : sans garde, rien ne refuse l'écriture
+            raise RuntimeError("publication sans garde refusée")
+        return event
+
+    async def publish_with(
+        self,
+        *,
+        user_id: str,
+        session_id: str,
+        type: EventType,
+        payload: BaseModel | dict[str, Any],
+        guard: Guard,
+        agent: str | None = None,
+    ) -> SessionEvent | None:
+        """Comme `publish`, avec `guard(db)` appelée dans la transaction de l'événement (sous le
+        verrou de la session) : `False` → rien n'est écrit ni diffusé, `None` ; `True` → garde
+        et événement validés ensemble, puis diffusion. Si l'insertion échoue, la garde est
+        annulée avec elle (D52 §2, D61)."""
+        return await self._protected(user_id, session_id, type, payload, agent, guard)
+
+    async def _protected(
+        self,
+        user_id: str,
+        session_id: str,
+        type: EventType,
+        payload: BaseModel | dict[str, Any],
+        agent: str | None,
+        guard: Guard | None,
+    ) -> SessionEvent | None:
         data = validate_payload(type, payload).model_dump(mode="json")
-        task = asyncio.ensure_future(self._publish(user_id, session_id, type, data, agent))
-        self._inflight.add(task)
-        task.add_done_callback(self._inflight.discard)
+        key = (user_id, session_id)
+        task = asyncio.ensure_future(self._publish(key, type, data, agent, guard))
+        tasks = self._inflight.setdefault(key, set())
+        tasks.add(task)
+        task.add_done_callback(lambda done: self._landed(key, done))
         return await asyncio.shield(task)
 
+    def _landed(self, key: _Key, task: _Publication) -> None:
+        tasks = self._inflight.get(key)
+        if tasks is not None:
+            tasks.discard(task)
+            if not tasks:
+                del self._inflight[key]
+
     async def _publish(
-        self, user_id: str, session_id: str, type: str, data: dict[str, Any], agent: str | None
-    ) -> SessionEvent:
-        key = (user_id, session_id)
+        self, key: _Key, type: str, data: dict[str, Any], agent: str | None, guard: Guard | None
+    ) -> SessionEvent | None:
+        user_id, session_id = key
         while True:
             state = self._state(key)
             state.publishers += 1
@@ -83,67 +127,18 @@ class EventBus:
                 async with state.lock:
                     if state.closed:
                         continue  # `close` a retiré cet état pendant l'attente du verrou
-                    event = await self._write(state, user_id, session_id, type, data, agent)
+                    row = await self._writer.write(
+                        state, user_id, session_id, type, data, agent, guard
+                    )
+                    if row is None:
+                        return None  # garde refusée : rien d'écrit, rien à diffuser
+                    event = to_event(row)
                     for sub in state.subscribers:
                         sub.offer(event)
                     return event
             finally:
                 state.publishers -= 1
                 self._release(key, state)
-
-    async def _write(
-        self,
-        state: SessionState,
-        user_id: str,
-        session_id: str,
-        type: str,
-        data: dict[str, Any],
-        agent: str | None,
-    ) -> SessionEvent:
-        """Numérote et écrit (verrou de session tenu) ; relit `max_seq` si la base refuse le
-        `seq` (écrivain hors de ce bus) ; toute autre erreur invalide le cache."""
-        attempt = 0
-        while True:
-            attempt += 1
-            if state.last_seq is None:
-                state.last_seq = await self._load_last_seq(user_id, session_id)
-            seq = state.last_seq + 1
-            try:
-                row = await self._insert(user_id, session_id, seq, type, data, agent)
-            except IntegrityError:
-                state.last_seq = None
-                if attempt >= _WRITE_ATTEMPTS:
-                    raise
-                continue
-            except BaseException:
-                state.last_seq = None  # issue inconnue (validée ou non) : la base tranchera
-                raise
-            state.last_seq = seq
-            return to_event(row)
-
-    async def _load_last_seq(self, user_id: str, session_id: str) -> int:
-        # Lecture dans sa propre transaction : l'écriture qui suit commence par l'INSERT, si
-        # bien que SQLite applique le délai d'attente (busy timeout) au lieu d'échouer.
-        async with self._factory() as db:
-            if await SessionRepository(db, user_id).get(session_id) is None:
-                raise AppError("session_not_found", "Session introuvable.", status_code=404)
-            return await EventRepository(db, user_id).max_seq(session_id)
-
-    async def _insert(
-        self,
-        user_id: str,
-        session_id: str,
-        seq: int,
-        type: str,
-        data: dict[str, Any],
-        agent: str | None,
-    ) -> SessionEventRecord:
-        async with self._factory() as db:
-            row = await EventRepository(db, user_id).add(
-                session_id=session_id, seq=seq, type=type, agent=agent, payload=data
-            )
-            await db.commit()
-        return row
 
     # --- Abonnement ----------------------------------------------------------------------
 
@@ -211,12 +206,19 @@ class EventBus:
             for sub in state.subscribers:
                 sub.close()
 
-    async def flush(self) -> None:
+    async def flush(self, *, user_id: str | None = None, session_id: str | None = None) -> None:
         """Attend les publications déjà commencées (protégées : leur appelant a pu être annulé,
-        elles continuent sans lui). Après l'arrêt d'une tâche (pause, annulation), tout ce
-        qu'elle publiait est écrit : le `last_seq` lu ensuite le compte (D56)."""
-        if self._inflight:
-            await asyncio.gather(*list(self._inflight), return_exceptions=True)
+        elles continuent sans lui) : toutes, ou seulement celles de la session `(user_id,
+        session_id)` (N5). Après l'arrêt d'une tâche (pause, annulation), tout ce qu'elle
+        publiait est écrit : le `last_seq` lu ensuite le compte (D56)."""
+        if (user_id is None) != (session_id is None):
+            raise ValueError("flush : user_id et session_id vont ensemble")
+        if user_id is None or session_id is None:
+            pending = [task for tasks in self._inflight.values() for task in tasks]
+        else:
+            pending = list(self._inflight.get((user_id, session_id), ()))
+        if pending:
+            await asyncio.gather(*pending, return_exceptions=True)
 
     async def aclose(self) -> None:
         """Arrêt du serveur, avant la fermeture du moteur : attend les écritures protégées

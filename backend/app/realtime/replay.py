@@ -15,8 +15,9 @@ recevoir un 1000 au milieu du rejeu) :
 - abonné arrivé après ce `close` (ou client qui revient avec `after_seq` au-delà de la fin) :
   le bus rejoue puis attend indéfiniment. Une fois l'abonnement inscrit, `watch` lit UNE fois
   le `seq` de fin (`read_end_seq`) : celui de `run.completed` / `run.failed` s'il est écrit, le
-  dernier `seq` d'une session `cancelled` (aucun événement final), `None` sinon (session
-  ouverte, ou statut final écrit mais pas encore son événement : celui-ci arrivera en direct).
+  dernier `seq` d'une session `cancelled` (aucun événement final), `None` pour une session
+  ouverte. Statut final et événement final sont écrits ensemble (D61) : une session
+  `completed` / `failed` a toujours son `seq` de fin.
   Il ferme quand `forward` a transmis jusqu'à ce `seq` et attend le bus — aussitôt si
   `after_seq` l'atteint déjà.
 """

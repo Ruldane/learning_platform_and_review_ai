@@ -3,11 +3,15 @@
 
 - `durability="sync"` : le checkpoint d'une étape est écrit avant l'étape suivante ; un arrêt
   brutal ne fait jamais rejouer un nœud terminé (Review Focus 1).
-- Chaque issue est une transition conditionnelle depuis `running` : si la session a été mise en
-  pause ou annulée entre-temps, l'issue n'est ni écrite ni publiée.
+- Chaque issue est une transition conditionnelle depuis `running`, écrite dans la MÊME
+  transaction que son événement (`EventBus.publish_with`, D61) : statut et événement existent
+  ensemble ou pas du tout. Si la session a été mise en pause ou annulée entre-temps, rien
+  n'est écrit ni publié. Si l'écriture échoue (base indisponible), la session reste `running`
+  et sera reprise au prochain démarrage.
 - L'issue s'écrit en entier même si la tâche est annulée à ce moment (`_settle`).
-- `bus.close` seulement sur `completed` / `failed` (et `cancelled`, par le runner) ; jamais sur
-  `waiting_user` ni `paused` (D42).
+- `bus.close` seulement sur `completed` / `failed` écrits (et `cancelled`, par le runner) ;
+  jamais sur `waiting_user` ni `paused` (D42), ni sur une issue non écrite (la session reste
+  ouverte : un 1000 serait pris pour une fin définitive, D50).
 """
 
 import asyncio
@@ -23,9 +27,8 @@ from langgraph.types import Command, StreamMode
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.agents.graphs.registry import GraphSpec
-from app.agents.runtime.bus import EventBus
+from app.agents.runtime.bus import EventBus, Guard
 from app.agents.runtime.checkpointer import thread_config
-from app.agents.runtime.control import transition
 from app.agents.runtime.costs import CostTracker, ModelPrice
 from app.agents.runtime.deps import ChatModelSource, GraphDeps
 from app.agents.runtime.repositories import SessionRepository
@@ -174,34 +177,41 @@ class _Run:
             agent=agent,
         )
 
-    async def _transition(self, to: str, **values: Any) -> bool:
-        return await transition(
-            self.ctx.session_factory,
-            self.user_id,
-            self.session_id,
-            from_={"running"},
-            to=to,
-            **values,
+    def _guard(self, to: str, **values: Any) -> Guard:
+        async def guard(db: AsyncSession) -> bool:
+            return await SessionRepository(db, self.user_id).transition(
+                self.session_id, from_={"running"}, to=to, **values
+            )
+
+        return guard
+
+    async def _outcome(self, to: str, type: Any, payload: dict[str, Any], **values: Any) -> bool:
+        """Statut `to` (depuis `running`) et événement `type` validés ensemble (D61) ; `False`
+        si la session n'est plus `running` (pause, annulation) : rien d'écrit ni de publié."""
+        event = await self.ctx.bus.publish_with(
+            user_id=self.user_id,
+            session_id=self.session_id,
+            type=type,
+            payload=payload,
+            guard=self._guard(to, **values),
         )
+        return event is not None
 
     async def wait_user(self, pending: dict[str, Any]) -> None:
-        # Statut d'abord : qui reçoit la question peut y répondre aussitôt.
-        if await self._transition("waiting_user", pending_interrupt=pending):
-            await self.publish("interrupt.requested", pending)
+        # Question et statut ensemble : qui reçoit la question peut y répondre aussitôt.
+        await self._outcome(
+            "waiting_user", "interrupt.requested", pending, pending_interrupt=pending
+        )
 
     async def complete(self, summary: str) -> None:
-        if await self._transition("completed", error=None):
-            await self._publish_final("run.completed", {"summary": summary})
+        await self._final("completed", "run.completed", {"summary": summary}, error=None)
 
     async def fail(self, code: str, message: str) -> None:
         error = {"code": code, "message": message}
-        if await self._transition("failed", error=error):
-            await self._publish_final("run.failed", error)
+        await self._final("failed", "run.failed", error, error=error)
 
-    async def _publish_final(self, type: Any, payload: dict[str, Any]) -> None:
-        """Événement final puis `bus.close`, même si la publication échoue : sinon les abonnés
-        (WebSocket) attendraient indéfiniment une session pourtant terminée (D42)."""
-        try:
-            await self.publish(type, payload)
-        finally:
+    async def _final(self, to: str, type: Any, payload: dict[str, Any], **values: Any) -> None:
+        """Issue finale puis `bus.close` : les abonnés reçoivent l'événement final et s'arrêtent
+        (D42). Écriture en échec : rien n'est fermé, la session reste `running` (D61)."""
+        if await self._outcome(to, type, payload, **values):
             await self.ctx.bus.close(user_id=self.user_id, session_id=self.session_id)

@@ -1,6 +1,8 @@
 """WebSocket `/sessions/{id}/stream` : rejeu après `after_seq`, direct, fin de session, origine,
 isolation, déconnexion du client (aucun abonné laissé derrière)."""
 
+import threading
+
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -149,3 +151,36 @@ def test_ws_reopened_past_the_end_of_a_finished_session_closes_at_once(sync_clie
         ):
             ws.receive_json()
         assert closed.value.code == 1000
+
+
+def test_ws_reconnect_during_active_publish_has_no_gap_or_duplicate(sync_client: TestClient):
+    """Le premier socket lit jusqu'au `seq` 3 puis se ferme pendant que la session publie ; le
+    second reprend avec `after_seq=3` : chaque `seq` reçu une fois, sans trou, jusqu'à la fin."""
+    sid = start(sync_client, "ask")
+    view = wait_status_sync(sync_client, sid, "waiting_user")
+    assert view["last_seq"] >= 1
+    iid = view["pending_interrupt"]["interrupt_id"]
+
+    def publish() -> None:
+        for i in range(60):
+            r = sync_client.post(f"{API}/{sid}/message", json={"text": f"remarque {i}"})
+            assert r.status_code == 201, r.text
+
+    publisher = threading.Thread(target=publish)
+    publisher.start()
+    try:
+        with sync_client.websocket_connect(stream_url(sid)) as ws:
+            received = [ws.receive_json()["seq"] for _ in range(3)]
+        with sync_client.websocket_connect(stream_url(sid, 3)) as ws:
+            publisher.join(5)
+            assert not publisher.is_alive()
+            r = sync_client.post(f"{API}/{sid}/resume", json={"interrupt_id": iid, "value": "oui"})
+            assert r.status_code == 202, r.text
+            with pytest.raises(WebSocketDisconnect) as closed:
+                while True:
+                    received.append(ws.receive_json()["seq"])
+    finally:
+        publisher.join()
+    assert closed.value.code == 1000
+    last = wait_status_sync(sync_client, sid, "completed")["last_seq"]
+    assert received == list(range(1, last + 1))

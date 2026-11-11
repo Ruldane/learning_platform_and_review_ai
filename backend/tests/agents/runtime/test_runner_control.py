@@ -1,6 +1,7 @@
 """SessionRunner : reprise, réponses en double, messages, pause, annulation, isolation."""
 
 import asyncio
+from typing import Any
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -198,18 +199,18 @@ async def test_pause_returns_once_the_stopped_task_s_publications_are_written(
 ):
     """D56 : `last_seq` de la réponse couvre tout ce que la tâche arrêtée publiait (un
     `agent.started` en vol ne doit pas arriver au front APRÈS une réponse qui l'ignore)."""
-    flushed: list[bool] = []
+    flushed: list[tuple[bool, dict[str, Any]]] = []
     real_flush = bus.flush
 
-    async def flush() -> None:
-        flushed.append(runner.is_active(sid))  # la tâche est déjà arrêtée
-        await real_flush()
+    async def flush(**kwargs: Any) -> None:
+        flushed.append((runner.is_active(sid), kwargs))  # la tâche est déjà arrêtée
+        await real_flush(**kwargs)
 
     monkeypatch.setattr(bus, "flush", flush)
     sid = await runner.start(user_id, "blocking", {})
     await wait_until(probe.b_started.is_set)
     await runner.pause(user_id, sid)
-    assert flushed == [False]
+    assert flushed == [(False, {"user_id": user_id, "session_id": sid})]  # N5 : cette session
 
 
 async def test_post_message_waits_for_a_control_action_in_progress(

@@ -141,13 +141,13 @@ class SessionRunner:
     async def pause(self, user_id: str, session_id: str) -> AgentSession:
         async with self._control(session_id):
             if await control.claim_pause(self._db, user_id, session_id):
-                await self._stop(session_id)
+                await self._stop(user_id, session_id)
         return await control.get_owned(self._db, user_id, session_id)
 
     async def cancel(self, user_id: str, session_id: str) -> AgentSession:
         async with self._control(session_id):
             await control.claim_cancel(self._db, user_id, session_id)
-            await self._stop(session_id)
+            await self._stop(user_id, session_id)
             await self._bus.close(user_id=user_id, session_id=session_id)
         return await control.get_owned(self._db, user_id, session_id)
 
@@ -213,11 +213,12 @@ class SessionRunner:
         if task is not None:
             await asyncio.wait({task})
 
-    async def _stop(self, session_id: str) -> None:
-        """Annule la tâche en cours, attend qu'elle soit finie, puis que ses publications encore
-        en vol soient écrites : la vue rendue ensuite (`last_seq`) les compte toutes (D56)."""
+    async def _stop(self, user_id: str, session_id: str) -> None:
+        """Annule la tâche en cours, attend qu'elle soit finie, puis que les publications encore
+        en vol de CETTE session soient écrites (N5) : la vue rendue ensuite (`last_seq`) les
+        compte toutes (D56), sans attendre celles des autres sessions."""
         task = self._tasks.get(session_id)
         if task is not None:
             task.cancel()
             await asyncio.wait({task})
-            await self._bus.flush()
+            await self._bus.flush(user_id=user_id, session_id=session_id)

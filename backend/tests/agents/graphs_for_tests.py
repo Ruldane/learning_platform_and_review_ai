@@ -115,6 +115,31 @@ def _ask(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
     return g
 
 
+def _step_then_ask(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
+    """Un nœud terminé (`A`) puis une question : une reprise ne doit pas rejouer `A`."""
+
+    async def a(state: State) -> State:
+        PROBE.counter["A"] += 1
+        return {}
+
+    async def ask(state: State) -> State:
+        return {"answer": interrupt(_question("On continue ?"))}
+
+    async def after(state: State) -> State:
+        PROBE.counter["after"] += 1
+        return {"summary": f"Réponse : {state['answer']}"}
+
+    g = StateGraph(State)
+    g.add_node("a", a)
+    g.add_node("ask", ask)
+    g.add_node("after", after)
+    g.add_edge(START, "a")
+    g.add_edge("a", "ask")
+    g.add_edge("ask", "after")
+    g.add_edge("after", END)
+    return g
+
+
 def _two_questions(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
     """Deux branches parallèles qui interrompent chacune : une question à la fois."""
 
@@ -219,6 +244,7 @@ TEST_GRAPHS: dict[str, GraphSpec] = {
         GraphSpec("two_steps", NoInput, _two_steps),
         GraphSpec("blocking", NoInput, _blocking),
         GraphSpec("ask", NoInput, _ask),
+        GraphSpec("step_then_ask", NoInput, _step_then_ask),
         GraphSpec("two_questions", NoInput, _two_questions),
         GraphSpec("one_llm_call", NoInput, _one_llm_call),
         GraphSpec("with_topic", TopicInput, _one_llm_call),

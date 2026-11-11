@@ -1,8 +1,8 @@
 """SessionRunner : courses entre actions de contrôle, et actions pendant l'arrêt du serveur.
 
-La course est forcée de façon déterministe : la publication de `interrupt.requested` est
-retenue, si bien que `resume` attend la tâche qui pose la question pendant qu'une annulation
-(ou une pause) arrive.
+La course est forcée de façon déterministe : la tâche qui pose la question est retenue juste
+après l'écriture de `interrupt.requested`, si bien que `resume` attend cette tâche pendant
+qu'une annulation (ou une pause) arrive.
 """
 
 import asyncio
@@ -35,16 +35,18 @@ type Factory = async_sessionmaker[AsyncSession]
 
 
 def _hold_questions(bus: EventBus, monkeypatch: pytest.MonkeyPatch) -> asyncio.Event:
-    """Retient toute publication de `interrupt.requested` jusqu'à `release.set()`."""
+    """Retient la tâche qui pose une question jusqu'à `release.set()` : statut `waiting_user` et
+    `interrupt.requested` sont écrits ensemble (D61), la tâche n'a pas encore fini."""
     release = asyncio.Event()
-    original = bus.publish
+    original = bus.publish_with
 
-    async def publish(**kwargs: Any) -> Any:
+    async def publish_with(**kwargs: Any) -> Any:
+        event = await original(**kwargs)
         if kwargs["type"] == "interrupt.requested":
             await release.wait()
-        return await original(**kwargs)
+        return event
 
-    monkeypatch.setattr(bus, "publish", publish)
+    monkeypatch.setattr(bus, "publish_with", publish_with)
     return release
 
 
@@ -56,7 +58,7 @@ async def _resume_while_question_is_published(
     control: str,
 ) -> tuple[str, "asyncio.Task[None]", "asyncio.Task[AgentSession]"]:
     sid = await runner.start(user_id, "ask", {})
-    row = await wait_status(db, user_id, sid, "waiting_user")  # question écrite, pas publiée
+    row = await wait_status(db, user_id, sid, "waiting_user")  # question écrite, tâche retenue
     assert row.pending_interrupt is not None
     resume = asyncio.create_task(
         runner.resume(user_id, sid, row.pending_interrupt["interrupt_id"], "oui")
@@ -108,6 +110,102 @@ async def test_pause_during_resume_stops_the_graph_before_any_progress(
     assert (await types(db_factory, user_id, sid))[-1] == "interrupt.requested"
     await runner.resume(user_id, sid, None, None)  # la reprise repose la question
     await wait_status(db_factory, user_id, sid, "waiting_user")
+
+
+# --- Pause ou annulation pendant l'écriture de l'issue (D52 §2, D61) ------------------------
+
+
+def _hold_outcome(
+    bus: EventBus, monkeypatch: pytest.MonkeyPatch, *, inside: bool
+) -> tuple[asyncio.Event, asyncio.Event]:
+    """Retient l'écriture de `run.completed` jusqu'à `release.set()` : avant la garde
+    (`inside=False`), ou dans la transaction, la garde passée (`inside=True` : le verrou
+    d'écriture de SQLite est tenu, une transition concurrente attend le commit)."""
+    held, release = asyncio.Event(), asyncio.Event()
+    original = bus.publish_with
+
+    async def publish_with(**kwargs: Any) -> Any:
+        if kwargs["type"] != "run.completed":
+            return await original(**kwargs)
+        guard = kwargs.pop("guard")
+
+        async def holding(db: AsyncSession) -> bool:
+            done = await guard(db)
+            held.set()
+            await release.wait()
+            return bool(done)
+
+        if not inside:
+            held.set()
+            await release.wait()
+        return await original(**kwargs, guard=holding if inside else guard)
+
+    monkeypatch.setattr(bus, "publish_with", publish_with)
+    return held, release
+
+
+async def _control_during_outcome(
+    runner: SessionRunner,
+    bus: EventBus,
+    db: Factory,
+    user_id: str,
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    control: str,
+    inside: bool,
+) -> tuple[str, bool]:
+    """Lance `two_steps`, déclenche `control` pendant l'écriture de l'issue ; rend le statut
+    final et la présence de `run.completed`."""
+    held, release = _hold_outcome(bus, monkeypatch, inside=inside)
+    sid = await runner.start(user_id, "two_steps", {})
+    await asyncio.wait_for(held.wait(), 5)
+    action = asyncio.create_task(getattr(runner, control)(user_id, sid))
+    if inside:
+        await asyncio.sleep(0.1)  # l'action attend le verrou d'écriture de SQLite
+    else:
+        await wait_status(db, user_id, sid, "paused" if control == "pause" else "cancelled")
+    release.set()
+    try:
+        await asyncio.wait_for(action, 5)
+    except AppError as e:  # l'issue est passée avant : la session est déjà terminée
+        assert e.status_code == 409
+    await wait_idle(runner, sid)
+    status = (await get_session(db, user_id, sid)).status
+    return status, "run.completed" in await types(db, user_id, sid)
+
+
+@pytest.mark.parametrize("inside", [False, True])
+async def test_pause_during_outcome_write_leaves_one_coherent_outcome(
+    runner: SessionRunner,
+    bus: EventBus,
+    db_factory: Factory,
+    user_id: str,
+    monkeypatch: pytest.MonkeyPatch,
+    inside: bool,
+):
+    outcome = await _control_during_outcome(
+        runner, bus, db_factory, user_id, monkeypatch, control="pause", inside=inside
+    )
+    assert outcome in {("completed", True), ("paused", False)}
+    assert outcome == (("completed", True) if inside else ("paused", False))
+
+
+@pytest.mark.parametrize("inside", [False, True])
+async def test_cancel_during_settle_never_leaves_status_without_event(
+    runner: SessionRunner,
+    bus: EventBus,
+    db_factory: Factory,
+    user_id: str,
+    monkeypatch: pytest.MonkeyPatch,
+    inside: bool,
+):
+    """Annulation pendant `_settle` : la tâche est annulée alors que l'issue s'écrit."""
+    outcome = await _control_during_outcome(
+        runner, bus, db_factory, user_id, monkeypatch, control="cancel", inside=inside
+    )
+    assert outcome in {("completed", True), ("cancelled", False)}
+    assert outcome == (("completed", True) if inside else ("cancelled", False))
+    assert bus.tracked_sessions() == 0  # fermé par l'issue ou par l'annulation
 
 
 # --- Pendant l'arrêt du serveur -------------------------------------------------------------

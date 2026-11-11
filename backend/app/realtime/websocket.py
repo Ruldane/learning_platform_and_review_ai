@@ -72,8 +72,8 @@ def end_seq_reader(
             events = EventRepository(db, user_id)
             if status == "cancelled":  # aucun événement final : tout ce qui est écrit
                 return await events.max_seq(session_id)
-            # `completed` / `failed` : l'événement final, s'il est déjà écrit (le runner écrit
-            # le statut avant de le publier ; sinon il arrivera en direct).
+            # `completed` / `failed` : l'événement final, écrit dans la même transaction que
+            # le statut (D61). `None` (ligne d'avant D61 sans son événement) : flux ouvert.
             return await events.last_seq_of(session_id, replay.FINAL_EVENTS)
 
     return read

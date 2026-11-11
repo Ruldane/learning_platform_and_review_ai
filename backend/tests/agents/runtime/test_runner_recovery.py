@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.agents.runtime import control
 from app.agents.runtime.bus import EventBus
 from app.agents.runtime.checkpointer import open_checkpointer
 from app.agents.runtime.repositories import SessionRepository
@@ -90,6 +91,32 @@ async def test_waiting_session_survives_restart(
     await r2.resume(user_id, sid, pending["interrupt_id"], "oui")
     await wait_status(db_factory, user_id, sid, "completed")
     assert probe.counter["after"] == 1
+
+
+async def test_restart_after_claim_resume_asks_again_same_interrupt(
+    make_runner: MakeRunner, db_factory: Factory, user_id: str, probe: Probe
+):
+    """Réponse acceptée (`claim_resume` : `running`, question effacée), puis arrêt brutal avant
+    que la tâche relancée n'écrive le moindre checkpoint : au redémarrage, la même question est
+    reposée (même id) et aucun nœud terminé n'est rejoué."""
+    r1 = await make_runner()
+    sid = await r1.start(user_id, "step_then_ask", {})
+    first = await wait_status(db_factory, user_id, sid, "waiting_user")
+    await wait_idle(r1, sid)
+    assert first.pending_interrupt is not None
+    first_id = first.pending_interrupt["interrupt_id"]
+    await control.claim_resume(db_factory, user_id, sid, first_id, "oui")  # aucune tâche lancée
+    await r1.shutdown()
+    r2 = await make_runner()
+    assert await r2.recover_on_startup() == [sid]
+    row = await wait_status(db_factory, user_id, sid, "waiting_user")
+    await wait_idle(r2, sid)
+    assert row.status == "waiting_user" and row.pending_interrupt is not None
+    assert row.pending_interrupt["interrupt_id"] == first_id
+    assert (probe.counter["A"], probe.counter["after"]) == (1, 0)
+    await r2.resume(user_id, sid, first_id, "oui")
+    await wait_status(db_factory, user_id, sid, "completed")
+    assert (probe.counter["A"], probe.counter["after"]) == (1, 1)
 
 
 async def test_running_session_without_checkpoint_restarts_from_its_input(

@@ -39,9 +39,9 @@ def act_as(app: FastAPI, user_id: str) -> None:
 
 
 def _settled(app: Any, sid: str) -> bool:
-    """Tâche de la session finie. Lu AVANT la lecture du statut : le runner écrit le statut
-    avant de publier l'événement qui va avec (`interrupt.requested`, `run.completed`, D46) ;
-    une tâche déjà finie a tout écrit, donc la lecture qui suit voit tout."""
+    """Tâche de la session finie. Lu AVANT la lecture du statut : une tâche déjà finie a
+    tout écrit (issue et son événement, D61, puis `bus.close`), donc la lecture qui suit voit
+    tout."""
     return not app.state.runtime.runner.is_active(sid)
 
 

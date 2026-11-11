@@ -8,7 +8,7 @@ from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.agents.runtime.bus import EventBus
-from app.agents.runtime.repositories import EventRepository
+from app.agents.runtime.repositories import EventRepository, SessionRepository
 from app.db.models.agents import AgentSession
 from tests.agents.runtime.conftest import TIMEOUT, say, stored_seq, take
 
@@ -170,6 +170,35 @@ async def test_flush_waits_for_publications_whose_caller_was_cancelled(
     await bus.flush()  # rien en vol : rend la main aussitôt
 
 
+async def test_flush_waits_only_for_given_session(
+    bus: EventBus, db_factory: Factory, user_id: str, session_id: str
+):
+    """N5 : la pause d'une session n'attend pas les publications des autres sessions."""
+    async with db_factory() as db:
+        other = await SessionRepository(db, user_id).add(graph="demo", status="running")
+        await db.commit()
+    held = bus._state((user_id, other.id))
+    await held.lock.acquire()  # la publication de l'autre session reste bloquée
+    try:
+        blocked = asyncio.create_task(say(bus, user_id, other.id, "bloquée"))
+        mine = asyncio.create_task(say(bus, user_id, session_id, "a"))
+        await asyncio.sleep(0)  # les deux publications sont en vol
+        await asyncio.wait_for(bus.flush(user_id=user_id, session_id=session_id), timeout=1)
+        assert mine.done() and await stored_seq(db_factory, user_id, session_id) == 1
+        flushing_other = asyncio.create_task(bus.flush(user_id=user_id, session_id=other.id))
+        await asyncio.sleep(0.05)
+        assert not flushing_other.done() and not blocked.done()
+    finally:
+        held.lock.release()
+    await asyncio.wait_for(flushing_other, TIMEOUT)
+    assert blocked.done() and await stored_seq(db_factory, user_id, other.id) == 1
+
+
+async def test_flush_takes_a_whole_session_key(bus: EventBus, user_id: str):
+    with pytest.raises(ValueError):
+        await bus.flush(user_id=user_id)
+
+
 async def test_publish_waits_for_a_concurrent_sqlite_writer(
     bus: EventBus, db_factory: Factory, user_id: str, session_id: str
 ):
@@ -194,14 +223,14 @@ async def test_aclose_waits_for_publishes_whose_caller_was_cancelled(
     """Arrêt du serveur : `aclose` attend les écritures protégées encore en vol (sinon le
     moteur serait fermé sous leurs pieds)."""
     entered, release = asyncio.Event(), asyncio.Event()
-    original = bus._insert
+    original = bus._writer.insert
 
     async def slow_insert(*args: object, **kwargs: object) -> object:
         entered.set()
         await release.wait()
         return await original(*args, **kwargs)  # type: ignore[arg-type]
 
-    monkeypatch.setattr(bus, "_insert", slow_insert)
+    monkeypatch.setattr(bus._writer, "insert", slow_insert)
     publisher = asyncio.create_task(say(bus, user_id, session_id, "a"))
     await asyncio.wait_for(entered.wait(), TIMEOUT)
     publisher.cancel()
