@@ -1,12 +1,12 @@
 """Contrôles de santé qui s'appuient sur les features : la base et les clés LLM (sans réseau)."""
 
 from collections.abc import Callable, Mapping
+from typing import Protocol
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.security import Cipher
-from app.features.settings.keys_schemas import ApiKeyOut
 from app.features.settings.keys_service import ApiKeyService
 from app.providers.health import HealthStatus, available
 from app.providers.llm.base import LlmProvider
@@ -24,7 +24,19 @@ class DatabaseCheck:
         return available()
 
 
-def _describe(entry: ApiKeyOut) -> str:
+class _KeyEntry(Protocol):
+    """Ce que `_describe` lit d'une entrée de `ApiKeyService.list()` (type local : une feature
+    n'importe d'une autre que son service)."""
+
+    @property
+    def label(self) -> str: ...
+    @property
+    def source(self) -> str | None: ...
+    @property
+    def readable(self) -> bool: ...
+
+
+def _describe(entry: _KeyEntry) -> str:
     if entry.source is None:
         return f"{entry.label} : aucune clé"
     return f"{entry.label} : {'clé présente' if entry.readable else 'clé illisible'}"

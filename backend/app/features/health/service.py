@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from typing import Literal
 
 import httpx
@@ -6,6 +7,7 @@ import httpx
 from app.features.health.schemas import HealthReport
 from app.providers.health import HealthCheck, HealthStatus
 
+logger = logging.getLogger(__name__)
 CHECK_TIMEOUT_SECONDS = 3.0
 DB_CHECK = "db"
 
@@ -15,9 +17,11 @@ async def _run_one(check: HealthCheck, timeout: float) -> HealthStatus:
     rapporté : le message d'une exception réseau peut contenir une adresse ou une clé."""
     try:
         return await asyncio.wait_for(check.check(), timeout)
-    except (TimeoutError, httpx.TimeoutException):
+    except (TimeoutError, httpx.TimeoutException) as exc:
+        logger.warning("health check %s failed: %s", check.name, type(exc).__name__)
         return HealthStatus(ok=False, detail="Délai dépassé")
     except Exception as exc:
+        logger.warning("health check %s failed: %s", check.name, type(exc).__name__)
         return HealthStatus(ok=False, detail=f"Erreur : {type(exc).__name__}")
 
 

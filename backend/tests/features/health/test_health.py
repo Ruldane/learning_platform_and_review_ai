@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from collections.abc import Callable
 
 import httpx
@@ -72,6 +73,18 @@ async def test_exception_detail_is_only_the_type_name() -> None:
     boom = _Raising("qdrant", httpx.ConnectError("http://secret-host sk-secret-key"))
     r = await HealthService([ok("db"), boom]).run()
     assert r.checks["qdrant"].detail == "Erreur : ConnectError"
+
+
+async def test_failed_check_is_logged_with_type_name_only(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    boom = _Raising("qdrant", httpx.ConnectError("http://secret-host sk-secret-key"))
+    with caplog.at_level(logging.WARNING, logger="app.features.health.service"):
+        await HealthService([ok("db"), boom, _Slow("searxng", 5)], timeout=0.05).run()
+    messages = [r.getMessage() for r in caplog.records]
+    assert "health check qdrant failed: ConnectError" in messages
+    assert "health check searxng failed: TimeoutError" in messages
+    assert "secret" not in caplog.text
 
 
 async def test_httpx_timeout_is_reported_as_timeout() -> None:
