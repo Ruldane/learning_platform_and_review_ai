@@ -9,7 +9,10 @@ from app.providers.embeddings.base import Embedder
 from app.providers.health import HealthCheck
 from app.providers.llm.base import LlmProvider
 from app.providers.llm.factory import LlmFactory
+from app.providers.pdf.base import PdfTextExtractor
+from app.providers.storage.base import FileStorage
 from app.providers.vector.base import MemoryRepository
+from app.providers.web.base import WebReader, YoutubeTranscripts
 
 
 @dataclass
@@ -25,8 +28,12 @@ class Providers:
 
 @dataclass(frozen=True)
 class MemoryProviders:
-    """Services de la mémoire : vectorisation et index vectoriel (étendu en 2.4 : stockage de
-    fichiers, extraction PDF, lecture web, transcriptions YouTube)."""
+    """Services de la mémoire : vectorisation, index vectoriel, stockage des fichiers importés,
+    extraction PDF, lecture sûre du web et transcriptions YouTube."""
 
     embedder: Embedder
     index: MemoryRepository
+    storage: FileStorage
+    pdf: PdfTextExtractor
+    web: WebReader
+    youtube: YoutubeTranscripts

@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import httpx
 import pytest
 import respx
@@ -13,7 +15,11 @@ from app.core.security import Cipher
 from app.main import create_app
 from app.providers.embeddings.ollama import OllamaEmbedder
 from app.providers.llm.glm import GlmProvider
+from app.providers.pdf.extract import PdfPlumberExtractor
+from app.providers.storage.local import LocalFileStorage
 from app.providers.vector.qdrant import QdrantMemoryRepository
+from app.providers.web.reader import TrafilaturaWebReader
+from app.providers.web.youtube import TranscriptApiYoutube
 
 _HTTP = httpx.AsyncClient()
 
@@ -77,6 +83,10 @@ async def test_memory_providers_are_built_without_any_request(settings: Settings
             assert isinstance(built, MemoryProviders)
             assert isinstance(built.embedder, OllamaEmbedder)
             assert isinstance(built.index, QdrantMemoryRepository)
+            assert isinstance(built.storage, LocalFileStorage)
+            assert isinstance(built.pdf, PdfPlumberExtractor)
+            assert isinstance(built.web, TrafilaturaWebReader)
+            assert isinstance(built.youtube, TranscriptApiYoutube)
         assert not router.calls
 
 
@@ -99,8 +109,38 @@ async def test_memory_providers_close_their_clients(
     monkeypatch.setattr("app.bootstrap.httpx.AsyncClient", tracking)
     monkeypatch.setattr(AsyncQdrantClient, "close", close)
     async with memory_providers(settings):
-        assert len(created) == 1 and not created[0].is_closed
-    assert created[0].is_closed and closed == [True]
+        assert len(created) == 2 and not any(c.is_closed for c in created)
+    assert all(c.is_closed for c in created) and closed == [True]
+
+
+async def test_web_reader_client_never_follows_redirects_nor_trusts_the_environment(
+    settings: Settings, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("HTTPS_PROXY", "http://proxy.interne:3128")
+    created: list[httpx.AsyncClient] = []
+    original = httpx.AsyncClient
+
+    def tracking(*args: object, **kwargs: object) -> httpx.AsyncClient:
+        client = original(*args, **kwargs)  # type: ignore[arg-type]
+        created.append(client)
+        return client
+
+    monkeypatch.setattr("app.bootstrap.httpx.AsyncClient", tracking)
+    async with memory_providers(settings) as built:
+        reader = created[1]
+        assert built.web._fetcher._http is reader  # type: ignore[attr-defined]
+        assert reader.follow_redirects is False and reader.trust_env is False
+        assert reader.timeout == httpx.Timeout(15.0)
+        assert not reader._mounts  # aucun proxy repris de l'environnement
+
+
+async def test_storage_lives_under_the_configured_data_dir(
+    settings: Settings, tmp_path: Path
+) -> None:
+    configured = settings.model_copy(update={"data_dir": tmp_path})
+    async with memory_providers(configured) as built:
+        key = await built.storage.save("u1", "documents", b"x", ".txt")
+    assert (tmp_path / "storage" / key).read_bytes() == b"x"
 
 
 async def test_memory_providers_use_the_configured_services(settings: Settings) -> None:

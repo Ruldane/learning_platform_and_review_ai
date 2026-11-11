@@ -23,10 +23,16 @@ from app.providers.llm.base import LlmProvider
 from app.providers.llm.factory import LlmFactory
 from app.providers.llm.glm import GlmProvider
 from app.providers.llm.registry import LLM_PROVIDERS, PRICES_PATH
+from app.providers.pdf.extract import PdfPlumberExtractor
 from app.providers.pdf.gotenberg_probe import GotenbergProbe
 from app.providers.search.searxng_probe import SearxngProbe
+from app.providers.storage.local import LocalFileStorage
 from app.providers.vector.qdrant import QdrantMemoryRepository
 from app.providers.vector.qdrant_probe import QdrantProbe
+from app.providers.web.base import FETCH_TIMEOUT_S
+from app.providers.web.fetch import SafeHttpFetcher, refuse_all_cookies
+from app.providers.web.reader import TrafilaturaWebReader
+from app.providers.web.youtube import TranscriptApiYoutube
 
 _OLLAMA_TIMEOUT_SECONDS = 60.0
 _QDRANT_TIMEOUT_SECONDS = 10
@@ -95,12 +101,27 @@ def run_settings_source(session_factory: async_sessionmaker[AsyncSession]) -> Ru
     return SettingsRunReader(session_factory)
 
 
+def _reader_http() -> httpx.AsyncClient:
+    """Client du lecteur web, à part de celui d'Ollama : jamais de redirection automatique (la
+    garde SSRF revérifie chaque saut), aucun proxy ni réglage de l'environnement (l'adresse
+    connectée serait celle du proxy), aucun cookie retenu (client partagé entre utilisateurs)."""
+    return httpx.AsyncClient(
+        follow_redirects=False,
+        trust_env=False,
+        timeout=httpx.Timeout(FETCH_TIMEOUT_S),
+        cookies=refuse_all_cookies(),
+    )
+
+
 @asynccontextmanager
 async def memory_providers(settings: Settings) -> AsyncIterator[MemoryProviders]:
-    """Embeddings Ollama et index Qdrant ; leurs clients sont fermés à la sortie. Aucune
-    requête à la construction : le back démarre même si Ollama ou Qdrant sont arrêtés (la
-    collection est créée à la première utilisation)."""
-    async with httpx.AsyncClient(timeout=_OLLAMA_TIMEOUT_SECONDS) as http:
+    """Embeddings Ollama, index Qdrant, stockage local, extraction PDF, lecteur web et YouTube ;
+    les clients sont fermés à la sortie. Aucune requête à la construction : le back démarre même
+    si Ollama ou Qdrant sont arrêtés (la collection est créée à la première utilisation)."""
+    async with (
+        httpx.AsyncClient(timeout=_OLLAMA_TIMEOUT_SECONDS) as http,
+        _reader_http() as reader_http,
+    ):
         # Pas de contrôle de version au démarrage : il ferait une requête dès la construction.
         qdrant = AsyncQdrantClient(
             url=settings.qdrant_url, timeout=_QDRANT_TIMEOUT_SECONDS, check_compatibility=False
@@ -113,6 +134,15 @@ async def memory_providers(settings: Settings) -> AsyncIterator[MemoryProviders]
                 collection=settings.memory_collection,
                 dimension=settings.embedding_dimension,
             )
-            yield MemoryProviders(embedder=embedder, index=index)
+            pdf = PdfPlumberExtractor()
+            web = TrafilaturaWebReader(SafeHttpFetcher(reader_http), pdf)
+            yield MemoryProviders(
+                embedder=embedder,
+                index=index,
+                storage=LocalFileStorage(settings.storage_dir),
+                pdf=pdf,
+                web=web,
+                youtube=TranscriptApiYoutube(web),
+            )
         finally:
             await qdrant.close()
