@@ -127,6 +127,26 @@ export const fr = {
     demo_proponent: { name: "Avocat", role: "Défend l'idée" },
     demo_critic: { name: "Critique", role: "Challenge l'idée" },
   },
+  demo: {
+    title: "Démo du moteur d'agents",
+    intro:
+      "Un Avocat et un Critique débattent d'un sujet de ton choix ; l'équipe te pose une question entre les deux tours.",
+    topic: {
+      label: "Sujet",
+      placeholder: "Ex. apprendre Rust",
+      submit: "Lancer le débat",
+      starting: "Lancement…",
+    },
+    loading: "Ouverture du débat…",
+    reconnecting: "Connexion au direct perdue, reconnexion…",
+    restart: "Nouveau débat",
+    cancel: {
+      title: "Annuler le débat ?",
+      description: "Les agents s'arrêtent et la session ne pourra plus reprendre.",
+      confirm: "Oui, annuler le débat",
+      keep: "Non, continuer",
+    },
+  },
   settings: {
     models: {
       navLabel: "Modèles et clés",
