@@ -6,6 +6,7 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
 from app.agents.runtime.bus import EventBus
+from app.agents.runtime.runner import SessionRunner
 from app.config import Settings
 from app.core.security import Cipher, KnownSecrets
 from app.db.models.accounts import User
@@ -89,11 +90,16 @@ async def test_http_client_is_closed_when_composition_fails(
     assert len(created) == 1 and created[0].is_closed
 
 
-async def test_event_bus_is_drained_before_the_engine_is_disposed(
+async def test_shutdown_stops_runner_then_bus_then_engine(
     settings: Settings, db_engine: object, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     order: list[str] = []
     original_dispose = AsyncEngine.dispose
+    original_shutdown = SessionRunner.shutdown
+
+    async def runner_shutdown(self: SessionRunner) -> None:
+        order.append("runner")
+        await original_shutdown(self)
 
     async def bus_aclose(self: EventBus) -> None:
         order.append("bus")
@@ -102,9 +108,10 @@ async def test_event_bus_is_drained_before_the_engine_is_disposed(
         order.append("engine")
         await original_dispose(self, close)
 
+    monkeypatch.setattr(SessionRunner, "shutdown", runner_shutdown)
     monkeypatch.setattr(EventBus, "aclose", bus_aclose)
     monkeypatch.setattr(AsyncEngine, "dispose", dispose)
     app = create_app(settings)
     async with LifespanManager(app):
         assert isinstance(app.state.runtime.bus, EventBus)
-    assert order == ["bus", "engine"]
+    assert order == ["runner", "bus", "engine"]

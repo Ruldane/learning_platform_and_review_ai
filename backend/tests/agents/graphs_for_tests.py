@@ -24,6 +24,7 @@ class Probe:
         self.counter: Counter[str] = Counter()
         self.b_started = asyncio.Event()
         self.release_b = asyncio.Event()
+        self.b_done = asyncio.Event()
 
 
 PROBE = Probe()
@@ -82,6 +83,7 @@ def _blocking(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
         PROBE.counter["B"] += 1
         PROBE.b_started.set()
         await PROBE.release_b.wait()
+        PROBE.b_done.set()
         return {"summary": "Débloqué."}
 
     g = StateGraph(State)

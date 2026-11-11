@@ -2,12 +2,19 @@
 arrêt du serveur a interrompues. Une tâche asyncio par session active, toujours suivie : aucune
 n'est orpheline, `shutdown` les annule et les attend.
 
+Les actions de contrôle d'une même session (reprise, pause, annulation) sont sérialisées par
+un verrou par session, tenu de la décision en base jusqu'au lancement ou à l'arrêt de la tâche ;
+une tâche lancée attend ce verrou avant de démarrer : une pause ou une annulation arrivée pendant
+une reprise passe avant elle et l'arrête avant tout progrès du graphe.
+
 Le corps d'une tâche vit dans `execution.py`, les règles de statut dans `control.py`.
 """
 
 import asyncio
 import logging
-from collections.abc import Mapping
+from collections.abc import AsyncIterator, Mapping
+from contextlib import asynccontextmanager
+from dataclasses import dataclass, field
 from functools import partial
 from typing import Any
 
@@ -29,6 +36,16 @@ from app.db.models.agents import AgentSession
 
 logger = logging.getLogger(__name__)
 
+_STOPPING = "Le serveur s'arrête : réessaie dans un instant."
+
+
+@dataclass(eq=False)
+class _Gate:
+    """Verrou de contrôle d'une session ; oublié quand plus personne ne le tient ni ne l'attend."""
+
+    lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+    users: int = 0
+
 
 class SessionRunner:
     def __init__(
@@ -45,6 +62,7 @@ class SessionRunner:
         self._bus = bus
         self._ctx = RunContext(session_factory, bus, models, checkpointer, prices, graphs)
         self._tasks: dict[str, asyncio.Task[None]] = {}
+        self._gates: dict[str, _Gate] = {}
         self._stopping = False
 
     # --- Démarrage et reprise ------------------------------------------------------------
@@ -58,6 +76,7 @@ class SessionRunner:
         subject_id: str | None = None,
     ) -> str:
         """Valide l'entrée, crée la session `running`, lance sa tâche et rend la main aussitôt."""
+        self._refuse_if_stopping()  # avant toute écriture : rien à reprendre au démarrage
         spec = self._ctx.graphs.get(graph)
         if spec is None:
             raise unknown_graph(graph)
@@ -85,9 +104,11 @@ class SessionRunner:
     ) -> None:
         """Réponse à la question en attente (`interrupt_id` = celui de `pending_interrupt`), ou
         reprise d'une pause (`interrupt_id=None`) sur le dernier checkpoint."""
-        command = await control.claim_resume(self._db, user_id, session_id, interrupt_id, value)
-        await self._settle(session_id)  # la tâche qui a posé la question finit d'en publier
-        self._launch(user_id, session_id, command)
+        async with self._control(session_id):
+            self._refuse_if_stopping()  # avant `claim_resume` : la question reste en attente
+            command = await control.claim_resume(self._db, user_id, session_id, interrupt_id, value)
+            await self._settle(session_id)  # la tâche qui a posé la question finit d'en publier
+            self._launch(user_id, session_id, command)
 
     async def recover_on_startup(self) -> list[str]:
         """Relance les sessions `running` qu'un arrêt a interrompues (dernier checkpoint : aucun
@@ -109,14 +130,16 @@ class SessionRunner:
         )
 
     async def pause(self, user_id: str, session_id: str) -> AgentSession:
-        if await control.claim_pause(self._db, user_id, session_id):
-            await self._stop(session_id)
+        async with self._control(session_id):
+            if await control.claim_pause(self._db, user_id, session_id):
+                await self._stop(session_id)
         return await control.get_owned(self._db, user_id, session_id)
 
     async def cancel(self, user_id: str, session_id: str) -> AgentSession:
-        await control.claim_cancel(self._db, user_id, session_id)
-        await self._stop(session_id)
-        await self._bus.close(user_id=user_id, session_id=session_id)
+        async with self._control(session_id):
+            await control.claim_cancel(self._db, user_id, session_id)
+            await self._stop(session_id)
+            await self._bus.close(user_id=user_id, session_id=session_id)
         return await control.get_owned(self._db, user_id, session_id)
 
     # --- Tâches --------------------------------------------------------------------------
@@ -134,13 +157,33 @@ class SessionRunner:
             task.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
 
-    def _launch(self, user_id: str, session_id: str, command: Command[Any] | None) -> None:
+    def _refuse_if_stopping(self) -> None:
         if self._stopping:
-            raise AppError(
-                "server_stopping", "Le serveur s'arrête : réessaie dans un instant.", 503
-            )
+            raise AppError("server_stopping", _STOPPING, 503)
+
+    @asynccontextmanager
+    async def _control(self, session_id: str) -> AsyncIterator[None]:
+        """Tient le verrou de contrôle de la session. Aucune attente avant `acquire` : une
+        action appelée prend sa place dans la file dès son premier pas."""
+        gate = self._gates.setdefault(session_id, _Gate())
+        gate.users += 1
+        try:
+            async with gate.lock:
+                yield
+        finally:
+            gate.users -= 1
+            if not gate.users and self._gates.get(session_id) is gate:
+                del self._gates[session_id]
+
+    async def _run(self, user_id: str, session_id: str, command: Command[Any] | None) -> None:
+        async with self._control(session_id):
+            pass  # laisse passer d'abord les actions de contrôle déjà en file (pause, annulation)
+        await run_session(self._ctx, user_id, session_id, command)
+
+    def _launch(self, user_id: str, session_id: str, command: Command[Any] | None) -> None:
+        self._refuse_if_stopping()
         task = asyncio.create_task(
-            run_session(self._ctx, user_id, session_id, command), name=f"session:{session_id}"
+            self._run(user_id, session_id, command), name=f"session:{session_id}"
         )
         self._tasks[session_id] = task
         task.add_done_callback(partial(self._forget, session_id))

@@ -164,7 +164,9 @@ async def test_cancel_marks_cancelled_and_stops_task(
     await wait_until(probe.b_started.is_set)
     cancelled = await runner.cancel(user_id, sid)
     assert cancelled.status == "cancelled" and not runner.is_active(sid)
-    probe.release_b.set()
+    probe.release_b.set()  # une tâche survivante finirait B et publierait run.completed
+    with pytest.raises(TimeoutError):
+        await asyncio.wait_for(probe.b_done.wait(), 0.3)
     assert "run.completed" not in await types(db_factory, user_id, sid)
     for action in (runner.resume(user_id, sid, None, None), runner.pause(user_id, sid)):
         with pytest.raises(AppError) as e:

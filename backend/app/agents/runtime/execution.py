@@ -64,7 +64,10 @@ async def run_session(
     """
     run = _Run(ctx, user_id, session_id)
     try:
-        graph, config, graph_input = await run.prepare(command)
+        prepared = await run.prepare(command)
+        if prepared is None:
+            return  # plus `running` (pause, annulation passées avant) : rien à faire ni écrire
+        graph, config, graph_input = prepared
         pending = await run.stream(graph, graph_input, config)
         if pending is not None:
             outcome = run.wait_user(pending)
@@ -93,6 +96,8 @@ async def _settle(outcome: Awaitable[None]) -> None:
         await asyncio.shield(task)
     except asyncio.CancelledError:
         await asyncio.wait({task})
+        if not task.cancelled() and (error := task.exception()) is not None:
+            logger.error("Issue d'une session non écrite (%s)", type(error).__name__)
         raise
 
 
@@ -110,13 +115,17 @@ class _Run:
 
     async def prepare(
         self, command: Command[Any] | None
-    ) -> tuple[Pregel[Any, Any, Any, Any], RunnableConfig, Any]:
+    ) -> tuple[Pregel[Any, Any, Any, Any], RunnableConfig, Any] | None:
+        """Graphe compilé, configuration et entrée ; `None` si la session n'est plus
+        `running` (une pause ou une annulation est passée avant le démarrage de la tâche)."""
         ctx = self.ctx
         async with ctx.session_factory() as db:
             row = await SessionRepository(db, self.user_id).get(self.session_id)
             settings = await SettingsService(db, self.user_id).get()
         if row is None:
             raise AppError("session_not_found", "Session introuvable.", 404)
+        if row.status != "running":
+            return None
         spec = ctx.graphs.get(row.graph)
         if spec is None:
             raise unknown_graph(row.graph)
