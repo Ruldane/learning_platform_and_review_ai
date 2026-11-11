@@ -45,11 +45,11 @@ class WriteOutcome:
     created: bool
 
 
-def _not_found() -> AppError:
+def not_found() -> AppError:
     return AppError("memory_item_not_found", "Élément de mémoire introuvable.", 404)
 
 
-def _duplicate() -> AppError:
+def duplicate() -> AppError:
     return AppError("memory_duplicate", "Un élément identique existe déjà.", 409)
 
 
@@ -89,19 +89,17 @@ def to_out(item: MemoryItem) -> MemoryItemOut:
 
 class MemoryService:
     def __init__(self, db: AsyncSession, user_id: str, runtime: MemoryRuntime) -> None:
-        self._db = db
-        self._user_id = user_id
-        self._runtime = runtime
+        self.db, self.user_id, self.runtime = db, user_id, runtime  # lus par `merge.py`
         self._items = MemoryItemRepository(db, user_id)
         self._chunks = ChunkRepository(db, user_id)
         self._writes = WriteRepository(db, user_id)
 
-    async def _get(self, item_id: str) -> MemoryItem:
+    async def get(self, item_id: str) -> MemoryItem:
         """Élément de l'utilisateur ou 404. Toute modification passe par ici : les fragments
         (`replace_for_item`) et l'index ne revérifient pas le propriétaire."""
         item = await self._items.get(item_id)
         if item is None:
-            raise _not_found()
+            raise not_found()
         return item
 
     # --- écriture ---------------------------------------------------------------------------
@@ -142,14 +140,14 @@ class MemoryService:
             reason=reason,
         )
         if index and item.status == "active":
-            await self._runtime.indexer.index_item(self._db, item)
+            await self.runtime.indexer.index_item(self.db, item)
         return WriteOutcome(item, True)
 
     async def _insert(self, fields: dict[str, Any], digest: str) -> tuple[MemoryItem, bool]:
         """Insertion sous SAVEPOINT : l'unicité du hash tranche une course ; la perdante relit."""
         await self._items.begin_write()
         try:
-            async with self._db.begin_nested():
+            async with self.db.begin_nested():
                 return await self._items.add(**fields), True
         except IntegrityError:
             winner = await self._items.find_by_hash(digest)
@@ -180,7 +178,7 @@ class MemoryService:
         return MemoryItemList(items=[to_out(row) for row in rows], total=total)
 
     async def detail(self, item_id: str) -> MemoryItemDetail:
-        item = await self._get(item_id)
+        item = await self.get(item_id)
         chunks = await self._chunks.for_item(item.id)
         writes = await self._writes.for_item(item.id)
         return MemoryItemDetail(
@@ -196,8 +194,8 @@ class MemoryService:
         if first_chunk_id is None or item.indexed_at is None:
             return []
         try:
-            hits = await self._runtime.providers.index.similar(
-                self._user_id, first_chunk_id, k=NEIGHBORS, exclude_item_id=item.id
+            hits = await self.runtime.providers.index.similar(
+                self.user_id, first_chunk_id, k=NEIGHBORS, exclude_item_id=item.id
             )
         except (EmbeddingsUnavailable, VectorStoreUnavailable):
             return []
@@ -225,7 +223,7 @@ class MemoryService:
         modifié reçoit un nouveau hash (409 s'il existe déjà), est réindexé et journalisé
         `update` ; confirmer une décision en attente la rend active, l'indexe et journalise
         `confirm`."""
-        item = await self._get(item_id)
+        item = await self.get(item_id)
         if patch.level is not None and item.kind != "acquis":
             raise AppError("memory_level_forbidden", "Seul un acquis a un niveau.", 422)
         content = await self._edit(item, patch)
@@ -235,13 +233,13 @@ class MemoryService:
         confirmed = patch.status == "active" and item.status == "pending"
         if confirmed:
             item.status = "active"
-        await self._db.flush()
+        await self.db.flush()
         if content or level:
             await self._log(item, "update")
         if confirmed:
             await self._log(item, "confirm")
         if item.status == "active" and (content or confirmed):
-            await self._runtime.indexer.index_item(self._db, item)
+            await self.runtime.indexer.index_item(self.db, item)
         return to_out(item)
 
     async def _edit(self, item: MemoryItem, patch: MemoryItemPatch) -> bool:
@@ -257,14 +255,14 @@ class MemoryService:
         digest = content_hash(cast(MemoryKind, item.kind), title, text)
         clash = await self._items.find_by_hash(digest)
         if clash is not None and clash.id != item.id:
-            raise _duplicate()
+            raise duplicate()
         await self._items.begin_write()
         try:
-            async with self._db.begin_nested():
+            async with self.db.begin_nested():
                 item.title, item.text, item.tags, item.content_hash = title, text, tags, digest
-                await self._db.flush()
+                await self.db.flush()
         except IntegrityError:
-            raise _duplicate() from None
+            raise duplicate() from None
         return True
 
     async def _log(self, item: MemoryItem, action: WriteAction) -> None:
@@ -282,18 +280,18 @@ class MemoryService:
         """Supprime l'élément, ses fragments (cascade) et ses vecteurs. Une décision en attente
         refusée est journalisée `reject`, le reste `delete`. Un document perd aussi ses lignes
         `documents`, et leurs fichiers après le commit (jamais une ligne sans son fichier)."""
-        item = await self._get(item_id)
+        item = await self.get(item_id)
         keys: list[str] = []
         if item.kind == "document":
-            docs = DocumentService(self._db, self._user_id, self._runtime)
+            docs = DocumentService(self.db, self.user_id, self.runtime)
             keys = await docs.remove_for_item(item)
         action: WriteAction = "reject" if item.status == "pending" else "delete"
         await self._writes.log(
             item=item, action=action, author=USER_AUTHOR, session_id=None, reason=None
         )
         await self._items.delete(item.id)
-        await self._runtime.indexer.unindex(self._user_id, [item.id])
+        await self.runtime.indexer.unindex(self.user_id, [item.id])
         if keys:
-            await self._db.commit()
+            await self.db.commit()
             for key in keys:
-                await self._runtime.providers.storage.delete(self._user_id, key)
+                await self.runtime.providers.storage.delete(self.user_id, key)

@@ -17,10 +17,12 @@ from app.features.memory.schemas import (
     MemoryItemOut,
     MemoryItemPatch,
     MemoryKind,
+    MergeRequest,
     SearchRequest,
     SearchResponse,
 )
 from app.features.memory.service.items import ItemFilter, MemoryService
+from app.features.memory.service.merge import merge
 from app.features.memory.service.search import search
 
 router = APIRouter(prefix="/memory", tags=["memory"])
@@ -74,6 +76,12 @@ async def update_item(item_id: str, body: MemoryItemPatch, service: Service) -> 
 async def delete_item(item_id: str, service: Service) -> Response:
     await service.delete(item_id)
     return Response(status_code=http.HTTP_204_NO_CONTENT)
+
+
+@router.post("/items/{item_id}/merge", response_model=MemoryItemOut)
+async def merge_items(item_id: str, body: MergeRequest, service: Service) -> MemoryItemOut:
+    """Fond `other_ids` dans l'élément (D67) : même type, ni document ni décision en attente."""
+    return await merge(service, item_id, body.other_ids)
 
 
 @router.post("/search", response_model=SearchResponse)

@@ -24,6 +24,9 @@ __all__ = [
     "DocumentSourceKind",
     "DocumentStatus",
     "ItemStatus",
+    "MapPoint",
+    "MapResponse",
+    "MemoryExport",
     "MemoryItemCreate",
     "MemoryItemDetail",
     "MemoryItemList",
@@ -31,11 +34,15 @@ __all__ = [
     "MemoryItemPatch",
     "MemoryKind",
     "MemoryWriteOut",
+    "MergeRequest",
     "PasteCreate",
     "NeighborOut",
+    "ReindexState",
+    "ReindexStatus",
     "SearchHitOut",
     "SearchRequest",
     "SearchResponse",
+    "StatsOut",
     "UserWritableKind",
 ]
 
@@ -176,3 +183,65 @@ class PasteCreate(BaseModel):
 
     text: str
     title: str | None = Field(default=None, max_length=200)
+
+
+# --- explorateur : fusion, carte, statistiques, réindexation, export (D67) -------------------
+
+
+class MergeRequest(BaseModel):
+    """Éléments à fondre dans l'élément de l'URL (même type, 20 au plus)."""
+
+    other_ids: list[str] = Field(min_length=1, max_length=20)
+
+
+class MapPoint(BaseModel):
+    item_id: str
+    title: str
+    kind: MemoryKind
+    x: float
+    y: float
+
+
+class MapResponse(BaseModel):
+    """Un point par élément actif indexé (moyenne de ses fragments), coordonnées sur [-1, 1] ;
+    `truncated` : seuls les plus récents sont montrés."""
+
+    points: list[MapPoint]
+    method: Literal["pca"]
+    truncated: bool
+
+
+ReindexStatus = Literal["idle", "queued", "running", "done", "failed"]
+
+
+class ReindexState(BaseModel):
+    """État de la réindexation de l'utilisateur, tenu en mémoire (perdu au redémarrage)."""
+
+    status: ReindexStatus
+    done: int
+    total: int
+    error: str | None
+
+
+class StatsOut(BaseModel):
+    by_kind: dict[MemoryKind, int]
+    total_items: int
+    total_chunks: int
+    pending_decisions: int
+    unindexed_items: int
+    last_write: MemoryWriteOut | None
+    dimension: int
+    vectorize_limit: int
+    vectorize_share: float
+    reindex: ReindexState
+    dashboard_url: str
+
+
+class MemoryExport(BaseModel):
+    """Toute la mémoire de l'utilisateur en JSON, sans aucun vecteur."""
+
+    version: Literal[1]
+    exported_at: datetime
+    items: list[MemoryItemOut]
+    documents: list[DocumentOut]
+    writes: list[MemoryWriteOut]

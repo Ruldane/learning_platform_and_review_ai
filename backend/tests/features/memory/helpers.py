@@ -59,7 +59,7 @@ class DownIndex:
     async def delete_user(self, user_id: str) -> None:
         raise VectorStoreUnavailable()
 
-    async def vectors(self, user_id: str, *, limit: int) -> list[VectorRecord]:
+    async def vectors(self, user_id: str, *, limit: int, **_: Any) -> list[VectorRecord]:
         raise VectorStoreUnavailable()
 
 

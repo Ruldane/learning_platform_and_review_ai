@@ -1041,6 +1041,75 @@
         "title": "KeyTestResult",
         "type": "object"
       },
+      "MapPoint": {
+        "properties": {
+          "item_id": {
+            "title": "Item Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "document",
+              "acquis",
+              "lecon",
+              "source",
+              "offre",
+              "decision"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "x": {
+            "title": "X",
+            "type": "number"
+          },
+          "y": {
+            "title": "Y",
+            "type": "number"
+          }
+        },
+        "required": [
+          "item_id",
+          "title",
+          "kind",
+          "x",
+          "y"
+        ],
+        "title": "MapPoint",
+        "type": "object"
+      },
+      "MapResponse": {
+        "description": "Un point par élément actif indexé (moyenne de ses fragments), coordonnées sur [-1, 1] ;\n`truncated` : seuls les plus récents sont montrés.",
+        "properties": {
+          "method": {
+            "const": "pca",
+            "title": "Method",
+            "type": "string"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/MapPoint"
+            },
+            "title": "Points",
+            "type": "array"
+          },
+          "truncated": {
+            "title": "Truncated",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "points",
+          "method",
+          "truncated"
+        ],
+        "title": "MapResponse",
+        "type": "object"
+      },
       "MeOut": {
         "properties": {
           "auth_mode": {
@@ -1081,6 +1150,51 @@
           "auth_mode"
         ],
         "title": "MeOut",
+        "type": "object"
+      },
+      "MemoryExport": {
+        "description": "Toute la mémoire de l'utilisateur en JSON, sans aucun vecteur.",
+        "properties": {
+          "documents": {
+            "items": {
+              "$ref": "#/components/schemas/DocumentOut"
+            },
+            "title": "Documents",
+            "type": "array"
+          },
+          "exported_at": {
+            "format": "date-time",
+            "title": "Exported At",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MemoryItemOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "version": {
+            "const": 1,
+            "title": "Version",
+            "type": "integer"
+          },
+          "writes": {
+            "items": {
+              "$ref": "#/components/schemas/MemoryWriteOut"
+            },
+            "title": "Writes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "version",
+          "exported_at",
+          "items",
+          "documents",
+          "writes"
+        ],
+        "title": "MemoryExport",
         "type": "object"
       },
       "MemoryItemCreate": {
@@ -1710,6 +1824,25 @@
         "title": "MemoryWrittenPayload",
         "type": "object"
       },
+      "MergeRequest": {
+        "description": "Éléments à fondre dans l'élément de l'URL (même type, 20 au plus).",
+        "properties": {
+          "other_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Other Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "other_ids"
+        ],
+        "title": "MergeRequest",
+        "type": "object"
+      },
       "MessageRequest": {
         "properties": {
           "text": {
@@ -1956,6 +2089,49 @@
           "models"
         ],
         "title": "ProviderModels",
+        "type": "object"
+      },
+      "ReindexState": {
+        "description": "État de la réindexation de l'utilisateur, tenu en mémoire (perdu au redémarrage).",
+        "properties": {
+          "done": {
+            "title": "Done",
+            "type": "integer"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "status": {
+            "enum": [
+              "idle",
+              "queued",
+              "running",
+              "done",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "status",
+          "done",
+          "total",
+          "error"
+        ],
+        "title": "ReindexState",
         "type": "object"
       },
       "ResumeRequest": {
@@ -2663,6 +2839,87 @@
         "title": "StartSessionResponse",
         "type": "object"
       },
+      "StatsOut": {
+        "properties": {
+          "by_kind": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "enum": [
+                "document",
+                "acquis",
+                "lecon",
+                "source",
+                "offre",
+                "decision"
+              ]
+            },
+            "title": "By Kind",
+            "type": "object"
+          },
+          "dashboard_url": {
+            "title": "Dashboard Url",
+            "type": "string"
+          },
+          "dimension": {
+            "title": "Dimension",
+            "type": "integer"
+          },
+          "last_write": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MemoryWriteOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pending_decisions": {
+            "title": "Pending Decisions",
+            "type": "integer"
+          },
+          "reindex": {
+            "$ref": "#/components/schemas/ReindexState"
+          },
+          "total_chunks": {
+            "title": "Total Chunks",
+            "type": "integer"
+          },
+          "total_items": {
+            "title": "Total Items",
+            "type": "integer"
+          },
+          "unindexed_items": {
+            "title": "Unindexed Items",
+            "type": "integer"
+          },
+          "vectorize_limit": {
+            "title": "Vectorize Limit",
+            "type": "integer"
+          },
+          "vectorize_share": {
+            "title": "Vectorize Share",
+            "type": "number"
+          }
+        },
+        "required": [
+          "by_kind",
+          "total_items",
+          "total_chunks",
+          "pending_decisions",
+          "unindexed_items",
+          "last_write",
+          "dimension",
+          "vectorize_limit",
+          "vectorize_share",
+          "reindex",
+          "dashboard_url"
+        ],
+        "title": "StatsOut",
+        "type": "object"
+      },
       "ToolCalledEvent": {
         "properties": {
           "agent": {
@@ -3221,6 +3478,27 @@
         ]
       }
     },
+    "/api/v1/memory/export": {
+      "get": {
+        "operationId": "export_api_v1_memory_export_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoryExport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Export",
+        "tags": [
+          "memory"
+        ]
+      }
+    },
     "/api/v1/memory/items": {
       "get": {
         "operationId": "list_items_api_v1_memory_items_get",
@@ -3545,6 +3823,102 @@
         ]
       }
     },
+    "/api/v1/memory/items/{item_id}/merge": {
+      "post": {
+        "description": "Fond `other_ids` dans l'élément (D67) : même type, ni document ni décision en attente.",
+        "operationId": "merge_items_api_v1_memory_items__item_id__merge_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MergeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoryItemOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Merge Items",
+        "tags": [
+          "memory"
+        ]
+      }
+    },
+    "/api/v1/memory/map": {
+      "get": {
+        "operationId": "get_map_api_v1_memory_map_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MapResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Map",
+        "tags": [
+          "memory"
+        ]
+      }
+    },
+    "/api/v1/memory/reindex": {
+      "post": {
+        "description": "Met la réindexation en file (worker) ; déjà en file ou en cours : l'état courant.",
+        "operationId": "reindex_api_v1_memory_reindex_post",
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReindexState"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Reindex",
+        "tags": [
+          "memory"
+        ]
+      }
+    },
     "/api/v1/memory/search": {
       "post": {
         "operationId": "search_memory_api_v1_memory_search_post",
@@ -3581,6 +3955,27 @@
           }
         },
         "summary": "Search Memory",
+        "tags": [
+          "memory"
+        ]
+      }
+    },
+    "/api/v1/memory/stats": {
+      "get": {
+        "operationId": "get_stats_api_v1_memory_stats_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Stats",
         "tags": [
           "memory"
         ]

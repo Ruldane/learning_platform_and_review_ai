@@ -132,6 +132,14 @@ async def test_vectors_respects_limit_across_pages(repo: QdrantMemoryRepository)
     assert len(await repo.vectors("A", limit=100)) == 30
 
 
+async def test_vectors_restricted_to_items_and_user(repo: QdrantMemoryRepository) -> None:
+    first, second = make_chunk("A", "un", item="i1"), make_chunk("A", "deux", item="i2")
+    await repo.index([first, second, make_chunk("B", "un", item="i1")])
+    records = await repo.vectors("A", limit=10, item_ids=["i1"])
+    assert [r.chunk_id for r in records] == [first.chunk_id]
+    assert await repo.vectors("A", limit=10, item_ids=[]) == []
+
+
 async def test_collection_created_lazily(client: AsyncQdrantClient) -> None:
     repo = QdrantMemoryRepository(
         client, HashingEmbedder(DIM), collection=COLLECTION, dimension=DIM

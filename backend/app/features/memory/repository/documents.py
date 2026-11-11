@@ -16,14 +16,15 @@ class DocumentRepository(UserScopedRepository[Document]):
         )
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
-    async def list_recent(self, limit: int = 200) -> builtins.list[Document]:
-        """Documents de l'utilisateur, les plus récents d'abord."""
+    async def list_recent(self, limit: int | None = 200) -> builtins.list[Document]:
+        """Documents de l'utilisateur, les plus récents d'abord (`None` : tous, pour l'export)."""
         stmt = (
             select(Document)
             .where(Document.user_id == self.user_id)
             .order_by(Document.created_at.desc(), Document.id.desc())
-            .limit(limit)
         )
+        if limit is not None:
+            stmt = stmt.limit(limit)
         return builtins.list((await self.session.execute(stmt)).scalars().all())
 
     async def for_item(self, item_id: str) -> builtins.list[Document]:

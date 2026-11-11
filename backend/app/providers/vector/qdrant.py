@@ -181,7 +181,14 @@ class QdrantMemoryRepository:
                 self._collection, points_selector=models.FilterSelector(filter=selector), wait=True
             )
 
-    async def vectors(self, user_id: str, *, limit: int) -> list[VectorRecord]:
+    async def vectors(
+        self, user_id: str, *, limit: int, item_ids: Sequence[str] | None = None
+    ) -> list[VectorRecord]:
+        by_item: list[models.Condition] = (
+            [models.FieldCondition(key="item_id", match=models.MatchAny(any=list(item_ids)))]
+            if item_ids is not None
+            else []
+        )
         records: list[VectorRecord] = []
         offset: models.ExtendedPointId | None = None
         async with _store_errors():
@@ -189,7 +196,7 @@ class QdrantMemoryRepository:
             while len(records) < limit:
                 page, offset = await self._client.scroll(
                     self._collection,
-                    scroll_filter=_user_filter(user_id),
+                    scroll_filter=_user_filter(user_id, *by_item),
                     limit=min(_SCROLL_PAGE, limit - len(records)),
                     offset=offset,
                     with_vectors=True,

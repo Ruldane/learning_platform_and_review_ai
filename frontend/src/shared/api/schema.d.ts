@@ -79,6 +79,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/memory/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export */
+        get: operations["export_api_v1_memory_export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/memory/items": {
         parameters: {
             query?: never;
@@ -116,6 +133,63 @@ export interface paths {
         patch: operations["update_item_api_v1_memory_items__item_id__patch"];
         trace?: never;
     };
+    "/api/v1/memory/items/{item_id}/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Merge Items
+         * @description Fond `other_ids` dans l'élément (D67) : même type, ni document ni décision en attente.
+         */
+        post: operations["merge_items_api_v1_memory_items__item_id__merge_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/memory/map": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Map */
+        get: operations["get_map_api_v1_memory_map_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/memory/reindex": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reindex
+         * @description Met la réindexation en file (worker) ; déjà en file ou en cours : l'état courant.
+         */
+        post: operations["reindex_api_v1_memory_reindex_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/memory/search": {
         parameters: {
             query?: never;
@@ -127,6 +201,23 @@ export interface paths {
         put?: never;
         /** Search Memory */
         post: operations["search_memory_api_v1_memory_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/memory/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Stats */
+        get: operations["get_stats_api_v1_memory_stats_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -778,6 +869,38 @@ export interface components {
             /** Ok */
             ok: boolean;
         };
+        /** MapPoint */
+        MapPoint: {
+            /** Item Id */
+            item_id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "document" | "acquis" | "lecon" | "source" | "offre" | "decision";
+            /** Title */
+            title: string;
+            /** X */
+            x: number;
+            /** Y */
+            y: number;
+        };
+        /**
+         * MapResponse
+         * @description Un point par élément actif indexé (moyenne de ses fragments), coordonnées sur [-1, 1] ;
+         *     `truncated` : seuls les plus récents sont montrés.
+         */
+        MapResponse: {
+            /**
+             * Method
+             * @constant
+             */
+            method: "pca";
+            /** Points */
+            points: components["schemas"]["MapPoint"][];
+            /** Truncated */
+            truncated: boolean;
+        };
         /** MeOut */
         MeOut: {
             /** Auth Mode */
@@ -788,6 +911,28 @@ export interface components {
             id: string;
             /** Name */
             name: string | null;
+        };
+        /**
+         * MemoryExport
+         * @description Toute la mémoire de l'utilisateur en JSON, sans aucun vecteur.
+         */
+        MemoryExport: {
+            /** Documents */
+            documents: components["schemas"]["DocumentOut"][];
+            /**
+             * Exported At
+             * Format: date-time
+             */
+            exported_at: string;
+            /** Items */
+            items: components["schemas"]["MemoryItemOut"][];
+            /**
+             * Version
+             * @constant
+             */
+            version: 1;
+            /** Writes */
+            writes: components["schemas"]["MemoryWriteOut"][];
         };
         /** MemoryItemCreate */
         MemoryItemCreate: {
@@ -990,6 +1135,14 @@ export interface components {
             /** Title */
             title: string;
         };
+        /**
+         * MergeRequest
+         * @description Éléments à fondre dans l'élément de l'URL (même type, 20 au plus).
+         */
+        MergeRequest: {
+            /** Other Ids */
+            other_ids: string[];
+        };
         /** MessageRequest */
         MessageRequest: {
             /** Text */
@@ -1084,6 +1237,23 @@ export interface components {
             models: string[] | null;
             /** Name */
             name: string;
+        };
+        /**
+         * ReindexState
+         * @description État de la réindexation de l'utilisateur, tenu en mémoire (perdu au redémarrage).
+         */
+        ReindexState: {
+            /** Done */
+            done: number;
+            /** Error */
+            error: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "idle" | "queued" | "running" | "done" | "failed";
+            /** Total */
+            total: number;
         };
         /**
          * ResumeRequest
@@ -1350,6 +1520,31 @@ export interface components {
         StartSessionResponse: {
             /** Session Id */
             session_id: string;
+        };
+        /** StatsOut */
+        StatsOut: {
+            /** By Kind */
+            by_kind: {
+                [key: string]: number;
+            };
+            /** Dashboard Url */
+            dashboard_url: string;
+            /** Dimension */
+            dimension: number;
+            last_write: components["schemas"]["MemoryWriteOut"] | null;
+            /** Pending Decisions */
+            pending_decisions: number;
+            reindex: components["schemas"]["ReindexState"];
+            /** Total Chunks */
+            total_chunks: number;
+            /** Total Items */
+            total_items: number;
+            /** Unindexed Items */
+            unindexed_items: number;
+            /** Vectorize Limit */
+            vectorize_limit: number;
+            /** Vectorize Share */
+            vectorize_share: number;
         };
         /** ToolCalledEvent */
         ToolCalledEvent: {
@@ -1681,6 +1876,26 @@ export interface operations {
             };
         };
     };
+    export_api_v1_memory_export_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryExport"];
+                };
+            };
+        };
+    };
     list_items_api_v1_memory_items_get: {
         parameters: {
             query?: {
@@ -1847,6 +2062,81 @@ export interface operations {
             };
         };
     };
+    merge_items_api_v1_memory_items__item_id__merge_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MergeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryItemOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_map_api_v1_memory_map_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MapResponse"];
+                };
+            };
+        };
+    };
+    reindex_api_v1_memory_reindex_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReindexState"];
+                };
+            };
+        };
+    };
     search_memory_api_v1_memory_search_post: {
         parameters: {
             query?: never;
@@ -1876,6 +2166,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_stats_api_v1_memory_stats_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatsOut"];
                 };
             };
         };

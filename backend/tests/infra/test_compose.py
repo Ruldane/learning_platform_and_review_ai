@@ -49,3 +49,11 @@ def test_env_example_documents_the_ports() -> None:
 def test_env_example_documents_cors_origin() -> None:
     text = (ROOT / ".env.example").read_text(encoding="utf-8")
     assert "# CORS_ORIGIN=http://localhost:5173" in text
+
+
+def test_compose_passes_qdrant_dashboard_url() -> None:
+    backend_env = _services("docker-compose.yml")["backend"]["environment"]
+    assert (
+        backend_env["QDRANT_DASHBOARD_URL"]
+        == "${QDRANT_DASHBOARD_URL:-http://localhost:${QDRANT_PORT:-6333}/dashboard}"
+    )

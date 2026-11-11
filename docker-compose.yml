@@ -23,6 +23,8 @@ services:
     environment:
       DATA_DIR: /data
       QDRANT_URL: http://qdrant:6333
+      # Lien du tableau de bord de Qdrant ouvert par le navigateur : suit QDRANT_PORT (D67).
+      QDRANT_DASHBOARD_URL: ${QDRANT_DASHBOARD_URL:-http://localhost:${QDRANT_PORT:-6333}/dashboard}
       # Surchargeable depuis .env (macOS : http://host.docker.internal:11434, Ollama sur la machine).
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
       SEARXNG_URL: http://searxng:8080

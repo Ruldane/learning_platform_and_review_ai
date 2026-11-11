@@ -77,4 +77,8 @@ class MemoryRepository(Protocol):
 
     async def delete_user(self, user_id: str) -> None: ...
 
-    async def vectors(self, user_id: str, *, limit: int) -> list[VectorRecord]: ...
+    async def vectors(
+        self, user_id: str, *, limit: int, item_ids: Sequence[str] | None = None
+    ) -> list[VectorRecord]:
+        """Vecteurs bruts de l'utilisateur (`limit` au plus), restreints à `item_ids` si donné."""
+        ...

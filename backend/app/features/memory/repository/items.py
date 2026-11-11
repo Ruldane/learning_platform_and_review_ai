@@ -6,7 +6,7 @@ from datetime import datetime
 from sqlalchemy import ColumnElement, Select, exists, func, select, update
 from sqlalchemy.orm.attributes import set_committed_value
 
-from app.db.models.memory import ItemStatus, MemoryItem, MemoryKind
+from app.db.models.memory import ItemStatus, MemoryChunk, MemoryItem, MemoryKind
 from app.db.repository import UserScopedRepository
 
 
@@ -55,6 +55,32 @@ class MemoryItemRepository(UserScopedRepository[MemoryItem]):
         )
         await self.session.execute(stmt)
         set_committed_value(item, "indexed_at", at)
+
+    async def mark_indexed(self, item: MemoryItem, at: datetime, chunk_id: str | None) -> bool:
+        """Pose `indexed_at` seulement si l'élément existe encore et si `chunk_id` (un fragment
+        qui vient d'être poussé dans l'index) est toujours à lui en base : sinon ses fragments ont
+        été renouvelés entre-temps (écriture concurrente) et l'index n'est plus à jour. Vrai si
+        c'est fait. `None` : élément sans fragment, aucune condition."""
+        conditions = [MemoryItem.id == item.id, MemoryItem.user_id == self.user_id]
+        if chunk_id is not None:
+            conditions.append(
+                exists().where(
+                    MemoryChunk.id == chunk_id,
+                    MemoryChunk.item_id == item.id,
+                    MemoryChunk.user_id == self.user_id,
+                )
+            )
+        stmt = (
+            update(MemoryItem)
+            .where(*conditions)
+            .values(indexed_at=at, updated_at=MemoryItem.updated_at)
+            .returning(MemoryItem.id)
+            .execution_options(synchronize_session=False)
+        )
+        if (await self.session.execute(stmt)).first() is None:
+            return False
+        set_committed_value(item, "indexed_at", at)
+        return True
 
     async def find_by_hash(self, content_hash: str) -> MemoryItem | None:
         stmt = select(MemoryItem).where(
@@ -133,6 +159,15 @@ class MemoryItemRepository(UserScopedRepository[MemoryItem]):
         stmt = self._scoped().order_by(MemoryItem.created_at.desc(), MemoryItem.id.desc())
         if limit is not None:
             stmt = stmt.limit(limit)
+        return builtins.list((await self.session.execute(stmt)).scalars().all())
+
+    async def everything(self) -> builtins.list[MemoryItem]:
+        """Tous les éléments, actifs et en attente, les plus récents d'abord (export)."""
+        stmt = (
+            select(MemoryItem)
+            .where(MemoryItem.user_id == self.user_id)
+            .order_by(MemoryItem.created_at.desc(), MemoryItem.id.desc())
+        )
         return builtins.list((await self.session.execute(stmt)).scalars().all())
 
     async def unindexed_batch(self, limit: int) -> builtins.list[MemoryItem]:

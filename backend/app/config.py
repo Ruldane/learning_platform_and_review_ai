@@ -34,6 +34,8 @@ class Settings(BaseSettings):
     zai_base_url: str = "https://api.z.ai/api/paas/v4/"
 
     qdrant_url: str = "http://qdrant:6333"
+    # Adresse du tableau de bord de Qdrant vue du navigateur (lien des statistiques, D67).
+    qdrant_dashboard_url: str = "http://localhost:6333/dashboard"
     ollama_base_url: str = "http://ollama:11434"
     embedding_model: str = "bge-m3"
     embedding_dimension: int = 1024
