@@ -1,6 +1,7 @@
 from collections.abc import AsyncIterator
+from typing import Annotated
 
-from fastapi import Request
+from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -13,3 +14,9 @@ async def get_db(request: Request) -> AsyncIterator[AsyncSession]:
         except BaseException:
             await session.rollback()
             raise
+
+
+# `scope="function"` : le code après `yield` (le commit) s'exécute AVANT l'envoi de la réponse.
+# Avec la portée « request » par défaut, un échec de commit serait signalé après un 200 déjà
+# parti, et le client pourrait lire avant que la donnée ne soit commitée. À utiliser partout.
+Db = Annotated[AsyncSession, Depends(get_db, scope="function")]
