@@ -53,3 +53,75 @@ dev = [
     "respx>=0.23.1",
     "ruff>=0.17.4",
 ]
+
+# Contrats d'import (plan directeur, 1.2), bloquants en pre-commit (`lint-imports`).
+# À étendre à chaque nouvelle feature ou fournisseur concret ; `app.agents` s'ajoutera aux
+# contrats 3 et 4 quand le paquet existera (import-linter refuse un module absent).
+[tool.importlinter]
+root_packages = ["app"]
+include_external_packages = false
+
+[[tool.importlinter.contracts]]
+id = "couches-feature"
+name = "1a. Couches de chaque feature : router -> service -> repository"
+type = "layers"
+containers = ["app.features.auth", "app.features.health", "app.features.settings"]
+layers = [
+    "(router) | (keys_router)",
+    "(service) | (keys_service)",
+    "(repository) | (keys_repository)",
+]
+
+[[tool.importlinter.contracts]]
+id = "router-sans-base"
+name = "1b. Un router n'importe jamais un repository ni app.db"
+type = "forbidden"
+source_modules = ["app.features.*.router", "app.features.*.keys_router"]
+forbidden_modules = [
+    "app.db",
+    "app.features.*.repository",
+    "app.features.*.keys_repository",
+]
+# Le service, lui, importe le repository : seule l'importation directe est interdite.
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+id = "features-independantes"
+name = "2. Une feature n'importe d'une autre feature que son service"
+type = "independence"
+modules = ["app.features.auth", "app.features.health", "app.features.settings"]
+ignore_imports = [
+    "app.features.** -> app.features.*.service",
+    "app.features.** -> app.features.*.keys_service",
+]
+
+[[tool.importlinter.contracts]]
+id = "features-sans-fournisseur-concret"
+name = "3. app.features n'importe jamais une implémentation concrète de app.providers"
+type = "forbidden"
+source_modules = ["app.features"]
+forbidden_modules = [
+    "app.providers.llm.anthropic",
+    "app.providers.llm.openai",
+    "app.providers.llm.glm",
+    "app.providers.llm.fake",
+    "app.providers.llm.registry",
+    "app.providers.embeddings.ollama_probe",
+    "app.providers.vector.qdrant_probe",
+    "app.providers.search.searxng_probe",
+    "app.providers.pdf.gotenberg_probe",
+]
+
+[[tool.importlinter.contracts]]
+id = "fournisseurs-sans-feature"
+name = "4. app.providers n'importe jamais app.features"
+type = "forbidden"
+source_modules = ["app.providers"]
+forbidden_modules = ["app.features"]
+
+[[tool.importlinter.contracts]]
+id = "composition-isolee"
+name = "5. Seul app.main importe app.bootstrap (composition)"
+type = "forbidden"
+source_modules = ["app.core", "app.db", "app.features", "app.providers"]
+forbidden_modules = ["app.bootstrap"]
