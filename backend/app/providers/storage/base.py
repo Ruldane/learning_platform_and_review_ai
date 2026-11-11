@@ -21,8 +21,10 @@ class FileStorage(Protocol):
         """Écrit `data` et rend la clé relative générée."""
         ...
 
-    async def read(self, key: str) -> bytes: ...
+    async def read(self, user_id: str, key: str) -> bytes:
+        """La clé doit appartenir à `user_id` (préfixe `<user_id>/`), sinon `StorageKeyInvalid`."""
+        ...
 
-    async def delete(self, key: str) -> None:
-        """Idempotent : une clé déjà supprimée ne lève rien."""
+    async def delete(self, user_id: str, key: str) -> None:
+        """Idempotent : une clé déjà supprimée ne lève rien. Même contrôle d'appartenance."""
         ...

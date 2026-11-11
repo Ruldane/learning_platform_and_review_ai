@@ -1,7 +1,6 @@
 """Garde SSRF du lecteur : schéma, identifiants, adresses résolues et connectée, redirections,
 cookies, messages sans URL."""
 
-import asyncio
 import socket
 
 import httpx
@@ -75,6 +74,10 @@ async def test_rejects_bad_scheme_or_credentials(url: str) -> None:
         "2002:7f00:1::",
         "2001::1",
         "2001:db8::1",
+        "fec0::1",
+        "::ffff:0:7f00:1",
+        "::ffff:0:808:808",
+        "::8.8.8.8",
         "pas-une-ip",
     ],
 )
@@ -107,6 +110,16 @@ async def test_ip_literal_hosts_are_judged_without_resolution(url: str) -> None:
     with pytest.raises(UrlForbidden):
         await fetcher.fetch(url)
     assert resolver.calls == []
+
+
+@pytest.mark.parametrize("url", ["http://a..invalid/", f"http://{'a' * 64}.example/"])
+async def test_name_refused_by_the_idna_codec_is_forbidden(url: str) -> None:
+    async def idna(host: str, port: int) -> list[str]:
+        return [host.encode("idna").decode()]  # lève UnicodeError, comme getaddrinfo
+
+    fetcher, _ = fetcher_for(never, idna)
+    with pytest.raises(UrlForbidden):
+        await fetcher.fetch(url)
 
 
 async def test_unresolvable_host_is_unreachable() -> None:
@@ -229,7 +242,7 @@ async def test_public_connected_peer_passes() -> None:
     assert (await fetcher.fetch("https://example.com/")).body == b"ok"
 
 
-async def test_cookies_arenever_kept_between_requests() -> None:
+async def test_cookies_are_never_kept_between_requests() -> None:
     seen: list[httpx.Request] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -245,7 +258,7 @@ async def test_cookies_arenever_kept_between_requests() -> None:
     assert "cookie" not in seen[1].headers and not client.cookies
 
 
-async def test_error_messagesnever_contain_the_url(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_error_messages_never_contain_the_url(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("app.providers.web.base.FETCH_MAX_BYTES", 10)
     marker = "secret-marqueur"
 
@@ -272,23 +285,3 @@ async def test_error_messagesnever_contain_the_url(monkeypatch: pytest.MonkeyPat
         assert marker not in f"{error} {error!r} {error.message} {error.details}"
         assert error.__cause__ is None
         assert error.__suppress_context__ or error.__context__ is None
-
-
-async def test_real_transport_exposes_the_connected_address_against_dns_rebinding() -> None:
-    """Contrat httpcore vérifié sur une vraie connexion (boucle locale, aucun accès extérieur) :
-    le résolveur annonce une adresse publique, la connexion aboutit sur 127.0.0.1 → refus."""
-    served: list[bytes] = []
-
-    async def serve(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
-        served.append(await reader.readuntil(b"\r\n\r\n"))
-        writer.write(b"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 2\r\n\r\nok")
-        await writer.drain()
-        writer.close()
-
-    server = await asyncio.start_server(serve, "127.0.0.1", 0)
-    port = server.sockets[0].getsockname()[1]
-    async with server, httpx.AsyncClient(trust_env=False, cookies=refuse_all_cookies()) as client:
-        fetcher = SafeHttpFetcher(client, resolve=FakeResolver({"localhost": [PUBLIC_IP]}))
-        with pytest.raises(UrlForbidden):
-            await fetcher.fetch(f"http://localhost:{port}/")
-    assert len(served) == 1

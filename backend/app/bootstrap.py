@@ -14,6 +14,7 @@ from app.config import Settings
 from app.core.providers import MemoryProviders, Providers
 from app.core.security import Cipher
 from app.features.health.checks import DatabaseCheck, LlmKeysCheck
+from app.features.memory.service.runtime import MemoryRuntime, memory_runtime
 from app.features.settings.keys_service import DbKeyReader
 from app.features.settings.service import SettingsModelReader, SettingsRunReader
 from app.providers.embeddings.ollama import OllamaEmbedder
@@ -32,6 +33,7 @@ from app.providers.vector.qdrant_probe import QdrantProbe
 from app.providers.web.base import FETCH_TIMEOUT_S
 from app.providers.web.fetch import SafeHttpFetcher, refuse_all_cookies
 from app.providers.web.reader import TrafilaturaWebReader
+from app.providers.web.transport import GuardedTransport
 from app.providers.web.youtube import TranscriptApiYoutube
 
 _OLLAMA_TIMEOUT_SECONDS = 60.0
@@ -102,10 +104,12 @@ def run_settings_source(session_factory: async_sessionmaker[AsyncSession]) -> Ru
 
 
 def _reader_http() -> httpx.AsyncClient:
-    """Client du lecteur web, à part de celui d'Ollama : jamais de redirection automatique (la
-    garde SSRF revérifie chaque saut), aucun proxy ni réglage de l'environnement (l'adresse
-    connectée serait celle du proxy), aucun cookie retenu (client partagé entre utilisateurs)."""
+    """Client du lecteur web, à part de celui d'Ollama : connexion sur l'adresse vérifiée
+    (`GuardedTransport`, anti rebinding DNS), jamais de redirection automatique (la garde SSRF
+    revérifie chaque saut), aucun proxy ni réglage de l'environnement (l'adresse connectée
+    serait celle du proxy), aucun cookie retenu (client partagé entre utilisateurs)."""
     return httpx.AsyncClient(
+        transport=GuardedTransport(),
         follow_redirects=False,
         trust_env=False,
         timeout=httpx.Timeout(FETCH_TIMEOUT_S),
@@ -146,3 +150,13 @@ async def memory_providers(settings: Settings) -> AsyncIterator[MemoryProviders]
             )
         finally:
             await qdrant.close()
+
+
+@asynccontextmanager
+async def open_memory_runtime(
+    session_factory: async_sessionmaker[AsyncSession], providers: MemoryProviders
+) -> AsyncIterator[MemoryRuntime]:
+    """Ce que la mémoire partage entre les requêtes (indexeur, verrous), construit sur les
+    fournisseurs de `memory_providers` ou ceux qu'un test a injectés."""
+    async with memory_runtime(session_factory, providers) as runtime:
+        yield runtime

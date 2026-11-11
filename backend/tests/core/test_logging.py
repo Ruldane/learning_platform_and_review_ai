@@ -110,3 +110,14 @@ def test_secret_in_mapping_style_args_is_redacted() -> None:
     )
     RedactingFilter(lambda: ["ma-cle-tres-secrete"]).filter(record)
     assert record.getMessage() == "*** 3"
+
+
+def test_libraries_that_would_quote_urls_or_documents_are_quieted() -> None:
+    for name in ("httpx", "httpcore", "pdfminer", "trafilatura", "htmldate"):
+        logging.getLogger(name).setLevel(logging.DEBUG)
+    configure_logging("DEBUG", lambda: [])
+    assert logging.getLogger("httpx").level == logging.WARNING
+    assert logging.getLogger("httpcore").level == logging.WARNING
+    for name in ("pdfminer", "trafilatura", "htmldate"):
+        assert logging.getLogger(name).level == logging.ERROR
+    assert not logging.getLogger("pdfminer.pdfparser").isEnabledFor(logging.WARNING)

@@ -41,6 +41,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/memory/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Items */
+        get: operations["list_items_api_v1_memory_items_get"];
+        put?: never;
+        /** Create Item */
+        post: operations["create_item_api_v1_memory_items_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/memory/items/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Item */
+        get: operations["get_item_api_v1_memory_items__item_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Item */
+        delete: operations["delete_item_api_v1_memory_items__item_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Item */
+        patch: operations["update_item_api_v1_memory_items__item_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/memory/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search Memory */
+        post: operations["search_memory_api_v1_memory_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sessions": {
         parameters: {
             query?: never;
@@ -475,6 +529,17 @@ export interface components {
             /** Step */
             step: number;
         };
+        /** ChunkOut */
+        ChunkOut: {
+            /** Id */
+            id: string;
+            /** Ordinal */
+            ordinal: number;
+            /** Text */
+            text: string;
+            /** Token Count */
+            token_count: number;
+        };
         /** Citation */
         Citation: {
             /** Index */
@@ -625,6 +690,171 @@ export interface components {
             /** Name */
             name: string | null;
         };
+        /** MemoryItemCreate */
+        MemoryItemCreate: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "acquis" | "decision" | "offre";
+            /** Level */
+            level?: ("declare" | "en_cours") | null;
+            /** Tags */
+            tags?: string[];
+            /** Text */
+            text: string;
+            /** Title */
+            title: string;
+        };
+        /** MemoryItemDetail */
+        MemoryItemDetail: {
+            /** Chunks */
+            chunks: components["schemas"]["ChunkOut"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string;
+            /** Evidence */
+            evidence: string[];
+            /** Id */
+            id: string;
+            /** Indexed */
+            indexed: boolean;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "document" | "acquis" | "lecon" | "source" | "offre" | "decision";
+            /** Lang */
+            lang: string | null;
+            /** Level */
+            level: ("declare" | "en_cours" | "valide" | "prouve") | null;
+            /** Neighbors */
+            neighbors: components["schemas"]["NeighborOut"][];
+            /** Reason */
+            reason: string | null;
+            /** Session Id */
+            session_id: string | null;
+            /** Source Id */
+            source_id: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "pending";
+            /** Tags */
+            tags: string[];
+            /** Text */
+            text: string;
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Writes */
+            writes: components["schemas"]["MemoryWriteOut"][];
+        };
+        /** MemoryItemList */
+        MemoryItemList: {
+            /** Items */
+            items: components["schemas"]["MemoryItemOut"][];
+            /** Total */
+            total: number;
+        };
+        /** MemoryItemOut */
+        MemoryItemOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string;
+            /** Evidence */
+            evidence: string[];
+            /** Id */
+            id: string;
+            /** Indexed */
+            indexed: boolean;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "document" | "acquis" | "lecon" | "source" | "offre" | "decision";
+            /** Lang */
+            lang: string | null;
+            /** Level */
+            level: ("declare" | "en_cours" | "valide" | "prouve") | null;
+            /** Reason */
+            reason: string | null;
+            /** Session Id */
+            session_id: string | null;
+            /** Source Id */
+            source_id: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "pending";
+            /** Tags */
+            tags: string[];
+            /** Text */
+            text: string;
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * MemoryItemPatch
+         * @description Tout est facultatif ; un champ absent ou `null` ne change rien. `status` n'accepte que
+         *     `active` : confirmer une décision en attente (la refuser, c'est la supprimer).
+         */
+        MemoryItemPatch: {
+            /** Level */
+            level?: ("declare" | "en_cours") | null;
+            /** Status */
+            status?: "active" | null;
+            /** Tags */
+            tags?: string[] | null;
+            /** Text */
+            text?: string | null;
+            /** Title */
+            title?: string | null;
+        };
+        /** MemoryWriteOut */
+        MemoryWriteOut: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "create" | "update" | "delete" | "confirm" | "reject" | "merge";
+            /** Author */
+            author: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Id */
+            id: string;
+            /** Item Id */
+            item_id: string;
+            /** Item Title */
+            item_title: string;
+            /** Reason */
+            reason: string | null;
+            /** Session Id */
+            session_id: string | null;
+        };
         /** MemoryWrittenEvent */
         MemoryWrittenEvent: {
             /**
@@ -686,6 +916,20 @@ export interface components {
             };
             /** Providers */
             providers: components["schemas"]["ProviderModels"][];
+        };
+        /** NeighborOut */
+        NeighborOut: {
+            /** Item Id */
+            item_id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "document" | "acquis" | "lecon" | "source" | "offre" | "decision";
+            /** Score */
+            score: number;
+            /** Title */
+            title: string;
         };
         /** ProposalReadyEvent */
         ProposalReadyEvent: {
@@ -805,6 +1049,45 @@ export interface components {
             code: string;
             /** Message */
             message: string;
+        };
+        /** SearchHitOut */
+        SearchHitOut: {
+            /** Chunk Id */
+            chunk_id: string;
+            /** Created By */
+            created_by: string;
+            /** Item Id */
+            item_id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "document" | "acquis" | "lecon" | "source" | "offre" | "decision";
+            /** Score */
+            score: number;
+            /** Text */
+            text: string;
+            /** Title */
+            title: string;
+        };
+        /** SearchRequest */
+        SearchRequest: {
+            /**
+             * K
+             * @default 8
+             */
+            k: number;
+            /** Kinds */
+            kinds?: ("document" | "acquis" | "lecon" | "source" | "offre" | "decision")[] | null;
+            /** Query */
+            query: string;
+        };
+        /** SearchResponse */
+        SearchResponse: {
+            /** Agent Text */
+            agent_text: string;
+            /** Hits */
+            hits: components["schemas"]["SearchHitOut"][];
         };
         SessionEvent: components["schemas"]["AgentStartedEvent"] | components["schemas"]["AgentTokenEvent"] | components["schemas"]["AgentMessageEvent"] | components["schemas"]["ToolCalledEvent"] | components["schemas"]["ToolResultEvent"] | components["schemas"]["SourceFoundEvent"] | components["schemas"]["BoardUpdateEvent"] | components["schemas"]["MemoryWrittenEvent"] | components["schemas"]["InterruptRequestedEvent"] | components["schemas"]["ProposalReadyEvent"] | components["schemas"]["ArtifactReadyEvent"] | components["schemas"]["CostUpdatedEvent"] | components["schemas"]["RunCompletedEvent"] | components["schemas"]["RunFailedEvent"] | components["schemas"]["UserMessageEvent"];
         /**
@@ -1179,6 +1462,205 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthReport"];
+                };
+            };
+        };
+    };
+    list_items_api_v1_memory_items_get: {
+        parameters: {
+            query?: {
+                kind?: ("document" | "acquis" | "lecon" | "source" | "offre" | "decision") | null;
+                tag?: string | null;
+                author?: string | null;
+                since?: string | null;
+                until?: string | null;
+                status?: "active" | "pending";
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryItemList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_item_api_v1_memory_items_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemoryItemCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryItemOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_item_api_v1_memory_items__item_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryItemDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_item_api_v1_memory_items__item_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_item_api_v1_memory_items__item_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemoryItemPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryItemOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_memory_api_v1_memory_search_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

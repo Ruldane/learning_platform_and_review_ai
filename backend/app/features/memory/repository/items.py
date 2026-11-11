@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from sqlalchemy import ColumnElement, Select, exists, func, select, update
+from sqlalchemy.orm.attributes import set_committed_value
 
 from app.db.models.memory import ItemStatus, MemoryItem, MemoryKind
 from app.db.repository import UserScopedRepository
@@ -33,6 +34,27 @@ class MemoryItemRepository(UserScopedRepository[MemoryItem]):
         return select(MemoryItem).where(
             MemoryItem.user_id == self.user_id, MemoryItem.status == status
         )
+
+    async def begin_write(self) -> None:
+        """Ouvre la transaction d'écriture avant un SAVEPOINT. pysqlite n'ouvre une transaction
+        qu'à la première instruction d'écriture : sans elle, `begin_nested` en ouvrirait une et
+        sa libération la validerait, hors de portée d'un `rollback` de la requête. La ligne visée
+        n'existe pas ; si une transaction est déjà ouverte, c'est sans effet."""
+        stmt = (
+            update(MemoryItem).where(MemoryItem.id == "").values(updated_at=MemoryItem.updated_at)
+        )
+        await self.session.execute(stmt)
+
+    async def set_indexed_at(self, item: MemoryItem, at: datetime | None) -> None:
+        """Date d'indexation de `item` (`None` : à réindexer) ; `updated_at` n'est pas touché,
+        indexer n'est pas modifier l'élément."""
+        stmt = (
+            update(MemoryItem)
+            .where(MemoryItem.id == item.id, MemoryItem.user_id == self.user_id)
+            .values(indexed_at=at, updated_at=MemoryItem.updated_at)
+        )
+        await self.session.execute(stmt)
+        set_committed_value(item, "indexed_at", at)
 
     async def find_by_hash(self, content_hash: str) -> MemoryItem | None:
         stmt = select(MemoryItem).where(

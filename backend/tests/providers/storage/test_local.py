@@ -16,7 +16,7 @@ async def test_save_returns_key_under_user_and_category(tmp_path: Path) -> None:
 async def test_save_then_read_round_trips_and_leaves_no_temp_file(tmp_path: Path) -> None:
     storage = LocalFileStorage(tmp_path)
     key = await storage.save("u1", "documents", b"bonjour", ".txt")
-    assert await storage.read(key) == b"bonjour"
+    assert await storage.read("u1", key) == b"bonjour"
     assert os.listdir(tmp_path / "u1" / "documents") == [key.rsplit("/", 1)[1]]
 
 
@@ -45,11 +45,11 @@ async def test_two_saves_never_share_a_key(tmp_path: Path) -> None:
 async def test_read_rejects_key_outside_root(tmp_path: Path, key: str) -> None:
     storage = LocalFileStorage(tmp_path / "root")
     with pytest.raises(StorageKeyInvalid) as caught:
-        await storage.read(key)
+        await storage.read("u1", key)
     assert caught.value.code == "storage_key_invalid" and caught.value.status_code == 400
     assert caught.value.message == "Chemin de fichier refusé."
     with pytest.raises(StorageKeyInvalid):
-        await storage.delete(key)
+        await storage.delete("u1", key)
 
 
 async def test_read_rejects_a_user_folder_linked_outside_root(tmp_path: Path) -> None:
@@ -63,7 +63,7 @@ async def test_read_rejects_a_user_folder_linked_outside_root(tmp_path: Path) ->
     except OSError:
         pytest.skip("liens symboliques indisponibles sur ce poste")
     with pytest.raises(StorageKeyInvalid):
-        await LocalFileStorage(root).read(f"u1/documents/{name}")
+        await LocalFileStorage(root).read("u1", f"u1/documents/{name}")
 
 
 @pytest.mark.parametrize(
@@ -92,8 +92,8 @@ async def test_save_rejects_unknown_suffix_or_unsafe_parts(
 async def test_delete_is_idempotent(tmp_path: Path) -> None:
     storage = LocalFileStorage(tmp_path)
     key = await storage.save("u1", "documents", b"x", ".txt")
-    await storage.delete(key)
-    await storage.delete(key)
+    await storage.delete("u1", key)
+    await storage.delete("u1", key)
     assert not (tmp_path / key).exists()
 
 
@@ -105,3 +105,14 @@ async def test_failed_write_leaves_no_file(tmp_path: Path, monkeypatch: pytest.M
     with pytest.raises(OSError):
         await LocalFileStorage(tmp_path).save("u1", "documents", b"x", ".txt")
     assert list((tmp_path / "u1" / "documents").iterdir()) == []
+
+
+@pytest.mark.parametrize("owner", ["u2", "u", "u1x", "../u1", ""])
+async def test_key_of_another_user_is_refused(tmp_path: Path, owner: str) -> None:
+    storage = LocalFileStorage(tmp_path)
+    key = await storage.save("u1", "documents", b"secret", ".txt")
+    with pytest.raises(StorageKeyInvalid):
+        await storage.read(owner, key)
+    with pytest.raises(StorageKeyInvalid):
+        await storage.delete(owner, key)
+    assert await storage.read("u1", key) == b"secret"

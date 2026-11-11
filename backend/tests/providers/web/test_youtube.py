@@ -1,6 +1,7 @@
 import time
 
 import pytest
+from requests import Session
 from youtube_transcript_api import (
     FetchedTranscript,
     FetchedTranscriptSnippet,
@@ -9,7 +10,7 @@ from youtube_transcript_api import (
 )
 
 from app.providers.web.base import UrlForbidden, UrlUnreadable, WebDocument, youtube_video_id
-from app.providers.web.youtube import TranscriptApiYoutube
+from app.providers.web.youtube import REQUEST_TIMEOUT_S, BoundedSession, TranscriptApiYoutube
 from tests.support.memory import FakeWebReader
 
 VIDEO = "dQw4w9WgXcQ"
@@ -163,3 +164,35 @@ async def test_not_a_youtube_link_is_refused_without_any_call(
         await TranscriptApiYoutube(reader).transcript("https://example.com/watch?v=dQw4w9WgXcQ")
     assert caught.value.message == "Lien YouTube non reconnu."
     assert seen == [] and reader.calls == []
+
+
+def test_library_session_has_a_timeout_and_ignores_the_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seen: list[dict[str, object]] = []
+
+    def fake_request(self: Session, method: str, url: str, **kwargs: object) -> object:
+        seen.append(kwargs)
+        return None
+
+    monkeypatch.setattr(Session, "request", fake_request)
+    session = BoundedSession()
+    session.get("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+    session.get("https://www.youtube.com/", timeout=1)
+    assert session.trust_env is False
+    assert [kw["timeout"] for kw in seen] == [REQUEST_TIMEOUT_S, 1]
+
+
+async def test_library_is_given_the_bounded_session(monkeypatch: pytest.MonkeyPatch) -> None:
+    clients: list[object] = []
+
+    class FakeApi:
+        def __init__(self, http_client: object = None) -> None:
+            clients.append(http_client)
+
+        def fetch(self, video_id: str, languages: object = ("en",)) -> FetchedTranscript:
+            return _transcript("a")
+
+    monkeypatch.setattr("app.providers.web.youtube.YouTubeTranscriptApi", FakeApi)
+    got = await TranscriptApiYoutube(FakeWebReader()).transcript(WATCH)
+    assert got.text == "a" and len(clients) == 1 and isinstance(clients[0], BoundedSession)

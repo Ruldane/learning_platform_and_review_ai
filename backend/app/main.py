@@ -9,7 +9,7 @@ from sqlalchemy.exc import OperationalError
 
 from app.agents.runtime.lifespan import agent_runtime
 from app.agents.runtime.openapi import register_event_schemas
-from app.bootstrap import build_providers, model_prices, run_settings_source
+from app.bootstrap import build_providers, model_prices, open_memory_runtime, run_settings_source
 from app.bootstrap import memory_providers as open_memory_providers
 from app.config import Settings, get_settings
 from app.core.errors import register_error_handlers
@@ -82,6 +82,10 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         if injected is None:
             injected = await stack.enter_async_context(open_memory_providers(app.state.settings))
         app.state.memory_providers = injected
+        # Mémoire : entrée avant le moteur d'agents (qui s'en servira), donc fermée après lui.
+        app.state.memory = await stack.enter_async_context(
+            open_memory_runtime(app.state.session_factory, injected)
+        )
         if app.state.settings.auth_mode == "local":
             await _ensure_local_user(app)
         # Moteur d'agents (bus, runner, checkpointer) : entré après le moteur de base, donc

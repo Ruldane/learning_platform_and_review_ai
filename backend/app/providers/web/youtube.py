@@ -7,7 +7,9 @@ lecteur sûr. Les journaux ne citent que le type d'erreur."""
 
 import asyncio
 import logging
+from typing import Any
 
+from requests import Response, Session
 from youtube_transcript_api import YouTubeTranscriptApi
 
 from app.core.errors import AppError
@@ -24,11 +26,26 @@ from app.providers.web.base import (
 logger = logging.getLogger(__name__)
 
 TRANSCRIPT_TIMEOUT_S = 15.0
+REQUEST_TIMEOUT_S = (5.0, 10.0)  # connexion, lecture : `asyncio.timeout` n'arrête pas le thread
+
+
+class BoundedSession(Session):
+    """Session de la bibliothèque : délai par défaut sur chaque requête (sans lui, un thread
+    resterait bloqué au-delà des 15 s) et aucun proxy ni `.netrc` de l'environnement."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.trust_env = False
+
+    def request(self, *args: Any, **kwargs: Any) -> Response:
+        kwargs.setdefault("timeout", REQUEST_TIMEOUT_S)
+        return super().request(*args, **kwargs)
 
 
 def _fetch_text(video_id: str, languages: tuple[str, ...]) -> str:
     """Bloquant (requests) : appelé dans un thread."""
-    fetched = YouTubeTranscriptApi().fetch(video_id, languages=languages)
+    with BoundedSession() as session:
+        fetched = YouTubeTranscriptApi(http_client=session).fetch(video_id, languages=languages)
     return " ".join(" ".join(snippet.text for snippet in fetched).split())
 
 

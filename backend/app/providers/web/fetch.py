@@ -4,9 +4,11 @@ Algorithme, sous un délai unique de `FETCH_TIMEOUT_S` pour l'ensemble (redirect
 1. schéma http/https, hôte présent, aucun identifiant (`user:pass@`), sinon `UrlForbidden` ;
 2. toutes les adresses résolues de l'hôte publiques, sinon `UrlForbidden` ;
 3. requête en flux sans suivi automatique ; une 3xx revient en 1 avec `Location` résolue
-   (5 redirections au plus) ;
-4. adresse réellement connectée (`network_stream.get_extra_info("server_addr")`, httpcore)
-   publique : un DNS qui change entre 2 et la connexion (rebinding) est refusé ;
+   (5 redirections au plus) ; avec `GuardedTransport` (`transport.py`, branché par
+   `bootstrap`), la connexion elle-même résout, revérifie et se fait sur l'adresse validée :
+   un DNS qui change entre 2 et la connexion (rebinding) ne reçoit aucune requête ;
+4. défense en profondeur : adresse réellement connectée
+   (`network_stream.get_extra_info("server_addr")`, httpcore) publique ;
 5. `Content-Type` sur liste blanche, taille plafonnée en flux (déclarée puis lue, décompression
    comprise).
 Les erreurs sont levées `from None` : la chaîne d'exceptions citerait l'URL dans un journal."""
@@ -17,6 +19,7 @@ import socket
 from collections.abc import Awaitable, Callable
 from http.cookiejar import CookieJar, DefaultCookiePolicy
 
+import httpcore
 import httpx
 
 from app.providers.web import base
@@ -43,8 +46,15 @@ _HEADERS = {
     "user-agent": "Mozilla/5.0 (compatible; TremplinReader/1.0)",
 }
 _NAT64 = ipaddress.ip_network("64:ff9b::/96")
-_NAT64_LOCAL = ipaddress.ip_network("64:ff9b:1::/48")
-_IPV4_COMPATIBLE = ipaddress.ip_network("::/96")
+_IPV6_GLOBAL_UNICAST = ipaddress.ip_network("2000::/3")
+
+
+class AddressRefused(httpcore.ConnectError):
+    """Levée par `GuardedBackend` (adresse non publique à la connexion) ; `SafeHttpFetcher` la
+    rend en `UrlForbidden`. Message fixe, sans l'hôte."""
+
+    def __init__(self) -> None:
+        super().__init__("adresse refusée")
 
 
 async def system_resolve(host: str, port: int) -> list[str]:
@@ -53,20 +63,24 @@ async def system_resolve(host: str, port: int) -> list[str]:
 
 
 def is_public_address(ip: str) -> bool:
-    """Adresse joignable publiquement (`is_global`, pas multicast). Une adresse IPv6 qui porte
-    une IPv4 (mappée, compatible, NAT64, 6to4) est jugée sur cette IPv4 ; Teredo est refusé."""
+    """Adresse joignable publiquement (`is_global`, pas multicast). Une IPv6 qui porte une IPv4
+    (mappée, NAT64 `64:ff9b::/96`, 6to4) est jugée sur cette IPv4 ; toute autre IPv6 doit être
+    unicast globale (`2000::/3`) : site-local, traduite `::ffff:0:0/96`, compatible `::/96`,
+    NAT64 local et Teredo sont refusées."""
     try:
         address = ipaddress.ip_address(ip)
     except ValueError:
         return False
     if isinstance(address, ipaddress.IPv6Address):
-        if address.teredo is not None or address in _NAT64_LOCAL:
+        if address.teredo is not None:
             return False
         embedded = address.ipv4_mapped or address.sixtofour
-        if embedded is None and (address in _NAT64 or address in _IPV4_COMPATIBLE):
+        if embedded is None and address in _NAT64:
             embedded = ipaddress.IPv4Address(int(address) & 0xFFFFFFFF)
         if embedded is not None:
             return is_public_address(str(embedded))
+        if address not in _IPV6_GLOBAL_UNICAST:
+            return False
     return address.is_global and not address.is_multicast
 
 
@@ -83,7 +97,7 @@ def refuse_all_cookies() -> CookieJar:
     return CookieJar(policy=_RefuseAllCookies())
 
 
-def _is_ip_literal(host: str) -> bool:
+def is_ip_literal(host: str) -> bool:
     try:
         ipaddress.ip_address(host)
     except ValueError:
@@ -134,6 +148,10 @@ class SafeHttpFetcher:
                 return await self._follow(url)
         except (TimeoutError, httpx.TimeoutException):
             raise UrlUnreadable(TIMEOUT_MESSAGE) from None
+        except httpx.ConnectError as exc:
+            if isinstance(exc.__cause__, AddressRefused):
+                raise UrlForbidden() from None
+            raise UrlUnreadable() from None
         except (httpx.HTTPError, httpx.StreamError):
             raise UrlUnreadable() from None
 
@@ -175,12 +193,14 @@ class SafeHttpFetcher:
             host = url.raw_host.decode("ascii")
         except UnicodeDecodeError:
             raise UrlForbidden() from None
-        if _is_ip_literal(host):
+        if is_ip_literal(host):
             addresses = [host]
         else:
             port = url.port or (443 if url.scheme == "https" else 80)
             try:
                 addresses = await self._resolve(host, port)
+            except UnicodeError:  # nom refusé par le codec IDNA (`a..b`, label > 63)
+                raise UrlForbidden() from None
             except OSError:
                 raise UrlUnreadable() from None
         if not addresses:

@@ -38,8 +38,14 @@ class _Decoder:
             return data
         return self._zlib.decompress(data, budget + 1)
 
-    def flush(self) -> bytes:
-        return b"" if self._zlib is None else self._zlib.flush()
+    def finish(self) -> bytes:
+        """Reste décodé ; un flux compressé tronqué ou suivi de données → illisible."""
+        if self._zlib is None:
+            return b""
+        tail = self._zlib.flush()
+        if not self._zlib.eof or self._zlib.unused_data:
+            raise UrlUnreadable()
+        return tail
 
 
 async def read_capped(response: httpx.Response) -> bytes:
@@ -58,7 +64,7 @@ async def read_capped(response: httpx.Response) -> bytes:
             if decoded > limit:
                 raise UrlTooLarge()
             chunks.append(data)
-        tail = decoder.flush()
+        tail = decoder.finish()
     except zlib.error:
         raise UrlUnreadable() from None
     if decoded + len(tail) > limit:

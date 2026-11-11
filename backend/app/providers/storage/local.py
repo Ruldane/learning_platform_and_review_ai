@@ -31,17 +31,21 @@ class LocalFileStorage:
         ):
             raise StorageKeyInvalid()
         key = f"{user_id}/{category}/{uuid.uuid4()}{suffix}"
-        await asyncio.to_thread(self._write, self._path(key), data)
+        await asyncio.to_thread(self._write, self._path(key, user_id), data)
         return key
 
-    async def read(self, key: str) -> bytes:
-        return await asyncio.to_thread(self._path(key).read_bytes)
+    async def read(self, user_id: str, key: str) -> bytes:
+        return await asyncio.to_thread(self._path(key, user_id).read_bytes)
 
-    async def delete(self, key: str) -> None:
-        await asyncio.to_thread(self._path(key).unlink, missing_ok=True)
+    async def delete(self, user_id: str, key: str) -> None:
+        await asyncio.to_thread(self._path(key, user_id).unlink, missing_ok=True)
 
-    def _path(self, key: str) -> Path:
+    def _path(self, key: str, user_id: str) -> Path:
+        """La clé doit commencer par `<user_id>/` (défense en profondeur : une clé
+        d'un autre utilisateur, même bien formée, est refusée)."""
         if not isinstance(key, str) or not _KEY.fullmatch(key):
+            raise StorageKeyInvalid()
+        if not _USER_ID.fullmatch(user_id) or key.split("/", 1)[0] != user_id:
             raise StorageKeyInvalid()
         root = self._root.resolve()
         path = (root / key).resolve()

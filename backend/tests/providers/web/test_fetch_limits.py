@@ -2,6 +2,7 @@
 
 import asyncio
 import gzip
+import zlib
 
 import httpx
 import pytest
@@ -92,10 +93,25 @@ async def test_unknown_content_encoding_is_unsupported(encoding: str) -> None:
         await fetcher.fetch("https://example.com/")
 
 
-async def test_corrupt_gzip_is_unreadable() -> None:
-    fetcher, _ = fetcher_for(lambda r: html(b"pas du gzip", **{"content-encoding": "gzip"}))
+@pytest.mark.parametrize(
+    "body",
+    [
+        b"pas du gzip",
+        gzip.compress(b"bonjour " * 50)[:-12],  # tronqué : fin de flux et CRC absents
+        gzip.compress(b"bonjour") + b"donnees en trop",
+        b"",
+    ],
+)
+async def test_corrupt_truncated_or_padded_gzip_is_unreadable(body: bytes) -> None:
+    fetcher, _ = fetcher_for(lambda r: html(body, **{"content-encoding": "gzip"}))
     with pytest.raises(UrlUnreadable):
         await fetcher.fetch("https://example.com/")
+
+
+async def test_deflate_with_zlib_wrapper_is_decoded() -> None:
+    body = zlib.compress(b"bonjour")
+    fetcher, _ = fetcher_for(lambda r: html(body, **{"content-encoding": "deflate"}))
+    assert (await fetcher.fetch("https://example.com/")).body == b"bonjour"
 
 
 @pytest.mark.parametrize("content_type", ["image/png", "application/octet-stream", None])

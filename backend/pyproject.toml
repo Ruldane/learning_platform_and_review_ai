@@ -141,6 +141,7 @@ forbidden_modules = [
     "app.providers.pdf.extract",
     "app.providers.web.fetch",
     "app.providers.web._body",
+    "app.providers.web.transport",
     "app.providers.web.reader",
     "app.providers.web.youtube",
 ]

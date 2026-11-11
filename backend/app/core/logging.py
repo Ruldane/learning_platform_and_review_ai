@@ -8,6 +8,16 @@ REDACTED = "***"
 _KEY_PATTERN = re.compile(r"sk-[A-Za-z0-9_-]{16,}")
 # Journaux de uvicorn : ils ne se propagent pas jusqu'à la racine.
 _OWN_HANDLER_LOGGERS = ("uvicorn", "uvicorn.error", "uvicorn.access")
+# Bibliothèques dont les journaux citeraient une URL ou un extrait de document (spec 17.2) :
+# httpx écrit « HTTP Request: GET <URL complète> » en INFO à chaque requête et redirection ;
+# pdfminer, trafilatura et htmldate citent des fragments en WARNING.
+_QUIET_LOGGERS = {
+    "httpx": logging.WARNING,
+    "httpcore": logging.WARNING,
+    "pdfminer": logging.ERROR,
+    "trafilatura": logging.ERROR,
+    "htmldate": logging.ERROR,
+}
 
 
 class RedactingFilter(logging.Filter):
@@ -64,6 +74,8 @@ def configure_logging(level: str, get_secrets: Callable[[], Iterable[str]]) -> N
     """Règle le niveau et masque les secrets sur tous les handlers. Idempotent."""
     root = logging.getLogger()
     root.setLevel(level.upper())
+    for name, quiet_level in _QUIET_LOGGERS.items():
+        logging.getLogger(name).setLevel(quiet_level)
     if not root.handlers:
         stream = logging.StreamHandler(sys.stderr)
         stream.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
