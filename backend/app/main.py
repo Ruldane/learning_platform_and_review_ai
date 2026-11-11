@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import OperationalError
 
+from app.agents.runtime.bus import EventBus
 from app.agents.runtime.openapi import register_event_schemas
 from app.bootstrap import build_providers
 from app.config import Settings, get_settings
@@ -65,6 +66,11 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         stack.push_async_callback(engine.dispose)
         app.state.engine = engine
         app.state.session_factory = create_session_factory(engine)
+        # Bus d'événements des sessions ; la pile le vide (écritures en vol) avant de fermer
+        # le moteur, puisqu'elle dépile dans l'ordre inverse.
+        bus = EventBus(app.state.session_factory)
+        stack.push_async_callback(bus.aclose)
+        app.state.bus = bus
         # Client partagé par les sondes de santé.
         http = await stack.enter_async_context(httpx.AsyncClient(timeout=_PROBE_TIMEOUT_SECONDS))
         app.state.providers = build_providers(

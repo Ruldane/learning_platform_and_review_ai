@@ -8,26 +8,22 @@
 - `subscribe` inscrit sa file AVANT toute lecture, rejoue la base après `after_seq`, puis passe
   au direct en ignorant tout `seq` déjà émis : ni trou ni doublon.
 - File bornée : pleine, elle cesse de recevoir ; son abonné la vide puis repasse par le rejeu.
+  De même si le direct saute un numéro (écrivain hors du bus) : rejeu depuis le dernier reçu.
+- `aclose` (arrêt du serveur) attend les écritures protégées encore en vol.
 
 Un seul bus par processus (`app.state`) : la diffusion en direct est en mémoire.
 """
 
 import asyncio
 from collections.abc import AsyncGenerator
-from contextlib import suppress
-from dataclasses import dataclass, field
 from typing import Any
 
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.agents.runtime.events import (
-    SESSION_EVENT_ADAPTER,
-    EventType,
-    SessionEvent,
-    validate_payload,
-)
+from app.agents.runtime.bus_state import SessionState, Subscriber, to_event
+from app.agents.runtime.events import EventType, SessionEvent, validate_payload
 from app.agents.runtime.repositories import EventRepository, SessionRepository
 from app.core.errors import AppError
 from app.db.models.agents import SessionEventRecord
@@ -37,57 +33,6 @@ REPLAY_BATCH = 500
 _WRITE_ATTEMPTS = 3
 
 type _Key = tuple[str, str]  # (user_id, session_id) : l'isolation par utilisateur vaut aussi ici
-
-
-@dataclass(eq=False)
-class _Subscriber:
-    """File d'un abonné ; `None` en file signale la fin de la session."""
-
-    queue: asyncio.Queue[SessionEvent | None]
-    overflowed: bool = False  # file pleine : plus rien n'y entre jusqu'au prochain rejeu
-    closed: bool = False
-
-    def offer(self, event: SessionEvent) -> None:
-        if self.overflowed:
-            return
-        try:
-            self.queue.put_nowait(event)
-        except asyncio.QueueFull:
-            self.overflowed = True
-
-    def close(self) -> None:
-        self.closed = True
-        with suppress(asyncio.QueueFull):  # file pleine : `closed` suffit, vue une fois vidée
-            self.queue.put_nowait(None)
-
-    async def next_live(self) -> SessionEvent | None:
-        """Prochain événement en file ; `None` quand il faut rejouer (débordement) ou finir."""
-        if self.queue.empty() and (self.overflowed or self.closed):
-            return None
-        return await self.queue.get()
-
-
-@dataclass(eq=False)
-class _SessionState:
-    lock: asyncio.Lock = field(default_factory=asyncio.Lock)
-    last_seq: int | None = None  # None : à relire en base
-    subscribers: set[_Subscriber] = field(default_factory=set)
-    publishers: int = 0  # publications en cours ou en attente du verrou
-    closed: bool = False  # retiré du bus : un publieur en attente reprend avec le nouvel état
-
-
-def _to_event(row: SessionEventRecord) -> SessionEvent:
-    return SESSION_EVENT_ADAPTER.validate_python(
-        {
-            "id": row.id,
-            "session_id": row.session_id,
-            "seq": row.seq,
-            "ts": row.created_at,
-            "type": row.type,
-            "agent": row.agent,
-            "payload": row.payload,
-        }
-    )
 
 
 class EventBus:
@@ -101,7 +46,7 @@ class EventBus:
         self._factory = session_factory
         self._queue_size = queue_size
         self._replay_batch = replay_batch
-        self._states: dict[_Key, _SessionState] = {}
+        self._states: dict[_Key, SessionState] = {}
         self._inflight: set[asyncio.Task[SessionEvent]] = set()
 
     # --- Publication ---------------------------------------------------------------------
@@ -148,7 +93,7 @@ class EventBus:
 
     async def _write(
         self,
-        state: _SessionState,
+        state: SessionState,
         user_id: str,
         session_id: str,
         type: str,
@@ -174,7 +119,7 @@ class EventBus:
                 state.last_seq = None  # issue inconnue (validée ou non) : la base tranchera
                 raise
             state.last_seq = seq
-            return _to_event(row)
+            return to_event(row)
 
     async def _load_last_seq(self, user_id: str, session_id: str) -> int:
         # Lecture dans sa propre transaction : l'écriture qui suit commence par l'INSERT, si
@@ -218,12 +163,13 @@ class EventBus:
         """
         key = (user_id, session_id)
         state = self._state(key)
-        sub = _Subscriber(asyncio.Queue(self._queue_size))
+        sub = Subscriber(asyncio.Queue(self._queue_size))
         state.subscribers.add(sub)  # 1. inscrire la file avant toute lecture en base
         last = after_seq
         try:
             while True:
-                sub.overflowed = False  # file vide : elle reçoit de nouveau, avant la relecture
+                # Avant la relecture : la file reçoit de nouveau, rien ne tombe entre les deux.
+                sub.overflowed = False
                 while True:  # 2. rejeu par lots
                     batch = await self._read_after(user_id, session_id, last)
                     for event in batch:
@@ -231,11 +177,16 @@ class EventBus:
                         last = event.seq
                     if len(batch) < self._replay_batch:
                         break
+                gap = False
                 while (live := await sub.next_live()) is not None:  # 3. direct
-                    if live.seq > last:
-                        yield live
-                        last = live.seq
-                if not sub.overflowed:
+                    if live.seq <= last:
+                        continue  # déjà émis (rejeu)
+                    if live.seq > last + 1:
+                        gap = True  # écrivain hors du bus : la base a ce qui manque
+                        break
+                    yield live
+                    last = live.seq
+                if not (gap or sub.overflowed):
                     return  # session fermée
         finally:  # 4. désinscrire
             state.subscribers.discard(sub)
@@ -248,7 +199,7 @@ class EventBus:
             rows = await EventRepository(db, user_id).list_after(
                 session_id, after_seq, limit=self._replay_batch
             )
-        return [_to_event(row) for row in rows]
+        return [to_event(row) for row in rows]
 
     # --- Fin de session et état mémoire --------------------------------------------------
 
@@ -267,6 +218,12 @@ class EventBus:
             for sub in state.subscribers:
                 sub.close()
 
+    async def aclose(self) -> None:
+        """Arrêt du serveur, avant la fermeture du moteur : attend les écritures protégées
+        encore en vol (leur appelant a pu être annulé, elles continuent sans lui)."""
+        while self._inflight:
+            await asyncio.gather(*self._inflight, return_exceptions=True)
+
     def subscriber_count(self, *, user_id: str, session_id: str) -> int:
         state = self._states.get((user_id, session_id))
         return len(state.subscribers) if state is not None else 0
@@ -279,13 +236,13 @@ class EventBus:
     def tracked_sessions(self) -> int:
         return len(self._states)
 
-    def _state(self, key: _Key) -> _SessionState:
+    def _state(self, key: _Key) -> SessionState:
         state = self._states.get(key)
         if state is None:
-            state = self._states[key] = _SessionState()
+            state = self._states[key] = SessionState()
         return state
 
-    def _release(self, key: _Key, state: _SessionState) -> None:
+    def _release(self, key: _Key, state: SessionState) -> None:
         """Oublie un état devenu inutile : ni abonné, ni publication, ni `seq` en cache (une
         session jamais publiée ici, ou d'un autre utilisateur). Le cache, lui, vit jusqu'à
         `close`, pour ne pas relire `max_seq` à chaque événement d'une session sans abonné."""

@@ -3,8 +3,9 @@ import pytest
 from asgi_lifespan import LifespanManager
 from sqlalchemy import func, select
 from sqlalchemy.exc import OperationalError
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
+from app.agents.runtime.bus import EventBus
 from app.config import Settings
 from app.core.security import Cipher, KnownSecrets
 from app.db.models.accounts import User
@@ -86,3 +87,24 @@ async def test_http_client_is_closed_when_composition_fails(
         async with LifespanManager(create_app(settings)):
             pass
     assert len(created) == 1 and created[0].is_closed
+
+
+async def test_event_bus_is_drained_before_the_engine_is_disposed(
+    settings: Settings, db_engine: object, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    order: list[str] = []
+    original_dispose = AsyncEngine.dispose
+
+    async def bus_aclose(self: EventBus) -> None:
+        order.append("bus")
+
+    async def dispose(self: AsyncEngine, close: bool = True) -> None:
+        order.append("engine")
+        await original_dispose(self, close)
+
+    monkeypatch.setattr(EventBus, "aclose", bus_aclose)
+    monkeypatch.setattr(AsyncEngine, "dispose", dispose)
+    app = create_app(settings)
+    async with LifespanManager(app):
+        assert isinstance(app.state.bus, EventBus)
+    assert order == ["bus", "engine"]

@@ -199,3 +199,26 @@ async def test_replay_reads_the_database_in_batches(
         await say(bus, user_id, session_id, "direct")
         seqs += await take(it, 1)
     assert seqs == [1, 2, 3, 4, 5, 6]
+
+
+async def test_live_gap_from_a_foreign_writer_is_filled_by_replay(
+    bus: EventBus, db_factory: Factory, user_id: str, session_id: str
+):
+    """Un écrivain hors du bus insère 2 : le direct reçoit 3 alors que l'abonné en est à 1 ;
+    il repasse par la base depuis 1 au lieu de sauter 2."""
+    async with aclosing(bus.subscribe(user_id=user_id, session_id=session_id)) as it:
+        reader = asyncio.ensure_future(anext(it))
+        async with asyncio.timeout(5):  # inscrit : 1 arrive par le direct ou par le rejeu
+            while bus.subscriber_count(user_id=user_id, session_id=session_id) == 0:
+                await asyncio.sleep(0.01)
+        await say(bus, user_id, session_id, "1")
+        assert (await asyncio.wait_for(reader, 5)).seq == 1
+        async with db_factory() as db:
+            await EventRepository(db, user_id).add(
+                session_id=session_id, seq=2, type="user.message", payload={"text": "étranger"}
+            )
+            await db.commit()
+        assert (await say(bus, user_id, session_id, "3")).seq == 3
+        assert await take(it, 2) == [2, 3]
+        await say(bus, user_id, session_id, "4")
+        assert await take(it, 1) == [4]

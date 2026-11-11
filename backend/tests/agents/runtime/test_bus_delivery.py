@@ -8,6 +8,7 @@ from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.agents.runtime.bus import EventBus
+from app.agents.runtime.repositories import EventRepository
 from app.db.models.agents import AgentSession
 from tests.agents.runtime.conftest import TIMEOUT, say, take
 
@@ -166,3 +167,39 @@ async def test_publish_waits_for_a_concurrent_sqlite_writer(
         assert not task.done()
         await db.commit()
     assert (await asyncio.wait_for(task, TIMEOUT)).seq == 2
+
+
+async def test_aclose_waits_for_publishes_whose_caller_was_cancelled(
+    bus: EventBus,
+    db_factory: Factory,
+    user_id: str,
+    session_id: str,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Arrêt du serveur : `aclose` attend les écritures protégées encore en vol (sinon le
+    moteur serait fermé sous leurs pieds)."""
+    entered, release = asyncio.Event(), asyncio.Event()
+    original = bus._insert
+
+    async def slow_insert(*args: object, **kwargs: object) -> object:
+        entered.set()
+        await release.wait()
+        return await original(*args, **kwargs)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(bus, "_insert", slow_insert)
+    publisher = asyncio.create_task(say(bus, user_id, session_id, "a"))
+    await asyncio.wait_for(entered.wait(), TIMEOUT)
+    publisher.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await publisher
+    closing = asyncio.create_task(bus.aclose())
+    await asyncio.sleep(0.05)
+    assert not closing.done()
+    release.set()
+    await asyncio.wait_for(closing, TIMEOUT)
+    async with db_factory() as db:
+        assert await EventRepository(db, user_id).max_seq(session_id) == 1
+
+
+async def test_aclose_without_publication_returns_at_once(bus: EventBus):
+    await asyncio.wait_for(bus.aclose(), TIMEOUT)
