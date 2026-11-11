@@ -79,7 +79,9 @@ async def structured_call[T: BaseModel](
     conversation = [*messages, HumanMessage(_INSTRUCTIONS.format(schema=schema_json))]
     attempts = 1 + retries
     for attempt in range(attempts):
-        reply = await call_with_retries(model, conversation, agent=agent, allow_empty=True)
+        reply = await call_with_retries(  # JSON brut : pas de tokens en direct
+            model, conversation, agent=agent, allow_empty=True, stream=False
+        )
         result, problem = _parse(schema, reply)
         if result is not None:
             return result

@@ -7,9 +7,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import OperationalError
 
-from app.agents.runtime.bus import EventBus
+from app.agents.runtime.lifespan import agent_runtime
 from app.agents.runtime.openapi import register_event_schemas
-from app.bootstrap import build_providers
+from app.bootstrap import build_providers, model_prices
 from app.config import Settings, get_settings
 from app.core.errors import register_error_handlers
 from app.core.logging import configure_logging
@@ -66,11 +66,6 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         stack.push_async_callback(engine.dispose)
         app.state.engine = engine
         app.state.session_factory = create_session_factory(engine)
-        # Bus d'événements des sessions ; la pile le vide (écritures en vol) avant de fermer
-        # le moteur, puisqu'elle dépile dans l'ordre inverse.
-        bus = EventBus(app.state.session_factory)
-        stack.push_async_callback(bus.aclose)
-        app.state.bus = bus
         # Client partagé par les sondes de santé.
         http = await stack.enter_async_context(httpx.AsyncClient(timeout=_PROBE_TIMEOUT_SECONDS))
         app.state.providers = build_providers(
@@ -82,6 +77,16 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         )
         if app.state.settings.auth_mode == "local":
             await _ensure_local_user(app)
+        # Moteur d'agents (bus, runner, checkpointer) : entré après le moteur de base, donc
+        # fermé avant lui (la pile dépile à l'envers) ; reprend les sessions interrompues.
+        app.state.runtime = await stack.enter_async_context(
+            agent_runtime(
+                app.state.settings,
+                app.state.session_factory,
+                app.state.providers.llm_factory,
+                model_prices(),
+            )
+        )
         yield
 
 

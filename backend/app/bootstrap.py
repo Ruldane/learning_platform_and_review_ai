@@ -6,6 +6,7 @@ from collections.abc import Callable
 import httpx
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.agents.runtime.costs import ModelPrice, load_prices
 from app.config import Settings
 from app.core.providers import Providers
 from app.core.security import Cipher
@@ -17,7 +18,7 @@ from app.providers.health import HealthCheck
 from app.providers.llm.base import LlmProvider
 from app.providers.llm.factory import LlmFactory
 from app.providers.llm.glm import GlmProvider
-from app.providers.llm.registry import LLM_PROVIDERS
+from app.providers.llm.registry import LLM_PROVIDERS, PRICES_PATH
 from app.providers.pdf.gotenberg_probe import GotenbergProbe
 from app.providers.search.searxng_probe import SearxngProbe
 from app.providers.vector.qdrant_probe import QdrantProbe
@@ -72,3 +73,9 @@ def build_providers(
         env_keys=env_keys,
         health_checks=_health_checks(settings, session_factory, http, llm_keys),
     )
+
+
+def model_prices() -> dict[str, ModelPrice]:
+    """Table des prix des modèles (`model_prices.json` des fournisseurs) pour le suivi des coûts :
+    lue ici car `app.agents` n'importe pas `app.providers.llm.registry` (contrat 3)."""
+    return load_prices(PRICES_PATH)

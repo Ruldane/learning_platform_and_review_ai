@@ -106,5 +106,5 @@ async def test_event_bus_is_drained_before_the_engine_is_disposed(
     monkeypatch.setattr(AsyncEngine, "dispose", dispose)
     app = create_app(settings)
     async with LifespanManager(app):
-        assert isinstance(app.state.bus, EventBus)
+        assert isinstance(app.state.runtime.bus, EventBus)
     assert order == ["bus", "engine"]

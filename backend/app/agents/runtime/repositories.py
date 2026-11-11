@@ -1,3 +1,6 @@
+from collections.abc import Collection
+from typing import Any
+
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -29,6 +32,25 @@ class SessionRepository(UserScopedRepository[AgentSession]):
         )
         row = (await self.session.execute(stmt)).first()
         return None if row is None else (row[0], row[1], row[2])
+
+    async def transition(
+        self, session_id: str, *, from_: Collection[str], to: str, **values: Any
+    ) -> bool:
+        """Passe la session au statut `to` (en écrivant `values`) seulement si son statut est
+        dans `from_` ; `True` si c'est fait. Un seul `UPDATE` conditionnel : de deux transitions
+        concurrentes (double clic, pause pendant la fin du graphe), une seule l'emporte."""
+        stmt = (
+            update(AgentSession)
+            .where(
+                AgentSession.id == session_id,
+                AgentSession.user_id == self.user_id,
+                AgentSession.status.in_(list(from_)),
+            )
+            .values(status=to, **values)
+            .returning(AgentSession.id)
+            .execution_options(synchronize_session=False)
+        )
+        return (await self.session.execute(stmt)).first() is not None
 
 
 class EventRepository(UserScopedRepository[SessionEventRecord]):

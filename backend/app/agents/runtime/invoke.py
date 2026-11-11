@@ -12,6 +12,7 @@ from typing import Any, TypeVar, cast
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage
+from langgraph.constants import TAG_NOSTREAM
 
 from app.agents.runtime.emit import emit
 from app.core.errors import AppError
@@ -42,15 +43,22 @@ def message_text(message: BaseMessage) -> str:
 
 
 async def call_with_retries(
-    model: BaseChatModel, messages: list[BaseMessage], *, agent: str, allow_empty: bool = False
+    model: BaseChatModel,
+    messages: list[BaseMessage],
+    *,
+    agent: str,
+    allow_empty: bool = False,
+    stream: bool = True,
 ) -> AIMessage:
     """`model.ainvoke` étiqueté par agent (l'étiquette et les métadonnées remontent aux
     callbacks du coût et au mode `messages` du runner), retenté sur erreur transitoire.
 
     Une réponse vide (GLM : réflexion seule, `content` vide) est retentée de même, sauf si
-    `allow_empty` (l'appelant la traite alors lui-même).
+    `allow_empty` (l'appelant la traite alors lui-même). `stream=False` : la réponse n'est pas
+    diffusée token par token (étiquette `nostream` de LangGraph), pour du JSON brut par exemple.
     """
-    chat = model.with_config(metadata={"agent": agent}, tags=[f"agent:{agent}"])
+    tags = [f"agent:{agent}"] if stream else [f"agent:{agent}", TAG_NOSTREAM]
+    chat = model.with_config(metadata={"agent": agent}, tags=tags)
     for attempt in range(len(RETRY_DELAYS_S) + 1):
         last = attempt == len(RETRY_DELAYS_S)
         try:

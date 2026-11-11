@@ -88,7 +88,10 @@ def _usage(response: LLMResult) -> tuple[int, int]:
 
 class CostTracker(AsyncCallbackHandler):
     raise_error = True  # sans cela, TokenBudgetExceeded serait avalée par LangChain
-    run_inline = True
+    # Pas `run_inline` : un gestionnaire « en ligne » qui lève laisse les coroutines des autres
+    # gestionnaires jamais attendues (langchain_core, `on_chat_model_start`) ; regroupé avec eux
+    # par `asyncio.gather`, il s'exécute toujours sur la boucle de l'appelant (D42, D46).
+    run_inline = False
 
     def __init__(
         self,
