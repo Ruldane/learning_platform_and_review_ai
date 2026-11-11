@@ -63,3 +63,8 @@ export function unwrap<T>(result: { data?: T; error?: unknown; response: Respons
   }
   return result.data as T;
 }
+
+/** Message français à afficher pour une erreur : celui du back pour une `ApiError`, sinon le général. */
+export function errorMessage(error: unknown): string {
+  return error instanceof ApiError ? error.message : t("errors.generic");
+}

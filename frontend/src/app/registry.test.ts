@@ -8,9 +8,12 @@ describe("registre des features", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("expose l'accueil dans la navigation", () => {
+  it("expose l'accueil et les réglages dans la navigation", () => {
     const groups = buildNav(FEATURES);
-    expect(groups.map((g) => g.section)).toEqual(["home"]);
+    expect(groups.map((g) => g.section)).toEqual(["home", "settings"]);
     expect(groups[0]?.items).toEqual([{ labelKey: "nav.home", path: "/" }]);
+    expect(groups[1]?.items).toEqual([
+      { labelKey: "settings.models.navLabel", path: "/reglages/modeles" },
+    ]);
   });
 });
