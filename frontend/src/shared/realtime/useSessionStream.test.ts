@@ -8,10 +8,13 @@ import { createFakeSocketServer } from "@/test/fakeSocket";
 import { server } from "@/test/server";
 import type { SessionView } from "./sessionApi";
 import { useSessionStore } from "./sessionStore";
-import { completed, interrupt, tok, turn } from "./testEvents";
+import { completed, interrupt, started, tok, turn } from "./testEvents";
 import { useSessionStream } from "./useSessionStream";
 
-const runningView = { status: "running", last_seq: 0 } as SessionView;
+const at = "2026-11-11T10:00:00Z";
+const viewOf = (status: SessionView["status"], lastSeq = 0, updatedAt = at) =>
+  ({ status, last_seq: lastSeq, updated_at: updatedAt, pending_interrupt: null }) as SessionView;
+const runningView = viewOf("running");
 const fetchRunning = async () => runningView;
 const ev = (seq: number) => tok(seq, "m1", `t${seq}`);
 
@@ -71,7 +74,7 @@ describe("useSessionStream", () => {
     const { result } = renderHook(() =>
       useSessionStream("s1", {
         createSocket: fake.factory,
-        fetchSession: async () => ({ status: "completed", last_seq: 1 }) as SessionView,
+        fetchSession: async () => viewOf("completed", 1),
       }),
     );
     act(() => {
@@ -143,6 +146,53 @@ describe("useSessionStream", () => {
     expect(result.current.events.map((e) => e.seq)).toEqual([1, 2]);
     unmount();
     expect(fake.sockets.every((s) => s.closedByClient)).toBe(true);
+  });
+
+  it("applies the status read over REST when the stream opens (reload of a paused session)", async () => {
+    const fake = createFakeSocketServer();
+    const { result } = renderHook(() =>
+      useSessionStream("s1", {
+        createSocket: fake.factory,
+        fetchSession: async () => viewOf("paused", 2),
+      }),
+    );
+    await act(async () => {
+      fake.last().open().push(started(1, "demo_critic"), ev(2));
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(result.current.status).toBe("paused");
+  });
+
+  it("re-reads the session when a newer event arrives while paused", async () => {
+    const fake = createFakeSocketServer();
+    const views = [viewOf("paused", 1), viewOf("running", 2, "2026-11-11T10:00:09Z")];
+    const fetchSession = vi.fn(async () => views.shift() ?? viewOf("running", 2));
+    const { result } = renderHook(() =>
+      useSessionStream("s1", { createSocket: fake.factory, fetchSession }),
+    );
+    await act(async () => {
+      fake.last().open().push(started(1, "demo_critic"));
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(result.current.status).toBe("paused");
+    // Repris ailleurs (autre onglet) : l'événement ne lève pas la pause, mais la fait relire.
+    await act(async () => {
+      fake.last().push(started(2, "demo_critic"));
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(fetchSession).toHaveBeenCalledTimes(2);
+    expect(result.current.status).toBe("running");
+  });
+
+  it("exposes why the stream gave up", () => {
+    const fake = createFakeSocketServer();
+    const { result } = renderHook(() =>
+      useSessionStream("s1", { createSocket: fake.factory, fetchSession: fetchRunning }),
+    );
+    act(() => {
+      fake.last().drop(4404);
+    });
+    expect(result.current.failure).toBe("not_found");
   });
 
   it("opens nothing without a session id", () => {

@@ -1,10 +1,12 @@
 import { reduceEvent } from "./eventHandlers";
 import { answerInterrupts } from "./feedHelpers";
+import { applySnapshot } from "./statusGate";
 import type { LocalAction, SessionEvent, SessionViewState } from "./types";
 
 export const initialSessionState: SessionViewState = {
   lastSeq: 0,
   status: "running",
+  statusVersion: { seq: 0, at: 0 },
   feed: [],
   pendingInterrupt: null,
   cost: null,
@@ -21,11 +23,9 @@ export function applyEvent(state: SessionViewState, event: SessionEvent): Sessio
   return { ...reduceEvent(state, event), lastSeq: event.seq };
 }
 
-/** Actions locales du client (réponse envoyée, statut posé par une réponse REST). */
+/** Actions locales du client (réponse envoyée, statut lu en REST : flux ou réponse d'action). */
 export function applyLocal(state: SessionViewState, action: LocalAction): SessionViewState {
-  if (action.type === "status.set") {
-    return action.status === state.status ? state : { ...state, status: action.status };
-  }
+  if (action.type === "snapshot") return applySnapshot(state, action.snapshot);
   const known = state.feed.some(
     (i) => i.kind === "interrupt" && i.interrupt.interrupt_id === action.interruptId,
   );

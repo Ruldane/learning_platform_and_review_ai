@@ -25,6 +25,8 @@ export interface AgentTurn {
   intent?: string;
   text: string;
   streaming: boolean;
+  /** Arrêté sans `agent.message` (pause, redémarrage, fin) : le même agent qui repart le remplace. */
+  interrupted?: boolean;
   tools: ToolCallView[];
   citations: unknown[];
 }
@@ -35,9 +37,25 @@ export type FeedItem =
   | { kind: "interrupt"; seq: number; interrupt: InterruptPayload; answered: boolean }
   | { kind: "event"; event: SessionEvent }; // autres types : registre de rendu
 
+/** Statut lu en REST (`GET /sessions/{id}` ou réponse d'une action), vrai au moins à `lastSeq`. */
+export interface StatusSnapshot {
+  status: SessionStatus;
+  lastSeq: number;
+  /** `updated_at` du serveur : départage deux lectures du même `lastSeq`. */
+  updatedAt: string;
+  pendingInterrupt: InterruptPayload | null;
+}
+
+/** D'où vient le statut affiché : `seq` de l'événement ou de la lecture REST, instant serveur (µs). */
+export interface StatusVersion {
+  seq: number;
+  at: number;
+}
+
 export interface SessionViewState {
   lastSeq: number;
   status: SessionStatus;
+  statusVersion: StatusVersion;
   feed: FeedItem[];
   pendingInterrupt: InterruptPayload | null;
   cost: CostPayload | null;
@@ -47,4 +65,4 @@ export interface SessionViewState {
 
 export type LocalAction =
   | { type: "interrupt.answered"; interruptId: string }
-  | { type: "status.set"; status: SessionStatus };
+  | { type: "snapshot"; snapshot: StatusSnapshot };

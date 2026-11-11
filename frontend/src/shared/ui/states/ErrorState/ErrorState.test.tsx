@@ -15,4 +15,12 @@ describe("ErrorState", () => {
     await userEvent.click(screen.getByRole("button", { name: "Réessayer" }));
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
+
+  it("remplace « Réessayer » par l'action donnée", async () => {
+    const onRetry = vi.fn();
+    render(<ErrorState message="Introuvable." onRetry={onRetry} actionLabel="Nouveau débat" />);
+    expect(screen.queryByRole("button", { name: "Réessayer" })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Nouveau débat" }));
+    expect(onRetry).toHaveBeenCalledTimes(1);
+  });
 });

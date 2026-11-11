@@ -3,6 +3,7 @@ import { t } from "@/shared/i18n/t";
 import { fetchSession as fetchSessionRest } from "./sessionApi";
 import { browserSocket, type SocketFactory } from "./socket";
 import { selectEvents, selectSession, useSessionStore } from "./sessionStore";
+import { snapshotOf } from "./statusGate";
 import {
   SessionStreamConnection,
   type ConnectionState,
@@ -11,7 +12,7 @@ import {
 } from "./streamConnection";
 import type { InterruptPayload, SessionEvent, SessionStatus, SessionViewState } from "./types";
 
-export type { ConnectionState } from "./streamConnection";
+export type { ConnectionState, StreamFailure } from "./streamConnection";
 
 export interface SessionStreamOptions {
   /** Fabrique de socket (un faux en test). Lue à chaque (re)connexion ; la changer ne rouvre rien. */
@@ -28,6 +29,8 @@ export interface SessionStream {
   connection: ConnectionState;
   /** Message français quand le flux a abandonné (`connection === "failed"`). */
   error: string | null;
+  /** Raison de l'abandon : une session introuvable ne se « réessaie » pas. */
+  failure: StreamFailure | null;
   /** Relance le flux après un abandon (bouton « Réessayer »). */
   retry: () => void;
 }
@@ -38,9 +41,39 @@ interface Link {
   failure: StreamFailure | null;
 }
 
+type StreamIo = Pick<StreamConnectionDeps, "createSocket" | "fetchSession">;
+
+/** Branche une connexion de flux sur le store de l'application et la démarre. */
+function openStream(
+  sessionId: string,
+  io: { current: StreamIo },
+  onState: StreamConnectionDeps["onState"],
+): SessionStreamConnection {
+  const store = useSessionStore.getState;
+  const view = () => selectSession(sessionId)(store());
+  const connection: SessionStreamConnection = new SessionStreamConnection({
+    sessionId,
+    createSocket: (url) => io.current.createSocket(url),
+    fetchSession: (id, signal) => io.current.fetchSession(id, signal),
+    lastSeq: () => view().lastSeq,
+    onEvent: (event) => {
+      store().ingest(sessionId, [event]);
+      const { status, statusVersion } = view();
+      if (status === "paused" && event.seq > statusVersion.seq) connection.refresh();
+    },
+    onSnapshot: (session) =>
+      store().local(sessionId, { type: "snapshot", snapshot: snapshotOf(session) }),
+    onState,
+  });
+  connection.start();
+  return connection;
+}
+
 /**
  * Suit une session en direct : ouvre le WebSocket après le dernier `seq` du store, ingère chaque
- * événement (le réducteur ignore les doublons d'un rejeu), reconnecte sur fermeture anormale.
+ * événement (le réducteur ignore les doublons d'un rejeu), relit le statut en REST à chaque
+ * ouverture, reconnecte sur fermeture anormale. Pendant une pause, un événement plus récent que
+ * le statut connu (publié avant la pause, ou session reprise ailleurs) fait relire la session.
  * Démontage : socket fermé, minuteries coupées, aucune reconnexion (StrictMode compris).
  */
 export function useSessionStream(
@@ -52,24 +85,16 @@ export function useSessionStream(
   const [attempt, setAttempt] = useState(0);
   const [link, setLink] = useState<Link>({ sessionId: null, state: "closed", failure: null });
   // Options lues par référence : une fonction recréée à chaque rendu ne relance pas le flux.
-  const io = useRef({ createSocket, fetchSession });
+  const io = useRef<StreamIo>({ createSocket, fetchSession });
   useEffect(() => {
     io.current = { createSocket, fetchSession };
   });
 
   useEffect(() => {
     if (!sessionId) return undefined;
-    const store = useSessionStore.getState;
-    const connection = new SessionStreamConnection({
-      sessionId,
-      createSocket: (url) => io.current.createSocket(url),
-      fetchSession: (id, signal) => io.current.fetchSession(id, signal),
-      lastSeq: () => selectSession(sessionId)(store()).lastSeq,
-      onEvent: (event) => store().ingest(sessionId, [event]),
-      onStatus: (status) => store().local(sessionId, { type: "status.set", status }),
-      onState: (state, failure) => setLink({ sessionId, state, failure }),
-    });
-    connection.start();
+    const connection = openStream(sessionId, io, (state, failure) =>
+      setLink({ sessionId, state, failure }),
+    );
     return () => connection.dispose();
   }, [sessionId, attempt]);
 
@@ -89,6 +114,7 @@ export function useSessionStream(
     pendingInterrupt: view.pendingInterrupt,
     connection,
     error: failure ? t(`sessions.stream.${failure}`) : null,
+    failure,
     retry,
   };
 }

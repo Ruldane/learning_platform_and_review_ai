@@ -9,6 +9,7 @@ import {
   interrupt,
   message,
   result,
+  snapshot,
   sourceFound,
   started,
   tok,
@@ -70,6 +71,60 @@ describe("applyEvent : tours d'agent", () => {
   });
 });
 
+describe("applyEvent : tour interrompu (redémarrage, pause, nouvel essai)", () => {
+  it("drops the half-written turn when the same agent starts again", () => {
+    const s = run([
+      started(1, "demo_critic"),
+      tok(2, "m1", "Moitié"),
+      started(3, "demo_critic"),
+      tok(4, "m2", "Entier"),
+      message(5, "m2", "Entier."),
+    ]);
+    expect(s.feed).toHaveLength(1);
+    expect(turn(s, "m1")).toBeUndefined();
+    expect(turn(s, "m2")).toMatchObject({ text: "Entier.", streaming: false });
+  });
+  it("replaces the turn when a retry streams under a new message id", () => {
+    const s = run([
+      started(1, "demo_critic"),
+      tok(2, "m1", "Moi"),
+      tok(3, "m2", "Re"),
+      tok(4, "m2", "pris"),
+      message(5, "m2", "Repris."),
+    ]);
+    expect(s.feed).toHaveLength(1);
+    expect(turn(s, "m2")).toMatchObject({ text: "Repris.", streaming: false });
+  });
+  it("keeps one bubble when the final message id differs from the streamed one", () => {
+    const s = run([started(1, "demo_critic"), tok(2, "m1", "A"), message(3, "m1-final", "A.")]);
+    expect(s.feed).toHaveLength(1);
+    expect(turn(s, "m1-final")).toMatchObject({ text: "A.", streaming: false });
+  });
+  it("leaves finished turns and other agents alone", () => {
+    const s = run([
+      started(1, "demo_proponent"),
+      tok(2, "p1", "Pour", "demo_proponent"),
+      message(3, "p1", "Pour.", "demo_proponent"),
+      started(4, "demo_critic"),
+      tok(5, "c1", "Con"),
+      started(6, "demo_critic"),
+    ]);
+    expect(turn(s, "p1")).toMatchObject({ text: "Pour.", streaming: false });
+    expect(turn(s, "c1")).toBeUndefined();
+    expect(s.feed).toHaveLength(2);
+  });
+  it("keeps an interrupted turn that called tools, finalised", () => {
+    const s = run([
+      started(1, "demo_critic"),
+      called(2, "c1"),
+      tok(3, "m1", "x"),
+      started(4, "demo_critic"),
+    ]);
+    expect(turn(s, "m1")).toMatchObject({ streaming: false, interrupted: true });
+    expect(s.feed).toHaveLength(2);
+  });
+});
+
 describe("applyEvent : interruptions, coût, fin", () => {
   it("sets waiting_user on interrupt and clears it when answered locally", () => {
     let s = run([started(1, "demo_critic"), interrupt(2)]);
@@ -86,10 +141,10 @@ describe("applyEvent : interruptions, coût, fin", () => {
     expect(s.status).toBe("running");
     expect(s.feed[0]).toMatchObject({ kind: "interrupt", answered: true });
   });
-  it("records a user message and answers the pending interrupt", () => {
+  it("records a user message without answering the pending interrupt", () => {
     const s = run([interrupt(1), userMsg(2, "Option A")]);
     expect(s.feed[1]).toEqual({ kind: "user", seq: 2, text: "Option A" });
-    expect(s.pendingInterrupt).toBeNull();
+    expect(s.pendingInterrupt?.interrupt_id).toBe("i1");
   });
   it("stores cost.updated", () => {
     expect(run([cost(1, 42)]).cost).toMatchObject({ tokens_in: 42, cap_tokens: 300000 });
@@ -116,10 +171,12 @@ describe("applyEvent : interruptions, coût, fin", () => {
 });
 
 describe("applyLocal", () => {
-  it("status.set changes the status", () => {
-    expect(applyLocal(initialSessionState, { type: "status.set", status: "paused" }).status).toBe(
-      "paused",
-    );
+  it("snapshot sets the status read over REST", () => {
+    const s = applyLocal(initialSessionState, {
+      type: "snapshot",
+      snapshot: snapshot("paused", 0),
+    });
+    expect(s.status).toBe("paused");
   });
   it("interrupt.answered with an unknown id leaves the state untouched", () => {
     const s = run([interrupt(1)]);

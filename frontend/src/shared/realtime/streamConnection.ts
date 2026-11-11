@@ -24,8 +24,11 @@ export interface StreamConnectionDeps {
   /** Dernier `seq` appliqué, relu à chaque (re)connexion. */
   lastSeq: () => number;
   onEvent: (event: SessionEvent) => void;
-  /** Statut lu en REST : une annulation, par exemple, ne publie aucun événement. */
-  onStatus: (status: SessionStatus) => void;
+  /**
+   * Session lue en REST (ouverture du flux, fin, `refresh`) : statut et question en attente du
+   * serveur ; une pause ou une annulation ne publient aucun événement (D46 §7, D56).
+   */
+  onSnapshot: (view: SessionView) => void;
   onState: (state: ConnectionState, failure: StreamFailure | null) => void;
 }
 
@@ -33,9 +36,10 @@ const TERMINAL: ReadonlySet<SessionStatus> = new Set(["completed", "failed", "ca
 export const isTerminalStatus = (status: SessionStatus): boolean => TERMINAL.has(status);
 
 /**
- * Un flux de session : ouvre le WebSocket après le dernier `seq`, reconnecte sur fermeture anormale
- * (attente croissante, nombre d'essais plafonné), s'arrête sur 1000 / 4404 / 1008 ou quand le
- * serveur dit la session terminée et déjà toute reçue. `dispose()` coupe tout, sans rappel.
+ * Un flux de session : ouvre le WebSocket après le dernier `seq` et relit la session en REST à
+ * chaque ouverture, reconnecte sur fermeture anormale (attente croissante, nombre d'essais
+ * plafonné), s'arrête sur 1000 / 4404 / 1008 ou quand le serveur dit la session terminée et déjà
+ * toute reçue. `dispose()` coupe tout, sans rappel.
  */
 export class SessionStreamConnection {
   private readonly deps: StreamConnectionDeps;
@@ -53,6 +57,12 @@ export class SessionStreamConnection {
     this.connect("connecting");
   }
 
+  /** Relit la session en REST, sauf si une lecture est déjà en cours (sa réponse suffira). */
+  refresh(): void {
+    if (this.done || this.check !== null) return;
+    this.readView((view) => this.deps.onSnapshot(view));
+  }
+
   /** Démontage : socket fermé, minuteries et requêtes annulées, plus aucun rappel. */
   dispose(): void {
     this.done = true;
@@ -67,16 +77,24 @@ export class SessionStreamConnection {
     const url = sessionStreamUrl(this.deps.sessionId, this.deps.lastSeq());
     const socket = this.deps.createSocket(url);
     this.socket = socket;
-    socket.onopen = () => this.deps.onState("open", null);
+    socket.onopen = () => this.opened();
     socket.onmessage = (e) => this.receive(e.data);
     socket.onclose = (e) => this.closed(e.code);
   }
 
+  /**
+   * Le serveur a accepté : les essais repartent de zéro (un navigateur ne signale jamais `open`
+   * pour un refus avant `accept`, et 4404 est traité à part), puis le statut est relu en REST.
+   */
+  private opened(): void {
+    this.attempts = 0;
+    this.deps.onState("open", null);
+    this.refresh();
+  }
+
   private receive(data: string): void {
     const event = parseEventFrame(data);
-    if (!event) return;
-    this.attempts = 0; // connexion utile : les essais repartent de zéro
-    this.deps.onEvent(event);
+    if (event) this.deps.onEvent(event);
   }
 
   private closed(code: number): void {
@@ -111,17 +129,14 @@ export class SessionStreamConnection {
 
   /** Pendant l'attente, demande au serveur si la session existe encore et si elle est finie. */
   private checkSession(): void {
-    const abort = this.newCheck();
-    this.deps.fetchSession(this.deps.sessionId, abort.signal).then(
+    this.readView(
       (view) => {
-        if (abort.signal.aborted || this.done) return;
         // Terminée mais des événements manquent encore : la reconnexion les rejouera, puis 1000.
         if (!isTerminalStatus(view.status) || view.last_seq > this.deps.lastSeq()) return;
-        this.deps.onStatus(view.status);
+        this.deps.onSnapshot(view);
         this.end("closed", null);
       },
-      (error: unknown) => {
-        if (abort.signal.aborted || this.done) return;
+      (error) => {
         if (error instanceof ApiError && error.status === 404) this.end("failed", "not_found");
         // Autre échec (réseau, serveur arrêté) : la reconnexion prévue suit son cours.
       },
@@ -130,12 +145,29 @@ export class SessionStreamConnection {
 
   /** Après une fin normale : statut final (une session annulée n'a pas d'événement de fin). */
   private refreshStatus(): void {
+    // Un échec laisse le statut tel quel : le flux est déjà complet.
+    this.readView((view) => this.deps.onSnapshot(view));
+  }
+
+  /**
+   * Une lecture REST à la fois : la précédente est abandonnée. Rappels muets une fois la lecture
+   * abandonnée (nouvelle lecture, `dispose`, abandon du flux) ; une lecture lancée après `end`
+   * (statut final après 1000) répond encore.
+   */
+  private readView(onView: (view: SessionView) => void, onError?: (error: unknown) => void) {
     const abort = this.newCheck();
+    const settle = () => {
+      if (this.check === abort) this.check = null;
+    };
     this.deps.fetchSession(this.deps.sessionId, abort.signal).then(
       (view) => {
-        if (!abort.signal.aborted) this.deps.onStatus(view.status);
+        settle();
+        if (!abort.signal.aborted) onView(view);
       },
-      () => undefined, // le flux est déjà complet ; seul le statut affiché pourrait être en retard
+      (error: unknown) => {
+        settle();
+        if (!abort.signal.aborted) onError?.(error);
+      },
     );
   }
 

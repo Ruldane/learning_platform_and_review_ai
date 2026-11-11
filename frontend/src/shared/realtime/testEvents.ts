@@ -1,4 +1,12 @@
-import type { AgentTurn, EventOf, SessionEvent, SessionViewState } from "./types";
+import type {
+  AgentTurn,
+  EventOf,
+  InterruptPayload,
+  SessionEvent,
+  SessionStatus,
+  SessionViewState,
+  StatusSnapshot,
+} from "./types";
 
 /** Fabriques d'événements pour les tests du réducteur et du store. */
 function base(seq: number, agent: string | null) {
@@ -92,3 +100,11 @@ export const sourceFound = (seq: number): SessionEvent =>
 export function turn(state: SessionViewState, messageId: string): AgentTurn | undefined {
   return state.feed.find((i): i is AgentTurn => i.kind === "turn" && i.messageId === messageId);
 }
+
+/** Lecture REST du statut (`GET /sessions/{id}`, réponse d'une action) telle que le store la reçoit. */
+export const snapshot = (
+  status: SessionStatus,
+  lastSeq: number,
+  updatedAt = "2026-11-11T10:00:00.000000Z",
+  pendingInterrupt: InterruptPayload | null = null,
+): StatusSnapshot => ({ status, lastSeq, updatedAt, pendingInterrupt });

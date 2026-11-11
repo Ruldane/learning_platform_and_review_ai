@@ -3,8 +3,16 @@ import { useCallback, useMemo } from "react";
 import { ApiError, errorMessage } from "@/shared/api/errors";
 import { fr } from "@/shared/i18n/fr";
 import { t } from "@/shared/i18n/t";
-import { postCancel, postMessage, postPause, postResume, startSession } from "./sessionApi";
+import {
+  postCancel,
+  postMessage,
+  postPause,
+  postResume,
+  startSession,
+  type SessionView,
+} from "./sessionApi";
 import { selectSession, useSessionStore } from "./sessionStore";
+import { snapshotOf } from "./statusGate";
 
 type SessionErrorCode = keyof typeof fr.sessions.errors;
 
@@ -52,8 +60,10 @@ export function useSessionActions(sessionId: string): SessionActions {
   return useMemo(() => {
     const store = useSessionStore.getState;
     const view = () => selectSession(sessionId)(store());
-    const setStatus = (status: ReturnType<typeof view>["status"]) =>
-      store().local(sessionId, { type: "status.set", status });
+    // La réponse REST est une lecture du statut : appliquée seulement si rien de plus récent
+    // n'est arrivé par le flux (question suivante, fin), D56.
+    const applyView = (updated: SessionView) =>
+      store().local(sessionId, { type: "snapshot", snapshot: snapshotOf(updated) });
     return {
       resume: (interruptId, value) =>
         run(async () => {
@@ -61,15 +71,14 @@ export function useSessionActions(sessionId: string): SessionActions {
           // Garde : le direct a pu livrer la question suivante avant cette réponse REST.
           if (interruptId !== null && view().pendingInterrupt?.interrupt_id === interruptId) {
             store().local(sessionId, { type: "interrupt.answered", interruptId });
-          } else if (interruptId === null && view().status === "paused") {
-            setStatus(updated.status);
           }
+          applyView(updated);
         }),
       // L'événement `user.message` renvoyé n'est pas ingéré : il arrivera par le flux, dans
       // l'ordre ; l'ingérer avant des `seq` plus petits encore en route les ferait ignorer.
       sendMessage: (text) => run(() => postMessage(sessionId, text)),
-      pause: () => run(async () => setStatus((await postPause(sessionId)).status)),
-      cancel: () => run(async () => setStatus((await postCancel(sessionId)).status)),
+      pause: () => run(async () => applyView(await postPause(sessionId))),
+      cancel: () => run(async () => applyView(await postCancel(sessionId))),
       pending: isPending,
       error: error ? sessionActionError(error) : null,
     };

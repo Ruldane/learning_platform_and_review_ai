@@ -41,7 +41,7 @@ function setup(fetchResult: () => Promise<SessionView> = async () => sessionView
     fetchSession: h.fetchSession,
     lastSeq: () => h.events.at(-1)?.seq ?? 0,
     onEvent: (event) => h.events.push(event),
-    onStatus: (status) => h.statuses.push(status),
+    onSnapshot: (view) => h.statuses.push(view.status),
     onState: (state, failure) => {
       h.states.push(state);
       h.failures.push(failure);
@@ -106,15 +106,48 @@ describe("SessionStreamConnection", () => {
     expect(h.fake.last().url).toContain("after_seq=1");
   });
 
-  it("does not reset the attempts on an open without data", async () => {
+  it("resets the attempts as soon as a socket opens, even without data (M1)", async () => {
+    // Une session en attente (question, pause) n'envoie rien après une reconnexion : plusieurs
+    // redémarrages du serveur ne doivent pas épuiser le plafond d'essais.
     const h = setup();
+    for (let restart = 0; restart < MAX_RECONNECT_ATTEMPTS + 2; restart += 1) {
+      h.fake.last().drop(1006);
+      await vi.advanceTimersByTimeAsync(500);
+      h.fake.last().drop(1006);
+      await vi.advanceTimersByTimeAsync(1000);
+      h.fake.last().open();
+      expect(lastState(h)).toBe("open");
+    }
+    h.fake.last().drop(1006);
+    expect(lastState(h)).toBe("reconnecting");
+    await vi.advanceTimersByTimeAsync(500); // de nouveau le premier délai
+    expect(lastState(h)).toBe("reconnecting");
+  });
+
+  it("reads the session over REST when the socket opens, and after each reconnect", async () => {
+    const h = setup(async () => sessionView("paused", 4));
+    h.fake.last().open();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(h.statuses).toEqual(["paused"]);
     h.fake.last().drop(1006);
     await vi.advanceTimersByTimeAsync(500);
-    h.fake.last().open().drop(1006);
-    await vi.advanceTimersByTimeAsync(500);
-    expect(h.fake.sockets).toHaveLength(2);
-    await vi.advanceTimersByTimeAsync(500);
-    expect(h.fake.sockets).toHaveLength(3);
+    h.fake.last().open();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(h.fetchSession).toHaveBeenCalledTimes(3); // ouverture, attente, réouverture
+    expect(h.statuses.at(-1)).toBe("paused");
+  });
+
+  it("refresh() reads the session again, one request at a time", async () => {
+    let answer: (view: SessionView) => void = () => undefined;
+    const h = setup(() => new Promise((resolve) => (answer = resolve)));
+    h.fake.last().open(); // lecture d'ouverture en cours
+    h.connection.refresh();
+    h.connection.refresh();
+    expect(h.fetchSession).toHaveBeenCalledTimes(1);
+    answer(sessionView("running", 2));
+    await vi.advanceTimersByTimeAsync(0);
+    h.connection.refresh();
+    expect(h.fetchSession).toHaveBeenCalledTimes(2);
   });
 
   it("treats 1000 as final and reads the final status over REST", async () => {

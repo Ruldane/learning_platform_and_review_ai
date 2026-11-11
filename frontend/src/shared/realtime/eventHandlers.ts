@@ -1,11 +1,13 @@
 import {
-  answerInterrupts,
+  answerAskedBefore,
   mergeTool,
   pendingTurn,
+  retireUnfinished,
   stopStreaming,
   updateLastTurn,
   upsertTurn,
 } from "./feedHelpers";
+import { statusFromEvent } from "./statusGate";
 import type { EventOf, SessionEvent, SessionEventType, SessionViewState } from "./types";
 
 type Handler<T extends SessionEventType> = (
@@ -18,14 +20,18 @@ type HandlerMap = { [T in SessionEventType]?: Handler<T> };
 const agentOf = (state: SessionViewState, event: SessionEvent): string =>
   event.agent ?? state.currentAgent ?? "agent";
 
+/**
+ * Un agent (re)part : les questions posées avant sont répondues (le graphe a repris) et ses tours
+ * inachevés, interrompus par un redémarrage ou une pause, cèdent la place au tour rejoué.
+ */
 const onStarted: Handler<"agent.started"> = (state, event) => {
-  const resumed = answerInterrupts(state);
   const agent = agentOf(state, event);
+  const next = statusFromEvent(state, event.seq, { status: "running", pendingInterrupt: null });
+  const feed = retireUnfinished(answerAskedBefore(state.feed, event.seq), agent);
   return {
-    ...resumed,
-    status: "running",
+    ...next,
     currentAgent: agent,
-    feed: [...resumed.feed, pendingTurn(agent, event.seq, event.payload.intent)],
+    feed: [...feed, pendingTurn(agent, event.seq, event.payload.intent)],
   };
 };
 
@@ -44,6 +50,7 @@ const onMessage: Handler<"agent.message"> = (state, event) => ({
     ...turn,
     text: event.payload.text,
     streaming: false,
+    interrupted: false,
     citations: event.payload.citations ?? [],
   })),
 });
@@ -74,37 +81,45 @@ const onToolResult: Handler<"tool.result"> = (state, event) => ({
   })),
 });
 
-const onUserMessage: Handler<"user.message"> = (state, event) => {
-  const answered = answerInterrupts(state);
+/** Une remarque est un événement que les nœuds liront au tour suivant, pas une réponse (D4). */
+const onUserMessage: Handler<"user.message"> = (state, event) => ({
+  ...state,
+  feed: [...state.feed, { kind: "user", seq: event.seq, text: event.payload.text }],
+});
+
+/** Une question reposée (après une pause, même id) remplace son ancienne carte. */
+const onInterrupt: Handler<"interrupt.requested"> = (state, event) => {
+  const id = event.payload.interrupt_id;
+  const next = statusFromEvent(state, event.seq, {
+    status: "waiting_user",
+    pendingInterrupt: event.payload,
+  });
+  const others = state.feed.filter(
+    (i) => !(i.kind === "interrupt" && i.interrupt.interrupt_id === id),
+  );
   return {
-    ...answered,
-    status: state.status === "waiting_user" ? "running" : state.status,
-    feed: [...answered.feed, { kind: "user", seq: event.seq, text: event.payload.text }],
+    ...next,
+    feed: [
+      ...stopStreaming(others),
+      { kind: "interrupt", seq: event.seq, interrupt: event.payload, answered: false },
+    ],
   };
 };
 
-const onInterrupt: Handler<"interrupt.requested"> = (state, event) => ({
-  ...state,
-  status: "waiting_user",
-  pendingInterrupt: event.payload,
-  feed: [
-    ...state.feed,
-    { kind: "interrupt", seq: event.seq, interrupt: event.payload, answered: false },
-  ],
-});
-
 const onCost: Handler<"cost.updated"> = (state, event) => ({ ...state, cost: event.payload });
 
-const onCompleted: Handler<"run.completed"> = (state) => ({
-  ...state,
-  status: "completed",
+const onCompleted: Handler<"run.completed"> = (state, event) => ({
+  ...statusFromEvent(state, event.seq, {
+    status: "completed",
+    pendingInterrupt: null,
+    final: true,
+  }),
   currentAgent: null,
   feed: stopStreaming(state.feed),
 });
 
 const onFailed: Handler<"run.failed"> = (state, event) => ({
-  ...state,
-  status: "failed",
+  ...statusFromEvent(state, event.seq, { status: "failed", pendingInterrupt: null, final: true }),
   currentAgent: null,
   error: { code: event.payload.code, message: event.payload.message },
   feed: stopStreaming(state.feed),

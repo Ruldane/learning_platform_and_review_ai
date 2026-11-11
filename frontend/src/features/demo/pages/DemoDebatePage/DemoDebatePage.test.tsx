@@ -12,7 +12,19 @@ import { server } from "@/test/server";
 import { DemoDebatePage } from "./DemoDebatePage";
 
 const API = `${apiBaseUrl}/api/v1/sessions`;
-const view = (status: string) => ({ session_id: "s1", status, last_seq: 0 });
+const view = (status: string) => ({
+  id: "s1",
+  graph: "demo_debate",
+  status,
+  last_seq: 0,
+  pending_interrupt: null,
+  error: null,
+  tokens_in: 0,
+  tokens_out: 0,
+  cost_usd: 0,
+  created_at: "2026-11-11T10:00:00Z",
+  updated_at: "2026-11-11T10:00:00Z",
+});
 const choiceInterrupt = {
   ...interrupt(3, "i1"),
   payload: {
@@ -42,7 +54,11 @@ async function startDebate(user: ReturnType<typeof userEvent.setup>, topic = "ap
 }
 
 describe("DemoDebatePage", () => {
-  beforeEach(() => useSessionStore.getState().reset("s1"));
+  beforeEach(() => {
+    useSessionStore.getState().reset("s1");
+    // Lecture REST faite à chaque ouverture du flux ; les événements poussés ensuite la dépassent.
+    server.use(http.get(`${API}/s1`, () => HttpResponse.json(view("running"))));
+  });
   afterEach(() => useSessionStore.getState().reset("s1"));
 
   it("starts a debate, streams turns and answers the interrupt", async () => {
@@ -88,11 +104,34 @@ describe("DemoDebatePage", () => {
     expect(await screen.findByText("Mais encore ?")).toBeInTheDocument();
   });
 
-  it("montre une session introuvable avec ErrorState", async () => {
-    const { fake } = setup("/demo?session=s1");
+  it("montre une session introuvable et propose un nouveau débat (pas « Réessayer »)", async () => {
+    const { fake, router, user } = setup("/demo?session=s1");
     await waitFor(() => expect(fake.sockets).toHaveLength(1));
     fake.last().open().drop(4404);
     expect(await screen.findByRole("alert")).toHaveTextContent("Cette session est introuvable.");
+    expect(screen.queryByRole("button", { name: "Réessayer" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Nouveau débat" }));
+    expect(await screen.findByLabelText("Sujet")).toBeInTheDocument();
+    expect(router.state.location.search).toBe("");
+  });
+
+  it("annonce la reconnexion pendant une coupure du serveur, jusqu'à la réouverture", async () => {
+    const { fake } = setup("/demo?session=s1");
+    await waitFor(() => expect(fake.sockets).toHaveLength(1));
+    fake
+      .last()
+      .open()
+      .push(started(1, "demo_proponent"), tok(2, "m1", "Oui", "demo_proponent"));
+    expect(await screen.findByText("Oui")).toBeInTheDocument();
+    fake.last().drop(1006); // serveur arrêté : le navigateur ne voit qu'un 1006
+    const notice = "Connexion au direct perdue, reconnexion…";
+    expect(await screen.findByText(notice)).toBeInTheDocument();
+    await waitFor(() => expect(fake.sockets).toHaveLength(2), { timeout: 2000 });
+    fake.last().drop(1006); // refusé avant la poignée de main : toujours en reconnexion
+    expect(screen.getByText(notice)).toBeInTheDocument();
+    await waitFor(() => expect(fake.sockets).toHaveLength(3), { timeout: 3000 });
+    fake.last().open();
+    await waitFor(() => expect(screen.queryByText(notice)).not.toBeInTheDocument());
   });
 
   it("affiche l'erreur de lancement et garde le formulaire", async () => {

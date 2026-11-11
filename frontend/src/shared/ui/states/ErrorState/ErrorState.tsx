@@ -4,10 +4,12 @@ import { Button } from "@/shared/ui/button";
 interface ErrorStateProps {
   message: string;
   onRetry: () => void;
+  /** Libellé du bouton quand réessayer n'a pas de sens (ex. « Nouveau débat »). */
+  actionLabel?: string;
 }
 
-/** Erreur affichée en place du contenu, avec un bouton pour réessayer. */
-export function ErrorState({ message, onRetry }: ErrorStateProps) {
+/** Erreur affichée en place du contenu, avec un bouton pour réessayer (ou une autre issue). */
+export function ErrorState({ message, onRetry, actionLabel }: ErrorStateProps) {
   return (
     <div
       role="alert"
@@ -15,7 +17,7 @@ export function ErrorState({ message, onRetry }: ErrorStateProps) {
     >
       <p className="text-destructive">{message}</p>
       <Button variant="outline" onClick={onRetry}>
-        {t("errors.retry")}
+        {actionLabel ?? t("errors.retry")}
       </Button>
     </div>
   );

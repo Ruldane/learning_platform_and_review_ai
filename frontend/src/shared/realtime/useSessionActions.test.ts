@@ -6,7 +6,7 @@ import { fr } from "@/shared/i18n/fr";
 import { createQueryWrapper } from "@/test/queryWrapper";
 import { server } from "@/test/server";
 import { selectSession, useSessionStore } from "./sessionStore";
-import { interrupt } from "./testEvents";
+import { interrupt, snapshot, started } from "./testEvents";
 import { useSessionActions, useStartSession } from "./useSessionActions";
 
 const BASE = `${apiBaseUrl}/api/v1/sessions`;
@@ -70,7 +70,7 @@ describe("useSessionActions", () => {
   });
 
   it("resume with a null id takes a paused session back to running", async () => {
-    useSessionStore.getState().local("s1", { type: "status.set", status: "paused" });
+    useSessionStore.getState().local("s1", { type: "snapshot", snapshot: snapshot("paused", 0) });
     server.use(
       http.post(`${BASE}/s1/resume`, () => HttpResponse.json(view("running"), { status: 202 })),
     );
@@ -89,6 +89,15 @@ describe("useSessionActions", () => {
     expect(state().status).toBe("paused");
     await act(() => result.current.cancel());
     expect(state().status).toBe("cancelled");
+  });
+
+  it("a paused response is not lifted by a late agent.started", async () => {
+    useSessionStore.getState().ingest("s1", [started(1, "demo_critic")]);
+    server.use(http.post(`${BASE}/s1/pause`, () => HttpResponse.json(view("paused"))));
+    const { result } = renderActions();
+    await act(() => result.current.pause());
+    useSessionStore.getState().ingest("s1", [started(2, "demo_critic")]);
+    expect(state().status).toBe("paused");
   });
 
   it("sends a message without ingesting the returned event", async () => {

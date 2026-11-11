@@ -1,5 +1,7 @@
 import { t } from "@/shared/i18n/t";
+import { isAwaitingAnswer } from "@/shared/realtime/feedHelpers";
 import type { SocketFactory } from "@/shared/realtime/socket";
+import type { SessionStream } from "@/shared/realtime/useSessionStream";
 import {
   DebateFeed,
   InterruptCard,
@@ -21,15 +23,25 @@ interface DemoSessionProps {
   onRestart: () => void;
 }
 
+/** Flux abandonné ; session introuvable : réessayer ne sert à rien, on en propose une autre. */
+function streamFailure(stream: SessionStream, onRestart: () => void) {
+  const missing = stream.failure === "not_found";
+  return (
+    <ErrorState
+      message={stream.error ?? t("errors.generic")}
+      onRetry={missing ? onRestart : stream.retry}
+      actionLabel={missing ? t("demo.restart") : undefined}
+    />
+  );
+}
+
 /** Une session de démo suivie en direct : barre d'état, fil, message, contrôles. */
 export function DemoSession({ sessionId, createSocket, onRestart }: DemoSessionProps) {
   const demo = useDemoSession(sessionId, createSocket);
   const { stream, actions, finished } = demo;
   const { view, status, connection } = stream;
 
-  if (connection === "failed") {
-    return <ErrorState message={stream.error ?? t("errors.generic")} onRetry={stream.retry} />;
-  }
+  if (connection === "failed") return streamFailure(stream, onRestart);
   if (connection === "connecting" && view.feed.length === 0) {
     return <LoadingState label={t("demo.loading")} />;
   }
@@ -48,7 +60,8 @@ export function DemoSession({ sessionId, createSocket, onRestart }: DemoSessionP
           <InterruptCard
             interrupt={item.interrupt}
             answered={item.answered}
-            disabled={actions.pending}
+            // Active seulement si le serveur attend cette réponse (pas en pause, pas déjà reprise).
+            disabled={actions.pending || !isAwaitingAnswer(view, item.interrupt.interrupt_id)}
             onAnswer={(value) => void actions.resume(item.interrupt.interrupt_id, value)}
           />
         )}
