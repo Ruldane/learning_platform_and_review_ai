@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.agents.runtime.bus import EventBus
 from app.agents.runtime.repositories import EventRepository
-from app.features.settings.schemas import UserSettings
+from app.agents.runtime.run_settings import RunSettings
 from app.providers.llm.base import Tier
 
 
@@ -27,7 +27,7 @@ class GraphDeps:
     session_id: str
     models: ChatModelSource
     bus: EventBus
-    settings: UserSettings
+    settings: RunSettings
     session_factory: async_sessionmaker[AsyncSession]
 
     async def user_messages_since(self, seq: int) -> list[tuple[int, str]]:

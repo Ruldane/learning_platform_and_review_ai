@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.agents.runtime.lifespan import agent_runtime
 from app.agents.runtime.repositories import SessionRepository
 from app.config import Settings
+from app.features.settings.service import SettingsRunReader
 from tests.agents.runtime.runner_helpers import all_events, fake_llm, wait_idle, wait_status
 
 
@@ -19,7 +20,8 @@ async def test_runtime_opens_a_separate_checkpoint_file_and_recovers_sessions(
     async with db_factory() as db:
         row = await SessionRepository(db, user_id).add(graph="disparu", status="running", input={})
         await db.commit()
-    async with agent_runtime(settings, db_factory, fake_llm([]), {}) as runtime:
+    reader = SettingsRunReader(db_factory)
+    async with agent_runtime(settings, db_factory, fake_llm([]), {}, reader) as runtime:
         assert settings.checkpoints_path.exists()
         await wait_status(db_factory, user_id, row.id, "failed")
         await wait_idle(runtime.runner, row.id)

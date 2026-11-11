@@ -26,8 +26,8 @@ def use_test_runtime(monkeypatch: pytest.MonkeyPatch) -> Probe:
         monkeypatch.setitem(GRAPHS, name, spec)
     real = main_module.agent_runtime
 
-    def fake_runtime(settings: Any, factory: Any, models: Any, prices: Any) -> Any:
-        return real(settings, factory, fake_llm(["Bonjour à toi"] * 50), prices)
+    def fake_runtime(settings: Any, factory: Any, models: Any, prices: Any, run: Any) -> Any:
+        return real(settings, factory, fake_llm(["Bonjour à toi"] * 50), prices, run)
 
     monkeypatch.setattr(main_module, "agent_runtime", fake_runtime)
     return reset_probe()

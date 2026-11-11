@@ -9,7 +9,7 @@ from sqlalchemy.exc import OperationalError
 
 from app.agents.runtime.lifespan import agent_runtime
 from app.agents.runtime.openapi import register_event_schemas
-from app.bootstrap import build_providers, model_prices
+from app.bootstrap import build_providers, model_prices, run_settings_source
 from app.config import Settings, get_settings
 from app.core.errors import register_error_handlers
 from app.core.logging import configure_logging
@@ -85,6 +85,7 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
                 app.state.session_factory,
                 app.state.providers.llm_factory,
                 model_prices(),
+                run_settings_source(app.state.session_factory),
             )
         )
         yield

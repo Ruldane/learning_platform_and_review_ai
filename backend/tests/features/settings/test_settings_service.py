@@ -4,10 +4,11 @@ import pytest
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.agents.runtime.run_settings import RunSettings
 from app.db.models.accounts import UserSettingsRow
 from app.features.settings.repository import UserSettingsRepository
 from app.features.settings.schemas import Availability, UserSettings, WeeklyReview
-from app.features.settings.service import SettingsModelReader, SettingsService
+from app.features.settings.service import SettingsModelReader, SettingsRunReader, SettingsService
 from app.providers.llm.base import ModelChoice
 from app.providers.llm.model_defaults import GLM_STRONG
 
@@ -113,3 +114,22 @@ async def test_agent_override_wins(
     assert (await reader.get_model_choice("u1", "fort", "autre")).provider == "anthropic"
     # Un autre utilisateur n'est pas affecté par la surcharge.
     assert (await reader.get_model_choice("u2", "fort", "strategist")).provider == "anthropic"
+
+
+async def test_run_reader_gives_the_engine_the_stored_settings(
+    db_session: AsyncSession, db_session_factory: async_sessionmaker[AsyncSession]
+) -> None:
+    """Adaptateur `RunSettingsSource` du moteur d'agents (assemblé par `app.bootstrap`)."""
+    service = SettingsService(db_session, "u1")
+    s = await service.get()
+    await service.replace(s.model_copy(update={"session_token_cap": 50_000, "debate_rounds": 5}))
+    await db_session.commit()
+    reader = SettingsRunReader(db_session_factory)
+    assert await reader.get_run_settings("u1") == RunSettings(
+        session_token_cap=50_000,
+        debate_rounds=5,
+        lesson_language="fr",
+        search_languages=("fr", "en"),
+        style_guide="",
+    )
+    assert (await reader.get_run_settings("u2")).session_token_cap == 300_000

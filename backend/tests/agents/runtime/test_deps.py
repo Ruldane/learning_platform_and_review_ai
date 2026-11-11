@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.agents.runtime.bus import EventBus
 from app.agents.runtime.deps import GraphDeps
-from app.features.settings.schemas import UserSettings
+from app.agents.runtime.run_settings import RunSettings
 
 
 async def test_user_messages_since_returns_only_user_messages_after_seq(
@@ -25,7 +25,7 @@ async def test_user_messages_since_returns_only_user_messages_after_seq(
         session_id=session_id,
         models=None,  # type: ignore[arg-type]
         bus=bus,
-        settings=UserSettings(),
+        settings=RunSettings(300_000, 3, "fr", ("fr", "en"), ""),
         session_factory=db_factory,
     )
     assert await deps.user_messages_since(0) == [(first, "un"), (third, "deux")]

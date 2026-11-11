@@ -4,6 +4,7 @@ from typing import Any
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.agents.runtime.run_settings import RunSettings
 from app.features.settings.repository import UserSettingsRepository
 from app.features.settings.schemas import UserSettings
 from app.providers.llm.base import ModelChoice, Tier
@@ -56,3 +57,22 @@ class SettingsModelReader:
         if agent is not None and agent in settings.agent_overrides:
             return settings.agent_overrides[agent]
         return settings.tiers[tier]
+
+
+class SettingsRunReader:
+    """Réglages d'une exécution d'agents (`RunSettingsSource` du moteur), assemblé par
+    `app.bootstrap`. Ouvre sa propre session : appelé par le runner, hors requête HTTP."""
+
+    def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+        self._session_factory = session_factory
+
+    async def get_run_settings(self, user_id: str) -> RunSettings:
+        async with self._session_factory() as session:
+            settings = await SettingsService(session, user_id).get()
+        return RunSettings(
+            session_token_cap=settings.session_token_cap,
+            debate_rounds=settings.debate_rounds,
+            lesson_language=settings.lesson_language,
+            search_languages=tuple(settings.search_languages),
+            style_guide=settings.style_guide,
+        )

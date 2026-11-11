@@ -10,7 +10,7 @@ from app.agents.runtime.events import (
     RunFailedPayload,
     SessionEvent,
 )
-from app.agents.runtime.lifespan import AgentRuntime
+from app.agents.runtime.handle import AgentRuntime
 from app.core.errors import AppError
 from app.db.models.agents import AgentSession, SessionStatus
 from app.features.sessions.repository import SessionReadRepository

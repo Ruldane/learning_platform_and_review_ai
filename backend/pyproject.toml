@@ -109,10 +109,6 @@ ignore_imports = [
     "app.features.** -> app.features.*.keys_service.**",
     # Le registre monte les routeurs de toutes les features : c'est son rôle.
     "app.features.registry -> app.features.**",
-    # Le moteur d'agents (socle partagé) lit les réglages par le service de `settings` et ses
-    # types publics : une feature qui utilise le moteur (sessions) n'en dépend pas pour autant.
-    "app.agents.** -> app.features.*.service",
-    "app.agents.** -> app.features.*.schemas",
 ]
 
 [[tool.importlinter.contracts]]
@@ -138,6 +134,13 @@ name = "4. app.providers n'importe jamais app.features, app.agents ni app.realti
 type = "forbidden"
 source_modules = ["app.providers"]
 forbidden_modules = ["app.features", "app.agents", "app.realtime"]
+
+[[tool.importlinter.contracts]]
+id = "moteur-sans-feature"
+name = "6. app.agents n'importe jamais app.features (réglages fournis par la composition)"
+type = "forbidden"
+source_modules = ["app.agents"]
+forbidden_modules = ["app.features"]
 
 [[tool.importlinter.contracts]]
 id = "composition-isolee"

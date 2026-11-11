@@ -14,6 +14,7 @@ from app.agents.runtime.deps import ChatModelSource
 from app.agents.runtime.events import SessionEvent
 from app.agents.runtime.repositories import SessionRepository
 from app.agents.runtime.runner import SessionRunner
+from app.features.settings.service import SettingsRunReader
 from tests.agents.graphs_for_tests import TEST_GRAPHS, Probe, reset_probe
 from tests.agents.runtime.runner_helpers import fake_llm
 
@@ -85,6 +86,7 @@ async def make_runner(
             models=models,
             checkpointer=checkpointer,
             prices={"modele-test": ModelPrice(1.0, 2.0)},
+            run_settings=SettingsRunReader(db_factory),
             graphs=TEST_GRAPHS,
         )
         made.append(runner)

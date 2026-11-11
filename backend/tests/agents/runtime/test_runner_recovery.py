@@ -13,6 +13,7 @@ from app.agents.runtime.bus import EventBus
 from app.agents.runtime.checkpointer import open_checkpointer
 from app.agents.runtime.repositories import SessionRepository
 from app.agents.runtime.runner import SessionRunner
+from app.features.settings.service import SettingsRunReader
 from tests.agents.graphs_for_tests import TEST_GRAPHS, Probe
 from tests.agents.runtime.runner_helpers import (
     all_events,
@@ -44,6 +45,7 @@ async def make_runner(
                 models=fake_llm([]),
                 checkpointer=checkpointer,
                 prices={},
+                run_settings=SettingsRunReader(db_factory),
                 graphs=TEST_GRAPHS,
             )
             stack.push_async_callback(bus.aclose)

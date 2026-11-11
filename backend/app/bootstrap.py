@@ -7,12 +7,13 @@ import httpx
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.agents.runtime.costs import ModelPrice, load_prices
+from app.agents.runtime.run_settings import RunSettingsSource
 from app.config import Settings
 from app.core.providers import Providers
 from app.core.security import Cipher
 from app.features.health.checks import DatabaseCheck, LlmKeysCheck
 from app.features.settings.keys_service import DbKeyReader
-from app.features.settings.service import SettingsModelReader
+from app.features.settings.service import SettingsModelReader, SettingsRunReader
 from app.providers.embeddings.ollama_probe import OllamaProbe
 from app.providers.health import HealthCheck
 from app.providers.llm.base import LlmProvider
@@ -79,3 +80,9 @@ def model_prices() -> dict[str, ModelPrice]:
     """Table des prix des modèles (`model_prices.json` des fournisseurs) pour le suivi des coûts :
     lue ici car `app.agents` n'importe pas `app.providers.llm.registry` (contrat 3)."""
     return load_prices(PRICES_PATH)
+
+
+def run_settings_source(session_factory: async_sessionmaker[AsyncSession]) -> RunSettingsSource:
+    """Réglages lus par le moteur d'agents, adaptés du service de la feature `settings` : le
+    moteur n'importe aucune feature (contrat 6)."""
+    return SettingsRunReader(session_factory)

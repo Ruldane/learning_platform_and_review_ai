@@ -29,9 +29,9 @@ from app.agents.runtime.control import transition
 from app.agents.runtime.costs import CostTracker, ModelPrice
 from app.agents.runtime.deps import ChatModelSource, GraphDeps
 from app.agents.runtime.repositories import SessionRepository
+from app.agents.runtime.run_settings import RunSettingsSource
 from app.agents.runtime.stream import translate_chunk
 from app.core.errors import AppError
-from app.features.settings.service import SettingsService
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +47,7 @@ class RunContext:
     checkpointer: BaseCheckpointSaver[Any]
     prices: Mapping[str, ModelPrice]
     graphs: Mapping[str, GraphSpec]
+    run_settings: RunSettingsSource
 
 
 def unknown_graph(name: str) -> AppError:
@@ -121,11 +122,11 @@ class _Run:
         ctx = self.ctx
         async with ctx.session_factory() as db:
             row = await SessionRepository(db, self.user_id).get(self.session_id)
-            settings = await SettingsService(db, self.user_id).get()
         if row is None:
             raise AppError("session_not_found", "Session introuvable.", 404)
         if row.status != "running":
             return None
+        settings = await ctx.run_settings.get_run_settings(self.user_id)
         spec = ctx.graphs.get(row.graph)
         if spec is None:
             raise unknown_graph(row.graph)

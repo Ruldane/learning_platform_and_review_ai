@@ -6,7 +6,7 @@ from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import HTTPConnection
 
-from app.agents.runtime.lifespan import AgentRuntime
+from app.agents.runtime.handle import AgentRuntime
 from app.core.errors import AppError
 from app.core.providers import Providers
 from app.core.security import Cipher

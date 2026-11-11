@@ -17,7 +17,7 @@ from starlette.requests import HTTPConnection
 from starlette.websockets import WebSocket
 
 from app.agents.runtime import control
-from app.agents.runtime.lifespan import AgentRuntime
+from app.agents.runtime.handle import AgentRuntime
 from app.agents.runtime.repositories import EventRepository
 from app.core.errors import AppError
 from app.realtime import replay
