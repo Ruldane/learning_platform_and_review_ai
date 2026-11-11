@@ -95,7 +95,7 @@ describe("useSessionStream", () => {
       fake.last().drop(4404);
     });
     expect(result.current.connection).toBe("failed");
-    expect(result.current.error).toBe(fr.sessions.stream.not_found);
+    expect(result.current.error).toBe(fr.session.stream.not_found);
     act(() => result.current.retry());
     expect(fake.sockets).toHaveLength(2);
     expect(result.current.connection).toBe("connecting");
@@ -146,6 +146,19 @@ describe("useSessionStream", () => {
     expect(result.current.events.map((e) => e.seq)).toEqual([1, 2]);
     unmount();
     expect(fake.sockets.every((s) => s.closedByClient)).toBe(true);
+  });
+
+  it("StrictMode double mount leaves one open socket and no duplicate event", async () => {
+    const fake = createFakeSocketServer();
+    const { result } = renderHook(
+      () => useSessionStream("s1", { createSocket: fake.factory, fetchSession: fetchRunning }),
+      { wrapper: StrictMode },
+    );
+    act(() => {
+      fake.last().open().push(ev(1), ev(2), ev(2));
+    });
+    expect(fake.openSockets()).toHaveLength(1);
+    expect(result.current.events.map((e) => e.seq)).toEqual([1, 2]);
   });
 
   it("applies the status read over REST when the stream opens (reload of a paused session)", async () => {

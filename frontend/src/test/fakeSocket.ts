@@ -45,6 +45,8 @@ export interface FakeSocketServer {
   factory: SocketFactory;
   sockets: FakeSocket[];
   last(): FakeSocket;
+  /** Sockets ni fermés par le client ni débranchés (plus de rappel de fermeture). */
+  openSockets(): FakeSocket[];
 }
 
 export function createFakeSocketServer(): FakeSocketServer {
@@ -61,5 +63,6 @@ export function createFakeSocketServer(): FakeSocketServer {
       if (!socket) throw new Error("Aucun socket ouvert");
       return socket;
     },
+    openSockets: () => sockets.filter((s) => !s.closedByClient && s.onclose !== null),
   };
 }

@@ -113,7 +113,7 @@ export function useSessionStream(
     status: view.status,
     pendingInterrupt: view.pendingInterrupt,
     connection,
-    error: failure ? t(`sessions.stream.${failure}`) : null,
+    error: failure ? t(`session.stream.${failure}`) : null,
     failure,
     retry,
   };

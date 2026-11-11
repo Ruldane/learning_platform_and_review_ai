@@ -1,58 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/shared/api/errors";
-import { createFakeSocketServer, type FakeSocketServer } from "@/test/fakeSocket";
-import type { SessionView } from "./sessionApi";
+import type { SessionView } from "@/shared/realtime/sessionApi";
 import { MAX_RECONNECT_ATTEMPTS, reconnectDelay } from "./socket";
-import { SessionStreamConnection, type ConnectionState } from "./streamConnection";
-import { tok } from "./testEvents";
-import type { SessionEvent, SessionStatus } from "./types";
-
-const sessionView = (status: SessionStatus, lastSeq: number): SessionView => ({
-  id: "s1",
-  graph: "demo",
-  status,
-  last_seq: lastSeq,
-  pending_interrupt: null,
-  error: null,
-  cost_usd: 0,
-  tokens_in: 0,
-  tokens_out: 0,
-  created_at: "2026-11-11T10:00:00Z",
-  updated_at: "2026-11-11T10:00:00Z",
-});
-
-interface Harness {
-  fake: FakeSocketServer;
-  connection: SessionStreamConnection;
-  events: SessionEvent[];
-  states: ConnectionState[];
-  failures: (string | null)[];
-  statuses: SessionStatus[];
-  fetchSession: ReturnType<typeof vi.fn<(id: string) => Promise<SessionView>>>;
-}
-
-function setup(fetchResult: () => Promise<SessionView> = async () => sessionView("running", 0)) {
-  const h = { events: [], states: [], failures: [], statuses: [] } as unknown as Harness;
-  h.fake = createFakeSocketServer();
-  h.fetchSession = vi.fn(fetchResult);
-  h.connection = new SessionStreamConnection({
-    sessionId: "s1",
-    createSocket: h.fake.factory,
-    fetchSession: h.fetchSession,
-    lastSeq: () => h.events.at(-1)?.seq ?? 0,
-    onEvent: (event) => h.events.push(event),
-    onSnapshot: (view) => h.statuses.push(view.status),
-    onState: (state, failure) => {
-      h.states.push(state);
-      h.failures.push(failure);
-    },
-  });
-  h.connection.start();
-  return h;
-}
-
-const ev = (seq: number) => tok(seq, "m1", `t${seq}`);
-const lastState = (h: Harness) => h.states.at(-1);
+import { ev, lastState, sessionView, setup } from "@/test/streamHarness";
 
 describe("SessionStreamConnection", () => {
   beforeEach(() => {
@@ -135,19 +85,6 @@ describe("SessionStreamConnection", () => {
     await vi.advanceTimersByTimeAsync(0);
     expect(h.fetchSession).toHaveBeenCalledTimes(3); // ouverture, attente, réouverture
     expect(h.statuses.at(-1)).toBe("paused");
-  });
-
-  it("refresh() reads the session again, one request at a time", async () => {
-    let answer: (view: SessionView) => void = () => undefined;
-    const h = setup(() => new Promise((resolve) => (answer = resolve)));
-    h.fake.last().open(); // lecture d'ouverture en cours
-    h.connection.refresh();
-    h.connection.refresh();
-    expect(h.fetchSession).toHaveBeenCalledTimes(1);
-    answer(sessionView("running", 2));
-    await vi.advanceTimersByTimeAsync(0);
-    h.connection.refresh();
-    expect(h.fetchSession).toHaveBeenCalledTimes(2);
   });
 
   it("treats 1000 as final and reads the final status over REST", async () => {

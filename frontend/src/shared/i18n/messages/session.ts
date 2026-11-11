@@ -1,0 +1,59 @@
+/** Textes d'une session d'agents : flux, erreurs d'action, statut, coût, fil, contrôles. */
+export const session = {
+  stream: {
+    not_found: "Cette session est introuvable.",
+    refused: "Le serveur a refusé la connexion au direct de la session.",
+    unreachable: "Connexion au direct perdue. Vérifie que Tremplin est démarré, puis réessaie.",
+  },
+  errors: {
+    stale_interrupt: "Cette question a déjà reçu une réponse.",
+    interrupt_required: "Réponds d'abord à la question en attente.",
+    session_not_resumable: "Cette session ne peut pas reprendre maintenant.",
+    session_not_pausable: "Cette session ne peut plus être mise en pause.",
+    session_not_cancellable: "Cette session est déjà terminée : rien à arrêter.",
+    session_closed: "Cette session est terminée : elle n'accepte plus de message.",
+    session_not_found: "Cette session est introuvable.",
+    server_stopping: "Le serveur est en train de s'arrêter. Réessaie dans un instant.",
+  },
+  status: {
+    label: "État de la session",
+    running: "En cours",
+    waiting_user: "En attente de ta réponse",
+    paused: "En pause",
+    completed: "Terminée",
+    failed: "Échouée",
+    cancelled: "Annulée",
+  },
+  round: "Tour {round}",
+  cost: {
+    summary: "{tokens} tokens · ≈ {cost} $",
+    title: "{tokens} tokens utilisés sur un plafond de {cap}",
+    none: "Coût : pas encore mesuré",
+  },
+  feed: {
+    label: "Fil du débat",
+    empty: "Le débat va commencer…",
+  },
+  bubble: { you: "Toi" },
+  activity: { thinking: "Réfléchit…", searching: "Cherche…", writing: "Écrit…" },
+  tool: {
+    running: "En cours",
+    ok: "Terminé",
+    failed: "Échec",
+    args: "Arguments",
+    summary: "Résumé",
+  },
+  interrupt: {
+    label: "Question de l'équipe",
+    answerLabel: "Ta réponse",
+    answer: "Répondre",
+    answered: "Réponse envoyée",
+  },
+  controls: {
+    label: "Contrôles de la session",
+    pause: "Pause",
+    resume: "Reprendre",
+    cancel: "Annuler",
+  },
+  composer: { label: "Ton message", send: "Envoyer" },
+} as const;

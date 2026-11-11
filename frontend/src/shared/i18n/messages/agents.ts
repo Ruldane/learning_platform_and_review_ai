@@ -1,0 +1,22 @@
+/** Nom et rôle de chaque agent. */
+export const agents = {
+  moderator: { name: "Modérateur", role: "Anime le débat" },
+  strategist: { name: "Stratège", role: "Pose le cap et les priorités" },
+  practitioner: { name: "Praticien", role: "Apporte le point de vue du terrain" },
+  scout: { name: "Éclaireur", role: "Cherche les sources" },
+  skeptic: { name: "Sceptique", role: "Teste les hypothèses" },
+  scribe: { name: "Scribe", role: "Garde la trace des échanges" },
+  writer: { name: "Rédacteur", role: "Écrit les contenus" },
+  verifier: { name: "Vérificateur", role: "Contrôle les faits" },
+  archivist: { name: "Archiviste", role: "Range et retrouve la mémoire" },
+  ats_reader: { name: "Lecteur ATS", role: "Lit comme un logiciel de tri" },
+  recruiter: { name: "Recruteur", role: "Regarde comme un recruteur" },
+  designer: { name: "Designer", role: "Soigne la mise en page" },
+  analyst: { name: "Analyste", role: "Mesure et compare" },
+  examiner: { name: "Examinateur", role: "Pose les questions d'examen" },
+  interviewer: { name: "Intervieweur", role: "Mène l'entretien" },
+  tutor: { name: "Tuteur", role: "Explique pas à pas" },
+  tracker: { name: "Suiveur", role: "Suit l'avancement" },
+  demo_proponent: { name: "Avocat", role: "Défend l'idée" },
+  demo_critic: { name: "Critique", role: "Challenge l'idée" },
+} as const;

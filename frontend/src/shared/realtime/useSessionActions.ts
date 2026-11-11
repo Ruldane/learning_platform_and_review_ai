@@ -14,15 +14,15 @@ import {
 import { selectSession, useSessionStore } from "./sessionStore";
 import { snapshotOf } from "./statusGate";
 
-type SessionErrorCode = keyof typeof fr.sessions.errors;
+type SessionErrorCode = keyof typeof fr.session.errors;
 
 const isSessionErrorCode = (code: string): code is SessionErrorCode =>
-  Object.hasOwn(fr.sessions.errors, code);
+  Object.hasOwn(fr.session.errors, code);
 
 /** Message français d'un échec d'action : codes connus (409, 503) traduits ici, sinon celui de l'API. */
 export function sessionActionError(error: unknown): string {
   if (error instanceof ApiError && isSessionErrorCode(error.code)) {
-    return t(`sessions.errors.${error.code}`);
+    return t(`session.errors.${error.code}`);
   }
   return errorMessage(error);
 }

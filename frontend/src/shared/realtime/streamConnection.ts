@@ -48,6 +48,8 @@ export class SessionStreamConnection {
   private check: AbortController | null = null;
   private attempts = 0;
   private done = false;
+  /** Une relecture a été demandée pendant une lecture en cours : elle part dès que celle-ci finit. */
+  private refreshQueued = false;
 
   constructor(deps: StreamConnectionDeps) {
     this.deps = deps;
@@ -57,9 +59,17 @@ export class SessionStreamConnection {
     this.connect("connecting");
   }
 
-  /** Relit la session en REST, sauf si une lecture est déjà en cours (sa réponse suffira). */
+  /**
+   * Relit la session en REST. Si une lecture est déjà en cours, la relecture est mise en attente
+   * (une seule, quel que soit le nombre de demandes) et lancée à la fin de celle-ci : sa réponse
+   * peut dater d'avant la demande (contrôle de reconnexion, ouverture précédente).
+   */
   refresh(): void {
-    if (this.done || this.check !== null) return;
+    if (this.done) return;
+    if (this.check !== null) {
+      this.refreshQueued = true;
+      return;
+    }
     this.readView((view) => this.deps.onSnapshot(view));
   }
 
@@ -152,7 +162,8 @@ export class SessionStreamConnection {
   /**
    * Une lecture REST à la fois : la précédente est abandonnée. Rappels muets une fois la lecture
    * abandonnée (nouvelle lecture, `dispose`, abandon du flux) ; une lecture lancée après `end`
-   * (statut final après 1000) répond encore.
+   * (statut final après 1000) répond encore. Une relecture mise en attente part après les rappels
+   * de la lecture qui se termine, sauf si le flux est fini entre-temps.
    */
   private readView(onView: (view: SessionView) => void, onError?: (error: unknown) => void) {
     const abort = this.newCheck();
@@ -163,12 +174,21 @@ export class SessionStreamConnection {
       (view) => {
         settle();
         if (!abort.signal.aborted) onView(view);
+        this.runQueuedRefresh(abort);
       },
       (error: unknown) => {
         settle();
         if (!abort.signal.aborted) onError?.(error);
+        this.runQueuedRefresh(abort);
       },
     );
+  }
+
+  /** Lance la relecture en attente une fois la lecture `finished` terminée (et non remplacée). */
+  private runQueuedRefresh(finished: AbortController): void {
+    if (!this.refreshQueued || this.check !== null || finished.signal.aborted) return;
+    this.refreshQueued = false;
+    this.refresh();
   }
 
   private end(state: "closed" | "failed", failure: StreamFailure | null): void {
@@ -187,6 +207,7 @@ export class SessionStreamConnection {
   private clearPending(): void {
     if (this.timer !== null) clearTimeout(this.timer);
     this.timer = null;
+    this.refreshQueued = false;
     this.check?.abort();
     this.check = null;
   }

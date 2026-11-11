@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { fr } from "./fr";
 import { t } from "./t";
 
 describe("t", () => {
@@ -21,5 +22,12 @@ describe("t", () => {
   it("refuse une clé inconnue à la compilation", () => {
     // @ts-expect-error la clé n'existe pas dans `fr`
     expect(t("n.existe.pas")).toBe("n.existe.pas");
+  });
+
+  it("merges sessions into session", () => {
+    expect("sessions" in fr).toBe(false);
+    expect(t("session.errors.stale_interrupt")).toBe("Cette question a déjà reçu une réponse.");
+    expect(t("session.stream.not_found")).toBe("Cette session est introuvable.");
+    expect(t("session.status.paused")).toBe("En pause");
   });
 });

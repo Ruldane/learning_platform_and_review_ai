@@ -133,7 +133,7 @@ describe("useSessionActions", () => {
       ok = await result.current.resume("i1", "a");
     });
     expect(ok).toBe(false);
-    await waitFor(() => expect(result.current.error).toBe(fr.sessions.errors.stale_interrupt));
+    await waitFor(() => expect(result.current.error).toBe(fr.session.errors.stale_interrupt));
   });
 
   it.each([
@@ -148,7 +148,7 @@ describe("useSessionActions", () => {
       if (route === "message") await result.current.sendMessage("x");
       else await result.current[route]();
     });
-    await waitFor(() => expect(result.current.error).toBe(fr.sessions.errors[code]));
+    await waitFor(() => expect(result.current.error).toBe(fr.session.errors[code]));
   });
 
   it("falls back to the server message for an unknown code, and clears it on success", async () => {
