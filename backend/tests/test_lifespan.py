@@ -1,6 +1,11 @@
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+from pathlib import Path
+
 import httpx
 import pytest
 from asgi_lifespan import LifespanManager
+from fastapi import FastAPI
 from sqlalchemy import func, select
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
@@ -8,10 +13,12 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from app.agents.runtime.bus import EventBus
 from app.agents.runtime.runner import SessionRunner
 from app.config import Settings
+from app.core.providers import MemoryProviders
 from app.core.security import Cipher, KnownSecrets
 from app.db.models.accounts import User
 from app.features.auth.service import AuthService
 from app.main import create_app
+from tests.support.memory import fake_memory_providers
 
 
 async def test_lifespan_creates_secret_and_cipher(settings: Settings, db_engine: object) -> None:
@@ -115,3 +122,45 @@ async def test_shutdown_stops_runner_then_bus_then_engine(
     async with LifespanManager(app):
         assert isinstance(app.state.runtime.bus, EventBus)
     assert order == ["runner", "bus", "engine"]
+
+
+async def test_lifespan_uses_injected_memory_providers(
+    app: FastAPI, memory_providers: MemoryProviders, client: httpx.AsyncClient
+) -> None:
+    assert app.state.memory_providers is memory_providers
+
+
+async def test_lifespan_builds_memory_providers_when_none_injected(
+    settings: Settings, db_engine: object, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    built = fake_memory_providers(tmp_path)
+    seen: list[Settings] = []
+    closed: list[bool] = []
+
+    @asynccontextmanager
+    async def fake_composition(given: Settings) -> AsyncIterator[MemoryProviders]:
+        seen.append(given)
+        try:
+            yield built
+        finally:
+            closed.append(True)
+
+    monkeypatch.setattr("app.main.open_memory_providers", fake_composition)
+    app = create_app(settings)
+    async with LifespanManager(app):
+        assert app.state.memory_providers is built and closed == []
+    assert seen == [settings] and closed == [True]
+
+
+async def test_injected_memory_providers_skip_the_composition(
+    settings: Settings,
+    db_engine: object,
+    memory_providers: MemoryProviders,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def boom(given: Settings) -> None:
+        raise AssertionError("la composition ne doit pas être appelée")
+
+    monkeypatch.setattr("app.main.open_memory_providers", boom)
+    async with LifespanManager(create_app(settings, memory_providers=memory_providers)):
+        pass

@@ -9,9 +9,11 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 import app.db.models  # noqa: F401  (enregistre les modèles sur Base.metadata)
 from app.config import Settings
+from app.core.providers import MemoryProviders
 from app.db.base import Base
 from app.db.engine import create_engine, create_session_factory
 from app.main import create_app
+from tests.support.memory import fake_memory_providers
 
 
 @pytest.fixture
@@ -46,10 +48,17 @@ async def db_session(
         yield session
 
 
+# Mémoire : l'embedder déterministe et Qdrant en mémoire remplacent Ollama et Qdrant dans toute la
+# suite. `app` et `client_google_mode` les injectent : aucun test ne peut atteindre un vrai service.
 @pytest.fixture
-def app(settings: Settings, db_engine: AsyncEngine) -> FastAPI:
+def memory_providers(tmp_path: Path) -> MemoryProviders:
+    return fake_memory_providers(tmp_path)
+
+
+@pytest.fixture
+def app(settings: Settings, db_engine: AsyncEngine, memory_providers: MemoryProviders) -> FastAPI:
     # Dépend de `db_engine` pour que le schéma existe avant le lifespan.
-    return create_app(settings)
+    return create_app(settings, memory_providers=memory_providers)
 
 
 @pytest.fixture
@@ -64,10 +73,12 @@ async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
 
 @pytest.fixture
 async def client_google_mode(
-    settings: Settings, db_engine: AsyncEngine
+    settings: Settings, db_engine: AsyncEngine, memory_providers: MemoryProviders
 ) -> AsyncIterator[httpx.AsyncClient]:
     # Mode `google` : aucune session n'existe encore (phase 9), les routes protégées répondent 401.
-    google_app = create_app(settings.model_copy(update={"auth_mode": "google"}))
+    google_app = create_app(
+        settings.model_copy(update={"auth_mode": "google"}), memory_providers=memory_providers
+    )
     async with LifespanManager(google_app):
         transport = httpx.ASGITransport(app=google_app, raise_app_exceptions=False)
         async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:

@@ -10,9 +10,11 @@ from sqlalchemy.exc import OperationalError
 from app.agents.runtime.lifespan import agent_runtime
 from app.agents.runtime.openapi import register_event_schemas
 from app.bootstrap import build_providers, model_prices, run_settings_source
+from app.bootstrap import memory_providers as open_memory_providers
 from app.config import Settings, get_settings
 from app.core.errors import register_error_handlers
 from app.core.logging import configure_logging
+from app.core.providers import MemoryProviders
 from app.core.security import Cipher, KnownSecrets, load_or_create_secret
 from app.db.engine import create_engine, create_session_factory
 from app.features.auth.service import AuthService
@@ -75,6 +77,11 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
             http,
             lambda: getattr(app.state, "local_user_id", None),
         )
+        # Fournisseurs de la mémoire : ceux qu'on a injectés (tests), sinon la composition réelle.
+        injected: MemoryProviders | None = app.state.injected_memory_providers
+        if injected is None:
+            injected = await stack.enter_async_context(open_memory_providers(app.state.settings))
+        app.state.memory_providers = injected
         if app.state.settings.auth_mode == "local":
             await _ensure_local_user(app)
         # Moteur d'agents (bus, runner, checkpointer) : entré après le moteur de base, donc
@@ -91,8 +98,11 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         yield
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
-    """Construit l'application. `settings` prime toujours sur le cache `get_settings()`."""
+def create_app(
+    settings: Settings | None = None, *, memory_providers: MemoryProviders | None = None
+) -> FastAPI:
+    """Construit l'application. `settings` prime toujours sur le cache `get_settings()` ;
+    `memory_providers` remplace la composition réelle d'Ollama et de Qdrant (tests)."""
     settings = settings if settings is not None else get_settings()
     app = FastAPI(
         title="Tremplin",
@@ -102,6 +112,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=_lifespan,
     )
     app.state.settings = settings
+    app.state.injected_memory_providers = memory_providers
     # Ordre important : le dernier middleware ajouté est le plus externe. Les erreurs sont
     # enregistrées d'abord pour que leur 500 traverse CORS (voir `UnexpectedErrorMiddleware`).
     register_error_handlers(app)

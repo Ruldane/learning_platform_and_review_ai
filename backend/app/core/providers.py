@@ -5,9 +5,11 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 
 from app.core.security import Cipher
+from app.providers.embeddings.base import Embedder
 from app.providers.health import HealthCheck
 from app.providers.llm.base import LlmProvider
 from app.providers.llm.factory import LlmFactory
+from app.providers.vector.base import MemoryRepository
 
 
 @dataclass
@@ -19,3 +21,12 @@ class Providers:
     cipher: Cipher
     env_keys: Mapping[str, str | None]
     health_checks: list[HealthCheck] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class MemoryProviders:
+    """Services de la mémoire : vectorisation et index vectoriel (étendu en 2.4 : stockage de
+    fichiers, extraction PDF, lecture web, transcriptions YouTube)."""
+
+    embedder: Embedder
+    index: MemoryRepository

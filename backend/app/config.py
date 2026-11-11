@@ -36,6 +36,8 @@ class Settings(BaseSettings):
     qdrant_url: str = "http://qdrant:6333"
     ollama_base_url: str = "http://ollama:11434"
     embedding_model: str = "bge-m3"
+    embedding_dimension: int = 1024
+    memory_collection: str = "memory"
     searxng_url: str = "http://searxng:8080"
     gotenberg_url: str = "http://gotenberg:3000"
 
