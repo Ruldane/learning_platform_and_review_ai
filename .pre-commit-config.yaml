@@ -49,6 +49,14 @@ repos:
         language: system
         files: ^(backend/|contracts/)
         pass_filenames: false
+      - id: api-types
+        name: types du front à jour (schema.d.ts = contracts/openapi.json)
+        # Régénère les types dans un fichier temporaire et compare : voir
+        # frontend/scripts/check-api-types.mjs. Corriger par `pnpm --dir frontend gen:api`.
+        entry: pnpm --dir frontend gen:api:check
+        language: system
+        files: ^(contracts/openapi\.json|frontend/src/shared/api/schema\.d\.ts|frontend/scripts/check-api-types\.mjs)$
+        pass_filenames: false
       - id: frontend-lint
         name: eslint (front)
         entry: pnpm --dir frontend lint

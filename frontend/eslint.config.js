@@ -55,7 +55,7 @@ export default tseslint.config(
   react.configs.flat["jsx-runtime"],
   reactHooks.configs.flat.recommended,
   {
-    files: ["**/*.{ts,tsx,js}"],
+    files: ["**/*.{ts,tsx,js,mjs}"],
     languageOptions: { globals: { ...globals.browser, ...globals.node } },
     settings: {
       react: { version: "detect" },

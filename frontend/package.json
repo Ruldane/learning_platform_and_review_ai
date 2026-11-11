@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json",
     "format": "prettier --write .",
-    "gen:api": "openapi-typescript ../contracts/openapi.json -o src/shared/api/schema.d.ts"
+    "gen:api": "openapi-typescript ../contracts/openapi.json -o src/shared/api/schema.d.ts",
+    "gen:api:check": "node scripts/check-api-types.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.107.1",
