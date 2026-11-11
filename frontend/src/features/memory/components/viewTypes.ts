@@ -65,3 +65,43 @@ export interface ItemEdit {
 export interface NewItem extends ItemEdit {
   kind: "acquis" | "decision" | "offre";
 }
+
+export interface MapPointView {
+  item_id: string;
+  title: string;
+  kind: MemoryKindView;
+  x: number;
+  y: number;
+}
+
+export interface ReindexView {
+  status: "idle" | "queued" | "running" | "done" | "failed";
+  done: number;
+  total: number;
+  error: string | null;
+}
+
+export interface MemoryStatsView {
+  by_kind: Record<MemoryKindView, number>;
+  total_items: number;
+  total_chunks: number;
+  pending_decisions: number;
+  unindexed_items: number;
+  last_write: MemoryWriteView | null;
+  vectorize_share: number;
+  reindex: ReindexView;
+  dashboard_url: string;
+}
+
+export type DocumentStatusView = "queued" | "processing" | "indexed" | "error";
+
+export interface DocumentRow {
+  id: string;
+  name: string;
+  source_kind: string;
+  status: DocumentStatusView;
+  error: { code: string; message: string } | null;
+  learned: boolean;
+  item_id: string | null;
+  created_at: string;
+}
