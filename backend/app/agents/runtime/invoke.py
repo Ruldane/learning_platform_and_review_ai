@@ -7,6 +7,7 @@ ici, et ici seulement, qu'un appel est retenté.
 
 import asyncio
 import functools
+import logging
 from collections.abc import Awaitable, Callable
 from typing import Any, TypeVar, cast
 
@@ -16,7 +17,9 @@ from langgraph.constants import TAG_NOSTREAM
 
 from app.agents.runtime.emit import emit
 from app.core.errors import AppError
-from app.providers.llm.errors import is_transient
+from app.providers.llm.errors import describe_provider_error, is_transient
+
+logger = logging.getLogger(__name__)
 
 NODE_TIMEOUT_S = 120
 RETRY_DELAYS_S = (1.0, 2.0, 4.0)
@@ -65,7 +68,9 @@ async def call_with_retries(
             reply = await chat.ainvoke(messages)
         except Exception as exc:
             if last or not is_transient(exc):
-                raise
+                if (readable := _readable(exc, model, agent)) is None:
+                    raise
+                raise readable from None  # ni message ni corps du fournisseur en chaîne
         else:
             text = message_text(reply)
             if allow_empty or text.strip() or reply.tool_calls:
@@ -79,6 +84,25 @@ async def call_with_retries(
                 )
         await _sleep(RETRY_DELAYS_S[attempt])
     raise AssertionError("inatteignable")  # pragma: no cover
+
+
+def _readable(exc: Exception, model: BaseChatModel, agent: str) -> AppError | None:
+    """Panne du fournisseur → `AppError` française (clé refusée, crédit épuisé, limite, service
+    indisponible, délai) au lieu de l'« erreur inattendue » générique ; `None` pour toute autre
+    exception. Journal : agent, fournisseur et type d'exception, jamais son texte."""
+    metadata = model.metadata or {}
+    provider = metadata.get("tremplin_provider")
+    label = metadata.get("tremplin_provider_label") or "le fournisseur"
+    described = describe_provider_error(exc, provider=provider, label=str(label))
+    if described is not None:
+        logger.warning(
+            "Appel LLM en échec : agent %s, fournisseur %s, %s (%s)",
+            agent,
+            provider or "inconnu",
+            type(exc).__name__,
+            described.code,
+        )
+    return described
 
 
 async def invoke_agent(

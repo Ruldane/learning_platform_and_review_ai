@@ -2,6 +2,7 @@ import asyncio
 from typing import Any
 
 import httpx
+import openai
 import pytest
 from langchain_core.callbacks import AsyncCallbackHandler
 from langchain_core.messages import HumanMessage
@@ -9,8 +10,9 @@ from langgraph.graph import END, START, StateGraph
 from typing_extensions import TypedDict
 
 from app.agents.runtime import invoke as invoke_module
-from app.agents.runtime.invoke import RETRY_DELAYS_S, invoke_agent, node_timeout
+from app.agents.runtime.invoke import NODE_TIMEOUT_S, RETRY_DELAYS_S, invoke_agent, node_timeout
 from app.core.errors import AppError
+from app.providers.llm.base import LLM_CALL_TIMEOUT_S
 from tests.agents.runtime.fakes import FlakyModel, fake_model
 
 
@@ -36,11 +38,68 @@ async def test_invoke_agent_retries_transient_errors(sleeps: list[float]) -> Non
 
 
 @pytest.mark.usefixtures("emitted")
-async def test_invoke_agent_gives_up_after_all_delays(sleeps: list[float]) -> None:
+async def test_invoke_agent_gives_up_after_all_delays_with_a_readable_error(
+    sleeps: list[float],
+) -> None:
     model = FlakyModel(fail_times=99, exc=httpx.ConnectError("c"))
-    with pytest.raises(httpx.ConnectError):
+    with pytest.raises(AppError) as e:
         await invoke_agent(model, [HumanMessage("x")], agent="a", step="s", intent="i")
+    assert e.value.code == "llm_unavailable"
     assert model.calls == 1 + len(RETRY_DELAYS_S) and sleeps == list(RETRY_DELAYS_S)
+
+
+SDK_MESSAGE = "Incorrect API key provided: sk-proj-****cdef"
+REQUEST = httpx.Request("POST", "https://exemple.test/v1/chat/completions")
+
+
+def _provider_model(exc: BaseException, provider: str, label: str) -> FlakyModel:
+    """Modèle qui échoue comme un SDK, avec les métadonnées posées par `build()`."""
+    meta = {"tremplin_provider": provider, "tremplin_provider_label": label}
+    return FlakyModel(fail_times=99, exc=exc, metadata=meta)
+
+
+@pytest.mark.usefixtures("emitted")
+async def test_rejected_key_fails_at_once_with_a_readable_message(
+    sleeps: list[float], caplog: pytest.LogCaptureFixture
+) -> None:
+    response = httpx.Response(401, request=REQUEST)
+    exc = openai.AuthenticationError(SDK_MESSAGE, response=response, body=None)
+    model = _provider_model(exc, "openai", "OpenAI")
+    with pytest.raises(AppError) as e:
+        await invoke_agent(model, [HumanMessage("x")], agent="a", step="s", intent="i")
+    assert e.value.code == "llm_key_rejected" and "OpenAI" in e.value.message
+    assert model.calls == 1 and sleeps == []
+    assert "cdef" not in e.value.message and "cdef" not in caplog.text
+    assert e.value.__cause__ is None and e.value.__suppress_context__
+
+
+@pytest.mark.usefixtures("emitted")
+async def test_exhausted_glm_credit_is_not_retried(sleeps: list[float]) -> None:
+    response = httpx.Response(429, request=REQUEST)
+    exc = openai.RateLimitError(SDK_MESSAGE, response=response, body={"code": "1113"})
+    model = _provider_model(exc, "glm", "GLM (Z.ai)")
+    with pytest.raises(AppError) as e:
+        await invoke_agent(model, [HumanMessage("x")], agent="a", step="s", intent="i")
+    assert e.value.code == "llm_credit_exhausted"
+    assert e.value.message == "Crédit Z.ai insuffisant pour ce modèle."
+    assert model.calls == 1 and sleeps == []
+
+
+@pytest.mark.usefixtures("emitted")
+async def test_rate_limit_is_retried_then_reported_readably(sleeps: list[float]) -> None:
+    response = httpx.Response(429, request=REQUEST)
+    exc = openai.RateLimitError(SDK_MESSAGE, response=response, body=None)
+    model = _provider_model(exc, "openai", "OpenAI")
+    with pytest.raises(AppError) as e:
+        await invoke_agent(model, [HumanMessage("x")], agent="a", step="s", intent="i")
+    assert e.value.code == "llm_rate_limited"
+    assert model.calls == 1 + len(RETRY_DELAYS_S)
+
+
+def test_two_full_calls_and_a_retry_delay_fit_in_the_node_budget() -> None:
+    # M3 : un appel qui pend laisse la place à un nouvel essai complet avant `node_timeout`.
+    assert LLM_CALL_TIMEOUT_S == 45
+    assert 2 * LLM_CALL_TIMEOUT_S + RETRY_DELAYS_S[0] < NODE_TIMEOUT_S
 
 
 @pytest.mark.usefixtures("emitted")

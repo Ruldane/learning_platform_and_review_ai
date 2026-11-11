@@ -5,9 +5,8 @@ from langchain_core.language_models import BaseChatModel
 from pydantic import SecretStr
 
 from app.providers.llm import _http
-from app.providers.llm.base import KeyTestResult
+from app.providers.llm.base import LLM_CALL_TIMEOUT_S, KeyTestResult
 
-_TIMEOUT_S = 120
 _API_URL = "https://api.anthropic.com"
 _API_VERSION = "2023-06-01"
 _MAX_PAGES = 50  # garde-fou contre un curseur qui ne finit jamais
@@ -26,10 +25,14 @@ class AnthropicProvider:
             model=model,  # type: ignore[call-arg]
             api_key=SecretStr(api_key),
             base_url=base_url,
-            timeout=_TIMEOUT_S,
+            timeout=LLM_CALL_TIMEOUT_S,
             max_retries=0,  # les nouveaux essais appartiennent à `invoke_agent` (D44)
             streaming=True,
-            metadata={"tremplin_provider": self.name, "tremplin_model": model},
+            metadata={
+                "tremplin_provider": self.name,
+                "tremplin_provider_label": self.label,
+                "tremplin_model": model,
+            },
         )
 
     async def list_models(self, api_key: str) -> list[str] | None:

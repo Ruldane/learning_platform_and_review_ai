@@ -1,5 +1,6 @@
 """Fournisseur OpenAI, et base commune des fournisseurs de type OpenAI (GLM de Z.ai)."""
 
+from collections.abc import Mapping
 from typing import Any, ClassVar
 
 from langchain_core.language_models import BaseChatModel
@@ -7,9 +8,8 @@ from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
 
 from app.providers.llm import _http
-from app.providers.llm.base import KeyTestResult
-
-_TIMEOUT_S = 120
+from app.providers.llm.base import LLM_CALL_TIMEOUT_S, KeyTestResult
+from app.providers.llm.errors import PROVIDER_ERROR_CODES
 
 
 class OpenAICompatibleProvider:
@@ -18,8 +18,13 @@ class OpenAICompatibleProvider:
     name: str = "openai"
     label: str = "OpenAI"
     default_base_url: ClassVar[str] = "https://api.openai.com/v1/"
-    # Messages français par code d'erreur du corps de réponse (voir `_http.check_key`).
-    error_code_messages: ClassVar[dict[str, str]] = {}
+    # Messages français par code d'erreur du corps de réponse (voir `_http.check_key`) ; la table
+    # commune est `errors.PROVIDER_ERROR_CODES`, aussi lue pour les appels du chat.
+    error_code_messages: ClassVar[Mapping[str, str]] = {}
+    # Demander l'usage en flux (`stream_options.include_usage`) : sans lui, l'API d'OpenAI ne
+    # renvoie aucun token en flux (coût à 0, plafond jamais atteint), et `langchain_openai` ne le
+    # demande d'office que sans `base_url`, que l'on passe toujours.
+    request_stream_usage: ClassVar[bool] = True
 
     def __init__(self, base_url: str | None = None) -> None:
         self._base_url = base_url or self.default_base_url
@@ -33,11 +38,16 @@ class OpenAICompatibleProvider:
             model=model,
             api_key=SecretStr(api_key),
             base_url=base_url or self._base_url,
-            timeout=_TIMEOUT_S,
+            timeout=LLM_CALL_TIMEOUT_S,
             max_retries=0,  # les nouveaux essais appartiennent à `invoke_agent` (D44)
             streaming=True,
+            stream_usage=self.request_stream_usage or None,  # None : réglage par défaut du SDK
             extra_body=self.extra_body(model),
-            metadata={"tremplin_provider": self.name, "tremplin_model": model},
+            metadata={
+                "tremplin_provider": self.name,
+                "tremplin_provider_label": self.label,
+                "tremplin_model": model,
+            },
         )
 
     def _url(self, path: str) -> str:
@@ -67,3 +77,4 @@ class OpenAICompatibleProvider:
 class OpenAIProvider(OpenAICompatibleProvider):
     name = "openai"
     label = "OpenAI"
+    error_code_messages: ClassVar[Mapping[str, str]] = PROVIDER_ERROR_CODES["openai"]

@@ -9,8 +9,10 @@ est petit, un `content` vide. GLM-5.3 raisonne toujours (`thinking: disabled` es
 1210, vérifié) : on abaisse son effort à `low`. Les autres modèles reçoivent `thinking: disabled`.
 """
 
+from collections.abc import Mapping
 from typing import Any, ClassVar
 
+from app.providers.llm.errors import PROVIDER_ERROR_CODES
 from app.providers.llm.model_defaults import PRESETS
 from app.providers.llm.openai import OpenAICompatibleProvider
 
@@ -21,11 +23,11 @@ class GlmProvider(OpenAICompatibleProvider):
     name = "glm"
     label = "GLM (Z.ai)"
     default_base_url: ClassVar[str] = "https://api.z.ai/api/paas/v4/"
-    # Codes d'erreur Z.ai (`{"error": {"code": ...}}`), renvoyés avec un statut 429.
-    error_code_messages: ClassVar[dict[str, str]] = {
-        "1113": "Crédit Z.ai insuffisant pour ce modèle.",
-        "1305": "Service Z.ai surchargé, réessaie plus tard.",
-    }
+    # Codes d'erreur Z.ai (`{"error": {"code": ...}}`, statut 429) : table commune (`errors`).
+    error_code_messages: ClassVar[Mapping[str, str]] = PROVIDER_ERROR_CODES["glm"]
+    # Z.ai renvoie l'usage en flux sans qu'on le demande (D44, vérifié en réel) : pas de
+    # `stream_options`, paramètre que son API ne documente pas.
+    request_stream_usage: ClassVar[bool] = False
 
     def __init__(
         self,

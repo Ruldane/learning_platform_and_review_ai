@@ -9,6 +9,10 @@ from typing import Literal, Protocol
 from langchain_core.language_models import BaseChatModel
 from pydantic import BaseModel, Field
 
+# Délai d'un appel au fournisseur (SDK). Deux appels complets et une attente tiennent dans le
+# plafond d'un nœud (`NODE_TIMEOUT_S`, 120 s) : un appel qui pend laisse place à un nouvel essai.
+LLM_CALL_TIMEOUT_S = 45
+
 Tier = Literal["rapide", "standard", "fort", "vision"]
 TIERS: tuple[Tier, ...] = ("rapide", "standard", "fort", "vision")
 
