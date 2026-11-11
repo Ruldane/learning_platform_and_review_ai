@@ -30,7 +30,8 @@ class MemoryIndexer:
         self._reindexing: set[str] = set()
 
     def lock(self, user_id: str) -> asyncio.Lock:
-        """Verrou de l'utilisateur : une seule indexation ou réindexation à la fois chez lui."""
+        """Verrou de l'utilisateur sur ses vecteurs : une seule écriture dans l'index à la fois
+        chez lui. Jamais tenu pendant une attente de SQLite (voir `push`)."""
         return self._locks.setdefault(user_id, asyncio.Lock())
 
     def reindexing(self, user_id: str) -> bool:
@@ -43,24 +44,38 @@ class MemoryIndexer:
         panne d'Ollama ou de Qdrant le laisse non indexé (faux), sans exception."""
         if item.status != "active":
             return False
-        items = MemoryItemRepository(db, item.user_id)
-        async with self.lock(item.user_id):
-            drafts = chunk_text(item.text)
-            rows = await ChunkRepository(db, item.user_id).replace_for_item(item.id, drafts)
-            to_index = [ChunkToIndex(row.id, _payload(item, row.ordinal, row.text)) for row in rows]
-            try:
-                await self._index.delete_items(item.user_id, [item.id])
-                await self._index.index(to_index)
-            except (EmbeddingsUnavailable, VectorStoreUnavailable) as exc:
-                logger.warning(
-                    "Élément %s gardé non indexé (%s), la réindexation le rattrapera",
-                    item.id,
-                    type(exc).__name__,
-                )
-                await items.set_indexed_at(item, None)
-                return False
-            await items.set_indexed_at(item, utcnow())
+        chunks = await self.prepare(db, item)
+        try:
+            await self.push(item.user_id, item.id, chunks)
+        except (EmbeddingsUnavailable, VectorStoreUnavailable) as exc:
+            logger.warning(
+                "Élément %s gardé non indexé (%s), la réindexation le rattrapera",
+                item.id,
+                type(exc).__name__,
+            )
+            return False
+        await MemoryItemRepository(db, item.user_id).set_indexed_at(item, utcnow())
         return True
+
+    async def prepare(self, db: AsyncSession, item: MemoryItem) -> list[ChunkToIndex]:
+        """Première moitié, en base seulement : fragments renouvelés (nouveaux `id`), élément
+        marqué non indexé. Le worker la valide (commit) avant `push`, pour ne jamais tenir le
+        verrou d'écriture de SQLite pendant la vectorisation. L'appelant a vérifié que l'élément
+        appartient à l'utilisateur (`replace_for_item` ne le revérifie pas)."""
+        rows = await ChunkRepository(db, item.user_id).replace_for_item(
+            item.id, chunk_text(item.text)
+        )
+        await MemoryItemRepository(db, item.user_id).set_indexed_at(item, None)
+        return [ChunkToIndex(row.id, _payload(item, row.ordinal, row.text)) for row in rows]
+
+    async def push(self, user_id: str, item_id: str, chunks: list[ChunkToIndex]) -> None:
+        """Seconde moitié, index seulement : tous les vecteurs de l'élément retirés (y compris ceux
+        d'un essai interrompu), puis les fragments vectorisés et insérés. Le verrou de
+        l'utilisateur ne couvre que ces appels : jamais d'attente de SQLite sous ce verrou.
+        Lève `EmbeddingsUnavailable` ou `VectorStoreUnavailable`."""
+        async with self.lock(user_id):
+            await self._index.delete_items(user_id, [item_id])
+            await self._index.index(chunks)
 
     async def unindex(self, user_id: str, item_ids: Sequence[str]) -> None:
         """Retire les vecteurs ; une panne du magasin est journalisée et avalée (les vecteurs

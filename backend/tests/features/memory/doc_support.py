@@ -1,0 +1,77 @@
+"""Matériel des tests de l'import de documents : DOCX réels (python-docx) et zips fabriqués à la
+main (bombes), document en base prêt pour la chaîne d'ingestion."""
+
+import io
+import zipfile
+from typing import Any
+
+import docx
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+from app.core.providers import MemoryProviders
+from app.db.models.memory import Document
+from app.features.memory.repository import DocumentRepository
+from app.features.memory.service.text import source_hash
+
+PHRASE = "Les transformeurs utilisent l'attention multi-têtes pour relier les mots."
+
+
+def make_docx(
+    paragraphs: list[str], *, heading: str | None = None, core_title: str | None = None
+) -> bytes:
+    document = docx.Document()
+    if core_title is not None:
+        document.core_properties.title = core_title
+    if heading is not None:
+        document.add_heading(heading, level=1)
+    for text in paragraphs:
+        document.add_paragraph(text)
+    out = io.BytesIO()
+    document.save(out)
+    return out.getvalue()
+
+
+def make_zip(entries: dict[str, bytes], *, stored: bool = False) -> bytes:
+    """Zip en mémoire ; `stored` : sans compression (taux 1:1)."""
+    out = io.BytesIO()
+    method = zipfile.ZIP_STORED if stored else zipfile.ZIP_DEFLATED
+    with zipfile.ZipFile(out, "w", compression=method) as archive:
+        for name, data in entries.items():
+            archive.writestr(name, data)
+    return out.getvalue()
+
+
+async def add_document(
+    factory: async_sessionmaker[AsyncSession],
+    providers: MemoryProviders,
+    user_id: str,
+    *,
+    kind: str,
+    data: bytes | None = None,
+    suffix: str = ".txt",
+    **fields: Any,
+) -> Document:
+    """Document en base (commité), avec son fichier enregistré si `data` est donné."""
+    key = None
+    if data is not None:
+        key = await providers.storage.save(user_id, "documents", data, suffix)
+    values: dict[str, Any] = {
+        "name": "cours.pdf",
+        "source_kind": kind,
+        "status": "queued",
+        "storage_key": key,
+        "size_bytes": len(data) if data is not None else None,
+        "source_hash": source_hash(data or str(fields.get("url", "x")).encode()),
+        **fields,
+    }
+    async with factory() as db:
+        doc = await DocumentRepository(db, user_id).add(**values)
+        await db.commit()
+    return doc
+
+
+async def reload(factory: async_sessionmaker[AsyncSession], user_id: str, doc_id: str) -> Document:
+    async with factory() as db:
+        doc = await DocumentRepository(db, user_id).get(doc_id)
+    assert doc is not None
+    return doc

@@ -1,16 +1,28 @@
-"""Schémas de l'API de la mémoire (14.2) : éléments, journal, recherche."""
+"""Schémas de l'API de la mémoire (14.2) : éléments, journal, recherche, documents."""
 
 from datetime import datetime
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
-from app.db.models.memory import ItemStatus, MasteryLevel, MemoryKind, WriteAction
+from app.db.models.memory import (
+    DocumentSourceKind,
+    DocumentStatus,
+    ItemStatus,
+    MasteryLevel,
+    MemoryKind,
+    WriteAction,
+)
 
-# `ItemStatus` et `MemoryKind` sont réexportés : un router n'importe pas `app.db` (contrat 1b).
+# Les types littéraux sont réexportés : un router n'importe pas `app.db` (contrat 1b).
 __all__ = [
     "AgentLevel",
     "ChunkOut",
+    "DocumentCreated",
+    "DocumentError",
+    "DocumentOut",
+    "DocumentSourceKind",
+    "DocumentStatus",
     "ItemStatus",
     "MemoryItemCreate",
     "MemoryItemDetail",
@@ -127,3 +139,30 @@ class SearchHitOut(BaseModel):
 class SearchResponse(BaseModel):
     hits: list[SearchHitOut]
     agent_text: str
+
+
+class DocumentError(BaseModel):
+    """Erreur d'import lisible ; `item_id` : l'élément déjà en mémoire d'un doublon."""
+
+    code: str
+    message: str
+    item_id: str | None = None
+
+
+class DocumentOut(BaseModel):
+    id: str
+    name: str
+    source_kind: DocumentSourceKind
+    status: DocumentStatus
+    error: DocumentError | None
+    url: str | None
+    size_bytes: int | None
+    item_id: str | None
+    learned: bool
+    created_at: datetime
+    updated_at: datetime
+
+
+class DocumentCreated(BaseModel):
+    document: DocumentOut
+    duplicate: bool

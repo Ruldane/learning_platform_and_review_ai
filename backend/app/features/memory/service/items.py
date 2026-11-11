@@ -25,6 +25,7 @@ from app.features.memory.schemas import (
     MemoryWriteOut,
     NeighborOut,
 )
+from app.features.memory.service.documents import DocumentService
 from app.features.memory.service.rules import WriteDraft, clean_tags, resolve_write
 from app.features.memory.service.runtime import MemoryRuntime
 from app.features.memory.service.text import clean_text, content_hash
@@ -104,10 +105,11 @@ class MemoryService:
 
     # --- écriture ---------------------------------------------------------------------------
 
-    async def write(self, draft: WriteDraft) -> WriteOutcome:
+    async def write(self, draft: WriteDraft, *, index: bool = True) -> WriteOutcome:
         """Écrit un élément selon les règles (`resolve_write`). Même contenu déjà là : rend
         l'existant sans second élément ni second journal (nœud d'agent rejoué, double clic).
-        Deux écritures simultanées : la perdante relit le gagnant. Actif : indexé aussitôt."""
+        Deux écritures simultanées : la perdante relit le gagnant. Actif : indexé aussitôt, sauf
+        `index=False` (le worker indexe après avoir validé sa transaction)."""
         status, meta = resolve_write(draft)
         title, text = _content(draft.title, draft.text)
         digest = content_hash(draft.kind, title, text)
@@ -138,7 +140,7 @@ class MemoryService:
             session_id=draft.session_id,
             reason=reason,
         )
-        if item.status == "active":
+        if index and item.status == "active":
             await self._runtime.indexer.index_item(self._db, item)
         return WriteOutcome(item, True)
 
@@ -277,9 +279,11 @@ class MemoryService:
 
     async def delete(self, item_id: str) -> None:
         """Supprime l'élément, ses fragments (cascade) et ses vecteurs. Une décision en attente
-        refusée est journalisée `reject`, le reste `delete`. Le fichier et la ligne `documents`
-        d'un document sont retirés par le service des documents (2.7)."""
+        refusée est journalisée `reject`, le reste `delete`. Un document perd aussi ses lignes
+        `documents` et son fichier (`DocumentService.remove_for_item`)."""
         item = await self._get(item_id)
+        if item.kind == "document":
+            await DocumentService(self._db, self._user_id, self._runtime).remove_for_item(item)
         action: WriteAction = "reject" if item.status == "pending" else "delete"
         await self._writes.log(
             item=item, action=action, author=USER_AUTHOR, session_id=None, reason=None

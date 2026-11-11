@@ -13,17 +13,21 @@ from app.bootstrap import build_providers, model_prices, open_memory_runtime, ru
 from app.bootstrap import memory_providers as open_memory_providers
 from app.config import Settings, get_settings
 from app.core.errors import register_error_handlers
+from app.core.limits import BodySizeLimit
 from app.core.logging import configure_logging
 from app.core.providers import MemoryProviders
 from app.core.security import Cipher, KnownSecrets, load_or_create_secret
 from app.db.engine import create_engine, create_session_factory
 from app.features.auth.service import AuthService
+from app.features.memory.service.upload import MAX_UPLOAD_BYTES
 from app.features.registry import FEATURE_ROUTERS
 
 API_PREFIX = "/api/v1"
 logger = logging.getLogger(__name__)
 _LOG_LEVEL = "INFO"
 _PROBE_TIMEOUT_SECONDS = 3.0
+# Corps d'un import : le fichier (20 Mo) plus l'enveloppe multipart et les autres champs.
+_UPLOAD_BODY_MAX = MAX_UPLOAD_BYTES + 1024 * 1024
 
 
 async def _ensure_local_user(app: FastAPI) -> None:
@@ -77,6 +81,10 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
             http,
             lambda: getattr(app.state, "local_user_id", None),
         )
+        # Avant la mémoire : son worker relit la base au démarrage ; un schéma absent doit donner
+        # l'indication `alembic upgrade head` plutôt qu'une erreur SQL brute.
+        if app.state.settings.auth_mode == "local":
+            await _ensure_local_user(app)
         # Fournisseurs de la mémoire : ceux qu'on a injectés (tests), sinon la composition réelle.
         injected: MemoryProviders | None = app.state.injected_memory_providers
         if injected is None:
@@ -86,8 +94,6 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.memory = await stack.enter_async_context(
             open_memory_runtime(app.state.session_factory, injected)
         )
-        if app.state.settings.auth_mode == "local":
-            await _ensure_local_user(app)
         # Moteur d'agents (bus, runner, checkpointer) : entré après le moteur de base, donc
         # fermé avant lui (la pile dépile à l'envers) ; reprend les sessions interrompues.
         app.state.runtime = await stack.enter_async_context(
@@ -120,6 +126,8 @@ def create_app(
     # Ordre important : le dernier middleware ajouté est le plus externe. Les erreurs sont
     # enregistrées d'abord pour que leur 500 traverse CORS (voir `UnexpectedErrorMiddleware`).
     register_error_handlers(app)
+    # Entre la gestion des erreurs et CORS : la 413 traverse CORS (lisible par le navigateur).
+    app.add_middleware(BodySizeLimit, path=f"{API_PREFIX}/documents", max_bytes=_UPLOAD_BODY_MAX)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,

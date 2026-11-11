@@ -21,6 +21,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Documents
+         * @description Les 200 plus récents, du plus récent au plus ancien.
+         */
+        get: operations["list_documents_api_v1_documents_get"];
+        put?: never;
+        /**
+         * Create Document
+         * @description 202 : nouveau document ou document en erreur remis en file ; 200 : doublon (existant).
+         */
+        post: operations["create_document_api_v1_documents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -529,6 +553,17 @@ export interface components {
             /** Step */
             step: number;
         };
+        /** Body_create_document_api_v1_documents_post */
+        Body_create_document_api_v1_documents_post: {
+            /** File */
+            file?: string | null;
+            /** Text */
+            text?: string | null;
+            /** Title */
+            title?: string | null;
+            /** Url */
+            url?: string | null;
+        };
         /** ChunkOut */
         ChunkOut: {
             /** Id */
@@ -592,6 +627,60 @@ export interface components {
             tokens_in: number;
             /** Tokens Out */
             tokens_out: number;
+        };
+        /** DocumentCreated */
+        DocumentCreated: {
+            document: components["schemas"]["DocumentOut"];
+            /** Duplicate */
+            duplicate: boolean;
+        };
+        /**
+         * DocumentError
+         * @description Erreur d'import lisible ; `item_id` : l'élément déjà en mémoire d'un doublon.
+         */
+        DocumentError: {
+            /** Code */
+            code: string;
+            /** Item Id */
+            item_id?: string | null;
+            /** Message */
+            message: string;
+        };
+        /** DocumentOut */
+        DocumentOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            error: components["schemas"]["DocumentError"] | null;
+            /** Id */
+            id: string;
+            /** Item Id */
+            item_id: string | null;
+            /** Learned */
+            learned: boolean;
+            /** Name */
+            name: string;
+            /** Size Bytes */
+            size_bytes: number | null;
+            /**
+             * Source Kind
+             * @enum {string}
+             */
+            source_kind: "pdf" | "docx" | "markdown" | "text" | "url" | "youtube" | "paste";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "queued" | "processing" | "indexed" | "error";
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Url */
+            url: string | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -1442,6 +1531,68 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeOut"];
+                };
+            };
+        };
+    };
+    list_documents_api_v1_documents_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"][];
+                };
+            };
+        };
+    };
+    create_document_api_v1_documents_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_create_document_api_v1_documents_post"];
+            };
+        };
+        responses: {
+            /** @description Contenu déjà importé */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentCreated"];
+                };
+            };
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentCreated"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
