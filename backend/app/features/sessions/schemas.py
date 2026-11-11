@@ -29,13 +29,16 @@ class StartSessionResponse(BaseModel):
 
 class SessionView(BaseModel):
     """État d'une session pour le front ; `last_seq` : dernier événement écrit (le WebSocket
-    reprend avec `after_seq`)."""
+    reprend avec `after_seq`) ; `subject_type`/`subject_id` : l'objet suivi (un document pour
+    l'Archiviste), pour reprendre son suivi après un rechargement (D71)."""
 
     model_config = ConfigDict(from_attributes=True)
 
     id: str
     graph: str
     status: SessionStatus
+    subject_type: str | None
+    subject_id: str | None
     last_seq: int
     pending_interrupt: InterruptRequestedPayload | None
     error: RunFailedPayload | None

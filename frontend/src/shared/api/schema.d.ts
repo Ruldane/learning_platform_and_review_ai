@@ -1408,7 +1408,8 @@ export interface components {
         /**
          * SessionView
          * @description État d'une session pour le front ; `last_seq` : dernier événement écrit (le WebSocket
-         *     reprend avec `after_seq`).
+         *     reprend avec `after_seq`) ; `subject_type`/`subject_id` : l'objet suivi (un document pour
+         *     l'Archiviste), pour reprendre son suivi après un rechargement (D71).
          */
         SessionView: {
             /** Cost Usd */
@@ -1431,6 +1432,10 @@ export interface components {
              * @enum {string}
              */
             status: "running" | "waiting_user" | "paused" | "completed" | "failed" | "cancelled";
+            /** Subject Id */
+            subject_id: string | null;
+            /** Subject Type */
+            subject_type: string | null;
             /** Tokens In */
             tokens_in: number;
             /** Tokens Out */

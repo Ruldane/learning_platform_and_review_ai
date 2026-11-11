@@ -23,6 +23,8 @@ def to_view(row: AgentSession, last_seq: int) -> SessionView:
         id=row.id,
         graph=row.graph,
         status=row.status,  # type: ignore[arg-type]  # colonne texte, valeurs de SessionStatus
+        subject_type=row.subject_type,
+        subject_id=row.subject_id,
         last_seq=last_seq,
         pending_interrupt=InterruptRequestedPayload.model_validate(pending) if pending else None,
         error=RunFailedPayload.model_validate(row.error) if row.error else None,
@@ -31,6 +33,16 @@ def to_view(row: AgentSession, last_seq: int) -> SessionView:
         cost_usd=row.cost_usd,
         created_at=row.created_at,
         updated_at=row.updated_at,
+    )
+
+
+async def find_active_session(
+    db: AsyncSession, user_id: str, *, graph: str, subject_type: str, subject_id: str
+) -> str | None:
+    """Session la plus récente de `graph` sur cet objet encore ouverte (`running`,
+    `waiting_user` ou `paused`), `None` sinon. Lecture pour les autres features (contrat 2)."""
+    return await SessionReadRepository(db, user_id).latest_open(
+        graph=graph, subject_type=subject_type, subject_id=subject_id
     )
 
 

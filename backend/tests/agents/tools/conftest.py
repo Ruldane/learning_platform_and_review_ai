@@ -25,6 +25,7 @@ class FakeGateway:
     writes: list[tuple[str, str, str, AgentWrite]] = field(default_factory=list)
     created: bool = True
     skill_title: str = "Python"
+    existing_title: str | None = None  # titre en mémoire d'un contenu déjà présent
 
     async def search(
         self, user_id: str, query: str, *, kinds: Sequence[str] | None, k: int
@@ -40,7 +41,8 @@ class FakeGateway:
     ) -> WriteResult:
         self.writes.append((user_id, session_id, author, write))
         status = "pending" if write.kind == "decision" else "active"
-        return WriteResult("item-1", write.kind, write.title, status, self.created)
+        title = write.title if self.created else (self.existing_title or write.title)
+        return WriteResult("item-1", write.kind, title, status, self.created)
 
     async def skills(self, user_id: str) -> SkillsSummary:
         skill = SkillEntry("a1", self.skill_title, "declare", [])

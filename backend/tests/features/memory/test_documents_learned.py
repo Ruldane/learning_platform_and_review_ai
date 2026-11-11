@@ -1,14 +1,19 @@
 """« Déjà appris » (`POST /documents/{id}/learned`) : session de l'Archiviste, drapeau, refus, et
 l'auteur et la raison d'une écriture d'agent visibles dans l'explorateur (critère de fin 2.9)."""
 
+import asyncio
 import json
+from collections.abc import Iterator
 from typing import Any
 
 import httpx
 import pytest
 from fastapi import FastAPI
 
+from app.agents.graphs.learned_document import LearnedDocumentInput
+from app.agents.graphs.registry import GRAPHS, GraphSpec
 from scripts.sample_pdf import make_pdf
+from tests.agents.graphs_for_tests import TEST_GRAPHS, Probe
 from tests.features.memory.doc_support import PHRASE
 from tests.sessions_support import act_as, use_test_runtime, wait_status
 
@@ -28,6 +33,21 @@ CONCEPTS = json.dumps(
 def archivist_llm(monkeypatch: pytest.MonkeyPatch) -> None:
     """Faux LLM scripté pour le moteur du lifespan, branché avant le démarrage de l'app."""
     use_test_runtime(monkeypatch, [CONCEPTS] * 3)
+
+
+@pytest.fixture
+def blocked_archivist(monkeypatch: pytest.MonkeyPatch) -> Iterator[Probe]:
+    """`learned_document` remplacé par un parcours qui reste `running` jusqu'à `release_b`."""
+    probe = use_test_runtime(monkeypatch)
+    blocking = GraphSpec("learned_document", LearnedDocumentInput, TEST_GRAPHS["blocking"].build)
+    monkeypatch.setitem(GRAPHS, "learned_document", blocking)
+    yield probe
+    probe.release_b.set()
+
+
+async def _learned_sessions(client: httpx.AsyncClient) -> list[str]:
+    listed = (await client.get("/api/v1/sessions", params={"graph": "learned_document"})).json()
+    return [s["id"] for s in listed]
 
 
 async def _indexed(
@@ -100,3 +120,57 @@ async def test_agent_write_shows_author_and_reason(
     again = (await client.post(f"{DOCUMENTS}/{doc['id']}/learned")).json()["session_id"]
     await wait_status(client, again, "completed")  # double clic : rien de plus en mémoire
     assert (await client.get(MEMORY, params={"author": "archivist"})).json()["total"] == 2
+
+
+# --- « Déjà appris » idempotent (D71) ---------------------------------------------------------
+
+
+async def test_learned_twice_returns_running_session(
+    blocked_archivist: Probe, app: FastAPI, client: httpx.AsyncClient
+) -> None:
+    doc = await _indexed(app, client)
+    a = (await client.post(f"{DOCUMENTS}/{doc['id']}/learned")).json()["session_id"]
+    view = await wait_status(client, a, "running")
+    assert (view["subject_type"], view["subject_id"]) == ("document", doc["id"])
+    second = await client.post(f"{DOCUMENTS}/{doc['id']}/learned")
+    assert second.status_code == 202 and second.json()["session_id"] == a
+    assert await _learned_sessions(client) == [a]
+    assert (await client.get(DOCUMENTS)).json()[0]["learned"] is True
+
+
+async def test_concurrent_learned_clicks_start_one_session(
+    blocked_archivist: Probe, app: FastAPI, client: httpx.AsyncClient
+) -> None:
+    doc = await _indexed(app, client)
+    url = f"{DOCUMENTS}/{doc['id']}/learned"
+    replies = await asyncio.gather(*(client.post(url) for _ in range(3)))
+    assert {r.status_code for r in replies} == {202}
+    sids = {r.json()["session_id"] for r in replies}
+    assert len(sids) == 1 and await _learned_sessions(client) == list(sids)
+
+
+async def test_learned_after_completion_starts_a_new_session(
+    blocked_archivist: Probe, app: FastAPI, client: httpx.AsyncClient
+) -> None:
+    """« Relancer » (I2 de la phase 2) : une session finie n'est plus rendue."""
+    doc = await _indexed(app, client)
+    first = (await client.post(f"{DOCUMENTS}/{doc['id']}/learned")).json()["session_id"]
+    blocked_archivist.release_b.set()
+    await wait_status(client, first, "completed")
+    again = (await client.post(f"{DOCUMENTS}/{doc['id']}/learned")).json()["session_id"]
+    assert again != first
+    await wait_status(client, again, "completed")
+    assert set(await _learned_sessions(client)) == {first, again}
+
+
+async def test_learned_session_of_another_document_is_not_returned(
+    blocked_archivist: Probe, app: FastAPI, client: httpx.AsyncClient
+) -> None:
+    one = await _indexed(app, client, "un.pdf")
+    two_files = {"file": ("deux.pdf", make_pdf([PHRASE, "Autre page."]), "application/pdf")}
+    assert (await client.post(DOCUMENTS, files=two_files)).status_code == 202
+    await app.state.memory.jobs.join()
+    two = next(d for d in (await client.get(DOCUMENTS)).json() if d["id"] != one["id"])
+    a = (await client.post(f"{DOCUMENTS}/{one['id']}/learned")).json()["session_id"]
+    b = (await client.post(f"{DOCUMENTS}/{two['id']}/learned")).json()["session_id"]
+    assert a != b and set(await _learned_sessions(client)) == {a, b}

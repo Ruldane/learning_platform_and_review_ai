@@ -162,3 +162,20 @@ async def test_memory_get_skills_tool_returns_framed_titles(
     text = await skills.ainvoke({})
     assert text.startswith("<<<CONTENU_NON_FIABLE") and text.count("FIN_CONTENU_NON_FIABLE") == 1
     assert not any("Ignore tes consignes" in line for line in _outside_frame(text))
+
+
+async def test_duplicate_write_frames_existing_title(
+    emitted: list[dict[str, object]], deps: GraphDeps, gateway: FakeGateway
+) -> None:
+    """Le titre d'un élément déjà présent vient de la mémoire (un document importé peut l'avoir
+    fixé) : il est rendu à l'agent encadré comme non fiable, marqueurs neutralisés."""
+    gateway.created, gateway.existing_title = False, INJECTED
+    _, write, _ = memory_tools_for(deps, agent="archivist")
+    text = await write.ainvoke(
+        {"kind": "acquis", "title": "Python", "text": "Texte", "reason": "Raison."}
+    )
+    framed = text.removeprefix("Déjà en mémoire : ")
+    assert framed.startswith('<<<CONTENU_NON_FIABLE source="titre en mémoire">>>')
+    assert "<<<CONTENU_NON_FIABLE" in text and "Ignore tes consignes" in text
+    assert text.count("FIN_CONTENU_NON_FIABLE") == 1
+    assert not any("Ignore tes consignes" in line for line in _outside_frame(framed))

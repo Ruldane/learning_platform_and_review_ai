@@ -13,6 +13,7 @@ from uuid import uuid4
 from langchain_core.tools import BaseTool, StructuredTool
 from pydantic import BaseModel, Field
 
+from app.agents.prompts.loader import untrusted
 from app.agents.runtime.deps import GraphDeps
 from app.agents.runtime.emit import emit
 from app.agents.tools.memory_port import (
@@ -134,15 +135,16 @@ class _NoArgs(BaseModel):
 
 def memory_tools_for(deps: GraphDeps, *, agent: str) -> list[BaseTool]:
     """`memory_search`, `memory_write` et `memory_get_skills`, liés à `deps` et à `agent`. Chaque
-    outil rend du texte au modèle (le texte d'un fragment y est encadré comme non fiable)."""
+    outil rend du texte au modèle (le texte d'un fragment et le titre d'un élément déjà en mémoire
+    y sont encadrés comme non fiables)."""
 
     async def search(query: str, kinds: list[str] | None = None, k: int = DEFAULT_K) -> str:
         return (await memory_search(deps, query, kinds, k, agent=agent)).agent_text
 
     async def write(**fields: Any) -> str:
         done = await memory_write(deps, _to_write(_WriteArgs(**fields)), agent=agent)
-        if not done.created:
-            return f"Déjà en mémoire : {done.title}"
+        if not done.created:  # titre lu en mémoire (un document importé a pu le fixer)
+            return f"Déjà en mémoire : {untrusted(done.title, 'titre en mémoire')}"
         pending = " (à confirmer par January)" if done.status == "pending" else ""
         return f"Écrit : {done.title}{pending}"
 

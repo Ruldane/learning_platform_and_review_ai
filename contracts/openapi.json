@@ -2495,7 +2495,7 @@
         ]
       },
       "SessionView": {
-        "description": "État d'une session pour le front ; `last_seq` : dernier événement écrit (le WebSocket\nreprend avec `after_seq`).",
+        "description": "État d'une session pour le front ; `last_seq` : dernier événement écrit (le WebSocket\nreprend avec `after_seq`) ; `subject_type`/`subject_id` : l'objet suivi (un document pour\nl'Archiviste), pour reprendre son suivi après un rechargement (D71).",
         "properties": {
           "cost_usd": {
             "title": "Cost Usd",
@@ -2550,6 +2550,28 @@
             "title": "Status",
             "type": "string"
           },
+          "subject_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Id"
+          },
+          "subject_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Type"
+          },
           "tokens_in": {
             "title": "Tokens In",
             "type": "integer"
@@ -2568,6 +2590,8 @@
           "id",
           "graph",
           "status",
+          "subject_type",
+          "subject_id",
           "last_seq",
           "pending_interrupt",
           "error",

@@ -34,6 +34,7 @@ from app.features.memory.service.upload import (
     file_too_large,
     normalize_url,
 )
+from app.features.sessions.service import find_active_session
 from app.providers.web.base import youtube_video_id
 
 logger = logging.getLogger(__name__)
@@ -41,6 +42,7 @@ logger = logging.getLogger(__name__)
 LIST_LIMIT = 200
 READ_BLOCK = 1024 * 1024
 STORAGE_CATEGORY = "documents"
+LEARNED_GRAPH = "learned_document"
 
 
 @dataclass(frozen=True)
@@ -222,11 +224,14 @@ class DocumentService:
                 await storage.delete(self._user_id, key)
 
     async def mark_learned(self, document_id: str, runner: SessionRunner) -> str:
-        """« Déjà appris » (D68) : lance le parcours `learned_document` sur un document indexé et
-        pose `learned`. La session est lancée AVANT l'écriture du drapeau : elle ouvre ses propres
-        sessions de base, la requête ne tient donc aucun verrou d'écriture pendant ce temps ; un
-        refus de lancement laisse le drapeau intact. Relancer est sans danger : les acquis déjà
-        écrits sont reconnus à leur titre."""
+        """« Déjà appris » (D68, D71) : lance le parcours `learned_document` sur un document
+        indexé et pose `learned`. Idempotent tant qu'une session de ce document est ouverte : elle
+        est rendue au lieu d'en lancer une seconde (double clic) ; une session finie ne compte plus
+        (« Relancer »). Le verrou de l'utilisateur ne couvre que « session ouverte ? sinon
+        lancer » ; la requête n'y entre avec aucune écriture en attente (sinon l'autoflush de la
+        lecture tiendrait le verrou d'écriture de SQLite pendant que le runner écrit la session
+        avec sa propre connexion). Le drapeau est écrit après, hors du verrou ; un refus de
+        lancement le laisse intact."""
         doc = await self._docs.get(document_id)
         if doc is None:
             raise AppError("document_not_found", "Document introuvable.", 404)
@@ -236,13 +241,15 @@ class DocumentService:
                 "Le document doit être indexé avant d'être marqué déjà appris.",
                 409,
             )
-        session_id = await runner.start(
-            self._user_id,
-            "learned_document",
-            {"document_id": doc.id},
-            subject_type="document",
-            subject_id=doc.id,
-        )
+        subject = {"subject_type": "document", "subject_id": doc.id}
+        async with self._runtime.learn_lock(self._user_id):
+            session_id = await find_active_session(
+                self._db, self._user_id, graph=LEARNED_GRAPH, **subject
+            )
+            if session_id is None:
+                session_id = await runner.start(
+                    self._user_id, LEARNED_GRAPH, {"document_id": doc.id}, **subject
+                )
         doc.learned = True
         await self._db.flush()
         logger.info("Document %s marqué déjà appris (session %s)", doc.id, session_id)

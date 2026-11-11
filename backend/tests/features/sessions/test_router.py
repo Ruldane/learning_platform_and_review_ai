@@ -1,11 +1,15 @@
 """API REST des sessions (SPEC 14.1) : démarrage, lecture, liste, messages, erreurs, isolation."""
 
 import time
+from datetime import UTC, datetime, timedelta
 
 import httpx
 from fastapi import FastAPI
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.agents.runtime.repositories import SessionRepository
 from app.db.base import new_id
+from app.features.sessions.service import find_active_session
 from tests.agents.graphs_for_tests import Probe
 from tests.sessions_support import API, act_as, wait_status
 
@@ -58,6 +62,54 @@ async def test_get_returns_session_view(client: httpx.AsyncClient):
     assert view["tokens_in"] > 0 and view["tokens_out"] > 0 and view["cost_usd"] >= 0
     assert view["last_seq"] >= 4  # agent.started, tokens..., agent.message, cost, run.completed
     assert view["created_at"] and view["updated_at"]
+
+
+async def test_session_view_exposes_subject(client: httpx.AsyncClient, probe: Probe):
+    doc_id = new_id()
+    sid = await start(client, "blocking", subject_type="document", subject_id=doc_id)
+    body = (await client.get(f"{API}/{sid}")).json()
+    assert body["subject_type"] == "document" and body["subject_id"] == doc_id
+    listed = (await client.get(API)).json()
+    assert (listed[0]["subject_type"], listed[0]["subject_id"]) == ("document", doc_id)
+    plain = await start(client, "two_steps")
+    view = await wait_status(client, plain, "completed")
+    assert view["subject_type"] is None and view["subject_id"] is None
+
+
+async def test_find_active_session_picks_latest_open_session_of_the_subject(
+    db_session_factory: async_sessionmaker[AsyncSession],
+):
+    t0 = datetime(2026, 1, 1, tzinfo=UTC)
+    rows = [  # (utilisateur, graphe, statut, objet, minutes)
+        ("u1", "learned_document", "completed", "d1", 9),
+        ("u1", "learned_document", "paused", "d1", 1),
+        ("u1", "learned_document", "waiting_user", "d1", 2),
+        ("u1", "learned_document", "running", "d2", 8),
+        ("u1", "other_graph", "running", "d1", 7),
+        ("u2", "learned_document", "running", "d1", 6),
+    ]
+    ids: list[str] = []
+    async with db_session_factory() as db:
+        for user, graph, status, subject, minutes in rows:
+            row = await SessionRepository(db, user).add(
+                graph=graph,
+                status=status,
+                subject_type="document",
+                subject_id=subject,
+                created_at=t0 + timedelta(minutes=minutes),
+            )
+            ids.append(row.id)
+        await db.commit()
+
+        async def find(user: str, subject: str) -> str | None:
+            return await find_active_session(
+                db, user, graph="learned_document", subject_type="document", subject_id=subject
+            )
+
+        assert await find("u1", "d1") == ids[2]  # la plus récente encore ouverte
+        assert await find("u1", "d2") == ids[3]
+        assert await find("u2", "d1") == ids[5]
+        assert await find("u1", "d3") is None and await find("u3", "d1") is None
 
 
 async def test_get_unknown_session_returns_404(client: httpx.AsyncClient):

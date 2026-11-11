@@ -10,6 +10,8 @@ export const sessionView = (status: SessionStatus, lastSeq: number): SessionView
   id: "s1",
   graph: "demo",
   status,
+  subject_type: null,
+  subject_id: null,
   last_seq: lastSeq,
   pending_interrupt: null,
   error: null,

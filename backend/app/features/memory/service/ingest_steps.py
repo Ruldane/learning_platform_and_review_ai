@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
 from app.db.base import utcnow
-from app.db.models.memory import USER_AUTHOR, MemoryItem
+from app.db.models.memory import USER_AUTHOR, Document, MemoryItem
 from app.features.memory.repository import (
     DocumentRepository,
     MemoryItemRepository,
@@ -26,7 +26,7 @@ from app.features.memory.service.rules import WriteDraft
 from app.features.memory.service.runtime import MemoryRuntime
 from app.features.memory.service.sources.base import SourceInput
 from app.features.memory.service.text import clean_display, content_hash
-from app.providers.vector.base import ChunkToIndex
+from app.providers.vector.base import ChunkToIndex, VectorStoreUnavailable
 
 logger = logging.getLogger(__name__)
 
@@ -170,31 +170,67 @@ async def finish_once(
     runtime: MemoryRuntime, claim: Claim, written: Written, title: str, failure: AppError | None
 ) -> None:
     """Statut final : `indexed`, ou `error` avec le message du fournisseur en panne (l'élément
-    est gardé non indexé : la réindexation le rattrapera)."""
+    est gardé non indexé : la réindexation le rattrapera). Le verrou d'écriture est pris avant
+    les lectures : le document et l'élément ne peuvent plus disparaître avant le commit. Élément
+    supprimé pendant le `push` : les vecteurs poussés après sa suppression sont retirés une
+    fois la transaction close (M2, D71). Document seul disparu (l'élément reste) : rien n'est
+    retiré, l'élément déjà marqué non indexé par `prepare` sera rattrapé par la réindexation."""
     src = claim.source
     async with runtime.session_factory() as db:
-        doc = await DocumentRepository(db, src.user_id).get(src.document_id)
         items = MemoryItemRepository(db, src.user_id)
+        await items.begin_write()
+        doc = await DocumentRepository(db, src.user_id).get(src.document_id)
         item = await items.get(written.item_id)
         if doc is None or item is None:
-            return  # supprimés entre-temps (la suppression de l'élément emporte le document)
-        if failure is None and written.chunks is not None:
-            # Conditionnel (D67) : des fragments renouvelés entre-temps (modification pendant
-            # le `push`) laissent l'élément à rattraper au lieu de le dire indexé à tort.
-            first = written.chunks[0].chunk_id if written.chunks else None
-            await items.mark_indexed(item, utcnow(), first)
-        if claim.kind in _RENAMED_BY_TITLE and clean_display(title):
-            doc.name = clean_display(title)  # titre venu du site : nettoyé comme un nom reçu
-        doc.item_id = written.item_id
-        if failure is None:
-            doc.status, doc.error = "indexed", None
+            await db.rollback()  # supprimés entre-temps (l'élément emporte le document)
         else:
-            doc.status, doc.error = "error", error_of(failure)
-        await db.commit()
+            await _settle(items, doc, item, claim, written, title, failure)
+            await db.commit()
+    if item is None and written.chunks is not None:
+        await drop_orphan_vectors(runtime, src.user_id, written.item_id)
+    if doc is None or item is None:
+        return
     if failure is None:
         logger.info("Document %s indexé (élément %s)", src.document_id, written.item_id)
     else:
         logger.info("Document %s en erreur (%s)", src.document_id, failure.code)
+
+
+async def _settle(
+    items: MemoryItemRepository,
+    doc: Document,
+    item: MemoryItem,
+    claim: Claim,
+    written: Written,
+    title: str,
+    failure: AppError | None,
+) -> None:
+    if failure is None and written.chunks is not None:
+        # Conditionnel (D67) : des fragments renouvelés entre-temps (modification pendant le
+        # `push`) laissent l'élément à rattraper au lieu de le dire indexé à tort.
+        first = written.chunks[0].chunk_id if written.chunks else None
+        await items.mark_indexed(item, utcnow(), first)
+    if claim.kind in _RENAMED_BY_TITLE and clean_display(title):
+        doc.name = clean_display(title)  # titre venu du site : nettoyé comme un nom reçu
+    doc.item_id = written.item_id
+    if failure is None:
+        doc.status, doc.error = "indexed", None
+    else:
+        doc.status, doc.error = "error", error_of(failure)
+
+
+async def drop_orphan_vectors(runtime: MemoryRuntime, user_id: str, item_id: str) -> None:
+    """Retire les vecteurs d'un élément supprimé pendant son import, hors de toute transaction ;
+    une panne du magasin est avalée et journalisée par identifiant (la réindexation purge les
+    orphelins restants, la recherche les écarte déjà)."""
+    try:
+        await runtime.providers.index.delete_items(user_id, [item_id])
+    except VectorStoreUnavailable:
+        logger.warning(
+            "Vecteurs orphelins de l'élément %s non retirés : magasin indisponible", item_id
+        )
+        return
+    logger.info("Vecteurs orphelins de l'élément %s retirés (supprimé pendant l'import)", item_id)
 
 
 async def finish(

@@ -1,9 +1,10 @@
 """La mémoire dans la vie de l'application : ce que les requêtes et le worker partagent. Ouvert
 par le lifespan (`app.state.memory`), avant le moteur d'agents."""
 
+import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -22,6 +23,13 @@ class MemoryRuntime:
     providers: MemoryProviders
     indexer: MemoryIndexer
     jobs: "MemoryJobs"
+    _learn_locks: dict[str, asyncio.Lock] = field(default_factory=dict, repr=False, compare=False)
+
+    def learn_lock(self, user_id: str) -> asyncio.Lock:
+        """Verrou de « Déjà appris » de l'utilisateur (D71) : ne couvre que la section « session
+        déjà ouverte ? sinon lancer », pour qu'un double clic ne lance qu'une session. Propre à
+        ce processus (un seul worker). Un verrou par utilisateur, gardé pour la vie du processus."""
+        return self._learn_locks.setdefault(user_id, asyncio.Lock())
 
 
 @asynccontextmanager
