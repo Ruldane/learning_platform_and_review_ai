@@ -52,4 +52,45 @@ export const settings = {
     warning:
       "Le niveau vision pointe vers un modèle sans vision : la capture du design du CV est désactivée.",
   },
+  search: {
+    languages: {
+      label: "Langues de recherche",
+      hint: "Au moins une langue reste cochée.",
+      fr: "Français",
+      en: "Anglais",
+      es: "Espagnol",
+      de: "Allemand",
+      it: "Italien",
+      pt: "Portugais",
+    },
+    domains: {
+      add: "Ajouter un domaine",
+      addButton: "Ajouter",
+      remove: "Retirer {domain}",
+      empty: "Aucun domaine.",
+      invalid: "Ce domaine n'est pas valide.",
+      duplicate: "Ce domaine est déjà dans la liste.",
+      full: "La liste est pleine ({max} domaines au plus).",
+    },
+    order: {
+      label: "Ordre des fournisseurs",
+      hint: "Le premier est interrogé d'abord ; le suivant prend le relais en cas d'échec.",
+      searxng: "SearXNG",
+      brave: "Brave",
+      up: "Monter {provider}",
+      down: "Descendre {provider}",
+      braveNeedsKey: "Ajoutez une clé Brave dans Modèles et clés",
+    },
+    caps: {
+      maxQueries: "Requêtes par session",
+      maxPages: "Pages lues par session",
+      range: "Entre {min} et {max}.",
+    },
+    usage: {
+      label: "Requêtes Brave du mois",
+      count: "{used} / {cap} requêtes en {month}",
+      inactive: "Brave inactif (aucune clé)",
+      capReached: "Le plafond du mois est atteint : Brave est sauté jusqu'au mois prochain.",
+    },
+  },
 } as const;

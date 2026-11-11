@@ -42,3 +42,27 @@ export interface KeyTestView {
   ok: boolean;
   message: string;
 }
+
+/** Les langues de recherche proposées, dans l'ordre d'affichage (codes ISO 639-1). */
+export const SEARCH_LANGUAGES = ["fr", "en", "es", "de", "it", "pt"] as const;
+export type SearchLanguage = (typeof SEARCH_LANGUAGES)[number];
+
+export type SearchProviderName = "searxng" | "brave";
+
+/** Réglages de la recherche web tels que les éditent les composants. */
+export interface SearchSettingsView {
+  languages: string[];
+  preferred: string[];
+  excluded: string[];
+  order: SearchProviderName[];
+  maxQueries: number;
+  maxPages: number;
+}
+
+/** Consommation Brave du mois civil (`month` : « AAAA-MM », en UTC). */
+export interface BraveUsageView {
+  hasKey: boolean;
+  used: number;
+  cap: number;
+  month: string;
+}
