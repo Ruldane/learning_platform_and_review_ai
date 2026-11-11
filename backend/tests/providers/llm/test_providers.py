@@ -92,7 +92,7 @@ async def test_glm_test_key_and_list_models_use_free_models_endpoint(
     provider = GlmProvider(base_url="https://exemple.test/v4/")
     result = await provider.test_key(KEY)
     assert result.ok and result.message == "Clé valide."
-    assert await provider.list_models(KEY) == ["glm-4.5"]
+    assert await provider.list_models(KEY) == ["glm-4.5", "glm-5.3-flash"]
     assert route.calls.last.request.headers["authorization"] == f"Bearer {KEY}"
     assert not chat.called
 
@@ -226,3 +226,40 @@ async def test_anthropic_list_models_follows_pagination(mock: respx.MockRouter) 
     ]
     assert await AnthropicProvider().list_models(KEY) == ["a", "b"]
     assert route.calls.last.request.url.params["after_id"] == "a"
+
+
+async def test_glm_list_models_adds_preset_models_missing_from_the_api(
+    mock: respx.MockRouter,
+) -> None:
+    # `glm-5.3-flash` (préréglage) reste sélectionnable même si /models ne le renvoie pas.
+    mock.get(GLM_MODELS).respond(200, json=GLM_LIST)
+    models = await GlmProvider(base_url="https://exemple.test/v4/").list_models(KEY)
+    assert models == ["glm-4.5", "glm-5.3-flash"]
+
+
+async def test_glm_list_models_has_no_duplicate_when_api_returns_preset_model(
+    mock: respx.MockRouter,
+) -> None:
+    ids = ["glm-5.3-flash", "glm-4.5"]
+    mock.get(GLM_MODELS).respond(200, json={"data": [{"id": i} for i in ids]})
+    models = await GlmProvider(base_url="https://exemple.test/v4/").list_models(KEY)
+    assert models == ids
+
+
+def test_glm_5_3_models_cannot_disable_thinking_so_effort_is_lowered() -> None:
+    # Z.ai : GLM-5.3 raisonne toujours (`thinking: disabled` -> 400, code 1210) ; `low` suffit à
+    # garder un `content` non vide avec un petit budget de tokens (vérifié, D44).
+    model = GlmProvider().build("glm-5.3-flash", "k")
+    assert model.extra_body == {"reasoning_effort": "low"}  # type: ignore[attr-defined]
+
+
+def test_glm_models_that_can_disable_thinking_do_so() -> None:
+    model = GlmProvider().build("glm-4.7-flash", "k")
+    assert model.extra_body == {"thinking": {"type": "disabled"}}  # type: ignore[attr-defined]
+
+
+def test_glm_reasoning_params_are_configurable() -> None:
+    model = GlmProvider(reasoning_effort="high").build("glm-5.3-flash", "k")
+    assert model.extra_body == {"reasoning_effort": "high"}  # type: ignore[attr-defined]
+    assert GlmProvider(reasoning_effort=None).build("glm-5.3-flash", "k").extra_body is None  # type: ignore[attr-defined]
+    assert GlmProvider(disable_thinking=False).build("glm-4.7-flash", "k").extra_body is None  # type: ignore[attr-defined]

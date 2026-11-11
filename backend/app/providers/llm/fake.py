@@ -111,7 +111,9 @@ class FakeLlmProvider:
     def build(self, model: str, api_key: str, *, base_url: str | None = None) -> BaseChatModel:
         self.built.append((model, api_key))
         self.base_urls.append(base_url)
-        return FakeChatModel(script=self._script)
+        return FakeChatModel(
+            script=self._script, metadata={"tremplin_provider": self.name, "tremplin_model": model}
+        )
 
     async def list_models(self, api_key: str) -> list[str] | None:
         return None

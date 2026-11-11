@@ -1,4 +1,4 @@
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.agents import AgentSession, LlmCall, SessionEventRecord
@@ -7,6 +7,28 @@ from app.db.repository import UserScopedRepository
 
 class SessionRepository(UserScopedRepository[AgentSession]):
     model = AgentSession
+
+    async def add_usage(
+        self, session_id: str, *, tokens_in: int, tokens_out: int, cost_usd: float
+    ) -> tuple[int, int, float] | None:
+        """Ajoute une consommation aux cumuls de la session et renvoie les nouveaux cumuls
+        `(tokens_in, tokens_out, cost_usd)`, `None` si elle n'existe pas pour cet utilisateur.
+
+        Un seul `UPDATE` relatif : deux appels concurrents ne s'écrasent pas.
+        """
+        stmt = (
+            update(AgentSession)
+            .where(AgentSession.id == session_id, AgentSession.user_id == self.user_id)
+            .values(
+                tokens_in=AgentSession.tokens_in + tokens_in,
+                tokens_out=AgentSession.tokens_out + tokens_out,
+                cost_usd=AgentSession.cost_usd + cost_usd,
+            )
+            .returning(AgentSession.tokens_in, AgentSession.tokens_out, AgentSession.cost_usd)
+            .execution_options(synchronize_session=False)
+        )
+        row = (await self.session.execute(stmt)).first()
+        return None if row is None else (row[0], row[1], row[2])
 
 
 class EventRepository(UserScopedRepository[SessionEventRecord]):

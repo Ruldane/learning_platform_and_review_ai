@@ -1,6 +1,6 @@
 """Fournisseur OpenAI, et base commune des fournisseurs de type OpenAI (GLM de Z.ai)."""
 
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from langchain_core.language_models import BaseChatModel
 from langchain_openai import ChatOpenAI
@@ -24,14 +24,20 @@ class OpenAICompatibleProvider:
     def __init__(self, base_url: str | None = None) -> None:
         self._base_url = base_url or self.default_base_url
 
+    def extra_body(self, model: str) -> dict[str, Any] | None:
+        """Paramètres propres au fournisseur ajoutés au corps de chaque requête (aucun ici)."""
+        return None
+
     def build(self, model: str, api_key: str, *, base_url: str | None = None) -> BaseChatModel:
         return ChatOpenAI(
             model=model,
             api_key=SecretStr(api_key),
             base_url=base_url or self._base_url,
             timeout=_TIMEOUT_S,
-            max_retries=2,
+            max_retries=0,  # les nouveaux essais appartiennent à `invoke_agent` (D44)
             streaming=True,
+            extra_body=self.extra_body(model),
+            metadata={"tremplin_provider": self.name, "tremplin_model": model},
         )
 
     def _url(self, path: str) -> str:

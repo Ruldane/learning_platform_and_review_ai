@@ -15,8 +15,10 @@ OPENAI_FAST = "gpt-6-luna"
 OPENAI_STRONG = "gpt-6.1-sol"
 OPENAI_VISION = "gpt-6.1-terra"
 
-GLM_FAST = "glm-4.7-flash"
-GLM_STRONG = "glm-5.3"
+# « Tout GLM » : glm-5.3-flash partout, le modèle que l'utilisatrice a crédité et qui voit les
+# images ; glm-5.3 et glm-4.7-flash ne sont pas fiables pour elle (D44).
+GLM_FAST = "glm-5.3-flash"
+GLM_STRONG = "glm-5.3-flash"
 GLM_VISION = "glm-5.3-flash"
 
 PresetName = Literal["all_haiku", "haiku_sonnet_strong", "all_glm", "all_openai"]

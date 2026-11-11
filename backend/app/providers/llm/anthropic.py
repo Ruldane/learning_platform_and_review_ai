@@ -27,8 +27,9 @@ class AnthropicProvider:
             api_key=SecretStr(api_key),
             base_url=base_url,
             timeout=_TIMEOUT_S,
-            max_retries=2,
+            max_retries=0,  # les nouveaux essais appartiennent à `invoke_agent` (D44)
             streaming=True,
+            metadata={"tremplin_provider": self.name, "tremplin_model": model},
         )
 
     async def list_models(self, api_key: str) -> list[str] | None:

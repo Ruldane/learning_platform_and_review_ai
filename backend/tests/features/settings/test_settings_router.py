@@ -1,6 +1,6 @@
 import httpx
 
-from app.providers.llm.model_defaults import GLM_FAST, GLM_VISION
+from app.providers.llm.model_defaults import GLM_VISION
 
 
 async def test_get_returns_defaults_with_computed_fields(client: httpx.AsyncClient) -> None:
@@ -34,7 +34,7 @@ async def test_put_rejects_bad_hour(client: httpx.AsyncClient) -> None:
 
 async def test_vision_disabled_when_tier_has_no_vision(client: httpx.AsyncClient) -> None:
     body = (await client.get("/api/v1/settings")).json()
-    body["tiers"]["vision"] = {"provider": "glm", "model": GLM_FAST}
+    body["tiers"]["vision"] = {"provider": "glm", "model": "glm-4.7-flash"}
     assert (await client.put("/api/v1/settings", json=body)).json()["vision_enabled"] is False
     body["tiers"]["vision"] = {"provider": "glm", "model": GLM_VISION}
     assert (await client.put("/api/v1/settings", json=body)).json()["vision_enabled"] is True

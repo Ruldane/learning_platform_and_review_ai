@@ -102,11 +102,20 @@ def test_glm_uses_configurable_base_url() -> None:
     assert str(model.openai_api_base).startswith("https://exemple.test/v4")  # type: ignore[attr-defined]
 
 
-def test_real_providers_build_with_retries_and_streaming() -> None:
+def test_real_providers_build_without_sdk_retries_and_with_streaming() -> None:
+    # `invoke_agent` possède les nouveaux essais et le plafond de 120 s (D44), pas le SDK.
     for name in ("anthropic", "openai", "glm"):
         model = LLM_PROVIDERS[name].build("un-modele", "k")
         assert model.streaming is True  # type: ignore[attr-defined]
-        assert model.max_retries == 2  # type: ignore[attr-defined]
+        assert model.max_retries == 0  # type: ignore[attr-defined]
+
+
+def test_real_providers_tag_models_with_provider_and_name() -> None:
+    for name in ("anthropic", "openai", "glm"):
+        model = LLM_PROVIDERS[name].build("un-modele", "k")
+        assert model.metadata is not None
+        assert model.metadata["tremplin_provider"] == name
+        assert model.metadata["tremplin_model"] == "un-modele"
 
 
 def test_registry_exposes_the_three_providers() -> None:

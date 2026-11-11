@@ -34,3 +34,12 @@ async def say(bus: EventBus, user_id: str, session_id: str, text: str) -> Sessio
 async def take(it: AsyncIterator[SessionEvent], count: int) -> list[int]:
     """Lit `count` événements (avec délai maximal) et renvoie leurs `seq`."""
     return [(await asyncio.wait_for(anext(it), TIMEOUT)).seq for _ in range(count)]
+
+
+@pytest.fixture
+def emitted(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, object]]:
+    """Remplace le `StreamWriter` de LangGraph : `emit()` marche hors d'un graphe et les tests
+    lisent ce qui a été émis."""
+    written: list[dict[str, object]] = []
+    monkeypatch.setattr("app.agents.runtime.emit.get_stream_writer", lambda: written.append)
+    return written
