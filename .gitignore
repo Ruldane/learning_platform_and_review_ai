@@ -13,3 +13,6 @@ data/
 playwright-report/
 test-results/
 .superpowers/
+
+# Captures des contrôles navigateur (Playwright MCP)
+.playwright-mcp/
