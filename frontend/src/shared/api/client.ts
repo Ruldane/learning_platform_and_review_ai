@@ -17,7 +17,9 @@ const errorMiddleware: Middleware = {
     if (!response.ok) throw await errorFromResponse(response);
     return undefined;
   },
-  onError() {
+  onError({ error }) {
+    // Une annulation volontaire (AbortController, signal de TanStack Query) n'est pas une panne.
+    if (error instanceof Error && error.name === "AbortError") return undefined;
     return networkError();
   },
 };

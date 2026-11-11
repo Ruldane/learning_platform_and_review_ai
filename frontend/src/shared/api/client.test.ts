@@ -1,4 +1,4 @@
-import { http, HttpResponse } from "msw";
+import { delay, http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { server } from "@/test/server";
 import { api, apiBaseUrl } from "./client";
@@ -52,6 +52,21 @@ describe("client API", () => {
       code: "network_error",
       status: 0,
     });
+  });
+
+  it("laisse passer une annulation telle quelle (AbortError, pas ApiError)", async () => {
+    server.use(
+      http.get(ME_URL, async () => {
+        await delay("infinite");
+        return HttpResponse.json({});
+      }),
+    );
+    const controller = new AbortController();
+    const pending = api.GET("/auth/me", { signal: controller.signal }).catch((e: unknown) => e);
+    controller.abort();
+    const error = await pending;
+    expect(error).not.toBeInstanceOf(ApiError);
+    expect(error).toMatchObject({ name: "AbortError" });
   });
 
   it("renvoie les données d'une réponse réussie", async () => {
