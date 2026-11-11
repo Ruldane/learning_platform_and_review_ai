@@ -6,12 +6,15 @@
 - Chaque issue est une transition conditionnelle depuis `running`, écrite dans la MÊME
   transaction que son événement (`EventBus.publish_with`, D61) : statut et événement existent
   ensemble ou pas du tout. Si la session a été mise en pause ou annulée entre-temps, rien
-  n'est écrit ni publié. Si l'écriture échoue (base indisponible), la session reste `running`
-  et sera reprise au prochain démarrage.
+  n'est écrit ni publié.
+- Écriture de l'issue en échec (D61 §4) : nouveaux essais (la garde les rend sûrs), puis repli
+  sur un `failed` atomique (`outcome_not_written`), pour ne jamais laisser une session
+  `running` sans tâche dans le processus. Si même le repli échoue (base vraiment
+  indisponible), la session reste `running` et sera reprise au prochain démarrage.
 - L'issue s'écrit en entier même si la tâche est annulée à ce moment (`_settle`).
-- `bus.close` seulement sur `completed` / `failed` écrits (et `cancelled`, par le runner) ;
-  jamais sur `waiting_user` ni `paused` (D42), ni sur une issue non écrite (la session reste
-  ouverte : un 1000 serait pris pour une fin définitive, D50).
+- `bus.close` seulement si la session est en base dans un statut terminal (et `cancelled`, par
+  le runner) ; jamais sur `waiting_user` ni `paused` (D42), ni sur une issue non écrite (la
+  session reste ouverte : un 1000 serait pris pour une fin définitive, D50).
 """
 
 import asyncio
@@ -29,6 +32,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.agents.graphs.registry import GraphSpec
 from app.agents.runtime.bus import EventBus, Guard
 from app.agents.runtime.checkpointer import thread_config
+from app.agents.runtime.control import TERMINAL
 from app.agents.runtime.costs import CostTracker, ModelPrice
 from app.agents.runtime.deps import ChatModelSource, GraphDeps
 from app.agents.runtime.repositories import SessionRepository
@@ -40,6 +44,12 @@ logger = logging.getLogger(__name__)
 
 STREAM_MODES: list[StreamMode] = ["custom", "messages", "updates"]
 INTERNAL_ERROR = "Une erreur inattendue a interrompu la session."
+NOT_WRITTEN = {
+    "code": "outcome_not_written",
+    "message": "La fin de la session n'a pas pu être enregistrée : elle est marquée en échec.",
+}
+# Attente avant chaque nouvel essai d'écriture de l'issue (deux nouveaux essais).
+OUTCOME_RETRY_DELAYS_S = (0.05, 0.25)
 
 
 @dataclass(frozen=True)
@@ -185,13 +195,15 @@ class _Run:
 
         return guard
 
-    async def _outcome(self, to: str, type: Any, payload: dict[str, Any], **values: Any) -> bool:
-        """Statut `to` (depuis `running`) et événement `type` validés ensemble (D61) ; `False`
+    async def _outcome(
+        self, to: str, event_type: Any, payload: dict[str, Any], **values: Any
+    ) -> bool:
+        """Statut `to` (depuis `running`) et événement `event_type` validés ensemble (D61) ; `False`
         si la session n'est plus `running` (pause, annulation) : rien d'écrit ni de publié."""
         event = await self.ctx.bus.publish_with(
             user_id=self.user_id,
             session_id=self.session_id,
-            type=type,
+            type=event_type,
             payload=payload,
             guard=self._guard(to, **values),
         )
@@ -199,19 +211,55 @@ class _Run:
 
     async def wait_user(self, pending: dict[str, Any]) -> None:
         # Question et statut ensemble : qui reçoit la question peut y répondre aussitôt.
-        await self._outcome(
-            "waiting_user", "interrupt.requested", pending, pending_interrupt=pending
-        )
+        await self._issue("waiting_user", "interrupt.requested", pending, pending_interrupt=pending)
 
     async def complete(self, summary: str) -> None:
-        await self._final("completed", "run.completed", {"summary": summary}, error=None)
+        await self._issue("completed", "run.completed", {"summary": summary}, error=None)
 
     async def fail(self, code: str, message: str) -> None:
         error = {"code": code, "message": message}
-        await self._final("failed", "run.failed", error, error=error)
+        await self._issue("failed", "run.failed", error, error=error)
 
-    async def _final(self, to: str, type: Any, payload: dict[str, Any], **values: Any) -> None:
-        """Issue finale puis `bus.close` : les abonnés reçoivent l'événement final et s'arrêtent
-        (D42). Écriture en échec : rien n'est fermé, la session reste `running` (D61)."""
-        if await self._outcome(to, type, payload, **values):
+    async def _issue(
+        self, to: str, event_type: Any, payload: dict[str, Any], **values: Any
+    ) -> None:
+        """Écrit l'issue (nouveaux essais), à défaut un `failed` `outcome_not_written` ; lève si
+        rien ne s'écrit (la session reste `running`). Puis `bus.close` si la session est en
+        base dans un statut terminal : les abonnés reçoivent l'événement final et s'arrêtent."""
+        try:
+            written = await self._persist(to, event_type, payload, **values)
+        except Exception as exc:
+            logger.error(
+                "Session %s : issue « %s » non écrite (%s), repli en échec",
+                self.session_id,
+                to,
+                type(exc).__name__,
+            )
+            to = "failed"
+            written = await self._persist(to, "run.failed", NOT_WRITTEN, error=NOT_WRITTEN)
+        # Refusée : pause, annulation, ou un essai précédent a validé malgré son erreur.
+        final = to in TERMINAL if written else await self._status() in TERMINAL
+        if final:
             await self.ctx.bus.close(user_id=self.user_id, session_id=self.session_id)
+
+    async def _persist(
+        self, to: str, event_type: Any, payload: dict[str, Any], **values: Any
+    ) -> bool:
+        """`_outcome` avec nouveaux essais sur erreur (base occupée au-delà du délai d'attente).
+        Sûr : si un essai a validé malgré son erreur, la garde refuse le suivant."""
+        for delay in OUTCOME_RETRY_DELAYS_S:
+            try:
+                return await self._outcome(to, event_type, payload, **values)
+            except Exception as exc:
+                logger.warning(
+                    "Session %s : écriture de l'issue en échec (%s), nouvel essai",
+                    self.session_id,
+                    type(exc).__name__,
+                )
+                await asyncio.sleep(delay)
+        return await self._outcome(to, event_type, payload, **values)
+
+    async def _status(self) -> str | None:
+        async with self.ctx.session_factory() as db:
+            row = await SessionRepository(db, self.user_id).get(self.session_id)
+        return None if row is None else row.status

@@ -14,6 +14,7 @@ from langgraph.checkpoint.base import BaseCheckpointSaver
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.agents.runtime import control as control_rules
 from app.agents.runtime.bus import EventBus
 from app.agents.runtime.checkpointer import thread_config
 from app.agents.runtime.execution import RunContext, _settle, run_session
@@ -157,13 +158,22 @@ async def _control_during_outcome(
     """Lance `two_steps`, déclenche `control` pendant l'écriture de l'issue ; rend le statut
     final et la présence de `run.completed`."""
     held, release = _hold_outcome(bus, monkeypatch, inside=inside)
+    transitioning = asyncio.Event()
+    real_transition = control_rules.transition
+
+    async def transition(*args: Any, **kwargs: Any) -> bool:
+        transitioning.set()  # l'UPDATE de la pause / de l'annulation part maintenant
+        return await real_transition(*args, **kwargs)
+
+    monkeypatch.setattr(control_rules, "transition", transition)
     sid = await runner.start(user_id, "two_steps", {})
     await asyncio.wait_for(held.wait(), 5)
     action = asyncio.create_task(getattr(runner, control)(user_id, sid))
-    if inside:
-        await asyncio.sleep(0.1)  # l'action attend le verrou d'écriture de SQLite
-    else:
+    await asyncio.wait_for(transitioning.wait(), 5)
+    if not inside:
         await wait_status(db, user_id, sid, "paused" if control == "pause" else "cancelled")
+    # `inside` : l'UPDATE de l'action attend le verrou d'écriture tenu par l'issue (ou passe
+    # après son commit) : dans les deux cas l'issue l'emporte.
     release.set()
     try:
         await asyncio.wait_for(action, 5)
@@ -191,7 +201,7 @@ async def test_pause_during_outcome_write_leaves_one_coherent_outcome(
 
 
 @pytest.mark.parametrize("inside", [False, True])
-async def test_cancel_during_settle_never_leaves_status_without_event(
+async def test_cancel_during_outcome_write_leaves_one_coherent_outcome(
     runner: SessionRunner,
     bus: EventBus,
     db_factory: Factory,
@@ -199,7 +209,8 @@ async def test_cancel_during_settle_never_leaves_status_without_event(
     monkeypatch: pytest.MonkeyPatch,
     inside: bool,
 ):
-    """Annulation pendant `_settle` : la tâche est annulée alors que l'issue s'écrit."""
+    """`inside=False` : la tâche est annulée pendant `_settle`, l'issue refusée ne s'écrit pas.
+    `inside=True` : l'annulation arrive dans la transaction de l'issue et répond 409."""
     outcome = await _control_during_outcome(
         runner, bus, db_factory, user_id, monkeypatch, control="cancel", inside=inside
     )

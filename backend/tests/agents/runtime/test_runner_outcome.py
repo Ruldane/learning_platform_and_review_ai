@@ -1,6 +1,7 @@
 """Issue d'une session : statut final et événement final écrits ensemble (D52 §2, D61). Une
-écriture de l'issue qui échoue laisse la session `running` (reprise au démarrage) et le flux
-ouvert ; une issue écrite ferme le bus (D42)."""
+écriture de l'issue qui échoue est retentée, puis remplacée par un `failed` atomique
+(`outcome_not_written`) ; si rien ne s'écrit, la session reste `running` (reprise au
+démarrage) et son flux ouvert. Une issue finale en base ferme le bus (D42)."""
 
 from collections.abc import Callable
 from typing import Any
@@ -41,18 +42,26 @@ def _record_closes(bus: EventBus, monkeypatch: pytest.MonkeyPatch) -> list[str]:
     return closed
 
 
-def _break_final_write(monkeypatch: pytest.MonkeyPatch, final: str) -> list[bool]:
-    """L'insertion de l'événement `final` lève tant que `broken[0]` est vrai."""
-    broken = [True]
+def _break_writes(monkeypatch: pytest.MonkeyPatch, *kinds: str, times: int = 99) -> list[int]:
+    """Les `times` premières insertions d'un événement de type `kinds` lèvent ; `left[0]` = échecs
+    restants (0 : la base est revenue)."""
+    left = [times]
     real_add = EventRepository.add
 
     async def add(self: EventRepository, **fields: Any) -> Any:
-        if broken[0] and fields.get("type") == final:
+        if left[0] > 0 and fields.get("type") in kinds:
+            left[0] -= 1
             raise RuntimeError("base indisponible")
         return await real_add(self, **fields)
 
     monkeypatch.setattr(EventRepository, "add", add)
-    return broken
+    return left
+
+
+async def _failed_payload(db: Factory, user_id: str, sid: str) -> dict[str, Any]:
+    failed = [e for e in await all_events(db, user_id, sid) if e.type == "run.failed"]
+    assert len(failed) == 1
+    return failed[0].payload.model_dump()
 
 
 @pytest.mark.parametrize(("graph", "final", "status"), _FINALS)
@@ -74,26 +83,105 @@ async def test_written_outcome_closes_the_bus(
     assert (await types(db_factory, user_id, sid))[-1] == final
 
 
-@pytest.mark.parametrize(("graph", "final", "status"), _FINALS)
-async def test_failed_final_write_leaves_the_session_running_and_its_stream_open(
+async def test_transient_write_failure_is_retried_and_keeps_the_original_outcome(
     runner: SessionRunner,
     bus: EventBus,
     db_factory: Factory,
     user_id: str,
     monkeypatch: pytest.MonkeyPatch,
-    graph: str,
-    final: str,
-    status: str,
 ):
-    """Ni statut final sans événement, ni flux fermé (1000 = fin définitive pour le front) sur
-    une session qui sera reprise : les abonnés restent, le redémarrage les reconnectera."""
     closed = _record_closes(bus, monkeypatch)
-    _break_final_write(monkeypatch, final)
-    sid = await runner.start(user_id, graph, {})
+    _break_writes(monkeypatch, "run.completed", times=1)
+    sid = await runner.start(user_id, "two_steps", {})
+    await wait_idle(runner, sid)
+    assert (await get_session(db_factory, user_id, sid)).status == "completed"
+    kinds = await types(db_factory, user_id, sid)
+    assert kinds.count("run.completed") == 1 and "run.failed" not in kinds
+    assert closed == [sid]
+
+
+async def test_failed_completion_write_falls_back_to_an_atomic_failure(
+    runner: SessionRunner,
+    bus: EventBus,
+    db_factory: Factory,
+    user_id: str,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Aucune session `running` sans tâche : l'issue ne s'écrit pas, `failed` la remplace, le
+    bus se ferme (1000 sur le WebSocket)."""
+    closed = _record_closes(bus, monkeypatch)
+    _break_writes(monkeypatch, "run.completed")
+    sid = await runner.start(user_id, "two_steps", {})
+    await wait_idle(runner, sid)
+    row = await get_session(db_factory, user_id, sid)
+    payload = await _failed_payload(db_factory, user_id, sid)
+    assert row.status == "failed" and payload["code"] == "outcome_not_written"
+    assert row.error == payload and "run.completed" not in await types(db_factory, user_id, sid)
+    assert closed == [sid]
+
+
+async def test_failed_question_write_falls_back_to_an_atomic_failure(
+    runner: SessionRunner,
+    bus: EventBus,
+    db_factory: Factory,
+    user_id: str,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    closed = _record_closes(bus, monkeypatch)
+    _break_writes(monkeypatch, "interrupt.requested")
+    sid = await runner.start(user_id, "ask", {})
+    await wait_idle(runner, sid)
+    row = await get_session(db_factory, user_id, sid)
+    assert row.status == "failed" and row.pending_interrupt is None
+    assert (await _failed_payload(db_factory, user_id, sid))["code"] == "outcome_not_written"
+    assert closed == [sid]
+
+
+async def test_outcome_committed_despite_an_error_is_not_written_twice(
+    runner: SessionRunner,
+    bus: EventBus,
+    db_factory: Factory,
+    user_id: str,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Le commit a abouti mais l'écriture a levé : le nouvel essai est refusé par la garde, le
+    statut relu est terminal, le bus est fermé ; ni doublon ni repli en échec."""
+    closed = _record_closes(bus, monkeypatch)
+    real_insert = bus._writer.insert
+    raised: list[str] = []
+
+    async def insert(*args: Any, **kwargs: Any) -> Any:
+        row = await real_insert(*args, **kwargs)
+        if row is not None and row.type == "run.completed" and not raised:
+            raised.append(row.type)
+            raise RuntimeError("réponse perdue après le commit")
+        return row
+
+    monkeypatch.setattr(bus._writer, "insert", insert)
+    sid = await runner.start(user_id, "two_steps", {})
+    await wait_idle(runner, sid)
+    assert (await get_session(db_factory, user_id, sid)).status == "completed"
+    kinds = await types(db_factory, user_id, sid)
+    assert kinds.count("run.completed") == 1 and "run.failed" not in kinds
+    assert closed == [sid]
+
+
+async def test_when_nothing_can_be_written_the_session_stays_running_and_its_stream_open(
+    runner: SessionRunner,
+    bus: EventBus,
+    db_factory: Factory,
+    user_id: str,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Issue et repli en échec (`crash` : `run.failed` dans les deux cas) : ni statut final sans
+    événement, ni 1000 sur une session qui sera reprise au démarrage."""
+    closed = _record_closes(bus, monkeypatch)
+    _break_writes(monkeypatch, "run.failed")
+    sid = await runner.start(user_id, "crash", {})
     await wait_idle(runner, sid)
     assert closed == []
     assert (await get_session(db_factory, user_id, sid)).status == "running"
-    assert final not in await types(db_factory, user_id, sid)
+    assert "run.failed" not in await types(db_factory, user_id, sid)
 
 
 async def test_failed_final_write_leaves_running_then_recovery_completes_once(
@@ -103,13 +191,13 @@ async def test_failed_final_write_leaves_running_then_recovery_completes_once(
     probe: Probe,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    broken = _break_final_write(monkeypatch, "run.completed")
+    left = _break_writes(monkeypatch, "run.completed", "run.failed")  # base indisponible
     first = make_runner(fake_llm([]))
     sid = await first.start(user_id, "two_steps", {})
     await wait_idle(first, sid)
     assert (await get_session(db_factory, user_id, sid)).status == "running"
     await first.shutdown()  # redémarrage du serveur
-    broken[0] = False
+    left[0] = 0
     second = make_runner(fake_llm([]))
     assert await second.recover_on_startup() == [sid]
     await wait_status(db_factory, user_id, sid, "completed")
