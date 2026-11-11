@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import OperationalError
 
+from app.bootstrap import build_providers
 from app.config import Settings, get_settings
 from app.core.errors import register_error_handlers
 from app.core.logging import configure_logging
@@ -58,6 +59,9 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     engine = create_engine(app.state.settings.database_url)
     app.state.engine = engine
     app.state.session_factory = create_session_factory(engine)
+    app.state.providers = build_providers(
+        app.state.settings, app.state.session_factory, app.state.cipher
+    )
     try:
         if app.state.settings.auth_mode == "local":
             await _ensure_local_user(app)
