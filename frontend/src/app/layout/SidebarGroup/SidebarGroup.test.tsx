@@ -34,4 +34,40 @@ describe("SidebarGroup", () => {
     expect(screen.getByRole("heading", { name: "Apprendre" })).toBeInTheDocument();
     expect(screen.getAllByRole("link")).toHaveLength(2);
   });
+
+  it("garde l'entrée active sur une sous-route (section à une seule entrée)", () => {
+    render(
+      <MemoryRouter initialEntries={["/apprendre/cles"]}>
+        <SidebarGroup group={{ ...base, items: [{ labelKey: "nav.learn", path: "/apprendre" }] }} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole("link", { name: "Apprendre" })).toHaveAttribute("aria-current", "page");
+  });
+
+  it("n'active pas « / » sur une autre page, et active l'entrée courante (plusieurs entrées)", () => {
+    render(
+      <MemoryRouter initialEntries={["/x/detail"]}>
+        <SidebarGroup
+          group={{
+            ...base,
+            items: [
+              { labelKey: "nav.home", path: "/" },
+              { labelKey: "nav.study", path: "/x" },
+            ],
+          }}
+        />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole("link", { name: "Accueil" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("link", { name: "Étudier" })).toHaveAttribute("aria-current", "page");
+  });
+
+  it("active « / » sur la page d'accueil", () => {
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <SidebarGroup group={{ ...base, items: [{ labelKey: "nav.home", path: "/" }] }} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole("link", { name: "Accueil" })).toHaveAttribute("aria-current", "page");
+  });
 });
