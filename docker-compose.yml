@@ -1,7 +1,8 @@
 # Tremplin : les 7 services de la spec (16.1). Images figées sur des versions précises (D30).
 # `cp .env.example .env` puis `docker compose up -d` ; sans .env le back démarre sans clé LLM.
 # Ports publiés sur 127.0.0.1 seulement, modifiables par FRONTEND_PORT, BACKEND_PORT et
-# QDRANT_PORT (dans .env) ; CORS_ORIGIN et l'adresse du back dans le bundle en dérivent (D36).
+# QDRANT_PORT (dans .env) ; CORS_ORIGIN (+ jumeau 127.0.0.1, D37) et l'adresse du back dans le
+# bundle en dérivent (D36).
 
 services:
   frontend:

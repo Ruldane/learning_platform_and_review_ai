@@ -47,7 +47,10 @@ QDRANT_PORT=6335
 
 puis `docker compose up -d --build` (l'adresse de l'API est intégrée à l'interface à la
 construction). L'origine autorisée par le back (`CORS_ORIGIN`) suit `FRONTEND_PORT`, et
-l'interface est alors sur `http://localhost:<FRONTEND_PORT>`.
+l'interface est alors sur `http://localhost:<FRONTEND_PORT>` (ou `http://127.0.0.1:<FRONTEND_PORT>` :
+les deux formes d'une origine locale sont acceptées). Pour autoriser d'autres origines (un front
+lancé hors Docker, par exemple), donner dans `.env` la liste complète, séparée par des virgules :
+`CORS_ORIGIN=http://localhost:5174,http://localhost:4173`.
 
 ### macOS et Ollama installé sur la machine
 

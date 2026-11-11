@@ -1,9 +1,20 @@
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
+from urllib.parse import urlsplit
 
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Les ports sont publiés sur 127.0.0.1 : l'interface s'ouvre aussi bien par `localhost` que par
+# `127.0.0.1`, et le navigateur envoie l'une ou l'autre origine.
+_LOOPBACK_TWINS = {"localhost": "127.0.0.1", "127.0.0.1": "localhost"}
+
+
+def _with_loopback_twin(origin: str) -> list[str]:
+    host = urlsplit(origin).hostname or ""
+    twin = _LOOPBACK_TWINS.get(host)
+    return [origin, origin.replace(f"//{host}", f"//{twin}", 1)] if twin else [origin]
 
 
 class Settings(BaseSettings):
@@ -28,6 +39,7 @@ class Settings(BaseSettings):
     searxng_url: str = "http://searxng:8080"
     gotenberg_url: str = "http://gotenberg:3000"
 
+    # Une origine ou plusieurs séparées par des virgules ; voir `cors_origins`.
     cors_origin: str = "http://localhost:5173"
 
     google_client_id: str | None = None
@@ -39,6 +51,18 @@ class Settings(BaseSettings):
         if not self.database_url:
             self.database_url = f"sqlite+aiosqlite:///{(self.data_dir / 'app.db').as_posix()}"
         return self
+
+    @property
+    def cors_origins(self) -> list[str]:
+        """Origines autorisées : celles de `cors_origin`, plus la forme jumelle de chaque origine
+        locale (`localhost` <-> `127.0.0.1`, même port). Sans doublon, ordre conservé."""
+        origins: list[str] = []
+        for raw in self.cors_origin.split(","):
+            origin = raw.strip().rstrip("/")
+            for candidate in _with_loopback_twin(origin) if origin else []:
+                if candidate not in origins:
+                    origins.append(candidate)
+        return origins
 
     @property
     def checkpoints_path(self) -> Path:

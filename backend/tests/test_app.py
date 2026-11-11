@@ -108,6 +108,28 @@ async def test_cors_allows_front_origin_only(client: httpx.AsyncClient) -> None:
     assert "access-control-allow-origin" not in ko.headers
 
 
+async def test_cors_allows_loopback_twin_of_front_origin(client: httpx.AsyncClient) -> None:
+    # Ports publiés sur 127.0.0.1 : l'interface peut être ouverte sous l'une ou l'autre forme.
+    r = await client.get("/api/openapi.json", headers={"Origin": "http://127.0.0.1:5173"})
+    assert r.headers.get("access-control-allow-origin") == "http://127.0.0.1:5173"
+    other_port = await client.get("/api/openapi.json", headers={"Origin": "http://127.0.0.1:9999"})
+    assert "access-control-allow-origin" not in other_port.headers
+
+
+def test_cors_origins_accepts_a_list_and_adds_loopback_twins() -> None:
+    s = Settings(
+        _env_file=None,
+        cors_origin=" http://localhost:5174/ , https://app.example.org,http://127.0.0.1:3000",
+    )
+    assert s.cors_origins == [
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
+        "https://app.example.org",
+        "http://127.0.0.1:3000",
+        "http://localhost:3000",
+    ]
+
+
 async def test_openapi_is_served(client: httpx.AsyncClient) -> None:
     assert (await client.get("/api/openapi.json")).status_code == 200
 

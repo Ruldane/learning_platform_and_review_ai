@@ -44,3 +44,8 @@ def test_env_example_documents_the_ports() -> None:
     text = (ROOT / ".env.example").read_text(encoding="utf-8")
     for var in ("FRONTEND_PORT=5173", "BACKEND_PORT=8000", "QDRANT_PORT=6333"):
         assert f"# {var}" in text
+
+
+def test_env_example_documents_cors_origin() -> None:
+    text = (ROOT / ".env.example").read_text(encoding="utf-8")
+    assert "# CORS_ORIGIN=http://localhost:5173" in text
