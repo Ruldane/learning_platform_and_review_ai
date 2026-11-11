@@ -5,6 +5,8 @@ import asyncio
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.agents.runtime import control
+from app.agents.runtime.bus import EventBus
 from app.agents.runtime.runner import SessionRunner
 from app.core.errors import AppError
 from tests.agents.graphs_for_tests import Probe
@@ -185,3 +187,42 @@ async def test_finished_session_cannot_be_paused_or_cancelled(
             await action
         assert e.value.status_code == 409
     assert (await get_session(db_factory, user_id, sid)).status == "completed"
+
+
+async def test_pause_returns_once_the_stopped_task_s_publications_are_written(
+    runner: SessionRunner,
+    bus: EventBus,
+    user_id: str,
+    probe: Probe,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """D56 : `last_seq` de la réponse couvre tout ce que la tâche arrêtée publiait (un
+    `agent.started` en vol ne doit pas arriver au front APRÈS une réponse qui l'ignore)."""
+    flushed: list[bool] = []
+    real_flush = bus.flush
+
+    async def flush() -> None:
+        flushed.append(runner.is_active(sid))  # la tâche est déjà arrêtée
+        await real_flush()
+
+    monkeypatch.setattr(bus, "flush", flush)
+    sid = await runner.start(user_id, "blocking", {})
+    await wait_until(probe.b_started.is_set)
+    await runner.pause(user_id, sid)
+    assert flushed == [False]
+
+
+async def test_post_message_waits_for_a_control_action_in_progress(
+    runner: SessionRunner, db_factory: Factory, user_id: str
+):
+    """M7 : un message ne se glisse pas pendant une annulation (écrit après `cancelled`)."""
+    sid, _ = await _asked(runner, db_factory, user_id)
+    async with runner._control(sid):  # une annulation tient le verrou de contrôle
+        posting = asyncio.create_task(runner.post_message(user_id, sid, "trop tard ?"))
+        await asyncio.sleep(0.05)
+        assert not posting.done()
+        await control.claim_cancel(db_factory, user_id, sid)
+    with pytest.raises(AppError) as e:
+        await posting
+    assert e.value.code == "session_closed"
+    assert "user.message" not in await types(db_factory, user_id, sid)

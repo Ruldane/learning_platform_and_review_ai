@@ -47,10 +47,12 @@ class SessionsService:
         )
 
     async def get(self, session_id: str) -> SessionView:
+        """Le dernier `seq` est lu AVANT la ligne : le statut rendu est donc au moins aussi
+        récent que `last_seq`, et le front peut ordonner cette lecture et les événements (D56)."""
+        seqs = await self._repo.last_seqs([session_id])
         row = await self._repo.get(session_id)
         if row is None:
             raise AppError("session_not_found", "Session introuvable.", 404)
-        seqs = await self._repo.last_seqs([session_id])
         return to_view(row, seqs.get(session_id, 0))
 
     async def list(

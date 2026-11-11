@@ -127,11 +127,16 @@ class SessionRunner:
 
     async def post_message(self, user_id: str, session_id: str, text: str) -> SessionEvent:
         """Publie `user.message` ; les nœuds le lisent au tour suivant
-        (`GraphDeps.user_messages_since`, D4)."""
-        await control.check_open(self._db, user_id, session_id)
-        return await self._bus.publish(
-            user_id=user_id, session_id=session_id, type="user.message", payload={"text": text}
-        )
+        (`GraphDeps.user_messages_since`, D4). Sous le verrou de contrôle, comme pause et
+        annulation : un message ne s'écrit jamais après une annulation acceptée."""
+        async with self._control(session_id):
+            await control.check_open(self._db, user_id, session_id)
+            return await self._bus.publish(
+                user_id=user_id,
+                session_id=session_id,
+                type="user.message",
+                payload={"text": text},
+            )
 
     async def pause(self, user_id: str, session_id: str) -> AgentSession:
         async with self._control(session_id):
@@ -209,8 +214,10 @@ class SessionRunner:
             await asyncio.wait({task})
 
     async def _stop(self, session_id: str) -> None:
-        """Annule la tâche en cours et attend qu'elle soit finie."""
+        """Annule la tâche en cours, attend qu'elle soit finie, puis que ses publications encore
+        en vol soient écrites : la vue rendue ensuite (`last_seq`) les compte toutes (D56)."""
         task = self._tasks.get(session_id)
         if task is not None:
             task.cancel()
             await asyncio.wait({task})
+            await self._bus.flush()

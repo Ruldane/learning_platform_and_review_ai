@@ -12,7 +12,7 @@ from app.agents.runtime.checkpointer import open_checkpointer
 from app.agents.runtime.costs import ModelPrice
 from app.agents.runtime.deps import ChatModelSource
 from app.agents.runtime.events import SessionEvent
-from app.agents.runtime.repositories import SessionRepository
+from app.agents.runtime.repositories import EventRepository, SessionRepository
 from app.agents.runtime.runner import SessionRunner
 from app.features.settings.service import SettingsRunReader
 from tests.agents.graphs_for_tests import TEST_GRAPHS, Probe, reset_probe
@@ -39,6 +39,14 @@ async def say(bus: EventBus, user_id: str, session_id: str, text: str) -> Sessio
     return await bus.publish(
         user_id=user_id, session_id=session_id, type="user.message", payload={"text": text}
     )
+
+
+async def stored_seq(
+    db_factory: async_sessionmaker[AsyncSession], user_id: str, session_id: str
+) -> int:
+    """Dernier `seq` écrit en base (le bus n'expose plus son cache, M6)."""
+    async with db_factory() as db:
+        return await EventRepository(db, user_id).max_seq(session_id)
 
 
 async def take(it: AsyncIterator[SessionEvent], count: int) -> list[int]:

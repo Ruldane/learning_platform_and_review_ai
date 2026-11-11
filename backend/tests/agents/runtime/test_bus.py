@@ -14,7 +14,7 @@ from app.agents.runtime.bus import EventBus
 from app.agents.runtime.events import CostUpdatedPayload, SessionEvent
 from app.agents.runtime.repositories import EventRepository
 from app.core.errors import AppError
-from tests.agents.runtime.conftest import say, take
+from tests.agents.runtime.conftest import say, stored_seq, take
 
 type Factory = async_sessionmaker[AsyncSession]
 
@@ -65,7 +65,7 @@ async def test_seq_continues_from_database_after_restart(
 ):
     await say(EventBus(db_factory), user_id, session_id, "avant")
     restarted = EventBus(db_factory)  # cache vide : repart de max_seq
-    assert await restarted.last_seq(user_id=user_id, session_id=session_id) == 1
+    assert await stored_seq(db_factory, user_id, session_id) == 1
     assert (await say(restarted, user_id, session_id, "après")).seq == 2
 
 
@@ -84,10 +84,12 @@ async def test_unique_constraint_is_the_safety_net_for_a_foreign_writer(
 # --- Validation et isolation ---------------------------------------------------------------
 
 
-async def test_publish_rejects_invalid_payload(bus: EventBus, user_id: str, session_id: str):
+async def test_publish_rejects_invalid_payload(
+    bus: EventBus, db_factory: Factory, user_id: str, session_id: str
+):
     with pytest.raises(ValueError):
         await bus.publish(user_id=user_id, session_id=session_id, type="cost.updated", payload={})
-    assert await bus.last_seq(user_id=user_id, session_id=session_id) == 0
+    assert await stored_seq(db_factory, user_id, session_id) == 0
 
 
 async def test_publish_drops_fields_outside_the_catalogue(
@@ -107,12 +109,12 @@ async def test_publish_drops_fields_outside_the_catalogue(
 
 
 async def test_publish_refuses_a_session_of_another_user(
-    bus: EventBus, user_id: str, other_user_id: str, session_id: str
+    bus: EventBus, db_factory: Factory, user_id: str, other_user_id: str, session_id: str
 ):
     with pytest.raises(AppError) as exc:
         await say(bus, other_user_id, session_id, "intrus")
     assert exc.value.code == "session_not_found"
-    assert await bus.last_seq(user_id=user_id, session_id=session_id) == 0
+    assert await stored_seq(db_factory, user_id, session_id) == 0
 
 
 async def test_subscriber_of_another_user_receives_nothing(

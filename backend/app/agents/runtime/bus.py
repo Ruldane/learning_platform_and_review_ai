@@ -145,13 +145,6 @@ class EventBus:
             await db.commit()
         return row
 
-    async def last_seq(self, *, user_id: str, session_id: str) -> int:
-        state = self._states.get((user_id, session_id))
-        if state is not None and state.last_seq is not None:
-            return state.last_seq
-        async with self._factory() as db:
-            return await EventRepository(db, user_id).max_seq(session_id)
-
     # --- Abonnement ----------------------------------------------------------------------
 
     async def subscribe(
@@ -218,11 +211,18 @@ class EventBus:
             for sub in state.subscribers:
                 sub.close()
 
+    async def flush(self) -> None:
+        """Attend les publications déjà commencées (protégées : leur appelant a pu être annulé,
+        elles continuent sans lui). Après l'arrêt d'une tâche (pause, annulation), tout ce
+        qu'elle publiait est écrit : le `last_seq` lu ensuite le compte (D56)."""
+        if self._inflight:
+            await asyncio.gather(*list(self._inflight), return_exceptions=True)
+
     async def aclose(self) -> None:
         """Arrêt du serveur, avant la fermeture du moteur : attend les écritures protégées
-        encore en vol (leur appelant a pu être annulé, elles continuent sans lui)."""
+        encore en vol, jusqu'à ce qu'il n'en reste aucune."""
         while self._inflight:
-            await asyncio.gather(*self._inflight, return_exceptions=True)
+            await self.flush()
 
     def subscriber_count(self, *, user_id: str, session_id: str) -> int:
         state = self._states.get((user_id, session_id))

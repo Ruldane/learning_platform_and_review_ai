@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.agents.runtime.bus import EventBus
 from app.agents.runtime.repositories import EventRepository
 from app.db.models.agents import AgentSession
-from tests.agents.runtime.conftest import TIMEOUT, say, take
+from tests.agents.runtime.conftest import TIMEOUT, say, stored_seq, take
 
 type Factory = async_sessionmaker[AsyncSession]
 
@@ -139,7 +139,7 @@ async def test_subscriber_state_is_freed_for_a_session_never_published(
 
 
 async def test_cancelled_publisher_still_delivers_a_committed_event(
-    bus: EventBus, user_id: str, session_id: str
+    bus: EventBus, db_factory: Factory, user_id: str, session_id: str
 ):
     """Le runner peut être annulé en pleine publication : un événement écrit est diffusé."""
     async with aclosing(bus.subscribe(user_id=user_id, session_id=session_id)) as it:
@@ -151,8 +151,23 @@ async def test_cancelled_publisher_still_delivers_a_committed_event(
         with pytest.raises(asyncio.CancelledError):
             await publisher
         assert (await asyncio.wait_for(reader, TIMEOUT)).seq == 1
-    assert await bus.last_seq(user_id=user_id, session_id=session_id) == 1
+    assert await stored_seq(db_factory, user_id, session_id) == 1
     assert (await say(bus, user_id, session_id, "b")).seq == 2
+
+
+async def test_flush_waits_for_publications_whose_caller_was_cancelled(
+    bus: EventBus, db_factory: Factory, user_id: str, session_id: str
+):
+    """Pause : la tâche arrêtée a pu laisser une publication en vol ; `flush` l'attend, la
+    réponse REST lue ensuite la compte dans `last_seq` (D56)."""
+    publisher = asyncio.create_task(say(bus, user_id, session_id, "a"))
+    await asyncio.sleep(0)  # publish est entré dans l'écriture protégée
+    publisher.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await publisher
+    await bus.flush()
+    assert await stored_seq(db_factory, user_id, session_id) == 1
+    await bus.flush()  # rien en vol : rend la main aussitôt
 
 
 async def test_publish_waits_for_a_concurrent_sqlite_writer(
