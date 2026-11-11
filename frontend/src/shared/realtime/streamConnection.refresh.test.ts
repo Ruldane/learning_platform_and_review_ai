@@ -49,16 +49,18 @@ describe("SessionStreamConnection refresh queue (N2)", () => {
   });
 
   it("a refresh queued behind a failing check still runs", async () => {
+    let fail: (error: unknown) => void = () => undefined;
     let calls = 0;
-    const h = setup(async () => {
+    const h = setup(() => {
       calls += 1;
-      if (calls === 1)
-        throw new ApiError({ code: "network_error", message: "Hors ligne", status: 0 });
-      return sessionView("paused", 3);
+      if (calls === 1) return new Promise((_, reject) => (fail = reject));
+      return Promise.resolve(sessionView("paused", 3));
     });
     h.fake.last().drop(1006);
     await vi.advanceTimersByTimeAsync(500);
-    h.fake.last().open();
+    h.fake.last().open(); // en attente derrière le contrôle encore en vol
+    expect(h.fetchSession).toHaveBeenCalledTimes(1);
+    fail(new ApiError({ code: "network_error", message: "Hors ligne", status: 0 }));
     await vi.advanceTimersByTimeAsync(0);
     expect(h.statuses).toEqual(["paused"]);
   });
