@@ -12,7 +12,8 @@ from app.main import create_app
 
 @pytest.fixture
 def settings(tmp_path: Path) -> Settings:
-    return Settings(data_dir=tmp_path)
+    # Isolé du .env et de l'environnement du développeur : tests déterministes.
+    return Settings(_env_file=None, data_dir=tmp_path, cors_origin="http://localhost:5173")
 
 
 @pytest.fixture

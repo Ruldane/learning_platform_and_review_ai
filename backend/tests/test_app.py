@@ -26,6 +26,20 @@ async def test_app_error_is_rendered(app: FastAPI, client: httpx.AsyncClient) ->
     }
 
 
+async def test_http_error_is_french_and_forwards_headers(
+    app: FastAPI, client: httpx.AsyncClient
+) -> None:
+    @app.get("/api/v1/_get_only")
+    async def get_only() -> dict[str, bool]:
+        return {"ok": True}
+
+    r = await client.post("/api/v1/_get_only")
+    assert r.status_code == 405
+    assert r.json()["error"]["code"] == "http_error"
+    assert r.json()["error"]["message"] == "Méthode non autorisée."
+    assert "GET" in r.headers["allow"]
+
+
 async def test_validation_error_is_french(app: FastAPI, client: httpx.AsyncClient) -> None:
     @app.get("/api/v1/_v")
     async def v(n: int) -> dict[str, int]:

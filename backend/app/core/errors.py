@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Mapping
 from typing import Any
 
 from fastapi import FastAPI, Request
@@ -27,11 +28,24 @@ class AppError(Exception):
         self.details = details
 
 
+_HTTP_MESSAGES = {
+    401: "Connexion requise.",
+    403: "Accès refusé.",
+    405: "Méthode non autorisée.",
+    429: "Trop de requêtes, réessaie dans un instant.",
+}
+_DEFAULT_HTTP_MESSAGE = "La requête n'a pas pu aboutir."
+
+
 def _error_response(
-    status_code: int, code: str, message: str, details: dict[str, Any] | None = None
+    status_code: int,
+    code: str,
+    message: str,
+    details: dict[str, Any] | None = None,
+    headers: Mapping[str, str] | None = None,
 ) -> JSONResponse:
     body = {"error": {"code": code, "message": message, "details": details}}
-    return JSONResponse(status_code=status_code, content=body)
+    return JSONResponse(status_code=status_code, content=body, headers=headers)
 
 
 async def _handle_app_error(_: Request, exc: Exception) -> JSONResponse:
@@ -49,8 +63,9 @@ async def _handle_validation_error(_: Request, exc: Exception) -> JSONResponse:
 async def _handle_http_error(_: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, StarletteHTTPException)
     if exc.status_code == 404:
-        return _error_response(404, "not_found", "Ressource introuvable.")
-    return _error_response(exc.status_code, "http_error", str(exc.detail))
+        return _error_response(404, "not_found", "Ressource introuvable.", headers=exc.headers)
+    message = _HTTP_MESSAGES.get(exc.status_code, _DEFAULT_HTTP_MESSAGE)
+    return _error_response(exc.status_code, "http_error", message, headers=exc.headers)
 
 
 async def _handle_unexpected_error(_: Request, exc: Exception) -> JSONResponse:
