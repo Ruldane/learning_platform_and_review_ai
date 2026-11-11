@@ -1,0 +1,18 @@
+# Rechargement à chaud : `docker compose -f docker-compose.yml -f docker-compose.dev.yml up`.
+services:
+  backend:
+    # Remplace l'entrypoint : on applique tout de même les migrations, puis uvicorn recharge.
+    entrypoint: ["sh", "-c", "alembic upgrade head && exec uvicorn --factory app.main:create_app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/app"]
+    volumes:
+      - ./backend/app:/app/app
+
+  frontend:
+    # Étape `build` du Dockerfile : Node et pnpm, pas nginx.
+    build:
+      context: ./frontend
+      target: build
+    command: ["pnpm", "dev", "--host", "0.0.0.0", "--port", "5173"]
+    environment:
+      VITE_API_URL: http://localhost:8000
+    volumes:
+      - ./frontend/src:/app/src

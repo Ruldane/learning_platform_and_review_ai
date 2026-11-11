@@ -1,0 +1,42 @@
+# Configuration SearXNG de Tremplin. Montée en lecture seule dans /etc/searxng/settings.yml.
+# Le service n'est joignable que depuis le réseau Docker interne (aucun port publié).
+use_default_settings: true
+
+general:
+  instance_name: "Tremplin"
+  enable_metrics: false
+
+search:
+  # `json` est indispensable : le back appelle /search?format=json.
+  formats:
+    - html
+    - json
+  safe_search: 0
+  autocomplete: ""
+
+server:
+  # Pas de limiteur : le service n'est pas exposé et le back est son seul client.
+  limiter: false
+  public_instance: false
+  image_proxy: false
+  # server.secret_key : fournie par la variable SEARXNG_SECRET du compose (valeur fixe, le
+  # service est interne). Elle prime sur le fichier, qui n'en porte donc aucune.
+
+# Les noms viennent du settings.yml par défaut de SearXNG (version figée dans le compose).
+engines:
+  # Généralistes
+  - name: duckduckgo
+    disabled: false
+  - name: brave
+    disabled: false
+  - name: wikipedia
+    disabled: false
+  # Spécialisés : code, recherche, vidéo
+  - name: github
+    disabled: false
+  - name: arxiv
+    disabled: false
+  - name: stackoverflow
+    disabled: false
+  - name: youtube
+    disabled: false

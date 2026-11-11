@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+tests/
+scripts/
+infra/
+*.db
+*.db-wal
+*.db-shm
+data/
+.env
+.env.*
+Dockerfile
+.dockerignore
