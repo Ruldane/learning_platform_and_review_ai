@@ -42,15 +42,23 @@ class SourceExtractor(Protocol):
 
 
 def _missing() -> AppError:
-    return AppError("document_source_missing", "Source du document introuvable.", 500)
+    return AppError(
+        "document_source_missing",
+        "Fichier ou lien d'origine introuvable : importe ce document de nouveau.",
+        422,
+    )
 
 
 async def read_stored(source: SourceInput, tools: ExtractionTools) -> bytes:
     """Octets du fichier enregistré, lus pour le propriétaire du document (`read(user_id, key)`
-    refuse la clé d'un autre utilisateur)."""
+    refuse la clé d'un autre utilisateur). Fichier disparu : erreur lisible, qu'un nouvel
+    import répare (il réécrit le fichier)."""
     if source.storage_key is None:
         raise _missing()
-    return await tools.storage.read(source.user_id, source.storage_key)
+    try:
+        return await tools.storage.read(source.user_id, source.storage_key)
+    except FileNotFoundError:
+        raise _missing() from None
 
 
 def required_url(source: SourceInput) -> str:

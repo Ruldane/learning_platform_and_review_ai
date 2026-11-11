@@ -32,7 +32,7 @@ def test_detect_upload_kinds() -> None:
     assert detect_upload("Plan.DOCX", make_docx(["Bonjour"])) == "docx"
     assert detect_upload("notes.md", "# Notes\nété".encode()) == "markdown"
     assert detect_upload("notes.markdown", b"# Notes") == "markdown"
-    assert detect_upload("lisez-moi.txt", "﻿bonjour".encode()) == "text"
+    assert detect_upload("lisez-moi.txt", "\ufeffbonjour".encode()) == "text"
 
 
 @pytest.mark.parametrize(
@@ -119,3 +119,15 @@ def test_normalize_url_refuses_credentials() -> None:
     with pytest.raises(AppError) as caught:
         normalize_url("https://moi:secret@example.org/")
     assert caught.value.code == "url_forbidden" and "secret" not in caught.value.message
+
+
+def test_docx_xml_parts_have_their_own_cap(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Les parties XML (analysées par lxml) sont bornées à part ; une image du même poids passe."""
+    assert upload.DOCX_MAX_XML == 25 * 1024 * 1024
+    monkeypatch.setattr(upload, "DOCX_MAX_XML", 1000)
+    xml_heavy = make_zip({"word/document.xml": b"<w/>", "word/styles.xml": b"s" * 2000})
+    assert _error("plan.docx", xml_heavy).code == "docx_invalid"
+    rels_heavy = make_zip({"word/document.xml": b"<w/>", "word/_rels/x.rels": b"r" * 2000})
+    assert _error("plan.docx", rels_heavy).code == "docx_invalid"
+    image = make_zip({"word/document.xml": b"<w/>", "word/media/a.png": b"p" * 2000})
+    assert detect_upload("plan.docx", image) == "docx"

@@ -1,5 +1,6 @@
 """Écriture et lecture des éléments de la mémoire : règles d'écriture, dédoublonnage, journal,
-indexation (via `MemoryIndexer`). Le commit appartient à la session de la requête."""
+indexation (via `MemoryIndexer`). Le commit appartient à la requête, sauf pour indexer et pour
+supprimer un document (D66)."""
 
 from dataclasses import dataclass
 from typing import Any, cast
@@ -280,13 +281,19 @@ class MemoryService:
     async def delete(self, item_id: str) -> None:
         """Supprime l'élément, ses fragments (cascade) et ses vecteurs. Une décision en attente
         refusée est journalisée `reject`, le reste `delete`. Un document perd aussi ses lignes
-        `documents` et son fichier (`DocumentService.remove_for_item`)."""
+        `documents`, et leurs fichiers après le commit (jamais une ligne sans son fichier)."""
         item = await self._get(item_id)
+        keys: list[str] = []
         if item.kind == "document":
-            await DocumentService(self._db, self._user_id, self._runtime).remove_for_item(item)
+            docs = DocumentService(self._db, self._user_id, self._runtime)
+            keys = await docs.remove_for_item(item)
         action: WriteAction = "reject" if item.status == "pending" else "delete"
         await self._writes.log(
             item=item, action=action, author=USER_AUTHOR, session_id=None, reason=None
         )
         await self._items.delete(item.id)
         await self._runtime.indexer.unindex(self._user_id, [item.id])
+        if keys:
+            await self._db.commit()
+            for key in keys:
+                await self._runtime.providers.storage.delete(self._user_id, key)

@@ -41,10 +41,17 @@ class MemoryIndexer:
     async def index_item(self, db: AsyncSession, item: MemoryItem) -> bool:
         """(Ré)indexe l'élément : fragments renouvelés, anciens vecteurs retirés, nouveaux
         insérés. Vrai si l'élément est indexé. Un élément `pending` n'est jamais indexé ; une
-        panne d'Ollama ou de Qdrant le laisse non indexé (faux), sans exception."""
+        panne d'Ollama ou de Qdrant le laisse non indexé (faux), sans exception.
+
+        **Valide la transaction de l'appelant** (D66) avant la vectorisation, comme le worker :
+        le verrou d'écriture de SQLite n'est jamais tenu pendant l'appel à Ollama ni pendant
+        l'attente du verrou de l'utilisateur. `indexed_at` est ensuite posé par une seconde
+        transaction courte. Une panne après le premier commit laisse l'élément enregistré,
+        lisible et non indexé : la réindexation le rattrapera."""
         if item.status != "active":
             return False
         chunks = await self.prepare(db, item)
+        await db.commit()
         try:
             await self.push(item.user_id, item.id, chunks)
         except (EmbeddingsUnavailable, VectorStoreUnavailable) as exc:
@@ -55,6 +62,7 @@ class MemoryIndexer:
             )
             return False
         await MemoryItemRepository(db, item.user_id).set_indexed_at(item, utcnow())
+        await db.commit()
         return True
 
     async def prepare(self, db: AsyncSession, item: MemoryItem) -> list[ChunkToIndex]:

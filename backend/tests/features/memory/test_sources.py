@@ -1,5 +1,7 @@
 """Registre des sources d'ingestion : une source par type, titre et texte extraits."""
 
+import io
+import zipfile
 from datetime import date
 from pathlib import Path
 from typing import get_args
@@ -15,7 +17,7 @@ from app.features.memory.service.sources.base import ExtractionTools, SourceInpu
 from app.features.memory.service.sources.registry import INGESTION_SOURCES, get_source
 from app.providers.web.base import Transcript, WebDocument
 from scripts.sample_pdf import make_pdf
-from tests.features.memory.doc_support import make_docx, make_zip
+from tests.features.memory.doc_support import forge_size, make_docx, make_zip
 from tests.support.memory import FakeWebReader, FakeYoutube
 
 USER = "u1"
@@ -102,7 +104,7 @@ async def test_markdown_title_is_first_h1_else_name(memory_providers: MemoryProv
 
 
 async def test_text_title_is_the_name(memory_providers: MemoryProviders) -> None:
-    data = "﻿Bonjour à tous".encode()
+    data = "\ufeffBonjour à tous".encode()
     title, text, _ = await _extract_file(memory_providers, "text", data, ".txt", "lettre.txt")
     assert (title, text) == ("lettre", "Bonjour à tous")
 
@@ -159,3 +161,21 @@ async def test_file_source_reads_only_the_owner_storage(
     with pytest.raises(AppError) as caught:
         await get_source("text").extract(src, _tools(memory_providers))
     assert caught.value.code == "storage_key_invalid"
+
+
+async def test_docx_with_forged_sizes_is_invalid(memory_providers: MemoryProviders) -> None:
+    """Tailles décompressées falsifiées (petites) : la garde les croit, mais `zipfile` ne rend
+    jamais plus que la taille déclarée et vérifie le CRC, donc python-docx échoue proprement."""
+    real = make_docx(["Corps"])
+    with zipfile.ZipFile(io.BytesIO(real)) as archive:
+        parts = {info.filename: archive.read(info) for info in archive.infolist()}
+    parts["word/document.xml"] += b"<!--" + b"0" * (3 * 1024 * 1024) + b"-->"
+    forged = forge_size(make_zip(parts), "word/document.xml", 500)
+    with zipfile.ZipFile(io.BytesIO(forged)) as archive:
+        assert archive.getinfo("word/document.xml").file_size == 500
+        with pytest.raises(zipfile.BadZipFile):
+            archive.read("word/document.xml")
+    assert upload.detect_upload("plan.docx", forged) == "docx"  # la garde croit les en-têtes
+    with pytest.raises(AppError) as caught:
+        await _extract_file(memory_providers, "docx", forged, ".docx", "plan.docx")
+    assert caught.value.code == "docx_invalid"

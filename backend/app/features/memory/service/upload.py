@@ -20,6 +20,10 @@ DOCX_MAX_UNCOMPRESSED = 100 * 1024 * 1024
 DOCX_MAX_ENTRIES = 1000
 DOCX_MAX_RATIO = 100
 DOCX_RATIO_FLOOR = 1024 * 1024
+# Parties XML (`.xml`, `.rels`) que python-docx analyse avec lxml : leur somme est bornée à part,
+# l'arbre en mémoire pesant plusieurs fois la taille du texte (les images restent sous le plafond
+# total).
+DOCX_MAX_XML = 25 * 1024 * 1024
 DOCX_MAIN_PART = "word/document.xml"
 
 UploadKind = Literal["pdf", "docx", "markdown", "text"]
@@ -78,7 +82,8 @@ def is_utf8_text(data: bytes) -> bool:
 
 def check_docx_zip(data: bytes) -> None:
     """Zip lisible, `word/document.xml` présent (sinon 415), entrées non chiffrées, au plus
-    `DOCX_MAX_ENTRIES` entrées et `DOCX_MAX_UNCOMPRESSED` octets décompressés, taux par entrée
+    `DOCX_MAX_ENTRIES` entrées, `DOCX_MAX_UNCOMPRESSED` octets décompressés dont `DOCX_MAX_XML`
+    de XML, taux par entrée
     borné (sinon `docx_invalid`). Les tailles lues sont celles du répertoire central : `zipfile`
     ne rend jamais plus que la taille déclarée d'une entrée (et vérifie son CRC)."""
     try:
@@ -90,10 +95,12 @@ def check_docx_zip(data: bytes) -> None:
         raise docx_invalid()
     if all(info.filename != DOCX_MAIN_PART for info in infos):
         raise unsupported_file_type()
-    total = 0
+    total = xml = 0
     for info in infos:
         total += info.file_size
-        if info.flag_bits & 0x1 or total > DOCX_MAX_UNCOMPRESSED:
+        if info.filename.lower().endswith((".xml", ".rels")):
+            xml += info.file_size
+        if info.flag_bits & 0x1 or total > DOCX_MAX_UNCOMPRESSED or xml > DOCX_MAX_XML:
             raise docx_invalid()
         if info.file_size > DOCX_RATIO_FLOOR and info.file_size > DOCX_MAX_RATIO * max(
             info.compress_size, 1

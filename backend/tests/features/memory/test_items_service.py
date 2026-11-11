@@ -93,7 +93,8 @@ async def test_concurrent_identical_writes_create_one_item(
 async def test_write_is_atomic_with_the_session_transaction(
     service: MemoryService, db: AsyncSession
 ) -> None:
-    await service.write(draft(author="writer"))
+    # Sans indexation : `index_item` valide la transaction avant de vectoriser (D66).
+    await service.write(draft(author="writer"), index=False)
     await db.rollback()  # l'insertion sous SAVEPOINT ne doit pas valider seule la transaction
     assert await _count(db, MemoryItem) == 0 and await _count(db, MemoryWrite) == 0
 

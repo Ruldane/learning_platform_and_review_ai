@@ -34,11 +34,25 @@ export interface paths {
          */
         get: operations["list_documents_api_v1_documents_get"];
         put?: never;
-        /**
-         * Create Document
-         * @description 202 : nouveau document ou document en erreur remis en file ; 200 : doublon (existant).
-         */
+        /** Create Document */
         post: operations["create_document_api_v1_documents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/text": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Paste Document */
+        post: operations["paste_document_api_v1_documents_text_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -557,10 +571,6 @@ export interface components {
         Body_create_document_api_v1_documents_post: {
             /** File */
             file?: string | null;
-            /** Text */
-            text?: string | null;
-            /** Title */
-            title?: string | null;
             /** Url */
             url?: string | null;
         };
@@ -1019,6 +1029,18 @@ export interface components {
             score: number;
             /** Title */
             title: string;
+        };
+        /**
+         * PasteCreate
+         * @description Texte collé (`POST /documents/text`, corps JSON). La longueur du texte (500 000
+         *     caractères au plus) est contrôlée par le service, qui répond `paste_too_long` ; le corps est
+         *     borné à 21 Mo par le middleware.
+         */
+        PasteCreate: {
+            /** Text */
+            text: string;
+            /** Title */
+            title?: string | null;
         };
         /** ProposalReadyEvent */
         ProposalReadyEvent: {
@@ -1565,6 +1587,48 @@ export interface operations {
         requestBody?: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_create_document_api_v1_documents_post"];
+            };
+        };
+        responses: {
+            /** @description Contenu déjà importé */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentCreated"];
+                };
+            };
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentCreated"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    paste_document_api_v1_documents_text_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasteCreate"];
             };
         };
         responses: {

@@ -114,9 +114,10 @@ async def test_duplicate_content_marks_error_with_existing_title(
     assert done.status == "error" and done.item_id is None
     assert done.error == {
         "code": "duplicate_content",
-        "message": "Ce contenu est déjà en mémoire (« premier »).",
+        "message": "Ce contenu est déjà en mémoire.",
         "item_id": item_id,
     }
+    assert "premier" not in str(done.error)  # ni le titre ni le nom de l'existant
 
 
 @pytest.fixture(params=["embeddings", "vector_store"])

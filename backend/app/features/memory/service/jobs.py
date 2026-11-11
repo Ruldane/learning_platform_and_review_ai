@@ -7,6 +7,7 @@ Les journaux ne citent que des identifiants et des types d'exception."""
 
 import asyncio
 import logging
+from collections import Counter
 from collections.abc import Callable
 
 from app.features.memory.repository import list_documents_to_resume
@@ -25,6 +26,7 @@ class MemoryJobs:
         self._runtime_factory = runtime_factory
         self._queue: asyncio.Queue[tuple[str, str]] = asyncio.Queue()
         self._worker: asyncio.Task[None] | None = None
+        self._scheduled: Counter[str] = Counter()  # documents en file ou en cours
 
     async def start(self) -> None:
         """Relit les documents à reprendre, les met en file et lance UNE tâche worker."""
@@ -42,7 +44,12 @@ class MemoryJobs:
     def enqueue_ingest(self, user_id: str, document_id: str) -> None:
         """Après le commit du document. Mettre deux fois le même document en file est sans
         effet : le second passage le trouve déjà `indexed` ou `error`."""
+        self._scheduled[document_id] += 1
         self._queue.put_nowait((user_id, document_id))
+
+    def is_scheduled(self, document_id: str) -> bool:
+        """Vrai si le document attend dans la file ou est en cours de traitement."""
+        return self._scheduled[document_id] > 0
 
     async def join(self) -> None:
         """Pour les tests : attend que la file soit vide et le worker au repos."""
@@ -70,6 +77,9 @@ class MemoryJobs:
             except Exception as exc:
                 logger.error("Job du document %s abandonné (%s)", document_id, type(exc).__name__)
             finally:
+                self._scheduled[document_id] -= 1
+                if self._scheduled[document_id] <= 0:
+                    del self._scheduled[document_id]
                 self._queue.task_done()
 
     async def _execute(self, user_id: str, document_id: str) -> None:

@@ -2,6 +2,7 @@
 main (bombes), document en base prêt pour la chaîne d'ingestion."""
 
 import io
+import struct
 import zipfile
 from typing import Any
 
@@ -75,3 +76,19 @@ async def reload(factory: async_sessionmaker[AsyncSession], user_id: str, doc_id
         doc = await DocumentRepository(db, user_id).get(doc_id)
     assert doc is not None
     return doc
+
+
+def forge_size(data: bytes, name: str, size: int) -> bytes:
+    """Zip dont l'entrée `name` déclare `size` octets décompressés dans son en-tête local ET dans
+    le répertoire central (bombe qui ment sur sa taille)."""
+    out = bytearray(data)
+    with zipfile.ZipFile(io.BytesIO(data)) as archive:
+        offset = archive.getinfo(name).header_offset
+    struct.pack_into("<I", out, offset + 22, size)  # en-tête local : taille décompressée
+    central = out.find(b"PK\x01\x02")
+    while central != -1:
+        length = struct.unpack_from("<H", out, central + 28)[0]
+        if bytes(out[central + 46 : central + 46 + length]) == name.encode():
+            struct.pack_into("<I", out, central + 24, size)
+        central = out.find(b"PK\x01\x02", central + 4)
+    return bytes(out)

@@ -1,19 +1,23 @@
-"""Import des documents (14.2) : `POST /documents` (multipart : un fichier, un lien ou un texte
-collé, un seul) et `GET /documents`. La taille du corps est bornée avant l'analyse du multipart
-par `app.core.limits.BodySizeLimit` ; le fichier l'est encore à sa lecture."""
+"""Import des documents (14.2) : `POST /documents` (multipart : un fichier ou un lien, un seul),
+`POST /documents/text` (JSON : texte collé et titre) et `GET /documents`. Le texte collé passe
+en JSON : un champ multipart autre qu'un fichier est plafonné à 1 Mio par Starlette, qui
+répondrait une 400 générique. La taille du corps est bornée avant l'analyse par
+`app.core.limits.BodySizeLimit` ; le fichier l'est encore à sa lecture."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, File, Form, Response, UploadFile
 from fastapi import status as http
 
 from app.core.deps import CurrentUserDep, Db
 from app.features.memory.router.deps import MemoryRuntimeDep
-from app.features.memory.schemas import DocumentCreated, DocumentOut
+from app.features.memory.schemas import DocumentCreated, DocumentOut, PasteCreate
 from app.features.memory.service.documents import DocumentService
-from app.features.memory.service.upload import MAX_PASTE_CHARS
 
 router = APIRouter(prefix="/documents", tags=["documents"])
+_RESPONSES: dict[int | str, dict[str, Any]] = {
+    200: {"model": DocumentCreated, "description": "Contenu déjà importé"}
+}
 
 
 def _service(current: CurrentUserDep, db: Db, runtime: MemoryRuntimeDep) -> DocumentService:
@@ -23,25 +27,37 @@ def _service(current: CurrentUserDep, db: Db, runtime: MemoryRuntimeDep) -> Docu
 Service = Annotated[DocumentService, Depends(_service)]
 
 
+def _created(response: Response, document: DocumentOut, new: bool) -> DocumentCreated:
+    """202 : nouveau document ou document remis en file ; 200 : doublon (existant)."""
+    if not new:
+        response.status_code = http.HTTP_200_OK
+    return DocumentCreated(document=document, duplicate=not new)
+
+
 @router.post(
-    "",
-    status_code=http.HTTP_202_ACCEPTED,
-    response_model=DocumentCreated,
-    responses={200: {"model": DocumentCreated, "description": "Contenu déjà importé"}},
+    "", status_code=http.HTTP_202_ACCEPTED, response_model=DocumentCreated, responses=_RESPONSES
 )
 async def create_document(
     response: Response,
     service: Service,
     file: Annotated[UploadFile | None, File()] = None,
     url: Annotated[str | None, Form(max_length=2048)] = None,
-    text: Annotated[str | None, Form(max_length=MAX_PASTE_CHARS)] = None,
-    title: Annotated[str | None, Form(max_length=200)] = None,
 ) -> DocumentCreated:
-    """202 : nouveau document ou document en erreur remis en file ; 200 : doublon (existant)."""
-    document, new = await service.create(file=file, url=url, text=text, title=title)
-    if not new:
-        response.status_code = http.HTTP_200_OK
-    return DocumentCreated(document=document, duplicate=not new)
+    document, new = await service.create(file=file, url=url, text=None, title=None)
+    return _created(response, document, new)
+
+
+@router.post(
+    "/text",
+    status_code=http.HTTP_202_ACCEPTED,
+    response_model=DocumentCreated,
+    responses=_RESPONSES,
+)
+async def paste_document(
+    response: Response, service: Service, body: PasteCreate
+) -> DocumentCreated:
+    document, new = await service.create(file=None, url=None, text=body.text, title=body.title)
+    return _created(response, document, new)
 
 
 @router.get("", response_model=list[DocumentOut])

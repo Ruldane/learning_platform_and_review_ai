@@ -31,6 +31,7 @@ __all__ = [
     "MemoryItemPatch",
     "MemoryKind",
     "MemoryWriteOut",
+    "PasteCreate",
     "NeighborOut",
     "SearchHitOut",
     "SearchRequest",
@@ -166,3 +167,12 @@ class DocumentOut(BaseModel):
 class DocumentCreated(BaseModel):
     document: DocumentOut
     duplicate: bool
+
+
+class PasteCreate(BaseModel):
+    """Texte collé (`POST /documents/text`, corps JSON). La longueur du texte (500 000
+    caractères au plus) est contrôlée par le service, qui répond `paste_too_long` ; le corps est
+    borné à 21 Mo par le middleware."""
+
+    text: str
+    title: str | None = Field(default=None, max_length=200)

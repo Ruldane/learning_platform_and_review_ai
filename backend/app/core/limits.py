@@ -40,16 +40,19 @@ def _declared_length(scope: Scope) -> int | None:
 
 
 class BodySizeLimit:
+    """Requêtes POST sur `path` ou sous `path/` (pas `pathX`)."""
+
     def __init__(self, app: ASGIApp, *, path: str, max_bytes: int) -> None:
         self.app = app
         self.path = path
         self.max_bytes = max_bytes
 
     def _applies(self, scope: Scope) -> bool:
+        path = str(scope.get("path", ""))
         return (
             scope["type"] == "http"
             and scope.get("method") == "POST"
-            and str(scope.get("path", "")).startswith(self.path)
+            and (path == self.path or path.startswith(self.path + "/"))
         )
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:

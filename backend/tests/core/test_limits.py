@@ -121,3 +121,11 @@ async def test_invalid_content_length_is_left_to_the_server() -> None:
     }
     await BodySizeLimit(_app(calls), path="/api/v1/documents", max_bytes=MAX)(scope, receive, send)
     assert calls == [] and sent[0]["status"] == 413
+
+
+async def test_only_the_path_and_its_children_are_guarded() -> None:
+    async with _client(_app([])) as client:
+        sibling = await client.post("/api/v1/documentsX", content=b"x" * 100)
+        child = await client.post("/api/v1/documents/text", content=b"x" * 100)
+    assert sibling.status_code == 404  # pas `/api/v1/documents` : la garde n'y touche pas
+    assert child.status_code == 413

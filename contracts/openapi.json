@@ -544,30 +544,6 @@
             ],
             "title": "File"
           },
-          "text": {
-            "anyOf": [
-              {
-                "maxLength": 500000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Text"
-          },
-          "title": {
-            "anyOf": [
-              {
-                "maxLength": 200,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Title"
-          },
           "url": {
             "anyOf": [
               {
@@ -1849,6 +1825,32 @@
         "title": "NeighborOut",
         "type": "object"
       },
+      "PasteCreate": {
+        "description": "Texte collé (`POST /documents/text`, corps JSON). La longueur du texte (500 000\ncaractères au plus) est contrôlée par le service, qui répond `paste_too_long` ; le corps est\nborné à 21 Mo par le middleware.",
+        "properties": {
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "PasteCreate",
+        "type": "object"
+      },
       "ProposalReadyEvent": {
         "properties": {
           "agent": {
@@ -3098,7 +3100,6 @@
         ]
       },
       "post": {
-        "description": "202 : nouveau document ou document en erreur remis en file ; 200 : doublon (existant).",
         "operationId": "create_document_api_v1_documents_post",
         "requestBody": {
           "content": {
@@ -3142,6 +3143,57 @@
           }
         },
         "summary": "Create Document",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/api/v1/documents/text": {
+      "post": {
+        "operationId": "paste_document_api_v1_documents_text_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasteCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentCreated"
+                }
+              }
+            },
+            "description": "Contenu déjà importé"
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentCreated"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Paste Document",
         "tags": [
           "documents"
         ]

@@ -4,6 +4,7 @@ from app.features.memory.service.text import (
     CHUNK_OVERLAP,
     CHUNK_TOKENS,
     chunk_text,
+    clean_display,
     clean_text,
     content_hash,
     count_tokens,
@@ -102,3 +103,29 @@ def test_display_name(raw: str | None, expected: str) -> None:
 def test_display_name_is_capped_and_normalized() -> None:
     assert len(display_name("a" * 500)) == 200
     assert display_name("e\u0301.txt") == "\u00e9.txt"
+
+
+# Construits par `chr` : un caractère invisible ne doit pas l'être aussi dans le source du test.
+RLO, LRI, RLI, FSI, PDI = (chr(c) for c in (0x202E, 0x2066, 0x2067, 0x2068, 0x2069))
+ZWSP, ESC, LS, PS = chr(0x200B), chr(0x1B), chr(0x2028), chr(0x2029)
+
+
+@pytest.mark.parametrize(
+    "raw,expected",
+    [
+        (f"facture{RLO}fdp.exe", "facturefdp.exe"),  # forçage droite-à-gauche
+        (f"{LRI}cv{PDI}{RLI}.pdf{FSI}", "cv.pdf"),  # isolats bidirectionnels
+        (f"c{ZWSP}v.pdf", "cv.pdf"),  # espace de largeur nulle
+        (f"cv{ESC}[31m.pdf", "cv[31m.pdf"),  # ESC
+        (f"ligne{LS}suite{PS}.pdf", "lignesuite.pdf"),  # séparateurs de ligne, de paragraphe
+        ("  trop   d'espaces" + chr(9) + ".pdf ", "trop d'espaces.pdf"),  # tabulation : Cc
+    ],
+)
+def test_display_name_drops_invisible_characters(raw: str, expected: str) -> None:
+    assert display_name(raw) == expected
+    assert clean_display(raw) == expected
+
+
+def test_clean_display_is_capped_and_may_be_empty() -> None:
+    assert len(clean_display("é" * 500)) == 200
+    assert clean_display(f"{RLO}{ZWSP} " + chr(10)) == "" and clean_display(None) == ""

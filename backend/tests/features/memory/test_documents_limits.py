@@ -137,3 +137,25 @@ async def test_streamed_multipart_over_the_limit_is_413(
     r = await client.post(API, content=body(), headers=headers)
     assert r.status_code == 413 and r.json()["error"]["message"] == TOO_LARGE
     assert _stored(tmp_path) == []
+
+
+class _QuickPaste(_Quick):
+    kind = "paste"
+
+
+async def test_paste_is_json_capped_at_500k_characters(
+    app: FastAPI, client: httpx.AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Corps JSON : pas le plafond d'1 Mio par champ multipart de Starlette ; 500 000 caractères
+    de 3 octets (1,5 Mo) passent, un de plus reçoit une erreur lisible sans écho."""
+    monkeypatch.setitem(INGESTION_SOURCES, "paste", _QuickPaste())
+    wide = await client.post(f"{API}/text", json={"text": "€" * 500_000})
+    assert wide.status_code == 202, wide.text[:200]
+    too_long = await client.post(f"{API}/text", json={"text": "secret" + "x" * 500_000})
+    assert too_long.status_code == 422 and too_long.json()["error"] == {
+        "code": "paste_too_long",
+        "message": "Texte trop long : 500 000 caractères au maximum.",
+        "details": None,
+    }
+    assert "secret" not in too_long.text
+    await app.state.memory.jobs.join()

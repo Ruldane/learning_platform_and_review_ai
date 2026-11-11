@@ -82,7 +82,7 @@ async def test_reupload_after_error_requeues(app: FastAPI, client: httpx.AsyncCl
 async def test_paste_is_stored_as_a_text_file(
     app: FastAPI, client: httpx.AsyncClient, db_session_factory: Factory
 ) -> None:
-    r = await client.post(API, data={"text": PHRASE, "title": "  Mes notes  "})
+    r = await client.post(f"{API}/text", json={"text": PHRASE, "title": "  Mes notes  "})
     assert r.status_code == 202
     doc = r.json()["document"]
     assert doc["source_kind"] == "paste" and doc["name"] == "Mes notes"
@@ -111,13 +111,13 @@ async def test_unsupported_type_is_415(client: httpx.AsyncClient, tmp_path: Path
     "kwargs",
     [
         {"files": {"file": ("a.txt", b"bonjour")}, "data": {"url": "https://example.org/"}},
-        {"data": {"url": "https://example.org/", "text": "bonjour"}},
-        {"data": {"text": "   "}},
+        {"data": {"url": "   "}},
         {"data": {}},
+        {"json": {"text": "   "}, "url": f"{API}/text"},
     ],
 )
 async def test_exactly_one_source_required(client: httpx.AsyncClient, kwargs: Any) -> None:
-    r = await client.post(API, **kwargs)
+    r = await client.post(kwargs.pop("url", API), **kwargs)
     assert r.status_code == 422
     assert r.json()["error"] == {
         "code": "invalid_document_source",
@@ -189,3 +189,26 @@ async def test_documents_isolated_between_users(app: FastAPI, client: httpx.Asyn
     assert removed.status_code == 404
     await _settle(app)
     assert [d["id"] for d in (await client.get(API)).json()] == [theirs.json()["document"]["id"]]
+
+
+async def test_reupload_of_a_stuck_document_requeues_and_rewrites_its_file(
+    app: FastAPI, client: httpx.AsyncClient, db_session_factory: Factory, settings: Settings
+) -> None:
+    """Statut final perdu (document `processing` sans job prévu) et fichier disparu : le réimport
+    le remet en file avec le fichier reçu ; l'ancien fichier n'est plus là."""
+    first = (await _upload(client, "a.txt", PHRASE.encode())).json()["document"]
+    await _settle(app)
+    user = app.state.local_user_id
+    async with db_session_factory() as db:
+        row = await DocumentRepository(db, user).update(first["id"], status="processing")
+        assert row is not None and row.storage_key is not None
+        old_key = row.storage_key
+        await db.commit()
+    (settings.storage_dir / old_key).unlink()
+    again = await _upload(client, "a.txt", PHRASE.encode())
+    assert again.status_code == 202 and again.json()["document"]["status"] == "queued"
+    await _settle(app)
+    async with db_session_factory() as db:
+        row = await DocumentRepository(db, user).get(first["id"])
+    assert row is not None and row.status == "indexed" and row.storage_key != old_key
+    assert row.storage_key is not None and (settings.storage_dir / row.storage_key).is_file()

@@ -3,6 +3,7 @@
 fichier est enregistré sous une clé générée (`<user_id>/documents/<uuid4><suffixe canonique>`).
 Ni les messages ni les journaux ne citent un nom de fichier, un lien ou un contenu."""
 
+import builtins
 import logging
 from dataclasses import dataclass
 from datetime import date
@@ -18,7 +19,7 @@ from app.features.memory.repository import DocumentRepository
 from app.features.memory.schemas import DocumentError, DocumentOut
 from app.features.memory.service.runtime import MemoryRuntime
 from app.features.memory.service.text import (
-    DISPLAY_NAME_MAX,
+    clean_display,
     clean_text,
     display_name,
     source_hash,
@@ -104,10 +105,10 @@ def _from_url(raw: str) -> _Incoming:
 
 
 def _from_text(text: str, title: str | None) -> _Incoming:
-    cleaned = clean_text(text)
-    if len(cleaned) > MAX_PASTE_CHARS:
+    if len(text) > MAX_PASTE_CHARS:
         raise AppError("paste_too_long", "Texte trop long : 500 000 caractères au maximum.", 422)
-    name = " ".join((title or "").split())[:DISPLAY_NAME_MAX] or default_paste_title()
+    cleaned = clean_text(text)
+    name = clean_display(title) or default_paste_title()
     data = cleaned.encode("utf-8")
     digest = source_hash(f"text:{cleaned}".encode())
     return _Incoming("paste", name, digest, data=data, suffix=SUFFIX_OF["text"])
@@ -124,8 +125,8 @@ class DocumentService:
         self, *, file: UploadFile | None, url: str | None, text: str | None, title: str | None
     ) -> tuple[DocumentOut, bool]:
         """(document, nouveau ?). Exactement une source. Même contenu déjà importé : l'existant,
-        sauf s'il est en erreur, auquel cas il repart en file. Le commit précède la mise en file
-        du worker (qui doit voir la ligne)."""
+        sauf s'il est en erreur ou bloqué, auquel cas il repart en file (`_again`). Le commit
+        précède la mise en file du worker (qui doit voir la ligne)."""
         url = url.strip() if url and url.strip() else None
         text = text if text and text.strip() else None
         if [file is not None, url is not None, text is not None].count(True) != 1:
@@ -133,7 +134,7 @@ class DocumentService:
         incoming = await self._incoming(file, url, text, title)
         existing = await self._docs.find_by_source_hash(incoming.digest)
         if existing is not None:
-            return await self._again(existing)
+            return await self._again(existing, incoming)
         doc, created = await self._insert(incoming)
         if not created:  # course perdue : un import identique a gagné
             return to_document_out(doc), False
@@ -154,26 +155,47 @@ class DocumentService:
         name = display_name(file.filename)
         return _Incoming(kind, name, source_hash(data), data=data, suffix=SUFFIX_OF[kind])
 
-    async def _again(self, existing: Document) -> tuple[DocumentOut, bool]:
-        """Doublon : rendu tel quel ; en erreur : remis en file (erreur effacée)."""
-        if existing.status != "error":
+    async def _again(self, existing: Document, incoming: _Incoming) -> tuple[DocumentOut, bool]:
+        """Doublon rendu tel quel, sauf s'il est en erreur, ou en file ou en cours sans job prévu
+        dans ce processus (statut final perdu) : il repart alors en file, erreur effacée, avec
+        le fichier qu'on vient de recevoir (l'ancien est supprimé après le commit)."""
+        stuck = existing.status in ("queued", "processing")
+        stuck = stuck and not self._runtime.jobs.is_scheduled(existing.id)
+        if existing.status != "error" and not stuck:
             return to_document_out(existing), False
+        old_key, new_key = existing.storage_key, await self._save(incoming)
+        if new_key is not None:
+            existing.storage_key, existing.size_bytes = new_key, len(incoming.data or b"")
         existing.status, existing.error = "queued", None
-        await self._db.commit()
+        await self._commit_files(new_key, old_key if new_key is not None else None)
         self._runtime.jobs.enqueue_ingest(self._user_id, existing.id)
         logger.info("Document %s remis en file", existing.id)
         return to_document_out(existing), True
+
+    async def _save(self, incoming: _Incoming) -> str | None:
+        if incoming.data is None or incoming.suffix is None:
+            return None
+        storage = self._runtime.providers.storage
+        return await storage.save(self._user_id, STORAGE_CATEGORY, incoming.data, incoming.suffix)
+
+    async def _commit_files(self, new_key: str | None, old_key: str | None) -> None:
+        """Commit ; s'il échoue, le nouveau fichier est supprimé, sinon l'ancien."""
+        storage = self._runtime.providers.storage
+        try:
+            await self._db.commit()
+        except BaseException:
+            if new_key is not None:
+                await storage.delete(self._user_id, new_key)
+            raise
+        if old_key is not None:
+            await storage.delete(self._user_id, old_key)
 
     async def _insert(self, incoming: _Incoming) -> tuple[Document, bool]:
         """Fichier enregistré puis ligne insérée et validée ; tout échec supprime le fichier.
         Course sur le hash (unicité) : la transaction est annulée (elle ne contient que cette
         insertion, d'où aucun SAVEPOINT, D65 c) et le gagnant est rendu, `False`."""
         storage = self._runtime.providers.storage
-        key = None
-        if incoming.data is not None and incoming.suffix is not None:
-            key = await storage.save(
-                self._user_id, STORAGE_CATEGORY, incoming.data, incoming.suffix
-            )
+        key = await self._save(incoming)
         committed = False
         try:
             doc = await self._docs.add(
@@ -201,9 +223,10 @@ class DocumentService:
     async def list(self) -> list[DocumentOut]:
         return [to_document_out(doc) for doc in await self._docs.list_recent(LIST_LIMIT)]
 
-    async def remove_for_item(self, item: MemoryItem) -> None:
+    async def remove_for_item(self, item: MemoryItem) -> builtins.list[str]:
         """Suppression d'un élément `document` (appelée par `MemoryService.delete`, qui a vérifié
-        que l'élément est à l'utilisateur) : ses lignes `documents` et leurs fichiers."""
+        que l'élément est à l'utilisateur) : ses lignes `documents` sont supprimées et les clés
+        de leurs fichiers rendues, à supprimer après le commit."""
         docs = {doc.id: doc for doc in await self._docs.for_item(item.id)}
         if item.source_id is not None and item.source_id not in docs:
             linked = await self._docs.get(item.source_id)
@@ -211,5 +234,4 @@ class DocumentService:
                 docs[linked.id] = linked
         for doc in docs.values():
             await self._docs.delete(doc.id)
-            if doc.storage_key is not None:
-                await self._runtime.providers.storage.delete(self._user_id, doc.storage_key)
+        return [doc.storage_key for doc in docs.values() if doc.storage_key is not None]

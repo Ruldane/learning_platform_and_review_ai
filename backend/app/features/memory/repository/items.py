@@ -62,6 +62,21 @@ class MemoryItemRepository(UserScopedRepository[MemoryItem]):
         )
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
+    async def find_document_of(self, source_id: str) -> MemoryItem | None:
+        """Élément `document` tiré du document `source_id` (le plus ancien s'il y en avait
+        plusieurs)."""
+        stmt = (
+            select(MemoryItem)
+            .where(
+                MemoryItem.user_id == self.user_id,
+                MemoryItem.kind == "document",
+                MemoryItem.source_id == source_id,
+            )
+            .order_by(MemoryItem.created_at, MemoryItem.id)
+            .limit(1)
+        )
+        return (await self.session.execute(stmt)).scalar_one_or_none()
+
     async def filtered(
         self, f: ItemFilter, *, limit: int, offset: int
     ) -> tuple[builtins.list[MemoryItem], int]:

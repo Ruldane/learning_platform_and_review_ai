@@ -82,10 +82,27 @@ def source_hash(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+# Catégories invisibles retirées d'un nom affiché : contrôles (Cc), formats (Cf : forçages et
+# isolats bidirectionnels U+202A-202E et U+2066-2069, espaces de largeur nulle), séparateurs de
+# ligne (Zl) et de paragraphe (Zp). « facture<U+202E>fdp.exe » ne peut plus se faire passer pour
+# « factureexe.pdf ».
+_HIDDEN_CATEGORIES = frozenset({"Cc", "Cf", "Zl", "Zp"})
+
+
+def _visible(text: str) -> str:
+    text = unicodedata.normalize("NFC", text)
+    return "".join(c for c in text if unicodedata.category(c) not in _HIDDEN_CATEGORIES)
+
+
+def clean_display(text: str | None) -> str:
+    """Texte affiché sur une ligne (nom de document, titre saisi ou reçu d'un site) : NFC,
+    caractères invisibles retirés (Cc, Cf, Zl, Zp), espaces regroupés, 200 caractères au plus.
+    Peut rendre une chaîne vide."""
+    return " ".join(_visible(text or "").split())[:DISPLAY_NAME_MAX].strip()
+
+
 def display_name(raw: str | None) -> str:
-    """Nom d'affichage d'un document : dernier segment d'un chemin (`/` ou `\\`), sans
-    caractère de contrôle. Jamais utilisé comme chemin."""
-    cleaned = unicodedata.normalize("NFC", _drop_controls(raw or ""))
-    segments = [s.strip() for s in _PATH_SEPARATORS.split(cleaned)]
-    name = next((s for s in reversed(segments) if s), "")
-    return name[:DISPLAY_NAME_MAX] or DEFAULT_DOCUMENT_NAME
+    """Nom d'affichage d'un document : dernier segment d'un chemin (`/` ou `\`), nettoyé par
+    `clean_display`. Jamais utilisé comme chemin."""
+    segments = [clean_display(s) for s in _PATH_SEPARATORS.split(_visible(raw or ""))]
+    return next((s for s in reversed(segments) if s), "") or DEFAULT_DOCUMENT_NAME
