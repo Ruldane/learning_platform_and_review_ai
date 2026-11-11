@@ -29,7 +29,7 @@ describe("ApiKeyList", () => {
       <ApiKeyList
         entries={entries}
         testResults={{}}
-        pendingProvider={null}
+        pendingProviders={[]}
         onSave={vi.fn()}
         onDelete={vi.fn()}
         onTest={vi.fn()}
@@ -45,7 +45,7 @@ describe("ApiKeyList", () => {
       <ApiKeyList
         entries={entries}
         testResults={{ anthropic: { ok: true, message: "Clé valide." } }}
-        pendingProvider="anthropic"
+        pendingProviders={["anthropic"]}
         onSave={vi.fn()}
         onDelete={vi.fn()}
         onTest={onTest}
@@ -64,7 +64,7 @@ describe("ApiKeyList", () => {
       <ApiKeyList
         entries={entries}
         testResults={{}}
-        pendingProvider={null}
+        pendingProviders={[]}
         onSave={vi.fn()}
         onDelete={vi.fn()}
         onTest={onTest}
@@ -82,7 +82,7 @@ describe("ApiKeyList", () => {
       <ApiKeyList
         entries={entries}
         testResults={{}}
-        pendingProvider={null}
+        pendingProviders={[]}
         onSave={onSave}
         onDelete={vi.fn()}
         onTest={vi.fn()}
@@ -92,5 +92,21 @@ describe("ApiKeyList", () => {
     const openai = within(screen.getByRole("article", { name: "OpenAI" }));
     await user.click(openai.getByRole("button", { name: "Enregistrer" }));
     expect(onSave).toHaveBeenCalledWith("openai", "sk-openai-9999");
+  });
+
+  it("marque occupés plusieurs fournisseurs à la fois", () => {
+    render(
+      <ApiKeyList
+        entries={entries}
+        testResults={{}}
+        pendingProviders={["anthropic", "openai"]}
+        onSave={vi.fn()}
+        onDelete={vi.fn()}
+        onTest={vi.fn()}
+      />,
+    );
+    const anthropic = within(screen.getByRole("article", { name: "Anthropic" }));
+    expect(anthropic.getByRole("button", { name: "Tester" })).toBeDisabled();
+    expect(anthropic.getByRole("button", { name: "Supprimer" })).toBeDisabled();
   });
 });

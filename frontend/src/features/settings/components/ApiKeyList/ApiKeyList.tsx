@@ -5,8 +5,8 @@ interface ApiKeyListProps {
   entries: ApiKeyEntry[];
   /** Résultats de test, par nom de fournisseur. */
   testResults: Record<string, KeyTestView>;
-  /** Fournisseur dont une opération est en cours, ou `null`. */
-  pendingProvider: string | null;
+  /** Fournisseurs dont une opération est en cours. */
+  pendingProviders: readonly string[];
   onSave: (provider: string, key: string) => void | Promise<void>;
   onDelete: (provider: string) => void;
   onTest: (provider: string) => void;
@@ -16,7 +16,7 @@ interface ApiKeyListProps {
 export function ApiKeyList({
   entries,
   testResults,
-  pendingProvider,
+  pendingProviders,
   onSave,
   onDelete,
   onTest,
@@ -28,7 +28,7 @@ export function ApiKeyList({
           <ApiKeyCard
             entry={entry}
             testResult={testResults[entry.provider]}
-            pending={pendingProvider === entry.provider}
+            pending={pendingProviders.includes(entry.provider)}
             onSave={(key) => onSave(entry.provider, key)}
             onDelete={() => onDelete(entry.provider)}
             onTest={() => onTest(entry.provider)}

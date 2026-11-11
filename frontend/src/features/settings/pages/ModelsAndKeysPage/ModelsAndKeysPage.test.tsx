@@ -86,6 +86,7 @@ describe("ModelsAndKeysPage", () => {
     );
     const user = await openPage();
     await user.type(screen.getByLabelText("Clé API Anthropic"), SECRET);
+    expect(document.body.innerHTML).not.toContain(SECRET);
     await user.click(card("Anthropic").getByRole("button", { name: "Enregistrer" }));
     expect(await card("Anthropic").findByText("•••• 1234")).toBeInTheDocument();
     expect(screen.getByLabelText("Clé API Anthropic")).toHaveValue("");
@@ -121,10 +122,11 @@ describe("ModelsAndKeysPage", () => {
       ),
     );
     const user = await openPage();
-    await user.type(screen.getByLabelText("Clé API Anthropic"), "court");
+    await user.type(screen.getByLabelText("Clé API Anthropic"), "sk-ant-short-0000");
     await user.click(card("Anthropic").getByRole("button", { name: "Enregistrer" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("La clé est trop courte.");
-    expect(screen.getByLabelText("Clé API Anthropic")).toHaveValue("court");
+    expect(screen.getByLabelText("Clé API Anthropic")).toHaveValue("sk-ant-short-0000");
+    expect(document.body.innerHTML).not.toContain("sk-ant-short");
   });
 
   it("n'offre la suppression que pour une clé saisie ici", async () => {

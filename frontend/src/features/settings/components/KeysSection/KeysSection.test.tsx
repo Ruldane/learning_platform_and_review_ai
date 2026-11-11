@@ -17,7 +17,7 @@ describe("KeysSection", () => {
           },
         ]}
         testResults={{}}
-        pendingProvider={null}
+        pendingProviders={[]}
         onSave={vi.fn()}
         onDelete={vi.fn()}
         onTest={vi.fn()}

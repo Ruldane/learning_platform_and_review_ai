@@ -5,7 +5,7 @@ import type { ApiKeyEntry, KeyTestView } from "../viewTypes";
 interface KeysSectionProps {
   entries: ApiKeyEntry[];
   testResults: Record<string, KeyTestView>;
-  pendingProvider: string | null;
+  pendingProviders: readonly string[];
   onSave: (provider: string, key: string) => void | Promise<void>;
   onDelete: (provider: string) => void;
   onTest: (provider: string) => void;

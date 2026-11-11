@@ -28,6 +28,7 @@ describe("ApiKeyCard", () => {
     expect(screen.getByLabelText(/clé/i)).toHaveValue("");
     expect(screen.getByText("•••• 1234")).toBeInTheDocument();
     expect(screen.queryByText(/sk-ant/)).not.toBeInTheDocument();
+    expect(document.body.innerHTML).not.toContain("sk-ant-secret");
   });
 
   it("garde la saisie quand l'enregistrement échoue, la vide quand il réussit", async () => {
@@ -42,6 +43,7 @@ describe("ApiKeyCard", () => {
     await user.type(screen.getByLabelText(/clé/i), "sk-ant-secret-1234");
     await user.click(screen.getByRole("button", { name: "Enregistrer" }));
     expect(screen.getByLabelText(/clé/i)).toHaveValue("sk-ant-secret-1234");
+    expect(document.body.innerHTML).not.toContain("sk-ant-secret");
     await user.click(screen.getByRole("button", { name: "Enregistrer" }));
     expect(screen.getByLabelText(/clé/i)).toHaveValue("");
   });
@@ -52,7 +54,7 @@ describe("ApiKeyCard", () => {
     );
     const input = screen.getByLabelText(/clé/i);
     expect(input).toHaveAttribute("type", "password");
-    expect(input).toHaveAttribute("autocomplete", "off");
+    expect(input).toHaveAttribute("autocomplete", "new-password");
     expect(input).toHaveValue("");
   });
 
