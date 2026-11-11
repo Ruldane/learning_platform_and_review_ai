@@ -40,8 +40,10 @@ class OpenAICompatibleProvider:
         return {"Authorization": f"Bearer {api_key}"}
 
     async def list_models(self, api_key: str) -> list[str] | None:
-        page = await _http.get_json(self.label, self._url("models"), self._headers(api_key), {})
-        return [m["id"] for m in page["data"]]
+        ids, _ = await _http.get_model_page(
+            self.label, self._url("models"), self._headers(api_key), {}
+        )
+        return ids
 
     async def test_key(self, api_key: str) -> KeyTestResult:
         """Liste les modèles : aucun token dépensé."""

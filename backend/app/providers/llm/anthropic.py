@@ -10,6 +10,7 @@ from app.providers.llm.base import KeyTestResult
 _TIMEOUT_S = 120
 _API_URL = "https://api.anthropic.com"
 _API_VERSION = "2023-06-01"
+_MAX_PAGES = 50  # garde-fou contre un curseur qui ne finit jamais
 
 
 def _headers(api_key: str) -> dict[str, str]:
@@ -33,14 +34,15 @@ class AnthropicProvider:
     async def list_models(self, api_key: str) -> list[str] | None:
         ids: list[str] = []
         params: dict[str, str | int] = {"limit": 1000}
-        while True:
-            page = await _http.get_json(
+        for _ in range(_MAX_PAGES):
+            page, cursor = await _http.get_model_page(
                 self.label, f"{_API_URL}/v1/models", _headers(api_key), params
             )
-            ids += [m["id"] for m in page["data"]]
-            if not page.get("has_more") or not page.get("last_id"):
+            ids += page
+            if cursor is None:
                 return ids
-            params["after_id"] = page["last_id"]
+            params["after_id"] = cursor
+        return ids
 
     async def test_key(self, api_key: str) -> KeyTestResult:
         """Liste les modèles : aucun token dépensé."""

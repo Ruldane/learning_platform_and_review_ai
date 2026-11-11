@@ -4,6 +4,7 @@ import httpx
 import pytest
 import respx
 
+from app.core.errors import AppError
 from app.providers.llm.anthropic import AnthropicProvider
 from app.providers.llm.glm import GlmProvider
 from app.providers.llm.openai import OpenAIProvider
@@ -107,3 +108,77 @@ async def test_glm_test_key_refused_on_401(mock: respx.MockRouter) -> None:
     assert not result.ok
     assert result.message == "Clé refusée par GLM (Z.ai)."
     assert KEY not in result.message
+
+
+BAD_KEYS = ["sk-clé-é", "sk-“smart”", "sk-ligne\nsuivante"]
+PROVIDERS = [AnthropicProvider, OpenAIProvider, GlmProvider]
+
+
+@pytest.mark.parametrize("bad_key", BAD_KEYS)
+@pytest.mark.parametrize("provider_cls", PROVIDERS)
+async def test_test_key_with_invalid_characters_does_not_raise(
+    mock: respx.MockRouter, provider_cls: type[AnthropicProvider], bad_key: str
+) -> None:
+    result = await provider_cls().test_key(bad_key)
+    assert not result.ok
+    assert result.message == "La clé contient des caractères invalides."
+    assert bad_key not in result.message
+    assert not mock.calls
+
+
+@pytest.mark.parametrize("bad_key", BAD_KEYS)
+@pytest.mark.parametrize("provider_cls", [AnthropicProvider, OpenAIProvider])
+async def test_list_models_with_invalid_characters_is_readable_error(
+    mock: respx.MockRouter, provider_cls: type[AnthropicProvider], bad_key: str
+) -> None:
+    with pytest.raises(AppError) as e:
+        await provider_cls().list_models(bad_key)
+    assert e.value.code == "llm_models_unavailable"
+    assert bad_key not in e.value.message
+    assert not mock.calls
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {},
+        {"data": None},
+        {"data": "texte"},
+        {"data": [{"name": "x"}]},
+        {"data": [None]},
+        {"data": [{"id": 3}]},
+        [1, 2],
+    ],
+)
+@pytest.mark.parametrize(
+    ("provider", "url"),
+    [
+        (AnthropicProvider(), "https://api.anthropic.com/v1/models"),
+        (OpenAIProvider(), "https://api.openai.com/v1/models"),
+    ],
+)
+async def test_list_models_malformed_payload_is_readable_error(
+    mock: respx.MockRouter, provider: AnthropicProvider, url: str, payload: object
+) -> None:
+    mock.get(url).respond(200, json=payload)
+    with pytest.raises(AppError) as e:
+        await provider.list_models(KEY)
+    assert e.value.code == "llm_models_unavailable" and e.value.status_code == 502
+    assert KEY not in e.value.message
+
+
+async def test_list_models_non_json_body_is_readable_error(mock: respx.MockRouter) -> None:
+    mock.get("https://api.openai.com/v1/models").respond(200, text="<html>")
+    with pytest.raises(AppError) as e:
+        await OpenAIProvider().list_models(KEY)
+    assert e.value.code == "llm_models_unavailable"
+
+
+async def test_anthropic_list_models_follows_pagination(mock: respx.MockRouter) -> None:
+    route = mock.get("https://api.anthropic.com/v1/models")
+    route.side_effect = [
+        httpx.Response(200, json={"data": [{"id": "a"}], "has_more": True, "last_id": "a"}),
+        httpx.Response(200, json={"data": [{"id": "b"}], "has_more": False, "last_id": "b"}),
+    ]
+    assert await AnthropicProvider().list_models(KEY) == ["a", "b"]
+    assert route.calls.last.request.url.params["after_id"] == "a"
