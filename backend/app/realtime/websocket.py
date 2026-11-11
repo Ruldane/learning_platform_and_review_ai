@@ -2,11 +2,13 @@
 
 - **Origine** : CORS ne s'applique pas aux WebSockets ; un navigateur envoie toujours `Origin`,
   qui doit être l'une des origines autorisées (`Settings.cors_origins`), sinon la poignée de
-  main est refusée (code 1008). Sans en-tête `Origin` (client hors navigateur, tests), accepté.
+  main est refusée (fermeture 1008 avant `accept` : le navigateur, lui, ne voit qu'un 1006,
+  comme pour un `after_seq` invalide ou un 401). Sans en-tête `Origin` (client hors
+  navigateur, tests), accepté.
 - **Propriété** : session inconnue ou d'un autre utilisateur → accepté puis fermé en `4404`
   (un refus avant `accept` n'arriverait au navigateur que comme un 1006 anonyme).
 - **Base** : jamais de session ouverte pour la durée de la connexion (D38) ; chaque lecture
-  (propriété, statut) ouvre une session courte par `session_factory`.
+  (propriété, statut, dernier `seq`) ouvre une session courte par `session_factory`.
 """
 
 from fastapi import WebSocketException, status
@@ -16,6 +18,7 @@ from starlette.websockets import WebSocket
 
 from app.agents.runtime import control
 from app.agents.runtime.lifespan import AgentRuntime
+from app.agents.runtime.repositories import EventRepository
 from app.core.errors import AppError
 from app.realtime import replay
 
@@ -48,6 +51,16 @@ async def serve_session_stream(
         except AppError:
             return "cancelled"  # session disparue : plus rien à attendre
 
+    async def read_last_seq() -> int:
+        async with factory() as db:
+            return await EventRepository(db, user_id).max_seq(session_id)
+
     await replay.stream_to_socket(
-        ws, runtime.bus, user_id, session_id, after_seq, read_status=read_status
+        ws,
+        runtime.bus,
+        user_id,
+        session_id,
+        after_seq,
+        read_status=read_status,
+        read_last_seq=read_last_seq,
     )

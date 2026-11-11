@@ -21,9 +21,3 @@ def sync_client(app: FastAPI) -> Iterator[TestClient]:
     """Client synchrone (WebSocket) : lifespan, requêtes et WebSocket sur la même boucle."""
     with TestClient(app) as client:
         yield client
-
-
-@pytest.fixture(autouse=True)
-def short_idle(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Silence de 50 ms (au lieu d'une seconde) avant de lire le statut d'une session."""
-    monkeypatch.setattr("app.realtime.replay.IDLE_CHECK_S", 0.05)

@@ -190,11 +190,17 @@ class _Run:
 
     async def complete(self, summary: str) -> None:
         if await self._transition("completed", error=None):
-            await self.publish("run.completed", {"summary": summary})
-            await self.ctx.bus.close(user_id=self.user_id, session_id=self.session_id)
+            await self._publish_final("run.completed", {"summary": summary})
 
     async def fail(self, code: str, message: str) -> None:
         error = {"code": code, "message": message}
         if await self._transition("failed", error=error):
-            await self.publish("run.failed", error)
+            await self._publish_final("run.failed", error)
+
+    async def _publish_final(self, type: Any, payload: dict[str, Any]) -> None:
+        """Événement final puis `bus.close`, même si la publication échoue : sinon les abonnés
+        (WebSocket) attendraient indéfiniment une session pourtant terminée (D42)."""
+        try:
+            await self.publish(type, payload)
+        finally:
             await self.ctx.bus.close(user_id=self.user_id, session_id=self.session_id)

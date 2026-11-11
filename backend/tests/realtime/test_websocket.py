@@ -12,6 +12,8 @@ from app.db.base import new_id
 from app.main import create_app
 from tests.sessions_support import API, act_as, wait_status_sync, wait_until_sync
 
+pytestmark = pytest.mark.timeout(10)
+
 
 def start(client: TestClient, graph: str) -> str:
     r = client.post(API, json={"graph": graph})

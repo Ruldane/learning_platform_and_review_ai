@@ -31,6 +31,10 @@ asyncio_default_fixture_loop_scope = "function"
 pythonpath = ["."]
 testpaths = ["tests"]
 addopts = "--import-mode=importlib"
+# Un test bloqué (WebSocket, attente sans fin) échoue au lieu de geler la suite ; méthode
+# « thread » : Windows n'a pas SIGALRM.
+timeout = 60
+timeout_method = "thread"
 
 [tool.ruff]
 line-length = 100
@@ -51,6 +55,7 @@ dev = [
     "pre-commit>=4.7.0",
     "pytest>=9.2.0",
     "pytest-asyncio>=1.4.1.post1",
+    "pytest-timeout>=2.4.0",
     "pyyaml>=6.0.3",
     "respx>=0.23.1",
     "ruff>=0.17.4",
