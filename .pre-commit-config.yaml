@@ -1,0 +1,32 @@
+# Hooks locaux uniquement (aucun dépôt distant). Les commandes passent par uv,
+# donc aucune installation globale n'est requise (Windows + Git Bash compris).
+#
+# Hooks à ajouter par les tâches suivantes (ne pas les ajouter avant : ils échoueraient) :
+#   - back : `mypy app` et `lint-imports` (quand `app/` et la config import-linter existent) ;
+#   - front : `pnpm --dir frontend lint` et `pnpm --dir frontend typecheck` (tâche 0.11) ;
+#   - contrat : `uv run --directory backend python scripts/export_openapi.py --check` (tâche 0.11).
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check (back)
+        entry: uv run --directory backend ruff check
+        language: system
+        files: ^backend/
+        types: [python]
+        pass_filenames: false
+      - id: ruff-format
+        name: ruff format --check (back)
+        entry: uv run --directory backend ruff format --check
+        language: system
+        files: ^backend/
+        types: [python]
+        pass_filenames: false
+      - id: check-file-length
+        name: longueur des fichiers et fonctions (back)
+        # --project (et non --directory) : le répertoire courant reste la racine du dépôt,
+        # les chemins transmis par pre-commit restent donc valides.
+        entry: uv run --project backend python backend/scripts/check_file_length.py
+        language: system
+        files: ^backend/
+        types: [python]
