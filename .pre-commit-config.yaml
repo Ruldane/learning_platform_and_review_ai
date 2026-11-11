@@ -2,9 +2,7 @@
 # donc aucune installation globale n'est requise (Windows + Git Bash compris).
 #
 # Hooks à ajouter par les tâches suivantes (ne pas les ajouter avant : ils échoueraient) :
-#   - back : `lint-imports` (quand la config import-linter existe) ;
-#   - front : `pnpm --dir frontend lint` et `pnpm --dir frontend typecheck` (tâche 0.11) ;
-#   - contrat : `uv run --directory backend python scripts/export_openapi.py --check` (tâche 0.11).
+#   - back : `lint-imports` (quand la config import-linter existe).
 repos:
   - repo: local
     hooks:
@@ -37,4 +35,23 @@ repos:
         language: system
         files: ^backend/
         types: [python]
+        pass_filenames: false
+      - id: openapi-contract
+        name: contrat OpenAPI à jour (contracts/openapi.json)
+        # Échoue si le back a changé sans régénérer le contrat : voir backend/scripts/export_openapi.py.
+        entry: uv run --directory backend python -m scripts.export_openapi --check
+        language: system
+        files: ^(backend/|contracts/)
+        pass_filenames: false
+      - id: frontend-lint
+        name: eslint (front)
+        entry: pnpm --dir frontend lint
+        language: system
+        files: ^frontend/
+        pass_filenames: false
+      - id: frontend-typecheck
+        name: tsc --noEmit (front)
+        entry: pnpm --dir frontend typecheck
+        language: system
+        files: ^frontend/
         pass_filenames: false
