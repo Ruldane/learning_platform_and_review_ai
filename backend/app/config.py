@@ -12,8 +12,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     data_dir: Path = Path("/data")
-    # Si absente, calculée à partir de `data_dir` (voir `_default_database_url`).
-    database_url: str | None = None
+    # Vide = calculée à partir de `data_dir` (voir `_default_database_url`) : jamais vide ensuite.
+    database_url: str = ""
     auth_mode: Literal["local", "google"] = "local"
 
     anthropic_api_key: str | None = None
@@ -36,7 +36,7 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _default_database_url(self) -> "Settings":
-        if self.database_url is None:
+        if not self.database_url:
             self.database_url = f"sqlite+aiosqlite:///{(self.data_dir / 'app.db').as_posix()}"
         return self
 

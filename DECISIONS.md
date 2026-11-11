@@ -150,3 +150,10 @@ Chaque entrée : date, sujet, décision, raison.
 - **Sujet** : Règles ruff du back
 - **Décision** : ruff avec `select = ["E", "F", "I", "UP", "B", "SIM"]` et `line-length = 100` (pycodestyle, pyflakes, tri des imports, pyupgrade, bugbear, simplifications).
 - **Raison** : un jeu restreint et sans bruit qui attrape les vrais défauts (imports inutilisés, bugs probables, syntaxe obsolète) sans imposer de règles de style discutables ; à étendre seulement si un défaut récurrent le justifie.
+
+## D22
+
+- **Date** : 2026-11-11
+- **Sujet** : Socle de données (tâche 0.3)
+- **Décision** : (1) `created_at` / `updated_at` utilisent un `TypeDecorator` `UTCDateTime` (colonne `DateTime(timezone=True)`) qui restitue des datetimes UTC avec fuseau, car SQLite perd le fuseau à la lecture ; la migration 0001 écrit `sa.DateTime(timezone=True)` pour rester indépendante du code applicatif. (2) Les fixtures de test utilisent un vrai fichier `tmp_path/app.db` (schéma créé par `Base.metadata.create_all` avant le démarrage de l'app) plutôt qu'une base mémoire et un `get_db` surchargé : `client` et `db_session` voient les mêmes données. (3) `Settings.database_url` est une `str` (vide = calculée depuis `data_dir`), l'override `DATABASE_URL` reste valable. (4) `Base.metadata` porte une convention de nommage des contraintes (nécessaire au mode batch d'Alembic sur SQLite). (5) Aucune clé étrangère vers `users` pour l'instant : `user_id` est indexé mais non contraint (le filtre applicatif du repository est la garantie ; `User.user_id == User.id` rendrait une clé étrangère auto-référente sans valeur). (6) `User.email` est unique et obligatoire, `google_sub` unique et nullable. (7) `alembic/env.py` lit `sqlalchemy.url` s'il est fixé (tests, scripts), sinon `get_settings().database_url`.
+- **Raison** : lectures fidèles au contrat « UTC tz aware », tests plus proches de la production (WAL, connexions distinctes), migrations vérifiables par `compare_metadata`.
