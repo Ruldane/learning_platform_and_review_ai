@@ -2,7 +2,7 @@ import { useEffect, useId, useRef } from "react";
 import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 import { InlineError } from "@/shared/ui/states/InlineError";
-import type { ItemEdit, MemoryItemDetailView, NewItem } from "../viewTypes";
+import type { ItemPatch, MemoryItemDetailView, NewItem } from "../viewTypes";
 import { DrawerBody } from "./DrawerBody";
 
 interface MemoryItemDrawerProps {
@@ -12,7 +12,7 @@ interface MemoryItemDrawerProps {
   busy: boolean;
   error: string | null;
   onClose: () => void;
-  onSave: (value: ItemEdit | NewItem) => void;
+  onSave: (value: ItemPatch | NewItem) => void;
   onDelete: (id: string) => void;
   onOpenItem: (id: string) => void;
 }

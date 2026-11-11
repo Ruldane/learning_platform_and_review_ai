@@ -57,7 +57,29 @@ describe("MemoryItemForm", () => {
     await user.clear(screen.getByLabelText("Titre"));
     await user.type(screen.getByLabelText("Titre"), "Attention v2");
     await user.click(save());
-    expect(onSubmit).toHaveBeenCalledWith({ ...initial, title: "Attention v2" });
+    expect(onSubmit).toHaveBeenCalledWith({ title: "Attention v2" });
+  });
+
+  it("sends only the changed fields when editing", async () => {
+    const onSubmit = vi.fn();
+    const user = userEvent.setup();
+    const initial = { title: "Attention", text: "Texte", tags: ["nlp"], level: "declare" as const };
+    render(<MemoryItemForm {...base} initial={initial} onSubmit={onSubmit} />);
+    await user.type(screen.getByLabelText("Étiquettes"), ", cours");
+    await user.selectOptions(screen.getByLabelText("Niveau"), "En cours");
+    await user.click(save());
+    expect(onSubmit).toHaveBeenCalledWith({ tags: ["nlp", "cours"], level: "en_cours" });
+  });
+
+  it("offers no text field for a document and never sends its text", async () => {
+    const onSubmit = vi.fn();
+    const user = userEvent.setup();
+    const initial = { title: "Cours", text: "x".repeat(25_000), tags: [], level: null };
+    render(<MemoryItemForm {...base} initial={initial} withText={false} onSubmit={onSubmit} />);
+    expect(screen.queryByLabelText("Texte")).not.toBeInTheDocument();
+    await user.type(screen.getByLabelText("Titre"), " v2");
+    await user.click(save());
+    expect(onSubmit).toHaveBeenCalledWith({ title: "Cours v2" });
   });
 
   it("hides the level when the item has none to edit", () => {

@@ -62,6 +62,9 @@ export interface ItemEdit {
   level: "declare" | "en_cours" | null;
 }
 
+/** Modification : seuls les champs changés sont envoyés (un champ absent ne change rien). */
+export type ItemPatch = Partial<ItemEdit>;
+
 export interface NewItem extends ItemEdit {
   kind: "acquis" | "decision" | "offre";
 }

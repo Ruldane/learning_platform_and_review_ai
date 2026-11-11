@@ -12,6 +12,7 @@ export type {
   DocumentRow,
   DocumentStatusView,
   ItemEdit,
+  ItemPatch,
   ItemFilterValue,
   MapPointView,
   MemoryItemDetailView,

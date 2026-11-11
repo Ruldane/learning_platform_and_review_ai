@@ -42,7 +42,14 @@ export function MemoryExplorerPage() {
       <section aria-label={t("memory.page.listTitle")}>
         <ListSection onOpen={openItem} />
       </section>
-      <ItemPanel itemId={itemId} creating={creating} onClose={close} onOpenItem={openItem} />
+      {/* Une clé par élément : les erreurs d'écriture ne passent pas d'un élément à l'autre. */}
+      <ItemPanel
+        key={creating ? "new" : (itemId ?? "none")}
+        itemId={itemId}
+        creating={creating}
+        onClose={close}
+        onOpenItem={openItem}
+      />
     </div>
   );
 }

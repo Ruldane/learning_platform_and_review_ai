@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { t } from "@/shared/i18n/t";
 import type { SocketFactory } from "@/shared/realtime/socket";
 import { useSessionStream } from "@/shared/realtime/useSessionStream";
+import { Button } from "@/shared/ui/button";
 import { ErrorState } from "@/shared/ui/states/ErrorState";
 
 interface LearnedProgressProps {
@@ -10,6 +11,8 @@ interface LearnedProgressProps {
   documentName: string;
   /** Appelé une fois, quand la session est terminée (réussie ou non). */
   onFinished: () => void;
+  /** Relance le parcours de l'Archiviste sur le document (échec ou annulation). */
+  onRetry: () => void;
   createSocket?: SocketFactory;
 }
 
@@ -24,6 +27,7 @@ export function LearnedProgress({
   sessionId,
   documentName,
   onFinished,
+  onRetry,
   createSocket,
 }: LearnedProgressProps) {
   const stream = useSessionStream(sessionId, { createSocket });
@@ -63,6 +67,11 @@ export function LearnedProgress({
       >
         {message}
       </p>
+      {failed ? (
+        <Button variant="outline" size="sm" className="self-start" onClick={onRetry}>
+          {t("memory.documents.relaunch")}
+        </Button>
+      ) : null}
     </section>
   );
 }

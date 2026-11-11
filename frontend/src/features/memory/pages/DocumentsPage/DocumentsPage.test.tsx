@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { apiBaseUrl } from "@/shared/api/client";
@@ -179,6 +179,50 @@ describe("DocumentsPage Déjà appris", () => {
     const { fake } = await start();
     fake.last().open().push(started(1, "archivist"), failed(2));
     expect(await screen.findByRole("alert")).toHaveTextContent("Clé manquante pour ce niveau.");
+  });
+
+  it("offers Relancer after a failure and follows the new run (I2)", async () => {
+    const { fake, user } = await start();
+    fake.last().open().push(started(1, "archivist"), failed(2));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Clé manquante pour ce niveau.");
+    let launches = 0;
+    server.use(
+      http.post(`${API}/documents/d1/learned`, () => {
+        launches += 1;
+        return HttpResponse.json({ session_id: "s2" }, { status: 202 });
+      }),
+      http.get(`${API}/sessions/s2`, () =>
+        HttpResponse.json({ ...sessionView("running"), id: "s2" }),
+      ),
+    );
+    const progress = screen.getByRole("region", { name: /Suivi de l'Archiviste/ });
+    await user.click(within(progress).getByRole("button", { name: "Relancer" }));
+    await waitFor(() => expect(launches).toBe(1));
+    await waitFor(() => expect(fake.sockets).toHaveLength(2));
+    fake
+      .last()
+      .open()
+      .push({ ...written(2, "Attention"), session_id: "s2" });
+    fake.last().push({ ...completed(3), session_id: "s2" });
+    expect(await screen.findByText("1 acquis ajouté(s)")).toBeInTheDocument();
+    useSessionStore.getState().reset("s2");
+  });
+
+  it("can relaunch a document already marked learned after a reload (I2)", async () => {
+    const { backend, user } = setup({
+      documents: [documentOut({ id: "d1", name: "Cours NLP", learned: true })],
+    });
+    let launches = 0;
+    server.use(
+      http.post(`${API}/documents/d1/learned`, () => {
+        launches += 1;
+        return HttpResponse.json({ session_id: "s1" }, { status: 202 });
+      }),
+    );
+    expect(backend.documents).toHaveLength(1);
+    expect(await screen.findByText("Marqué déjà appris")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Relancer" }));
+    await waitFor(() => expect(launches).toBe(1));
   });
 
   it("shows the server refusal when the document cannot be marked", async () => {

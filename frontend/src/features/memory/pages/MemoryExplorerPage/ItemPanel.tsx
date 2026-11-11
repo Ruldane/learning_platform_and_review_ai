@@ -3,7 +3,7 @@ import { t } from "@/shared/i18n/t";
 import { ErrorState } from "@/shared/ui/states/ErrorState";
 import { LoadingState } from "@/shared/ui/states/LoadingState";
 import { MemoryItemDrawer } from "../../components/MemoryItemDrawer";
-import type { ItemEdit, NewItem } from "../../components/viewTypes";
+import type { ItemPatch, NewItem } from "../../components/viewTypes";
 import { useItemMutations } from "../../hooks/useItemMutations";
 import { useMemoryItem } from "../../hooks/useMemoryItem";
 
@@ -23,7 +23,7 @@ export function ItemPanel({ itemId, creating, onClose, onOpenItem }: ItemPanelPr
   const writes = [create, update, remove];
   const failure = writes.find((write) => write.isError)?.error ?? null;
 
-  const save = (value: ItemEdit | NewItem) => {
+  const save = (value: ItemPatch | NewItem) => {
     if ("kind" in value) create.mutate(value, { onSuccess: (created) => onOpenItem(created.id) });
     else if (itemId) update.mutate({ id: itemId, value });
   };

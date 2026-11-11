@@ -1,6 +1,6 @@
 import { api, apiBaseUrl } from "@/shared/api/client";
 import { unwrap } from "@/shared/api/errors";
-import type { ItemEdit, ItemsQuery, MemoryKindView, NewItem, UploadInput } from "./types";
+import type { ItemPatch, ItemsQuery, MemoryKindView, NewItem, UploadInput } from "./types";
 
 /** Lien direct vers l'export JSON : le navigateur le télécharge, aucun appel de l'application. */
 export const exportUrl = `${apiBaseUrl}/api/v1/memory/export`;
@@ -43,8 +43,8 @@ export async function createItem(value: NewItem) {
   return unwrap(await api.POST("/memory/items", { body: value }));
 }
 
-/** `PATCH /memory/items/{id}` : modifier (`ItemEdit`) ou confirmer une décision (`status`). */
-export async function patchItem(id: string, value: ItemEdit | { status: "active" }) {
+/** `PATCH /memory/items/{id}` : modifier (`ItemPatch`, champs changés seuls) ou confirmer une décision (`status`). */
+export async function patchItem(id: string, value: ItemPatch | { status: "active" }) {
   return unwrap(
     await api.PATCH("/memory/items/{item_id}", { params: { path: { item_id: id } }, body: value }),
   );

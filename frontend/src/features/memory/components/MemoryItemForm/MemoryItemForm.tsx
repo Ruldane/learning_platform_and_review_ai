@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
-import type { ItemEdit, NewItem } from "../viewTypes";
+import type { ItemEdit, ItemPatch, NewItem } from "../viewTypes";
 import { buildValue, isValid, showLevel, toDraft, type Draft } from "./itemFormModel";
 import { KindLevelFields } from "./KindLevelFields";
 import { TextFields } from "./TextFields";
@@ -9,8 +9,10 @@ import { TextFields } from "./TextFields";
 interface MemoryItemFormProps {
   initial: ItemEdit | null;
   chooseKind: boolean;
+  /** Faux : pas de zone de texte (document importé) ; le texte n'est ni validé ni envoyé. */
+  withText?: boolean;
   disabled: boolean;
-  onSubmit: (value: ItemEdit | NewItem) => void;
+  onSubmit: (value: ItemPatch | NewItem) => void;
   onCancel: () => void;
 }
 
@@ -18,17 +20,18 @@ interface MemoryItemFormProps {
 export function MemoryItemForm({
   initial,
   chooseKind,
+  withText = true,
   disabled,
   onSubmit,
   onCancel,
 }: MemoryItemFormProps) {
   const [draft, setDraft] = useState<Draft>(() => toDraft(initial));
   const patch = (change: Partial<Draft>) => setDraft((current) => ({ ...current, ...change }));
-  const canSubmit = !disabled && isValid(draft);
+  const canSubmit = !disabled && isValid(draft, withText);
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (canSubmit) onSubmit(buildValue(draft, chooseKind, initial));
+    if (canSubmit) onSubmit(buildValue(draft, chooseKind, initial, withText));
   };
 
   return (
@@ -40,7 +43,7 @@ export function MemoryItemForm({
         disabled={disabled}
         onChange={patch}
       />
-      <TextFields draft={draft} disabled={disabled} onChange={patch} />
+      <TextFields draft={draft} withText={withText} disabled={disabled} onChange={patch} />
       <div className="flex gap-2">
         <Button type="submit" disabled={!canSubmit}>
           {t("memory.button.save")}

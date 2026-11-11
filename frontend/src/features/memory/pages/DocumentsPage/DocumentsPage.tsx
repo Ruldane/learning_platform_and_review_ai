@@ -41,6 +41,7 @@ export function DocumentsPage({ createSocket }: { createSocket?: SocketFactory }
           sessionId={learning.sessionId}
           documentName={nameOf(learning.documentId)}
           onFinished={() => actions.finishLearning(learning.documentId)}
+          onRetry={() => learn.mutate(learning.documentId)}
           createSocket={createSocket}
         />
       ))}

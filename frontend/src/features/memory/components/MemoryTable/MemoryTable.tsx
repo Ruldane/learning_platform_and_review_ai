@@ -1,10 +1,9 @@
 import { t } from "@/shared/i18n/t";
-import { Button } from "@/shared/ui/button";
 import { EmptyState } from "@/shared/ui/states/EmptyState";
 import { MemoryFilters } from "../MemoryFilters";
 import type { ItemFilterValue, MemoryItemRow } from "../viewTypes";
-import { canMerge } from "./mergeRule";
 import { ItemsTable } from "./ItemsTable";
+import { MergeBar } from "./MergeBar";
 import { TablePager } from "./TablePager";
 
 interface MemoryTableProps {
@@ -20,21 +19,22 @@ interface MemoryTableProps {
   onOpen: (id: string) => void;
   onMerge: (targetId: string, otherIds: string[]) => void;
   onPage: (offset: number) => void;
+  /** Fusion en cours : bouton et sélection verrouillés. */
+  merging: boolean;
 }
 
 /** Liste des éléments de mémoire : filtres, sélection, fusion et pagination (présentationnel). */
 export function MemoryTable(props: MemoryTableProps) {
-  const { items, total, offset, limit, selected, onSelect, onMerge } = props;
-  const picked = selected.map((id) => items.find((item) => item.id === id));
-  // Un élément coché sur une autre page n'a pas de type connu ici : pas de fusion à l'aveugle.
-  const mergeable =
-    picked.every((item) => item !== undefined) && canMerge(picked as MemoryItemRow[]);
-  const toggle = (id: string) =>
-    onSelect(selected.includes(id) ? selected.filter((other) => other !== id) : [...selected, id]);
-  const merge = () => {
-    const [target, ...others] = selected;
-    if (target !== undefined) onMerge(target, others);
-  };
+  const { items, total, offset, limit, selected, merging, onSelect } = props;
+  const pager = (
+    <TablePager
+      total={total}
+      offset={offset}
+      limit={limit}
+      shown={items.length}
+      onPage={props.onPage}
+    />
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -44,24 +44,28 @@ export function MemoryTable(props: MemoryTableProps) {
         onChange={props.onFiltersChange}
       />
       {items.length === 0 ? (
-        <EmptyState title={t("memory.empty")} />
+        <>
+          <EmptyState title={t("memory.empty")} />
+          {total > limit ? pager : null}
+        </>
       ) : (
         <>
-          <ItemsTable items={items} selected={selected} onToggle={toggle} onOpen={props.onOpen} />
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-3">
-              <Button variant="outline" disabled={!mergeable} onClick={merge}>
-                {t("memory.button.merge")}
-              </Button>
-              <p className="text-xs text-muted-foreground">{t("memory.table.mergeHint")}</p>
-            </div>
-            <TablePager
-              total={total}
-              offset={offset}
-              limit={limit}
-              shown={items.length}
-              onPage={props.onPage}
-            />
+          <ItemsTable
+            items={items}
+            selected={selected}
+            locked={merging}
+            onToggle={(id) =>
+              onSelect(
+                selected.includes(id)
+                  ? selected.filter((other) => other !== id)
+                  : [...selected, id],
+              )
+            }
+            onOpen={props.onOpen}
+          />
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <MergeBar items={items} selected={selected} merging={merging} onMerge={props.onMerge} />
+            {pager}
           </div>
         </>
       )}

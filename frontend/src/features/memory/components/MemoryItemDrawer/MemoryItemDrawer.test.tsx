@@ -113,12 +113,24 @@ describe("MemoryItemDrawer", () => {
     await user.clear(screen.getByLabelText("Titre"));
     await user.type(screen.getByLabelText("Titre"), "Attention v2");
     await user.click(screen.getByRole("button", { name: "Enregistrer" }));
-    expect(onSave).toHaveBeenCalledWith({
-      title: "Attention v2",
-      text: "Le mécanisme d'attention pondère les jetons.",
-      tags: ["nlp"],
-      level: "declare",
-    });
+    expect(onSave).toHaveBeenCalledWith({ title: "Attention v2" });
+  });
+
+  it("edits only the title and tags of a document", async () => {
+    const onSave = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <MemoryItemDrawer
+        {...base}
+        item={detail({ kind: "document", level: null, tags: ["nlp"], text: "x".repeat(25_000) })}
+        onSave={onSave}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "Modifier" }));
+    expect(screen.queryByLabelText("Texte")).not.toBeInTheDocument();
+    await user.type(screen.getByLabelText("Étiquettes"), ", cours");
+    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+    expect(onSave).toHaveBeenCalledWith({ tags: ["nlp", "cours"] });
   });
 
   it("does not offer the level of a validated acquis", async () => {

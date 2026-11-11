@@ -1,4 +1,4 @@
-import type { ItemEdit, NewItem } from "../viewTypes";
+import type { ItemEdit, ItemPatch, NewItem } from "../viewTypes";
 
 export type NewKind = NewItem["kind"];
 export type EditableLevel = NonNullable<ItemEdit["level"]>;
@@ -35,19 +35,33 @@ export function showLevel(draft: Draft, chooseKind: boolean, initial: ItemEdit |
   return chooseKind ? draft.kind === "acquis" : initial?.level != null;
 }
 
-export const isValid = (draft: Draft): boolean =>
-  draft.title.trim() !== "" && draft.text.trim() !== "";
+export const isValid = (draft: Draft, withText = true): boolean =>
+  draft.title.trim() !== "" && (!withText || draft.text.trim() !== "");
+
+const sameTags = (a: string[], b: string[]) =>
+  a.length === b.length && a.every((v, i) => v === b[i]);
+
+/** Seuls les champs modifiés partent au PATCH : un champ absent ne change rien côté back. */
+function changedFields(edit: ItemEdit, initial: ItemEdit | null, withText: boolean): ItemPatch {
+  const patch: ItemPatch = {};
+  if (edit.title !== initial?.title) patch.title = edit.title;
+  if (withText && edit.text !== initial?.text) patch.text = edit.text;
+  if (!sameTags(edit.tags, initial?.tags ?? [])) patch.tags = edit.tags;
+  if (edit.level !== null && edit.level !== initial?.level) patch.level = edit.level;
+  return patch;
+}
 
 export function buildValue(
   draft: Draft,
   chooseKind: boolean,
   initial: ItemEdit | null,
-): ItemEdit | NewItem {
+  withText = true,
+): ItemPatch | NewItem {
   const edit: ItemEdit = {
     title: draft.title.trim(),
     text: draft.text.trim(),
     tags: parseTags(draft.tags),
     level: showLevel(draft, chooseKind, initial) ? draft.level : null,
   };
-  return chooseKind ? { ...edit, kind: draft.kind } : edit;
+  return chooseKind ? { ...edit, kind: draft.kind } : changedFields(edit, initial, withText);
 }

@@ -5,6 +5,7 @@ import type { Draft } from "./itemFormModel";
 
 interface TextFieldsProps {
   draft: Draft;
+  withText: boolean;
   disabled: boolean;
   onChange: (patch: Partial<Draft>) => void;
 }
@@ -12,7 +13,7 @@ interface TextFieldsProps {
 const labelClass = "flex flex-col gap-1 text-sm font-medium";
 
 /** Titre, texte et étiquettes (séparées par des virgules). */
-export function TextFields({ draft, disabled, onChange }: TextFieldsProps) {
+export function TextFields({ draft, withText, disabled, onChange }: TextFieldsProps) {
   const tagsId = useId();
   const hintId = useId();
   return (
@@ -28,16 +29,18 @@ export function TextFields({ draft, disabled, onChange }: TextFieldsProps) {
           className={fieldClass}
         />
       </label>
-      <label className={labelClass}>
-        {t("memory.form.text")}
-        <textarea
-          value={draft.text}
-          disabled={disabled}
-          rows={8}
-          onChange={(e) => onChange({ text: e.target.value })}
-          className={`${fieldClass} h-auto py-1.5`}
-        />
-      </label>
+      {withText ? (
+        <label className={labelClass}>
+          {t("memory.form.text")}
+          <textarea
+            value={draft.text}
+            disabled={disabled}
+            rows={8}
+            onChange={(e) => onChange({ text: e.target.value })}
+            className={`${fieldClass} h-auto py-1.5`}
+          />
+        </label>
+      ) : null}
       <div className="flex flex-col gap-1">
         <label htmlFor={tagsId} className="text-sm font-medium">
           {t("memory.form.tags")}

@@ -76,6 +76,9 @@ export const memory = {
     selection: "Sélection",
     range: "{from}–{to} sur {total}",
     mergeHint: "Coche au moins deux éléments du même type (hors documents) pour les fusionner.",
+    mergeAsk: "Fondre {count} éléments dans « {title} » ? Les autres seront supprimés.",
+    mergeYes: "Oui, fusionner",
+    mergeNo: "Non, annuler",
   },
   pending: {
     title: "À confirmer",
@@ -183,6 +186,7 @@ export const memory = {
       paste: "Texte collé",
     },
     markLearned: "Déjà appris",
+    relaunch: "Relancer",
     learned: "Marqué déjà appris",
     learning: "L'Archiviste extrait les concepts…",
     learnedCount: "{n} acquis ajouté(s)",

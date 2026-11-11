@@ -7,6 +7,7 @@ import type { MemoryItemRow } from "../viewTypes";
 interface MemoryTableRowProps {
   item: MemoryItemRow;
   checked: boolean;
+  locked: boolean;
   onToggle: (id: string) => void;
   onOpen: (id: string) => void;
 }
@@ -14,13 +15,14 @@ interface MemoryTableRowProps {
 const cellClass = "px-3 py-2 align-top";
 
 /** Une ligne de la liste : case, titre (ouvre le détail), type, auteur, niveau et date. */
-export function MemoryTableRow({ item, checked, onToggle, onOpen }: MemoryTableRowProps) {
+export function MemoryTableRow({ item, checked, locked, onToggle, onOpen }: MemoryTableRowProps) {
   return (
     <tr className="border-t border-border">
       <td className={cellClass}>
         <input
           type="checkbox"
           checked={checked}
+          disabled={locked}
           aria-label={t("memory.table.select", { title: item.title })}
           onChange={() => onToggle(item.id)}
         />

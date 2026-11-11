@@ -13,6 +13,11 @@ import { useMemoryItems } from "../../hooks/useMemoryItems";
 
 const PAGE_SIZE = 25;
 
+/** Décalage de la dernière page non vide pour `total` éléments. */
+export function lastPageOffset(total: number, limit: number): number {
+  return Math.max(0, Math.ceil(total / limit) - 1) * limit;
+}
+
 /** Liste filtrable et paginée des éléments, avec la fusion de la sélection ; vide : on propose l'import. */
 export function ListSection({ onOpen }: { onOpen: (id: string) => void }) {
   const [filters, setFilters] = useState<ItemFilterValue>(NO_FILTERS);
@@ -20,6 +25,10 @@ export function ListSection({ onOpen }: { onOpen: (id: string) => void }) {
   const [selected, setSelected] = useState<string[]>([]);
   const list = useMemoryItems({ filters, status: "active", offset, limit: PAGE_SIZE });
   const { merge } = useItemMutations();
+  // Une suppression ou une fusion peut vider la dernière page : on revient à la dernière page non vide.
+  if (list.data && list.data.items.length === 0 && offset > 0) {
+    setOffset(lastPageOffset(list.data.total, PAGE_SIZE));
+  }
   const changeFilters = (value: ItemFilterValue) => {
     setFilters(value);
     setOffset(0);
@@ -53,6 +62,7 @@ export function ListSection({ onOpen }: { onOpen: (id: string) => void }) {
           merge.mutate({ id, otherIds }, { onSuccess: () => setSelected([]) })
         }
         onPage={setOffset}
+        merging={merge.isPending}
       />
       {merge.isError ? <InlineError message={errorMessage(merge.error)} /> : null}
     </div>

@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { createItem, deleteItem, mergeItems, patchItem } from "../api";
 import { memoryKeys } from "../queryKeys";
-import type { ItemEdit, NewItem } from "../types";
+import type { ItemPatch, NewItem } from "../types";
 
 /**
  * Toute écriture change la liste, les statistiques et la carte (et un détail ouvert) : tout est
@@ -32,7 +32,7 @@ function useWrite<V, R>(run: (variables: V) => Promise<R>, gone?: (variables: V)
 export function useItemMutations() {
   return {
     create: useWrite((value: NewItem) => createItem(value)),
-    update: useWrite(({ id, value }: { id: string; value: ItemEdit }) => patchItem(id, value)),
+    update: useWrite(({ id, value }: { id: string; value: ItemPatch }) => patchItem(id, value)),
     remove: useWrite(
       (id: string) => deleteItem(id),
       (id) => [id],

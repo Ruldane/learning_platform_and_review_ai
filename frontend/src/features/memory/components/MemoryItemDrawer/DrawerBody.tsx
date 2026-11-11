@@ -1,10 +1,8 @@
 import { useState } from "react";
-import { t } from "@/shared/i18n/t";
-import { Button } from "@/shared/ui/button";
 import { MemoryItemForm } from "../MemoryItemForm";
-import type { ItemEdit, MemoryItemDetailView, NewItem } from "../viewTypes";
+import type { ItemEdit, ItemPatch, MemoryItemDetailView, NewItem } from "../viewTypes";
 import { ChunkList } from "./ChunkList";
-import { DeleteConfirm } from "./DeleteConfirm";
+import { ItemActions } from "./ItemActions";
 import { ItemDetails } from "./ItemDetails";
 import { NeighborList } from "./NeighborList";
 import { WriteJournal } from "./WriteJournal";
@@ -13,7 +11,7 @@ interface DrawerBodyProps {
   item: MemoryItemDetailView | null;
   busy: boolean;
   onClose: () => void;
-  onSave: (value: ItemEdit | NewItem) => void;
+  onSave: (value: ItemPatch | NewItem) => void;
   onDelete: (id: string) => void;
   onOpenItem: (id: string) => void;
 }
@@ -29,7 +27,6 @@ export function DrawerBody({ item, busy, onClose, onSave, onDelete, onOpenItem }
   // On retient l'objet en cours de modification : une fois le détail relu après l'enregistrement,
   // c'est un nouvel objet et la lecture reprend seule ; une sauvegarde en erreur garde le formulaire.
   const [editedItem, setEditedItem] = useState<MemoryItemDetailView | null>(null);
-  const [confirming, setConfirming] = useState(false);
 
   if (item === null) {
     return (
@@ -47,6 +44,8 @@ export function DrawerBody({ item, busy, onClose, onSave, onDelete, onOpenItem }
       <MemoryItemForm
         initial={toEdit(item)}
         chooseKind={false}
+        // Le texte d'un document est le texte extrait entier : on ne le modifie pas ici.
+        withText={item.kind !== "document"}
         disabled={busy}
         onSubmit={onSave}
         onCancel={() => setEditedItem(null)}
@@ -56,22 +55,11 @@ export function DrawerBody({ item, busy, onClose, onSave, onDelete, onOpenItem }
   return (
     <>
       <ItemDetails item={item} />
-      {confirming ? (
-        <DeleteConfirm
-          busy={busy}
-          onConfirm={() => onDelete(item.id)}
-          onKeep={() => setConfirming(false)}
-        />
-      ) : (
-        <div className="flex gap-2">
-          <Button variant="outline" disabled={busy} onClick={() => setEditedItem(item)}>
-            {t("memory.button.edit")}
-          </Button>
-          <Button variant="destructive" disabled={busy} onClick={() => setConfirming(true)}>
-            {t("memory.button.delete")}
-          </Button>
-        </div>
-      )}
+      <ItemActions
+        busy={busy}
+        onEdit={() => setEditedItem(item)}
+        onDelete={() => onDelete(item.id)}
+      />
       <ChunkList chunks={item.chunks} />
       <NeighborList neighbors={item.neighbors} onOpenItem={onOpenItem} />
       <WriteJournal writes={item.writes} />

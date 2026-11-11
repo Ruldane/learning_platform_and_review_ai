@@ -116,6 +116,7 @@ describe("MemoryExplorerPage", () => {
     await user.click(await screen.findByLabelText("Sélectionner « Leçon A »"));
     await user.click(screen.getByLabelText("Sélectionner « Leçon B »"));
     await user.click(screen.getByRole("button", { name: "Fusionner" }));
+    await user.click(screen.getByRole("button", { name: "Oui, fusionner" }));
     await waitFor(() =>
       expect(backend.writes).toEqual([
         { method: "POST", path: "/memory/items/l1/merge", body: { other_ids: ["l2"] } },
@@ -138,6 +139,7 @@ describe("MemoryExplorerPage", () => {
     await user.click(await screen.findByLabelText("Sélectionner « Leçon A »"));
     await user.click(screen.getByLabelText("Sélectionner « Leçon B »"));
     await user.click(screen.getByRole("button", { name: "Fusionner" }));
+    await user.click(screen.getByRole("button", { name: "Oui, fusionner" }));
     expect(await screen.findByText("Ce contenu existe déjà dans ta mémoire.")).toBeInTheDocument();
   });
 
@@ -203,6 +205,23 @@ describe("MemoryExplorerPage", () => {
     expect(backend.writes[0]?.path).toBe("/memory/items/i1");
     expect(backend.writes[0]?.body).toEqual(expect.objectContaining({ title: "Attention v2" }));
     expect(await within(drawer).findByRole("button", { name: "Modifier" })).toBeInTheDocument();
+  });
+
+  it("renames an imported document of 25 000 characters without sending its text", async () => {
+    const long = itemOut({
+      id: "d9",
+      kind: "document",
+      title: "Cours PDF",
+      level: null,
+      text: "x".repeat(25_000),
+    });
+    const { backend, user } = setup("/memoire?item=d9", { items: [long] });
+    const drawer = await screen.findByRole("dialog");
+    await user.click(await within(drawer).findByRole("button", { name: "Modifier" }));
+    await user.type(within(drawer).getByLabelText("Titre"), " v2");
+    await user.click(within(drawer).getByRole("button", { name: "Enregistrer" }));
+    await waitFor(() => expect(backend.writes).toHaveLength(1));
+    expect(backend.writes[0]?.body).toEqual({ title: "Cours PDF v2" });
   });
 
   it("deletes the opened item after an in-page confirmation, and closes the drawer", async () => {

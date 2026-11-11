@@ -17,6 +17,7 @@ const base = {
   onOpen: vi.fn(),
   onMerge: vi.fn(),
   onPage: vi.fn(),
+  merging: false,
 };
 
 const two = [row({ id: "a", title: "Premier" }), row({ id: "b", title: "Second" })];
@@ -80,14 +81,35 @@ describe("MemoryTable", () => {
     const user = userEvent.setup();
     render(<MemoryTable {...base} total={2} items={two} selected={["a", "b"]} onMerge={onMerge} />);
     await user.click(mergeButton());
+    await user.click(screen.getByRole("button", { name: "Oui, fusionner" }));
     expect(onMerge).toHaveBeenCalledWith("a", ["b"]);
   });
 
   it("merges into the first checked item", async () => {
     const onMerge = vi.fn();
+    const user = userEvent.setup();
     render(<MemoryTable {...base} total={2} items={two} selected={["b", "a"]} onMerge={onMerge} />);
-    await userEvent.setup().click(mergeButton());
+    await user.click(mergeButton());
+    await user.click(screen.getByRole("button", { name: "Oui, fusionner" }));
     expect(onMerge).toHaveBeenCalledWith("b", ["a"]);
+  });
+
+  it("asks for an in-page confirmation before merging, and lets the user back out", async () => {
+    const onMerge = vi.fn();
+    const user = userEvent.setup();
+    render(<MemoryTable {...base} total={2} items={two} selected={["a", "b"]} onMerge={onMerge} />);
+    await user.click(mergeButton());
+    expect(screen.getByText(/Fondre 2 éléments dans « Premier »/)).toBeInTheDocument();
+    expect(onMerge).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Non, annuler" }));
+    expect(onMerge).not.toHaveBeenCalled();
+    expect(mergeButton()).toBeEnabled();
+  });
+
+  it("locks the merge and the selection while the merge is in flight", () => {
+    render(<MemoryTable {...base} total={2} items={two} selected={["a", "b"]} merging />);
+    expect(mergeButton()).toBeDisabled();
+    expect(screen.getByRole("checkbox", { name: "Sélectionner « Premier »" })).toBeDisabled();
   });
 
   it("disables merge for one item, mixed kinds or documents", () => {
@@ -115,6 +137,13 @@ describe("MemoryTable", () => {
     expect(onPage).toHaveBeenLastCalledWith(50);
     await user.click(screen.getByRole("button", { name: "Précédent" }));
     expect(onPage).toHaveBeenLastCalledWith(0);
+  });
+
+  it("still shows the pager when the page is empty but there are more pages", async () => {
+    const onPage = vi.fn();
+    render(<MemoryTable {...base} total={30} offset={50} limit={25} items={[]} onPage={onPage} />);
+    await userEvent.setup().click(screen.getByRole("button", { name: "Précédent" }));
+    expect(onPage).toHaveBeenCalledWith(25);
   });
 
   it("disables the paging buttons at both ends", () => {

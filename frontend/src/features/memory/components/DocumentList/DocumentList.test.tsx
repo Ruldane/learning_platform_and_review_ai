@@ -8,7 +8,7 @@ const none: string[] = [];
 const rowOf = (name: string) => screen.getByText(name).closest("li")!;
 
 describe("DocumentList", () => {
-  it("offers Déjà appris only for indexed documents not learned yet", () => {
+  it("offers Déjà appris, or Relancer once learned, only for indexed documents", () => {
     render(
       <DocumentList
         documents={[
@@ -26,6 +26,20 @@ describe("DocumentList", () => {
     expect(within(rowOf("indexe.pdf")).getByRole("button", { name: "Déjà appris" })).toBeVisible();
     expect(within(rowOf("appris.pdf")).getByText("Marqué déjà appris")).toBeInTheDocument();
     expect(within(rowOf("indexe.pdf")).queryByText("Marqué déjà appris")).not.toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Relancer" })).toHaveLength(1);
+    expect(within(rowOf("appris.pdf")).getByRole("button", { name: "Relancer" })).toBeEnabled();
+  });
+
+  it("disables Relancer while the Archiviste runs on that document", () => {
+    render(
+      <DocumentList
+        documents={[documentRow({ id: "a", learned: true })]}
+        learningIds={["a"]}
+        onMarkLearned={vi.fn()}
+      />,
+    );
+    expect(screen.queryByRole("button", { name: "Relancer" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Déjà appris" })).toBeDisabled();
   });
 
   it("calls back with the document id", async () => {
