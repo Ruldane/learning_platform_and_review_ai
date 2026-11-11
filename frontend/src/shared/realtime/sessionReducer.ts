@@ -1,5 +1,5 @@
 import { reduceEvent } from "./eventHandlers";
-import { answerInterrupts } from "./feedHelpers";
+import { answerInterrupts, stopStreaming } from "./feedHelpers";
 import { applySnapshot } from "./statusGate";
 import type { LocalAction, SessionEvent, SessionViewState } from "./types";
 
@@ -20,7 +20,11 @@ export const initialSessionState: SessionViewState = {
  */
 export function applyEvent(state: SessionViewState, event: SessionEvent): SessionViewState {
   if (event.seq <= state.lastSeq) return state;
-  return { ...reduceEvent(state, event), lastSeq: event.seq };
+  const next = reduceEvent(state, event);
+  // Seule une session en cours écrit : un jeton rejoué après une pause ou une annulation lue en
+  // REST ne rallume pas « Écrit… ».
+  const feed = next.status === "running" ? next.feed : stopStreaming(next.feed);
+  return { ...next, feed, lastSeq: event.seq };
 }
 
 /** Actions locales du client (réponse envoyée, statut lu en REST : flux ou réponse d'action). */

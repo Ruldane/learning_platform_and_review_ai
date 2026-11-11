@@ -4,7 +4,7 @@ import openai
 import pytest
 
 from app.core.errors import AppError
-from app.providers.llm.errors import describe_provider_error, is_transient
+from app.providers.llm.errors import _body_code, describe_provider_error, is_transient
 
 REQUEST = httpx.Request("POST", "https://exemple.test/v1/messages")
 
@@ -185,3 +185,40 @@ def test_exhausted_credit_is_not_retried_but_overload_is() -> None:
     assert not is_transient(_status_error(openai.RateLimitError, 429, "1113"))
     assert not is_transient(_status_error(openai.RateLimitError, 429, "insufficient_quota"))
     assert is_transient(_status_error(openai.RateLimitError, 429, "1305"))
+
+
+# --- Code d'erreur du corps de réponse : toujours une chaîne, jamais d'exception (N3) -------
+
+
+def test_integer_body_code_is_normalised_to_a_string() -> None:
+    exc = openai.RateLimitError(LEAKY, response=response(429), body={"code": 1113})
+    exc.code = 1113  # type: ignore[assignment]  # ce que renvoie un serveur compatible, tel quel
+    assert _body_code(exc) == "1113"
+    assert not is_transient(exc)  # le crédit épuisé est reconnu même avec un code entier
+    error = describe_provider_error(exc, provider="glm", label="GLM (Z.ai)")
+    assert error is not None and error.code == "llm_credit_exhausted"
+
+
+def test_missing_or_non_scalar_body_code_is_none() -> None:
+    assert _body_code(_status_error(openai.RateLimitError, 429)) is None
+    exc = openai.RateLimitError(LEAKY, response=response(429), body=None)
+    exc.code = ["x"]  # type: ignore[assignment]
+    assert _body_code(exc) is None
+
+
+def test_unread_streamed_response_does_not_raise() -> None:
+    stream = httpx.Response(
+        429, request=REQUEST, stream=httpx.ByteStream(b'{"error": {"code": 1}}')
+    )
+    exc = httpx.HTTPStatusError(LEAKY, request=REQUEST, response=stream)
+    assert _body_code(exc) is None  # corps non lu : on n'en lit pas le code
+    assert is_transient(exc)
+    error = describe_provider_error(exc, provider="glm", label="GLM (Z.ai)")
+    assert error is not None and error.code == "llm_rate_limited"
+    assert "cdef" not in error.message and "Corps brut" not in error.message
+
+
+def test_read_httpx_body_code_is_a_string() -> None:
+    body = httpx.Response(429, request=REQUEST, json={"error": {"code": 1113}})
+    exc = httpx.HTTPStatusError(LEAKY, request=REQUEST, response=body)
+    assert _body_code(exc) == "1113"

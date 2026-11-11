@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { applyEvent, applyLocal, initialSessionState } from "./sessionReducer";
 import type { FeedItem, SessionEvent, SessionViewState, StatusSnapshot } from "./types";
-import { completed, interrupt, snapshot, started, tok, turn, userMsg } from "./testEvents";
+import { completed, interrupt, message, snapshot, started, tok, turn, userMsg } from "./testEvents";
 
 const run = (events: SessionEvent[], from: SessionViewState = initialSessionState) =>
   events.reduce(applyEvent, from);
@@ -150,5 +150,50 @@ describe("snapshot REST : le statut du serveur fait foi", () => {
       answered: false,
     });
     expect(s).toMatchObject({ status: "waiting_user", pendingInterrupt: { interrupt_id: "i2" } });
+  });
+});
+
+describe("seul un statut running garde une bulle « Écrit… »", () => {
+  it("a session paused by a REST read stays quiet when replayed tokens follow", () => {
+    const s = run(
+      [started(1, "demo_critic"), tok(2, "m1", "Moi"), tok(3, "m1", "tié")],
+      snap(initialSessionState, snapshot("paused", 1)),
+    );
+    expect(s.status).toBe("paused");
+    expect(turn(s, "m1")).toMatchObject({ text: "Moitié", streaming: false, interrupted: true });
+  });
+
+  it("a cancelled session (REST first, then replay) shows no streaming bubble", () => {
+    const s = run(
+      [started(1, "demo_critic"), tok(2, "m1", "Moi")],
+      snap(initialSessionState, snapshot("cancelled", 2)),
+    );
+    expect(s.feed.some((i) => i.kind === "turn" && i.streaming)).toBe(false);
+  });
+
+  it("a late token after the pause response does not bring the bubble back", () => {
+    const paused = snap(
+      run([started(1, "demo_critic"), tok(2, "m1", "Moi")]),
+      snapshot("paused", 2),
+    );
+    const s = applyEvent(paused, tok(3, "m1", "tié"));
+    expect(turn(s, "m1")).toMatchObject({ streaming: false, interrupted: true });
+  });
+
+  it("stays idempotent on seq and a final message still completes the turn", () => {
+    const paused = snap(run([started(1, "demo_critic")]), snapshot("paused", 1));
+    const s1 = applyEvent(paused, tok(2, "m1", "Moi"));
+    expect(applyEvent(s1, tok(2, "m1", "Moi"))).toBe(s1);
+    const done = applyEvent(s1, message(3, "m1", "Moitié."));
+    expect(turn(done, "m1")).toMatchObject({
+      text: "Moitié.",
+      streaming: false,
+      interrupted: false,
+    });
+  });
+
+  it("keeps streaming while the session runs", () => {
+    const s = run([started(1, "demo_critic"), tok(2, "m1", "Moi")]);
+    expect(turn(s, "m1")).toMatchObject({ streaming: true });
   });
 });

@@ -53,16 +53,25 @@ def _status(exc: BaseException) -> int | None:
     return None
 
 
+def _as_code(code: object) -> str | None:
+    """Un code d'erreur est une chaîne, quel que soit le type donné par le SDK ou le serveur."""
+    if isinstance(code, bool) or not isinstance(code, str | int):
+        return None
+    return str(code)
+
+
 def _body_code(exc: BaseException) -> str | None:
-    """Code d'erreur du corps de réponse (`error.code`), jamais son message."""
+    """Code d'erreur du corps de réponse (`error.code`) en chaîne, jamais son message.
+
+    Ne lève jamais : un corps non lu (réponse en flux), illisible ou d'une autre forme donne `None`.
+    """
     if isinstance(exc, openai.APIStatusError):
-        return exc.code  # le SDK l'extrait de `{"error": {...}}`
+        return _as_code(exc.code)  # le SDK l'extrait de `{"error": {...}}`
     if isinstance(exc, httpx.HTTPStatusError):
         try:
-            code = exc.response.json()["error"]["code"]
-        except (ValueError, KeyError, TypeError):
+            return _as_code(exc.response.json()["error"]["code"])
+        except (ValueError, KeyError, TypeError, httpx.ResponseNotRead):
             return None
-        return str(code) if isinstance(code, str | int) else None
     return None
 
 
