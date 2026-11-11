@@ -13,7 +13,13 @@ class AgentSpec:
     tier: Tier
 
 
-AGENTS: dict[str, AgentSpec] = {}
+AGENTS: dict[str, AgentSpec] = {
+    spec.name: spec
+    for spec in (
+        AgentSpec(name="demo_proponent", tier="rapide"),  # Défenseur du graphe `demo_debate`
+        AgentSpec(name="demo_critic", tier="rapide"),  # Critique du graphe `demo_debate`
+    )
+}
 
 
 def get_agent(name: str) -> AgentSpec:

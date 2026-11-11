@@ -35,10 +35,17 @@ class _Keys:
         return self._key
 
 
+def fake_llm_with_provider(
+    replies: list[str], *, key: str | None = "fake-key"
+) -> tuple[LlmFactory, FakeLlmProvider]:
+    """Comme `fake_llm`, avec le faux fournisseur (`provider.received` : messages reçus)."""
+    provider = FakeLlmProvider(replies)
+    return LlmFactory(_FakeChoice(), _Keys(key), {"fake": provider}, {}), provider
+
+
 def fake_llm(replies: list[str], *, key: str | None = "fake-key") -> LlmFactory:
     """La vraie fabrique, branchée sur le faux fournisseur ; `key=None` : clé absente."""
-    provider = FakeLlmProvider(replies)
-    return LlmFactory(_FakeChoice(), _Keys(key), {"fake": provider}, {})
+    return fake_llm_with_provider(replies, key=key)[0]
 
 
 async def wait_until(predicate: Callable[[], bool]) -> None:
