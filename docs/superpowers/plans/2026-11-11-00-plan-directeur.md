@@ -250,10 +250,11 @@ Registres d'agents et de graphes, chargeur de prompts, checkpointer SQLite async
 - Front `memory/` : `MemoryTable`, `MemoryItemDrawer`, `SemanticSearch`, `VectorMap`, `SearchBench`, `MemoryStats`, `DocumentUpload`, `PendingDecisions`.
 - **Terminée quand** un PDF importé se retrouve par recherche et une écriture d'agent s'affiche avec son auteur (et sa raison).
 
-### Phase 3 — Recherche web
+### Phase 3 — Recherche web · plan : `2026-11-11-04-phase-3-recherche-web.md`
 
-- Back : `search/` (`SearchProvider`, SearXNG, Brave plafonné à 900 requêtes par mois, ordre de repli) ; `web/` (`web_read` : étend `SafeHttpFetcher` et `TrafilaturaWebReader` livrés en phase 2 (D63) — httpx + trafilatura, repli Gotenberg, PDF, YouTube, GitHub, arXiv ; statut `ok`/`unreadable`) ; garde SSRF (adresses privées, protocoles), 15 s par page, 1 requête/s/domaine, cache `web_cache` 7 jours ; retrait nom/email/téléphone des requêtes ; notation des sources sur 100 (seuil 60) ; plafonds 12 requêtes / 30 pages par session ; table `sources` ; domaines privilégiés et exclus dans les réglages ; `web_tools`.
-- Front : réglages de recherche (langues, domaines).
+- Reliquat de la phase 2 (ouvre la phase) : `SessionView.subject_type/subject_id` et reprise du suivi de l'Archiviste après rechargement (« Déjà appris » idempotent) ; extraction PDF en sous-processus avec délai et plafond mémoire (DoS de D63) ; titre d'un doublon encadré dans `memory_tools.py` ; vecteurs orphelins d'un document supprimé pendant son import (M2).
+- Back : `search/` (`SearchProvider`, SearXNG, Brave plafonné à 900 requêtes par mois civil, clé Brave dans l'écran des clés, ordre de repli) ; `web/` étendu sans réécrire `SafeHttpFetcher` ni `TrafilaturaWebReader` (D63) : débit 1 requête/s/domaine (3 s pour l'API arXiv), GitHub (README), arXiv (Atom + PDF), repli Gotenberg (URL déjà validée → PDF → texte, liste de refus Chromium), 15 s par page repli compris ; feature `research` : tables `web_cache` (7 jours, 24 h pour une page illisible), `sources`, `web_queries`, `search_usage`, retrait nom/email/téléphone des requêtes, domaines privilégiés et exclus (liste de départ), plafonds 12 requêtes / 30 pages par session réglables, statut `ok`/`unreadable`, `GET /research/usage`, `GET /research/sources` ; port `WebGateway` et `web_tools` ; Éclaireur (`scout`) qui note sur 100 (seuil 60) dans un parcours de banc d'essai `web_research` (18e graphe, réutilisé par le Conseil en phase 4) ; `source.found` complété (statut, verdict, raison).
+- Front : `SourcesPanel` et `sourcesFromEvents` dans `shared/session-ui/` ; Réglages > « Recherche web » (langues, domaines, ordre, plafonds, compteur Brave) ; feature `research/` (« Essai de recherche ») ; reprise du suivi de l'Archiviste dans `memory/`.
 - **Terminée quand** une requête renvoie des sources notées et lues, et une page illisible est signalée.
 
 ### Phase 4 — Conseil et programme (F1, F2)
