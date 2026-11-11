@@ -13,6 +13,7 @@ from fastapi import UploadFile
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agents.runtime.runner import SessionRunner
 from app.core.errors import AppError
 from app.db.models.memory import Document, DocumentSourceKind, MemoryItem
 from app.features.memory.repository import DocumentRepository
@@ -219,6 +220,33 @@ class DocumentService:
         finally:
             if key is not None and not committed:
                 await storage.delete(self._user_id, key)
+
+    async def mark_learned(self, document_id: str, runner: SessionRunner) -> str:
+        """« Déjà appris » (D68) : lance le parcours `learned_document` sur un document indexé et
+        pose `learned`. La session est lancée AVANT l'écriture du drapeau : elle ouvre ses propres
+        sessions de base, la requête ne tient donc aucun verrou d'écriture pendant ce temps ; un
+        refus de lancement laisse le drapeau intact. Relancer est sans danger : les acquis déjà
+        écrits sont reconnus à leur titre."""
+        doc = await self._docs.get(document_id)
+        if doc is None:
+            raise AppError("document_not_found", "Document introuvable.", 404)
+        if doc.status != "indexed":
+            raise AppError(
+                "document_not_ready",
+                "Le document doit être indexé avant d'être marqué déjà appris.",
+                409,
+            )
+        session_id = await runner.start(
+            self._user_id,
+            "learned_document",
+            {"document_id": doc.id},
+            subject_type="document",
+            subject_id=doc.id,
+        )
+        doc.learned = True
+        await self._db.flush()
+        logger.info("Document %s marqué déjà appris (session %s)", doc.id, session_id)
+        return session_id
 
     async def list(self) -> list[DocumentOut]:
         return [to_document_out(doc) for doc in await self._docs.list_recent(LIST_LIMIT)]

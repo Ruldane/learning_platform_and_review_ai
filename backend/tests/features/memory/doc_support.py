@@ -12,6 +12,9 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.core.providers import MemoryProviders
 from app.db.models.memory import Document
 from app.features.memory.repository import DocumentRepository
+from app.features.memory.service.items import MemoryService
+from app.features.memory.service.rules import WriteDraft
+from app.features.memory.service.runtime import MemoryRuntime
 from app.features.memory.service.text import source_hash
 
 PHRASE = "Les transformeurs utilisent l'attention multi-têtes pour relier les mots."
@@ -92,3 +95,26 @@ def forge_size(data: bytes, name: str, size: int) -> bytes:
             struct.pack_into("<I", out, central + 24, size)
         central = out.find(b"PK\x01\x02", central + 4)
     return bytes(out)
+
+
+async def add_indexed_document(
+    factory: async_sessionmaker[AsyncSession],
+    providers: MemoryProviders,
+    runtime: MemoryRuntime,
+    user_id: str,
+    *,
+    title: str = "Cours NLP",
+    text: str = PHRASE,
+) -> str:
+    """Document `indexed` dont l'élément (`kind="document"`, fragments, vecteurs) est écrit par le
+    service, comme après l'ingestion ; rend l'identifiant du document."""
+    doc = await add_document(factory, providers, user_id, kind="text", name=f"{title}.txt")
+    async with factory() as db:
+        out = await MemoryService(db, user_id, runtime).write(
+            WriteDraft(kind="document", title=title, text=text, author="user", reason=None)
+        )
+        stored = await DocumentRepository(db, user_id).get(doc.id)
+        assert stored is not None
+        stored.status, stored.item_id = "indexed", out.item.id
+        await db.commit()
+    return doc.id

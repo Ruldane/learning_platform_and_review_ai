@@ -24,6 +24,7 @@ __all__ = [
     "DocumentSourceKind",
     "DocumentStatus",
     "ItemStatus",
+    "LearnedStarted",
     "MapPoint",
     "MapResponse",
     "MemoryExport",
@@ -174,6 +175,12 @@ class DocumentOut(BaseModel):
 class DocumentCreated(BaseModel):
     document: DocumentOut
     duplicate: bool
+
+
+class LearnedStarted(BaseModel):
+    """Session `learned_document` lancée par `POST /documents/{id}/learned`."""
+
+    session_id: str
 
 
 class PasteCreate(BaseModel):

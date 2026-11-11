@@ -38,6 +38,7 @@ from app.agents.runtime.deps import ChatModelSource, GraphDeps
 from app.agents.runtime.repositories import SessionRepository
 from app.agents.runtime.run_settings import RunSettingsSource
 from app.agents.runtime.stream import translate_chunk
+from app.agents.tools.memory_port import NO_MEMORY, MemoryGateway
 from app.core.errors import AppError
 
 logger = logging.getLogger(__name__)
@@ -61,6 +62,7 @@ class RunContext:
     prices: Mapping[str, ModelPrice]
     graphs: Mapping[str, GraphSpec]
     run_settings: RunSettingsSource
+    memory: MemoryGateway = NO_MEMORY
 
 
 def unknown_graph(name: str) -> AppError:
@@ -144,7 +146,13 @@ class _Run:
         if spec is None:
             raise unknown_graph(row.graph)
         deps = GraphDeps(
-            self.user_id, self.session_id, ctx.models, ctx.bus, settings, ctx.session_factory
+            self.user_id,
+            self.session_id,
+            ctx.models,
+            ctx.bus,
+            settings,
+            ctx.session_factory,
+            ctx.memory,
         )
         graph = spec.build(deps).compile(checkpointer=ctx.checkpointer)
         tracker = CostTracker(

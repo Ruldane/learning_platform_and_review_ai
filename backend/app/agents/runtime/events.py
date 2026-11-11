@@ -87,6 +87,7 @@ class MemoryWrittenPayload(BaseModel):
     kind: str
     title: str
     reason: str
+    status: Literal["active", "pending"] = "active"  # `pending` : décision « À confirmer » (D68)
 
 
 class InterruptOption(BaseModel):

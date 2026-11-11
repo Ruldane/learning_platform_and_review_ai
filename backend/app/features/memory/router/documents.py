@@ -9,9 +9,9 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, File, Form, Response, UploadFile
 from fastapi import status as http
 
-from app.core.deps import CurrentUserDep, Db
+from app.core.deps import CurrentUserDep, Db, RuntimeDep
 from app.features.memory.router.deps import MemoryRuntimeDep
-from app.features.memory.schemas import DocumentCreated, DocumentOut, PasteCreate
+from app.features.memory.schemas import DocumentCreated, DocumentOut, LearnedStarted, PasteCreate
 from app.features.memory.service.documents import DocumentService
 
 router = APIRouter(prefix="/documents", tags=["documents"])
@@ -58,6 +58,14 @@ async def paste_document(
 ) -> DocumentCreated:
     document, new = await service.create(file=None, url=None, text=body.text, title=body.title)
     return _created(response, document, new)
+
+
+@router.post(
+    "/{document_id}/learned", status_code=http.HTTP_202_ACCEPTED, response_model=LearnedStarted
+)
+async def mark_learned(document_id: str, service: Service, runtime: RuntimeDep) -> LearnedStarted:
+    """« Déjà appris » : l'Archiviste crée des acquis déclarés à partir du document indexé."""
+    return LearnedStarted(session_id=await service.mark_learned(document_id, runtime.runner))
 
 
 @router.get("", response_model=list[DocumentOut])

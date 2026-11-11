@@ -47,12 +47,15 @@ class ChunkRepository(UserScopedRepository[MemoryChunk]):
         await self.session.flush()
         return rows
 
-    async def for_item(self, item_id: str) -> builtins.list[MemoryChunk]:
+    async def for_item(self, item_id: str, limit: int | None = None) -> builtins.list[MemoryChunk]:
+        """Fragments de l'élément dans l'ordre ; `limit` : les premiers seulement."""
         stmt = (
             select(MemoryChunk)
             .where(MemoryChunk.user_id == self.user_id, MemoryChunk.item_id == item_id)
             .order_by(MemoryChunk.ordinal)
         )
+        if limit is not None:
+            stmt = stmt.limit(limit)
         return builtins.list((await self.session.execute(stmt)).scalars().all())
 
     async def get_many(self, ids: Sequence[str]) -> dict[str, MemoryChunk]:

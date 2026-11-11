@@ -11,7 +11,11 @@ from app.agents.runtime.checkpointer import open_checkpointer
 from app.agents.runtime.costs import ModelPrice
 from app.agents.runtime.run_settings import RunSettings
 from app.agents.runtime.runner import SessionRunner
+from app.core.providers import MemoryProviders
+from app.features.memory.service.gateway import AgentMemoryGateway
+from app.features.memory.service.runtime import MemoryRuntime, memory_runtime
 from app.providers.llm.fake import FakeLlmProvider
+from tests.agents.runtime.conftest import emitted  # noqa: F401  (fixture partagée)
 from tests.agents.runtime.runner_helpers import fake_llm_with_provider
 
 
@@ -64,5 +68,53 @@ async def make_debate(
             stack.push_async_callback(bus.aclose)
             stack.push_async_callback(runner.shutdown)
             return Debate(runner, fake)
+
+        yield make
+
+
+# --- Parcours `learned_document` : vraie mémoire (base, HashingEmbedder, Qdrant local) ----------
+
+
+@dataclass
+class Learned:
+    runner: SessionRunner
+    fake: FakeLlmProvider
+    memory: MemoryRuntime
+    factory: async_sessionmaker[AsyncSession]
+    providers: MemoryProviders
+
+
+type MakeLearned = Callable[[list[str]], Awaitable[Learned]]
+
+
+@pytest.fixture
+async def make_learned_runner(
+    tmp_path: Path,
+    db_session_factory: async_sessionmaker[AsyncSession],
+    memory_providers: MemoryProviders,
+) -> AsyncIterator[MakeLearned]:
+    """Runner sur le registre RÉEL, le faux fournisseur scripté avec `replies` et la passerelle
+    mémoire réelle (base de test, `HashingEmbedder`, Qdrant en mémoire)."""
+    async with AsyncExitStack() as stack:
+
+        async def make(replies: list[str]) -> Learned:
+            memory = await stack.enter_async_context(
+                memory_runtime(db_session_factory, memory_providers)
+            )
+            saver = await stack.enter_async_context(open_checkpointer(tmp_path / "checkpoints.db"))
+            bus = EventBus(db_session_factory)
+            models, fake = fake_llm_with_provider(replies)
+            runner = SessionRunner(
+                session_factory=db_session_factory,
+                bus=bus,
+                models=models,
+                checkpointer=saver,
+                prices={"modele-test": ModelPrice(1.0, 2.0)},
+                run_settings=FixedSettings(2),
+                memory=AgentMemoryGateway(memory),
+            )
+            stack.push_async_callback(bus.aclose)
+            stack.push_async_callback(runner.shutdown)
+            return Learned(runner, fake, memory, db_session_factory, memory_providers)
 
         yield make

@@ -20,14 +20,18 @@ TIMEOUT = 5.0
 API = "/api/v1/sessions"
 
 
-def use_test_runtime(monkeypatch: pytest.MonkeyPatch) -> Probe:
-    """Parcours de test dans le registre global et faux LLM pour le runtime du lifespan."""
+def use_test_runtime(monkeypatch: pytest.MonkeyPatch, replies: list[str] | None = None) -> Probe:
+    """Parcours de test dans le registre global et faux LLM pour le runtime du lifespan
+    (`replies` : réponses scriptées, sinon « Bonjour à toi » à volonté). La mémoire que le
+    lifespan branche est transmise au vrai moteur."""
     for name, spec in TEST_GRAPHS.items():
         monkeypatch.setitem(GRAPHS, name, spec)
     real = main_module.agent_runtime
 
-    def fake_runtime(settings: Any, factory: Any, models: Any, prices: Any, run: Any) -> Any:
-        return real(settings, factory, fake_llm(["Bonjour à toi"] * 50), prices, run)
+    def fake_runtime(*args: Any, **kwargs: Any) -> Any:
+        settings, factory, _models, prices, run = args
+        llm = fake_llm(replies if replies is not None else ["Bonjour à toi"] * 50)
+        return real(settings, factory, llm, prices, run, **kwargs)
 
     monkeypatch.setattr(main_module, "agent_runtime", fake_runtime)
     return reset_probe()

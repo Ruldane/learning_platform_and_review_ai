@@ -1041,6 +1041,20 @@
         "title": "KeyTestResult",
         "type": "object"
       },
+      "LearnedStarted": {
+        "description": "Session `learned_document` lancée par `POST /documents/{id}/learned`.",
+        "properties": {
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id"
+        ],
+        "title": "LearnedStarted",
+        "type": "object"
+      },
       "MapPoint": {
         "properties": {
           "item_id": {
@@ -1808,6 +1822,15 @@
           },
           "reason": {
             "title": "Reason",
+            "type": "string"
+          },
+          "status": {
+            "default": "active",
+            "enum": [
+              "active",
+              "pending"
+            ],
+            "title": "Status",
             "type": "string"
           },
           "title": {
@@ -3451,6 +3474,49 @@
           }
         },
         "summary": "Paste Document",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/api/v1/documents/{document_id}/learned": {
+      "post": {
+        "description": "« Déjà appris » : l'Archiviste crée des acquis déclarés à partir du document indexé.",
+        "operationId": "mark_learned_api_v1_documents__document_id__learned_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "title": "Document Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearnedStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Mark Learned",
         "tags": [
           "documents"
         ]

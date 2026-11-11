@@ -10,10 +10,12 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.agents.runtime.costs import ModelPrice, load_prices
 from app.agents.runtime.run_settings import RunSettingsSource
+from app.agents.tools.memory_port import MemoryGateway
 from app.config import Settings
 from app.core.providers import MemoryProviders, Providers
 from app.core.security import Cipher
 from app.features.health.checks import DatabaseCheck, LlmKeysCheck
+from app.features.memory.service.gateway import AgentMemoryGateway
 from app.features.memory.service.runtime import MemoryRuntime, memory_runtime
 from app.features.settings.keys_service import DbKeyReader
 from app.features.settings.service import SettingsModelReader, SettingsRunReader
@@ -101,6 +103,12 @@ def run_settings_source(session_factory: async_sessionmaker[AsyncSession]) -> Ru
     """Réglages lus par le moteur d'agents, adaptés du service de la feature `settings` : le
     moteur n'importe aucune feature (contrat 6)."""
     return SettingsRunReader(session_factory)
+
+
+def memory_gateway(runtime: MemoryRuntime) -> MemoryGateway:
+    """Mémoire vue par le moteur d'agents (outils `memory_*`, Archiviste), adaptée du service de la
+    feature `memory` : le moteur n'importe aucune feature (contrat 6, D68)."""
+    return AgentMemoryGateway(runtime)
 
 
 def _reader_http() -> httpx.AsyncClient:

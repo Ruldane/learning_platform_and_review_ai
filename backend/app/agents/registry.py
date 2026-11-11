@@ -18,6 +18,7 @@ AGENTS: dict[str, AgentSpec] = {
     for spec in (
         AgentSpec(name="demo_proponent", tier="rapide"),  # Défenseur du graphe `demo_debate`
         AgentSpec(name="demo_critic", tier="rapide"),  # Critique du graphe `demo_debate`
+        AgentSpec(name="archivist", tier="rapide"),  # Archiviste du graphe `learned_document`
     )
 }
 

@@ -59,6 +59,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/documents/{document_id}/learned": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark Learned
+         * @description « Déjà appris » : l'Archiviste crée des acquis déclarés à partir du document indexé.
+         */
+        post: operations["mark_learned_api_v1_documents__document_id__learned_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -869,6 +889,14 @@ export interface components {
             /** Ok */
             ok: boolean;
         };
+        /**
+         * LearnedStarted
+         * @description Session `learned_document` lancée par `POST /documents/{id}/learned`.
+         */
+        LearnedStarted: {
+            /** Session Id */
+            session_id: string;
+        };
         /** MapPoint */
         MapPoint: {
             /** Item Id */
@@ -1132,6 +1160,12 @@ export interface components {
             kind: string;
             /** Reason */
             reason: string;
+            /**
+             * Status
+             * @default active
+             * @enum {string}
+             */
+            status: "active" | "pending";
             /** Title */
             title: string;
         };
@@ -1843,6 +1877,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DocumentCreated"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_learned_api_v1_documents__document_id__learned_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LearnedStarted"];
                 };
             };
             /** @description Validation Error */

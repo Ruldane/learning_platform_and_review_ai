@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.agents.runtime.bus import EventBus
 from app.agents.runtime.repositories import EventRepository
 from app.agents.runtime.run_settings import RunSettings
+from app.agents.tools.memory_port import NO_MEMORY, MemoryGateway
 from app.providers.llm.base import Tier
 
 
@@ -29,6 +30,7 @@ class GraphDeps:
     bus: EventBus
     settings: RunSettings
     session_factory: async_sessionmaker[AsyncSession]
+    memory: MemoryGateway = NO_MEMORY  # branchée par la composition (D68)
 
     async def user_messages_since(self, seq: int) -> list[tuple[int, str]]:
         """`(seq, texte)` des `user.message` de la session au-delà de `seq`, dans l'ordre."""
