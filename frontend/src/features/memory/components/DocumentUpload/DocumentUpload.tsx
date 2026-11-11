@@ -14,11 +14,16 @@ interface DocumentUploadProps {
   onUploadFile: (file: File) => void;
   onSubmitUrl: (url: string) => void;
   onSubmitText: (title: string, text: string) => void;
+  /**
+   * Change après un envoi réussi : les formulaires du lien et du texte collé sont remontés, donc
+   * vidés (un échec garde la saisie). L'onglet courant, lui, ne change pas.
+   */
+  resetKey?: number;
 }
 
 /** Import d'un document : fichier (20 Mo, PDF, DOCX, Markdown, texte), lien ou texte collé. */
 export function DocumentUpload(props: DocumentUploadProps) {
-  const { busy, error, onUploadFile, onSubmitUrl, onSubmitText } = props;
+  const { busy, error, onUploadFile, onSubmitUrl, onSubmitText, resetKey = 0 } = props;
   const [tab, setTab] = useState<UploadTab>("file");
 
   return (
@@ -32,8 +37,12 @@ export function DocumentUpload(props: DocumentUploadProps) {
       >
         {/* `key` : changer d'onglet repart d'un formulaire neuf (message de taille compris). */}
         {tab === "file" ? <FileTab key="file" busy={busy} onUploadFile={onUploadFile} /> : null}
-        {tab === "url" ? <UrlTab key="url" busy={busy} onSubmitUrl={onSubmitUrl} /> : null}
-        {tab === "text" ? <TextTab key="text" busy={busy} onSubmitText={onSubmitText} /> : null}
+        {tab === "url" ? (
+          <UrlTab key={`url-${resetKey}`} busy={busy} onSubmitUrl={onSubmitUrl} />
+        ) : null}
+        {tab === "text" ? (
+          <TextTab key={`text-${resetKey}`} busy={busy} onSubmitText={onSubmitText} />
+        ) : null}
         {busy ? (
           <p role="status" className="text-sm text-muted-foreground">
             {t("memory.upload.busy")}

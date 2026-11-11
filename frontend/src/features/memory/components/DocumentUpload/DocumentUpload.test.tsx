@@ -123,4 +123,27 @@ describe("DocumentUpload", () => {
     await user.click(screen.getByRole("tab", { name: "Lien" }));
     expect(screen.queryByText(/trop volumineux/)).not.toBeInTheDocument();
   });
+
+  it("empties the link and pasted-text forms when resetKey changes, on the same tab", async () => {
+    const props = {
+      busy: false,
+      error: null,
+      onUploadFile: vi.fn(),
+      onSubmitUrl: vi.fn(),
+      onSubmitText: vi.fn(),
+    };
+    const user = userEvent.setup();
+    const { rerender } = render(<DocumentUpload {...props} resetKey={0} />);
+    await user.click(screen.getByRole("tab", { name: "Texte collé" }));
+    await user.type(screen.getByLabelText("Texte"), "À garder");
+    rerender(<DocumentUpload {...props} resetKey={0} />);
+    expect(screen.getByLabelText("Texte")).toHaveValue("À garder");
+    rerender(<DocumentUpload {...props} resetKey={1} />);
+    expect(screen.getByRole("tab", { name: "Texte collé", selected: true })).toBeInTheDocument();
+    expect(screen.getByLabelText("Texte")).toHaveValue("");
+    await user.click(screen.getByRole("tab", { name: "Lien" }));
+    await user.type(screen.getByLabelText("Adresse du lien"), "https://exemple.fr");
+    rerender(<DocumentUpload {...props} resetKey={2} />);
+    expect(screen.getByLabelText("Adresse du lien")).toHaveValue("");
+  });
 });

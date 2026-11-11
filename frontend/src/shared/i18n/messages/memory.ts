@@ -1,5 +1,26 @@
 /** Textes de l'explorateur de mémoire (liste, détail, À confirmer, recherche, carte, statistiques, documents). */
 export const memory = {
+  nav: {
+    explorer: "Explorateur",
+    map: "Carte 2D",
+    bench: "Banc d'essai",
+    documents: "Documents",
+  },
+  page: {
+    explorerTitle: "Mémoire",
+    explorerIntro: "Ce que les agents savent sur toi : lis, corrige et complète.",
+    mapTitle: "Carte 2D",
+    mapIntro: "Chaque point est un élément de ta mémoire ; les plus proches se ressemblent.",
+    benchTitle: "Banc d'essai",
+    documentsTitle: "Documents",
+    documentsIntro: "Importe un fichier, un lien ou un texte : il est découpé puis indexé.",
+    add: "Ajouter",
+    importDocument: "Importer un document",
+    emptyDescription: "Importe un document ou ajoute un élément à la main pour commencer.",
+    searchTitle: "Recherche sémantique",
+    listTitle: "Éléments",
+    loadingItem: "Chargement de l'élément…",
+  },
   kind: {
     document: "Document",
     acquis: "Acquis",
@@ -146,6 +167,7 @@ export const memory = {
     textBody: "Texte",
     textSubmit: "Importer le texte",
     busy: "Import en cours…",
+    duplicate: "Ce contenu est déjà dans ta mémoire.",
   },
   documents: {
     title: "Documents importés",
@@ -158,9 +180,13 @@ export const memory = {
       text: "Texte",
       url: "Lien",
       youtube: "YouTube",
-      pasted: "Texte collé",
+      paste: "Texte collé",
     },
     markLearned: "Déjà appris",
     learned: "Marqué déjà appris",
+    learning: "L'Archiviste extrait les concepts…",
+    learnedCount: "{n} acquis ajouté(s)",
+    learnedFailed: "L'Archiviste n'a pas pu terminer.",
+    learnedProgress: "Suivi de l'Archiviste pour « {name} »",
   },
 } as const;

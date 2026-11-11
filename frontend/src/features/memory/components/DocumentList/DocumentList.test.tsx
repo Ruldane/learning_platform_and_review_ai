@@ -90,6 +90,22 @@ describe("DocumentList", () => {
     expect(screen.getByText("Ce PDF ne contient aucun texte lisible.")).toBeInTheDocument();
   });
 
+  it("labels every source kind the back end sends (paste included)", () => {
+    const kinds = ["pdf", "docx", "markdown", "text", "url", "youtube", "paste"];
+    render(
+      <DocumentList
+        documents={kinds.map((kind) =>
+          documentRow({ id: kind, name: `n-${kind}`, source_kind: kind }),
+        )}
+        learningIds={none}
+        onMarkLearned={vi.fn()}
+      />,
+    );
+    for (const label of ["PDF", "DOCX", "Markdown", "Texte", "Lien", "YouTube", "Texte collé"]) {
+      expect(screen.getByText(label)).toBeInTheDocument();
+    }
+  });
+
   it("names the source kind, and falls back to the raw value", () => {
     render(
       <DocumentList

@@ -1,0 +1,1 @@
+export { SearchBenchPage } from "./SearchBenchPage";
