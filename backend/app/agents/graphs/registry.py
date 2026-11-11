@@ -1,0 +1,31 @@
+"""Registre des parcours (graphes d'agents). Un parcours se déclare ici et nulle part ailleurs :
+`POST /sessions` valide l'entrée avec `input_model`, le runner compile `build(deps)`."""
+
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any
+
+from langgraph.graph import StateGraph
+from pydantic import BaseModel
+
+from app.agents.runtime.deps import GraphDeps
+from app.core.errors import AppError
+
+
+@dataclass(frozen=True)
+class GraphSpec:
+    name: str
+    input_model: type[BaseModel]  # `model_dump()` = état initial
+    build: Callable[
+        [GraphDeps], StateGraph[Any, Any, Any, Any]
+    ]  # non compilé : le runner s'en charge
+
+
+GRAPHS: dict[str, GraphSpec] = {}
+
+
+def get_graph(name: str) -> GraphSpec:
+    spec = GRAPHS.get(name)
+    if spec is None:
+        raise AppError("unknown_graph", f"Parcours inconnu : {name}", 404, {"graph": name})
+    return spec

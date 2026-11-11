@@ -1,0 +1,23 @@
+"""Registre des agents : un nom (slug, identique côté front dans `agentColors.ts`) et un niveau
+de modèle. Le prompt de chaque agent est le fichier `prompts/<nom>.md`. Rempli par les graphes."""
+
+from dataclasses import dataclass
+
+from app.core.errors import AppError
+from app.providers.llm.base import Tier
+
+
+@dataclass(frozen=True)
+class AgentSpec:
+    name: str
+    tier: Tier
+
+
+AGENTS: dict[str, AgentSpec] = {}
+
+
+def get_agent(name: str) -> AgentSpec:
+    spec = AGENTS.get(name)
+    if spec is None:
+        raise AppError("unknown_agent", f"Agent inconnu : {name}", 404, {"agent": name})
+    return spec
