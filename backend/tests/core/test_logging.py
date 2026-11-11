@@ -49,3 +49,64 @@ def test_secrets_are_read_lazily(caplog: pytest.LogCaptureFixture) -> None:
     KnownSecrets.add("cle-ajoutee-apres-coup")
     logging.getLogger("t").info("voici cle-ajoutee-apres-coup")
     assert "cle-ajoutee-apres-coup" not in caplog.text
+
+
+def _access_record(path: str) -> logging.LogRecord:
+    return logging.LogRecord(
+        "uvicorn.access",
+        logging.INFO,
+        __file__,
+        1,
+        '%s - "%s %s HTTP/%s" %d',
+        ("127.0.0.1:5000", "GET", path, "1.1", 200),
+        None,
+    )
+
+
+def test_uvicorn_access_formatter_still_works_and_redacts() -> None:
+    # Régression : `args` doit rester un 5-tuple, sinon AccessFormatter lève un TypeError.
+    from uvicorn.logging import AccessFormatter
+
+    handler = logging.Handler()
+    handler.addFilter(RedactingFilter(lambda: ["ma-cle-tres-secrete"]))
+    handler.setFormatter(AccessFormatter("%(levelprefix)s %(message)s", use_colors=False))
+    record = _access_record("/api/v1/x?key=ma-cle-tres-secrete")
+    assert handler.filter(record)
+    out = handler.format(record)
+    assert "ma-cle-tres-secrete" not in out and "***" in out
+    assert out.endswith('"GET /api/v1/x?key=*** HTTP/1.1" 200')
+
+
+def test_non_secret_args_keep_their_type() -> None:
+    record = _access_record("/ok")
+    RedactingFilter(lambda: ["ma-cle-tres-secrete"]).filter(record)
+    assert record.args == ("127.0.0.1:5000", "GET", "/ok", "1.1", 200)
+    assert isinstance(record.args, tuple) and isinstance(record.args[4], int)
+    assert record.getMessage().endswith("200")
+
+
+def test_secret_inside_non_str_args_is_redacted() -> None:
+    class Holder:
+        def __str__(self) -> str:
+            return "Holder(ma-cle-tres-secrete)"
+
+    record = logging.LogRecord(
+        "t",
+        logging.INFO,
+        __file__,
+        1,
+        "%s %s %s",
+        ({"k": "ma-cle-tres-secrete"}, ["ma-cle-tres-secrete"], Holder()),
+        None,
+    )
+    RedactingFilter(lambda: ["ma-cle-tres-secrete"]).filter(record)
+    assert "ma-cle-tres-secrete" not in record.getMessage()
+    assert len(record.args) == 3  # type: ignore[arg-type]
+
+
+def test_secret_in_mapping_style_args_is_redacted() -> None:
+    record = logging.LogRecord(
+        "t", logging.INFO, __file__, 1, "%(a)s %(n)d", ({"a": "ma-cle-tres-secrete", "n": 3},), None
+    )
+    RedactingFilter(lambda: ["ma-cle-tres-secrete"]).filter(record)
+    assert record.getMessage() == "*** 3"

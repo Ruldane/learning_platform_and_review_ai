@@ -1,7 +1,7 @@
 import logging
 import re
 import sys
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from typing import Any
 
 REDACTED = "***"
@@ -24,15 +24,27 @@ class RedactingFilter(logging.Filter):
                 text = text.replace(secret, REDACTED)
         return _KEY_PATTERN.sub(REDACTED, text)
 
-    def filter(self, record: logging.LogRecord) -> bool:
+    def _redact_value(self, value: Any) -> Any:
+        """Masque `value` s'il contient un secret ; sinon le rend tel quel (type conservé)."""
+        if isinstance(value, str):
+            return self.redact(value)
         try:
-            message = record.getMessage()
-        except Exception:  # message mal formé : on masque ce qu'on peut
-            record.msg = self.redact(str(record.msg))
-            record.args = tuple(self.redact(str(a)) for a in _as_tuple(record.args))
-        else:
-            record.msg = self.redact(message)
-            record.args = None
+            text = str(value)
+        except Exception:  # objet dont __str__ échoue : le formatage échouera de même
+            return value
+        redacted = self.redact(text)
+        # Un dict, une liste ou un objet contenant un secret devient une chaîne masquée ;
+        # sans secret, l'argument garde son type (ex. `%d` d'uvicorn pour le code HTTP).
+        return value if redacted == text else redacted
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        # La structure de `args` est conservée : AccessFormatter d'uvicorn en dépend (5-tuple).
+        record.msg = self._redact_value(record.msg)
+        args = record.args
+        if isinstance(args, tuple):
+            record.args = tuple(self._redact_value(a) for a in args)
+        elif isinstance(args, Mapping):
+            record.args = {k: self._redact_value(v) for k, v in args.items()}
         if record.exc_info and not record.exc_text:
             record.exc_text = logging.Formatter().formatException(record.exc_info)
         if record.exc_text:
@@ -40,12 +52,6 @@ class RedactingFilter(logging.Filter):
         if record.stack_info:
             record.stack_info = self.redact(record.stack_info)
         return True
-
-
-def _as_tuple(args: Any) -> tuple[Any, ...]:
-    if args is None:
-        return ()
-    return args if isinstance(args, tuple) else (args,)
 
 
 def _install(handler: logging.Handler, get_secrets: Callable[[], Iterable[str]]) -> None:
