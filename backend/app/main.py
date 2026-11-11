@@ -89,6 +89,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=_lifespan,
     )
     app.state.settings = settings
+    # Ordre important : le dernier middleware ajouté est le plus externe. Les erreurs sont
+    # enregistrées d'abord pour que leur 500 traverse CORS (voir `UnexpectedErrorMiddleware`).
+    register_error_handlers(app)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[settings.cors_origin],
@@ -96,7 +99,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    register_error_handlers(app)
     for router in FEATURE_ROUTERS:
         app.include_router(router, prefix=API_PREFIX)
     return app

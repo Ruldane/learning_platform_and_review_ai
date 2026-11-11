@@ -7,6 +7,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 logger = logging.getLogger(__name__)
 
@@ -70,13 +71,46 @@ async def _handle_http_error(_: Request, exc: Exception) -> JSONResponse:
     return _error_response(exc.status_code, "http_error", message, headers=exc.headers)
 
 
-async def _handle_unexpected_error(_: Request, exc: Exception) -> JSONResponse:
-    logger.error("Erreur non gérée", exc_info=exc)
-    return _error_response(500, "internal_error", "Erreur interne. Réessaie dans un instant.")
+class UnexpectedErrorMiddleware:
+    """Transforme toute exception non gérée en 500 au format d'erreur de l'API.
+
+    Starlette envoie le gestionnaire `Exception` dans `ServerErrorMiddleware`, à l'extérieur de
+    `CORSMiddleware` : le 500 partait sans en-tête CORS et le navigateur le masquait. Ce
+    middleware est ajouté AVANT `CORSMiddleware` (donc à l'intérieur) pour que la réponse
+    d'erreur traverse CORS. Les WebSockets et les réponses déjà commencées sont laissées telles
+    quelles (l'exception remonte).
+    """
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        started = False
+
+        async def send_wrapper(message: Message) -> None:
+            nonlocal started
+            if message["type"] == "http.response.start":
+                started = True
+            await send(message)
+
+        try:
+            await self.app(scope, receive, send_wrapper)
+        except Exception as exc:
+            if started:
+                raise
+            logger.error("Erreur non gérée", exc_info=exc)
+            response = _error_response(
+                500, "internal_error", "Erreur interne. Réessaie dans un instant."
+            )
+            await response(scope, receive, send)
 
 
 def register_error_handlers(app: FastAPI) -> None:
+    """Gestionnaires d'erreurs. À appeler AVANT d'ajouter `CORSMiddleware` (voir ci-dessus)."""
     app.add_exception_handler(AppError, _handle_app_error)
     app.add_exception_handler(RequestValidationError, _handle_validation_error)
     app.add_exception_handler(StarletteHTTPException, _handle_http_error)
-    app.add_exception_handler(Exception, _handle_unexpected_error)
+    app.add_middleware(UnexpectedErrorMiddleware)

@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import httpx
+import pytest
 from fastapi import FastAPI
 
 from app.config import Settings, get_settings
@@ -76,6 +77,22 @@ async def test_unhandled_error_is_500_without_trace(
     assert r.status_code == 500
     assert "secret interne" not in r.text
     assert r.json()["error"]["code"] == "internal_error"
+
+
+async def test_unhandled_error_keeps_cors_headers(
+    app: FastAPI, client: httpx.AsyncClient, caplog: pytest.LogCaptureFixture
+) -> None:
+    # Sans en-tête CORS, le navigateur masque le 500 : le front croirait le serveur injoignable.
+    @app.get("/api/v1/_crash_cors")
+    async def crash() -> None:
+        raise RuntimeError("secret interne")
+
+    r = await client.get("/api/v1/_crash_cors", headers={"Origin": "http://localhost:5173"})
+    assert r.status_code == 500
+    assert r.json()["error"]["code"] == "internal_error"
+    assert "secret interne" not in r.text
+    assert r.headers.get("access-control-allow-origin") == "http://localhost:5173"
+    assert any(rec.getMessage() == "Erreur non gérée" for rec in caplog.records)
 
 
 async def test_cors_allows_front_origin_only(client: httpx.AsyncClient) -> None:
