@@ -137,3 +137,15 @@ def test_ws_requires_a_user(settings: Settings, app: FastAPI):
         pass
     assert denied.value.status_code == 401
     assert denied.value.json()["error"]["code"] == "auth_required"
+
+
+def test_ws_reopened_past_the_end_of_a_finished_session_closes_at_once(sync_client: TestClient):
+    sid = start(sync_client, "two_steps")
+    n = wait_status_sync(sync_client, sid, "completed")["last_seq"]
+    for after in (n, n + 5):
+        with (
+            sync_client.websocket_connect(stream_url(sid, after)) as ws,
+            pytest.raises(WebSocketDisconnect) as closed,
+        ):
+            ws.receive_json()
+        assert closed.value.code == 1000

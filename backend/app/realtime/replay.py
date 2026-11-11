@@ -12,10 +12,13 @@ recevoir un 1000 au milieu du rejeu) :
 - `run.completed` / `run.failed` transmis : ce sont toujours les derniers événements d'une
   session `completed` / `failed` (D46) ; `forward` ferme aussitôt (code 1000).
 - le bus termine l'abonnement (`close` sur un statut terminal, D42) → 1000.
-- abonné arrivé après ce `close` : le bus rejoue puis attend indéfiniment. Pour `completed` /
-  `failed`, l'événement final est dans le rejeu (cas 1). Pour `cancelled` (aucun événement
-  final), `watch` lit le statut une fois l'abonnement inscrit, puis le dernier `seq` écrit, et
-  ferme quand `forward` a transmis jusqu'à ce `seq` et attend le bus.
+- abonné arrivé après ce `close` (ou client qui revient avec `after_seq` au-delà de la fin) :
+  le bus rejoue puis attend indéfiniment. Une fois l'abonnement inscrit, `watch` lit UNE fois
+  le `seq` de fin (`read_end_seq`) : celui de `run.completed` / `run.failed` s'il est écrit, le
+  dernier `seq` d'une session `cancelled` (aucun événement final), `None` sinon (session
+  ouverte, ou statut final écrit mais pas encore son événement : celui-ci arrivera en direct).
+  Il ferme quand `forward` a transmis jusqu'à ce `seq` et attend le bus — aussitôt si
+  `after_seq` l'atteint déjà.
 """
 
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -30,8 +33,8 @@ from app.agents.runtime.events import SessionEvent
 
 FINAL_EVENTS = frozenset({"run.completed", "run.failed"})
 
-type StatusReader = Callable[[], Awaitable[str]]
-type LastSeqReader = Callable[[], Awaitable[int]]
+# `seq` après lequel la session n'écrira plus rien, `None` si elle peut encore écrire.
+type EndSeqReader = Callable[[], Awaitable[int | None]]
 
 
 @dataclass
@@ -54,8 +57,7 @@ async def stream_to_socket(
     session_id: str,
     after_seq: int,
     *,
-    read_status: StatusReader,
-    read_last_seq: LastSeqReader,
+    read_end_seq: EndSeqReader,
 ) -> None:
     """Envoie chaque `SessionEvent` en JSON (`model_dump(mode="json")`) jusqu'à la déconnexion
     du client, ou jusqu'à la fin de la session (le serveur ferme alors en 1000)."""
@@ -72,7 +74,7 @@ async def stream_to_socket(
             tg.cancel_scope.cancel()
 
         async def watch() -> None:
-            await _cancelled_and_drained(read_status, read_last_seq, stream)
+            await _drained(read_end_seq, stream)
             stream.finished = True
             tg.cancel_scope.cancel()
 
@@ -107,19 +109,18 @@ async def _forward(ws: WebSocket, events: AsyncIterator[SessionEvent], stream: _
             return True
 
 
-async def _cancelled_and_drained(
-    read_status: StatusReader, read_last_seq: LastSeqReader, stream: _Stream
-) -> None:
-    """Rend la main quand la session est annulée et que tout ce qui a été écrit est transmis ;
+async def _drained(read_end_seq: EndSeqReader, stream: _Stream) -> None:
+    """Rend la main quand la session est finie et que tout jusqu'à sa fin est transmis ;
     sinon attend indéfiniment (l'événement final ou le `close` du bus concluront)."""
     await stream.subscribed.wait()
-    # Statut lu APRÈS l'inscription : s'il n'est pas `cancelled`, le `close` qui suivra une
-    # annulation trouvera cet abonné et terminera le flux.
-    if await read_status() != "cancelled":
+    # Lu APRÈS l'inscription : si la session peut encore écrire, ce qu'elle écrira (événement
+    # final, `close` du bus) trouvera cet abonné.
+    end = await read_end_seq()
+    if end is None:
         await anyio.sleep_forever()
-    last = await read_last_seq()  # lu après le statut
+        return
     async with stream.changed:
-        while not (stream.waiting and stream.sent_seq >= last):
+        while not (stream.waiting and stream.sent_seq >= end):
             await stream.changed.wait()
 
 

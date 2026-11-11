@@ -45,22 +45,35 @@ async def serve_session_stream(
         await ws.close(code=CLOSE_NOT_FOUND, reason="Session introuvable.")
         return
 
-    async def read_status() -> str:
-        try:
-            return (await control.get_owned(factory, user_id, session_id)).status
-        except AppError:
-            return "cancelled"  # session disparue : plus rien à attendre
-
-    async def read_last_seq() -> int:
-        async with factory() as db:
-            return await EventRepository(db, user_id).max_seq(session_id)
-
     await replay.stream_to_socket(
         ws,
         runtime.bus,
         user_id,
         session_id,
         after_seq,
-        read_status=read_status,
-        read_last_seq=read_last_seq,
+        read_end_seq=end_seq_reader(factory, user_id, session_id),
     )
+
+
+def end_seq_reader(
+    factory: async_sessionmaker[AsyncSession], user_id: str, session_id: str
+) -> replay.EndSeqReader:
+    """`seq` de fin de la session (voir `replay`) : statut lu d'abord, puis le `seq` dans une
+    autre session courte, pour qu'il soit au moins aussi récent que le statut."""
+
+    async def read() -> int | None:
+        try:
+            status = (await control.get_owned(factory, user_id, session_id)).status
+        except AppError:
+            return 0  # session disparue : plus rien à attendre
+        if status not in control.TERMINAL:
+            return None
+        async with factory() as db:
+            events = EventRepository(db, user_id)
+            if status == "cancelled":  # aucun événement final : tout ce qui est écrit
+                return await events.max_seq(session_id)
+            # `completed` / `failed` : l'événement final, s'il est déjà écrit (le runner écrit
+            # le statut avant de le publier ; sinon il arrivera en direct).
+            return await events.last_seq_of(session_id, replay.FINAL_EVENTS)
+
+    return read

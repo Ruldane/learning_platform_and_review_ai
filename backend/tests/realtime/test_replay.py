@@ -18,6 +18,7 @@ from app.db.base import Base, new_id
 from app.db.engine import create_engine, create_session_factory
 from app.db.models.agents import AgentSession
 from app.realtime import replay
+from app.realtime.websocket import end_seq_reader
 
 pytestmark = pytest.mark.timeout(10)
 
@@ -86,16 +87,7 @@ async def set_status(db: Factory, sid: str, status: str) -> None:
 
 
 def stream(ws: FakeSocket, bus: EventBus, db: Factory, sid: str, after: int = 0) -> Any:
-    async def read_status() -> str:
-        async with db() as s:
-            row = await SessionRepository(s, USER).get(sid)
-        assert row is not None
-        return row.status
-
-    async def read_last_seq() -> int:
-        async with db() as s:
-            return await EventRepository(s, USER).max_seq(sid)
-
+    """Le flux tel que le monte la route : lecteur de fin réel (`end_seq_reader`)."""
     return asyncio.ensure_future(
         replay.stream_to_socket(
             ws,  # type: ignore[arg-type]
@@ -103,8 +95,7 @@ def stream(ws: FakeSocket, bus: EventBus, db: Factory, sid: str, after: int = 0)
             USER,
             sid,
             after,
-            read_status=read_status,
-            read_last_seq=read_last_seq,
+            read_end_seq=end_seq_reader(db, USER, sid),
         )
     )
 
@@ -186,3 +177,42 @@ async def test_bus_close_ends_the_stream(db: Factory):
     await bus.close(user_id=USER, session_id=sid)
     await asyncio.wait_for(task, 5)
     assert ws.seqs() == [1] and ws.closed == 1000
+
+
+FINALS = {
+    "completed": ("run.completed", {"summary": "Fini."}),
+    "failed": ("run.failed", {"code": "internal_error", "message": "Échec."}),
+}
+
+
+@pytest.mark.parametrize("status", ["completed", "failed"])
+@pytest.mark.parametrize("beyond", [0, 3])
+async def test_finished_session_reopened_after_its_final_event_closes_at_once(
+    db: Factory, status: str, beyond: int
+):
+    """Reconnexion avec `after_seq` au-delà de l'événement final (store du front non remis à
+    zéro, nouvel essai) : rien à rejouer, fermeture 1000 aussitôt, aucun envoi."""
+    bus = EventBus(db)
+    sid = await new_session(db, "running", events=2)
+    await set_status(db, sid, status)
+    final_type, payload = FINALS[status]
+    final = await bus.publish(user_id=USER, session_id=sid, type=final_type, payload=payload)
+    await bus.close(user_id=USER, session_id=sid)
+    ws = FakeSocket()
+    await asyncio.wait_for(stream(ws, bus, db, sid, after=final.seq + beyond), 2)
+    assert ws.sent == [] and ws.closed == 1000
+
+
+async def test_finished_session_status_without_its_final_event_waits_for_it(db: Factory):
+    """Statut `failed` écrit, `run.failed` pas encore : on ne ferme pas sur le seul statut."""
+    bus = EventBus(db)
+    sid = await new_session(db, "running", events=2)
+    await set_status(db, sid, "failed")
+    ws = FakeSocket()
+    task = stream(ws, bus, db, sid, after=2)
+    await asyncio.sleep(0.3)
+    assert ws.closed is None
+    final_type, payload = FINALS["failed"]
+    await bus.publish(user_id=USER, session_id=sid, type=final_type, payload=payload)
+    await asyncio.wait_for(task, 5)
+    assert ws.seqs() == [3] and ws.closed == 1000

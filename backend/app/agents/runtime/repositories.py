@@ -81,6 +81,16 @@ class EventRepository(UserScopedRepository[SessionEventRecord]):
         )
         return int((await self.session.execute(stmt)).scalar_one())
 
+    async def last_seq_of(self, session_id: str, types: Collection[str]) -> int | None:
+        """`seq` du dernier événement de l'un de ces types, `None` s'il n'y en a aucun."""
+        stmt = select(func.max(SessionEventRecord.seq)).where(
+            SessionEventRecord.user_id == self.user_id,
+            SessionEventRecord.session_id == session_id,
+            SessionEventRecord.type.in_(list(types)),
+        )
+        seq = (await self.session.execute(stmt)).scalar_one()
+        return None if seq is None else int(seq)
+
 
 class LlmCallRepository(UserScopedRepository[LlmCall]):
     model = LlmCall
