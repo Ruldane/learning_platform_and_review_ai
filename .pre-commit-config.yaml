@@ -1,8 +1,5 @@
 # Hooks locaux uniquement (aucun dépôt distant). Les commandes passent par uv,
 # donc aucune installation globale n'est requise (Windows + Git Bash compris).
-#
-# Hooks à ajouter par les tâches suivantes (ne pas les ajouter avant : ils échoueraient) :
-#   - back : `lint-imports` (quand la config import-linter existe).
 repos:
   - repo: local
     hooks:
@@ -35,6 +32,15 @@ repos:
         language: system
         files: ^backend/
         types: [python]
+        pass_filenames: false
+      - id: lint-imports
+        name: contrats d'import (back, import-linter)
+        # Contrats dans backend/pyproject.toml ([tool.importlinter]). Appel par Python plutôt que
+        # par lint-imports.exe, comme mypy (exécutables parfois bloqués sous Windows).
+        entry: uv run --directory backend python -c "from importlinter.cli import lint_imports_command; lint_imports_command()"
+        language: system
+        # pyproject.toml compris : modifier un contrat relance la vérification.
+        files: ^backend/(app/.*\.py|pyproject\.toml)$
         pass_filenames: false
       - id: openapi-contract
         name: contrat OpenAPI à jour (contracts/openapi.json)

@@ -1,14 +1,16 @@
 # Tremplin : les 7 services de la spec (16.1). Images figées sur des versions précises (D30).
 # `cp .env.example .env` puis `docker compose up -d` ; sans .env le back démarre sans clé LLM.
+# Ports publiés sur 127.0.0.1 seulement, modifiables par FRONTEND_PORT, BACKEND_PORT et
+# QDRANT_PORT (dans .env) ; CORS_ORIGIN et l'adresse du back dans le bundle en dérivent (D36).
 
 services:
   frontend:
     build:
       context: ./frontend
       args:
-        VITE_API_URL: http://localhost:8000
+        VITE_API_URL: http://localhost:${BACKEND_PORT:-8000}
     ports:
-      - "5173:5173"
+      - "127.0.0.1:${FRONTEND_PORT:-5173}:5173"
     depends_on:
       - backend
 
@@ -24,10 +26,12 @@ services:
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
       SEARXNG_URL: http://searxng:8080
       GOTENBERG_URL: http://gotenberg:3000
+      # Origine du front autorisée par CORS : suit FRONTEND_PORT, surchargeable depuis .env.
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:${FRONTEND_PORT:-5173}}
     volumes:
       - app_data:/data
     ports:
-      - "8000:8000"
+      - "127.0.0.1:${BACKEND_PORT:-8000}:8000"
     # Pas de dépendance à ollama-init : l'app répond pendant le téléchargement de bge-m3.
     depends_on:
       qdrant:
@@ -42,7 +46,7 @@ services:
   qdrant:
     image: qdrant/qdrant:v1.20.0
     ports:
-      - "6333:6333"
+      - "127.0.0.1:${QDRANT_PORT:-6333}:6333"
     volumes:
       - qdrant_data:/qdrant/storage
     healthcheck:

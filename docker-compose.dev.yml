@@ -13,6 +13,6 @@ services:
       target: build
     command: ["pnpm", "dev", "--host", "0.0.0.0", "--port", "5173"]
     environment:
-      VITE_API_URL: http://localhost:8000
+      VITE_API_URL: http://localhost:${BACKEND_PORT:-8000}
     volumes:
       - ./frontend/src:/app/src
