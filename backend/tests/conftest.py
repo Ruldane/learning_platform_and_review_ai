@@ -60,3 +60,15 @@ async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
         transport = httpx.ASGITransport(app=app, raise_app_exceptions=False)
         async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
             yield c
+
+
+@pytest.fixture
+async def client_google_mode(
+    settings: Settings, db_engine: AsyncEngine
+) -> AsyncIterator[httpx.AsyncClient]:
+    # Mode `google` : aucune session n'existe encore (phase 9), les routes protégées répondent 401.
+    google_app = create_app(settings.model_copy(update={"auth_mode": "google"}))
+    async with LifespanManager(google_app):
+        transport = httpx.ASGITransport(app=google_app, raise_app_exceptions=False)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
+            yield c

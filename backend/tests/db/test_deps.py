@@ -40,7 +40,8 @@ async def test_get_db_commits_and_client_sees_same_data(
 ) -> None:
     _add_routes(app)
     assert (await client.post("/api/v1/_users/a@x.test")).status_code == 200
-    users = (await db_session.execute(select(User))).scalars().all()
+    # L'utilisateur local (sans e-mail) est créé au démarrage : on ne regarde que la ligne écrite.
+    users = (await db_session.execute(select(User).where(User.id == "u1"))).scalars().all()
     assert [u.email for u in users] == ["a@x.test"]
 
 
@@ -49,7 +50,7 @@ async def test_get_db_rolls_back_on_error(
 ) -> None:
     _add_routes(app)
     assert (await client.post("/api/v1/_users_fail")).status_code == 500
-    assert (await db_session.execute(select(User))).scalars().all() == []
+    assert (await db_session.execute(select(User).where(User.id == "u2"))).scalars().all() == []
 
 
 async def test_lifespan_exposes_engine_and_session_factory(

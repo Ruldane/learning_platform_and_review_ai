@@ -1,15 +1,34 @@
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.exc import OperationalError
 
 from app.config import Settings, get_settings
 from app.core.errors import register_error_handlers
 from app.db.engine import create_engine, create_session_factory
+from app.features.auth.service import AuthService
 from app.features.registry import FEATURE_ROUTERS
 
 API_PREFIX = "/api/v1"
+logger = logging.getLogger(__name__)
+
+
+async def _ensure_local_user(app: FastAPI) -> None:
+    """Mode `local` : crée l'utilisateur unique s'il manque et mémorise son id."""
+    try:
+        async with app.state.session_factory() as session:
+            user = await AuthService(session).ensure_local_user()
+            await session.commit()
+            app.state.local_user_id = user.id
+    except OperationalError as exc:
+        message = (
+            "Base de données non initialisée : lance `alembic upgrade head` avant de démarrer."
+        )
+        logger.error(message)
+        raise RuntimeError(message) from exc
 
 
 @asynccontextmanager
@@ -19,6 +38,8 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.engine = engine
     app.state.session_factory = create_session_factory(engine)
     try:
+        if app.state.settings.auth_mode == "local":
+            await _ensure_local_user(app)
         yield
     finally:
         await engine.dispose()
