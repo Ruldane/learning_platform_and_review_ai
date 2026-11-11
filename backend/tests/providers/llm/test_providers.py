@@ -79,35 +79,79 @@ async def test_openai_test_key_timeout_does_not_raise(mock: respx.MockRouter) ->
     assert not result.ok and KEY not in result.message
 
 
-async def test_glm_has_no_model_list() -> None:
-    assert await GlmProvider().list_models(KEY) is None
+GLM_MODELS = "https://exemple.test/v4/models"
+GLM_LIST = {"object": "list", "data": [{"id": "glm-4.5", "object": "model", "owned_by": "z-ai"}]}
 
 
-async def test_glm_test_key_uses_one_token_call(mock: respx.MockRouter) -> None:
-    message = {"role": "assistant", "content": "a"}
-    route = mock.post("https://exemple.test/v4/chat/completions").respond(
-        200,
-        json={
-            "id": "x",
-            "object": "chat.completion",
-            "created": 1,
-            "model": "glm-4.7-flash",
-            "choices": [{"index": 0, "finish_reason": "length", "message": message}],
-        },
-    )
-    result = await GlmProvider(base_url="https://exemple.test/v4/").test_key(KEY)
-    assert result.ok
-    assert b'"max_tokens":1' in route.calls.last.request.content.replace(b" ", b"")
+async def test_glm_test_key_and_list_models_use_free_models_endpoint(
+    mock: respx.MockRouter,
+) -> None:
+    # `GET /models` ne coûte rien et ne dépend pas de la charge d'un modèle gratuit.
+    route = mock.get(GLM_MODELS).respond(200, json=GLM_LIST)
+    chat = mock.post("https://exemple.test/v4/chat/completions")
+    provider = GlmProvider(base_url="https://exemple.test/v4/")
+    result = await provider.test_key(KEY)
+    assert result.ok and result.message == "Clé valide."
+    assert await provider.list_models(KEY) == ["glm-4.5"]
+    assert route.calls.last.request.headers["authorization"] == f"Bearer {KEY}"
+    assert not chat.called
 
 
 async def test_glm_test_key_refused_on_401(mock: respx.MockRouter) -> None:
-    mock.post("https://api.z.ai/api/paas/v4/chat/completions").respond(
-        401, json={"error": {"code": "1000", "message": "bad"}}
+    mock.get("https://api.z.ai/api/paas/v4/models").respond(
+        401, json={"error": {"code": "401", "message": "token expired or incorrect"}}
     )
     result = await GlmProvider().test_key(KEY)
     assert not result.ok
     assert result.message == "Clé refusée par GLM (Z.ai)."
     assert KEY not in result.message
+
+
+@pytest.mark.parametrize(
+    ("code", "message"),
+    [
+        ("1113", "Crédit Z.ai insuffisant pour ce modèle."),
+        ("1305", "Service Z.ai surchargé, réessaie plus tard."),
+        (
+            "9999",
+            "Limite de requêtes ou crédit épuisé chez GLM (Z.ai), réessaie plus tard.",
+        ),
+    ],
+)
+async def test_glm_429_messages_are_readable(
+    mock: respx.MockRouter, code: str, message: str
+) -> None:
+    body = {"error": {"code": code, "message": f"détail fournisseur {KEY}"}}
+    mock.get(GLM_MODELS).respond(429, json=body)
+    result = await GlmProvider(base_url="https://exemple.test/v4/").test_key(KEY)
+    assert not result.ok
+    assert result.message == message
+    assert KEY not in result.message
+
+
+@pytest.mark.parametrize(
+    ("provider", "url"),
+    [
+        (AnthropicProvider(), "https://api.anthropic.com/v1/models"),
+        (OpenAIProvider(), "https://api.openai.com/v1/models"),
+    ],
+)
+async def test_429_without_known_code_is_readable(
+    mock: respx.MockRouter, provider: AnthropicProvider, url: str
+) -> None:
+    mock.get(url).respond(429, text="<html>trop</html>")
+    result = await provider.test_key(KEY)
+    assert not result.ok
+    assert result.message == (
+        f"Limite de requêtes ou crédit épuisé chez {provider.label}, réessaie plus tard."
+    )
+
+
+async def test_glm_list_models_failure_is_readable_error(mock: respx.MockRouter) -> None:
+    mock.get(GLM_MODELS).respond(429, json={"error": {"code": "1305", "message": "x"}})
+    with pytest.raises(AppError) as e:
+        await GlmProvider(base_url="https://exemple.test/v4/").list_models(KEY)
+    assert e.value.code == "llm_models_unavailable" and KEY not in e.value.message
 
 
 BAD_KEYS = ["sk-clé-é", "sk-“smart”", "sk-ligne\nsuivante"]
@@ -127,7 +171,7 @@ async def test_test_key_with_invalid_characters_does_not_raise(
 
 
 @pytest.mark.parametrize("bad_key", BAD_KEYS)
-@pytest.mark.parametrize("provider_cls", [AnthropicProvider, OpenAIProvider])
+@pytest.mark.parametrize("provider_cls", PROVIDERS)
 async def test_list_models_with_invalid_characters_is_readable_error(
     mock: respx.MockRouter, provider_cls: type[AnthropicProvider], bad_key: str
 ) -> None:

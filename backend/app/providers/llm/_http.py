@@ -4,6 +4,7 @@ Volontairement en `httpx` simple (et non via les SDK des fournisseurs, qui s'app
 `httpx2` et échappent à `respx`) : ces appels sont triviaux et restent testables sans réseau.
 """
 
+from collections.abc import Mapping
 from typing import Any
 
 import httpx
@@ -20,10 +21,38 @@ def _headers_are_valid(headers: dict[str, str]) -> bool:
     return all(v.isascii() and v.isprintable() for v in headers.values())
 
 
+def _provider_error_code(response: httpx.Response) -> str | None:
+    """Code d'erreur du fournisseur (`{"error": {"code": ...}}`), ou `None` si absent/illisible."""
+    try:
+        code = response.json()["error"]["code"]
+    except (ValueError, KeyError, TypeError):
+        return None
+    return str(code) if isinstance(code, str | int) else None
+
+
+def _error_message(label: str, response: httpx.Response, code_messages: Mapping[str, str]) -> str:
+    """Message français d'un échec : rien du corps de la réponse n'est recopié (la clé y figure
+    parfois), seul son code d'erreur sert à choisir un message connu."""
+    code = _provider_error_code(response)
+    if code is not None and code in code_messages:
+        return code_messages[code]
+    if response.status_code == 429:
+        return f"Limite de requêtes ou crédit épuisé chez {label}, réessaie plus tard."
+    return f"{label} a répondu par une erreur ({response.status_code})."
+
+
 async def check_key(
-    label: str, method: str, url: str, headers: dict[str, str], body: dict[str, Any] | None = None
+    label: str,
+    method: str,
+    url: str,
+    headers: dict[str, str],
+    body: dict[str, Any] | None = None,
+    code_messages: Mapping[str, str] | None = None,
 ) -> KeyTestResult:
-    """Envoie la requête de vérification. Ne lève jamais, ne reprend jamais la clé du retour."""
+    """Envoie la requête de vérification. Ne lève jamais, ne reprend jamais la clé du retour.
+
+    `code_messages` : messages propres au fournisseur, par code d'erreur de son corps de réponse.
+    """
     if not _headers_are_valid(headers):
         return KeyTestResult(ok=False, message=_INVALID_KEY)
     try:
@@ -36,9 +65,7 @@ async def check_key(
     if response.status_code in (401, 403):
         return KeyTestResult(ok=False, message=f"Clé refusée par {label}.")
     if not response.is_success:
-        return KeyTestResult(
-            ok=False, message=f"{label} a répondu par une erreur ({response.status_code})."
-        )
+        return KeyTestResult(ok=False, message=_error_message(label, response, code_messages or {}))
     return KeyTestResult(ok=True, message="Clé valide.")
 
 

@@ -18,6 +18,8 @@ class OpenAICompatibleProvider:
     name: str = "openai"
     label: str = "OpenAI"
     default_base_url: ClassVar[str] = "https://api.openai.com/v1/"
+    # Messages français par code d'erreur du corps de réponse (voir `_http.check_key`).
+    error_code_messages: ClassVar[dict[str, str]] = {}
 
     def __init__(self, base_url: str | None = None) -> None:
         self._base_url = base_url or self.default_base_url
@@ -47,7 +49,13 @@ class OpenAICompatibleProvider:
 
     async def test_key(self, api_key: str) -> KeyTestResult:
         """Liste les modèles : aucun token dépensé."""
-        return await _http.check_key(self.label, "GET", self._url("models"), self._headers(api_key))
+        return await _http.check_key(
+            self.label,
+            "GET",
+            self._url("models"),
+            self._headers(api_key),
+            code_messages=self.error_code_messages,
+        )
 
 
 class OpenAIProvider(OpenAICompatibleProvider):
