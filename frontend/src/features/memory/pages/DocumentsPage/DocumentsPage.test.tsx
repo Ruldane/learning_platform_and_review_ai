@@ -7,7 +7,14 @@ import { completed, failed, started } from "@/shared/realtime/testEvents";
 import type { SessionEvent } from "@/shared/realtime/types";
 import { createFakeSocketServer } from "@/test/fakeSocket";
 import { server } from "@/test/server";
-import { API, apiError, documentOut, memoryBackend, readHandlers } from "../../fixtures";
+import {
+  API,
+  apiError,
+  documentOut,
+  memoryBackend,
+  readHandlers,
+  sessionOut,
+} from "../../fixtures";
 import { renderRoutes } from "@/test/renderRoutes";
 import { DocumentsPage } from "./DocumentsPage";
 
@@ -234,5 +241,37 @@ describe("DocumentsPage Déjà appris", () => {
     );
     await user.click(await screen.findByRole("button", { name: "Déjà appris" }));
     expect(await screen.findByText("Le document n'est pas encore indexé.")).toBeInTheDocument();
+  });
+});
+
+describe("DocumentsPage after a reload", () => {
+  beforeEach(() => {
+    useSessionStore.getState().reset("s1");
+    server.use(http.get(SESSION, () => HttpResponse.json(sessionView("running"))));
+  });
+  afterEach(() => useSessionStore.getState().reset("s1"));
+
+  const documents = [documentOut({ id: "d1", name: "Cours NLP", learned: true })];
+
+  it("follows a running Archiviste session again", async () => {
+    const { fake } = setup({ documents, sessions: [sessionOut()] });
+    expect(
+      await screen.findByLabelText("Suivi de l'Archiviste pour « Cours NLP »"),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Déjà appris" })).toBeDisabled();
+    await waitFor(() => expect(fake.sockets).toHaveLength(1));
+    fake.last().open().push(started(1, "archivist"), written(2, "Attention"), completed(3));
+    expect(await screen.findByText("1 acquis ajouté(s)")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Relancer" })).toBeEnabled();
+  });
+
+  it("ignores running sessions of other subjects", async () => {
+    const { fake } = setup({
+      documents,
+      sessions: [sessionOut({ subject_type: "goal", subject_id: "g1" })],
+    });
+    expect(await screen.findByText("Cours NLP")).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Suivi de l'Archiviste/)).toBeNull();
+    expect(fake.sockets).toHaveLength(0);
   });
 });

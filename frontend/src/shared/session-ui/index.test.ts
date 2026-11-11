@@ -14,6 +14,8 @@ describe("session-ui public API", () => {
       "CostBadge",
       "SessionControls",
       "MessageComposer",
+      "SourcesPanel",
+      "SourceCard",
       "AGENT_COLORS",
       "agentIdentity",
     ];

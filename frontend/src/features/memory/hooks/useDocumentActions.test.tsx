@@ -1,9 +1,9 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { createQueryWrapper } from "@/test/queryWrapper";
 import { server } from "@/test/server";
-import { API, apiError, documentOut } from "../fixtures";
+import { API, apiError, documentOut, sessionOut } from "../fixtures";
 import { useDocumentActions } from "./useDocumentActions";
 
 const created = (duplicate: boolean) => ({ document: documentOut(), duplicate });
@@ -25,6 +25,8 @@ function captureMultipart(readBody: boolean) {
 }
 
 describe("useDocumentActions", () => {
+  beforeEach(() => server.use(http.get(`${API}/sessions`, () => HttpResponse.json([]))));
+
   it("sends a file as multipart and counts the success", async () => {
     const captured = captureMultipart(false);
     const { result } = renderHook(() => useDocumentActions(), { wrapper: createQueryWrapper() });
@@ -90,5 +92,35 @@ describe("useDocumentActions", () => {
     act(() => result.current.finishLearning("d1"));
     expect(result.current.learningIds).toEqual([]);
     expect(result.current.learnings[0]?.finished).toBe(true);
+  });
+
+  it("completes the learnings with the running sessions read from the server", async () => {
+    server.use(http.get(`${API}/sessions`, () => HttpResponse.json([sessionOut()])));
+    const { result } = renderHook(() => useDocumentActions(), { wrapper: createQueryWrapper() });
+    await waitFor(() => expect(result.current.learnings).toHaveLength(1));
+    expect(result.current.learnings[0]).toEqual({
+      documentId: "d1",
+      sessionId: "s1",
+      finished: false,
+    });
+    expect(result.current.learningIds).toEqual(["d1"]);
+    act(() => result.current.finishLearning("d1"));
+    expect(result.current.learningIds).toEqual([]);
+    expect(result.current.learnings[0]?.finished).toBe(true);
+  });
+
+  it("never overwrites a local entry with the session read from the server", async () => {
+    server.use(
+      http.get(`${API}/sessions`, () => HttpResponse.json([sessionOut({ id: "s-old" })])),
+      http.post(`${API}/documents/d1/learned`, () =>
+        HttpResponse.json({ session_id: "s-new" }, { status: 202 }),
+      ),
+      http.get(`${API}/documents`, () => HttpResponse.json([])),
+    );
+    const { result } = renderHook(() => useDocumentActions(), { wrapper: createQueryWrapper() });
+    await waitFor(() => expect(result.current.learnings[0]?.sessionId).toBe("s-old"));
+    act(() => result.current.learn.mutate("d1"));
+    await waitFor(() => expect(result.current.learnings[0]?.sessionId).toBe("s-new"));
+    expect(result.current.learnings).toHaveLength(1);
   });
 });

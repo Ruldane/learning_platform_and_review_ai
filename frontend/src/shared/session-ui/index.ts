@@ -10,3 +10,6 @@ export { SessionControls } from "./SessionControls";
 export { SessionStatusBar } from "./SessionStatusBar";
 export { ToolChip } from "./ToolChip";
 export { UserMessageBubble } from "./UserMessageBubble";
+export { SourceCard } from "./SourceCard";
+export { SourcesPanel } from "./SourcesPanel";
+export type { QueryView, SourcesViewModel, SourceView } from "./sourceTypes";

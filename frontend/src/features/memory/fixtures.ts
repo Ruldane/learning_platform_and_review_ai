@@ -6,6 +6,7 @@ import type {
   MemoryItemDetail,
   MemoryItemOut,
   SearchResponse,
+  SessionView,
   StatsOut,
 } from "./types";
 
@@ -100,6 +101,26 @@ export function documentOut(overrides: Partial<DocumentOut> = {}): DocumentOut {
   };
 }
 
+/** Une session de l'Archiviste en cours, telle que `GET /sessions` la renvoie. */
+export function sessionOut(overrides: Partial<SessionView> = {}): SessionView {
+  return {
+    id: "s1",
+    graph: "learned_document",
+    status: "running",
+    last_seq: 0,
+    pending_interrupt: null,
+    error: null,
+    tokens_in: 0,
+    tokens_out: 0,
+    cost_usd: 0,
+    subject_type: "document",
+    subject_id: "d1",
+    created_at: NOW,
+    updated_at: NOW,
+    ...overrides,
+  };
+}
+
 export const mapOut: MapResponse = {
   method: "pca",
   truncated: false,
@@ -130,6 +151,8 @@ export interface MemoryBackend {
   stats: StatsOut;
   map: MapResponse;
   documents: DocumentOut[];
+  /** Sessions renvoyées par `GET /sessions` (déjà filtrées : le faux back ne lit pas les paramètres). */
+  sessions: SessionView[];
   requests: { method: string; url: URL }[];
   /** Écritures reçues, dans l'ordre (le corps JSON, ou `null`). */
   writes: { method: string; path: string; body: unknown }[];
@@ -141,6 +164,7 @@ export function memoryBackend(init: Partial<MemoryBackend> = {}): MemoryBackend 
     stats: statsOut(),
     map: mapOut,
     documents: [],
+    sessions: [],
     requests: [],
     writes: [],
     ...init,
@@ -185,6 +209,10 @@ export function readHandlers(b: MemoryBackend) {
     http.get(`${API}/documents`, ({ request }) => {
       seen(request);
       return HttpResponse.json(b.documents);
+    }),
+    http.get(`${API}/sessions`, ({ request }) => {
+      seen(request);
+      return HttpResponse.json(b.sessions);
     }),
   ];
 }

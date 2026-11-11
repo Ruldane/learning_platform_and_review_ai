@@ -14,4 +14,5 @@ export const memoryKeys = {
   stats: ["memory", "stats"],
   map: ["memory", "map"],
   documents: ["memory", "documents"],
+  runningLearnings: ["memory", "sessions", "learned_document", "running"],
 } as const;

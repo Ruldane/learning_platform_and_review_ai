@@ -28,6 +28,7 @@ type Schemas = components["schemas"];
 
 export type DocumentCreated = Schemas["DocumentCreated"];
 export type DocumentOut = Schemas["DocumentOut"];
+export type SessionView = Schemas["SessionView"];
 export type MapResponse = Schemas["MapResponse"];
 export type MemoryItemDetail = Schemas["MemoryItemDetail"];
 export type MemoryItemList = Schemas["MemoryItemList"];

@@ -125,3 +125,24 @@ export async function markLearned(documentId: string) {
     }),
   );
 }
+
+/**
+ * `GET /sessions?graph=learned_document&status=running` : les parcours de l'Archiviste encore en
+ * cours, repris après un rechargement. Seules comptent les sessions dont l'objet suivi est un
+ * document (`subject_type` « document », `subject_id` non nul).
+ */
+export async function fetchRunningLearnings(
+  signal?: AbortSignal,
+): Promise<{ documentId: string; sessionId: string }[]> {
+  const sessions = unwrap(
+    await api.GET("/sessions", {
+      params: { query: { graph: "learned_document", status: "running" } },
+      signal,
+    }),
+  );
+  return sessions.flatMap((session) =>
+    session.subject_type === "document" && session.subject_id
+      ? [{ documentId: session.subject_id, sessionId: session.id }]
+      : [],
+  );
+}
