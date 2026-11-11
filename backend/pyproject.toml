@@ -56,8 +56,7 @@ dev = [
 
 # Contrats d'import (plan directeur, 1.2), bloquants en pre-commit (`lint-imports`).
 # Les contrats 1a et 2 couvrent toute feature (`app.features.*`) sans la nommer ; le contrat 3
-# est à étendre à chaque fournisseur concret ; `app.agents` s'ajoutera aux
-# contrats 3 et 4 quand le paquet existera (import-linter refuse un module absent).
+# est à étendre à chaque fournisseur concret ; `app.agents` figure dans les contrats 3, 4 et 5.
 [tool.importlinter]
 root_packages = ["app"]
 include_external_packages = false
@@ -107,9 +106,9 @@ ignore_imports = [
 
 [[tool.importlinter.contracts]]
 id = "features-sans-fournisseur-concret"
-name = "3. app.features n'importe jamais une implémentation concrète de app.providers"
+name = "3. app.features et app.agents n'importent jamais une implémentation concrète de app.providers"
 type = "forbidden"
-source_modules = ["app.features"]
+source_modules = ["app.features", "app.agents"]
 forbidden_modules = [
     "app.providers.llm.anthropic",
     "app.providers.llm.openai",
@@ -124,14 +123,14 @@ forbidden_modules = [
 
 [[tool.importlinter.contracts]]
 id = "fournisseurs-sans-feature"
-name = "4. app.providers n'importe jamais app.features"
+name = "4. app.providers n'importe jamais app.features ni app.agents"
 type = "forbidden"
 source_modules = ["app.providers"]
-forbidden_modules = ["app.features"]
+forbidden_modules = ["app.features", "app.agents"]
 
 [[tool.importlinter.contracts]]
 id = "composition-isolee"
 name = "5. Seul app.main importe app.bootstrap (composition)"
 type = "forbidden"
-source_modules = ["app.core", "app.db", "app.features", "app.providers"]
+source_modules = ["app.core", "app.db", "app.features", "app.agents", "app.providers"]
 forbidden_modules = ["app.bootstrap"]
