@@ -30,4 +30,12 @@ describe("t", () => {
     expect(t("session.stream.not_found")).toBe("Cette session est introuvable.");
     expect(t("session.status.paused")).toBe("En pause");
   });
+
+  it("aggregates the memory zone", () => {
+    expect(t("memory.kind.lecon")).toBe("Leçon");
+    expect(t("memory.level.prouve")).toBe("Prouvé");
+    expect(t("memory.action.merge")).toBe("Fusion");
+    expect(t("memory.empty")).toBe("Aucun élément en mémoire");
+    expect(t("memory.drawer.deleteAsk")).toBe("Supprimer définitivement ?");
+  });
 });

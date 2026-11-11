@@ -1,0 +1,1 @@
+export { MemoryTable } from "./MemoryTable";
