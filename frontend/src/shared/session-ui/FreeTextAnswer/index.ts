@@ -1,0 +1,1 @@
+export { FreeTextAnswer } from "./FreeTextAnswer";
