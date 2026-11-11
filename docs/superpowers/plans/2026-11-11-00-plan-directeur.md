@@ -221,6 +221,11 @@ Fixés dans les phases 0 et 1, utilisés partout ensuite. Les signatures exactes
 | D11 | Router front | React Router (mode data), routes déclarées par les manifestes |
 | D12 | Le schéma d'architecture de la section 12 est absent du document (« embedded content ») | Le texte de 12 et 16.1 suffit ; rien à reconstituer |
 | D13 | `infra/searxng/settings.yml` dans `backend/` (16.2) | Respecté tel quel |
+| D14 | Champ `type` de la charge d'interruption (9.4) en collision avec le `type` de l'enveloppe d'événement | La charge porte `kind` à la place |
+| D15 | Reprise après Pause | `POST /sessions/{id}/resume` avec `interrupt_id: null` |
+| D16 | Sorties structurées | JSON validé par Pydantic (2 nouveaux essais), sans `with_structured_output`, pour un comportement identique sur les 3 fournisseurs |
+| D17 | Page de démonstration de la phase 1 | Route `/demo` conservée hors navigation |
+| D18 | Reprise des sessions au démarrage | `list_sessions_to_recover` est la seule lecture sans filtre `user_id`, réservée au démarrage du back |
 
 ## 5. Feuille de route
 
