@@ -1,12 +1,10 @@
 """Composition de l'application : l'unique module qui assemble les implémentations concrètes
 (fournisseurs LLM) avec les features. Le lifespan l'appelle une fois au démarrage."""
 
-from collections.abc import Mapping
-from dataclasses import dataclass
-
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.config import Settings
+from app.core.providers import Providers
 from app.core.security import Cipher
 from app.features.settings.keys_service import DbKeyReader
 from app.features.settings.service import SettingsModelReader
@@ -14,17 +12,6 @@ from app.providers.llm.base import LlmProvider
 from app.providers.llm.factory import LlmFactory
 from app.providers.llm.glm import GlmProvider
 from app.providers.llm.registry import LLM_PROVIDERS
-
-
-@dataclass
-class Providers:
-    """Services externes et ce qu'il faut pour s'en servir. Le champ `health_checks` s'ajoute
-    avec les contrôles de santé (tâche 0.9)."""
-
-    llm: Mapping[str, LlmProvider]
-    llm_factory: LlmFactory
-    cipher: Cipher
-    env_keys: Mapping[str, str | None]
 
 
 def build_providers(

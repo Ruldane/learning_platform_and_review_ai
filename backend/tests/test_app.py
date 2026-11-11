@@ -51,6 +51,20 @@ async def test_validation_error_is_french(app: FastAPI, client: httpx.AsyncClien
     assert r.json()["error"]["message"] == "Requête invalide."
 
 
+async def test_validation_error_never_echoes_the_input(
+    app: FastAPI, client: httpx.AsyncClient
+) -> None:
+    @app.post("/api/v1/_vbody")
+    async def vbody(body: dict[str, int]) -> dict[str, int]:
+        return body
+
+    r = await client.post("/api/v1/_vbody", json={"secret": "SUPERSECRETVALUE1234"})
+    assert r.status_code == 422
+    assert "SUPERSECRETVALUE1234" not in r.text
+    (err,) = r.json()["error"]["details"]["errors"]
+    assert set(err) == {"loc", "msg", "type"} and err["loc"] == ["body", "secret"]
+
+
 async def test_unhandled_error_is_500_without_trace(
     app: FastAPI, client: httpx.AsyncClient
 ) -> None:

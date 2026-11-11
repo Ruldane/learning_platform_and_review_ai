@@ -151,14 +151,14 @@ class ApiKeyService:
         key = await self._usable_key(provider)
         return await llm.list_models(key) if key else None
 
-    async def _models_or_none(self, llm: LlmProvider, key: str) -> builtins.list[str] | None:
+    async def _models_or_none(self, provider: str) -> builtins.list[str] | None:
         try:
-            return await llm.list_models(key)
+            return await self.list_models(provider)
         except Exception as exc:
             # Un fournisseur en panne ne doit pas faire échouer toute la page : on ne journalise
             # que son nom et le type d'erreur, jamais la clé ni le message de l'exception.
             logger.warning(
-                "Liste des modèles indisponible pour %s (%s)", llm.name, type(exc).__name__
+                "Liste des modèles indisponible pour %s (%s)", provider, type(exc).__name__
             )
             return None
 
@@ -166,12 +166,10 @@ class ApiKeyService:
         """Fournisseurs, présence d'une clé lisible, modèles proposés et préréglages."""
         entries: builtins.list[ProviderModels] = []
         for llm in self._providers.values():
-            key = await self._usable_key(llm.name)
-            models = await self._models_or_none(llm, key) if key else None
+            has_key = await self._usable_key(llm.name) is not None
+            models = await self._models_or_none(llm.name) if has_key else None
             entries.append(
-                ProviderModels(
-                    name=llm.name, label=llm.label, has_key=key is not None, models=models
-                )
+                ProviderModels(name=llm.name, label=llm.label, has_key=has_key, models=models)
             )
         return ModelsOut(providers=entries, presets=PRESETS)
 

@@ -2,8 +2,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Response
 
-from app.bootstrap import Providers
 from app.core.deps import CurrentUserDep, Db, get_providers
+from app.core.providers import Providers
 from app.features.settings.keys_schemas import ApiKeyIn, ApiKeyOut, ModelsOut
 from app.features.settings.keys_service import ApiKeyService
 from app.providers.llm.base import KeyTestResult

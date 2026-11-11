@@ -7,7 +7,8 @@ from cryptography.fernet import Fernet
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.bootstrap import Providers
+from app.core.errors import AppError
+from app.core.providers import Providers
 from app.core.security import Cipher, KnownSecrets, SecretUnreadable
 from app.db.models.accounts import ApiKey
 from app.features.settings.keys_service import ApiKeyService, DbKeyReader
@@ -178,6 +179,36 @@ async def test_short_key_is_422_and_not_echoed(client: httpx.AsyncClient) -> Non
         "details": None,
     }
     assert "abc1234" not in r.text
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        {"key": "SUPERSECRETKEY1234"},
+        {"provider": "fake", "key": ["SUPERSECRETKEY1234"]},
+        {"provider": ["fake"], "key": "SUPERSECRETKEY1234"},
+    ],
+)
+async def test_malformed_body_never_echoes_the_key(
+    client: httpx.AsyncClient, body: dict[str, object]
+) -> None:
+    r = await client.post(KEYS, json=body)
+    assert r.status_code == 422 and r.json()["error"]["code"] == "validation_error"
+    assert "SUPERSECRETKEY1234" not in r.text
+
+
+async def test_service_list_models(
+    service_with_env: Svc, providers: Providers, swap_cipher: Callable[[], None]
+) -> None:
+    providers.llm = {"fake": ListingProvider(["m-1", "m-2"])}
+    svc = service_with_env({})
+    assert await svc.list_models("fake") is None  # pas de clé
+    await svc.set("fake", SECRET)
+    assert await svc.list_models("fake") == ["m-1", "m-2"]
+    swap_cipher()
+    assert await service_with_env({}).list_models("fake") is None  # clé illisible
+    with pytest.raises(AppError):
+        await svc.list_models("nope")
 
 
 async def test_key_is_stripped_before_storing(

@@ -5,8 +5,8 @@ from cryptography.fernet import Fernet
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.bootstrap import Providers
 from app.core.deps import get_providers
+from app.core.providers import Providers
 from app.core.security import Cipher
 from app.features.settings.keys_service import ApiKeyService, DbKeyReader
 from app.features.settings.service import SettingsModelReader

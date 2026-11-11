@@ -3,8 +3,9 @@ from asgi_lifespan import LifespanManager
 from cryptography.fernet import Fernet
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.bootstrap import Providers, build_providers
+from app.bootstrap import build_providers
 from app.config import Settings
+from app.core.providers import Providers
 from app.core.security import Cipher
 from app.main import create_app
 from app.providers.llm.glm import GlmProvider

@@ -1,16 +1,14 @@
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated
+from typing import Annotated
 
 from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
+from app.core.providers import Providers
 from app.core.security import Cipher
-
-if TYPE_CHECKING:  # évite un import à l'exécution : la composition vit dans app/bootstrap.py
-    from app.bootstrap import Providers
-    from app.providers.llm.factory import LlmFactory
+from app.providers.llm.factory import LlmFactory
 
 
 async def get_db(request: Request) -> AsyncIterator[AsyncSession]:
@@ -49,13 +47,13 @@ def get_current_user(request: Request) -> CurrentUser:
 CurrentUserDep = Annotated[CurrentUser, Depends(get_current_user)]
 
 
-def get_providers(request: Request) -> "Providers":
+def get_providers(request: Request) -> Providers:
     """Services externes assemblés au démarrage par `app/bootstrap.py`."""
     providers: Providers = request.app.state.providers
     return providers
 
 
-def get_llm_factory(request: Request) -> "LlmFactory":
+def get_llm_factory(request: Request) -> LlmFactory:
     """Fabrique des modèles de chat (seul point d'instanciation des LLM)."""
     return get_providers(request).llm_factory
 

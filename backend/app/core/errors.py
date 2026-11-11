@@ -55,8 +55,10 @@ async def _handle_app_error(_: Request, exc: Exception) -> JSONResponse:
 
 async def _handle_validation_error(_: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, RequestValidationError)
-    # exc.errors() peut contenir des objets non sérialisables (ex. ValueError) : on les encode.
-    details = {"errors": jsonable_encoder(exc.errors())}
+    # On ne garde que `loc`, `msg` et `type` : `input` recopierait la valeur reçue (clé d'API,
+    # données personnelles) et `ctx` peut contenir des objets non sérialisables.
+    errors = [{key: err[key] for key in ("loc", "msg", "type")} for err in exc.errors()]
+    details = {"errors": jsonable_encoder(errors)}
     return _error_response(422, "validation_error", "Requête invalide.", details)
 
 
