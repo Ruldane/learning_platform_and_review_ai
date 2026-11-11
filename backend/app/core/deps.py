@@ -6,6 +6,7 @@ from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import HTTPConnection
 
+from app.agents.runtime.lifespan import AgentRuntime
 from app.core.errors import AppError
 from app.core.providers import Providers
 from app.core.security import Cipher
@@ -66,3 +67,12 @@ def get_llm_factory(conn: HTTPConnection) -> LlmFactory:
 def get_cipher(conn: HTTPConnection) -> Cipher:
     cipher: Cipher = conn.app.state.cipher
     return cipher
+
+
+def get_runtime(conn: HTTPConnection) -> AgentRuntime:
+    """Moteur d'agents (bus, runner) ouvert par le lifespan (`app.agents.runtime.lifespan`)."""
+    runtime: AgentRuntime = conn.app.state.runtime
+    return runtime
+
+
+RuntimeDep = Annotated[AgentRuntime, Depends(get_runtime)]

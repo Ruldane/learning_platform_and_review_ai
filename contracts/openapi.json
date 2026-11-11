@@ -950,6 +950,21 @@
         "title": "MemoryWrittenPayload",
         "type": "object"
       },
+      "MessageRequest": {
+        "properties": {
+          "text": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "MessageRequest",
+        "type": "object"
+      },
       "ModelChoice": {
         "description": "Fournisseur et identifiant de modèle retenus pour un niveau ou un agent.",
         "properties": {
@@ -1119,6 +1134,27 @@
           "models"
         ],
         "title": "ProviderModels",
+        "type": "object"
+      },
+      "ResumeRequest": {
+        "description": "Réponse à la question en attente (`interrupt_id` de `pending_interrupt`), ou reprise\nd'une pause (`interrupt_id` nul).",
+        "properties": {
+          "interrupt_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interrupt Id"
+          },
+          "value": {
+            "title": "Value"
+          }
+        },
+        "title": "ResumeRequest",
         "type": "object"
       },
       "RunCompletedEvent": {
@@ -1320,6 +1356,92 @@
             "$ref": "#/components/schemas/UserMessageEvent"
           }
         ]
+      },
+      "SessionView": {
+        "description": "État d'une session pour le front ; `last_seq` : dernier événement écrit (le WebSocket\nreprend avec `after_seq`).",
+        "properties": {
+          "cost_usd": {
+            "title": "Cost Usd",
+            "type": "number"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RunFailedPayload"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "graph": {
+            "title": "Graph",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "last_seq": {
+            "title": "Last Seq",
+            "type": "integer"
+          },
+          "pending_interrupt": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InterruptRequestedPayload"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "enum": [
+              "running",
+              "waiting_user",
+              "paused",
+              "completed",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "tokens_in": {
+            "title": "Tokens In",
+            "type": "integer"
+          },
+          "tokens_out": {
+            "title": "Tokens Out",
+            "type": "integer"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "graph",
+          "status",
+          "last_seq",
+          "pending_interrupt",
+          "error",
+          "tokens_in",
+          "tokens_out",
+          "cost_usd",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "SessionView",
+        "type": "object"
       },
       "SettingsOut": {
         "description": "Réglages renvoyés par l'API : ajoute les valeurs calculées, jamais stockées.",
@@ -1544,6 +1666,63 @@
           "score"
         ],
         "title": "SourceFoundPayload",
+        "type": "object"
+      },
+      "StartSessionRequest": {
+        "properties": {
+          "graph": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Graph",
+            "type": "string"
+          },
+          "input": {
+            "additionalProperties": true,
+            "title": "Input",
+            "type": "object"
+          },
+          "subject_id": {
+            "anyOf": [
+              {
+                "maxLength": 36,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Id"
+          },
+          "subject_type": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Type"
+          }
+        },
+        "required": [
+          "graph"
+        ],
+        "title": "StartSessionRequest",
+        "type": "object"
+      },
+      "StartSessionResponse": {
+        "properties": {
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id"
+        ],
+        "title": "StartSessionResponse",
         "type": "object"
       },
       "ToolCalledEvent": {
@@ -1976,6 +2155,419 @@
         "summary": "Health",
         "tags": [
           "health"
+        ]
+      }
+    },
+    "/api/v1/sessions": {
+      "get": {
+        "operationId": "list_sessions_api_v1_sessions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "graph",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Graph"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "running",
+                    "waiting_user",
+                    "paused",
+                    "completed",
+                    "failed",
+                    "cancelled"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SessionView"
+                  },
+                  "title": "Response List Sessions Api V1 Sessions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Sessions",
+        "tags": [
+          "sessions"
+        ]
+      },
+      "post": {
+        "operationId": "start_session_api_v1_sessions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartSessionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartSessionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Session",
+        "tags": [
+          "sessions"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}": {
+      "get": {
+        "operationId": "get_session_api_v1_sessions__session_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Session",
+        "tags": [
+          "sessions"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/cancel": {
+      "post": {
+        "operationId": "cancel_session_api_v1_sessions__session_id__cancel_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cancel Session",
+        "tags": [
+          "sessions"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/message": {
+      "post": {
+        "operationId": "post_message_api_v1_sessions__session_id__message_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "discriminator": {
+                    "mapping": {
+                      "agent.message": "#/components/schemas/AgentMessageEvent",
+                      "agent.started": "#/components/schemas/AgentStartedEvent",
+                      "agent.token": "#/components/schemas/AgentTokenEvent",
+                      "artifact.ready": "#/components/schemas/ArtifactReadyEvent",
+                      "board.update": "#/components/schemas/BoardUpdateEvent",
+                      "cost.updated": "#/components/schemas/CostUpdatedEvent",
+                      "interrupt.requested": "#/components/schemas/InterruptRequestedEvent",
+                      "memory.written": "#/components/schemas/MemoryWrittenEvent",
+                      "proposal.ready": "#/components/schemas/ProposalReadyEvent",
+                      "run.completed": "#/components/schemas/RunCompletedEvent",
+                      "run.failed": "#/components/schemas/RunFailedEvent",
+                      "source.found": "#/components/schemas/SourceFoundEvent",
+                      "tool.called": "#/components/schemas/ToolCalledEvent",
+                      "tool.result": "#/components/schemas/ToolResultEvent",
+                      "user.message": "#/components/schemas/UserMessageEvent"
+                    },
+                    "propertyName": "type"
+                  },
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/AgentStartedEvent"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AgentTokenEvent"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AgentMessageEvent"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ToolCalledEvent"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ToolResultEvent"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SourceFoundEvent"
+                    },
+                    {
+                      "$ref": "#/components/schemas/BoardUpdateEvent"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MemoryWrittenEvent"
+                    },
+                    {
+                      "$ref": "#/components/schemas/InterruptRequestedEvent"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProposalReadyEvent"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ArtifactReadyEvent"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CostUpdatedEvent"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RunCompletedEvent"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RunFailedEvent"
+                    },
+                    {
+                      "$ref": "#/components/schemas/UserMessageEvent"
+                    }
+                  ],
+                  "title": "Response Post Message Api V1 Sessions  Session Id  Message Post"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Post Message",
+        "tags": [
+          "sessions"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/pause": {
+      "post": {
+        "operationId": "pause_session_api_v1_sessions__session_id__pause_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Pause Session",
+        "tags": [
+          "sessions"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/resume": {
+      "post": {
+        "operationId": "resume_session_api_v1_sessions__session_id__resume_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResumeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resume Session",
+        "tags": [
+          "sessions"
         ]
       }
     },

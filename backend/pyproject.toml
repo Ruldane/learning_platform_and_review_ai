@@ -104,13 +104,17 @@ ignore_imports = [
     "app.features.** -> app.features.*.keys_service.**",
     # Le registre monte les routeurs de toutes les features : c'est son rôle.
     "app.features.registry -> app.features.**",
+    # Le moteur d'agents (socle partagé) lit les réglages par le service de `settings` et ses
+    # types publics : une feature qui utilise le moteur (sessions) n'en dépend pas pour autant.
+    "app.agents.** -> app.features.*.service",
+    "app.agents.** -> app.features.*.schemas",
 ]
 
 [[tool.importlinter.contracts]]
 id = "features-sans-fournisseur-concret"
-name = "3. app.features et app.agents n'importent jamais une implémentation concrète de app.providers"
+name = "3. app.features, app.agents et app.realtime n'importent jamais une implémentation concrète de app.providers"
 type = "forbidden"
-source_modules = ["app.features", "app.agents"]
+source_modules = ["app.features", "app.agents", "app.realtime"]
 forbidden_modules = [
     "app.providers.llm.anthropic",
     "app.providers.llm.openai",
@@ -125,14 +129,14 @@ forbidden_modules = [
 
 [[tool.importlinter.contracts]]
 id = "fournisseurs-sans-feature"
-name = "4. app.providers n'importe jamais app.features ni app.agents"
+name = "4. app.providers n'importe jamais app.features, app.agents ni app.realtime"
 type = "forbidden"
 source_modules = ["app.providers"]
-forbidden_modules = ["app.features", "app.agents"]
+forbidden_modules = ["app.features", "app.agents", "app.realtime"]
 
 [[tool.importlinter.contracts]]
 id = "composition-isolee"
 name = "5. Seul app.main importe app.bootstrap (composition)"
 type = "forbidden"
-source_modules = ["app.core", "app.db", "app.features", "app.agents", "app.providers"]
+source_modules = ["app.core", "app.db", "app.features", "app.agents", "app.realtime", "app.providers"]
 forbidden_modules = ["app.bootstrap"]
