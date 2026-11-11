@@ -1,0 +1,110 @@
+import { describe, expect, it } from "vitest";
+import { applyEvent, applyLocal, initialSessionState } from "./sessionReducer";
+import type { SessionEvent, SessionViewState } from "./types";
+import {
+  called, completed, cost, failed, interrupt, message, result, sourceFound, started, tok, turn, userMsg,
+} from "./testEvents";
+
+const run = (events: SessionEvent[], from: SessionViewState = initialSessionState) =>
+  events.reduce(applyEvent, from);
+
+describe("applyEvent : idempotence", () => {
+  it("ignores an event already applied", () => {
+    const s1 = applyEvent(initialSessionState, tok(1, "m1", "Bon"));
+    expect(applyEvent(s1, tok(1, "m1", "Bon"))).toBe(s1);
+  });
+  it("ignores older seq (replay after reconnection) without duplicating", () => {
+    const events = [started(1, "demo_critic"), tok(2, "m1", "Bon"), tok(3, "m1", "jour")];
+    const s = run([...events, ...events]);
+    expect(turn(s, "m1")?.text).toBe("Bonjour");
+    expect(s.feed).toHaveLength(1);
+    expect(s.lastSeq).toBe(3);
+  });
+});
+
+describe("applyEvent : tours d'agent", () => {
+  it("accumulates tokens then replaces with the final message", () => {
+    let s = run([started(1, "demo_critic"), tok(2, "m1", "Bon"), tok(3, "m1", "jour")]);
+    expect(turn(s, "m1")).toMatchObject({ text: "Bonjour", streaming: true, intent: "Je relis" });
+    s = applyEvent(s, message(4, "m1", "Bonjour."));
+    expect(turn(s, "m1")).toMatchObject({ text: "Bonjour.", streaming: false });
+    expect(turn(s, "m1")?.citations).toHaveLength(1);
+    expect(s.feed).toHaveLength(1);
+  });
+  it("sets running and current agent on agent.started", () => {
+    const s = run([started(1, "demo_critic")]);
+    expect(s).toMatchObject({ currentAgent: "demo_critic", status: "running" });
+    expect(s.feed[0]).toMatchObject({ kind: "turn", agent: "demo_critic", intent: "Je relis" });
+  });
+  it("creates the turn from a token when agent.started is missing", () => {
+    const s = run([tok(5, "m9", "Salut", "demo_writer")]);
+    expect(turn(s, "m9")).toMatchObject({ agent: "demo_writer", text: "Salut", streaming: true });
+  });
+  it("opens separate turns for two message ids", () => {
+    const s = run([started(1, "demo_critic"), tok(2, "m1", "A"), message(3, "m1", "A"), tok(4, "m2", "B")]);
+    expect(s.feed).toHaveLength(2);
+    expect(turn(s, "m2")?.text).toBe("B");
+  });
+  it("attaches tool calls and results to the agent's last turn", () => {
+    const s = run([started(1, "demo_critic"), called(2, "c1"), tok(3, "m1", "x"), result(4, "c1")]);
+    expect(s.feed).toHaveLength(1);
+    expect(turn(s, "m1")?.tools).toEqual([
+      { callId: "c1", tool: "search", args: { q: "x" }, ok: true, summary: "3 résultats" },
+    ]);
+  });
+});
+
+describe("applyEvent : interruptions, coût, fin", () => {
+  it("sets waiting_user on interrupt and clears it when answered locally", () => {
+    let s = run([started(1, "demo_critic"), interrupt(2)]);
+    expect(s.status).toBe("waiting_user");
+    expect(s.pendingInterrupt?.interrupt_id).toBe("i1");
+    expect(s.feed[1]).toMatchObject({ kind: "interrupt", answered: false });
+    s = applyLocal(s, { type: "interrupt.answered", interruptId: "i1" });
+    expect(s).toMatchObject({ status: "running", pendingInterrupt: null });
+    expect(s.feed[1]).toMatchObject({ kind: "interrupt", answered: true });
+  });
+  it("marks the interrupt answered when the session resumes (replay from scratch)", () => {
+    const s = run([interrupt(1), started(2, "demo_critic")]);
+    expect(s.pendingInterrupt).toBeNull();
+    expect(s.status).toBe("running");
+    expect(s.feed[0]).toMatchObject({ kind: "interrupt", answered: true });
+  });
+  it("records a user message and answers the pending interrupt", () => {
+    const s = run([interrupt(1), userMsg(2, "Option A")]);
+    expect(s.feed[1]).toEqual({ kind: "user", seq: 2, text: "Option A" });
+    expect(s.pendingInterrupt).toBeNull();
+  });
+  it("stores cost.updated", () => {
+    expect(run([cost(1, 42)]).cost).toMatchObject({ tokens_in: 42, cap_tokens: 300000 });
+  });
+  it("completes the run and finalises streaming turns", () => {
+    const s = run([started(1, "demo_critic"), tok(2, "m1", "x"), completed(3)]);
+    expect(s).toMatchObject({ status: "completed", currentAgent: null });
+    expect(turn(s, "m1")?.streaming).toBe(false);
+  });
+  it("stores run.failed message for display", () => {
+    const s = run([started(1, "demo_critic"), failed(2)]);
+    expect(s).toMatchObject({
+      status: "failed",
+      currentAgent: null,
+      error: { code: "llm_key_missing", message: "Clé manquante pour ce niveau." },
+    });
+  });
+  it("routes unknown types to a generic feed item", () => {
+    const ev = sourceFound(3);
+    const s = run([ev]);
+    expect(s.feed).toEqual([{ kind: "event", event: ev }]);
+    expect(s.lastSeq).toBe(3);
+  });
+});
+
+describe("applyLocal", () => {
+  it("status.set changes the status", () => {
+    expect(applyLocal(initialSessionState, { type: "status.set", status: "paused" }).status).toBe("paused");
+  });
+  it("interrupt.answered with an unknown id leaves the state untouched", () => {
+    const s = run([interrupt(1)]);
+    expect(applyLocal(s, { type: "interrupt.answered", interruptId: "zz" })).toBe(s);
+  });
+});
