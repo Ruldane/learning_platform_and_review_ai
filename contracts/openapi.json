@@ -285,10 +285,12 @@
         "description": "Fournisseur et identifiant de modèle retenus pour un niveau ou un agent.",
         "properties": {
           "model": {
+            "minLength": 1,
             "title": "Model",
             "type": "string"
           },
           "provider": {
+            "minLength": 1,
             "title": "Provider",
             "type": "string"
           }

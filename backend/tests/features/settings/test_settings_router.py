@@ -49,3 +49,15 @@ async def test_put_accepts_a_get_response_and_ignores_extra_fields(
     r = await client.put("/api/v1/settings", json=body)
     assert r.status_code == 200 and "champ_inconnu" not in r.json()
     assert r.json()["availability"]["weekly_budget_minutes"] == 840
+
+
+async def test_put_rejects_empty_model_or_provider_without_echo(client: httpx.AsyncClient) -> None:
+    body = (await client.get("/api/v1/settings")).json()
+    body["tiers"]["rapide"] = {"provider": "glm", "model": ""}
+    body["agent_overrides"] = {"coach": {"provider": "", "model": "MODELE-ECHO-XYZ"}}
+    r = await client.put("/api/v1/settings", json=body)
+    assert r.status_code == 422 and r.json()["error"]["code"] == "validation_error"
+    locs = [err["loc"] for err in r.json()["error"]["details"]["errors"]]
+    assert ["body", "tiers", "rapide", "model"] in locs
+    assert ["body", "agent_overrides", "coach", "provider"] in locs
+    assert "MODELE-ECHO-XYZ" not in r.text

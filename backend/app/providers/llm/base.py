@@ -7,7 +7,7 @@ composition avec la feature réglages se fait dans `app/bootstrap.py`.
 from typing import Literal, Protocol
 
 from langchain_core.language_models import BaseChatModel
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 Tier = Literal["rapide", "standard", "fort", "vision"]
 TIERS: tuple[Tier, ...] = ("rapide", "standard", "fort", "vision")
@@ -16,8 +16,8 @@ TIERS: tuple[Tier, ...] = ("rapide", "standard", "fort", "vision")
 class ModelChoice(BaseModel):
     """Fournisseur et identifiant de modèle retenus pour un niveau ou un agent."""
 
-    provider: str
-    model: str
+    provider: str = Field(min_length=1)
+    model: str = Field(min_length=1)
 
 
 class KeyTestResult(BaseModel):
