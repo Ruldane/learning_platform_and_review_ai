@@ -5,27 +5,53 @@ function base(seq: number, agent: string | null) {
   return { id: `e${seq}`, session_id: "s1", seq, ts: "2026-11-11T10:00:00Z", agent };
 }
 
-export const started = (seq: number, agent: string, intent = "Je relis"): EventOf<"agent.started"> => ({
+export const started = (
+  seq: number,
+  agent: string,
+  intent = "Je relis",
+): EventOf<"agent.started"> => ({
   ...base(seq, agent),
   type: "agent.started",
   payload: { intent, step: "draft" },
 });
-export const tok = (seq: number, messageId: string, text: string, agent = "demo_critic"): EventOf<"agent.token"> => ({
+export const tok = (
+  seq: number,
+  messageId: string,
+  text: string,
+  agent = "demo_critic",
+): EventOf<"agent.token"> => ({
   ...base(seq, agent),
   type: "agent.token",
   payload: { message_id: messageId, text },
 });
-export const message = (seq: number, messageId: string, text: string, agent = "demo_critic"): EventOf<"agent.message"> => ({
+export const message = (
+  seq: number,
+  messageId: string,
+  text: string,
+  agent = "demo_critic",
+): EventOf<"agent.message"> => ({
   ...base(seq, agent),
   type: "agent.message",
-  payload: { message_id: messageId, text, citations: [{ index: 1, title: "Doc", url: null, memory_item_id: null }] },
+  payload: {
+    message_id: messageId,
+    text,
+    citations: [{ index: 1, title: "Doc", url: null, memory_item_id: null }],
+  },
 });
-export const called = (seq: number, callId: string, agent = "demo_critic"): EventOf<"tool.called"> => ({
+export const called = (
+  seq: number,
+  callId: string,
+  agent = "demo_critic",
+): EventOf<"tool.called"> => ({
   ...base(seq, agent),
   type: "tool.called",
   payload: { call_id: callId, tool: "search", args: { q: "x" } },
 });
-export const result = (seq: number, callId: string, agent = "demo_critic"): EventOf<"tool.result"> => ({
+export const result = (
+  seq: number,
+  callId: string,
+  agent = "demo_critic",
+): EventOf<"tool.result"> => ({
   ...base(seq, agent),
   type: "tool.result",
   payload: { call_id: callId, tool: "search", ok: true, summary: "3 résultats" },

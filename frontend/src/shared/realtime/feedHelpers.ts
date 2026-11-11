@@ -6,7 +6,16 @@ const PENDING_PREFIX = "pending:";
 const isPending = (turn: AgentTurn): boolean => turn.messageId.startsWith(PENDING_PREFIX);
 
 export function newTurn(agent: string, messageId: string, intent?: string): AgentTurn {
-  return { kind: "turn", messageId, agent, intent, text: "", streaming: true, tools: [], citations: [] };
+  return {
+    kind: "turn",
+    messageId,
+    agent,
+    intent,
+    text: "",
+    streaming: true,
+    tools: [],
+    citations: [],
+  };
 }
 
 export const pendingTurn = (agent: string, seq: number, intent?: string): AgentTurn =>
@@ -71,11 +80,15 @@ export function stopStreaming(feed: FeedItem[]): FeedItem[] {
 /** Marque répondues toutes les interruptions en attente (ou celle de `interruptId`) et vide `pendingInterrupt`. */
 export function answerInterrupts(state: SessionViewState, interruptId?: string): SessionViewState {
   const matches = (i: FeedItem) =>
-    i.kind === "interrupt" && !i.answered && (!interruptId || i.interrupt.interrupt_id === interruptId);
+    i.kind === "interrupt" &&
+    !i.answered &&
+    (!interruptId || i.interrupt.interrupt_id === interruptId);
   if (!state.feed.some(matches) && state.pendingInterrupt === null) return state;
   return {
     ...state,
-    feed: state.feed.map((i) => (matches(i) && i.kind === "interrupt" ? { ...i, answered: true } : i)),
+    feed: state.feed.map((i) =>
+      matches(i) && i.kind === "interrupt" ? { ...i, answered: true } : i,
+    ),
     pendingInterrupt: null,
   };
 }

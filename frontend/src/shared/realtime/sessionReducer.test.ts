@@ -2,7 +2,18 @@ import { describe, expect, it } from "vitest";
 import { applyEvent, applyLocal, initialSessionState } from "./sessionReducer";
 import type { SessionEvent, SessionViewState } from "./types";
 import {
-  called, completed, cost, failed, interrupt, message, result, sourceFound, started, tok, turn, userMsg,
+  called,
+  completed,
+  cost,
+  failed,
+  interrupt,
+  message,
+  result,
+  sourceFound,
+  started,
+  tok,
+  turn,
+  userMsg,
 } from "./testEvents";
 
 const run = (events: SessionEvent[], from: SessionViewState = initialSessionState) =>
@@ -41,7 +52,12 @@ describe("applyEvent : tours d'agent", () => {
     expect(turn(s, "m9")).toMatchObject({ agent: "demo_writer", text: "Salut", streaming: true });
   });
   it("opens separate turns for two message ids", () => {
-    const s = run([started(1, "demo_critic"), tok(2, "m1", "A"), message(3, "m1", "A"), tok(4, "m2", "B")]);
+    const s = run([
+      started(1, "demo_critic"),
+      tok(2, "m1", "A"),
+      message(3, "m1", "A"),
+      tok(4, "m2", "B"),
+    ]);
     expect(s.feed).toHaveLength(2);
     expect(turn(s, "m2")?.text).toBe("B");
   });
@@ -101,7 +117,9 @@ describe("applyEvent : interruptions, coût, fin", () => {
 
 describe("applyLocal", () => {
   it("status.set changes the status", () => {
-    expect(applyLocal(initialSessionState, { type: "status.set", status: "paused" }).status).toBe("paused");
+    expect(applyLocal(initialSessionState, { type: "status.set", status: "paused" }).status).toBe(
+      "paused",
+    );
   });
   it("interrupt.answered with an unknown id leaves the state untouched", () => {
     const s = run([interrupt(1)]);

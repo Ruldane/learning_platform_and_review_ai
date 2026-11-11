@@ -1,9 +1,17 @@
 import {
-  answerInterrupts, mergeTool, pendingTurn, stopStreaming, updateLastTurn, upsertTurn,
+  answerInterrupts,
+  mergeTool,
+  pendingTurn,
+  stopStreaming,
+  updateLastTurn,
+  upsertTurn,
 } from "./feedHelpers";
 import type { EventOf, SessionEvent, SessionEventType, SessionViewState } from "./types";
 
-type Handler<T extends SessionEventType> = (state: SessionViewState, event: EventOf<T>) => SessionViewState;
+type Handler<T extends SessionEventType> = (
+  state: SessionViewState,
+  event: EventOf<T>,
+) => SessionViewState;
 type HandlerMap = { [T in SessionEventType]?: Handler<T> };
 
 /** L'agent d'un événement ; repli sur l'agent courant quand l'enveloppe n'en porte pas. */
@@ -79,7 +87,10 @@ const onInterrupt: Handler<"interrupt.requested"> = (state, event) => ({
   ...state,
   status: "waiting_user",
   pendingInterrupt: event.payload,
-  feed: [...state.feed, { kind: "interrupt", seq: event.seq, interrupt: event.payload, answered: false }],
+  feed: [
+    ...state.feed,
+    { kind: "interrupt", seq: event.seq, interrupt: event.payload, answered: false },
+  ],
 });
 
 const onCost: Handler<"cost.updated"> = (state, event) => ({ ...state, cost: event.payload });
@@ -115,8 +126,7 @@ export const EVENT_HANDLERS: HandlerMap = {
 
 export function reduceEvent(state: SessionViewState, event: SessionEvent): SessionViewState {
   const handler = EVENT_HANDLERS[event.type] as
-    | ((s: SessionViewState, e: SessionEvent) => SessionViewState)
-    | undefined;
+    ((s: SessionViewState, e: SessionEvent) => SessionViewState) | undefined;
   if (handler) return handler(state, event);
   return { ...state, feed: [...state.feed, { kind: "event", event }] };
 }
