@@ -55,7 +55,8 @@ dev = [
 ]
 
 # Contrats d'import (plan directeur, 1.2), bloquants en pre-commit (`lint-imports`).
-# À étendre à chaque nouvelle feature ou fournisseur concret ; `app.agents` s'ajoutera aux
+# Les contrats 1a et 2 couvrent toute feature (`app.features.*`) sans la nommer ; le contrat 3
+# est à étendre à chaque fournisseur concret ; `app.agents` s'ajoutera aux
 # contrats 3 et 4 quand le paquet existera (import-linter refuse un module absent).
 [tool.importlinter]
 root_packages = ["app"]
@@ -65,7 +66,9 @@ include_external_packages = false
 id = "couches-feature"
 name = "1a. Couches de chaque feature : router -> service -> repository"
 type = "layers"
-containers = ["app.features.auth", "app.features.health", "app.features.settings"]
+# Joker : toute nouvelle feature est vérifiée sans modifier ce fichier (`registry`, simple
+# module, n'a aucune couche : elles sont toutes optionnelles).
+containers = ["app.features.*"]
 layers = [
     "(router) | (keys_router)",
     "(service) | (keys_service)",
@@ -89,10 +92,17 @@ allow_indirect_imports = true
 id = "features-independantes"
 name = "2. Une feature n'importe d'une autre feature que son service"
 type = "independence"
-modules = ["app.features.auth", "app.features.health", "app.features.settings"]
+modules = ["app.features.*"]
+# Les motifs `.**` couvrent un service devenu paquet ; tant qu'aucun ne l'est, ils ne
+# correspondent à rien : simple avertissement plutôt qu'échec.
+unmatched_ignore_imports_alerting = "warn"
 ignore_imports = [
     "app.features.** -> app.features.*.service",
+    "app.features.** -> app.features.*.service.**",
     "app.features.** -> app.features.*.keys_service",
+    "app.features.** -> app.features.*.keys_service.**",
+    # Le registre monte les routeurs de toutes les features : c'est son rôle.
+    "app.features.registry -> app.features.**",
 ]
 
 [[tool.importlinter.contracts]]
