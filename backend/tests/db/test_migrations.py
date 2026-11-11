@@ -44,7 +44,9 @@ async def test_wal_mode_is_enabled(tmp_path: Path) -> None:
         async with engine.connect() as conn:
             mode = (await conn.execute(text("PRAGMA journal_mode"))).scalar_one()
             fk = (await conn.execute(text("PRAGMA foreign_keys"))).scalar_one()
+            busy = (await conn.execute(text("PRAGMA busy_timeout"))).scalar_one()
     finally:
         await engine.dispose()
     assert mode == "wal"
     assert fk == 1
+    assert busy == 5000  # écrivains concurrents (bus d'événements) : attendre, pas échouer

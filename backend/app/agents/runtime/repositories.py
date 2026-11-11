@@ -12,8 +12,11 @@ class SessionRepository(UserScopedRepository[AgentSession]):
 class EventRepository(UserScopedRepository[SessionEventRecord]):
     model = SessionEventRecord
 
-    async def list_after(self, session_id: str, after_seq: int) -> list[SessionEventRecord]:
-        """Événements de la session dont `seq` dépasse `after_seq`, par `seq` croissant."""
+    async def list_after(
+        self, session_id: str, after_seq: int, limit: int | None = None
+    ) -> list[SessionEventRecord]:
+        """Événements de la session dont `seq` dépasse `after_seq`, par `seq` croissant
+        (au plus `limit` s'il est donné : le rejeu lit par lots)."""
         stmt = (
             select(SessionEventRecord)
             .where(
@@ -22,6 +25,7 @@ class EventRepository(UserScopedRepository[SessionEventRecord]):
                 SessionEventRecord.seq > after_seq,
             )
             .order_by(SessionEventRecord.seq)
+            .limit(limit)
         )
         return list((await self.session.execute(stmt)).scalars().all())
 
