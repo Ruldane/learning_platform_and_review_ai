@@ -67,7 +67,21 @@ async def test_searxng_json_disabled_is_explained(http: httpx.AsyncClient) -> No
     respx.get(url__startswith=f"{SEARXNG}/search").respond(403)
     s = await SearxngProbe(SEARXNG, http).check()
     assert not s.ok and "JSON" in s.detail
-    assert s.detail == "Le format JSON n'est pas activé dans SearXNG."
+    assert s.detail == (
+        "Le format JSON est peut-être désactivé dans SearXNG, "
+        "ou la requête a été bloquée par son limiteur."
+    )
+
+
+@respx.mock
+async def test_searxng_deep_check_has_its_own_longer_timeout(http: httpx.AsyncClient) -> None:
+    respx.get(f"{SEARXNG}/healthz").respond(200)
+    search = respx.get(url__startswith=f"{SEARXNG}/search").respond(json={"results": []})
+    probe = SearxngProbe(SEARXNG, http)
+    await probe.check()
+    assert search.calls[0].request.extensions["timeout"]["read"] == 10.0
+    # Le plafond demandé au service de santé couvre la sonde et la recherche profonde.
+    assert probe.timeout > 10.0
 
 
 @respx.mock

@@ -1,6 +1,6 @@
 import logging
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import AsyncExitStack, asynccontextmanager
 
 import httpx
 from fastapi import FastAPI
@@ -58,25 +58,24 @@ def _setup_security(app: FastAPI) -> None:
 async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     _setup_security(app)
     # Le schéma n'est jamais créé ici : en Docker, l'entrypoint lance `alembic upgrade head`.
-    engine = create_engine(app.state.settings.database_url)
-    app.state.engine = engine
-    app.state.session_factory = create_session_factory(engine)
-    # Client partagé par les sondes de santé, fermé à l'arrêt.
-    http = httpx.AsyncClient(timeout=_PROBE_TIMEOUT_SECONDS)
-    app.state.providers = build_providers(
-        app.state.settings,
-        app.state.session_factory,
-        app.state.cipher,
-        http,
-        lambda: getattr(app.state, "local_user_id", None),
-    )
-    try:
+    # La pile ferme le moteur et le client HTTP même si la composition ou le démarrage échoue.
+    async with AsyncExitStack() as stack:
+        engine = create_engine(app.state.settings.database_url)
+        stack.push_async_callback(engine.dispose)
+        app.state.engine = engine
+        app.state.session_factory = create_session_factory(engine)
+        # Client partagé par les sondes de santé.
+        http = await stack.enter_async_context(httpx.AsyncClient(timeout=_PROBE_TIMEOUT_SECONDS))
+        app.state.providers = build_providers(
+            app.state.settings,
+            app.state.session_factory,
+            app.state.cipher,
+            http,
+            lambda: getattr(app.state, "local_user_id", None),
+        )
         if app.state.settings.auth_mode == "local":
             await _ensure_local_user(app)
         yield
-    finally:
-        await http.aclose()
-        await engine.dispose()
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:

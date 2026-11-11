@@ -12,6 +12,12 @@ CHECK_TIMEOUT_SECONDS = 3.0
 DB_CHECK = "db"
 
 
+def _cap(check: HealthCheck, default: float) -> float:
+    """Un contrôle peut demander un plafond plus long (attribut `timeout`), jamais plus court."""
+    own = getattr(check, "timeout", None)
+    return max(default, float(own)) if isinstance(own, int | float) else default
+
+
 async def _run_one(check: HealthCheck, timeout: float) -> HealthStatus:
     """Un contrôle ne fait jamais échouer le rapport. Seul le nom du type d'exception est
     rapporté : le message d'une exception réseau peut contenir une adresse ou une clé."""
@@ -31,7 +37,9 @@ class HealthService:
         self._timeout = timeout
 
     async def run(self) -> HealthReport:
-        statuses = await asyncio.gather(*(_run_one(c, self._timeout) for c in self._checks))
+        statuses = await asyncio.gather(
+            *(_run_one(c, _cap(c, self._timeout)) for c in self._checks)
+        )
         results = {c.name: s for c, s in zip(self._checks, statuses, strict=True)}
         status: Literal["ok", "degraded", "down"]
         if DB_CHECK in results and not results[DB_CHECK].ok:

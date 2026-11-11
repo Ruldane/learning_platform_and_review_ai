@@ -17,6 +17,15 @@ class FakeCheck:
         return self._status
 
 
+class RaisingCheck:
+    def __init__(self, name: str, error: Exception) -> None:
+        self.name = name
+        self._error = error
+
+    async def check(self) -> HealthStatus:
+        raise self._error
+
+
 def override_health_checks(app: FastAPI, checks: list[HealthCheck]) -> None:
     """Remplace les contrôles réels : la route ne touche aucun service."""
     real: Providers = app.state.providers

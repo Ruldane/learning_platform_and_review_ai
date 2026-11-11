@@ -1,3 +1,4 @@
+import httpx
 import pytest
 from asgi_lifespan import LifespanManager
 from sqlalchemy import func, select
@@ -63,3 +64,25 @@ async def test_other_operational_error_is_not_relabeled(
         async with LifespanManager(create_app(settings)):
             pass
     assert caught.value is error
+
+
+async def test_http_client_is_closed_when_composition_fails(
+    settings: Settings, db_engine: object, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    created: list[httpx.AsyncClient] = []
+    original = httpx.AsyncClient
+
+    def tracking(*args: object, **kwargs: object) -> httpx.AsyncClient:
+        client = original(*args, **kwargs)  # type: ignore[arg-type]
+        created.append(client)
+        return client
+
+    def boom(*args: object, **kwargs: object) -> None:
+        raise ValueError("composition cassée")
+
+    monkeypatch.setattr("app.main.httpx.AsyncClient", tracking)
+    monkeypatch.setattr("app.main.build_providers", boom)
+    with pytest.raises(ValueError, match="composition cassée"):
+        async with LifespanManager(create_app(settings)):
+            pass
+    assert len(created) == 1 and created[0].is_closed
