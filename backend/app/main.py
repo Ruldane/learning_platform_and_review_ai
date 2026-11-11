@@ -2,6 +2,7 @@ import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
+import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import OperationalError
@@ -18,6 +19,7 @@ from app.features.registry import FEATURE_ROUTERS
 API_PREFIX = "/api/v1"
 logger = logging.getLogger(__name__)
 _LOG_LEVEL = "INFO"
+_PROBE_TIMEOUT_SECONDS = 3.0
 
 
 async def _ensure_local_user(app: FastAPI) -> None:
@@ -59,14 +61,21 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     engine = create_engine(app.state.settings.database_url)
     app.state.engine = engine
     app.state.session_factory = create_session_factory(engine)
+    # Client partagé par les sondes de santé, fermé à l'arrêt.
+    http = httpx.AsyncClient(timeout=_PROBE_TIMEOUT_SECONDS)
     app.state.providers = build_providers(
-        app.state.settings, app.state.session_factory, app.state.cipher
+        app.state.settings,
+        app.state.session_factory,
+        app.state.cipher,
+        http,
+        lambda: getattr(app.state, "local_user_id", None),
     )
     try:
         if app.state.settings.auth_mode == "local":
             await _ensure_local_user(app)
         yield
     finally:
+        await http.aclose()
         await engine.dispose()
 
 
