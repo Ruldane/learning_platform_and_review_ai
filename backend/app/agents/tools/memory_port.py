@@ -9,6 +9,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Literal, Protocol
 
+from app.agents.prompts.loader import untrusted
 from app.core.errors import AppError
 
 # Types qu'un agent peut écrire : jamais un `document` (réservé à l'import).
@@ -79,6 +80,11 @@ class SkillsSummary:
         lines = [f"Acquis ({self.total}) :"]
         lines += [f"- {_one_line(skill.title)} — {skill.level}" for skill in self.skills]
         return "\n".join(lines)
+
+    def as_agent_text(self) -> str:
+        """`as_text` encadré comme contenu non fiable (17.4) : un titre d'acquis peut venir d'un
+        document importé (Archiviste). À donner tel quel à un agent (prompt, retour d'outil)."""
+        return untrusted(self.as_text(), "memoire:acquis")
 
 
 @dataclass(frozen=True)

@@ -64,6 +64,25 @@ class RedactingFilter(logging.Filter):
         return True
 
 
+class AccessQueryFilter(logging.Filter):
+    """Retire la chaîne de requête du chemin dans le journal d'accès d'uvicorn : un filtre
+    `?tag=…&author=…` est du contenu de l'utilisateur (spec 17.2). Posé sur le logger
+    `uvicorn.access` lui-même, il s'applique quel que soit le handler. `args` garde sa forme
+    (5-tuple attendu par `AccessFormatter`)."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        args = record.args
+        if isinstance(args, tuple) and len(args) >= 3 and isinstance(args[2], str):
+            record.args = (*args[:2], args[2].split("?", 1)[0], *args[3:])
+        return True
+
+
+def _install_access_filter() -> None:
+    access = logging.getLogger("uvicorn.access")
+    if not any(isinstance(f, AccessQueryFilter) for f in access.filters):
+        access.addFilter(AccessQueryFilter())
+
+
 def _install(handler: logging.Handler, get_secrets: Callable[[], Iterable[str]]) -> None:
     for existing in [f for f in handler.filters if isinstance(f, RedactingFilter)]:
         handler.removeFilter(existing)
@@ -71,7 +90,9 @@ def _install(handler: logging.Handler, get_secrets: Callable[[], Iterable[str]])
 
 
 def configure_logging(level: str, get_secrets: Callable[[], Iterable[str]]) -> None:
-    """Règle le niveau et masque les secrets sur tous les handlers. Idempotent."""
+    """Règle le niveau, masque les secrets sur tous les handlers et retire les chaînes de
+    requête du journal d'accès. Idempotent."""
+    _install_access_filter()
     root = logging.getLogger()
     root.setLevel(level.upper())
     for name, quiet_level in _QUIET_LOGGERS.items():

@@ -6,7 +6,7 @@ from typing import Any
 import httpx
 import pytest
 from fastapi import FastAPI
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.errors import AppError
 from app.db.models.memory import MemoryItem
@@ -145,3 +145,27 @@ async def test_merge_into_existing_content_is_refused_and_rolled_back(
     for item_id in ids:  # rien supprimé, rien modifié
         assert (await client.get(f"{API}/{item_id}")).status_code == 200
     assert (await client.get(f"{API}/{ids[0]}")).json()["writes"][0]["action"] == "create"
+
+
+async def test_merge_interrupted_before_reindexing_leaves_the_target_unindexed(
+    service: MemoryService,
+    runtime: MemoryRuntime,
+    db_session_factory: async_sessionmaker[AsyncSession],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Arrêt juste après le commit du texte fusionné : la cible ne doit pas se dire indexée
+    avec ses anciens fragments, la réindexation doit la rattraper."""
+    target = await _write(service, kind="lecon", title="Cible", text="Texte A.")
+    other = await _write(service, kind="lecon", title="Autre", text="Texte B.")
+    assert target.indexed_at is not None
+
+    async def crash(*_: Any) -> bool:
+        raise RuntimeError("arrêt du processus")
+
+    monkeypatch.setattr(runtime.indexer, "index_item", crash)
+    with pytest.raises(RuntimeError):
+        await merge(service, target.id, [other.id])
+    async with db_session_factory() as fresh:
+        stored = await MemoryItemRepository(fresh, "u1").get(target.id)
+    assert stored is not None and stored.text == "Texte A.\n\nTexte B."
+    assert stored.indexed_at is None

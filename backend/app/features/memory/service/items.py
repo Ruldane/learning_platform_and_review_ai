@@ -279,7 +279,8 @@ class MemoryService:
     async def delete(self, item_id: str) -> None:
         """Supprime l'élément, ses fragments (cascade) et ses vecteurs. Une décision en attente
         refusée est journalisée `reject`, le reste `delete`. Un document perd aussi ses lignes
-        `documents`, et leurs fichiers après le commit (jamais une ligne sans son fichier)."""
+        `documents`, et leurs fichiers après le commit (jamais une ligne sans son fichier).
+        **Valide la transaction** avant de retirer les vecteurs, hors transaction (D66)."""
         item = await self.get(item_id)
         keys: list[str] = []
         if item.kind == "document":
@@ -290,8 +291,7 @@ class MemoryService:
             item=item, action=action, author=USER_AUTHOR, session_id=None, reason=None
         )
         await self._items.delete(item.id)
+        await self.db.commit()  # avant Qdrant : verrou d'écriture rendu (orphelins : réindexation)
         await self.runtime.indexer.unindex(self.user_id, [item.id])
-        if keys:
-            await self.db.commit()
-            for key in keys:
-                await self.runtime.providers.storage.delete(self.user_id, key)
+        for key in keys:
+            await self.runtime.providers.storage.delete(self.user_id, key)

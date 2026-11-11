@@ -147,7 +147,7 @@ def memory_tools_for(deps: GraphDeps, *, agent: str) -> list[BaseTool]:
         return f"Écrit : {done.title}{pending}"
 
     async def skills() -> str:
-        return (await memory_get_skills(deps, agent=agent)).as_text()
+        return (await memory_get_skills(deps, agent=agent)).as_agent_text()
 
     return [
         StructuredTool.from_function(

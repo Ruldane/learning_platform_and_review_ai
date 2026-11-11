@@ -2,7 +2,7 @@ import logging
 
 import pytest
 
-from app.core.logging import RedactingFilter, configure_logging
+from app.core.logging import AccessQueryFilter, RedactingFilter, configure_logging
 from app.core.security import KnownSecrets
 
 
@@ -121,3 +121,24 @@ def test_libraries_that_would_quote_urls_or_documents_are_quieted() -> None:
     for name in ("pdfminer", "trafilatura", "htmldate"):
         assert logging.getLogger(name).level == logging.ERROR
     assert not logging.getLogger("pdfminer.pdfparser").isEnabledFor(logging.WARNING)
+
+
+def test_access_log_drops_the_query_string() -> None:
+    # Spec 17.2 : une étiquette ou un auteur filtrés (`?tag=…`) sont du contenu de l'utilisateur.
+    configure_logging("INFO", lambda: [])
+    configure_logging("INFO", lambda: [])  # idempotent : un seul filtre
+    access = logging.getLogger("uvicorn.access")
+    assert sum(isinstance(f, AccessQueryFilter) for f in access.filters) == 1
+    records: list[logging.LogRecord] = []
+    handler = logging.Handler()
+    handler.emit = records.append  # type: ignore[method-assign]
+    access.addHandler(handler)
+    try:
+        record = _access_record("/api/v1/memory/items?tag=sant%C3%A9&author=moi")
+        access.handle(record)
+    finally:
+        access.removeHandler(handler)
+    assert [r.getMessage() for r in records] == [
+        '127.0.0.1:5000 - "GET /api/v1/memory/items HTTP/1.1" 200'
+    ]
+    assert isinstance(records[0].args, tuple) and records[0].args[4] == 200

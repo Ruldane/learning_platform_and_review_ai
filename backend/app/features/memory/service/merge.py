@@ -95,6 +95,9 @@ async def merge(service: MemoryService, target_id: str, other_ids: Sequence[str]
     await writes.log(
         item=target, action="merge", author=USER_AUTHOR, session_id=None, reason=reason
     )
+    # Non indexée dans la même transaction que le texte fusionné : un arrêt avant la fin de
+    # `index_item` ne la laisse jamais dite indexée avec ses anciens fragments.
+    await items.set_indexed_at(target, None)
     await db.commit()  # rien n'est tenu pendant les appels à Qdrant qui suivent
     await service.runtime.indexer.unindex(user_id, ids)
     await service.runtime.indexer.index_item(db, target)  # dernière étape (D66)

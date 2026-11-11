@@ -19,6 +19,7 @@ from app.features.memory.service import jobs as jobs_module
 from app.features.memory.service import reindex as reindex_module
 from app.features.memory.service.items import MemoryService
 from app.features.memory.service.runtime import MemoryRuntime, memory_runtime
+from app.providers.embeddings.base import EmbeddingsUnavailable
 from app.providers.embeddings.fake import HashingEmbedder
 from app.providers.vector.qdrant import QdrantMemoryRepository
 from tests.features.memory.helpers import draft, with_embeddings_down
@@ -231,7 +232,7 @@ async def test_reindex_failure_reports_readable_error(
         runtime.jobs.enqueue_reindex(USER)
         await runtime.jobs.join()
         state = runtime.jobs.reindex_state(USER)
-        assert state.status == "failed" and state.total == 1 and state.done == 0
+        assert state.status == "failed" and state.done == 0  # Ollama sondé avant tout effacement
         assert state.error is not None
         assert state.error.startswith("Le service d'embeddings (Ollama)")
         assert not runtime.indexer.reindexing(USER)
@@ -251,3 +252,25 @@ async def test_unexpected_reindex_error_is_generic(
     state = rt.jobs.reindex_state(USER)
     assert state.status == "failed"
     assert state.error == "La réindexation a échoué de façon inattendue."
+
+
+async def test_reindex_with_embeddings_down_keeps_the_existing_index(
+    rt: MemoryRuntime, db_session_factory: Factory, gate: _Gate, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Ollama arrêté ou bge-m3 en téléchargement : rien n'est effacé avant d'avoir vérifié
+    qu'Ollama répond (vecteurs et `indexed_at` gardés), état `failed` lisible."""
+    item_id = await _write(rt, db_session_factory, title="A", text="Premier texte.")
+    await _consistent(rt, db_session_factory, item_id)
+
+    async def down(*_: Any) -> list[float]:
+        raise EmbeddingsUnavailable()
+
+    monkeypatch.setattr(gate, "aembed_query", down)
+    monkeypatch.setattr(gate, "aembed_documents", down)
+    rt.jobs.enqueue_reindex(USER)
+    await rt.jobs.join()
+    state = rt.jobs.reindex_state(USER)
+    assert state.status == "failed" and state.error is not None
+    assert state.error.startswith("Le service d'embeddings (Ollama)")
+    assert not rt.indexer.reindexing(USER)
+    await _consistent(rt, db_session_factory, item_id)  # vecteurs et `indexed_at` intacts

@@ -7,7 +7,8 @@ asyncio de l'utilisateur tenu pendant une attente de SQLite (D66) :
 
 1. drapeau `reindexing` levé : un `index_item` qui commence ensuite renouvelle ses fragments
    sans toucher l'index et laisse l'élément non indexé ; on attend la fin de ceux déjà lancés ;
-2. `clear_indexed` (transaction courte), puis `delete_user` sous le verrou de l'utilisateur ;
+2. Ollama et Qdrant sondés (une panne arrête tout avant le moindre effacement), puis
+   `clear_indexed` (transaction courte), puis `delete_user` sous le verrou de l'utilisateur ;
 3. par lots de 16 : fragments préparés et validés, poussés (verrou pris et rendu par élément
    dans `push`), puis `indexed_at` posé si les fragments n'ont pas changé entre-temps ;
 4. fin quand un lot est vide et qu'aucun écrivain n'a agi depuis sa lecture : le drapeau est
@@ -51,8 +52,12 @@ async def reindex_user(runtime: MemoryRuntime, user_id: str, report: Report) -> 
 
 async def _reset(runtime: MemoryRuntime, user_id: str) -> int:
     """Étapes 1 et 2 : écrivains en cours terminés, tout marqué à réindexer, vecteurs effacés.
-    Rend le nombre d'éléments à réindexer."""
+    Rend le nombre d'éléments à réindexer. Ollama et Qdrant sont sondés avant tout effacement
+    (hors transaction, hors verrou) : en panne, l'erreur du port remonte et l'index existant
+    reste intact."""
     await runtime.indexer.wait_writers(user_id)
+    await runtime.providers.embedder.aembed_query("ping")
+    await runtime.providers.index.vectors(user_id, limit=1)
     async with runtime.session_factory() as db:
         items = MemoryItemRepository(db, user_id)
         await items.clear_indexed()

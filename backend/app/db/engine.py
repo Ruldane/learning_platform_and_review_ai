@@ -21,8 +21,10 @@ def _set_sqlite_pragmas(dbapi_connection: Any, _: Any) -> None:
 
 def create_engine(url: str) -> AsyncEngine:
     """Moteur asynchrone ; chaque connexion SQLite passe en WAL, clés étrangères actives et
-    délai d'attente sur verrou (`BUSY_TIMEOUT_MS`)."""
-    engine = _create_async_engine(url)
+    délai d'attente sur verrou (`BUSY_TIMEOUT_MS`) ; paramètres SQL masqués dans les erreurs."""
+    # hide_parameters : une erreur SQL ne cite jamais ses paramètres (contenu, nom de fichier,
+    # lien), même dans la trace du gestionnaire d'erreurs générique (spec 17.2).
+    engine = _create_async_engine(url, hide_parameters=True)
     if engine.dialect.name == "sqlite":
         event.listen(engine.sync_engine, "connect", _set_sqlite_pragmas)
     return engine

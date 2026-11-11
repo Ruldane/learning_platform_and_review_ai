@@ -19,7 +19,7 @@ class MemoryContext:
 
     def as_prompt(self) -> str:
         return (
-            f"Ce que January sait déjà faire :\n{self.skills.as_text()}\n\n"
+            f"Ce que January sait déjà faire :\n{self.skills.as_agent_text()}\n\n"
             f"Décisions passées proches de l'objectif :\n{self.decisions.agent_text}\n\n"
             f"Documents de January proches de l'objectif :\n{self.documents.agent_text}"
         )

@@ -179,7 +179,10 @@ async def finish_once(
         if doc is None or item is None:
             return  # supprimés entre-temps (la suppression de l'élément emporte le document)
         if failure is None and written.chunks is not None:
-            await items.set_indexed_at(item, utcnow())
+            # Conditionnel (D67) : des fragments renouvelés entre-temps (modification pendant
+            # le `push`) laissent l'élément à rattraper au lieu de le dire indexé à tort.
+            first = written.chunks[0].chunk_id if written.chunks else None
+            await items.mark_indexed(item, utcnow(), first)
         if claim.kind in _RENAMED_BY_TITLE and clean_display(title):
             doc.name = clean_display(title)  # titre venu du site : nettoyé comme un nom reçu
         doc.item_id = written.item_id

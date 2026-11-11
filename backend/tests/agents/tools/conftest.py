@@ -24,6 +24,7 @@ class FakeGateway:
     searches: list[tuple[str, tuple[str, ...] | None, int]] = field(default_factory=list)
     writes: list[tuple[str, str, str, AgentWrite]] = field(default_factory=list)
     created: bool = True
+    skill_title: str = "Python"
 
     async def search(
         self, user_id: str, query: str, *, kinds: Sequence[str] | None, k: int
@@ -42,7 +43,8 @@ class FakeGateway:
         return WriteResult("item-1", write.kind, write.title, status, self.created)
 
     async def skills(self, user_id: str) -> SkillsSummary:
-        return SkillsSummary(1, {"declare": 1}, [SkillEntry("a1", "Python", "declare", [])])
+        skill = SkillEntry("a1", self.skill_title, "declare", [])
+        return SkillsSummary(1, {"declare": 1}, [skill])
 
     async def document_text(
         self, user_id: str, document_id: str, *, max_chunks: int

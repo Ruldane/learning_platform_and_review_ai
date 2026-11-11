@@ -210,3 +210,29 @@ async def test_missing_stored_file_is_a_readable_error(
         "code": "document_source_missing",
         "message": "Fichier ou lien d'origine introuvable : importe ce document de nouveau.",
     }
+
+
+async def test_import_end_never_marks_an_item_indexed_after_its_chunks_changed(
+    db_session_factory: Factory, memory_providers: MemoryProviders, runtime: MemoryRuntime
+) -> None:
+    """Une modification (PATCH) renouvelle les fragments pendant le `push` de l'import : la fin
+    de l'import ne pose pas `indexed_at` (ses vecteurs sont périmés), l'élément reste à
+    rattraper ; le document est bien `indexed`."""
+    doc = await add_document(
+        db_session_factory, memory_providers, USER, kind="text", data=PHRASE.encode()
+    )
+    claimed = await ingest_steps.claim(runtime, USER, doc.id)
+    assert claimed is not None
+    written = await ingest_steps.write_item(runtime, claimed, "Cours", PHRASE, None)
+    assert written.chunks
+    await runtime.indexer.push(USER, written.item_id, written.chunks)
+    async with db_session_factory() as db:  # écriture concurrente : nouveaux fragments
+        item = await MemoryItemRepository(db, USER).get(written.item_id)
+        assert item is not None
+        await runtime.indexer.prepare(db, item)
+        await db.commit()
+    await ingest_steps.finish_once(runtime, claimed, written, "Cours", None)
+    async with db_session_factory() as db:
+        item = await MemoryItemRepository(db, USER).get(written.item_id)
+    assert item is not None and item.indexed_at is None
+    assert (await reload(db_session_factory, USER, doc.id)).status == "indexed"
