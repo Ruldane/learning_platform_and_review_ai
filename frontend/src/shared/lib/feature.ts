@@ -5,9 +5,20 @@ import type { MessageKey } from "@/shared/i18n/t";
 export type NavSection =
   "home" | "learn" | "study" | "skills" | "career" | "applications" | "memory" | "settings";
 
-/** Ce qu'une feature déclare pour s'intégrer à l'application (routes et entrée de navigation). */
+/** Une entrée de la navigation latérale ; `order` trie les entrées d'une même section. */
+export interface NavEntry {
+  section: NavSection;
+  labelKey: MessageKey;
+  path: string;
+  order: number;
+}
+
+/**
+ * Ce qu'une feature déclare pour s'intégrer à l'application : ses routes et ses entrées de
+ * navigation (plusieurs possibles, éventuellement dans la même section : SPEC 15.1).
+ */
 export interface FeatureManifest {
   id: string;
   routes: RouteObject[];
-  nav?: { section: NavSection; labelKey: MessageKey; path: string; order: number };
+  nav?: NavEntry[];
 }

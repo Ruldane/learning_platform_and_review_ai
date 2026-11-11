@@ -126,10 +126,12 @@ Si un fichier approche 300 lignes, il devient un paquet (`service/__init__.py`, 
 export type NavSection =
   | "home" | "learn" | "study" | "skills" | "career" | "applications" | "memory" | "settings";
 
+export interface NavEntry { section: NavSection; labelKey: MessageKey; path: string; order: number }
+
 export interface FeatureManifest {
   id: string;
   routes: RouteObject[];               // react-router
-  nav?: { section: NavSection; labelKey: MessageKey; path: string; order: number };
+  nav?: NavEntry[];                    // plusieurs écrans par section possibles (SPEC 15.1)
 }
 ```
 

@@ -15,7 +15,7 @@ export interface NavGroup {
  * entrée ; sections dans l'ordre de `NAV_SECTIONS`, entrées par `order` croissant.
  */
 export function buildNav(features: FeatureManifest[]): NavGroup[] {
-  const entries = features.flatMap((feature) => (feature.nav ? [feature.nav] : []));
+  const entries = features.flatMap((feature) => feature.nav ?? []);
   return NAV_SECTIONS.flatMap(({ id, labelKey, icon }) => {
     const items = entries
       .filter((entry) => entry.section === id)

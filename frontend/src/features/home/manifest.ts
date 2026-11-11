@@ -4,5 +4,5 @@ import { HomePage } from "./pages/HomePage";
 export const homeManifest: FeatureManifest = {
   id: "home",
   routes: [{ index: true, Component: HomePage }],
-  nav: { section: "home", labelKey: "nav.home", path: "/", order: 1 },
+  nav: [{ section: "home", labelKey: "nav.home", path: "/", order: 1 }],
 };
