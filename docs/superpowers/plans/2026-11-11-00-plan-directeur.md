@@ -78,7 +78,7 @@ Si un fichier approche 300 lignes, il devient un paquet (`service/__init__.py`, 
 | --- | --- | --- |
 | Features | `app/features/registry.py` | `FEATURE_ROUTERS: list[APIRouter]`, monté par `main.py` |
 | Fournisseurs LLM | `app/providers/llm/registry.py` | `LLM_PROVIDERS: dict[str, LlmProvider]` |
-| Contrôles de santé | `app/features/health/registry.py` | `HEALTH_CHECKS: list[HealthCheck]` |
+| Contrôles de santé | `app/bootstrap.py` (`_health_checks`) | `list[HealthCheck]` (interface `app/providers/health.py`), posée sur `Providers.health_checks` et lue par la feature `health` (D28) |
 | Agents | `app/agents/registry.py` | `AGENTS: dict[str, AgentSpec]` |
 | Graphes | `app/agents/graphs/registry.py` | `GRAPHS: dict[str, GraphSpec]`, lu par `POST /sessions` |
 | Tâches planifiées | `app/scheduler/registry.py` | `JOBS: list[JobSpec]` |
@@ -88,8 +88,8 @@ Si un fichier approche 300 lignes, il devient un paquet (`service/__init__.py`, 
 
 **Contrats d'import vérifiés** par `import-linter` (bloquant en pre commit) :
 
-1. Couches dans chaque feature : `router` → `service` → `repository`. Un `router` n'importe jamais `repository` ni `app.db`.
-2. Une feature n'importe d'une autre feature que son `service` (jamais son `repository` ni son `router`).
+1. Couches dans chaque feature : `router` → `service` → `repository`. Un `router` n'importe jamais `repository` ni `app.db`. Les contrats portent sur `app.features.*` : une nouvelle feature est vérifiée sans être nommée.
+2. Une feature n'importe d'une autre feature que son `service` (jamais son `repository` ni son `router`) ; seul `app/features/registry.py` importe les routeurs de toutes les features.
 3. `app.features` et `app.agents` n'importent jamais une implémentation concrète de `app.providers` (`anthropic`, `openai`, `glm`, `qdrant`, `ollama`, `searxng`, `brave`, `gotenberg`, `local`), seulement `base` et les fabriques.
 4. `app.providers` n'importe jamais `app.features` ni `app.agents`.
 
@@ -140,7 +140,7 @@ export interface FeatureManifest {
 ### 1.4 Ajouter une feature demain
 
 1. Back : `app/features/<nom>/` (4 fichiers) + une ligne dans `FEATURE_ROUTERS` + une migration Alembic si nouvelles tables + graphe et agents dans leurs registres si besoin.
-2. `uv run python scripts/export_openapi.py` puis `pnpm gen:api`.
+2. `cd backend && uv run python -m scripts.export_openapi` (D32) puis `pnpm --dir frontend gen:api` (vérifiés par les hooks `openapi-contract` et `api-types`).
 3. Front : `src/features/<nom>/` + une ligne dans `app/registry.ts` + textes dans `fr.ts`.
 4. Tests : service, routeur (dont isolation utilisateur), composants.
 

@@ -568,7 +568,7 @@ async def agent_runtime(settings: Settings, session_factory: async_sessionmaker[
 #   ouvre le checkpointer, construit bus et runner, appelle recover_on_startup(), puis shutdown() à la sortie
 
 # core/deps.py
-def get_runtime(request: Request) -> AgentRuntime          # app.state.runtime
+def get_runtime(conn: HTTPConnection) -> AgentRuntime     # app.state.runtime ; HTTPConnection (et non Request) : utilisable sur la route WebSocket (D38)
 
 # features/sessions/schemas.py
 class StartSessionRequest(BaseModel): graph: str; input: dict[str, Any] = {}; subject_type: str | None = None; subject_id: str | None = None
@@ -630,7 +630,7 @@ def test_ws_closes_4404_for_foreign_session(other_user_sync_client): ...
 - [ ] **Step 2: Run** — `uv run pytest tests/features/sessions tests/realtime -v` → FAIL.
 - [ ] **Step 3: Implement** lifespan, deps, service, router, WebSocket ; enregistrer les routeurs.
 - [ ] **Step 4: Verify** → PASS ; `uv run lint-imports` → contrats respectés (le routeur n'importe ni `repositories` ni `app.db`).
-- [ ] **Step 5: Regenerate the contract** — `uv run python scripts/export_openapi.py` puis `uv run python scripts/export_openapi.py --check` → OK.
+- [ ] **Step 5: Regenerate the contract** — `uv run python -m scripts.export_openapi` puis `uv run python -m scripts.export_openapi --check` → OK (D32), puis `pnpm --dir ../frontend gen:api` (le hook `api-types` vérifie `schema.d.ts`).
 - [ ] **Step 6: Commit** — `git commit -m "feat(sessions): API des sessions d'agents et WebSocket avec rejeu"`
 
 ---
