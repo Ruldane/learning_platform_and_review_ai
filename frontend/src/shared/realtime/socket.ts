@@ -47,8 +47,14 @@ export function reconnectDelay(attempt: number): number {
 
 /** Codes de fermeture reçus du serveur. */
 export const CLOSE_FINISHED = 1000; // session terminée : fin définitive du flux
-export const CLOSE_POLICY = 1008; // origine refusée, after_seq invalide
-export const CLOSE_NOT_FOUND = 4404; // session inconnue ou d'un autre utilisateur
+/**
+ * Refus de politique. Inatteignable aujourd'hui depuis un navigateur : le serveur refuse l'origine,
+ * un `after_seq` invalide ou un 401 AVANT `accept`, et le navigateur n'en voit qu'un 1006 anonyme
+ * (D47, D49). Gardé pour un refus qui viendrait un jour après `accept`.
+ */
+export const CLOSE_POLICY = 1008;
+/** Session inconnue ou d'un autre utilisateur : fermée APRÈS `accept`, code lisible (D47 §3). */
+export const CLOSE_NOT_FOUND = 4404;
 
 /** Lit une trame ; `null` si ce n'est pas un événement de session (trame ignorée). */
 export function parseEventFrame(data: string): SessionEvent | null {
