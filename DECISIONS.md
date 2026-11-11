@@ -143,3 +143,10 @@ Chaque entrée : date, sujet, décision, raison.
 - **Sujet** : Branche de travail et outils de qualité sous Windows
 - **Décision** : le travail se fait sur la branche `dev` (le brief disait `main`). Les hooks pre-commit sont des hooks `local` en `language: system` qui passent par `uv run` ; pre-commit s'invoque via `uv run python -m pre_commit` car Windows bloque les exécutables `pre-commit.exe` et `mypy.exe` (stratégie de contrôle d'application). Le hook de longueur utilise `--project` au lieu de `--directory`, pour que les chemins transmis par pre-commit restent relatifs à la racine du dépôt. `asgi-lifespan` est ajouté aux dépendances de développement pour les clients de test des tâches suivantes.
 - **Raison** : fiabilité des hooks dans l'environnement Windows + Git Bash réel de l'utilisatrice.
+
+## D21
+
+- **Date** : 2026-11-11
+- **Sujet** : Règles ruff du back
+- **Décision** : ruff avec `select = ["E", "F", "I", "UP", "B", "SIM"]` et `line-length = 100` (pycodestyle, pyflakes, tri des imports, pyupgrade, bugbear, simplifications).
+- **Raison** : un jeu restreint et sans bruit qui attrape les vrais défauts (imports inutilisés, bugs probables, syntaxe obsolète) sans imposer de règles de style discutables ; à étendre seulement si un défaut récurrent le justifie.
