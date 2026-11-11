@@ -8,12 +8,15 @@ from sqlalchemy.exc import OperationalError
 
 from app.config import Settings, get_settings
 from app.core.errors import register_error_handlers
+from app.core.logging import configure_logging
+from app.core.security import Cipher, KnownSecrets, load_or_create_secret
 from app.db.engine import create_engine, create_session_factory
 from app.features.auth.service import AuthService
 from app.features.registry import FEATURE_ROUTERS
 
 API_PREFIX = "/api/v1"
 logger = logging.getLogger(__name__)
+_LOG_LEVEL = "INFO"
 
 
 async def _ensure_local_user(app: FastAPI) -> None:
@@ -24,6 +27,8 @@ async def _ensure_local_user(app: FastAPI) -> None:
             await session.commit()
             app.state.local_user_id = user.id
     except OperationalError as exc:
+        if "no such table" not in str(exc.orig):
+            raise
         message = (
             "Base de données non initialisée : lance `alembic upgrade head` avant de démarrer."
         )
@@ -31,8 +36,24 @@ async def _ensure_local_user(app: FastAPI) -> None:
         raise RuntimeError(message) from exc
 
 
+def _setup_security(app: FastAPI) -> None:
+    """Secret de l'application, chiffreur, et masquage des clés dans les journaux."""
+    settings: Settings = app.state.settings
+    app.state.cipher = Cipher(load_or_create_secret(settings.secret_path))
+    for key in (
+        settings.anthropic_api_key,
+        settings.openai_api_key,
+        settings.zai_api_key,
+        settings.brave_api_key,
+    ):
+        if key:
+            KnownSecrets.add(key)
+    configure_logging(_LOG_LEVEL, KnownSecrets.values)
+
+
 @asynccontextmanager
 async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
+    _setup_security(app)
     # Le schéma n'est jamais créé ici : en Docker, l'entrypoint lance `alembic upgrade head`.
     engine = create_engine(app.state.settings.database_url)
     app.state.engine = engine
