@@ -1,0 +1,10 @@
+{
+  "claude-haiku-5-5": {"input_per_mtok": 0.10, "output_per_mtok": 0.50},
+  "claude-sonnet-5-5": {"input_per_mtok": 2.00, "output_per_mtok": 10.00},
+  "gpt-6-luna": {"input_per_mtok": 0.10, "output_per_mtok": 0.50},
+  "gpt-6.1-sol": {"input_per_mtok": 2.00, "output_per_mtok": 10.00},
+  "gpt-6.1-terra": {"input_per_mtok": 1.00, "output_per_mtok": 5.00},
+  "glm-4.7-flash": {"input_per_mtok": 0.0, "output_per_mtok": 0.0},
+  "glm-5.3": {"input_per_mtok": 1.40, "output_per_mtok": 4.40},
+  "glm-5.3-flash": {"input_per_mtok": 0.47, "output_per_mtok": 1.47}
+}

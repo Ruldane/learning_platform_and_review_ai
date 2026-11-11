@@ -1,7 +1,12 @@
-"""Types de la fabrique LLM. L'interface (protocoles, fabrique) est complétée en tâche 0.7."""
+"""Interface LLM : types partagés, protocoles des fournisseurs et des lecteurs injectés.
 
-from typing import Literal
+Aucun import de `app/features/` : la fabrique ne dépend que des protocoles ci-dessous, la
+composition avec la feature réglages se fait dans `app/bootstrap.py`.
+"""
 
+from typing import Literal, Protocol
+
+from langchain_core.language_models import BaseChatModel
 from pydantic import BaseModel
 
 Tier = Literal["rapide", "standard", "fort", "vision"]
@@ -13,3 +18,39 @@ class ModelChoice(BaseModel):
 
     provider: str
     model: str
+
+
+class KeyTestResult(BaseModel):
+    """Résultat d'un test de clé : `message` est en français et ne contient jamais la clé."""
+
+    ok: bool
+    message: str
+
+
+class LlmProvider(Protocol):
+    """Un fournisseur de modèles de chat (Anthropic, OpenAI, GLM, faux pour les tests)."""
+
+    name: str
+    label: str
+
+    def build(self, model: str, api_key: str, *, base_url: str | None = None) -> BaseChatModel: ...
+
+    async def list_models(self, api_key: str) -> list[str] | None:
+        """Identifiants disponibles, ou `None` si le fournisseur n'a pas d'API de liste."""
+        ...
+
+    async def test_key(self, api_key: str) -> KeyTestResult:
+        """Vérifie la clé sans jamais lever (erreurs réseau et d'authentification incluses)."""
+        ...
+
+
+class ModelChoiceReader(Protocol):
+    async def get_model_choice(
+        self, user_id: str, tier: Tier, agent: str | None
+    ) -> ModelChoice: ...
+
+
+class KeyReader(Protocol):
+    async def get_key(self, user_id: str, provider: str) -> str | None:
+        """Clé en clair, ou `None` si absente. Lève `SecretUnreadable` si elle est illisible."""
+        ...
