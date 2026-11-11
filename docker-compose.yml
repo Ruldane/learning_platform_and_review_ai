@@ -102,6 +102,25 @@ services:
 
   gotenberg:
     image: gotenberg/gotenberg:8.40.0
+    # Chromium rend des pages non fiables (repli du lecteur web, D72) : il ne doit joindre aucune
+    # adresse interne, page ou sous-ressource (fetch, XHR, iframe, redirection) comprise.
+    # 1. `--chromium-deny-private-ips` : refus selon l'adresse RÉSOLUE (boucle locale, RFC 1918,
+    #    lien local dont 169.254.169.254, CGNAT, IPv6 locales), connexion épinglée sur l'adresse
+    #    vérifiée par le proxy interne de Gotenberg (8.32+) ; c'est la garde principale.
+    # 2. `--chromium-deny-list` : défense en profondeur, sur l'URL écrite (minuscules, sans
+    #    identifiants) : `file:` ; tout hôte d'un seul label (services compose `backend`,
+    #    `frontend`, `qdrant`, `ollama`, `searxng`, `gotenberg`, `localhost`, IPv4 décimale) ;
+    #    `*.localhost`, `*.internal` (`host.docker.internal`), `*.local` ; IPv4 littérales
+    #    0/8 (octal et hexadécimal compris), 10/8, 127/8, 169.254/16, 172.16/12, 192.168/16,
+    #    100.64/10, 198.18/15 ; toute IPv6 littérale. Aucune virgule : Gotenberg y découpe la
+    #    liste. `$$` : `$` échappé pour l'interpolation de compose.
+    # 3. `downloadFrom` coupé (jamais utilisé). Chaque rendu a déjà son propre contexte de
+    #    navigation (cookies, cache, stockage) : ne jamais activer `--chromium-shared-browser-context`.
+    command:
+      - gotenberg
+      - --chromium-deny-private-ips=true
+      - '--chromium-deny-list=^file:|^[a-z][a-z0-9+.-]*://([^/?#@]*@)?(([^/?#@.:\[]+|([a-z0-9-]+\.)*(localhost|internal|local))\.?(:[0-9]*)?([/?#]|$$)|(0[0-9a-fx]*|10|127|169\.254|172\.(1[6-9]|2[0-9]|3[01])|192\.168|100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])|198\.1[89])\.|\[)'
+      - --api-disable-download-from=true
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:3000/health"]
       interval: 10s

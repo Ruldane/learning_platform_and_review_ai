@@ -8,14 +8,15 @@ from cryptography.fernet import Fernet
 from qdrant_client import AsyncQdrantClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.bootstrap import build_providers, memory_providers
+from app.bootstrap import _render_http, build_providers, memory_providers, page_renderer
 from app.config import Settings
 from app.core.providers import MemoryProviders, Providers
 from app.core.security import Cipher
 from app.main import create_app
 from app.providers.embeddings.ollama import OllamaEmbedder
 from app.providers.llm.glm import GlmProvider
-from app.providers.pdf.extract import PdfPlumberExtractor
+from app.providers.pdf.gotenberg import GotenbergRenderer
+from app.providers.pdf.subprocess import SubprocessPdfExtractor
 from app.providers.storage.local import LocalFileStorage
 from app.providers.vector.qdrant import QdrantMemoryRepository
 from app.providers.web.reader import TrafilaturaWebReader
@@ -84,7 +85,7 @@ async def test_memory_providers_are_built_without_any_request(settings: Settings
             assert isinstance(built.embedder, OllamaEmbedder)
             assert isinstance(built.index, QdrantMemoryRepository)
             assert isinstance(built.storage, LocalFileStorage)
-            assert isinstance(built.pdf, PdfPlumberExtractor)
+            assert isinstance(built.pdf, SubprocessPdfExtractor)
             assert isinstance(built.web, TrafilaturaWebReader)
             assert isinstance(built.youtube, TranscriptApiYoutube)
         assert not router.calls
@@ -158,3 +159,31 @@ async def test_memory_providers_use_the_configured_services(settings: Settings) 
         async with memory_providers(configured) as built:
             assert await built.embedder.aembed_query("x") == [0.0] * 8
         assert route.called
+
+
+async def test_render_client_is_dedicated_and_ignores_the_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("HTTP_PROXY", "http://proxy.interne:3128")
+    async with _render_http() as http:
+        assert http.follow_redirects is False and http.trust_env is False
+        assert http.timeout == httpx.Timeout(15.0)
+        assert not http._mounts
+
+
+async def test_page_renderer_follows_the_settings(settings: Settings) -> None:
+    configured = settings.model_copy(update={"gotenberg_url": "http://rendu:3000/"})
+    assert configured.web_render_fallback is True
+    async with _render_http() as http:
+        renderer = page_renderer(configured, http)
+        assert isinstance(renderer, GotenbergRenderer)
+        assert renderer._endpoint == "http://rendu:3000/forms/chromium/convert/url"
+        disabled = configured.model_copy(update={"web_render_fallback": False})
+        assert page_renderer(disabled, http) is None
+
+
+def test_web_render_fallback_is_read_from_the_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("WEB_RENDER_FALLBACK", "false")
+    assert Settings(_env_file=None).web_render_fallback is False  # type: ignore[call-arg]

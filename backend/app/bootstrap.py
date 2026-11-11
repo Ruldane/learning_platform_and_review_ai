@@ -26,8 +26,10 @@ from app.providers.llm.base import LlmProvider
 from app.providers.llm.factory import LlmFactory
 from app.providers.llm.glm import GlmProvider
 from app.providers.llm.registry import LLM_PROVIDERS, PRICES_PATH
-from app.providers.pdf.extract import PdfPlumberExtractor
+from app.providers.pdf.base import PageRenderer
+from app.providers.pdf.gotenberg import GotenbergRenderer
 from app.providers.pdf.gotenberg_probe import GotenbergProbe
+from app.providers.pdf.subprocess import SubprocessPdfExtractor
 from app.providers.search.searxng_probe import SearxngProbe
 from app.providers.storage.local import LocalFileStorage
 from app.providers.vector.qdrant import QdrantMemoryRepository
@@ -125,6 +127,22 @@ def _reader_http() -> httpx.AsyncClient:
     )
 
 
+def _render_http() -> httpx.AsyncClient:
+    """Client de Gotenberg, à part : aucun proxy ni réglage de l'environnement, aucune
+    redirection, 15 s (délai d'une page, D63). Ouvert par `memory_providers` dès que le lecteur
+    web reçoit le repli (tâche 3.4)."""
+    return httpx.AsyncClient(
+        follow_redirects=False, trust_env=False, timeout=httpx.Timeout(FETCH_TIMEOUT_S)
+    )
+
+
+def page_renderer(settings: Settings, http: httpx.AsyncClient) -> PageRenderer | None:
+    """Repli Gotenberg du lecteur web, `None` si `WEB_RENDER_FALLBACK=false`."""
+    if not settings.web_render_fallback:
+        return None
+    return GotenbergRenderer(http, settings.gotenberg_url)
+
+
 @asynccontextmanager
 async def memory_providers(settings: Settings) -> AsyncIterator[MemoryProviders]:
     """Embeddings Ollama, index Qdrant, stockage local, extraction PDF, lecteur web et YouTube ;
@@ -146,7 +164,8 @@ async def memory_providers(settings: Settings) -> AsyncIterator[MemoryProviders]
                 collection=settings.memory_collection,
                 dimension=settings.embedding_dimension,
             )
-            pdf = PdfPlumberExtractor()
+            # Sous-processus borné (délai, mémoire, 2 au plus) : import de documents et lecteur web.
+            pdf = SubprocessPdfExtractor()
             web = TrafilaturaWebReader(SafeHttpFetcher(reader_http), pdf)
             yield MemoryProviders(
                 embedder=embedder,

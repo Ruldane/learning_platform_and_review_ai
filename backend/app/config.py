@@ -42,6 +42,8 @@ class Settings(BaseSettings):
     memory_collection: str = "memory"
     searxng_url: str = "http://searxng:8080"
     gotenberg_url: str = "http://gotenberg:3000"
+    # Repli Gotenberg du lecteur web (page rendue en JavaScript, D72) : `false` le coupe.
+    web_render_fallback: bool = True
 
     # Une origine ou plusieurs séparées par des virgules ; voir `cors_origins`.
     cors_origin: str = "http://localhost:5173"
