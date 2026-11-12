@@ -6,11 +6,17 @@ sonde (tous les services annoncés disponibles).
 
     uv run python -m tests.e2e.server --port 8765 --data-dir <dossier> [--host 0.0.0.0]
 
+Le dossier de données doit être temporaire (sous le dossier temporaire du système) ou dédié
+(marqueur `.tremplin-e2e`), sans base existante : le serveur y crée sa base et la peuple, il ne
+doit jamais toucher des données réelles. La base est toujours `<dossier>/app.db`, quelle que
+soit la variable `DATABASE_URL` de l'environnement.
+
 Le planificateur est coupé : la validation du programme lance déjà la chaîne des leçons des
 semaines 1 et 2, et un passage planifié pourrait relancer une leçon hors du script."""
 
 import argparse
-import logging
+import sys
+import tempfile
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
@@ -37,8 +43,12 @@ DEFAULT_ORIGIN = "http://localhost:5180"
 PDF_LINES = ["Tremplin", "Document de test du parcours de bout en bout."]
 
 HEALTH_CHECKS = ("db", "qdrant", "ollama", "searxng", "gotenberg", "llm")
+MARKER = ".tremplin-e2e"
+DATABASE = "app.db"
 
-logger = logging.getLogger(__name__)
+
+class UnsafeDataDir(Exception):
+    """Dossier de données refusé : il pourrait contenir des données réelles."""
 
 
 class _Faked:
@@ -84,11 +94,43 @@ def migrate(settings: Settings) -> None:
     command.upgrade(config, "head")
 
 
+def prepare_data_dir(path: Path, *, temp_root: Path | None = None) -> Path:
+    """Le dossier de données du serveur, créé et marqué. Refusé s'il contient déjà une base
+    (usage unique), s'il est non vide sans marqueur, ou s'il n'est ni sous le dossier temporaire
+    du système (`temp_root`) ni marqué comme dédié au test. Rien n'est créé en cas de refus."""
+    data_dir = path.resolve()
+    root = (temp_root or Path(tempfile.gettempdir())).resolve()
+    marked = (data_dir / MARKER).is_file()
+    if (data_dir / DATABASE).exists():
+        raise UnsafeDataDir("Dossier de données refusé : il contient déjà une base.")
+    if data_dir.is_dir() and any(data_dir.iterdir()) and not marked:
+        raise UnsafeDataDir(f"Dossier de données refusé : non vide et sans marqueur {MARKER}.")
+    if not marked and not data_dir.is_relative_to(root):
+        raise UnsafeDataDir(
+            f"Dossier de données refusé : ni temporaire ni dédié (marqueur {MARKER})."
+        )
+    data_dir.mkdir(parents=True, exist_ok=True)
+    (data_dir / MARKER).touch()
+    return data_dir
+
+
+def e2e_settings(data_dir: Path, *, origin: str) -> Settings:
+    """Réglages du serveur : base dans `data_dir` même si `DATABASE_URL` est dans
+    l'environnement, sans `.env` ni planificateur."""
+    return Settings(
+        _env_file=None,  # type: ignore[call-arg]  # option de pydantic-settings
+        data_dir=data_dir,
+        database_url=f"sqlite+aiosqlite:///{(data_dir / DATABASE).as_posix()}",
+        cors_origin=origin,
+        scheduler_enabled=False,
+    )
+
+
 def _parse(argv: Sequence[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Serveur du parcours de bout en bout n° 1.")
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--host", default="127.0.0.1")
-    parser.add_argument("--data-dir", type=Path, required=True)
+    parser.add_argument("--data-dir", type=Path, required=True, help="temporaire ou dédié")
     parser.add_argument("--origin", default=DEFAULT_ORIGIN, help="origine du front (CORS)")
     parser.add_argument(
         "--turn-delay", type=float, default=1.5, help="secondes avant chaque prise de parole"
@@ -98,13 +140,11 @@ def _parse(argv: Sequence[str] | None) -> argparse.Namespace:
 
 def main(argv: Sequence[str] | None = None) -> None:
     args = _parse(argv)
-    args.data_dir.mkdir(parents=True, exist_ok=True)
-    settings = Settings(
-        _env_file=None,  # type: ignore[call-arg]  # option de pydantic-settings
-        data_dir=args.data_dir.resolve(),
-        cors_origin=args.origin,
-        scheduler_enabled=False,
-    )
+    try:
+        data_dir = prepare_data_dir(args.data_dir)
+    except UnsafeDataDir as refused:
+        sys.exit(str(refused))
+    settings = e2e_settings(data_dir, origin=args.origin)
     migrate(settings)
     app = build_app(settings, delays=dict.fromkeys(DEBATERS, args.turn_delay))
     uvicorn.run(app, host=args.host, port=args.port, log_level="warning")

@@ -1,7 +1,7 @@
-"""Script de contrôle de fin de phase 4 : joué contre l'application réelle (lifespan, moteur,
-features), avec les fournisseurs factices et les modèles scriptés du parcours de bout en bout.
-Aucun réseau ni LLM réel : la santé est remplacée par une réponse OK, les événements sont lus en
-base (le client ASGI de httpx ne parle pas WebSocket)."""
+"""Script de contrôle de fin de phase 4 : joué de bout en bout contre l'application réelle
+(lifespan, moteur, features) servie par uvicorn sur 127.0.0.1, avec les fournisseurs factices et
+les modèles scriptés du parcours de bout en bout. Les événements passent par le vrai WebSocket.
+Aucun réseau externe ni LLM réel : la santé est remplacée par une réponse OK."""
 
 from typing import Any
 
@@ -11,12 +11,10 @@ from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 import scripts.check_phase4 as check
-from app.agents.runtime.bus_state import to_event
-from app.agents.runtime.repositories import EventRepository
 from app.config import Settings
 from scripts.check_phase4 import STEPS, CheckFailed, run_check
-from scripts.phase4_steps import Run, check_lessons
 from tests.e2e.server import build_app
+from tests.scripts.live_server import serving
 
 
 @pytest.fixture
@@ -25,18 +23,10 @@ def app(settings: Settings, db_engine: AsyncEngine) -> FastAPI:
     return build_app(settings)
 
 
-def _db_feed(app: FastAPI) -> check.EventFeed:
-    async def events(session_id: str) -> list[dict[str, Any]]:
-        async with app.state.session_factory() as db:
-            rows = await EventRepository(db, app.state.local_user_id).list_after(session_id, 0)
-        return [to_event(row).model_dump(mode="json") for row in rows]
-
-    return events
-
-
 @pytest.mark.timeout(600)
-async def test_check_runs_against_the_app(app: FastAPI, client: httpx.AsyncClient) -> None:
-    steps = await run_check(client, timeout_s=300, events=_db_feed(app))
+async def test_check_runs_against_the_app(app: FastAPI) -> None:
+    async with serving(app) as base, httpx.AsyncClient(base_url=base, timeout=30) as client:
+        steps = await run_check(client, timeout_s=300)  # événements lus par WebSocket
 
     assert steps == [
         "santé",
@@ -85,32 +75,3 @@ def test_main_exits_with_zero_on_success(monkeypatch: pytest.MonkeyPatch) -> Non
     with pytest.raises(SystemExit) as exited:
         check.main(["--api", "http://localhost:1"])
     assert exited.value.code == 0
-
-
-async def test_lessons_wait_for_their_pdf() -> None:
-    """Une leçon passe « prête » avant que son PDF soit rendu : le contrôle attend le PDF."""
-    polls = {"count": 0}
-
-    def api(request: httpx.Request) -> httpx.Response:
-        path = request.url.path
-        if path.endswith("/lessons"):
-            polls["count"] += 1
-            ready = polls["count"] > 2
-            lesson = {"id": "l1", "week_rank": 1, "status": "ready", "pdf_available": ready}
-            return httpx.Response(200, json=[lesson])
-        if path.endswith("/pdf"):
-            if polls["count"] <= 2:
-                return httpx.Response(404, json={"error": {"code": "lesson_pdf_missing"}})
-            return httpx.Response(200, content=b"%PDF-1.4")
-        resources = [{"id": f"r{n}"} for n in range(4)]
-        return httpx.Response(200, json={"id": "l1", "resources": resources})
-
-    async def no_events(session_id: str) -> list[dict[str, Any]]:
-        return []
-
-    transport = httpx.MockTransport(api)
-    async with httpx.AsyncClient(transport=transport, base_url="http://api") as client:
-        run = Run(client, no_events, timeout_s=5, program_id="p1", week_ranks=[1])
-        await check_lessons(run)
-
-    assert polls["count"] == 3

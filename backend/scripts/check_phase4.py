@@ -17,6 +17,7 @@ from typing import Any
 
 import httpx
 
+from scripts.phase4_rules import check_export_files
 from scripts.phase4_steps import (
     API,
     CheckFailed,
@@ -82,11 +83,8 @@ async def _validate(run: Run) -> None:
 async def _exports(run: Run) -> None:
     path = f"/programs/{run.program_id}"
     pdf = await run.request("exports", "GET", f"{path}/export.pdf")
-    if not pdf.content.startswith(b"%PDF"):
-        raise CheckFailed("exports", "L'export PDF du programme n'est pas un PDF.")
     ics = await run.request("exports", "GET", f"{path}/export.ics")
-    if "BEGIN:VCALENDAR" not in ics.text:
-        raise CheckFailed("exports", "L'export .ics du programme n'est pas un calendrier.")
+    check_export_files(pdf.content, ics.text)
 
 
 async def run_check(
