@@ -20,6 +20,8 @@ describe("registre des features", () => {
     ]);
     expect(groups[2]?.items).toEqual([
       { labelKey: "settings.models.navLabel", path: "/reglages/modeles" },
+      { labelKey: "settings.search.navLabel", path: "/reglages/recherche" },
+      { labelKey: "research.nav.bench", path: "/reglages/recherche/essai" },
     ]);
   });
 });

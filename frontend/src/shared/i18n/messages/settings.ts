@@ -53,6 +53,23 @@ export const settings = {
       "Le niveau vision pointe vers un modèle sans vision : la capture du design du CV est désactivée.",
   },
   search: {
+    navLabel: "Recherche web",
+    title: "Recherche web",
+    intro:
+      "Règle comment l'Éclaireur cherche sur le web : langues, moteurs, domaines de confiance et plafonds par session.",
+    sections: {
+      queries: "Requêtes",
+      engines: "Moteurs de recherche",
+      domains: "Domaines",
+    },
+    domainsPreferred: "Domaines privilégiés",
+    domainsExcluded: "Domaines exclus",
+    save: "Enregistrer",
+    saving: "Enregistrement…",
+    saved: "Réglages enregistrés.",
+    unsaved: "Modifications non enregistrées.",
+    tryBench: "Essayer la recherche",
+    loading: "Chargement des réglages de recherche…",
     languages: {
       label: "Langues de recherche",
       hint: "Au moins une langue reste cochée.",

@@ -1,0 +1,1 @@
+export { SearchSettingsPage } from "./SearchSettingsPage";

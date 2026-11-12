@@ -235,4 +235,24 @@ describe("ModelsAndKeysPage", () => {
       await screen.findByRole("heading", { name: "Aucun fournisseur disponible" }),
     ).toBeInTheDocument();
   });
+
+  it("liste la clé Brave comme les autres, sans la proposer comme modèle", async () => {
+    const brave: ApiKeyOut = {
+      provider: "brave",
+      label: "Brave Search",
+      source: "ui",
+      last4: "wxyz",
+      readable: true,
+      last_test_ok: null,
+      last_tested_at: null,
+    };
+    mockBackend({ keys: [...apiKeysFixture, brave] });
+    await openPage();
+    const braveCard = card("Brave Search");
+    expect(braveCard.getByText("•••• wxyz")).toBeInTheDocument();
+    expect(braveCard.getByRole("button", { name: "Tester" })).toBeEnabled();
+    expect(braveCard.getByRole("button", { name: "Supprimer" })).toBeEnabled();
+    // Brave ne sert pas de modèle : il n'est pas dans la liste des fournisseurs des niveaux.
+    expect(screen.queryByRole("option", { name: "Brave Search" })).not.toBeInTheDocument();
+  });
 });

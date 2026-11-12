@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { settingsFixture } from "./fixtures";
-import { buildUserSettings } from "./userSettings";
+import {
+  buildUserSettings,
+  toBraveUsageView,
+  toSearchSettingsView,
+  withSearchSettings,
+} from "./userSettings";
 
 const newTiers = {
   rapide: { provider: "glm", model: "glm-4.7-flash" },
@@ -50,5 +55,58 @@ describe("buildUserSettings", () => {
       "tiers",
       "weekly_review",
     ]);
+  });
+});
+
+describe("réglages de recherche", () => {
+  const view = {
+    languages: ["fr", "en", "es"],
+    preferred: ["python.org"],
+    excluded: ["example.com"],
+    order: ["searxng", "brave"] as ("searxng" | "brave")[],
+    maxQueries: 20,
+    maxPages: 40,
+  };
+
+  it("lit les réglages de recherche, avec les valeurs par défaut du back si absentes", () => {
+    expect(toSearchSettingsView(settingsFixture)).toEqual({
+      languages: ["fr", "en"],
+      preferred: [],
+      excluded: [],
+      order: ["searxng", "brave"],
+      maxQueries: 12,
+      maxPages: 30,
+    });
+    const bare = {
+      ...settingsFixture,
+      search_languages: undefined,
+      search_provider_order: undefined,
+    };
+    expect(toSearchSettingsView(bare).languages).toEqual(["fr", "en"]);
+  });
+
+  it("remplace les seuls champs de recherche et reprend tout le reste", () => {
+    const body = withSearchSettings(settingsFixture, view);
+    expect(body).toMatchObject({
+      search_languages: ["fr", "en", "es"],
+      preferred_domains: ["python.org"],
+      excluded_domains: ["example.com"],
+      search_provider_order: ["searxng", "brave"],
+      search_max_queries: 20,
+      search_max_pages: 40,
+      tiers: settingsFixture.tiers,
+      brief_time: "07:00",
+      weekly_review: { day: "sunday", time: "18:00" },
+    });
+    expect(body).not.toHaveProperty("vision_enabled");
+    expect(Object.keys(body).sort()).toEqual(
+      Object.keys(buildUserSettings(settingsFixture, settingsFixture.tiers as never)).sort(),
+    );
+  });
+
+  it("convertit le compteur Brave du contrat", () => {
+    expect(
+      toBraveUsageView({ brave: { has_key: true, used: 3, cap: 900, month: "2026-11" } }),
+    ).toEqual({ hasKey: true, used: 3, cap: 900, month: "2026-11" });
   });
 });

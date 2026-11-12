@@ -16,6 +16,7 @@ describe("session-ui public API", () => {
       "MessageComposer",
       "SourcesPanel",
       "SourceCard",
+      "sourcesFromEvents",
       "AGENT_COLORS",
       "agentIdentity",
     ];

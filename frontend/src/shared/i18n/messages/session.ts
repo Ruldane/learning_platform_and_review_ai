@@ -62,6 +62,7 @@ export const session = {
     empty: "Aucune source pour l'instant.",
     queries: "Requêtes lancées",
     queryFailed: "Sans réponse",
+    queryHidden: "Requête non affichée",
     kept: "Retenues",
     rejected: "Écartées",
     unreadable: "Illisibles",

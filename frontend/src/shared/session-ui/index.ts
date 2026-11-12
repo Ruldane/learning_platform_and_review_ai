@@ -12,4 +12,5 @@ export { ToolChip } from "./ToolChip";
 export { UserMessageBubble } from "./UserMessageBubble";
 export { SourceCard } from "./SourceCard";
 export { SourcesPanel } from "./SourcesPanel";
+export { sourcesFromEvents } from "./sourcesFromEvents";
 export type { QueryView, SourcesViewModel, SourceView } from "./sourceTypes";

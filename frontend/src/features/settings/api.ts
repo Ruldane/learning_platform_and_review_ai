@@ -38,3 +38,8 @@ export async function testApiKey(provider: string) {
 export async function fetchModels(signal?: AbortSignal) {
   return unwrap(await api.GET("/settings/models", { signal }));
 }
+
+/** `GET /research/usage` : consommation Brave du mois civil UTC et présence d'une clé. */
+export async function fetchSearchUsage(signal?: AbortSignal) {
+  return unwrap(await api.GET("/research/usage", { signal }));
+}

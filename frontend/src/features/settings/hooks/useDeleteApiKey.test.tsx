@@ -22,6 +22,7 @@ describe("useDeleteApiKey", () => {
     await act(() => result.current.mutateAsync("openai"));
     await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: ["api-keys"] }));
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["models"] });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["search-usage"] });
     expect(deleted).toBe("openai");
   });
 });

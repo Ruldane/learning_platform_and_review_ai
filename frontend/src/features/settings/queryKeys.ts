@@ -3,4 +3,5 @@ export const settingsKeys = {
   settings: ["settings"],
   apiKeys: ["api-keys"],
   models: ["models"],
+  searchUsage: ["search-usage"],
 } as const;

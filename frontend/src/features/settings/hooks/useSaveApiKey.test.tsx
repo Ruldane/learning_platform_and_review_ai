@@ -25,6 +25,7 @@ describe("useSaveApiKey", () => {
     await act(() => result.current.mutateAsync({ provider: "anthropic", key: "sk-ant-1234" }));
     await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: ["api-keys"] }));
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["models"] });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["search-usage"] });
     expect(received).toEqual({ provider: "anthropic", key: "sk-ant-1234" });
   });
 

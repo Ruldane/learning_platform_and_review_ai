@@ -16,6 +16,8 @@ export function useSaveApiKey() {
       Promise.all([
         queryClient.invalidateQueries({ queryKey: settingsKeys.apiKeys }),
         queryClient.invalidateQueries({ queryKey: settingsKeys.models }),
+        // La clé Brave change `has_key` du compteur de la recherche web.
+        queryClient.invalidateQueries({ queryKey: settingsKeys.searchUsage }),
       ]),
   });
 }

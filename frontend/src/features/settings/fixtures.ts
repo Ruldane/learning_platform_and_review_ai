@@ -1,4 +1,4 @@
-import type { ApiKeyOut, ModelChoice, ModelsOut, SettingsOut } from "./types";
+import type { ApiKeyOut, ModelChoice, ModelsOut, SearchUsageOut, SettingsOut } from "./types";
 
 /** Données de test de la feature (réponses typiques du back) ; jamais importées par le code de l'application. */
 function allTiers(provider: string, model: string) {
@@ -81,4 +81,8 @@ export const modelsFixture: ModelsOut = {
     all_glm: allTiers("glm", "glm-5.3"),
     all_openai: allTiers("openai", "gpt-6-luna"),
   },
+};
+
+export const searchUsageFixture: SearchUsageOut = {
+  brave: { has_key: true, used: 120, cap: 900, month: "2026-11" },
 };
