@@ -1,7 +1,8 @@
 """Variables du prompt `plan` du Stratège (D86), tirées du contexte du port `ProgramStore`.
 
 Les propositions et le compte rendu sont des sorties d'agents, le plan courant mêle des textes de
-January et du Stratège : tous sont encadrés par `untrusted()` (17.4). L'objectif et le cadrage
+January et du Stratège, les acquis viennent en partie de la mémoire : tous sont encadrés par
+`untrusted()` (17.4). L'objectif et le cadrage
 sont les souhaits de January : non encadrés (D53 §5, D84), jamais journalisés."""
 
 from typing import Any
@@ -27,10 +28,12 @@ def hours(minutes: int) -> str:
 
 
 def _known(known: KnownSkills) -> str:
+    """Encadrés par `untrusted()` : les noms viennent en partie des acquis de la mémoire (écrits
+    par l'Archiviste d'après un document importé ; relecture de 4.5, D88)."""
     if not known:
         return "Aucun acquis connu."
     lines = [f"- {name} ({_LEVELS.get(level, level)})" for name, level in sorted(known.items())]
-    return "\n".join(lines)
+    return untrusted("\n".join(lines), "acquis connus de January")
 
 
 def _proposal(rank: int, proposal: ProposalDraft) -> str:

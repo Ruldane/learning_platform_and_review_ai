@@ -21,6 +21,8 @@ from app.features.learning.service.runtime import LearningRuntime
 from app.features.learning.service.store import AgentCouncilStore
 from app.features.memory.service.gateway import AgentMemoryGateway
 from app.features.memory.service.runtime import MemoryRuntime, memory_runtime
+from app.features.program.service.runtime import ProgramRuntime
+from app.features.program.service.store import AgentProgramStore
 from app.features.research.service.gateway import AgentWebGateway
 from app.features.research.service.runtime import ResearchRuntime
 from app.features.settings.keys_service import DbKeyReader
@@ -141,12 +143,17 @@ def web_gateway(runtime: ResearchRuntime) -> WebGateway:
 
 
 def agent_ports(
-    memory: MemoryRuntime, research: ResearchRuntime, *, learning: LearningRuntime
+    memory: MemoryRuntime,
+    research: ResearchRuntime,
+    *,
+    learning: LearningRuntime,
+    program: ProgramRuntime,
 ) -> AgentPorts:
-    """Tous les ports du moteur d'agents (D82) : un port de plus = un champ d'`AgentPorts` et
-    une ligne ici. Le Conseil (D84) est adapté de la feature `learning` (D87)."""
+    """Tous les ports du moteur (D82) : un port de plus = un champ d'`AgentPorts` et une ligne ici.
+    Conseil (D84) et programme (D86) adaptés des features `learning` (D87) et `program` (D88)."""
     council = AgentCouncilStore(learning.session_factory, learning.launcher, learning)
-    return AgentPorts(memory=memory_gateway(memory), web=web_gateway(research), council=council)
+    program_store = AgentProgramStore(program)
+    return AgentPorts(memory_gateway(memory), web_gateway(research), council, program_store)
 
 
 def _reader_http() -> httpx.AsyncClient:
@@ -261,9 +268,8 @@ async def open_research_runtime(
 
 
 def key_test_http() -> httpx.AsyncClient:
-    """Client du test de la clé Brave (écran des clés), ouvert par le lifespan : comme
-    `_search_http`, aucun proxy ni réglage de l'environnement (la clé ne passe par aucun
-    intermédiaire, revue 3.3, D74), aucune redirection, 10 s."""
+    """Client du test de la clé Brave, ouvert par le lifespan : celui de `_search_http` (aucun
+    proxy ni réglage de l'environnement, aucune redirection, 10 s ; revue 3.3, D74)."""
     return _search_http()
 
 

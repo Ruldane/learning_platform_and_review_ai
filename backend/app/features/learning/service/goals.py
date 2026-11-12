@@ -162,3 +162,11 @@ async def save_minutes(db: AsyncSession, user_id: str, goal_id: str, text: str) 
     goal = await owned_goal(db, user_id, goal_id)
     goal.minutes = text
     await db.flush()
+
+
+async def mark_planned(db: AsyncSession, user_id: str, goal_id: str) -> None:
+    """Programme validé (D88) : l'objectif passe à « planned »."""
+    goal = await owned_goal(db, user_id, goal_id)
+    if goal.status != "planned":
+        goal.status = "planned"
+        await db.flush()

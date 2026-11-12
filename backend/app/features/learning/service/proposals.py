@@ -96,3 +96,18 @@ async def latest_batch(db: AsyncSession, user_id: str, goal_id: str) -> builtins
 async def list_latest(db: AsyncSession, user_id: str, goal_id: str) -> builtins.list[ProposalOut]:
     await owned_goal(db, user_id, goal_id)
     return [ProposalOut.model_validate(row) for row in await latest_batch(db, user_id, goal_id)]
+
+
+async def proposal_drafts(
+    db: AsyncSession, user_id: str, goal_id: str, proposal_ids: Sequence[str]
+) -> builtins.list[ProposalDraft]:
+    """Les propositions choisies, dans l'ordre, pour le programme (port `ProgramStore`, D88) :
+    chacune à l'utilisateur et à l'objectif, sinon 404."""
+    repo = ProposalRepository(db, user_id)
+    drafts: builtins.list[ProposalDraft] = []
+    for proposal_id in proposal_ids:
+        row = await repo.get_fresh(proposal_id)
+        if row is None or row.goal_id != goal_id:
+            raise proposal_not_found()
+        drafts.append(_draft(row))
+    return drafts

@@ -330,6 +330,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/programs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Programs */
+        get: operations["list_programs_api_v1_programs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/programs/{program_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Program */
+        get: operations["get_program_api_v1_programs__program_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Program */
+        patch: operations["patch_program_api_v1_programs__program_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/programs/{program_id}/export.ics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Ics */
+        get: operations["export_ics_api_v1_programs__program_id__export_ics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/programs/{program_id}/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Validate Program */
+        post: operations["validate_program_api_v1_programs__program_id__validate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/proposals/{proposal_id}/choose": {
         parameters: {
             query?: never;
@@ -569,6 +638,23 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tasks/{task_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Task */
+        patch: operations["patch_task_api_v1_tasks__task_id__patch"];
         trace?: never;
     };
 }
@@ -1534,6 +1620,44 @@ export interface components {
             /** Providers */
             providers: components["schemas"]["ProviderModels"][];
         };
+        /** ModuleOut */
+        ModuleOut: {
+            /** Id */
+            id: string;
+            /** Lesson Id */
+            lesson_id: string | null;
+            /** Lesson Status */
+            lesson_status: ("pending" | "generating" | "ready" | "failed") | null;
+            /** Prerequisites */
+            prerequisites: string[];
+            /** Rank */
+            rank: number;
+            /** Resources Count */
+            resources_count: number;
+            /** Skills */
+            skills: string[];
+            /** Skipped */
+            skipped: boolean;
+            /** Tasks */
+            tasks: components["schemas"]["TaskOut"][];
+            /** Title */
+            title: string;
+        };
+        /** MovedTaskOut */
+        MovedTaskOut: {
+            /**
+             * After
+             * Format: date
+             */
+            after: string;
+            /**
+             * Before
+             * Format: date
+             */
+            before: string;
+            /** Task */
+            task: string;
+        };
         /** NeighborOut */
         NeighborOut: {
             /** Item Id */
@@ -1559,6 +1683,103 @@ export interface components {
             text: string;
             /** Title */
             title?: string | null;
+        };
+        /**
+         * PlanDiffOut
+         * @description Différence de la dernière version du Stratège avec le plan qu'elle a remplacé.
+         */
+        PlanDiffOut: {
+            /** Added */
+            added: string[];
+            /** Moved */
+            moved: components["schemas"]["MovedTaskOut"][];
+            /** Removed */
+            removed: string[];
+            /** Weeks After */
+            weeks_after: number;
+            /** Weeks Before */
+            weeks_before: number;
+        };
+        /** ProgramOut */
+        ProgramOut: {
+            /** Cap Minutes */
+            cap_minutes: number;
+            diff: components["schemas"]["PlanDiffOut"] | null;
+            /** Goal Id */
+            goal_id: string;
+            /** Id */
+            id: string;
+            progress: components["schemas"]["ProgressOut"];
+            /** Session Id */
+            session_id: string | null;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "validated";
+            /** Title */
+            title: string;
+            /** Version */
+            version: number;
+            /** Weekday Minutes */
+            weekday_minutes: number;
+            /** Weekend Minutes */
+            weekend_minutes: number;
+            /** Weekly Minutes */
+            weekly_minutes: number;
+            /** Weeks */
+            weeks: components["schemas"]["WeekOut"][];
+        };
+        /**
+         * ProgramPatch
+         * @description Ajouts, suppressions et date de début (un lundi, brouillon seulement), appliqués
+         *     ensemble : une règle cassée annule tout.
+         */
+        ProgramPatch: {
+            /** Add Tasks */
+            add_tasks?: components["schemas"]["TaskCreate"][];
+            /** Delete Task Ids */
+            delete_task_ids?: string[];
+            /** Start Date */
+            start_date?: string | null;
+        };
+        /** ProgramSummaryOut */
+        ProgramSummaryOut: {
+            /** Goal Id */
+            goal_id: string;
+            /** Id */
+            id: string;
+            progress: components["schemas"]["ProgressOut"];
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "validated";
+            /** Title */
+            title: string;
+            /** Weeks */
+            weeks: number;
+        };
+        /** ProgressOut */
+        ProgressOut: {
+            /** Done Minutes */
+            done_minutes: number;
+            /** Done Tasks */
+            done_tasks: number;
+            /** Total Minutes */
+            total_minutes: number;
+            /** Total Tasks */
+            total_tasks: number;
         };
         /** ProposalOut */
         ProposalOut: {
@@ -2025,6 +2246,68 @@ export interface components {
             /** Vectorize Share */
             vectorize_share: number;
         };
+        /** TaskCreate */
+        TaskCreate: {
+            /** Done Criterion */
+            done_criterion: string;
+            /** Minutes */
+            minutes: number;
+            /** Module Id */
+            module_id: string;
+            /**
+             * Planned Date
+             * Format: date
+             */
+            planned_date: string;
+            /** Title */
+            title: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "lire" | "regarder" | "pratiquer" | "quiz" | "projet";
+        };
+        /** TaskOut */
+        TaskOut: {
+            /** Already Known */
+            already_known: boolean;
+            /** Done Criterion */
+            done_criterion: string;
+            /** Id */
+            id: string;
+            /** Minutes */
+            minutes: number;
+            /** Module Id */
+            module_id: string;
+            /**
+             * Planned Date
+             * Format: date
+             */
+            planned_date: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "todo" | "done";
+            /** Title */
+            title: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "lire" | "regarder" | "pratiquer" | "quiz" | "projet";
+        };
+        /** TaskPatch */
+        TaskPatch: {
+            /** Minutes */
+            minutes?: number | null;
+            /** Planned Date */
+            planned_date?: string | null;
+            /** Status */
+            status?: ("todo" | "done") | null;
+            /** Title */
+            title?: string | null;
+        };
         /** ToolCalledEvent */
         ToolCalledEvent: {
             /**
@@ -2196,6 +2479,22 @@ export interface components {
             };
             weekly_review?: components["schemas"]["WeeklyReview"];
         };
+        /**
+         * ValidateOut
+         * @description `session_id` : session du Stratège reprise (la validation s'y termine) ; `None` : la
+         *     validation est faite (ou l'était déjà).
+         */
+        ValidateOut: {
+            /** Program Id */
+            program_id: string;
+            /** Session Id */
+            session_id: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "validated";
+        };
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -2208,6 +2507,33 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /**
+         * WeekOut
+         * @description `load_minutes` : tâches planifiées dans les sept jours de la semaine (calendrier).
+         */
+        WeekOut: {
+            /** Deliverable */
+            deliverable: string;
+            /** Id */
+            id: string;
+            /** Load Hours */
+            load_hours: number;
+            /** Load Minutes */
+            load_minutes: number;
+            /** Modules */
+            modules: components["schemas"]["ModuleOut"][];
+            /** Objective */
+            objective: string;
+            /** Rank */
+            rank: number;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** Theme */
+            theme: string;
         };
         /** WeeklyReview */
         WeeklyReview: {
@@ -2902,6 +3228,154 @@ export interface operations {
             };
         };
     };
+    list_programs_api_v1_programs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProgramSummaryOut"][];
+                };
+            };
+        };
+    };
+    get_program_api_v1_programs__program_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                program_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProgramOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_program_api_v1_programs__program_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                program_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProgramPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProgramOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_ics_api_v1_programs__program_id__export_ics_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                program_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/calendar": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    validate_program_api_v1_programs__program_id__validate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                program_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     choose_proposal_api_v1_proposals__proposal_id__choose_post: {
         parameters: {
             query?: never;
@@ -3398,6 +3872,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ModelsOut"];
+                };
+            };
+        };
+    };
+    patch_task_api_v1_tasks__task_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

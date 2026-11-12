@@ -22,6 +22,8 @@ from app.features.auth.service import AuthService
 from app.features.learning.service.runtime import LearningRuntime
 from app.features.learning.service.store import AgentCouncilStore
 from app.features.memory.service.gateway import AgentMemoryGateway
+from app.features.program.service.runtime import ProgramRuntime
+from app.features.program.service.store import AgentProgramStore
 from app.features.research.service.gateway import AgentWebGateway
 from app.main import create_app
 from tests.support.memory import fake_memory_providers
@@ -214,12 +216,14 @@ async def test_launcher_is_bound_to_the_runner_then_unbound_at_shutdown(
     assert launcher.runner is None
 
 
-def test_agent_ports_compose_memory_web_and_council() -> None:
+def test_agent_ports_compose_memory_web_council_and_program() -> None:
     learning = LearningRuntime(object(), SessionLauncher())  # type: ignore[arg-type]
-    ports = agent_ports(object(), object(), learning=learning)  # type: ignore[arg-type]
+    program = ProgramRuntime(object(), object())  # type: ignore[arg-type]
+    ports = agent_ports(object(), object(), learning=learning, program=program)  # type: ignore[arg-type]
     assert isinstance(ports.memory, AgentMemoryGateway)
     assert isinstance(ports.web, AgentWebGateway)
     assert isinstance(ports.council, AgentCouncilStore)
+    assert isinstance(ports.program, AgentProgramStore)
 
 
 async def test_learning_runtime_shares_the_launcher(settings: Settings, db_engine: object) -> None:

@@ -31,6 +31,7 @@ from app.db.engine import create_engine, create_session_factory
 from app.features.auth.service import AuthService
 from app.features.learning.service.runtime import LearningRuntime
 from app.features.memory.service.upload import MAX_UPLOAD_BYTES
+from app.features.program.service.runtime import ProgramRuntime
 from app.features.registry import FEATURE_ROUTERS
 
 API_PREFIX = "/api/v1"
@@ -141,6 +142,7 @@ async def _open_agents(app: FastAPI, stack: AsyncExitStack) -> None:
     # lié au runner juste après le moteur, délié avant l'arrêt du moteur.
     app.state.launcher = SessionLauncher()
     app.state.learning = LearningRuntime(app.state.session_factory, app.state.launcher)
+    app.state.program = ProgramRuntime(app.state.session_factory, app.state.memory)
     app.state.runtime = await stack.enter_async_context(
         agent_runtime(
             app.state.settings,
@@ -148,7 +150,12 @@ async def _open_agents(app: FastAPI, stack: AsyncExitStack) -> None:
             app.state.providers.llm_factory,
             model_prices(),
             run_settings_source(app.state.session_factory),
-            ports=agent_ports(app.state.memory, app.state.research, learning=app.state.learning),
+            ports=agent_ports(
+                app.state.memory,
+                app.state.research,
+                learning=app.state.learning,
+                program=app.state.program,
+            ),
         )
     )
     app.state.launcher.bind(app.state.runtime.runner)

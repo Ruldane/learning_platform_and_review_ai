@@ -2431,6 +2431,118 @@
         "title": "ModelsOut",
         "type": "object"
       },
+      "ModuleOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "lesson_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lesson Id"
+          },
+          "lesson_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "pending",
+                  "generating",
+                  "ready",
+                  "failed"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lesson Status"
+          },
+          "prerequisites": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Prerequisites",
+            "type": "array"
+          },
+          "rank": {
+            "title": "Rank",
+            "type": "integer"
+          },
+          "resources_count": {
+            "title": "Resources Count",
+            "type": "integer"
+          },
+          "skills": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Skills",
+            "type": "array"
+          },
+          "skipped": {
+            "title": "Skipped",
+            "type": "boolean"
+          },
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/TaskOut"
+            },
+            "title": "Tasks",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "rank",
+          "title",
+          "skills",
+          "prerequisites",
+          "skipped",
+          "lesson_id",
+          "lesson_status",
+          "resources_count",
+          "tasks"
+        ],
+        "title": "ModuleOut",
+        "type": "object"
+      },
+      "MovedTaskOut": {
+        "properties": {
+          "after": {
+            "format": "date",
+            "title": "After",
+            "type": "string"
+          },
+          "before": {
+            "format": "date",
+            "title": "Before",
+            "type": "string"
+          },
+          "task": {
+            "title": "Task",
+            "type": "string"
+          }
+        },
+        "required": [
+          "task",
+          "before",
+          "after"
+        ],
+        "title": "MovedTaskOut",
+        "type": "object"
+      },
       "NeighborOut": {
         "properties": {
           "item_id": {
@@ -2491,6 +2603,259 @@
           "text"
         ],
         "title": "PasteCreate",
+        "type": "object"
+      },
+      "PlanDiffOut": {
+        "description": "Différence de la dernière version du Stratège avec le plan qu'elle a remplacé.",
+        "properties": {
+          "added": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Added",
+            "type": "array"
+          },
+          "moved": {
+            "items": {
+              "$ref": "#/components/schemas/MovedTaskOut"
+            },
+            "title": "Moved",
+            "type": "array"
+          },
+          "removed": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Removed",
+            "type": "array"
+          },
+          "weeks_after": {
+            "title": "Weeks After",
+            "type": "integer"
+          },
+          "weeks_before": {
+            "title": "Weeks Before",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "added",
+          "removed",
+          "moved",
+          "weeks_before",
+          "weeks_after"
+        ],
+        "title": "PlanDiffOut",
+        "type": "object"
+      },
+      "ProgramOut": {
+        "properties": {
+          "cap_minutes": {
+            "title": "Cap Minutes",
+            "type": "integer"
+          },
+          "diff": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlanDiffOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "goal_id": {
+            "title": "Goal Id",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "progress": {
+            "$ref": "#/components/schemas/ProgressOut"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
+          "start_date": {
+            "format": "date",
+            "title": "Start Date",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "validated"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "weekday_minutes": {
+            "title": "Weekday Minutes",
+            "type": "integer"
+          },
+          "weekend_minutes": {
+            "title": "Weekend Minutes",
+            "type": "integer"
+          },
+          "weekly_minutes": {
+            "title": "Weekly Minutes",
+            "type": "integer"
+          },
+          "weeks": {
+            "items": {
+              "$ref": "#/components/schemas/WeekOut"
+            },
+            "title": "Weeks",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "goal_id",
+          "title",
+          "status",
+          "version",
+          "start_date",
+          "weekly_minutes",
+          "cap_minutes",
+          "weekday_minutes",
+          "weekend_minutes",
+          "session_id",
+          "weeks",
+          "progress",
+          "diff"
+        ],
+        "title": "ProgramOut",
+        "type": "object"
+      },
+      "ProgramPatch": {
+        "description": "Ajouts, suppressions et date de début (un lundi, brouillon seulement), appliqués\nensemble : une règle cassée annule tout.",
+        "properties": {
+          "add_tasks": {
+            "items": {
+              "$ref": "#/components/schemas/TaskCreate"
+            },
+            "maxItems": 20,
+            "title": "Add Tasks",
+            "type": "array"
+          },
+          "delete_task_ids": {
+            "items": {
+              "maxLength": 36,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Delete Task Ids",
+            "type": "array"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          }
+        },
+        "title": "ProgramPatch",
+        "type": "object"
+      },
+      "ProgramSummaryOut": {
+        "properties": {
+          "goal_id": {
+            "title": "Goal Id",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "progress": {
+            "$ref": "#/components/schemas/ProgressOut"
+          },
+          "start_date": {
+            "format": "date",
+            "title": "Start Date",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "validated"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "weeks": {
+            "title": "Weeks",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "goal_id",
+          "title",
+          "status",
+          "start_date",
+          "weeks",
+          "progress"
+        ],
+        "title": "ProgramSummaryOut",
+        "type": "object"
+      },
+      "ProgressOut": {
+        "properties": {
+          "done_minutes": {
+            "title": "Done Minutes",
+            "type": "integer"
+          },
+          "done_tasks": {
+            "title": "Done Tasks",
+            "type": "integer"
+          },
+          "total_minutes": {
+            "title": "Total Minutes",
+            "type": "integer"
+          },
+          "total_tasks": {
+            "title": "Total Tasks",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "done_tasks",
+          "total_tasks",
+          "done_minutes",
+          "total_minutes"
+        ],
+        "title": "ProgressOut",
         "type": "object"
       },
       "ProposalOut": {
@@ -3764,6 +4129,184 @@
         "title": "StatsOut",
         "type": "object"
       },
+      "TaskCreate": {
+        "properties": {
+          "done_criterion": {
+            "maxLength": 200,
+            "minLength": 3,
+            "title": "Done Criterion",
+            "type": "string"
+          },
+          "minutes": {
+            "maximum": 120.0,
+            "minimum": 15.0,
+            "title": "Minutes",
+            "type": "integer"
+          },
+          "module_id": {
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Module Id",
+            "type": "string"
+          },
+          "planned_date": {
+            "format": "date",
+            "title": "Planned Date",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 120,
+            "minLength": 3,
+            "title": "Title",
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "lire",
+              "regarder",
+              "pratiquer",
+              "quiz",
+              "projet"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "module_id",
+          "title",
+          "type",
+          "minutes",
+          "done_criterion",
+          "planned_date"
+        ],
+        "title": "TaskCreate",
+        "type": "object"
+      },
+      "TaskOut": {
+        "properties": {
+          "already_known": {
+            "title": "Already Known",
+            "type": "boolean"
+          },
+          "done_criterion": {
+            "title": "Done Criterion",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "minutes": {
+            "title": "Minutes",
+            "type": "integer"
+          },
+          "module_id": {
+            "title": "Module Id",
+            "type": "string"
+          },
+          "planned_date": {
+            "format": "date",
+            "title": "Planned Date",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "todo",
+              "done"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "lire",
+              "regarder",
+              "pratiquer",
+              "quiz",
+              "projet"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "module_id",
+          "title",
+          "type",
+          "minutes",
+          "done_criterion",
+          "planned_date",
+          "status",
+          "already_known"
+        ],
+        "title": "TaskOut",
+        "type": "object"
+      },
+      "TaskPatch": {
+        "properties": {
+          "minutes": {
+            "anyOf": [
+              {
+                "maximum": 120.0,
+                "minimum": 15.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minutes"
+          },
+          "planned_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planned Date"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "todo",
+                  "done"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 3,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "title": "TaskPatch",
+        "type": "object"
+      },
       "ToolCalledEvent": {
         "properties": {
           "agent": {
@@ -4122,6 +4665,41 @@
         "title": "UserSettings",
         "type": "object"
       },
+      "ValidateOut": {
+        "description": "`session_id` : session du Stratège reprise (la validation s'y termine) ; `None` : la\nvalidation est faite (ou l'était déjà).",
+        "properties": {
+          "program_id": {
+            "title": "Program Id",
+            "type": "string"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "validated"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "program_id",
+          "status",
+          "session_id"
+        ],
+        "title": "ValidateOut",
+        "type": "object"
+      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -4160,6 +4738,64 @@
           "type"
         ],
         "title": "ValidationError",
+        "type": "object"
+      },
+      "WeekOut": {
+        "description": "`load_minutes` : tâches planifiées dans les sept jours de la semaine (calendrier).",
+        "properties": {
+          "deliverable": {
+            "title": "Deliverable",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "load_hours": {
+            "title": "Load Hours",
+            "type": "number"
+          },
+          "load_minutes": {
+            "title": "Load Minutes",
+            "type": "integer"
+          },
+          "modules": {
+            "items": {
+              "$ref": "#/components/schemas/ModuleOut"
+            },
+            "title": "Modules",
+            "type": "array"
+          },
+          "objective": {
+            "title": "Objective",
+            "type": "string"
+          },
+          "rank": {
+            "title": "Rank",
+            "type": "integer"
+          },
+          "start_date": {
+            "format": "date",
+            "title": "Start Date",
+            "type": "string"
+          },
+          "theme": {
+            "title": "Theme",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "rank",
+          "theme",
+          "objective",
+          "deliverable",
+          "start_date",
+          "load_minutes",
+          "load_hours",
+          "modules"
+        ],
+        "title": "WeekOut",
         "type": "object"
       },
       "WeeklyReview": {
@@ -5160,6 +5796,207 @@
         ]
       }
     },
+    "/api/v1/programs": {
+      "get": {
+        "operationId": "list_programs_api_v1_programs_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProgramSummaryOut"
+                  },
+                  "title": "Response List Programs Api V1 Programs Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Programs",
+        "tags": [
+          "program"
+        ]
+      }
+    },
+    "/api/v1/programs/{program_id}": {
+      "get": {
+        "operationId": "get_program_api_v1_programs__program_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "program_id",
+            "required": true,
+            "schema": {
+              "title": "Program Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgramOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Program",
+        "tags": [
+          "program"
+        ]
+      },
+      "patch": {
+        "operationId": "patch_program_api_v1_programs__program_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "program_id",
+            "required": true,
+            "schema": {
+              "title": "Program Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgramPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgramOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Patch Program",
+        "tags": [
+          "program"
+        ]
+      }
+    },
+    "/api/v1/programs/{program_id}/export.ics": {
+      "get": {
+        "operationId": "export_ics_api_v1_programs__program_id__export_ics_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "program_id",
+            "required": true,
+            "schema": {
+              "title": "Program Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/calendar": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export Ics",
+        "tags": [
+          "program"
+        ]
+      }
+    },
+    "/api/v1/programs/{program_id}/validate": {
+      "post": {
+        "operationId": "validate_program_api_v1_programs__program_id__validate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "program_id",
+            "required": true,
+            "schema": {
+              "title": "Program Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidateOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Validate Program",
+        "tags": [
+          "program"
+        ]
+      }
+    },
     "/api/v1/proposals/{proposal_id}/choose": {
       "post": {
         "operationId": "choose_proposal_api_v1_proposals__proposal_id__choose_post",
@@ -5913,6 +6750,58 @@
         "summary": "List Models",
         "tags": [
           "settings"
+        ]
+      }
+    },
+    "/api/v1/tasks/{task_id}": {
+      "patch": {
+        "operationId": "patch_task_api_v1_tasks__task_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Patch Task",
+        "tags": [
+          "program"
         ]
       }
     }
