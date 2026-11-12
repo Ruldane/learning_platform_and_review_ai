@@ -59,6 +59,14 @@ class ProposalRef:
 
 
 @dataclass(frozen=True)
+class SavedProposal:
+    """Une proposition d'un lot déjà enregistré, avec ses détails tels qu'écrits (D85)."""
+
+    ref: ProposalRef
+    draft: ProposalDraft
+
+
+@dataclass(frozen=True)
 class Choice:
     """Le choix de January : un parcours (`choose`, un id) ou un mélange de deux (`mix`)."""
 
@@ -111,6 +119,13 @@ class CouncilStore(Protocol):
     ) -> list[ProposalRef]:
         """Un lot de propositions ; idempotent par `(session, batch)` : rejoué, rend le lot
         déjà écrit."""
+        ...
+
+    async def saved_proposals(
+        self, user_id: str, session_id: str, *, batch: int
+    ) -> list[SavedProposal]:
+        """Le lot `batch` de la session tel qu'enregistré, par rang ; vide s'il n'existe pas. Un
+        `propose` rejoué le relit au lieu de rappeler le modèle (D85)."""
         ...
 
     async def attach_board(self, user_id: str, proposal_id: str, board_id: str) -> None: ...
@@ -170,6 +185,11 @@ class _NoCouncil:
         batch: int,
         proposals: Sequence[ProposalDraft],
     ) -> list[ProposalRef]:
+        raise council_unavailable()
+
+    async def saved_proposals(
+        self, user_id: str, session_id: str, *, batch: int
+    ) -> list[SavedProposal]:
         raise council_unavailable()
 
     async def attach_board(self, user_id: str, proposal_id: str, board_id: str) -> None:

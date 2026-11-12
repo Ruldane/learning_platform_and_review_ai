@@ -14,6 +14,7 @@ from app.agents.tools.council_port import (
     GoalBrief,
     ProposalDraft,
     ProposalRef,
+    SavedProposal,
 )
 from app.core.errors import AppError
 
@@ -28,11 +29,12 @@ def goal_not_found() -> AppError:
 @dataclass
 class FakeCouncilStore:
     """`goals` : (utilisateur, objectif) → brief. `framing_saved` ne garde que les écritures qui
-        changent quelque chose (une réécriture à l'identique n'en ajoute pas) ; `framing_calls`
-        compte tous les appels. `block_after_framing` : fige l'appel après l'écriture (arrêt du back
-        en plein nœud). `boards` : id par `(session, étape)`, `board_kinds` leur type ; `choices` :
-        les choix enregistrés (un seul par session et objectif), `programs_started` : les sessions
-        `program_builder` lancées (une seule par objectif). Chaque écriture vérifie que l'objectif
+    changent quelque chose (une réécriture à l'identique n'en ajoute pas) ; `framing_calls`
+    compte tous les appels. `block_after_framing` / `block_after_proposals` : fige l'appel après
+    l'écriture (arrêt du back en plein nœud). `boards` : id par `(session, étape)`, `board_kinds`
+    leur type ; `batches` / `batch_drafts` : lots par `(session, lot)` ; `choices` : les choix
+    enregistrés (un seul par session et objectif), `programs_started` : les sessions
+    `program_builder` lancées (une seule par objectif). Chaque écriture vérifie que l'objectif
     (ou la proposition) est à l'utilisateur : un oubli du filtre utilisateur échoue (404)."""
 
     goals: dict[tuple[str, str], GoalBrief] = field(default_factory=dict)
@@ -46,6 +48,9 @@ class FakeCouncilStore:
     board_kinds: dict[tuple[str, int], BoardKind] = field(default_factory=dict)
     minutes: dict[str, str] = field(default_factory=dict)
     batches: dict[tuple[str, int], list[ProposalRef]] = field(default_factory=dict)
+    batch_drafts: dict[tuple[str, int], list[ProposalDraft]] = field(default_factory=dict)
+    proposals_calls: int = 0
+    block_after_proposals: bool = False
     attached: dict[str, str] = field(default_factory=dict)
     chosen: dict[tuple[str, str], Choice] = field(default_factory=dict)
     choices: list[Choice] = field(default_factory=list)
@@ -120,8 +125,21 @@ class FakeCouncilStore:
         await self.goal(user_id, goal_id)
         refs = [ProposalRef(uuid4().hex, rank, p.name) for rank, p in enumerate(proposals, 1)]
         kept = self.batches.setdefault((session_id, batch), refs)
+        self.batch_drafts.setdefault((session_id, batch), list(proposals))
         self.owners.update({ref.proposal_id: user_id for ref in kept})
+        self.proposals_calls += 1
+        if self.block_after_proposals:
+            await asyncio.Event().wait()
         return list(kept)
+
+    async def saved_proposals(
+        self, user_id: str, session_id: str, *, batch: int
+    ) -> list[SavedProposal]:
+        refs = self.batches.get((session_id, batch), [])
+        if any(self.owners.get(ref.proposal_id) != user_id for ref in refs):
+            return []
+        drafts = self.batch_drafts.get((session_id, batch), [])
+        return [SavedProposal(ref, draft) for ref, draft in zip(refs, drafts, strict=True)]
 
     async def attach_board(self, user_id: str, proposal_id: str, board_id: str) -> None:
         if self.owners.get(proposal_id) != user_id:

@@ -8,7 +8,7 @@ web ou de la mémoire (catalogue) est encadré par `untrusted()` quand un autre 
 comme en D53 §5 et D84, mais jamais journalisés."""
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date
 from typing import Any, Literal, Protocol, get_args
 
@@ -98,6 +98,18 @@ def transcript_prompt(turns: list[dict[str, Any]]) -> str:
     )
 
 
+def people_prompt(state: CouncilState) -> str:
+    """Praticiens repérés par l'Éclaireur (noms, rôles et sites viennent du web : encadrés)."""
+    people = state.get("people", [])
+    if not people:
+        return "Aucun praticien repéré."
+    lines = [
+        f"- {one_line(p['name'])} — {one_line(p['role'])} (publie sur {', '.join(p['where'])})"
+        for p in people
+    ]
+    return untrusted("\n".join(lines), "praticiens repérés")
+
+
 def notes_prompt(notes: list[str]) -> str:
     return "\n".join(f"- {one_line(note)}" for note in notes)
 
@@ -164,6 +176,13 @@ async def read_inputs(deps: GraphDeps, state: CouncilState) -> Absorbed:
         texts=[text for i in inputs if (text := i.text.strip())],
         commands=[i.command for i in inputs if i.command is not None],
     )
+
+
+def without_round_commands(read: Absorbed) -> Absorbed:
+    """Les mêmes entrées, sans `another_round` ni `to_proposals` : envoyées pendant l'attente du
+    choix, elles sont réglées par la réponse elle-même (un nouveau tour, D85)."""
+    kept = [c for c in read.commands if c not in ("another_round", "to_proposals")]
+    return replace(read, commands=kept)
 
 
 def absorb(state: CouncilState, read: Absorbed, *, carry: bool, target: int) -> CouncilState:

@@ -45,10 +45,13 @@ class PeopleFound(BaseModel):
     people: list[PersonModel] = Field(max_length=MAX_PEOPLE)
 
 
-def _url_key(url: str) -> str:
+def _url_key(url: str) -> str | None:
     """Clé tolérante d'une adresse : schéma et hôte en minuscules, sans `/` final ni fragment ;
-    chemin et requête gardent leur casse."""
-    parts = urlsplit(url.strip())
+    chemin et requête gardent leur casse. `None` pour une adresse mal formée (`http://[abc`)."""
+    try:
+        parts = urlsplit(url.strip())
+    except ValueError:
+        return None
     path = parts.path.rstrip("/")
     return urlunsplit((parts.scheme.lower(), parts.netloc.lower(), path, parts.query, ""))
 
@@ -59,7 +62,8 @@ def _known_urls(state: CouncilState) -> dict[str, str]:
     for url in [p["url"] for p in state.get("pages", [])] + [
         h["url"] for h in state.get("hits", [])
     ]:
-        known.setdefault(_url_key(url), url)
+        if (key := _url_key(url)) is not None:
+            known.setdefault(key, url)
     return known
 
 
@@ -89,11 +93,13 @@ def _pages_prompt(pages: list[dict[str, Any]]) -> str:
 
 
 def _vetted(found: PeopleFound, known: dict[str, str]) -> list[PersonFound]:
-    """Personnes dont au moins une adresse est connue de la session, sans doublon de nom."""
+    """Personnes dont au moins une adresse est connue de la session, sans doublon de nom. Une
+    adresse mal formée est ignorée : sans autre adresse connue, la personne est écartée."""
     people: list[PersonFound] = []
     names: set[str] = set()
     for person in found.people:
-        urls = list(dict.fromkeys(u for raw in person.urls if (u := known.get(_url_key(raw)))))
+        keys = [key for raw in person.urls if (key := _url_key(raw)) is not None]
+        urls = list(dict.fromkeys(u for key in keys if (u := known.get(key))))
         name = one_line(person.name)
         if not urls or name.casefold() in names:
             continue

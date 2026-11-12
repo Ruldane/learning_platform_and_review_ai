@@ -18,6 +18,7 @@ from app.agents.nodes.council_rules import (
     notes_prompt,
     read_inputs,
     transcript_prompt,
+    without_round_commands,
 )
 from app.agents.prompts.loader import render_prompt
 from app.agents.registry import get_agent
@@ -74,9 +75,17 @@ def make_round_start(deps: GraphDeps) -> Node:
     async def round_start(state: CouncilState) -> CouncilState:
         """Entrées de January lues (messages → notes du tour, commandes), puis l'ordre de parole.
         `to_proposals` lu avant un tour ≥ 2 : pas de nouveau tour (`turn_index` au bout). Le tour 1
-        a toujours lieu : chaque débatteur donne sa position (3.1, étape 3)."""
+        a toujours lieu : chaque débatteur donne sa position (3.1, étape 3). Au retour du choix
+        (« autre tour »), `another_round` et `to_proposals` envoyés pendant l'attente sont
+        ignorés ; textes et angle restent lus."""
         target = state.get("rounds_target") or min(1 + deps.settings.debate_rounds, MAX_ROUNDS)
-        update = absorb(state, await read_inputs(deps, state), carry=True, target=target)
+        read = await read_inputs(deps, state)
+        reopened = (state.get("choice") or {}).get("action") == "another_round"
+        if reopened:  # retour du choix : la réponse règle déjà le nombre de tours
+            read = without_round_commands(read)
+        update = absorb(state, read, carry=True, target=target)
+        if reopened:
+            update["choice"] = None
         number = state.get("round", 0) + 1
         if update.get("stop") and number > 1:
             return {**update, "turn_index": len(state.get("order", DEBATERS))}

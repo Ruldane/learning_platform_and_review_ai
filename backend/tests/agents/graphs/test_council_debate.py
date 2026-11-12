@@ -193,3 +193,16 @@ def test_names_other_debater() -> None:
     assert names_other_debater("L'Eclaireur a raison.", "skeptic")
     assert not names_other_debater("Je suis sceptique.", "practitioner")  # l'adjectif
     assert not names_other_debater("Le Sceptique que je suis insiste.", "skeptic")  # soi-même
+
+
+async def test_scout_debates_with_the_practitioners_it_spotted(
+    make_council_runner: MakeCouncil,
+) -> None:
+    c = await make_council_runner()
+    await c.to_choice()
+    scout = next(m for m in await c.agent_messages(step_prefix="positions") if m.agent == "scout")
+    prompt = c.prompt_of(scout)
+    line = prompt.index("- Ada Lovelace — Ingénieure IA")
+    assert prompt.rfind("<<<CONTENU_NON_FIABLE", 0, line) > prompt.rfind("<<<FIN_", 0, line)
+    others = [m for m in await c.agent_messages(step_prefix="positions") if m.agent != "scout"]
+    assert all("Ada Lovelace" not in c.prompt_of(m) for m in others)

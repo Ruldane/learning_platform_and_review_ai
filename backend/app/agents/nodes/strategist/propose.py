@@ -2,8 +2,9 @@
 débat demandé au moment du choix donne un nouveau lot. Il part du compte rendu du Scribe (sortie
 d'agent, encadrée), des messages de January, de l'objectif et du cadrage.
 
-Le port enregistre le lot de façon idempotente par `(session, lot)` : le nœud rejoué rappelle le
-modèle mais retrouve le lot déjà écrit, jamais un second."""
+Rejoué après un arrêt, le nœud relit d'abord le lot déjà enregistré (`saved_proposals`) et le
+réémet tel quel, noms et détails ensemble, sans rappeler le modèle (D85) ; l'écriture reste
+idempotente par `(session, lot)`, jamais un second lot."""
 
 from typing import Any
 
@@ -18,7 +19,7 @@ from app.agents.runtime.emit import emit
 from app.agents.runtime.invoke import node_timeout
 from app.agents.runtime.structured import structured_call
 from app.agents.state.learning_council import CouncilState
-from app.agents.tools.council_port import ProposalDraft, ProposalRef
+from app.agents.tools.council_port import ProposalDraft, SavedProposal
 
 AGENT = "strategist"
 MIN_PROPOSALS = 2
@@ -42,41 +43,48 @@ def _prompt(state: CouncilState) -> str:
     )
 
 
-def _state_entries(refs: list[ProposalRef], drafts: list[ProposalDraft]) -> list[dict[str, Any]]:
-    """Le lot tel que le port l'a écrit (ids, rangs, noms), complété des détails rédigés."""
-    by_rank = {rank: draft for rank, draft in enumerate(drafts, start=1)}
-    entries = []
-    for ref in refs:
-        draft = by_rank.get(ref.rank)
-        details = draft.model_dump() if draft is not None else {}
-        entries.append(
-            {**details, "proposal_id": ref.proposal_id, "rank": ref.rank, "name": ref.name}
-        )
-    return entries
+def _entry(saved: SavedProposal) -> dict[str, Any]:
+    ref = saved.ref
+    return {
+        **saved.draft.model_dump(),
+        "proposal_id": ref.proposal_id,
+        "rank": ref.rank,
+        "name": ref.name,
+    }
+
+
+async def _draft(deps: GraphDeps, state: CouncilState, batch: int) -> list[SavedProposal]:
+    """Nouveau lot : le Stratège rédige, le port enregistre (ids, rangs, noms)."""
+    model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
+    found = await structured_call(
+        model,
+        ProposalSet,
+        [SystemMessage(_prompt(state)), HumanMessage("Propose les parcours.")],
+        agent=AGENT,
+        step=f"propositions-{batch}",
+        intent="je propose des parcours",
+    )
+    refs = await deps.ports.council.save_proposals(
+        deps.user_id, deps.session_id, state["goal_id"], batch=batch, proposals=found.proposals
+    )
+    by_rank = dict(enumerate(found.proposals, start=1))
+    return [SavedProposal(ref, by_rank[ref.rank]) for ref in refs if ref.rank in by_rank]
 
 
 def make_propose(deps: GraphDeps) -> Node:
     @node_timeout()
     async def propose(state: CouncilState) -> CouncilState:
         batch = state.get("batch", 0) + 1
-        model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
-        found = await structured_call(
-            model,
-            ProposalSet,
-            [SystemMessage(_prompt(state)), HumanMessage("Propose les parcours.")],
-            agent=AGENT,
-            step=f"propositions-{batch}",
-            intent="je propose des parcours",
-        )
-        refs = await deps.ports.council.save_proposals(
-            deps.user_id,
-            deps.session_id,
-            state["goal_id"],
-            batch=batch,
-            proposals=found.proposals,
-        )
-        for ref in refs:
-            emit("proposal.ready", {"proposal_id": ref.proposal_id, "title": ref.name}, agent=AGENT)
-        return {"batch": batch, "proposals": _state_entries(refs, found.proposals), "choice": None}
+        council = deps.ports.council
+        saved = await council.saved_proposals(deps.user_id, deps.session_id, batch=batch)
+        if not saved:
+            saved = await _draft(deps, state, batch)
+        for item in saved:
+            emit(
+                "proposal.ready",
+                {"proposal_id": item.ref.proposal_id, "title": item.ref.name},
+                agent=AGENT,
+            )
+        return {"batch": batch, "proposals": [_entry(item) for item in saved], "choice": None}
 
     return propose

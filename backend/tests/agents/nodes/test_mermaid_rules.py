@@ -25,6 +25,15 @@ def test_a_simple_flowchart_passes() -> None:
         "%%{init: {}}%%\nflowchart TD\nA-->B",
         'flowchart TD\nA["<script>x</script>"]-->B',
         "sequenceDiagram\nA->>B: x",
+        # Plusieurs instructions sur une ligne, séparées par `;` (revue 4.4, Important 1).
+        'flowchart TD\nA-->B; click A "https://evil.example"',
+        "flowchart TD\nA-->B; click A call alert()",
+        "flowchart TD\nA-->B;click A call alert()",
+        "flowchart TD\nA-->B ;  CLICK A call alert()",
+        "flowchart TD\nA-->B; style A fill:url(https://evil.example/p.png)",
+        "flowchart TD\nA-->B; STYLE A fill:URL (https://evil.example/p.png)",
+        'flowchart TD\nA["url(https://evil.example)"] --> B',
+        "flowchart TD\nA-->B; %%{init: {}}%%",
     ],
 )
 def test_scribe_rejects_click_and_init_directives(code: str) -> None:
@@ -56,3 +65,16 @@ def test_size_limits() -> None:
     label = "x" * (MAX_LABEL_CHARS + 1)
     assert any("libellé" in p for p in mermaid_problems(f'flowchart TD\nA["{label}"] --> B'))
     assert mermaid_problems(f'flowchart TD\nA["{"x" * MAX_LABEL_CHARS}"] --> B') == []
+
+
+def test_edge_labels_are_not_counted_as_nodes() -> None:
+    edges = "\n".join(f"N{i} -- relie --> N{i + 1}" for i in range(MAX_NODES - 1))
+    assert mermaid_problems(f"flowchart TD\n{edges}") == []  # 40 nœuds, libellés à part
+    assert mermaid_problems("flowchart LR\nA == mène à ==> B\nB -. puis .-> C") == []
+
+
+def test_statements_after_a_semicolon_are_checked_like_lines() -> None:
+    assert mermaid_problems("flowchart TD\nA-->B; B-->C") == []
+    label = "x" * (MAX_LABEL_CHARS + 1)
+    assert mermaid_problems(f'flowchart TD\nA-->B; C["{label}"]')
+    assert mermaid_problems('flowchart TD\nA["a ; click B"] --> B') == []  # dans un libellé

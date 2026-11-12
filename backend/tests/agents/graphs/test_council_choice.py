@@ -67,6 +67,24 @@ async def test_another_round_returns_to_debate_then_new_batch(
     assert [choice.proposal_ids for choice in c.store.choices] == [(ids[2],)]
 
 
+async def test_commands_sent_while_choosing_do_not_change_the_new_round(
+    make_council_runner: MakeCouncil,
+) -> None:
+    # Revue 4.4 : « Passer aux propositions » et « Relancer un tour » envoyés pendant l'attente du
+    # choix, puis « autre tour » : un seul tour de plus, joué en entier ; le texte reste lu.
+    c = await make_council_runner()
+    first = await c.to_choice()
+    await c.post_message("", "to_proposals")
+    await c.post_message("", "another_round")
+    await c.post_message("Plus de pratique, merci")
+    await c.resume("another_round")
+    await c.wait_choice(after=first)
+    third_round = await c.agent_messages(step_prefix="tour-3")
+    assert len(third_round) == 4 and await c.agent_messages(step_prefix="tour-4") == []
+    assert "Plus de pratique" in c.prompt_of(third_round[0])
+    assert list(c.store.batches) == [(c.sid, 1), (c.sid, 2)]
+
+
 async def test_invalid_choice_asks_again(make_council_runner: MakeCouncil) -> None:
     c = await make_council_runner()
     first = await c.to_choice()
@@ -116,6 +134,30 @@ async def test_council_replay_does_not_duplicate_boards_or_proposals(
     assert len(second.store.boards) == boards_before_restart + expected_rest
     assert len(second.store.batches) == 1 and len(second.store.attached) == 2
     assert len(await second.events("proposal.ready")) == 2  # `propose` n'est pas rejoué
+
+
+async def test_replayed_propose_reads_the_saved_batch(make_council_runner: MakeCouncil) -> None:
+    # Arrêt du back juste après l'écriture du lot : `propose` rejoué relit le lot enregistré
+    # (noms et détails ensemble) au lieu de rappeler le Stratège (revue 4.4, Minor 3).
+    models = CouncilModels()
+    first_batch = [proposal("Premier A"), proposal("Premier B")]
+    first_batch[0]["promise"] = "Promesse propre au premier lot."
+    models.when("strategist", "Propose les parcours.", json.dumps({"proposals": first_batch}))
+    first = await make_council_runner(models=models)
+    first.store.block_after_proposals = True
+    await first.wait_question("framing")
+    await first.resume("go")
+    await wait_until(lambda: first.store.proposals_calls == 1)
+    await first.runner.shutdown()
+    first.store.block_after_proposals = False
+    second = await make_council_runner(sid=first.sid)
+    assert await second.runner.recover_on_startup() == [first.sid]
+    await second.wait_choice()
+    assert not any("Propose les parcours." in call.prompt for call in second.models.calls)
+    assert [r["title"] for r in await second.events("proposal.ready")] == ["Premier A", "Premier B"]
+    timeline = next(call.prompt for call in second.models.calls if "Nom : Premier A" in call.prompt)
+    assert "Promesse propre au premier lot." in timeline
+    assert second.store.proposals_calls == 1 and len(second.store.batches) == 1
 
 
 async def test_token_cap_fails_council_readably(make_council_runner: MakeCouncil) -> None:

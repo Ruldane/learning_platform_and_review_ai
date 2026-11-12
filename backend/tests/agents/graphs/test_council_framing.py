@@ -9,7 +9,7 @@ import logging
 import pytest
 
 from app.agents.nodes.moderator import framing_answers, research_query
-from app.agents.nodes.scout.people import _url_key
+from app.agents.nodes.scout.people import PeopleFound, PersonModel, _url_key, _vetted
 from app.agents.tools.web_port import PersonFound
 from app.features.research.repository import SourceRepository
 from tests.agents.graphs.council_models import URLS, CouncilModels
@@ -233,3 +233,18 @@ def test_url_key_folds_scheme_and_host_only() -> None:
     assert _url_key("HTTPS://Site.Exemple.org/Doc/") == _url_key("https://site.exemple.org/Doc")
     assert _url_key("https://site.exemple.org/Doc") != _url_key("https://site.exemple.org/doc")
     assert _url_key("https://a.org/p?Q=1#frag") == "https://a.org/p?Q=1"
+
+
+def test_malformed_person_url_is_ignored_without_failing() -> None:
+    # Revue 4.4 (contrôleur) : `urlsplit` lève `ValueError` sur `http://[abc` ; l'adresse est
+    # ignorée, et la personne écartée si elle n'en a pas d'autre connue de la session.
+    assert _url_key("http://[abc") is None
+    known = {_url_key(ADA_URL): ADA_URL}
+    found = PeopleFound(
+        people=[
+            PersonModel(name="Ada Lovelace", role="Ingénieure", urls=["http://[abc", ADA_URL]),
+            PersonModel(name="Personne", role="Inconnue", urls=["http://[abc"]),
+        ]
+    )
+    kept = _vetted(found, {k: v for k, v in known.items() if k is not None})
+    assert [p.name for p in kept] == ["Ada Lovelace"] and kept[0].url == ADA_URL

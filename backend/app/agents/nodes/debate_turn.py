@@ -22,6 +22,7 @@ from app.agents.nodes.council_rules import (
     citation_entries,
     goal_vars,
     notes_prompt,
+    people_prompt,
     transcript_prompt,
 )
 from app.agents.prompts.loader import render_prompt
@@ -94,6 +95,7 @@ def _prompt(state: CouncilState, agent: str, *, first: bool, max_words: int) -> 
         round=state["round"],
         first=first,
         catalog=catalog_prompt(state.get("catalog", [])),
+        people=people_prompt(state),
         transcript=transcript_prompt(state.get("turns", [])),
         notes=notes_prompt(state.get("round_notes", [])),
         angle=state.get("angle"),
