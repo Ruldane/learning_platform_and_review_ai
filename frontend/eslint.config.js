@@ -67,7 +67,14 @@ const boundaryPolicies = [
 
 export default tseslint.config(
   {
-    ignores: ["dist", "node_modules", "coverage", "src/shared/api/schema.d.ts"],
+    ignores: [
+      "dist",
+      "node_modules",
+      "coverage",
+      "playwright-report",
+      "test-results",
+      "src/shared/api/schema.d.ts",
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -93,6 +100,12 @@ export default tseslint.config(
   {
     // Les blocs `describe` regroupent tous les cas d'un fichier : ils dépassent 50 lignes.
     files: ["**/*.test.{ts,tsx}"],
+    rules: { "max-lines-per-function": "off" },
+  },
+  {
+    // Parcours de bout en bout (Playwright) : hors de `src`, donc hors des règles de feature ; un
+    // parcours se lit d'un bout à l'autre et ses étapes dépassent 50 lignes.
+    files: ["e2e/**/*.ts", "playwright.config.ts"],
     rules: { "max-lines-per-function": "off" },
   },
   {

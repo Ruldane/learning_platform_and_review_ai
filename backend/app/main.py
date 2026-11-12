@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import OperationalError
 
+from app.agents.runtime.deps import ChatModelSource
 from app.agents.runtime.launcher import SessionLauncher
 from app.agents.runtime.lifespan import agent_runtime
 from app.agents.runtime.openapi import register_event_schemas
@@ -163,11 +164,13 @@ async def _open_agents(app: FastAPI, stack: AsyncExitStack) -> None:
     app.state.program = ProgramRuntime(
         app.state.session_factory, app.state.memory, lessons=app.state.lessons
     )
+    # Modèles injectés (parcours de bout en bout, tests), sinon la fabrique réelle.
+    models: ChatModelSource = app.state.injected_chat_models or app.state.providers.llm_factory
     app.state.runtime = await stack.enter_async_context(
         agent_runtime(
             app.state.settings,
             app.state.session_factory,
-            app.state.providers.llm_factory,
+            models,
             model_prices(),
             run_settings_source(app.state.session_factory),
             ports=agent_ports(
@@ -197,11 +200,13 @@ def create_app(
     memory_providers: MemoryProviders | None = None,
     research_providers: ResearchProviders | None = None,
     publishing_providers: PublishingProviders | None = None,
+    chat_models: ChatModelSource | None = None,
 ) -> FastAPI:
     """Construit l'application. `settings` prime toujours sur le cache `get_settings()` ;
     `memory_providers` remplace la composition réelle d'Ollama et de Qdrant,
     `research_providers` celle de SearXNG et de Brave, `publishing_providers` celle du rendu
-    PDF de Gotenberg (tests)."""
+    PDF de Gotenberg, `chat_models` la fabrique des modèles des agents (tests, parcours de bout
+    en bout)."""
     settings = settings if settings is not None else get_settings()
     app = FastAPI(
         title="Tremplin",
@@ -214,6 +219,7 @@ def create_app(
     app.state.injected_memory_providers = memory_providers
     app.state.injected_research_providers = research_providers
     app.state.injected_publishing_providers = publishing_providers
+    app.state.injected_chat_models = chat_models
     # Ordre important : le dernier middleware ajouté est le plus externe. Les erreurs sont
     # enregistrées d'abord pour que leur 500 traverse CORS (voir `UnexpectedErrorMiddleware`).
     register_error_handlers(app)
