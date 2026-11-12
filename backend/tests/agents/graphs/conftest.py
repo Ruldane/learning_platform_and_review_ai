@@ -24,6 +24,7 @@ from app.providers.search.fake import FakeSearch
 from tests.agents.graphs.council_support import make_council_runner  # noqa: F401
 from tests.agents.graphs.lesson_support import make_lesson_runner  # noqa: F401
 from tests.agents.graphs.program_support import make_builder_runner  # noqa: F401
+from tests.agents.graphs.quiz_support import make_quiz_runner, quiz_store  # noqa: F401
 from tests.agents.graphs.web_support import MakeWeb, Web, add_users, research_runtime
 from tests.agents.runtime.conftest import emitted  # noqa: F401  (fixture partagée)
 from tests.agents.runtime.runner_helpers import fake_llm_with_provider

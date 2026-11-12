@@ -16,6 +16,7 @@ from app.agents.runtime.prose import ShortenToMax
 from app.agents.tools.council_port import ProposalDraft
 from app.agents.tools.lesson_port import ResourcePick
 from app.agents.tools.plan_schema import SkillDraft, TaskDraft, WeekDraft
+from app.agents.tools.quiz_port import GradeDraft, QuestionDraft, QuizDraft
 
 
 def _shortens(model: type[BaseModel], name: str) -> bool:
@@ -43,6 +44,10 @@ def _shortens(model: type[BaseModel], name: str) -> bool:
         (FramingQuestionModel, "question"),
         (PersonModel, "role"),
         (Concept, "summary"),
+        (QuestionDraft, "expected"),
+        (QuestionDraft, "rubric"),
+        (QuestionDraft, "explanation"),
+        (GradeDraft, "feedback"),
     ],
 )
 def test_free_text_fields_are_shortened(model: type[BaseModel], name: str) -> None:
@@ -59,6 +64,12 @@ def test_free_text_fields_are_shortened(model: type[BaseModel], name: str) -> No
         (PlannedQuery, "text"),
         (ProposalDraft, "name"),
         (ProposalDraft, "skills"),
+        (QuestionDraft, "prompt"),
+        (QuestionDraft, "choices"),
+        (QuestionDraft, "code"),
+        (QuestionDraft, "skill"),
+        (QuizDraft, "title"),
+        (GradeDraft, "ref"),
     ],
 )
 def test_identifiers_names_and_code_stay_strict(model: type[BaseModel], name: str) -> None:

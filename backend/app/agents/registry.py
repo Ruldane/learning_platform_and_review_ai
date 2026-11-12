@@ -27,6 +27,7 @@ AGENTS: dict[str, AgentSpec] = {
         AgentSpec(name="scribe", tier="rapide"),  # Scribe : tableau et compte rendu
         AgentSpec(name="writer", tier="fort"),  # Rédacteur : la leçon d'un module
         AgentSpec(name="verifier", tier="standard"),  # Vérificateur : structure, faits, liens
+        AgentSpec(name="examiner", tier="standard"),  # Examinateur : quiz d'un module, notes
     )
 }
 
