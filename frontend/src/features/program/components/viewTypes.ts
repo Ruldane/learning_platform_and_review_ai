@@ -54,7 +54,8 @@ export interface PlanDiffTask {
   id: string;
   title: string;
   moduleTitle: string;
-  plannedDate: string;
+  /** Jour prévu ; `null` quand il n'est plus connu (tâche retirée). */
+  plannedDate: string | null;
 }
 
 export interface PlanDiffMove {

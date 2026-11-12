@@ -55,7 +55,8 @@ export function WeekCalendar({ week, editable, onMoveTask }: WeekCalendarProps) 
       <div
         role="group"
         aria-label={t("program.calendar.label", { rank: week.rank })}
-        className="grid grid-cols-7 items-start gap-1.5"
+        tabIndex={0}
+        className="grid grid-cols-[repeat(7,minmax(8.5rem,1fr))] items-start gap-1.5 overflow-x-auto pb-2 focus-visible:outline-2 focus-visible:outline-ring"
       >
         {week.days.map((day) => (
           <DayColumn

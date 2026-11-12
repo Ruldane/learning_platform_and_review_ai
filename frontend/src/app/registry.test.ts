@@ -15,6 +15,9 @@ describe("registre des features", () => {
     expect(groups[1]?.items.map((item) => item.path)).toEqual([
       "/apprendre/objectifs",
       "/apprendre/conseil",
+      "/apprendre/programme",
+      "/apprendre/lecons",
+      "/apprendre/bibliotheque",
     ]);
     expect(groups[2]?.items.map((item) => item.path)).toEqual([
       "/memoire",

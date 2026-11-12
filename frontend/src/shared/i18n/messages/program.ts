@@ -1,5 +1,64 @@
 /** Textes du programme : semaine, calendrier, liste, changements et avancement. */
 export const program = {
+  nav: { program: "Programme" },
+  page: {
+    loading: "Chargement du programme…",
+    status: { draft: "Brouillon", validated: "Validé" },
+    version: "Version {version}",
+    start: "Début le {date}",
+    indexLoading: "Recherche de ton programme…",
+    indexEmptyTitle: "Pas encore de programme",
+    indexEmptyDescription:
+      "Le programme naît du Conseil : choisis un parcours et le Stratège le bâtit semaine par semaine.",
+    indexEmptyAction: "Ouvrir le Conseil",
+  },
+  views: {
+    label: "Vues du programme",
+    week: "Semaine",
+    list: "Liste",
+    progress: "Avancement",
+  },
+  weekPicker: {
+    label: "Semaine affichée",
+    previous: "Semaine précédente",
+    next: "Semaine suivante",
+    option: "Semaine {rank} : {theme}",
+  },
+  exports: {
+    label: "Exports",
+    pdf: "Exporter en PDF",
+    ics: "Exporter le calendrier (.ics)",
+  },
+  validation: {
+    label: "Validation du programme",
+    intro:
+      "Déplace, supprime ou ajoute des tâches dans le calendrier, puis valide le programme ou demande une révision.",
+    introNoSession: "Relis le programme et valide-le quand il te convient.",
+    validate: "Valider le programme",
+    validated: "Programme validé",
+    validatedHint:
+      "Tu peux encore replanifier tes tâches. Les leçons se préparent en tâche de fond.",
+    working: "Le Stratège met à jour le programme…",
+    workingHint: "Cette page se met à jour toute seule.",
+    revise: "Demander une révision",
+    noteLabel: "Ce qu'il faut revoir",
+    noteRequired: "Dis ce qu'il faut revoir.",
+    send: "Envoyer la demande",
+    cancel: "Annuler",
+    notWaiting:
+      "Le programme n'attend pas de validation pour l'instant (session : {status}). L'état a été relu.",
+    notWaitingUnknown: "Le programme n'attend pas de validation pour l'instant. L'état a été relu.",
+    stale: "Cette question a déjà reçu une réponse. L'état a été relu.",
+    sessionFailed:
+      "La session du Stratège s'est arrêtée avant la fin. Tu peux quand même valider le programme tel qu'il est.",
+  },
+  changes: { heading: "Changements de la dernière version" },
+  lessons: {
+    heading: "Leçons du programme",
+    open: "Ouvrir la leçon",
+    waiting: "Pas encore de leçon pour ce module.",
+    link: "{module} : {status}",
+  },
   taskType: {
     lire: "Lire",
     regarder: "Regarder",
@@ -63,6 +122,7 @@ export const program = {
     dayPlaceholder: "Choisir un jour",
     weekGroup: "Semaine {rank} : {theme}",
     submit: "Ajouter la tâche",
+    noModule: "Aucun module du programme ne peut accueillir cette tâche.",
     errors: {
       title: "Donne un titre à la tâche.",
       minutes: "La durée doit être un nombre entier de 15 à 120 minutes.",

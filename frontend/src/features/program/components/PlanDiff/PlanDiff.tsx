@@ -14,7 +14,9 @@ function plannedEntry(task: PlanDiffTask) {
       key={task.id}
       title={task.title}
       moduleTitle={task.moduleTitle}
-      detail={t("program.diff.plannedOn", { day: shortDay(task.plannedDate) })}
+      detail={
+        task.plannedDate ? t("program.diff.plannedOn", { day: shortDay(task.plannedDate) }) : null
+      }
     />
   );
 }
