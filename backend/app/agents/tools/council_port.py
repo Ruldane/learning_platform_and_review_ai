@@ -15,10 +15,11 @@ from typing import Annotated, Literal, Protocol
 from pydantic import BaseModel, Field
 
 from app.agents.runtime.payloads import BoardKind
+from app.agents.runtime.prose import Prose, ShortenToMax
 from app.core.errors import AppError
 
 _Item = Annotated[str, Field(min_length=1, max_length=120)]
-_Tradeoff = Annotated[str, Field(min_length=1, max_length=300)]
+_Tradeoff = Annotated[str, Field(min_length=1, max_length=300), ShortenToMax()]
 
 
 @dataclass(frozen=True)
@@ -43,11 +44,11 @@ class ProposalDraft(BaseModel):
     """Un parcours proposé (SPEC 3.1, étape 5) : sortie structurée du Stratège (tâche 4.4)."""
 
     name: str = Field(min_length=3, max_length=80)
-    promise: str = Field(min_length=10, max_length=300)
+    promise: Prose = Field(min_length=10, max_length=300)
     duration_weeks: int = Field(ge=1, le=52)
     weekly_hours: int = Field(ge=1, le=40)
     skills: list[_Item] = Field(min_length=1, max_length=15)
-    final_project: str = Field(min_length=10, max_length=400)
+    final_project: Prose = Field(min_length=10, max_length=400)
     tradeoffs: list[_Tradeoff] = Field(min_length=1, max_length=5)
 
 

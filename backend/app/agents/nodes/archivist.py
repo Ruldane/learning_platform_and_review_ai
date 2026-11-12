@@ -11,6 +11,7 @@ from app.agents.registry import get_agent
 from app.agents.runtime.deps import GraphDeps
 from app.agents.runtime.emit import emit
 from app.agents.runtime.invoke import node_timeout
+from app.agents.runtime.prose import Prose
 from app.agents.runtime.structured import structured_call
 from app.agents.state.learned_document import LearnedDocumentState
 from app.agents.tools.memory_port import AgentWrite
@@ -31,7 +32,7 @@ class Node(Protocol):
 
 class Concept(BaseModel):
     title: str = Field(min_length=1, max_length=120)
-    summary: str = Field(min_length=1, max_length=400)
+    summary: Prose = Field(min_length=1, max_length=400)
     tags: list[str] = Field(default_factory=list, max_length=5)
 
 

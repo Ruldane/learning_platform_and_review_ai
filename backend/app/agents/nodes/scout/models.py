@@ -6,6 +6,7 @@ from typing import Any, Protocol
 
 from pydantic import BaseModel, Field
 
+from app.agents.runtime.prose import Prose
 from app.agents.state.web_research import WebResearchState
 
 AGENT = "scout"
@@ -42,8 +43,8 @@ class SourceScore(BaseModel):
     depth: int = Field(ge=0, le=20)
     author: int = Field(ge=0, le=15)
     pedagogy: int = Field(ge=0, le=15)
-    reason: str = Field(min_length=1, max_length=300)
-    summary: str = Field(min_length=1, max_length=600)
+    reason: Prose = Field(min_length=1, max_length=300)
+    summary: Prose = Field(min_length=1, max_length=600)
 
     @property
     def total(self) -> int:

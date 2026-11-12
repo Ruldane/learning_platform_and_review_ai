@@ -28,6 +28,7 @@ from app.agents.prompts.loader import render_prompt
 from app.agents.registry import get_agent
 from app.agents.runtime.deps import GraphDeps
 from app.agents.runtime.invoke import node_timeout
+from app.agents.runtime.prose import Prose
 from app.agents.runtime.structured import structured_call
 from app.agents.state.learning_council import CouncilState
 from app.agents.tools.council_port import FramingQuestion, GoalBrief
@@ -40,7 +41,7 @@ GO = {"value": "go", "label": "Lancer la recherche"}
 
 
 class FramingQuestionModel(BaseModel):
-    question: str = Field(min_length=5, max_length=300)
+    question: Prose = Field(min_length=5, max_length=300)
 
 
 class FramingPlan(BaseModel):

@@ -12,6 +12,7 @@ from typing import Protocol
 
 from pydantic import BaseModel, Field
 
+from app.agents.runtime.prose import Prose
 from app.core.errors import AppError
 from app.db.models.lessons import ResourceLevel, ResourceType
 
@@ -43,7 +44,7 @@ class ResourcePick(BaseModel):
     type: ResourceType
     duration_minutes: int = Field(ge=1, le=600)
     level: ResourceLevel
-    reason: str = Field(min_length=5, max_length=200)
+    reason: Prose = Field(min_length=5, max_length=200)
 
 
 class ResourcePicks(BaseModel):

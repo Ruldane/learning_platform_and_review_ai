@@ -20,6 +20,7 @@ from app.agents.registry import get_agent
 from app.agents.runtime.deps import GraphDeps
 from app.agents.runtime.emit import emit
 from app.agents.runtime.invoke import node_timeout
+from app.agents.runtime.prose import Prose
 from app.agents.runtime.structured import structured_call
 from app.agents.state.learning_council import CouncilState
 from app.agents.tools.web_port import PersonFound
@@ -37,7 +38,7 @@ class Node(Protocol):
 
 class PersonModel(BaseModel):
     name: str = Field(min_length=2, max_length=120)
-    role: str = Field(min_length=2, max_length=200)
+    role: Prose = Field(min_length=2, max_length=200)
     urls: list[str] = Field(min_length=1, max_length=3)
 
 

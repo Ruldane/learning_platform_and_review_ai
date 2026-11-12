@@ -1,9 +1,13 @@
+import json
+import logging
 from typing import Any
 
 import pytest
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel
 
+from app.agents.nodes.moderator_rounds import RoundPlan, RoundReview
+from app.agents.nodes.scout.models import SourceScore
 from app.agents.runtime.structured import extract_json_object, structured_call
 from app.core.errors import AppError
 from tests.agents.runtime.fakes import FlakyModel, fake_model
@@ -85,3 +89,62 @@ async def test_structured_call_propagates_non_transient_errors() -> None:
 )
 def test_extract_json_object(text: str, expected: dict[str, Any] | None) -> None:
     assert extract_json_object(text) == expected
+
+
+async def test_structured_call_logs_each_failed_attempt_without_any_value(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    caplog.set_level(logging.WARNING, logger="app")
+    model, _ = fake_model(["pas du json secret", '{"title": 31415}', '{"title": "Plan"}'])
+    await structured_call(model, Title, [HumanMessage("x")], **{**ARGS, "agent": "moderator"})
+    warnings = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
+    assert len(warnings) == 2
+    assert all("moderator" in w and "étape s" in w for w in warnings)
+    assert "essai 1/3" in warnings[0] and "aucun objet JSON" in warnings[0]
+    assert "essai 2/3" in warnings[1] and "title : Input should be a valid string" in warnings[1]
+    assert "secret" not in caplog.text and "31415" not in caplog.text
+
+
+def _summary(chars: int) -> str:
+    """Résumé neutre en phrases françaises, de `chars` caractères exactement."""
+    sentence = "Le Conseil converge vers un projet guidé dès la semaine 1, avec un test de recul. "
+    return (sentence * (chars // len(sentence) + 1))[:chars]
+
+
+async def test_round_review_with_the_too_long_summary_seen_from_glm_passes_first_time() -> None:
+    # Réponse type relevée en réel (GLM 5.3 flash, bilan du tour 2) : `summary` de 536 caractères
+    # pour un plafond de 400 ; neuf essais sur dix dépassaient (diagnostic D97).
+    summary = _summary(536)
+    model, provider = fake_model([json.dumps({"stable": True, "summary": summary})])
+    review = await structured_call(model, RoundReview, [HumanMessage("x")], **ARGS)
+    assert review.stable is True
+    assert 0 < len(review.summary) <= 400 and summary.startswith(review.summary.rstrip("…"))
+    assert len(provider.received) == 1
+
+
+async def test_source_score_with_the_too_long_texts_seen_from_glm_passes_first_time() -> None:
+    # Réponse type relevée en réel : `reason` de 302 caractères (plafond 300), `summary` de 701
+    # (plafond 600), notes dans le barème.
+    reply = {
+        "authority": 12,
+        "freshness": 17,
+        "depth": 14,
+        "author": 5,
+        "pedagogy": 13,
+        "reason": _summary(302),
+        "summary": _summary(701),
+    }
+    model, provider = fake_model([json.dumps(reply)])
+    score = await structured_call(model, SourceScore, [HumanMessage("x")], **ARGS)
+    assert score.total == 61
+    assert len(score.reason) <= 300 and len(score.summary) <= 600
+    assert len(provider.received) == 1
+
+
+async def test_round_plan_out_of_schema_is_still_refused() -> None:
+    # Raccourcir ne vaut que pour le texte libre : un ordre de parole faux est toujours refusé.
+    bad = json.dumps({"order": ["skeptic", "skeptic", "scout", "strategist"], "intent": "Q ?"})
+    model, provider = fake_model([bad] * 3)
+    with pytest.raises(AppError):
+        await structured_call(model, RoundPlan, [HumanMessage("x")], **ARGS)
+    assert len(provider.received) == 3

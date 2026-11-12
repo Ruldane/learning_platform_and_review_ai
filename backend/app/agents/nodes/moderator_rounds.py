@@ -25,6 +25,7 @@ from app.agents.registry import get_agent
 from app.agents.runtime.deps import GraphDeps
 from app.agents.runtime.emit import emit
 from app.agents.runtime.invoke import node_timeout
+from app.agents.runtime.prose import Prose
 from app.agents.runtime.structured import structured_call
 from app.agents.state.learning_council import CouncilState
 
@@ -33,7 +34,7 @@ AGENT = "moderator"
 
 class RoundPlan(BaseModel):
     order: list[Debater] = Field(min_length=len(DEBATERS), max_length=len(DEBATERS))
-    intent: str = Field(min_length=1, max_length=200)
+    intent: Prose = Field(min_length=1, max_length=200)
 
     @field_validator("order")
     @classmethod
@@ -45,7 +46,7 @@ class RoundPlan(BaseModel):
 
 class RoundReview(BaseModel):
     stable: bool
-    summary: str = Field(min_length=1, max_length=400)
+    summary: Prose = Field(min_length=1, max_length=400)
 
 
 def _round_turns(state: CouncilState, *rounds: int) -> str:

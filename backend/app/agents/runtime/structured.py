@@ -6,6 +6,7 @@ se retente de la même façon partout.
 """
 
 import json
+import logging
 from typing import Any
 
 from langchain_core.language_models import BaseChatModel
@@ -15,6 +16,8 @@ from pydantic import BaseModel, ValidationError
 from app.agents.runtime.emit import emit
 from app.agents.runtime.invoke import call_with_retries, message_text
 from app.core.errors import AppError
+
+logger = logging.getLogger(__name__)
 
 _INSTRUCTIONS = (
     "Réponds uniquement par un objet JSON conforme à ce schéma JSON, sans texte autour ni "
@@ -85,6 +88,15 @@ async def structured_call[T: BaseModel](
         result, problem = _parse(schema, reply)
         if result is not None:
             return result
+        # Champ et motif de pydantic seulement : ni valeur reçue ni contenu (SPEC 17.2).
+        logger.warning(
+            "Sortie structurée refusée : agent %s, étape %s, essai %d/%d, %s",
+            agent,
+            step,
+            attempt + 1,
+            attempts,
+            problem,
+        )
         if attempt < attempts - 1:
             text = message_text(reply)
             if text.strip():  # une réponse vide est refusée par certaines API si on la renvoie

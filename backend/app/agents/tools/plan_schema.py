@@ -9,6 +9,7 @@ from collections.abc import Mapping
 
 from pydantic import BaseModel, Field
 
+from app.agents.runtime.prose import Prose
 from app.db.models.program import TaskType
 from app.db.models.skills import SkillLevel
 
@@ -20,7 +21,7 @@ class TaskDraft(BaseModel):
     title: str = Field(min_length=3, max_length=120)
     type: TaskType
     minutes: int = Field(ge=15, le=120)
-    done_criterion: str = Field(min_length=3, max_length=200)
+    done_criterion: Prose = Field(min_length=3, max_length=200)
 
 
 class ModuleDraft(BaseModel):
@@ -32,8 +33,8 @@ class ModuleDraft(BaseModel):
 
 class WeekDraft(BaseModel):
     theme: str = Field(min_length=3, max_length=120)
-    objective: str = Field(min_length=3, max_length=300)
-    deliverable: str = Field(min_length=3, max_length=300)
+    objective: Prose = Field(min_length=3, max_length=300)
+    deliverable: Prose = Field(min_length=3, max_length=300)
     modules: list[ModuleDraft] = Field(min_length=1, max_length=4)
 
 
