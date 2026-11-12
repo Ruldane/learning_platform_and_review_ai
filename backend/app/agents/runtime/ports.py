@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 from app.agents.tools.council_port import NO_COUNCIL, CouncilStore
 from app.agents.tools.memory_port import NO_MEMORY, MemoryGateway
+from app.agents.tools.program_port import NO_PROGRAM, ProgramStore
 from app.agents.tools.web_port import NO_WEB, WebGateway
 
 
@@ -15,6 +16,7 @@ class AgentPorts:
     memory: MemoryGateway = NO_MEMORY  # mémoire (D68)
     web: WebGateway = NO_WEB  # recherche web (D77)
     council: CouncilStore = NO_COUNCIL  # Conseil d'apprentissage (D84)
+    program: ProgramStore = NO_PROGRAM  # programme du Stratège (D86)
 
 
 NO_PORTS = AgentPorts()

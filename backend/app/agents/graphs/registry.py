@@ -8,7 +8,13 @@ from typing import Any
 from langgraph.graph import StateGraph
 from pydantic import BaseModel
 
-from app.agents.graphs import demo_debate, learned_document, learning_council, web_research
+from app.agents.graphs import (
+    demo_debate,
+    learned_document,
+    learning_council,
+    program_builder,
+    web_research,
+)
 from app.agents.runtime.deps import GraphDeps
 from app.core.errors import AppError
 
@@ -33,6 +39,7 @@ GRAPHS: dict[str, GraphSpec] = {
         GraphSpec(
             "learning_council", learning_council.LearningCouncilInput, learning_council.build
         ),
+        GraphSpec("program_builder", program_builder.ProgramBuilderInput, program_builder.build),
     )
 }
 

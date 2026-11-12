@@ -21,6 +21,7 @@ from app.features.research.service.gateway import AgentWebGateway
 from app.providers.llm.fake import FakeLlmProvider
 from app.providers.search.fake import FakeSearch
 from tests.agents.graphs.council_support import make_council_runner  # noqa: F401
+from tests.agents.graphs.program_support import make_builder_runner  # noqa: F401
 from tests.agents.graphs.web_support import MakeWeb, Web, add_users, research_runtime
 from tests.agents.runtime.conftest import emitted  # noqa: F401  (fixture partagée)
 from tests.agents.runtime.runner_helpers import fake_llm_with_provider
