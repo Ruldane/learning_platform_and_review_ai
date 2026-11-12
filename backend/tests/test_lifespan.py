@@ -11,6 +11,7 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
 from app.agents.runtime.bus import EventBus
+from app.agents.runtime.launcher import SessionLauncher
 from app.agents.runtime.runner import SessionRunner
 from app.bootstrap import agent_ports
 from app.config import Settings
@@ -18,6 +19,8 @@ from app.core.providers import MemoryProviders, ResearchProviders
 from app.core.security import Cipher, KnownSecrets
 from app.db.models.accounts import User
 from app.features.auth.service import AuthService
+from app.features.learning.service.runtime import LearningRuntime
+from app.features.learning.service.store import AgentCouncilStore
 from app.features.memory.service.gateway import AgentMemoryGateway
 from app.features.research.service.gateway import AgentWebGateway
 from app.main import create_app
@@ -211,7 +214,16 @@ async def test_launcher_is_bound_to_the_runner_then_unbound_at_shutdown(
     assert launcher.runner is None
 
 
-def test_agent_ports_compose_memory_and_web() -> None:
-    ports = agent_ports(object(), object())  # type: ignore[arg-type]
+def test_agent_ports_compose_memory_web_and_council() -> None:
+    learning = LearningRuntime(object(), SessionLauncher())  # type: ignore[arg-type]
+    ports = agent_ports(object(), object(), learning=learning)  # type: ignore[arg-type]
     assert isinstance(ports.memory, AgentMemoryGateway)
     assert isinstance(ports.web, AgentWebGateway)
+    assert isinstance(ports.council, AgentCouncilStore)
+
+
+async def test_learning_runtime_shares_the_launcher(settings: Settings, db_engine: object) -> None:
+    app = create_app(settings)
+    async with LifespanManager(app):
+        assert app.state.learning.launcher is app.state.launcher
+        assert app.state.learning.session_factory is app.state.session_factory

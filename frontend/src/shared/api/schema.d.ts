@@ -21,6 +21,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/boards/{board_id}/edits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Edit Board */
+        post: operations["edit_board_api_v1_boards__board_id__edits_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/documents": {
         parameters: {
             query?: never;
@@ -73,6 +90,75 @@ export interface paths {
          * @description « Déjà appris » : l'Archiviste crée des acquis déclarés à partir du document indexé.
          */
         post: operations["mark_learned_api_v1_documents__document_id__learned_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/goals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Goals */
+        get: operations["list_goals_api_v1_goals_get"];
+        put?: never;
+        /** Create Goal */
+        post: operations["create_goal_api_v1_goals_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/goals/{goal_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Goal */
+        get: operations["get_goal_api_v1_goals__goal_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/goals/{goal_id}/boards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Boards */
+        get: operations["list_boards_api_v1_goals__goal_id__boards_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/goals/{goal_id}/proposals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Proposals */
+        get: operations["list_proposals_api_v1_goals__goal_id__proposals_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -238,6 +324,23 @@ export interface paths {
         get: operations["get_stats_api_v1_memory_stats_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/proposals/{proposal_id}/choose": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Choose Proposal */
+        post: operations["choose_proposal_api_v1_proposals__proposal_id__choose_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -680,6 +783,55 @@ export interface components {
              */
             readonly weekly_budget_minutes: number;
         };
+        /**
+         * BoardEdit
+         * @description Scène Excalidraw retouchée par January (`serializeAsJSON`) et sa note, renvoyée aux agents
+         *     comme un message. Corps plafonné à 2 Mio (`main.BOARD_BODY_MAX`).
+         */
+        BoardEdit: {
+            /** Note */
+            note: string;
+            /** Scene */
+            scene: {
+                [key: string]: unknown;
+            };
+        };
+        /** BoardOut */
+        BoardOut: {
+            /**
+             * Author
+             * @enum {string}
+             */
+            author: "scribe" | "user";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Goal Id */
+            goal_id: string;
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "domain_map" | "prerequisites" | "timeline" | "comparison";
+            /** Mermaid */
+            mermaid: string;
+            /** Parent Id */
+            parent_id: string | null;
+            /** Scene */
+            scene: {
+                [key: string]: unknown;
+            } | null;
+            /** Session Id */
+            session_id: string | null;
+            /** Step */
+            step: number;
+            /** Title */
+            title: string;
+        };
         /** BoardUpdateEvent */
         BoardUpdateEvent: {
             /**
@@ -751,6 +903,27 @@ export interface components {
             month: string;
             /** Used */
             used: number;
+        };
+        /** ChooseOut */
+        ChooseOut: {
+            /** Council Session Id */
+            council_session_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "running" | "waiting_user" | "paused" | "completed" | "failed" | "cancelled";
+        };
+        /**
+         * ChooseRequest
+         * @description `mix_with` : seconde proposition du même lot (mélange) ; `start_date` : début souhaité du
+         *     programme (prochain lundi par défaut).
+         */
+        ChooseRequest: {
+            /** Mix With */
+            mix_with?: string | null;
+            /** Start Date */
+            start_date?: string | null;
         };
         /** ChunkOut */
         ChunkOut: {
@@ -869,6 +1042,56 @@ export interface components {
             updated_at: string;
             /** Url */
             url: string | null;
+        };
+        /**
+         * GoalCreate
+         * @description L'objectif saisi par January (SPEC 3.1, étape 1). Une échéance passée est refusée (422,
+         *     chemin du champ seulement, jamais la saisie).
+         */
+        GoalCreate: {
+            /** Deadline */
+            deadline?: string | null;
+            /** Target Role */
+            target_role?: string | null;
+            /** Text */
+            text: string;
+            /** Weekly Hours */
+            weekly_hours?: number | null;
+        };
+        /** GoalOut */
+        GoalOut: {
+            /** Council Session Id */
+            council_session_id: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Deadline */
+            deadline: string | null;
+            /** Id */
+            id: string;
+            /** Program Id */
+            program_id: string | null;
+            /** Program Session Id */
+            program_session_id: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "council" | "chosen" | "planned";
+            /** Target Role */
+            target_role: string | null;
+            /** Text */
+            text: string;
+            /** Weekly Hours */
+            weekly_hours: number | null;
+        };
+        /** GoalStarted */
+        GoalStarted: {
+            goal: components["schemas"]["GoalOut"];
+            /** Session Id */
+            session_id: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -1327,6 +1550,35 @@ export interface components {
             text: string;
             /** Title */
             title?: string | null;
+        };
+        /** ProposalOut */
+        ProposalOut: {
+            /** Batch */
+            batch: number;
+            /** Board Id */
+            board_id: string | null;
+            /** Chosen */
+            chosen: boolean;
+            /** Duration Weeks */
+            duration_weeks: number;
+            /** Final Project */
+            final_project: string;
+            /** Goal Id */
+            goal_id: string;
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Promise */
+            promise: string;
+            /** Rank */
+            rank: number;
+            /** Skills */
+            skills: string[];
+            /** Tradeoffs */
+            tradeoffs: string[];
+            /** Weekly Hours */
+            weekly_hours: number;
         };
         /** ProposalReadyEvent */
         ProposalReadyEvent: {
@@ -1991,6 +2243,41 @@ export interface operations {
             };
         };
     };
+    edit_board_api_v1_boards__board_id__edits_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                board_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BoardEdit"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_documents_api_v1_documents_get: {
         parameters: {
             query?: never;
@@ -2113,6 +2400,152 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LearnedStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_goals_api_v1_goals_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalOut"][];
+                };
+            };
+        };
+    };
+    create_goal_api_v1_goals_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoalCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_goal_api_v1_goals__goal_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_boards_api_v1_goals__goal_id__boards_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_proposals_api_v1_goals__goal_id__proposals_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalOut"][];
                 };
             };
             /** @description Validation Error */
@@ -2456,6 +2889,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StatsOut"];
+                };
+            };
+        };
+    };
+    choose_proposal_api_v1_proposals__proposal_id__choose_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                proposal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChooseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChooseOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

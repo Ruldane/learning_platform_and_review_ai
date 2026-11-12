@@ -29,6 +29,7 @@ from app.core.providers import MemoryProviders, ResearchProviders
 from app.core.security import Cipher, KnownSecrets, load_or_create_secret
 from app.db.engine import create_engine, create_session_factory
 from app.features.auth.service import AuthService
+from app.features.learning.service.runtime import LearningRuntime
 from app.features.memory.service.upload import MAX_UPLOAD_BYTES
 from app.features.registry import FEATURE_ROUTERS
 
@@ -38,6 +39,9 @@ _LOG_LEVEL = "INFO"
 _PROBE_TIMEOUT_SECONDS = 3.0
 # Corps d'un import : le fichier (20 Mo) plus l'enveloppe multipart et les autres champs.
 _UPLOAD_BODY_MAX = MAX_UPLOAD_BYTES + 1024 * 1024
+# Corps d'une retouche du tableau : scène Excalidraw complète (`serializeAsJSON`, `files` peut
+# porter une image) et sa note (D87).
+BOARD_BODY_MAX = 2 * 1024 * 1024
 
 
 async def _ensure_local_user(app: FastAPI) -> None:
@@ -133,9 +137,10 @@ async def _open_agents(app: FastAPI, stack: AsyncExitStack) -> None:
     """Moteur d'agents (bus, runner, checkpointer) sur les ports des features, puis lanceur de
     sessions hors requête (D82). Entré après la mémoire et la recherche, donc fermé avant elles
     (la pile dépile à l'envers) ; reprend les sessions interrompues."""
-    # Le lanceur existe avant les ports (qui pourront le recevoir) ; lié au runner juste après
-    # le moteur, délié avant l'arrêt du moteur.
+    # Le lanceur existe avant les ports (le Conseil le reçoit pour lancer `program_builder`) ;
+    # lié au runner juste après le moteur, délié avant l'arrêt du moteur.
     app.state.launcher = SessionLauncher()
+    app.state.learning = LearningRuntime(app.state.session_factory, app.state.launcher)
     app.state.runtime = await stack.enter_async_context(
         agent_runtime(
             app.state.settings,
@@ -143,7 +148,7 @@ async def _open_agents(app: FastAPI, stack: AsyncExitStack) -> None:
             app.state.providers.llm_factory,
             model_prices(),
             run_settings_source(app.state.session_factory),
-            ports=agent_ports(app.state.memory, app.state.research),
+            ports=agent_ports(app.state.memory, app.state.research, learning=app.state.learning),
         )
     )
     app.state.launcher.bind(app.state.runtime.runner)
@@ -175,6 +180,13 @@ def create_app(
     register_error_handlers(app)
     # Entre la gestion des erreurs et CORS : la 413 traverse CORS (lisible par le navigateur).
     app.add_middleware(BodySizeLimit, path=f"{API_PREFIX}/documents", max_bytes=_UPLOAD_BODY_MAX)
+    app.add_middleware(
+        BodySizeLimit,
+        path=f"{API_PREFIX}/boards",
+        max_bytes=BOARD_BODY_MAX,
+        code="board_too_large",
+        message="Tableau trop volumineux : 2 Mio au maximum.",
+    )
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,

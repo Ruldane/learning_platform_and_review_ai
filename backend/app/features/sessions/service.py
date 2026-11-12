@@ -21,6 +21,17 @@ from app.features.sessions.schemas import (
     StartSessionRequest,
 )
 
+# Les autres features passent par ce service (contrat 2) : requêtes et vue réexportées.
+__all__ = [
+    "MessageRequest",
+    "ResumeRequest",
+    "SessionView",
+    "SessionsService",
+    "find_active_session",
+    "find_latest_session",
+    "to_view",
+]
+
 
 def to_view(row: AgentSession, last_seq: int) -> SessionView:
     pending = row.pending_interrupt
@@ -47,6 +58,16 @@ async def find_active_session(
     """Session la plus récente de `graph` sur cet objet encore ouverte (`running`,
     `waiting_user` ou `paused`), `None` sinon. Lecture pour les autres features (contrat 2)."""
     return await SessionReadRepository(db, user_id).latest_open(
+        graph=graph, subject_type=subject_type, subject_id=subject_id
+    )
+
+
+async def find_latest_session(
+    db: AsyncSession, user_id: str, *, graph: str, subject_type: str, subject_id: str
+) -> str | None:
+    """Session la plus récente de `graph` sur cet objet, quel que soit son statut, `None` s'il
+    n'y en a pas. Lecture pour les autres features (contrat 2)."""
+    return await SessionReadRepository(db, user_id).latest(
         graph=graph, subject_type=subject_type, subject_id=subject_id
     )
 

@@ -24,8 +24,8 @@ class _Progress:
     started: bool = False
 
 
-def _too_large() -> JSONResponse:
-    body = {"error": {"code": TOO_LARGE_CODE, "message": TOO_LARGE_MESSAGE, "details": None}}
+def _too_large(code: str, message: str) -> JSONResponse:
+    body = {"error": {"code": code, "message": message, "details": None}}
     return JSONResponse(status_code=413, content=body)
 
 
@@ -40,12 +40,23 @@ def _declared_length(scope: Scope) -> int | None:
 
 
 class BodySizeLimit:
-    """Requêtes POST sur `path` ou sous `path/` (pas `pathX`)."""
+    """Requêtes POST sur `path` ou sous `path/` (pas `pathX`) ; `code` et `message` : l'erreur
+    413 rendue (par défaut, celle d'un import de fichier)."""
 
-    def __init__(self, app: ASGIApp, *, path: str, max_bytes: int) -> None:
+    def __init__(
+        self,
+        app: ASGIApp,
+        *,
+        path: str,
+        max_bytes: int,
+        code: str = TOO_LARGE_CODE,
+        message: str = TOO_LARGE_MESSAGE,
+    ) -> None:
         self.app = app
         self.path = path
         self.max_bytes = max_bytes
+        self.code = code
+        self.message = message
 
     def _applies(self, scope: Scope) -> bool:
         path = str(scope.get("path", ""))
@@ -61,7 +72,7 @@ class BodySizeLimit:
             return
         declared = _declared_length(scope)
         if declared is not None and declared > self.max_bytes:
-            await _too_large()(scope, receive, send)
+            await _too_large(self.code, self.message)(scope, receive, send)
             return
         progress = _Progress()
 
@@ -87,4 +98,4 @@ class BodySizeLimit:
             if not progress.exceeded or progress.started:
                 raise
         if progress.exceeded and not progress.started:
-            await _too_large()(scope, receive, send)
+            await _too_large(self.code, self.message)(scope, receive, send)

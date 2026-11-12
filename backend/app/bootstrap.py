@@ -17,6 +17,8 @@ from app.config import Settings
 from app.core.providers import MemoryProviders, Providers, ResearchProviders
 from app.core.security import Cipher
 from app.features.health.checks import DatabaseCheck, LlmKeysCheck
+from app.features.learning.service.runtime import LearningRuntime
+from app.features.learning.service.store import AgentCouncilStore
 from app.features.memory.service.gateway import AgentMemoryGateway
 from app.features.memory.service.runtime import MemoryRuntime, memory_runtime
 from app.features.research.service.gateway import AgentWebGateway
@@ -138,10 +140,13 @@ def web_gateway(runtime: ResearchRuntime) -> WebGateway:
     return AgentWebGateway(runtime)
 
 
-def agent_ports(memory: MemoryRuntime, research: ResearchRuntime) -> AgentPorts:
+def agent_ports(
+    memory: MemoryRuntime, research: ResearchRuntime, *, learning: LearningRuntime
+) -> AgentPorts:
     """Tous les ports du moteur d'agents (D82) : un port de plus = un champ d'`AgentPorts` et
-    une ligne ici."""
-    return AgentPorts(memory=memory_gateway(memory), web=web_gateway(research))
+    une ligne ici. Le Conseil (D84) est adapté de la feature `learning` (D87)."""
+    council = AgentCouncilStore(learning.session_factory, learning.launcher, learning)
+    return AgentPorts(memory=memory_gateway(memory), web=web_gateway(research), council=council)
 
 
 def _reader_http() -> httpx.AsyncClient:
