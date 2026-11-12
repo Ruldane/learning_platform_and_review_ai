@@ -39,6 +39,7 @@ from app.agents.runtime.repositories import SessionRepository
 from app.agents.runtime.run_settings import RunSettingsSource
 from app.agents.runtime.stream import translate_chunk
 from app.agents.tools.memory_port import NO_MEMORY, MemoryGateway
+from app.agents.tools.web_port import NO_WEB, WebGateway
 from app.core.errors import AppError
 
 logger = logging.getLogger(__name__)
@@ -63,6 +64,7 @@ class RunContext:
     graphs: Mapping[str, GraphSpec]
     run_settings: RunSettingsSource
     memory: MemoryGateway = NO_MEMORY
+    web: WebGateway = NO_WEB
 
 
 def unknown_graph(name: str) -> AppError:
@@ -153,6 +155,7 @@ class _Run:
             settings,
             ctx.session_factory,
             ctx.memory,
+            ctx.web,
         )
         graph = spec.build(deps).compile(checkpointer=ctx.checkpointer)
         tracker = CostTracker(

@@ -1597,12 +1597,33 @@ export interface components {
             date: string | null;
             /** Lang */
             lang: string | null;
+            /**
+             * Reason
+             * @default null
+             */
+            reason: string | null;
             /** Score */
             score: number | null;
+            /**
+             * Source Id
+             * @default null
+             */
+            source_id: string | null;
+            /**
+             * Status
+             * @default ok
+             * @enum {string}
+             */
+            status: "ok" | "unreadable";
             /** Title */
             title: string;
             /** Url */
             url: string;
+            /**
+             * Verdict
+             * @default null
+             */
+            verdict: ("kept" | "rejected") | null;
         };
         /** SourceOut */
         SourceOut: {

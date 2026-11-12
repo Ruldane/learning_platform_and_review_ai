@@ -11,12 +11,14 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.agents.runtime.costs import ModelPrice, load_prices
 from app.agents.runtime.run_settings import RunSettingsSource
 from app.agents.tools.memory_port import MemoryGateway
+from app.agents.tools.web_port import WebGateway
 from app.config import Settings
 from app.core.providers import MemoryProviders, Providers, ResearchProviders
 from app.core.security import Cipher
 from app.features.health.checks import DatabaseCheck, LlmKeysCheck
 from app.features.memory.service.gateway import AgentMemoryGateway
 from app.features.memory.service.runtime import MemoryRuntime, memory_runtime
+from app.features.research.service.gateway import AgentWebGateway
 from app.features.research.service.runtime import ResearchRuntime
 from app.features.settings.keys_service import DbKeyReader
 from app.features.settings.service import SettingsModelReader, SettingsRunReader
@@ -127,6 +129,12 @@ def memory_gateway(runtime: MemoryRuntime) -> MemoryGateway:
     """Mémoire vue par le moteur d'agents (outils `memory_*`, Archiviste), adaptée du service de la
     feature `memory` : le moteur n'importe aucune feature (contrat 6, D68)."""
     return AgentMemoryGateway(runtime)
+
+
+def web_gateway(runtime: ResearchRuntime) -> WebGateway:
+    """Recherche web vue par le moteur d'agents (outils `web_*`, Éclaireur), adaptée du service de
+    la feature `research` : le moteur n'importe aucune feature (contrat 6, D77)."""
+    return AgentWebGateway(runtime)
 
 
 def _reader_http() -> httpx.AsyncClient:

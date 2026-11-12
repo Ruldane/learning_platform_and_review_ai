@@ -2,6 +2,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -14,9 +15,13 @@ from app.agents.runtime.runner import SessionRunner
 from app.core.providers import MemoryProviders
 from app.features.memory.service.gateway import AgentMemoryGateway
 from app.features.memory.service.runtime import MemoryRuntime, memory_runtime
+from app.features.research.service.gateway import AgentWebGateway
 from app.providers.llm.fake import FakeLlmProvider
+from app.providers.search.fake import FakeSearch
+from tests.agents.graphs.web_support import MakeWeb, Web, add_users, research_runtime
 from tests.agents.runtime.conftest import emitted  # noqa: F401  (fixture partagée)
 from tests.agents.runtime.runner_helpers import fake_llm_with_provider
+from tests.support.memory import FakeWebReader
 
 
 class FixedSettings:
@@ -116,5 +121,61 @@ async def make_learned_runner(
             stack.push_async_callback(bus.aclose)
             stack.push_async_callback(runner.shutdown)
             return Learned(runner, fake, memory, db_session_factory, memory_providers)
+
+        yield make
+
+
+# --- Parcours `web_research` : vraie mémoire et vraie recherche, faux moteurs et faux lecteur ----
+
+
+@pytest.fixture
+async def make_web_runner(
+    tmp_path: Path,
+    db_session_factory: async_sessionmaker[AsyncSession],
+    memory_providers: MemoryProviders,
+    user_id: str,
+    other_user_id: str,
+) -> AsyncIterator[MakeWeb]:
+    """Runner sur le registre RÉEL. Plusieurs appels = plusieurs processus qui se suivent sur la
+    même base, le même `checkpoints.db` et les mêmes faux moteurs. `models` remplace le faux LLM
+    (sinon `replies` le scripte)."""
+    search, reader = FakeSearch("searxng"), FakeWebReader()
+    await add_users(db_session_factory, user_id, other_user_id)
+    research = research_runtime(db_session_factory, search, reader)
+    async with AsyncExitStack() as stack:
+
+        async def make(replies: list[str], *, models: Any = None) -> Web:
+            memory = await stack.enter_async_context(
+                memory_runtime(db_session_factory, memory_providers)
+            )
+            saver = await stack.enter_async_context(open_checkpointer(tmp_path / "checkpoints.db"))
+            bus = EventBus(db_session_factory)
+            fake = None
+            if models is None:
+                models, fake = fake_llm_with_provider(replies)
+            web = Web(
+                None,  # type: ignore[arg-type]
+                fake,
+                memory,
+                db_session_factory,
+                search,
+                reader,
+                research,
+                AgentWebGateway(research),
+                AgentMemoryGateway(memory),
+            )
+            web.runner = SessionRunner(
+                session_factory=db_session_factory,
+                bus=bus,
+                models=models,
+                checkpointer=saver,
+                prices={"modele-test": ModelPrice(1.0, 2.0)},
+                run_settings=FixedSettings(2),
+                memory=web.memory_gateway,
+                web=web.gateway,
+            )
+            stack.push_async_callback(bus.aclose)
+            stack.push_async_callback(web.runner.shutdown)
+            return web
 
         yield make

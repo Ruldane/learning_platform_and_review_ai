@@ -75,6 +75,12 @@ class SourceFoundPayload(BaseModel):
     date: str | None
     lang: str | None
     score: int | None
+    # Compléments de la recherche web (D77) : valeurs par défaut, donc compatibles avec les
+    # événements déjà stockés.
+    source_id: str | None = None  # absent : page sans ligne `sources` (domaine exclu)
+    status: Literal["ok", "unreadable"] = "ok"
+    verdict: Literal["kept", "rejected"] | None = None  # absent : source non notée
+    reason: str | None = None  # raison du verdict, ou de l'illisibilité
 
 
 class BoardUpdatePayload(BaseModel):

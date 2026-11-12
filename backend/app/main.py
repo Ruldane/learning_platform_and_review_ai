@@ -17,6 +17,7 @@ from app.bootstrap import (
     open_memory_runtime,
     open_research_runtime,
     run_settings_source,
+    web_gateway,
 )
 from app.bootstrap import memory_providers as open_memory_providers
 from app.bootstrap import research_providers as open_research_providers
@@ -134,6 +135,7 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
                 model_prices(),
                 run_settings_source(app.state.session_factory),
                 memory=memory_gateway(app.state.memory),
+                web=web_gateway(app.state.research),
             )
         )
         yield

@@ -33,6 +33,7 @@ from app.agents.runtime.execution import RunContext, run_session, unknown_graph
 from app.agents.runtime.repositories import SessionRepository, list_sessions_to_recover
 from app.agents.runtime.run_settings import RunSettingsSource
 from app.agents.tools.memory_port import NO_MEMORY, MemoryGateway
+from app.agents.tools.web_port import NO_WEB, WebGateway
 from app.core.errors import AppError
 from app.db.models.agents import AgentSession
 
@@ -61,11 +62,12 @@ class SessionRunner:
         run_settings: RunSettingsSource,
         graphs: Mapping[str, GraphSpec] = GRAPHS,
         memory: MemoryGateway = NO_MEMORY,
+        web: WebGateway = NO_WEB,
     ) -> None:
         self._db = session_factory
         self._bus = bus
         self._ctx = RunContext(
-            session_factory, bus, models, checkpointer, prices, graphs, run_settings, memory
+            session_factory, bus, models, checkpointer, prices, graphs, run_settings, memory, web
         )
         self._tasks: dict[str, asyncio.Task[None]] = {}
         self._gates: dict[str, _Gate] = {}

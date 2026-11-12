@@ -2864,6 +2864,18 @@
             ],
             "title": "Lang"
           },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Reason"
+          },
           "score": {
             "anyOf": [
               {
@@ -2875,6 +2887,27 @@
             ],
             "title": "Score"
           },
+          "source_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Source Id"
+          },
+          "status": {
+            "default": "ok",
+            "enum": [
+              "ok",
+              "unreadable"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
           "title": {
             "title": "Title",
             "type": "string"
@@ -2882,6 +2915,22 @@
           "url": {
             "title": "Url",
             "type": "string"
+          },
+          "verdict": {
+            "anyOf": [
+              {
+                "enum": [
+                  "kept",
+                  "rejected"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Verdict"
           }
         },
         "required": [
