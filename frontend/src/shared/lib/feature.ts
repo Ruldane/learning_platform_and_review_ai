@@ -1,3 +1,4 @@
+import type { ComponentType } from "react";
 import type { RouteObject } from "react-router";
 import type { MessageKey } from "@/shared/i18n/t";
 
@@ -14,11 +15,22 @@ export interface NavEntry {
 }
 
 /**
- * Ce qu'une feature déclare pour s'intégrer à l'application : ses routes et ses entrées de
- * navigation (plusieurs possibles, éventuellement dans la même section : SPEC 15.1).
+ * Emplacements de la coquille qu'une feature peut occuper sans toucher à la mise en page :
+ * `topbar` est rendu dans la barre du haut, `overlay` dans la mise en page (par-dessus les pages).
+ */
+export interface FeatureShell {
+  topbar?: ComponentType;
+  overlay?: ComponentType;
+}
+
+/**
+ * Ce qu'une feature déclare pour s'intégrer à l'application : ses routes, ses entrées de
+ * navigation (plusieurs possibles, éventuellement dans la même section : SPEC 15.1) et, au besoin,
+ * ses emplacements de coquille.
  */
 export interface FeatureManifest {
   id: string;
   routes: RouteObject[];
   nav?: NavEntry[];
+  shell?: FeatureShell;
 }

@@ -140,7 +140,9 @@ describe("DemoDebatePage : cycle de vie complet", () => {
       .push(...history);
     await expectStatus("En pause");
     expect(screen.queryByRole("button", { name: "Pause" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Plus concret" })).toBeDisabled();
+    // La question répondue reste repliée après le rechargement : plus d'option à cliquer.
+    expect(screen.queryByRole("button", { name: "Plus concret" })).not.toBeInTheDocument();
+    expect(screen.getByText("Réponse envoyée")).toBeInTheDocument();
 
     // 4. Reprise : le Critique rejoue son tour coupé (nouvel id), une seule bulle (I5).
     await user.click(screen.getByRole("button", { name: "Reprendre" }));

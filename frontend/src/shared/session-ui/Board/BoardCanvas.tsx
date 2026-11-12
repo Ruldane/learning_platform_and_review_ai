@@ -36,7 +36,8 @@ export default function BoardCanvas(props: BoardCanvasProps) {
   const { title, elements, files, animate, reducedMotion, readOnly, onReady, onSceneChange } =
     props;
   const { visible, done } = useReveal(elements, { animate, reducedMotion });
-  const settled = useSettled(done);
+  const [changeTick, setChangeTick] = useState(0);
+  const settled = useSettled(done, changeTick);
   const [initial] = useState(visible);
   const [api, setApi] = useState<BoardApi | null>(null);
   const frame = useRef<HTMLDivElement>(null);
@@ -59,7 +60,10 @@ export default function BoardCanvas(props: BoardCanvasProps) {
         initialData={{ elements: initial, files, appState: { viewBackgroundColor: "#ffffff" } }}
         viewModeEnabled={readOnly || !settled}
         onChange={(current) => {
-          if (settled || done) onSceneChange(current as readonly SceneElementLike[], !settled);
+          if (!settled && !done) return;
+          onSceneChange(current as readonly SceneElementLike[], !settled);
+          // Un changement avant le calme relance l'attente : c'est un ajustement d'Excalidraw.
+          if (!settled) setChangeTick((tick) => tick + 1);
         }}
         langCode="fr-FR"
         UIOptions={{

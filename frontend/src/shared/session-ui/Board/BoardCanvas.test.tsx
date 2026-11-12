@@ -2,7 +2,7 @@ import { act, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import BoardCanvas from "./BoardCanvas";
 import { REFIT_DELAY_MS } from "./useRefitOnShow";
-import { SETTLE_MS } from "./useSettled";
+import { QUIET_MS } from "./useSettled";
 import { fake, fakeApi, lastSceneIds, resetExcalidrawMock } from "./excalidrawMock";
 
 vi.mock("@excalidraw/excalidraw", async () => (await import("./excalidrawMock")).module);
@@ -97,10 +97,22 @@ describe("BoardCanvas", () => {
     expect(screen.getByTestId("excalidraw")).toHaveAttribute("data-view-mode", "true");
     act(() => fake.props?.onChange?.(elements, {}, {}));
     expect(onSceneChange).toHaveBeenLastCalledWith(elements, true);
-    await act(() => vi.advanceTimersByTimeAsync(SETTLE_MS));
+    await act(() => vi.advanceTimersByTimeAsync(QUIET_MS));
     expect(screen.getByTestId("excalidraw")).toHaveAttribute("data-view-mode", "false");
     act(() => fake.props?.onChange?.(elements, {}, {}));
     expect(onSceneChange).toHaveBeenLastCalledWith(elements, false);
+  });
+
+  it("restarts the quiet window on each change of Excalidraw, which becomes the reference", async () => {
+    const onSceneChange = vi.fn();
+    render(canvas({ animate: false, onSceneChange }));
+    await act(() => vi.advanceTimersByTimeAsync(200));
+    act(() => fake.props?.onChange?.(elements, {}, {}));
+    expect(onSceneChange).toHaveBeenLastCalledWith(elements, true);
+    await act(() => vi.advanceTimersByTimeAsync(QUIET_MS - 1));
+    expect(screen.getByTestId("excalidraw")).toHaveAttribute("data-view-mode", "true");
+    await act(() => vi.advanceTimersByTimeAsync(1));
+    expect(screen.getByTestId("excalidraw")).toHaveAttribute("data-view-mode", "false");
   });
 
   it("passes nothing on while the elements are still appearing", async () => {

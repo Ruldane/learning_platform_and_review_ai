@@ -1,6 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import type { PlanDiffView } from "../viewTypes";
+import type { PlanDiffView } from "./types";
 import { PlanDiff } from "./PlanDiff";
 
 const DIFF: PlanDiffView = {

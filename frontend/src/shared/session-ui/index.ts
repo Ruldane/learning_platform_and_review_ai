@@ -11,6 +11,8 @@ export { FreeTextAnswer } from "./FreeTextAnswer";
 export { InterruptCard } from "./InterruptCard";
 export { MermaidSvg } from "./MermaidSvg";
 export { MessageComposer } from "./MessageComposer";
+export { PlanDiff } from "./PlanDiff";
+export type { PlanDiffMove, PlanDiffTask, PlanDiffView } from "./PlanDiff";
 export { SessionControls } from "./SessionControls";
 export { SessionStatusBar } from "./SessionStatusBar";
 export { ToolChip } from "./ToolChip";

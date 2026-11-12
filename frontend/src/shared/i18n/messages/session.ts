@@ -1,4 +1,4 @@
-/** Textes d'une session d'agents : flux, erreurs d'action, statut, coût, fil, contrôles. */
+/** Textes d'une session d'agents : flux, erreurs d'action, statut, coût, fil, contrôles, diff. */
 export const session = {
   stream: {
     not_found: "Cette session est introuvable.",
@@ -61,6 +61,16 @@ export const session = {
     answer: "Répondre",
     answered: "Réponse envoyée",
     required: "obligatoire",
+  },
+  diff: {
+    label: "Changements du programme",
+    empty: "Aucun changement.",
+    added: "Ajoutées",
+    removed: "Retirées",
+    moved: "Déplacées",
+    movedRange: "{from} → {to}",
+    plannedOn: "prévue {day}",
+    module: "Module : {module}",
   },
   controls: {
     label: "Contrôles de la session",

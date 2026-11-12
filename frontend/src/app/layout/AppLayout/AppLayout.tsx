@@ -4,6 +4,7 @@ import { cn } from "@/shared/lib/utils";
 import { buildNav } from "../../buildNav";
 import { FEATURES } from "../../registry";
 import { HealthStatus } from "../HealthStatus";
+import { ShellSlots } from "../Shell";
 import { Sidebar } from "../Sidebar";
 import { Topbar } from "../Topbar";
 
@@ -14,7 +15,10 @@ function useWidePage(): boolean {
   return useMatches().some((match) => (match.handle as { wide?: boolean } | undefined)?.wide);
 }
 
-/** Coquille : lien d'évitement, navigation latérale, barre du haut (voyant de santé) et contenu. */
+/**
+ * Coquille : lien d'évitement, navigation latérale, barre du haut (voyant de santé), contenu et
+ * surcouches des features (`shell.overlay`).
+ */
 export function AppLayout() {
   const wide = useWidePage();
   return (
@@ -39,6 +43,7 @@ export function AppLayout() {
           <Outlet />
         </main>
       </div>
+      <ShellSlots slot="overlay" />
     </div>
   );
 }

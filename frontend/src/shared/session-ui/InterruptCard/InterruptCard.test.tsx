@@ -65,11 +65,17 @@ describe("InterruptCard", () => {
     expect(screen.getByRole("button", { name: "Répondre" })).toBeDisabled();
   });
 
-  it("locks the card once answered and does not steal focus", () => {
+  it("folds into the question and a receipt once answered", () => {
     render(<InterruptCard interrupt={withOptions} answered onAnswer={vi.fn()} />);
-    const option = screen.getByRole("button", { name: "Plus concret" });
-    expect(option).toBeDisabled();
-    expect(option).not.toHaveFocus();
+    expect(screen.getByText("Quelle suite donner ?")).toBeInTheDocument();
+    expect(screen.getByText("Réponse envoyée")).toBeInTheDocument();
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+
+  it("shows no free text field once answered", () => {
+    render(<InterruptCard interrupt={freeText} answered onAnswer={vi.fn()} />);
+    expect(screen.queryByRole("textbox")).toBeNull();
+    expect(screen.queryByRole("button")).toBeNull();
     expect(screen.getByText("Réponse envoyée")).toBeInTheDocument();
   });
 
@@ -134,10 +140,27 @@ describe("InterruptCard", () => {
     expect(screen.getByRole("button", { name: "Répondre" })).toBeEnabled();
   });
 
-  it("locks the fields once answered", () => {
+  it("hides the framing fields once answered", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(
+      <InterruptCard interrupt={framing} answered={false} onAnswer={vi.fn()} />,
+    );
+    await user.type(screen.getByLabelText("Quand veux-tu changer de poste ?"), " Dans 6 mois ");
+    rerender(<InterruptCard interrupt={framing} answered onAnswer={vi.fn()} />);
+    expect(screen.queryByRole("textbox")).toBeNull();
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(screen.getByText("Réponse envoyée")).toBeInTheDocument();
+    // Les réponses saisies dans cet onglet restent lisibles, sans champ ; le champ vide est omis.
+    expect(screen.getByText("Quand veux-tu changer de poste ?")).toBeInTheDocument();
+    expect(screen.getByText("Dans 6 mois")).toBeInTheDocument();
+    expect(screen.queryByText("Quel type d'entreprise vises-tu ?")).toBeNull();
+  });
+
+  it("shows only the question and the receipt when the answer was typed elsewhere", () => {
     render(<InterruptCard interrupt={framing} answered onAnswer={vi.fn()} />);
-    expect(screen.getByLabelText("Quel type d'entreprise vises-tu ?")).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Lancer la recherche" })).toBeDisabled();
+    expect(screen.getByText("Réponds aux questions de cadrage.")).toBeInTheDocument();
+    expect(screen.getByText("Réponse envoyée")).toBeInTheDocument();
+    expect(screen.queryByText("Quel type d'entreprise vises-tu ?")).toBeNull();
   });
 
   it("never opens a blocking browser dialog", async () => {

@@ -42,6 +42,19 @@ describe("agentColors", () => {
     }
   });
 
+  it("knows examiner and tutor", () => {
+    const examiner = agentIdentity("examiner");
+    expect(examiner).toMatchObject({ name: "Examinateur", color: AGENT_COLORS.examiner });
+    expect(examiner.role).not.toBe("");
+    const tutor = agentIdentity("tutor");
+    expect(tutor).toMatchObject({ name: "Tuteur", color: AGENT_COLORS.tutor });
+    expect(tutor.role).not.toBe("");
+    for (const color of [examiner.color, tutor.color]) {
+      expect(contrast(color, "#fafaf7")).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(color, "#ffffff")).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
   it("resolves name and role from the French messages", () => {
     const identity = agentIdentity("demo_critic");
     expect(identity.name).toBe("Critique");

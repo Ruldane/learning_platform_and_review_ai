@@ -1,6 +1,6 @@
 import { t } from "@/shared/i18n/t";
 import { fieldClass } from "@/shared/ui/fieldClass";
-import { longDay } from "../format";
+import { longDay } from "@/shared/lib/format";
 import type { WeekView } from "../viewTypes";
 import { TaskField } from "./TaskField";
 

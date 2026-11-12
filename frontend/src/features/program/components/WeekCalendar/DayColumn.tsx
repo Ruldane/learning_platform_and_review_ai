@@ -2,7 +2,8 @@ import { useDroppable } from "@dnd-kit/core";
 import { TriangleAlert } from "lucide-react";
 import { t } from "@/shared/i18n/t";
 import { cn } from "@/shared/lib/utils";
-import { dayLoad, dayOfMonth, shortDay, weekdayLabel } from "../format";
+import { shortDay } from "@/shared/lib/format";
+import { dayLoad, dayOfMonth, weekdayLabel } from "../format";
 import type { DayView } from "../viewTypes";
 import { TaskCard } from "./TaskCard";
 

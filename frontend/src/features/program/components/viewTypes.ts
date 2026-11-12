@@ -50,28 +50,6 @@ export interface NewTaskInput {
   plannedDate: string;
 }
 
-export interface PlanDiffTask {
-  id: string;
-  title: string;
-  moduleTitle: string;
-  /** Jour prévu ; `null` quand il n'est plus connu (tâche retirée). */
-  plannedDate: string | null;
-}
-
-export interface PlanDiffMove {
-  id: string;
-  title: string;
-  moduleTitle: string;
-  from: string;
-  to: string;
-}
-
-export interface PlanDiffView {
-  added: PlanDiffTask[];
-  removed: PlanDiffTask[];
-  moved: PlanDiffMove[];
-}
-
 export interface ProgressView {
   tasksDone: number;
   tasksPlanned: number;

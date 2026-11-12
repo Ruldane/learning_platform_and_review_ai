@@ -1,6 +1,6 @@
 import type { KeyboardEvent } from "react";
 import { t } from "@/shared/i18n/t";
-import { longDay } from "../format";
+import { longDay } from "@/shared/lib/format";
 
 interface MoveMenuListProps {
   dates: string[];

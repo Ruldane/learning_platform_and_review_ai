@@ -1,5 +1,5 @@
 import { t } from "@/shared/i18n/t";
-import { formatMinutes } from "../format";
+import { formatMinutes } from "@/shared/lib/format";
 import type { WeekView } from "../viewTypes";
 import { ProgressBar } from "./ProgressBar";
 import { percentOf } from "./percentOf";

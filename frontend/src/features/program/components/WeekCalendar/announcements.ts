@@ -1,6 +1,6 @@
 import type { Announcements } from "@dnd-kit/core";
 import { t } from "@/shared/i18n/t";
-import { longDay } from "../format";
+import { longDay } from "@/shared/lib/format";
 import type { WeekView } from "../viewTypes";
 
 /** Annonces du glisser-déposer pour les lecteurs d'écran, en français. */

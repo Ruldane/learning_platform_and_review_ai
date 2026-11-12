@@ -15,6 +15,7 @@ describe("session-ui public API", () => {
       "CostBadge",
       "SessionControls",
       "MessageComposer",
+      "PlanDiff",
       "Board",
       "MermaidSvg",
       "SourcesPanel",

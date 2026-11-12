@@ -1,8 +1,8 @@
 import { Download } from "lucide-react";
+import { longDay } from "@/shared/lib/format";
 import { t } from "@/shared/i18n/t";
 import { buttonVariants } from "@/shared/ui/button";
 import { exportIcsUrl, exportPdfUrl } from "../../api";
-import { longDay } from "../../components/format";
 import type { ProgramOut } from "../../types";
 
 /** Titre du programme, son état (brouillon ou validé, version, début) et les exports PDF et .ics. */

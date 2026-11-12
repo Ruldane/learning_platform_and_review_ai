@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { t } from "@/shared/i18n/t";
-import { PlanDiff } from "../../components/PlanDiff";
+import { PlanDiff } from "@/shared/session-ui";
 import { useTaskMutations } from "../../hooks/useTaskMutations";
 import { toModuleLessons, toPlanDiffView, toProgressView, toWeekViews } from "../../toView";
 import type { ProgramOut } from "../../types";

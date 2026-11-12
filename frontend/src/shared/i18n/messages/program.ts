@@ -130,16 +130,6 @@ export const program = {
       day: "Choisis le jour de la tâche.",
     },
   },
-  diff: {
-    label: "Changements du programme",
-    empty: "Aucun changement.",
-    added: "Ajoutées",
-    removed: "Retirées",
-    moved: "Déplacées",
-    movedRange: "{from} → {to}",
-    plannedOn: "prévue {day}",
-    module: "Module : {module}",
-  },
   progress: {
     label: "Avancement du programme",
     tasks: "Tâches faites / prévues",

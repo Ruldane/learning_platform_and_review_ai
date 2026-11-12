@@ -2,7 +2,7 @@ import { Trash2 } from "lucide-react";
 import { t } from "@/shared/i18n/t";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
-import { shortDay } from "../format";
+import { shortDay } from "@/shared/lib/format";
 import type { TaskView } from "../viewTypes";
 
 interface TaskRowProps {
