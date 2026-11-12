@@ -5,6 +5,7 @@ dans `GRAPHS`). `PROBE` compte les passages dans les nœuds et synchronise les t
 import asyncio
 import operator
 from collections import Counter
+from collections.abc import Awaitable, Callable
 from typing import Annotated, Any, TypedDict
 
 from langchain_core.messages import HumanMessage
@@ -25,6 +26,9 @@ class Probe:
         self.b_started = asyncio.Event()
         self.release_b = asyncio.Event()
         self.b_done = asyncio.Event()
+        # `chain` : lance une autre session depuis un nœud, comme la chaîne des leçons.
+        self.start_child: Callable[[], Awaitable[str]] | None = None
+        self.child_id = ""
 
 
 PROBE = Probe()
@@ -224,6 +228,23 @@ def _structured(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
     return g
 
 
+def _chain(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
+    """Un appel au modèle, puis une autre session lancée depuis le nœud suivant (`PROBE`)."""
+
+    async def launch(state: State) -> State:
+        assert PROBE.start_child is not None
+        PROBE.child_id = await PROBE.start_child()
+        return {}
+
+    g = StateGraph(State)
+    g.add_node("speak", _speak(deps))
+    g.add_node("launch", launch)
+    g.add_edge(START, "speak")
+    g.add_edge("speak", "launch")
+    g.add_edge("launch", END)
+    return g
+
+
 SECRET = "sk-secret-a-ne-jamais-journaliser"
 
 
@@ -250,6 +271,7 @@ TEST_GRAPHS: dict[str, GraphSpec] = {
         GraphSpec("with_topic", TopicInput, _one_llm_call),
         GraphSpec("spend_then_llm", NoInput, _spend_then_llm),
         GraphSpec("crash", NoInput, _crash),
+        GraphSpec("chain", NoInput, _chain),
         GraphSpec("structured", NoInput, _structured),
     )
 }

@@ -3,6 +3,11 @@ déterministes (`check_lesson` : structure, longueur, liens, recopie), puis un c
 par le modèle (`FactReport`) : chaque affirmation sur le domaine doit s'appuyer sur une source
 numérotée. La leçon et les sources sont des données encadrées, jamais des consignes.
 
+Seules les sections de faits sont jugées : une affirmation située ailleurs (objectif, exercice,
+auto-évaluation…) est écartée (`in_scope`). Après la dernière révision, s'il ne reste que des
+affirmations non sourcées, le code retire lui-même les phrases qui les portent (`prune`, sans
+appel au modèle) puis rejoue les contrôles déterministes (D97 n° 11).
+
 Rien n'est écrit : un nœud rejoué refait le contrôle, sans effet de bord."""
 
 import logging
@@ -18,6 +23,7 @@ from app.agents.nodes.lesson_common import (
     sources_prompt,
 )
 from app.agents.nodes.verifier.checks import check_lesson
+from app.agents.nodes.verifier.prune import in_scope, prune
 from app.agents.prompts.loader import render_prompt, untrusted
 from app.agents.registry import get_agent
 from app.agents.runtime.deps import GraphDeps
@@ -63,9 +69,31 @@ async def _facts(deps: GraphDeps, title: str, draft: str, sources: list[LessonSo
     return [claim for claim in claims if claim]
 
 
-def _verdict_text(words: int, problems: list[str], unsupported: list[str]) -> str:
+def _converge(
+    draft: str, title: str, sources: list[LessonSource], unsupported: list[str]
+) -> tuple[LessonFactoryState, int]:
+    """Dernière révision passée, seuls des faits non sourcés restent : leurs phrases sont retirées
+    si toutes sont situées et si la leçon tient encore les contrôles ; sinon, la raison de
+    l'échec. Rend la mise à jour de l'état et le nombre de phrases retirées."""
+    pruned = prune(draft, unsupported)
+    if pruned.unlocated:
+        problem = (
+            f"Retrait impossible : {pruned.unlocated} affirmation(s) non sourcée(s) introuvable(s) "
+            "dans les sections de faits."
+        )
+        return {"problems": [problem]}, 0
+    check = check_lesson(pruned.markdown, title=title, sources=_numbered(sources))
+    if check.problems:
+        lead = f"Retrait de {pruned.removed} phrase(s) non sourcée(s) impossible"
+        return {"problems": [f"{lead} : {p}" for p in check.problems]}, 0
+    update: LessonFactoryState = {"draft": pruned.markdown, "words": check.words, "unsupported": []}
+    return update, pruned.removed
+
+
+def _verdict_text(words: int, problems: list[str], unsupported: list[str], removed: int) -> str:
     if not problems and not unsupported:
-        return f"Leçon conforme : {words} mots, structure, liens et faits sourcés vérifiés."
+        after = f" après retrait de {removed} phrase(s) non sourcée(s)" if removed else ""
+        return f"Leçon conforme{after} : {words} mots, structure, liens et faits sourcés vérifiés."
     lines = [f"Leçon à corriger ({words} mots) :"]
     lines += [f"- {p}" for p in problems[:MAX_PROBLEMS_SHOWN]]
     if len(problems) > MAX_PROBLEMS_SHOWN:
@@ -82,23 +110,42 @@ def make_verify(deps: GraphDeps) -> Node:
         draft = state["draft"]
         sources = lesson_sources(state)
         check = check_lesson(draft, title=brief.title, sources=_numbered(sources))
-        unsupported = await _facts(deps, brief.title, draft, sources)
+        claims = await _facts(deps, brief.title, draft, sources)
+        unsupported = in_scope(draft, claims)
         revisions = state.get("revisions", 0)
         logger.info(
-            "Leçon contrôlée : session %s, module %s, %d mots, %d problème(s), %d non sourcée(s)",
+            "Leçon contrôlée : session %s, module %s, %d mots, %d problème(s), "
+            "%d non sourcée(s), %d hors périmètre",
             deps.session_id,
             brief.module_id,
             check.words,
             len(check.problems),
             len(unsupported),
+            len(claims) - len(unsupported),
         )
-        text = _verdict_text(check.words, check.problems, unsupported)
+        result: LessonFactoryState = {
+            "words": check.words,
+            "problems": check.problems,
+            "unsupported": unsupported,
+        }
+        removed = 0
+        if revisions >= MAX_REVISIONS and unsupported and not check.problems:
+            update, removed = _converge(draft, brief.title, sources, unsupported)
+            result.update(update)
+            logger.info(
+                "Leçon élaguée : session %s, module %s, %d phrase(s) retirée(s), %d problème(s)",
+                deps.session_id,
+                brief.module_id,
+                removed,
+                len(result.get("problems", [])),
+            )
+        text = _verdict_text(result["words"], result["problems"], result["unsupported"], removed)
         emit(
             "agent.message",
             {"message_id": f"{AGENT}-controle-{revisions}", "text": text},
             agent=AGENT,
         )
-        return {"words": check.words, "problems": check.problems, "unsupported": unsupported}
+        return result
 
     return verify
 

@@ -11,6 +11,7 @@ Le corps d'une tâche vit dans `execution.py`, les règles de statut dans `contr
 """
 
 import asyncio
+import contextvars
 import logging
 from collections.abc import AsyncIterator, Mapping
 from contextlib import asynccontextmanager
@@ -196,8 +197,13 @@ class SessionRunner:
 
     def _launch(self, user_id: str, session_id: str, command: Command[Any] | None) -> None:
         self._refuse_if_stopping()
+        # Contexte vierge : lancée depuis le nœud d'une autre session (chaîne des leçons), la
+        # tâche hériterait sinon de sa configuration LangChain, donc de son suivi des coûts et
+        # de son plafond de tokens (chaque appel compté deux fois, D97 n° 12).
         task = asyncio.create_task(
-            self._run(user_id, session_id, command), name=f"session:{session_id}"
+            self._run(user_id, session_id, command),
+            name=f"session:{session_id}",
+            context=contextvars.Context(),
         )
         self._tasks[session_id] = task
         task.add_done_callback(partial(self._forget, session_id))
