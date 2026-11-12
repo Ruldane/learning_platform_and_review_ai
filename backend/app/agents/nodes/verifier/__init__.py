@@ -8,7 +8,7 @@ from app.agents.nodes.verifier.checks import (
     check_lesson,
 )
 from app.agents.nodes.verifier.overlap import MAX_QUOTE_WORDS
-from app.agents.nodes.verifier.prune import IN_SCOPE, Pruned, in_scope, prune
+from app.agents.nodes.verifier.prune import IN_SCOPE, Pruned, in_scope, prune, still_cited
 from app.agents.nodes.verifier.verify import MAX_REVISIONS, FactReport, make_verify, route_verify
 
 __all__ = [
@@ -26,4 +26,5 @@ __all__ = [
     "make_verify",
     "prune",
     "route_verify",
+    "still_cited",
 ]

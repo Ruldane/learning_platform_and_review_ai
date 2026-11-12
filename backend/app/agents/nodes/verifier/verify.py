@@ -23,7 +23,7 @@ from app.agents.nodes.lesson_common import (
     sources_prompt,
 )
 from app.agents.nodes.verifier.checks import check_lesson
-from app.agents.nodes.verifier.prune import in_scope, prune
+from app.agents.nodes.verifier.prune import in_scope, prune, still_cited
 from app.agents.prompts.loader import render_prompt, untrusted
 from app.agents.registry import get_agent
 from app.agents.runtime.deps import GraphDeps
@@ -79,8 +79,11 @@ def _converge(
     if pruned.unlocated:
         problem = (
             f"Retrait impossible : {pruned.unlocated} affirmation(s) non sourcée(s) introuvable(s) "
-            "dans les sections de faits."
+            "dans les sections de faits (citation absente, ambiguë ou trop courte)."
         )
+        return {"problems": [problem]}, 0
+    if left := still_cited(pruned.markdown, unsupported):
+        problem = f"Retrait incomplet : {left} affirmation(s) non sourcée(s) encore dans la leçon."
         return {"problems": [problem]}, 0
     check = check_lesson(pruned.markdown, title=title, sources=_numbered(sources))
     if check.problems:
