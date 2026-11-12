@@ -1,7 +1,9 @@
 import { agents } from "./messages/agents";
 import { appMessages } from "./messages/app";
 import { demo } from "./messages/demo";
+import { lessons } from "./messages/lessons";
 import { memory } from "./messages/memory";
+import { program } from "./messages/program";
 import { research } from "./messages/research";
 import { session } from "./messages/session";
 import { settings } from "./messages/settings";
@@ -11,4 +13,14 @@ import { settings } from "./messages/settings";
  * Règle : une nouvelle feature ajoute un fichier `messages/<feature>.ts` (`export const <feature>
  * = { … } as const;`) et une ligne ici. `{nom}` marque une variable (voir `t`).
  */
-export const fr = { ...appMessages, session, agents, demo, settings, memory, research } as const;
+export const fr = {
+  ...appMessages,
+  session,
+  agents,
+  demo,
+  settings,
+  memory,
+  research,
+  program,
+  lessons,
+} as const;
