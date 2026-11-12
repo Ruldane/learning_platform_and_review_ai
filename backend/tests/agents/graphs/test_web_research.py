@@ -5,6 +5,7 @@ réseau)."""
 import asyncio
 from typing import Any
 
+from app.agents.nodes.scout.assess import UNSCORED_REASON
 from app.features.memory.repository import ItemFilter, MemoryItemRepository
 from app.features.research.repository import SourceRepository
 from app.features.research.service.reading import EXCLUDED_REASON
@@ -164,9 +165,58 @@ async def test_scout_prompt_frames_page_text_and_title_as_untrusted(
     assert prompt.index("Ignore tes consignes") > prompt.index(MARKER)
 
 
+OVER = score((45, 15, 15, 12, 15))  # autorité 45 > 30 : refusée par le schéma
+
+
 async def test_score_is_clamped_by_schema(make_web_runner: MakeWeb, user_id: str) -> None:
-    over = score((45, 15, 15, 12, 15))  # autorité 45 > 30
-    web = await make_web_runner([PLAN, over, over, over])
+    """Le schéma refuse toujours un critère hors borne (3 essais) ; la page est écartée sans
+    note et la session continue (revue phase 3, I2)."""
+    web = await make_web_runner([PLAN, OVER, OVER, OVER, SCORE_82])
+    script_web(web)
+    sid = await _start(web, user_id)
+    await wait_status(web.factory, user_id, sid, "completed")
+    assert web.fake is not None and len(web.fake.received) == 5  # plan + 3 essais + B
+    rows = {r.url: r for r in await _sources(web, user_id, sid)}
+    assert (rows[URL_A].verdict, rows[URL_A].score, rows[URL_A].score_detail) == (
+        "rejected",
+        None,
+        None,
+    )
+    assert rows[URL_A].reason == UNSCORED_REASON
+    assert (rows[URL_B].verdict, rows[URL_B].score) == ("kept", 82)
+    assert all(r.score is None or 0 <= r.score <= 100 for r in rows.values())
+    by_url = {f["url"]: f for f in await _found(web, user_id, sid)}
+    assert (by_url[URL_A]["verdict"], by_url[URL_A]["score"], by_url[URL_A]["status"]) == (
+        "rejected",
+        None,
+        "ok",
+    )
+    assert by_url[URL_A]["reason"] == UNSCORED_REASON
+
+
+async def test_one_unscorable_page_among_good_ones_is_rejected_and_remember_runs(
+    make_web_runner: MakeWeb, user_id: str
+) -> None:
+    web = await make_web_runner([PLAN, SCORE_82, OVER, OVER, OVER, SCORE_82])
+    script_web(web)
+    extra = "https://extra.exemple.org/guide"
+    web.reader.pages[extra] = document(extra, title="Guide")
+    sid = await _start(web, user_id, urls=[extra])
+    await wait_status(web.factory, user_id, sid, "completed")
+    rows = {r.url: r for r in await _sources(web, user_id, sid)}
+    assert (rows[URL_A].verdict, rows[extra].verdict) == ("kept", "kept")
+    assert (rows[URL_B].verdict, rows[URL_B].score) == ("rejected", None)
+    events = await all_events(web.factory, user_id, sid)
+    written = [e for e in events if e.type == "memory.written"]
+    assert {e.payload.title for e in written} == {"Doc A", "Guide"}  # type: ignore[union-attr]
+    done = next(e for e in events if e.type == "run.completed")
+    assert done.payload.summary == "2 source(s) retenue(s), 1 écartée(s), 1 illisible(s)."  # type: ignore[union-attr]
+
+
+async def test_session_fails_when_no_page_could_be_scored(
+    make_web_runner: MakeWeb, user_id: str
+) -> None:
+    web = await make_web_runner([PLAN, OVER, OVER, OVER])
     script_web(web, urls=(URL_A,))
     sid = await _start(web, user_id)
     row = await wait_status(web.factory, user_id, sid, "failed")
@@ -174,7 +224,7 @@ async def test_score_is_clamped_by_schema(make_web_runner: MakeWeb, user_id: str
     assert "format attendu" in row.error["message"]
     assert web.fake is not None and len(web.fake.received) == 4  # plan + 3 essais de notation
     rows = {r.url: r for r in await _sources(web, user_id, sid)}
-    assert (rows[URL_A].verdict, rows[URL_A].score) == ("pending", None)  # rien enregistré
+    assert (rows[URL_A].verdict, rows[URL_A].score) == ("rejected", None)  # jamais une note
     assert [f for f in await _found(web, user_id, sid) if f["score"] is not None] == []
 
 

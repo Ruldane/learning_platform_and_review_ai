@@ -56,3 +56,22 @@ async def test_reserve_is_atomic_across_connections_without_any_lock(
     outcomes = await asyncio.gather(*(one(f"u{i % 2}") for i in range(5)))
     assert sorted(outcomes) == [False, False, False, False, True]
     assert await _total(db) == 900
+
+
+async def test_release_gives_back_one_request_and_never_goes_below_zero(db: AsyncSession) -> None:
+    """Revue phase 3, I1 : une requête que Brave n'a pas servie est rendue, en une instruction
+    gardée (`count > 0`), sur la seule ligne de l'utilisateur."""
+    repo = SearchUsageRepository(db, "u1")
+    assert not await repo.release("brave", "2026-11", "fp1")  # aucune ligne : rien à rendre
+    await _seed(db, "u0", 5)
+    assert await repo.reserve("brave", "2026-11", "fp1", 900)
+    assert await _total(db) == 6
+    assert await repo.release("brave", "2026-11", "fp1")
+    assert not await repo.release("brave", "2026-11", "fp1")  # déjà à 0 : jamais négatif
+    await db.commit()
+    assert await _total(db) == 5  # la ligne de u0 n'est jamais touchée
+    rows = await SearchUsageRepository(db, "u1").list(month="2026-11")
+    assert [row.count for row in rows] == [0]
+    # Un autre mois ou une autre clé : rien à rendre.
+    assert await SearchUsageRepository(db, "u0").release("brave", "2026-12", "fp1") is False
+    assert await SearchUsageRepository(db, "u0").release("brave", "2026-11", "fp2") is False

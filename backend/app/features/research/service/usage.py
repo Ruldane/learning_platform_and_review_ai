@@ -36,14 +36,37 @@ async def brave_key(keys: KeyReader, user_id: str) -> str | None:
         return None
 
 
-async def reserve_brave(db: AsyncSession, user_id: str, api_key: str, now: datetime) -> bool:
+@dataclass(frozen=True)
+class BraveReservation:
+    """Requête Brave réservée : de quoi la rendre au bon compteur (même mois, même clé)."""
+
+    fingerprint: str
+    month: str
+
+
+async def reserve_brave(
+    db: AsyncSession, user_id: str, api_key: str, now: datetime
+) -> BraveReservation | None:
     """Réserve une requête Brave du mois si la clé est sous le plafond, et la commite aussitôt
     (transaction propre, fermée avant l'appel réseau). Contrôle et ajout indivisibles
-    (`SearchUsageRepository.reserve`)."""
+    (`SearchUsageRepository.reserve`). `None` : plafond atteint."""
+    reservation = BraveReservation(key_fingerprint(api_key), month_of(now))
     repo = SearchUsageRepository(db, user_id)
-    reserved = await repo.reserve(BRAVE, month_of(now), key_fingerprint(api_key), BRAVE_MONTHLY_CAP)
+    reserved = await repo.reserve(
+        BRAVE, reservation.month, reservation.fingerprint, BRAVE_MONTHLY_CAP
+    )
     await db.commit()
-    return reserved
+    return reservation if reserved else None
+
+
+async def release_brave(db: AsyncSession, user_id: str, reservation: BraveReservation) -> bool:
+    """Rend une requête que Brave n'a ni servie ni facturée (429, clé refusée, rien d'envoyé),
+    dans sa propre transaction courte ; jamais sous zéro (`SearchUsageRepository.release`)."""
+    released = await SearchUsageRepository(db, user_id).release(
+        BRAVE, reservation.month, reservation.fingerprint
+    )
+    await db.commit()
+    return released
 
 
 @dataclass(frozen=True)

@@ -2,9 +2,11 @@
 résumer. La note vient de cinq critères bornés par le schéma ; le code additionne et applique le
 seuil de 60 (la passerelle enregistre, SPEC 10.3)."""
 
+import logging
 from datetime import UTC, datetime
 from typing import Any
 
+from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from app.agents.nodes.scout.models import AGENT, Node, SourceScore, one_line, page_title
@@ -18,8 +20,14 @@ from app.agents.state.web_research import WebResearchState
 from app.agents.tools.memory_port import AgentWrite
 from app.agents.tools.memory_tools import memory_write
 from app.agents.tools.web_port import KEEP_THRESHOLD, SourceVerdictView
+from app.core.errors import AppError
 
 JUDGE_TIMEOUT_S = 600  # un appel au modèle par page lue
+# Page dont le modèle n'a rendu aucune note conforme au schéma (revue phase 3, I2).
+UNSCORED_REASON = "Note impossible à établir."
+INVALID_OUTPUT_CODE = "structured_output_invalid"
+
+logger = logging.getLogger(__name__)
 REMEMBER_TIMEOUT_S = 300  # une vectorisation par source retenue
 
 
@@ -65,42 +73,78 @@ def _emit_judged(page: dict[str, Any], verdict: SourceVerdictView) -> None:
     )
 
 
+async def _score(model: BaseChatModel, page: dict[str, Any]) -> SourceScore | AppError:
+    """Les cinq critères de la page, ou l'erreur `structured_output_invalid` si le modèle n'a
+    rendu aucune note conforme au schéma après ses essais (critère hors borne...), rendue et non
+    levée. Toute autre erreur (quota, fournisseur indisponible, délai) remonte : elle vaudrait
+    pour toutes les pages."""
+    try:
+        return await structured_call(
+            model,
+            SourceScore,
+            [SystemMessage(_prompt(page)), HumanMessage("Note cette source.")],
+            agent=AGENT,
+            step="notation",
+            intent="je note une source",
+        )
+    except AppError as exc:
+        if exc.code != INVALID_OUTPUT_CODE:
+            raise
+        return exc
+
+
+async def _record(
+    deps: GraphDeps, page: dict[str, Any], score: SourceScore | None
+) -> SourceVerdictView:
+    """Verdict enregistré par la passerelle ; sans note : écartée, raison fixe (revue phase 3)."""
+    return await deps.web.judge(
+        deps.user_id,
+        deps.session_id,
+        page["source_id"],
+        criteria=None if score is None else score.criteria,
+        reason=UNSCORED_REASON if score is None else score.reason,
+        summary="" if score is None else score.summary,
+    )
+
+
+def _entry(
+    page: dict[str, Any], score: SourceScore | None, verdict: SourceVerdictView
+) -> dict[str, Any]:
+    return {
+        "source_id": verdict.source_id,
+        "url": page["url"],
+        "title": page_title(page),
+        "lang": page["lang"],
+        "summary": "" if score is None else one_line(score.summary),
+        "score": verdict.score,
+        "verdict": verdict.verdict,
+    }
+
+
 def make_judge(deps: GraphDeps) -> Node:
     @node_timeout(JUDGE_TIMEOUT_S)
     async def judge(state: WebResearchState) -> WebResearchState:
+        """Une page dont la note est impossible à établir est écartée sans note et la session
+        continue ; elle échoue seulement si aucune page n'a pu être notée."""
         model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
         verdicts: list[dict[str, Any]] = []
+        failure: AppError | None = None
+        unscored = 0
         for page in state.get("pages", []):
             if page["source_id"] is None:
                 continue
-            score = await structured_call(
-                model,
-                SourceScore,
-                [SystemMessage(_prompt(page)), HumanMessage("Note cette source.")],
-                agent=AGENT,
-                step="notation",
-                intent="je note une source",
-            )
-            verdict = await deps.web.judge(
-                deps.user_id,
-                deps.session_id,
-                page["source_id"],
-                criteria=score.criteria,
-                reason=score.reason,
-                summary=score.summary,
-            )
+            outcome = await _score(model, page)
+            score = outcome if isinstance(outcome, SourceScore) else None
+            if isinstance(outcome, AppError):
+                failure, unscored = outcome, unscored + 1
+                logger.warning(
+                    "Note impossible : session %s, source %s", deps.session_id, page["source_id"]
+                )
+            verdict = await _record(deps, page, score)
             _emit_judged(page, verdict)
-            verdicts.append(
-                {
-                    "source_id": verdict.source_id,
-                    "url": page["url"],
-                    "title": page_title(page),
-                    "lang": page["lang"],
-                    "summary": one_line(score.summary),
-                    "score": verdict.score,
-                    "verdict": verdict.verdict,
-                }
-            )
+            verdicts.append(_entry(page, score, verdict))
+        if failure is not None and unscored == len(verdicts):
+            raise failure  # aucune page notée : la session échoue, message lisible
         return {"verdicts": verdicts}
 
     return judge

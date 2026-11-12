@@ -35,6 +35,12 @@ class SearchUnavailable(AppError):
         )
 
 
+class SearchNotServed(SearchUnavailable):
+    """Même erreur pour l'appelant, mais le fournisseur n'a **ni servi ni facturé** la requête :
+    rien n'est parti (clé invalide, connexion impossible) ou elle a été refusée d'emblée (429
+    de débit, 401/403 clé refusée). Une requête réservée sur un compteur peut être rendue."""
+
+
 class SearchProvider(Protocol):
     name: str
 

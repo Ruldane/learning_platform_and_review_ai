@@ -4,7 +4,12 @@ from collections.abc import Callable
 import httpx
 import pytest
 
-from app.providers.search.base import SEARCH_TIMEOUT_S, SearchResult, SearchUnavailable
+from app.providers.search.base import (
+    SEARCH_TIMEOUT_S,
+    SearchNotServed,
+    SearchResult,
+    SearchUnavailable,
+)
 from app.providers.search.brave import BRAVE_SEARCH_URL, BraveKeyProvider, BraveSearch
 
 _KEY = "secret-brave-key-1234"
@@ -123,6 +128,42 @@ async def test_brave_network_errors_are_unavailable(
     assert _KEY not in caplog.text and _QUERY not in caplog.text
 
 
+@pytest.mark.parametrize(
+    ("status", "not_served"), [(401, True), (403, True), (429, True), (422, False), (500, False)]
+)
+async def test_brave_refusals_that_are_not_billed_are_flagged(
+    status: int, not_served: bool
+) -> None:
+    """429 (débit), 401/403 (clé refusée) : Brave n'a ni servi ni facturé la requête, la
+    réservation peut être rendue (revue phase 3, I1). Le reste reste une panne ordinaire."""
+    handler: Handler = lambda request: httpx.Response(status, json={})  # noqa: E731
+    with pytest.raises(SearchUnavailable) as caught:
+        await BraveSearch(_http(handler), _KEY).search("q")
+    assert isinstance(caught.value, SearchNotServed) is not_served
+    assert caught.value.code == "search_unavailable"
+
+
+@pytest.mark.parametrize(
+    ("error", "not_served"),
+    [
+        (httpx.ConnectError("x"), True),
+        (httpx.ConnectTimeout("x"), True),
+        (httpx.PoolTimeout("x"), True),
+        (httpx.ReadTimeout("x"), False),
+        (httpx.RemoteProtocolError("x"), False),
+    ],
+)
+async def test_brave_network_errors_before_sending_are_flagged(
+    error: Exception, not_served: bool
+) -> None:
+    def boom(request: httpx.Request) -> httpx.Response:
+        raise error
+
+    with pytest.raises(SearchUnavailable) as caught:
+        await BraveSearch(_http(boom), _KEY).search("q")
+    assert isinstance(caught.value, SearchNotServed) is not_served
+
+
 async def test_brave_invalid_json_is_unavailable() -> None:
     handler: Handler = lambda request: httpx.Response(200, content=b"<html>")  # noqa: E731
     with pytest.raises(SearchUnavailable):
@@ -131,7 +172,7 @@ async def test_brave_invalid_json_is_unavailable() -> None:
 
 async def test_brave_non_ascii_key_is_unavailable_without_request() -> None:
     sent: list[httpx.Request] = []
-    with pytest.raises(SearchUnavailable):
+    with pytest.raises(SearchNotServed):  # rien d'envoyé : réservation rendue
         await BraveSearch(_http(_web(), sent), "clé-é-invalide").search("q")
     assert sent == []
 

@@ -66,7 +66,12 @@ class SubprocessPdfExtractor:
         max_chars = base.MAX_TEXT_CHARS
         command = worker_command(base.MAX_PDF_PAGES, max_chars, self._max_memory_bytes)
         async with self._slots:
-            process = await _spawn(command)
+            try:
+                process = await _spawn(command)
+            except OSError as exc:
+                # EAGAIN, ENOMEM, interpréteur absent : page illisible, jamais le chemin.
+                logger.info("Extraction PDF : worker non lancé (%s)", type(exc).__name__)
+                raise PdfUnreadable() from None
             try:
                 async with asyncio.timeout(self._timeout_s):
                     output = await _exchange(process, data, max_chars * _BYTES_PER_CHAR)

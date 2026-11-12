@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Select, func, literal, select
+from sqlalchemy import Select, func, literal, select, update
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -54,6 +54,24 @@ class SearchUsageRepository(UserScopedRepository[SearchUsage]):
         stmt = stmt.on_conflict_do_update(
             index_elements=["user_id", "provider", "month", "key_fingerprint"],
             set_={"count": SearchUsage.count + 1, "updated_at": stmt.excluded.updated_at},
+        )
+        result = await self.session.execute(stmt)
+        return int(result.rowcount or 0) == 1  # type: ignore[attr-defined]
+
+    async def release(self, provider: str, month: str, fingerprint: str) -> bool:
+        """Rend une requête réservée que le fournisseur n'a pas servie : `count - 1` sur la
+        seule ligne de l'utilisateur, en une instruction gardée par `count > 0` (jamais
+        négatif, jamais sur le compte d'un autre). Rend vrai si une requête a été rendue."""
+        stmt = (
+            update(SearchUsage)
+            .where(
+                SearchUsage.user_id == self.user_id,
+                SearchUsage.provider == provider,
+                SearchUsage.month == month,
+                SearchUsage.key_fingerprint == fingerprint,
+                SearchUsage.count > 0,
+            )
+            .values(count=SearchUsage.count - 1, updated_at=utcnow())
         )
         result = await self.session.execute(stmt)
         return int(result.rowcount or 0) == 1  # type: ignore[attr-defined]

@@ -18,6 +18,7 @@ from app.providers.keys import KeyTestResult
 from app.providers.search.base import (
     MAX_RESULTS,
     SEARCH_TIMEOUT_S,
+    SearchNotServed,
     SearchResult,
     SearchUnavailable,
     TimeRange,
@@ -36,6 +37,11 @@ _LANGS = {"pt": "pt-pt", "ja": "jp", "zh": "zh-hans"}
 _TAG = re.compile(r"<[^>]{0,200}>")
 # Clé invalide : Brave répond 401/403, ou 422 avec ce code dans le corps.
 _INVALID_TOKEN_CODES = ("SUBSCRIPTION_TOKEN_INVALID",)
+# Réponses que Brave ne facture pas : débit dépassé (1 requête par seconde en offre gratuite),
+# clé refusée. Les autres échecs restent comptés (prudence, D76).
+_NOT_BILLED_STATUSES = (401, 403, 429)
+# Erreurs levées avant l'envoi de la requête : rien n'est parti.
+_NOT_SENT_ERRORS = (httpx.ConnectError, httpx.ConnectTimeout, httpx.PoolTimeout)
 
 
 def _plain(value: object) -> str:
@@ -104,7 +110,7 @@ class BraveSearch:
         headers = _headers(self._api_key)
         if headers is None:
             logger.info("Clé Brave invalide (caractères)")
-            raise SearchUnavailable() from None
+            raise SearchNotServed() from None
         try:
             response = await self._http.get(
                 BRAVE_SEARCH_URL,
@@ -114,9 +120,13 @@ class BraveSearch:
             )
         except httpx.HTTPError as exc:
             logger.info("Brave injoignable (%s)", type(exc).__name__)
+            if isinstance(exc, _NOT_SENT_ERRORS):
+                raise SearchNotServed() from None
             raise SearchUnavailable() from None
         if response.status_code != 200:
             logger.info("Brave a refusé la recherche (statut %s)", response.status_code)
+            if response.status_code in _NOT_BILLED_STATUSES:
+                raise SearchNotServed() from None
             raise SearchUnavailable() from None
         try:
             body = response.json()

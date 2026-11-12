@@ -187,23 +187,26 @@ async def record_verdict(
     user_id: str,
     source_id: str,
     *,
-    score: int,
-    detail: dict[str, int],
+    score: int | None,
+    detail: dict[str, int] | None,
     reason: str,
     summary: str,
 ) -> Source:
     """Note (bornée à 0..100) et verdict d'une source : `kept` si la note atteint
     `SOURCE_THRESHOLD` et que la page est lisible, sinon `rejected` (une page illisible n'est
-    jamais retenue ni citée, SPEC 10.2). Idempotent. La raison d'une page illisible reste celle
-    de la lecture. Le commit appartient à l'appelant."""
+    jamais retenue ni citée, SPEC 10.2). `score=None` : note impossible à établir, écartée sans
+    note ni détail. Idempotent. La raison d'une page illisible reste celle de la lecture. Le
+    commit appartient à l'appelant."""
     source = await SourceRepository(db, user_id).get(source_id)
     if source is None:
         raise source_not_found()
-    score = max(0, min(100, score))
+    if score is not None:
+        score = max(0, min(100, score))
     readable = source.status == "ok"
-    source.verdict = "kept" if readable and score >= SOURCE_THRESHOLD else "rejected"
+    keep = readable and score is not None and score >= SOURCE_THRESHOLD
+    source.verdict = "kept" if keep else "rejected"
     source.score = score
-    source.score_detail = dict(detail)
+    source.score_detail = None if detail is None else dict(detail)
     source.summary = summary
     if readable:
         source.reason = reason[:_MAX_REASON]

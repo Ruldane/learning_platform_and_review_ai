@@ -63,7 +63,7 @@ class PageRead:
 @dataclass(frozen=True)
 class SourceVerdictView:
     source_id: str
-    score: int
+    score: int | None  # `None` : note impossible à établir (sortie du modèle invalide)
     verdict: Literal["kept", "rejected"]
     reason: str
 
@@ -96,10 +96,13 @@ class WebGateway(Protocol):
         session_id: str,
         source_id: str,
         *,
-        criteria: dict[str, int],
+        criteria: dict[str, int] | None,
         reason: str,
         summary: str,
-    ) -> SourceVerdictView: ...
+    ) -> SourceVerdictView:
+        """Note (somme des critères bornés) et verdict d'une source. `criteria=None` : aucune
+        note n'a pu être établie, la source est écartée sans note, avec `reason`."""
+        ...
 
     async def limits(self, user_id: str) -> WebLimits: ...
 
@@ -132,7 +135,7 @@ class _NoWeb:
         session_id: str,
         source_id: str,
         *,
-        criteria: dict[str, int],
+        criteria: dict[str, int] | None,
         reason: str,
         summary: str,
     ) -> SourceVerdictView:

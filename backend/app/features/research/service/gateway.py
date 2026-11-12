@@ -106,19 +106,20 @@ class AgentWebGateway:
         session_id: str,
         source_id: str,
         *,
-        criteria: dict[str, int],
+        criteria: dict[str, int] | None,
         reason: str,
         summary: str,
     ) -> SourceVerdictView:
         """Enregistre la note et le verdict (idempotent : un nœud rejoué écrit la même chose).
-        `source_not_found` (404) si la source n'est pas à l'utilisateur."""
-        detail = _detail(criteria)
+        `criteria=None` : écartée sans note (note impossible à établir). `source_not_found`
+        (404) si la source n'est pas à l'utilisateur."""
+        detail = None if criteria is None else _detail(criteria)
         async with self._runtime.session_factory() as db:
             source = await record_verdict(
                 db,
                 user_id,
                 source_id,
-                score=sum(detail.values()),
+                score=None if detail is None else sum(detail.values()),
                 detail=detail,
                 reason=reason,
                 summary=summary,
@@ -126,7 +127,7 @@ class AgentWebGateway:
             await db.commit()
             view = SourceVerdictView(
                 source_id=source.id,
-                score=source.score or 0,
+                score=source.score,
                 verdict="kept" if source.verdict == "kept" else "rejected",
                 reason=source.reason or "",
             )

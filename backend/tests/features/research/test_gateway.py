@@ -126,6 +126,28 @@ async def test_judge_sums_bounded_criteria_and_keeps_from_60(
     assert (again.score, again.verdict) == (60, "kept")  # seuil inclus, jugement rejouable
 
 
+async def test_judge_without_criteria_rejects_without_score(
+    gateway: WebGateway, fake_web: FakeWebReader, db_session_factory: Factory
+) -> None:
+    """Page dont la note n'a pas pu être établie (sortie du modèle invalide) : écartée, sans
+    note ni détail, avec la raison donnée (revue phase 3, I2)."""
+    fake_web.pages["https://ex.org/a"] = _doc("https://ex.org/a")
+    page = await gateway.read(UID, "s1", "https://ex.org/a")
+    assert page.source_id
+    verdict = await gateway.judge(
+        UID, "s1", page.source_id, criteria=None, reason="Note impossible.", summary=""
+    )
+    assert (verdict.score, verdict.verdict, verdict.reason) == (
+        None,
+        "rejected",
+        "Note impossible.",
+    )
+    async with db_session_factory() as db:
+        row = await SourceRepository(db, UID).get(page.source_id)
+    assert row is not None
+    assert (row.verdict, row.score, row.score_detail) == ("rejected", None, None)
+
+
 async def test_judge_never_keeps_an_unreadable_page(
     gateway: WebGateway, fake_web: FakeWebReader
 ) -> None:

@@ -98,6 +98,21 @@ async def test_nonzero_exit_is_unreadable(monkeypatch: pytest.MonkeyPatch) -> No
     assert caught.value.message == _DEFAULT_MESSAGE
 
 
+async def test_spawn_failure_is_unreadable_without_path(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Any, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Lancement impossible (interpréteur absent, EAGAIN, ENOMEM) : page illisible, pas une
+    erreur interne ; ni le chemin ni l'exception d'origine dans le message (revue phase 3, m6)."""
+    missing = str(tmp_path / "secret-dir" / "python-absent")
+    monkeypatch.setattr(pdf_subprocess, "worker_command", lambda *_args: [missing, "-c", ""])
+    with pytest.raises(PdfUnreadable) as caught:
+        await SubprocessPdfExtractor().extract_text(b"%PDF-")
+    assert caught.value.message == _DEFAULT_MESSAGE
+    assert caught.value.__cause__ is None and caught.value.__suppress_context__
+    assert "secret-dir" not in caught.value.message
+    assert "secret-dir" not in caplog.text
+
+
 async def test_oversized_output_is_unreadable(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("app.providers.pdf.base.MAX_TEXT_CHARS", 10)
     _fake_worker(monkeypatch, "import sys; sys.stdout.write('x' * 41)")

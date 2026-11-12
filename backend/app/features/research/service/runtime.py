@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.core.providers import ResearchProviders
 from app.db.base import utcnow
 from app.features.research.repository import WebCacheRepository
+from app.features.research.service.pacing import BRAVE_INTERVAL_S, KeyPacer
 from app.providers.llm.base import KeyReader
 
 # Purge des entrées expirées du cache web d'un utilisateur : au plus une fois par heure, à
@@ -28,6 +29,8 @@ class ResearchRuntime:
     now: Callable[[], datetime] = utcnow
     # Un seul verrou pour le processus : le compteur mensuel d'une clé Brave est partagé.
     brave_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+    # Cadence de Brave par clé (1 requête par seconde en offre gratuite), pour tout le processus.
+    brave_pacer: KeyPacer = field(default_factory=lambda: KeyPacer(BRAVE_INTERVAL_S))
     # Faible : un verrou que plus personne ne tient disparaît (une entrée par session sinon).
     _session_locks: weakref.WeakValueDictionary[tuple[str, str], asyncio.Lock] = field(
         default_factory=weakref.WeakValueDictionary, repr=False, compare=False
