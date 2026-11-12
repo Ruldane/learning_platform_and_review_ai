@@ -1,0 +1,1 @@
+export { CompareTable } from "./CompareTable";

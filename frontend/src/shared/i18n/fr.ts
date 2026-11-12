@@ -9,6 +9,7 @@ import { quiz } from "./messages/quiz";
 import { research } from "./messages/research";
 import { session } from "./messages/session";
 import { settings } from "./messages/settings";
+import { skills } from "./messages/skills";
 import { study } from "./messages/study";
 
 /**
@@ -29,4 +30,5 @@ export const fr = {
   learning,
   study,
   quiz,
+  skills,
 } as const;
