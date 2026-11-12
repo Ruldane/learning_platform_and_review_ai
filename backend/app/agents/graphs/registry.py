@@ -12,6 +12,7 @@ from app.agents.graphs import (
     demo_debate,
     learned_document,
     learning_council,
+    lesson_factory,
     program_builder,
     web_research,
 )
@@ -40,6 +41,7 @@ GRAPHS: dict[str, GraphSpec] = {
             "learning_council", learning_council.LearningCouncilInput, learning_council.build
         ),
         GraphSpec("program_builder", program_builder.ProgramBuilderInput, program_builder.build),
+        GraphSpec("lesson_factory", lesson_factory.LessonFactoryInput, lesson_factory.build),
     )
 }
 

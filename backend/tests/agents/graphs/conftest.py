@@ -14,6 +14,7 @@ from app.agents.runtime.ports import AgentPorts
 from app.agents.runtime.run_settings import RunSettings
 from app.agents.runtime.runner import SessionRunner
 from app.agents.tools.council_port import NO_COUNCIL, CouncilStore
+from app.agents.tools.lesson_port import NO_LESSONS, LessonStore
 from app.core.providers import MemoryProviders
 from app.features.memory.service.gateway import AgentMemoryGateway
 from app.features.memory.service.runtime import MemoryRuntime, memory_runtime
@@ -21,6 +22,7 @@ from app.features.research.service.gateway import AgentWebGateway
 from app.providers.llm.fake import FakeLlmProvider
 from app.providers.search.fake import FakeSearch
 from tests.agents.graphs.council_support import make_council_runner  # noqa: F401
+from tests.agents.graphs.lesson_support import make_lesson_runner  # noqa: F401
 from tests.agents.graphs.program_support import make_builder_runner  # noqa: F401
 from tests.agents.graphs.web_support import MakeWeb, Web, add_users, research_runtime
 from tests.agents.runtime.conftest import emitted  # noqa: F401  (fixture partagée)
@@ -143,8 +145,8 @@ async def make_web_runner(
     other_user_id: str,
 ) -> AsyncIterator[MakeWeb]:
     """Runner sur le registre RÉEL. Plusieurs appels = plusieurs processus (même base, même
-    `checkpoints.db`, mêmes faux moteurs). `models` remplace le faux LLM ; `council` : le port ;
-    `rounds` et `token_cap` : réglages de la session."""
+    `checkpoints.db`, mêmes faux moteurs). `models` remplace le faux LLM ; `council` et
+    `lessons` : les ports ; `rounds` et `token_cap` : réglages de la session."""
     search, reader = FakeSearch("searxng"), FakeWebReader()
     await add_users(db_session_factory, user_id, other_user_id)
     research = research_runtime(db_session_factory, search, reader)
@@ -155,6 +157,7 @@ async def make_web_runner(
             *,
             models: Any = None,
             council: CouncilStore = NO_COUNCIL,
+            lessons: LessonStore = NO_LESSONS,
             rounds: int = 2,
             token_cap: int = 300_000,
         ) -> Web:
@@ -175,7 +178,9 @@ async def make_web_runner(
                 checkpointer=saver,
                 prices={"modele-test": ModelPrice(1.0, 2.0)},
                 run_settings=FixedSettings(rounds, token_cap),
-                ports=AgentPorts(memory=web.memory_gateway, web=web.gateway, council=council),
+                ports=AgentPorts(
+                    memory=web.memory_gateway, web=web.gateway, council=council, lessons=lessons
+                ),
             )
             stack.push_async_callback(bus.aclose)
             stack.push_async_callback(web.runner.shutdown)
