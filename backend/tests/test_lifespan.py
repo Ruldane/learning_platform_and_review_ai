@@ -16,7 +16,7 @@ import app.main as main_module
 from app.agents.runtime.bus import EventBus
 from app.agents.runtime.launcher import SessionLauncher
 from app.agents.runtime.runner import SessionRunner
-from app.bootstrap import agent_ports
+from app.bootstrap import agent_ports, study_runtimes
 from app.config import Settings
 from app.core.providers import MemoryProviders, ResearchProviders
 from app.core.security import Cipher, KnownSecrets
@@ -29,6 +29,7 @@ from app.features.lessons.service.store import AgentLessonStore
 from app.features.memory.service.gateway import AgentMemoryGateway
 from app.features.program.service.runtime import ProgramRuntime
 from app.features.program.service.store import AgentProgramStore
+from app.features.quiz.service.store import AgentQuizStore
 from app.features.research.service.gateway import AgentWebGateway
 from app.main import create_app
 from app.scheduler.base import JobContext, JobSpec
@@ -222,22 +223,31 @@ async def test_launcher_is_bound_to_the_runner_then_unbound_at_shutdown(
     assert launcher.runner is None
 
 
-def test_agent_ports_compose_memory_web_council_program_and_lessons() -> None:
+def test_agent_ports_compose_memory_web_council_program_lessons_and_quiz() -> None:
     learning = LearningRuntime(object(), SessionLauncher())  # type: ignore[arg-type]
     program = ProgramRuntime(object(), object())  # type: ignore[arg-type]
     lessons = LessonsRuntime(*[object()] * 6)  # type: ignore[arg-type]
+    study = study_runtimes(
+        object(),  # type: ignore[arg-type]
+        SessionLauncher(),
+        program=program,
+        memory=object(),  # type: ignore[arg-type]
+    )
     ports = agent_ports(
         object(),  # type: ignore[arg-type]
         object(),  # type: ignore[arg-type]
         learning=learning,
         program=program,
         lessons=lessons,
+        study=study,
     )
     assert isinstance(ports.memory, AgentMemoryGateway)
     assert isinstance(ports.web, AgentWebGateway)
     assert isinstance(ports.council, AgentCouncilStore)
     assert isinstance(ports.program, AgentProgramStore)
     assert isinstance(ports.lessons, AgentLessonStore)
+    assert isinstance(ports.quiz, AgentQuizStore)
+    assert study.quiz.program is program
 
 
 async def test_learning_runtime_shares_the_launcher(settings: Settings, db_engine: object) -> None:
@@ -245,6 +255,9 @@ async def test_learning_runtime_shares_the_launcher(settings: Settings, db_engin
     async with LifespanManager(app):
         assert app.state.learning.launcher is app.state.launcher
         assert app.state.learning.session_factory is app.state.session_factory
+        quiz = app.state.quiz  # quiz (D101) : même lanceur, programme et mémoire
+        assert quiz.launcher is app.state.launcher and quiz.program is app.state.program
+        assert quiz.memory is app.state.memory
 
 
 async def test_lifespan_wires_lessons_and_the_scheduler(

@@ -96,6 +96,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/flashcards/due": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Due Cards
+         * @description La file du jour (30 fiches, 15 minutes, moins celles déjà revues aujourd'hui).
+         */
+        get: operations["due_cards_api_v1_flashcards_due_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/flashcards/{card_id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Review Card
+         * @description Avis sur une fiche due ; déjà revue : 409 `card_not_due` ; inconnue : 404.
+         */
+        post: operations["review_card_api_v1_flashcards__card_id__review_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/goals": {
         parameters: {
             query?: never;
@@ -388,6 +428,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/modules/{module_id}/quiz": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Quiz
+         * @description Prépare le quiz du module (202) ; déjà prêt : 200 ; en préparation : même session ; en
+         *     échec : relancé. Leçon pas prête : 409 `lesson_not_ready`.
+         */
+        post: operations["start_quiz_api_v1_modules__module_id__quiz_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/programs": {
         parameters: {
             query?: never;
@@ -477,6 +538,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/programs/{program_id}/quizzes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Quizzes */
+        get: operations["list_quizzes_api_v1_programs__program_id__quizzes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/programs/{program_id}/validate": {
         parameters: {
             query?: never;
@@ -505,6 +583,61 @@ export interface paths {
         put?: never;
         /** Choose Proposal */
         post: operations["choose_proposal_api_v1_proposals__proposal_id__choose_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quizzes/{quiz_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Quiz */
+        get: operations["get_quiz_api_v1_quizzes__quiz_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quizzes/{quiz_id}/attempts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Attempt
+         * @description Envoie les réponses et lance la notation. 422 `invalid_answers` ; 409 `quiz_not_ready`,
+         *     `attempt_in_progress` ou `retry_too_soon` (`details.retry_on`).
+         */
+        post: operations["create_attempt_api_v1_quizzes__quiz_id__attempts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quizzes/{quiz_id}/attempts/{attempt_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Attempt */
+        get: operations["get_attempt_api_v1_quizzes__quiz_id__attempts__attempt_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -913,6 +1046,18 @@ export interface components {
             /** Text */
             text: string;
         };
+        /** AnswerIn */
+        AnswerIn: {
+            /** Choice */
+            choice?: number | null;
+            /** Question Id */
+            question_id: string;
+            /**
+             * Text
+             * @default
+             */
+            text: string;
+        };
         /** ApiKeyIn */
         ApiKeyIn: {
             /**
@@ -981,6 +1126,52 @@ export interface components {
              * @default null
              */
             url: string | null;
+        };
+        /** AttemptCreate */
+        AttemptCreate: {
+            /** Answers */
+            answers: components["schemas"]["AnswerIn"][];
+        };
+        /** AttemptOut */
+        AttemptOut: {
+            followup: components["schemas"]["FollowupOut"] | null;
+            /** Id */
+            id: string;
+            /** Passed */
+            passed: boolean | null;
+            /** Results */
+            results: components["schemas"]["ResultOut"][];
+            /** Score */
+            score: number | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "grading" | "graded" | "failed";
+        };
+        /** AttemptStarted */
+        AttemptStarted: {
+            /** Attempt Id */
+            attempt_id: string;
+            /** Session Id */
+            session_id: string;
+        };
+        /** AttemptSummaryOut */
+        AttemptSummaryOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Id */
+            id: string;
+            /** Score */
+            score: number | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "grading" | "graded" | "failed";
         };
         /** Availability */
         "Availability-Input": {
@@ -1293,6 +1484,37 @@ export interface components {
             updated_at: string;
             /** Url */
             url: string | null;
+        };
+        /** DueQueue */
+        DueQueue: {
+            /** Cards */
+            cards: components["schemas"]["FlashcardOut"][];
+            /** Daily Cards */
+            daily_cards: number;
+            /** Remaining Due */
+            remaining_due: number;
+            /** Reviewed Today */
+            reviewed_today: number;
+        };
+        /** FlashcardOut */
+        FlashcardOut: {
+            /** Back */
+            back: string;
+            /** Front */
+            front: string;
+            /** Id */
+            id: string;
+            /** Skill */
+            skill: string | null;
+        };
+        /** FollowupOut */
+        FollowupOut: {
+            /** Retry On */
+            retry_on: string | null;
+            /** Revision Tasks */
+            revision_tasks: string[];
+            /** Unplaced */
+            unplaced: number;
         };
         /**
          * GoalCreate
@@ -2070,6 +2292,75 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** QuestionOut */
+        QuestionOut: {
+            /** Choices */
+            choices: string[];
+            /** Code */
+            code: string | null;
+            /** Id */
+            id: string;
+            /** Prompt */
+            prompt: string;
+            /** Rank */
+            rank: number;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "qcm" | "short" | "code" | "explain";
+        };
+        /** QuizOut */
+        QuizOut: {
+            /** Attempts */
+            attempts: components["schemas"]["AttemptSummaryOut"][];
+            /** Failure Reason */
+            failure_reason: string | null;
+            /** Id */
+            id: string;
+            /** Module Id */
+            module_id: string;
+            /** Questions */
+            questions: components["schemas"]["QuestionOut"][];
+            /** Session Id */
+            session_id: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "generating" | "ready" | "failed";
+            /** Title */
+            title: string;
+        };
+        /** QuizStarted */
+        QuizStarted: {
+            /** Quiz Id */
+            quiz_id: string;
+            /** Session Id */
+            session_id: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "generating" | "ready" | "failed";
+        };
+        /** QuizSummaryOut */
+        QuizSummaryOut: {
+            /** Best Score */
+            best_score: number | null;
+            /** Module Id */
+            module_id: string;
+            /** Module Title */
+            module_title: string;
+            /** Quiz Id */
+            quiz_id: string | null;
+            /** Retry On */
+            retry_on: string | null;
+            /** Status */
+            status: ("generating" | "ready" | "failed") | null;
+            /** Week Rank */
+            week_rank: number;
+        };
         /**
          * ReindexState
          * @description État de la réindexation de l'utilisateur, tenu en mémoire (perdu au redémarrage).
@@ -2144,6 +2435,19 @@ export interface components {
              */
             status: "to_read" | "read";
         };
+        /** ResultOut */
+        ResultOut: {
+            /** Correct Answer */
+            correct_answer: string;
+            /** Explanation */
+            explanation: string;
+            /** Feedback */
+            feedback: string;
+            /** Points */
+            points: number;
+            /** Question Id */
+            question_id: string;
+        };
         /**
          * ResumeRequest
          * @description Réponse à la question en attente (`interrupt_id` de `pending_interrupt`), ou reprise
@@ -2154,6 +2458,28 @@ export interface components {
             interrupt_id?: string | null;
             /** Value */
             value?: unknown;
+        };
+        /** ReviewIn */
+        ReviewIn: {
+            /**
+             * Result
+             * @enum {string}
+             */
+            result: "ok" | "fail";
+        };
+        /** ReviewOut */
+        ReviewOut: {
+            /** Card Id */
+            card_id: string;
+            /** Demoted Skill */
+            demoted_skill: string | null;
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /** Step */
+            step: number;
         };
         /** RunCompletedEvent */
         RunCompletedEvent: {
@@ -3071,6 +3397,61 @@ export interface operations {
             };
         };
     };
+    due_cards_api_v1_flashcards_due_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DueQueue"];
+                };
+            };
+        };
+    };
+    review_card_api_v1_flashcards__card_id__review_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                card_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_goals_api_v1_goals_get: {
         parameters: {
             query?: never;
@@ -3644,6 +4025,46 @@ export interface operations {
             };
         };
     };
+    start_quiz_api_v1_modules__module_id__quiz_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                module_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Quiz déjà prêt. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuizStarted"];
+                };
+            };
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuizStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_programs_api_v1_programs_get: {
         parameters: {
             query?: never;
@@ -3823,6 +4244,37 @@ export interface operations {
             };
         };
     };
+    list_quizzes_api_v1_programs__program_id__quizzes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                program_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuizSummaryOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     validate_program_api_v1_programs__program_id__validate_post: {
         parameters: {
             query?: never;
@@ -3876,6 +4328,104 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ChooseOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_quiz_api_v1_quizzes__quiz_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quiz_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuizOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_attempt_api_v1_quizzes__quiz_id__attempts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quiz_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttemptStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_attempt_api_v1_quizzes__quiz_id__attempts__attempt_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quiz_id: string;
+                attempt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttemptOut"];
                 };
             };
             /** @description Validation Error */

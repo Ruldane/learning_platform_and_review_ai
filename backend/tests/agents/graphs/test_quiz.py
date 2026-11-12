@@ -10,7 +10,7 @@ from pydantic import ValidationError
 
 from app.agents.graphs.quiz import QuizInput
 from app.agents.nodes.examiner import GRADE_REQUEST, MISSING_FEEDBACK, WRITE_REQUEST
-from app.agents.tools.quiz_port import QuizDraft, quiz_problems
+from app.agents.tools.quiz_port import QuestionDraft, QuizDraft, quiz_problems
 from app.core.errors import AppError
 from tests.agents.graphs.council_models import CouncilModels
 from tests.agents.graphs.quiz_support import (
@@ -147,6 +147,19 @@ async def test_answer_is_framed_as_untrusted(make_quiz_runner: MakeQuiz) -> None
     assert TRAP in between_untrusted_markers(prompt, "réponse de January")
     assert TRAP not in outside_untrusted_markers(prompt)
     assert "Énoncé de q4" in between_untrusted_markers(prompt, "question q4")
+    # Relecture de 5.3 : le titre du module est encadré, lui aussi (il vient du Stratège).
+    assert TITLE in between_untrusted_markers(prompt, "module")
+    assert TITLE not in outside_untrusted_markers(prompt)
+
+
+async def test_qcm_slipped_into_open_items_is_never_sent(make_quiz_runner: MakeQuiz) -> None:
+    """Défensif : un QCM glissé par le port parmi les ouvertes ne va jamais au modèle."""
+    run = await make_quiz_runner(start=False)
+    run.store.add_attempt(run.user_id, open_items=[open_item("q1", "qcm"), open_item("q4")])
+    run.sid = await run.runner.start(run.user_id, "quiz", GRADE)
+    await run.wait_status("completed")
+    [prompt] = run.prompts()
+    assert "question q4" in prompt and "Énoncé de q1" not in prompt
 
 
 async def test_grade_out_of_scale_is_refused(make_quiz_runner: MakeQuiz) -> None:
@@ -206,3 +219,9 @@ async def test_logs_carry_ids_only(
     text = "\n".join(r.getMessage() for r in caplog.records if r.name.startswith("app."))
     assert ATTEMPT_ID in text
     assert all(secret not in text for secret in (TRAP, "Énoncé de q4", "softmax", "Hors sujet"))
+
+
+def test_empty_rubric_criterion_is_refused() -> None:
+    """Relecture de 5.3 : un critère de grille vide est refusé (puis redemandé)."""
+    with pytest.raises(ValidationError):
+        QuestionDraft.model_validate(question("short", 1, rubric=["Parle de poids.", ""]))

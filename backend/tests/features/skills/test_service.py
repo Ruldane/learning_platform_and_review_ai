@@ -153,3 +153,29 @@ async def test_evidence_keeps_the_latest_twenty(db_session_factory: Factory) -> 
     async with db_session_factory() as db:
         row = (await db.execute(select(UserSkill))).scalar_one()
     assert [e["label"] for e in row.evidence] == [f"p{n}" for n in range(5, 25)]
+
+
+async def test_record_review_demotes_valide_after_two_failures(
+    db_session_factory: Factory,
+) -> None:
+    async with db_session_factory() as db:
+        service = SkillsService(db, ME)
+        await service.raise_levels(["Pandas"], "valide", _ev("quiz", "quiz", "q1"))
+        await service.raise_levels(["SQL"], "en_cours", _ev("programme"))
+        assert await service.record_review("inconnue", ok=False) is None
+        assert await service.record_review("pandas", ok=False) is None
+        assert await service.record_review("pandas", ok=True) is None  # série remise à 0
+        assert await service.record_review("pandas", ok=False) is None
+        assert await service.record_review("PANDAS", ok=False) == "en_cours"
+        assert await service.record_review("sql", ok=False) is None
+        assert await service.record_review("sql", ok=False) is None  # pas `valide` : rien
+        rows = {
+            row.skill_id: (row.level, row.fail_streak)
+            for row in (await db.execute(select(UserSkill))).scalars()
+        }
+        assert sorted(rows.values()) == [("en_cours", 0), ("en_cours", 2)]
+        await service.reset_fail_streaks(["SQL"])
+        assert sorted(r.fail_streak for r in (await db.execute(select(UserSkill))).scalars()) == [
+            0,
+            0,
+        ]

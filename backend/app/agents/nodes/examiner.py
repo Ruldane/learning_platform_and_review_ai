@@ -163,14 +163,16 @@ def make_grade_open(deps: GraphDeps) -> Node:
     async def grade_open(state: QuizState) -> QuizState:
         attempt = attempt_of(state)
         grades: dict[str, list[Any]] = {ref: [p, ""] for ref, p in attempt.qcm_points.items()}
-        if not attempt.open_items:
+        # Défensif : un QCM n'est jamais montré au modèle, même si le port en glissait un.
+        items = [item for item in attempt.open_items if item.type != "qcm"]
+        if not items:
             return {"grades": grades}
         prompt = render_prompt(
             AGENT,
             mode="grade",
-            module_title=attempt.module_title,
+            module=untrusted(f"Titre : {attempt.module_title}", "module"),
             lesson=_lesson(attempt.lesson_markdown),
-            items="\n\n".join(_item_prompt(item) for item in attempt.open_items),
+            items="\n\n".join(_item_prompt(item) for item in items),
         )
         model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
         found = await structured_call(
@@ -181,14 +183,14 @@ def make_grade_open(deps: GraphDeps) -> Node:
             step="notation",
             intent="je note tes réponses ouvertes",
         )
-        open_grades, missing = _grades_by_ref(found, attempt.open_items)
+        open_grades, missing = _grades_by_ref(found, items)
         unknown = sum(1 for grade in found.items if grade.ref not in open_grades)
         logger.info(
             "Réponses notées : session %s, tentative %s, %d ouverte(s), %d sans note, "
             "%d référence(s) inconnue(s)",
             deps.session_id,
             attempt.attempt_id,
-            len(attempt.open_items),
+            len(items),
             missing,
             unknown,
         )

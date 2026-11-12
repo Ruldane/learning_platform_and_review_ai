@@ -92,3 +92,31 @@ async def test_acquis_levels_keep_the_highest_per_name(
         await db.commit()
         levels = await acquis_levels(db, USER)
     assert levels == {"pandas": "valide"}
+
+
+async def test_allow_lower_is_the_only_way_down(
+    runtime: MemoryRuntime, db_session_factory: Factory
+) -> None:
+    """D101 : la rétrogradation de F9 (deux échecs de fiches) est la seule baisse admise."""
+    await _reflect(runtime, "Pandas", "valide")
+    await _reflect(runtime, "Pandas", "en_cours")
+    [item] = await _items(db_session_factory)
+    assert item.meta["level"] == "valide"  # sans `allow_lower` : jamais baissé
+    await reflect_skill_level(
+        runtime,
+        USER,
+        title="pandas",
+        level="en_cours",
+        author="user",
+        session_id=None,
+        reason="Deux échecs de suite",
+        allow_lower=True,
+    )
+    [item] = await _items(db_session_factory)
+    assert item.meta["level"] == "en_cours"
+    assert (await _writes(db_session_factory))[-1] == (
+        "update",
+        "user",
+        None,
+        "Deux échecs de suite",
+    )

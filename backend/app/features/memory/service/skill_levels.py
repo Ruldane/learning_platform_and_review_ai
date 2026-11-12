@@ -48,9 +48,12 @@ async def _raise(
     author: str,
     session_id: str | None,
     reason: str,
+    allow_lower: bool = False,
 ) -> None:
-    """Monte le niveau de l'acquis s'il est plus bas, journalise `update` ; sinon rien."""
-    if MASTERY_ORDER[_level(item)] >= MASTERY_ORDER[level]:
+    """Monte le niveau de l'acquis s'il est plus bas (ou le pose, plus bas compris, avec
+    `allow_lower`), journalise `update` ; sinon rien."""
+    current = MASTERY_ORDER[_level(item)]
+    if current == MASTERY_ORDER[level] or (current > MASTERY_ORDER[level] and not allow_lower):
         return
     item.meta = {**(item.meta or {}), "level": level}
     await db.flush()
@@ -93,10 +96,12 @@ async def reflect_skill_levels(
     author: str,
     session_id: str | None,
     reason: str,
+    allow_lower: bool = False,
 ) -> list[str]:
     """Reflète chaque `(titre, niveau)` dans l'acquis du même nom normalisé (créé, ou monté,
     jamais plus bas) ; rend les ids des acquis. Les acquis sont lus une seule fois. Session de
-    base propre, commitée (la vectorisation d'un acquis créé valide sa transaction avant)."""
+    base propre, commitée (la vectorisation d'un acquis créé valide sa transaction avant).
+    `allow_lower` : seule baisse admise (D6, D101), deux échecs de fiches de suite (SPEC F9)."""
     ids: list[str] = []
     async with runtime.session_factory() as db:
         index: dict[str, MemoryItem] = {}
@@ -120,7 +125,14 @@ async def reflect_skill_levels(
                 )
                 index[norm] = item
             await _raise(
-                db, user_id, item, level, author=author, session_id=session_id, reason=reason
+                db,
+                user_id,
+                item,
+                level,
+                author=author,
+                session_id=session_id,
+                reason=reason,
+                allow_lower=allow_lower,
             )
             ids.append(item.id)
         await db.commit()
@@ -136,9 +148,17 @@ async def reflect_skill_level(
     author: str,
     session_id: str | None,
     reason: str,
+    allow_lower: bool = False,
 ) -> str:
-    """Crée l'acquis `title` au niveau `level` (ou le monte, jamais plus bas) ; rend son id."""
+    """Crée l'acquis `title` au niveau `level` (ou le monte ; plus bas seulement avec
+    `allow_lower`) ; rend son id."""
     [item_id] = await reflect_skill_levels(
-        runtime, user_id, [(title, level)], author=author, session_id=session_id, reason=reason
+        runtime,
+        user_id,
+        [(title, level)],
+        author=author,
+        session_id=session_id,
+        reason=reason,
+        allow_lower=allow_lower,
     )
     return item_id

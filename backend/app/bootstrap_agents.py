@@ -3,6 +3,8 @@ par le moteur, ports adaptés des features (D82), production des leçons et cont
 planifiées (D91). Comme `app.bootstrap`, seul `app.main` (par `app.bootstrap`) l'importe
 (contrat 5)."""
 
+from dataclasses import dataclass
+
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.agents.runtime.launcher import SessionLauncher
@@ -19,6 +21,8 @@ from app.features.memory.service.gateway import AgentMemoryGateway
 from app.features.memory.service.runtime import MemoryRuntime
 from app.features.program.service.runtime import ProgramRuntime
 from app.features.program.service.store import AgentProgramStore
+from app.features.quiz.service.runtime import QuizRuntime
+from app.features.quiz.service.store import AgentQuizStore
 from app.features.research.service.gateway import AgentWebGateway
 from app.features.research.service.runtime import ResearchRuntime
 from app.features.settings.service import SettingsRunReader
@@ -43,6 +47,26 @@ def web_gateway(runtime: ResearchRuntime) -> WebGateway:
     return AgentWebGateway(runtime)
 
 
+@dataclass(frozen=True)
+class StudyRuntimes:
+    """Les features de l'étude (phase 5), créées ensemble pour garder `app.main` court (F23) :
+    une feature de plus = un champ ici, une ligne dans `study_runtimes` et dans `agent_ports`."""
+
+    quiz: QuizRuntime
+
+
+def study_runtimes(
+    session_factory: async_sessionmaker[AsyncSession],
+    launcher: SessionLauncher,
+    *,
+    program: ProgramRuntime,
+    memory: MemoryRuntime,
+) -> StudyRuntimes:
+    """Quiz et révisions (D101) : lanceur (lié au moteur ensuite), programme (verrou, tâches de
+    suivi), mémoire (reflet des niveaux)."""
+    return StudyRuntimes(quiz=QuizRuntime(session_factory, launcher, program, memory))
+
+
 def agent_ports(
     memory: MemoryRuntime,
     research: ResearchRuntime,
@@ -50,10 +74,11 @@ def agent_ports(
     learning: LearningRuntime,
     program: ProgramRuntime,
     lessons: LessonsRuntime,
+    study: StudyRuntimes,
 ) -> AgentPorts:
     """Tous les ports du moteur (D82) : un port de plus = un champ d'`AgentPorts` et une ligne ici.
-    Conseil (D84), programme (D86) et leçons (D90) adaptés des features `learning` (D87),
-    `program` (D88) et `lessons` (D91)."""
+    Conseil (D84), programme (D86), leçons (D90) et quiz (D100) adaptés des features `learning`
+    (D87), `program` (D88), `lessons` (D91) et `quiz` (D101)."""
     council = AgentCouncilStore(learning.session_factory, learning.launcher, learning)
     program_store = AgentProgramStore(program)
     return AgentPorts(
@@ -62,6 +87,7 @@ def agent_ports(
         council,
         program_store,
         AgentLessonStore(lessons),
+        AgentQuizStore(study.quiz),
     )
 
 

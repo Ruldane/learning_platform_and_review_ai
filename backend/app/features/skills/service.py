@@ -8,7 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.tools.plan_schema import EdgeDraft, SkillDraft
 from app.core.skills import Evidence, normalize_skill_name, read_evidence
-from app.db.models.skills import LEVEL_ORDER, SkillLevel
+from app.db.models.skills import LEVEL_ORDER, SkillLevel, UserSkill
+from app.features.quiz.service.spacing import DEMOTE_AFTER
 from app.features.skills.repository import (
     SkillEdgeRepository,
     SkillRepository,
@@ -125,3 +126,42 @@ class SkillsService:
     async def known_levels(self) -> dict[str, SkillLevel]:
         """`nom normalisé → niveau` de chaque compétence connue de January."""
         return {norm: _as_level(level) for norm, level in await self._levels.levels()}
+
+    async def _level_row(self, name: str) -> tuple[str, UserSkill] | None:
+        """`(nom affiché, ligne de niveau)` de la compétence, `None` si January n'en a pas."""
+        norm = normalize_skill_name(name)
+        rows = await self._skills.by_norm([norm]) if norm else {}
+        if norm not in rows:
+            return None
+        levels = await self._levels.for_skills([rows[norm].id])
+        row = levels.get(rows[norm].id)
+        return None if row is None else (rows[norm].name, row)
+
+    async def reset_fail_streaks(self, names: Sequence[str]) -> None:
+        """Un quiz réussi remet à zéro les échecs de fiches de ces compétences (D101)."""
+        for name in dict.fromkeys(names):
+            found = await self._level_row(name)
+            if found is not None:
+                found[1].fail_streak = 0
+        await self._db.flush()
+
+    async def record_review(self, skill: str, ok: bool) -> SkillLevel | None:
+        """Avis sur une fiche de `skill` (F9, D101) : réussite → échecs remis à 0 ; échec → +1.
+        Un acquis `valide` qui atteint `DEMOTE_AFTER` échecs consécutifs redescend à `en_cours`
+        (échecs remis à 0) : seule baisse de niveau admise ; rend alors le nouveau niveau, sinon
+        `None` (compétence sans niveau comprise)."""
+        found = await self._level_row(skill)
+        if found is None:
+            return None
+        row = found[1]
+        row.fail_streak = 0 if ok else row.fail_streak + 1
+        demoted: SkillLevel | None = None
+        if row.level == "valide" and row.fail_streak >= DEMOTE_AFTER:
+            row.level, row.fail_streak, demoted = "en_cours", 0, "en_cours"
+        await self._db.flush()
+        return demoted
+
+    async def display_name(self, skill: str) -> str | None:
+        """Le nom affiché de la compétence, `None` si elle n'a pas de niveau."""
+        found = await self._level_row(skill)
+        return None if found is None else found[0]

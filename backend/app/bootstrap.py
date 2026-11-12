@@ -9,6 +9,7 @@ from qdrant_client import AsyncQdrantClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.agents.runtime.costs import ModelPrice, load_prices
+from app.bootstrap_agents import StudyRuntimes as StudyRuntimes
 from app.bootstrap_agents import (  # réexportés : `app.main` ne lit que `app.bootstrap`
     agent_ports as agent_ports,
 )
@@ -16,6 +17,7 @@ from app.bootstrap_agents import lessons_runtime as lessons_runtime
 from app.bootstrap_agents import memory_gateway as memory_gateway
 from app.bootstrap_agents import run_settings_source as run_settings_source
 from app.bootstrap_agents import scheduler_context as scheduler_context
+from app.bootstrap_agents import study_runtimes as study_runtimes
 from app.bootstrap_agents import web_gateway as web_gateway
 from app.config import Settings
 from app.core.providers import MemoryProviders, Providers, PublishingProviders, ResearchProviders

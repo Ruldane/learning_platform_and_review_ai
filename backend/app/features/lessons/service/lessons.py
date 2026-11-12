@@ -107,3 +107,10 @@ async def lesson_pdf(
         return lesson.title, await storage.read(user_id, lesson.pdf_key)
     except (FileNotFoundError, StorageKeyInvalid):
         raise lesson_pdf_missing() from None
+
+
+async def ready_markdown(db: AsyncSession, user_id: str, module_id: str) -> str | None:
+    """Le Markdown de la leçon prête du module, `None` si elle n'est pas prête (quiz, D101).
+    Lecture pour les autres features (contrat 2)."""
+    lesson = await LessonRepository(db, user_id).by_module(module_id)
+    return lesson.markdown if lesson is not None and lesson.status == "ready" else None

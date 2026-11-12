@@ -215,6 +215,38 @@
         "title": "AgentTokenPayload",
         "type": "object"
       },
+      "AnswerIn": {
+        "properties": {
+          "choice": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Choice"
+          },
+          "question_id": {
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Question Id",
+            "type": "string"
+          },
+          "text": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question_id"
+        ],
+        "title": "AnswerIn",
+        "type": "object"
+      },
       "ApiKeyIn": {
         "properties": {
           "key": {
@@ -396,6 +428,148 @@
           "title"
         ],
         "title": "ArtifactReadyPayload",
+        "type": "object"
+      },
+      "AttemptCreate": {
+        "properties": {
+          "answers": {
+            "items": {
+              "$ref": "#/components/schemas/AnswerIn"
+            },
+            "maxItems": 50,
+            "title": "Answers",
+            "type": "array"
+          }
+        },
+        "required": [
+          "answers"
+        ],
+        "title": "AttemptCreate",
+        "type": "object"
+      },
+      "AttemptOut": {
+        "properties": {
+          "followup": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FollowupOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/ResultOut"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "status": {
+            "enum": [
+              "grading",
+              "graded",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "score",
+          "passed",
+          "results",
+          "followup"
+        ],
+        "title": "AttemptOut",
+        "type": "object"
+      },
+      "AttemptStarted": {
+        "properties": {
+          "attempt_id": {
+            "title": "Attempt Id",
+            "type": "string"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "attempt_id",
+          "session_id"
+        ],
+        "title": "AttemptStarted",
+        "type": "object"
+      },
+      "AttemptSummaryOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "status": {
+            "enum": [
+              "grading",
+              "graded",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "score",
+          "created_at"
+        ],
+        "title": "AttemptSummaryOut",
         "type": "object"
       },
       "Availability-Input": {
@@ -1115,6 +1289,106 @@
           "updated_at"
         ],
         "title": "DocumentOut",
+        "type": "object"
+      },
+      "DueQueue": {
+        "properties": {
+          "cards": {
+            "items": {
+              "$ref": "#/components/schemas/FlashcardOut"
+            },
+            "title": "Cards",
+            "type": "array"
+          },
+          "daily_cards": {
+            "title": "Daily Cards",
+            "type": "integer"
+          },
+          "remaining_due": {
+            "title": "Remaining Due",
+            "type": "integer"
+          },
+          "reviewed_today": {
+            "title": "Reviewed Today",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "cards",
+          "reviewed_today",
+          "daily_cards",
+          "remaining_due"
+        ],
+        "title": "DueQueue",
+        "type": "object"
+      },
+      "FlashcardOut": {
+        "properties": {
+          "back": {
+            "title": "Back",
+            "type": "string"
+          },
+          "front": {
+            "title": "Front",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "skill": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skill"
+          }
+        },
+        "required": [
+          "id",
+          "front",
+          "back",
+          "skill"
+        ],
+        "title": "FlashcardOut",
+        "type": "object"
+      },
+      "FollowupOut": {
+        "properties": {
+          "retry_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retry On"
+          },
+          "revision_tasks": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Revision Tasks",
+            "type": "array"
+          },
+          "unplaced": {
+            "title": "Unplaced",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "revision_tasks",
+          "retry_on",
+          "unplaced"
+        ],
+        "title": "FollowupOut",
         "type": "object"
       },
       "GoalCreate": {
@@ -3197,6 +3471,245 @@
         "title": "ProviderModels",
         "type": "object"
       },
+      "QuestionOut": {
+        "properties": {
+          "choices": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Choices",
+            "type": "array"
+          },
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "prompt": {
+            "title": "Prompt",
+            "type": "string"
+          },
+          "rank": {
+            "title": "Rank",
+            "type": "integer"
+          },
+          "type": {
+            "enum": [
+              "qcm",
+              "short",
+              "code",
+              "explain"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "rank",
+          "type",
+          "prompt",
+          "code",
+          "choices"
+        ],
+        "title": "QuestionOut",
+        "type": "object"
+      },
+      "QuizOut": {
+        "properties": {
+          "attempts": {
+            "items": {
+              "$ref": "#/components/schemas/AttemptSummaryOut"
+            },
+            "title": "Attempts",
+            "type": "array"
+          },
+          "failure_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Reason"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "module_id": {
+            "title": "Module Id",
+            "type": "string"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionOut"
+            },
+            "title": "Questions",
+            "type": "array"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
+          "status": {
+            "enum": [
+              "generating",
+              "ready",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "module_id",
+          "title",
+          "status",
+          "failure_reason",
+          "session_id",
+          "questions",
+          "attempts"
+        ],
+        "title": "QuizOut",
+        "type": "object"
+      },
+      "QuizStarted": {
+        "properties": {
+          "quiz_id": {
+            "title": "Quiz Id",
+            "type": "string"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
+          "status": {
+            "enum": [
+              "generating",
+              "ready",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "quiz_id",
+          "session_id",
+          "status"
+        ],
+        "title": "QuizStarted",
+        "type": "object"
+      },
+      "QuizSummaryOut": {
+        "properties": {
+          "best_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Best Score"
+          },
+          "module_id": {
+            "title": "Module Id",
+            "type": "string"
+          },
+          "module_title": {
+            "title": "Module Title",
+            "type": "string"
+          },
+          "quiz_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quiz Id"
+          },
+          "retry_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retry On"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "generating",
+                  "ready",
+                  "failed"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "week_rank": {
+            "title": "Week Rank",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "module_id",
+          "module_title",
+          "week_rank",
+          "quiz_id",
+          "status",
+          "best_score",
+          "retry_on"
+        ],
+        "title": "QuizSummaryOut",
+        "type": "object"
+      },
       "ReindexState": {
         "description": "État de la réindexation de l'utilisateur, tenu en mémoire (perdu au redémarrage).",
         "properties": {
@@ -3413,6 +3926,39 @@
         "title": "ResourcePatch",
         "type": "object"
       },
+      "ResultOut": {
+        "properties": {
+          "correct_answer": {
+            "title": "Correct Answer",
+            "type": "string"
+          },
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          },
+          "feedback": {
+            "title": "Feedback",
+            "type": "string"
+          },
+          "points": {
+            "title": "Points",
+            "type": "number"
+          },
+          "question_id": {
+            "title": "Question Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question_id",
+          "points",
+          "correct_answer",
+          "explanation",
+          "feedback"
+        ],
+        "title": "ResultOut",
+        "type": "object"
+      },
       "ResumeRequest": {
         "description": "Réponse à la question en attente (`interrupt_id` de `pending_interrupt`), ou reprise\nd'une pause (`interrupt_id` nul).",
         "properties": {
@@ -3432,6 +3978,59 @@
           }
         },
         "title": "ResumeRequest",
+        "type": "object"
+      },
+      "ReviewIn": {
+        "properties": {
+          "result": {
+            "enum": [
+              "ok",
+              "fail"
+            ],
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "ReviewIn",
+        "type": "object"
+      },
+      "ReviewOut": {
+        "properties": {
+          "card_id": {
+            "title": "Card Id",
+            "type": "string"
+          },
+          "demoted_skill": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Demoted Skill"
+          },
+          "due_date": {
+            "format": "date",
+            "title": "Due Date",
+            "type": "string"
+          },
+          "step": {
+            "title": "Step",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "card_id",
+          "step",
+          "due_date",
+          "demoted_skill"
+        ],
+        "title": "ReviewOut",
         "type": "object"
       },
       "RunCompletedEvent": {
@@ -5440,6 +6039,81 @@
         ]
       }
     },
+    "/api/v1/flashcards/due": {
+      "get": {
+        "description": "La file du jour (30 fiches, 15 minutes, moins celles déjà revues aujourd'hui).",
+        "operationId": "due_cards_api_v1_flashcards_due_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DueQueue"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Due Cards",
+        "tags": [
+          "quiz"
+        ]
+      }
+    },
+    "/api/v1/flashcards/{card_id}/review": {
+      "post": {
+        "description": "Avis sur une fiche due ; déjà revue : 409 `card_not_due` ; inconnue : 404.",
+        "operationId": "review_card_api_v1_flashcards__card_id__review_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "card_id",
+            "required": true,
+            "schema": {
+              "title": "Card Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Review Card",
+        "tags": [
+          "quiz"
+        ]
+      }
+    },
     "/api/v1/goals": {
       "get": {
         "operationId": "list_goals_api_v1_goals_get",
@@ -6292,6 +6966,59 @@
         ]
       }
     },
+    "/api/v1/modules/{module_id}/quiz": {
+      "post": {
+        "description": "Prépare le quiz du module (202) ; déjà prêt : 200 ; en préparation : même session ; en\néchec : relancé. Leçon pas prête : 409 `lesson_not_ready`.",
+        "operationId": "start_quiz_api_v1_modules__module_id__quiz_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "module_id",
+            "required": true,
+            "schema": {
+              "title": "Module Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizStarted"
+                }
+              }
+            },
+            "description": "Quiz déjà prêt."
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Quiz",
+        "tags": [
+          "quiz"
+        ]
+      }
+    },
     "/api/v1/programs": {
       "get": {
         "operationId": "list_programs_api_v1_programs_get",
@@ -6541,6 +7268,52 @@
         ]
       }
     },
+    "/api/v1/programs/{program_id}/quizzes": {
+      "get": {
+        "operationId": "list_quizzes_api_v1_programs__program_id__quizzes_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "program_id",
+            "required": true,
+            "schema": {
+              "title": "Program Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/QuizSummaryOut"
+                  },
+                  "title": "Response List Quizzes Api V1 Programs  Program Id  Quizzes Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Quizzes",
+        "tags": [
+          "quiz"
+        ]
+      }
+    },
     "/api/v1/programs/{program_id}/validate": {
       "post": {
         "operationId": "validate_program_api_v1_programs__program_id__validate_post",
@@ -6632,6 +7405,152 @@
         "summary": "Choose Proposal",
         "tags": [
           "learning"
+        ]
+      }
+    },
+    "/api/v1/quizzes/{quiz_id}": {
+      "get": {
+        "operationId": "get_quiz_api_v1_quizzes__quiz_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "quiz_id",
+            "required": true,
+            "schema": {
+              "title": "Quiz Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Quiz",
+        "tags": [
+          "quiz"
+        ]
+      }
+    },
+    "/api/v1/quizzes/{quiz_id}/attempts": {
+      "post": {
+        "description": "Envoie les réponses et lance la notation. 422 `invalid_answers` ; 409 `quiz_not_ready`,\n`attempt_in_progress` ou `retry_too_soon` (`details.retry_on`).",
+        "operationId": "create_attempt_api_v1_quizzes__quiz_id__attempts_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "quiz_id",
+            "required": true,
+            "schema": {
+              "title": "Quiz Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Attempt",
+        "tags": [
+          "quiz"
+        ]
+      }
+    },
+    "/api/v1/quizzes/{quiz_id}/attempts/{attempt_id}": {
+      "get": {
+        "operationId": "get_attempt_api_v1_quizzes__quiz_id__attempts__attempt_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "quiz_id",
+            "required": true,
+            "schema": {
+              "title": "Quiz Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "attempt_id",
+            "required": true,
+            "schema": {
+              "title": "Attempt Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Attempt",
+        "tags": [
+          "quiz"
         ]
       }
     },

@@ -12,6 +12,7 @@ from app.agents.runtime.launcher import SessionLauncher
 from app.agents.runtime.lifespan import agent_runtime
 from app.agents.runtime.openapi import register_event_schemas
 from app.bootstrap import (
+    StudyRuntimes,
     agent_ports,
     build_providers,
     key_test_http,
@@ -21,6 +22,7 @@ from app.bootstrap import (
     open_research_runtime,
     run_settings_source,
     scheduler_context,
+    study_runtimes,
 )
 from app.bootstrap import memory_providers as open_memory_providers
 from app.bootstrap import publishing_providers as open_publishing_providers
@@ -144,13 +146,10 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         yield
 
 
-async def _open_agents(app: FastAPI, stack: AsyncExitStack) -> None:
-    """Moteur d'agents (bus, runner, checkpointer) sur les ports des features, puis lanceur de
-    sessions hors requête (D82). Entré après la mémoire et la recherche, donc fermé avant elles
-    (la pile dépile à l'envers) ; reprend les sessions interrompues. Enfin, le planificateur des
-    tâches (D91)."""
-    # Le lanceur existe avant les ports (le Conseil le reçoit pour lancer `program_builder`) ;
-    # lié au runner juste après le moteur, délié avant l'arrêt du moteur.
+def _compose_features(app: FastAPI) -> StudyRuntimes:
+    """Runtimes des features que le moteur sert par ses ports : apprentissage, leçons,
+    programme, puis l'étude (quiz et révisions, D101). Le lanceur existe avant eux (le Conseil
+    le reçoit pour lancer `program_builder`) ; lié au runner juste après le moteur."""
     app.state.launcher = SessionLauncher()
     app.state.learning = LearningRuntime(app.state.session_factory, app.state.launcher)
     app.state.lessons = lessons_runtime(
@@ -164,6 +163,22 @@ async def _open_agents(app: FastAPI, stack: AsyncExitStack) -> None:
     app.state.program = ProgramRuntime(
         app.state.session_factory, app.state.memory, lessons=app.state.lessons
     )
+    study = study_runtimes(
+        app.state.session_factory,
+        app.state.launcher,
+        program=app.state.program,
+        memory=app.state.memory,
+    )
+    app.state.quiz = study.quiz
+    return study
+
+
+async def _open_agents(app: FastAPI, stack: AsyncExitStack) -> None:
+    """Moteur d'agents (bus, runner, checkpointer) sur les ports des features, puis lanceur de
+    sessions hors requête (D82). Entré après la mémoire et la recherche, donc fermé avant elles
+    (la pile dépile à l'envers) ; reprend les sessions interrompues. Enfin, le planificateur des
+    tâches (D91)."""
+    study = _compose_features(app)
     # Modèles injectés (parcours de bout en bout, tests), sinon la fabrique réelle.
     models: ChatModelSource = app.state.injected_chat_models or app.state.providers.llm_factory
     app.state.runtime = await stack.enter_async_context(
@@ -179,6 +194,7 @@ async def _open_agents(app: FastAPI, stack: AsyncExitStack) -> None:
                 learning=app.state.learning,
                 program=app.state.program,
                 lessons=app.state.lessons,
+                study=study,
             ),
         )
     )

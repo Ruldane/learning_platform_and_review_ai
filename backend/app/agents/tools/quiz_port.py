@@ -27,7 +27,7 @@ MAX_CHOICES = 5
 OPEN_SCORES = (0.0, 0.5, 1.0)  # notes d'une réponse ouverte
 
 Choice = Annotated[str, Field(min_length=1, max_length=200)]
-Criterion = Annotated[str, Field(max_length=200), ShortenToMax()]
+Criterion = Annotated[str, Field(min_length=1, max_length=200), ShortenToMax()]
 
 
 class QuestionDraft(BaseModel):
