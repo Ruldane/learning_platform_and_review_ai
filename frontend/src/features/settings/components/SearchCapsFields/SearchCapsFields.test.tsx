@@ -54,4 +54,22 @@ describe("SearchCapsFields", () => {
     expect(field).toHaveValue(12);
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
+
+  it("signale une saisie invalide au parent, puis sa correction", async () => {
+    const user = userEvent.setup();
+    const onInvalidChange = vi.fn();
+    render(
+      <SearchCapsFields
+        maxQueries={12}
+        maxPages={30}
+        onChange={vi.fn()}
+        onInvalidChange={onInvalidChange}
+      />,
+    );
+    const field = screen.getByLabelText("Requêtes par session");
+    await user.clear(field);
+    expect(onInvalidChange).toHaveBeenLastCalledWith(true);
+    await user.type(field, "20");
+    expect(onInvalidChange).toHaveBeenLastCalledWith(false);
+  });
 });

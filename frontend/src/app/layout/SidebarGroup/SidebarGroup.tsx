@@ -9,8 +9,13 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
     isActive ? "bg-accent text-accent-foreground" : "text-foreground",
   );
 
-/** Seul « / » exige une correspondance exacte ; les autres restent actifs sur leurs sous-routes. */
-const isRoot = (path: string) => path === "/";
+/**
+ * « / » exige une correspondance exacte ; les autres restent actifs sur leurs sous-routes, sauf
+ * si une entrée sœur de la même section est elle-même une sous-route (sinon les deux seraient
+ * actives à la fois).
+ */
+const needsEnd = (path: string, siblings: NavGroup["items"]) =>
+  path === "/" || siblings.some((other) => other.path.startsWith(`${path}/`));
 
 /**
  * Une section de la navigation. Une section à une seule entrée devient un lien portant l'icône
@@ -21,7 +26,7 @@ export function SidebarGroup({ group }: { group: NavGroup }) {
   const [single] = group.items;
   if (group.items.length === 1 && single) {
     return (
-      <NavLink to={single.path} end={isRoot(single.path)} className={linkClass}>
+      <NavLink to={single.path} end={needsEnd(single.path, group.items)} className={linkClass}>
         <Icon aria-hidden="true" className="size-4" />
         {t(single.labelKey)}
       </NavLink>
@@ -36,7 +41,7 @@ export function SidebarGroup({ group }: { group: NavGroup }) {
       <ul className="flex flex-col gap-1">
         {group.items.map((item) => (
           <li key={item.path}>
-            <NavLink to={item.path} end={isRoot(item.path)} className={linkClass}>
+            <NavLink to={item.path} end={needsEnd(item.path, group.items)} className={linkClass}>
               {t(item.labelKey)}
             </NavLink>
           </li>

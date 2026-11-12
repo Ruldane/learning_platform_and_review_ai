@@ -74,6 +74,22 @@ describe("SearchSettingsPage", () => {
     });
   });
 
+  it("refuses to save an invalid cap, even with Enter, and keeps the error", async () => {
+    const { puts, user } = setup();
+    const queries = await screen.findByLabelText("Requêtes par session");
+    await user.clear(queries);
+    await user.type(queries, "60{Enter}"); // « 6 » est valide, « 60 » ne l'est pas
+    expect(puts).toEqual([]);
+    expect(queries).toHaveValue(60);
+    expect(screen.getByRole("alert")).toHaveTextContent("Entre 1 et 50.");
+    expect(screen.getByRole("button", { name: "Enregistrer" })).toBeDisabled();
+    expect(screen.queryByText("Réglages enregistrés.")).not.toBeInTheDocument();
+
+    await user.clear(queries);
+    await user.type(queries, "20");
+    expect(screen.getByRole("button", { name: "Enregistrer" })).toBeEnabled();
+  });
+
   it("keeps the input and shows the error when saving fails, then saves on retry", async () => {
     let failing = true;
     const { puts, user } = setup({

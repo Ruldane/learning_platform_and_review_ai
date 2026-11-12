@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { t } from "@/shared/i18n/t";
 import { fieldClass } from "@/shared/ui/fieldClass";
 
@@ -8,6 +8,8 @@ interface CapFieldProps {
   min: number;
   max: number;
   onValid: (value: number) => void;
+  /** Signale au parent que la saisie en cours est invalide (il doit alors refuser l'envoi). */
+  onInvalidChange?: (invalid: boolean) => void;
 }
 
 function isValid(text: string, min: number, max: number): boolean {
@@ -20,11 +22,16 @@ function isValid(text: string, min: number, max: number): boolean {
  * est transmise ; invalide ou vide, elle reste affichée avec un message et rien n'est transmis.
  * En quittant le champ, on revient à la dernière valeur valide.
  */
-export function CapField({ label, value, min, max, onValid }: CapFieldProps) {
+export function CapField({ label, value, min, max, onValid, onInvalidChange }: CapFieldProps) {
   const [draft, setDraft] = useState<string | null>(null);
   const inputId = useId();
   const errorId = useId();
   const invalid = draft !== null && !isValid(draft, min, max);
+
+  useEffect(() => {
+    onInvalidChange?.(invalid);
+    return () => onInvalidChange?.(false);
+  }, [invalid, onInvalidChange]);
 
   function onChange(next: string) {
     setDraft(next);

@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { apiBaseUrl } from "@/shared/api/client";
 import { useSessionStore } from "@/shared/realtime/sessionStore";
 import { createFakeSocketServer } from "@/test/fakeSocket";
@@ -152,6 +152,37 @@ describe("ResearchBenchPage", () => {
     await user.click(screen.getByRole("link", { name: "Nouvel essai" }));
     expect(await screen.findByRole("button", { name: "Lancer l'essai" })).toBeInTheDocument();
     expect(router.state.location.search).toBe("");
+  });
+
+  it("cancels a running run from the page, and offers no cancel once it is finished", async () => {
+    const cancelled = vi.fn();
+    server.use(
+      http.post(`${API}/s1/cancel`, () => {
+        cancelled();
+        return HttpResponse.json(sessionView("cancelled"));
+      }),
+    );
+    const { fake, user } = setup("/reglages/recherche/essai?session=s1");
+    await waitFor(() => expect(fake.sockets).toHaveLength(1));
+    const { sourceFound } = researchEvents();
+    fake
+      .last()
+      .open()
+      .push(sourceFound({ source_id: "a", title: "Guide RAG", score: 70, verdict: "kept" }));
+    await user.click(await screen.findByRole("button", { name: "Annuler" }));
+
+    await waitFor(() => expect(cancelled).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText("Annulée")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Annuler" })).not.toBeInTheDocument();
+  });
+
+  it("does not offer to cancel a run that has already completed", async () => {
+    const { fake } = setup("/reglages/recherche/essai?session=s1");
+    await waitFor(() => expect(fake.sockets).toHaveLength(1));
+    const { completed } = researchEvents();
+    fake.last().open().push(completed());
+    expect(await screen.findByText("Terminée")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Annuler" })).not.toBeInTheDocument();
   });
 
   it("keeps the form and shows the error when the run cannot start", async () => {

@@ -24,7 +24,7 @@ export function ResearchBenchPage({ createSocket }: { createSocket?: SocketFacto
         </Link>
       </header>
       {run.sessionId ? (
-        <ResearchRun stream={run.stream} onRestart={run.restart} />
+        <ResearchRun sessionId={run.sessionId} stream={run.stream} onRestart={run.restart} />
       ) : (
         <>
           <ResearchBenchForm

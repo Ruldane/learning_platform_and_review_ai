@@ -11,10 +11,17 @@ interface SearchSettingsSectionsProps {
   value: SearchSettingsView;
   usage: BraveUsageView;
   onChange: (next: SearchSettingsView) => void;
+  /** Vrai tant qu'un plafond contient une saisie invalide. */
+  onCapsInvalidChange: (invalid: boolean) => void;
 }
 
 /** Les trois blocs de l'écran : requêtes (langues, plafonds), moteurs (ordre, Brave), domaines. */
-export function SearchSettingsSections({ value, usage, onChange }: SearchSettingsSectionsProps) {
+export function SearchSettingsSections({
+  value,
+  usage,
+  onChange,
+  onCapsInvalidChange,
+}: SearchSettingsSectionsProps) {
   return (
     <>
       <Section title={t("settings.search.sections.queries")}>
@@ -26,6 +33,7 @@ export function SearchSettingsSections({ value, usage, onChange }: SearchSetting
           maxQueries={value.maxQueries}
           maxPages={value.maxPages}
           onChange={(caps) => onChange({ ...value, ...caps })}
+          onInvalidChange={onCapsInvalidChange}
         />
       </Section>
       <Section title={t("settings.search.sections.engines")}>

@@ -28,6 +28,7 @@ export function SearchSettingsEditor({ settings, usage }: SearchSettingsEditorPr
   const [draft, setDraft] = useState<SearchSettingsView | null>(null);
   const saver = useSaveSearchSettings(settings);
   const value = draft ?? stored;
+  const [capsInvalid, setCapsInvalid] = useState(false);
   const dirty = draft !== null && !sameSettings(draft, stored);
 
   const edit = (next: SearchSettingsView) => {
@@ -36,7 +37,8 @@ export function SearchSettingsEditor({ settings, usage }: SearchSettingsEditorPr
   };
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (!dirty || saver.pending || draft === null) return;
+    // Entrée dans un plafond invalide : rien ne part (le brouillon garde la dernière valeur valide).
+    if (!dirty || capsInvalid || saver.pending || draft === null) return;
     saver.save(draft).then(
       () => setDraft(null),
       () => undefined, // l'erreur est affichée depuis la mutation ; la saisie est gardée
@@ -52,15 +54,20 @@ export function SearchSettingsEditor({ settings, usage }: SearchSettingsEditorPr
           {t("settings.search.tryBench")}
         </Link>
       </header>
-      <SearchSettingsSections value={value} usage={usage} onChange={edit} />
+      <SearchSettingsSections
+        value={value}
+        usage={usage}
+        onChange={edit}
+        onCapsInvalidChange={setCapsInvalid}
+      />
       {saver.error ? <InlineError message={errorMessage(saver.error)} /> : null}
       <div className="flex items-center gap-3">
-        <Button type="submit" disabled={!dirty || saver.pending}>
+        <Button type="submit" disabled={!dirty || capsInvalid || saver.pending}>
           {saver.pending ? t("settings.search.saving") : t("settings.search.save")}
         </Button>
         <p role="status" className="text-sm text-muted-foreground">
           {saver.saved && !dirty ? t("settings.search.saved") : null}
-          {dirty && !saver.pending ? t("settings.search.unsaved") : null}
+          {dirty && !capsInvalid && !saver.pending ? t("settings.search.unsaved") : null}
         </p>
       </div>
     </form>
