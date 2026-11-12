@@ -1,10 +1,14 @@
 export { AGENT_COLORS, agentIdentity } from "./agentColors";
 export type { AgentIdentity, AgentSlug } from "./agentColors";
 export { AgentBubble } from "./AgentBubble";
+export { Board } from "./Board";
+export type { BoardProps } from "./Board";
+export type { BoardEdit, BoardKind, BoardStateView } from "./boardTypes";
 export { CostBadge } from "./CostBadge";
 export { DebateFeed } from "./DebateFeed";
 export { FreeTextAnswer } from "./FreeTextAnswer";
 export { InterruptCard } from "./InterruptCard";
+export { MermaidSvg } from "./MermaidSvg";
 export { MessageComposer } from "./MessageComposer";
 export { SessionControls } from "./SessionControls";
 export { SessionStatusBar } from "./SessionStatusBar";
