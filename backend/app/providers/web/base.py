@@ -2,8 +2,10 @@
 
 Aucun message d'erreur ne cite l'URL, le nom d'hôte ni un extrait de la page (spec 17.2)."""
 
+import asyncio
 import re
 from collections.abc import Mapping
+from contextvars import ContextVar
 from dataclasses import dataclass
 from typing import Protocol
 from urllib.parse import parse_qs, urlsplit
@@ -29,6 +31,18 @@ NOT_YOUTUBE_MESSAGE = "Lien YouTube non reconnu."
 NO_TRANSCRIPT_MESSAGE = "Vidéo illisible : ni transcription ni description disponibles."
 GITHUB_UNREADABLE = "Dépôt GitHub illisible : README absent ou API indisponible."
 ARXIV_UNREADABLE = "Article arXiv introuvable ou API indisponible."
+
+# Échéance de la lecture en cours (`loop.time()`), posée par `RoutingWebReader` : le fetch, le
+# débit, le repli Gotenberg et le PDF arXiv se règlent sur ce qui reste des 15 s de la page.
+READ_DEADLINE: ContextVar[float | None] = ContextVar("web_read_deadline", default=None)
+
+
+def deadline_within(seconds: float) -> float:
+    """Échéance à `seconds` d'ici, ramenée à celle de la lecture en cours si elle est plus
+    proche. À appeler dans une boucle asyncio."""
+    own = asyncio.get_running_loop().time() + seconds
+    outer = READ_DEADLINE.get()
+    return own if outer is None else min(own, outer)
 
 
 @dataclass(frozen=True)

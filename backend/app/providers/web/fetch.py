@@ -47,8 +47,8 @@ _HEADERS = {
     "user-agent": "Mozilla/5.0 (compatible; TremplinReader/1.0)",
 }
 # En-têtes qu'un appel ne remplace jamais : l'encodage borne la décompression (`_body`), l'hôte
-# est celui de l'URL validée.
-_LOCKED_HEADERS = frozenset({"accept-encoding", "host"})
+# est celui de l'URL validée, aucun cookie n'est envoyé (client partagé, D63), pas de corps.
+_LOCKED_HEADERS = frozenset({"accept-encoding", "host", "cookie", "content-length"})
 _NAT64 = ipaddress.ip_network("64:ff9b::/96")
 _IPV6_GLOBAL_UNICAST = ipaddress.ip_network("2000::/3")
 
@@ -151,7 +151,8 @@ class SafeHttpFetcher:
     l'environnement : l'adresse connectée serait celle du proxy) ; voir `bootstrap`.
     `throttle` (D74) est attendu avant chaque saut, redirections comprises, une fois l'URL et
     ses adresses validées : une adresse refusée ne consomme aucun créneau. L'attente compte
-    dans les 15 s."""
+    dans les 15 s, ramenées à l'échéance de la lecture en cours (`READ_DEADLINE`) ; un créneau
+    au-delà échoue tout de suite en « délai dépassé » sans être réservé."""
 
     def __init__(
         self,
@@ -171,9 +172,10 @@ class SafeHttpFetcher:
         content_types: tuple[str, ...] = ALLOWED_CONTENT_TYPES,
         headers: Mapping[str, str] | None = None,
     ) -> FetchedResource:
+        deadline = base.deadline_within(base.FETCH_TIMEOUT_S)
         try:
-            async with asyncio.timeout(base.FETCH_TIMEOUT_S):
-                return await self._follow(url, content_types, _request_headers(headers))
+            async with asyncio.timeout_at(deadline):
+                return await self._follow(url, content_types, _request_headers(headers), deadline)
         except (TimeoutError, httpx.TimeoutException):
             raise UrlUnreadable(TIMEOUT_MESSAGE) from None
         except httpx.ConnectError as exc:
@@ -184,13 +186,14 @@ class SafeHttpFetcher:
             raise UrlUnreadable() from None
 
     async def _follow(
-        self, url: str, content_types: tuple[str, ...], headers: dict[str, str]
+        self, url: str, content_types: tuple[str, ...], headers: dict[str, str], deadline: float
     ) -> FetchedResource:
         current = _checked_url(url)
         for _ in range(MAX_REDIRECTS + 1):
             await self._check_host(current)
             if self._throttle is not None:
-                await self._throttle.wait(current.host)
+                budget = deadline - asyncio.get_running_loop().time()
+                await self._throttle.wait(current.host, budget_s=budget)
             async with self._http.stream(
                 "GET", current, headers=headers, follow_redirects=False
             ) as response:

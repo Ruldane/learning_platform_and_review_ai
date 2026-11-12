@@ -2,7 +2,7 @@
 (fournisseurs LLM, sondes de santé) avec les features. Le lifespan l'appelle au démarrage."""
 
 from collections.abc import AsyncIterator, Callable
-from contextlib import asynccontextmanager
+from contextlib import AbstractAsyncContextManager, asynccontextmanager, nullcontext
 
 import httpx
 from qdrant_client import AsyncQdrantClient
@@ -157,17 +157,25 @@ def page_renderer(settings: Settings, http: httpx.AsyncClient) -> PageRenderer |
     return GotenbergRenderer(http, settings.gotenberg_url)
 
 
+def _render_client(
+    settings: Settings,
+) -> AbstractAsyncContextManager[httpx.AsyncClient | None]:
+    """Client de Gotenberg seulement si le repli est actif (aucun client ouvert inutilisé)."""
+    return _render_http() if settings.web_render_fallback else nullcontext(None)
+
+
 def _web_reader(
     settings: Settings,
     reader_http: httpx.AsyncClient,
-    render_http: httpx.AsyncClient,
+    render_http: httpx.AsyncClient | None,
     pdf: SubprocessPdfExtractor,
 ) -> WebReader:
     """Lecteur web étendu (D74) : un seul fetcher sûr et un seul débit par hôte pour tout le
     processus (pages, API GitHub, API et PDF arXiv) ; repli Gotenberg selon les réglages. La
     mémoire (import d'URL), YouTube (repli) et la recherche reçoivent ce même lecteur."""
     fetcher = SafeHttpFetcher(reader_http, throttle=DomainThrottle())
-    pages = TrafilaturaWebReader(fetcher, pdf, renderer=page_renderer(settings, render_http))
+    renderer = page_renderer(settings, render_http) if render_http is not None else None
+    pages = TrafilaturaWebReader(fetcher, pdf, renderer=renderer)
     return RoutingWebReader(pages, GithubReader(fetcher), ArxivReader(fetcher, pdf))
 
 
@@ -179,7 +187,7 @@ async def memory_providers(settings: Settings) -> AsyncIterator[MemoryProviders]
     async with (
         httpx.AsyncClient(timeout=_OLLAMA_TIMEOUT_SECONDS) as http,
         _reader_http() as reader_http,
-        _render_http() as render_http,
+        _render_client(settings) as render_http,
     ):
         # Pas de contrôle de version au démarrage : il ferait une requête dès la construction.
         qdrant = AsyncQdrantClient(

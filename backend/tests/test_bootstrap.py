@@ -234,5 +234,7 @@ async def test_web_reader_routes_github_arxiv_and_renders_with_one_throttle(
         renderer = default._renderer
         assert isinstance(renderer, GotenbergRenderer) and renderer._http is created[2]
     disabled = settings.model_copy(update={"web_render_fallback": False})
+    created.clear()
     async with memory_providers(disabled) as built:
         assert built.web._default._renderer is None  # type: ignore[attr-defined]
+        assert len(created) == 2  # aucun client Gotenberg ouvert inutilisé

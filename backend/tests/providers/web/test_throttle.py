@@ -101,9 +101,11 @@ class RecordingThrottle(DomainThrottle):
     def __init__(self) -> None:
         super().__init__()
         self.hosts: list[str] = []
+        self.budgets: list[float | None] = []
 
-    async def wait(self, host: str) -> None:
+    async def wait(self, host: str, *, budget_s: float | None = None) -> None:
         self.hosts.append(host)
+        self.budgets.append(budget_s)
 
 
 async def test_fetch_throttles_each_redirect_hop() -> None:
@@ -116,6 +118,8 @@ async def test_fetch_throttles_each_redirect_hop() -> None:
     fetcher, _ = fetcher_for(handler, throttle=throttle)
     await fetcher.fetch("https://a.example/debut")
     assert throttle.hosts == ["a.example", "b.example"]
+    # Chaque saut reçoit ce qui reste des 15 s du fetch.
+    assert all(b is not None and 0 < b <= 15.0 for b in throttle.budgets)
 
 
 async def test_fetch_never_throttles_a_refused_address() -> None:

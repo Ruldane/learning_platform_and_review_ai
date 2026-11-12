@@ -18,6 +18,7 @@ from defusedxml.ElementTree import fromstring
 from app.core.errors import AppError
 from app.providers.pdf import base as pdf_limits
 from app.providers.pdf.base import PdfTextExtractor
+from app.providers.web import base
 from app.providers.web.base import (
     ARXIV_UNREADABLE,
     TIMEOUT_MESSAGE,
@@ -31,7 +32,10 @@ logger = logging.getLogger(__name__)
 
 API_URL = "https://export.arxiv.org/api/query"
 PDF_ROOT = "https://arxiv.org/pdf"
-_HOSTS = frozenset({"arxiv.org", "www.arxiv.org"})
+_HOSTS = frozenset({"arxiv.org", "www.arxiv.org", "export.arxiv.org"})
+# Part des 15 s de la lecture gardée après l'étape du PDF : un PDF trop lent laisse le temps de
+# rendre le résumé (revue 3.4).
+_PDF_MARGIN_RATIO = 0.15
 _ATOM_TYPES = ("application/atom+xml", "application/xml", "text/xml")
 _NS = "{http://www.w3.org/2005/Atom}"
 # Identifiants récents (`1706.03762`, `2401.12345v2`) et anciens (`hep-th/9901001`,
@@ -85,14 +89,17 @@ class ArxivReader:
     async def read(self, url: str) -> WebDocument:
         """Titre, auteurs joints, date de publication, résumé et texte du PDF. API en échec ou
         article absent → `UrlUnreadable(ARXIV_UNREADABLE)` ; une adresse refusée et le délai
-        dépassé passent tels quels ; un PDF en échec laisse le résumé comme texte."""
+        dépassé passent tels quels ; un PDF en échec ou trop lent laisse le résumé comme texte.
+        L'étape du PDF s'arrête `_PDF_MARGIN_RATIO` × 15 s avant l'échéance de la lecture."""
         paper = arxiv_id(url)
         if paper is None:
             raise UrlUnreadable(ARXIV_UNREADABLE)
+        deadline = base.deadline_within(base.FETCH_TIMEOUT_S)
         entry = await asyncio.to_thread(_entry, await self._feed(paper))
         summary = _clean(entry.find(f"{_NS}summary"))
         names = [_clean(author.find(f"{_NS}name")) for author in entry.findall(f"{_NS}author")]
-        text = await self._pdf_text(paper) or summary
+        pdf_deadline = deadline - base.FETCH_TIMEOUT_S * _PDF_MARGIN_RATIO
+        text = await self._pdf_text(paper, pdf_deadline) or summary
         if not text:
             raise UrlUnreadable(ARXIV_UNREADABLE)
         return WebDocument(
@@ -120,14 +127,26 @@ class ArxivReader:
             raise UrlUnreadable(ARXIV_UNREADABLE) from None
         return resource.body
 
-    async def _pdf_text(self, paper: str) -> str:
-        """Texte du PDF, ou `""` en cas d'échec (journal : code d'erreur seulement)."""
+    async def _pdf_text(self, paper: str, deadline: float) -> str:
+        """Texte du PDF avant `deadline`, ou `""` en cas d'échec ou de délai (journal : code
+        d'erreur seulement). L'échéance est publiée au fetcher (débit et téléchargement) ; le
+        sous-processus d'extraction est tué à l'annulation (D72)."""
+        if deadline <= asyncio.get_running_loop().time():
+            logger.info("PDF arXiv non lu, résumé gardé (délai)")
+            return ""
+        token = base.READ_DEADLINE.set(deadline)
         try:
-            resource = await self._fetcher.fetch(
-                f"{PDF_ROOT}/{paper}", content_types=("application/pdf",)
-            )
-            text = await self._pdf.extract_text(resource.body)
+            async with asyncio.timeout_at(deadline):
+                resource = await self._fetcher.fetch(
+                    f"{PDF_ROOT}/{paper}", content_types=("application/pdf",)
+                )
+                text = await self._pdf.extract_text(resource.body)
+        except TimeoutError:
+            logger.info("PDF arXiv trop lent, résumé gardé")
+            return ""
         except AppError as exc:
             logger.info("PDF arXiv illisible, résumé gardé (%s)", exc.code)
             return ""
+        finally:
+            base.READ_DEADLINE.reset(token)
         return text.strip()

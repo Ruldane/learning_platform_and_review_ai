@@ -1,13 +1,21 @@
 """Lecture d'un article arXiv : métadonnées par l'API Atom (defusedxml), texte par le PDF, résumé
 en repli ; tout passe par le fetcher sûr."""
 
+import asyncio
+import time
+from collections.abc import AsyncIterator
+
 import httpx
 import pytest
 
 from app.providers.pdf.base import PdfUnreadable
+from app.providers.web import base
 from app.providers.web.arxiv import ArxivReader, arxiv_id
 from app.providers.web.base import ARXIV_UNREADABLE, UrlForbidden, UrlUnreadable
+from app.providers.web.github import GithubReader
+from app.providers.web.routing import RoutingWebReader
 from tests.providers.web.fetch_support import FakeResolver, Handler, fetcher_for, never, ok
+from tests.support.memory import FakeWebReader
 
 SUMMARY = "The dominant sequence transduction models are based on complex recurrent networks."
 PDF_TEXT = "Attention Is All You Need. " * 20
@@ -71,6 +79,7 @@ def _arxiv(atom: bytes = ATOM, pdf: httpx.Response | None = None) -> Handler:
         ("https://arxiv.org/abs/hep-th/9901001", "hep-th/9901001"),
         ("https://arxiv.org/abs/2401.12345v2", "2401.12345v2"),
         ("https://www.arxiv.org/pdf/2401.12345", "2401.12345"),
+        ("https://export.arxiv.org/abs/2401.12345", "2401.12345"),
         ("http://arxiv.org/abs/math.GT/0309136v1", "math.GT/0309136v1"),
         ("https://arxiv.org/abs/1706.03762/", "1706.03762"),
         ("https://arxiv.org/list/cs.AI/recent", None),
@@ -160,3 +169,58 @@ async def test_arxiv_api_goes_through_the_ssrf_guard() -> None:
     fetcher, _ = fetcher_for(never, FakeResolver({"export.arxiv.org": ["169.254.169.254"]}))
     with pytest.raises(UrlForbidden):
         await ArxivReader(fetcher, FakePdf()).read("https://arxiv.org/abs/1706.03762")
+
+
+# Revue 3.4 (I2) : un PDF lent (téléchargement ou extraction) laisse le résumé, dans les 15 s.
+
+
+class SlowPdf:
+    def __init__(self) -> None:
+        self.cancelled = False
+
+    async def extract_text(self, data: bytes) -> str:
+        try:
+            await asyncio.sleep(30)
+        except asyncio.CancelledError:
+            self.cancelled = True
+            raise
+        return PDF_TEXT
+
+
+async def _slow_body() -> AsyncIterator[bytes]:
+    yield b"%PDF-1.4 "
+    await asyncio.sleep(30)
+    yield b"fin"
+
+
+def _slow_download(request: httpx.Request) -> httpx.Response:
+    if request.url.host == "arxiv.org":
+        return httpx.Response(
+            200, headers={"content-type": "application/pdf"}, content=_slow_body()
+        )
+    return _arxiv()(request)
+
+
+@pytest.mark.parametrize("slow", ["extraction", "telechargement"])
+async def test_arxiv_slow_pdf_keeps_abstract_within_the_page_budget(
+    slow: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(base, "FETCH_TIMEOUT_S", 1.0)
+    pdf = SlowPdf()
+    fetcher, _ = fetcher_for(_slow_download if slow == "telechargement" else _arxiv())
+    reader = RoutingWebReader(FakeWebReader(), GithubReader(fetcher), ArxivReader(fetcher, pdf))
+    started = time.monotonic()
+    doc = await reader.read("https://arxiv.org/abs/1706.03762")
+    elapsed = time.monotonic() - started
+    assert doc.text == SUMMARY and doc.title == "Attention Is All You Need"
+    assert doc.author == "Ashish Vaswani, Noam Shazeer"
+    assert 0.5 <= elapsed < 1.0  # échéance du PDF : 15 % avant la fin des 15 s (ici 1 s)
+    assert pdf.cancelled is (slow == "extraction")
+
+
+async def test_arxiv_pdf_skipped_when_no_time_is_left(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("app.providers.web.arxiv._PDF_MARGIN_RATIO", 1.0)
+    seen: list[httpx.Request] = []
+    fetcher, _ = fetcher_for(_arxiv(), seen=seen)
+    doc = await ArxivReader(fetcher, SlowPdf()).read("https://arxiv.org/abs/1706.03762")
+    assert doc.text == SUMMARY and [r.url.host for r in seen] == ["export.arxiv.org"]

@@ -28,11 +28,17 @@ class RoutingWebReader:
         self._arxiv = arxiv
 
     async def read(self, url: str, *, require_text: bool = True) -> WebDocument:
+        """L'échéance est publiée dans `READ_DEADLINE` : chaque étape (débit, fetch, rendu, PDF
+        arXiv) se règle sur ce qui reste."""
+        deadline = base.deadline_within(base.FETCH_TIMEOUT_S)
+        token = base.READ_DEADLINE.set(deadline)
         try:
-            async with asyncio.timeout(base.FETCH_TIMEOUT_S):
+            async with asyncio.timeout_at(deadline):
                 return await self._dispatch(url, require_text)
         except TimeoutError:
             raise UrlUnreadable(TIMEOUT_MESSAGE) from None
+        finally:
+            base.READ_DEADLINE.reset(token)
 
     async def _dispatch(self, url: str, require_text: bool) -> WebDocument:
         if github_repo(url) is not None:

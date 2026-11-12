@@ -1,11 +1,10 @@
-import contextlib
 import logging
 
 import httpx
 import pytest
 
 from app.core.errors import AppError
-from app.providers.pdf.base import RenderFailed
+from app.providers.pdf.base import PdfUnreadable, RenderFailed
 from app.providers.pdf.extract import PdfPlumberExtractor
 from app.providers.web.base import NO_TEXT_MESSAGE, FetchedResource, UrlForbidden, UrlUnreadable
 from app.providers.web.reader import TrafilaturaWebReader
@@ -167,12 +166,22 @@ async def test_no_render_when_text_is_not_required() -> None:
 
 
 @pytest.mark.parametrize(
-    ("content_type", "body"),
-    [("text/html", PAGE.encode()), ("text/plain", b"court"), ("application/pdf", b"%PDF-1.4")],
+    ("content_type", "body", "error"),
+    [
+        ("text/html", PAGE.encode(), None),
+        ("text/plain", b"court", UrlUnreadable),
+        ("application/pdf", b"%PDF-1.4", PdfUnreadable),
+    ],
     ids=["html-long", "texte-court", "pdf"],
 )
-async def test_no_render_for_readable_html_nor_other_types(content_type: str, body: bytes) -> None:
+async def test_no_render_for_readable_html_nor_other_types(
+    content_type: str, body: bytes, error: type[AppError] | None
+) -> None:
     renderer = FakeRenderer(make_pdf(RENDERED_LINES))
-    with contextlib.suppress(AppError):
-        await _rendering(renderer, content_type, body).read(URL)
+    reader = _rendering(renderer, content_type, body)
+    if error is None:
+        assert "Tremplin aide" in (await reader.read(URL)).text
+    else:
+        with pytest.raises(error):
+            await reader.read(URL)
     assert renderer.calls == []

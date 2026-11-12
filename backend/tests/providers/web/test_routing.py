@@ -1,12 +1,14 @@
 """Aiguillage du lecteur web (GitHub, arXiv, page ordinaire) et délai de 15 s pour toute la
 lecture, repli Gotenberg compris."""
 
+import asyncio
+
 import pytest
 
 from app.core.errors import AppError
 from app.providers.web import base
 from app.providers.web.base import TIMEOUT_MESSAGE, FetchedResource, UrlUnreadable, WebDocument
-from app.providers.web.reader import TrafilaturaWebReader
+from app.providers.web.reader import TrafilaturaWebReader, _html
 from app.providers.web.routing import RoutingWebReader
 from tests.support.memory import FakeRenderer, FakeWebReader
 
@@ -42,6 +44,8 @@ def _doc(url: str) -> WebDocument:
         ("https://arxiv.org/abs/1706.03762", "arxiv"),
         ("https://arxiv.org/pdf/1706.03762v7.pdf", "arxiv"),
         ("https://github.com/settings/profile", "défaut"),
+        ("https://github.com/psf/requests/issues/123", "défaut"),
+        ("https://export.arxiv.org/abs/1706.03762", "arxiv"),
         ("https://arxiv.org/list/cs.AI/recent", "défaut"),
         ("https://example.org/article", "défaut"),
     ],
@@ -71,12 +75,14 @@ async def test_routing_errors_pass_through() -> None:
 
 
 async def test_routing_whole_read_under_15s(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(base, "FETCH_TIMEOUT_S", 0.1)
-    renderer = FakeRenderer(b"%PDF-1.4", delay_s=5.0)
+    # Premier appel de trafilatura (pool de threads, initialisation) hors du budget mesuré.
+    await asyncio.to_thread(_html, b"<html><body></body></html>", "https://example.org/")
+    monkeypatch.setattr(base, "FETCH_TIMEOUT_S", 0.5)
+    renderer = FakeRenderer(b"%PDF-1.4", delay_s=30.0)
     default = TrafilaturaWebReader(EmptyPageFetcher(), NoPdf(), renderer=renderer)
     reader = RoutingWebReader(default, FakeSourceReader("github"), FakeSourceReader("arxiv"))
     with pytest.raises(UrlUnreadable) as caught:
         await reader.read("https://example.org/spa")
     assert caught.value.message == TIMEOUT_MESSAGE and caught.value.__cause__ is None
     [(_, timeout_s)] = renderer.calls
-    assert 0 < timeout_s <= 0.1
+    assert 0 < timeout_s <= 0.5

@@ -39,9 +39,15 @@ async def test_headers_per_call_are_added_but_never_the_encoding() -> None:
     await fetcher.fetch(
         "https://api.example/x",
         content_types=("application/json",),
-        headers={"Accept": "application/vnd.github+json", "Accept-Encoding": "br, zstd"},
+        headers={
+            "Accept": "application/vnd.github+json",
+            "Accept-Encoding": "br, zstd",
+            "Cookie": "session=volée",
+            "Host": "interne.local",
+        },
     )
     sent = seen[-1].headers
+    assert "cookie" not in sent and sent["host"] == "api.example"
     assert sent["accept"] == "application/vnd.github+json"
     assert sent["accept-encoding"] == "gzip, deflate"
     assert "TremplinReader" in sent["user-agent"]

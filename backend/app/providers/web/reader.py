@@ -72,7 +72,7 @@ class TrafilaturaWebReader:
     async def read(self, url: str, *, require_text: bool = True) -> WebDocument:
         """Sans texte exigé (`require_text=False`, repli YouTube), aucun rendu : seuls le titre
         et la description sont attendus."""
-        deadline = asyncio.get_running_loop().time() + base.FETCH_TIMEOUT_S
+        deadline = base.deadline_within(base.FETCH_TIMEOUT_S)
         resource = await self._fetcher.fetch(url)
         if resource.content_type == "application/pdf":
             text = await self._pdf.extract_text(resource.body)

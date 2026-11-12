@@ -45,7 +45,7 @@ _RESERVED = frozenset(
 
 
 def github_repo(url: str) -> tuple[str, str] | None:
-    """`(owner, repo)` d'une URL `https://github.com/<owner>/<repo>[/...]`, `.git` retiré ;
+    """`(owner, repo)` d'une URL `https://github.com/<owner>/<repo>[/tree/...]`, `.git` retiré ;
     `None` pour toute autre URL (page du site, autre hôte, identifiants, nom invalide)."""
     try:
         parts = urlsplit(url)
@@ -57,7 +57,9 @@ def github_repo(url: str) -> tuple[str, str] | None:
     if parts.username is not None or parts.password is not None:
         return None
     segments = [s for s in parts.path.split("/") if s]
-    if len(segments) < 2:
+    # Racine du dépôt ou `tree/<branche>` seulement : une issue, une PR ou un fichier citeraient
+    # leur URL avec le texte du README (revue 3.4) ; ils restent au lecteur de pages.
+    if len(segments) < 2 or (len(segments) > 2 and segments[2] != "tree"):
         return None
     owner, repo = segments[0], segments[1].removesuffix(".git")
     if owner.lower() in _RESERVED or repo in ("", ".", ".."):
