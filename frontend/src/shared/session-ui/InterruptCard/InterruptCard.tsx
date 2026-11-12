@@ -1,7 +1,8 @@
-import { useId } from "react";
+import { useId, useState } from "react";
 import { t } from "@/shared/i18n/t";
 import type { InterruptPayload } from "@/shared/realtime/types";
 import { FreeTextAnswer } from "../FreeTextAnswer";
+import { fieldAnswers } from "./fieldAnswers";
 import { InterruptFields } from "./InterruptFields";
 import { InterruptOptions } from "./InterruptOptions";
 
@@ -9,7 +10,10 @@ interface InterruptCardProps {
   interrupt: InterruptPayload;
   answered: boolean;
   disabled?: boolean;
-  /** Une option envoie sa valeur ; des champs envoient `{ answers: { id: texte } }` ; sinon le texte libre. */
+  /**
+   * Une option envoie sa valeur ; des champs envoient `{ answers: { id: texte } }` (et une option
+   * clique après saisie envoie ces réponses, jamais perdues) ; sinon le texte libre.
+   */
   onAnswer: (value: unknown) => void;
 }
 
@@ -29,6 +33,12 @@ export function InterruptCard({
   const locked = answered || disabled;
   const options = interrupt.options ?? [];
   const fields = interrupt.fields ?? [];
+  const [draft, setDraft] = useState<Record<string, string>>({});
+  // Des réponses déjà saisies partent avec l'option (« Lancer la recherche ») : jamais perdues.
+  const pickOption = (value: string) => {
+    const answers = fieldAnswers(fields, draft);
+    onAnswer(Object.keys(answers).length > 0 ? { answers } : value);
+  };
 
   return (
     <section
@@ -39,7 +49,13 @@ export function InterruptCard({
         {interrupt.question}
       </p>
       {fields.length > 0 ? (
-        <InterruptFields fields={fields} disabled={locked} onSubmit={onAnswer} />
+        <InterruptFields
+          fields={fields}
+          draft={draft}
+          onDraft={setDraft}
+          disabled={locked}
+          onSubmit={onAnswer}
+        />
       ) : null}
       {options.length > 0 ? (
         <InterruptOptions
@@ -47,7 +63,7 @@ export function InterruptCard({
           labelledBy={questionId}
           disabled={locked}
           autoFocusFirst={fields.length === 0}
-          onPick={onAnswer}
+          onPick={pickOption}
         />
       ) : null}
       {options.length === 0 && fields.length === 0 ? (

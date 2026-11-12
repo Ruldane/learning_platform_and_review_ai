@@ -30,4 +30,41 @@ describe("AppLayout", () => {
     expect(main).toHaveTextContent("Contenu");
     expect(await screen.findByText("Tous les services répondent")).toBeInTheDocument();
   });
+
+  it("donne plus de largeur à une page qui le demande (handle wide), pas aux autres", () => {
+    server.use(
+      http.get(`${apiBaseUrl}/api/v1/health`, () =>
+        HttpResponse.json({ status: "ok", checks: {} }),
+      ),
+    );
+    const router = createMemoryRouter(
+      [
+        {
+          path: "/",
+          Component: AppLayout,
+          children: [
+            { index: true, element: <p>Étroite</p> },
+            { path: "large", handle: { wide: true }, element: <p>Large</p> },
+          ],
+        },
+      ],
+      { initialEntries: ["/large"] },
+    );
+    render(<RouterProvider router={router} />, { wrapper: createQueryWrapper() });
+    expect(screen.getByRole("main").className).toContain("max-w-7xl");
+    expect(screen.getByRole("main").className).not.toContain("max-w-4xl");
+  });
+
+  it("garde la colonne étroite par défaut", () => {
+    server.use(
+      http.get(`${apiBaseUrl}/api/v1/health`, () =>
+        HttpResponse.json({ status: "ok", checks: {} }),
+      ),
+    );
+    const router = createMemoryRouter([
+      { path: "/", Component: AppLayout, children: [{ index: true, element: <p>Étroite</p> }] },
+    ]);
+    render(<RouterProvider router={router} />, { wrapper: createQueryWrapper() });
+    expect(screen.getByRole("main").className).toContain("max-w-4xl");
+  });
 });

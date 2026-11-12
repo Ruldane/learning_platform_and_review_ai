@@ -109,6 +109,16 @@ describe("InterruptCard", () => {
     expect(onAnswer).toHaveBeenCalledWith("go");
   });
 
+  it("sends the typed answers when the option is clicked, so they are never lost", async () => {
+    const user = userEvent.setup();
+    const onAnswer = vi.fn();
+    render(<InterruptCard interrupt={framing} answered={false} onAnswer={onAnswer} />);
+    await user.type(screen.getByLabelText("Quand veux-tu changer de poste ?"), " Dans 6 mois ");
+    await user.click(screen.getByRole("button", { name: "Lancer la recherche" }));
+    expect(onAnswer).toHaveBeenCalledTimes(1);
+    expect(onAnswer).toHaveBeenCalledWith({ answers: { q2: "Dans 6 mois" } });
+  });
+
   it("waits for the required fields", async () => {
     const user = userEvent.setup();
     const required = {

@@ -1,13 +1,15 @@
 import { t } from "@/shared/i18n/t";
 import type { ProposalView } from "../viewTypes";
 import { MixBar } from "./MixBar";
-import { ProposalCard } from "./ProposalCard";
+import { ProposalGrid } from "./ProposalGrid";
 import { useMixSelection } from "./useMixSelection";
 
 interface ProposalCardsProps {
   proposals: ProposalView[];
   /** January peut choisir, mélanger ou relancer (le débat est fini). */
   canChoose: boolean;
+  /** Le Conseil propose un autre tour (absent au plafond de tours : l'interruption n'en offre plus). */
+  canAnotherRound?: boolean;
   /** Une action est en cours : tout est désactivé, sauf « Voir au tableau ». */
   busy: boolean;
   onChoose: (proposalId: string) => void;
@@ -28,6 +30,7 @@ const MIX_SIZE = 2;
 export function ProposalCards({
   proposals,
   canChoose,
+  canAnotherRound = true,
   busy,
   onChoose,
   onMix,
@@ -37,6 +40,8 @@ export function ProposalCards({
   const ordered = [...proposals].sort((a, b) => a.rank - b.rank);
   const { picked, toggle } = useMixSelection(ordered);
   const actionable = canChoose && !busy;
+  // Un parcours est déjà choisi : plus rien à décider ici.
+  const decided = ordered.some((proposal) => proposal.chosen);
 
   if (ordered.length === 0) {
     return <p className="text-muted-foreground">{t("learning.proposals.empty")}</p>;
@@ -47,31 +52,26 @@ export function ProposalCards({
       aria-busy={busy}
       className="flex flex-col gap-4"
     >
-      <div
-        className="grid gap-4"
-        style={{ gridTemplateColumns: "repeat(auto-fit, minmax(17rem, 1fr))" }}
-      >
-        {ordered.map((proposal) => (
-          <ProposalCard
-            key={proposal.id}
-            proposal={proposal}
-            actionable={actionable}
-            ticked={picked.includes(proposal.id)}
-            tickLocked={picked.length >= MIX_SIZE}
-            onChoose={() => onChoose(proposal.id)}
-            onTick={() => toggle(proposal.id)}
-            onShowBoard={onShowBoard}
-          />
-        ))}
-      </div>
-      <MixBar
-        picked={picked.length}
-        size={MIX_SIZE}
-        canChoose={canChoose}
+      <ProposalGrid
+        proposals={ordered}
         actionable={actionable}
-        onMix={() => onMix(picked[0] ?? "", picked[1] ?? "")}
-        onAnotherRound={onAnotherRound}
+        picked={picked}
+        mixSize={MIX_SIZE}
+        onChoose={onChoose}
+        onTick={toggle}
+        onShowBoard={onShowBoard}
       />
+      {decided ? null : (
+        <MixBar
+          picked={picked.length}
+          size={MIX_SIZE}
+          canChoose={canChoose}
+          canAnotherRound={canAnotherRound}
+          actionable={actionable}
+          onMix={() => onMix(picked[0] ?? "", picked[1] ?? "")}
+          onAnotherRound={onAnotherRound}
+        />
+      )}
     </section>
   );
 }

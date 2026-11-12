@@ -7,6 +7,7 @@ interface MixBarProps {
   /** Nombre de cartes à cocher pour mélanger. */
   size: number;
   canChoose: boolean;
+  canAnotherRound: boolean;
   actionable: boolean;
   onMix: () => void;
   onAnotherRound: () => void;
@@ -17,6 +18,7 @@ export function MixBar({
   picked,
   size,
   canChoose,
+  canAnotherRound,
   actionable,
   onMix,
   onAnotherRound,
@@ -30,9 +32,11 @@ export function MixBar({
       <Button disabled={!actionable || picked !== size} onClick={onMix}>
         {t("learning.proposals.mix")}
       </Button>
-      <Button variant="outline" disabled={!actionable} onClick={onAnotherRound}>
-        {t("learning.proposals.anotherRound")}
-      </Button>
+      {canAnotherRound ? (
+        <Button variant="outline" disabled={!actionable} onClick={onAnotherRound}>
+          {t("learning.proposals.anotherRound")}
+        </Button>
+      ) : null}
       <p role="status" className="text-sm text-muted-foreground">
         {canChoose
           ? t("learning.proposals.mixHint", { count: picked })

@@ -126,6 +126,20 @@ describe("sourcesFromEvents", () => {
     expect(model.kept.map((s) => s.id)).toEqual(["a"]);
   });
 
+  it("keeps a page and a practitioner that share an address apart (no source_id)", () => {
+    const model = sourcesFromEvents([
+      sourceFound({
+        url: "https://exemple.fr/ada",
+        title: "Un article",
+        verdict: "kept",
+        score: 80,
+      }),
+      sourceFound({ url: "https://exemple.fr/ada", title: "Ada", kind: "person", role: "ML" }),
+    ]);
+    expect(model.kept.map((s) => s.title)).toEqual(["Un article"]);
+    expect(model.people.map((s) => s.title)).toEqual(["Ada"]);
+  });
+
   it("shows a person who was not judged but not a rejected one", () => {
     const model = sourcesFromEvents([
       sourceFound({ source_id: "p1", kind: "person", title: "Ada" }),

@@ -74,7 +74,8 @@ export function sourcesFromEvents(events: SessionEvent[]): SourcesViewModel {
       addResult(queries, event);
     } else if (event.type === "source.found") {
       const source = toSource(event);
-      sources.set(source.id, source);
+      // Page et praticien ne se remplacent jamais, même avec la même adresse.
+      sources.set(`${source.kind}:${source.id}`, source);
     }
   }
   const all = [...sources.values()];

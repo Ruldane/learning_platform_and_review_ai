@@ -34,6 +34,40 @@ describe("applyEvent : idempotence", () => {
   });
 });
 
+describe("applyEvent : nœud rejoué avec les mêmes identifiants", () => {
+  it("does not leave an empty bubble when a finished message is republished", () => {
+    const first = [started(1, "scribe"), message(2, "m1", "Position A", "scribe")];
+    // Après un redémarrage, le nœud repart (nouveau seq) et republie le même message.
+    const replay = [started(3, "scribe"), message(4, "m1", "Position A", "scribe")];
+    const s = run([...first, ...replay]);
+    const turns = s.feed.filter((i) => i.kind === "turn");
+    expect(turns).toHaveLength(1);
+    expect(turn(s, "m1")).toMatchObject({ text: "Position A", streaming: false });
+  });
+
+  it("restarts the text when a finished message streams again under the same id", () => {
+    const s = run([
+      started(1, "scribe"),
+      tok(2, "m1", "Position A", "scribe"),
+      message(3, "m1", "Position A", "scribe"),
+      started(4, "scribe"),
+      tok(5, "m1", "Position", "scribe"),
+      tok(6, "m1", " A", "scribe"),
+    ]);
+    expect(turn(s, "m1")).toMatchObject({ text: "Position A", streaming: true });
+    expect(s.feed.filter((i) => i.kind === "turn")).toHaveLength(1);
+  });
+
+  it("keeps the next agent's pending bubble when it is not a replay", () => {
+    const s = run([
+      started(1, "scribe"),
+      message(2, "m1", "Position A", "scribe"),
+      started(3, "scribe"),
+    ]);
+    expect(s.feed.filter((i) => i.kind === "turn")).toHaveLength(2);
+  });
+});
+
 describe("applyEvent : tours d'agent", () => {
   it("accumulates tokens then replaces with the final message", () => {
     let s = run([started(1, "demo_critic"), tok(2, "m1", "Bon"), tok(3, "m1", "jour")]);

@@ -122,6 +122,20 @@ describe("ProposalCards", () => {
     expect(onAnotherRound).toHaveBeenCalledTimes(1);
   });
 
+  it("offers no other round when the interrupt does not (round cap)", () => {
+    setup({ canAnotherRound: false });
+    expect(screen.queryByRole("button", { name: "Demander un autre tour" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Mélanger ces deux parcours" })).toBeInTheDocument();
+  });
+
+  it("drops the mix bar once a parcours is chosen", () => {
+    const proposals = makeProposals().map((p) => ({ ...p, chosen: p.id === "p1" }));
+    setup({ proposals, canChoose: false });
+    expect(screen.queryByRole("button", { name: "Mélanger ces deux parcours" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Demander un autre tour" })).toBeNull();
+    expect(screen.queryByText(/Tu pourras choisir/)).toBeNull();
+  });
+
   it("shows a proposal on the board, only when it has one", async () => {
     const { user, onShowBoard } = setup();
     expect(screen.getAllByRole("button", { name: /au tableau/ })).toHaveLength(2);

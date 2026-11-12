@@ -39,7 +39,8 @@ const onToken: Handler<"agent.token"> = (state, event) => ({
   ...state,
   feed: upsertTurn(state.feed, agentOf(state, event), event.payload.message_id, (turn) => ({
     ...turn,
-    text: turn.text + event.payload.text,
+    // Un message déjà fini qui se remet à streamer (nœud rejoué, même `message_id`) repart de zéro.
+    text: turn.streaming || turn.interrupted ? turn.text + event.payload.text : event.payload.text,
     streaming: true,
   })),
 });

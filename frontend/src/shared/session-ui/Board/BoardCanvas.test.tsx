@@ -1,6 +1,7 @@
 import { act, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import BoardCanvas from "./BoardCanvas";
+import { REFIT_DELAY_MS } from "./useRefitOnShow";
 import { fake, fakeApi, lastSceneIds, resetExcalidrawMock } from "./excalidrawMock";
 
 vi.mock("@excalidraw/excalidraw", async () => (await import("./excalidrawMock")).module);
@@ -56,6 +57,15 @@ describe("BoardCanvas", () => {
     expect(screen.getByTestId("excalidraw")).toHaveAttribute("data-view-mode", "true");
     await act(() => vi.advanceTimersByTimeAsync(250));
     expect(screen.getByTestId("excalidraw")).toHaveAttribute("data-view-mode", "false");
+    expect(fakeApi.scrollToContent).toHaveBeenLastCalledWith(undefined, expect.any(Object));
+  });
+
+  it("frames the content again once the canvas has measured itself (a state already seen)", async () => {
+    render(canvas({ animate: false }));
+    await act(() => vi.advanceTimersByTimeAsync(0));
+    const early = fakeApi.scrollToContent.mock.calls.length;
+    await act(() => vi.advanceTimersByTimeAsync(REFIT_DELAY_MS));
+    expect(fakeApi.scrollToContent.mock.calls.length).toBe(early + 1);
     expect(fakeApi.scrollToContent).toHaveBeenLastCalledWith(undefined, expect.any(Object));
   });
 

@@ -1,26 +1,18 @@
-import { useId, useState, type FormEvent } from "react";
+import { useId, type FormEvent } from "react";
 import { t } from "@/shared/i18n/t";
-import type { InterruptPayload } from "@/shared/realtime/types";
 import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/lib/utils";
 import { fieldClass } from "@/shared/ui/fieldClass";
-
-type InterruptField = NonNullable<InterruptPayload["fields"]>[number];
+import { fieldAnswers, type InterruptField } from "./fieldAnswers";
 
 interface InterruptFieldsProps {
   fields: InterruptField[];
+  /** Texte saisi par champ : la carte le garde, pour que les options puissent l'envoyer aussi. */
+  draft: Record<string, string>;
+  onDraft: (draft: Record<string, string>) => void;
   disabled: boolean;
   /** Reçoit `{ answers: { <id du champ>: <texte> } }` : les champs vides sont omis. */
   onSubmit: (value: { answers: Record<string, string> }) => void;
-}
-
-function answersOf(fields: InterruptField[], draft: Record<string, string>) {
-  const answers: Record<string, string> = {};
-  for (const field of fields) {
-    const text = (draft[field.id] ?? "").trim();
-    if (text !== "") answers[field.id] = text;
-  }
-  return answers;
 }
 
 /**
@@ -28,10 +20,15 @@ function answersOf(fields: InterruptField[], draft: Record<string, string>) {
  * envoie les réponses données ; il reste inactif tant que tous les champs sont vides ou qu'un
  * champ obligatoire manque. Le premier champ reçoit le focus.
  */
-export function InterruptFields({ fields, disabled, onSubmit }: InterruptFieldsProps) {
+export function InterruptFields({
+  fields,
+  draft,
+  onDraft,
+  disabled,
+  onSubmit,
+}: InterruptFieldsProps) {
   const prefix = useId();
-  const [draft, setDraft] = useState<Record<string, string>>({});
-  const answers = answersOf(fields, draft);
+  const answers = fieldAnswers(fields, draft);
   const missing = fields.some((field) => field.required && answers[field.id] === undefined);
   const ready = Object.keys(answers).length > 0 && !missing;
 
@@ -56,7 +53,7 @@ export function InterruptFields({ fields, disabled, onSubmit }: InterruptFieldsP
             disabled={disabled}
             autoFocus={!disabled && index === 0}
             aria-describedby={field.required ? `${prefix}-${field.id}-req` : undefined}
-            onChange={(event) => setDraft({ ...draft, [field.id]: event.target.value })}
+            onChange={(event) => onDraft({ ...draft, [field.id]: event.target.value })}
             className={cn(fieldClass, "h-auto min-h-16 py-1.5")}
           />
           {field.required ? (

@@ -41,20 +41,21 @@ export function Board(props: BoardProps) {
     return <EmptyState title={t("session.board.label")} description={t("session.board.empty")} />;
   }
   return (
-    <section
-      aria-label={t("session.board.label")}
-      className="grid gap-4 lg:grid-cols-[14rem_minmax(0,1fr)]"
-    >
-      <BoardStateList states={states} activeId={active.id} onSelect={onSelect} />
-      <BoardWorkspace
-        key={active.id}
-        state={active}
-        animate={!seen.has(active.id)}
-        readOnly={readOnly}
-        sending={sending}
-        onSendEdit={onSendEdit}
-        onSeen={onSeen}
-      />
+    // Mise en page selon la largeur de la zone (et non de l'écran) : dans la colonne de droite du
+    // Conseil, la liste des états passe au-dessus du canevas au lieu de lui prendre 14 rem.
+    <section aria-label={t("session.board.label")} className="@container">
+      <div className="grid gap-4 @2xl:grid-cols-[14rem_minmax(0,1fr)]">
+        <BoardStateList states={states} activeId={active.id} onSelect={onSelect} />
+        <BoardWorkspace
+          key={active.id}
+          state={active}
+          animate={!seen.has(active.id)}
+          readOnly={readOnly}
+          sending={sending}
+          onSendEdit={onSendEdit}
+          onSeen={onSeen}
+        />
+      </div>
     </section>
   );
 }

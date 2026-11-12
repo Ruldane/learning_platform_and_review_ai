@@ -13,7 +13,7 @@ export function BoardStateList({ states, activeId, onSelect }: BoardStateListPro
   const ordered = [...states].sort((a, b) => a.step - b.step);
   return (
     <nav aria-label={t("session.board.states")}>
-      <ol className="flex flex-col gap-1">
+      <ol className="flex flex-row flex-wrap gap-1 @2xl:flex-col">
         {ordered.map((state) => {
           const active = state.id === activeId;
           return (

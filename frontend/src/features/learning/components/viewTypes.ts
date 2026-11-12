@@ -27,3 +27,28 @@ export interface ProposalView {
 
 /** Les espaces à onglets de la page Conseil. */
 export type CouncilTab = "board" | "sources" | "proposals";
+
+/** Ce que January saisit pour un objectif (SPEC 3.1, étape 1) ; les champs facultatifs vides sont `null`. */
+export interface GoalInput {
+  text: string;
+  targetRole: string | null;
+  /** Échéance, au format `AAAA-MM-JJ`. */
+  deadline: string | null;
+  /** Heures par semaine, de 1 à 40. */
+  weeklyHours: number | null;
+}
+
+/** Statut d'un objectif : le Conseil délibère, un parcours est choisi, un programme est planifié. */
+export type GoalStatusView = "council" | "chosen" | "planned";
+
+/** Une ligne de la liste des objectifs. */
+export interface GoalRow {
+  id: string;
+  text: string;
+  targetRole: string | null;
+  deadline: string | null;
+  weeklyHours: number | null;
+  status: GoalStatusView;
+  /** Le programme de l'objectif, s'il existe : son lien. */
+  programId: string | null;
+}

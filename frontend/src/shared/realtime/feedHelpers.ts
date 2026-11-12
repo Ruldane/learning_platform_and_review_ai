@@ -37,6 +37,22 @@ function lastTurnIndex(feed: FeedItem[], agent: string): number {
 }
 
 /**
+ * Un nœud rejoué republie un message déjà fini sous le même `message_id` : l'`agent.started` de la
+ * relance a ouvert une bulle provisoire que ce message ne remplira jamais. Elle est retirée (même
+ * agent, après le tour connu, encore vide et sans outil appelé) : pas de bulle fantôme en double.
+ */
+function dropReplayShells(feed: FeedItem[], agent: string, known: number): FeedItem[] {
+  const shell = (item: FeedItem, index: number) =>
+    index > known &&
+    item.kind === "turn" &&
+    item.agent === agent &&
+    isPending(item) &&
+    item.text === "" &&
+    item.tools.length === 0;
+  return feed.some(shell) ? feed.filter((item, index) => !shell(item, index)) : feed;
+}
+
+/**
  * Applique `update` au tour de ce `messageId`. S'il manque, le dernier tour de l'agent en prend
  * l'identifiant s'il est provisoire (ouvert par `agent.started`) ou inachevé : un nouvel essai
  * de l'appel (autre `message_id`, sans nouvel `agent.started`) remplace alors le texte à moitié
@@ -49,7 +65,9 @@ export function upsertTurn(
   update: (turn: AgentTurn) => AgentTurn,
 ): FeedItem[] {
   const byId = feed.findIndex((i) => i.kind === "turn" && i.messageId === messageId);
-  if (byId >= 0) return replaceAt(feed, byId, update(feed[byId] as AgentTurn));
+  if (byId >= 0) {
+    return replaceAt(dropReplayShells(feed, agent, byId), byId, update(feed[byId] as AgentTurn));
+  }
   const last = lastTurnIndex(feed, agent);
   const candidate = last >= 0 ? (feed[last] as AgentTurn) : null;
   if (candidate && isPending(candidate)) {
