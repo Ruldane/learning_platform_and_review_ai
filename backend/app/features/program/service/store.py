@@ -28,7 +28,11 @@ from app.features.program.service.planning import (
 )
 from app.features.program.service.programs import load, plan_text, program_not_found
 from app.features.program.service.runtime import ProgramRuntime
-from app.features.program.service.validation import commit_validation, sync_skills
+from app.features.program.service.validation import (
+    commit_validation,
+    start_production,
+    sync_skills,
+)
 from app.features.settings.service import SettingsService
 
 logger = logging.getLogger(__name__)
@@ -133,7 +137,8 @@ class AgentProgramStore:
 
     async def validate(self, user_id: str, session_id: str, program_id: str) -> None:
         """Validation sous le verrou, puis reflet des niveaux en mémoire hors du verrou ; rejoué
-        (`finalize` après un redémarrage), rattrape un reflet manqué."""
+        (`finalize` après un redémarrage), rattrape un reflet manqué ; lance enfin les leçons
+        des semaines 1 et 2 (D91, une seule chaîne par programme)."""
         async with self._rt.program_lock(user_id, program_id):
             async with self._rt.session_factory() as db:
                 program = await ProgramRepository(db, user_id).get_fresh(program_id)
@@ -142,3 +147,4 @@ class AgentProgramStore:
                 await owned_goal(db, user_id, program.goal_id)
             sync = await commit_validation(self._rt, user_id, program_id)
         await sync_skills(self._rt, user_id, sync, session_id=session_id)
+        await start_production(self._rt, user_id, program_id)

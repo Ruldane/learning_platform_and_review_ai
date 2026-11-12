@@ -185,6 +185,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/lessons/{lesson_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Lesson */
+        get: operations["get_lesson_api_v1_lessons__lesson_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lessons/{lesson_id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Lesson Pdf
+         * @description PDF A4 de la leçon ; 404 `lesson_pdf_missing` tant qu'il n'est pas produit.
+         */
+        get: operations["get_lesson_pdf_api_v1_lessons__lesson_id__pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/memory/export": {
         parameters: {
             query?: never;
@@ -402,6 +439,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/programs/{program_id}/lessons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Program Lessons */
+        get: operations["list_program_lessons_api_v1_programs__program_id__lessons_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/programs/{program_id}/validate": {
         parameters: {
             query?: never;
@@ -462,6 +516,64 @@ export interface paths {
         };
         /** Get Usage */
         get: operations["get_usage_api_v1_research_usage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/resources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Resources
+         * @description Bibliothèque : ressources de l'utilisateur, les plus récentes d'abord, filtrées par
+         *     programme, type, langue et statut.
+         */
+        get: operations["list_resources_api_v1_resources_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/resources/{resource_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Resource */
+        patch: operations["patch_resource_api_v1_resources__resource_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/resources/{resource_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Resource File
+         * @description Copie locale du PDF libre ; 404 `resource_file_missing` s'il n'y en a pas.
+         */
+        get: operations["get_resource_file_api_v1_resources__resource_id__file_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1325,6 +1437,56 @@ export interface components {
             /** Session Id */
             session_id: string;
         };
+        /** LessonOut */
+        LessonOut: {
+            /** Failure Reason */
+            failure_reason: string | null;
+            /** Id */
+            id: string;
+            /** Markdown */
+            markdown: string;
+            /** Module Id */
+            module_id: string;
+            /** Pdf Available */
+            pdf_available: boolean;
+            /** Program Id */
+            program_id: string;
+            /** Resources */
+            resources: components["schemas"]["ResourceOut"][];
+            /**
+             * Status
+             * @description `pending` : pas encore lancée (semaines 3 et suivantes : 7 jours avant leur début) ; `generating` ; `ready` ; `failed` (relancée automatiquement, 3 essais en tout).
+             * @enum {string}
+             */
+            status: "pending" | "generating" | "ready" | "failed";
+            /** Title */
+            title: string;
+            /** Week Rank */
+            week_rank: number;
+            /** Word Count */
+            word_count: number;
+        };
+        /** LessonSummaryOut */
+        LessonSummaryOut: {
+            /** Id */
+            id: string;
+            /** Module Id */
+            module_id: string;
+            /** Pdf Available */
+            pdf_available: boolean;
+            /**
+             * Status
+             * @description `pending` : pas encore lancée (semaines 3 et suivantes : 7 jours avant leur début) ; `generating` ; `ready` ; `failed` (relancée automatiquement, 3 essais en tout).
+             * @enum {string}
+             */
+            status: "pending" | "generating" | "ready" | "failed";
+            /** Title */
+            title: string;
+            /** Week Rank */
+            week_rank: number;
+            /** Word Count */
+            word_count: number;
+        };
         /** MapPoint */
         MapPoint: {
             /** Item Id */
@@ -1890,6 +2052,63 @@ export interface components {
             status: "idle" | "queued" | "running" | "done" | "failed";
             /** Total */
             total: number;
+        };
+        /**
+         * ResourceOut
+         * @description Une ressource d'un module : lien, métadonnées de la source (auteur, date, langue) et
+         *     raison du choix ; `has_local_copy` : PDF libre gardé sur le disque
+         *     (`GET /resources/{id}/file`), sinon `note` est la fiche de lecture.
+         */
+        ResourceOut: {
+            /** Author */
+            author: string | null;
+            /**
+             * Date
+             * @description Date de publication telle que la source la donne.
+             */
+            date: string | null;
+            /** Duration Minutes */
+            duration_minutes: number | null;
+            /** Has Local Copy */
+            has_local_copy: boolean;
+            /** Id */
+            id: string;
+            /** Lang */
+            lang: string | null;
+            /** Level */
+            level: ("debutant" | "intermediaire" | "avance") | null;
+            /** Module Id */
+            module_id: string;
+            /** Note */
+            note: string | null;
+            /** Program Id */
+            program_id: string;
+            /** Reason */
+            reason: string;
+            /** Score */
+            score: number | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "to_read" | "read";
+            /** Title */
+            title: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "documentation" | "cours" | "video" | "article" | "depot" | "papier";
+            /** Url */
+            url: string;
+        };
+        /** ResourcePatch */
+        ResourcePatch: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "to_read" | "read";
         };
         /**
          * ResumeRequest
@@ -2954,6 +3173,68 @@ export interface operations {
             };
         };
     };
+    get_lesson_api_v1_lessons__lesson_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lesson_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_lesson_pdf_api_v1_lessons__lesson_id__pdf_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lesson_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     export_api_v1_memory_export_get: {
         parameters: {
             query?: never;
@@ -3416,6 +3697,37 @@ export interface operations {
             };
         };
     };
+    list_program_lessons_api_v1_programs__program_id__lessons_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                program_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonSummaryOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     validate_program_api_v1_programs__program_id__validate_post: {
         parameters: {
             query?: never;
@@ -3529,6 +3841,106 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchUsageOut"];
+                };
+            };
+        };
+    };
+    list_resources_api_v1_resources_get: {
+        parameters: {
+            query?: {
+                program_id?: string | null;
+                type?: ("documentation" | "cours" | "video" | "article" | "depot" | "papier") | null;
+                lang?: string | null;
+                status?: ("to_read" | "read") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_resource_api_v1_resources__resource_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                resource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourcePatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_resource_file_api_v1_resources__resource_id__file_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                resource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

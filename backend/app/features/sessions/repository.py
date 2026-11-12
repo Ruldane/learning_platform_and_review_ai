@@ -33,6 +33,19 @@ class SessionReadRepository(UserScopedRepository[AgentSession]):
             graph=graph, subject_type=subject_type, subject_id=subject_id, statuses=OPEN_STATUSES
         )
 
+    async def open_ids(
+        self, *, graph: str, subject_type: str, subject_id: str
+    ) -> builtins.list[str]:
+        """Identifiants de TOUTES les sessions ouvertes de `graph` sur cet objet."""
+        stmt = select(AgentSession.id).where(
+            AgentSession.user_id == self.user_id,
+            AgentSession.graph == graph,
+            AgentSession.subject_type == subject_type,
+            AgentSession.subject_id == subject_id,
+            AgentSession.status.in_(OPEN_STATUSES),
+        )
+        return builtins.list((await self.session.execute(stmt)).scalars().all())
+
     async def latest(
         self,
         *,

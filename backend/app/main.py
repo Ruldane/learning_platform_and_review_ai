@@ -14,10 +14,12 @@ from app.bootstrap import (
     agent_ports,
     build_providers,
     key_test_http,
+    lessons_runtime,
     model_prices,
     open_memory_runtime,
     open_research_runtime,
     run_settings_source,
+    scheduler_context,
 )
 from app.bootstrap import memory_providers as open_memory_providers
 from app.bootstrap import publishing_providers as open_publishing_providers
@@ -34,6 +36,8 @@ from app.features.learning.service.runtime import LearningRuntime
 from app.features.memory.service.upload import MAX_UPLOAD_BYTES
 from app.features.program.service.runtime import ProgramRuntime
 from app.features.registry import FEATURE_ROUTERS
+from app.scheduler.registry import JOBS
+from app.scheduler.runner import open_scheduler
 
 API_PREFIX = "/api/v1"
 logger = logging.getLogger(__name__)
@@ -142,12 +146,23 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
 async def _open_agents(app: FastAPI, stack: AsyncExitStack) -> None:
     """Moteur d'agents (bus, runner, checkpointer) sur les ports des features, puis lanceur de
     sessions hors requête (D82). Entré après la mémoire et la recherche, donc fermé avant elles
-    (la pile dépile à l'envers) ; reprend les sessions interrompues."""
+    (la pile dépile à l'envers) ; reprend les sessions interrompues. Enfin, le planificateur des
+    tâches (D91)."""
     # Le lanceur existe avant les ports (le Conseil le reçoit pour lancer `program_builder`) ;
     # lié au runner juste après le moteur, délié avant l'arrêt du moteur.
     app.state.launcher = SessionLauncher()
     app.state.learning = LearningRuntime(app.state.session_factory, app.state.launcher)
-    app.state.program = ProgramRuntime(app.state.session_factory, app.state.memory)
+    app.state.lessons = lessons_runtime(
+        app.state.session_factory,
+        app.state.launcher,
+        memory=app.state.memory,
+        research=app.state.research,
+        files=app.state.memory_providers,
+        publishing=app.state.publishing_providers,
+    )
+    app.state.program = ProgramRuntime(
+        app.state.session_factory, app.state.memory, lessons=app.state.lessons
+    )
     app.state.runtime = await stack.enter_async_context(
         agent_runtime(
             app.state.settings,
@@ -160,11 +175,16 @@ async def _open_agents(app: FastAPI, stack: AsyncExitStack) -> None:
                 app.state.research,
                 learning=app.state.learning,
                 program=app.state.program,
+                lessons=app.state.lessons,
             ),
         )
     )
     app.state.launcher.bind(app.state.runtime.runner)
     stack.callback(app.state.launcher.unbind)
+    # Tâches planifiées (leçons « J-7 », D91) : après le moteur et le lanceur lié, donc
+    # arrêtées avant eux (un passage en cours est annulé et attendu).
+    context = scheduler_context(app.state.session_factory, app.state.launcher, app.state.lessons)
+    await stack.enter_async_context(open_scheduler(JOBS, context))
 
 
 def create_app(

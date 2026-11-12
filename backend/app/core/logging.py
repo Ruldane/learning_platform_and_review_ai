@@ -19,6 +19,8 @@ _QUIET_LOGGERS = {
     "pdfminer": logging.ERROR,
     "trafilatura": logging.ERROR,
     "htmldate": logging.ERROR,
+    # « Running job … executed successfully » toutes les 6 h : nos tâches journalisent elles-mêmes.
+    "apscheduler": logging.WARNING,
 }
 
 

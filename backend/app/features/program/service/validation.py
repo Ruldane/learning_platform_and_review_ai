@@ -21,6 +21,7 @@ from app.agents.runtime.handle import AgentRuntime
 from app.agents.tools.plan_schema import EdgeDraft, SkillDraft
 from app.core.errors import AppError
 from app.features.learning.service.goals import mark_planned
+from app.features.lessons.service.production import start_lessons
 from app.features.memory.service.runtime import MemoryRuntime
 from app.features.memory.service.skill_levels import reflect_skill_levels
 from app.features.program.repository import PlanVersionRepository
@@ -240,4 +241,13 @@ async def request_validation(
         out, sync = await _under_lock(runtime, rt, user_id, program_id)
     if sync is not None:
         await sync_skills(rt, user_id, sync, session_id=None)
+        await start_production(rt, user_id, program_id)
     return out
+
+
+async def start_production(rt: ProgramRuntime, user_id: str, program_id: str) -> None:
+    """Après la validation, hors de tout verrou du programme : leçons des semaines 1 et 2
+    lancées en chaîne (D91, idempotent : une seule chaîne par programme). Jamais d'erreur ici :
+    une panne est journalisée et la tâche planifiée rattrape."""
+    if rt.lessons is not None:
+        await start_lessons(rt.lessons, user_id, program_id)

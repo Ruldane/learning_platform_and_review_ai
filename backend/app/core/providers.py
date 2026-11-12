@@ -14,7 +14,7 @@ from app.providers.pdf.base import HtmlPdfRenderer, PdfTextExtractor
 from app.providers.search.base import SearchProvider
 from app.providers.storage.base import FileStorage
 from app.providers.vector.base import MemoryRepository
-from app.providers.web.base import WebReader, YoutubeTranscripts
+from app.providers.web.base import WebFetcher, WebReader, YoutubeTranscripts
 
 
 @dataclass
@@ -49,12 +49,14 @@ BraveFactory = Callable[[str], SearchProvider]
 
 @dataclass(frozen=True)
 class ResearchProviders:
-    """Services de la recherche web : SearXNG (sans clé), fabrique Brave et le lecteur web de la
-    mémoire (le même objet que `MemoryProviders.web`)."""
+    """Services de la recherche web : SearXNG (sans clé), fabrique Brave, le lecteur web de la
+    mémoire (le même objet que `MemoryProviders.web`) et un fetcher sûr (garde SSRF) pour les
+    copies locales des PDF libres des ressources (D91)."""
 
     searxng: SearchProvider
     brave: BraveFactory
     web: WebReader
+    fetcher: WebFetcher
 
 
 @dataclass(frozen=True)

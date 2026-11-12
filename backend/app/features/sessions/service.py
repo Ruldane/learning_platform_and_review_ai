@@ -29,6 +29,7 @@ __all__ = [
     "SessionsService",
     "find_active_session",
     "find_latest_session",
+    "list_open_sessions",
     "to_view",
 ]
 
@@ -58,6 +59,16 @@ async def find_active_session(
     """Session la plus récente de `graph` sur cet objet encore ouverte (`running`,
     `waiting_user` ou `paused`), `None` sinon. Lecture pour les autres features (contrat 2)."""
     return await SessionReadRepository(db, user_id).latest_open(
+        graph=graph, subject_type=subject_type, subject_id=subject_id
+    )
+
+
+async def list_open_sessions(
+    db: AsyncSession, user_id: str, *, graph: str, subject_type: str, subject_id: str
+) -> builtins.list[str]:
+    """Toutes les sessions ouvertes de `graph` sur cet objet (production des leçons : une chaîne
+    par programme, D91). Lecture pour les autres features (contrat 2)."""
+    return await SessionReadRepository(db, user_id).open_ids(
         graph=graph, subject_type=subject_type, subject_id=subject_id
     )
 

@@ -1,6 +1,7 @@
 """Le programme dans la vie de l'application : ce que les requêtes HTTP et le port du Stratège
-partagent (base, mémoire pour le reflet des niveaux, verrous par programme). Ouvert par le
-lifespan (`app.state.program`), avant le moteur d'agents (D88)."""
+partagent (base, mémoire pour le reflet des niveaux, production des leçons lancée par la
+validation, verrous par programme). Ouvert par le lifespan (`app.state.program`), avant le
+moteur d'agents (D88, D91)."""
 
 import asyncio
 import weakref
@@ -10,6 +11,7 @@ from dataclasses import dataclass, field
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.features.lessons.service.production import ProductionContext
 from app.features.memory.service.runtime import MemoryRuntime
 
 
@@ -17,6 +19,9 @@ from app.features.memory.service.runtime import MemoryRuntime
 class ProgramRuntime:
     session_factory: async_sessionmaker[AsyncSession]
     memory: MemoryRuntime
+    # Production des leçons (D91) : la validation lance les semaines 1 et 2 ; `None` hors de
+    # l'application (tests du programme seul).
+    lessons: ProductionContext | None = None
     # Validations demandées par la route et reprises dans la session du Stratège : un second
     # clic pendant que `finalize` tourne rend le même état (202) au lieu d'un 409.
     validating: set[str] = field(default_factory=set, repr=False, compare=False)

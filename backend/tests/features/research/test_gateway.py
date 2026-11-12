@@ -2,6 +2,7 @@
 par le code, isolation entre utilisateurs, aucun appel réseau (faux fournisseurs)."""
 
 import logging
+from dataclasses import replace
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -254,9 +255,7 @@ async def test_no_database_session_is_open_during_network_calls(
 
     searxng_fake.results["attention"] = [hit("https://ex.org/a")]
     searxng_fake.search = spy_search  # type: ignore[method-assign]
-    runtime.providers = type(runtime.providers)(
-        searxng=searxng_fake, brave=runtime.providers.brave, web=Spy()
-    )
+    runtime.providers = replace(runtime.providers, searxng=searxng_fake, web=Spy())
     gateway = AgentWebGateway(runtime)
     await gateway.search(UID, "s1", "attention")
     await gateway.read(UID, "s1", "https://ex.org/a")

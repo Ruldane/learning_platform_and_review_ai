@@ -1526,6 +1526,136 @@
         "title": "LearnedStarted",
         "type": "object"
       },
+      "LessonOut": {
+        "properties": {
+          "failure_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Reason"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "markdown": {
+            "title": "Markdown",
+            "type": "string"
+          },
+          "module_id": {
+            "title": "Module Id",
+            "type": "string"
+          },
+          "pdf_available": {
+            "title": "Pdf Available",
+            "type": "boolean"
+          },
+          "program_id": {
+            "title": "Program Id",
+            "type": "string"
+          },
+          "resources": {
+            "items": {
+              "$ref": "#/components/schemas/ResourceOut"
+            },
+            "title": "Resources",
+            "type": "array"
+          },
+          "status": {
+            "description": "`pending` : pas encore lancée (semaines 3 et suivantes : 7 jours avant leur début) ; `generating` ; `ready` ; `failed` (relancée automatiquement, 3 essais en tout).",
+            "enum": [
+              "pending",
+              "generating",
+              "ready",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "week_rank": {
+            "title": "Week Rank",
+            "type": "integer"
+          },
+          "word_count": {
+            "title": "Word Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "module_id",
+          "week_rank",
+          "title",
+          "status",
+          "word_count",
+          "pdf_available",
+          "program_id",
+          "markdown",
+          "failure_reason",
+          "resources"
+        ],
+        "title": "LessonOut",
+        "type": "object"
+      },
+      "LessonSummaryOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "module_id": {
+            "title": "Module Id",
+            "type": "string"
+          },
+          "pdf_available": {
+            "title": "Pdf Available",
+            "type": "boolean"
+          },
+          "status": {
+            "description": "`pending` : pas encore lancée (semaines 3 et suivantes : 7 jours avant leur début) ; `generating` ; `ready` ; `failed` (relancée automatiquement, 3 essais en tout).",
+            "enum": [
+              "pending",
+              "generating",
+              "ready",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "week_rank": {
+            "title": "Week Rank",
+            "type": "integer"
+          },
+          "word_count": {
+            "title": "Word Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "module_id",
+          "week_rank",
+          "title",
+          "status",
+          "word_count",
+          "pdf_available"
+        ],
+        "title": "LessonSummaryOut",
+        "type": "object"
+      },
       "MapPoint": {
         "properties": {
           "item_id": {
@@ -3092,6 +3222,179 @@
           "error"
         ],
         "title": "ReindexState",
+        "type": "object"
+      },
+      "ResourceOut": {
+        "description": "Une ressource d'un module : lien, métadonnées de la source (auteur, date, langue) et\nraison du choix ; `has_local_copy` : PDF libre gardé sur le disque\n(`GET /resources/{id}/file`), sinon `note` est la fiche de lecture.",
+        "properties": {
+          "author": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Date de publication telle que la source la donne.",
+            "title": "Date"
+          },
+          "duration_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Minutes"
+          },
+          "has_local_copy": {
+            "title": "Has Local Copy",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "lang": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lang"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "enum": [
+                  "debutant",
+                  "intermediaire",
+                  "avance"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level"
+          },
+          "module_id": {
+            "title": "Module Id",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "program_id": {
+            "title": "Program Id",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "status": {
+            "enum": [
+              "to_read",
+              "read"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "documentation",
+              "cours",
+              "video",
+              "article",
+              "depot",
+              "papier"
+            ],
+            "title": "Type",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "module_id",
+          "program_id",
+          "type",
+          "title",
+          "url",
+          "author",
+          "date",
+          "lang",
+          "duration_minutes",
+          "level",
+          "reason",
+          "score",
+          "status",
+          "has_local_copy",
+          "note"
+        ],
+        "title": "ResourceOut",
+        "type": "object"
+      },
+      "ResourcePatch": {
+        "properties": {
+          "status": {
+            "enum": [
+              "to_read",
+              "read"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "ResourcePatch",
         "type": "object"
       },
       "ResumeRequest": {
@@ -5299,6 +5602,92 @@
         ]
       }
     },
+    "/api/v1/lessons/{lesson_id}": {
+      "get": {
+        "operationId": "get_lesson_api_v1_lessons__lesson_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "lesson_id",
+            "required": true,
+            "schema": {
+              "title": "Lesson Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Lesson",
+        "tags": [
+          "lessons"
+        ]
+      }
+    },
+    "/api/v1/lessons/{lesson_id}/pdf": {
+      "get": {
+        "description": "PDF A4 de la leçon ; 404 `lesson_pdf_missing` tant qu'il n'est pas produit.",
+        "operationId": "get_lesson_pdf_api_v1_lessons__lesson_id__pdf_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "lesson_id",
+            "required": true,
+            "schema": {
+              "title": "Lesson Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Lesson Pdf",
+        "tags": [
+          "lessons"
+        ]
+      }
+    },
     "/api/v1/memory/export": {
       "get": {
         "operationId": "export_api_v1_memory_export_get",
@@ -6005,6 +6394,52 @@
         ]
       }
     },
+    "/api/v1/programs/{program_id}/lessons": {
+      "get": {
+        "operationId": "list_program_lessons_api_v1_programs__program_id__lessons_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "program_id",
+            "required": true,
+            "schema": {
+              "title": "Program Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LessonSummaryOut"
+                  },
+                  "title": "Response List Program Lessons Api V1 Programs  Program Id  Lessons Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Program Lessons",
+        "tags": [
+          "lessons"
+        ]
+      }
+    },
     "/api/v1/programs/{program_id}/validate": {
       "post": {
         "operationId": "validate_program_api_v1_programs__program_id__validate_post",
@@ -6165,6 +6600,220 @@
         "summary": "Get Usage",
         "tags": [
           "research"
+        ]
+      }
+    },
+    "/api/v1/resources": {
+      "get": {
+        "description": "Bibliothèque : ressources de l'utilisateur, les plus récentes d'abord, filtrées par\nprogramme, type, langue et statut.",
+        "operationId": "list_resources_api_v1_resources_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "program_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 36,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Program Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "documentation",
+                    "cours",
+                    "video",
+                    "article",
+                    "depot",
+                    "papier"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "lang",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 8,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Lang"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "to_read",
+                    "read"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ResourceOut"
+                  },
+                  "title": "Response List Resources Api V1 Resources Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Resources",
+        "tags": [
+          "lessons"
+        ]
+      }
+    },
+    "/api/v1/resources/{resource_id}": {
+      "patch": {
+        "operationId": "patch_resource_api_v1_resources__resource_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "resource_id",
+            "required": true,
+            "schema": {
+              "title": "Resource Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResourcePatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Patch Resource",
+        "tags": [
+          "lessons"
+        ]
+      }
+    },
+    "/api/v1/resources/{resource_id}/file": {
+      "get": {
+        "description": "Copie locale du PDF libre ; 404 `resource_file_missing` s'il n'y en a pas.",
+        "operationId": "get_resource_file_api_v1_resources__resource_id__file_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "resource_id",
+            "required": true,
+            "schema": {
+              "title": "Resource Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Resource File",
+        "tags": [
+          "lessons"
         ]
       }
     },

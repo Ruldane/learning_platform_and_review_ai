@@ -3,6 +3,7 @@ from app.features.program.repository.programs import (
     ModuleRepository,
     ProgramRepository,
     WeekRepository,
+    validated_programs,
 )
 from app.features.program.repository.tasks import TaskRepository
 from app.features.program.repository.versions import PlanVersionRepository
@@ -14,4 +15,5 @@ __all__ = [
     "ProgramRepository",
     "TaskRepository",
     "WeekRepository",
+    "validated_programs",
 ]

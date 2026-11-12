@@ -1,6 +1,7 @@
 import builtins
 
 from sqlalchemy import delete, func, literal_column, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.lessons import Lesson, Resource
 from app.db.models.program import Module, Program, Week
@@ -99,3 +100,17 @@ class ModuleExtrasRepository(UserScopedRepository[Lesson]):
             .group_by(Resource.module_id)
         )
         return {row[0]: int(row[1]) for row in (await self.session.execute(stmt)).all()}
+
+
+async def validated_programs(session: AsyncSession) -> builtins.list[tuple[str, str]]:
+    """`(utilisateur, programme)` de TOUS les programmes validés, identifiants seulement.
+
+    SEULE lecture sans `user_id` de la phase 4 (D91, comme D18 et D75) : réservée à la tâche
+    planifiée des leçons (`app.scheduler`), qui relance ensuite chaque programme sous son
+    utilisateur (toutes les lectures suivantes filtrent par `user_id`)."""
+    stmt = (
+        select(Program.user_id, Program.id)
+        .where(Program.status == "validated")
+        .order_by(Program.created_at, literal_column("rowid"))
+    )
+    return [(row[0], row[1]) for row in (await session.execute(stmt)).all()]

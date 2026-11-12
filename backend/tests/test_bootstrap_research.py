@@ -15,6 +15,8 @@ from app.core.security import Cipher
 from app.main import create_app
 from app.providers.search.brave import BraveKeyProvider, BraveSearch
 from app.providers.search.searxng import SearxngSearch
+from app.providers.web.fetch import SafeHttpFetcher
+from app.providers.web.transport import GuardedTransport
 from tests.support.memory import FakeWebReader, fake_memory_providers
 from tests.support.research import fake_research_providers
 
@@ -52,14 +54,20 @@ async def test_research_clients_are_dedicated_and_closed(
     monkeypatch.setenv("HTTP_PROXY", "http://proxy.interne:3128")
     created = _tracking(monkeypatch)
     async with research_providers(settings, FakeWebReader()) as built:
-        assert len(created) == 2 and not any(c.is_closed for c in created)
-        searxng_http, brave_http = created
+        assert len(created) == 3 and not any(c.is_closed for c in created)
+        searxng_http, brave_http, download_http = created
         assert built.searxng._http is searxng_http  # type: ignore[attr-defined]
         assert built.brave("BSA-cle-0001")._http is brave_http  # type: ignore[attr-defined]
-        for client in created:
+        for client in (searxng_http, brave_http):
             assert client.follow_redirects is False and client.trust_env is False
             assert client.timeout == httpx.Timeout(10.0)
             assert not client._mounts  # aucun proxy repris de l'environnement
+        # Copies locales des PDF (D91) : fetcher sûr sur le client durci du lecteur web.
+        assert isinstance(built.fetcher, SafeHttpFetcher)
+        assert built.fetcher._http is download_http
+        assert isinstance(download_http._transport, GuardedTransport)
+        assert download_http.follow_redirects is False and download_http.trust_env is False
+        assert not download_http._mounts
     assert all(c.is_closed for c in created)
 
 

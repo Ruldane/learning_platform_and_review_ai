@@ -9,24 +9,22 @@ from qdrant_client import AsyncQdrantClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.agents.runtime.costs import ModelPrice, load_prices
-from app.agents.runtime.ports import AgentPorts
-from app.agents.runtime.run_settings import RunSettingsSource
-from app.agents.tools.memory_port import MemoryGateway
-from app.agents.tools.web_port import WebGateway
+from app.bootstrap_agents import (  # réexportés : `app.main` ne lit que `app.bootstrap`
+    agent_ports as agent_ports,
+)
+from app.bootstrap_agents import lessons_runtime as lessons_runtime
+from app.bootstrap_agents import memory_gateway as memory_gateway
+from app.bootstrap_agents import run_settings_source as run_settings_source
+from app.bootstrap_agents import scheduler_context as scheduler_context
+from app.bootstrap_agents import web_gateway as web_gateway
 from app.config import Settings
 from app.core.providers import MemoryProviders, Providers, PublishingProviders, ResearchProviders
 from app.core.security import Cipher
 from app.features.health.checks import DatabaseCheck, LlmKeysCheck
-from app.features.learning.service.runtime import LearningRuntime
-from app.features.learning.service.store import AgentCouncilStore
-from app.features.memory.service.gateway import AgentMemoryGateway
 from app.features.memory.service.runtime import MemoryRuntime, memory_runtime
-from app.features.program.service.runtime import ProgramRuntime
-from app.features.program.service.store import AgentProgramStore
-from app.features.research.service.gateway import AgentWebGateway
 from app.features.research.service.runtime import ResearchRuntime
 from app.features.settings.keys_service import DbKeyReader
-from app.features.settings.service import SettingsModelReader, SettingsRunReader
+from app.features.settings.service import SettingsModelReader
 from app.providers.embeddings.ollama import OllamaEmbedder
 from app.providers.embeddings.ollama_probe import OllamaProbe
 from app.providers.health import HealthCheck
@@ -123,38 +121,6 @@ def model_prices() -> dict[str, ModelPrice]:
     """Table des prix des modèles (`model_prices.json` des fournisseurs) pour le suivi des coûts :
     lue ici car `app.agents` n'importe pas `app.providers.llm.registry` (contrat 3)."""
     return load_prices(PRICES_PATH)
-
-
-def run_settings_source(session_factory: async_sessionmaker[AsyncSession]) -> RunSettingsSource:
-    """Réglages lus par le moteur d'agents, adaptés du service de la feature `settings` : le
-    moteur n'importe aucune feature (contrat 6)."""
-    return SettingsRunReader(session_factory)
-
-
-def memory_gateway(runtime: MemoryRuntime) -> MemoryGateway:
-    """Mémoire vue par le moteur d'agents (outils `memory_*`, Archiviste), adaptée du service de la
-    feature `memory` : le moteur n'importe aucune feature (contrat 6, D68)."""
-    return AgentMemoryGateway(runtime)
-
-
-def web_gateway(runtime: ResearchRuntime) -> WebGateway:
-    """Recherche web vue par le moteur d'agents (outils `web_*`, Éclaireur), adaptée du service de
-    la feature `research` : le moteur n'importe aucune feature (contrat 6, D77)."""
-    return AgentWebGateway(runtime)
-
-
-def agent_ports(
-    memory: MemoryRuntime,
-    research: ResearchRuntime,
-    *,
-    learning: LearningRuntime,
-    program: ProgramRuntime,
-) -> AgentPorts:
-    """Tous les ports du moteur (D82) : un port de plus = un champ d'`AgentPorts` et une ligne ici.
-    Conseil (D84) et programme (D86) adaptés des features `learning` (D87) et `program` (D88)."""
-    council = AgentCouncilStore(learning.session_factory, learning.launcher, learning)
-    program_store = AgentProgramStore(program)
-    return AgentPorts(memory_gateway(memory), web_gateway(research), council, program_store)
 
 
 def _reader_http() -> httpx.AsyncClient:
@@ -288,12 +254,21 @@ async def research_providers(
     settings: Settings, web: WebReader
 ) -> AsyncIterator[ResearchProviders]:
     """SearXNG et la fabrique Brave (une instance par clé, client partagé), sur le lecteur web de
-    la mémoire ; clients fermés à la sortie, aucune requête à la construction."""
-    async with _search_http() as searxng_http, _search_http() as brave_http:
+    la mémoire, et un fetcher sûr à part pour les copies locales des PDF des ressources (garde
+    SSRF, même client durci que le lecteur web, D91) ; clients fermés à la sortie, aucune
+    requête à la construction."""
+    async with (
+        _search_http() as searxng_http,
+        _search_http() as brave_http,
+        _reader_http() as download_http,
+    ):
 
         def brave(api_key: str) -> SearchProvider:
             return BraveSearch(brave_http, api_key)
 
         yield ResearchProviders(
-            searxng=SearxngSearch(searxng_http, settings.searxng_url), brave=brave, web=web
+            searxng=SearxngSearch(searxng_http, settings.searxng_url),
+            brave=brave,
+            web=web,
+            fetcher=SafeHttpFetcher(download_http, throttle=DomainThrottle()),
         )

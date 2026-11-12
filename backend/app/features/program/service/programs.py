@@ -21,6 +21,7 @@ from app.features.program.repository import (
     ProgramRepository,
     TaskRepository,
     WeekRepository,
+    validated_programs,
 )
 from app.features.program.schemas import (
     ModuleOut,
@@ -234,3 +235,21 @@ async def list_programs(db: AsyncSession, user_id: str) -> builtins.list[Program
         )
         for p in programs
     ]
+
+
+def module_not_found() -> AppError:
+    return AppError("module_not_found", "Module introuvable.", 404)
+
+
+async def program_of_module(db: AsyncSession, user_id: str, module_id: str) -> str:
+    """Le programme d'un module de l'utilisateur ; 404 `module_not_found` s'il n'est pas à lui."""
+    module = await ModuleRepository(db, user_id).get(module_id)
+    if module is None:
+        raise module_not_found()
+    return module.program_id
+
+
+async def list_validated_programs(db: AsyncSession) -> builtins.list[tuple[str, str]]:
+    """`(utilisateur, programme)` des programmes validés de tous les utilisateurs : lecture sans
+    `user_id` réservée à la tâche planifiée des leçons (D91), identifiants seulement."""
+    return await validated_programs(db)

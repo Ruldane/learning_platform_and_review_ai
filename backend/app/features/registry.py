@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from app.features.auth.router import router as auth_router
 from app.features.health.router import router as health_router
 from app.features.learning.router import router as learning_router
+from app.features.lessons.router import router as lessons_router
 from app.features.memory.router import router as memory_router
 from app.features.program.router import router as program_router
 from app.features.research.router import router as research_router
@@ -21,4 +22,5 @@ FEATURE_ROUTERS: list[APIRouter] = [
     research_router,
     learning_router,
     program_router,
+    lessons_router,
 ]

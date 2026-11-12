@@ -1,5 +1,7 @@
+import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from datetime import timedelta
 from pathlib import Path
 
 import httpx
@@ -10,6 +12,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
+import app.main as main_module
 from app.agents.runtime.bus import EventBus
 from app.agents.runtime.launcher import SessionLauncher
 from app.agents.runtime.runner import SessionRunner
@@ -21,11 +24,14 @@ from app.db.models.accounts import User
 from app.features.auth.service import AuthService
 from app.features.learning.service.runtime import LearningRuntime
 from app.features.learning.service.store import AgentCouncilStore
+from app.features.lessons.service.runtime import LessonsRuntime
+from app.features.lessons.service.store import AgentLessonStore
 from app.features.memory.service.gateway import AgentMemoryGateway
 from app.features.program.service.runtime import ProgramRuntime
 from app.features.program.service.store import AgentProgramStore
 from app.features.research.service.gateway import AgentWebGateway
 from app.main import create_app
+from app.scheduler.base import JobContext, JobSpec
 from tests.support.memory import fake_memory_providers
 
 
@@ -216,14 +222,22 @@ async def test_launcher_is_bound_to_the_runner_then_unbound_at_shutdown(
     assert launcher.runner is None
 
 
-def test_agent_ports_compose_memory_web_council_and_program() -> None:
+def test_agent_ports_compose_memory_web_council_program_and_lessons() -> None:
     learning = LearningRuntime(object(), SessionLauncher())  # type: ignore[arg-type]
     program = ProgramRuntime(object(), object())  # type: ignore[arg-type]
-    ports = agent_ports(object(), object(), learning=learning, program=program)  # type: ignore[arg-type]
+    lessons = LessonsRuntime(*[object()] * 6)  # type: ignore[arg-type]
+    ports = agent_ports(
+        object(),  # type: ignore[arg-type]
+        object(),  # type: ignore[arg-type]
+        learning=learning,
+        program=program,
+        lessons=lessons,
+    )
     assert isinstance(ports.memory, AgentMemoryGateway)
     assert isinstance(ports.web, AgentWebGateway)
     assert isinstance(ports.council, AgentCouncilStore)
     assert isinstance(ports.program, AgentProgramStore)
+    assert isinstance(ports.lessons, AgentLessonStore)
 
 
 async def test_learning_runtime_shares_the_launcher(settings: Settings, db_engine: object) -> None:
@@ -231,3 +245,25 @@ async def test_learning_runtime_shares_the_launcher(settings: Settings, db_engin
     async with LifespanManager(app):
         assert app.state.learning.launcher is app.state.launcher
         assert app.state.learning.session_factory is app.state.session_factory
+
+
+async def test_lifespan_wires_lessons_and_the_scheduler(
+    settings: Settings, db_engine: object, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Leçons composées avant le moteur (port, validation), planificateur après lui (D91)."""
+    seen: list[JobContext] = []
+
+    async def probe(ctx: JobContext) -> None:
+        seen.append(ctx)
+
+    monkeypatch.setattr(main_module, "JOBS", [JobSpec("probe", timedelta(hours=6), probe)])
+    app = create_app(settings)
+    async with LifespanManager(app):
+        async with asyncio.timeout(3):
+            while not seen:
+                await asyncio.sleep(0.01)
+        assert seen[0].production is app.state.lessons
+        assert seen[0].launcher is app.state.launcher
+        assert app.state.program.lessons is app.state.lessons
+        assert app.state.lessons.launcher is app.state.launcher
+    assert len(seen) == 1

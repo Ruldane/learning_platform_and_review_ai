@@ -21,6 +21,7 @@ from app.features.settings.service import SettingsService
 from app.providers.search.base import SearchProvider, SearchResult
 from app.providers.search.fake import FakeSearch
 from tests.support.memory import FakeWebReader
+from tests.support.research import FakeFetcher
 
 
 class Clock:
@@ -118,7 +119,9 @@ def runtime(
     env_keys: dict[str, str | None],
     clock: Clock,
 ) -> ResearchRuntime:
-    providers = ResearchProviders(searxng=searxng_fake, brave=brave_factory, web=fake_web)
+    providers = ResearchProviders(
+        searxng=searxng_fake, brave=brave_factory, web=fake_web, fetcher=FakeFetcher()
+    )
     keys = DbKeyReader(db_session_factory, Cipher(Fernet.generate_key()), env_keys)
     return ResearchRuntime(db_session_factory, providers, keys, now=clock)
 
