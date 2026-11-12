@@ -902,8 +902,8 @@ export interface components {
         };
         /**
          * InterruptField
-         * @description Une question d'un cadrage à plusieurs champs (D82) ; la réponse est un objet
-         *     `{id: texte}`.
+         * @description Une question d'un cadrage à plusieurs champs (D82) ; la reprise porte
+         *     `{"answers": {id: texte}}` (ou la valeur d'une option, `"go"`, D84).
          */
         InterruptField: {
             /** Id */

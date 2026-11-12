@@ -91,8 +91,8 @@ class InterruptOption(BaseModel):
 
 
 class InterruptField(BaseModel):
-    """Une question d'un cadrage à plusieurs champs (D82) ; la réponse est un objet
-    `{id: texte}`."""
+    """Une question d'un cadrage à plusieurs champs (D82) ; la reprise porte
+    `{"answers": {id: texte}}` (ou la valeur d'une option, `"go"`, D84)."""
 
     id: str = Field(pattern=r"^[a-z0-9_]{1,32}$")
     label: str

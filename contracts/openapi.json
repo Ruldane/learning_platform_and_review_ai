@@ -995,7 +995,7 @@
         "type": "object"
       },
       "InterruptField": {
-        "description": "Une question d'un cadrage à plusieurs champs (D82) ; la réponse est un objet\n`{id: texte}`.",
+        "description": "Une question d'un cadrage à plusieurs champs (D82) ; la reprise porte\n`{\"answers\": {id: texte}}` (ou la valeur d'une option, `\"go\"`, D84).",
         "properties": {
           "id": {
             "pattern": "^[a-z0-9_]{1,32}$",

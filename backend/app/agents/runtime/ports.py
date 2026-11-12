@@ -5,6 +5,7 @@ contrat 6). Un port de plus = un champ ici, avec sa valeur « non branché », e
 
 from dataclasses import dataclass
 
+from app.agents.tools.council_port import NO_COUNCIL, CouncilStore
 from app.agents.tools.memory_port import NO_MEMORY, MemoryGateway
 from app.agents.tools.web_port import NO_WEB, WebGateway
 
@@ -13,6 +14,7 @@ from app.agents.tools.web_port import NO_WEB, WebGateway
 class AgentPorts:
     memory: MemoryGateway = NO_MEMORY  # mémoire (D68)
     web: WebGateway = NO_WEB  # recherche web (D77)
+    council: CouncilStore = NO_COUNCIL  # Conseil d'apprentissage (D84)
 
 
 NO_PORTS = AgentPorts()

@@ -73,6 +73,18 @@ class PageRead:
 
 
 @dataclass(frozen=True)
+class PersonFound:
+    """Un praticien repéré par l'Éclaireur (SPEC 10.3) : informations professionnelles publiques
+    seulement. `url` est une page lue ou un résultat de la session, jamais une adresse écrite par
+    le modèle ; `where` : où il publie (domaines)."""
+
+    name: str
+    role: str
+    url: str
+    where: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class WebLimits:
     languages: tuple[str, ...]
     preferred: tuple[str, ...]
@@ -115,6 +127,11 @@ class WebGateway(Protocol):
         `judge` rejoué après un arrêt ne rappelle pas le modèle (D82)."""
         ...
 
+    async def add_person(self, user_id: str, session_id: str, person: PersonFound) -> str:
+        """Enregistre le praticien dans les sources de la session (`kind` `person`) ; idempotent
+        (même personne, même adresse : même ligne). Rend l'id de la source."""
+        ...
+
     async def limits(self, user_id: str) -> WebLimits: ...
 
 
@@ -155,6 +172,9 @@ class _NoWeb:
     async def verdicts(
         self, user_id: str, session_id: str, source_ids: Sequence[str]
     ) -> dict[str, SourceVerdictView]:
+        raise web_unavailable()
+
+    async def add_person(self, user_id: str, session_id: str, person: PersonFound) -> str:
         raise web_unavailable()
 
     async def limits(self, user_id: str) -> WebLimits:

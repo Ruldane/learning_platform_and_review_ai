@@ -12,12 +12,14 @@ from typing import get_args
 from app.agents.tools.web_port import (
     CRITERIA_MAX,
     PageRead,
+    PersonFound,
     SourceVerdictView,
     WebHit,
     WebLimits,
     WebSearchResult,
 )
 from app.db.models.research import PageStatus
+from app.features.research.service.people import record_person
 from app.features.research.service.prefs import load_prefs
 from app.features.research.service.reading import (
     Judged,
@@ -176,6 +178,15 @@ class AgentWebGateway:
         async with self._runtime.session_factory() as db:
             known = await session_verdicts(db, user_id, session_id)
         return {sid: _view(sid, judged) for sid, judged in known.items() if sid in wanted}
+
+    async def add_person(self, user_id: str, session_id: str, person: PersonFound) -> str:
+        """Praticien enregistré dans les sources de la session (idempotent), sous le verrou de
+        la session comme une lecture : deux écritures de la même personne n'en font qu'une."""
+        lock = self._runtime.session_lock(user_id, session_id)
+        async with lock, self._runtime.session_factory() as db:
+            source = await record_person(db, user_id, session_id, person)
+            await db.commit()
+            return source.id
 
     async def limits(self, user_id: str) -> WebLimits:
         async with self._runtime.session_factory() as db:

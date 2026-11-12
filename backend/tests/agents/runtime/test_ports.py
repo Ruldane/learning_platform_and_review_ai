@@ -17,6 +17,7 @@ from app.agents.runtime.deps import GraphDeps
 from app.agents.runtime.ports import NO_PORTS, AgentPorts
 from app.agents.runtime.run_settings import RunSettings
 from app.agents.runtime.runner import SessionRunner
+from app.agents.tools.council_port import NO_COUNCIL
 from app.agents.tools.memory_port import NO_MEMORY
 from app.agents.tools.web_port import NO_WEB, PageRead, SourceVerdictView, WebLimits
 from app.agents.tools.web_port import WebSearchResult as Found
@@ -131,3 +132,10 @@ async def test_runner_passes_ports_to_graphs(
         await runner.shutdown()
     done = [e for e in await all_events(db_factory, user_id, sid) if e.type == "run.completed"]
     assert done[0].payload.summary == "de,it"  # type: ignore[union-attr]
+
+
+async def test_council_port_is_unplugged_by_default() -> None:
+    assert NO_PORTS.council is NO_COUNCIL
+    with pytest.raises(AppError) as exc:
+        await NO_COUNCIL.goal("u1", "g1")
+    assert (exc.value.code, exc.value.status_code) == ("council_unavailable", 503)
