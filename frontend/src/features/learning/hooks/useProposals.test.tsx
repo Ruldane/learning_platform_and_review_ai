@@ -60,7 +60,7 @@ describe("useBoards", () => {
         ]),
       ),
     );
-    const { result } = renderHook(() => useBoards("g1"), { wrapper: createQueryWrapper() });
+    const { result } = renderHook(() => useBoards("g1", "c1"), { wrapper: createQueryWrapper() });
     await waitFor(() => expect(result.current.data).toHaveLength(2));
     expect(result.current.data?.[0]).toMatchObject({
       id: "b1",
@@ -72,5 +72,18 @@ describe("useBoards", () => {
       author: "user",
       scene: { elements: [] },
     });
+  });
+
+  it("leaves out the boards of a council relaunched since", async () => {
+    server.use(
+      http.get(`${API}/goals/g1/boards`, () =>
+        HttpResponse.json([
+          boardOut("b1", { session_id: "c1" }),
+          boardOut("b2", { session_id: "c2", step: 1 }),
+        ]),
+      ),
+    );
+    const { result } = renderHook(() => useBoards("g1", "c2"), { wrapper: createQueryWrapper() });
+    await waitFor(() => expect(result.current.data?.map((board) => board.id)).toEqual(["b2"]));
   });
 });

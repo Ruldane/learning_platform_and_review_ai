@@ -1,15 +1,6 @@
+import { webUrl } from "@/shared/session-ui";
 import { lessonPdfUrl, resourceFileUrl } from "./api";
 import type { LessonOut, LessonView, ResourceOut, ResourceView } from "./types";
-
-/** Une adresse web que le navigateur peut ouvrir sans risque : `http` ou `https`, rien d'autre. */
-export function webUrl(url: string): string | null {
-  try {
-    const { protocol } = new URL(url);
-    return protocol === "http:" || protocol === "https:" ? url : null;
-  } catch {
-    return null;
-  }
-}
 
 export function toLessonView(lesson: LessonOut): LessonView {
   return {
@@ -24,7 +15,8 @@ export function toResourceView(resource: ResourceOut): ResourceView {
   return {
     id: resource.id,
     title: resource.title,
-    url: webUrl(resource.url),
+    // Le filtre d'adresses commun (http et https seulement), l'adresse gardée telle quelle.
+    url: webUrl(resource.url) ? resource.url : null,
     type: resource.type,
     lang: resource.lang,
     durationMinutes: resource.duration_minutes,

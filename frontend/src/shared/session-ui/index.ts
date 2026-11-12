@@ -19,3 +19,4 @@ export { SourceCard } from "./SourceCard";
 export { SourcesPanel } from "./SourcesPanel";
 export { sourcesFromEvents } from "./sourcesFromEvents";
 export type { QueryView, SourcesViewModel, SourceView } from "./sourceTypes";
+export { webUrl } from "./webUrl";

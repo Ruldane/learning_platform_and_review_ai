@@ -1,25 +1,25 @@
 import { useQuery } from "@tanstack/react-query";
+import { useRef } from "react";
 import { fetchLesson } from "../api";
 import { lessonsKeys } from "../queryKeys";
-import type { LessonStatus } from "../types";
-
-const GENERATING_MS = 5000;
-const WAITING_MS = 15_000;
+import { lessonRefetchInterval } from "./polling";
 
 /**
- * Quand relire une leçon : toutes les 5 s pendant qu'elle s'écrit, toutes les 15 s tant qu'elle
- * attend son tour ou sa nouvelle tentative (elle peut y rester longtemps) ; plus une fois prête.
+ * Une leçon (`GET /lessons/{id}`), relue d'elle-même tant qu'elle n'est pas prête, puis tant que
+ * son PDF n'est pas arrivé (pour un temps borné, voir `lessonRefetchInterval`).
  */
-export function lessonRefetchInterval(status: LessonStatus | undefined): number | false {
-  if (status === undefined || status === "ready") return false;
-  return status === "generating" ? GENERATING_MS : WAITING_MS;
-}
-
-/** Une leçon (`GET /lessons/{id}`), relue d'elle-même tant qu'elle n'est pas prête. */
 export function useLesson(lessonId: string) {
+  /** Numéro de lecture (`dataUpdateCount`) où la leçon a été vue prête pour la première fois. */
+  const readyAt = useRef<number | null>(null);
   return useQuery({
     queryKey: lessonsKeys.lesson(lessonId),
     queryFn: ({ signal }) => fetchLesson(lessonId, signal),
-    refetchInterval: (query) => lessonRefetchInterval(query.state.data?.status),
+    refetchInterval: (query) => {
+      const lesson = query.state.data;
+      const updates = query.state.dataUpdateCount;
+      if (lesson?.status !== "ready") readyAt.current = null;
+      else readyAt.current ??= updates;
+      return lessonRefetchInterval(lesson, updates - (readyAt.current ?? updates));
+    },
   });
 }

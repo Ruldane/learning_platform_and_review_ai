@@ -6,6 +6,8 @@ import { LoadingState } from "@/shared/ui/states/LoadingState";
 import { useCouncilData } from "../../hooks/useCouncilData";
 import { useCouncilSession } from "../../hooks/useCouncilSession";
 import { useCouncilTabs } from "../../hooks/useCouncilTabs";
+import { useProgramRetry } from "../../hooks/useProgramRetry";
+import { useRetryCouncil } from "../../hooks/useRetryCouncil";
 import type { GoalOut } from "../../types";
 import { CouncilFeed } from "./CouncilFeed";
 import { CouncilSide } from "./CouncilSide";
@@ -27,6 +29,8 @@ export function CouncilLayout({ goal, sessionId, createSocket }: CouncilLayoutPr
   const session = useCouncilSession(goal, sessionId, createSocket);
   const data = useCouncilData(goal.id, sessionId, session.stream.events);
   const tabs = useCouncilTabs(session.progress.stage);
+  const councilRetry = useRetryCouncil(goal.id, sessionId);
+  const programRetry = useProgramRetry(goal.id, sessionId, data.proposals.data);
   const { stream } = session;
 
   if (stream.connection === "failed") {
@@ -45,9 +49,13 @@ export function CouncilLayout({ goal, sessionId, createSocket }: CouncilLayoutPr
   }
   return (
     <div className="flex flex-col gap-4">
-      <CouncilStatus session={session} />
+      <CouncilStatus session={session} programRetry={programRetry} />
       <div className="grid items-start gap-6 lg:grid-cols-[2fr_3fr]">
-        <CouncilFeed session={session} onShowProposals={() => tabs.setTab("proposals")} />
+        <CouncilFeed
+          session={session}
+          retry={councilRetry}
+          onShowProposals={() => tabs.setTab("proposals")}
+        />
         <CouncilSide session={session} data={data} tabs={tabs} />
       </div>
     </div>

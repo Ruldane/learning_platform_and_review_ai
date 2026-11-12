@@ -28,12 +28,23 @@ export async function createGoal(input: GoalInput) {
   );
 }
 
-/** `GET /goals/{id}/proposals` : le dernier lot. */
+/**
+ * `POST /goals/{id}/council` : relance depuis le début un Conseil dont la dernière session a
+ * échoué (409 `council_not_failed` sinon, `goal_already_chosen` si un programme est lancé).
+ */
+export async function retryCouncil(goalId: string) {
+  return unwrap(await api.POST("/goals/{goal_id}/council", goalPath(goalId)));
+}
+
+/** `GET /goals/{id}/proposals` : le dernier lot (vide après une relance, jusqu'au premier lot). */
 export async function fetchProposals(goalId: string, signal?: AbortSignal) {
   return unwrap(await api.GET("/goals/{goal_id}/proposals", { ...goalPath(goalId), signal }));
 }
 
-/** `GET /goals/{id}/boards` : tous les états du tableau, dans l'ordre de création. */
+/**
+ * `GET /goals/{id}/boards` : tous les états du tableau, dans l'ordre de création, ceux des Conseils
+ * précédents compris (à filtrer par `session_id`).
+ */
 export async function fetchBoards(goalId: string, signal?: AbortSignal) {
   return unwrap(await api.GET("/goals/{goal_id}/boards", { ...goalPath(goalId), signal }));
 }

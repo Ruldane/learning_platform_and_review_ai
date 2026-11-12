@@ -1,14 +1,19 @@
 import type { SessionEvent } from "@/shared/realtime/types";
 import type { CouncilStage } from "./components/viewTypes";
 
-/** Nombre de tours par défaut (réglage `debate_rounds`, SPEC 3.1). */
+/** Tours de débat par défaut après le tour 1 (réglage `debate_rounds`, SPEC 3.1). */
 export const DEFAULT_ROUNDS = 3;
+/** Plafond de tours du back, tour 1 compris (`council_rules.MAX_ROUNDS`). */
+export const MAX_ROUNDS = 8;
 
 export interface CouncilProgress {
   stage: CouncilStage;
   /** Tour en cours du débat (0 : pas encore commencé). */
   round: number;
-  /** Tours prévus, jamais moins que le tour en cours (un « autre tour » en ajoute un). */
+  /**
+   * Tours prévus en tout, tour 1 compris (`1 + debate_rounds`, 8 au plus, D85 §2) ; jamais moins
+   * que le tour en cours (un « autre tour » en ajoute un).
+   */
   rounds: number;
 }
 
@@ -54,18 +59,20 @@ function advance(now: CouncilProgress, event: SessionEvent): CouncilProgress {
  * tant que rien d'autre n'est arrivé ; recherche dès un outil `web_*` ou une source ; débat à
  * chaque message « tour-n » (le tour en vient) ; propositions dès `proposal.ready` ou la question
  * du choix ; programme dès le choix annoncé ou un programme connu. Le dernier événement l'emporte
- * (« autre tour » : retour au débat). `plannedRounds` vient des réglages.
+ * (« autre tour » : retour au débat). `debateRounds` vient des réglages : le back fait le tour 1
+ * (positions) puis `debateRounds` tours de débat.
  */
 export function councilStage(
   events: SessionEvent[],
   hasProgram: boolean,
-  plannedRounds: number = DEFAULT_ROUNDS,
+  debateRounds: number = DEFAULT_ROUNDS,
 ): CouncilProgress {
-  let now: CouncilProgress = { stage: "framing", round: 0, rounds: plannedRounds };
+  const planned = Math.min(1 + debateRounds, MAX_ROUNDS);
+  let now: CouncilProgress = { stage: "framing", round: 0, rounds: planned };
   for (const event of events) now = advance(now, event);
   return {
     stage: hasProgram ? "program" : now.stage,
     round: now.round,
-    rounds: Math.max(plannedRounds, now.round),
+    rounds: Math.max(planned, now.round),
   };
 }

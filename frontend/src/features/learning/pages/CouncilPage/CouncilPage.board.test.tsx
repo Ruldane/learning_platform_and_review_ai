@@ -38,6 +38,12 @@ const setup = (api: Parameters<typeof renderCouncil>[1] = {}) => {
 
 const SEND = "Envoyer mes modifications aux agents";
 
+/** Le canevas sort de la lecture seule une fois les ajustements d'Excalidraw passés. */
+const editable = () =>
+  waitFor(() =>
+    expect(screen.getByTestId("excalidraw")).toHaveAttribute("data-view-mode", "false"),
+  );
+
 describe("CouncilPage : tableau", () => {
   beforeEach(() => {
     useSessionStore.getState().reset("c1");
@@ -74,6 +80,7 @@ describe("CouncilPage : tableau", () => {
     const { fakeSockets, user } = setup({ boards: [boardOut("b1")], status: "running" });
     await openCouncil(fakeSockets);
     await screen.findByTestId("excalidraw");
+    await editable();
     const send = screen.getByRole("button", { name: SEND });
     act(() => fake.props?.onChange?.(shapes, {}, {}));
     const edited = [
@@ -101,6 +108,7 @@ describe("CouncilPage : tableau", () => {
     const { fakeSockets, user } = setup({ boards: [boardOut("b1")], status: "running" });
     await openCouncil(fakeSockets);
     await screen.findByTestId("excalidraw");
+    await editable();
     act(() => fake.props?.onChange?.(shapes, {}, {}));
     act(() =>
       fake.props?.onChange?.(
@@ -112,6 +120,8 @@ describe("CouncilPage : tableau", () => {
     await user.click(screen.getByRole("button", { name: SEND }));
     expect(await screen.findByText("Tableau trop volumineux.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: SEND })).toBeEnabled();
+    // Un seul message : celui du serveur, dans le volet (pas un second dans le tableau).
+    expect(screen.getAllByRole("alert")).toHaveLength(1);
   });
 
   it("draws the Scribe's board as it arrives, once per board", async () => {

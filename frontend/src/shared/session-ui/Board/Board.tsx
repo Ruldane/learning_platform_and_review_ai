@@ -7,7 +7,10 @@ import { BoardWorkspace } from "./BoardWorkspace";
 
 export interface BoardProps {
   states: readonly BoardStateView[];
-  /** L'état affiché ; absent ou inconnu : le plus récent. */
+  /**
+   * L'état affiché ; absent ou inconnu : le plus récent, sauf si January retouche un état sans
+   * avoir envoyé ses modifications (il reste affiché quand le Scribe en publie un nouveau).
+   */
   activeId: string | null;
   onSelect: (id: string) => void;
   /** Les modifications de January, envoyées sur demande (bouton), jamais à chaque geste. */
@@ -35,7 +38,14 @@ export function Board(props: BoardProps) {
     (id: string) => setSeen((prev) => (prev.has(id) ? prev : new Set(prev).add(id))),
     [],
   );
-  const active = states.find((state) => state.id === activeId) ?? latestOf(states);
+  // État retouché et pas encore envoyé : un nouvel état du Scribe ne le remplace pas à l'écran.
+  const [editing, setEditing] = useState<string | null>(null);
+  const onDirtyChange = useCallback(
+    (id: string, dirty: boolean) => setEditing((prev) => (dirty ? id : prev === id ? null : prev)),
+    [],
+  );
+  const find = (id: string | null) => states.find((state) => state.id === id);
+  const active = find(activeId) ?? find(editing) ?? latestOf(states);
 
   if (!active) {
     return <EmptyState title={t("session.board.label")} description={t("session.board.empty")} />;
@@ -54,6 +64,7 @@ export function Board(props: BoardProps) {
           sending={sending}
           onSendEdit={onSendEdit}
           onSeen={onSeen}
+          onDirtyChange={onDirtyChange}
         />
       </div>
     </section>

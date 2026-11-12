@@ -34,35 +34,41 @@ function snapshotOf(elements: readonly SceneElementLike[]): SceneElementLike[] {
 }
 
 /**
- * Suit ce que January change sur le tableau. La référence est la scène affichée au départ (puis la
- * scène envoyée) ; `dirty` devient vrai dès qu'un élément en diffère.
+ * Suit ce que January change sur le tableau. La référence est la dernière scène signalée par le
+ * canevas encore en lecture seule (`reference`, la scène telle qu'Excalidraw l'a ajustée), à défaut
+ * celle du convertisseur, puis la scène envoyée ; `dirty` devient vrai dès qu'un élément en diffère.
  */
 export function useBoardEdits(initial: readonly SceneElementLike[] | null) {
-  const [sent, setSent] = useState<readonly SceneElementLike[] | null>(null);
   const first = useMemo(() => (initial ? snapshotOf(initial) : null), [initial]);
-  const baseline = sent ?? first;
-  const baselineRef = useRef(baseline);
+  const firstRef = useRef(first);
+  /** Scène ajustée par Excalidraw, puis scène envoyée : prime sur celle du convertisseur. */
+  const shown = useRef<readonly SceneElementLike[] | null>(null);
   const current = useRef<readonly SceneElementLike[]>([]);
   const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
-    baselineRef.current = baseline;
-  }, [baseline]);
+    firstRef.current = first;
+  }, [first]);
 
-  const onSceneChange = useCallback((elements: readonly SceneElementLike[]) => {
+  const onSceneChange = useCallback((elements: readonly SceneElementLike[], reference = false) => {
     current.current = snapshotOf(elements);
-    const base = baselineRef.current;
+    if (reference) {
+      shown.current = current.current;
+      setDirty(false);
+      return;
+    }
+    const base = shown.current ?? firstRef.current;
     if (base) setDirty(signature(base) !== signature(current.current));
   }, []);
 
   const snapshot = useCallback(
-    () => ({ before: baselineRef.current ?? [], after: current.current }),
+    () => ({ before: shown.current ?? firstRef.current ?? [], after: current.current }),
     [],
   );
 
   /** Après l'envoi, ce qui est affiché devient la nouvelle référence. */
   const markSent = useCallback(() => {
-    setSent(current.current);
+    shown.current = current.current;
     setDirty(false);
   }, []);
 

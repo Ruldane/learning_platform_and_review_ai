@@ -107,6 +107,10 @@ describe("Board", () => {
     await screen.findByTestId("excalidraw");
     const send = screen.getByRole("button", { name: "Envoyer mes modifications aux agents" });
     expect(send).toBeDisabled();
+    // Même sans animation, le canevas reste un instant en lecture seule (ajustements d'Excalidraw).
+    await waitFor(() =>
+      expect(screen.getByTestId("excalidraw")).toHaveAttribute("data-view-mode", "false"),
+    );
 
     act(() => fake.props?.onChange?.(shapes, {}, {}));
     expect(send).toBeDisabled();

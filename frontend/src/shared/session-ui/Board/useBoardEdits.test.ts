@@ -36,6 +36,18 @@ describe("useBoardEdits", () => {
     expect(result.current.dirty).toBe(true);
   });
 
+  it("takes the scene adjusted by Excalidraw (read-only canvas) as the reference", () => {
+    const initial = [el("a"), el("arrow", 100, 20)];
+    const { result } = renderHook(() => useBoardEdits(initial));
+    const adjusted = [el("a", 3, 2), el("arrow", 104, 23)];
+    act(() => result.current.onSceneChange(adjusted, true));
+    act(() => result.current.onSceneChange([el("a", 3, 2), el("arrow", 104, 23)]));
+    expect(result.current.dirty).toBe(false);
+    expect(result.current.snapshot().before[1]?.x).toBe(104);
+    act(() => result.current.onSceneChange([el("a", 60, 2), el("arrow", 104, 23)]));
+    expect(result.current.dirty).toBe(true);
+  });
+
   it("never reports changes before a scene is displayed", () => {
     const { result } = renderHook(() => useBoardEdits(null));
     act(() => result.current.onSceneChange([el("a")]));

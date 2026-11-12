@@ -21,6 +21,16 @@ function setup(over: Partial<ComponentProps<typeof ProposalCards>> = {}) {
 const tick = (name: string) => ({ name: `Mélanger « ${name} »` });
 
 describe("ProposalCards", () => {
+  it("lists twice the same item without mixing the rows (no duplicate key)", () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const [first, ...others] = makeProposals();
+    setup({ proposals: [{ ...first!, skills: ["Python", "Python"] }, ...others] });
+    const card = screen.getAllByRole("article")[0]!;
+    expect(within(card).getAllByText("Python")).toHaveLength(2);
+    expect(JSON.stringify(error.mock.calls)).not.toContain("same key");
+    error.mockRestore();
+  });
+
   it("shows the same sections on every card", () => {
     setup();
     const cards = screen.getAllByRole("article");

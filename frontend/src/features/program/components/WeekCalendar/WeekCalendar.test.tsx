@@ -2,9 +2,23 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { makeWeek } from "../fixtures";
+import type { WeekView } from "../viewTypes";
 import { WeekCalendar } from "./WeekCalendar";
 
 const MOVE_T1 = "Déplacer « Lire le chapitre 1 »";
+
+/** La semaine après le déplacement de `taskId` vers `date` (ce que rend la mutation optimiste). */
+function moved(week: WeekView, taskId: string, date: string): WeekView {
+  const task = week.days.flatMap((day) => day.tasks).find((item) => item.id === taskId)!;
+  return {
+    ...week,
+    days: week.days.map((day) => {
+      const tasks = day.tasks.filter((item) => item.id !== taskId);
+      if (day.date === date) tasks.push({ ...task, plannedDate: date });
+      return { ...day, tasks };
+    }),
+  };
+}
 
 describe("WeekCalendar", () => {
   it("moves a task with the keyboard menu", async () => {
@@ -15,6 +29,18 @@ describe("WeekCalendar", () => {
     await user.click(screen.getByRole("menuitem", { name: /mercredi 18 novembre/ }));
     expect(onMoveTask).toHaveBeenCalledWith("t1", "2026-11-18");
     expect(screen.queryByRole("menu")).toBeNull();
+  });
+
+  it("gives the focus back to the moved card once it shows in its new day", async () => {
+    const user = userEvent.setup();
+    const week = makeWeek();
+    const { rerender } = render(<WeekCalendar week={week} editable onMoveTask={vi.fn()} />);
+    screen.getByRole("button", { name: MOVE_T1 }).focus();
+    await user.keyboard("{Enter}{ArrowDown}{Enter}");
+    rerender(<WeekCalendar week={moved(week, "t1", "2026-11-18")} editable onMoveTask={vi.fn()} />);
+    const wednesday = screen.getByRole("group", { name: /^mer\. / });
+    const trigger = within(wednesday).getByRole("button", { name: MOVE_T1 });
+    expect(trigger).toHaveFocus();
   });
 
   it("opens the menu and picks a day with the keys only", async () => {

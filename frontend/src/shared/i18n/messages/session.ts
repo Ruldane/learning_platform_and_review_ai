@@ -112,7 +112,7 @@ export const session = {
     sending: "Envoi en cours…",
     sendHint: "Déplace, annote ou corrige le tableau : le bouton s'active après une modification.",
     exportFailed: "L'export a échoué. Réessaie dans un instant.",
-    sendFailed: "Tes modifications n'ont pas pu partir. Réessaie dans un instant.",
+    sendFailed: "Tes modifications n'ont pas pu être préparées. Réessaie dans un instant.",
     genericNote: "Le schéma a été retouché (formes ou liens).",
     note: {
       added: "Ajouté : {items}",

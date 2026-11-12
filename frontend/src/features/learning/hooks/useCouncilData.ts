@@ -24,7 +24,7 @@ function lastIdOf(events: SessionEvent[], type: SessionEvent["type"]): string | 
 export function useCouncilData(goalId: string, sessionId: string, events: SessionEvent[]) {
   const sources = useMemo(() => sourcesFromEvents(events), [events]);
   const proposals = useProposals(goalId, lastIdOf(events, "proposal.ready"));
-  const saved = useBoards(goalId);
+  const saved = useBoards(goalId, sessionId);
   const boards = useMemo(() => boardsFromEvents(saved.data ?? [], events), [saved.data, events]);
   const choose = useChooseProposal(goalId, sessionId);
   const edit = useBoardEdit(goalId);

@@ -2,6 +2,7 @@ import { act, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import BoardCanvas from "./BoardCanvas";
 import { REFIT_DELAY_MS } from "./useRefitOnShow";
+import { SETTLE_MS } from "./useSettled";
 import { fake, fakeApi, lastSceneIds, resetExcalidrawMock } from "./excalidrawMock";
 
 vi.mock("@excalidraw/excalidraw", async () => (await import("./excalidrawMock")).module);
@@ -87,6 +88,29 @@ describe("BoardCanvas", () => {
     await act(() => vi.advanceTimersByTimeAsync(250));
     expect(screen.getByTestId("excalidraw")).toHaveAttribute("data-view-mode", "true");
     fake.props?.onChange?.(elements, {}, {});
-    expect(onSceneChange).toHaveBeenCalledWith(elements);
+    expect(onSceneChange).toHaveBeenCalledWith(elements, false);
+  });
+
+  it("stays read-only a moment without animation, Excalidraw's changes being the reference", async () => {
+    const onSceneChange = vi.fn();
+    render(canvas({ animate: false, onSceneChange }));
+    expect(screen.getByTestId("excalidraw")).toHaveAttribute("data-view-mode", "true");
+    act(() => fake.props?.onChange?.(elements, {}, {}));
+    expect(onSceneChange).toHaveBeenLastCalledWith(elements, true);
+    await act(() => vi.advanceTimersByTimeAsync(SETTLE_MS));
+    expect(screen.getByTestId("excalidraw")).toHaveAttribute("data-view-mode", "false");
+    act(() => fake.props?.onChange?.(elements, {}, {}));
+    expect(onSceneChange).toHaveBeenLastCalledWith(elements, false);
+  });
+
+  it("passes nothing on while the elements are still appearing", async () => {
+    const onSceneChange = vi.fn();
+    render(canvas({ onSceneChange }));
+    await act(() => vi.advanceTimersByTimeAsync(0));
+    act(() => fake.props?.onChange?.([elements[0]], {}, {}));
+    expect(onSceneChange).not.toHaveBeenCalled();
+    await act(() => vi.advanceTimersByTimeAsync(400));
+    act(() => fake.props?.onChange?.(elements, {}, {}));
+    expect(onSceneChange).toHaveBeenLastCalledWith(elements, true);
   });
 });

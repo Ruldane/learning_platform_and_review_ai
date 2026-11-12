@@ -112,6 +112,11 @@ function outcomeEvents(base: Base) {
       type: "run.completed",
       payload: { summary: "ok" },
     }),
+    failed: (message = "Le modèle n'a pas répondu."): SessionEvent => ({
+      ...base(),
+      type: "run.failed",
+      payload: { code: "internal_error", message },
+    }),
   };
 }
 

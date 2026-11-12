@@ -8,6 +8,8 @@ import { CancelCouncilCard } from "../../components/CancelCouncilCard";
 import { ChoiceNotice } from "../../components/ChoiceNotice";
 import { DebateCommandBar } from "../../components/DebateCommandBar";
 import type { useCouncilSession } from "../../hooks/useCouncilSession";
+import type { useRetryCouncil } from "../../hooks/useRetryCouncil";
+import { CouncilFailure } from "./CouncilFailure";
 
 type Session = ReturnType<typeof useCouncilSession>;
 
@@ -17,6 +19,8 @@ const CHOICE_KIND = "choose_path";
 
 interface CouncilFeedProps {
   session: Session;
+  /** Relance du Conseil, proposée quand sa session a échoué. */
+  retry: ReturnType<typeof useRetryCouncil>;
   onShowProposals: () => void;
 }
 
@@ -24,12 +28,12 @@ interface CouncilFeedProps {
  * Colonne de gauche : le débat (bulles, cartes de question), le champ de message actif pendant
  * tout le débat, les commandes permanentes et les contrôles de la session. Tout part par REST.
  */
-export function CouncilFeed({ session, onShowProposals }: CouncilFeedProps) {
+export function CouncilFeed({ session, retry, onShowProposals }: CouncilFeedProps) {
   const { stream, actions } = session;
   const { view, status } = stream;
   const [confirming, setConfirming] = useState(false);
   const finished = FINISHED.includes(status);
-  const failure = status === "failed" ? view.error?.message : null;
+  const failure = status === "failed" ? (view.error?.message ?? null) : null;
 
   return (
     <section aria-label={t("learning.council.feed")} className="flex min-w-0 flex-col gap-3">
@@ -53,7 +57,7 @@ export function CouncilFeed({ session, onShowProposals }: CouncilFeedProps) {
           )
         }
       />
-      {failure ? <InlineError message={failure} /> : null}
+      {status === "failed" ? <CouncilFailure message={failure} retry={retry} /> : null}
       {actions.error ? <InlineError message={actions.error} /> : null}
       {confirming && !finished ? (
         <CancelCouncilCard

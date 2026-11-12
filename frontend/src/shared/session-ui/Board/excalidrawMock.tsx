@@ -2,6 +2,7 @@
  * Faux `@excalidraw/excalidraw` pour les tests du tableau : jsdom n'a ni canevas ni polices.
  * Usage : `vi.mock("@excalidraw/excalidraw", async () => (await import("./excalidrawMock")).module)`.
  */
+import { act } from "@testing-library/react";
 import { useEffect } from "react";
 import { vi } from "vitest";
 
@@ -21,7 +22,16 @@ export const fakeApi = {
   getFiles: vi.fn(() => ({})),
 };
 
-export const fake: { props: FakeExcalidrawProps | null } = { props: null };
+export const fake: {
+  props: FakeExcalidrawProps | null;
+  /**
+   * Ajustements d'Excalidraw au montage (flèches liées recalculées, texte mesuré) : la scène
+   * qu'il signale aussitôt, à partir des éléments reçus. `null` : aucun `onChange` au montage.
+   */
+  mountChange: ((elements: { id: string }[]) => unknown[]) | null;
+  /** Nombre d'ajustements de montage déjà signalés. */
+  adjusted: number;
+} = { props: null, mountChange: null, adjusted: 0 };
 
 function Excalidraw(props: FakeExcalidrawProps) {
   useEffect(() => {
@@ -29,6 +39,15 @@ function Excalidraw(props: FakeExcalidrawProps) {
   });
   useEffect(() => {
     props.excalidrawAPI?.(fakeApi);
+    const adjust = fake.mountChange;
+    // Comme Excalidraw : un peu après le montage (polices chargées), avec les props du moment.
+    const timer = adjust
+      ? setTimeout(() => {
+          act(() => fake.props?.onChange?.(adjust(props.initialData?.elements ?? []), {}, {}));
+          fake.adjusted += 1;
+        })
+      : undefined;
+    return () => clearTimeout(timer);
     // Excalidraw ne rend son API qu'une fois monté.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -57,6 +76,8 @@ export function lastSceneIds(): string[] {
 
 export function resetExcalidrawMock(): void {
   fake.props = null;
+  fake.mountChange = null;
+  fake.adjusted = 0;
   for (const fn of Object.values(fakeApi)) fn.mockClear();
   exportToBlob.mockReset();
   exportToSvg.mockReset();

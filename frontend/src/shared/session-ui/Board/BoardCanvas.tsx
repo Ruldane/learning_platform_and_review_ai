@@ -20,8 +20,12 @@ export interface BoardCanvasProps {
   reducedMotion: boolean;
   readOnly: boolean;
   onReady: (api: BoardApi) => void;
-  /** Appelé à chaque changement une fois la scène entière affichée (jamais pendant l'animation). */
-  onSceneChange: (elements: readonly SceneElementLike[]) => void;
+  /**
+   * Chaque changement signalé par Excalidraw. `reference` : la scène entière est affichée mais le
+   * canevas est encore en lecture seule ; ce sont les ajustements d'Excalidraw, pas January.
+   * Rien n'est transmis pendant l'animation.
+   */
+  onSceneChange: (elements: readonly SceneElementLike[], reference: boolean) => void;
 }
 
 /**
@@ -32,7 +36,7 @@ export default function BoardCanvas(props: BoardCanvasProps) {
   const { title, elements, files, animate, reducedMotion, readOnly, onReady, onSceneChange } =
     props;
   const { visible, done } = useReveal(elements, { animate, reducedMotion });
-  const settled = useSettled(done, !animate || reducedMotion);
+  const settled = useSettled(done);
   const [initial] = useState(visible);
   const [api, setApi] = useState<BoardApi | null>(null);
   const frame = useRef<HTMLDivElement>(null);
@@ -55,7 +59,7 @@ export default function BoardCanvas(props: BoardCanvasProps) {
         initialData={{ elements: initial, files, appState: { viewBackgroundColor: "#ffffff" } }}
         viewModeEnabled={readOnly || !settled}
         onChange={(current) => {
-          if (settled) onSceneChange(current as readonly SceneElementLike[]);
+          if (settled || done) onSceneChange(current as readonly SceneElementLike[], !settled);
         }}
         langCode="fr-FR"
         UIOptions={{

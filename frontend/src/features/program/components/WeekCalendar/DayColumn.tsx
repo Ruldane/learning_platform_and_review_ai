@@ -11,6 +11,7 @@ interface DayColumnProps {
   editable: boolean;
   /** Tous les jours de la semaine (`AAAA-MM-JJ`) : une tâche peut aller sur chacun d'eux. */
   dates: string[];
+  /** Déplacement choisi dans le menu « Déplacer vers… » d'une carte. */
   onMoveTask: (taskId: string, date: string) => void;
 }
 

@@ -7,6 +7,7 @@ import { LessonMarkdown } from "./LessonMarkdown";
 import { LessonToc } from "./LessonToc";
 import { ReadingProgress } from "./ReadingProgress";
 import { BODY_CLASS } from "./readerStyles";
+import { withoutLeadingTitle } from "./leadingTitle";
 import { extractHeadings } from "./toc";
 
 interface LessonReaderProps {
@@ -21,7 +22,9 @@ const WORDS_PER_MINUTE = 200;
  */
 export function LessonReader({ lesson }: LessonReaderProps) {
   const body = useRef<HTMLElement>(null);
-  const headings = useMemo(() => extractHeadings(lesson.markdown), [lesson.markdown]);
+  // Le titre est celui de la page (`<h1>`) : celui du Markdown ne se répète pas dessous.
+  const markdown = useMemo(() => withoutLeadingTitle(lesson.markdown), [lesson.markdown]);
+  const headings = useMemo(() => extractHeadings(markdown), [markdown]);
   const minutes = Math.max(1, Math.ceil(lesson.wordCount / WORDS_PER_MINUTE));
   return (
     <div className="flex flex-col gap-6">
@@ -50,7 +53,7 @@ export function LessonReader({ lesson }: LessonReaderProps) {
           aria-label={t("lessons.reader.label", { title: lesson.title })}
           className={BODY_CLASS}
         >
-          <LessonMarkdown markdown={lesson.markdown} headings={headings} />
+          <LessonMarkdown markdown={markdown} headings={headings} />
         </article>
         <aside className="order-first xl:sticky xl:top-6 xl:order-last">
           <LessonToc headings={headings} />

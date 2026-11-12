@@ -69,6 +69,19 @@ export const learning = {
     showProposals: "Voir les propositions",
     proposalsLoading: "Chargement des propositions…",
     boardsLoading: "Chargement du tableau…",
+    programFailed: "La préparation du programme a échoué.",
+    councilFailed: "Le Conseil s'est arrêté sur une erreur.",
+  },
+  retry: {
+    council: "Relancer le Conseil",
+    councilHelp: "Le Conseil repart du début : les questions de cadrage te seront reposées.",
+    program: "Relancer la préparation du programme",
+    programHelp: "Le Stratège repart du parcours que tu as choisi.",
+    busy: "Relance en cours…",
+    notFailed: "Le Conseil n'est pas en échec : l'état a été relu.",
+    notFailedStatus: "Le Conseil n'est pas en échec (état : {status}) : l'état a été relu.",
+    alreadyChosen:
+      "Un programme est déjà lancé pour cet objectif : le Conseil ne peut plus être relancé. L'état a été relu.",
   },
   choose: {
     alreadyChosen:

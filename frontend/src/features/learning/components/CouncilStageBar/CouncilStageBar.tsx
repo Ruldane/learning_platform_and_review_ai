@@ -6,7 +6,7 @@ interface CouncilStageBarProps {
   stage: CouncilStage;
   /** Tour en cours du débat (0 : pas encore commencé). */
   round: number;
-  /** Nombre de tours prévus (réglage `debate_rounds`, de 1 à 5). */
+  /** Nombre total de tours prévus, tour 1 compris (`1 + debate_rounds`). */
   rounds: number;
 }
 
@@ -15,7 +15,7 @@ const STAGES: CouncilStage[] = ["framing", "research", "debate", "proposals", "p
 /**
  * Les cinq étapes du Conseil, de gauche à droite : cadrage, recherche, débat, propositions,
  * programme. L'étape courante porte `aria-current="step"` ; les étapes passées sont dites
- * « terminée » aux lecteurs d'écran ; pendant le débat, « Tour 2 / 3 » s'affiche à côté.
+ * « terminée » aux lecteurs d'écran ; pendant le débat, « Tour 2 / 4 » s'affiche à côté.
  */
 export function CouncilStageBar({ stage, round, rounds }: CouncilStageBarProps) {
   const current = STAGES.indexOf(stage);

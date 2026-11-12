@@ -17,8 +17,9 @@ export function ProposalSection({ title, items, children }: ProposalSectionProps
       </h4>
       {items ? (
         <ul className="list-disc pl-4">
-          {items.map((item) => (
-            <li key={item}>{item}</li>
+          {items.map((item, index) => (
+            // Deux puces peuvent porter le même texte : la position les distingue.
+            <li key={`${index}-${item}`}>{item}</li>
           ))}
         </ul>
       ) : (

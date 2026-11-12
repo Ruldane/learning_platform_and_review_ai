@@ -1,6 +1,6 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { API, lessonOut, resourceOut } from "@/test/lessonsApi";
 import { renderRoutes } from "@/test/renderRoutes";
 import { server } from "@/test/server";
@@ -32,6 +32,31 @@ describe("LessonPage", () => {
     expect(
       within(list).getByRole("link", { name: /Documentation officielle de Python/ }),
     ).toBeInTheDocument();
+  });
+
+  it("reads a ready lesson again until its PDF is there", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      let reads = 0;
+      server.use(
+        http.get(`${API}/lessons/l1`, () => {
+          reads += 1;
+          return HttpResponse.json(lessonOut({ pdf_available: reads > 1 }));
+        }),
+      );
+      renderRoutes(
+        [{ path: "/apprendre/lecons/:lessonId", element: <LessonPage /> }],
+        "/apprendre/lecons/l1",
+      );
+      expect(await screen.findByText("Une variable nomme une valeur.")).toBeInTheDocument();
+      expect(screen.queryByRole("link", { name: "Télécharger le PDF" })).toBeNull();
+      await act(() => vi.advanceTimersByTimeAsync(5000));
+      expect(await screen.findByRole("link", { name: "Télécharger le PDF" })).toBeInTheDocument();
+      await act(() => vi.advanceTimersByTimeAsync(60_000));
+      expect(reads).toBe(2);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("toggles a resource as read from the lesson", async () => {

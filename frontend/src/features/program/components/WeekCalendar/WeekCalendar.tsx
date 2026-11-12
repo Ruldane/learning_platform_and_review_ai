@@ -13,6 +13,7 @@ import type { WeekView } from "../viewTypes";
 import { DayColumn } from "./DayColumn";
 import { makeAnnouncements } from "./announcements";
 import { columnKeyboardCoordinates } from "./keyboardCoordinates";
+import { useFocusAfterMove } from "./useFocusAfterMove";
 
 interface WeekCalendarProps {
   week: WeekView;
@@ -33,6 +34,12 @@ export function WeekCalendar({ week, editable, onMoveTask }: WeekCalendarProps) 
   );
   const announcements = useMemo(() => makeAnnouncements(week), [week]);
   const dates = week.days.map((day) => day.date);
+  const { gridRef, moved } = useFocusAfterMove(week);
+
+  function onMenuMove(taskId: string, date: string) {
+    moved(taskId);
+    onMoveTask(taskId, date);
+  }
 
   function onDragEnd({ active, over }: DragEndEvent) {
     if (!editable || !over) return;
@@ -53,6 +60,7 @@ export function WeekCalendar({ week, editable, onMoveTask }: WeekCalendarProps) 
       }}
     >
       <div
+        ref={gridRef}
         role="group"
         aria-label={t("program.calendar.label", { rank: week.rank })}
         tabIndex={0}
@@ -64,7 +72,7 @@ export function WeekCalendar({ week, editable, onMoveTask }: WeekCalendarProps) 
             day={day}
             editable={editable}
             dates={dates}
-            onMoveTask={onMoveTask}
+            onMoveTask={onMenuMove}
           />
         ))}
       </div>

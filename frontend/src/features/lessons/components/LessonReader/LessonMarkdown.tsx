@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { httpUrlOnly, markdownComponents } from "./markdownComponents";
+import { remarkRawHtmlAsText } from "./rawHtmlAsText";
 import type { TocHeading } from "./toc";
 
 interface LessonMarkdownProps {
@@ -9,12 +10,13 @@ interface LessonMarkdownProps {
   headings: TocHeading[];
 }
 
-const REMARK_PLUGINS = [remarkGfm];
+const REMARK_PLUGINS = [remarkGfm, remarkRawHtmlAsText];
 
 /**
  * Rendu du Markdown d'une leçon (GFM : tables, listes de tâches). Le contenu n'est pas fiable
- * (SPEC 17.2) : le HTML brut est ignoré (`skipHtml`) et seules les adresses http(s) passent
- * (`urlTransform`).
+ * (SPEC 17.2) : un bloc HTML brut s'affiche en texte (`remarkRawHtmlAsText`), le HTML en ligne est
+ * retiré, rien n'est jamais interprété (`skipHtml` en dernier recours) ; seules les adresses
+ * http(s) passent (`urlTransform`).
  */
 export function LessonMarkdown({ markdown, headings }: LessonMarkdownProps) {
   const components = useMemo(

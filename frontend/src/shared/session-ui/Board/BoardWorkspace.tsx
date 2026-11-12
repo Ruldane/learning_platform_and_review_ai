@@ -16,11 +16,13 @@ interface BoardWorkspaceProps {
   onSendEdit: (boardId: string, edit: BoardEdit) => void | Promise<void>;
   /** Le canevas de cet état s'est affiché : il ne sera plus animé quand on y reviendra. */
   onSeen: (id: string) => void;
+  /** January a des modifications non envoyées sur cet état (ou n'en a plus). */
+  onDirtyChange: (id: string, dirty: boolean) => void;
 }
 
 /** Un état du tableau : canevas, barre d'actions et repli Mermaid. Remonté à chaque état. */
 export function BoardWorkspace(props: BoardWorkspaceProps) {
-  const { state, readOnly, sending, onSendEdit, onSeen } = props;
+  const { state, readOnly, sending, onSendEdit, onSeen, onDirtyChange } = props;
   const scene = useBoardScene(state);
   const reducedMotion = usePrefersReducedMotion();
   const edits = useBoardEdits(
@@ -39,6 +41,11 @@ export function BoardWorkspace(props: BoardWorkspaceProps) {
     if (scene.status === "failed") console.error("board_fallback", { boardId: state.id });
     if (scene.status === "ready") onSeen(state.id);
   }, [scene.status, state.id, onSeen]);
+
+  useEffect(() => {
+    onDirtyChange(state.id, edits.dirty);
+    return () => onDirtyChange(state.id, false);
+  }, [edits.dirty, state.id, onDirtyChange]);
 
   return (
     <div className="flex min-w-0 flex-col gap-3">

@@ -94,7 +94,8 @@ describe("CouncilPage", () => {
     );
     expect(await screen.findAllByRole("article")).toHaveLength(4);
     expect(screen.getByRole("tab", { name: "Tableau" })).toBeInTheDocument();
-    expect(screen.getByText("Tour 1 / 3")).toBeInTheDocument();
+    // Tour 1 (positions) puis les 3 tours de débat du réglage par défaut.
+    expect(screen.getByText("Tour 1 / 4")).toBeInTheDocument();
     await user.click(screen.getByRole("tab", { name: "Sources" }));
     const kept = await screen.findByRole("region", { name: "Retenues" });
     expect(within(kept).getAllByRole("listitem")).toHaveLength(8);

@@ -1,18 +1,25 @@
-import { Link } from "react-router";
 import { t } from "@/shared/i18n/t";
 import { CostBadge } from "@/shared/session-ui";
 import { CouncilStageBar } from "../../components/CouncilStageBar";
 import type { useCouncilSession } from "../../hooks/useCouncilSession";
+import type { useProgramRetry } from "../../hooks/useProgramRetry";
+import { ProgramState } from "./ProgramState";
 
 type Session = ReturnType<typeof useCouncilSession>;
+
+interface CouncilStatusProps {
+  session: Session;
+  /** Relance du Stratège, proposée quand la session du programme a échoué. */
+  programRetry: ReturnType<typeof useProgramRetry>;
+}
 
 /**
  * La barre d'état du Conseil, en haut : statut de la session, étape (cadrage, recherche, débat,
  * propositions, programme) avec le tour, coût en direct, puis, à l'étape du programme, le lien
- * « Voir le programme » dès qu'il est prêt.
+ * « Voir le programme » dès qu'il est prêt, ou sa relance s'il a échoué.
  */
-export function CouncilStatus({ session }: { session: Session }) {
-  const { stream, progress, programLink } = session;
+export function CouncilStatus({ session, programRetry }: CouncilStatusProps) {
+  const { stream, progress } = session;
   return (
     <section
       aria-label={t("session.status.label")}
@@ -33,17 +40,11 @@ export function CouncilStatus({ session }: { session: Session }) {
         </p>
       ) : null}
       {progress.stage === "program" ? (
-        <p className="text-sm">
-          {programLink ? (
-            <Link to={programLink} className="font-medium underline underline-offset-2">
-              {t("learning.council.programLink")}
-            </Link>
-          ) : (
-            <span role="status" className="text-muted-foreground">
-              {t("learning.council.programPending")}
-            </span>
-          )}
-        </p>
+        <ProgramState
+          link={session.programLink}
+          failed={session.programFailed}
+          retry={programRetry}
+        />
       ) : null}
     </section>
   );

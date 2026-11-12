@@ -28,6 +28,7 @@ export function TaskCard({ task, editable, moveTargets, onMove }: TaskCardProps)
   return (
     <li
       ref={setNodeRef}
+      data-task-id={task.id}
       style={style}
       className={cn(
         "relative flex flex-col gap-1 rounded-lg border bg-background p-2 text-xs",
