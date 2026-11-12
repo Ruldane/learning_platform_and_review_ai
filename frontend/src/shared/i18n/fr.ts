@@ -8,6 +8,7 @@ import { program } from "./messages/program";
 import { research } from "./messages/research";
 import { session } from "./messages/session";
 import { settings } from "./messages/settings";
+import { study } from "./messages/study";
 
 /**
  * Tous les textes de l'interface, en français : agrégat des fichiers `messages/<zone>.ts`.
@@ -25,4 +26,5 @@ export const fr = {
   program,
   lessons,
   learning,
+  study,
 } as const;
