@@ -1,6 +1,7 @@
 """Validation d'un programme (SPEC 3.1 étape 7, 3.2 point d'arrêt n° 3 ; D7, D6, D86, D88).
 
-`validate_program` est idempotente : statut `validated`, version acceptée (une version
+`validate_program` (`commit_validation` sous le verrou, puis `sync_skills` hors du verrou)
+est idempotente : statut `validated`, version acceptée (une version
 « Modifications de January » est écrite d'abord si les lignes ont bougé depuis la dernière
 version du Stratège), référentiel de compétences, compétences couvertes montées à « en cours »
 (jamais baissées) et chaque niveau changé reflété dans l'acquis de la mémoire.
@@ -9,6 +10,7 @@ La route reprend la session du Stratège qui attend sa validation, sinon valide 
 passe sous le verrou du programme. Journaux : identifiants seulement (SPEC 17.2)."""
 
 import logging
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any, Protocol
 
@@ -20,7 +22,7 @@ from app.agents.tools.plan_schema import EdgeDraft, SkillDraft
 from app.core.errors import AppError
 from app.features.learning.service.goals import mark_planned
 from app.features.memory.service.runtime import MemoryRuntime
-from app.features.memory.service.skill_levels import reflect_skill_level
+from app.features.memory.service.skill_levels import reflect_skill_levels
 from app.features.program.repository import PlanVersionRepository
 from app.features.program.schemas import ValidateOut
 from app.features.program.service.diff import diff_plans, snapshot
@@ -92,6 +94,11 @@ def _catalog(raw: dict[str, Any]) -> tuple[list[SkillDraft], list[EdgeDraft]]:
     return skills, edges
 
 
+def _covered(loaded: Loaded) -> list[str]:
+    """Compétences des modules planifiés (les modules sautés sont déjà acquis)."""
+    return [str(skill) for m in loaded.modules if not m.skipped for skill in m.skills]
+
+
 async def _raise_skills(
     db: AsyncSession, user_id: str, loaded: Loaded
 ) -> list[tuple[str, SkillLevel]]:
@@ -100,59 +107,69 @@ async def _raise_skills(
     version = await PlanVersionRepository(db, user_id).latest_with_catalog(loaded.program.id)
     if version is not None:
         await service.upsert_catalog(*_catalog(version.snapshot.get("catalog", {})))
-    covered = [str(s) for m in loaded.modules if not m.skipped for s in m.skills]
-    return await service.raise_levels(covered, "en_cours", f"Programme {loaded.program.title}")
+    evidence = f"Programme {loaded.program.title}"
+    return await service.raise_levels(_covered(loaded), "en_cours", evidence)
 
 
-async def _reflect(
-    ctx: ValidationContext,
-    user_id: str,
-    changed: list[tuple[str, SkillLevel]],
-    title: str,
-    session_id: str | None,
+@dataclass(frozen=True)
+class SkillSync:
+    """Ce qu'il reste à refléter dans la mémoire, hors du verrou : TOUTES les compétences
+    couvertes par le programme, à leur niveau actuel (le reflet est idempotent)."""
+
+    title: str
+    levels: list[tuple[str, SkillLevel]]
+
+
+async def commit_validation(ctx: ValidationContext, user_id: str, program_id: str) -> SkillSync:
+    """Valide le programme et commite (idempotent : déjà validé, rien ne change) ; rend les
+    niveaux à refléter, branche « déjà validé » comprise. À appeler sous le verrou."""
+    async with ctx.session_factory() as db:
+        loaded = await load(db, user_id, program_id)
+        program = loaded.program
+        changed: list[tuple[str, SkillLevel]] | None = None
+        if program.status != "validated":
+            now = datetime.now(UTC)
+            program.version = await _accept(db, user_id, loaded, now)
+            changed = await _raise_skills(db, user_id, loaded)
+            program.status, program.validated_at = "validated", now
+            await mark_planned(db, user_id, program.goal_id)
+        levels = await SkillsService(db, user_id).levels_of(_covered(loaded))
+        await db.commit()
+    if changed is not None:
+        logger.info(
+            "Programme validé : utilisateur %s, programme %s, %d niveau(x) changé(s)",
+            user_id,
+            program_id,
+            len(changed),
+        )
+    return SkillSync(program.title, levels)
+
+
+async def sync_skills(
+    ctx: ValidationContext, user_id: str, sync: SkillSync, *, session_id: str | None
 ) -> None:
-    """Chaque niveau changé reflété dans l'acquis de la mémoire, au mieux : une panne laisse la
-    validation faite (journalisée, identifiants seulement)."""
-    author = "strategist" if session_id else "user"
-    for name, level in changed:
-        try:
-            await reflect_skill_level(
-                ctx.memory,
-                user_id,
-                title=name,
-                level=level,
-                author=author,
-                session_id=session_id,
-                reason=f"Programme « {title} » validé",
-            )
-        except Exception:
-            logger.warning("Acquis non reflété après validation : utilisateur %s", user_id)
+    """Reflète les niveaux dans les acquis de la mémoire (D6), HORS du verrou (la vectorisation
+    d'un acquis créé appelle Ollama). Idempotent : un reflet manqué (panne, arrêt) est rattrapé
+    par l'appel suivant (rejeu de `finalize`, second « Valider »). Une panne est journalisée."""
+    try:
+        await reflect_skill_levels(
+            ctx.memory,
+            user_id,
+            sync.levels,
+            author="strategist" if session_id else "user",
+            session_id=session_id,
+            reason=f"Programme « {sync.title} » validé",
+        )
+    except Exception:
+        logger.warning("Acquis non reflétés après validation : utilisateur %s", user_id)
 
 
 async def validate_program(
     ctx: ValidationContext, user_id: str, program_id: str, *, session_id: str | None
 ) -> None:
-    """Valide le programme (idempotent : déjà validé, rien ne change). À appeler sous le verrou
-    du programme."""
-    async with ctx.session_factory() as db:
-        loaded = await load(db, user_id, program_id)
-        program = loaded.program
-        if program.status == "validated":
-            return
-        now = datetime.now(UTC)
-        program.version = await _accept(db, user_id, loaded, now)
-        changed = await _raise_skills(db, user_id, loaded)
-        program.status, program.validated_at = "validated", now
-        await mark_planned(db, user_id, program.goal_id)
-        await db.commit()
-        title = program.title
-    await _reflect(ctx, user_id, changed, title, session_id)
-    logger.info(
-        "Programme validé : utilisateur %s, programme %s, %d niveau(x) changé(s)",
-        user_id,
-        program_id,
-        len(changed),
-    )
+    """Valide (sous le verrou si l'appelant le tient) puis reflète les niveaux en mémoire."""
+    sync = await commit_validation(ctx, user_id, program_id)
+    await sync_skills(ctx, user_id, sync, session_id=session_id)
 
 
 async def _session_view(
@@ -182,32 +199,45 @@ async def _resume(
             raise
 
 
+async def _under_lock(
+    runtime: AgentRuntime, rt: ProgramRuntime, user_id: str, program_id: str
+) -> tuple[ValidateOut, SkillSync | None]:
+    async with rt.session_factory() as db:
+        loaded = await load(db, user_id, program_id)
+    program = loaded.program
+    done = ValidateOut(program_id=program_id, status="validated", session_id=None)
+    if program.status == "validated":
+        rt.validating.discard(program_id)
+        return done, await commit_validation(rt, user_id, program_id)
+    check_weeks(loaded, loaded.weeks)
+    view = await _session_view(runtime, rt, user_id, program.session_id)
+    pending = view.pending_interrupt if view is not None else None
+    waiting = view is not None and view.status == "waiting_user"
+    if view is not None and waiting and pending is not None and pending.kind == VALIDATION_KIND:
+        await _resume(runtime, rt, user_id, view.id, pending.interrupt_id)
+        rt.validating.add(program_id)
+        logger.info("Validation reprise : programme %s, session %s", program_id, view.id)
+        return ValidateOut(program_id=program_id, status="draft", session_id=view.id), None
+    if view is None or view.status != "running":
+        rt.validating.discard(program_id)
+    if view is not None and view.status in OPEN_STATUSES:
+        if program_id in rt.validating:
+            return ValidateOut(program_id=program_id, status="draft", session_id=view.id), None
+        raise program_busy(view.status)
+    return done, await commit_validation(rt, user_id, program_id)
+
+
 async def request_validation(
     runtime: AgentRuntime, rt: ProgramRuntime, user_id: str, program_id: str
 ) -> ValidateOut:
     """Sous le verrou du programme : déjà validé → 202 sans session ; règles vérifiées sur l'état
     courant (422) ; Stratège en attente sur `validate_program` → reprise (« validate ») ;
     validation déjà reprise et en cours → même état ; Stratège occupé (révision) → 409 ;
-    sinon (brouillon sans session ouverte) → validation en ligne."""
+    sinon (brouillon sans session ouverte) → validation en ligne. Hors du verrou ensuite : les
+    niveaux sont reflétés dans la mémoire (rattrape un reflet manqué, programme déjà validé
+    compris)."""
     async with rt.program_lock(user_id, program_id):
-        async with rt.session_factory() as db:
-            loaded = await load(db, user_id, program_id)
-        program = loaded.program
-        if program.status == "validated":
-            rt.validating.discard(program_id)
-            return ValidateOut(program_id=program_id, status="validated", session_id=None)
-        check_weeks(loaded, loaded.weeks)
-        view = await _session_view(runtime, rt, user_id, program.session_id)
-        pending = view.pending_interrupt if view is not None else None
-        waiting = view is not None and view.status == "waiting_user"
-        if view is not None and waiting and pending is not None and pending.kind == VALIDATION_KIND:
-            await _resume(runtime, rt, user_id, view.id, pending.interrupt_id)
-            rt.validating.add(program_id)
-            logger.info("Validation reprise : programme %s, session %s", program_id, view.id)
-            return ValidateOut(program_id=program_id, status="draft", session_id=view.id)
-        if view is not None and view.status in OPEN_STATUSES:
-            if program_id in rt.validating and view.status == "running":
-                return ValidateOut(program_id=program_id, status="draft", session_id=view.id)
-            raise program_busy(view.status)
-        await validate_program(rt, user_id, program_id, session_id=None)
-    return ValidateOut(program_id=program_id, status="validated", session_id=None)
+        out, sync = await _under_lock(runtime, rt, user_id, program_id)
+    if sync is not None:
+        await sync_skills(rt, user_id, sync, session_id=None)
+    return out

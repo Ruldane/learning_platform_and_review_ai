@@ -24,6 +24,7 @@ from app.features.program.service.packing import (
     first_practice,
     pack_week,
 )
+from app.features.program.service.rules import describe, week_breaks
 from app.features.program.service.verbs import ACTION_VERBS, has_action_verb
 
 # Types de l'ordonnancement et verbes d'action : réexportés pour les autres modules du programme.
@@ -73,13 +74,11 @@ def check_draft(draft: PlanDraft, budget: Budget) -> list[str]:
     problems: list[str] = []
     for rank, week in enumerate(draft.weeks, start=1):
         tasks = _week_tasks(week)
-        total = sum(task.minutes for task in tasks)
-        if total > budget.cap_minutes:
-            problems.append(f"Semaine {rank} : {total} min prévues, {budget.cap_minutes} au plus.")
-        if not any(task.type == "pratiquer" for task in tasks):
-            problems.append(f"Semaine {rank} : aucune tâche de pratique.")
-        if not any(task.type == "quiz" for task in tasks):
-            problems.append(f"Semaine {rank} : aucun quiz.")
+        pairs = [(task.minutes, task.type) for task in tasks]
+        total, cap = sum(minutes for minutes, _ in pairs), budget.cap_minutes
+        problems += [
+            describe(rule, f"Semaine {rank}", total, cap) for rule in week_breaks(pairs, cap)
+        ]
         problems.extend(
             f"Semaine {rank} : le titre « {task.title} » ne commence pas par un verbe d'action."
             for task in tasks
@@ -165,15 +164,9 @@ def week_problems(
 ) -> list[str]:
     """Règles vérifiées à chaque modification d'une semaine : charge, pratique, quiz."""
     label = f"Semaine du {week_start:%d/%m}"
-    problems: list[str] = []
-    total = sum(minutes for _, minutes, _ in tasks)
-    if total > budget.cap_minutes:
-        problems.append(f"{label} : {total} min prévues, {budget.cap_minutes} au plus.")
-    if not any(kind == "pratiquer" for _, _, kind in tasks):
-        problems.append(f"{label} : aucune tâche de pratique.")
-    if not any(kind == "quiz" for _, _, kind in tasks):
-        problems.append(f"{label} : aucun quiz.")
-    return problems
+    pairs = [(minutes, kind) for _, minutes, kind in tasks]
+    total, cap = sum(minutes for minutes, _ in pairs), budget.cap_minutes
+    return [describe(rule, label, total, cap) for rule in week_breaks(pairs, cap)]
 
 
 def _entries(week: WeekDraft, week_index: int) -> list[Entry]:

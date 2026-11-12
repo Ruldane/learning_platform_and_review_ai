@@ -2606,7 +2606,7 @@
         "type": "object"
       },
       "PlanDiffOut": {
-        "description": "Différence de la dernière version du Stratège avec le plan qu'elle a remplacé.",
+        "description": "Différence de la dernière version (du Stratège, ou « Modifications de January » écrite à\nla validation) avec le plan qu'elle a remplacé.",
         "properties": {
           "added": {
             "items": {
@@ -4184,6 +4184,7 @@
         "type": "object"
       },
       "TaskOut": {
+        "description": "Une tâche reste dans son module (donc listée sous la semaine de ce module) même quand\nJanuary la déplace dans une autre semaine : le calendrier la place par `planned_date`.",
         "properties": {
           "already_known": {
             "title": "Already Known",
@@ -4202,10 +4203,12 @@
             "type": "integer"
           },
           "module_id": {
+            "description": "Module d'origine ; ne change pas quand la tâche bouge.",
             "title": "Module Id",
             "type": "string"
           },
           "planned_date": {
+            "description": "Jour planifié : c'est lui qui range la tâche dans une semaine du calendrier (charge et règles), pas son module.",
             "format": "date",
             "title": "Planned Date",
             "type": "string"
@@ -4741,7 +4744,7 @@
         "type": "object"
       },
       "WeekOut": {
-        "description": "`load_minutes` : tâches planifiées dans les sept jours de la semaine (calendrier).",
+        "description": "Une semaine : sa charge se lit sur le calendrier (tâches dont `planned_date` tombe dans\nses sept jours), ses modules sont ceux que le Stratège y a rangés. Après un déplacement, la\nsomme des tâches de `modules` peut donc différer de `load_minutes`.",
         "properties": {
           "deliverable": {
             "title": "Deliverable",
@@ -4752,14 +4755,17 @@
             "type": "string"
           },
           "load_hours": {
+            "description": "`load_minutes` en heures, à la demi-heure.",
             "title": "Load Hours",
             "type": "number"
           },
           "load_minutes": {
+            "description": "Minutes des tâches planifiées du lundi au dimanche de cette semaine, quel que soit leur module (règle des 85 %).",
             "title": "Load Minutes",
             "type": "integer"
           },
           "modules": {
+            "description": "Modules rangés dans cette semaine, avec TOUTES leurs tâches, y compris celles que January a déplacées dans une autre semaine (voir `TaskOut.planned_date`).",
             "items": {
               "$ref": "#/components/schemas/ModuleOut"
             },

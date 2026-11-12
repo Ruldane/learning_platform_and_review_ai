@@ -36,13 +36,19 @@ _Minutes = Annotated[int, Field(ge=15, le=120)]
 
 
 class TaskOut(BaseModel):
+    """Une tâche reste dans son module (donc listée sous la semaine de ce module) même quand
+    January la déplace dans une autre semaine : le calendrier la place par `planned_date`."""
+
     id: str
-    module_id: str
+    module_id: str = Field(description="Module d'origine ; ne change pas quand la tâche bouge.")
     title: str
     type: TaskType
     minutes: int
     done_criterion: str
-    planned_date: date
+    planned_date: date = Field(
+        description="Jour planifié : c'est lui qui range la tâche dans une semaine du "
+        "calendrier (charge et règles), pas son module."
+    )
     status: TaskStatus
     already_known: bool
 
@@ -61,7 +67,9 @@ class ModuleOut(BaseModel):
 
 
 class WeekOut(BaseModel):
-    """`load_minutes` : tâches planifiées dans les sept jours de la semaine (calendrier)."""
+    """Une semaine : sa charge se lit sur le calendrier (tâches dont `planned_date` tombe dans
+    ses sept jours), ses modules sont ceux que le Stratège y a rangés. Après un déplacement, la
+    somme des tâches de `modules` peut donc différer de `load_minutes`."""
 
     id: str
     rank: int
@@ -69,9 +77,15 @@ class WeekOut(BaseModel):
     objective: str
     deliverable: str
     start_date: date
-    load_minutes: int
-    load_hours: float  # arrondi à la demi-heure
-    modules: list[ModuleOut]
+    load_minutes: int = Field(
+        description="Minutes des tâches planifiées du lundi au dimanche de cette semaine, "
+        "quel que soit leur module (règle des 85 %)."
+    )
+    load_hours: float = Field(description="`load_minutes` en heures, à la demi-heure.")
+    modules: list[ModuleOut] = Field(
+        description="Modules rangés dans cette semaine, avec TOUTES leurs tâches, y compris "
+        "celles que January a déplacées dans une autre semaine (voir `TaskOut.planned_date`)."
+    )
 
 
 class ProgressOut(BaseModel):
@@ -88,7 +102,8 @@ class MovedTaskOut(BaseModel):
 
 
 class PlanDiffOut(BaseModel):
-    """Différence de la dernière version du Stratège avec le plan qu'elle a remplacé."""
+    """Différence de la dernière version (du Stratège, ou « Modifications de January » écrite à
+    la validation) avec le plan qu'elle a remplacé."""
 
     added: list[str]
     removed: list[str]

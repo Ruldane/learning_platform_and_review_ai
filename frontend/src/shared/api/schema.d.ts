@@ -1686,7 +1686,8 @@ export interface components {
         };
         /**
          * PlanDiffOut
-         * @description Différence de la dernière version du Stratège avec le plan qu'elle a remplacé.
+         * @description Différence de la dernière version (du Stratège, ou « Modifications de January » écrite à
+         *     la validation) avec le plan qu'elle a remplacé.
          */
         PlanDiffOut: {
             /** Added */
@@ -2267,7 +2268,11 @@ export interface components {
              */
             type: "lire" | "regarder" | "pratiquer" | "quiz" | "projet";
         };
-        /** TaskOut */
+        /**
+         * TaskOut
+         * @description Une tâche reste dans son module (donc listée sous la semaine de ce module) même quand
+         *     January la déplace dans une autre semaine : le calendrier la place par `planned_date`.
+         */
         TaskOut: {
             /** Already Known */
             already_known: boolean;
@@ -2277,11 +2282,15 @@ export interface components {
             id: string;
             /** Minutes */
             minutes: number;
-            /** Module Id */
+            /**
+             * Module Id
+             * @description Module d'origine ; ne change pas quand la tâche bouge.
+             */
             module_id: string;
             /**
              * Planned Date
              * Format: date
+             * @description Jour planifié : c'est lui qui range la tâche dans une semaine du calendrier (charge et règles), pas son module.
              */
             planned_date: string;
             /**
@@ -2510,18 +2519,29 @@ export interface components {
         };
         /**
          * WeekOut
-         * @description `load_minutes` : tâches planifiées dans les sept jours de la semaine (calendrier).
+         * @description Une semaine : sa charge se lit sur le calendrier (tâches dont `planned_date` tombe dans
+         *     ses sept jours), ses modules sont ceux que le Stratège y a rangés. Après un déplacement, la
+         *     somme des tâches de `modules` peut donc différer de `load_minutes`.
          */
         WeekOut: {
             /** Deliverable */
             deliverable: string;
             /** Id */
             id: string;
-            /** Load Hours */
+            /**
+             * Load Hours
+             * @description `load_minutes` en heures, à la demi-heure.
+             */
             load_hours: number;
-            /** Load Minutes */
+            /**
+             * Load Minutes
+             * @description Minutes des tâches planifiées du lundi au dimanche de cette semaine, quel que soit leur module (règle des 85 %).
+             */
             load_minutes: number;
-            /** Modules */
+            /**
+             * Modules
+             * @description Modules rangés dans cette semaine, avec TOUTES leurs tâches, y compris celles que January a déplacées dans une autre semaine (voir `TaskOut.planned_date`).
+             */
             modules: components["schemas"]["ModuleOut"][];
             /** Objective */
             objective: string;

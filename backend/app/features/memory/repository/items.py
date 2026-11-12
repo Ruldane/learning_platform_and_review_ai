@@ -161,6 +161,15 @@ class MemoryItemRepository(UserScopedRepository[MemoryItem]):
             stmt = stmt.limit(limit)
         return builtins.list((await self.session.execute(stmt)).scalars().all())
 
+    async def of_kind(self, kind: MemoryKind) -> builtins.list[MemoryItem]:
+        """Éléments actifs d'un type, du plus ancien au plus récent (sans limite)."""
+        stmt = (
+            self._scoped()
+            .where(MemoryItem.kind == kind)
+            .order_by(MemoryItem.created_at, MemoryItem.id)
+        )
+        return builtins.list((await self.session.execute(stmt)).scalars().all())
+
     async def everything(self) -> builtins.list[MemoryItem]:
         """Tous les éléments, actifs et en attente, les plus récents d'abord (export)."""
         stmt = (

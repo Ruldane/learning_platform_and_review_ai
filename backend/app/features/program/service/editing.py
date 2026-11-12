@@ -9,12 +9,14 @@ le second voit le premier et reçoit une 422 lisible, sans recopie de la saisie.
 import logging
 from collections.abc import Iterable
 from datetime import timedelta
+from typing import cast
 
 from app.core.errors import AppError
-from app.db.models.program import Task, Week
+from app.db.models.program import Task, TaskType, Week
 from app.features.program.repository import TaskRepository
 from app.features.program.schemas import ProgramOut, ProgramPatch, TaskOut, TaskPatch
 from app.features.program.service.programs import Loaded, load, task_out, view_of
+from app.features.program.service.rules import WeekRule, week_breaks
 from app.features.program.service.runtime import ProgramRuntime
 
 logger = logging.getLogger(__name__)
@@ -50,25 +52,30 @@ def _outside(cap: int) -> WeekRuleBroken:
     )
 
 
+_MESSAGES: dict[WeekRule, str] = {
+    "week_over_budget": (
+        "{label} dépasserait 85 % de ton budget : {total} min prévues, {cap} au plus."
+    ),
+    "week_needs_practice": "{label} doit garder au moins une tâche de pratique.",
+    "week_needs_quiz": "{label} doit garder son quiz.",
+}
+
+
 def check_weeks(loaded: Loaded, weeks: Iterable[Week | None]) -> None:
-    """Règles de chaque semaine donnée, sur les tâches planifiées dans ses sept jours (la même
-    règle que `planning.week_problems`) : la première cassée lève `WeekRuleBroken`."""
+    """Règle de chaque semaine donnée (`rules.week_breaks`, la même que pour le Stratège), sur
+    les tâches planifiées dans ses sept jours : la première cassée lève `WeekRuleBroken`."""
     cap = loaded.program.cap_minutes
     for week in sorted({w for w in weeks if w is not None}, key=lambda w: w.rank):
-        tasks = [t for t in loaded.tasks if loaded.week_of(t.planned_date) is week]
-        total = sum(t.minutes for t in tasks)
-        label = f"La semaine {week.rank}"
-        if total > cap:
-            message = (
-                f"{label} dépasserait 85 % de ton budget : {total} min prévues, {cap} au plus."
-            )
-            raise WeekRuleBroken("week_over_budget", message, week, total, cap)
-        if not any(t.type == "pratiquer" for t in tasks):
-            message = f"{label} doit garder au moins une tâche de pratique."
-            raise WeekRuleBroken("week_needs_practice", message, week, total, cap)
-        if not any(t.type == "quiz" for t in tasks):
-            message = f"{label} doit garder son quiz."
-            raise WeekRuleBroken("week_needs_quiz", message, week, total, cap)
+        tasks = [
+            (t.minutes, cast(TaskType, t.type))
+            for t in loaded.tasks
+            if loaded.week_of(t.planned_date) is week
+        ]
+        total = sum(minutes for minutes, _ in tasks)
+        for rule in week_breaks(tasks, cap):
+            label = f"La semaine {week.rank}"
+            message = _MESSAGES[rule].format(label=label, total=total, cap=cap)
+            raise WeekRuleBroken(rule, message, week, total, cap)
 
 
 def _apply(loaded: Loaded, task: Task, patch: TaskPatch) -> set[Week | None]:

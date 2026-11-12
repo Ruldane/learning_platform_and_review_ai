@@ -81,3 +81,12 @@ async def test_concurrent_raises_create_one_skill(db_session_factory: Factory) -
     await asyncio.gather(raise_once(), raise_once())
     assert await _count(db_session_factory, Skill) == 1
     assert await _count(db_session_factory, UserSkill) == 1
+
+
+async def test_levels_of_reads_current_levels_once_per_name(db_session_factory: Factory) -> None:
+    async with db_session_factory() as db:
+        service = SkillsService(db, ME)
+        await service.raise_levels(["Pandas"], "valide", "Quiz")
+        await service.upsert_catalog([SkillDraft(name="Polars", domain="Données")], [])
+        levels = await service.levels_of(["pandas", "PANDAS", "Polars", "inconnue", ""])
+    assert levels == [("Pandas", "valide")]  # « Polars » n'a pas de niveau

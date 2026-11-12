@@ -95,6 +95,18 @@ class SkillsService:
         await self._db.flush()
         return changed
 
+    async def levels_of(self, names: Sequence[str]) -> list[tuple[str, SkillLevel]]:
+        """`(nom affiché, niveau)` actuel de chacune de ces compétences qui a un niveau, une
+        fois par nom normalisé (pour refléter les niveaux dans la mémoire)."""
+        norms = [norm for norm in dict.fromkeys(map(normalize_skill_name, names)) if norm]
+        rows = await self._skills.by_norm(norms)
+        levels = await self._levels.for_skills([row.id for row in rows.values()])
+        return [
+            (rows[norm].name, _as_level(levels[rows[norm].id].level))
+            for norm in norms
+            if norm in rows and rows[norm].id in levels
+        ]
+
     async def known_levels(self) -> dict[str, SkillLevel]:
         """`nom normalisé → niveau` de chaque compétence connue de January."""
         return {norm: _as_level(level) for norm, level in await self._levels.levels()}
