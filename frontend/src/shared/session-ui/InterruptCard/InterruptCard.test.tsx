@@ -14,6 +14,17 @@ const withOptions = {
 };
 const freeText = { ...withOptions, options: [] };
 
+const framing = {
+  interrupt_id: "i2",
+  kind: "framing",
+  question: "Réponds aux questions de cadrage.",
+  options: [{ label: "Lancer la recherche", value: "go" }],
+  fields: [
+    { id: "q1", label: "Quel type d'entreprise vises-tu ?", max_length: 2000, required: false },
+    { id: "q2", label: "Quand veux-tu changer de poste ?", max_length: 2000, required: false },
+  ],
+};
+
 describe("InterruptCard", () => {
   it("calls onAnswer with the option value", async () => {
     const user = userEvent.setup();
@@ -65,6 +76,58 @@ describe("InterruptCard", () => {
   it("disables the options while an answer is being sent", () => {
     render(<InterruptCard interrupt={withOptions} answered={false} disabled onAnswer={vi.fn()} />);
     expect(screen.getByRole("button", { name: "Plus court" })).toBeDisabled();
+  });
+
+  it("with fields sends answers", async () => {
+    const user = userEvent.setup();
+    const onAnswer = vi.fn();
+    render(<InterruptCard interrupt={framing} answered={false} onAnswer={onAnswer} />);
+    await user.type(
+      screen.getByRole("textbox", { name: "Quel type d'entreprise vises-tu ?" }),
+      "Startup",
+    );
+    await user.click(screen.getByRole("button", { name: "Répondre" }));
+    expect(onAnswer).toHaveBeenCalledWith({ answers: { q1: "Startup" } });
+  });
+
+  it("omits blank answers and trims the others", async () => {
+    const user = userEvent.setup();
+    const onAnswer = vi.fn();
+    render(<InterruptCard interrupt={framing} answered={false} onAnswer={onAnswer} />);
+    await user.type(screen.getByLabelText("Quel type d'entreprise vises-tu ?"), "   ");
+    await user.type(screen.getByLabelText("Quand veux-tu changer de poste ?"), " Dans 6 mois ");
+    await user.click(screen.getByRole("button", { name: "Répondre" }));
+    expect(onAnswer).toHaveBeenCalledWith({ answers: { q2: "Dans 6 mois" } });
+  });
+
+  it("does not send while every field is empty, but keeps the option usable", async () => {
+    const user = userEvent.setup();
+    const onAnswer = vi.fn();
+    render(<InterruptCard interrupt={framing} answered={false} onAnswer={onAnswer} />);
+    expect(screen.getByRole("button", { name: "Répondre" })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Lancer la recherche" }));
+    expect(onAnswer).toHaveBeenCalledWith("go");
+  });
+
+  it("waits for the required fields", async () => {
+    const user = userEvent.setup();
+    const required = {
+      ...framing,
+      fields: [{ id: "q1", label: "Ton objectif ?", max_length: 100, required: true }],
+    };
+    render(<InterruptCard interrupt={required} answered={false} onAnswer={vi.fn()} />);
+    const field = screen.getByLabelText("Ton objectif ?");
+    expect(field).toBeRequired();
+    expect(field).toHaveAttribute("maxlength", "100");
+    expect(screen.getByRole("button", { name: "Répondre" })).toBeDisabled();
+    await user.type(field, "Devenir tech lead");
+    expect(screen.getByRole("button", { name: "Répondre" })).toBeEnabled();
+  });
+
+  it("locks the fields once answered", () => {
+    render(<InterruptCard interrupt={framing} answered onAnswer={vi.fn()} />);
+    expect(screen.getByLabelText("Quel type d'entreprise vises-tu ?")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Lancer la recherche" })).toBeDisabled();
   });
 
   it("never opens a blocking browser dialog", async () => {

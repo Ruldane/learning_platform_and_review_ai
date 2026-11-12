@@ -14,6 +14,8 @@ const kept: SourceView = {
   status: "ok",
   verdict: "kept",
   reason: null,
+  kind: "page",
+  role: null,
 };
 
 const unreadable: SourceView = {

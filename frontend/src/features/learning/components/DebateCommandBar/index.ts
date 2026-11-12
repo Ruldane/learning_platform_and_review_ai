@@ -1,0 +1,1 @@
+export { DebateCommandBar } from "./DebateCommandBar";

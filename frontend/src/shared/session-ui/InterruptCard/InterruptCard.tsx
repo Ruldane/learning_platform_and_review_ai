@@ -1,20 +1,23 @@
 import { useId } from "react";
 import { t } from "@/shared/i18n/t";
 import type { InterruptPayload } from "@/shared/realtime/types";
-import { Button } from "@/shared/ui/button";
 import { FreeTextAnswer } from "../FreeTextAnswer";
+import { InterruptFields } from "./InterruptFields";
+import { InterruptOptions } from "./InterruptOptions";
 
 interface InterruptCardProps {
   interrupt: InterruptPayload;
   answered: boolean;
   disabled?: boolean;
-  onAnswer: (value: string) => void;
+  /** Une option envoie sa valeur ; des champs envoient `{ answers: { id: texte } }` ; sinon le texte libre. */
+  onAnswer: (value: unknown) => void;
 }
 
 /**
  * Question de l'équipe, affichée comme une carte dans le fil (jamais `window.confirm`).
- * Les options sont des boutons ; sans option, un champ libre apparaît. Au clavier : le focus
- * arrive sur la première option (ou sur le champ), Tab passe d'une option à l'autre, Entrée valide.
+ * Les options sont des boutons ; sans option ni champ, un champ libre apparaît ; avec des champs
+ * (cadrage à plusieurs questions), un champ par question et un bouton « Répondre ». Au clavier :
+ * le focus arrive sur la première option (ou sur le premier champ), Tab passe de l'un à l'autre.
  */
 export function InterruptCard({
   interrupt,
@@ -25,6 +28,7 @@ export function InterruptCard({
   const questionId = useId();
   const locked = answered || disabled;
   const options = interrupt.options ?? [];
+  const fields = interrupt.fields ?? [];
 
   return (
     <section
@@ -34,23 +38,21 @@ export function InterruptCard({
       <p id={questionId} className="font-medium">
         {interrupt.question}
       </p>
+      {fields.length > 0 ? (
+        <InterruptFields fields={fields} disabled={locked} onSubmit={onAnswer} />
+      ) : null}
       {options.length > 0 ? (
-        <div role="group" aria-labelledby={questionId} className="mt-2 flex flex-wrap gap-2">
-          {options.map((option, index) => (
-            <Button
-              key={option.value}
-              variant="outline"
-              disabled={locked}
-              autoFocus={!locked && index === 0}
-              onClick={() => onAnswer(option.value)}
-            >
-              {option.label}
-            </Button>
-          ))}
-        </div>
-      ) : (
+        <InterruptOptions
+          options={options}
+          labelledBy={questionId}
+          disabled={locked}
+          autoFocusFirst={fields.length === 0}
+          onPick={onAnswer}
+        />
+      ) : null}
+      {options.length === 0 && fields.length === 0 ? (
         <FreeTextAnswer disabled={locked} onSubmit={onAnswer} />
-      )}
+      ) : null}
       {answered ? (
         <p className="mt-2 text-sm text-muted-foreground">{t("session.interrupt.answered")}</p>
       ) : null}

@@ -1,5 +1,6 @@
 import { t } from "@/shared/i18n/t";
 import type { SourceView } from "../sourceTypes";
+import { webUrl } from "../webUrl";
 
 const DAY = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeZone: "UTC" });
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}/;
@@ -9,16 +10,6 @@ function formatDate(value: string): string {
   if (!ISO_DAY.test(value)) return value;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value : DAY.format(date);
-}
-
-/** L'adresse d'une page web (http ou https), ou `null` : jamais de lien `javascript:` ou `data:`. */
-function webUrl(url: string): URL | null {
-  try {
-    const parsed = new URL(url);
-    return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed : null;
-  } catch {
-    return null;
-  }
 }
 
 /**

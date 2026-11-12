@@ -76,7 +76,7 @@ describe("sourcesFromEvents", () => {
 
   it("does not show a page that is read but not judged yet", () => {
     const model = sourcesFromEvents([sourceFound({ source_id: "a" })]);
-    expect(model).toEqual({ queries: [], kept: [], rejected: [], unreadable: [] });
+    expect(model).toEqual({ queries: [], kept: [], rejected: [], unreadable: [], people: [] });
   });
 
   it("maps the payload to the view, with an empty title falling back to the url", () => {
@@ -102,6 +102,43 @@ describe("sourcesFromEvents", () => {
       status: "ok",
       verdict: "kept",
       reason: null,
+      kind: "page",
+      role: null,
     });
+  });
+
+  it("puts people apart", () => {
+    const model = sourcesFromEvents([
+      sourceFound({
+        source_id: "p1",
+        kind: "person",
+        role: "Ingénieure ML",
+        title: "Ada Lovelace",
+        url: "https://exemple.fr/ada",
+        verdict: "kept",
+        score: 80,
+      }),
+      sourceFound({ source_id: "a", verdict: "kept", score: 90 }),
+    ]);
+    expect(model.people).toMatchObject([
+      { id: "p1", title: "Ada Lovelace", kind: "person", role: "Ingénieure ML" },
+    ]);
+    expect(model.kept.map((s) => s.id)).toEqual(["a"]);
+  });
+
+  it("shows a person who was not judged but not a rejected one", () => {
+    const model = sourcesFromEvents([
+      sourceFound({ source_id: "p1", kind: "person", title: "Ada" }),
+      sourceFound({ source_id: "p2", kind: "person", title: "Bob", verdict: "rejected" }),
+    ]);
+    expect(model.people.map((p) => p.title)).toEqual(["Ada"]);
+  });
+
+  it("reads an old event without kind as a page", () => {
+    const old = sourceFound({ source_id: "a", verdict: "kept", score: 50 });
+    if (old.type === "source.found") {
+      delete (old.payload as Partial<typeof old.payload>).kind;
+    }
+    expect(sourcesFromEvents([old]).kept).toHaveLength(1);
   });
 });

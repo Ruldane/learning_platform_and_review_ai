@@ -15,7 +15,7 @@ const turn: FeedItem = {
   tools: [],
   citations: [],
 };
-const user: FeedItem = { kind: "user", seq: 2, text: "Pense aux débutants" };
+const user: FeedItem = { kind: "user", seq: 2, text: "Pense aux débutants", command: null };
 const interrupt: FeedItem = {
   kind: "interrupt",
   seq: 3,
@@ -27,6 +27,18 @@ let unregister: (() => void) | undefined;
 afterEach(() => unregister?.());
 
 describe("DebateFeed", () => {
+  it("renders the citations of a turn and the command of a user message", () => {
+    const cited: FeedItem = {
+      ...turn,
+      messageId: "m2",
+      citations: [{ index: 1, title: "Doc", url: "https://a.org", memory_item_id: null }],
+    } as FeedItem;
+    const command: FeedItem = { kind: "user", seq: 4, text: "", command: "to_proposals" };
+    render(<DebateFeed items={[cited, command]} renderInterrupt={() => null} />);
+    expect(screen.getByRole("link", { name: "Source 1 : Doc" })).toBeInTheDocument();
+    expect(screen.getByText("Commande : Passer aux propositions")).toBeInTheDocument();
+  });
+
   it("renders turns, user messages and delegates interrupts to renderInterrupt", () => {
     render(
       <DebateFeed

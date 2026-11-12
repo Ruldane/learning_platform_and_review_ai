@@ -5,6 +5,7 @@ describe("session-ui public API", () => {
   it("exports every shared session component and the agent identities", () => {
     const names = [
       "AgentBubble",
+      "CitationChips",
       "UserMessageBubble",
       "ToolChip",
       "DebateFeed",

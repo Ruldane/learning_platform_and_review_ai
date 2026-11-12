@@ -3,11 +3,15 @@
  * la page qui l'utilise convertit ses données dans ces formes.
  */
 
-/** Une page trouvée par la recherche web. */
+/** Une page trouvée par la recherche web, ou un praticien repéré (`kind: "person"`, SPEC 10.3). */
 export interface SourceView {
   id: string;
+  /** `person` : un praticien (le titre est son nom, l'adresse un profil ou une publication). */
+  kind: "page" | "person";
   url: string;
   title: string;
+  /** Rôle d'un praticien (« Ingénieure ML chez… ») ; `null` pour une page. */
+  role: string | null;
   author: string | null;
   /** Date de publication, en ISO (`2026-03-04`) ou en texte libre. */
   date: string | null;
@@ -38,4 +42,6 @@ export interface SourcesViewModel {
   kept: SourceView[];
   rejected: SourceView[];
   unreadable: SourceView[];
+  /** Praticiens repérés, présentés à part des pages. */
+  people: SourceView[];
 }

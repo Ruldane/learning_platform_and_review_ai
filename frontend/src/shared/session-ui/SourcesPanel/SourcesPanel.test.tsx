@@ -14,6 +14,8 @@ const base: SourceView = {
   status: "ok",
   verdict: "kept",
   reason: null,
+  kind: "page",
+  role: null,
 };
 
 const model: SourcesViewModel = {
@@ -43,9 +45,20 @@ const model: SourcesViewModel = {
       reason: "Page illisible : aucun texte principal trouvé.",
     },
   ],
+  people: [
+    {
+      ...base,
+      id: "p1",
+      title: "Ada Lovelace",
+      url: "https://exemple.fr/ada",
+      kind: "person",
+      role: "Ingénieure ML",
+      score: null,
+    },
+  ],
 };
 
-const none: SourcesViewModel = { queries: [], kept: [], rejected: [], unreadable: [] };
+const none: SourcesViewModel = { queries: [], kept: [], rejected: [], unreadable: [], people: [] };
 
 describe("SourcesPanel", () => {
   it("groups kept, rejected and unreadable sources", () => {
@@ -57,6 +70,25 @@ describe("SourcesPanel", () => {
     const unreadable = screen.getByRole("region", { name: "Illisibles" });
     expect(within(unreadable).getByText("Page vide")).toBeInTheDocument();
     expect(within(unreadable).queryByRole("link")).toBeNull();
+  });
+
+  it("lists the practitioners found apart from the pages", () => {
+    render(<SourcesPanel model={model} pending={false} />);
+    const people = screen.getByRole("region", { name: "Praticiens repérés" });
+    expect(within(people).getByRole("link", { name: "Ada Lovelace" })).toHaveAttribute(
+      "href",
+      "https://exemple.fr/ada",
+    );
+    expect(within(people).getByText("Ingénieure ML")).toBeInTheDocument();
+    expect(within(people).getByText("Publie sur exemple.fr")).toBeInTheDocument();
+    expect(within(people).queryByText(/\/100/)).toBeNull();
+    const kept = screen.getByRole("region", { name: "Retenues" });
+    expect(within(kept).queryByText("Ada Lovelace")).toBeNull();
+  });
+
+  it("is not empty when only practitioners were found", () => {
+    render(<SourcesPanel model={{ ...none, people: model.people }} pending={false} />);
+    expect(screen.queryByText("Aucune source pour l'instant.")).toBeNull();
   });
 
   it("shows the queries that were sent with their language", () => {

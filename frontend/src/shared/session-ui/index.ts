@@ -4,6 +4,7 @@ export { AgentBubble } from "./AgentBubble";
 export { Board } from "./Board";
 export type { BoardProps } from "./Board";
 export type { BoardEdit, BoardKind, BoardStateView } from "./boardTypes";
+export { CitationChips } from "./CitationChips";
 export { CostBadge } from "./CostBadge";
 export { DebateFeed } from "./DebateFeed";
 export { FreeTextAnswer } from "./FreeTextAnswer";

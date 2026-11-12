@@ -5,6 +5,7 @@ import { fr } from "@/shared/i18n/fr";
 import { t } from "@/shared/i18n/t";
 import {
   postCancel,
+  postCommand,
   postMessage,
   postPause,
   postResume,
@@ -13,6 +14,7 @@ import {
 } from "./sessionApi";
 import { selectSession, useSessionStore } from "./sessionStore";
 import { snapshotOf } from "./statusGate";
+import type { UserCommand } from "./types";
 
 type SessionErrorCode = keyof typeof fr.session.errors;
 
@@ -31,6 +33,8 @@ export interface SessionActions {
   /** Répond à la question `interruptId` (ou reprend une pause avec `null`). `true` si accepté. */
   resume(interruptId: string | null, value: unknown): Promise<boolean>;
   sendMessage(text: string): Promise<boolean>;
+  /** Commande du débat (REST, jamais le WebSocket) ; `true` si acceptée. */
+  sendCommand(command: NonNullable<UserCommand>): Promise<boolean>;
   pause(): Promise<boolean>;
   cancel(): Promise<boolean>;
   pending: boolean;
@@ -77,6 +81,7 @@ export function useSessionActions(sessionId: string): SessionActions {
       // L'événement `user.message` renvoyé n'est pas ingéré : il arrivera par le flux, dans
       // l'ordre ; l'ingérer avant des `seq` plus petits encore en route les ferait ignorer.
       sendMessage: (text) => run(() => postMessage(sessionId, text)),
+      sendCommand: (command) => run(() => postCommand(sessionId, command)),
       pause: () => run(async () => applyView(await postPause(sessionId))),
       cancel: () => run(async () => applyView(await postCancel(sessionId))),
       pending: isPending,

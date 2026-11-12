@@ -1,6 +1,7 @@
 import { t } from "@/shared/i18n/t";
-import type { ToolCallView } from "@/shared/realtime/types";
+import type { Citation, ToolCallView } from "@/shared/realtime/types";
 import { agentIdentity } from "../agentColors";
+import { CitationChips } from "../CitationChips";
 import { ToolChip } from "../ToolChip";
 
 interface AgentBubbleProps {
@@ -10,6 +11,8 @@ interface AgentBubbleProps {
   /** Phrase d'intention de l'agent (jamais un raisonnement brut). */
   intent?: string;
   tools: ToolCallView[];
+  /** Sources citées par le message (pastilles numérotées sous le texte). */
+  citations?: Citation[];
 }
 
 /** « Réfléchit », « Cherche » ou « Écrit » selon ce que l'agent fait en ce moment. */
@@ -23,7 +26,14 @@ function activityLabel(text: string, tools: ToolCallView[]): string {
  * Le texte est une zone `aria-live="polite"` (`aria-busy` tant qu'il s'écrit) : les lecteurs
  * d'écran annoncent la réponse entière une fois terminée, pas chaque token.
  */
-export function AgentBubble({ agent, text, streaming, intent, tools }: AgentBubbleProps) {
+export function AgentBubble({
+  agent,
+  text,
+  streaming,
+  intent,
+  tools,
+  citations = [],
+}: AgentBubbleProps) {
   const { name, role, color } = agentIdentity(agent);
   return (
     <article
@@ -53,6 +63,7 @@ export function AgentBubble({ agent, text, streaming, intent, tools }: AgentBubb
       <div aria-live="polite" aria-busy={streaming} className="whitespace-pre-wrap break-words">
         {text}
       </div>
+      {streaming ? null : <CitationChips citations={citations} />}
       {tools.length > 0 ? (
         <ul className="mt-2 flex flex-col gap-1">
           {tools.map((call) => (

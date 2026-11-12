@@ -1,6 +1,7 @@
 import { agents } from "./messages/agents";
 import { appMessages } from "./messages/app";
 import { demo } from "./messages/demo";
+import { learning } from "./messages/learning";
 import { lessons } from "./messages/lessons";
 import { memory } from "./messages/memory";
 import { program } from "./messages/program";
@@ -23,4 +24,5 @@ export const fr = {
   research,
   program,
   lessons,
+  learning,
 } as const;

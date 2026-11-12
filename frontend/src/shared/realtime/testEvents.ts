@@ -64,10 +64,14 @@ export const result = (
   type: "tool.result",
   payload: { call_id: callId, tool: "search", ok: true, summary: "3 résultats" },
 });
-export const userMsg = (seq: number, text: string): EventOf<"user.message"> => ({
+export const userMsg = (
+  seq: number,
+  text: string,
+  command: EventOf<"user.message">["payload"]["command"] = null,
+): EventOf<"user.message"> => ({
   ...base(seq, null),
   type: "user.message",
-  payload: { text, command: null },
+  payload: { text, command },
 });
 export const interrupt = (seq: number, id = "i1"): EventOf<"interrupt.requested"> => ({
   ...base(seq, "demo_critic"),

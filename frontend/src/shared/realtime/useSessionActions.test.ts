@@ -125,6 +125,35 @@ describe("useSessionActions", () => {
     expect(state().lastSeq).toBe(0);
   });
 
+  it("sendCommand posts an empty text with the command and does not ingest the event", async () => {
+    let body: unknown = null;
+    server.use(
+      http.post(`${BASE}/s1/message`, async ({ request }) => {
+        body = await request.json();
+        return HttpResponse.json({}, { status: 202 });
+      }),
+    );
+    const { result } = renderActions();
+    let ok = false;
+    await act(async () => {
+      ok = await result.current.sendCommand("shorter");
+    });
+    expect(ok).toBe(true);
+    expect(body).toEqual({ text: "", command: "shorter" });
+    expect(state().lastSeq).toBe(0);
+  });
+
+  it("sendCommand reports a closed session in French", async () => {
+    server.use(http.post(`${BASE}/s1/message`, () => apiError("session_closed", 409)));
+    const { result } = renderActions();
+    let ok = true;
+    await act(async () => {
+      ok = await result.current.sendCommand("another_round");
+    });
+    expect(ok).toBe(false);
+    await waitFor(() => expect(result.current.error).toBe(fr.session.errors.session_closed));
+  });
+
   it("surfaces the French API error message", async () => {
     server.use(http.post(`${BASE}/s1/resume`, () => apiError("stale_interrupt", 409)));
     const { result } = renderActions();

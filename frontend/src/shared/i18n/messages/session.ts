@@ -34,7 +34,19 @@ export const session = {
     label: "Fil du débat",
     empty: "Le débat va commencer…",
   },
-  bubble: { you: "Toi" },
+  bubble: { you: "Toi", command: "Commande : {command}" },
+  commands: {
+    another_round: "Relancer un tour",
+    to_proposals: "Passer aux propositions",
+    more_concrete: "Plus concret",
+    shorter: "Plus court",
+  },
+  citations: {
+    label: "Sources citées",
+    source: "Source {index} : {title}",
+    untitled: "sans titre",
+    memory: "élément de ta mémoire",
+  },
   activity: { thinking: "Réfléchit…", searching: "Cherche…", writing: "Écrit…" },
   tool: {
     running: "En cours",
@@ -48,6 +60,7 @@ export const session = {
     answerLabel: "Ta réponse",
     answer: "Répondre",
     answered: "Réponse envoyée",
+    required: "obligatoire",
   },
   controls: {
     label: "Contrôles de la session",
@@ -66,6 +79,9 @@ export const session = {
     kept: "Retenues",
     rejected: "Écartées",
     unreadable: "Illisibles",
+    people: "Praticiens repérés",
+    peopleRole: "Rôle",
+    peoplePublishes: "Publie sur {host}",
     score: "{score}/100",
     scoreTitle: "Note de la source sur 100",
     author: "Auteur",

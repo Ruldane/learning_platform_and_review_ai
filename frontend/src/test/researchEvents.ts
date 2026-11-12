@@ -11,6 +11,8 @@ const SOURCE_DEFAULTS = {
   status: "ok",
   verdict: null,
   reason: null,
+  kind: "page",
+  role: null,
 };
 
 /**

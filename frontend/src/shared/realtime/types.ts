@@ -6,6 +6,9 @@ export type SessionEventType = SessionEvent["type"];
 export type SessionStatus = components["schemas"]["SessionView"]["status"];
 export type InterruptPayload = components["schemas"]["InterruptRequestedPayload"];
 export type CostPayload = components["schemas"]["CostUpdatedPayload"];
+export type Citation = components["schemas"]["Citation"];
+/** Commande du débat (D82) ; `null` : un message libre. */
+export type UserCommand = components["schemas"]["UserMessagePayload"]["command"];
 
 /** Variante de `SessionEvent` pour un `type` donné (ex. `EventOf<"agent.token">`). */
 export type EventOf<T extends SessionEventType> = Extract<SessionEvent, { type: T }>;
@@ -28,12 +31,12 @@ export interface AgentTurn {
   /** Arrêté sans `agent.message` (pause, redémarrage, fin) : le même agent qui repart le remplace. */
   interrupted?: boolean;
   tools: ToolCallView[];
-  citations: unknown[];
+  citations: Citation[];
 }
 
 export type FeedItem =
   | AgentTurn
-  | { kind: "user"; seq: number; text: string }
+  | { kind: "user"; seq: number; text: string; command: UserCommand }
   | { kind: "interrupt"; seq: number; interrupt: InterruptPayload; answered: boolean }
   | { kind: "event"; event: SessionEvent }; // autres types : registre de rendu
 

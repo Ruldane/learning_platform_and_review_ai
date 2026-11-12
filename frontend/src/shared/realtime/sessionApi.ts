@@ -1,6 +1,7 @@
 import { api } from "@/shared/api/client";
 import { unwrap } from "@/shared/api/errors";
 import type { components } from "@/shared/api/schema";
+import type { UserCommand } from "./types";
 
 /** Appels REST des sessions (14.1) : toute action passe par ici, jamais par le WebSocket. */
 export type SessionView = components["schemas"]["SessionView"];
@@ -31,6 +32,19 @@ export async function postResume(
 
 export async function postMessage(sessionId: string, text: string): Promise<void> {
   unwrap(await api.POST("/sessions/{session_id}/message", { ...path(sessionId), body: { text } }));
+}
+
+/** Commande du débat (« Plus court », « Passer aux propositions »…) : un message sans texte (D82). */
+export async function postCommand(
+  sessionId: string,
+  command: NonNullable<UserCommand>,
+): Promise<void> {
+  unwrap(
+    await api.POST("/sessions/{session_id}/message", {
+      ...path(sessionId),
+      body: { text: "", command },
+    }),
+  );
 }
 
 export async function postPause(sessionId: string): Promise<SessionView> {

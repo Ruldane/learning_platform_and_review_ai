@@ -143,8 +143,12 @@ describe("applyEvent : interruptions, coût, fin", () => {
   });
   it("records a user message without answering the pending interrupt", () => {
     const s = run([interrupt(1), userMsg(2, "Option A")]);
-    expect(s.feed[1]).toEqual({ kind: "user", seq: 2, text: "Option A" });
+    expect(s.feed[1]).toEqual({ kind: "user", seq: 2, text: "Option A", command: null });
     expect(s.pendingInterrupt?.interrupt_id).toBe("i1");
+  });
+  it("keeps the debate command of a user message", () => {
+    const s = run([userMsg(1, "", "to_proposals")]);
+    expect(s.feed[0]).toEqual({ kind: "user", seq: 1, text: "", command: "to_proposals" });
   });
   it("stores cost.updated", () => {
     expect(run([cost(1, 42)]).cost).toMatchObject({ tokens_in: 42, cap_tokens: 300000 });

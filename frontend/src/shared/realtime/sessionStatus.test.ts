@@ -20,7 +20,7 @@ describe("user.message (D4 : un message n'est pas une réponse)", () => {
     expect(s.status).toBe("waiting_user");
     expect(s.pendingInterrupt?.interrupt_id).toBe("i1");
     expect(s.feed[1]).toMatchObject({ kind: "interrupt", answered: false });
-    expect(s.feed[2]).toEqual({ kind: "user", seq: 3, text: "Pense aux débutants" });
+    expect(s.feed[2]).toEqual({ kind: "user", seq: 3, text: "Pense aux débutants", command: null });
   });
 });
 

@@ -84,7 +84,15 @@ const onToolResult: Handler<"tool.result"> = (state, event) => ({
 /** Une remarque est un événement que les nœuds liront au tour suivant, pas une réponse (D4). */
 const onUserMessage: Handler<"user.message"> = (state, event) => ({
   ...state,
-  feed: [...state.feed, { kind: "user", seq: event.seq, text: event.payload.text }],
+  feed: [
+    ...state.feed,
+    {
+      kind: "user",
+      seq: event.seq,
+      text: event.payload.text,
+      command: event.payload.command ?? null,
+    },
+  ],
 });
 
 /** Une question reposée (après une pause, même id) remplace son ancienne carte. */

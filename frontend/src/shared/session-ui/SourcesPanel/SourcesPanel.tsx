@@ -1,5 +1,6 @@
 import { t } from "@/shared/i18n/t";
 import type { SourcesViewModel } from "../sourceTypes";
+import { PeopleList } from "./PeopleList";
 import { QueryList } from "./QueryList";
 import { SourceList } from "./SourceList";
 
@@ -14,8 +15,9 @@ interface SourcesPanelProps {
  * (avec la raison) et illisibles. Présentationnel : la page lui passe un modèle de vue (D34).
  */
 export function SourcesPanel({ model, pending }: SourcesPanelProps) {
-  const { queries, kept, rejected, unreadable } = model;
-  const empty = queries.length + kept.length + rejected.length + unreadable.length === 0;
+  const { queries, kept, rejected, unreadable, people } = model;
+  const empty =
+    queries.length + kept.length + rejected.length + unreadable.length + people.length === 0;
   return (
     <section aria-label={t("session.sources.label")} className="flex flex-col gap-4">
       <p role="status" aria-live="polite" className="text-sm text-muted-foreground">
@@ -28,6 +30,7 @@ export function SourcesPanel({ model, pending }: SourcesPanelProps) {
       <SourceList title={t("session.sources.kept")} sources={kept} />
       <SourceList title={t("session.sources.rejected")} sources={rejected} />
       <SourceList title={t("session.sources.unreadable")} sources={unreadable} />
+      <PeopleList people={people} />
     </section>
   );
 }

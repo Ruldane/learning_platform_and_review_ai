@@ -42,8 +42,11 @@ function toSource(event: EventOf<"source.found">): SourceView {
   const p = event.payload;
   return {
     id: p.source_id ?? p.url,
+    // Un événement stocké avant D82 n'a pas de `kind` : c'est une page.
+    kind: p.kind === "person" ? "person" : "page",
     url: p.url,
     title: p.title.trim() === "" ? p.url : p.title,
+    role: p.role ?? null,
     author: p.author,
     date: p.date,
     lang: p.lang,
@@ -58,7 +61,8 @@ function toSource(event: EventOf<"source.found">): SourceView {
  * Convertit les événements d'une session de recherche web en modèle du `SourcesPanel` (D34).
  * Une source est identifiée par son `source_id` (son adresse si elle n'en a pas : domaine exclu) :
  * un nœud rejoué réémet ses `source.found` (D77), le dernier événement l'emporte. Une page lue mais
- * pas encore jugée n'est pas montrée (le contrat n'émet pas ce cas).
+ * pas encore jugée n'est pas montrée (le contrat n'émet pas ce cas). Les praticiens (`kind:
+ * "person"`) forment un bloc à part, sans note : ils sont montrés sauf s'ils sont écartés.
  */
 export function sourcesFromEvents(events: SessionEvent[]): SourcesViewModel {
   const queries: Queries = { byKey: new Map(), keyOfCall: new Map() };
@@ -74,10 +78,12 @@ export function sourcesFromEvents(events: SessionEvent[]): SourcesViewModel {
     }
   }
   const all = [...sources.values()];
+  const pages = all.filter((s) => s.kind === "page");
   return {
     queries: [...queries.byKey.values()],
-    kept: all.filter((s) => s.status === "ok" && s.verdict === "kept"),
-    rejected: all.filter((s) => s.status === "ok" && s.verdict === "rejected"),
-    unreadable: all.filter((s) => s.status === "unreadable"),
+    kept: pages.filter((s) => s.status === "ok" && s.verdict === "kept"),
+    rejected: pages.filter((s) => s.status === "ok" && s.verdict === "rejected"),
+    unreadable: pages.filter((s) => s.status === "unreadable"),
+    people: all.filter((s) => s.kind === "person" && s.status === "ok" && s.verdict !== "rejected"),
   };
 }

@@ -35,10 +35,11 @@ function itemContent(item: FeedItem, renderInterrupt: DebateFeedProps["renderInt
           streaming={item.streaming}
           intent={item.intent}
           tools={item.tools}
+          citations={item.citations}
         />
       );
     case "user":
-      return <UserMessageBubble text={item.text} />;
+      return <UserMessageBubble text={item.text} command={item.command} />;
     case "interrupt":
       return renderInterrupt(item);
     case "event": {

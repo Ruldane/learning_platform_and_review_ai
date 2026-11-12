@@ -40,6 +40,27 @@ describe("AgentBubble", () => {
     expect(screen.getByText("Cherche…")).toBeInTheDocument();
   });
 
+  it("shows numbered citations that open the source", () => {
+    render(
+      <AgentBubble
+        agent="scout"
+        text="Voir [1]"
+        streaming={false}
+        tools={[]}
+        citations={[{ index: 1, title: "Doc", url: "https://a.org", memory_item_id: null }]}
+      />,
+    );
+    expect(screen.getByRole("link", { name: "Source 1 : Doc" })).toHaveAttribute(
+      "rel",
+      "noopener noreferrer",
+    );
+  });
+
+  it("has no citation list without citations", () => {
+    render(<AgentBubble agent="scout" text="Seul" streaming={false} tools={[]} />);
+    expect(screen.queryByRole("list", { name: "Sources citées" })).toBeNull();
+  });
+
   it("says it is thinking while nothing is written yet", () => {
     render(<AgentBubble agent="scout" text="" streaming tools={[]} />);
     expect(screen.getByText("Réfléchit…")).toBeInTheDocument();
