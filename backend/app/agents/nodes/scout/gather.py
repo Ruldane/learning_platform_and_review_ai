@@ -170,7 +170,7 @@ def make_read(deps: GraphDeps) -> Node:
                 reason = page.reason or "Page illisible."
                 _unreadable(url, reason, page)
                 unreadable += 1
-                if page.source_id is not None:  # écartée sans note : plus « en attente »
+                if page.source_id is not None and page.verdict is None:  # plus « en attente »
                     await deps.web.judge(
                         deps.user_id, deps.session_id, page.source_id, criteria={}, reason=reason,
                         summary="",
@@ -192,4 +192,19 @@ def _scoring_page(page: PageRead, preferred: tuple[str, ...]) -> dict[str, Any]:
         "lang": page.lang,
         "text": page.text[:PAGE_CHARS_FOR_SCORING],
         "preferred": _is_preferred(page.url, preferred),
+        "verdict": _known_verdict(page),
+    }
+
+
+def _known_verdict(page: PageRead) -> dict[str, Any] | None:
+    """Verdict déjà posé dans la session (D82), gardé dans l'état pour que `judge` ne rappelle
+    pas le modèle."""
+    known = page.verdict
+    if known is None:
+        return None
+    return {
+        "score": known.score,
+        "verdict": known.verdict,
+        "reason": known.reason,
+        "summary": known.summary,
     }

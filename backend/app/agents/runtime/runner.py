@@ -28,12 +28,11 @@ from app.agents.runtime import control
 from app.agents.runtime.bus import EventBus
 from app.agents.runtime.costs import ModelPrice
 from app.agents.runtime.deps import ChatModelSource
-from app.agents.runtime.events import SessionEvent
+from app.agents.runtime.events import SessionEvent, UserCommand
 from app.agents.runtime.execution import RunContext, run_session, unknown_graph
+from app.agents.runtime.ports import NO_PORTS, AgentPorts
 from app.agents.runtime.repositories import SessionRepository, list_sessions_to_recover
 from app.agents.runtime.run_settings import RunSettingsSource
-from app.agents.tools.memory_port import NO_MEMORY, MemoryGateway
-from app.agents.tools.web_port import NO_WEB, WebGateway
 from app.core.errors import AppError
 from app.db.models.agents import AgentSession
 
@@ -61,13 +60,12 @@ class SessionRunner:
         prices: Mapping[str, ModelPrice],
         run_settings: RunSettingsSource,
         graphs: Mapping[str, GraphSpec] = GRAPHS,
-        memory: MemoryGateway = NO_MEMORY,
-        web: WebGateway = NO_WEB,
+        ports: AgentPorts = NO_PORTS,
     ) -> None:
         self._db = session_factory
         self._bus = bus
         self._ctx = RunContext(
-            session_factory, bus, models, checkpointer, prices, graphs, run_settings, memory, web
+            session_factory, bus, models, checkpointer, prices, graphs, run_settings, ports
         )
         self._tasks: dict[str, asyncio.Task[None]] = {}
         self._gates: dict[str, _Gate] = {}
@@ -129,17 +127,19 @@ class SessionRunner:
 
     # --- Actions de l'utilisatrice -------------------------------------------------------
 
-    async def post_message(self, user_id: str, session_id: str, text: str) -> SessionEvent:
-        """Publie `user.message` ; les nœuds le lisent au tour suivant
-        (`GraphDeps.user_messages_since`, D4). Sous le verrou de contrôle, comme pause et
-        annulation : un message ne s'écrit jamais après une annulation acceptée."""
+    async def post_message(
+        self, user_id: str, session_id: str, text: str, command: UserCommand | None = None
+    ) -> SessionEvent:
+        """Publie `user.message` (texte, commande du débat) ; les nœuds le lisent au tour
+        suivant (`GraphDeps.user_inputs_since`, D4, D82). Sous le verrou de contrôle, comme pause
+        et annulation : un message ne s'écrit jamais après une annulation acceptée."""
         async with self._control(session_id):
             await control.check_open(self._db, user_id, session_id)
             return await self._bus.publish(
                 user_id=user_id,
                 session_id=session_id,
                 type="user.message",
-                payload={"text": text},
+                payload={"text": text, "command": command},
             )
 
     async def pause(self, user_id: str, session_id: str) -> AgentSession:

@@ -49,6 +49,20 @@ def _search_result(outcome: SearchOutcome) -> WebSearchResult:
     return WebSearchResult(query=outcome.query, provider=outcome.provider, hits=hits)
 
 
+def _verdict(outcome: PageOutcome) -> SourceVerdictView | None:
+    """Verdict déjà posé dans la session (D82) : `judge` le réémet sans rappeler le modèle."""
+    judged = outcome.judged
+    if judged is None or outcome.source_id is None:
+        return None
+    return SourceVerdictView(
+        source_id=outcome.source_id,
+        score=judged.score,
+        verdict=judged.verdict,
+        reason=judged.reason,
+        summary=judged.summary,
+    )
+
+
 def _page(outcome: PageOutcome) -> PageRead:
     status: PageStatus = outcome.status
     return PageRead(
@@ -61,6 +75,7 @@ def _page(outcome: PageOutcome) -> PageRead:
         date=outcome.date,
         lang=outcome.lang,
         reason=outcome.reason,
+        verdict=_verdict(outcome),
     )
 
 
@@ -130,6 +145,7 @@ class AgentWebGateway:
                 score=source.score,
                 verdict="kept" if source.verdict == "kept" else "rejected",
                 reason=source.reason or "",
+                summary=source.summary or "",
             )
         logger.info(
             "Source notée : utilisateur %s, session %s, source %s, %s",

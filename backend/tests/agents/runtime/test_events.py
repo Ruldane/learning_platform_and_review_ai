@@ -8,10 +8,15 @@ from app.agents.runtime.events import (
     SESSION_EVENT_ADAPTER,
     AgentMessagePayload,
     AgentTokenEvent,
+    BoardUpdatePayload,
     Citation,
     EventType,
+    InterruptField,
     InterruptRequestedEvent,
+    InterruptRequestedPayload,
     SessionEvent,
+    SourceFoundPayload,
+    UserMessagePayload,
     validate_payload,
 )
 
@@ -142,3 +147,59 @@ def test_openapi_exposes_session_event_union(app: FastAPI):
 
 def test_session_event_alias_is_exported():
     assert SessionEvent is not None
+
+
+# --- Phase 4 : champs ajoutés avec défaut (D82) ------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("event_type", "payload"),
+    [
+        ("board.update", {"mermaid": "flowchart TD", "step": 1}),
+        ("user.message", {"text": "ancien"}),
+        ("interrupt.requested", {"interrupt_id": "i", "kind": "text", "question": "?"}),
+        ("source.found", _SAMPLE_PAYLOADS["source.found"]),
+    ],
+)
+def test_old_events_still_validate(event_type: EventType, payload: dict[str, object]):
+    """Charges stockées avant la phase 4 (sans fields, kind, board_id ni command)."""
+    assert validate_payload(event_type, payload)
+
+
+def test_new_fields_have_defaults():
+    board = validate_payload("board.update", {"mermaid": "flowchart TD", "step": 1})
+    assert isinstance(board, BoardUpdatePayload)
+    assert (board.board_id, board.kind, board.title) == (None, None, None)
+    found = validate_payload("source.found", _SAMPLE_PAYLOADS["source.found"])
+    assert isinstance(found, SourceFoundPayload) and (found.kind, found.role) == ("page", None)
+    said = validate_payload("user.message", {"text": "x"})
+    assert isinstance(said, UserMessagePayload) and said.command is None
+    asked = validate_payload("interrupt.requested", _SAMPLE_PAYLOADS["interrupt.requested"])
+    assert isinstance(asked, InterruptRequestedPayload) and asked.fields == []
+
+
+def test_user_message_accepts_a_command_without_text():
+    said = validate_payload("user.message", {"command": "shorter"})
+    assert isinstance(said, UserMessagePayload) and (said.text, said.command) == ("", "shorter")
+    with pytest.raises(ValueError):
+        validate_payload("user.message", {"text": "", "command": "louder"})
+
+
+def test_interrupt_fields_are_bounded():
+    field = InterruptField(id="goal_1", label="Ton objectif ?", required=True)
+    assert field.max_length == 2000
+    for bad in (
+        {"id": "Goal", "label": "x"},
+        {"id": "a" * 33, "label": "x"},
+        {"id": "ok", "label": "x", "max_length": 0},
+        {"id": "ok", "label": "x", "max_length": 4001},
+    ):
+        with pytest.raises(ValueError):
+            InterruptField.model_validate(bad)
+
+
+def test_board_kind_is_one_of_four():
+    for kind in ("domain_map", "prerequisites", "timeline", "comparison"):
+        assert validate_payload("board.update", {"mermaid": "m", "step": 1, "kind": kind})
+    with pytest.raises(ValueError):
+        validate_payload("board.update", {"mermaid": "m", "step": 1, "kind": "free"})

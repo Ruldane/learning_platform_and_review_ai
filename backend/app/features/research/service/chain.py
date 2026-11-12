@@ -10,6 +10,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
 
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.features.research.service.cache import search_key
@@ -85,8 +86,19 @@ async def _provider(
 
 
 async def _release(runtime: ResearchRuntime, user_id: str, reservation: BraveReservation) -> None:
-    async with runtime.session_factory() as db:
-        released = await release_brave(db, user_id, reservation)
+    """Rend la réservation. Une erreur de base (occupée, disque) est avalée et journalisée par
+    son type : la requête reste comptée (au pire une de trop sur 900), mais la chaîne passe au
+    fournisseur suivant au lieu d'échouer (D82)."""
+    try:
+        async with runtime.session_factory() as db:
+            released = await release_brave(db, user_id, reservation)
+    except (SQLAlchemyError, OSError) as exc:
+        logger.warning(
+            "Requête Brave non servie, réservation non rendue (utilisateur %s) : %s",
+            user_id,
+            type(exc).__name__,
+        )
+        return
     logger.info("Requête Brave non servie rendue (utilisateur %s) : %s", user_id, released)
 
 
@@ -112,7 +124,7 @@ async def _call(
     except SearchNotServed:
         if pick.reservation is not None:
             await _release(runtime, user_id, pick.reservation)
-        raise
+        raise  # telle quelle : `provider_chain` passe au fournisseur suivant
 
 
 async def provider_chain(

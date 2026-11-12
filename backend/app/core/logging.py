@@ -10,9 +10,11 @@ _KEY_PATTERN = re.compile(r"sk-[A-Za-z0-9_-]{16,}")
 _OWN_HANDLER_LOGGERS = ("uvicorn", "uvicorn.error", "uvicorn.access")
 # Bibliothèques dont les journaux citeraient une URL ou un extrait de document (spec 17.2) :
 # httpx écrit « HTTP Request: GET <URL complète> » en INFO à chaque requête et redirection ;
-# pdfminer, trafilatura et htmldate citent des fragments en WARNING.
+# pdfminer, trafilatura et htmldate citent des fragments en WARNING ; `httpx2` (SDK de Z.ai)
+# écrit l'URL de l'API en INFO à chaque appel.
 _QUIET_LOGGERS = {
     "httpx": logging.WARNING,
+    "httpx2": logging.WARNING,
     "httpcore": logging.WARNING,
     "pdfminer": logging.ERROR,
     "trafilatura": logging.ERROR,

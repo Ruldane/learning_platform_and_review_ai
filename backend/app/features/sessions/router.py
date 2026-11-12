@@ -55,7 +55,7 @@ async def resume_session(session_id: str, body: ResumeRequest, service: Service)
     "/{session_id}/message", status_code=http.HTTP_201_CREATED, response_model=SessionEvent
 )
 async def post_message(session_id: str, body: MessageRequest, service: Service) -> SessionEvent:
-    return await service.message(session_id, body.text)
+    return await service.message(session_id, body)
 
 
 @router.post("/{session_id}/pause", response_model=SessionView)

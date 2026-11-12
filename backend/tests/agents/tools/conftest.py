@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 import pytest
 
 from app.agents.runtime.deps import GraphDeps
+from app.agents.runtime.ports import AgentPorts
 from app.agents.runtime.run_settings import RunSettings
 from app.agents.tools.memory_port import (
     AgentWrite,
@@ -68,5 +69,5 @@ def deps(gateway: FakeGateway) -> GraphDeps:
         bus=None,  # type: ignore[arg-type]
         settings=RunSettings(300_000, 3, "fr", ("fr",), ""),
         session_factory=None,  # type: ignore[arg-type]
-        memory=gateway,
+        ports=AgentPorts(memory=gateway),
     )

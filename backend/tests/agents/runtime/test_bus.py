@@ -27,7 +27,7 @@ async def test_publish_assigns_increasing_seq(bus: EventBus, user_id: str, sessi
     b = await say(bus, user_id, session_id, "b")
     assert (a.seq, b.seq) == (1, 2)
     assert a.type == "user.message" and a.session_id == session_id
-    assert a.payload.model_dump() == {"text": "a"}
+    assert a.payload.model_dump() == {"text": "a", "command": None}
 
 
 async def test_concurrent_publish_yields_unique_increasing_seq(
@@ -102,10 +102,10 @@ async def test_publish_drops_fields_outside_the_catalogue(
         type="user.message",
         payload={"text": "a", "api_key": "sk-secret"},
     )
-    assert ev.payload.model_dump() == {"text": "a"}
+    assert ev.payload.model_dump() == {"text": "a", "command": None}
     async with db_factory() as db:
         rows = await EventRepository(db, user_id).list_after(session_id, 0)
-    assert rows[0].payload == {"text": "a"}
+    assert rows[0].payload == {"text": "a", "command": None}
 
 
 async def test_publish_refuses_a_session_of_another_user(

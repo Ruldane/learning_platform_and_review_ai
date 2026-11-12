@@ -78,4 +78,5 @@ def test_interrupt_payload_validates_the_value():
         "kind": "choice",
         "question": "Lequel ?",
         "options": [{"value": "a", "label": "A"}],
+        "fields": [],
     }

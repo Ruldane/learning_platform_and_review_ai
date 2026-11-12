@@ -67,7 +67,7 @@ export const result = (
 export const userMsg = (seq: number, text: string): EventOf<"user.message"> => ({
   ...base(seq, null),
   type: "user.message",
-  payload: { text },
+  payload: { text, command: null },
 });
 export const interrupt = (seq: number, id = "i1"): EventOf<"interrupt.requested"> => ({
   ...base(seq, "demo_critic"),

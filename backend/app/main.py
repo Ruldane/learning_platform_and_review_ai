@@ -7,17 +7,17 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import OperationalError
 
+from app.agents.runtime.launcher import SessionLauncher
 from app.agents.runtime.lifespan import agent_runtime
 from app.agents.runtime.openapi import register_event_schemas
 from app.bootstrap import (
+    agent_ports,
     build_providers,
     key_test_http,
-    memory_gateway,
     model_prices,
     open_memory_runtime,
     open_research_runtime,
     run_settings_source,
-    web_gateway,
 )
 from app.bootstrap import memory_providers as open_memory_providers
 from app.bootstrap import research_providers as open_research_providers
@@ -125,20 +125,29 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
                 app.state.session_factory, app.state.research_providers, app.state.providers
             )
         )
-        # Moteur d'agents (bus, runner, checkpointer) : entré après le moteur de base, donc
-        # fermé avant lui (la pile dépile à l'envers) ; reprend les sessions interrompues.
-        app.state.runtime = await stack.enter_async_context(
-            agent_runtime(
-                app.state.settings,
-                app.state.session_factory,
-                app.state.providers.llm_factory,
-                model_prices(),
-                run_settings_source(app.state.session_factory),
-                memory=memory_gateway(app.state.memory),
-                web=web_gateway(app.state.research),
-            )
-        )
+        await _open_agents(app, stack)
         yield
+
+
+async def _open_agents(app: FastAPI, stack: AsyncExitStack) -> None:
+    """Moteur d'agents (bus, runner, checkpointer) sur les ports des features, puis lanceur de
+    sessions hors requête (D82). Entré après la mémoire et la recherche, donc fermé avant elles
+    (la pile dépile à l'envers) ; reprend les sessions interrompues."""
+    # Le lanceur existe avant les ports (qui pourront le recevoir) ; lié au runner juste après
+    # le moteur, délié avant l'arrêt du moteur.
+    app.state.launcher = SessionLauncher()
+    app.state.runtime = await stack.enter_async_context(
+        agent_runtime(
+            app.state.settings,
+            app.state.session_factory,
+            app.state.providers.llm_factory,
+            model_prices(),
+            run_settings_source(app.state.session_factory),
+            ports=agent_ports(app.state.memory, app.state.research),
+        )
+    )
+    app.state.launcher.bind(app.state.runtime.runner)
+    stack.callback(app.state.launcher.unbind)
 
 
 def create_app(

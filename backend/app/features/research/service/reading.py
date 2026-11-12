@@ -6,6 +6,7 @@ le titre (SPEC 17.2)."""
 
 import logging
 from dataclasses import dataclass
+from typing import Literal
 from urllib.parse import urlsplit
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,6 +33,16 @@ _MAX_DATE = 32
 
 
 @dataclass(frozen=True)
+class Judged:
+    """Verdict déjà posé sur une source de la session (nœud rejoué, seconde lecture)."""
+
+    score: int | None
+    verdict: Literal["kept", "rejected"]
+    reason: str
+    summary: str
+
+
+@dataclass(frozen=True)
 class PageOutcome:
     source_id: str | None
     url: str  # l'URL normalisée
@@ -44,10 +55,24 @@ class PageOutcome:
     reason: str | None
     cached: bool
     replayed: bool
+    judged: Judged | None = None
+
+
+def _judged(source: Source) -> Judged | None:
+    if source.verdict == "pending":
+        return None
+    verdict: Literal["kept", "rejected"] = "kept" if source.verdict == "kept" else "rejected"
+    return Judged(source.score, verdict, source.reason or "", source.summary or "")
 
 
 def _outcome(
-    source_id: str | None, url: str, page: CachedPage, *, cached: bool, replayed: bool
+    source_id: str | None,
+    url: str,
+    page: CachedPage,
+    *,
+    cached: bool,
+    replayed: bool,
+    judged: Judged | None = None,
 ) -> PageOutcome:
     return PageOutcome(
         source_id=source_id,
@@ -61,6 +86,7 @@ def _outcome(
         reason=page.reason,
         cached=cached,
         replayed=replayed,
+        judged=judged,
     )
 
 
@@ -130,7 +156,8 @@ async def _in_session(
     runtime: ResearchRuntime, user_id: str, session_id: str, settings: ResearchPrefs, url: str
 ) -> PageOutcome:
     """À appeler sous `session_lock`. Une URL déjà lue par la session (nœud rejoué) rend sa
-    source, sans compter une page de plus ni créer de seconde ligne."""
+    source, et son verdict si elle est déjà notée, sans compter une page de plus ni créer de
+    seconde ligne."""
     async with runtime.session_factory() as db:
         repo = SourceRepository(db, user_id)
         known = await repo.get_by_url(session_id, url_key(url))
@@ -138,7 +165,9 @@ async def _in_session(
     if known is not None:
         found = await _fetch(runtime, user_id, url)
         await _save(runtime, user_id, url, found, None)
-        return _outcome(known.id, url, found[0], cached=found[1], replayed=True)
+        return _outcome(
+            known.id, url, found[0], cached=found[1], replayed=True, judged=_judged(known)
+        )
     if count >= settings.max_pages:
         raise WebQuotaReached(settings.max_pages, "pages")
     found = await _fetch(runtime, user_id, url)

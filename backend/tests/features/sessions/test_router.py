@@ -130,7 +130,8 @@ async def test_message_creates_user_message_event(client: httpx.AsyncClient):
     r = await client.post(f"{API}/{sid}/message", json={"text": "Plutôt demain"})
     assert r.status_code == 201
     event = r.json()
-    assert event["type"] == "user.message" and event["payload"] == {"text": "Plutôt demain"}
+    assert event["type"] == "user.message"
+    assert event["payload"] == {"text": "Plutôt demain", "command": None}
     assert event["session_id"] == sid and event["seq"] == before["last_seq"] + 1
     assert (await client.get(f"{API}/{sid}")).json()["last_seq"] == event["seq"]
 
@@ -147,6 +148,31 @@ async def test_message_rejects_empty_text(client: httpx.AsyncClient):
     sid = await start(client, "ask")
     r = await client.post(f"{API}/{sid}/message", json={"text": ""})
     assert r.status_code == 422
+
+
+async def test_message_without_text_or_command_is_422_without_echo(client: httpx.AsyncClient):
+    sid = await start(client, "ask")
+    await wait_status(client, sid, "waiting_user")
+    r = await client.post(f"{API}/{sid}/message", json={"text": "  "})
+    assert r.status_code == 422 and "  " not in r.text
+    error = r.json()["error"]
+    assert error["code"] == "invalid_input" and error["details"] == {"fields": ["text"]}
+    r = await client.post(f"{API}/{sid}/message", json={})
+    assert r.status_code == 422 and r.json()["error"]["code"] == "invalid_input"
+    r = await client.post(f"{API}/{sid}/message", json={"command": "louder"})
+    assert r.status_code == 422 and "louder" not in r.text
+
+
+async def test_message_command_is_published(client: httpx.AsyncClient):
+    sid = await start(client, "ask")
+    await wait_status(client, sid, "waiting_user")
+    r = await client.post(f"{API}/{sid}/message", json={"command": "to_proposals"})
+    assert r.status_code == 201
+    assert r.json()["payload"] == {"text": "", "command": "to_proposals"}
+    r = await client.post(
+        f"{API}/{sid}/message", json={"text": " Plus concret ", "command": "more_concrete"}
+    )
+    assert r.json()["payload"] == {"text": "Plus concret", "command": "more_concrete"}
 
 
 async def test_list_filters_by_graph_and_status(client: httpx.AsyncClient, probe: Probe):

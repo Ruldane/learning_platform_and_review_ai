@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.agents.runtime.bus import EventBus
 from app.agents.runtime.checkpointer import open_checkpointer
 from app.agents.runtime.costs import ModelPrice
+from app.agents.runtime.ports import AgentPorts
 from app.agents.runtime.run_settings import RunSettings
 from app.agents.runtime.runner import SessionRunner
 from app.core.providers import MemoryProviders
@@ -116,7 +117,7 @@ async def make_learned_runner(
                 checkpointer=saver,
                 prices={"modele-test": ModelPrice(1.0, 2.0)},
                 run_settings=FixedSettings(2),
-                memory=AgentMemoryGateway(memory),
+                ports=AgentPorts(memory=AgentMemoryGateway(memory)),
             )
             stack.push_async_callback(bus.aclose)
             stack.push_async_callback(runner.shutdown)
@@ -171,8 +172,7 @@ async def make_web_runner(
                 checkpointer=saver,
                 prices={"modele-test": ModelPrice(1.0, 2.0)},
                 run_settings=FixedSettings(2),
-                memory=web.memory_gateway,
-                web=web.gateway,
+                ports=AgentPorts(memory=web.memory_gateway, web=web.gateway),
             )
             stack.push_async_callback(bus.aclose)
             stack.push_async_callback(web.runner.shutdown)

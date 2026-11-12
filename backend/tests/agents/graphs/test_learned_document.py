@@ -12,6 +12,7 @@ from app.agents.graphs.registry import get_graph
 from app.agents.nodes.archivist import make_write
 from app.agents.registry import get_agent
 from app.agents.runtime.deps import GraphDeps
+from app.agents.runtime.ports import AgentPorts
 from app.agents.runtime.run_settings import RunSettings
 from app.agents.tools.memory_port import AgentWrite
 from app.features.memory.repository import ItemFilter, MemoryItemRepository, WriteRepository
@@ -120,7 +121,7 @@ async def test_learned_document_replay_does_not_duplicate_acquis(
         None,  # type: ignore[arg-type]
         RunSettings(300_000, 2, "fr", ("fr",), ""),
         learned.factory,
-        AgentMemoryGateway(learned.memory),
+        AgentPorts(memory=AgentMemoryGateway(learned.memory)),
     )
     state: Any = {
         "document_id": "d1",

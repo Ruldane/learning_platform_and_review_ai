@@ -94,12 +94,35 @@ async def test_sources_route_lists_session_sources_and_is_isolated(
         "verdict",
         "score",
         "reason",
+        "kind",
     }
     assert body[0]["verdict"] == "pending" and body[0]["score"] is None
     empty = await client.get("/api/v1/research/sources", params={"session_id": "s9"})
     assert empty.json() == []
     missing = await client.get("/api/v1/research/sources")
     assert missing.status_code == 422
+
+
+async def test_sources_route_exposes_kind(
+    client: httpx.AsyncClient, app: FastAPI, db_session_factory: Factory
+) -> None:
+    me: str = app.state.local_user_id
+    async with db_session_factory() as session:
+        for name, kind in [("page", "page"), ("ada", "person")]:
+            session.add(
+                Source(
+                    user_id=me,
+                    session_id="s1",
+                    kind=kind,
+                    url=f"https://ex.org/{name}",
+                    url_hash=name,
+                    title=name,
+                    status="ok",
+                )
+            )
+        await session.commit()
+    body = (await client.get("/api/v1/research/sources", params={"session_id": "s1"})).json()
+    assert [(s["title"], s["kind"]) for s in body] == [("page", "page"), ("ada", "person")]
 
 
 async def test_research_routes_require_auth(client_google_mode: httpx.AsyncClient) -> None:

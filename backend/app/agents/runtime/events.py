@@ -10,6 +10,58 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 
+from app.agents.runtime.payloads import (
+    AgentMessagePayload,
+    AgentStartedPayload,
+    AgentTokenPayload,
+    ArtifactReadyPayload,
+    BoardKind,
+    BoardUpdatePayload,
+    Citation,
+    CostUpdatedPayload,
+    InterruptField,
+    InterruptOption,
+    InterruptRequestedPayload,
+    MemoryWrittenPayload,
+    ProposalReadyPayload,
+    RunCompletedPayload,
+    RunFailedPayload,
+    SourceFoundPayload,
+    ToolCalledPayload,
+    ToolResultPayload,
+    UserCommand,
+    UserMessagePayload,
+)
+
+__all__ = [
+    "AgentMessagePayload",
+    "AgentStartedPayload",
+    "AgentTokenPayload",
+    "ArtifactReadyPayload",
+    "BoardKind",
+    "BoardUpdatePayload",
+    "Citation",
+    "CostUpdatedPayload",
+    "EventBase",
+    "EventType",
+    "InterruptField",
+    "InterruptOption",
+    "InterruptRequestedPayload",
+    "MemoryWrittenPayload",
+    "PAYLOAD_MODELS",
+    "ProposalReadyPayload",
+    "RunCompletedPayload",
+    "RunFailedPayload",
+    "SESSION_EVENT_ADAPTER",
+    "SessionEvent",
+    "SourceFoundPayload",
+    "ToolCalledPayload",
+    "ToolResultPayload",
+    "UserCommand",
+    "UserMessagePayload",
+    "validate_payload",
+]
+
 EventType = Literal[
     "agent.started",
     "agent.token",
@@ -27,119 +79,6 @@ EventType = Literal[
     "run.failed",
     "user.message",
 ]
-
-
-# --- Charges -------------------------------------------------------------------------------
-
-
-class AgentStartedPayload(BaseModel):
-    step: str
-    intent: str  # phrase d'intention affichée : jamais un raisonnement brut (9.5)
-
-
-class AgentTokenPayload(BaseModel):
-    message_id: str
-    text: str
-
-
-class Citation(BaseModel):
-    index: int
-    title: str
-    url: str | None = None
-    memory_item_id: str | None = None
-
-
-class AgentMessagePayload(BaseModel):
-    message_id: str
-    text: str
-    citations: list[Citation] = Field(default_factory=list)
-
-
-class ToolCalledPayload(BaseModel):
-    call_id: str
-    tool: str
-    args: dict[str, Any]
-
-
-class ToolResultPayload(BaseModel):
-    call_id: str
-    tool: str
-    ok: bool
-    summary: str
-
-
-class SourceFoundPayload(BaseModel):
-    title: str
-    url: str
-    author: str | None
-    date: str | None
-    lang: str | None
-    score: int | None
-    # Compléments de la recherche web (D77) : valeurs par défaut, donc compatibles avec les
-    # événements déjà stockés.
-    source_id: str | None = None  # absent : page sans ligne `sources` (domaine exclu)
-    status: Literal["ok", "unreadable"] = "ok"
-    verdict: Literal["kept", "rejected"] | None = None  # absent : source non notée
-    reason: str | None = None  # raison du verdict, ou de l'illisibilité
-
-
-class BoardUpdatePayload(BaseModel):
-    mermaid: str
-    step: int
-
-
-class MemoryWrittenPayload(BaseModel):
-    item_id: str
-    kind: str
-    title: str
-    reason: str
-    status: Literal["active", "pending"] = "active"  # `pending` : décision « À confirmer » (D68)
-
-
-class InterruptOption(BaseModel):
-    value: str
-    label: str
-
-
-class InterruptRequestedPayload(BaseModel):
-    """`kind` et non `type` : `type` est déjà le discriminant de l'enveloppe (DECISIONS)."""
-
-    interrupt_id: str
-    kind: str
-    question: str
-    options: list[InterruptOption] = Field(default_factory=list)
-
-
-class ProposalReadyPayload(BaseModel):
-    proposal_id: str
-    title: str
-
-
-class ArtifactReadyPayload(BaseModel):
-    artifact_id: str
-    kind: str
-    title: str
-    url: str | None = None
-
-
-class CostUpdatedPayload(BaseModel):
-    tokens_in: int
-    tokens_out: int
-    cost_usd: float
-    cap_tokens: int
-
-
-class RunCompletedPayload(BaseModel):
-    summary: str = ""
-
-
-class RunFailedPayload(BaseModel):
-    code: str
-    message: str
-
-
-class UserMessagePayload(BaseModel):
-    text: str
 
 
 PAYLOAD_MODELS: dict[EventType, type[BaseModel]] = {

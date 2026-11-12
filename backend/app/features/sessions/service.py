@@ -14,7 +14,12 @@ from app.agents.runtime.handle import AgentRuntime
 from app.core.errors import AppError
 from app.db.models.agents import AgentSession, SessionStatus
 from app.features.sessions.repository import SessionReadRepository
-from app.features.sessions.schemas import ResumeRequest, SessionView, StartSessionRequest
+from app.features.sessions.schemas import (
+    MessageRequest,
+    ResumeRequest,
+    SessionView,
+    StartSessionRequest,
+)
 
 
 def to_view(row: AgentSession, last_seq: int) -> SessionView:
@@ -78,8 +83,18 @@ class SessionsService:
         await self._runner.resume(self._user_id, session_id, req.interrupt_id, req.value)
         return await self.get(session_id)
 
-    async def message(self, session_id: str, text: str) -> SessionEvent:
-        return await self._runner.post_message(self._user_id, session_id, text)
+    async def message(self, session_id: str, req: MessageRequest) -> SessionEvent:
+        """Publie le message (texte sans blancs autour) et sa commande ; rien à dire ni à
+        commander : 422, chemin `text` seul, jamais la saisie."""
+        text = req.text.strip()
+        if not text and req.command is None:
+            raise AppError(
+                "invalid_input",
+                "Écris un message ou choisis une commande.",
+                422,
+                {"fields": ["text"]},
+            )
+        return await self._runner.post_message(self._user_id, session_id, text, req.command)
 
     async def pause(self, session_id: str) -> SessionView:
         await self._runner.pause(self._user_id, session_id)

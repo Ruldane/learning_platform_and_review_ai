@@ -705,12 +705,31 @@ export interface components {
              */
             type: "board.update";
         };
-        /** BoardUpdatePayload */
+        /**
+         * BoardUpdatePayload
+         * @description Un état du tableau. `board_id`, `kind`, `title` (D82) : plusieurs tableaux par session
+         *     (carte du domaine, prérequis, frise, comparaison) ; absents des événements d'avant.
+         */
         BoardUpdatePayload: {
+            /**
+             * Board Id
+             * @default null
+             */
+            board_id: string | null;
+            /**
+             * Kind
+             * @default null
+             */
+            kind: ("domain_map" | "prerequisites" | "timeline" | "comparison") | null;
             /** Mermaid */
             mermaid: string;
             /** Step */
             step: number;
+            /**
+             * Title
+             * @default null
+             */
+            title: string | null;
         };
         /** Body_create_document_api_v1_documents_post */
         Body_create_document_api_v1_documents_post: {
@@ -881,6 +900,27 @@ export interface components {
             /** Ok */
             ok: boolean;
         };
+        /**
+         * InterruptField
+         * @description Une question d'un cadrage à plusieurs champs (D82) ; la réponse est un objet
+         *     `{id: texte}`.
+         */
+        InterruptField: {
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /**
+             * Max Length
+             * @default 2000
+             */
+            max_length: number;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+        };
         /** InterruptOption */
         InterruptOption: {
             /** Label */
@@ -918,6 +958,8 @@ export interface components {
          * @description `kind` et non `type` : `type` est déjà le discriminant de l'enveloppe (DECISIONS).
          */
         InterruptRequestedPayload: {
+            /** Fields */
+            fields?: components["schemas"]["InterruptField"][];
             /** Interrupt Id */
             interrupt_id: string;
             /** Kind */
@@ -1225,9 +1267,18 @@ export interface components {
             /** Other Ids */
             other_ids: string[];
         };
-        /** MessageRequest */
+        /**
+         * MessageRequest
+         * @description Message de l'utilisatrice, ou commande du débat (D82) : le texte est alors facultatif.
+         *     Texte vide (ou blanc) sans commande : 422 `invalid_input` (`SessionsService.message`).
+         */
         MessageRequest: {
-            /** Text */
+            /** Command */
+            command?: ("another_round" | "to_proposals" | "more_concrete" | "shorter") | null;
+            /**
+             * Text
+             * @default
+             */
             text: string;
         };
         /**
@@ -1595,6 +1646,12 @@ export interface components {
             author: string | null;
             /** Date */
             date: string | null;
+            /**
+             * Kind
+             * @default page
+             * @enum {string}
+             */
+            kind: "page" | "person";
             /** Lang */
             lang: string | null;
             /**
@@ -1602,6 +1659,11 @@ export interface components {
              * @default null
              */
             reason: string | null;
+            /**
+             * Role
+             * @default null
+             */
+            role: string | null;
             /** Score */
             score: number | null;
             /**
@@ -1631,6 +1693,11 @@ export interface components {
             author: string | null;
             /** Id */
             id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "page" | "person";
             /** Lang */
             lang: string | null;
             /** Published */
@@ -1794,9 +1861,20 @@ export interface components {
              */
             type: "user.message";
         };
-        /** UserMessagePayload */
+        /**
+         * UserMessagePayload
+         * @description Message de l'utilisatrice (D4) ; `command` : commande du débat, texte alors facultatif.
+         */
         UserMessagePayload: {
-            /** Text */
+            /**
+             * Command
+             * @default null
+             */
+            command: ("another_round" | "to_proposals" | "more_concrete" | "shorter") | null;
+            /**
+             * Text
+             * @default
+             */
             text: string;
         };
         /** UserSettings */

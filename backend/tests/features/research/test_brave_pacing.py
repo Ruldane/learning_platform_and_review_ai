@@ -2,11 +2,13 @@
 clé, après la réservation et avant l'appel ; réservation rendue quand Brave n'a pas servi la
 requête (429, clé refusée, connexion impossible, créneau hors budget)."""
 
+import logging
 import time
 from collections.abc import Sequence
 from dataclasses import replace
 
 import pytest
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.features.research.service.errors import NoSearchProvider
@@ -20,7 +22,7 @@ from app.providers.search.base import (
     TimeRange,
 )
 from app.providers.search.fake import FakeSearch
-from tests.features.research.conftest import UID, BraveFactory, brave_total, hit
+from tests.features.research.conftest import UID, BraveFactory, brave_total, hit, set_settings
 from tests.features.research.test_pacing import FakeTime
 
 Factory = async_sessionmaker[AsyncSession]
@@ -113,3 +115,28 @@ async def test_slot_beyond_budget_skips_brave_and_releases(
         await search(paced, UID, "s1", "q2", budget_s=5.0)  # prochain départ dans 30 s
     assert brave_fake.calls == [("q1", None)] and fake_time.sleeps == []
     assert await brave_total(db_session_factory) == 1  # la seconde réservation est rendue
+
+
+async def test_release_db_error_still_falls_back_to_next_provider(
+    runtime_with_brave_key: ResearchRuntime,
+    searxng_fake: FakeSearch,
+    brave_fake: FakeSearch,
+    db_session_factory: Factory,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Base occupée pendant le rendu d'une réservation Brave (D82) : l'erreur est avalée et
+    journalisée par son type, la chaîne passe au fournisseur suivant au lieu d'échouer."""
+
+    async def busy(*args: object, **kwargs: object) -> bool:
+        raise OperationalError("UPDATE search_usage", {}, Exception("database is locked"))
+
+    monkeypatch.setattr("app.features.research.service.chain.release_brave", busy)
+    await set_settings(db_session_factory, UID, search_provider_order=["brave", "searxng"])
+    brave_fake.error = SearchNotServed()
+    searxng_fake.results = {"zxq secrete": [hit("https://ex.org/s")]}
+    with caplog.at_level(logging.WARNING):
+        out = await search(runtime_with_brave_key, UID, "s1", "zxq secrete")
+    assert out.provider == "searxng" and len(brave_fake.calls) == 1
+    assert "OperationalError" in caplog.text and "zxq" not in caplog.text
+    assert "database is locked" not in caplog.text

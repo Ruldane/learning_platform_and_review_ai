@@ -75,6 +75,7 @@ async def test_interrupt_payload_shape(make_debate: MakeDebate, db_factory: Fact
         "kind": "choice",
         "question": QUESTION,
         "options": OPTIONS,
+        "fields": [],
     }
 
 

@@ -12,11 +12,14 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
 from app.agents.runtime.bus import EventBus
 from app.agents.runtime.runner import SessionRunner
+from app.bootstrap import agent_ports
 from app.config import Settings
 from app.core.providers import MemoryProviders, ResearchProviders
 from app.core.security import Cipher, KnownSecrets
 from app.db.models.accounts import User
 from app.features.auth.service import AuthService
+from app.features.memory.service.gateway import AgentMemoryGateway
+from app.features.research.service.gateway import AgentWebGateway
 from app.main import create_app
 from tests.support.memory import fake_memory_providers
 
@@ -196,3 +199,19 @@ async def test_lifespan_builds_research_providers_on_the_memory_web_reader(
     async with LifespanManager(app):
         assert app.state.research_providers is research_providers and closed == []
     assert seen == [(settings, memory_providers.web)] and closed == [True]
+
+
+async def test_launcher_is_bound_to_the_runner_then_unbound_at_shutdown(
+    settings: Settings, db_engine: object
+) -> None:
+    app = create_app(settings)
+    async with LifespanManager(app):
+        launcher = app.state.launcher
+        assert launcher.runner is app.state.runtime.runner
+    assert launcher.runner is None
+
+
+def test_agent_ports_compose_memory_and_web() -> None:
+    ports = agent_ports(object(), object())  # type: ignore[arg-type]
+    assert isinstance(ports.memory, AgentMemoryGateway)
+    assert isinstance(ports.web, AgentWebGateway)

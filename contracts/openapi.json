@@ -513,7 +513,38 @@
         "type": "object"
       },
       "BoardUpdatePayload": {
+        "description": "Un état du tableau. `board_id`, `kind`, `title` (D82) : plusieurs tableaux par session\n(carte du domaine, prérequis, frise, comparaison) ; absents des événements d'avant.",
         "properties": {
+          "board_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Board Id"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "domain_map",
+                  "prerequisites",
+                  "timeline",
+                  "comparison"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Kind"
+          },
           "mermaid": {
             "title": "Mermaid",
             "type": "string"
@@ -521,6 +552,18 @@
           "step": {
             "title": "Step",
             "type": "integer"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Title"
           }
         },
         "required": [
@@ -951,6 +994,38 @@
         "title": "HealthStatus",
         "type": "object"
       },
+      "InterruptField": {
+        "description": "Une question d'un cadrage à plusieurs champs (D82) ; la réponse est un objet\n`{id: texte}`.",
+        "properties": {
+          "id": {
+            "pattern": "^[a-z0-9_]{1,32}$",
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "max_length": {
+            "default": 2000,
+            "maximum": 4000,
+            "minimum": 1,
+            "title": "Max Length",
+            "type": "integer"
+          },
+          "required": {
+            "default": false,
+            "title": "Required",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "label"
+        ],
+        "title": "InterruptField",
+        "type": "object"
+      },
       "InterruptOption": {
         "properties": {
           "label": {
@@ -1023,6 +1098,13 @@
       "InterruptRequestedPayload": {
         "description": "`kind` et non `type` : `type` est déjà le discriminant de l'enveloppe (DECISIONS).",
         "properties": {
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/InterruptField"
+            },
+            "title": "Fields",
+            "type": "array"
+          },
           "interrupt_id": {
             "title": "Interrupt Id",
             "type": "string"
@@ -1896,17 +1978,32 @@
         "type": "object"
       },
       "MessageRequest": {
+        "description": "Message de l'utilisatrice, ou commande du débat (D82) : le texte est alors facultatif.\nTexte vide (ou blanc) sans commande : 422 `invalid_input` (`SessionsService.message`).",
         "properties": {
+          "command": {
+            "anyOf": [
+              {
+                "enum": [
+                  "another_round",
+                  "to_proposals",
+                  "more_concrete",
+                  "shorter"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Command"
+          },
           "text": {
+            "default": "",
             "maxLength": 4000,
-            "minLength": 1,
             "title": "Text",
             "type": "string"
           }
         },
-        "required": [
-          "text"
-        ],
         "title": "MessageRequest",
         "type": "object"
       },
@@ -2853,6 +2950,15 @@
             ],
             "title": "Date"
           },
+          "kind": {
+            "default": "page",
+            "enum": [
+              "page",
+              "person"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
           "lang": {
             "anyOf": [
               {
@@ -2875,6 +2981,18 @@
             ],
             "default": null,
             "title": "Reason"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Role"
           },
           "score": {
             "anyOf": [
@@ -2959,6 +3077,14 @@
           },
           "id": {
             "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "page",
+              "person"
+            ],
+            "title": "Kind",
             "type": "string"
           },
           "lang": {
@@ -3048,7 +3174,8 @@
           "status",
           "verdict",
           "score",
-          "reason"
+          "reason",
+          "kind"
         ],
         "title": "SourceOut",
         "type": "object"
@@ -3397,15 +3524,32 @@
         "type": "object"
       },
       "UserMessagePayload": {
+        "description": "Message de l'utilisatrice (D4) ; `command` : commande du débat, texte alors facultatif.",
         "properties": {
+          "command": {
+            "anyOf": [
+              {
+                "enum": [
+                  "another_round",
+                  "to_proposals",
+                  "more_concrete",
+                  "shorter"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Command"
+          },
           "text": {
+            "default": "",
             "title": "Text",
             "type": "string"
           }
         },
-        "required": [
-          "text"
-        ],
         "title": "UserMessagePayload",
         "type": "object"
       },

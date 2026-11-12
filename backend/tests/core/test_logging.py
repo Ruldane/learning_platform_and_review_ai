@@ -142,3 +142,9 @@ def test_access_log_drops_the_query_string() -> None:
         '127.0.0.1:5000 - "GET /api/v1/memory/items HTTP/1.1" 200'
     ]
     assert isinstance(records[0].args, tuple) and records[0].args[4] == 200
+
+
+def test_httpx2_logger_is_quiet() -> None:
+    """SDK de Z.ai : il journalise l'URL fixe de l'API en INFO à chaque appel."""
+    configure_logging("INFO", lambda: [])
+    assert logging.getLogger("httpx2").level == logging.WARNING

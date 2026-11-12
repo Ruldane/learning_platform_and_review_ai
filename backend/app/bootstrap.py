@@ -9,6 +9,7 @@ from qdrant_client import AsyncQdrantClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.agents.runtime.costs import ModelPrice, load_prices
+from app.agents.runtime.ports import AgentPorts
 from app.agents.runtime.run_settings import RunSettingsSource
 from app.agents.tools.memory_port import MemoryGateway
 from app.agents.tools.web_port import WebGateway
@@ -135,6 +136,12 @@ def web_gateway(runtime: ResearchRuntime) -> WebGateway:
     """Recherche web vue par le moteur d'agents (outils `web_*`, Éclaireur), adaptée du service de
     la feature `research` : le moteur n'importe aucune feature (contrat 6, D77)."""
     return AgentWebGateway(runtime)
+
+
+def agent_ports(memory: MemoryRuntime, research: ResearchRuntime) -> AgentPorts:
+    """Tous les ports du moteur d'agents (D82) : un port de plus = un champ d'`AgentPorts` et
+    une ligne ici."""
+    return AgentPorts(memory=memory_gateway(memory), web=web_gateway(research))
 
 
 def _reader_http() -> httpx.AsyncClient:

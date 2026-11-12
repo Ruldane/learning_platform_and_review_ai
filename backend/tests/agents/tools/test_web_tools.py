@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 import pytest
 
 from app.agents.runtime.deps import GraphDeps
+from app.agents.runtime.ports import AgentPorts
 from app.agents.runtime.run_settings import RunSettings
 from app.agents.tools.web_port import (
     NO_WEB,
@@ -90,7 +91,7 @@ def _deps(web: FakeWeb) -> GraphDeps:
         None,  # type: ignore[arg-type]
         RunSettings(300_000, 3, "fr", ("fr",), ""),
         None,  # type: ignore[arg-type]
-        web=web,
+        AgentPorts(web=web),
     )
 
 

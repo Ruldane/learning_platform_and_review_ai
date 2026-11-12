@@ -12,10 +12,9 @@ from app.agents.runtime.checkpointer import open_checkpointer
 from app.agents.runtime.costs import ModelPrice
 from app.agents.runtime.deps import ChatModelSource
 from app.agents.runtime.handle import AgentRuntime
+from app.agents.runtime.ports import NO_PORTS, AgentPorts
 from app.agents.runtime.run_settings import RunSettingsSource
 from app.agents.runtime.runner import SessionRunner
-from app.agents.tools.memory_port import NO_MEMORY, MemoryGateway
-from app.agents.tools.web_port import NO_WEB, WebGateway
 from app.config import Settings
 
 logger = logging.getLogger(__name__)
@@ -29,12 +28,11 @@ async def agent_runtime(
     prices: Mapping[str, ModelPrice],
     run_settings: RunSettingsSource,
     *,
-    memory: MemoryGateway = NO_MEMORY,
-    web: WebGateway = NO_WEB,
+    ports: AgentPorts = NO_PORTS,
 ) -> AsyncIterator[AgentRuntime]:
-    """`prices`, `run_settings`, `memory` et `web` viennent de la composition (`app.bootstrap`) :
+    """`prices`, `run_settings` et `ports` viennent de la composition (`app.bootstrap`) :
     `app.agents` ne lit ni la table des prix des fournisseurs (contrat 3) ni les features
-    `settings`, `memory` et `research` (contrat 6).
+    (`settings`, `memory`, `research`… : contrat 6, D82).
     À la sortie : tâches des sessions annulées et attendues (statut inchangé, reprises au
     prochain démarrage), puis écritures du bus vidées, puis checkpointer fermé — le tout avant
     la fermeture du moteur par l'appelant."""
@@ -47,8 +45,7 @@ async def agent_runtime(
             checkpointer=checkpointer,
             prices=prices,
             run_settings=run_settings,
-            memory=memory,
-            web=web,
+            ports=ports,
         )
         try:
             recovered = await runner.recover_on_startup()

@@ -2,10 +2,17 @@
 
 from pydantic import BaseModel, ConfigDict
 
-from app.db.models.research import PageStatus, SourceVerdict
+from app.db.models.research import PageStatus, SourceKind, SourceVerdict
 
 # Les types littéraux sont réexportés : un router n'importe pas `app.db` (contrat 1b).
-__all__ = ["BraveUsageOut", "PageStatus", "SearchUsageOut", "SourceOut", "SourceVerdict"]
+__all__ = [
+    "BraveUsageOut",
+    "PageStatus",
+    "SearchUsageOut",
+    "SourceKind",
+    "SourceOut",
+    "SourceVerdict",
+]
 
 
 class BraveUsageOut(BaseModel):
@@ -34,3 +41,4 @@ class SourceOut(BaseModel):
     verdict: SourceVerdict
     score: int | None
     reason: str | None
+    kind: SourceKind  # `person` : praticien repéré par l'Éclaireur (phase 4, D82)

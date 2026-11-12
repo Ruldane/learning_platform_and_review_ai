@@ -3,7 +3,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.agents.runtime.events import InterruptRequestedPayload, RunFailedPayload
+from app.agents.runtime.events import InterruptRequestedPayload, RunFailedPayload, UserCommand
 from app.db.models.agents import SessionStatus
 
 __all__ = [
@@ -13,6 +13,7 @@ __all__ = [
     "SessionView",
     "StartSessionRequest",
     "StartSessionResponse",
+    "UserCommand",
 ]
 
 
@@ -58,4 +59,8 @@ class ResumeRequest(BaseModel):
 
 
 class MessageRequest(BaseModel):
-    text: str = Field(min_length=1, max_length=4000)
+    """Message de l'utilisatrice, ou commande du débat (D82) : le texte est alors facultatif.
+    Texte vide (ou blanc) sans commande : 422 `invalid_input` (`SessionsService.message`)."""
+
+    text: str = Field(default="", max_length=4000)
+    command: UserCommand | None = None

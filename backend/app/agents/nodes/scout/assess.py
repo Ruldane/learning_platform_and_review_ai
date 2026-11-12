@@ -2,6 +2,7 @@
 résumer. La note vient de cinq critères bornés par le schéma ; le code additionne et applique le
 seuil de 60 (la passerelle enregistre, SPEC 10.3)."""
 
+import asyncio
 import logging
 from datetime import UTC, datetime
 from typing import Any
@@ -23,9 +24,11 @@ from app.agents.tools.web_port import KEEP_THRESHOLD, SourceVerdictView
 from app.core.errors import AppError
 
 JUDGE_TIMEOUT_S = 600  # un appel au modèle par page lue
-# Page dont le modèle n'a rendu aucune note conforme au schéma (revue phase 3, I2).
+PAGE_JUDGE_TIMEOUT_S = 90  # une page trop lente à noter est écartée sans note (D82)
+# Page dont le modèle n'a rendu aucune note conforme au schéma, ou trop lente (revue phase 3, I2).
 UNSCORED_REASON = "Note impossible à établir."
 INVALID_OUTPUT_CODE = "structured_output_invalid"
+PAGE_TIMEOUT_CODE = "page_judge_timeout"
 
 logger = logging.getLogger(__name__)
 REMEMBER_TIMEOUT_S = 300  # une vectorisation par source retenue
@@ -73,24 +76,38 @@ def _emit_judged(page: dict[str, Any], verdict: SourceVerdictView) -> None:
     )
 
 
+def _page_timeout() -> AppError:
+    return AppError(
+        PAGE_TIMEOUT_CODE,
+        f"La notation d'une page a dépassé {PAGE_JUDGE_TIMEOUT_S:g} secondes.",
+        504,
+    )
+
+
 async def _score(model: BaseChatModel, page: dict[str, Any]) -> SourceScore | AppError:
-    """Les cinq critères de la page, ou l'erreur `structured_output_invalid` si le modèle n'a
-    rendu aucune note conforme au schéma après ses essais (critère hors borne...), rendue et non
-    levée. Toute autre erreur (quota, fournisseur indisponible, délai) remonte : elle vaudrait
-    pour toutes les pages."""
+    """Les cinq critères de la page, ou une erreur rendue et non levée : `structured_output_invalid`
+    (aucune note conforme au schéma après les essais), ou `page_judge_timeout` (au-delà de
+    `PAGE_JUDGE_TIMEOUT_S`). Toute autre erreur (quota, fournisseur indisponible) remonte : elle
+    vaudrait pour toutes les pages."""
+    limit = asyncio.timeout(PAGE_JUDGE_TIMEOUT_S)
     try:
-        return await structured_call(
-            model,
-            SourceScore,
-            [SystemMessage(_prompt(page)), HumanMessage("Note cette source.")],
-            agent=AGENT,
-            step="notation",
-            intent="je note une source",
-        )
+        async with limit:
+            return await structured_call(
+                model,
+                SourceScore,
+                [SystemMessage(_prompt(page)), HumanMessage("Note cette source.")],
+                agent=AGENT,
+                step="notation",
+                intent="je note une source",
+            )
     except AppError as exc:
         if exc.code != INVALID_OUTPUT_CODE:
             raise
         return exc
+    except TimeoutError:
+        if not limit.expired():
+            raise  # un délai levé plus bas, pas le nôtre
+        return _page_timeout()
 
 
 async def _record(
@@ -115,10 +132,24 @@ def _entry(
         "url": page["url"],
         "title": page_title(page),
         "lang": page["lang"],
-        "summary": "" if score is None else one_line(score.summary),
+        "summary": one_line(verdict.summary if score is None else score.summary),
         "score": verdict.score,
         "verdict": verdict.verdict,
     }
+
+
+def _known(page: dict[str, Any]) -> SourceVerdictView | None:
+    """Verdict déjà posé dans la session, rendu par la lecture (D82)."""
+    known = page.get("verdict")
+    if not known:
+        return None
+    return SourceVerdictView(
+        source_id=page["source_id"],
+        score=known["score"],
+        verdict=known["verdict"],
+        reason=known["reason"],
+        summary=known.get("summary", ""),
+    )
 
 
 def make_judge(deps: GraphDeps) -> Node:
@@ -133,12 +164,19 @@ def make_judge(deps: GraphDeps) -> Node:
         for page in state.get("pages", []):
             if page["source_id"] is None:
                 continue
+            if (known := _known(page)) is not None:  # déjà notée : réémise, modèle non rappelé
+                _emit_judged(page, known)
+                verdicts.append(_entry(page, None, known))
+                continue
             outcome = await _score(model, page)
             score = outcome if isinstance(outcome, SourceScore) else None
             if isinstance(outcome, AppError):
                 failure, unscored = outcome, unscored + 1
                 logger.warning(
-                    "Note impossible : session %s, source %s", deps.session_id, page["source_id"]
+                    "Note impossible (%s) : session %s, source %s",
+                    outcome.code,
+                    deps.session_id,
+                    page["source_id"],
                 )
             verdict = await _record(deps, page, score)
             _emit_judged(page, verdict)

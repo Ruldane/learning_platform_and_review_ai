@@ -1,8 +1,11 @@
 """Outils mémoire des agents : événements émis, passage par le port, outils pour le LLM."""
 
+from dataclasses import replace
+
 import pytest
 
 from app.agents.runtime.deps import GraphDeps
+from app.agents.runtime.ports import AgentPorts
 from app.agents.tools.memory_port import (
     NO_MEMORY,
     AgentWrite,
@@ -41,7 +44,7 @@ async def test_memory_search_emits_tool_events_and_returns_agent_text(
 async def test_memory_search_failure_reports_tool_result_then_raises(
     emitted: list[dict[str, object]], deps: GraphDeps
 ) -> None:
-    broken = GraphDeps(**{**deps.__dict__, "memory": NO_MEMORY})
+    broken = replace(deps, ports=AgentPorts(memory=NO_MEMORY))
     with pytest.raises(AppError) as exc:
         await memory_search(broken, "x", ["acquis"], 3, agent="archivist")
     assert exc.value.code == "memory_unavailable"

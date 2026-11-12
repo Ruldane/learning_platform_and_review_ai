@@ -46,6 +46,15 @@ class WebSearchResult:
 
 
 @dataclass(frozen=True)
+class SourceVerdictView:
+    source_id: str
+    score: int | None  # `None` : note impossible à établir (sortie du modèle invalide, délai)
+    verdict: Literal["kept", "rejected"]
+    reason: str
+    summary: str = ""  # résumé de la notation, repris tel quel quand le verdict est rejoué (D82)
+
+
+@dataclass(frozen=True)
 class PageRead:
     # `None` pour une page qui n'a pas de ligne `sources` : domaine exclu dans les réglages,
     # jamais lue (D77).
@@ -58,14 +67,9 @@ class PageRead:
     date: str | None
     lang: str | None
     reason: str | None
-
-
-@dataclass(frozen=True)
-class SourceVerdictView:
-    source_id: str
-    score: int | None  # `None` : note impossible à établir (sortie du modèle invalide)
-    verdict: Literal["kept", "rejected"]
-    reason: str
+    # Source déjà notée dans la session (nœud rejoué, seconde recherche) : son verdict, que
+    # `judge` réémet sans rappeler le modèle (D82).
+    verdict: SourceVerdictView | None = None
 
 
 @dataclass(frozen=True)
