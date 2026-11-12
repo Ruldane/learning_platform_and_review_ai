@@ -71,11 +71,14 @@ async def saved_proposals(
 
 
 async def attach_board(db: AsyncSession, user_id: str, proposal_id: str, board_id: str) -> None:
-    """La frise du parcours au tableau ; proposition et tableau doivent être à l'utilisateur."""
+    """La frise du parcours au tableau : proposition, objectif et tableau à l'utilisateur, et
+    tableau du même objectif que la proposition (sinon 404)."""
     proposal = await ProposalRepository(db, user_id).get_fresh(proposal_id)
     if proposal is None:
         raise proposal_not_found()
-    if await BoardRepository(db, user_id).get(board_id) is None:
+    await owned_goal(db, user_id, proposal.goal_id)
+    board = await BoardRepository(db, user_id).get(board_id)
+    if board is None or board.goal_id != proposal.goal_id:
         raise AppError("board_not_found", "État du tableau introuvable.", 404)
     proposal.board_id = board_id
     await db.flush()

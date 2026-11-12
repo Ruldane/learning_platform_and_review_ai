@@ -91,8 +91,12 @@ class ChooseRequest(BaseModel):
 
 
 class ChooseOut(BaseModel):
+    """`already_chosen` : ce même choix était déjà fait (double clic, reprise générique) ; la
+    requête n'a rien changé, `start_date` comprise (D87)."""
+
     council_session_id: str
     status: SessionStatus
+    already_chosen: bool = False
 
 
 class BoardOut(BaseModel):

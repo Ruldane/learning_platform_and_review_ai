@@ -751,7 +751,13 @@
         "type": "object"
       },
       "ChooseOut": {
+        "description": "`already_chosen` : ce même choix était déjà fait (double clic, reprise générique) ; la\nrequête n'a rien changé, `start_date` comprise (D87).",
         "properties": {
+          "already_chosen": {
+            "default": false,
+            "title": "Already Chosen",
+            "type": "boolean"
+          },
           "council_session_id": {
             "title": "Council Session Id",
             "type": "string"

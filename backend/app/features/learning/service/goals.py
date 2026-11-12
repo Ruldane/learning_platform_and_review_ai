@@ -71,8 +71,8 @@ async def create_goal(
 ) -> GoalStarted:
     """Enregistre l'objectif puis lance son Conseil (aucune route de session à part, D87).
     L'objectif est commité AVANT le lancement : le nœud `context` le relit dans sa propre
-    session. Lancement impossible (moteur indisponible) : l'objectif est retiré, l'erreur
-    passe."""
+    session. Lancement impossible, quelle que soit l'erreur : l'objectif est retiré (`_discard`),
+    l'erreur passe."""
     repo = GoalRepository(db, user_id)
     weekly = None if req.weekly_hours is None else req.weekly_hours * 60
     goal = await repo.add(
@@ -88,9 +88,8 @@ async def create_goal(
         session_id = await learning.launcher.start(
             user_id, COUNCIL_GRAPH, {"goal_id": goal.id}, subject_type=SUBJECT, subject_id=goal.id
         )
-    except AppError:
-        await repo.delete(goal.id)
-        await db.commit()
+    except BaseException:
+        await _discard(db, user_id, goal.id)
         raise
     goal.council_session_id = session_id
     await db.commit()  # verrou d'écriture de SQLite rendu aussitôt : le Conseil écrit déjà
@@ -98,6 +97,18 @@ async def create_goal(
         "Objectif créé : utilisateur %s, objectif %s, Conseil %s", user_id, goal.id, session_id
     )
     return GoalStarted(goal=await goal_out(db, user_id, goal), session_id=session_id)
+
+
+async def _discard(db: AsyncSession, user_id: str, goal_id: str) -> None:
+    """Retire l'objectif dont le Conseil n'a pas pu être lancé, quelle que soit l'erreur
+    (moteur indisponible, base, entrée refusée) : aucun objectif orphelin sans Conseil. Au mieux :
+    un retrait impossible est journalisé et l'erreur d'origine passe."""
+    try:
+        await db.rollback()
+        await GoalRepository(db, user_id).delete(goal_id)
+        await db.commit()
+    except Exception:
+        logger.warning("Objectif non retiré après un lancement manqué : objectif %s", goal_id)
 
 
 async def list_goals(db: AsyncSession, user_id: str) -> builtins.list[GoalOut]:

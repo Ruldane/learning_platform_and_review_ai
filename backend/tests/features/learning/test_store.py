@@ -240,3 +240,28 @@ async def test_start_program_returns_existing_session(
     first = await store.start_program(ME, other_goal, Choice("choose", ("p1",)))
     assert await store.start_program(ME, other_goal, Choice("choose", ("p2",))) == first
     assert len(launcher.started) == 1  # session ouverte rendue telle quelle
+
+
+async def test_attach_board_checks_goal_and_owner(
+    store: AgentCouncilStore, db_session_factory: Factory
+) -> None:
+    mine, other_goal = await _goal(db_session_factory), await _goal(db_session_factory)
+    theirs = await _goal(db_session_factory, user_id=OTHER)
+    refs = await store.save_proposals(ME, SID, mine, batch=1, proposals=[_draft("Parcours A")])
+    proposal = refs[0].proposal_id
+
+    async def board(user_id: str, goal_id: str, session_id: str) -> str:
+        return await store.save_board(
+            user_id, session_id, goal_id, step=1, kind="timeline", title="Frise", mermaid="x"
+        )
+
+    foreign_goal = await board(ME, other_goal, "autre-conseil")
+    foreign_user = await board(OTHER, theirs, "conseil-d-autrui")
+    await _refused(lambda: store.attach_board(ME, proposal, foreign_goal), "board_not_found")
+    await _refused(lambda: store.attach_board(ME, proposal, foreign_user), "board_not_found")
+    await _refused(lambda: store.attach_board(OTHER, proposal, foreign_user), "proposal_not_found")
+    own = await board(ME, mine, SID)
+    await store.attach_board(ME, proposal, own)
+    async with db_session_factory() as db:
+        row = await db.get(Proposal, proposal)
+    assert row is not None and row.board_id == own

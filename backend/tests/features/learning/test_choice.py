@@ -85,6 +85,7 @@ async def test_concurrent_choose_starts_one_program_session(
     replies = await asyncio.gather(*(_choose(client, p1) for _ in range(3)))
     assert [r.status_code for r in replies] == [202, 202, 202]
     assert {r.json()["council_session_id"] for r in replies} == {waiting.sid}
+    assert sorted(r.json()["already_chosen"] for r in replies) == [False, True, True]
     await wait_status(client, waiting.sid, "completed")
     assert await count_sessions(client, "program_builder") == 1
     assert await chosen_ids(client, waiting.goal_id) == {p1}
@@ -118,8 +119,9 @@ async def test_choose_after_generic_resume_is_idempotent(
     r = await client.post(f"/api/v1/sessions/{waiting.sid}/resume", json=body)
     assert r.status_code == 202
     await wait_status(client, waiting.sid, "completed")
-    r = await _choose(client, p1)
+    r = await _choose(client, p1, {"start_date": "2027-01-04"})
     assert r.status_code == 202 and r.json()["status"] == "completed"
+    assert r.json()["already_chosen"] is True  # rien changé, date de début comprise
     r = await _choose(client, p2)  # un autre parcours, Conseil terminé
     assert r.status_code == 409 and r.json()["error"]["code"] == "council_not_waiting"
     assert await count_sessions(client, "program_builder") == 1

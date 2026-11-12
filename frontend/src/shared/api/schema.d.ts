@@ -904,8 +904,17 @@ export interface components {
             /** Used */
             used: number;
         };
-        /** ChooseOut */
+        /**
+         * ChooseOut
+         * @description `already_chosen` : ce même choix était déjà fait (double clic, reprise générique) ; la
+         *     requête n'a rien changé, `start_date` comprise (D87).
+         */
         ChooseOut: {
+            /**
+             * Already Chosen
+             * @default false
+             */
+            already_chosen: boolean;
             /** Council Session Id */
             council_session_id: string;
             /**

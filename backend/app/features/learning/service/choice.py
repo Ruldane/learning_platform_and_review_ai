@@ -119,6 +119,44 @@ def _resume_value(choice: Choice) -> dict[str, Any]:
     return {"action": choice.action, "proposal_ids": list(choice.proposal_ids), "start_date": start}
 
 
+async def _forget(learning: LearningRuntime, user_id: str, session_id: str, goal_id: str) -> None:
+    """Efface le choix écrit, au mieux : un choix resté écrit ne bloque rien (le Conseil qui
+    attend encore est toujours repris au clic suivant), il s'afficherait seulement à tort."""
+    try:
+        await _write(learning, user_id, session_id, goal_id, None)
+    except Exception:
+        logger.warning(
+            "Choix non effacé après une reprise manquée : utilisateur %s, objectif %s",
+            user_id,
+            goal_id,
+        )
+
+
+async def _write_and_resume(
+    runtime: AgentRuntime,
+    learning: LearningRuntime,
+    user_id: str,
+    goal_id: str,
+    session_id: str,
+    choice: Choice,
+    interrupt_id: str,
+) -> SessionView:
+    """Choix écrit puis interruption reprise. Reprise manquée, pour quelque raison que ce soit
+    (question déjà répondue, moteur en arrêt, base verrouillée, arrêt du back) : choix effacé,
+    `finalize` écrira celui qu'il recevra ; une question déjà répondue donne 409
+    `council_not_waiting` avec le statut relu après l'échec."""
+    await _write(learning, user_id, session_id, goal_id, choice)
+    request = ResumeRequest(interrupt_id=interrupt_id, value=_resume_value(choice))
+    try:
+        return await _resume(runtime, learning, user_id, session_id, request)
+    except BaseException as exc:
+        await _forget(learning, user_id, session_id, goal_id)
+        if isinstance(exc, AppError) and exc.code == "stale_interrupt":
+            status = (await _view(runtime, learning, user_id, session_id)).status
+            raise council_not_waiting(status) from None
+        raise
+
+
 async def choose(
     runtime: AgentRuntime,
     learning: LearningRuntime,
@@ -127,11 +165,11 @@ async def choose(
     proposal_id: str,
     req: ChooseRequest,
 ) -> ChooseOut:
-    """Sous le verrou de l'objectif : (1) proposition (et `mix_with`) du dernier lot ; (2) même
-    choix déjà enregistré → état rendu, rien de plus (idempotent) ; (3) Conseil en attente sur
-    `choose_path` → choix écrit puis interruption reprise ; sinon 409 `council_not_waiting`. Une
-    reprise refusée (question déjà répondue par une reprise générique, moteur en arrêt) efface
-    le choix écrit : `finalize` écrira celui qu'il reçoit."""
+    """Sous le verrou de l'objectif : (1) proposition (et `mix_with`) du dernier lot ; (2) Conseil
+    en attente sur `choose_path` → choix écrit puis interruption reprise, **toujours** (un choix
+    resté écrit par une reprise manquée ne bloque pas) ; (3) Conseil qui n'attend pas : même
+    ensemble déjà choisi → état rendu, `already_chosen` vrai, rien changé (`start_date`
+    comprise ; double clic, reprise générique terminée) ; sinon 409 `council_not_waiting`."""
     goal_id = await ProposalRepository(db, user_id).goal_of(proposal_id)
     if goal_id is None:
         raise proposal_not_found()
@@ -141,22 +179,16 @@ async def choose(
         ids = _choice_ids([p.id for p in batch], proposal_id, req.mix_with)
         session_id = batch[0].session_id
         view = await _view(runtime, learning, user_id, session_id)
-        if {p.id for p in batch if p.chosen} == set(ids):
-            return ChooseOut(council_session_id=session_id, status=view.status)
         pending = view.pending_interrupt
         if view.status != "waiting_user" or pending is None or pending.kind != CHOICE_KIND:
-            raise council_not_waiting(view.status)
+            if {p.id for p in batch if p.chosen} != set(ids):
+                raise council_not_waiting(view.status)
+            return ChooseOut(council_session_id=session_id, status=view.status, already_chosen=True)
         action: Literal["choose", "mix"] = "mix" if len(ids) == 2 else "choose"
         choice = Choice(action, tuple(ids), req.start_date)
-        await _write(learning, user_id, session_id, goal_id, choice)
-        request = ResumeRequest(interrupt_id=pending.interrupt_id, value=_resume_value(choice))
-        try:
-            resumed = await _resume(runtime, learning, user_id, session_id, request)
-        except AppError as exc:
-            await _write(learning, user_id, session_id, goal_id, None)
-            if exc.code == "stale_interrupt":
-                raise council_not_waiting(str((exc.details or {}).get("status", ""))) from None
-            raise
+        resumed = await _write_and_resume(
+            runtime, learning, user_id, goal_id, session_id, choice, pending.interrupt_id
+        )
     logger.info(
         "Parcours choisi par la route : utilisateur %s, objectif %s, Conseil %s, propositions %s",
         user_id,
