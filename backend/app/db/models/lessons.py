@@ -10,6 +10,9 @@ LessonStatus = Literal["pending", "generating", "ready", "failed"]
 ResourceType = Literal["documentation", "cours", "video", "article", "depot", "papier"]
 ResourceLevel = Literal["debutant", "intermediaire", "avance"]
 ResourceStatus = Literal["to_read", "read"]
+# Essais de production d'une leçon (le premier et deux relances) : relu par la production et par
+# le schéma de l'API (`LessonSummaryOut.attempts`).
+MAX_LESSON_ATTEMPTS = 3
 
 
 class Lesson(UserScopedMixin, Base):

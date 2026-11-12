@@ -23,7 +23,7 @@ from typing import Protocol
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.db.models.lessons import Lesson
+from app.db.models.lessons import MAX_LESSON_ATTEMPTS, Lesson
 from app.features.lessons.repository import LessonRepository
 from app.features.lessons.service.runtime import Launcher
 from app.features.lessons.service.status import GRAPH, INTERRUPTED, SUBJECT
@@ -32,7 +32,7 @@ from app.features.sessions.service import list_open_sessions
 
 logger = logging.getLogger(__name__)
 
-MAX_ATTEMPTS = 3
+MAX_ATTEMPTS = MAX_LESSON_ATTEMPTS
 HORIZON_DAYS = 7
 FIRST_WEEKS = (1, 2)
 

@@ -2,7 +2,13 @@
 
 from pydantic import BaseModel, Field
 
-from app.db.models.lessons import LessonStatus, ResourceLevel, ResourceStatus, ResourceType
+from app.db.models.lessons import (
+    MAX_LESSON_ATTEMPTS,
+    LessonStatus,
+    ResourceLevel,
+    ResourceStatus,
+    ResourceType,
+)
 
 # Les types littéraux sont réexportés : un router n'importe pas `app.db` (contrat 1b).
 __all__ = [
@@ -51,9 +57,9 @@ class LessonSummaryOut(BaseModel):
     )
     attempts: int = Field(
         ge=0,
-        le=3,
-        description="Essais de production faits (3 au plus) : une leçon `failed` avec moins de 3 "
-        "essais sera relancée.",
+        le=MAX_LESSON_ATTEMPTS,
+        description=f"Essais de production faits ({MAX_LESSON_ATTEMPTS} au plus) : une leçon "
+        f"`failed` avec moins de {MAX_LESSON_ATTEMPTS} essais sera relancée.",
     )
     word_count: int
     pdf_available: bool

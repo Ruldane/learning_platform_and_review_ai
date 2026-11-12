@@ -85,10 +85,13 @@ def _keep_line(text: str, limit: int, keep: re.Pattern[str]) -> str | None:
     """Coupe qui garde entière la première ligne où `keep` correspond (comptée dans `limit`),
     ou `None` si aucune ligne ne correspond ou si la coupe ordinaire la garde déjà."""
     match = keep.search(text)
-    if match is None:
+    if match is None or match.end() == match.start():
         return None
-    start = text.rfind("\n", 0, match.start()) + 1
-    stop = text.find("\n", match.start())
+    # La ligne est celle où la correspondance FINIT : un motif qui admet des blancs en tête
+    # (`^\s*` en MULTILINE) peut commencer sur une ligne vide au-dessus (relecture 5.1, I1).
+    anchor = match.end() - 1
+    start = text.rfind("\n", 0, anchor) + 1
+    stop = text.find("\n", anchor)
     stop = len(text) if stop == -1 else stop
     if _cut_at(text, limit)[0] >= stop:
         return None

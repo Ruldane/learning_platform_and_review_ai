@@ -7,6 +7,7 @@ import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage
 
+from app.agents.nodes.debate_turn import _OBJECTION
 from app.agents.runtime.speech import (
     CitationEntry,
     cap_words,
@@ -59,6 +60,15 @@ def test_cap_words_keeps_objection_line() -> None:
     assert capped.endswith(f"\n{objection}") and count_words(capped) <= 150
     assert capped.startswith("mot0 mot1") and " …\n" in capped
     assert cap_words(text, 150) == cap_words(text, 150, keep=None)  # sans `keep` : comme avant
+
+
+@pytest.mark.parametrize("gap", ["\n\n", "\n  \n", "\n\n\n"])
+def test_objection_after_a_blank_line_is_kept(gap: str) -> None:
+    """Relecture de 5.1, I1 : `_OBJECTION` accepte des blancs en tête (MULTILINE), sauts de ligne
+    compris : sa correspondance part de la ligne vide ; la ligne gardée est celle de l'objection."""
+    objection = "**Objection :** dix semaines ne tiennent pas dans ce budget serré."
+    capped = cap_words(f"{_LONG}{gap}{objection}", 150, keep=_OBJECTION)
+    assert capped.endswith(f"\n{objection}") and count_words(capped) <= 150
 
 
 def test_cap_words_keep_changes_nothing_when_the_line_survives() -> None:

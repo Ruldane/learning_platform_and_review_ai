@@ -151,3 +151,16 @@ async def test_run_reader_gives_the_engine_the_stored_settings(
         style_guide="",
     )
     assert (await reader.get_run_settings("u2")).session_token_cap == 300_000
+
+
+async def test_stored_timezone_no_longer_known_falls_back_to_paris(
+    db_session: AsyncSession, caplog: pytest.LogCaptureFixture
+) -> None:
+    """D98 : un fuseau enregistré puis devenu inconnu ne fait pas échouer la lecture."""
+    await UserSettingsRepository(db_session, "u1").save_data(
+        {"timezone": "Mars/Olympus", "study_work_minutes": 25}
+    )
+    with caplog.at_level(logging.WARNING):
+        s = await SettingsService(db_session, "u1").get()
+    assert (s.timezone, s.study_work_minutes) == ("Europe/Paris", 25)
+    assert "timezone" in caplog.text and "Olympus" not in caplog.text
