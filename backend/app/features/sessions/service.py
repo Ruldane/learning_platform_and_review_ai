@@ -33,6 +33,7 @@ __all__ = [
     "find_active_session",
     "find_latest_session",
     "list_open_sessions",
+    "list_open_sessions_by_subject",
     "session_facts",
     "to_view",
 ]
@@ -74,6 +75,16 @@ async def list_open_sessions(
     par programme, D91). Lecture pour les autres features (contrat 2)."""
     return await SessionReadRepository(db, user_id).open_ids(
         graph=graph, subject_type=subject_type, subject_id=subject_id
+    )
+
+
+async def list_open_sessions_by_subject(
+    db: AsyncSession, user_id: str, *, graph: str, subject_type: str
+) -> builtins.dict[str, builtins.list[str]]:
+    """Sessions ouvertes de `graph` sur tous les objets d'un type, par `subject_id`, en une
+    requête (listes sans N+1). Lecture pour les autres features (contrat 2)."""
+    return await SessionReadRepository(db, user_id).open_ids_by_subject(
+        graph=graph, subject_type=subject_type
     )
 
 

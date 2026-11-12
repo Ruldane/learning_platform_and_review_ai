@@ -46,6 +46,24 @@ class SessionReadRepository(UserScopedRepository[AgentSession]):
         )
         return builtins.list((await self.session.execute(stmt)).scalars().all())
 
+    async def open_ids_by_subject(
+        self, *, graph: str, subject_type: str
+    ) -> builtins.dict[str, builtins.list[str]]:
+        """Sessions ouvertes de `graph` de l'utilisateur, rangées par objet (`subject_id`) : une
+        seule requête pour tous les objets d'un type."""
+        stmt = select(AgentSession.subject_id, AgentSession.id).where(
+            AgentSession.user_id == self.user_id,
+            AgentSession.graph == graph,
+            AgentSession.subject_type == subject_type,
+            AgentSession.subject_id.is_not(None),
+            AgentSession.status.in_(OPEN_STATUSES),
+        )
+        out: builtins.dict[str, builtins.list[str]] = {}
+        for subject_id, session_id in (await self.session.execute(stmt)).all():
+            if subject_id is not None:
+                out.setdefault(subject_id, []).append(session_id)
+        return out
+
     async def latest(
         self,
         *,

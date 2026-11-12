@@ -29,7 +29,9 @@ from app.features.quiz.service.scoring import passed
 from app.features.quiz.service.shuffle import choice_order, question_order
 from app.features.quiz.service.status import (
     attempt_shown,
+    interrupted,
     open_sessions,
+    open_sessions_by_quiz,
     quiz_shown,
     read_with_sessions,
 )
@@ -131,16 +133,25 @@ async def list_quizzes(db: AsyncSession, user_id: str, program_id: str) -> list[
     """Un résumé par module non sauté du programme, dans l'ordre du programme."""
     loaded = await load(db, user_id, program_id)
     ranks = {week.id: week.rank for week in loaded.weeks}
+    open_by_quiz = await open_sessions_by_quiz(db, user_id)  # D97 n° 9 : sessions, PUIS lignes
     quizzes = {q.module_id: q for q in await QuizRepository(db, user_id).for_program(program_id)}
     attempts = await AttemptRepository(db, user_id).for_quizzes([q.id for q in quizzes.values()])
+    if any(
+        interrupted(q.status, q.session_id, open_by_quiz.get(q.id, [])) for q in quizzes.values()
+    ):  # lancé entre les deux lectures : relues, la session compte ouverte
+        later = await open_sessions_by_quiz(db, user_id)
+        for quiz_id, ids in later.items():
+            known = open_by_quiz.setdefault(quiz_id, [])
+            known += [sid for sid in ids if sid not in known]
     out: list[QuizSummaryOut] = []
     for module in (m for m in loaded.modules if not m.skipped):
         quiz = quizzes.get(module.id)
         status: str | None = None
         mine: list[QuizAttempt] = []
         if quiz is not None:
-            open_ids = await open_sessions(db, user_id, quiz.id)
-            status = quiz_shown(quiz.status, quiz.session_id, None, open_ids)[0]
+            status = quiz_shown(quiz.status, quiz.session_id, None, open_by_quiz.get(quiz.id, []))[
+                0
+            ]
             mine = [a for a in attempts if a.quiz_id == quiz.id]
         out.append(
             QuizSummaryOut.model_validate(
