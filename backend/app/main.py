@@ -15,6 +15,7 @@ from app.bootstrap import (
     memory_gateway,
     model_prices,
     open_memory_runtime,
+    open_research_runtime,
     run_settings_source,
 )
 from app.bootstrap import memory_providers as open_memory_providers
@@ -116,6 +117,12 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         # Mémoire : entrée avant le moteur d'agents (qui s'en servira), donc fermée après lui.
         app.state.memory = await stack.enter_async_context(
             open_memory_runtime(app.state.session_factory, injected)
+        )
+        # Recherche web : après la mémoire (même lecteur web), avant le moteur d'agents.
+        app.state.research = await stack.enter_async_context(
+            open_research_runtime(
+                app.state.session_factory, app.state.research_providers, app.state.providers
+            )
         )
         # Moteur d'agents (bus, runner, checkpointer) : entré après le moteur de base, donc
         # fermé avant lui (la pile dépile à l'envers) ; reprend les sessions interrompues.

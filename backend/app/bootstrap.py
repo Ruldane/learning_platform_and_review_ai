@@ -17,6 +17,7 @@ from app.core.security import Cipher
 from app.features.health.checks import DatabaseCheck, LlmKeysCheck
 from app.features.memory.service.gateway import AgentMemoryGateway
 from app.features.memory.service.runtime import MemoryRuntime, memory_runtime
+from app.features.research.service.runtime import ResearchRuntime
 from app.features.settings.keys_service import DbKeyReader
 from app.features.settings.service import SettingsModelReader, SettingsRunReader
 from app.providers.embeddings.ollama import OllamaEmbedder
@@ -224,6 +225,19 @@ async def open_memory_runtime(
     fournisseurs de `memory_providers` ou ceux qu'un test a injectés."""
     async with memory_runtime(session_factory, providers) as runtime:
         yield runtime
+
+
+@asynccontextmanager
+async def open_research_runtime(
+    session_factory: async_sessionmaker[AsyncSession],
+    research: ResearchProviders,
+    providers: Providers,
+) -> AsyncIterator[ResearchRuntime]:
+    """Ce que la recherche web partage entre les requêtes et les agents (verrous, lecteur de
+    clés), sur les fournisseurs de `research_providers` ou ceux qu'un test a injectés. La clé
+    Brave est lue comme celles des LLM : réglages d'abord, puis `.env`."""
+    keys = DbKeyReader(session_factory, providers.cipher, providers.env_keys)
+    yield ResearchRuntime(session_factory, research, keys)
 
 
 def key_test_http() -> httpx.AsyncClient:

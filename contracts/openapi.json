@@ -560,6 +560,35 @@
         "title": "Body_create_document_api_v1_documents_post",
         "type": "object"
       },
+      "BraveUsageOut": {
+        "description": "Requêtes Brave du mois civil UTC (`month` : « AAAA-MM ») pour la clé en vigueur.",
+        "properties": {
+          "cap": {
+            "title": "Cap",
+            "type": "integer"
+          },
+          "has_key": {
+            "title": "Has Key",
+            "type": "boolean"
+          },
+          "month": {
+            "title": "Month",
+            "type": "string"
+          },
+          "used": {
+            "title": "Used",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "has_key",
+          "used",
+          "cap",
+          "month"
+        ],
+        "title": "BraveUsageOut",
+        "type": "object"
+      },
       "ChunkOut": {
         "properties": {
           "id": {
@@ -2425,6 +2454,18 @@
         "title": "SearchResponse",
         "type": "object"
       },
+      "SearchUsageOut": {
+        "properties": {
+          "brave": {
+            "$ref": "#/components/schemas/BraveUsageOut"
+          }
+        },
+        "required": [
+          "brave"
+        ],
+        "title": "SearchUsageOut",
+        "type": "object"
+      },
       "SessionEvent": {
         "discriminator": {
           "mapping": {
@@ -2634,6 +2675,7 @@
             "items": {
               "type": "string"
             },
+            "maxItems": 50,
             "title": "Excluded Domains",
             "type": "array"
           },
@@ -2646,6 +2688,7 @@
             "items": {
               "type": "string"
             },
+            "maxItems": 50,
             "title": "Preferred Domains",
             "type": "array"
           },
@@ -2658,15 +2701,38 @@
           },
           "search_languages": {
             "items": {
+              "pattern": "^[a-z]{2}$",
               "type": "string"
             },
+            "maxItems": 6,
+            "minItems": 1,
             "title": "Search Languages",
             "type": "array"
           },
+          "search_max_pages": {
+            "default": 30,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Search Max Pages",
+            "type": "integer"
+          },
+          "search_max_queries": {
+            "default": 12,
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "title": "Search Max Queries",
+            "type": "integer"
+          },
           "search_provider_order": {
             "items": {
+              "enum": [
+                "searxng",
+                "brave"
+              ],
               "type": "string"
             },
+            "maxItems": 2,
+            "minItems": 1,
             "title": "Search Provider Order",
             "type": "array"
           },
@@ -2827,6 +2893,115 @@
           "score"
         ],
         "title": "SourceFoundPayload",
+        "type": "object"
+      },
+      "SourceOut": {
+        "properties": {
+          "author": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "lang": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lang"
+          },
+          "published": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "unreadable"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          },
+          "verdict": {
+            "enum": [
+              "pending",
+              "kept",
+              "rejected"
+            ],
+            "title": "Verdict",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "url",
+          "title",
+          "author",
+          "lang",
+          "published",
+          "status",
+          "verdict",
+          "score",
+          "reason"
+        ],
+        "title": "SourceOut",
         "type": "object"
       },
       "StartSessionRequest": {
@@ -3214,6 +3389,7 @@
             "items": {
               "type": "string"
             },
+            "maxItems": 50,
             "title": "Excluded Domains",
             "type": "array"
           },
@@ -3226,6 +3402,7 @@
             "items": {
               "type": "string"
             },
+            "maxItems": 50,
             "title": "Preferred Domains",
             "type": "array"
           },
@@ -3238,15 +3415,38 @@
           },
           "search_languages": {
             "items": {
+              "pattern": "^[a-z]{2}$",
               "type": "string"
             },
+            "maxItems": 6,
+            "minItems": 1,
             "title": "Search Languages",
             "type": "array"
           },
+          "search_max_pages": {
+            "default": 30,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Search Max Pages",
+            "type": "integer"
+          },
+          "search_max_queries": {
+            "default": 12,
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "title": "Search Max Queries",
+            "type": "integer"
+          },
           "search_provider_order": {
             "items": {
+              "enum": [
+                "searxng",
+                "brave"
+              ],
               "type": "string"
             },
+            "maxItems": 2,
+            "minItems": 1,
             "title": "Search Provider Order",
             "type": "array"
           },
@@ -4068,6 +4268,75 @@
         "summary": "Get Stats",
         "tags": [
           "memory"
+        ]
+      }
+    },
+    "/api/v1/research/sources": {
+      "get": {
+        "operationId": "get_sources_api_v1_research_sources_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SourceOut"
+                  },
+                  "title": "Response Get Sources Api V1 Research Sources Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Sources",
+        "tags": [
+          "research"
+        ]
+      }
+    },
+    "/api/v1/research/usage": {
+      "get": {
+        "operationId": "get_usage_api_v1_research_usage_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchUsageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Usage",
+        "tags": [
+          "research"
         ]
       }
     },

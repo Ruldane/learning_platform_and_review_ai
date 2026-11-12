@@ -30,8 +30,26 @@ async def test_spec_defaults(db_session: AsyncSession) -> None:
     )
     assert s.weekly_review == WeeklyReview(day="sunday", time="18:00")
     assert s.lesson_language == "fr" and s.search_languages == ["fr", "en"]
-    assert s.style_guide == "" and s.preferred_domains == [] and s.excluded_domains == []
+    assert s.style_guide == "" and "wikipedia.org" in s.preferred_domains
+    assert "linkedin.com" in s.excluded_domains
     assert s.agent_overrides == {} and s.search_provider_order == ["searxng", "brave"]
+    assert (s.search_max_queries, s.search_max_pages) == (12, 30)
+
+
+async def test_invalid_stored_search_settings_fall_back_to_defaults(
+    db_session: AsyncSession,
+) -> None:
+    await UserSettingsRepository(db_session, "u1").save_data(
+        {
+            "search_provider_order": ["bing"],
+            "excluded_domains": ["pas un domaine"],
+            "search_max_pages": 1000,
+            "search_languages": ["de"],
+        }
+    )
+    s = await SettingsService(db_session, "u1").get()
+    assert s.search_provider_order == ["searxng", "brave"] and s.search_max_pages == 30
+    assert "pinterest.com" in s.excluded_domains and s.search_languages == ["de"]
 
 
 async def test_replace_persists_and_is_isolated(db_session: AsyncSession) -> None:

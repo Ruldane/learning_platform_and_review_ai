@@ -1,7 +1,11 @@
-from sqlalchemy import func, select
+from datetime import datetime
+from typing import Any
+
+from sqlalchemy import Select, func, literal, select
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.db.base import new_id, utcnow
 from app.db.models.research import SearchUsage
 from app.db.repository import UserScopedRepository
 
@@ -26,6 +30,42 @@ class SearchUsageRepository(UserScopedRepository[SearchUsage]):
         )
         await self.session.execute(stmt)
 
+    async def reserve(self, provider: str, month: str, fingerprint: str, cap: int) -> bool:
+        """Ajoute 1 au compteur de l'utilisateur seulement si le total du mois pour cette clé
+        (tous utilisateurs, comme `month_total`) est sous `cap`. Une seule instruction
+        `INSERT … SELECT … WHERE total < cap ON CONFLICT DO UPDATE` : SQLite l'exécute sous son
+        verrou d'écriture, donc le contrôle et l'ajout sont indivisibles, même entre processus.
+        Rend vrai si une requête a été réservée."""
+        now: datetime = utcnow()
+        values = select(
+            literal(new_id()),
+            literal(self.user_id),
+            literal(provider),
+            literal(month),
+            literal(fingerprint),
+            literal(1),
+            literal(now, SearchUsage.created_at.type),
+            literal(now, SearchUsage.updated_at.type),
+        ).where(_total(provider, month, fingerprint).scalar_subquery() < cap)
+        columns = ["id", "user_id", "provider", "month", "key_fingerprint", "count"]
+        stmt = sqlite_insert(SearchUsage).from_select(
+            [*columns, "created_at", "updated_at"], values
+        )
+        stmt = stmt.on_conflict_do_update(
+            index_elements=["user_id", "provider", "month", "key_fingerprint"],
+            set_={"count": SearchUsage.count + 1, "updated_at": stmt.excluded.updated_at},
+        )
+        result = await self.session.execute(stmt)
+        return int(result.rowcount or 0) == 1  # type: ignore[attr-defined]
+
+
+def _total(provider: str, month: str, fingerprint: str) -> Select[Any]:
+    return select(func.coalesce(func.sum(SearchUsage.count), 0)).where(
+        SearchUsage.provider == provider,
+        SearchUsage.month == month,
+        SearchUsage.key_fingerprint == fingerprint,
+    )
+
 
 async def month_total(db: AsyncSession, *, provider: str, month: str, fingerprint: str) -> int:
     """Requêtes du mois pour une même clé, tous utilisateurs confondus (D75).
@@ -34,9 +74,4 @@ async def month_total(db: AsyncSession, *, provider: str, month: str, fingerprin
     utilisateurs en mode Google, et son plafond est celui du compte Brave, pas d'un utilisateur.
     Ne renvoie qu'un nombre, jamais une ligne ni un identifiant d'utilisateur.
     """
-    stmt = select(func.coalesce(func.sum(SearchUsage.count), 0)).where(
-        SearchUsage.provider == provider,
-        SearchUsage.month == month,
-        SearchUsage.key_fingerprint == fingerprint,
-    )
-    return int((await db.execute(stmt)).scalar_one())
+    return int((await db.execute(_total(provider, month, fingerprint))).scalar_one())

@@ -244,6 +244,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/research/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Sources */
+        get: operations["get_sources_api_v1_research_sources_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Usage */
+        get: operations["get_usage_api_v1_research_usage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sessions": {
         parameters: {
             query?: never;
@@ -684,6 +718,20 @@ export interface components {
             file?: string | null;
             /** Url */
             url?: string | null;
+        };
+        /**
+         * BraveUsageOut
+         * @description Requêtes Brave du mois civil UTC (`month` : « AAAA-MM ») pour la clé en vigueur.
+         */
+        BraveUsageOut: {
+            /** Cap */
+            cap: number;
+            /** Has Key */
+            has_key: boolean;
+            /** Month */
+            month: string;
+            /** Used */
+            used: number;
         };
         /** ChunkOut */
         ChunkOut: {
@@ -1404,6 +1452,10 @@ export interface components {
             /** Hits */
             hits: components["schemas"]["SearchHitOut"][];
         };
+        /** SearchUsageOut */
+        SearchUsageOut: {
+            brave: components["schemas"]["BraveUsageOut"];
+        };
         SessionEvent: components["schemas"]["AgentStartedEvent"] | components["schemas"]["AgentTokenEvent"] | components["schemas"]["AgentMessageEvent"] | components["schemas"]["ToolCalledEvent"] | components["schemas"]["ToolResultEvent"] | components["schemas"]["SourceFoundEvent"] | components["schemas"]["BoardUpdateEvent"] | components["schemas"]["MemoryWrittenEvent"] | components["schemas"]["InterruptRequestedEvent"] | components["schemas"]["ProposalReadyEvent"] | components["schemas"]["ArtifactReadyEvent"] | components["schemas"]["CostUpdatedEvent"] | components["schemas"]["RunCompletedEvent"] | components["schemas"]["RunFailedEvent"] | components["schemas"]["UserMessageEvent"];
         /**
          * SessionView
@@ -1479,8 +1531,18 @@ export interface components {
             reminder_delays_days?: number[];
             /** Search Languages */
             search_languages?: string[];
+            /**
+             * Search Max Pages
+             * @default 30
+             */
+            search_max_pages: number;
+            /**
+             * Search Max Queries
+             * @default 12
+             */
+            search_max_queries: number;
             /** Search Provider Order */
-            search_provider_order?: string[];
+            search_provider_order?: ("searxng" | "brave")[];
             /**
              * Session Token Cap
              * @default 300000
@@ -1541,6 +1603,35 @@ export interface components {
             title: string;
             /** Url */
             url: string;
+        };
+        /** SourceOut */
+        SourceOut: {
+            /** Author */
+            author: string | null;
+            /** Id */
+            id: string;
+            /** Lang */
+            lang: string | null;
+            /** Published */
+            published: string | null;
+            /** Reason */
+            reason: string | null;
+            /** Score */
+            score: number | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "unreadable";
+            /** Title */
+            title: string | null;
+            /** Url */
+            url: string;
+            /**
+             * Verdict
+             * @enum {string}
+             */
+            verdict: "pending" | "kept" | "rejected";
         };
         /** StartSessionRequest */
         StartSessionRequest: {
@@ -1717,8 +1808,18 @@ export interface components {
             reminder_delays_days?: number[];
             /** Search Languages */
             search_languages?: string[];
+            /**
+             * Search Max Pages
+             * @default 30
+             */
+            search_max_pages: number;
+            /**
+             * Search Max Queries
+             * @default 12
+             */
+            search_max_queries: number;
             /** Search Provider Order */
-            search_provider_order?: string[];
+            search_provider_order?: ("searxng" | "brave")[];
             /**
              * Session Token Cap
              * @default 300000
@@ -2256,6 +2357,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StatsOut"];
+                };
+            };
+        };
+    };
+    get_sources_api_v1_research_sources_get: {
+        parameters: {
+            query: {
+                session_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_usage_api_v1_research_usage_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchUsageOut"];
                 };
             };
         };

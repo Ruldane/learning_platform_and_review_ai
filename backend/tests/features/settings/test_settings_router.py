@@ -61,3 +61,75 @@ async def test_put_rejects_empty_model_or_provider_without_echo(client: httpx.As
     assert ["body", "tiers", "rapide", "model"] in locs
     assert ["body", "agent_overrides", "coach", "provider"] in locs
     assert "MODELE-ECHO-XYZ" not in r.text
+
+
+async def test_settings_defaults_include_starting_domain_lists(client: httpx.AsyncClient) -> None:
+    body = (await client.get("/api/v1/settings")).json()
+    assert body["preferred_domains"] == [
+        "wikipedia.org",
+        "arxiv.org",
+        "github.com",
+        "docs.python.org",
+        "developer.mozilla.org",
+        "pytorch.org",
+        "huggingface.co",
+        "scikit-learn.org",
+    ]
+    assert body["excluded_domains"] == [
+        "pinterest.com",
+        "facebook.com",
+        "instagram.com",
+        "tiktok.com",
+        "linkedin.com",
+    ]
+    assert body["search_provider_order"] == ["searxng", "brave"]
+    assert (body["search_max_queries"], body["search_max_pages"]) == (12, 30)
+    assert body["search_languages"] == ["fr", "en"]
+
+
+async def test_settings_rejects_unknown_provider_and_bad_domain(
+    client: httpx.AsyncClient,
+) -> None:
+    base = (await client.get("/api/v1/settings")).json()
+    for change in (
+        {"search_provider_order": ["moteur-ECHO-XYZ"]},
+        {"preferred_domains": ["pas un domaine ECHO-XYZ"]},
+        {"excluded_domains": ["https://10.0.0.1/ECHO-XYZ"]},
+    ):
+        r = await client.put("/api/v1/settings", json=base | change)
+        assert r.status_code == 422 and r.json()["error"]["code"] == "validation_error"
+        assert "ECHO-XYZ" not in r.text
+
+
+async def test_settings_search_bounds(client: httpx.AsyncClient) -> None:
+    base = (await client.get("/api/v1/settings")).json()
+    for change in (
+        {"search_provider_order": []},
+        {"search_provider_order": ["brave", "brave"]},
+        {"search_languages": []},
+        {"search_languages": ["fr", "fr"]},
+        {"search_languages": ["FR"]},
+        {"search_languages": ["fr", "en", "es", "de", "it", "pt", "nl"]},
+        {"preferred_domains": [f"d{i}.org" for i in range(51)]},
+        {"search_max_queries": 0},
+        {"search_max_queries": 51},
+        {"search_max_pages": 101},
+    ):
+        r = await client.put("/api/v1/settings", json=base | change)
+        assert r.status_code == 422, change
+
+
+async def test_settings_normalizes_domains(client: httpx.AsyncClient) -> None:
+    base = (await client.get("/api/v1/settings")).json()
+    change = {
+        "preferred_domains": ["https://WWW.Python.org/doc", "python.org", "Docs.Rs."],
+        "search_provider_order": ["brave", "searxng"],
+        "search_max_queries": 50,
+        "search_max_pages": 100,
+    }
+    r = await client.put("/api/v1/settings", json=base | change)
+    assert r.status_code == 200
+    assert r.json()["preferred_domains"] == ["python.org", "docs.rs"]
+    again = (await client.get("/api/v1/settings")).json()
+    assert again["search_provider_order"] == ["brave", "searxng"]
+    assert (again["search_max_queries"], again["search_max_pages"]) == (50, 100)

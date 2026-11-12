@@ -21,6 +21,8 @@ export function buildUserSettings(current: SettingsOut, tiers: TierChoices): Use
     preferred_domains: current.preferred_domains,
     reminder_delays_days: current.reminder_delays_days,
     search_languages: current.search_languages,
+    search_max_pages: current.search_max_pages,
+    search_max_queries: current.search_max_queries,
     search_provider_order: current.search_provider_order,
     session_token_cap: current.session_token_cap,
     style_guide: current.style_guide,

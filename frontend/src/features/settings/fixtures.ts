@@ -21,6 +21,8 @@ export const settingsFixture: SettingsOut = {
   preferred_domains: [],
   reminder_delays_days: [7, 14, 21],
   search_languages: ["fr", "en"],
+  search_max_pages: 30,
+  search_max_queries: 12,
   search_provider_order: ["searxng", "brave"],
   session_token_cap: 300_000,
   style_guide: "",
