@@ -9,7 +9,6 @@ Journaux : identifiants seulement (SPEC 17.2)."""
 
 import logging
 from collections.abc import Awaitable, Callable, Mapping, Sequence
-from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -23,20 +22,12 @@ from app.agents.tools.council_port import (
     ProposalRef,
     SavedProposal,
 )
-from app.features.learning.repository import GoalRepository
 from app.features.learning.service import boards, goals, proposals
 from app.features.learning.service.choice import write_choice
+from app.features.learning.service.launching import launch_program, program_session
 from app.features.learning.service.runtime import LearningRuntime
-from app.features.sessions.service import find_active_session
 
 logger = logging.getLogger(__name__)
-
-
-def program_input(goal_id: str, choice: Choice) -> dict[str, Any]:
-    """Entrée de `program_builder` (`ProgramBuilderInput`) ; ids dédoublonnés dans l'ordre."""
-    start = choice.start_date.isoformat() if choice.start_date is not None else None
-    ids = list(dict.fromkeys(choice.proposal_ids))
-    return {"goal_id": goal_id, "proposal_ids": ids, "start_date": start}
 
 
 class AgentCouncilStore:
@@ -125,17 +116,10 @@ class AgentCouncilStore:
         `program_builder` ouverte → rendue telle quelle ; sinon lancée. L'objectif passe à
         « chosen »."""
         async with self._learning.goal_lock(user_id, goal_id):
-            existing = await self._run(lambda db: _program_session(db, user_id, goal_id))
+            existing = await self._run(lambda db: program_session(db, user_id, goal_id))
             if existing is not None:
                 return existing
-            session_id = await self._launcher.start(
-                user_id,
-                goals.PROGRAM_GRAPH,
-                program_input(goal_id, choice),
-                subject_type=goals.SUBJECT,
-                subject_id=goal_id,
-            )
-            await self._run(lambda db: _mark_chosen(db, user_id, goal_id))
+            session_id = await launch_program(self._db, self._launcher, user_id, goal_id, choice)
         logger.info(
             "Programme lancé : utilisateur %s, objectif %s, session %s",
             user_id,
@@ -156,20 +140,3 @@ async def _save_batch(
     return await proposals.save_proposals(
         db, user_id, session_id, goal_id, batch=batch, proposals=drafts
     )
-
-
-async def _program_session(db: AsyncSession, user_id: str, goal_id: str) -> str | None:
-    await goals.owned_goal(db, user_id, goal_id)
-    program = await GoalRepository(db, user_id).latest_program(goal_id)
-    if program is not None and program[1] is not None:
-        return program[1]
-    return await find_active_session(
-        db, user_id, graph=goals.PROGRAM_GRAPH, subject_type=goals.SUBJECT, subject_id=goal_id
-    )
-
-
-async def _mark_chosen(db: AsyncSession, user_id: str, goal_id: str) -> None:
-    goal = await goals.owned_goal(db, user_id, goal_id)
-    if goal.status == "council":
-        goal.status = "chosen"
-        await db.flush()

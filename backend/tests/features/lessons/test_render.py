@@ -67,11 +67,16 @@ async def test_lesson_html_has_no_content_script(fake_html_renderer: FakeHtmlRen
     assert "totalPages" in doc.footer_html and "<script" not in doc.footer_html
     assert doc.wait_for_expression == LESSON_READY
     html = doc.index_html
-    for trap in ("onerror", "onmouseover", "<img", "<iframe", "169.254", "evil.", "<b>", "<b "):
+    for trap in ("<img", "<iframe", "<b>", "<b "):
         assert trap not in html, trap
+    # Un bloc HTML devient du texte échappé (D97), une balise en ligne est retirée (D89) :
+    # aucune balise ni attribut ne porte un piège.
+    tags = " ".join(re.findall(r"<[^>]*>", html))
+    for trap in ("onerror", "onmouseover", "169.254", "evil.", "file:", "backend:8000"):
+        assert trap not in tags, trap
+    assert "&lt;img src=" in html and "onmouseover" not in html  # bloc échappé, en ligne retiré
     # Un lien refusé reste du texte inerte ; aucune adresse non http(s) dans un attribut.
     assert set(re.findall(r'href="([a-z]+):', html)) <= {"https"}
-    assert "file:" not in html and "backend:8000" not in html
     assert html.count('<pre class="mermaid">') == 1  # click et %%{init} refusés
     assert html.count("diagram-unavailable") == 2
     assert doc.assets["mermaid.min.js"] == asset("mermaid.min.js")
@@ -81,6 +86,7 @@ async def test_lesson_page_has_toc_callouts_and_csp(fake_html_renderer: FakeHtml
     await render_lesson_pdf(fake_html_renderer, title=SECRET_TITLE, markdown=TRAPPED, language="fr")
     html = fake_html_renderer.documents[0].index_html
     assert '<html lang="fr">' in html
+    assert html.count("<h1") == 1  # titre en couverture seulement, pas en double (D97)
     assert "<title>Titre &lt;script&gt;alert(3)&lt;/script&gt; secret</title>" in html
     assert '<nav class="toc">' in html and "Sommaire" in html
     assert re.search(r'<a href="#s2-l-essentiel-en-5-lignes">L(&#39;|\')essentiel', html)

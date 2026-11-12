@@ -1,5 +1,6 @@
-"""API de l'apprentissage (SPEC 14.2, D87) : objectifs (la création lance le Conseil),
-propositions du dernier lot, choix du parcours, états du tableau. Les autres actions du Conseil
+"""API de l'apprentissage (SPEC 14.2, D87) : objectifs (la création lance le Conseil, une
+relance le reprend après un échec, D97), propositions du dernier lot, choix du parcours, états
+du tableau. Les autres actions du Conseil
 (réponse au cadrage, commandes, messages) passent par les routes des sessions."""
 
 from typing import Annotated
@@ -19,7 +20,7 @@ from app.features.learning.schemas import (
     GoalStarted,
     ProposalOut,
 )
-from app.features.learning.service import boards, choice, goals, proposals
+from app.features.learning.service import boards, choice, goals, launching, proposals
 from app.features.learning.service.runtime import LearningRuntime
 
 router = APIRouter(tags=["learning"])
@@ -49,6 +50,17 @@ async def list_goals(current: CurrentUserDep, db: Db) -> list[GoalOut]:
 @router.get("/goals/{goal_id}", response_model=GoalOut)
 async def get_goal(goal_id: str, current: CurrentUserDep, db: Db) -> GoalOut:
     return await goals.get_goal(db, current.id, goal_id)
+
+
+@router.post(
+    "/goals/{goal_id}/council", status_code=http.HTTP_202_ACCEPTED, response_model=GoalStarted
+)
+async def retry_council(
+    goal_id: str, current: CurrentUserDep, learning: LearningDep
+) -> GoalStarted:
+    """Relance depuis le début le Conseil de l'objectif, seulement si sa dernière session a
+    échoué (409 `council_not_failed` sinon, `goal_already_chosen` si un programme est lancé)."""
+    return await launching.retry_council(learning, current.id, goal_id)
 
 
 @router.get("/goals/{goal_id}/proposals", response_model=list[ProposalOut])

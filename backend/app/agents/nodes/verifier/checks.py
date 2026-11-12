@@ -40,7 +40,10 @@ MAX_OBJECTIVES = 3
 ESSENTIAL_LINES = 5
 SELF_TEST_QUESTIONS = 5
 
-_MD = MarkdownIt("commonmark", {"html": False}).enable("table")
+# Le parseur du rendu (`lessons.service.markdown`, `html: True`) : le Vérificateur voit la leçon
+# comme le PDF la verra, HTML brut compris (D97).
+_MD = MarkdownIt("commonmark", {"html": True}).enable("table")
+_RAW_HTML_SHOWN = 40
 _BARE_URL = re.compile(r"https?://[^\s<>\"')\]]+")
 _MARKER = re.compile(r"\[(\d+)\]")
 _TRAILING = ".,;:!?"
@@ -62,6 +65,7 @@ class _Parsed:
     mermaid: list[str]
     texts: list[str]  # texte courant de chaque bloc (code exclu)
     links: list[str]
+    raw_html: list[str]  # HTML brut hors des blocs de code (`html_block`, `html_inline`)
 
 
 def _key(text: str) -> str:
@@ -86,7 +90,7 @@ def _inline_links(token: Token) -> list[str]:
 
 
 def _parse(markdown: str) -> _Parsed:
-    parsed = _Parsed([], [], {}, [], [], [])
+    parsed = _Parsed([], [], {}, [], [], [], [])
     section = ""
     tokens = _MD.parse(markdown)
     for index, token in enumerate(tokens):
@@ -99,9 +103,13 @@ def _parse(markdown: str) -> _Parsed:
             parsed.items[section] = parsed.items.get(section, 0) + 1
         elif token.type == "fence" and token.info.strip().lower() == "mermaid":
             parsed.mermaid.append(token.content)
+        elif token.type == "html_block":
+            parsed.raw_html.append(token.content)
         elif token.type == "inline":
             parsed.texts.append(_inline_text(token))
             parsed.links += _inline_links(token)
+            kids = token.children or []
+            parsed.raw_html += [c.content for c in kids if c.type == "html_inline"]
     return parsed
 
 
@@ -165,6 +173,18 @@ def _diagrams(parsed: _Parsed) -> list[str]:
     return problems
 
 
+def _raw_html(parsed: _Parsed) -> list[str]:
+    """Le rendu retire une balise en ligne et montre un bloc HTML en texte brut (D97) : la leçon
+    n'en contient donc aucun hors du code."""
+    if not parsed.raw_html:
+        return []
+    first = " ".join(parsed.raw_html[0].split())[:_RAW_HTML_SHOWN]
+    return [
+        f"HTML brut hors d'un bloc de code ({len(parsed.raw_html)} fois, dont « {first} ») : "
+        "mets toute balise entre accents graves, par exemple `<pre>`, ou dans un bloc de code."
+    ]
+
+
 def _length(words: int) -> list[str]:
     if MIN_WORDS <= words <= MAX_WORDS:
         return []
@@ -212,6 +232,7 @@ def check_lesson(
     words = sum(len(text.split()) for text in parsed.texts)
     problems = [
         *_structure(parsed, title),
+        *_raw_html(parsed),
         *_counts(parsed),
         *_diagrams(parsed),
         *_length(words),

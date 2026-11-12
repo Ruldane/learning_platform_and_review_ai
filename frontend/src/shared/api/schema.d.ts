@@ -148,6 +148,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/goals/{goal_id}/council": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Retry Council
+         * @description Relance depuis le début le Conseil de l'objectif, seulement si sa dernière session a
+         *     échoué (409 `council_not_failed` sinon, `goal_already_chosen` si un programme est lancé).
+         */
+        post: operations["retry_council_api_v1_goals__goal_id__council_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/goals/{goal_id}/proposals": {
         parameters: {
             query?: never;
@@ -571,7 +592,8 @@ export interface paths {
         };
         /**
          * Get Resource File
-         * @description Copie locale du PDF libre ; 404 `resource_file_missing` s'il n'y en a pas.
+         * @description Copie locale du PDF libre, en téléchargement ; 404 `resource_file_missing` s'il n'y en a
+         *     pas.
          */
         get: operations["get_resource_file_api_v1_resources__resource_id__file_get"];
         put?: never;
@@ -1125,7 +1147,8 @@ export interface components {
         /**
          * ChooseOut
          * @description `already_chosen` : ce même choix était déjà fait (double clic, reprise générique) ; la
-         *     requête n'a rien changé, `start_date` comprise (D87).
+         *     requête n'a rien changé, `start_date` comprise (D87). Faux aussi quand ce même choix relance
+         *     le Stratège, dont la session a échoué sans programme (D97).
          */
         ChooseOut: {
             /**
@@ -1144,7 +1167,8 @@ export interface components {
         /**
          * ChooseRequest
          * @description `mix_with` : seconde proposition du même lot (mélange) ; `start_date` : début souhaité du
-         *     programme (prochain lundi par défaut).
+         *     programme, un lundi, aujourd'hui ou plus tard (sinon 422 `invalid_start_date`) ; prochain
+         *     lundi par défaut.
          */
         ChooseRequest: {
             /** Mix With */
@@ -3109,6 +3133,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BoardOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retry_council_api_v1_goals__goal_id__council_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalStarted"];
                 };
             };
             /** @description Validation Error */

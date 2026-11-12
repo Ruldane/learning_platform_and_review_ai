@@ -2,9 +2,11 @@
 a lu des pages web : son texte est **non fiable**.
 
 1. `markdown-it-py` en `commonmark` avec tables ; le **HTML brut n'est jamais rendu** : le
-   parseur le reconnaît (balise, commentaire, bloc) pour le **retirer** (règles de rendu vides),
-   ce qui est plus strict que l'échapper (D89) ; une image devient son texte de remplacement
-   (rien n'est chargé).
+   parseur le reconnaît pour le neutraliser. Une balise en ligne (`html_inline`) est **retirée**
+   (D89) ; un bloc HTML (`html_block`) devient du **texte échappé** dans un `<p>` (D97) : un
+   `<pre>` ou `<script>` jamais refermé, qui court jusqu'à la fin du document, n'avale plus la
+   suite de la leçon. Le Vérificateur refuse de toute façon le HTML brut hors du code. Une image
+   devient son texte de remplacement (rien n'est chargé).
 2. Bloc ```` ```mermaid ```` : analysé par la grammaire stricte du Scribe puis **réémis**
    (`normalize_mermaid`, D85 §11f) ; seule la version régénérée entre dans `<pre class="mermaid">`,
    au texte échappé. Refusé : un encadré « schéma indisponible », jamais le code d'origine.
@@ -73,13 +75,17 @@ def _dropped(_renderer: Any, _tokens: Sequence[Token], _idx: int, _opts: Any, _e
     return ""
 
 
-# `html: True` pour le parseur seulement : le HTML brut devient des jetons `html_inline` /
-# `html_block`, rendus vides (jamais copiés ni échappés).
+def _escaped_block(_renderer: Any, tokens: Sequence[Token], idx: int, _opts: Any, _env: Any) -> str:
+    return f"<p>{escapeHtml(tokens[idx].content.strip())}</p>\n"
+
+
+# `html: True` pour le parseur seulement : le HTML brut devient des jetons `html_inline`
+# (retirés) et `html_block` (texte échappé), jamais copiés tels quels.
 _MD = MarkdownIt("commonmark", {"html": True}).enable("table")
 _MD.add_render_rule("fence", _fence)
 _MD.add_render_rule("image", _image)
 _MD.add_render_rule("html_inline", _dropped)
-_MD.add_render_rule("html_block", _dropped)
+_MD.add_render_rule("html_block", _escaped_block)
 
 
 def _plain(inline: Token) -> str:
@@ -130,9 +136,21 @@ def _clean(html: str) -> str:
     )
 
 
-def markdown_to_html(markdown: str) -> RenderedMarkdown:
+def _without_title(tokens: list[Token]) -> list[Token]:
+    """Sans le premier titre h1 placé avant toute section : le PDF le porte déjà en couverture."""
+    for index, token in enumerate(tokens):
+        if token.type == "heading_open" and token.level == 0 and token.tag in ("h1", "h2"):
+            return tokens[:index] + tokens[index + 3 :] if token.tag == "h1" else tokens
+    return tokens
+
+
+def markdown_to_html(markdown: str, *, drop_title: bool = False) -> RenderedMarkdown:
+    """`drop_title` : retire le titre `# …` du début (PDF seulement, D97) ; la vue de
+    l'application lit le Markdown tel quel."""
     env: dict[str, Any] = {"diagrams": 0}
     tokens = _MD.parse(markdown[:MAX_MARKDOWN_CHARS], env)
+    if drop_title:
+        tokens = _without_title(tokens)
     toc: list[tuple[str, str]] = []
     parts: list[str] = []
     for chunk in _chunks(tokens):

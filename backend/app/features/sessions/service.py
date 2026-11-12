@@ -2,6 +2,8 @@
 (qui ouvre ses propres sessions de base courtes et applique les règles de statut, D46)."""
 
 import builtins
+from dataclasses import dataclass
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,11 +27,13 @@ from app.features.sessions.schemas import (
 __all__ = [
     "MessageRequest",
     "ResumeRequest",
+    "SessionFacts",
     "SessionView",
     "SessionsService",
     "find_active_session",
     "find_latest_session",
     "list_open_sessions",
+    "session_facts",
     "to_view",
 ]
 
@@ -81,6 +85,19 @@ async def find_latest_session(
     return await SessionReadRepository(db, user_id).latest(
         graph=graph, subject_type=subject_type, subject_id=subject_id
     )
+
+
+@dataclass(frozen=True)
+class SessionFacts:
+    status: str
+    input: dict[str, Any]
+
+
+async def session_facts(db: AsyncSession, user_id: str, session_id: str) -> SessionFacts | None:
+    """Statut et entrée d'une session de l'utilisateur (relance d'un parcours en échec, D97),
+    `None` si elle n'existe pas. Lecture pour les autres features (contrat 2)."""
+    row = await SessionReadRepository(db, user_id).get(session_id)
+    return None if row is None else SessionFacts(row.status, dict(row.input or {}))
 
 
 class SessionsService:

@@ -49,9 +49,18 @@ _FENCE = re.compile(r"^```[a-z]*\s*\n|\n?```\s*$")
 logger = logging.getLogger(__name__)
 
 
+MIN_TITLE_CHARS = 3
+
+
 class BoardDraft(BaseModel):
-    title: str = Field(min_length=3, max_length=120)
+    title: str = Field(min_length=MIN_TITLE_CHARS, max_length=120)
     mermaid: str = Field(min_length=10, max_length=6000)
+
+
+def _title_problems(title: str) -> list[str]:
+    if len(title) < MIN_TITLE_CHARS:
+        return [f"Titre trop court : {MIN_TITLE_CHARS} caractères au moins."]
+    return []
 
 
 def _clean(code: str) -> str:
@@ -92,17 +101,18 @@ async def _valid_draft(
             if exc.code != INVALID_OUTPUT_CODE:
                 raise
             return None
-        draft = BoardDraft(title=" ".join(draft.title.split()), mermaid=_clean(draft.mermaid))
-        problems = mermaid_problems(draft.mermaid)
+        # Nettoyé, le brouillon n'est pas revalidé (une `ValidationError` sortirait du nœud et
+        # ferait échouer le Conseil) : ses défauts sont des refus, donc une nouvelle demande.
+        title, code = " ".join(draft.title.split()), _clean(draft.mermaid)
+        problems = _title_problems(title) + mermaid_problems(code)
         if not problems:
-            return BoardDraft.model_construct(
-                title=draft.title, mermaid=normalize_mermaid(draft.mermaid)
-            )
+            return BoardDraft.model_construct(title=title, mermaid=normalize_mermaid(code))
         if attempt == 0:
             refused = "\n".join(f"- {problem}" for problem in problems)
+            shown = {"title": title, "mermaid": code}
             messages = [
                 *messages,
-                AIMessage(json.dumps(draft.model_dump(), ensure_ascii=False)),
+                AIMessage(json.dumps(shown, ensure_ascii=False)),
                 HumanMessage(f"Schéma refusé :\n{refused}\nRedessine-le en respectant les règles."),
             ]
     return None

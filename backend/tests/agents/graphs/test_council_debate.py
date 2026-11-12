@@ -222,3 +222,17 @@ async def test_scout_debates_with_the_practitioners_it_spotted(
     assert prompt.rfind("<<<CONTENU_NON_FIABLE", 0, line) > prompt.rfind("<<<FIN_", 0, line)
     others = [m for m in await c.agent_messages(step_prefix="positions") if m.agent != "scout"]
     assert all("Ada Lovelace" not in c.prompt_of(m) for m in others)
+
+
+async def test_board_invalid_once_cleaned_is_asked_again(make_council_runner: MakeCouncil) -> None:
+    """Revue finale de la phase 4, M1 : un titre trop court une fois nettoyé n'interrompt pas le
+    Conseil (pas de `ValidationError`) ; il compte comme un refus, et le Scribe redessine."""
+    models = CouncilModels()
+    short = json.dumps({"title": "  ab ", "mermaid": 'flowchart TD\nA["Bases"] --> B["Projet"]'})
+    fenced = json.dumps({"title": "Carte", "mermaid": "```\nA-->B\n```"})
+    models.when("scribe", "dessiner la carte du domaine", short, fenced)
+    c = await make_council_runner(models=models)
+    await c.to_choice()
+    kinds = [x["kind"] for x in await c.events("board.update")]
+    assert "domain_map" not in kinds and kinds[0] == "prerequisites"
+    assert sum("Schéma refusé" in call.prompt for call in models.calls) == 1

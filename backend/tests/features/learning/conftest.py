@@ -7,6 +7,7 @@ Aucun appel LLM ni réseau."""
 import asyncio
 from collections.abc import Iterator
 from dataclasses import dataclass, field
+from datetime import date, timedelta
 from typing import Any
 
 import httpx
@@ -24,6 +25,7 @@ from app.agents.runtime.deps import GraphDeps
 from app.agents.state.learning_council import CouncilState
 from app.agents.state.program_builder import ProgramState
 from app.agents.tools.council_port import ProposalDraft
+from app.core.errors import AppError
 from tests.sessions_support import use_test_runtime, wait_status
 
 GOALS = "/api/v1/goals"
@@ -34,10 +36,14 @@ GOAL_TEXT = "Devenir AI product engineer"
 class Stub:
     """`batches` : lots proposés avant la question ; `hold` : le Conseil attend cet événement
     avant la question (session `running`) ; `resumed` : réponses reçues par `ask_choice` ;
-    `batch_ids` : ids de chaque lot ; `program_inputs` : entrées de `program_builder`."""
+    `batch_ids` : ids de chaque lot ; `program_inputs` : entrées de `program_builder` ;
+    `council_failures` / `program_failures` : nombre de sessions qui échouent d'abord (le Conseil
+    après son lot, avant la question ; `program_builder` avant toute écriture)."""
 
     batches: int = 1
     hold: asyncio.Event | None = None
+    council_failures: int = 0
+    program_failures: int = 0
     resumed: list[Any] = field(default_factory=list)
     batch_ids: dict[int, list[str]] = field(default_factory=dict)
     program_inputs: list[dict[str, Any]] = field(default_factory=list)
@@ -86,6 +92,9 @@ def _council(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
     async def gate(state: CouncilState) -> CouncilState:
         if STUB.hold is not None:
             await STUB.hold.wait()
+        if STUB.council_failures > 0:
+            STUB.council_failures -= 1
+            raise AppError("structured_output_invalid", "Sortie du modèle invalide.", 502)
         return {}
 
     graph = StateGraph(CouncilState)
@@ -107,6 +116,9 @@ def _council(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
 def _program(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
     async def wait_validation(state: ProgramState) -> ProgramState:
         STUB.program_inputs.append(dict(state))
+        if STUB.program_failures > 0:
+            STUB.program_failures -= 1
+            raise AppError("structured_output_invalid", "Sortie du modèle invalide.", 502)
         interrupt({"kind": "validate_program", "question": "Valider ?", "options": []})
         return {}
 
@@ -178,6 +190,12 @@ async def count_sessions(client: httpx.AsyncClient, graph: str) -> int:
 async def chosen_ids(client: httpx.AsyncClient, goal_id: str) -> set[str]:
     rows = (await client.get(f"{GOALS}/{goal_id}/proposals")).json()
     return {p["id"] for p in rows if p["chosen"]}
+
+
+def next_monday(weeks: int = 1) -> str:
+    """Un lundi à venir (`weeks` semaines après le prochain), au format ISO."""
+    today = date.today()
+    return (today + timedelta(days=7 - today.weekday() + 7 * (weeks - 1))).isoformat()
 
 
 def me(app: FastAPI) -> str:

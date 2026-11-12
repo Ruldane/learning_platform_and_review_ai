@@ -751,7 +751,7 @@
         "type": "object"
       },
       "ChooseOut": {
-        "description": "`already_chosen` : ce même choix était déjà fait (double clic, reprise générique) ; la\nrequête n'a rien changé, `start_date` comprise (D87).",
+        "description": "`already_chosen` : ce même choix était déjà fait (double clic, reprise générique) ; la\nrequête n'a rien changé, `start_date` comprise (D87). Faux aussi quand ce même choix relance\nle Stratège, dont la session a échoué sans programme (D97).",
         "properties": {
           "already_chosen": {
             "default": false,
@@ -783,7 +783,7 @@
         "type": "object"
       },
       "ChooseRequest": {
-        "description": "`mix_with` : seconde proposition du même lot (mélange) ; `start_date` : début souhaité du\nprogramme (prochain lundi par défaut).",
+        "description": "`mix_with` : seconde proposition du même lot (mélange) ; `start_date` : début souhaité du\nprogramme, un lundi, aujourd'hui ou plus tard (sinon 422 `invalid_start_date`) ; prochain\nlundi par défaut.",
         "properties": {
           "mix_with": {
             "anyOf": [
@@ -5534,6 +5534,49 @@
         ]
       }
     },
+    "/api/v1/goals/{goal_id}/council": {
+      "post": {
+        "description": "Relance depuis le début le Conseil de l'objectif, seulement si sa dernière session a\néchoué (409 `council_not_failed` sinon, `goal_already_chosen` si un programme est lancé).",
+        "operationId": "retry_council_api_v1_goals__goal_id__council_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "goal_id",
+            "required": true,
+            "schema": {
+              "title": "Goal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoalStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Retry Council",
+        "tags": [
+          "learning"
+        ]
+      }
+    },
     "/api/v1/goals/{goal_id}/proposals": {
       "get": {
         "operationId": "list_proposals_api_v1_goals__goal_id__proposals_get",
@@ -6775,7 +6818,7 @@
     },
     "/api/v1/resources/{resource_id}/file": {
       "get": {
-        "description": "Copie locale du PDF libre ; 404 `resource_file_missing` s'il n'y en a pas.",
+        "description": "Copie locale du PDF libre, en téléchargement ; 404 `resource_file_missing` s'il n'y en a\npas.",
         "operationId": "get_resource_file_api_v1_resources__resource_id__file_get",
         "parameters": [
           {

@@ -38,6 +38,14 @@ def unwrap(text: str) -> str:
     return (match.group(1) if match else text).strip()
 
 
+def _checks(state: LessonFactoryState) -> str:
+    """Contrôles du Vérificateur rendus au Rédacteur, encadrés comme non fiables (SPEC 17.4) :
+    ils citent la leçon (liens, titres) et les affirmations choisies par un modèle."""
+    lines = [f"- Problème : {p}" for p in state.get("problems", [])[:MAX_PROBLEMS_SHOWN]]
+    lines += [f"- Affirmation non sourcée : {c}" for c in state.get("unsupported", [])]
+    return untrusted("\n".join(lines), "contrôles du Vérificateur")
+
+
 def make_write(deps: GraphDeps) -> Node:
     @node_timeout(WRITE_TIMEOUT_S)
     async def write(state: LessonFactoryState) -> LessonFactoryState:
@@ -56,8 +64,7 @@ def make_write(deps: GraphDeps) -> Node:
             target_words=TARGET_WORDS,
             previous=untrusted(previous, "version précédente") if previous else "",
             revision=revision,
-            problems=state.get("problems", [])[:MAX_PROBLEMS_SHOWN] if previous else [],
-            unsupported=state.get("unsupported", []) if previous else [],
+            checks=_checks(state) if previous else "",
         )
         model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
         reply = await invoke_agent(

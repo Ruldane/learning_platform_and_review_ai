@@ -72,7 +72,7 @@ def lesson_document(
 async def render_lesson_pdf(
     renderer: HtmlPdfRenderer, *, title: str, markdown: str, language: str
 ) -> bytes:
-    content = markdown_to_html(markdown)
+    content = markdown_to_html(markdown, drop_title=True)  # le titre est déjà en couverture
 
     def page(scripts: bool) -> HtmlDocument:
         return lesson_document(

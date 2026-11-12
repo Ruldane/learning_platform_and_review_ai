@@ -142,3 +142,30 @@ def test_headings_inside_code_blocks_are_ignored() -> None:
 def test_problems_are_in_french_and_never_empty_strings() -> None:
     found = problems_of("Du texte sans structure.")
     assert found and all(p.strip() for p in found)
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        "<pre>\nx",  # bloc HTML de type 1 jamais refermé : avalerait toute la suite au rendu
+        "<script> charge un fichier.",
+        "Un `List` de <String> en Java.",  # balise en ligne
+        "<!-- note -->",
+    ],
+)
+def test_raw_html_outside_code_is_refused(raw: str) -> None:
+    lesson = with_section_text(lesson_markdown(1500), "Explication", raw)
+    found = problems_of(lesson)
+    assert any("HTML brut hors d'un bloc de code" in p for p in found), found
+
+
+def test_review_reproduction_keeps_sections_seen_by_the_renderer() -> None:
+    """Revue finale de la phase 4, I2 : le Vérificateur lit comme le rendu (`html: True`)."""
+    found = problems_of("## Objectifs\n- a\n<pre>\nx\n## Explication\nLong texte important.\n")
+    assert any("HTML brut" in p for p in found)
+    assert any("Section manquante : « ## Explication »" in p for p in found)
+
+
+def test_html_inside_code_is_accepted() -> None:
+    code = "Écrire `<script>` ou :\n\n```html\n<pre>\n<script>x</script>\n```"
+    assert problems_of(with_section_text(lesson_markdown(1500), "Explication", code)) == []

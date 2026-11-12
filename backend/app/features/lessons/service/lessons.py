@@ -8,7 +8,7 @@ from app.db.models.lessons import Lesson
 from app.features.lessons.repository import LessonRepository, ResourceRepository
 from app.features.lessons.schemas import LessonOut, LessonSummaryOut
 from app.features.lessons.service.resources import to_out
-from app.features.lessons.service.status import open_lesson_sessions, shown
+from app.features.lessons.service.status import read_with_open_sessions, shown
 from app.features.program.service.programs import Loaded, load
 from app.providers.storage.base import FileStorage, StorageKeyInvalid
 
@@ -41,13 +41,8 @@ def _summary(lesson: Lesson, week_rank: int, open_ids: list[str]) -> dict[str, o
     }
 
 
-async def _open_ids(
-    db: AsyncSession, user_id: str, program_id: str, rows: list[Lesson]
-) -> list[str]:
-    """Sessions de leçon ouvertes, lues seulement si une leçon est `generating`."""
-    if not any(row.status == "generating" for row in rows):
-        return []
-    return await open_lesson_sessions(db, user_id, program_id)
+def _states(rows: list[Lesson]) -> list[tuple[str, str | None]]:
+    return [(row.status, row.session_id) for row in rows]
 
 
 async def list_lessons(db: AsyncSession, user_id: str, program_id: str) -> list[LessonSummaryOut]:
@@ -57,9 +52,14 @@ async def list_lessons(db: AsyncSession, user_id: str, program_id: str) -> list[
     loaded = await load(db, user_id, program_id)
     ranks = _week_ranks(loaded)
     order = {module.id: index for index, module in enumerate(loaded.modules)}
-    rows = await LessonRepository(db, user_id).for_program(program_id)
+    rows, open_ids = await read_with_open_sessions(
+        db,
+        user_id,
+        program_id,
+        lambda: LessonRepository(db, user_id).for_program(program_id),
+        _states,
+    )
     rows.sort(key=lambda lesson: order.get(lesson.module_id, len(order)))
-    open_ids = await _open_ids(db, user_id, program_id, rows)
     return [
         LessonSummaryOut.model_validate(_summary(row, ranks.get(row.module_id, 0), open_ids))
         for row in rows
@@ -74,10 +74,16 @@ async def _owned(db: AsyncSession, user_id: str, lesson_id: str) -> Lesson:
 
 
 async def get_lesson(db: AsyncSession, user_id: str, lesson_id: str) -> LessonOut:
-    lesson = await _owned(db, user_id, lesson_id)
+    found = await _owned(db, user_id, lesson_id)  # son programme, puis relue après les sessions
+    lesson, open_ids = await read_with_open_sessions(
+        db,
+        user_id,
+        found.program_id,
+        lambda: _owned(db, user_id, lesson_id),
+        lambda x: _states([x]),
+    )
     loaded = await load(db, user_id, lesson.program_id)
     resources = await ResourceRepository(db, user_id).for_module(lesson.module_id)
-    open_ids = await _open_ids(db, user_id, lesson.program_id, [lesson])
     return LessonOut.model_validate(
         {
             **_summary(lesson, _week_ranks(loaded).get(lesson.module_id, 0), open_ids),

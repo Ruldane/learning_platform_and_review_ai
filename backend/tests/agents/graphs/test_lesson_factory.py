@@ -114,6 +114,7 @@ async def test_unsupported_claim_triggers_revision(make_lesson_runner: MakeLesso
     await c.wait_status("completed")
     assert c.writer_calls == 2
     assert f"Affirmation non sourcée : {claim}" in c.prompt_of_writer(2)
+    assert 'source="contrôles du Vérificateur"' in c.prompt_of_writer(2)
     assert "Affirmation non sourcée" not in c.prompt_of_writer(1)
     assert "Révision n° 1" in c.prompt_of_writer(2)
     pub = c.store.published[0]
@@ -124,7 +125,12 @@ async def test_check_problems_are_sent_to_the_writer(make_lesson_runner: MakeLes
     c = await make_lesson_runner(writer=[BAD])
     await c.wait_status("completed")
     assert c.writer_calls == 2
-    assert "Problème : La leçon fait 900 mots" in c.prompt_of_writer(2)
+    prompt = c.prompt_of_writer(2)
+    assert "Problème : La leçon fait 900 mots" in prompt
+    # Revue finale de la phase 4, M4 : les contrôles citent la leçon, donc le web.
+    frame = '<<<CONTENU_NON_FIABLE source="contrôles du Vérificateur">>>'
+    assert frame in prompt
+    assert prompt.index(frame) < prompt.index("Problème : La leçon fait 900 mots")
     assert c.store.published[0].markdown == GOOD_LESSON.strip()
 
 

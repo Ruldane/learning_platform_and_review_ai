@@ -84,7 +84,8 @@ class ProposalOut(BaseModel):
 
 class ChooseRequest(BaseModel):
     """`mix_with` : seconde proposition du même lot (mélange) ; `start_date` : début souhaité du
-    programme (prochain lundi par défaut)."""
+    programme, un lundi, aujourd'hui ou plus tard (sinon 422 `invalid_start_date`) ; prochain
+    lundi par défaut."""
 
     mix_with: _Id | None = None
     start_date: date | None = None
@@ -92,7 +93,8 @@ class ChooseRequest(BaseModel):
 
 class ChooseOut(BaseModel):
     """`already_chosen` : ce même choix était déjà fait (double clic, reprise générique) ; la
-    requête n'a rien changé, `start_date` comprise (D87)."""
+    requête n'a rien changé, `start_date` comprise (D87). Faux aussi quand ce même choix relance
+    le Stratège, dont la session a échoué sans programme (D97)."""
 
     council_session_id: str
     status: SessionStatus

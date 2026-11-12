@@ -10,6 +10,7 @@ verrou voit ce que la précédente a commité (double clic : même état rendu, 
 
 import logging
 from collections.abc import Sequence
+from datetime import date
 from typing import Any, Literal
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,6 +21,7 @@ from app.core.errors import AppError
 from app.features.learning.repository import ProposalRepository
 from app.features.learning.schemas import ChooseOut, ChooseRequest
 from app.features.learning.service.goals import owned_goal
+from app.features.learning.service.launching import MONDAY, retry_program
 from app.features.learning.service.proposals import latest_batch, proposal_not_found
 from app.features.learning.service.runtime import LearningRuntime
 from app.features.sessions.service import ResumeRequest, SessionsService, SessionView
@@ -50,6 +52,18 @@ def council_not_waiting(status: str) -> AppError:
         409,
         {"status": status},
     )
+
+
+def check_start_date(start: date | None) -> None:
+    """Début du programme : un lundi, aujourd'hui ou plus tard (comme `PATCH /programs`) ;
+    sinon 422 `invalid_start_date`, chemin du champ seulement, jamais la valeur."""
+    if start is not None and (start.weekday() != MONDAY or start < date.today()):
+        raise AppError(
+            "invalid_start_date",
+            "Un programme commence un lundi, aujourd'hui ou plus tard.",
+            422,
+            {"fields": ["start_date"]},
+        )
 
 
 async def write_choice(
@@ -168,8 +182,11 @@ async def choose(
     """Sous le verrou de l'objectif : (1) proposition (et `mix_with`) du dernier lot ; (2) Conseil
     en attente sur `choose_path` → choix écrit puis interruption reprise, **toujours** (un choix
     resté écrit par une reprise manquée ne bloque pas) ; (3) Conseil qui n'attend pas : même
-    ensemble déjà choisi → état rendu, `already_chosen` vrai, rien changé (`start_date`
-    comprise ; double clic, reprise générique terminée) ; sinon 409 `council_not_waiting`."""
+    ensemble déjà choisi → Stratège relancé s'il a échoué sans programme (`retry_program`,
+    `already_chosen` faux), sinon état rendu, `already_chosen` vrai, rien changé (`start_date`
+    comprise ; double clic, reprise générique terminée) ; autre ensemble : 409
+    `council_not_waiting`. `start_date` : un lundi à venir, sinon 422 `invalid_start_date`."""
+    check_start_date(req.start_date)
     goal_id = await ProposalRepository(db, user_id).goal_of(proposal_id)
     if goal_id is None:
         raise proposal_not_found()
@@ -183,7 +200,12 @@ async def choose(
         if view.status != "waiting_user" or pending is None or pending.kind != CHOICE_KIND:
             if {p.id for p in batch if p.chosen} != set(ids):
                 raise council_not_waiting(view.status)
-            return ChooseOut(council_session_id=session_id, status=view.status, already_chosen=True)
+            retried = await retry_program(
+                learning, user_id, goal_id, view.status, ids, req.start_date
+            )
+            return ChooseOut(
+                council_session_id=session_id, status=view.status, already_chosen=retried is None
+            )
         action: Literal["choose", "mix"] = "mix" if len(ids) == 2 else "choose"
         choice = Choice(action, tuple(ids), req.start_date)
         resumed = await _write_and_resume(

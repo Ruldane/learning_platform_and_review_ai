@@ -37,15 +37,18 @@ def get_lessons_runtime(conn: HTTPConnection) -> LessonsRuntime:
 LessonsDep = Annotated[LessonsRuntime, Depends(get_lessons_runtime)]
 
 
-def _pdf(body: bytes, filename: str) -> Response:
-    return Response(
-        content=body,
-        media_type=PDF_MEDIA_TYPE,
-        headers={
-            "Content-Disposition": f'inline; filename="{filename}"',
-            "X-Content-Type-Options": "nosniff",
-        },
-    )
+def _pdf(body: bytes, filename: str, *, third_party: bool = False) -> Response:
+    """Notre PDF de leçon s'ouvre dans le navigateur (`inline`). Le PDF d'un tiers (copie
+    locale d'une ressource) est téléchargé (`attachment`) et mis en bac à sable (CSP `sandbox`) :
+    jamais affiché sur l'origine de l'application (D97)."""
+    disposition = "attachment" if third_party else "inline"
+    headers = {
+        "Content-Disposition": f'{disposition}; filename="{filename}"',
+        "X-Content-Type-Options": "nosniff",
+    }
+    if third_party:
+        headers["Content-Security-Policy"] = "sandbox"
+    return Response(content=body, media_type=PDF_MEDIA_TYPE, headers=headers)
 
 
 @router.get("/programs/{program_id}/lessons", response_model=list[LessonSummaryOut])
@@ -95,6 +98,7 @@ async def patch_resource(
 async def get_resource_file(
     resource_id: str, current: CurrentUserDep, db: Db, rt: LessonsDep
 ) -> Response:
-    """Copie locale du PDF libre ; 404 `resource_file_missing` s'il n'y en a pas."""
+    """Copie locale du PDF libre, en téléchargement ; 404 `resource_file_missing` s'il n'y en a
+    pas."""
     body = await resources.resource_file(db, rt.storage, current.id, resource_id)
-    return _pdf(body, "ressource.pdf")
+    return _pdf(body, "ressource.pdf", third_party=True)

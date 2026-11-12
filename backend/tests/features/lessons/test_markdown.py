@@ -33,6 +33,29 @@ def test_raw_html_blocks_are_escaped() -> None:
     )
     assert _tags(out.html) <= {"p"}
     assert "<iframe" not in out.html and "<style" not in out.html
+    assert "&lt;iframe" in out.html  # bloc rendu en texte inerte, pas jeté
+
+
+def test_unclosed_html_block_keeps_the_rest_as_text() -> None:
+    """Revue finale de la phase 4, I2 : `<pre>` jamais refermé n'avale plus la suite."""
+    out = markdown_to_html("## Objectifs\n- a\n<pre>\nx\n## Explication\nLong texte important.\n")
+    assert "Explication" in out.html and "important" in out.html
+    assert "<pre" not in out.html and _tags(out.html) <= ALLOWED_TAGS
+
+
+def test_inline_html_is_still_dropped() -> None:
+    out = markdown_to_html("Texte <img src=x onerror=alert(1)> fin")
+    assert "onerror" not in out.html and "img" not in out.html
+
+
+def test_pdf_body_drops_the_leading_title_only_when_asked() -> None:
+    markdown = "# Titre de la leçon\n\n## Objectifs\n\n# Autre titre\n"
+    assert out_h1(markdown_to_html(markdown).html) == ["Titre de la leçon", "Autre titre"]
+    assert out_h1(markdown_to_html(markdown, drop_title=True).html) == ["Autre titre"]
+
+
+def out_h1(html: str) -> list[str]:
+    return re.findall(r"<h1>(.*?)</h1>", html)
 
 
 @pytest.mark.parametrize(

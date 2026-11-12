@@ -97,8 +97,14 @@ async def test_lesson_routes_and_isolation(client: httpx.AsyncClient, app: FastA
     pdf = await client.get(f"{API}/lessons/{s.lesson_id}/pdf")
     assert pdf.status_code == 200 and pdf.content == PDF
     assert pdf.headers["content-type"] == "application/pdf"
+    assert pdf.headers["content-disposition"].startswith("inline")  # notre PDF
+    assert "content-security-policy" not in pdf.headers
     copy = await client.get(f"{API}/resources/{s.resources[0]}/file")
     assert copy.status_code == 200 and copy.content == PDF
+    # Revue finale de la phase 4, M6 : PDF d'un tiers, jamais ouvert sur notre origine.
+    assert copy.headers["content-disposition"] == 'attachment; filename="ressource.pdf"'
+    assert copy.headers["content-security-policy"] == "sandbox"
+    assert copy.headers["x-content-type-options"] == "nosniff"
 
     act_as(app, "un-autre-utilisateur")
     for path, code in [

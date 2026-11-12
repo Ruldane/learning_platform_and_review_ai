@@ -85,10 +85,14 @@ async def attach_board(db: AsyncSession, user_id: str, proposal_id: str, board_i
 
 
 async def latest_batch(db: AsyncSession, user_id: str, goal_id: str) -> builtins.list[Proposal]:
-    """Le dernier lot de l'objectif, par rang ; vide s'il n'y en a pas encore."""
+    """Le dernier lot de l'objectif, par rang ; vide s'il n'y en a pas encore, ou s'il vient
+    d'un Conseil qui n'est plus celui de l'objectif (Conseil relancé, D97)."""
     repo = ProposalRepository(db, user_id)
     latest = await repo.latest_batch(goal_id)
     if latest is None:
+        return []
+    current = (await owned_goal(db, user_id, goal_id)).council_session_id
+    if current is not None and latest[0] != current:
         return []
     return await repo.batch(*latest)
 

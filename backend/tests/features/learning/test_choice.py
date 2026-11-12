@@ -3,8 +3,10 @@ idempotence sous le verrou de l'objectif (double clic, reprise générique) : un
 `program_builder`, une seule proposition choisie par lot (Review Focus n° 2)."""
 
 import asyncio
+from datetime import date, timedelta
 
 import httpx
+import pytest
 
 from tests.features.learning.conftest import (
     GOALS,
@@ -12,6 +14,7 @@ from tests.features.learning.conftest import (
     Waiting,
     chosen_ids,
     count_sessions,
+    next_monday,
     start_goal,
     wait_choice,
 )
@@ -49,15 +52,33 @@ async def test_choose_mix_with_start_date(
     client: httpx.AsyncClient, council_waiting_choice: Waiting, stub: Stub
 ) -> None:
     waiting = council_waiting_choice
-    p1, p3 = waiting.ids[0], waiting.ids[2]
-    r = await _choose(client, p3, {"mix_with": p1, "start_date": "2026-12-07"})
+    p1, p3, start = waiting.ids[0], waiting.ids[2], next_monday(3)
+    r = await _choose(client, p3, {"mix_with": p1, "start_date": start})
     assert r.status_code == 202
     await wait_status(client, waiting.sid, "completed")
-    value = {"action": "mix", "proposal_ids": [p3, p1], "start_date": "2026-12-07"}
+    value = {"action": "mix", "proposal_ids": [p3, p1], "start_date": start}
     assert stub.resumed == [value]
     assert await chosen_ids(client, waiting.goal_id) == {p1, p3}
     program = stub.program_inputs[0]
-    assert (program["proposal_ids"], program["start_date"]) == ([p3, p1], "2026-12-07")
+    assert (program["proposal_ids"], program["start_date"]) == ([p3, p1], start)
+
+
+def _not_a_valid_start() -> list[str]:
+    monday = date.fromisoformat(next_monday())
+    return [(monday + timedelta(days=2)).isoformat(), (monday - timedelta(days=7 * 52)).isoformat()]
+
+
+@pytest.mark.parametrize("start", _not_a_valid_start())
+async def test_choose_start_date_must_be_a_coming_monday(
+    client: httpx.AsyncClient, council_waiting_choice: Waiting, stub: Stub, start: str
+) -> None:
+    waiting = council_waiting_choice
+    r = await _choose(client, waiting.ids[0], {"start_date": start})
+    assert r.status_code == 422
+    error = r.json()["error"]
+    assert (error["code"], error["details"]) == ("invalid_start_date", {"fields": ["start_date"]})
+    assert start not in r.text
+    assert stub.resumed == [] and await chosen_ids(client, waiting.goal_id) == set()
 
 
 async def test_choose_mix_requires_two_of_latest_batch(
@@ -119,7 +140,7 @@ async def test_choose_after_generic_resume_is_idempotent(
     r = await client.post(f"/api/v1/sessions/{waiting.sid}/resume", json=body)
     assert r.status_code == 202
     await wait_status(client, waiting.sid, "completed")
-    r = await _choose(client, p1, {"start_date": "2027-01-04"})
+    r = await _choose(client, p1, {"start_date": next_monday(4)})
     assert r.status_code == 202 and r.json()["status"] == "completed"
     assert r.json()["already_chosen"] is True  # rien changé, date de début comprise
     r = await _choose(client, p2)  # un autre parcours, Conseil terminé
