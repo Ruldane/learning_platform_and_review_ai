@@ -4,16 +4,19 @@ dans l'écran des clés."""
 import httpx
 import pytest
 import respx
+from asgi_lifespan import LifespanManager
 from cryptography.fernet import Fernet
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.bootstrap import build_providers, research_providers
+from app.bootstrap import build_providers, key_test_http, research_providers
 from app.config import Settings
 from app.core.providers import ResearchProviders
 from app.core.security import Cipher
+from app.main import create_app
 from app.providers.search.brave import BraveKeyProvider, BraveSearch
 from app.providers.search.searxng import SearxngSearch
-from tests.support.memory import FakeWebReader
+from tests.support.memory import FakeWebReader, fake_memory_providers
+from tests.support.research import fake_research_providers
 
 
 def _tracking(monkeypatch: pytest.MonkeyPatch) -> list[httpx.AsyncClient]:
@@ -64,12 +67,42 @@ def test_build_providers_adds_brave_to_the_key_screen_only(
     settings: Settings, db_session_factory: async_sessionmaker[AsyncSession]
 ) -> None:
     configured = settings.model_copy(update={"brave_api_key": "BSA-env-0001"})
-    http = httpx.AsyncClient()
+    http, key_http = httpx.AsyncClient(), httpx.AsyncClient()
     built = build_providers(
-        configured, db_session_factory, Cipher(Fernet.generate_key()), http, lambda: None
+        configured,
+        db_session_factory,
+        Cipher(Fernet.generate_key()),
+        http,
+        lambda: None,
+        key_http=key_http,
     )
     assert list(built.key_providers) == ["anthropic", "openai", "glm", "brave"]
     brave = built.key_providers["brave"]
-    assert isinstance(brave, BraveKeyProvider) and brave._http is http
+    # Revue 3.3 (c) : le test de la clé n'utilise pas le client des sondes.
+    assert isinstance(brave, BraveKeyProvider) and brave._http is key_http
     assert "brave" not in built.llm
     assert built.env_keys["brave"] == "BSA-env-0001"
+
+
+async def test_key_test_client_ignores_the_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("HTTPS_PROXY", "http://proxy.interne:3128")
+    async with key_test_http() as http:
+        assert http.follow_redirects is False and http.trust_env is False
+        assert http.timeout == httpx.Timeout(10.0)
+        assert not http._mounts
+
+
+async def test_lifespan_gives_the_brave_key_test_its_own_client(
+    settings: Settings, db_engine: object, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("HTTPS_PROXY", "http://proxy.interne:3128")
+    memory = fake_memory_providers(settings.data_dir)
+    app = create_app(
+        settings,
+        memory_providers=memory,
+        research_providers=fake_research_providers(memory.web),
+    )
+    async with LifespanManager(app):
+        brave = app.state.providers.key_providers["brave"]
+        assert isinstance(brave, BraveKeyProvider)
+        assert brave._http.trust_env is False and not brave._http._mounts

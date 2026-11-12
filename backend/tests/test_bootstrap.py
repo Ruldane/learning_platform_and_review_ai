@@ -19,7 +19,11 @@ from app.providers.pdf.gotenberg import GotenbergRenderer
 from app.providers.pdf.subprocess import SubprocessPdfExtractor
 from app.providers.storage.local import LocalFileStorage
 from app.providers.vector.qdrant import QdrantMemoryRepository
+from app.providers.web.arxiv import ArxivReader
+from app.providers.web.github import GithubReader
 from app.providers.web.reader import TrafilaturaWebReader
+from app.providers.web.routing import RoutingWebReader
+from app.providers.web.throttle import DomainThrottle
 from app.providers.web.youtube import TranscriptApiYoutube
 
 _HTTP = httpx.AsyncClient()
@@ -33,7 +37,7 @@ def test_build_providers_registers_the_three_real_providers(
     settings: Settings, db_session_factory: async_sessionmaker[AsyncSession]
 ) -> None:
     cipher = Cipher(Fernet.generate_key())
-    built = build_providers(settings, db_session_factory, cipher, _HTTP, _NO_USER)
+    built = build_providers(settings, db_session_factory, cipher, _HTTP, _NO_USER, key_http=_HTTP)
     assert isinstance(built, Providers) and built.cipher is cipher
     assert set(built.llm) == {"anthropic", "openai", "glm"} and "fake" not in built.llm
 
@@ -45,7 +49,12 @@ def test_env_keys_come_from_settings(
         update={"anthropic_api_key": "a-key-0001", "zai_api_key": "z-key-0002"}
     )
     built = build_providers(
-        configured, db_session_factory, Cipher(Fernet.generate_key()), _HTTP, _NO_USER
+        configured,
+        db_session_factory,
+        Cipher(Fernet.generate_key()),
+        _HTTP,
+        _NO_USER,
+        key_http=_HTTP,
     )
     assert dict(built.env_keys) == {
         "anthropic": "a-key-0001",
@@ -60,7 +69,12 @@ def test_glm_honors_overridden_zai_base_url(
 ) -> None:
     configured = settings.model_copy(update={"zai_base_url": "https://zai.example/v9/"})
     glm = build_providers(
-        configured, db_session_factory, Cipher(Fernet.generate_key()), _HTTP, _NO_USER
+        configured,
+        db_session_factory,
+        Cipher(Fernet.generate_key()),
+        _HTTP,
+        _NO_USER,
+        key_http=_HTTP,
     ).llm["glm"]
     assert isinstance(glm, GlmProvider)
     assert glm._url("models") == "https://zai.example/v9/models"
@@ -91,8 +105,9 @@ async def test_memory_providers_are_built_without_any_request(settings: Settings
             assert isinstance(built.index, QdrantMemoryRepository)
             assert isinstance(built.storage, LocalFileStorage)
             assert isinstance(built.pdf, SubprocessPdfExtractor)
-            assert isinstance(built.web, TrafilaturaWebReader)
+            assert isinstance(built.web, RoutingWebReader)
             assert isinstance(built.youtube, TranscriptApiYoutube)
+            assert built.youtube._reader is built.web
         assert not router.calls
 
 
@@ -115,7 +130,7 @@ async def test_memory_providers_close_their_clients(
     monkeypatch.setattr("app.bootstrap.httpx.AsyncClient", tracking)
     monkeypatch.setattr(AsyncQdrantClient, "close", close)
     async with memory_providers(settings):
-        assert len(created) == 2 and not any(c.is_closed for c in created)
+        assert len(created) == 3 and not any(c.is_closed for c in created)
     assert all(c.is_closed for c in created) and closed == [True]
 
 
@@ -134,7 +149,7 @@ async def test_web_reader_client_never_follows_redirects_nor_trusts_the_environm
     monkeypatch.setattr("app.bootstrap.httpx.AsyncClient", tracking)
     async with memory_providers(settings) as built:
         reader = created[1]
-        assert built.web._fetcher._http is reader  # type: ignore[attr-defined]
+        assert built.web._default._fetcher._http is reader  # type: ignore[attr-defined]
         assert reader.follow_redirects is False and reader.trust_env is False
         assert reader.timeout == httpx.Timeout(15.0)
         assert not reader._mounts  # aucun proxy repris de l'environnement
@@ -192,3 +207,32 @@ def test_web_render_fallback_is_read_from_the_environment(
 ) -> None:
     monkeypatch.setenv("WEB_RENDER_FALLBACK", "false")
     assert Settings(_env_file=None).web_render_fallback is False  # type: ignore[call-arg]
+
+
+async def test_web_reader_routes_github_arxiv_and_renders_with_one_throttle(
+    settings: Settings, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    created: list[httpx.AsyncClient] = []
+    original = httpx.AsyncClient
+
+    def tracking(*args: object, **kwargs: object) -> httpx.AsyncClient:
+        client = original(*args, **kwargs)  # type: ignore[arg-type]
+        created.append(client)
+        return client
+
+    monkeypatch.setattr("app.bootstrap.httpx.AsyncClient", tracking)
+    async with memory_providers(settings) as built:
+        web = built.web
+        assert isinstance(web, RoutingWebReader)
+        default, github, arxiv = web._default, web._github, web._arxiv
+        assert isinstance(default, TrafilaturaWebReader)
+        assert isinstance(github, GithubReader) and isinstance(arxiv, ArxivReader)
+        fetcher = default._fetcher
+        assert github._fetcher is fetcher and arxiv._fetcher is fetcher
+        assert isinstance(fetcher._throttle, DomainThrottle)  # type: ignore[attr-defined]
+        assert arxiv._pdf is built.pdf and default._pdf is built.pdf
+        renderer = default._renderer
+        assert isinstance(renderer, GotenbergRenderer) and renderer._http is created[2]
+    disabled = settings.model_copy(update={"web_render_fallback": False})
+    async with memory_providers(disabled) as built:
+        assert built.web._default._renderer is None  # type: ignore[attr-defined]

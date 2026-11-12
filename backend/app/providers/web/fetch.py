@@ -16,7 +16,7 @@ Les erreurs sont levées `from None` : la chaîne d'exceptions citerait l'URL da
 import asyncio
 import ipaddress
 import socket
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Mapping
 from http.cookiejar import CookieJar, DefaultCookiePolicy
 
 import httpcore
@@ -35,6 +35,7 @@ from app.providers.web.base import (
     UrlUnreadable,
     UrlUnsupported,
 )
+from app.providers.web.throttle import DomainThrottle
 
 Resolver = Callable[[str, int], Awaitable[list[str]]]
 
@@ -45,6 +46,9 @@ _HEADERS = {
     "accept-encoding": ACCEPT_ENCODING,
     "user-agent": "Mozilla/5.0 (compatible; TremplinReader/1.0)",
 }
+# En-têtes qu'un appel ne remplace jamais : l'encodage borne la décompression (`_body`), l'hôte
+# est celui de l'URL validée.
+_LOCKED_HEADERS = frozenset({"accept-encoding", "host"})
 _NAT64 = ipaddress.ip_network("64:ff9b::/96")
 _IPV6_GLOBAL_UNICAST = ipaddress.ip_network("2000::/3")
 
@@ -127,25 +131,49 @@ def _check_peer(response: httpx.Response) -> None:
         raise UrlForbidden()
 
 
-def _media_type(response: httpx.Response) -> str:
+def _media_type(response: httpx.Response, allowed: tuple[str, ...]) -> str:
     media = str(response.headers.get("content-type", "")).split(";", 1)[0].strip().lower()
-    if media not in ALLOWED_CONTENT_TYPES:
+    if media not in allowed:
         raise UrlUnsupported()
     return media
 
 
+def _request_headers(extra: Mapping[str, str] | None) -> dict[str, str]:
+    headers = dict(_HEADERS)
+    for name, value in (extra or {}).items():
+        if name.lower() not in _LOCKED_HEADERS:
+            headers[name.lower()] = value
+    return headers
+
+
 class SafeHttpFetcher:
     """`http` doit être créé avec `follow_redirects=False` et `trust_env=False` (aucun proxy de
-    l'environnement : l'adresse connectée serait celle du proxy) ; voir `bootstrap`."""
+    l'environnement : l'adresse connectée serait celle du proxy) ; voir `bootstrap`.
+    `throttle` (D74) est attendu avant chaque saut, redirections comprises, une fois l'URL et
+    ses adresses validées : une adresse refusée ne consomme aucun créneau. L'attente compte
+    dans les 15 s."""
 
-    def __init__(self, http: httpx.AsyncClient, *, resolve: Resolver = system_resolve) -> None:
+    def __init__(
+        self,
+        http: httpx.AsyncClient,
+        *,
+        resolve: Resolver = system_resolve,
+        throttle: DomainThrottle | None = None,
+    ) -> None:
         self._http = http
         self._resolve = resolve
+        self._throttle = throttle
 
-    async def fetch(self, url: str) -> FetchedResource:
+    async def fetch(
+        self,
+        url: str,
+        *,
+        content_types: tuple[str, ...] = ALLOWED_CONTENT_TYPES,
+        headers: Mapping[str, str] | None = None,
+    ) -> FetchedResource:
         try:
             async with asyncio.timeout(base.FETCH_TIMEOUT_S):
-                return await self._follow(url)
+                return await self._follow(url, content_types, _request_headers(headers))
         except (TimeoutError, httpx.TimeoutException):
             raise UrlUnreadable(TIMEOUT_MESSAGE) from None
         except httpx.ConnectError as exc:
@@ -155,12 +183,16 @@ class SafeHttpFetcher:
         except (httpx.HTTPError, httpx.StreamError):
             raise UrlUnreadable() from None
 
-    async def _follow(self, url: str) -> FetchedResource:
+    async def _follow(
+        self, url: str, content_types: tuple[str, ...], headers: dict[str, str]
+    ) -> FetchedResource:
         current = _checked_url(url)
         for _ in range(MAX_REDIRECTS + 1):
             await self._check_host(current)
+            if self._throttle is not None:
+                await self._throttle.wait(current.host)
             async with self._http.stream(
-                "GET", current, headers=_HEADERS, follow_redirects=False
+                "GET", current, headers=headers, follow_redirects=False
             ) as response:
                 _check_peer(response)
                 if response.status_code in _REDIRECTS:
@@ -168,7 +200,7 @@ class SafeHttpFetcher:
                     continue
                 if not response.is_success:
                     raise UrlUnreadable()
-                media = _media_type(response)
+                media = _media_type(response, content_types)
                 if declared_too_large(response, base.FETCH_MAX_BYTES):
                     raise UrlTooLarge()
                 body = await read_capped(response)

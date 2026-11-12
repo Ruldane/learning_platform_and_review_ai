@@ -94,7 +94,8 @@ async def test_http_client_is_closed_when_composition_fails(
     with pytest.raises(ValueError, match="composition cassée"):
         async with LifespanManager(create_app(settings)):
             pass
-    assert len(created) == 1 and created[0].is_closed
+    # Sondes de santé et test de la clé Brave (D74) : tous deux fermés.
+    assert len(created) == 2 and all(c.is_closed for c in created)
 
 
 async def test_shutdown_stops_runner_then_bus_then_engine(

@@ -163,3 +163,14 @@ async def test_searxng_network_errors_are_unavailable(
         await _client(boom).search(_QUERY)
     assert caught.value.__cause__ is None
     assert _QUERY not in caplog.text and json.dumps(_QUERY) not in caplog.text
+
+
+@pytest.mark.parametrize("unresponsive", [3, True, {"brave": "timeout"}, "duckduckgo"])
+async def test_searxng_malformed_unresponsive_engines_never_crash(unresponsive: object) -> None:
+    """Revue 3.3 (a) : un champ de forme inattendue ne lève jamais `TypeError`. Sans résultat,
+    SearXNG est jugé indisponible (l'appelant passe à Brave) ; avec, les résultats restent."""
+    empty = {"results": [], "unresponsive_engines": unresponsive}
+    with pytest.raises(SearchUnavailable):
+        await _client(_json(empty)).search("q")
+    some = {"results": [_hit("https://ex.org/a")], "unresponsive_engines": unresponsive}
+    assert [h.url for h in await _client(_json(some)).search("q")] == ["https://ex.org/a"]

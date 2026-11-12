@@ -177,3 +177,15 @@ async def test_brave_key_test_never_raises() -> None:
     assert result.message == "Impossible de joindre Brave Search. Vérifie ta connexion."
     invalid = await BraveKeyProvider(_http(_web())).test_key("clé-é")
     assert invalid.ok is False and invalid.message == "La clé contient des caractères invalides."
+
+
+@pytest.mark.parametrize(
+    "body",
+    [["liste"], "texte", 42, True, {"web": "pas un objet"}, {"web": {"results": {"a": 1}}}],
+    ids=["liste", "texte", "nombre", "booleen", "web-texte", "results-objet"],
+)
+async def test_brave_unexpected_body_is_unavailable(body: object) -> None:
+    """Revue 3.3 (b) : un corps qui n'est pas un objet JSON n'est pas « aucun résultat »."""
+    handler: Handler = lambda request: httpx.Response(200, json=body)  # noqa: E731
+    with pytest.raises(SearchUnavailable):
+        await BraveSearch(_http(handler), _KEY).search("q")

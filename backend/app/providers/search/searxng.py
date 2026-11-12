@@ -56,6 +56,10 @@ def _parse(body: object) -> list[SearchResult]:
         raise SearchUnavailable() from None
     items = [i for i in body.get("results", []) if isinstance(i, dict) and is_web_url(i.get("url"))]
     unresponsive = body.get("unresponsive_engines") or []
+    if not items and not isinstance(unresponsive, list):
+        # Revue 3.3 (D74) : forme inattendue, jugée comme des moteurs en panne (repli sur Brave).
+        logger.info("SearXNG sans résultat, moteurs sans réponse de forme inattendue")
+        raise SearchUnavailable() from None
     if not items and unresponsive:
         logger.info("SearXNG sans résultat, %d moteurs sans réponse", len(unresponsive))
         raise SearchUnavailable() from None

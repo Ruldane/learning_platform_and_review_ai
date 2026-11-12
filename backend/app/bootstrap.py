@@ -38,9 +38,13 @@ from app.providers.search.searxng_probe import SearxngProbe
 from app.providers.storage.local import LocalFileStorage
 from app.providers.vector.qdrant import QdrantMemoryRepository
 from app.providers.vector.qdrant_probe import QdrantProbe
+from app.providers.web.arxiv import ArxivReader
 from app.providers.web.base import FETCH_TIMEOUT_S, WebReader
 from app.providers.web.fetch import SafeHttpFetcher, refuse_all_cookies
+from app.providers.web.github import GithubReader
 from app.providers.web.reader import TrafilaturaWebReader
+from app.providers.web.routing import RoutingWebReader
+from app.providers.web.throttle import DomainThrottle
 from app.providers.web.transport import GuardedTransport
 from app.providers.web.youtube import TranscriptApiYoutube
 
@@ -70,10 +74,12 @@ def build_providers(
     cipher: Cipher,
     http: httpx.AsyncClient,
     local_user_id: Callable[[], str | None],
+    *,
+    key_http: httpx.AsyncClient,
 ) -> Providers:
-    """`http` est partagé par les sondes et le test de la clé Brave (créé et fermé par le
-    lifespan) ; `local_user_id` est lu à chaque contrôle car l'utilisateur local n'existe
-    qu'après la construction."""
+    """`http` sert aux sondes de santé, `key_http` (`key_test_http`) au test de la clé Brave ;
+    tous deux créés et fermés par le lifespan. `local_user_id` est lu à chaque contrôle car
+    l'utilisateur local n'existe qu'après la construction."""
     # GLM : l'adresse Z.ai configurée sert aussi au test de clé et à la liste des modèles.
     llm: dict[str, LlmProvider] = {
         **LLM_PROVIDERS,
@@ -93,7 +99,7 @@ def build_providers(
     )
     llm_keys = LlmKeysCheck(session_factory, cipher, env_keys, llm, local_user_id)
     # Écran des clés : les LLM puis Brave, qui n'est ni dans la fabrique ni dans les modèles.
-    key_providers: dict[str, KeyProvider] = {**llm, "brave": BraveKeyProvider(http)}
+    key_providers: dict[str, KeyProvider] = {**llm, "brave": BraveKeyProvider(key_http)}
     return Providers(
         llm=llm,
         llm_factory=factory,
@@ -138,8 +144,7 @@ def _reader_http() -> httpx.AsyncClient:
 
 def _render_http() -> httpx.AsyncClient:
     """Client de Gotenberg, à part : aucun proxy ni réglage de l'environnement, aucune
-    redirection, 15 s (délai d'une page, D63). Ouvert par `memory_providers` dès que le lecteur
-    web reçoit le repli (tâche 3.4)."""
+    redirection, 15 s (délai d'une page, D63). Ouvert par `memory_providers` (D74)."""
     return httpx.AsyncClient(
         follow_redirects=False, trust_env=False, timeout=httpx.Timeout(FETCH_TIMEOUT_S)
     )
@@ -152,6 +157,20 @@ def page_renderer(settings: Settings, http: httpx.AsyncClient) -> PageRenderer |
     return GotenbergRenderer(http, settings.gotenberg_url)
 
 
+def _web_reader(
+    settings: Settings,
+    reader_http: httpx.AsyncClient,
+    render_http: httpx.AsyncClient,
+    pdf: SubprocessPdfExtractor,
+) -> WebReader:
+    """Lecteur web étendu (D74) : un seul fetcher sûr et un seul débit par hôte pour tout le
+    processus (pages, API GitHub, API et PDF arXiv) ; repli Gotenberg selon les réglages. La
+    mémoire (import d'URL), YouTube (repli) et la recherche reçoivent ce même lecteur."""
+    fetcher = SafeHttpFetcher(reader_http, throttle=DomainThrottle())
+    pages = TrafilaturaWebReader(fetcher, pdf, renderer=page_renderer(settings, render_http))
+    return RoutingWebReader(pages, GithubReader(fetcher), ArxivReader(fetcher, pdf))
+
+
 @asynccontextmanager
 async def memory_providers(settings: Settings) -> AsyncIterator[MemoryProviders]:
     """Embeddings Ollama, index Qdrant, stockage local, extraction PDF, lecteur web et YouTube ;
@@ -160,6 +179,7 @@ async def memory_providers(settings: Settings) -> AsyncIterator[MemoryProviders]
     async with (
         httpx.AsyncClient(timeout=_OLLAMA_TIMEOUT_SECONDS) as http,
         _reader_http() as reader_http,
+        _render_http() as render_http,
     ):
         # Pas de contrôle de version au démarrage : il ferait une requête dès la construction.
         qdrant = AsyncQdrantClient(
@@ -175,7 +195,7 @@ async def memory_providers(settings: Settings) -> AsyncIterator[MemoryProviders]
             )
             # Sous-processus borné (délai, mémoire, 2 au plus) : import de documents et lecteur web.
             pdf = SubprocessPdfExtractor()
-            web = TrafilaturaWebReader(SafeHttpFetcher(reader_http), pdf)
+            web = _web_reader(settings, reader_http, render_http, pdf)
             yield MemoryProviders(
                 embedder=embedder,
                 index=index,
@@ -196,6 +216,13 @@ async def open_memory_runtime(
     fournisseurs de `memory_providers` ou ceux qu'un test a injectés."""
     async with memory_runtime(session_factory, providers) as runtime:
         yield runtime
+
+
+def key_test_http() -> httpx.AsyncClient:
+    """Client du test de la clé Brave (écran des clés), ouvert par le lifespan : comme
+    `_search_http`, aucun proxy ni réglage de l'environnement (la clé ne passe par aucun
+    intermédiaire, revue 3.3, D74), aucune redirection, 10 s."""
+    return _search_http()
 
 
 def _search_http() -> httpx.AsyncClient:

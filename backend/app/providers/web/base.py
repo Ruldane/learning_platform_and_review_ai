@@ -3,6 +3,7 @@
 Aucun message d'erreur ne cite l'URL, le nom d'hôte ni un extrait de la page (spec 17.2)."""
 
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Protocol
 from urllib.parse import parse_qs, urlsplit
@@ -26,6 +27,8 @@ NO_TEXT_MESSAGE = "Page illisible : aucun texte principal trouvé."
 TOO_MANY_REDIRECTS_MESSAGE = "Page injoignable : trop de redirections."
 NOT_YOUTUBE_MESSAGE = "Lien YouTube non reconnu."
 NO_TRANSCRIPT_MESSAGE = "Vidéo illisible : ni transcription ni description disponibles."
+GITHUB_UNREADABLE = "Dépôt GitHub illisible : README absent ou API indisponible."
+ARXIV_UNREADABLE = "Article arXiv introuvable ou API indisponible."
 
 
 @dataclass(frozen=True)
@@ -84,7 +87,17 @@ class UrlUnreadable(AppError):
 
 
 class WebFetcher(Protocol):
-    async def fetch(self, url: str) -> FetchedResource: ...
+    async def fetch(
+        self,
+        url: str,
+        *,
+        content_types: tuple[str, ...] = ALLOWED_CONTENT_TYPES,
+        headers: Mapping[str, str] | None = None,
+    ) -> FetchedResource:
+        """`content_types` remplace la liste blanche des types (une API JSON ou Atom) ;
+        `headers` s'ajoute aux en-têtes par défaut, sauf `Accept-Encoding` (D74, compatible
+        D63 : un appel sans option se comporte comme avant)."""
+        ...
 
 
 class WebReader(Protocol):

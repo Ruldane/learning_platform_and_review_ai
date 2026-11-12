@@ -1,6 +1,7 @@
 """Matériel de test de la mémoire : fournisseurs factices (aucun Ollama, Qdrant, YouTube ni
 web réel)."""
 
+import asyncio
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -34,6 +35,24 @@ class FakeWebReader:
         if isinstance(page, AppError):
             raise page
         return page
+
+
+@dataclass
+class FakeRenderer:
+    """`PageRenderer` factice : rend `pdf` (ou lève l'erreur) après `delay_s` secondes ; note
+    chaque appel `(url, timeout_s)`."""
+
+    pdf: bytes | AppError = b""
+    delay_s: float = 0.0
+    calls: list[tuple[str, float]] = field(default_factory=list)
+
+    async def url_to_pdf(self, url: str, *, timeout_s: float) -> bytes:
+        self.calls.append((url, timeout_s))
+        if self.delay_s:
+            await asyncio.sleep(self.delay_s)
+        if isinstance(self.pdf, AppError):
+            raise self.pdf
+        return self.pdf
 
 
 @dataclass

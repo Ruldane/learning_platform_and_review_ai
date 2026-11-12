@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 import httpx
 
 from app.providers.web.fetch import Resolver, SafeHttpFetcher
+from app.providers.web.throttle import DomainThrottle
 
 PUBLIC_IP = "93.184.216.34"
 Handler = Callable[[httpx.Request], httpx.Response]
@@ -67,6 +68,8 @@ def fetcher_for(
     handler: Handler,
     resolver: Resolver | None = None,
     seen: list[httpx.Request] | None = None,
+    *,
+    throttle: DomainThrottle | None = None,
 ) -> tuple[SafeHttpFetcher, httpx.AsyncClient]:
     def recording(request: httpx.Request) -> httpx.Response:
         if seen is not None:
@@ -74,4 +77,5 @@ def fetcher_for(
         return handler(request)
 
     client = httpx.AsyncClient(transport=httpx.MockTransport(recording), trust_env=False)
-    return SafeHttpFetcher(client, resolve=resolver or FakeResolver()), client
+    fetcher = SafeHttpFetcher(client, resolve=resolver or FakeResolver(), throttle=throttle)
+    return fetcher, client

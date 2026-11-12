@@ -72,8 +72,10 @@ def _result(item: dict[str, Any]) -> SearchResult:
 
 
 def _parse(body: object) -> list[SearchResult]:
-    web = body.get("web") if isinstance(body, dict) else None
-    items = web.get("results") if isinstance(web, dict) else []
+    """Sans section `web` : aucun résultat. Corps qui n'est pas un objet, `web` ou
+    `web.results` de forme inattendue : indisponible (revue 3.3, D74)."""
+    web = body.get("web", {}) if isinstance(body, dict) else None
+    items = web.get("results", []) if isinstance(web, dict) else None
     if not isinstance(items, list):
         logger.info("Réponse Brave inattendue")
         raise SearchUnavailable() from None

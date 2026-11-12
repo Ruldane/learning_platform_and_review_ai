@@ -11,6 +11,7 @@ from app.agents.runtime.lifespan import agent_runtime
 from app.agents.runtime.openapi import register_event_schemas
 from app.bootstrap import (
     build_providers,
+    key_test_http,
     memory_gateway,
     model_prices,
     open_memory_runtime,
@@ -96,14 +97,16 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         stack.push_async_callback(engine.dispose)
         app.state.engine = engine
         app.state.session_factory = create_session_factory(engine)
-        # Client partagé par les sondes de santé.
+        # Client partagé par les sondes de santé ; le test de la clé Brave a le sien (D74).
         http = await stack.enter_async_context(httpx.AsyncClient(timeout=_PROBE_TIMEOUT_SECONDS))
+        key_http = await stack.enter_async_context(key_test_http())
         app.state.providers = build_providers(
             app.state.settings,
             app.state.session_factory,
             app.state.cipher,
             http,
             lambda: getattr(app.state, "local_user_id", None),
+            key_http=key_http,
         )
         # Avant la mémoire : son worker relit la base au démarrage ; un schéma absent doit donner
         # l'indication `alembic upgrade head` plutôt qu'une erreur SQL brute.
