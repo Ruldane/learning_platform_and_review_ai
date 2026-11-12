@@ -174,8 +174,13 @@ def test_label_text_is_escaped_by_our_own_entities(label: str, escaped: str) -> 
         "flowchart TD\nA --> B\x0c",
         'flowchart TD\nA["#8203;"] --> B',  # entité qui donne un caractère invisible
         # Structure.
-        "flowchart TD\nA ---> B",
+        "flowchart TD\nA ----------> B",  # plus de 8 traits
+        "flowchart TD\nA <-- B",  # pointe double sans seconde pointe
         "flowchart TD\nA -- texte B",
+        'flowchart TD\nA -- a; click A "x" --> B',
+        "flowchart TD\nA -- --> B",
+        "flowchart TD\nA --> B %%{init: {}}%%",
+        "flowchart TD\nA" + " " * 400 + "--> B",  # ligne trop longue
         'flowchart TD\nA["non fermé] --> B',
         "flowchart TD\nA[a(b)] --> B",
         "flowchart TD\nsubgraph S\nA --> B",
@@ -213,7 +218,9 @@ def test_size_limits() -> None:
     assert any("nœuds" in p for p in mermaid_problems(f"flowchart TD\n{nodes}"))
     lines = "\n".join("A --> B" for _ in range(MAX_MERMAID_LINES))
     assert any("lignes" in p for p in mermaid_problems(f"flowchart TD\n{lines}"))
-    assert any("lignes" in p for p in mermaid_problems("flowchart TD\n" + "A-->B;" * 80))
+    statements = ("A-->B;" * 40 + "\n") * 2
+    assert any("lignes" in p for p in mermaid_problems("flowchart TD\n" + statements))
+    assert any("caractères" in p for p in mermaid_problems("flowchart TD\n" + "A-->B;" * 80))
     label = "x" * (MAX_LABEL_CHARS + 1)
     assert any("libellé" in p for p in mermaid_problems(f'flowchart TD\nA["{label}"] --> B'))
     assert mermaid_problems(f'flowchart TD\nA["{"x" * MAX_LABEL_CHARS}"] --> B') == []
@@ -229,3 +236,39 @@ def test_simple_valid_code_passes() -> None:
     assert mermaid_problems(VALID) == []
     assert mermaid_problems("flowchart TD\nclicker --> styled") == []  # identifiants voisins
     assert mermaid_problems("flowchart BT;\nA-->B") == []
+
+
+@pytest.mark.parametrize(
+    ("code", "edge"),
+    [
+        # Faux refus de la re-relecture 3, admis désormais.
+        ("A -- pré-requis --> B", '-->|"pré-requis"|'),
+        ("A -. v1.2 .-> B", '-.->|"v1.2"|'),
+        ("A ----> B", "---->"),
+        ("A --> B %% note", "-->"),
+        ("A <--> B", "<-->"),
+        # Variantes.
+        ("A <-.-> B", "<-.->"),
+        ("A <==> B", "<==>"),
+        ("A -..-> B", "-..->"),
+        ("A ====> B", "====>"),
+        ("A ---- B", "----"),
+        ("A -- x = y + 1 ---> B", '--->|"x = y + 1"|'),
+        ('A -- "a -- b" --> B', '-->|"a -- b"|'),
+        ('A -- "x --> y ; z" --> B', '-->|"x --#gt; y ; z"|'),
+        ("A == mène à === B", '===|"mène à"|'),
+        ("A <-->|double| B", '<-->|"double"|'),
+    ],
+)
+def test_more_mermaid_edge_forms_are_accepted(code: str, edge: str) -> None:
+    out = normalize_mermaid(f"flowchart LR\n{code}")
+    assert out == f'flowchart LR\n  n1["A"] {edge} n2["B"]'
+    assert normalize_mermaid(out) == out
+
+
+@pytest.mark.parametrize("label", ['""', '"<br>"', '"   "', '" <br/> "'])
+def test_an_empty_label_falls_back_to_the_source_identifier(label: str) -> None:
+    code = f"flowchart TD\nEtape[{label}] --> B\nsubgraph S[{label}]\nC\nend"
+    assert normalize_mermaid(code) == (
+        'flowchart TD\n  n1["Etape"] --> n2["B"]\n  subgraph n3["S"]\n    n4["C"]\n  end'
+    )

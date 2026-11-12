@@ -20,8 +20,13 @@ SHAPES = (
 )
 RECTANGLE = SHAPES.index(("[", "]"))
 
-_ENTITY = re.compile(r"#(\d+|[A-Za-z][A-Za-z0-9]*);")
-_BREAK = re.compile(r"<br[ \t]*/?>", re.IGNORECASE)
+# Quantificateurs possessifs : aucun retour arrière, temps linéaire (D85 §11f, round 4).
+_ENTITY = re.compile(r"#(\d++|[A-Za-z][A-Za-z0-9]*+);")
+_BREAK = re.compile(r"<br[ \t]*+/?>", re.IGNORECASE)
+
+
+class MermaidSyntaxError(ValueError):
+    """Une instruction hors grammaire ; le message est le motif rendu au Scribe."""
 
 
 @dataclass(frozen=True)

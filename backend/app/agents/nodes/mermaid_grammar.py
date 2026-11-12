@@ -10,14 +10,18 @@ l'arbre : le texte du modèle ne sort jamais.
   - `direction <dir>` ;
   - une chaîne de groupes de nœuds `A & B` reliés par des arêtes.
 - Nœud : identifiant `[A-Za-z][A-Za-z0-9_]{0,63}`, suivi au plus d'une forme connue (`SHAPES`).
-- Arête : `-->`, `---`, `-.->`, `-.-`, `==>`, `===`. Libellé facultatif `|...|`, ou forme
-  `-- texte -->` (et `-. texte .->`, `== texte ==>`).
+- Arête : voir `mermaid_edges` (traits, pointillés, épaisses, longues ou à pointe double ;
+  libellé `|...|` ou forme `-- texte -->`).
 - Libellé : entre guillemets, ou sans guillemets s'il ne contient aucun caractère réservé.
-  Entités Mermaid décodées, `<br>` (et `<br/>`) changé en saut de ligne, blancs réduits.
-- Commentaires `%%` sur leur propre ligne : ignorés ; `%%{` (directive) : refusé."""
+  Entités Mermaid décodées, `<br>` (et `<br/>`) changé en saut de ligne, blancs réduits. Un
+  libellé vide compte comme absent : le nœud garde son identifiant d'origine pour texte.
+- Commentaires `%%` (ligne entière ou fin de ligne) : ignorés ; `%%{` (directive) : refusé.
+- Une ligne de plus de `MAX_LINE_CHARS` caractères est refusée avant toute analyse ; toutes les
+  expressions régulières sont sans retour arrière (possessives) : temps linéaire."""
 
 import re
 
+from app.agents.nodes.mermaid_edges import edge_at
 from app.agents.nodes.mermaid_tree import (
     SHAPES,
     Chain,
@@ -25,11 +29,14 @@ from app.agents.nodes.mermaid_tree import (
     Edge,
     End,
     Flowchart,
+    MermaidSyntaxError,
     NodeRef,
     Statement,
     Subgraph,
     label_text,
 )
+
+MAX_LINE_CHARS = 400
 
 KEYWORDS = frozenset({"subgraph", "end", "direction"})
 # Instructions Mermaid hors grammaire, nommées dans le motif du refus pour aider le Scribe.
@@ -37,28 +44,11 @@ FORBIDDEN = frozenset(
     {"click", "call", "callback", "href", "style", "classdef", "class", "linkstyle", "interpolate"}
     | {"acctitle", "accdescr"}
 )
-ARROWS = ("-.->", "-.-", "-->", "---", "==>", "===")
 _RESERVED_IN_BARE_LABEL = set('"[](){}|')
 
-_HEADER = re.compile(r"(?:flowchart|graph)[ \t]+(TD|TB|BT|LR|RL)[ \t]*(?:;(.*))?")
-_ID = re.compile(r"[A-Za-z][A-Za-z0-9_]{0,63}(?![A-Za-z0-9_])")
+_HEADER = re.compile(r"(?:flowchart|graph)[ \t]++(TD|TB|BT|LR|RL)[ \t]*+(?:;(.*+))?")
+_ID = re.compile(r"[A-Za-z][A-Za-z0-9_]{0,63}+(?![A-Za-z0-9_])")
 _DIRECTION = re.compile(r"(?:TD|TB|BT|LR|RL)(?![A-Za-z0-9_])")
-_PIPE = re.compile(r'[ \t]*\|(?:"([^"]*)"|([^"|]*))\|')
-_TEXT_EDGES = (
-    (
-        re.compile(r'--[ \t]*(?:"([^"]*)"|([^"|;\-]+?))[ \t]*(-->|---)'),
-        {"-->": "-->", "---": "---"},
-    ),
-    (
-        re.compile(r'-\.[ \t]*(?:"([^"]*)"|([^"|;.]+?))[ \t]*(\.->|\.-)'),
-        {".->": "-.->", ".-": "-.-"},
-    ),
-    (re.compile(r'==[ \t]*(?:"([^"]*)"|([^"|;=]+?))[ \t]*(==>|===)'), {"==>": "==>", "===": "==="}),
-)
-
-
-class MermaidSyntaxError(ValueError):
-    """Une instruction hors grammaire ; le message est le motif rendu au Scribe."""
 
 
 class _Cursor:
@@ -126,7 +116,7 @@ def _node(cur: _Cursor) -> NodeRef:
     key = _identifier(cur, "identifiant de nœud (lettres ASCII, chiffres, `_`)")
     for index, (opening, closing) in enumerate(SHAPES):
         if cur.take(opening):
-            return NodeRef(key, index, _label(cur, closing))
+            return NodeRef(key, index, _label(cur, closing) or None)  # vide : l'identifiant
     return NodeRef(key)
 
 
@@ -142,29 +132,15 @@ def _group(cur: _Cursor) -> list[NodeRef]:
         nodes.append(_node(cur))
 
 
-def _optional(text: str) -> str | None:
-    return label_text(text) or None
-
-
 def _edge(cur: _Cursor) -> Edge | None:
     saved = cur.pos
     cur.skip_blanks()
-    for arrow in ARROWS:
-        if cur.take(arrow):
-            pipe = cur.match(_PIPE)
-            raw = (
-                None
-                if pipe is None
-                else (pipe.group(1) if pipe.group(1) is not None else pipe.group(2))
-            )
-            return Edge(arrow, None if raw is None else _optional(raw))
-    for pattern, arrows in _TEXT_EDGES:
-        found = cur.match(pattern)
-        if found is not None:
-            raw = found.group(1) if found.group(1) is not None else found.group(2)
-            return Edge(arrows[found.group(3)], _optional(raw))
-    cur.pos = saved
-    return None
+    found = edge_at(cur.text, cur.pos)
+    if found is None:
+        cur.pos = saved
+        return None
+    edge, cur.pos = found
+    return edge
 
 
 def _chain(cur: _Cursor) -> Chain:
@@ -205,22 +181,31 @@ def _statement(cur: _Cursor) -> Statement:
     saved = cur.pos
     cur.skip_blanks()
     if cur.take("["):
-        return Subgraph(key, _label(cur, "]"))
+        return Subgraph(key, _label(cur, "]") or None)
     cur.pos = saved
     return Subgraph(key)
+
+
+def _comment(cur: _Cursor) -> bool:
+    """Commentaire `%%` jusqu'à la fin de la ligne (ignoré) ; `%%{` est une directive, refusée."""
+    if not cur.text.startswith("%%", cur.pos):
+        return False
+    if "%%{" in cur.text[cur.pos :]:
+        raise MermaidSyntaxError("directive `%%{` interdite")
+    return True
 
 
 def _parse_line(text: str, chart: Flowchart) -> None:
     cur = _Cursor(text)
     while True:
         cur.skip_blanks()
-        if cur.done():
+        if cur.done() or _comment(cur):
             return
         if cur.take(";"):
             continue
         chart.statements.append(_statement(cur))
         cur.skip_blanks()
-        if not cur.done() and not cur.take(";"):
+        if not cur.done() and not cur.take(";") and not _comment(cur):
             raise cur.unexpected("`;` ou une fin de ligne")
 
 
@@ -242,6 +227,9 @@ def parse_flowchart(code: str) -> tuple[Flowchart | None, list[str]]:
     problems: list[str] = []
     for number, line in enumerate(code.splitlines(), start=1):
         text = line.strip()
+        if len(text) > MAX_LINE_CHARS:
+            problems.append(f"ligne {number} : plus de {MAX_LINE_CHARS} caractères")
+            continue
         if text.startswith("%%"):
             if "%%{" in text:
                 problems.append(f"ligne {number} : directive `%%{{` interdite")

@@ -28,6 +28,7 @@ from app.agents.nodes.mermaid_tree import (
 MAX_MERMAID_LINES = 80
 MAX_NODES = 40
 MAX_LABEL_CHARS = 80
+MAX_CODE_CHARS = 8000
 
 _ALLOWED_CONTROLS = {"\t", "\n", "\r"}
 _ESCAPES = str.maketrans(
@@ -91,6 +92,8 @@ def _chart_problems(chart: Flowchart) -> list[str]:
 
 
 def _analysis(code: str) -> tuple[Flowchart | None, list[str]]:
+    if len(code) > MAX_CODE_CHARS:  # borne avant toute analyse (4.8 reprend cette fonction)
+        return None, [f"schéma de plus de {MAX_CODE_CHARS} caractères"]
     if any(_invisible(char) for char in code):
         return None, ["caractère invisible ou de contrôle interdit"]
     chart, problems = parse_flowchart(code)
