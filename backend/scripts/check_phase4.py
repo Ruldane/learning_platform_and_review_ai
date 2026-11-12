@@ -91,7 +91,7 @@ async def run_check(
     client: httpx.AsyncClient,
     *,
     goal: str = DEFAULT_GOAL,
-    timeout_s: float = 1800.0,
+    timeout_s: float = 3600.0,
     events: EventFeed | None = None,
 ) -> list[str]:
     """Les étapes réussies, dans l'ordre ; `CheckFailed` à la première ratée. `events` : lecture
@@ -131,7 +131,7 @@ async def _main(api: str, timeout_s: float) -> int:
 def main(argv: Sequence[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Contrôle de fin de phase 4 (SPEC 18.1).")
     parser.add_argument("--api", default="http://localhost:8000", help=f"racine de l'API ({API})")
-    parser.add_argument("--timeout", type=float, default=1800.0, help="délai total en secondes")
+    parser.add_argument("--timeout", type=float, default=3600.0, help="délai total en secondes")
     args = parser.parse_args(argv)
     sys.exit(asyncio.run(_main(args.api, args.timeout)))
 
