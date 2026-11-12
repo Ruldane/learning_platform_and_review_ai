@@ -9,8 +9,11 @@ programme : deux appels simultanés ne lancent jamais deux sessions, ni deux le�
 
 Une session de leçon qui s'arrête sans passer par le port (Vérificateur invalide, quota,
 annulation…) laisse sa leçon `generating` : la leçon passe en échec au prochain appel (sa
-session n'est plus ouverte). Une leçon en échec est relancée tant qu'elle a eu moins de
-`MAX_ATTEMPTS` essais, après les modules jamais tentés. Journaux : identifiants seulement."""
+session n'est plus ouverte), au plus tard au passage suivant de la tâche (15 minutes) ; les
+lectures la montrent en échec dès l'arrêt (`status`). Une leçon en échec est relancée tant
+qu'elle a eu moins de `MAX_ATTEMPTS` essais, après les modules jamais tentés. Sans rien de dû,
+un appel ne fait que lire la base : ni écriture, ni lancement, ni appel au modèle. Journaux :
+identifiants seulement."""
 
 import logging
 from contextlib import AbstractAsyncContextManager
@@ -23,6 +26,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.db.models.lessons import Lesson
 from app.features.lessons.repository import LessonRepository
 from app.features.lessons.service.runtime import Launcher
+from app.features.lessons.service.status import GRAPH, INTERRUPTED, SUBJECT
 from app.features.program.service.programs import Loaded, list_validated_programs, load
 from app.features.sessions.service import list_open_sessions
 
@@ -31,9 +35,6 @@ logger = logging.getLogger(__name__)
 MAX_ATTEMPTS = 3
 HORIZON_DAYS = 7
 FIRST_WEEKS = (1, 2)
-GRAPH = "lesson_factory"
-SUBJECT = "program"
-INTERRUPTED = "La production de la leçon s'est arrêtée avant la fin : elle sera relancée."
 
 
 class ProductionContext(Protocol):
@@ -59,19 +60,21 @@ def week_due(rank: int, start: date, today: date) -> bool:
     return rank in FIRST_WEEKS or start <= today + timedelta(days=HORIZON_DAYS)
 
 
-def _missing_lessons(db: AsyncSession, user_id: str, loaded: Loaded, have: set[str]) -> None:
-    """Une leçon `pending` pour chaque module planifié qui n'en a pas (liste des leçons)."""
-    for module in loaded.modules:
-        if not module.skipped and module.id not in have:
-            db.add(
-                Lesson(
-                    user_id=user_id,
-                    module_id=module.id,
-                    program_id=loaded.program.id,
-                    title=module.title[:200],
-                    status="pending",
-                )
+def _missing_lessons(db: AsyncSession, user_id: str, loaded: Loaded, have: set[str]) -> int:
+    """Une leçon `pending` pour chaque module planifié qui n'en a pas (liste des leçons) ;
+    rend le nombre de leçons ajoutées (zéro hors de la première passe après la validation)."""
+    missing = [m for m in loaded.modules if not m.skipped and m.id not in have]
+    for module in missing:
+        db.add(
+            Lesson(
+                user_id=user_id,
+                module_id=module.id,
+                program_id=loaded.program.id,
+                title=module.title[:200],
+                status="pending",
             )
+        )
+    return len(missing)
 
 
 def _reconcile(lessons: list[Lesson], open_ids: list[str]) -> int:
@@ -105,9 +108,10 @@ async def _prepare(
     if loaded.program.status != "validated":
         return None
     repo = LessonRepository(db, user_id)
-    _missing_lessons(db, user_id, loaded, {x.module_id for x in await repo.for_program(program_id)})
-    await db.flush()
     rows = await repo.for_program(program_id)
+    if _missing_lessons(db, user_id, loaded, {x.module_id for x in rows}):
+        await db.flush()
+        rows = await repo.for_program(program_id)
     open_ids = await list_open_sessions(
         db, user_id, graph=GRAPH, subject_type=SUBJECT, subject_id=program_id
     )

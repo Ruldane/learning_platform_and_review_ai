@@ -8,13 +8,14 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.core.errors import AppError
 from app.db.models.lessons import Lesson
 from app.features.lessons.service import production
-from app.features.lessons.service.production import INTERRUPTED, ensure_lessons
+from app.features.lessons.service.production import ensure_lessons
 from app.features.lessons.service.runtime import LessonsRuntime
+from app.features.lessons.service.status import INTERRUPTED
 from app.features.lessons.service.store import AgentLessonStore
 from app.features.program.service.runtime import ProgramRuntime
 from app.features.program.service.validation import request_validation
@@ -235,9 +236,16 @@ async def test_scheduler_and_validation_start_one_chain(
     await lessons_due.run(job_ctx)
     assert await count_open_sessions(db_session_factory, GRAPH) == 1
     assert len(launcher.started) == 1
-    lessons = await lessons_of(db_session_factory, program.program_id)
-    assert sorted(lessons) == sorted(program.modules)  # jamais deux leçons pour un module
-    assert [x.status for x in lessons.values()].count("generating") == 1
+    async with db_session_factory() as db:
+        stmt = (
+            select(Lesson.module_id, func.count(), func.sum(Lesson.status == "generating"))
+            .where(Lesson.program_id == program.program_id)
+            .group_by(Lesson.module_id)
+        )
+        per_module = {row[0]: (int(row[1]), int(row[2])) for row in (await db.execute(stmt)).all()}
+    assert sorted(per_module) == sorted(program.modules)
+    assert all(count == 1 for count, _ in per_module.values())  # jamais deux leçons par module
+    assert sum(generating for _, generating in per_module.values()) == 1
 
 
 async def test_route_validation_starts_lessons_too(

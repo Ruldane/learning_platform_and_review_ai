@@ -182,9 +182,13 @@ async def _open_agents(app: FastAPI, stack: AsyncExitStack) -> None:
     app.state.launcher.bind(app.state.runtime.runner)
     stack.callback(app.state.launcher.unbind)
     # Tâches planifiées (leçons « J-7 », D91) : après le moteur et le lanceur lié, donc
-    # arrêtées avant eux (un passage en cours est annulé et attendu).
-    context = scheduler_context(app.state.session_factory, app.state.launcher, app.state.lessons)
-    await stack.enter_async_context(open_scheduler(JOBS, context))
+    # arrêtées avant eux (un passage en cours est annulé et attendu). Réglage
+    # `scheduler_enabled` à `false` (tests d'application) : pas de planificateur du tout.
+    if app.state.settings.scheduler_enabled:
+        context = scheduler_context(
+            app.state.session_factory, app.state.launcher, app.state.lessons
+        )
+        await stack.enter_async_context(open_scheduler(JOBS, context))
 
 
 def create_app(

@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
 from app.db.models.program import Module, PlanVersion, Program, Task, Week
+from app.features.lessons.service.status import open_lesson_sessions, shown
 from app.features.program.repository import (
     ModuleExtrasRepository,
     ModuleRepository,
@@ -158,8 +159,15 @@ def day_budget(version: PlanVersion | None) -> tuple[int, int]:
 
 async def _modules_out(db: AsyncSession, user_id: str, loaded: Loaded) -> dict[str, ModuleOut]:
     extras = ModuleExtrasRepository(db, user_id)
-    lessons = await extras.lessons(loaded.program.id)
+    rows = await extras.lessons(loaded.program.id)
     counts = await extras.resource_counts(loaded.program.id)
+    open_ids = (
+        await open_lesson_sessions(db, user_id, loaded.program.id)
+        if any(row[1] == "generating" for row in rows.values())
+        else []
+    )
+    # Leçon interrompue hors du port : montrée en échec, sans écriture (D91).
+    lessons = {key: (row[0], shown(row[1], row[2], None, open_ids)[0]) for key, row in rows.items()}
     return {
         module.id: ModuleOut(
             id=module.id,

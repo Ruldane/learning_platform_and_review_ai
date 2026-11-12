@@ -86,12 +86,13 @@ class ModuleExtrasRepository(UserScopedRepository[Lesson]):
 
     model = Lesson
 
-    async def lessons(self, program_id: str) -> dict[str, tuple[str, str]]:
-        """`module → (leçon, statut)`."""
-        stmt = select(Lesson.module_id, Lesson.id, Lesson.status).where(
+    async def lessons(self, program_id: str) -> dict[str, tuple[str, str, str | None]]:
+        """`module → (leçon, statut, session)`."""
+        stmt = select(Lesson.module_id, Lesson.id, Lesson.status, Lesson.session_id).where(
             Lesson.user_id == self.user_id, Lesson.program_id == program_id
         )
-        return {row[0]: (row[1], row[2]) for row in (await self.session.execute(stmt)).all()}
+        rows = (await self.session.execute(stmt)).all()
+        return {row[0]: (row[1], row[2], row[3]) for row in rows}
 
     async def resource_counts(self, program_id: str) -> dict[str, int]:
         stmt = (

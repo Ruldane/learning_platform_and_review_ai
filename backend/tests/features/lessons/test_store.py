@@ -2,6 +2,9 @@
 publication (leçon, ressources, PDF, mémoire) idempotente, copie locale des PDF libres sinon
 fiche de lecture, échec qui ne touche jamais une leçon prête, filtre utilisateur partout."""
 
+from dataclasses import replace
+
+import pytest
 from sqlalchemy import func, select
 
 from app.agents.tools.lesson_port import LessonReport, ResourcePick
@@ -10,6 +13,8 @@ from app.db.models.learning import Goal
 from app.db.models.lessons import Lesson, Resource
 from app.db.models.memory import MemoryItem
 from app.db.models.research import Source
+from app.features.lessons.service.publishing import _settle
+from app.features.lessons.service.runtime import LessonsRuntime
 from app.features.lessons.service.store import AgentLessonStore
 from app.features.program.service.runtime import ProgramRuntime
 from app.features.research.service.cache import url_key
@@ -237,3 +242,48 @@ async def test_every_call_checks_the_owner(
         else:  # pragma: no cover
             raise AssertionError("un module d'un autre ne doit jamais être touché")
     assert await _count(db_session_factory, Lesson) == 0
+
+
+async def test_unkept_resource_copy_is_deleted(
+    program_rt: ProgramRuntime,
+    store: AgentLessonStore,
+    lessons_rt: LessonsRuntime,
+    db_session_factory: Factory,
+) -> None:
+    """Copie rangée entre-temps par un autre appel, ressource disparue ou écriture en échec :
+    le fichier en trop est supprimé (jamais de fichier orphelin)."""
+    program = await draft_program(program_rt)
+    sources = await add_sources(db_session_factory, SESSION, 1)
+    await publish(store, program, sources)
+    async with db_session_factory() as db:
+        resource = (await db.execute(select(Resource))).scalar_one()
+    storage = lessons_rt.storage
+
+    class Broken:
+        async def __aenter__(self) -> None:
+            raise RuntimeError("base indisponible")
+
+        async def __aexit__(self, *exc: object) -> None:
+            return None
+
+    cases = [
+        (lessons_rt, resource.id),  # copie rangée entre-temps : la nôtre arrive trop tard
+        (lessons_rt, "ressource-disparue"),
+        (replace(lessons_rt, session_factory=lambda: Broken()), resource.id),
+    ]
+    for rt, resource_id in cases:
+        await _set_local_key(db_session_factory, resource.id, "deja-rangee")
+        key = await storage.save(ME, "resources", PDF, ".pdf")
+        try:
+            assert await _settle(rt, ME, resource_id, key, "Fiche.") is False
+        except RuntimeError:
+            assert rt is not lessons_rt
+        with pytest.raises(FileNotFoundError):
+            await storage.read(ME, key)
+
+
+async def _set_local_key(factory: Factory, resource_id: str, key: str) -> None:
+    async with factory() as db:
+        row = (await db.execute(select(Resource).where(Resource.id == resource_id))).scalar_one()
+        row.local_key = key
+        await db.commit()

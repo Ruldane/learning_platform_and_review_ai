@@ -8,6 +8,7 @@ from app.db.models.lessons import Lesson
 from app.features.lessons.repository import LessonRepository, ResourceRepository
 from app.features.lessons.schemas import LessonOut, LessonSummaryOut
 from app.features.lessons.service.resources import to_out
+from app.features.lessons.service.status import open_lesson_sessions, shown
 from app.features.program.service.programs import Loaded, load
 from app.providers.storage.base import FileStorage, StorageKeyInvalid
 
@@ -26,28 +27,42 @@ def _week_ranks(loaded: Loaded) -> dict[str, int]:
     return {module.id: weeks.get(module.week_id, 0) for module in loaded.modules}
 
 
-def _summary(lesson: Lesson, week_rank: int) -> dict[str, object]:
+def _summary(lesson: Lesson, week_rank: int, open_ids: list[str]) -> dict[str, object]:
+    status, reason = shown(lesson.status, lesson.session_id, lesson.failure_reason, open_ids)
     return {
         "id": lesson.id,
         "module_id": lesson.module_id,
         "week_rank": week_rank,
         "title": lesson.title,
-        "status": lesson.status,
+        "status": status,
+        "failure_reason": reason,
         "word_count": lesson.word_count,
         "pdf_available": lesson.pdf_key is not None,
     }
 
 
+async def _open_ids(
+    db: AsyncSession, user_id: str, program_id: str, rows: list[Lesson]
+) -> list[str]:
+    """Sessions de leçon ouvertes, lues seulement si une leçon est `generating`."""
+    if not any(row.status == "generating" for row in rows):
+        return []
+    return await open_lesson_sessions(db, user_id, program_id)
+
+
 async def list_lessons(db: AsyncSession, user_id: str, program_id: str) -> list[LessonSummaryOut]:
     """Leçons d'un programme de l'utilisateur (404 `program_not_found` sinon), dans l'ordre du
-    programme ; un module sans leçon encore créée n'apparaît pas."""
+    programme ; un module sans leçon encore créée n'apparaît pas. Une leçon interrompue hors
+    du port apparaît en échec (`status`), sans écriture."""
     loaded = await load(db, user_id, program_id)
     ranks = _week_ranks(loaded)
     order = {module.id: index for index, module in enumerate(loaded.modules)}
     rows = await LessonRepository(db, user_id).for_program(program_id)
     rows.sort(key=lambda lesson: order.get(lesson.module_id, len(order)))
+    open_ids = await _open_ids(db, user_id, program_id, rows)
     return [
-        LessonSummaryOut.model_validate(_summary(row, ranks.get(row.module_id, 0))) for row in rows
+        LessonSummaryOut.model_validate(_summary(row, ranks.get(row.module_id, 0), open_ids))
+        for row in rows
     ]
 
 
@@ -62,12 +77,12 @@ async def get_lesson(db: AsyncSession, user_id: str, lesson_id: str) -> LessonOu
     lesson = await _owned(db, user_id, lesson_id)
     loaded = await load(db, user_id, lesson.program_id)
     resources = await ResourceRepository(db, user_id).for_module(lesson.module_id)
+    open_ids = await _open_ids(db, user_id, lesson.program_id, [lesson])
     return LessonOut.model_validate(
         {
-            **_summary(lesson, _week_ranks(loaded).get(lesson.module_id, 0)),
+            **_summary(lesson, _week_ranks(loaded).get(lesson.module_id, 0), open_ids),
             "program_id": lesson.program_id,
             "markdown": lesson.markdown,
-            "failure_reason": lesson.failure_reason,
             "resources": [to_out(row) for row in resources],
         }
     )

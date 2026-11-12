@@ -19,8 +19,14 @@ from tests.support.research import fake_research_providers
 
 @pytest.fixture
 def settings(tmp_path: Path) -> Settings:
-    # Isolé du .env et de l'environnement du développeur : tests déterministes.
-    return Settings(_env_file=None, data_dir=tmp_path, cors_origin="http://localhost:5173")
+    # Isolé du .env et de l'environnement du développeur : tests déterministes. Sans
+    # planificateur : un test qui en a besoin l'active (`scheduler_enabled`).
+    return Settings(
+        _env_file=None,
+        data_dir=tmp_path,
+        cors_origin="http://localhost:5173",
+        scheduler_enabled=False,
+    )
 
 
 # Base de test : un vrai fichier SQLite `tmp_path/app.db` (celui de `settings.database_url`).

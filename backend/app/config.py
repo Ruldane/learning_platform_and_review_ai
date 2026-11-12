@@ -44,6 +44,8 @@ class Settings(BaseSettings):
     gotenberg_url: str = "http://gotenberg:3000"
     # Repli Gotenberg du lecteur web (page rendue en JavaScript, D72) : `false` le coupe.
     web_render_fallback: bool = True
+    # Tâches planifiées (leçons « J-7 », D91) : `false` ne démarre pas le planificateur (tests).
+    scheduler_enabled: bool = True
 
     # Une origine ou plusieurs séparées par des virgules ; voir `cors_origins`.
     cors_origin: str = "http://localhost:5173"

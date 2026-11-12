@@ -20,9 +20,9 @@ async def wait_for(predicate: object, timeout: float = 3.0) -> None:
             await asyncio.sleep(0.01)
 
 
-def test_lessons_due_runs_every_six_hours_and_at_startup() -> None:
+def test_lessons_due_runs_every_fifteen_minutes_and_at_startup() -> None:
     assert [(j.name, j.every, j.at_startup) for j in JOBS] == [
-        ("lessons_due", timedelta(hours=6), True)
+        ("lessons_due", timedelta(minutes=15), True)
     ]
 
 

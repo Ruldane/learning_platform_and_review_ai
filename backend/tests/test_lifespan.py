@@ -257,7 +257,7 @@ async def test_lifespan_wires_lessons_and_the_scheduler(
         seen.append(ctx)
 
     monkeypatch.setattr(main_module, "JOBS", [JobSpec("probe", timedelta(hours=6), probe)])
-    app = create_app(settings)
+    app = create_app(settings.model_copy(update={"scheduler_enabled": True}))
     async with LifespanManager(app):
         async with asyncio.timeout(3):
             while not seen:
@@ -267,3 +267,19 @@ async def test_lifespan_wires_lessons_and_the_scheduler(
         assert app.state.program.lessons is app.state.lessons
         assert app.state.lessons.launcher is app.state.launcher
     assert len(seen) == 1
+
+
+async def test_scheduler_disabled_by_setting_runs_no_job(
+    settings: Settings, db_engine: object, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`scheduler_enabled=False` (réglage des tests d'application) : aucune tâche ne tourne."""
+    seen: list[JobContext] = []
+
+    async def probe(ctx: JobContext) -> None:
+        seen.append(ctx)
+
+    monkeypatch.setattr(main_module, "JOBS", [JobSpec("probe", timedelta(hours=6), probe)])
+    assert settings.scheduler_enabled is False
+    async with LifespanManager(create_app(settings)):
+        await asyncio.sleep(0.05)
+    assert seen == []

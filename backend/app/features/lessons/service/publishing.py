@@ -60,16 +60,32 @@ async def copy_resources(rt: LessonsRuntime, p: Published) -> None:
     for resource_id, url, source_id in pending:
         data = await download_pdf(rt.research, p.user_id, url)
         key = None if data is None else await rt.storage.save(p.user_id, "resources", data, ".pdf")
-        async with rt.session_factory() as db:
-            row = await ResourceRepository(db, p.user_id).get(resource_id)
-            if row is not None and row.local_key is None:
-                row.local_key = key
-                row.note = None if key else (notes.get(source_id or "") or "Fiche indisponible.")
-            await db.commit()
-        copied += key is not None
+        note = notes.get(source_id or "") or "Fiche indisponible."
+        copied += await _settle(rt, p.user_id, resource_id, key, note)
     logger.info(
         "Ressources : leçon %s, %d copie(s) locale(s) sur %d", p.lesson_id, copied, len(pending)
     )
+
+
+async def _settle(
+    rt: LessonsRuntime, user_id: str, resource_id: str, key: str | None, note: str
+) -> bool:
+    """Copie (ou, sans copie, fiche) rangée sur la ressource ; rend « copie gardée ». Une copie
+    non gardée (rangée entre-temps par un autre appel, ressource disparue, écriture en échec)
+    est supprimée du disque : jamais de fichier orphelin."""
+    kept = False
+    try:
+        async with rt.session_factory() as db:
+            row = await ResourceRepository(db, user_id).get(resource_id)
+            claimed = row is not None and row.local_key is None
+            if row is not None and claimed:
+                row.local_key, row.note = key, (None if key else note)
+            await db.commit()
+        kept = claimed and key is not None
+    finally:
+        if key is not None and not kept:
+            await rt.storage.delete(user_id, key)
+    return kept
 
 
 async def lesson_pdf(rt: LessonsRuntime, p: Published) -> bool:
