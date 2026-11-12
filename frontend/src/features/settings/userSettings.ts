@@ -33,8 +33,11 @@ export function buildUserSettings(current: SettingsOut, tiers: TierChoices): Use
     search_max_queries: current.search_max_queries,
     search_provider_order: current.search_provider_order,
     session_token_cap: current.session_token_cap,
+    study_break_minutes: current.study_break_minutes,
+    study_work_minutes: current.study_work_minutes,
     style_guide: current.style_guide,
     tiers,
+    timezone: current.timezone,
     weekly_review: current.weekly_review,
   };
 }

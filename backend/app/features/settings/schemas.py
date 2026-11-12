@@ -2,6 +2,7 @@ from typing import Annotated, Literal
 
 from pydantic import AfterValidator, BaseModel, Field, computed_field, field_validator
 
+from app.core.clock import DEFAULT_ZONE, Weekday, is_zone
 from app.core.domains import normalize_domain
 from app.providers.llm.base import TIERS, ModelChoice, Tier
 from app.providers.llm.model_defaults import DEFAULT_TIERS, supports_vision
@@ -49,8 +50,14 @@ def _domains(values: list[str]) -> list[str]:
     return normalized
 
 
+def _zone(name: str) -> str:
+    if not is_zone(name):
+        raise ValueError("fuseau inconnu")  # message fixe : la valeur reçue n'est pas recopiée
+    return name
+
+
 DomainList = Annotated[list[str], Field(max_length=MAX_DOMAINS), AfterValidator(_domains)]
-Weekday = Literal["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+TimeZoneName = Annotated[str, Field(min_length=1, max_length=64), AfterValidator(_zone)]
 
 
 class Availability(BaseModel):
@@ -94,6 +101,11 @@ class UserSettings(BaseModel):
     # Plafonds d'une session de recherche (SPEC 10.4) : requêtes lancées, pages lues.
     search_max_queries: int = Field(default=12, ge=1, le=50)
     search_max_pages: int = Field(default=30, ge=1, le=100)
+    # Session guidée (SPEC F14) : cycles de travail et de pause du minuteur, en minutes.
+    study_work_minutes: int = Field(default=50, ge=10, le=120)
+    study_break_minutes: int = Field(default=10, ge=0, le=60)
+    # Fuseau IANA de January (D98) : jours, semaines et bilan du dimanche se comptent en local.
+    timezone: TimeZoneName = DEFAULT_ZONE
 
     @field_validator("tiers")
     @classmethod

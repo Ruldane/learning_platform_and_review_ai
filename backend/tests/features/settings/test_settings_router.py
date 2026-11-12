@@ -133,3 +133,33 @@ async def test_settings_normalizes_domains(client: httpx.AsyncClient) -> None:
     again = (await client.get("/api/v1/settings")).json()
     assert again["search_provider_order"] == ["brave", "searxng"]
     assert (again["search_max_queries"], again["search_max_pages"]) == (50, 100)
+
+
+async def test_settings_study_defaults(client: httpx.AsyncClient) -> None:
+    body = (await client.get("/api/v1/settings")).json()
+    assert (body["study_work_minutes"], body["study_break_minutes"]) == (50, 10)
+    assert body["timezone"] == "Europe/Paris"
+
+
+async def test_study_rhythm_and_timezone_roundtrip_and_bounds(client: httpx.AsyncClient) -> None:
+    base = (await client.get("/api/v1/settings")).json()
+    change = {"study_work_minutes": 25, "study_break_minutes": 0, "timezone": "America/New_York"}
+    assert (await client.put("/api/v1/settings", json=base | change)).status_code == 200
+    again = (await client.get("/api/v1/settings")).json()
+    assert {key: again[key] for key in change} == change
+    for bad in (
+        {"study_work_minutes": 9},
+        {"study_work_minutes": 121},
+        {"study_break_minutes": -1},
+        {"study_break_minutes": 61},
+    ):
+        r = await client.put("/api/v1/settings", json=base | bad)
+        assert r.status_code == 422, bad
+
+
+async def test_unknown_timezone_is_422_without_echo(client: httpx.AsyncClient) -> None:
+    current = (await client.get("/api/v1/settings")).json()
+    for zone in ("Mars/Olympus", "../../etc/Olympus", "", "Olympus" * 20):
+        r = await client.put("/api/v1/settings", json={**current, "timezone": zone})
+        assert r.status_code == 422 and r.json()["error"]["code"] == "validation_error"
+        assert "Olympus" not in r.text

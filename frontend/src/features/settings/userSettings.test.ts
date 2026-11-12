@@ -51,9 +51,22 @@ describe("buildUserSettings", () => {
       "search_max_queries",
       "search_provider_order",
       "session_token_cap",
+      "study_break_minutes",
+      "study_work_minutes",
       "style_guide",
       "tiers",
+      "timezone",
       "weekly_review",
+    ]);
+  });
+
+  it("garde le rythme d'étude et le fuseau tels quels", () => {
+    const current = { ...settingsFixture, study_work_minutes: 25, timezone: "America/New_York" };
+    const body = buildUserSettings(current, newTiers);
+    expect([body.study_work_minutes, body.study_break_minutes, body.timezone]).toEqual([
+      25,
+      10,
+      "America/New_York",
     ]);
   });
 });

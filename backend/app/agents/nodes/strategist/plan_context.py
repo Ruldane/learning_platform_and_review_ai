@@ -63,6 +63,7 @@ def context_vars(ctx: ProgramContext) -> dict[str, Any]:
         "weekly_minutes": budget.weekly_minutes,
         "cap_minutes": budget.cap_minutes,
         "cap_hours": hours(budget.cap_minutes),
+        "floor_minutes": budget.floor_minutes,
         "weekday_minutes": budget.weekday_minutes,
         "weekend_minutes": budget.weekend_minutes,
         "known": _known(ctx.known_skills),

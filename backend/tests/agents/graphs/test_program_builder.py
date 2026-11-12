@@ -59,7 +59,13 @@ async def test_builder_saves_draft_and_stops_for_validation(
     said = await c.events("agent.message")
     assert "2 semaine(s)" in said[-1]["text"] and "85 %" in said[-1]["text"]
     prompt = c.prompt_of_call(1)
-    for expected in ("714 min", "Parcours pratique", "Le soir surtout", "en français"):
+    for expected in (
+        "714 min",
+        "au moins 428 min",
+        "Parcours pratique",
+        "Le soir surtout",
+        "en français",
+    ):
         assert expected in prompt
     assert 'source="proposition 1"' in prompt and 'source="compte rendu du Scribe"' in prompt
     assert "MÉLANGER" not in prompt and len(c.plan_prompts()) == 1  # conforme du premier coup

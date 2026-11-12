@@ -29,6 +29,7 @@ class BudgetView:
     cap_minutes: int  # 85 % du budget hebdomadaire
     weekday_minutes: int  # lundi à vendredi, chacun
     weekend_minutes: int  # le bloc du samedi ; dimanche libre
+    floor_minutes: int  # 60 % du plafond : charge visée au moins, sauf la dernière semaine (D98)
 
 
 @dataclass(frozen=True)

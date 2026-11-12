@@ -1463,6 +1463,11 @@ export interface components {
         };
         /** LessonOut */
         LessonOut: {
+            /**
+             * Attempts
+             * @description Essais de production faits (3 au plus) : une leçon `failed` avec moins de 3 essais sera relancée.
+             */
+            attempts: number;
             /** Failure Reason */
             failure_reason: string | null;
             /** Id */
@@ -1492,6 +1497,11 @@ export interface components {
         };
         /** LessonSummaryOut */
         LessonSummaryOut: {
+            /**
+             * Attempts
+             * @description Essais de production faits (3 au plus) : une leçon `failed` avec moins de 3 essais sera relancée.
+             */
+            attempts: number;
             /** Id */
             id: string;
             /** Module Id */
@@ -2346,6 +2356,16 @@ export interface components {
              */
             session_token_cap: number;
             /**
+             * Study Break Minutes
+             * @default 10
+             */
+            study_break_minutes: number;
+            /**
+             * Study Work Minutes
+             * @default 50
+             */
+            study_work_minutes: number;
+            /**
              * Style Guide
              * @default
              */
@@ -2354,6 +2374,11 @@ export interface components {
             tiers?: {
                 [key: string]: components["schemas"]["ModelChoice"];
             };
+            /**
+             * Timezone
+             * @default Europe/Paris
+             */
+            timezone: string;
             /**
              * Vision Enabled
              * @description Faux si le niveau `vision` pointe vers un modèle sans vision (spec 11.2).
@@ -2741,6 +2766,16 @@ export interface components {
              */
             session_token_cap: number;
             /**
+             * Study Break Minutes
+             * @default 10
+             */
+            study_break_minutes: number;
+            /**
+             * Study Work Minutes
+             * @default 50
+             */
+            study_work_minutes: number;
+            /**
              * Style Guide
              * @default
              */
@@ -2749,6 +2784,11 @@ export interface components {
             tiers?: {
                 [key: string]: components["schemas"]["ModelChoice"];
             };
+            /**
+             * Timezone
+             * @default Europe/Paris
+             */
+            timezone: string;
             weekly_review?: components["schemas"]["WeeklyReview"];
         };
         /**

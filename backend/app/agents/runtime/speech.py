@@ -57,12 +57,9 @@ def count_words(text: str) -> int:
     return sum(1 for match in _TOKEN.finditer(text) if _is_word(match.group()))
 
 
-def cap_words(text: str, limit: int) -> str:
-    """`limit` mots au plus : texte inchangé s'il tient ; sinon coupé après la dernière phrase
-    complète (., !, ?) qui tient dans `limit` mots, à défaut après les `limit` premiers mots
-    suivis de « … ». La mise en forme (sauts de ligne) de la partie gardée est conservée."""
-    if count_words(text) <= limit:
-        return text
+def _cut_at(text: str, limit: int) -> tuple[int, bool]:
+    """Fin de la partie gardée de `text` (plus de `limit` mots) et s'il faut « … » après : la
+    dernière phrase complète (., !, ?) qui tient, à défaut les `limit` premiers mots."""
     words = 0
     word_end = sentence_end = 0
     previous_end = -1
@@ -76,9 +73,49 @@ def cap_words(text: str, limit: int) -> str:
         if _SENTENCE_END.search(token) or (_TRAILING.match(token) and sentence_end == previous_end):
             sentence_end = match.end()
         previous_end = match.end()
-    if sentence_end:
-        return text[:sentence_end]
-    return f"{text[:word_end].rstrip()} {ELLIPSIS}"
+    return (sentence_end, False) if sentence_end else (word_end, True)
+
+
+def _cut(text: str, limit: int) -> str:
+    end, ellipsis = _cut_at(text, limit)
+    return f"{text[:end].rstrip()} {ELLIPSIS}" if ellipsis else text[:end]
+
+
+def _keep_line(text: str, limit: int, keep: re.Pattern[str]) -> str | None:
+    """Coupe qui garde entière la première ligne où `keep` correspond (comptée dans `limit`),
+    ou `None` si aucune ligne ne correspond ou si la coupe ordinaire la garde déjà."""
+    match = keep.search(text)
+    if match is None:
+        return None
+    start = text.rfind("\n", 0, match.start()) + 1
+    stop = text.find("\n", match.start())
+    stop = len(text) if stop == -1 else stop
+    if _cut_at(text, limit)[0] >= stop:
+        return None
+    line = text[start:stop].rstrip()
+    room = limit - count_words(line)
+    if room <= 0:
+        return _cut(line, limit) if room < 0 else line
+    before = text[:start].rstrip()
+    if not before:
+        return line
+    head = before if count_words(before) <= room else _cut(before, room)
+    return f"{head}\n{line}"
+
+
+def cap_words(text: str, limit: int, *, keep: re.Pattern[str] | None = None) -> str:
+    """`limit` mots au plus : texte inchangé s'il tient ; sinon coupé après la dernière phrase
+    complète (., !, ?) qui tient dans `limit` mots, à défaut après les `limit` premiers mots
+    suivis de « … ». La mise en forme (sauts de ligne) de la partie gardée est conservée.
+
+    Avec `keep`, la première ligne qui correspond est gardée entière (comptée dans `limit`,
+    coupée seulement si elle dépasse seule `limit`) : ce qui la précède est coupé comme
+    ci-dessus dans les mots qui restent, ce qui la suit est retiré (l'objection du Sceptique)."""
+    if count_words(text) <= limit:
+        return text
+    if keep is not None and (kept := _keep_line(text, limit, keep)) is not None:
+        return kept
+    return _cut(text, limit)
 
 
 def extract_citations(text: str, catalog: Sequence[CitationEntry]) -> list[Citation]:
@@ -114,21 +151,24 @@ async def speak(
     catalog: Sequence[CitationEntry],
     max_words: int,
     revise: Callable[[str], str | None] | None = None,
+    keep: re.Pattern[str] | None = None,
 ) -> Spoken:
     """`agent.started`, tokens en direct (`call_with_retries`), puis `agent.message` avec le
     texte coupé à `max_words` et ses citations, sous le `message_id` des tokens (D57).
 
     `revise(texte coupé)` rend une demande de correction (règles du débat non tenues, D85) ou
     `None` : une seule nouvelle demande est faite alors, sans tokens en direct, et son texte
-    remplace le premier sous le même `message_id` (la bulle en cours est corrigée)."""
+    remplace le premier sous le même `message_id` (la bulle en cours est corrigée).
+
+    `keep` : la première ligne qui correspond survit à la coupe (`cap_words`)."""
     emit("agent.started", {"step": step, "intent": intent}, agent=agent)
     reply = await call_with_retries(model, messages, agent=agent)
-    text = cap_words(message_text(reply).strip(), max_words)
+    text = cap_words(message_text(reply).strip(), max_words, keep=keep)
     correction = revise(text) if revise is not None else None
     if correction is not None:
         retry = [*messages, AIMessage(text), HumanMessage(correction)]
         second = await call_with_retries(model, retry, agent=agent, stream=False)
-        text = cap_words(message_text(second).strip(), max_words)
+        text = cap_words(message_text(second).strip(), max_words, keep=keep)
     citations = extract_citations(text, catalog)
     payload = AgentMessagePayload(
         message_id=reply.id or f"{agent}-{step}", text=text, citations=citations

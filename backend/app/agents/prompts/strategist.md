@@ -51,7 +51,9 @@ Règles du programme (tout écart te sera renvoyé à corriger) :
   `projet`, `minutes` de 15 à 120, `done_criterion` (le critère de fin, vérifiable) ;
 - chaque semaine contient au moins une tâche `pratiquer` et se termine par un `quiz` ;
 - la somme des minutes d'une semaine reste sous le plafond ; mieux vaut une semaine de plus
-  qu'une semaine trop chargée.
+  qu'une semaine trop chargée ;
+- remplis chaque semaine entre 60 % du plafond (au moins {{ floor_minutes }} min) et le
+  plafond, sauf la dernière : une semaine trop légère étire le programme pour rien.
 
 Référentiel de compétences du programme :
 - `skills` : chaque compétence visée par un module, une fois : `name`, `domain` (son domaine, par

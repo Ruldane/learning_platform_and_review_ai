@@ -156,3 +156,18 @@ async def test_resource_status_patch(client: httpx.AsyncClient, app: FastAPI) ->
     assert {x["id"] for x in listed} == {s.resources[0], s.resources[2]}
     r = await client.patch(f"{API}/resources/{s.resources[0]}", json={"status": "fini!secret"})
     assert r.status_code == 422 and "secret" not in r.text
+
+
+async def test_lesson_summary_exposes_attempts(client: httpx.AsyncClient, app: FastAPI) -> None:
+    s = await seed(app)
+    async with app.state.session_factory() as db:
+        failed = await db.get(Lesson, s.pending_id)
+        assert failed is not None
+        failed.status, failed.attempts, failed.failure_reason = "failed", 1, "Délai dépassé."
+        ready = await db.get(Lesson, s.lesson_id)
+        assert ready is not None
+        ready.attempts = 5  # au-delà du plafond (relances d'avant la phase 4) : 3 montré
+        await db.commit()
+    listed = (await client.get(f"{API}/programs/{s.program_id}/lessons")).json()
+    assert [(x["status"], x["attempts"]) for x in listed] == [("ready", 3), ("failed", 1)]
+    assert (await client.get(f"{API}/lessons/{s.pending_id}")).json()["attempts"] == 1

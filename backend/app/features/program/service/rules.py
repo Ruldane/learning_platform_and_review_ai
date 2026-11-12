@@ -1,7 +1,10 @@
 """La règle d'une semaine (SPEC 3.4) en un seul endroit (D86 §1, D88) : charge au plus 85 % du
 budget, au moins une tâche de pratique, un quiz. Le brouillon du Stratège (`check_draft`), les
 semaines rangées (`week_problems`) et les modifications de January (`editing.check_weeks`)
-passent tous par `week_breaks`."""
+passent tous par `week_breaks`.
+
+La sous-charge (D98) n'en fait pas partie : c'est une règle du Stratège seulement (`check_draft`,
+puis l'avance des tâches au rangement), January reste libre d'alléger une semaine."""
 
 from collections.abc import Sequence
 from typing import Literal
@@ -9,6 +12,19 @@ from typing import Literal
 from app.db.models.program import TaskType
 
 WeekRule = Literal["week_over_budget", "week_needs_practice", "week_needs_quiz"]
+# Part du plafond qu'une semaine du Stratège atteint au moins, sauf la dernière (D98).
+UNDERLOAD_SHARE = 0.6
+
+
+def floor_minutes(cap_minutes: int, share: float = UNDERLOAD_SHARE) -> int:
+    """`share` du plafond arrondi par défaut, en entiers (pas d'erreur flottante) :
+    `floor_minutes(714)` = 428."""
+    return cap_minutes * round(share * 100) // 100
+
+
+def describe_underload(label: str, total: int, floor: int) -> str:
+    """Phrase rendue au Stratège : « {label} : 125 min prévues, vise au moins 428 min. »"""
+    return f"{label} : {total} min prévues, vise au moins {floor} min."
 
 
 def week_breaks(tasks: Sequence[tuple[int, TaskType]], cap_minutes: int) -> list[WeekRule]:

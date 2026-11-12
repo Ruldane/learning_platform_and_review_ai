@@ -1528,6 +1528,13 @@
       },
       "LessonOut": {
         "properties": {
+          "attempts": {
+            "description": "Essais de production faits (3 au plus) : une leçon `failed` avec moins de 3 essais sera relancée.",
+            "maximum": 3.0,
+            "minimum": 0.0,
+            "title": "Attempts",
+            "type": "integer"
+          },
           "failure_reason": {
             "anyOf": [
               {
@@ -1596,6 +1603,7 @@
           "week_rank",
           "title",
           "status",
+          "attempts",
           "word_count",
           "pdf_available",
           "program_id",
@@ -1608,6 +1616,13 @@
       },
       "LessonSummaryOut": {
         "properties": {
+          "attempts": {
+            "description": "Essais de production faits (3 au plus) : une leçon `failed` avec moins de 3 essais sera relancée.",
+            "maximum": 3.0,
+            "minimum": 0.0,
+            "title": "Attempts",
+            "type": "integer"
+          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -1650,6 +1665,7 @@
           "week_rank",
           "title",
           "status",
+          "attempts",
           "word_count",
           "pdf_available"
         ],
@@ -3953,6 +3969,20 @@
             "title": "Session Token Cap",
             "type": "integer"
           },
+          "study_break_minutes": {
+            "default": 10,
+            "maximum": 60.0,
+            "minimum": 0.0,
+            "title": "Study Break Minutes",
+            "type": "integer"
+          },
+          "study_work_minutes": {
+            "default": 50,
+            "maximum": 120.0,
+            "minimum": 10.0,
+            "title": "Study Work Minutes",
+            "type": "integer"
+          },
           "style_guide": {
             "default": "",
             "title": "Style Guide",
@@ -3972,6 +4002,13 @@
             },
             "title": "Tiers",
             "type": "object"
+          },
+          "timezone": {
+            "default": "Europe/Paris",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Timezone",
+            "type": "string"
           },
           "vision_enabled": {
             "description": "Faux si le niveau `vision` pointe vers un modèle sans vision (spec 11.2).",
@@ -4944,6 +4981,20 @@
             "title": "Session Token Cap",
             "type": "integer"
           },
+          "study_break_minutes": {
+            "default": 10,
+            "maximum": 60.0,
+            "minimum": 0.0,
+            "title": "Study Break Minutes",
+            "type": "integer"
+          },
+          "study_work_minutes": {
+            "default": 50,
+            "maximum": 120.0,
+            "minimum": 10.0,
+            "title": "Study Work Minutes",
+            "type": "integer"
+          },
           "style_guide": {
             "default": "",
             "title": "Style Guide",
@@ -4963,6 +5014,13 @@
             },
             "title": "Tiers",
             "type": "object"
+          },
+          "timezone": {
+            "default": "Europe/Paris",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Timezone",
+            "type": "string"
           },
           "weekly_review": {
             "$ref": "#/components/schemas/WeeklyReview"

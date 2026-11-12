@@ -26,6 +26,7 @@ from app.features.program.service.planning import (
     next_monday,
     schedule,
 )
+from app.features.program.service.rules import floor_minutes
 from tests.support.council import GOAL_ID, GOAL_TEXT
 
 MONDAY = date(2026, 11, 16)
@@ -121,7 +122,10 @@ class FakeProgramStore:
 
     def _view(self) -> BudgetView:
         b = self.budget
-        return BudgetView(b.weekly_minutes, b.cap_minutes, b.weekday_minutes, b.weekend_minutes)
+        floor = floor_minutes(b.cap_minutes)
+        return BudgetView(
+            b.weekly_minutes, b.cap_minutes, b.weekday_minutes, b.weekend_minutes, floor
+        )
 
     async def context(
         self, user_id: str, goal_id: str, proposal_ids: Sequence[str], program_id: str | None

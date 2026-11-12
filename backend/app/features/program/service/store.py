@@ -27,6 +27,7 @@ from app.features.program.service.planning import (
     check_draft,
 )
 from app.features.program.service.programs import load, plan_text, program_not_found
+from app.features.program.service.rules import floor_minutes
 from app.features.program.service.runtime import ProgramRuntime
 from app.features.program.service.validation import (
     commit_validation,
@@ -40,7 +41,11 @@ logger = logging.getLogger(__name__)
 
 def _view(budget: Budget) -> BudgetView:
     return BudgetView(
-        budget.weekly_minutes, budget.cap_minutes, budget.weekday_minutes, budget.weekend_minutes
+        budget.weekly_minutes,
+        budget.cap_minutes,
+        budget.weekday_minutes,
+        budget.weekend_minutes,
+        floor_minutes(budget.cap_minutes),
     )
 
 

@@ -63,8 +63,10 @@ def _week(theme: str, module: str, skill: str, tasks: list[TaskDraft]) -> WeekDr
 
 
 def program_plan() -> str:
-    """Deux semaines d'un module, chacune avec sa pratique et finie par un quiz (~3 h par
-    semaine : loin des 85 % du budget par défaut)."""
+    """Deux semaines d'un module, chacune avec sa pratique et finie par un quiz. La semaine 1
+    (440 min) atteint 60 % du plafond par défaut (428 sur 714, D98) sans le dépasser ; la
+    démonstration reste le mardi (le parcours n° 1 la déplace au mercredi). La dernière semaine
+    peut rester légère."""
     first = _week(
         "Appeler un modèle de langage",
         "Appeler une API de LLM",
@@ -72,6 +74,9 @@ def program_plan() -> str:
         [
             _task("Lire la documentation de l'API", "lire", 60, "Notes prises sur l'API"),
             _task("Regarder une démonstration d'appel", "regarder", 30, "Démo comprise"),
+            _task("Lire des exemples d'appels", "lire", 90, "Trois exemples annotés"),
+            _task("Lire le guide des erreurs de l'API", "lire", 120, "Erreurs classées"),
+            _task("Lire la référence des paramètres", "lire", 60, "Paramètres notés"),
             _task("Coder un premier appel", "pratiquer", 60, "Script qui répond"),
             _task("Faire le quiz de la semaine", "quiz", 20, "Quiz réussi"),
         ],

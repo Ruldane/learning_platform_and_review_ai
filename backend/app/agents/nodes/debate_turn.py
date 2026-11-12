@@ -4,9 +4,9 @@ une exécution du nœud = une prise de parole = un point de contrôle.
 Le prompt montre les règles, le catalogue numéroté, tous les tours précédents, les messages de
 January à traiter et l'angle demandé. Le code tient ensuite les règles de 9.3 qu'il peut
 vérifier, avec une seule nouvelle demande : dès le tour 2, nommer un autre débatteur ; le
-Sceptique, une ligne « Objection : » ; le premier orateur d'un tour qui suit un message de
-January, la nommer. Encore non tenue : la prise de parole est acceptée et l'écart journalisé
-(identifiants et codes de règle seulement)."""
+Sceptique, une ligne « Objection : » (gardée par la coupe des 150 mots, D98) ; le premier
+orateur d'un tour qui suit un message de January, la nommer. Encore non tenue : la prise de
+parole est acceptée et l'écart journalisé (identifiants et codes de règle seulement)."""
 
 import logging
 import re
@@ -40,7 +40,11 @@ _NAME_PATTERNS = {
     "scout": re.compile(r"\b[ÉE]claireur\b"),
     "skeptic": re.compile(r"\bSceptique\b"),
 }
-_OBJECTION = re.compile(r"^\s*[*_]*Objection\s*[*_]*\s*:", re.MULTILINE)
+# « Objection : », en gras, en liste (`-`, `*`, `1.`, `1)`) ou au pluriel, sans tenir compte de la
+# casse : la ligne est aussi gardée par la coupe des 150 mots (`cap_words(keep=)`, D98).
+_OBJECTION = re.compile(
+    r"^\s*(?:[-*]\s+|\d+[.)]\s+)?[*_]*Objections?\s*[*_]*\s*:", re.MULTILINE | re.IGNORECASE
+)
 _JANUARY = re.compile(r"\bJanuary\b", re.IGNORECASE)
 RULES = {
     "name": "dès le tour 2, réponds nommément à au moins un autre membre du Conseil "
@@ -131,6 +135,7 @@ def make_turn(deps: GraphDeps) -> Node:
             catalog=citation_entries(state),
             max_words=max_words,
             revise=revise,
+            keep=_OBJECTION if agent == SKEPTIC else None,
         )
         if spoken.revised and (
             still := broken_rules(

@@ -9,6 +9,7 @@ DEBATERS = frozenset({"strategist", "practitioner", "scout", "skeptic"})
 LESSON_WEEKS = (1, 2)
 MIN_PROPOSALS, MAX_PROPOSALS = 2, 3
 MIN_RESOURCES, MAX_RESOURCES = 3, 6
+MAX_LESSON_ATTEMPTS = 3  # `lessons.service.production.MAX_ATTEMPTS`
 
 
 class CheckFailed(Exception):
@@ -97,9 +98,14 @@ def check_program_draft(program: dict[str, Any]) -> dict[str, int]:
 
 def lessons_done(lessons: list[dict[str, Any]], modules: dict[str, int]) -> bool:
     """Vrai quand chaque module attendu a sa leçon prête avec son PDF ; échec dès qu'une leçon
-    attendue est en échec. Une leçon est rangée « prête » avant le rendu de son PDF."""
+    attendue est en échec après ses 3 essais (avant : elle sera relancée, donc encore en cours,
+    D98). Une leçon est rangée « prête » avant le rendu de son PDF."""
     expected = [lesson for lesson in lessons if lesson["module_id"] in modules]
-    failed = [lesson["id"] for lesson in expected if lesson["status"] == "failed"]
+    failed = [
+        lesson["id"]
+        for lesson in expected
+        if lesson["status"] == "failed" and lesson["attempts"] >= MAX_LESSON_ATTEMPTS
+    ]
     if failed:
         raise CheckFailed("leçons", f"Leçon(s) en échec : {', '.join(failed)}.")
     done = {

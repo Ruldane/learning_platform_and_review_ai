@@ -30,6 +30,7 @@ dependencies = [
     "qdrant-client>=1.20.0",
     "sqlalchemy[asyncio]>=2.1.8",
     "trafilatura>=2.3.1",
+    "tzdata>=2026.6",
     "uvicorn[standard]>=0.54.0",
     "youtube-transcript-api>=1.2.5",
 ]

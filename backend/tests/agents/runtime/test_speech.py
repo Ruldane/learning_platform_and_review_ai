@@ -1,6 +1,8 @@
 """Prise de parole du débat (D82) : 150 mots au plus imposés par le code, citations `[n]` d'un
 catalogue numéroté, bulle finale qui remplace celle des tokens."""
 
+import re
+
 import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage
@@ -43,6 +45,42 @@ def test_cap_words_keeps_text_within_the_limit() -> None:
     long = " ".join(f"mot{n}" for n in range(151))
     capped = cap_words(long, 150)
     assert capped.endswith(" …") and count_words(capped) == 150
+
+
+_KEEP = re.compile(r"^Objection :", re.MULTILINE)
+_LONG = " ".join(f"mot{n}" for n in range(160)) + "."
+
+
+def test_cap_words_keeps_objection_line() -> None:
+    objection = "Objection : dix semaines ne tiennent pas dans ce budget serré."
+    text = f"{_LONG}\n{objection}"  # 170 mots, l'objection en dernière ligne
+    assert count_words(text) == 170
+    capped = cap_words(text, 150, keep=_KEEP)
+    assert capped.endswith(f"\n{objection}") and count_words(capped) <= 150
+    assert capped.startswith("mot0 mot1") and " …\n" in capped
+    assert cap_words(text, 150) == cap_words(text, 150, keep=None)  # sans `keep` : comme avant
+
+
+def test_cap_words_keep_changes_nothing_when_the_line_survives() -> None:
+    text = f"Objection : trop long.\n{_LONG}"
+    assert cap_words(text, 150, keep=_KEEP) == cap_words(text, 150) == "Objection : trop long."
+    assert cap_words("Court.\nObjection : non.", 150, keep=_KEEP) == "Court.\nObjection : non."
+
+
+def test_cap_words_keeps_only_the_first_matching_line() -> None:
+    text = f"Objection : une.\n{_LONG}\nObjection : deux."
+    assert cap_words(text, 150, keep=_KEEP) == "Objection : une."
+
+
+def test_objection_line_longer_than_the_limit_is_cut() -> None:
+    text = "Intro.\nObjection : " + " ".join(["trop"] * 20)
+    capped = cap_words(text, 5, keep=_KEEP)
+    assert capped == "Objection : trop trop trop trop …"
+
+
+def test_kept_line_after_a_full_budget_stands_alone() -> None:
+    text = "Un deux trois.\nObjection : quatre cinq six."
+    assert cap_words(text, 4, keep=_KEEP) == "Objection : quatre cinq six."
 
 
 def test_extract_citations_keeps_known_markers_in_order() -> None:
@@ -155,3 +193,19 @@ async def test_speak_without_objection_keeps_the_first_reply(
         revise=lambda text: None,
     )
     assert not spoken.revised and spoken.text == "Bonne réponse [1]."
+
+
+async def test_speak_keeps_the_matching_line_at_the_cut(emitted: list[dict[str, object]]) -> None:
+    model = await _model([f"{_LONG}\nObjection : trop de semaines [1]."])
+    spoken = await speak(
+        model,
+        [HumanMessage("?")],
+        agent="skeptic",
+        step="tour-1",
+        intent="je formule une objection",
+        catalog=[CitationEntry(1, "A")],
+        max_words=150,
+        keep=_KEEP,
+    )
+    assert spoken.text.endswith("\nObjection : trop de semaines [1].") and spoken.words <= 150
+    assert [c.index for c in spoken.citations] == [1]

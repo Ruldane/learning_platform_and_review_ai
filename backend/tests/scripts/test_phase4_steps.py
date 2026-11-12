@@ -72,6 +72,7 @@ async def test_lessons_pass_when_every_module_has_its_pdf() -> None:
         [lesson("m1a"), lesson("m2a")],  # le second module de la semaine 1 manque
         [lesson("m1a"), lesson("m1b"), lesson("m2a", pdf=False)],  # PDF pas encore rendu
         [lesson("m1a"), lesson("m1b"), lesson("m2a", "generating")],
+        [lesson("m1a"), lesson("m1b", "failed", attempts=1), lesson("m2a")],  # sera relancée
     ],
 )
 async def test_lessons_wait_until_the_deadline(listed: object) -> None:

@@ -49,6 +49,12 @@ class LessonSummaryOut(BaseModel):
         description="`pending` : pas encore lancée (semaines 3 et suivantes : 7 jours avant leur "
         "début) ; `generating` ; `ready` ; `failed` (relancée automatiquement, 3 essais en tout)."
     )
+    attempts: int = Field(
+        ge=0,
+        le=3,
+        description="Essais de production faits (3 au plus) : une leçon `failed` avec moins de 3 "
+        "essais sera relancée.",
+    )
     word_count: int
     pdf_available: bool
 

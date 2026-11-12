@@ -1782,6 +1782,7 @@ dependencies = [
     { name = "qdrant-client" },
     { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "trafilatura" },
+    { name = "tzdata" },
     { name = "uvicorn", extra = ["standard"] },
     { name = "youtube-transcript-api" },
 ]
@@ -1829,6 +1830,7 @@ requires-dist = [
     { name = "qdrant-client", specifier = ">=1.20.0" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.1.8" },
     { name = "trafilatura", specifier = ">=2.3.1" },
+    { name = "tzdata", specifier = ">=2026.6" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.54.0" },
     { name = "youtube-transcript-api", specifier = ">=1.2.5" },
 ]

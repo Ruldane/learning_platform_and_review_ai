@@ -10,6 +10,7 @@ from scripts.phase4_rules import (
     check_council_events,
     check_export_files,
     debate_rounds_of,
+    lessons_done,
 )
 
 DEBATERS = ("strategist", "practitioner", "scout", "skeptic")
@@ -88,3 +89,19 @@ def test_exports_fail_when_a_file_is_wrong(pdf: bytes, ics: str, message: str) -
     with pytest.raises(CheckFailed, match=message) as caught:
         check_export_files(pdf, ics)
     assert caught.value.step == "exports"
+
+
+def _lesson(status: str, attempts: int, *, pdf: bool = False) -> dict[str, Any]:
+    return {"id": "l1", "module_id": "m1", "status": status, "attempts": attempts,
+            "pdf_available": pdf}  # fmt: skip
+
+
+def test_lessons_done_waits_for_retried_failed_lesson() -> None:
+    assert lessons_done([_lesson("failed", 1)], {"m1": 1}) is False
+    assert lessons_done([_lesson("failed", 2)], {"m1": 1}) is False
+    assert lessons_done([_lesson("ready", 2, pdf=True)], {"m1": 1}) is True
+
+
+def test_lessons_done_fails_after_three_attempts() -> None:
+    with pytest.raises(CheckFailed, match="l1"):
+        lessons_done([_lesson("failed", 3)], {"m1": 1})

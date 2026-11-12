@@ -7,6 +7,7 @@ from app.core.errors import AppError
 from app.db.models.lessons import Lesson
 from app.features.lessons.repository import LessonRepository, ResourceRepository
 from app.features.lessons.schemas import LessonOut, LessonSummaryOut
+from app.features.lessons.service.production import MAX_ATTEMPTS
 from app.features.lessons.service.resources import to_out
 from app.features.lessons.service.status import read_with_open_sessions, shown
 from app.features.program.service.programs import Loaded, load
@@ -36,6 +37,7 @@ def _summary(lesson: Lesson, week_rank: int, open_ids: list[str]) -> dict[str, o
         "title": lesson.title,
         "status": status,
         "failure_reason": reason,
+        "attempts": min(lesson.attempts, MAX_ATTEMPTS),
         "word_count": lesson.word_count,
         "pdf_available": lesson.pdf_key is not None,
     }

@@ -25,8 +25,11 @@ export const settingsFixture: SettingsOut = {
   search_max_queries: 12,
   search_provider_order: ["searxng", "brave"],
   session_token_cap: 300_000,
+  study_break_minutes: 10,
+  study_work_minutes: 50,
   style_guide: "",
   tiers: allTiers("anthropic", "claude-haiku-5-5"),
+  timezone: "Europe/Paris",
   vision_enabled: true,
   weekly_review: { day: "sunday", time: "18:00" },
 };

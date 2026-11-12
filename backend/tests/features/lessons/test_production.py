@@ -107,7 +107,8 @@ async def test_week_three_waits_until_seven_days_before(
     launcher: RecordingLauncher,
     db_session_factory: Factory,
 ) -> None:
-    three = plan([full_week("Bases", [60]), full_week("Outils", [60]), full_week("Projet", [60])])
+    heavy = [120, 120, 120, 120]  # 545 min : au moins 60 % du plafond, rien n'est avancé (D98)
+    three = plan([full_week("Bases", heavy), full_week("Outils", heavy), full_week("Projet", [60])])
     program = await draft_program(program_rt, draft=three)
     await validate(program_rt, program)
     pid, (w1, w2, w3) = program.program_id, program.modules

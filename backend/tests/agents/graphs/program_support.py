@@ -27,7 +27,10 @@ from tests.agents.runtime.runner_helpers import TIMEOUT, all_events, get_session
 from tests.support.council import GOAL_ID
 from tests.support.program import FakeProgramStore, full_week, plan
 
-GOOD_PLAN = plan([full_week("Bases", [60, 60]), full_week("Projet", [90])]).model_dump_json()
+# Semaine 1 à 485 min (au moins 60 % du plafond de 714, D98), la dernière libre.
+GOOD_PLAN = plan(
+    [full_week("Bases", [120, 120, 120, 60]), full_week("Projet", [90])]
+).model_dump_json()
 START = "2026-11-16"
 
 

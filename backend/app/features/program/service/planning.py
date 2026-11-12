@@ -23,12 +23,19 @@ from app.features.program.service.packing import (
     final_quiz,
     first_practice,
     pack_week,
+    pull_forward,
 )
-from app.features.program.service.rules import describe, week_breaks
-from app.features.program.service.verbs import ACTION_VERBS, has_action_verb
+from app.features.program.service.rules import (
+    UNDERLOAD_SHARE,
+    describe,
+    describe_underload,
+    floor_minutes,
+    week_breaks,
+)
+from app.features.program.service.verbs import ACTION_VERBS, has_action_verb, review_subject
 
-# Types de l'ordonnancement et verbes d'action : réexportés pour les autres modules du programme.
-__all__ = ["ACTION_VERBS", "ScheduledPlan", "ScheduledTask", "ScheduledWeek"]
+# Types de l'ordonnancement, verbes d'action et part de sous-charge : réexportés.
+__all__ = ["ACTION_VERBS", "UNDERLOAD_SHARE", "ScheduledPlan", "ScheduledTask", "ScheduledWeek"]
 
 REVIEW_MINUTES = 20
 PRACTICE_MINUTES = 45
@@ -70,8 +77,10 @@ def _week_tasks(week: WeekDraft) -> list[TaskDraft]:
 
 
 def check_draft(draft: PlanDraft, budget: Budget) -> list[str]:
-    """Problèmes du brouillon, en français, à rendre au Stratège pour qu'il corrige."""
+    """Problèmes du brouillon, en français, à rendre au Stratège pour qu'il corrige ; une semaine
+    sous 60 % du plafond en est un, sauf la dernière (D98)."""
     problems: list[str] = []
+    floor = floor_minutes(budget.cap_minutes)
     for rank, week in enumerate(draft.weeks, start=1):
         tasks = _week_tasks(week)
         pairs = [(task.minutes, task.type) for task in tasks]
@@ -79,6 +88,8 @@ def check_draft(draft: PlanDraft, budget: Budget) -> list[str]:
         problems += [
             describe(rule, f"Semaine {rank}", total, cap) for rule in week_breaks(pairs, cap)
         ]
+        if rank < len(draft.weeks) and total < floor:
+            problems.append(describe_underload(f"Semaine {rank}", total, floor))
         problems.extend(
             f"Semaine {rank} : le titre « {task.title} » ne commence pas par un verbe d'action."
             for task in tasks
@@ -89,7 +100,7 @@ def check_draft(draft: PlanDraft, budget: Budget) -> list[str]:
 
 def _review_of(module: ModuleDraft) -> ModuleDraft:
     task = TaskDraft(
-        title=(REVIEW_PREFIX + module.title)[:120],
+        title=(REVIEW_PREFIX + review_subject(module.title))[:120],
         type="lire",
         minutes=REVIEW_MINUTES,
         done_criterion=REVIEW_CRITERION,
@@ -254,7 +265,8 @@ def schedule(draft: PlanDraft, budget: Budget, known: KnownSkills, start: date) 
     """Range le brouillon sur le calendrier : jamais plus de 85 % du budget par semaine.
 
     Ce qui ne tient pas passe à la semaine suivante ; des semaines « Suite » sont ajoutées tant
-    qu'il reste des tâches (52 semaines au plus). `start` est le premier jour (un lundi).
+    qu'il reste des tâches (52 semaines au plus). `start` est le premier jour (un lundi). Une
+    semaine sous 60 % du plafond, sauf la dernière, avance ensuite des tâches de la suivante.
     """
     reduced, skipped = apply_known(draft, known)
     if not reduced.weeks:
@@ -284,4 +296,4 @@ def schedule(draft: PlanDraft, budget: Budget, known: KnownSkills, start: date) 
             _build_week(index + 1, sources[index], packing.placed, first_day, sources, seen)
         )
         carried = packing.deferred
-    return ScheduledPlan(weeks, skipped, moved)
+    return ScheduledPlan(pull_forward(weeks, budget, floor_share=UNDERLOAD_SHARE), skipped, moved)

@@ -6,7 +6,9 @@ import json
 from collections import Counter
 from collections.abc import Awaitable, Callable
 
-from app.agents.nodes.debate_turn import names_other_debater
+import pytest
+
+from app.agents.nodes.debate_turn import broken_rules, names_other_debater
 from app.agents.runtime.speech import count_words
 from tests.agents.graphs.council_models import DEBATERS, SPEECH, STABLE, CouncilModels
 from tests.agents.graphs.council_support import Council, MakeCouncil
@@ -93,6 +95,28 @@ async def test_skeptic_raises_an_objection_each_round(make_council_runner: MakeC
     skeptic = [m for m in await c.agent_messages() if m.agent == "skeptic"]
     assert len(skeptic) == 3
     assert all("\nObjection :" in m.payload["text"] for m in skeptic)
+
+
+async def test_long_skeptic_turn_keeps_its_objection_line(make_council_runner: MakeCouncil) -> None:
+    long_turn = "Je réponds au Stratège :" + LONG_TAIL + "\nObjection : trop de notions [1]."
+    models = CouncilModels()
+    models.when("skeptic", round_marker(2), long_turn)
+    c = await make_council_runner(models=models, rounds=2)
+    await c.to_choice()
+    skeptic = [m for m in await c.agent_messages(step_prefix="tour-2") if m.agent == "skeptic"]
+    text = skeptic[0].payload["text"]
+    assert text.endswith("\nObjection : trop de notions [1].") and count_words(text) <= 150
+    assert sum("ne respecte pas ces règles" in call.prompt for call in models.calls) == 0
+
+
+@pytest.mark.parametrize(
+    "line", ["**Objection :** trop long", "1. Objection : x", "- Objection : x", "Objections : x"]
+)
+def test_objection_variants_are_accepted(line: str) -> None:
+    assert "objection" not in broken_rules(line, agent="skeptic", round=1, answer_january=False)
+    assert "objection" in broken_rules(
+        line.replace("bjection", "pinion"), agent="skeptic", round=1, answer_january=False
+    )
 
 
 async def test_message_during_round_one_is_answered_by_name_in_round_two(

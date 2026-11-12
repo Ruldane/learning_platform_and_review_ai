@@ -27,8 +27,18 @@ def program(*weeks: dict[str, Any], status: str = "draft", cap: int = 400) -> di
     return {"id": "p1", "status": status, "cap_minutes": cap, "weeks": list(weeks)}
 
 
-def lesson(module: str, status: str = "ready", pdf: bool = True) -> dict[str, Any]:
-    return {"id": f"l-{module}", "module_id": module, "status": status, "pdf_available": pdf}
+def lesson(
+    module: str, status: str = "ready", pdf: bool = True, attempts: int = 3
+) -> dict[str, Any]:
+    """Une leçon de `GET /programs/{id}/lessons` ; `attempts` à 3 par défaut : une leçon
+    `failed` a épuisé ses essais (D98)."""
+    return {
+        "id": f"l-{module}",
+        "module_id": module,
+        "status": status,
+        "attempts": attempts,
+        "pdf_available": pdf,
+    }
 
 
 def json_api(routes: dict[str, Any]) -> Route:
