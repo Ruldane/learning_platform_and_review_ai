@@ -2,11 +2,12 @@
 prérequis) et niveaux, qui ne baissent jamais. Le commit appartient à l'appelant."""
 
 from collections.abc import Sequence
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.tools.plan_schema import EdgeDraft, SkillDraft
-from app.core.skills import normalize_skill_name
+from app.core.skills import Evidence, normalize_skill_name, read_evidence
 from app.db.models.skills import LEVEL_ORDER, SkillLevel
 from app.features.skills.repository import (
     SkillEdgeRepository,
@@ -21,6 +22,20 @@ EVIDENCE_MAX = 20  # preuves gardées par compétence (les plus récentes)
 
 def higher_level(a: SkillLevel, b: SkillLevel) -> SkillLevel:
     return a if LEVEL_ORDER.index(a) >= LEVEL_ORDER.index(b) else b
+
+
+def _proof_key(item: Evidence) -> tuple[str, str | None]:
+    """Clé de dédoublonnage : (genre, référence) ; sans référence, le libellé fait foi."""
+    return (item["kind"], item["ref_id"] if item["ref_id"] is not None else item["label"])
+
+
+def _with_proof(raw: Sequence[Any], proof: Evidence) -> list[Evidence]:
+    """Les preuves relues, plus `proof` si son couple (genre, référence) manque (la première
+    gagne : un rejeu ne réécrit rien), au plus `EVIDENCE_MAX` des plus récentes."""
+    kept = read_evidence(raw)
+    if all(_proof_key(item) != _proof_key(proof) for item in kept):
+        kept.append(proof)
+    return kept[-EVIDENCE_MAX:]
 
 
 def _as_level(value: str) -> SkillLevel:
@@ -70,9 +85,10 @@ class SkillsService:
         return {norm: (row.id, row.name) for norm, row in rows.items()}
 
     async def raise_levels(
-        self, names: Sequence[str], level: SkillLevel, evidence: str
+        self, names: Sequence[str], level: SkillLevel, evidence: Evidence
     ) -> list[tuple[str, SkillLevel]]:
-        """Monte chaque compétence à `level` au moins (jamais plus bas) et note la preuve ;
+        """Monte chaque compétence à `level` au moins (jamais plus bas) et note la preuve,
+        dédoublonnée par (genre, référence) ;
         rend `(nom, nouveau niveau)` des seuls niveaux changés (créés compris)."""
         skills = await self._skill_ids(names)
         ids = [skill_id for skill_id, _ in skills.values()]
@@ -87,8 +103,7 @@ class SkillsService:
             old = before.get(skill_id)
             current = _as_level(old.level) if old is not None else None
             target = higher_level(_as_level(row.level), level)
-            if evidence and evidence not in row.evidence:
-                row.evidence = [*row.evidence, evidence][-EVIDENCE_MAX:]
+            row.evidence = list(_with_proof(row.evidence, evidence))
             row.level = target
             if target != current:
                 changed.append((name, target))

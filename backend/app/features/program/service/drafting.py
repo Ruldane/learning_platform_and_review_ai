@@ -185,6 +185,7 @@ async def save_version(
     await _write_rows(db, user_id, program.id, plan, draft)
     after = _snapshot(plan, draft, budget)
     number = await versions.next_version(program.id)
+    await versions.supersede_pending(program.id)  # la nouvelle proposition remplace l'ancienne
     version = await versions.add(
         program_id=program.id,
         version=number,

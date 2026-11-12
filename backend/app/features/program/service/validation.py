@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.agents.runtime.handle import AgentRuntime
 from app.agents.tools.plan_schema import EdgeDraft, SkillDraft
 from app.core.errors import AppError
+from app.core.skills import evidence
 from app.features.learning.service.goals import mark_planned
 from app.features.lessons.service.production import start_lessons
 from app.features.memory.service.runtime import MemoryRuntime
@@ -76,7 +77,8 @@ async def _accept(db: AsyncSession, user_id: str, loaded: Loaded, now: datetime)
             diff=diff_plans(previous, current).to_json(),
             reason=JANUARY_REASON,
         )
-    latest.accepted_at = now
+    await versions.supersede_pending(loaded.program.id, keep=latest.id)
+    latest.accepted_at, latest.status = now, "accepted"
     return latest.version
 
 
@@ -101,15 +103,15 @@ def _covered(loaded: Loaded) -> list[str]:
 
 
 async def _raise_skills(
-    db: AsyncSession, user_id: str, loaded: Loaded
+    db: AsyncSession, user_id: str, loaded: Loaded, now: datetime
 ) -> list[tuple[str, SkillLevel]]:
     """Référentiel du Stratège, puis compétences des modules planifiés à « en cours »."""
     service = SkillsService(db, user_id)
     version = await PlanVersionRepository(db, user_id).latest_with_catalog(loaded.program.id)
     if version is not None:
         await service.upsert_catalog(*_catalog(version.snapshot.get("catalog", {})))
-    evidence = f"Programme {loaded.program.title}"
-    return await service.raise_levels(_covered(loaded), "en_cours", evidence)
+    proof = evidence("program", loaded.program.id, f"Programme {loaded.program.title}", now)
+    return await service.raise_levels(_covered(loaded), "en_cours", proof)
 
 
 @dataclass(frozen=True)
@@ -131,7 +133,7 @@ async def commit_validation(ctx: ValidationContext, user_id: str, program_id: st
         if program.status != "validated":
             now = datetime.now(UTC)
             program.version = await _accept(db, user_id, loaded, now)
-            changed = await _raise_skills(db, user_id, loaded)
+            changed = await _raise_skills(db, user_id, loaded, now)
             program.status, program.validated_at = "validated", now
             await mark_planned(db, user_id, program.goal_id)
         levels = await SkillsService(db, user_id).levels_of(_covered(loaded))

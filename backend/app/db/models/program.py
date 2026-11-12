@@ -10,6 +10,8 @@ from app.db.base import Base, UserScopedMixin, UTCDateTime
 TaskType = Literal["lire", "regarder", "pratiquer", "quiz", "projet"]
 TaskStatus = Literal["todo", "done"]
 ProgramStatus = Literal["draft", "validated"]
+PlanKind = Literal["build", "replan"]
+PlanStatus = Literal["accepted", "pending", "refused", "superseded"]
 
 
 class Program(UserScopedMixin, Base):
@@ -101,3 +103,10 @@ class PlanVersion(UserScopedMixin, Base):
     session_id: Mapped[str | None] = mapped_column(String(36), default=None)
     revision: Mapped[int | None] = mapped_column(Integer, default=None)
     accepted_at: Mapped[datetime | None] = mapped_column(UTCDateTime, default=None)
+    # Phase 5 (D99). `build` : version du Stratège ou de January ; `replan` : bilan hebdomadaire.
+    # `pending` : proposition qui attend January, jamais lue comme « le plan en cours ».
+    kind: Mapped[str] = mapped_column(String(8), default="build", server_default="build")
+    status: Mapped[str] = mapped_column(String(12), default="pending", server_default="pending")
+    base_fingerprint: Mapped[str | None] = mapped_column(String(64), default=None)
+    review_entry_id: Mapped[str | None] = mapped_column(String(36), default=None)
+    week_loads: Mapped[dict[str, Any] | None] = mapped_column(default=None)

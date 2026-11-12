@@ -1,7 +1,7 @@
 """`AgentProgramStore` (port `ProgramStore` sur la feature `program`, D88) : contexte du Stratège,
 règles de 4.2, versions idempotentes par `(session, revision)`, filtre utilisateur partout."""
 
-from datetime import date
+from datetime import UTC, date, datetime
 
 import pytest
 from sqlalchemy import func, select
@@ -67,6 +67,26 @@ async def test_revision_writes_a_new_version_with_its_diff(
     assert latest.diff is not None and latest.diff["weeks_before"] == 2
     assert latest.diff["weeks_after"] == 1 and latest.diff["removed"]
     assert program is not None and program.title == "Parcours court" and program.version == 2
+
+
+async def test_new_version_is_pending_and_supersedes_the_previous_pending(
+    store: AgentProgramStore, db_session_factory: Factory
+) -> None:
+    rows = await add_goal(db_session_factory, ME)
+    await _save(store, rows.goal_id, sample_plan())
+    async with db_session_factory() as db:
+        first = (await db.execute(select(PlanVersion))).scalar_one()
+        assert (first.status, first.kind) == ("pending", "build")
+        first.status, first.accepted_at = "accepted", datetime(2026, 11, 12, tzinfo=UTC)
+        await db.commit()
+    await _save(store, rows.goal_id, plan([full_week("Bases", [60])]), revision=1)
+    await _save(store, rows.goal_id, plan([full_week("Bases", [30])]), revision=2)
+    async with db_session_factory() as db:
+        rows_ = (
+            (await db.execute(select(PlanVersion).order_by(PlanVersion.version))).scalars().all()
+        )
+    # une version acceptée reste acceptée ; seule une proposition en attente est remplacée
+    assert [v.status for v in rows_] == ["accepted", "superseded", "pending"]
 
 
 async def test_known_skills_merge_user_skills_and_memory(

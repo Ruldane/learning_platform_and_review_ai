@@ -141,6 +141,34 @@ async def test_validation_after_moves_accepts_january_version(
     assert after["version"] == 2 and after["weekday_minutes"] == 120
 
 
+async def _statuses(app: FastAPI, program_id: str) -> list[tuple[int, str]]:
+    async with app.state.session_factory() as db:
+        rows = await db.execute(
+            select(PlanVersion)
+            .where(PlanVersion.program_id == program_id)
+            .order_by(PlanVersion.version)
+        )
+        return [(v.version, v.status) for v in rows.scalars()]
+
+
+async def test_validation_marks_the_accepted_version(
+    client: httpx.AsyncClient, app: FastAPI, draft_program: Draft
+) -> None:
+    assert await _statuses(app, draft_program.program_id) == [(1, "pending")]
+    await client.post(f"{API}/programs/{draft_program.program_id}/validate")
+    assert await _statuses(app, draft_program.program_id) == [(1, "accepted")]
+
+
+async def test_validation_after_moves_supersedes_the_strategist_version(
+    client: httpx.AsyncClient, app: FastAPI, draft_program: Draft
+) -> None:
+    program = await view(client, draft_program.program_id)
+    tid = task_id(program, "Lire l'article A")
+    await client.patch(f"{API}/tasks/{tid}", json={"planned_date": "2026-11-17"})
+    await client.post(f"{API}/programs/{draft_program.program_id}/validate")
+    assert await _statuses(app, draft_program.program_id) == [(1, "superseded"), (2, "accepted")]
+
+
 async def test_concurrent_validations_accept_one_version(
     client: httpx.AsyncClient, app: FastAPI, draft_program: Draft
 ) -> None:

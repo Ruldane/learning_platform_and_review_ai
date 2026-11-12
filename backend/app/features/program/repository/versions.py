@@ -46,6 +46,19 @@ class PlanVersionRepository(UserScopedRepository[PlanVersion]):
         )
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
+    async def supersede_pending(self, program_id: str, keep: str | None = None) -> None:
+        """Passe à `superseded` les propositions en attente du programme, sauf `keep` : une
+        version `pending` qu'une plus récente remplace ne doit plus pouvoir être acceptée."""
+        stmt = select(PlanVersion).where(
+            PlanVersion.user_id == self.user_id,
+            PlanVersion.program_id == program_id,
+            PlanVersion.status == "pending",
+        )
+        for row in (await self.session.execute(stmt)).scalars():
+            if row.id != keep:
+                row.status = "superseded"
+        await self.session.flush()
+
     async def next_version(self, program_id: str) -> int:
         stmt = select(func.max(PlanVersion.version)).where(
             PlanVersion.user_id == self.user_id, PlanVersion.program_id == program_id
