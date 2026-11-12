@@ -132,6 +132,11 @@ class WebGateway(Protocol):
         (même personne, même adresse : même ligne). Rend l'id de la source."""
         ...
 
+    async def people(self, user_id: str, session_id: str) -> list[tuple[str, PersonFound]]:
+        """Praticiens déjà enregistrés pour la session, `(source_id, personne)` dans l'ordre
+        d'enregistrement : `spot_people` rejoué les réémet sans rappeler le modèle (D84)."""
+        ...
+
     async def limits(self, user_id: str) -> WebLimits: ...
 
 
@@ -175,6 +180,9 @@ class _NoWeb:
         raise web_unavailable()
 
     async def add_person(self, user_id: str, session_id: str, person: PersonFound) -> str:
+        raise web_unavailable()
+
+    async def people(self, user_id: str, session_id: str) -> list[tuple[str, PersonFound]]:
         raise web_unavailable()
 
     async def limits(self, user_id: str) -> WebLimits:

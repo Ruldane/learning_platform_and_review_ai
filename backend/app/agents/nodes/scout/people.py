@@ -9,7 +9,7 @@ la session : l'adresse enregistrée est alors celle de la session, jamais celle 
 
 import logging
 from typing import Any, Protocol
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, urlunsplit
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
@@ -46,7 +46,11 @@ class PeopleFound(BaseModel):
 
 
 def _url_key(url: str) -> str:
-    return url.strip().rstrip("/").casefold()
+    """Clé tolérante d'une adresse : schéma et hôte en minuscules, sans `/` final ni fragment ;
+    chemin et requête gardent leur casse."""
+    parts = urlsplit(url.strip())
+    path = parts.path.rstrip("/")
+    return urlunsplit((parts.scheme.lower(), parts.netloc.lower(), path, parts.query, ""))
 
 
 def _known_urls(state: CouncilState) -> dict[str, str]:
@@ -139,11 +143,28 @@ def _emit_person(person: PersonFound, source_id: str) -> None:
     )
 
 
+def _kept(person: PersonFound, source_id: str) -> dict[str, Any]:
+    """Praticien gardé : signalé (`source.found`) et rendu pour l'état."""
+    _emit_person(person, source_id)
+    return {
+        "source_id": source_id,
+        "name": person.name,
+        "role": person.role,
+        "url": person.url,
+        "where": list(person.where),
+    }
+
+
 def make_spot_people(deps: GraphDeps) -> Node:
     @node_timeout()
     async def spot_people(state: CouncilState) -> CouncilState:
-        """Sans page retenue : aucun appel au modèle. Une sortie du modèle invalide après les
-        essais laisse le Conseil continuer sans praticien (la recherche, elle, a abouti)."""
+        """Rejoué après un arrêt (D84) : les praticiens déjà enregistrés pour la session sont
+        réémis tels quels, sans appel au modèle ni ligne de plus (10 au plus en tout). Sans page
+        retenue : aucun appel au modèle. Une sortie du modèle invalide après les essais laisse
+        le Conseil continuer sans praticien (la recherche, elle, a abouti)."""
+        known = await deps.web.people(deps.user_id, deps.session_id)
+        if known:  # nœud rejoué : les praticiens déjà enregistrés, sans rappeler le modèle
+            return {"people": [_kept(person, sid) for sid, person in known[:MAX_PEOPLE]]}
         pages = _kept_pages(state)
         if not pages:
             return {"people": []}
@@ -157,16 +178,7 @@ def make_spot_people(deps: GraphDeps) -> Node:
         people: list[dict[str, Any]] = []
         for person in _vetted(found, _known_urls(state)):
             source_id = await deps.web.add_person(deps.user_id, deps.session_id, person)
-            _emit_person(person, source_id)
-            people.append(
-                {
-                    "source_id": source_id,
-                    "name": person.name,
-                    "role": person.role,
-                    "url": person.url,
-                    "where": list(person.where),
-                }
-            )
+            people.append(_kept(person, source_id))
         return {"people": people}
 
     return spot_people

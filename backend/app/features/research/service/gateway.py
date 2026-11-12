@@ -19,7 +19,7 @@ from app.agents.tools.web_port import (
     WebSearchResult,
 )
 from app.db.models.research import PageStatus
-from app.features.research.service.people import record_person
+from app.features.research.service.people import person_of, record_person, session_people
 from app.features.research.service.prefs import load_prefs
 from app.features.research.service.reading import (
     Judged,
@@ -187,6 +187,12 @@ class AgentWebGateway:
             source = await record_person(db, user_id, session_id, person)
             await db.commit()
             return source.id
+
+    async def people(self, user_id: str, session_id: str) -> list[tuple[str, PersonFound]]:
+        """Praticiens déjà enregistrés (filtrés par utilisateur et session)."""
+        async with self._runtime.session_factory() as db:
+            rows = await session_people(db, user_id, session_id)
+        return [(row.id, person_of(row)) for row in rows]
 
     async def limits(self, user_id: str) -> WebLimits:
         async with self._runtime.session_factory() as db:

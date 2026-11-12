@@ -23,10 +23,11 @@ logger = logging.getLogger(__name__)
 _MAX_WHERE = 1000
 
 
-def person_key(url: str, name: str) -> str:
-    """Empreinte d'un praticien : `person`, adresse normalisée, nom sur une ligne en minuscules."""
+def person_key(normalized_url: str, name: str) -> str:
+    """Empreinte d'un praticien : `person`, adresse DÉJÀ normalisée (`normalize_url`), nom sur
+    une ligne en minuscules."""
     folded = " ".join(name.split()).casefold()
-    return hashlib.sha256(f"person\n{normalize_url(url)}\n{folded}".encode()).hexdigest()
+    return hashlib.sha256(f"person\n{normalized_url}\n{folded}".encode()).hexdigest()
 
 
 def _row(session_id: str, url: str, key: str, person: PersonFound) -> Source:
@@ -68,3 +69,15 @@ async def record_person(
         source.id,
     )
     return source
+
+
+def person_of(source: Source) -> PersonFound:
+    """La personne telle qu'enregistrée (nom, rôle, adresse, domaines)."""
+    where = tuple(part for part in (source.summary or "").split(" ; ") if part)
+    return PersonFound(source.title or "", source.author or "", source.url, where)
+
+
+async def session_people(db: AsyncSession, user_id: str, session_id: str) -> list[Source]:
+    """Praticiens de la session de l'utilisateur, dans l'ordre d'enregistrement."""
+    sources = await SourceRepository(db, user_id).list_for_session(session_id)
+    return [source for source in sources if source.kind == "person"]

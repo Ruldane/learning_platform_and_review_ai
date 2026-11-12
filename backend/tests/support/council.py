@@ -28,11 +28,12 @@ def goal_not_found() -> AppError:
 @dataclass
 class FakeCouncilStore:
     """`goals` : (utilisateur, objectif) → brief. `framing_saved` ne garde que les écritures qui
-    changent quelque chose (une réécriture à l'identique n'en ajoute pas) ; `framing_calls`
-    compte tous les appels. `block_after_framing` : fige l'appel après l'écriture (arrêt du back
-    en plein nœud). `boards` : id par `(session, étape)`, `board_kinds` leur type ; `choices` :
-    les choix enregistrés (un seul par session et objectif), `programs_started` : les sessions
-    `program_builder` lancées (une seule par objectif)."""
+        changent quelque chose (une réécriture à l'identique n'en ajoute pas) ; `framing_calls`
+        compte tous les appels. `block_after_framing` : fige l'appel après l'écriture (arrêt du back
+        en plein nœud). `boards` : id par `(session, étape)`, `board_kinds` leur type ; `choices` :
+        les choix enregistrés (un seul par session et objectif), `programs_started` : les sessions
+        `program_builder` lancées (une seule par objectif). Chaque écriture vérifie que l'objectif
+    (ou la proposition) est à l'utilisateur : un oubli du filtre utilisateur échoue (404)."""
 
     goals: dict[tuple[str, str], GoalBrief] = field(default_factory=dict)
     framing: dict[tuple[str, str], tuple[list[dict[str, str]], dict[str, str]]] = field(
@@ -50,6 +51,7 @@ class FakeCouncilStore:
     choices: list[Choice] = field(default_factory=list)
     programs: dict[str, str] = field(default_factory=dict)
     programs_started: int = 0
+    owners: dict[str, str] = field(default_factory=dict)  # proposition → utilisateur
 
     def add_goal(
         self,
@@ -98,10 +100,12 @@ class FakeCouncilStore:
         title: str,
         mermaid: str,
     ) -> str:
+        await self.goal(user_id, goal_id)  # un oubli du filtre utilisateur échoue (404)
         self.board_kinds.setdefault((session_id, step), kind)
         return self.boards.setdefault((session_id, step), uuid4().hex)
 
     async def save_minutes(self, user_id: str, goal_id: str, text: str) -> None:
+        await self.goal(user_id, goal_id)
         self.minutes[goal_id] = text
 
     async def save_proposals(
@@ -113,20 +117,27 @@ class FakeCouncilStore:
         batch: int,
         proposals: Sequence[ProposalDraft],
     ) -> list[ProposalRef]:
+        await self.goal(user_id, goal_id)
         refs = [ProposalRef(uuid4().hex, rank, p.name) for rank, p in enumerate(proposals, 1)]
-        return list(self.batches.setdefault((session_id, batch), refs))
+        kept = self.batches.setdefault((session_id, batch), refs)
+        self.owners.update({ref.proposal_id: user_id for ref in kept})
+        return list(kept)
 
     async def attach_board(self, user_id: str, proposal_id: str, board_id: str) -> None:
+        if self.owners.get(proposal_id) != user_id:
+            raise AppError("proposal_not_found", "Proposition introuvable.", 404)
         self.attached[proposal_id] = board_id
 
     async def record_choice(
         self, user_id: str, session_id: str, goal_id: str, choice: Choice
     ) -> None:
+        await self.goal(user_id, goal_id)
         if (session_id, goal_id) not in self.chosen:
             self.chosen[(session_id, goal_id)] = choice
             self.choices.append(choice)
 
     async def start_program(self, user_id: str, goal_id: str, choice: Choice) -> str:
+        await self.goal(user_id, goal_id)
         if goal_id not in self.programs:
             self.programs[goal_id] = uuid4().hex
             self.programs_started += 1

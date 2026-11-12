@@ -9,7 +9,10 @@ import logging
 import pytest
 
 from app.agents.nodes.moderator import framing_answers, research_query
+from app.agents.nodes.scout.people import _url_key
+from app.agents.tools.web_port import PersonFound
 from app.features.research.repository import SourceRepository
+from tests.agents.graphs.council_models import URLS, CouncilModels
 from tests.agents.graphs.council_support import (
     ADA_URL,
     PAGE_COUNT,
@@ -24,6 +27,21 @@ from tests.support.council import GOAL_TEXT
 START = "<<<CONTENU_NON_FIABLE"
 END = "<<<FIN_CONTENU_NON_FIABLE>>>"
 ANSWER = "Je vise un poste en startup"
+PEOPLE_MARKER = "Repère les praticiens."
+
+
+def _people(*names: str) -> str:
+    return json.dumps(
+        {
+            "people": [
+                {"name": n, "role": "Ingénieure", "urls": [URLS[i]]} for i, n in enumerate(names)
+            ]
+        }
+    )
+
+
+TWO_PEOPLE = _people("Ada Lovelace", "Grace Hopper")
+OTHER_PEOPLE = _people("Alan Turing", "Margaret Hamilton", "Barbara Liskov")
 
 
 async def _people_rows(c: Council) -> list[str]:
@@ -94,7 +112,9 @@ async def test_framing_answer_saved_once_after_replay(
     assert len(second.store.framing_saved) == 1  # … sans seconde écriture différente
     assert second.store.framing_saved[0][1] == {"q2": ANSWER}
     assert "startup" in second.search_queries_prompt()
-    assert "cadrage" not in second.prompts()[0]  # le Modérateur n'est pas rappelé
+    assert "Prépare les requêtes de recherche." in second.prompts()[0]
+    framing = "Prépare les questions de cadrage."
+    assert not [p for p in second.prompts() if framing in p]  # Modérateur non rappelé
 
 
 async def test_research_scores_sources_and_spots_people(make_council_runner: MakeCouncil) -> None:
@@ -141,6 +161,40 @@ async def test_people_prompt_frames_page_metadata_as_untrusted(
     assert prompt.rfind(START, 0, line) > prompt.rfind(END, 0, line)  # encadré
 
 
+async def test_people_node_stopped_midway_is_replayed_without_the_model(
+    make_council_runner: MakeCouncil,
+) -> None:
+    # Le modèle rend deux praticiens ; le back s'arrête juste après l'écriture du premier (en
+    # plein `spot_people`). À la reprise, une autre réponse du modèle ajouterait d'autres
+    # personnes : le nœud réémet celle déjà écrite sans rappeler le modèle.
+    models = CouncilModels()
+    models.when("scout", PEOPLE_MARKER, TWO_PEOPLE)
+    first = await make_council_runner(models=models)
+    written: list[str] = []
+    add_person = first.web.gateway.add_person
+
+    async def add_then_stop(user_id: str, session_id: str, person: PersonFound) -> str:
+        written.append(await add_person(user_id, session_id, person))
+        await asyncio.Event().wait()
+        raise AssertionError("jamais atteint")
+
+    first.web.gateway.add_person = add_then_stop  # type: ignore[method-assign]
+    await first.wait_question("framing")
+    await first.resume("go")
+    await wait_until(lambda: len(written) == 1)
+    await first.runner.shutdown()
+    again = CouncilModels()
+    again.when("scout", PEOPLE_MARKER, OTHER_PEOPLE)
+    second = await make_council_runner(models=again, sid=first.sid)
+    assert await second.runner.recover_on_startup() == [first.sid]
+    await second.wait_choice()
+    assert not [p for p in second.prompts() if PEOPLE_MARKER in p]  # modèle non rappelé
+    assert await _people_rows(second) == ["Ada Lovelace"]  # aucune ligne de plus
+    people = [f for f in await second.source_found() if f["kind"] == "person"]
+    assert {f["source_id"] for f in people} == set(written)  # réémise à l'identique
+    assert len(people) <= 10
+
+
 async def test_logs_never_contain_goal_text_or_answers(
     make_council_runner: MakeCouncil, caplog: pytest.LogCaptureFixture
 ) -> None:
@@ -173,3 +227,9 @@ def test_research_query_is_one_line_of_300_chars_at_most() -> None:
     assert "\n" not in query and len(query) <= 300
     assert query.startswith("Devenir AI engineer ; ML engineer ; x")
     assert research_query({"text": "Data", "target_role": None}, [], {}) == "Data"
+
+
+def test_url_key_folds_scheme_and_host_only() -> None:
+    assert _url_key("HTTPS://Site.Exemple.org/Doc/") == _url_key("https://site.exemple.org/Doc")
+    assert _url_key("https://site.exemple.org/Doc") != _url_key("https://site.exemple.org/doc")
+    assert _url_key("https://a.org/p?Q=1#frag") == "https://a.org/p?Q=1"

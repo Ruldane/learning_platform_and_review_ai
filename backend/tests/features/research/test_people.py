@@ -87,3 +87,18 @@ async def test_gateway_add_person_returns_the_same_id_when_replayed(
     assert await gateway.add_person("u1", "s1", ADA) == first
     rows = await SourceRepository(db, "u1").list_for_session("s1")
     assert [(r.id, r.kind) for r in rows] == [(first, "person")]
+
+
+async def test_gateway_people_lists_persons_of_the_session_only(
+    runtime: ResearchRuntime, db: AsyncSession
+) -> None:
+    gateway = AgentWebGateway(runtime)
+    page_hash = url_key(ADA.url)
+    await SourceRepository(db, "u1").add(
+        Source(session_id="s1", kind="page", url=ADA.url, url_hash=page_hash, status="ok")
+    )
+    await db.commit()
+    ada = await gateway.add_person("u1", "s1", ADA)
+    assert await gateway.people("u1", "s1") == [(ada, ADA)]
+    assert await gateway.people("u2", "s1") == []
+    assert await gateway.people("u1", "s2") == []
