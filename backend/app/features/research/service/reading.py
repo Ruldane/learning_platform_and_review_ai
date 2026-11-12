@@ -243,6 +243,12 @@ async def record_verdict(
     return source
 
 
+async def session_verdicts(db: AsyncSession, user_id: str, session_id: str) -> dict[str, Judged]:
+    """Verdicts déjà posés sur les sources de la session de l'utilisateur, par `source_id`."""
+    sources = await SourceRepository(db, user_id).list_for_session(session_id)
+    return {source.id: judged for source in sources if (judged := _judged(source)) is not None}
+
+
 async def list_sources(db: AsyncSession, user_id: str, session_id: str) -> list[Source]:
     """Sources d'une session de l'utilisateur, dans l'ordre où elles ont été repérées."""
     return await SourceRepository(db, user_id).list_for_session(session_id)

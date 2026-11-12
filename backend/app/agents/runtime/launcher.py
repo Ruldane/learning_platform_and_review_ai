@@ -9,13 +9,12 @@ au moteur, le moteur au lanceur). Non lié, ou serveur qui s'arrête : 503 `engi
 import logging
 from typing import Any
 
-from app.agents.runtime.runner import SessionRunner
+from app.agents.runtime.runner import STOPPING_CODE, SessionRunner
 from app.core.errors import AppError
 
 logger = logging.getLogger(__name__)
 
 ENGINE_UNAVAILABLE = "Le moteur d'agents n'est pas prêt."
-_STOPPING_CODE = "server_stopping"
 
 
 def engine_unavailable() -> AppError:
@@ -56,7 +55,7 @@ class SessionLauncher:
         try:
             return await runner.start(user_id, graph, input, subject_type, subject_id)
         except AppError as exc:
-            if exc.code != _STOPPING_CODE:
+            if exc.code != STOPPING_CODE:
                 raise
             logger.warning("Session non lancée (utilisateur %s) : serveur en arrêt", user_id)
             raise engine_unavailable() from None

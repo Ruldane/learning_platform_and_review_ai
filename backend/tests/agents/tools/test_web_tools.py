@@ -79,6 +79,11 @@ class FakeWeb:
     ) -> SourceVerdictView:
         raise AssertionError("non utilisé")
 
+    async def verdicts(
+        self, user_id: str, session_id: str, source_ids: Sequence[str]
+    ) -> dict[str, SourceVerdictView]:
+        return {}
+
     async def limits(self, user_id: str) -> WebLimits:
         return WebLimits(("fr",), (), 12, 30)
 

@@ -23,6 +23,9 @@ from tests.agents.runtime.runner_helpers import fake_llm
         ("court", 150, "court"),
         ("Un deux ! Trois quatre ? cinq six", 5, "Un deux ! Trois quatre ?"),
         ("Fin citée [1]. Suite ici et là.", 4, "Fin citée [1]."),
+        ("Le ML aide. [1] Puis la suite qui dépasse.", 4, "Le ML aide. [1]"),
+        ("Le ML aide. [1, 2] Puis la suite qui dépasse.", 4, "Le ML aide. [1, 2]"),
+        ("Le ML aide. » [3] Puis la suite qui dépasse.", 4, "Le ML aide. » [3]"),
         ("Une ligne.\n\nDeux lignes ici. Trois.", 5, "Une ligne.\n\nDeux lignes ici."),
         ("Phrase « entre guillemets. » puis la suite qui dépasse.", 4,
          "Phrase « entre guillemets. »"),
@@ -48,6 +51,12 @@ def test_extract_citations_keeps_known_markers_in_order() -> None:
     assert [c.index for c in found] == [2, 1]
     assert (found[0].title, found[0].memory_item_id, found[0].url) == ("Mémoire", "m1", None)
     assert (found[1].title, found[1].url) == ("A", "https://a.org")
+
+
+def test_marker_after_the_cut_sentence_is_still_cited() -> None:
+    cat = [CitationEntry(1, "A")]
+    capped = cap_words("Le ML aide. [1] Puis la suite qui dépasse.", 4)
+    assert [c.index for c in extract_citations(capped, cat)] == [1]
 
 
 def test_extract_citations_reads_grouped_markers() -> None:

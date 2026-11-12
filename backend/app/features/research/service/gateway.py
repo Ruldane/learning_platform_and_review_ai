@@ -19,7 +19,13 @@ from app.agents.tools.web_port import (
 )
 from app.db.models.research import PageStatus
 from app.features.research.service.prefs import load_prefs
-from app.features.research.service.reading import PageOutcome, read, record_verdict
+from app.features.research.service.reading import (
+    Judged,
+    PageOutcome,
+    read,
+    record_verdict,
+    session_verdicts,
+)
 from app.features.research.service.runtime import ResearchRuntime
 from app.features.research.service.searching import SearchOutcome, search
 from app.providers.search.base import TimeRange
@@ -49,18 +55,22 @@ def _search_result(outcome: SearchOutcome) -> WebSearchResult:
     return WebSearchResult(query=outcome.query, provider=outcome.provider, hits=hits)
 
 
-def _verdict(outcome: PageOutcome) -> SourceVerdictView | None:
-    """Verdict déjà posé dans la session (D82) : `judge` le réémet sans rappeler le modèle."""
-    judged = outcome.judged
-    if judged is None or outcome.source_id is None:
-        return None
+def _view(source_id: str, judged: Judged) -> SourceVerdictView:
     return SourceVerdictView(
-        source_id=outcome.source_id,
+        source_id=source_id,
         score=judged.score,
         verdict=judged.verdict,
         reason=judged.reason,
         summary=judged.summary,
     )
+
+
+def _verdict(outcome: PageOutcome) -> SourceVerdictView | None:
+    """Verdict déjà posé dans la session (D82) : `judge` le réémet sans rappeler le modèle."""
+    judged = outcome.judged
+    if judged is None or outcome.source_id is None:
+        return None
+    return _view(outcome.source_id, judged)
 
 
 def _page(outcome: PageOutcome) -> PageRead:
@@ -155,6 +165,17 @@ class AgentWebGateway:
             view.verdict,
         )
         return view
+
+    async def verdicts(
+        self, user_id: str, session_id: str, source_ids: Sequence[str]
+    ) -> dict[str, SourceVerdictView]:
+        """Verdicts déjà posés (filtrés par utilisateur et session) parmi `source_ids`."""
+        wanted = set(source_ids)
+        if not wanted:
+            return {}
+        async with self._runtime.session_factory() as db:
+            known = await session_verdicts(db, user_id, session_id)
+        return {sid: _view(sid, judged) for sid, judged in known.items() if sid in wanted}
 
     async def limits(self, user_id: str) -> WebLimits:
         async with self._runtime.session_factory() as db:

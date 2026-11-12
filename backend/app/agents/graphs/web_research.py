@@ -18,13 +18,14 @@ from app.agents.nodes.scout import (
     make_remember,
     make_search,
 )
+from app.agents.nodes.scout.models import MAX_EXTRA_URLS
 from app.agents.runtime.deps import GraphDeps
 from app.agents.state.web_research import WebResearchState
 
 
 class WebResearchInput(BaseModel):
     query: str = Field(min_length=2, max_length=300)
-    urls: list[HttpUrl] = Field(default_factory=list, max_length=5)  # pages à lire en plus
+    urls: list[HttpUrl] = Field(default_factory=list, max_length=MAX_EXTRA_URLS)  # en plus
 
 
 def build(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:

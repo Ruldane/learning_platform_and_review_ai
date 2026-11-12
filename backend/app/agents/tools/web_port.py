@@ -108,6 +108,13 @@ class WebGateway(Protocol):
         note n'a pu être établie, la source est écartée sans note, avec `reason`."""
         ...
 
+    async def verdicts(
+        self, user_id: str, session_id: str, source_ids: Sequence[str]
+    ) -> dict[str, SourceVerdictView]:
+        """Verdicts déjà posés sur ces sources de la session (les autres sont absentes) : un
+        `judge` rejoué après un arrêt ne rappelle pas le modèle (D82)."""
+        ...
+
     async def limits(self, user_id: str) -> WebLimits: ...
 
 
@@ -143,6 +150,11 @@ class _NoWeb:
         reason: str,
         summary: str,
     ) -> SourceVerdictView:
+        raise web_unavailable()
+
+    async def verdicts(
+        self, user_id: str, session_id: str, source_ids: Sequence[str]
+    ) -> dict[str, SourceVerdictView]:
         raise web_unavailable()
 
     async def limits(self, user_id: str) -> WebLimits:

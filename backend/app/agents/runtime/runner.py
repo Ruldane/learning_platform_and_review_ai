@@ -38,6 +38,7 @@ from app.db.models.agents import AgentSession
 
 logger = logging.getLogger(__name__)
 
+STOPPING_CODE = "server_stopping"  # reconnu par `SessionLauncher`
 _STOPPING = "Le serveur s'arrête : réessaie dans un instant."
 
 
@@ -172,7 +173,7 @@ class SessionRunner:
 
     def _refuse_if_stopping(self) -> None:
         if self._stopping:
-            raise AppError("server_stopping", _STOPPING, 503)
+            raise AppError(STOPPING_CODE, _STOPPING, 503)
 
     @asynccontextmanager
     async def _control(self, session_id: str) -> AsyncIterator[None]:

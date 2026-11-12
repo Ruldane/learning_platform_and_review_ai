@@ -25,7 +25,9 @@ _LETTER_OR_DIGIT = re.compile(r"\w")
 _MARKER_PART = re.compile(r"\[[\d,]*\]?|^[\d,]*\]")
 # Fin de phrase : « . », « ! » ou « ? », suivis au plus de fermants ou d'un marqueur `[n]`.
 _SENTENCE_END = re.compile(r"[.!?][\"'»”)\]*_]*(?:\[[\d,\s]+\])?[\"'»”)]*$")
-_CLOSERS_ONLY = re.compile(r"^[\"'»”)\]]+$")
+# Jeton qui prolonge une fin de phrase : fermants seuls ou marqueur `[n]` séparé par une espace
+# (`aide. [1]`, `aide. [1, 2]`), pour ne jamais perdre une citation à la coupe.
+_TRAILING = re.compile(r"^(?:\[[\d,]*\]?|[\d,]*\]|[\"'»”)\]])+$")
 
 
 @dataclass(frozen=True)
@@ -70,9 +72,7 @@ def cap_words(text: str, limit: int) -> str:
             if words > limit:
                 break
             word_end = match.end()
-        if _SENTENCE_END.search(token) or (
-            _CLOSERS_ONLY.match(token) and sentence_end == previous_end
-        ):
+        if _SENTENCE_END.search(token) or (_TRAILING.match(token) and sentence_end == previous_end):
             sentence_end = match.end()
         previous_end = match.end()
     if sentence_end:

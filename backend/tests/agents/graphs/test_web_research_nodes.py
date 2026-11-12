@@ -20,7 +20,12 @@ from app.agents.nodes.scout import (
     make_read,
     make_search,
 )
-from app.agents.nodes.scout.assess import UNSCORED_REASON
+from app.agents.nodes.scout.assess import (
+    JUDGE_TIMEOUT_S,
+    PAGE_JUDGE_TIMEOUT_S,
+    UNSCORED_REASON,
+)
+from app.agents.nodes.scout.models import MAX_EXTRA_URLS, MAX_PAGES_JUDGED
 from app.agents.registry import get_agent
 from app.agents.runtime.deps import ChatModelSource, GraphDeps
 from app.agents.runtime.ports import AgentPorts
@@ -254,3 +259,11 @@ async def test_judge_fails_when_every_page_is_too_slow(
     with pytest.raises(AppError) as exc:
         await make_judge(deps)({"pages": pages})
     assert exc.value.code == "page_judge_timeout" and exc.value.status_code == 504
+
+
+def test_judge_node_leaves_each_page_its_full_delay() -> None:
+    """Une page lente est écartée seule : le délai du nœud couvre toutes les pages notables."""
+    assert JUDGE_TIMEOUT_S >= MAX_PAGES_JUDGED * PAGE_JUDGE_TIMEOUT_S
+    assert MAX_PAGES_JUDGED == MAX_PAGES_PER_RUN + MAX_EXTRA_URLS
+    with pytest.raises(ValidationError):
+        WebResearchInput(query="ok", urls=["https://x.org/a"] * (MAX_EXTRA_URLS + 1))  # type: ignore[list-item]

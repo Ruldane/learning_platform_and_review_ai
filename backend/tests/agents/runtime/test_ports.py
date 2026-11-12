@@ -55,6 +55,11 @@ class _Web:
     ) -> SourceVerdictView:
         raise AssertionError("inutile ici")
 
+    async def verdicts(
+        self, user_id: str, session_id: str, source_ids: Sequence[str]
+    ) -> dict[str, SourceVerdictView]:
+        return {}
+
     async def limits(self, user_id: str) -> WebLimits:
         return WebLimits(("de", "it"), (), 3, 4)
 

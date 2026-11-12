@@ -10,6 +10,9 @@ from app.agents.state.web_research import WebResearchState
 
 AGENT = "scout"
 MAX_PAGES_PER_RUN = 10  # borné aussi par le plafond de pages de la session
+MAX_EXTRA_URLS = 5  # adresses données en entrée, lues en plus des résultats
+# Pages notées au plus par un nœud `judge` : résultats lus plus adresses de l'entrée.
+MAX_PAGES_JUDGED = MAX_PAGES_PER_RUN + MAX_EXTRA_URLS
 PAGE_CHARS_FOR_SCORING = 6000
 MAX_QUERIES_TOTAL = 6
 QUERIES_PER_LANGUAGE = 3

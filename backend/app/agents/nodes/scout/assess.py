@@ -10,7 +10,14 @@ from typing import Any
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from app.agents.nodes.scout.models import AGENT, Node, SourceScore, one_line, page_title
+from app.agents.nodes.scout.models import (
+    AGENT,
+    MAX_PAGES_JUDGED,
+    Node,
+    SourceScore,
+    one_line,
+    page_title,
+)
 from app.agents.prompts.loader import render_prompt, untrusted
 from app.agents.registry import get_agent
 from app.agents.runtime.deps import GraphDeps
@@ -23,8 +30,11 @@ from app.agents.tools.memory_tools import memory_write
 from app.agents.tools.web_port import KEEP_THRESHOLD, SourceVerdictView
 from app.core.errors import AppError
 
-JUDGE_TIMEOUT_S = 600  # un appel au modèle par page lue
 PAGE_JUDGE_TIMEOUT_S = 90  # une page trop lente à noter est écartée sans note (D82)
+# Le nœud laisse à chaque page son délai complet : au pire toutes les pages notables sont lentes
+# (15 × 90 s), plus une minute pour les écritures. Ainsi une page lente est toujours écartée
+# seule, jamais avec tout le nœud (D82).
+JUDGE_TIMEOUT_S = MAX_PAGES_JUDGED * PAGE_JUDGE_TIMEOUT_S + 60
 # Page dont le modèle n'a rendu aucune note conforme au schéma, ou trop lente (revue phase 3, I2).
 UNSCORED_REASON = "Note impossible à établir."
 INVALID_OUTPUT_CODE = "structured_output_invalid"
@@ -138,7 +148,7 @@ def _entry(
     }
 
 
-def _known(page: dict[str, Any]) -> SourceVerdictView | None:
+def _from_state(page: dict[str, Any]) -> SourceVerdictView | None:
     """Verdict déjà posé dans la session, rendu par la lecture (D82)."""
     known = page.get("verdict")
     if not known:
@@ -152,6 +162,17 @@ def _known(page: dict[str, Any]) -> SourceVerdictView | None:
     )
 
 
+async def _known(deps: GraphDeps, pages: list[dict[str, Any]]) -> dict[str, SourceVerdictView]:
+    """Verdicts déjà posés, par `source_id` : ceux que la lecture a rendus (état), puis ceux
+    que la base connaît pour les autres pages. Un `judge` coupé au milieu puis rejoué depuis le
+    checkpoint de `read` retrouve ainsi les pages déjà notées sans rappeler le modèle (D82)."""
+    known = {p["source_id"]: v for p in pages if (v := _from_state(p)) is not None}
+    missing = [p["source_id"] for p in pages if p["source_id"] not in known]
+    if missing:
+        known.update(await deps.web.verdicts(deps.user_id, deps.session_id, missing))
+    return known
+
+
 def make_judge(deps: GraphDeps) -> Node:
     @node_timeout(JUDGE_TIMEOUT_S)
     async def judge(state: WebResearchState) -> WebResearchState:
@@ -161,10 +182,10 @@ def make_judge(deps: GraphDeps) -> Node:
         verdicts: list[dict[str, Any]] = []
         failure: AppError | None = None
         unscored = 0
-        for page in state.get("pages", []):
-            if page["source_id"] is None:
-                continue
-            if (known := _known(page)) is not None:  # déjà notée : réémise, modèle non rappelé
+        pages = [page for page in state.get("pages", []) if page["source_id"] is not None]
+        already = await _known(deps, pages)
+        for page in pages:
+            if (known := already.get(page["source_id"])) is not None:  # réémise, sans modèle
                 _emit_judged(page, known)
                 verdicts.append(_entry(page, None, known))
                 continue
