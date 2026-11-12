@@ -67,7 +67,9 @@ class LlmKeysCheck:
         if user_id is None:
             return HealthStatus(ok=False, detail="Aucun utilisateur local.")
         async with self._session_factory() as session:
-            service = ApiKeyService(session, user_id, self._cipher, self._env_keys, self._providers)
+            service = ApiKeyService(
+                session, user_id, self._cipher, self._env_keys, self._providers, llm=self._providers
+            )
             entries = await service.list()
         usable = any(e.source is not None and e.readable for e in entries)
         return HealthStatus(ok=usable, detail=" ; ".join(_describe(e) for e in entries))

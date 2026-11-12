@@ -14,7 +14,14 @@ ProvidersDep = Annotated[Providers, Depends(get_providers)]
 
 
 def _service(db: Db, current: CurrentUserDep, providers: ProvidersDep) -> ApiKeyService:
-    return ApiKeyService(db, current.id, providers.cipher, providers.env_keys, providers.llm)
+    return ApiKeyService(
+        db,
+        current.id,
+        providers.cipher,
+        providers.env_keys,
+        providers.key_providers,
+        llm=providers.llm,
+    )
 
 
 @router.get("/api-keys", response_model=list[ApiKeyOut])

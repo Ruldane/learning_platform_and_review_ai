@@ -11,6 +11,7 @@ from app.core.security import Cipher, KnownSecrets, SecretUnreadable
 from app.db.models.accounts import ApiKey
 from app.features.settings.keys_repository import ApiKeyRepository
 from app.features.settings.keys_schemas import ApiKeyOut, ModelsOut, ProviderModels
+from app.providers.keys import KeyProvider
 from app.providers.llm.base import KeyTestResult, LlmProvider
 from app.providers.llm.model_defaults import PRESETS
 
@@ -66,24 +67,40 @@ class DbKeyReader:
         return resolved[0] if resolved is not None else None
 
 
+def _unknown(name: str) -> AppError:
+    return AppError("unknown_provider", f"Fournisseur inconnu : {name}.", 404)
+
+
 class ApiKeyService:
+    """`providers` : fournisseurs de l'écran des clés (LLM et Brave), pour lister, saisir,
+    supprimer et tester une clé ; `llm` : les seuls fournisseurs LLM, pour les modèles (D73)."""
+
     def __init__(
         self,
         session: AsyncSession,
         user_id: str,
         cipher: Cipher,
         env_keys: Mapping[str, str | None],
-        providers: Mapping[str, LlmProvider],
+        providers: Mapping[str, KeyProvider],
+        *,
+        llm: Mapping[str, LlmProvider],
     ) -> None:
         self._repo = ApiKeyRepository(session, user_id)
         self._cipher = cipher
         self._env_keys = env_keys
         self._providers = providers
+        self._llm = llm
 
-    def _provider(self, name: str) -> LlmProvider:
+    def _provider(self, name: str) -> KeyProvider:
         provider = self._providers.get(name)
         if provider is None:
-            raise AppError("unknown_provider", f"Fournisseur inconnu : {name}.", 404)
+            raise _unknown(name)
+        return provider
+
+    def _llm_provider(self, name: str) -> LlmProvider:
+        provider = self._llm.get(name)
+        if provider is None:
+            raise _unknown(name)
         return provider
 
     async def get_plaintext(self, provider: str) -> str | None:
@@ -92,7 +109,7 @@ class ApiKeyService:
         resolved = await _resolve_key(self._repo, self._cipher, self._env_keys, provider)
         return resolved[0] if resolved is not None else None
 
-    def _out(self, provider: LlmProvider, row: ApiKey | None) -> ApiKeyOut:
+    def _out(self, provider: KeyProvider, row: ApiKey | None) -> ApiKeyOut:
         if row is not None:
             return ApiKeyOut(
                 provider=provider.name,
@@ -124,7 +141,7 @@ class ApiKeyService:
     async def test(self, provider: str) -> KeyTestResult:
         """Teste la clé en vigueur. Le résultat est mémorisé pour une clé saisie dans l'interface
         (une clé `.env` n'a pas de ligne où l'écrire)."""
-        llm = self._provider(provider)
+        key_provider = self._provider(provider)
         try:
             resolved = await _resolve_key(self._repo, self._cipher, self._env_keys, provider)
         except SecretUnreadable as exc:
@@ -132,9 +149,11 @@ class ApiKeyService:
             await self._repo.record_test(provider, False, datetime.now(UTC))
             return result
         if resolved is None:
-            return KeyTestResult(ok=False, message=f"Aucune clé enregistrée pour {llm.label}.")
+            return KeyTestResult(
+                ok=False, message=f"Aucune clé enregistrée pour {key_provider.label}."
+            )
         plain, source = resolved
-        result = await llm.test_key(plain)
+        result = await key_provider.test_key(plain)
         if source == "ui":
             await self._repo.record_test(provider, result.ok, datetime.now(UTC))
         return result
@@ -147,7 +166,7 @@ class ApiKeyService:
             return None
 
     async def list_models(self, provider: str) -> builtins.list[str] | None:
-        llm = self._provider(provider)
+        llm = self._llm_provider(provider)
         key = await self._usable_key(provider)
         return await llm.list_models(key) if key else None
 
@@ -165,7 +184,7 @@ class ApiKeyService:
     async def models_overview(self) -> ModelsOut:
         """Fournisseurs, présence d'une clé lisible, modèles proposés et préréglages."""
         entries: builtins.list[ProviderModels] = []
-        for llm in self._providers.values():
+        for llm in self._llm.values():
             has_key = await self._usable_key(llm.name) is not None
             models = await self._models_or_none(llm.name) if has_key else None
             entries.append(
@@ -178,7 +197,7 @@ class ApiKeyService:
         await self._repo.delete_provider(provider)
 
     async def set(self, provider: str, key: str) -> ApiKeyOut:
-        llm = self._provider(provider)
+        key_provider = self._provider(provider)
         clean = key.strip()
         if not clean:
             raise AppError("invalid_key", "La clé est vide.", 422)
@@ -186,8 +205,8 @@ class ApiKeyService:
             raise AppError("invalid_key", "La clé est trop courte.", 422)
         KnownSecrets.add(clean)
         row = await self._repo.upsert(provider, self._cipher.encrypt(clean), clean[-4:])
-        return self._out(llm, row)
+        return self._out(key_provider, row)
 
     async def list(self) -> builtins.list[ApiKeyOut]:
         rows = {row.provider: row for row in await self._repo.list()}
-        return [self._out(llm, rows.get(name)) for name, llm in self._providers.items()]
+        return [self._out(p, rows.get(name)) for name, p in self._providers.items()]

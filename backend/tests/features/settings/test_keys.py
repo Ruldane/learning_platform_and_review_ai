@@ -89,7 +89,7 @@ async def test_ui_key_wins_over_env(service_with_env: Svc) -> None:
 
 async def test_env_key_is_listed_with_source_env(service_with_env: Svc) -> None:
     svc = service_with_env({"fake": "env-key-ZZZ9"})
-    (entry,) = await svc.list()
+    entry = next(e for e in await svc.list() if e.provider == "fake")
     assert entry.source == "env" and entry.last4 == "ZZZ9" and entry.readable is True
     await svc.delete("fake")  # rien en base : sans effet, la clé .env reste
     assert await svc.get_plaintext("fake") == "env-key-ZZZ9"
@@ -97,7 +97,7 @@ async def test_env_key_is_listed_with_source_env(service_with_env: Svc) -> None:
 
 async def test_nothing_configured(service_with_env: Svc) -> None:
     svc = service_with_env({"fake": None})
-    (entry,) = await svc.list()
+    entry = next(e for e in await svc.list() if e.provider == "fake")
     assert entry.source is None and entry.last4 is None and entry.readable is True
     assert await svc.get_plaintext("fake") is None
 
@@ -221,8 +221,8 @@ async def test_key_is_stripped_before_storing(
 
 
 async def test_keys_are_isolated_per_user(providers: Providers, db_session: AsyncSession) -> None:
-    one = ApiKeyService(db_session, "u1", providers.cipher, {}, providers.llm)
-    two = ApiKeyService(db_session, "u2", providers.cipher, {}, providers.llm)
+    one = ApiKeyService(db_session, "u1", providers.cipher, {}, providers.llm, llm=providers.llm)
+    two = ApiKeyService(db_session, "u2", providers.cipher, {}, providers.llm, llm=providers.llm)
     await one.set("fake", SECRET)
     assert await two.get_plaintext("fake") is None
     assert await one.get_plaintext("fake") == SECRET
@@ -237,7 +237,9 @@ async def test_db_key_reader_follows_the_same_priority(
     reader = DbKeyReader(db_session_factory, providers.cipher, env)
     assert await reader.get_key(USER_ID, "fake") == "env-key-0001"
     assert await reader.get_key(USER_ID, "other") is None
-    service = ApiKeyService(db_session, USER_ID, providers.cipher, env, providers.llm)
+    service = ApiKeyService(
+        db_session, USER_ID, providers.cipher, env, providers.llm, llm=providers.llm
+    )
     await service.set("fake", "ui-key-0002")
     await db_session.commit()
     assert await reader.get_key(USER_ID, "fake") == "ui-key-0002"
@@ -272,6 +274,7 @@ async def test_models_provider_error_does_not_fail_the_endpoint(
     good, broken = ListingProvider(["m-1"]), ListingProvider(None, fail=True)
     broken.name, broken.label = "broken", "Cassé"
     providers.llm = {"fake": good, "broken": broken}
+    providers.key_providers = dict(providers.llm)
     await client.post(KEYS, json={"provider": "fake", "key": SECRET})
     await client.post(KEYS, json={"provider": "broken", "key": "broken-key-5555"})
     r = await client.get("/api/v1/settings/models")

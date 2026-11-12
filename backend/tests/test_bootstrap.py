@@ -47,7 +47,12 @@ def test_env_keys_come_from_settings(
     built = build_providers(
         configured, db_session_factory, Cipher(Fernet.generate_key()), _HTTP, _NO_USER
     )
-    assert dict(built.env_keys) == {"anthropic": "a-key-0001", "openai": None, "glm": "z-key-0002"}
+    assert dict(built.env_keys) == {
+        "anthropic": "a-key-0001",
+        "openai": None,
+        "glm": "z-key-0002",
+        "brave": None,
+    }
 
 
 def test_glm_honors_overridden_zai_base_url(
@@ -71,7 +76,7 @@ async def test_lifespan_stores_providers_and_serves_real_registry(
         transport = httpx.ASGITransport(app=app)
         async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
             r = await client.get("/api/v1/settings/api-keys")
-    assert [e["provider"] for e in r.json()] == ["anthropic", "openai", "glm"]
+    assert [e["provider"] for e in r.json()] == ["anthropic", "openai", "glm", "brave"]
     assert all(e["source"] is None for e in r.json())
 
 

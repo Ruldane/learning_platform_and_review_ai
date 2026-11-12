@@ -9,11 +9,12 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 import app.db.models  # noqa: F401  (enregistre les modèles sur Base.metadata)
 from app.config import Settings
-from app.core.providers import MemoryProviders
+from app.core.providers import MemoryProviders, ResearchProviders
 from app.db.base import Base
 from app.db.engine import create_engine, create_session_factory
 from app.main import create_app
 from tests.support.memory import fake_memory_providers
+from tests.support.research import fake_research_providers
 
 
 @pytest.fixture
@@ -55,10 +56,24 @@ def memory_providers(tmp_path: Path) -> MemoryProviders:
     return fake_memory_providers(tmp_path)
 
 
+# Recherche web : faux SearXNG et faux Brave dans toute la suite (même lecteur web que la
+# mémoire) ; `app` et `client_google_mode` les injectent : aucun test n'atteint SearXNG ni Brave.
 @pytest.fixture
-def app(settings: Settings, db_engine: AsyncEngine, memory_providers: MemoryProviders) -> FastAPI:
+def research_providers(memory_providers: MemoryProviders) -> ResearchProviders:
+    return fake_research_providers(memory_providers.web)
+
+
+@pytest.fixture
+def app(
+    settings: Settings,
+    db_engine: AsyncEngine,
+    memory_providers: MemoryProviders,
+    research_providers: ResearchProviders,
+) -> FastAPI:
     # Dépend de `db_engine` pour que le schéma existe avant le lifespan.
-    return create_app(settings, memory_providers=memory_providers)
+    return create_app(
+        settings, memory_providers=memory_providers, research_providers=research_providers
+    )
 
 
 @pytest.fixture
@@ -73,11 +88,16 @@ async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
 
 @pytest.fixture
 async def client_google_mode(
-    settings: Settings, db_engine: AsyncEngine, memory_providers: MemoryProviders
+    settings: Settings,
+    db_engine: AsyncEngine,
+    memory_providers: MemoryProviders,
+    research_providers: ResearchProviders,
 ) -> AsyncIterator[httpx.AsyncClient]:
     # Mode `google` : aucune session n'existe encore (phase 9), les routes protégées répondent 401.
     google_app = create_app(
-        settings.model_copy(update={"auth_mode": "google"}), memory_providers=memory_providers
+        settings.model_copy(update={"auth_mode": "google"}),
+        memory_providers=memory_providers,
+        research_providers=research_providers,
     )
     async with LifespanManager(google_app):
         transport = httpx.ASGITransport(app=google_app, raise_app_exceptions=False)

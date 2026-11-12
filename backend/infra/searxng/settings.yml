@@ -22,12 +22,20 @@ server:
   # server.secret_key : fournie par la variable SEARXNG_SECRET du compose (valeur fixe, le
   # service est interne). Elle prime sur le fichier, qui n'en porte donc aucune.
 
-# Les noms viennent du settings.yml par défaut de SearXNG (version figée dans le compose).
+# Les noms viennent du settings.yml par défaut de SearXNG (version figée dans le compose,
+# 2026.11.9-57ff753ad). Les moteurs d'une même recherche sont interrogés en parallèle.
 engines:
-  # Généralistes
+  # Généralistes (au moins trois : un moteur bloqué n'éteint pas la recherche). `mojeek` et
+  # `startpage` sont `inactive: true` par défaut (non chargés) : `disabled: false` ne suffit pas.
   - name: duckduckgo
     disabled: false
   - name: brave
+    disabled: false
+  - name: mojeek
+    inactive: false
+    disabled: false
+  - name: startpage
+    inactive: false
     disabled: false
   - name: wikipedia
     disabled: false

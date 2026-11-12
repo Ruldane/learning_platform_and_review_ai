@@ -36,6 +36,7 @@ def override_health_checks(app: FastAPI, checks: list[HealthCheck]) -> None:
             llm_factory=real.llm_factory,
             cipher=real.cipher,
             env_keys=real.env_keys,
+            key_providers=real.key_providers,
             health_checks=checks,
         )
 

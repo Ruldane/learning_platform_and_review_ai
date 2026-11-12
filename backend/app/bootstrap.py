@@ -12,7 +12,7 @@ from app.agents.runtime.costs import ModelPrice, load_prices
 from app.agents.runtime.run_settings import RunSettingsSource
 from app.agents.tools.memory_port import MemoryGateway
 from app.config import Settings
-from app.core.providers import MemoryProviders, Providers
+from app.core.providers import MemoryProviders, Providers, ResearchProviders
 from app.core.security import Cipher
 from app.features.health.checks import DatabaseCheck, LlmKeysCheck
 from app.features.memory.service.gateway import AgentMemoryGateway
@@ -22,6 +22,7 @@ from app.features.settings.service import SettingsModelReader, SettingsRunReader
 from app.providers.embeddings.ollama import OllamaEmbedder
 from app.providers.embeddings.ollama_probe import OllamaProbe
 from app.providers.health import HealthCheck
+from app.providers.keys import KeyProvider
 from app.providers.llm.base import LlmProvider
 from app.providers.llm.factory import LlmFactory
 from app.providers.llm.glm import GlmProvider
@@ -30,11 +31,14 @@ from app.providers.pdf.base import PageRenderer
 from app.providers.pdf.gotenberg import GotenbergRenderer
 from app.providers.pdf.gotenberg_probe import GotenbergProbe
 from app.providers.pdf.subprocess import SubprocessPdfExtractor
+from app.providers.search.base import SEARCH_TIMEOUT_S, SearchProvider
+from app.providers.search.brave import BraveKeyProvider, BraveSearch
+from app.providers.search.searxng import SearxngSearch
 from app.providers.search.searxng_probe import SearxngProbe
 from app.providers.storage.local import LocalFileStorage
 from app.providers.vector.qdrant import QdrantMemoryRepository
 from app.providers.vector.qdrant_probe import QdrantProbe
-from app.providers.web.base import FETCH_TIMEOUT_S
+from app.providers.web.base import FETCH_TIMEOUT_S, WebReader
 from app.providers.web.fetch import SafeHttpFetcher, refuse_all_cookies
 from app.providers.web.reader import TrafilaturaWebReader
 from app.providers.web.transport import GuardedTransport
@@ -67,8 +71,9 @@ def build_providers(
     http: httpx.AsyncClient,
     local_user_id: Callable[[], str | None],
 ) -> Providers:
-    """`http` est partagé par les sondes (créé et fermé par le lifespan) ; `local_user_id` est
-    lu à chaque contrôle car l'utilisateur local n'existe qu'après la construction."""
+    """`http` est partagé par les sondes et le test de la clé Brave (créé et fermé par le
+    lifespan) ; `local_user_id` est lu à chaque contrôle car l'utilisateur local n'existe
+    qu'après la construction."""
     # GLM : l'adresse Z.ai configurée sert aussi au test de clé et à la liste des modèles.
     llm: dict[str, LlmProvider] = {
         **LLM_PROVIDERS,
@@ -78,6 +83,7 @@ def build_providers(
         "anthropic": settings.anthropic_api_key,
         "openai": settings.openai_api_key,
         "glm": settings.zai_api_key,
+        "brave": settings.brave_api_key,
     }
     factory = LlmFactory(
         SettingsModelReader(session_factory),
@@ -86,11 +92,14 @@ def build_providers(
         {"glm": settings.zai_base_url},
     )
     llm_keys = LlmKeysCheck(session_factory, cipher, env_keys, llm, local_user_id)
+    # Écran des clés : les LLM puis Brave, qui n'est ni dans la fabrique ni dans les modèles.
+    key_providers: dict[str, KeyProvider] = {**llm, "brave": BraveKeyProvider(http)}
     return Providers(
         llm=llm,
         llm_factory=factory,
         cipher=cipher,
         env_keys=env_keys,
+        key_providers=key_providers,
         health_checks=_health_checks(settings, session_factory, http, llm_keys),
     )
 
@@ -187,3 +196,30 @@ async def open_memory_runtime(
     fournisseurs de `memory_providers` ou ceux qu'un test a injectés."""
     async with memory_runtime(session_factory, providers) as runtime:
         yield runtime
+
+
+def _search_http() -> httpx.AsyncClient:
+    """Client d'un fournisseur de recherche (SearXNG ou Brave), un par fournisseur : hôte fixe
+    et configuré, donc sans la garde SSRF du lecteur web (D63) ; aucun proxy ni réglage de
+    l'environnement (SearXNG est sur le réseau interne, la clé Brave ne passe par aucun
+    intermédiaire), aucune redirection, 10 s."""
+    return httpx.AsyncClient(
+        follow_redirects=False, trust_env=False, timeout=httpx.Timeout(SEARCH_TIMEOUT_S)
+    )
+
+
+@asynccontextmanager
+async def research_providers(
+    settings: Settings, web: WebReader
+) -> AsyncIterator[ResearchProviders]:
+    """SearXNG (`settings.searxng_url`) et la fabrique Brave (une instance par clé, client
+    partagé), sur le lecteur web de la mémoire ; clients fermés à la sortie. Aucune requête à
+    la construction."""
+    async with _search_http() as searxng_http, _search_http() as brave_http:
+
+        def brave(api_key: str) -> SearchProvider:
+            return BraveSearch(brave_http, api_key)
+
+        yield ResearchProviders(
+            searxng=SearxngSearch(searxng_http, settings.searxng_url), brave=brave, web=web
+        )

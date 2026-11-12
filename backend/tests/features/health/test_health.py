@@ -78,7 +78,9 @@ def make_check(
 async def store_key(
     session: AsyncSession, cipher: Cipher, llm: dict[str, FakeLlmProvider], user: str = USER
 ) -> None:
-    await ApiKeyService(session, user, cipher, {}, llm).set("openai", "sk-secret-0123456789")
+    await ApiKeyService(session, user, cipher, {}, llm, llm=llm).set(
+        "openai", "sk-secret-0123456789"
+    )
     await session.commit()
 
 

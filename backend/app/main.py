@@ -17,11 +17,12 @@ from app.bootstrap import (
     run_settings_source,
 )
 from app.bootstrap import memory_providers as open_memory_providers
+from app.bootstrap import research_providers as open_research_providers
 from app.config import Settings, get_settings
 from app.core.errors import register_error_handlers
 from app.core.limits import BodySizeLimit
 from app.core.logging import configure_logging
-from app.core.providers import MemoryProviders
+from app.core.providers import MemoryProviders, ResearchProviders
 from app.core.security import Cipher, KnownSecrets, load_or_create_secret
 from app.db.engine import create_engine, create_session_factory
 from app.features.auth.service import AuthService
@@ -68,6 +69,23 @@ def _setup_security(app: FastAPI) -> None:
     configure_logging(_LOG_LEVEL, KnownSecrets.values)
 
 
+async def _open_external_providers(app: FastAPI, stack: AsyncExitStack) -> MemoryProviders:
+    """Fournisseurs de la mémoire puis de la recherche web : ceux qu'on a injectés (tests),
+    sinon la composition réelle, fermée par la pile. La recherche reprend le lecteur web de la
+    mémoire. Rend les fournisseurs de la mémoire."""
+    memory: MemoryProviders | None = app.state.injected_memory_providers
+    if memory is None:
+        memory = await stack.enter_async_context(open_memory_providers(app.state.settings))
+    app.state.memory_providers = memory
+    research: ResearchProviders | None = app.state.injected_research_providers
+    if research is None:
+        research = await stack.enter_async_context(
+            open_research_providers(app.state.settings, memory.web)
+        )
+    app.state.research_providers = research
+    return memory
+
+
 @asynccontextmanager
 async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     _setup_security(app)
@@ -91,11 +109,7 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         # l'indication `alembic upgrade head` plutôt qu'une erreur SQL brute.
         if app.state.settings.auth_mode == "local":
             await _ensure_local_user(app)
-        # Fournisseurs de la mémoire : ceux qu'on a injectés (tests), sinon la composition réelle.
-        injected: MemoryProviders | None = app.state.injected_memory_providers
-        if injected is None:
-            injected = await stack.enter_async_context(open_memory_providers(app.state.settings))
-        app.state.memory_providers = injected
+        injected = await _open_external_providers(app, stack)
         # Mémoire : entrée avant le moteur d'agents (qui s'en servira), donc fermée après lui.
         app.state.memory = await stack.enter_async_context(
             open_memory_runtime(app.state.session_factory, injected)
@@ -116,10 +130,14 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 def create_app(
-    settings: Settings | None = None, *, memory_providers: MemoryProviders | None = None
+    settings: Settings | None = None,
+    *,
+    memory_providers: MemoryProviders | None = None,
+    research_providers: ResearchProviders | None = None,
 ) -> FastAPI:
     """Construit l'application. `settings` prime toujours sur le cache `get_settings()` ;
-    `memory_providers` remplace la composition réelle d'Ollama et de Qdrant (tests)."""
+    `memory_providers` remplace la composition réelle d'Ollama et de Qdrant, et
+    `research_providers` celle de SearXNG et de Brave (tests)."""
     settings = settings if settings is not None else get_settings()
     app = FastAPI(
         title="Tremplin",
@@ -130,6 +148,7 @@ def create_app(
     )
     app.state.settings = settings
     app.state.injected_memory_providers = memory_providers
+    app.state.injected_research_providers = research_providers
     # Ordre important : le dernier middleware ajouté est le plus externe. Les erreurs sont
     # enregistrées d'abord pour que leur 500 traverse CORS (voir `UnexpectedErrorMiddleware`).
     register_error_handlers(app)

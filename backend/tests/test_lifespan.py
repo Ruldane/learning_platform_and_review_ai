@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from app.agents.runtime.bus import EventBus
 from app.agents.runtime.runner import SessionRunner
 from app.config import Settings
-from app.core.providers import MemoryProviders
+from app.core.providers import MemoryProviders, ResearchProviders
 from app.core.security import Cipher, KnownSecrets
 from app.db.models.accounts import User
 from app.features.auth.service import AuthService
@@ -164,3 +164,34 @@ async def test_injected_memory_providers_skip_the_composition(
     monkeypatch.setattr("app.main.open_memory_providers", boom)
     async with LifespanManager(create_app(settings, memory_providers=memory_providers)):
         pass
+
+
+async def test_lifespan_uses_injected_research_providers(
+    app: FastAPI, research_providers: ResearchProviders, client: httpx.AsyncClient
+) -> None:
+    assert app.state.research_providers is research_providers
+
+
+async def test_lifespan_builds_research_providers_on_the_memory_web_reader(
+    settings: Settings,
+    db_engine: object,
+    memory_providers: MemoryProviders,
+    research_providers: ResearchProviders,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seen: list[tuple[Settings, object]] = []
+    closed: list[bool] = []
+
+    @asynccontextmanager
+    async def fake_composition(given: Settings, web: object) -> AsyncIterator[ResearchProviders]:
+        seen.append((given, web))
+        try:
+            yield research_providers
+        finally:
+            closed.append(True)
+
+    monkeypatch.setattr("app.main.open_research_providers", fake_composition)
+    app = create_app(settings, memory_providers=memory_providers)
+    async with LifespanManager(app):
+        assert app.state.research_providers is research_providers and closed == []
+    assert seen == [(settings, memory_providers.web)] and closed == [True]
