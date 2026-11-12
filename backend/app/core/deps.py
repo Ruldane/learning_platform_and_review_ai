@@ -8,7 +8,7 @@ from starlette.requests import HTTPConnection
 
 from app.agents.runtime.handle import AgentRuntime
 from app.core.errors import AppError
-from app.core.providers import Providers
+from app.core.providers import Providers, PublishingProviders
 from app.core.security import Cipher
 from app.providers.llm.factory import LlmFactory
 
@@ -76,3 +76,12 @@ def get_runtime(conn: HTTPConnection) -> AgentRuntime:
 
 
 RuntimeDep = Annotated[AgentRuntime, Depends(get_runtime)]
+
+
+def get_publishing(conn: HTTPConnection) -> PublishingProviders:
+    """Rendu PDF de nos gabarits (leçons, programme ; D89), ouvert ou injecté au démarrage."""
+    publishing: PublishingProviders = conn.app.state.publishing_providers
+    return publishing
+
+
+PublishingDep = Annotated[PublishingProviders, Depends(get_publishing)]

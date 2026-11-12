@@ -382,6 +382,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/programs/{program_id}/export.pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Pdf
+         * @description PDF A4 du programme (Gotenberg, sans script) ; 502 `render_failed` si le rendu échoue.
+         */
+        get: operations["export_pdf_api_v1_programs__program_id__export_pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/programs/{program_id}/validate": {
         parameters: {
             query?: never;
@@ -3352,6 +3372,37 @@ export interface operations {
                 };
                 content: {
                     "text/calendar": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_pdf_api_v1_programs__program_id__export_pdf_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                program_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
                 };
             };
             /** @description Validation Error */

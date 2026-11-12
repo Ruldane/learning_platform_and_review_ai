@@ -5961,6 +5961,50 @@
         ]
       }
     },
+    "/api/v1/programs/{program_id}/export.pdf": {
+      "get": {
+        "description": "PDF A4 du programme (Gotenberg, sans script) ; 502 `render_failed` si le rendu échoue.",
+        "operationId": "export_pdf_api_v1_programs__program_id__export_pdf_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "program_id",
+            "required": true,
+            "schema": {
+              "title": "Program Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export Pdf",
+        "tags": [
+          "program"
+        ]
+      }
+    },
     "/api/v1/programs/{program_id}/validate": {
       "post": {
         "operationId": "validate_program_api_v1_programs__program_id__validate_post",

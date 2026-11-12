@@ -10,7 +10,7 @@ from app.providers.health import HealthCheck
 from app.providers.keys import KeyProvider
 from app.providers.llm.base import LlmProvider
 from app.providers.llm.factory import LlmFactory
-from app.providers.pdf.base import PdfTextExtractor
+from app.providers.pdf.base import HtmlPdfRenderer, PdfTextExtractor
 from app.providers.search.base import SearchProvider
 from app.providers.storage.base import FileStorage
 from app.providers.vector.base import MemoryRepository
@@ -55,3 +55,11 @@ class ResearchProviders:
     searxng: SearchProvider
     brave: BraveFactory
     web: WebReader
+
+
+@dataclass(frozen=True)
+class PublishingProviders:
+    """Documents produits par l'application (D89) : PDF de nos gabarits HTML (leçons, programme)
+    par Gotenberg."""
+
+    html_pdf: HtmlPdfRenderer

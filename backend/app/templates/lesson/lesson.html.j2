@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="{{ language }}">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="{{ csp }}">
+<title>{{ title }}</title>
+<link rel="stylesheet" href="lesson.css">
+</head>
+<body>
+<header class="cover">
+<p class="kicker">{{ labels.kicker }}</p>
+<h1>{{ title }}</h1>
+</header>
+{% if toc %}
+<nav class="toc">
+<h2>{{ labels.toc }}</h2>
+<ol>
+{% for anchor, heading in toc %}
+<li><a href="#{{ anchor }}">{{ heading }}</a></li>
+{% endfor %}
+</ol>
+</nav>
+{% endif %}
+<main class="lesson">
+{{ body }}
+</main>
+{% if scripts %}
+<script src="mermaid.min.js"></script>
+<script src="render.js"></script>
+{% endif %}
+</body>
+</html>

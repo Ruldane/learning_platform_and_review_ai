@@ -14,7 +14,7 @@ from app.agents.runtime.run_settings import RunSettingsSource
 from app.agents.tools.memory_port import MemoryGateway
 from app.agents.tools.web_port import WebGateway
 from app.config import Settings
-from app.core.providers import MemoryProviders, Providers, ResearchProviders
+from app.core.providers import MemoryProviders, Providers, PublishingProviders, ResearchProviders
 from app.core.security import Cipher
 from app.features.health.checks import DatabaseCheck, LlmKeysCheck
 from app.features.learning.service.runtime import LearningRuntime
@@ -35,9 +35,10 @@ from app.providers.llm.base import LlmProvider
 from app.providers.llm.factory import LlmFactory
 from app.providers.llm.glm import GlmProvider
 from app.providers.llm.registry import LLM_PROVIDERS, PRICES_PATH
-from app.providers.pdf.base import PageRenderer
+from app.providers.pdf.base import HTML_RENDER_TIMEOUT_S, PageRenderer
 from app.providers.pdf.gotenberg import GotenbergRenderer
 from app.providers.pdf.gotenberg_probe import GotenbergProbe
+from app.providers.pdf.html import GotenbergHtmlRenderer
 from app.providers.pdf.subprocess import SubprocessPdfExtractor
 from app.providers.search.base import SEARCH_TIMEOUT_S, SearchProvider
 from app.providers.search.brave import BraveKeyProvider, BraveSearch
@@ -170,12 +171,17 @@ def _reader_http() -> httpx.AsyncClient:
     )
 
 
-def _render_http() -> httpx.AsyncClient:
-    """Client de Gotenberg, à part : aucun proxy ni réglage de l'environnement, aucune
-    redirection, 15 s (délai d'une page, D63). Ouvert par `memory_providers` (D74)."""
-    return httpx.AsyncClient(
-        follow_redirects=False, trust_env=False, timeout=httpx.Timeout(FETCH_TIMEOUT_S)
-    )
+def _render_http(timeout_s: float = FETCH_TIMEOUT_S) -> httpx.AsyncClient:
+    """Client de Gotenberg, à part : ni proxy ni réglage de l'environnement, ni redirection ;
+    15 s pour une page (D63, `memory_providers`, D74), 45 s pour nos gabarits (D89)."""
+    return httpx.AsyncClient(follow_redirects=False, trust_env=False, timeout=timeout_s)
+
+
+@asynccontextmanager
+async def publishing_providers(settings: Settings) -> AsyncIterator[PublishingProviders]:
+    """PDF de nos gabarits (leçons, programme) par Gotenberg (D89) ; client fermé à la sortie."""
+    async with _render_http(HTML_RENDER_TIMEOUT_S) as http:
+        yield PublishingProviders(html_pdf=GotenbergHtmlRenderer(http, settings.gotenberg_url))
 
 
 def page_renderer(settings: Settings, http: httpx.AsyncClient) -> PageRenderer | None:
@@ -198,9 +204,8 @@ def _web_reader(
     render_http: httpx.AsyncClient | None,
     pdf: SubprocessPdfExtractor,
 ) -> WebReader:
-    """Lecteur web étendu (D74) : un seul fetcher sûr et un seul débit par hôte pour tout le
-    processus (pages, API GitHub, API et PDF arXiv) ; repli Gotenberg selon les réglages. La
-    mémoire (import d'URL), YouTube (repli) et la recherche reçoivent ce même lecteur."""
+    """Lecteur web étendu (D74) : un fetcher sûr et un débit par hôte pour tout le processus
+    (pages, GitHub, arXiv), repli Gotenberg ; partagé par la mémoire, YouTube et la recherche."""
     fetcher = SafeHttpFetcher(reader_http, throttle=DomainThrottle())
     renderer = page_renderer(settings, render_http) if render_http is not None else None
     pages = TrafilaturaWebReader(fetcher, pdf, renderer=renderer)
@@ -248,8 +253,7 @@ async def memory_providers(settings: Settings) -> AsyncIterator[MemoryProviders]
 async def open_memory_runtime(
     session_factory: async_sessionmaker[AsyncSession], providers: MemoryProviders
 ) -> AsyncIterator[MemoryRuntime]:
-    """Ce que la mémoire partage entre les requêtes (indexeur, verrous), construit sur les
-    fournisseurs de `memory_providers` ou ceux qu'un test a injectés."""
+    """Ce que la mémoire partage entre les requêtes (indexeur, verrous), sur ses fournisseurs."""
     async with memory_runtime(session_factory, providers) as runtime:
         yield runtime
 
@@ -260,24 +264,20 @@ async def open_research_runtime(
     research: ResearchProviders,
     providers: Providers,
 ) -> AsyncIterator[ResearchRuntime]:
-    """Ce que la recherche web partage entre les requêtes et les agents (verrous, lecteur de
-    clés), sur les fournisseurs de `research_providers` ou ceux qu'un test a injectés. La clé
-    Brave est lue comme celles des LLM : réglages d'abord, puis `.env`."""
+    """Ce que la recherche partage (verrous, lecteur de clés : réglages d'abord, puis `.env`)."""
     keys = DbKeyReader(session_factory, providers.cipher, providers.env_keys)
     yield ResearchRuntime(session_factory, research, keys)
 
 
 def key_test_http() -> httpx.AsyncClient:
-    """Client du test de la clé Brave, ouvert par le lifespan : celui de `_search_http` (aucun
-    proxy ni réglage de l'environnement, aucune redirection, 10 s ; revue 3.3, D74)."""
+    """Client du test de la clé Brave, ouvert par le lifespan : `_search_http` (revue 3.3, D74)."""
     return _search_http()
 
 
 def _search_http() -> httpx.AsyncClient:
-    """Client d'un fournisseur de recherche (SearXNG ou Brave), un par fournisseur : hôte fixe
-    et configuré, donc sans la garde SSRF du lecteur web (D63) ; aucun proxy ni réglage de
-    l'environnement (SearXNG est sur le réseau interne, la clé Brave ne passe par aucun
-    intermédiaire), aucune redirection, 10 s."""
+    """Client d'un fournisseur de recherche (un par fournisseur) : hôte fixe et configuré, donc
+    sans la garde SSRF (D63) ; aucun proxy ni réglage de l'environnement (SearXNG est interne,
+    la clé Brave ne passe par aucun intermédiaire), aucune redirection, 10 s."""
     return httpx.AsyncClient(
         follow_redirects=False, trust_env=False, timeout=httpx.Timeout(SEARCH_TIMEOUT_S)
     )
@@ -287,9 +287,8 @@ def _search_http() -> httpx.AsyncClient:
 async def research_providers(
     settings: Settings, web: WebReader
 ) -> AsyncIterator[ResearchProviders]:
-    """SearXNG (`settings.searxng_url`) et la fabrique Brave (une instance par clé, client
-    partagé), sur le lecteur web de la mémoire ; clients fermés à la sortie. Aucune requête à
-    la construction."""
+    """SearXNG et la fabrique Brave (une instance par clé, client partagé), sur le lecteur web de
+    la mémoire ; clients fermés à la sortie, aucune requête à la construction."""
     async with _search_http() as searxng_http, _search_http() as brave_http:
 
         def brave(api_key: str) -> SearchProvider:

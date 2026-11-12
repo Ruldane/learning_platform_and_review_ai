@@ -1,6 +1,9 @@
-"""Ports du PDF : extraction du texte (fichier importé ou URL lue) et rendu d'une page web en PDF
-(repli des pages rendues en JavaScript)."""
+"""Ports du PDF : extraction du texte (fichier importé ou URL lue), rendu d'une page web en PDF
+(repli des pages rendues en JavaScript) et rendu de nos gabarits HTML (leçons, programme ; D89)."""
 
+import re
+from collections.abc import Mapping
+from dataclasses import dataclass
 from typing import Protocol
 
 from app.core.errors import AppError
@@ -43,4 +46,35 @@ class RenderFailed(AppError):
 class PageRenderer(Protocol):
     async def url_to_pdf(self, url: str, *, timeout_s: float) -> bytes:
         """PDF de la page à `url` (déjà validée par la garde SSRF), en `timeout_s` au plus."""
+        ...
+
+
+# Rendu d'un gabarit HTML (leçon avec schémas Mermaid, programme) : 45 s au plus (D89).
+HTML_RENDER_TIMEOUT_S = 45.0
+_RESERVED = {"index.html", "footer.html", "header.html"}
+_ASSET_NAME = re.compile(r"[a-z0-9][a-z0-9_.-]{0,63}\.(css|js)")
+
+
+@dataclass(frozen=True)
+class HtmlDocument:
+    """Page à rendre : `index.html`, ressources jointes à côté (noms simples, CSS ou JS : nos
+    fichiers figés seulement), pied de page (`pageNumber`, `totalPages`) et expression attendue
+    avant l'impression (`waitForExpression`)."""
+
+    index_html: str
+    assets: Mapping[str, bytes]
+    footer_html: str | None = None
+    wait_for_expression: str | None = None
+
+    def __post_init__(self) -> None:
+        for name in self.assets:
+            if name in _RESERVED or not _ASSET_NAME.fullmatch(name):
+                raise ValueError("nom de ressource refusé")
+
+
+class HtmlPdfRenderer(Protocol):
+    async def html_to_pdf(
+        self, document: HtmlDocument, *, timeout_s: float = HTML_RENDER_TIMEOUT_S
+    ) -> bytes:
+        """PDF A4 de `document`, en `timeout_s` au plus ; `RenderFailed` sinon."""
         ...

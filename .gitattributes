@@ -1,3 +1,5 @@
 * text=auto eol=lf
 *.png binary
 *.pdf binary
+# Mermaid figé : octets exacts (empreinte vérifiée par app/templates/assets.py, D89).
+backend/app/templates/assets/mermaid.min.js binary

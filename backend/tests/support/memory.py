@@ -9,8 +9,9 @@ from pathlib import Path
 from qdrant_client import AsyncQdrantClient
 
 from app.core.errors import AppError
-from app.core.providers import MemoryProviders
+from app.core.providers import MemoryProviders, PublishingProviders
 from app.providers.embeddings.fake import HashingEmbedder
+from app.providers.pdf.base import HTML_RENDER_TIMEOUT_S, HtmlDocument, RenderFailed
 from app.providers.pdf.extract import PdfPlumberExtractor
 from app.providers.storage.local import LocalFileStorage
 from app.providers.vector.base import ChunkPayload, ChunkToIndex
@@ -53,6 +54,29 @@ class FakeRenderer:
         if isinstance(self.pdf, AppError):
             raise self.pdf
         return self.pdf
+
+
+@dataclass
+class FakeHtmlRenderer:
+    """`HtmlPdfRenderer` factice (D89) : garde chaque document reçu ; les `failures` premiers
+    appels lèvent `RenderFailed`, les suivants rendent `pdf`."""
+
+    pdf: bytes = b"%PDF-1.7 faux rendu %%EOF"
+    failures: int = 0
+    documents: list[HtmlDocument] = field(default_factory=list)
+
+    async def html_to_pdf(
+        self, document: HtmlDocument, *, timeout_s: float = HTML_RENDER_TIMEOUT_S
+    ) -> bytes:
+        self.documents.append(document)
+        if self.failures:
+            self.failures -= 1
+            raise RenderFailed()
+        return self.pdf
+
+
+def fake_publishing_providers() -> PublishingProviders:
+    return PublishingProviders(html_pdf=FakeHtmlRenderer())
 
 
 @dataclass

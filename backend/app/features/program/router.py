@@ -1,5 +1,5 @@
 """API du programme (SPEC 3.4, 14.2 ; D88) : liste, vue complète, modifications de January
-(tâches déplacées, ajoutées, supprimées, date de début), validation et export `.ics`."""
+(tâches déplacées, ajoutées, supprimées, date de début), validation, exports `.ics` et PDF (D89)."""
 
 from typing import Annotated
 
@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Response
 from fastapi import status as http
 from starlette.requests import HTTPConnection
 
-from app.core.deps import CurrentUserDep, Db, RuntimeDep
+from app.core.deps import CurrentUserDep, Db, PublishingDep, RuntimeDep
 from app.features.program.schemas import (
     ProgramOut,
     ProgramPatch,
@@ -17,12 +17,14 @@ from app.features.program.schemas import (
     ValidateOut,
 )
 from app.features.program.service import editing, programs, validation
+from app.features.program.service.export_pdf import export_program_pdf
 from app.features.program.service.ics import program_ics
 from app.features.program.service.runtime import ProgramRuntime
 
 router = APIRouter(tags=["program"])
 
 ICS_MEDIA_TYPE = "text/calendar"
+PDF_MEDIA_TYPE = "application/pdf"
 
 
 def get_program_runtime(conn: HTTPConnection) -> ProgramRuntime:
@@ -80,4 +82,23 @@ async def export_ics(program_id: str, current: CurrentUserDep, db: Db) -> Respon
         content=body,
         media_type=f"{ICS_MEDIA_TYPE}; charset=utf-8",
         headers={"Content-Disposition": 'attachment; filename="programme.ics"'},
+    )
+
+
+@router.get(
+    "/programs/{program_id}/export.pdf",
+    response_class=Response,
+    responses={
+        200: {"content": {PDF_MEDIA_TYPE: {"schema": {"type": "string", "format": "binary"}}}}
+    },
+)
+async def export_pdf(
+    program_id: str, current: CurrentUserDep, db: Db, publishing: PublishingDep
+) -> Response:
+    """PDF A4 du programme (Gotenberg, sans script) ; 502 `render_failed` si le rendu échoue."""
+    body = await export_program_pdf(db, publishing.html_pdf, current.id, program_id)
+    return Response(
+        content=body,
+        media_type=PDF_MEDIA_TYPE,
+        headers={"Content-Disposition": 'attachment; filename="programme.pdf"'},
     )
