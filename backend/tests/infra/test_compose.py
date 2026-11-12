@@ -100,6 +100,14 @@ _DENIED = [
     "http://[::ffff:127.0.0.1]/",
     "ws://backend:8000/ws",
     "file:///etc/passwd",
+    "file:/etc/passwd",
+    "file:///tmpx/secret",
+    # Casse ignorée (`(?i)`) : schéma ou hôte en majuscules.
+    "FILE:///etc/passwd",
+    "HTTP://10.0.0.1/",
+    "http://BACKEND:8000/",
+    "HTTPS://Host.Docker.Internal/",
+    "http://[FD00::1]/",
     "https://user@10.0.0.1/",
 ]
 
@@ -112,6 +120,11 @@ _ALLOWED = [
     "https://backend.example.org/",
     "https://github.com/org/repo?tab=readme",
     "https://8.8.8.8/",
+    "HTTPS://Example.ORG/Page",
+    # Exception du défaut de Gotenberg, gardée : `convert/html` et `convert/markdown` (PDF des
+    # leçons et des CV, phases 4 et 6) font naviguer Chromium vers `file:///tmp/<requête>/`.
+    "file:///tmp/abc/index.html",
+    "file:///tmp/abc/style.css",
 ]
 
 
