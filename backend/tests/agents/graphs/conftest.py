@@ -28,14 +28,16 @@ from tests.support.memory import FakeWebReader
 
 
 class FixedSettings:
-    """`RunSettingsSource` de test : les réglages par défaut, `debate_rounds` au choix."""
+    """`RunSettingsSource` de test : les réglages par défaut, `debate_rounds` et le plafond de
+    tokens au choix."""
 
-    def __init__(self, debate_rounds: int) -> None:
+    def __init__(self, debate_rounds: int, token_cap: int = 300_000) -> None:
         self._rounds = debate_rounds
+        self._cap = token_cap
 
     async def get_run_settings(self, user_id: str) -> RunSettings:
         return RunSettings(
-            session_token_cap=300_000,
+            session_token_cap=self._cap,
             debate_rounds=self._rounds,
             lesson_language="fr",
             search_languages=("fr",),
@@ -140,14 +142,20 @@ async def make_web_runner(
     other_user_id: str,
 ) -> AsyncIterator[MakeWeb]:
     """Runner sur le registre RÉEL. Plusieurs appels = plusieurs processus (même base, même
-    `checkpoints.db`, mêmes faux moteurs). `models` remplace le faux LLM ; `council` : le port."""
+    `checkpoints.db`, mêmes faux moteurs). `models` remplace le faux LLM ; `council` : le port ;
+    `rounds` et `token_cap` : réglages de la session."""
     search, reader = FakeSearch("searxng"), FakeWebReader()
     await add_users(db_session_factory, user_id, other_user_id)
     research = research_runtime(db_session_factory, search, reader)
     async with AsyncExitStack() as stack:
 
         async def make(
-            replies: list[str], *, models: Any = None, council: CouncilStore = NO_COUNCIL
+            replies: list[str],
+            *,
+            models: Any = None,
+            council: CouncilStore = NO_COUNCIL,
+            rounds: int = 2,
+            token_cap: int = 300_000,
         ) -> Web:
             memory = await stack.enter_async_context(
                 memory_runtime(db_session_factory, memory_providers)
@@ -157,24 +165,15 @@ async def make_web_runner(
             fake = None
             if models is None:
                 models, fake = fake_llm_with_provider(replies)
-            web = Web(
-                None,  # type: ignore[arg-type]
-                fake,
-                memory,
-                db_session_factory,
-                search,
-                reader,
-                research,
-                AgentWebGateway(research),
-                AgentMemoryGateway(memory),
-            )
+            gateways = (AgentWebGateway(research), AgentMemoryGateway(memory))
+            web = Web(None, fake, memory, db_session_factory, search, reader, research, *gateways)  # type: ignore[arg-type]
             web.runner = SessionRunner(
                 session_factory=db_session_factory,
                 bus=bus,
                 models=models,
                 checkpointer=saver,
                 prices={"modele-test": ModelPrice(1.0, 2.0)},
-                run_settings=FixedSettings(2),
+                run_settings=FixedSettings(rounds, token_cap),
                 ports=AgentPorts(memory=web.memory_gateway, web=web.gateway, council=council),
             )
             stack.push_async_callback(bus.aclose)

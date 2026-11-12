@@ -1,5 +1,6 @@
 """Parcours `learning_council`, première moitié (D84) : cadrage du Modérateur (point d'arrêt
-n° 1), recherche de l'Éclaireur et praticiens. Faux LLM, faux moteurs, vraie base."""
+n° 1), recherche de l'Éclaireur et praticiens. Chaque session va ensuite jusqu'au choix du
+parcours avec le débat par défaut des faux modèles (D85). Faux LLM, faux moteurs, vraie base."""
 
 import asyncio
 import json
@@ -56,7 +57,7 @@ async def test_zero_question_still_stops(make_council_runner: MakeCouncil) -> No
     assert (view.pending_interrupt or {})["fields"] == []
     assert c.web.search.calls == []
     await c.resume("go")
-    await c.wait_status("completed")
+    await c.wait_choice()
     assert c.store.framing_saved == [([], {})]
 
 
@@ -66,7 +67,7 @@ async def test_answers_are_saved_and_feed_the_research_query(
     c = await make_council_runner(framing_replies(2) + research_replies())
     await c.wait_status("waiting_user")
     await c.resume({"answers": {"q1": ANSWER, "q9": "inconnue"}})
-    await c.wait_status("completed")
+    await c.wait_choice()
     questions, answers = c.store.framing_saved[-1]
     assert answers == {"q1": ANSWER}
     assert [q["id"] for q in questions] == ["q1", "q2"]
@@ -88,7 +89,7 @@ async def test_framing_answer_saved_once_after_replay(
     first.store.block_after_framing = False
     second = await make_council_runner(research_replies(), sid=first.sid)
     assert await second.runner.recover_on_startup() == [first.sid]
-    await second.wait_status("completed")
+    await second.wait_choice()
     assert second.store.framing_calls == 2  # nœud rejoué…
     assert len(second.store.framing_saved) == 1  # … sans seconde écriture différente
     assert second.store.framing_saved[0][1] == {"q2": ANSWER}
@@ -100,7 +101,7 @@ async def test_research_scores_sources_and_spots_people(make_council_runner: Mak
     c = await make_council_runner(framing_replies(1) + research_replies())
     await c.wait_status("waiting_user")
     await c.resume("go")
-    await c.wait_status("completed")
+    await c.wait_choice()
     found = await c.source_found()
     assert sum(1 for f in found if f["kind"] == "page" and f["score"] is not None) >= 8
     people = [f for f in found if f["kind"] == "person"]
@@ -122,7 +123,7 @@ async def test_person_without_read_url_is_dropped(make_council_runner: MakeCounc
     c = await make_council_runner(framing_replies(1) + research_replies(invented))
     await c.wait_status("waiting_user")
     await c.resume("go")
-    await c.wait_status("completed")
+    await c.wait_choice()
     assert [f for f in await c.source_found() if f["kind"] == "person"] == []
     assert await _people_rows(c) == []
 
@@ -133,7 +134,7 @@ async def test_people_prompt_frames_page_metadata_as_untrusted(
     c = await make_council_runner(framing_replies(1) + research_replies())
     await c.wait_status("waiting_user")
     await c.resume("go")
-    await c.wait_status("completed")
+    await c.wait_choice()
     prompt = c.people_prompt()
     assert prompt.count(END) >= PAGE_COUNT + 1  # chaque page, plus la règle partagée
     line = prompt.index("Auteur : Ada Lovelace")
@@ -148,7 +149,7 @@ async def test_logs_never_contain_goal_text_or_answers(
     c = await make_council_runner(framing_replies(2) + research_replies())
     await c.wait_status("waiting_user")
     await c.resume({"answers": {"q1": ANSWER}})
-    await c.wait_status("completed")
+    await c.wait_choice()
     await asyncio.sleep(0)
     for secret in (GOAL_TEXT, ANSWER, "Question de cadrage", "Ada Lovelace", ADA_URL):
         assert secret not in caplog.text

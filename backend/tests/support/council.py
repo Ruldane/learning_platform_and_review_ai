@@ -30,7 +30,9 @@ class FakeCouncilStore:
     """`goals` : (utilisateur, objectif) → brief. `framing_saved` ne garde que les écritures qui
     changent quelque chose (une réécriture à l'identique n'en ajoute pas) ; `framing_calls`
     compte tous les appels. `block_after_framing` : fige l'appel après l'écriture (arrêt du back
-    en plein nœud)."""
+    en plein nœud). `boards` : id par `(session, étape)`, `board_kinds` leur type ; `choices` :
+    les choix enregistrés (un seul par session et objectif), `programs_started` : les sessions
+    `program_builder` lancées (une seule par objectif)."""
 
     goals: dict[tuple[str, str], GoalBrief] = field(default_factory=dict)
     framing: dict[tuple[str, str], tuple[list[dict[str, str]], dict[str, str]]] = field(
@@ -40,11 +42,14 @@ class FakeCouncilStore:
     framing_calls: int = 0
     block_after_framing: bool = False
     boards: dict[tuple[str, int], str] = field(default_factory=dict)
+    board_kinds: dict[tuple[str, int], BoardKind] = field(default_factory=dict)
     minutes: dict[str, str] = field(default_factory=dict)
     batches: dict[tuple[str, int], list[ProposalRef]] = field(default_factory=dict)
     attached: dict[str, str] = field(default_factory=dict)
-    choices: dict[tuple[str, str], Choice] = field(default_factory=dict)
+    chosen: dict[tuple[str, str], Choice] = field(default_factory=dict)
+    choices: list[Choice] = field(default_factory=list)
     programs: dict[str, str] = field(default_factory=dict)
+    programs_started: int = 0
 
     def add_goal(
         self,
@@ -93,6 +98,7 @@ class FakeCouncilStore:
         title: str,
         mermaid: str,
     ) -> str:
+        self.board_kinds.setdefault((session_id, step), kind)
         return self.boards.setdefault((session_id, step), uuid4().hex)
 
     async def save_minutes(self, user_id: str, goal_id: str, text: str) -> None:
@@ -116,7 +122,12 @@ class FakeCouncilStore:
     async def record_choice(
         self, user_id: str, session_id: str, goal_id: str, choice: Choice
     ) -> None:
-        self.choices.setdefault((session_id, goal_id), choice)
+        if (session_id, goal_id) not in self.chosen:
+            self.chosen[(session_id, goal_id)] = choice
+            self.choices.append(choice)
 
     async def start_program(self, user_id: str, goal_id: str, choice: Choice) -> str:
-        return self.programs.setdefault(goal_id, uuid4().hex)
+        if goal_id not in self.programs:
+            self.programs[goal_id] = uuid4().hex
+            self.programs_started += 1
+        return self.programs[goal_id]

@@ -1,6 +1,7 @@
 """Le Modérateur du Conseil (SPEC 3.1, 9.1) : lit l'objectif et la mémoire, prépare 5 questions
 de cadrage au plus, s'arrête pour les poser (point d'arrêt n° 1), puis enregistre les réponses
-et prépare la demande de l'Éclaireur.
+et prépare la demande de l'Éclaireur. Pendant le débat, il ouvre et ferme chaque tour
+(`moderator_rounds`, D85).
 
 L'arrêt vit seul dans `ask_framing` : aucun effet de bord avant `interrupt()` (SPEC 9.4).
 L'écriture des réponses a lieu dans le nœud suivant, idempotente (le port écrase).
@@ -8,14 +9,21 @@ L'écriture des réponses a lieu dans le nœud suivant, idempotente (le port éc
 Objectif, poste visé et réponses viennent de January : non encadrés dans les prompts (D53 §5),
 jamais journalisés (17.2)."""
 
-from datetime import date
-from typing import Any, Protocol
+from typing import Any
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.types import interrupt
 from pydantic import BaseModel, Field
 
+from app.agents.nodes.council_rules import Node, deadline_text
 from app.agents.nodes.memory_context import load_memory_context
+from app.agents.nodes.moderator_rounds import (
+    AGENT,
+    RoundPlan,
+    RoundReview,
+    make_round_end,
+    make_round_start,
+)
 from app.agents.prompts.loader import render_prompt
 from app.agents.registry import get_agent
 from app.agents.runtime.deps import GraphDeps
@@ -24,16 +32,11 @@ from app.agents.runtime.structured import structured_call
 from app.agents.state.learning_council import CouncilState
 from app.agents.tools.council_port import FramingQuestion, GoalBrief
 
-AGENT = "moderator"
 MAX_FRAMING_QUESTIONS = 5
 MAX_ANSWER_CHARS = 2000
 MAX_QUERY_CHARS = 300
 FRAMING_PROMPT = "Réponds aux questions de cadrage (facultatif), puis lance la recherche."
 GO = {"value": "go", "label": "Lancer la recherche"}
-
-
-class Node(Protocol):
-    async def __call__(self, state: CouncilState) -> CouncilState: ...
 
 
 class FramingQuestionModel(BaseModel):
@@ -70,11 +73,6 @@ def make_context(deps: GraphDeps) -> Node:
     return context
 
 
-def _deadline(goal: dict[str, Any]) -> str:
-    raw = goal.get("deadline")
-    return date.fromisoformat(raw).strftime("%d/%m/%Y") if raw else "aucune"
-
-
 def make_frame(deps: GraphDeps) -> Node:
     @node_timeout()
     async def frame(state: CouncilState) -> CouncilState:
@@ -84,7 +82,7 @@ def make_frame(deps: GraphDeps) -> Node:
             mode="frame",
             goal=goal["text"],
             target_role=goal.get("target_role") or "non précisé",
-            deadline=_deadline(goal),
+            deadline=deadline_text(goal),
             weekly_minutes=goal.get("weekly_minutes"),
             context=state.get("context", ""),
             max_questions=MAX_FRAMING_QUESTIONS,
@@ -163,3 +161,18 @@ def make_apply_framing(deps: GraphDeps) -> Node:
         return {"query": research_query(state["goal"], questions, answers), "urls": []}
 
     return apply_framing
+
+
+__all__ = [
+    "AGENT",
+    "RoundPlan",
+    "RoundReview",
+    "ask_framing",
+    "framing_answers",
+    "make_apply_framing",
+    "make_context",
+    "make_frame",
+    "make_round_end",
+    "make_round_start",
+    "research_query",
+]

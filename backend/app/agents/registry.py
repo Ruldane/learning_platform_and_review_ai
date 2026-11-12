@@ -21,6 +21,10 @@ AGENTS: dict[str, AgentSpec] = {
         AgentSpec(name="archivist", tier="rapide"),  # Archiviste du graphe `learned_document`
         AgentSpec(name="scout", tier="rapide"),  # Éclaireur (`web_research`, Conseil)
         AgentSpec(name="moderator", tier="rapide"),  # Modérateur du Conseil
+        AgentSpec(name="strategist", tier="fort"),  # Stratège : débat, propositions, programme
+        AgentSpec(name="practitioner", tier="standard"),  # Praticien : voix du terrain
+        AgentSpec(name="skeptic", tier="standard"),  # Sceptique : objections, faisabilité
+        AgentSpec(name="scribe", tier="rapide"),  # Scribe : tableau et compte rendu
     )
 }
 

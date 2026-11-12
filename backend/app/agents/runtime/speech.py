@@ -7,11 +7,11 @@ renvoient à un catalogue numéroté (sources récupérées, éléments de la m�
 """
 
 import re
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import BaseMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
 from app.agents.runtime.emit import emit
 from app.agents.runtime.events import AgentMessagePayload, Citation
@@ -45,6 +45,7 @@ class Spoken:
     text: str
     citations: list[Citation]
     words: int
+    revised: bool = False  # une nouvelle demande a été faite (`revise`)
 
 
 def _is_word(token: str) -> bool:
@@ -112,15 +113,27 @@ async def speak(
     intent: str,
     catalog: Sequence[CitationEntry],
     max_words: int,
+    revise: Callable[[str], str | None] | None = None,
 ) -> Spoken:
     """`agent.started`, tokens en direct (`call_with_retries`), puis `agent.message` avec le
-    texte coupé à `max_words` et ses citations, sous le `message_id` des tokens (D57)."""
+    texte coupé à `max_words` et ses citations, sous le `message_id` des tokens (D57).
+
+    `revise(texte coupé)` rend une demande de correction (règles du débat non tenues, D85) ou
+    `None` : une seule nouvelle demande est faite alors, sans tokens en direct, et son texte
+    remplace le premier sous le même `message_id` (la bulle en cours est corrigée)."""
     emit("agent.started", {"step": step, "intent": intent}, agent=agent)
     reply = await call_with_retries(model, messages, agent=agent)
     text = cap_words(message_text(reply).strip(), max_words)
+    correction = revise(text) if revise is not None else None
+    if correction is not None:
+        retry = [*messages, AIMessage(text), HumanMessage(correction)]
+        second = await call_with_retries(model, retry, agent=agent, stream=False)
+        text = cap_words(message_text(second).strip(), max_words)
     citations = extract_citations(text, catalog)
     payload = AgentMessagePayload(
         message_id=reply.id or f"{agent}-{step}", text=text, citations=citations
     )
     emit("agent.message", payload, agent=agent)
-    return Spoken(text=text, citations=citations, words=count_words(text))
+    return Spoken(
+        text=text, citations=citations, words=count_words(text), revised=correction is not None
+    )

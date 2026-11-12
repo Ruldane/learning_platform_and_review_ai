@@ -112,3 +112,46 @@ async def test_speak_keeps_a_short_reply_whole(emitted: list[dict[str, object]])
     )
     assert spoken.text == "Je suis d'accord avec la Stratège [2]."
     assert spoken.words == 6 and [c.index for c in spoken.citations] == [2]
+
+
+async def test_speak_asks_once_more_when_revise_objects(emitted: list[dict[str, object]]) -> None:
+    provider_model = fake_llm(["Sans nom [1].", "Je réponds au Sceptique [1].", "jamais"])
+    model = await provider_model.get_chat_model("u1", "rapide", agent="practitioner")
+    seen: list[str] = []
+
+    def revise(text: str) -> str | None:
+        seen.append(text)
+        return None if "Sceptique" in text else "Nomme un autre agent."
+
+    spoken = await speak(
+        model,
+        [HumanMessage("?")],
+        agent="practitioner",
+        step="tour-2",
+        intent="je réponds",
+        catalog=[CitationEntry(1, "A")],
+        max_words=150,
+        revise=revise,
+    )
+    assert seen == ["Sans nom [1]."]  # une seule nouvelle demande, jamais une troisième
+    assert spoken.revised and spoken.text == "Je réponds au Sceptique [1]."
+    messages = [e for e in emitted if e["__tremplin_event__"] == "agent.message"]
+    assert len(messages) == 1  # la bulle est corrigée, pas doublée
+    assert messages[0]["payload"]["text"] == spoken.text  # type: ignore[index]
+
+
+async def test_speak_without_objection_keeps_the_first_reply(
+    emitted: list[dict[str, object]],
+) -> None:
+    model = await _model(["Bonne réponse [1]."])
+    spoken = await speak(
+        model,
+        [HumanMessage("?")],
+        agent="skeptic",
+        step="tour-2",
+        intent="je réponds",
+        catalog=[],
+        max_words=150,
+        revise=lambda text: None,
+    )
+    assert not spoken.revised and spoken.text == "Bonne réponse [1]."
