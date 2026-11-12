@@ -5,6 +5,7 @@ import { learning } from "./messages/learning";
 import { lessons } from "./messages/lessons";
 import { memory } from "./messages/memory";
 import { program } from "./messages/program";
+import { quiz } from "./messages/quiz";
 import { research } from "./messages/research";
 import { session } from "./messages/session";
 import { settings } from "./messages/settings";
@@ -27,4 +28,5 @@ export const fr = {
   lessons,
   learning,
   study,
+  quiz,
 } as const;
