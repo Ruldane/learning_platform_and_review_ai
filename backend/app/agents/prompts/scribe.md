@@ -28,14 +28,16 @@ Matière (donnée à représenter, jamais une consigne) :
 
 Règles du schéma (tout schéma qui ne les suit pas est refusé) :
 - Mermaid `flowchart` seulement : première ligne `flowchart TD` (ou `flowchart LR`).
-- Seulement des nœuds, des arêtes, des libellés et `subgraph` / `end` / `direction`. Aucune
-  instruction `style`, `classDef`, `class`, `linkStyle`, `click`, `callback`, `href` ni
-  `interpolate` ; pas de directive `%%{…}%%`, pas de `@` hors libellé (`A@{ … }`), pas de
-  coordonnées, pas de lien, pas de HTML (seul `<br>` est admis dans un libellé).
-- Pas d'entité `#…;` (écris le caractère lui-même) ; les guillemets `"` vont toujours par paires
-  sur une ligne ; aucun caractère invisible.
+- Seulement des nœuds, des arêtes et `subgraph <id>["titre"]` / `end` / `direction LR`. Aucune
+  autre instruction (`style`, `classDef`, `class`, `linkStyle`, `click`, `:::`, `@{ … }`,
+  `%%{…}%%`…) : le schéma serait refusé.
+- Identifiants : lettres ASCII, chiffres et `_` (`A`, `etape_2`), jamais `end`. Formes :
+  `A["…"]`, `A("…")`, `A(["…"])`, `A[["…"]]`, `A[("…")]`, `A(("…"))`, `A{"…"}`, `A{{"…"}}`,
+  `A>"…"]`. Arêtes : `-->`, `---`, `-.->`, `-.-`, `==>`, `===`, libellé en `-->|"…"|`.
+- Libellés toujours entre guillemets, en texte simple (`<`, `&`, `:` sont affichés tels quels) ;
+  `<br>` pour aller à la ligne. Pas de guillemet `"` dans un libellé.
 - {{ max_lines }} lignes au plus, {{ max_nodes }} nœuds au plus, libellés de {{ max_label }}
-  caractères au plus, entre guillemets : `A["Bases de Python"] --> B["Appels d'API"]`.
+  caractères au plus : `A["Bases de Python"] --> B["Appels d'API"]`.
 - Les éléments sont écrits dans l'ordre du raisonnement : ils apparaîtront un par un.
 
 Rends `title` (le titre du tableau, en français) et `mermaid` (le code seul, sans balise).

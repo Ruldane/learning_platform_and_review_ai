@@ -1,8 +1,9 @@
 """Le Scribe (SPEC 3.3, 9.1, D85) : dessine au tableau en Mermaid `flowchart` (jamais de
 coordonnées) et tient le compte rendu. Il ne prend pas position.
 
-Le Mermaid est filtré par le code (`mermaid_rules`) : refusé, une nouvelle demande ; encore
-refusé (ou sortie invalide), aucun tableau, le Conseil continue (journal : identifiants). Chaque
+Le Mermaid est analysé par une grammaire stricte puis réémis (`mermaid_rules`) : refusé, une
+nouvelle demande ; encore refusé (ou sortie invalide), aucun tableau, le Conseil continue
+(journal : identifiants). Seule la version réémise est enregistrée et publiée. Chaque
 tableau a son numéro d'étape, tiré de `board_step` de l'état d'entrée : un nœud rejoué réécrit les
 mêmes étapes, que le port enregistre une seule fois (idempotent par session et étape)."""
 
@@ -27,6 +28,7 @@ from app.agents.nodes.mermaid_rules import (
     MAX_MERMAID_LINES,
     MAX_NODES,
     mermaid_problems,
+    normalize_mermaid,
 )
 from app.agents.prompts.loader import render_prompt, untrusted
 from app.agents.registry import get_agent
@@ -73,7 +75,8 @@ def _board_prompt(state: CouncilState, kind: BoardKind, brief: str) -> str:
 async def _valid_draft(
     deps: GraphDeps, messages: list[BaseMessage], step: int
 ) -> BoardDraft | None:
-    """Un schéma qui passe le filtre, en deux demandes au plus ; sinon `None`."""
+    """Un schéma qui passe la grammaire, en deux demandes au plus, rendu **normalisé** (réémis
+    par `normalize_mermaid` : le Mermaid brut du modèle ne sort jamais) ; sinon `None`."""
     model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
     for attempt in range(2):
         try:
@@ -92,7 +95,9 @@ async def _valid_draft(
         draft = BoardDraft(title=" ".join(draft.title.split()), mermaid=_clean(draft.mermaid))
         problems = mermaid_problems(draft.mermaid)
         if not problems:
-            return draft
+            return BoardDraft.model_construct(
+                title=draft.title, mermaid=normalize_mermaid(draft.mermaid)
+            )
         if attempt == 0:
             refused = "\n".join(f"- {problem}" for problem in problems)
             messages = [

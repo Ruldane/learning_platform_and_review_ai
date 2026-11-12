@@ -46,6 +46,7 @@ class FakeCouncilStore:
     block_after_framing: bool = False
     boards: dict[tuple[str, int], str] = field(default_factory=dict)
     board_kinds: dict[tuple[str, int], BoardKind] = field(default_factory=dict)
+    board_codes: dict[tuple[str, int], str] = field(default_factory=dict)  # dernier écrit
     minutes: dict[str, str] = field(default_factory=dict)
     batches: dict[tuple[str, int], list[ProposalRef]] = field(default_factory=dict)
     batch_drafts: dict[tuple[str, int], list[ProposalDraft]] = field(default_factory=dict)
@@ -107,6 +108,7 @@ class FakeCouncilStore:
     ) -> str:
         await self.goal(user_id, goal_id)  # un oubli du filtre utilisateur échoue (404)
         self.board_kinds.setdefault((session_id, step), kind)
+        self.board_codes[(session_id, step)] = mermaid
         return self.boards.setdefault((session_id, step), uuid4().hex)
 
     async def save_minutes(self, user_id: str, goal_id: str, text: str) -> None:

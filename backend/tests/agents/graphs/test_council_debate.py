@@ -2,6 +2,7 @@
 objection du Sceptique, messages et commandes de January, arrêt anticipé, carte du domaine.
 Faux modèles par agent, faux moteurs, vraie base."""
 
+import json
 from collections import Counter
 from collections.abc import Awaitable, Callable
 
@@ -173,6 +174,21 @@ async def test_scribe_draws_domain_map_after_round_one(make_council_runner: Make
     assert len(c.store.boards) == 5 and len(c.store.attached) == 2  # une frise par proposition
     domain_prompt = next(p.prompt for p in c.models.calls if "carte du domaine" in p.prompt)
     assert "Stratège, tour 1" in domain_prompt
+
+
+async def test_scribe_publishes_and_saves_only_the_normalized_mermaid(
+    make_council_runner: MakeCouncil,
+) -> None:
+    models = CouncilModels()
+    raw = 'flowchart LR\nA["x < y"] -->|suite| B(List<String>)'
+    board = json.dumps({"title": "Carte", "mermaid": raw})
+    models.when("scribe", "dessiner la carte du domaine", board)
+    c = await make_council_runner(models=models)
+    await c.to_choice()
+    domain = next(x for x in await c.events("board.update") if x["kind"] == "domain_map")
+    expected = 'flowchart LR\n  n1["x #lt; y"] -->|"suite"| n2("List#lt;String#gt;")'
+    assert domain["mermaid"] == expected
+    assert c.store.board_codes[(c.sid, domain["step"])] == expected
 
 
 async def test_invalid_board_twice_is_skipped_without_failing(
