@@ -927,6 +927,72 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/study-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Study
+         * @description Ouvre une session et lance le Tuteur (202). `lesson_id` absent : bloc du jour (404
+         *     `no_block_today`) ; leçon pas prête : 409 `lesson_not_ready` ; session déjà ouverte sur la
+         *     même leçon : 200, elle-même ; sur une autre : 409 `study_already_open`.
+         */
+        post: operations["start_study_api_v1_study_sessions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/study-sessions/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Study Summary
+         * @description Série (jours locaux avec une session terminée), minutes de la semaine, minuteur, session
+         *     ouverte et bloc du jour.
+         */
+        get: operations["study_summary_api_v1_study_sessions_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/study-sessions/{study_session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Study */
+        get: operations["get_study_api_v1_study_sessions__study_session_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Study
+         * @description « Terminer » (`finish`, minuteur gardé puis question en attente reprise ; Tuteur en
+         *     train d'écrire : 409 `study_not_waiting`) ou « Abandonner » (`cancel`, rien n'est écrit).
+         *     Déjà terminée ou abandonnée : l'état, sans rien changer.
+         */
+        patch: operations["update_study_api_v1_study_sessions__study_session_id__patch"];
+        trace?: never;
+    };
     "/api/v1/tasks/{task_id}": {
         parameters: {
             query?: never;
@@ -1213,6 +1279,31 @@ export interface components {
              * @description Budget hebdomadaire : cinq jours de semaine plus un bloc de week-end (borne haute).
              */
             readonly weekly_budget_minutes: number;
+        };
+        /** BlockOut */
+        BlockOut: {
+            /** Lesson Id */
+            lesson_id: string;
+            /** Lesson Title */
+            lesson_title: string;
+            /** Module Title */
+            module_title: string;
+            /** Tasks */
+            tasks: components["schemas"]["BlockTaskOut"][];
+        };
+        /** BlockTaskOut */
+        BlockTaskOut: {
+            /** Id */
+            id: string;
+            /** Minutes */
+            minutes: number;
+            /** Title */
+            title: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "lire" | "regarder" | "pratiquer" | "quiz" | "projet";
         };
         /**
          * BoardEdit
@@ -2712,6 +2803,16 @@ export interface components {
             readonly vision_enabled: boolean;
             weekly_review?: components["schemas"]["WeeklyReview"];
         };
+        /** SkillLevelOut */
+        SkillLevelOut: {
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "declare" | "en_cours" | "valide" | "prouve";
+            /** Name */
+            name: string;
+        };
         /** SourceFoundEvent */
         SourceFoundEvent: {
             /**
@@ -2860,6 +2961,92 @@ export interface components {
             vectorize_limit: number;
             /** Vectorize Share */
             vectorize_share: number;
+        };
+        /** StudySessionOut */
+        StudySessionOut: {
+            /** Ended At */
+            ended_at: string | null;
+            /** Flashcards Created */
+            flashcards_created: number;
+            /** Id */
+            id: string;
+            /** Lesson Id */
+            lesson_id: string;
+            /** Lesson Title */
+            lesson_title: string;
+            /** Minutes */
+            minutes: number;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "socratic" | "feynman" | "direct";
+            /** Module Title */
+            module_title: string;
+            /** Session Id */
+            session_id: string | null;
+            /** Skills */
+            skills: components["schemas"]["SkillLevelOut"][];
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "finished" | "cancelled" | "interrupted";
+            /** Summary */
+            summary: string | null;
+            /** Tasks Done */
+            tasks_done: string[];
+        };
+        /** StudyStart */
+        StudyStart: {
+            /** Lesson Id */
+            lesson_id?: string | null;
+            /**
+             * Mode
+             * @default socratic
+             * @enum {string}
+             */
+            mode: "socratic" | "feynman" | "direct";
+            /** Question */
+            question?: string | null;
+        };
+        /** StudyStarted */
+        StudyStarted: {
+            /** Lesson Id */
+            lesson_id: string;
+            /** Session Id */
+            session_id: string;
+            /** Study Session Id */
+            study_session_id: string;
+        };
+        /** StudySummaryOut */
+        StudySummaryOut: {
+            block: components["schemas"]["BlockOut"] | null;
+            /** Break Minutes */
+            break_minutes: number;
+            /** Open Session Id */
+            open_session_id: string | null;
+            /** Streak Days */
+            streak_days: number;
+            /** Week Minutes */
+            week_minutes: number;
+            /** Work Minutes */
+            work_minutes: number;
+        };
+        /** StudyUpdate */
+        StudyUpdate: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "finish" | "cancel";
+            /** Worked Minutes */
+            worked_minutes?: number | null;
         };
         /** TaskCreate */
         TaskCreate: {
@@ -5000,6 +5187,134 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ModelsOut"];
+                };
+            };
+        };
+    };
+    start_study_api_v1_study_sessions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudyStart"];
+            };
+        };
+        responses: {
+            /** @description Session déjà ouverte sur cette leçon. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudyStarted"];
+                };
+            };
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudyStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    study_summary_api_v1_study_sessions_summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudySummaryOut"];
+                };
+            };
+        };
+    };
+    get_study_api_v1_study_sessions__study_session_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudySessionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_study_api_v1_study_sessions__study_session_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudyUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudySessionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

@@ -1,7 +1,7 @@
 """Port des sessions d'étude guidées (SPEC F14, D102). `app.agents` n'importe aucune feature
 (contrat 6) : il décrit ici ce dont le parcours `study_session` a besoin (la leçon découpée en
 sections, l'exercice et son corrigé, les sources ; le rangement de la fin de session) ; la feature
-`study` l'implémentera (tâche 5.6).
+`study` l'implémente (tâche 5.6, D103).
 
 Le parcours ne lit qu'une fois (`context`) et n'écrit qu'une fois (`finish`), à la fin ;
 `finish` est idempotent : une session d'étude déjà `finished` est relue telle quelle, sans
@@ -81,12 +81,19 @@ class StudyFinished:
 
 
 class StudyStore(Protocol):
+    """Garanties de l'implémentation (feature `study`, D103) : la séance d'une autre
+    utilisatrice lève une `AppError` 404 (`study_session_not_found`) dans `context` comme dans
+    `finish` ; `context` ne rend jamais un exercice sans corrigé (`solution` vide : exercice
+    omis), donc jamais un « Voir la solution » vide ; `finish` ne monte aucun acquis au-delà de
+    `en_cours` (seuls un quiz ou un projet valident, 4.5)."""
+
     async def context(self, user_id: str, study_session_id: str) -> StudyContext: ...
 
     async def finish(
         self, user_id: str, session_id: str, study_session_id: str, outcome: StudyOutcome
     ) -> StudyFinished:
-        """Idempotent : une session d'étude déjà `finished` est relue, rien n'est réécrit."""
+        """Idempotent : une session d'étude déjà `finished` est relue, rien n'est réécrit
+        (temps, tâches, fiches, acquis, journal) ; abandonnée entre-temps : fin vide."""
         ...
 
 

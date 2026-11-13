@@ -26,6 +26,8 @@ from app.features.quiz.service.store import AgentQuizStore
 from app.features.research.service.gateway import AgentWebGateway
 from app.features.research.service.runtime import ResearchRuntime
 from app.features.settings.service import SettingsRunReader
+from app.features.study.service.runtime import StudyRuntime
+from app.features.study.service.store import AgentStudyStore
 from app.scheduler.base import JobContext
 
 
@@ -53,6 +55,7 @@ class StudyRuntimes:
     une feature de plus = un champ ici, une ligne dans `study_runtimes` et dans `agent_ports`."""
 
     quiz: QuizRuntime
+    study: StudyRuntime
 
 
 def study_runtimes(
@@ -62,9 +65,12 @@ def study_runtimes(
     program: ProgramRuntime,
     memory: MemoryRuntime,
 ) -> StudyRuntimes:
-    """Quiz et révisions (D101) : lanceur (lié au moteur ensuite), programme (verrou, tâches de
-    suivi), mémoire (reflet des niveaux)."""
-    return StudyRuntimes(quiz=QuizRuntime(session_factory, launcher, program, memory))
+    """Quiz et révisions (D101), sessions guidées (D103) : lanceur (lié au moteur ensuite),
+    programme (verrou, tâches cochées ou de suivi), mémoire (reflet des niveaux)."""
+    return StudyRuntimes(
+        quiz=QuizRuntime(session_factory, launcher, program, memory),
+        study=StudyRuntime(session_factory, launcher, program, memory),
+    )
 
 
 def agent_ports(
@@ -77,8 +83,9 @@ def agent_ports(
     study: StudyRuntimes,
 ) -> AgentPorts:
     """Tous les ports du moteur (D82) : un port de plus = un champ d'`AgentPorts` et une ligne ici.
-    Conseil (D84), programme (D86), leçons (D90) et quiz (D100) adaptés des features `learning`
-    (D87), `program` (D88), `lessons` (D91) et `quiz` (D101)."""
+    Conseil (D84), programme (D86), leçons (D90), quiz (D100) et sessions d'étude (D102)
+    adaptés des features `learning` (D87), `program` (D88), `lessons` (D91), `quiz` (D101) et
+    `study` (D103)."""
     council = AgentCouncilStore(learning.session_factory, learning.launcher, learning)
     program_store = AgentProgramStore(program)
     return AgentPorts(
@@ -88,6 +95,7 @@ def agent_ports(
         program_store,
         AgentLessonStore(lessons),
         AgentQuizStore(study.quiz),
+        AgentStudyStore(study.study),
     )
 
 

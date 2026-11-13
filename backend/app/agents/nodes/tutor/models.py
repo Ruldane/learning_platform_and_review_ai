@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from typing import Any, Literal, Protocol
 
 from langchain_core.messages import HumanMessage, SystemMessage
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.agents.prompts.loader import render_prompt, untrusted
 from app.agents.registry import get_agent
@@ -61,7 +61,15 @@ class FinalQuestion(BaseModel):
 
 
 class FinalQuestions(BaseModel):
+    """Exactement 3 questions ; au-delà, les 3 premières sont gardées sans échec (m2 de la
+    relecture de 5.5) ; moins de 3 reste un refus, redemandé."""
+
     questions: list[FinalQuestion] = Field(min_length=3, max_length=3)
+
+    @field_validator("questions", mode="before")
+    @classmethod
+    def _first_three(cls, value: Any) -> Any:
+        return value[:3] if isinstance(value, list) else value
 
 
 class SessionSummary(BaseModel):

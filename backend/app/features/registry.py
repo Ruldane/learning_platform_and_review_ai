@@ -11,6 +11,7 @@ from app.features.research.router import router as research_router
 from app.features.sessions.router import router as sessions_router
 from app.features.settings.keys_router import router as keys_router
 from app.features.settings.router import router as settings_router
+from app.features.study.router import router as study_router
 
 # Chaque feature ajoute ici son routeur ; `create_app` les monte sous `/api/v1`.
 FEATURE_ROUTERS: list[APIRouter] = [
@@ -25,4 +26,5 @@ FEATURE_ROUTERS: list[APIRouter] = [
     program_router,
     lessons_router,
     quiz_router,
+    study_router,
 ]

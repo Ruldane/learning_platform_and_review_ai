@@ -148,8 +148,9 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 def _compose_features(app: FastAPI) -> StudyRuntimes:
     """Runtimes des features que le moteur sert par ses ports : apprentissage, leçons,
-    programme, puis l'étude (quiz et révisions, D101). Le lanceur existe avant eux (le Conseil
-    le reçoit pour lancer `program_builder`) ; lié au runner juste après le moteur."""
+    programme, puis l'étude (quiz et révisions, D101 ; sessions guidées, D103). Le lanceur
+    existe avant eux (le Conseil le reçoit pour lancer `program_builder`) ; lié au runner
+    juste après le moteur."""
     app.state.launcher = SessionLauncher()
     app.state.learning = LearningRuntime(app.state.session_factory, app.state.launcher)
     app.state.lessons = lessons_runtime(
@@ -170,6 +171,7 @@ def _compose_features(app: FastAPI) -> StudyRuntimes:
         memory=app.state.memory,
     )
     app.state.quiz = study.quiz
+    app.state.study = study.study
     return study
 
 

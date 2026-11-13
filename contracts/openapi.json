@@ -635,6 +635,72 @@
         "title": "Availability",
         "type": "object"
       },
+      "BlockOut": {
+        "properties": {
+          "lesson_id": {
+            "title": "Lesson Id",
+            "type": "string"
+          },
+          "lesson_title": {
+            "title": "Lesson Title",
+            "type": "string"
+          },
+          "module_title": {
+            "title": "Module Title",
+            "type": "string"
+          },
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/BlockTaskOut"
+            },
+            "title": "Tasks",
+            "type": "array"
+          }
+        },
+        "required": [
+          "lesson_id",
+          "lesson_title",
+          "module_title",
+          "tasks"
+        ],
+        "title": "BlockOut",
+        "type": "object"
+      },
+      "BlockTaskOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "minutes": {
+            "title": "Minutes",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "lire",
+              "regarder",
+              "pratiquer",
+              "quiz",
+              "projet"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "minutes",
+          "type"
+        ],
+        "title": "BlockTaskOut",
+        "type": "object"
+      },
       "BoardEdit": {
         "description": "Scène Excalidraw retouchée par January (`serializeAsJSON`) et sa note, renvoyée aux agents\ncomme un message. Corps plafonné à 2 Mio (`main.BOARD_BODY_MAX`).",
         "properties": {
@@ -4625,6 +4691,30 @@
         "title": "SettingsOut",
         "type": "object"
       },
+      "SkillLevelOut": {
+        "properties": {
+          "level": {
+            "enum": [
+              "declare",
+              "en_cours",
+              "valide",
+              "prouve"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "level"
+        ],
+        "title": "SkillLevelOut",
+        "type": "object"
+      },
       "SourceFoundEvent": {
         "properties": {
           "agent": {
@@ -5066,6 +5156,269 @@
           "dashboard_url"
         ],
         "title": "StatsOut",
+        "type": "object"
+      },
+      "StudySessionOut": {
+        "properties": {
+          "ended_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At"
+          },
+          "flashcards_created": {
+            "title": "Flashcards Created",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "lesson_id": {
+            "title": "Lesson Id",
+            "type": "string"
+          },
+          "lesson_title": {
+            "title": "Lesson Title",
+            "type": "string"
+          },
+          "minutes": {
+            "title": "Minutes",
+            "type": "integer"
+          },
+          "mode": {
+            "enum": [
+              "socratic",
+              "feynman",
+              "direct"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "module_title": {
+            "title": "Module Title",
+            "type": "string"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
+          "skills": {
+            "items": {
+              "$ref": "#/components/schemas/SkillLevelOut"
+            },
+            "title": "Skills",
+            "type": "array"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "open",
+              "finished",
+              "cancelled",
+              "interrupted"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "tasks_done": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tasks Done",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "lesson_id",
+          "lesson_title",
+          "module_title",
+          "mode",
+          "status",
+          "session_id",
+          "started_at",
+          "ended_at",
+          "minutes",
+          "summary",
+          "tasks_done",
+          "flashcards_created",
+          "skills"
+        ],
+        "title": "StudySessionOut",
+        "type": "object"
+      },
+      "StudyStart": {
+        "properties": {
+          "lesson_id": {
+            "anyOf": [
+              {
+                "maxLength": 36,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lesson Id"
+          },
+          "mode": {
+            "default": "socratic",
+            "enum": [
+              "socratic",
+              "feynman",
+              "direct"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "question": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question"
+          }
+        },
+        "title": "StudyStart",
+        "type": "object"
+      },
+      "StudyStarted": {
+        "properties": {
+          "lesson_id": {
+            "title": "Lesson Id",
+            "type": "string"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "study_session_id": {
+            "title": "Study Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "study_session_id",
+          "session_id",
+          "lesson_id"
+        ],
+        "title": "StudyStarted",
+        "type": "object"
+      },
+      "StudySummaryOut": {
+        "properties": {
+          "block": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BlockOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "break_minutes": {
+            "title": "Break Minutes",
+            "type": "integer"
+          },
+          "open_session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Open Session Id"
+          },
+          "streak_days": {
+            "title": "Streak Days",
+            "type": "integer"
+          },
+          "week_minutes": {
+            "title": "Week Minutes",
+            "type": "integer"
+          },
+          "work_minutes": {
+            "title": "Work Minutes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "streak_days",
+          "week_minutes",
+          "work_minutes",
+          "break_minutes",
+          "open_session_id",
+          "block"
+        ],
+        "title": "StudySummaryOut",
+        "type": "object"
+      },
+      "StudyUpdate": {
+        "properties": {
+          "action": {
+            "enum": [
+              "finish",
+              "cancel"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "worked_minutes": {
+            "anyOf": [
+              {
+                "maximum": 600.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Worked Minutes"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "StudyUpdate",
         "type": "object"
       },
       "TaskCreate": {
@@ -8469,6 +8822,173 @@
         "summary": "List Models",
         "tags": [
           "settings"
+        ]
+      }
+    },
+    "/api/v1/study-sessions": {
+      "post": {
+        "description": "Ouvre une session et lance le Tuteur (202). `lesson_id` absent : bloc du jour (404\n`no_block_today`) ; leçon pas prête : 409 `lesson_not_ready` ; session déjà ouverte sur la\nmême leçon : 200, elle-même ; sur une autre : 409 `study_already_open`.",
+        "operationId": "start_study_api_v1_study_sessions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StudyStart"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudyStarted"
+                }
+              }
+            },
+            "description": "Session déjà ouverte sur cette leçon."
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudyStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Study",
+        "tags": [
+          "study"
+        ]
+      }
+    },
+    "/api/v1/study-sessions/summary": {
+      "get": {
+        "description": "Série (jours locaux avec une session terminée), minutes de la semaine, minuteur, session\nouverte et bloc du jour.",
+        "operationId": "study_summary_api_v1_study_sessions_summary_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudySummaryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Study Summary",
+        "tags": [
+          "study"
+        ]
+      }
+    },
+    "/api/v1/study-sessions/{study_session_id}": {
+      "get": {
+        "operationId": "get_study_api_v1_study_sessions__study_session_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_session_id",
+            "required": true,
+            "schema": {
+              "title": "Study Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudySessionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Study",
+        "tags": [
+          "study"
+        ]
+      },
+      "patch": {
+        "description": "« Terminer » (`finish`, minuteur gardé puis question en attente reprise ; Tuteur en\ntrain d'écrire : 409 `study_not_waiting`) ou « Abandonner » (`cancel`, rien n'est écrit).\nDéjà terminée ou abandonnée : l'état, sans rien changer.",
+        "operationId": "update_study_api_v1_study_sessions__study_session_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_session_id",
+            "required": true,
+            "schema": {
+              "title": "Study Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StudyUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudySessionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Study",
+        "tags": [
+          "study"
         ]
       }
     },

@@ -31,6 +31,7 @@ from app.features.program.service.runtime import ProgramRuntime
 from app.features.program.service.store import AgentProgramStore
 from app.features.quiz.service.store import AgentQuizStore
 from app.features.research.service.gateway import AgentWebGateway
+from app.features.study.service.store import AgentStudyStore
 from app.main import create_app
 from app.scheduler.base import JobContext, JobSpec
 from tests.support.memory import fake_memory_providers
@@ -246,8 +247,8 @@ def test_agent_ports_compose_memory_web_council_program_lessons_and_quiz() -> No
     assert isinstance(ports.council, AgentCouncilStore)
     assert isinstance(ports.program, AgentProgramStore)
     assert isinstance(ports.lessons, AgentLessonStore)
-    assert isinstance(ports.quiz, AgentQuizStore)
-    assert study.quiz.program is program
+    assert isinstance(ports.quiz, AgentQuizStore) and isinstance(ports.study, AgentStudyStore)
+    assert study.quiz.program is program is study.study.program
 
 
 async def test_learning_runtime_shares_the_launcher(settings: Settings, db_engine: object) -> None:

@@ -5,9 +5,10 @@ de January lus d'abord, contenus non fiables encadrés, exercice fait (F13)."""
 from typing import Any
 
 import pytest
+from pydantic import ValidationError
 
 from app.agents.nodes.tutor.answers import CHECK_REQUEST, HINT_REQUEST, stuck_label
-from app.agents.nodes.tutor.models import MAX_ANSWER_CHARS, parse_tutor_answer
+from app.agents.nodes.tutor.models import MAX_ANSWER_CHARS, FinalQuestions, parse_tutor_answer
 from app.agents.nodes.tutor.teach import REPLY_REQUEST, TEACH_REQUEST
 from app.agents.tools.study_port import Outcome, exercise_done
 from tests.agents.graphs.council_models import CouncilModels
@@ -225,3 +226,14 @@ async def test_lesson_and_answers_are_untrusted(make_study_runner: MakeStudy) ->
     await _end_early(run, wait=False)
     assert run.store.finished is not None
     assert run.store.finished.outcomes[0].verdict == "wrong"
+
+
+def test_final_questions_keep_the_first_three() -> None:
+    """m2 (relecture de 5.5) : plus de 3 questions → les 3 premières, sans échec ; moins de 3
+    reste un refus (redemandé par la sortie structurée)."""
+    question = {"question": "Question finale numéro {n} ?", "expected": "Réponse {n}."}
+    raw = [{k: v.format(n=n) for k, v in question.items()} for n in range(1, 6)]
+    kept = FinalQuestions.model_validate({"questions": raw})
+    assert [q.expected for q in kept.questions] == ["Réponse 1.", "Réponse 2.", "Réponse 3."]
+    with pytest.raises(ValidationError):
+        FinalQuestions.model_validate({"questions": raw[:2]})
