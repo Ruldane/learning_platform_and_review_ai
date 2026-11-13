@@ -10,6 +10,7 @@ from app.agents.tools.lesson_port import NO_LESSONS, LessonStore
 from app.agents.tools.memory_port import NO_MEMORY, MemoryGateway
 from app.agents.tools.program_port import NO_PROGRAM, ProgramStore
 from app.agents.tools.quiz_port import NO_QUIZ, QuizStore
+from app.agents.tools.replan_port import NO_REPLAN, ReplanStore
 from app.agents.tools.study_port import NO_STUDY, StudyStore
 from app.agents.tools.web_port import NO_WEB, WebGateway
 
@@ -23,6 +24,7 @@ class AgentPorts:
     lessons: LessonStore = NO_LESSONS  # leçons du Rédacteur (D90)
     quiz: QuizStore = NO_QUIZ  # quiz de l'Examinateur (D100)
     study: StudyStore = NO_STUDY  # sessions d'étude du Tuteur (D102)
+    replan: ReplanStore = NO_REPLAN  # replanification du Stratège (D105)
 
 
 NO_PORTS = AgentPorts()

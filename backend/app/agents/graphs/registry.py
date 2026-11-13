@@ -15,6 +15,7 @@ from app.agents.graphs import (
     lesson_factory,
     program_builder,
     quiz,
+    replan,
     study_session,
     web_research,
 )
@@ -46,6 +47,7 @@ GRAPHS: dict[str, GraphSpec] = {
         GraphSpec("lesson_factory", lesson_factory.LessonFactoryInput, lesson_factory.build),
         GraphSpec("quiz", quiz.QuizInput, quiz.build),
         GraphSpec("study_session", study_session.StudySessionInput, study_session.build),
+        GraphSpec("replan", replan.ReplanInput, replan.build),
     )
 }
 
