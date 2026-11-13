@@ -1,15 +1,15 @@
-import { Link, useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { errorMessage } from "@/shared/api/errors";
 import { t } from "@/shared/i18n/t";
 import { ErrorState } from "@/shared/ui/states/ErrorState";
-import { InlineError } from "@/shared/ui/states/InlineError";
 import { LoadingState } from "@/shared/ui/states/LoadingState";
 import { LessonReader } from "../../components/LessonReader";
-import { ResourceList } from "../../components/ResourceList";
 import { useLesson } from "../../hooks/useLesson";
 import { useResourceStatus } from "../../hooks/useResourceStatus";
 import { toLessonView, toResourceView } from "../../toView";
+import { LessonNav } from "./LessonNav";
 import { LessonPreparing } from "./LessonPreparing";
+import { LessonResources } from "./LessonResources";
 
 /**
  * Leçon (`/apprendre/lecons/:lessonId`) : le lecteur, les ressources du module et le PDF quand la
@@ -19,6 +19,7 @@ export function LessonPage() {
   const { lessonId = "" } = useParams();
   const lesson = useLesson(lessonId);
   const resources = useResourceStatus();
+  const navigate = useNavigate();
 
   if (lesson.isPending) return <LoadingState label={t("lessons.page.loading")} />;
   if (lesson.isError) {
@@ -29,28 +30,16 @@ export function LessonPage() {
   const { data } = lesson;
   return (
     <div className="flex flex-col gap-6">
-      <nav>
-        <Link to="/apprendre/lecons" className="text-sm underline underline-offset-2">
-          {t("lessons.page.back")}
-        </Link>
-      </nav>
+      <LessonNav lessonId={data.id} ready={data.status === "ready"} />
       {data.status === "ready" ? (
         <>
-          <LessonReader lesson={toLessonView(data)} />
-          <section aria-labelledby="lesson-resources-title" className="flex flex-col gap-3">
-            <h2 id="lesson-resources-title" className="text-xl font-semibold">
-              {t("lessons.resources.heading")}
-            </h2>
-            {resources.error ? <InlineError message={resources.error} /> : null}
-            {data.resources.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{t("lessons.resources.empty")}</p>
-            ) : (
-              <ResourceList
-                resources={data.resources.map(toResourceView)}
-                onToggleStatus={resources.setStatus}
-              />
-            )}
-          </section>
+          <LessonReader
+            lesson={toLessonView(data)}
+            onAskTutor={(passage) =>
+              void navigate("/etudier/session", { state: { lessonId: data.id, question: passage } })
+            }
+          />
+          <LessonResources resources={data.resources.map(toResourceView)} status={resources} />
         </>
       ) : (
         <>

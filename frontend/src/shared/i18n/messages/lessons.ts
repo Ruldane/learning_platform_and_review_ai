@@ -11,6 +11,9 @@ export const lessons = {
     image: "Image non affichée : {alt}",
     diagram: "figure de la leçon",
     empty: "Cette leçon est vide.",
+    askTutor: "Demander au tuteur",
+    askTutorBar: "Question au tuteur",
+    askTutorSelection: "Passage sélectionné : « {excerpt} »",
   },
   status: {
     pending: "À venir",
@@ -37,6 +40,7 @@ export const lessons = {
     loading: "Chargement de la leçon…",
     back: "Toutes les leçons",
     week: "Semaine {rank}",
+    study: "Étudier cette leçon",
   },
   preparing: {
     title: "Leçon en préparation",

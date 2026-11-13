@@ -5,8 +5,10 @@ import { learningManifest } from "@/features/learning/manifest";
 import { lessonsManifest } from "@/features/lessons/manifest";
 import { memoryManifest } from "@/features/memory/manifest";
 import { programManifest } from "@/features/program/manifest";
+import { quizManifest } from "@/features/quiz/manifest";
 import { researchManifest } from "@/features/research/manifest";
 import { settingsManifest } from "@/features/settings/manifest";
+import { studyManifest } from "@/features/study/manifest";
 import type { FeatureManifest } from "@/shared/lib/feature";
 
 /** Liste des features : ajouter une feature = un dossier + une ligne ici. */
@@ -16,6 +18,8 @@ export const FEATURES: FeatureManifest[] = [
   learningManifest,
   programManifest,
   lessonsManifest,
+  studyManifest,
+  quizManifest,
   memoryManifest,
   settingsManifest,
   researchManifest,
