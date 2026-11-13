@@ -80,7 +80,8 @@ async def test_store_writes_summarized_document_and_journal_once(capture: Captur
     assert item.id == stored.memory_item_id and item.created_by == "archivist"
     assert item.title == "Les DataFrames pandas" and item.indexed_at is not None
     assert item.text == "\n".join(f"- {line}" for line in SUMMARY) + f"\n\nSource : {URL}"
-    assert item.tags == ["capture", "Module Bases"] and item.source_id is None
+    # Revue finale 5 (5.11 m1) : les concepts extraits de la page sont des étiquettes.
+    assert item.tags == ["capture", "Module Bases", "pandas", "Docker"] and item.source_id is None
     assert item.meta["reason"] == "Capture rapide de January." and item.session_id == "s-1"
     [entry] = await _rows(factory, JournalEntry)
     assert entry.id == stored.journal_entry_id and entry.kind == "capture"
@@ -126,10 +127,11 @@ async def test_tick_task_under_program_lock_and_cards_once(capture: Capture) -> 
     links = await capture.store.links(ME)
     await capture.store.store(ME, "s-3", _digest(), PAGE, links, source="url")
     task = links.tasks[0]
-    await capture.store.tick_task(ME, "s-3", task.task_id)
-    await capture.store.tick_task(ME, "s-3", task.task_id)  # idempotent
+    assert await capture.store.tick_task(ME, "s-3", task.task_id) is True
+    assert await capture.store.tick_task(ME, "s-3", task.task_id) is True  # idempotent
     other_task = (await _rows(capture.rt.session_factory, Task, OTHER))[0]
-    await capture.store.tick_task(ME, "s-3", other_task.id)  # la tâche d'une autre : ignorée
+    # La tâche d'une autre : ignorée, et dite non cochée (revue finale 5, 5.11 m2).
+    assert await capture.store.tick_task(ME, "s-3", other_task.id) is False
     statuses = {t.id: t.status for t in await _rows(capture.rt.session_factory, Task)}
     assert statuses[task.task_id] == "done"
     assert all(t.status == "todo" for t in await _rows(capture.rt.session_factory, Task, OTHER))
@@ -145,7 +147,50 @@ async def test_tick_task_under_program_lock_and_cards_once(capture: Capture) -> 
     assert {(c.source, c.source_id, c.module_id) for c in rows} == {
         ("capture", entry.id, links.modules[0].module_id)
     }
+    assert {c.skill for c in rows} == {None}  # revue finale 5, A-I2 : jamais de compétence
     assert {c.due_date.isoformat() for c in rows} == {"2026-11-19"}  # demain chez January
+
+
+async def test_vanished_task_is_not_ticked(capture: Capture) -> None:
+    """Revue finale 5 (5.11 m2) : tâche retirée entre la question et le oui → faux."""
+    await validated(capture.program, ME)
+    task = (await capture.store.links(ME)).tasks[0]
+    async with capture.rt.session_factory() as db:
+        await db.delete(await db.get(Task, task.task_id))
+        await db.commit()
+    assert await capture.store.tick_task(ME, "s-5", task.task_id) is False
+
+
+async def test_long_pasted_text_declares_nothing(capture: Capture) -> None:
+    """Revue finale 5 (P-m5) : un long texte collé n'est pas une note de January, même avec
+    `learned` : aucun acquis déclaré."""
+    await validated(capture.program, ME)
+    links = await capture.store.links(ME)
+    article = CaptureMaterial("", "J'ai appris Docker. " + "Article copié. " * 80, None)
+    digest = _digest(learned=True, covered_task=None)
+    await capture.store.store(ME, "s-6", digest, article, links, source="text")
+    assert "docker" not in await _levels(capture.rt.session_factory)
+
+
+async def test_failed_reflection_logs_error_type(
+    capture: Capture, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Revue finale 5 (5.11 m4) : un reflet en échec journalise son type d'erreur, rien d'autre ;
+    le niveau qui fait foi est rangé quand même."""
+
+    async def broken(*args: Any, **kwargs: Any) -> None:
+        raise RuntimeError("mémoire indisponible")
+
+    monkeypatch.setattr("app.features.capture.service.store.reflect_skill_levels", broken)
+    await validated(capture.program, ME)
+    links = await capture.store.links(ME)
+    note = CaptureMaterial("", "J'ai appris Docker.", None)
+    digest = _digest(learned=True, covered_task=None)
+    await capture.store.store(ME, "s-7", digest, note, links, source="text")
+    assert (await _levels(capture.rt.session_factory))["docker"][0] == "declare"
+    [warning] = [r for r in caplog.records if "non reflétés" in r.getMessage()]
+    assert warning.getMessage().endswith("session s-7 (RuntimeError)")
+    assert "indisponible" not in warning.getMessage()
 
 
 async def _document(factory: Factory, user_id: str, status: str) -> str:

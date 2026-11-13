@@ -123,7 +123,21 @@ async def test_cards_created_only_after_yes(make_capture_runner: MakeCapture) ->
     await again.resume("yes")
     await again.wait_status("completed")
     assert list(again.store.cards) == ["Que pondère l'attention ?"]
+    # Revue finale 5, A-I2 : la compétence posée par le modèle (contenu non fiable) est retirée.
+    assert again.store.cards["Que pondère l'attention ?"].skill is None
     assert (await again.said())[-1].endswith("1 fiche créée.")
+
+
+async def test_vanished_task_is_not_announced_as_ticked(make_capture_runner: MakeCapture) -> None:
+    """Revue finale 5 (5.11 m2) : la tâche a été retirée pendant la question (replanification
+    acceptée) ; le port rend faux et la fin ne dit pas « Tâche cochée »."""
+    run = await make_capture_runner(archivist(digest_reply(covered_task="t1")), body=NOTE)
+    run.store.vanished.add("task-id-t1")
+    await run.wait_question("capture_task")
+    await run.resume("yes")
+    await run.wait_status("completed")
+    assert run.store.tick_calls == 1 and run.store.ticked == []
+    assert "cochée" not in (await run.said())[-1]
 
 
 async def test_learned_only_from_a_note(make_capture_runner: MakeCapture) -> None:
@@ -138,6 +152,18 @@ async def test_learned_only_from_a_note(make_capture_runner: MakeCapture) -> Non
     await web.wait_status("completed")
     assert not web.store.store_calls[-1].digest.learned  # une page ne déclare rien
     assert "toujours faux" in web.prompts()[0]
+
+
+async def test_long_pasted_text_never_declares_learned(make_capture_runner: MakeCapture) -> None:
+    """Revue finale 5 (P-m5) : un long texte collé dans la capture (article copié) n'est pas une
+    note de January, même s'il dit « j'ai appris » : `learned` reste faux."""
+    article = "J'ai appris Kubernetes et Rust. " + "Un long article copié. " * 60
+    learned = digest_reply(learned=True, concepts=["Kubernetes", "Rust"])
+    run = await make_capture_runner(archivist(learned), body={"text": article})
+    await run.wait_status("completed")
+    call = run.store.store_calls[-1]
+    assert call.source == "text" and not call.digest.learned
+    assert "toujours faux" in run.prompts()[0] and "un texte collé" in run.prompts()[0]
 
 
 async def test_capture_page_is_untrusted(make_capture_runner: MakeCapture) -> None:

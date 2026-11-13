@@ -21,6 +21,7 @@ from app.agents.tools.capture_port import (
     CaptureSource,
     CaptureStored,
     ProgramLinks,
+    is_note,
 )
 from app.agents.tools.study_schema import CardDraft
 from app.core.errors import AppError
@@ -65,9 +66,10 @@ def journal_text(source: CaptureSource, title: str) -> str:
     return f"{_SOURCE_LABEL[source]} : « {title} »"
 
 
-def _learned(digest: CaptureDigest, source: CaptureSource) -> list[str]:
-    """Les concepts « j'ai appris » d'une note de January (jamais d'une page ni d'un document)."""
-    return list(digest.concepts) if digest.learned and source == "text" else []
+def _learned(digest: CaptureDigest, material: CaptureMaterial, source: CaptureSource) -> list[str]:
+    """Les concepts « j'ai appris » d'une note de January (jamais d'une page, d'un document ni
+    d'un long texte collé : `is_note`)."""
+    return list(digest.concepts) if digest.learned and is_note(source, material.text) else []
 
 
 def _ref(session_id: str) -> str:
@@ -120,7 +122,7 @@ class AgentCaptureStore:
                 await db.commit()
                 written = True
         await index_capture(self._rt.memory, user_id, item_id)
-        if concepts := _learned(digest, source):
+        if concepts := _learned(digest, material, source):
             await self._reflect(user_id, session_id, concepts, digest.title)
         if written:
             logger.info(
@@ -152,10 +154,12 @@ class AgentCaptureStore:
             user_id,
             title=digest.title,
             text=item_text(digest, material),
-            tags=("capture", *(m.title for m in modules)),
+            # Étiquettes : « capture », modules reliés, puis concepts extraits (F18 ; `clean_tags`
+            # borne le nombre et la longueur).
+            tags=("capture", *(m.title for m in modules), *digest.concepts),
             session_id=session_id,
         )
-        concepts = _learned(digest, source)
+        concepts = _learned(digest, material, source)
         covered = links.task(digest.covered_task) if digest.covered_task else None
         entry_id = await add_entry(
             db,
@@ -195,19 +199,28 @@ class AgentCaptureStore:
                 session_id=session_id,
                 reason=f"Capture « {title} » : January dit l'avoir appris.",
             )
-        except Exception:
-            logger.warning("Acquis non reflétés après une capture : session %s", session_id)
+        except Exception as exc:
+            logger.warning(
+                "Acquis non reflétés après une capture : session %s (%s)",
+                session_id,
+                type(exc).__name__,
+            )
 
-    async def tick_task(self, user_id: str, session_id: str, task_id: str) -> None:
+    async def tick_task(self, user_id: str, session_id: str, task_id: str) -> bool:
+        """Vrai si la tâche est cochée (déjà faite comprise : rejeu) ; faux si elle n'existe plus
+        ou n'est pas à January."""
         async with self._rt.session_factory() as db:
             program_id = await program_of_task(db, user_id, task_id)
         if program_id is None:
             logger.info("Capture : tâche inconnue ignorée (session %s)", session_id)
-            return
+            return False
         lock = self._rt.program.program_lock(user_id, program_id)
         async with lock, self._rt.session_factory() as db:  # le verrou AVANT la transaction (F4)
+            if await program_of_task(db, user_id, task_id) is None:  # retirée entre-temps
+                return False
             await tick_tasks(db, self._rt.program, user_id, [task_id])
             await db.commit()
+        return True
 
     async def add_cards(self, user_id: str, session_id: str, cards: Sequence[CardDraft]) -> int:
         async with self._rt.session_factory() as db:
@@ -216,7 +229,9 @@ class AgentCaptureStore:
             module_id = modules[0] if modules else None
             source_id = entry.id if entry else None
             new = [
-                NewCard(card.front, card.back, card.skill, module_id, "capture", source_id)
+                # Jamais de compétence (revue finale de la phase 5, A-I2) : le nom viendrait d'un
+                # contenu non fiable et deux échecs rétrograderaient un acquis validé.
+                NewCard(card.front, card.back, None, module_id, "capture", source_id)
                 for card in cards
             ]
             created = await write_cards(db, user_id, new, await self._rt.today(db, user_id))

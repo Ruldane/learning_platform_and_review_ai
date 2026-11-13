@@ -26,6 +26,9 @@ from app.core.errors import AppError
 
 CaptureSource = Literal["url", "text", "document"]
 SUMMARY_LINES = 5
+# Au-delà, un texte saisi est lu comme un texte collé (article copié), jamais comme une note de
+# January : il ne déclare aucun acquis (D108 n° 4, revue finale de la phase 5).
+NOTE_MAX_CHARS = 1_000
 
 SummaryLine = Annotated[str, Field(max_length=200), ShortenToMax()]
 ConceptName = Annotated[str, Field(min_length=2, max_length=120)]
@@ -40,6 +43,12 @@ class CaptureMaterial:
     title: str
     text: str
     url: str | None
+
+
+def is_note(source: CaptureSource, text: str) -> bool:
+    """Une note de January : un texte saisi (source `text`) et court. Seule une note peut
+    déclarer « j'ai appris » ; une page, un document ou un long texte collé, jamais."""
+    return source == "text" and len(text) <= NOTE_MAX_CHARS
 
 
 class CaptureDigest(BaseModel):
@@ -101,8 +110,9 @@ class CaptureStore(Protocol):
         journal `capture` ; idempotent par session (un rejeu relit ce qui est rangé)."""
         ...
 
-    async def tick_task(self, user_id: str, session_id: str, task_id: str) -> None:
-        """Coche la tâche (idempotent ; une tâche d'une autre est ignorée)."""
+    async def tick_task(self, user_id: str, session_id: str, task_id: str) -> bool:
+        """Coche la tâche (idempotent) ; vrai si elle est cochée, faux si elle n'existe plus
+        (retirée entre-temps, par une replanification acceptée) ou n'est pas à January."""
         ...
 
     async def add_cards(self, user_id: str, session_id: str, cards: Sequence[CardDraft]) -> int:
@@ -135,7 +145,7 @@ class _NoCapture:
     ) -> CaptureStored:
         raise capture_unavailable()
 
-    async def tick_task(self, user_id: str, session_id: str, task_id: str) -> None:
+    async def tick_task(self, user_id: str, session_id: str, task_id: str) -> bool:
         raise capture_unavailable()
 
     async def add_cards(self, user_id: str, session_id: str, cards: Sequence[CardDraft]) -> int:

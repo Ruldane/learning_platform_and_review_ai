@@ -13,6 +13,7 @@ from app.agents.tools.capture_port import (
     CaptureSource,
     CaptureStored,
     ProgramLinks,
+    is_note,
 )
 from app.agents.tools.replan_port import ModuleRef, TaskRef
 from app.core.errors import AppError
@@ -129,7 +130,9 @@ def stored_json(stored: CaptureStored) -> dict[str, Any]:
 def clean_digest(digest: CaptureDigest, links: ProgramLinks, *, note: bool) -> CaptureDigest:
     """Lignes vides retirées (le titre à défaut), concepts et modules dédoublonnés, références
     inconnues ignorées ; `learned` n'est gardé que pour une note de January (jamais pour une
-    page ou un document, qui pourrait le réclamer lui-même)."""
+    page ou un document, qui pourrait le réclamer lui-même). Les fiches perdent leur compétence :
+    un nom tiré d'un contenu non fiable ne doit jamais pouvoir rétrograder un acquis (comme les
+    fiches de session, D103 n° 11 ; revue finale de la phase 5, A-I2)."""
     summary = [" ".join(line.split()) for line in digest.summary if line.strip()]
     concepts = list(dict.fromkeys(c.strip() for c in digest.concepts if c.strip()))
     modules = [ref for ref in dict.fromkeys(digest.modules) if links.module(ref) is not None]
@@ -141,6 +144,7 @@ def clean_digest(digest: CaptureDigest, links: ProgramLinks, *, note: bool) -> C
             "modules": modules,
             "covered_task": task,
             "learned": digest.learned and note,
+            "flashcards": [c.model_copy(update={"skill": None}) for c in digest.flashcards],
         }
     )
 
@@ -175,6 +179,14 @@ def _tasks_text(links: ProgramLinks) -> str:
 _KINDS: dict[str, str] = {"url": "une page", "document": "un document", "text": "une note"}
 
 
+def _kind(material: CaptureMaterial, source: CaptureSource, pasted: bool) -> str:
+    if pasted:
+        return "le texte collé d'une page"
+    if source == "text" and not is_note(source, material.text):
+        return "un texte collé"
+    return _KINDS[source]
+
+
 def capture_vars(
     material: CaptureMaterial, links: ProgramLinks, *, source: CaptureSource, pasted: bool
 ) -> dict[str, Any]:
@@ -182,8 +194,8 @@ def capture_vars(
     programme) est encadré par `untrusted()` (17.4)."""
     return {
         "mode": "capture",
-        "kind": "le texte collé d'une page" if pasted else _KINDS[source],
-        "note": source == "text",
+        "kind": _kind(material, source, pasted),
+        "note": is_note(source, material.text),
         "title": untrusted(" ".join(material.title.split()) or "(sans titre)", "titre"),
         "content": untrusted(material.text[:MAX_TEXT_CHARS], "capture"),
         "modules": untrusted(_modules_text(links), "programme:modules"),

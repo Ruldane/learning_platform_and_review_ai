@@ -49,7 +49,7 @@ from app.agents.runtime.emit import emit
 from app.agents.runtime.invoke import node_timeout
 from app.agents.runtime.structured import structured_call
 from app.agents.state.capture import CaptureState
-from app.agents.tools.capture_port import CaptureDigest, CaptureMaterial
+from app.agents.tools.capture_port import CaptureDigest, CaptureMaterial, is_note
 from app.agents.tools.study_schema import CardDraft
 from app.agents.tools.web_tools import web_read
 from app.core.errors import AppError
@@ -144,9 +144,8 @@ def make_digest(deps: GraphDeps) -> Node:
         """Le résumé de l'Archiviste, relié aux modules et aux tâches de l'instantané."""
         links = await deps.ports.capture.links(deps.user_id)
         source = source_of(dict(state))
-        variables = capture_vars(
-            material_of(state["material"]), links, source=source, pasted=state.get("pasted", False)
-        )
+        material = material_of(state["material"])
+        variables = capture_vars(material, links, source=source, pasted=state.get("pasted", False))
         prompt = render_prompt(AGENT, **variables)
         model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
         found = await structured_call(
@@ -163,7 +162,7 @@ def make_digest(deps: GraphDeps) -> Node:
                 unknown,
                 deps.session_id,
             )
-        clean = clean_digest(found, links, note=source == "text")
+        clean = clean_digest(found, links, note=is_note(source, material.text))
         return {"links": links_json(links), "digest": clean.model_dump(mode="json")}
 
     return digest
@@ -224,9 +223,14 @@ def make_tick(deps: GraphDeps) -> Node:
     async def tick(state: CaptureState) -> CaptureState:
         """L'id vient de l'instantané gardé dans l'état (F7), jamais du modèle."""
         task_id = state["stored"]["covered_task"]["task_id"]
-        await deps.ports.capture.tick_task(deps.user_id, deps.session_id, task_id)
-        logger.info("Capture : tâche %s cochée (session %s)", task_id, deps.session_id)
-        return {"ticked": True}
+        ticked = await deps.ports.capture.tick_task(deps.user_id, deps.session_id, task_id)
+        logger.info(
+            "Capture : tâche %s %s (session %s)",
+            task_id,
+            "cochée" if ticked else "introuvable",
+            deps.session_id,
+        )
+        return {"ticked": ticked}
 
     return tick
 

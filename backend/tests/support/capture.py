@@ -85,6 +85,7 @@ class FakeCaptureStore:
     stored: dict[str, CaptureStored] = field(default_factory=dict)  # par session
     tick_calls: int = 0
     ticked: list[str] = field(default_factory=list)
+    vanished: set[str] = field(default_factory=set)  # tâches retirées entre-temps
     card_calls: int = 0
     cards: dict[str, CardDraft] = field(default_factory=dict)  # par recto
     block_after_store: bool = False
@@ -120,10 +121,13 @@ class FakeCaptureStore:
             await asyncio.Event().wait()
         return self.stored[session_id]
 
-    async def tick_task(self, user_id: str, session_id: str, task_id: str) -> None:
+    async def tick_task(self, user_id: str, session_id: str, task_id: str) -> bool:
         self.tick_calls += 1
+        if task_id in self.vanished:
+            return False
         if task_id not in self.ticked:
             self.ticked.append(task_id)
+        return True
 
     async def add_cards(self, user_id: str, session_id: str, cards: Sequence[CardDraft]) -> int:
         self.card_calls += 1
