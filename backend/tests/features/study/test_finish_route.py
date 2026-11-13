@@ -155,3 +155,23 @@ async def test_finish_resumes_when_minutes_were_kept_but_not_sent(
     r = await patch(client, out["study_session_id"], action="finish", worked_minutes=4)
     assert r.status_code == 202
     assert (await _finished(client, out))["minutes"] == 4
+
+
+async def test_second_finish_without_minutes_keeps_the_kept_time(
+    client: httpx.AsyncClient, tutored: Seeded, stub_tutor: StubControl
+) -> None:
+    """m3 : temps gardé (45 min), le Tuteur échoue après la reprise ; le « Terminer » suivant,
+    sans minuteur, ne l'écrase pas par 0 (absent n'efface jamais une valeur gardée)."""
+    stub_tutor.fail = True
+    out = await started(client, lesson_id=tutored.lessons[0])
+    await wait_status(client, out["session_id"], "failed")
+    sid = out["study_session_id"]
+    async with tutored.rt.session_factory() as db:
+        found = await db.get(StudySession, sid)
+        assert found is not None
+        found.worked_minutes = 45
+        await db.commit()
+    tutored.at((await row(tutored, sid)).created_at + timedelta(hours=2))
+    r = await patch(client, sid, action="finish")
+    assert r.status_code == 202 and r.json()["status"] == "finished"
+    assert r.json()["minutes"] == 45

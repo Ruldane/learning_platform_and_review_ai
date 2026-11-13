@@ -204,3 +204,22 @@ async def test_study_routes_isolate_users(client: httpx.AsyncClient, seeded: See
     async with seeded.rt.session_factory() as db:
         lesson = await db.get(Lesson, seeded.lessons[0])
         assert lesson is not None and lesson.user_id == seeded.user_id
+
+
+async def test_start_block_without_block_points_to_the_open_session(
+    client: httpx.AsyncClient, app: FastAPI
+) -> None:
+    """m9 : session ouverte sur une leçon choisie, rien de dû aujourd'hui : « Commencer mon
+    bloc » rend 409 `study_already_open` vers la session ouverte, pas 404 `no_block_today`."""
+    s = await seed(app, ready=(True, False))
+    async with s.rt.session_factory() as db:
+        await db.execute(update(Task).values(planned_date=MONDAY.replace(year=2027)))
+        await db.commit()
+    opened = await started(client, lesson_id=s.lessons[0])
+    r = await start(client)
+    assert r.status_code == 409
+    error = r.json()["error"]
+    assert error["code"] == "study_already_open"
+    assert error["details"] == {"study_session_id": opened["study_session_id"]}
+    await client.patch(f"{API}/{opened['study_session_id']}", json={"action": "cancel"})
+    assert (await start(client)).status_code == 404  # plus de session : rien de prévu

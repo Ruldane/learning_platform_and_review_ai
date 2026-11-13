@@ -2,7 +2,8 @@
 l'utilisatrice. Une session déjà terminée ou abandonnée est rendue telle quelle (idempotent).
 
 « Terminer » : le minuteur du front (`worked_minutes`, absent : 0) est gardé, borné par la durée
-réelle depuis le départ (arrondie à la minute supérieure), PUIS la question en attente reçoit
+réelle depuis le départ (arrondie à la minute supérieure) et jamais en dessous du temps déjà
+gardé (un second « Terminer » sans minuteur ne l'efface pas), PUIS la question en attente reçoit
 `{"action": "finish"}` quel que soit son genre (`tutor_question` ou `finish_session`) : le Tuteur
 fait son bilan et range la fin par le port (`finish.py`). Fin déjà demandée (temps gardé, Tuteur
 en train de conclure) : état rendu ; temps gardé mais question encore en attente (arrêt du back
@@ -53,7 +54,8 @@ def clamped_minutes(worked: int | None, started: datetime, now: datetime) -> int
 async def _keep_minutes(
     rt: StudyRuntime, user_id: str, row: StudySession, worked: int | None
 ) -> None:
-    minutes = clamped_minutes(worked, row.created_at, rt.now())
+    # Absent n'efface jamais le temps déjà gardé (un second « Terminer » sans minuteur).
+    minutes = max(row.worked_minutes or 0, clamped_minutes(worked, row.created_at, rt.now()))
     async with rt.session_factory() as db:
         await StudyRepository(db, user_id).close_open(row.id, worked_minutes=minutes)
         await db.commit()

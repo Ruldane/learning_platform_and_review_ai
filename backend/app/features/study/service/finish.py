@@ -6,10 +6,13 @@ rien de plus ; une session abandonnée entre-temps rend une fin vide, sans rien 
 Ce qu'elle écrit : le temps (`worked_minutes` gardé par la route, déjà borné par la durée réelle ;
 0 s'il manque), les tâches du bloc cochées (`lire` et `regarder` si January n'a pas terminé avant
 la fin, `pratiquer` si l'exercice est fait, F13), les compétences du module montées à `en_cours`
-au plus (jamais `valide` : seuls un quiz ou un projet valident, 4.5) avec une preuve `study`, une
+au plus (jamais `valide` : seuls un quiz ou un projet valident, 4.5) avec une preuve `study`,
+et seulement si la séance laisse une trace (au moins une minute ou une réponse à une question :
+une fin rangée par la route sans minuteur ni réponse ne monte rien, D103 n° 18), une
 fiche par question manquée (`partial`, `wrong`, `revealed` ; jamais `skipped`), le bilan et une
 ligne de journal `study_session` (« study:{id} »). Les niveaux changés sont reflétés dans la
-mémoire après le commit, hors du verrou. Journaux : identifiants et nombres seulement."""
+mémoire après le commit, hors du verrou, et rattrapés au rejeu (comme le quiz). Journaux :
+identifiants et nombres seulement."""
 
 import logging
 from dataclasses import asdict
@@ -86,6 +89,17 @@ async def _module(db: AsyncSession, row: StudySession) -> Module | None:
     return next((m for m in loaded.modules if m.id == row.module_id), None)
 
 
+async def _title(db: AsyncSession, row: StudySession, module: Module | None) -> str:
+    if module is not None:
+        return module.title
+    return (await StudyReadRepository(db, row.user_id).titles(row.lesson_id, ""))[0]
+
+
+def _has_trace(minutes: int, outcome: StudyOutcome) -> bool:
+    """Au moins une minute de travail ou une réponse à une question (D103 n° 18)."""
+    return minutes > 0 or bool(outcome.outcomes)
+
+
 async def _write(
     rt: StudyRuntime, db: AsyncSession, row: StudySession, outcome: StudyOutcome, now: datetime
 ) -> tuple[StudyFinished, str]:
@@ -93,19 +107,19 @@ async def _write(
     user_id, today = row.user_id, await rt.today(db, row.user_id)
     reads = StudyReadRepository(db, user_id)
     module = await _module(db, row)
-    title = module.title if module is not None else (await reads.titles(row.lesson_id, ""))[0]
+    title = await _title(db, row, module)
+    minutes = row.worked_minutes or 0
     wanted = _ticked_types(outcome)
     block = [str(t) for t in row.task_ids]
     types = {t.id: t.type for t in await reads.tasks(block)}
     ids = [t for t in block if types.get(t) in wanted]  # dans l'ordre du bloc
     done = await tick_tasks(db, rt.program, user_id, ids)
-    skills = [str(s) for s in module.skills] if module is not None else []
+    skills = [str(s) for s in module.skills] if module and _has_trace(minutes, outcome) else []
     label = f"Session guidée « {title} » ({today:%d/%m})"
     changed = await SkillsService(db, user_id).raise_levels(
         skills, CEILING, evidence("study", row.id, label, now)
     )
     cards = await add_cards(db, user_id, _cards(row, outcome), today)
-    minutes = row.worked_minutes or 0
     result = StudyFinished(minutes, done, cards, changed)
     row.minutes, row.summary = minutes, outcome.summary.strip() or None
     row.outcome = {"outcome": asdict(outcome), "result": asdict(result)}
@@ -140,7 +154,9 @@ async def _claim_and_write(
         if row is None:
             raise study_not_found()
         if not claimed:
-            return finished_of(row), False, ""
+            done = finished_of(row)
+            # Le titre ne sert qu'au reflet rattrapé (rien à refléter : pas de lecture de plus).
+            return done, False, await _title(db, row, await _module(db, row)) if done.skills else ""
         result, title = await _write(rt, db, row, outcome, now)
         await db.commit()
     return result, True, title
@@ -159,7 +175,7 @@ async def finish_study(
     # F4 : le verrou du programme AVANT la transaction d'écriture (même ordre qu'`editing`).
     async with rt.program.program_lock(user_id, program_id):
         result, written, title = await _claim_and_write(rt, user_id, study_id, outcome)
-    if written and result.skills:
+    if result.skills:  # au rejeu aussi : reflet idempotent, jamais baissé (rattrape un arrêt)
         try:
             await reflect_skill_levels(
                 rt.memory,

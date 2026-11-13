@@ -2,13 +2,15 @@
 leçon choisie, avec ou sans question pour le Tuteur.
 
 Sous le verrou de l'utilisatrice : la leçon (404 `lesson_not_found`, 409 `lesson_not_ready`) ou
-le bloc du jour (404 `no_block_today`) ; une session `open` dont la session d'agents est
-terminée passe à `cancelled` dans la même transaction que l'insertion de la nouvelle (F11) ; une
-session vivante sur la même leçon est rendue telle quelle (200), sur une autre leçon : 409
-`study_already_open` (`details.study_session_id`). L'index unique partiel tranche une course
-qui passerait quand même : le second relit la session ouverte. La ligne est commitée AVANT
-`launcher.start` (jamais le verrou d'écriture de SQLite tenu pendant le lancement, D66, D72) ;
-un lancement refusé laisse la session `cancelled`. Journaux : identifiants seulement."""
+le bloc du jour (404 `no_block_today`, seulement s'il n'y a pas de session ouverte : « Commencer
+mon bloc » sans bloc, avec une session vivante, rend 409 `study_already_open` vers elle) ; une
+session `open` dont la session d'agents est terminée passe à `cancelled` dans la même
+transaction que l'insertion de la nouvelle (F11) ; une session vivante sur la même leçon est
+rendue telle quelle (200), sur une autre leçon : 409 `study_already_open`
+(`details.study_session_id`). L'index unique partiel tranche une course qui passerait quand
+même : le second relit la session ouverte. La ligne est commitée AVANT `launcher.start` (jamais
+le verrou d'écriture de SQLite tenu pendant le lancement, D66, D72) ; un lancement refusé
+laisse la session `cancelled`. Journaux : identifiants seulement."""
 
 import logging
 from dataclasses import dataclass
@@ -52,12 +54,15 @@ class Target:
     task_ids: list[str]
 
 
-async def _target(rt: StudyRuntime, db: AsyncSession, user_id: str, body: StudyStart) -> Target:
+async def _target(
+    rt: StudyRuntime, db: AsyncSession, user_id: str, body: StudyStart
+) -> Target | None:
+    """La cible du départ ; `None` : « mon bloc » sans bloc du jour."""
     today = await rt.today(db, user_id)
     if body.lesson_id is None:
         block = await block_of_day(db, user_id, today)
         if block is None:
-            raise no_block_today()
+            return None
         return Target(block.lesson_id, block.module_id, block.program_id, block.task_ids)
     lesson = await StudyReadRepository(db, user_id).lesson(body.lesson_id)
     if lesson is None:
@@ -85,7 +90,8 @@ async def _live(db: AsyncSession, user_id: str) -> tuple[str, str, str] | None:
     return row.id, row.lesson_id, row.session_id
 
 
-def _existing(live: tuple[str, str, str], lesson_id: str) -> StudyStarted:
+def _existing(live: tuple[str, str, str], lesson_id: str | None) -> StudyStarted:
+    """La session ouverte rendue telle quelle ; autre leçon, ou pas de leçon (pas de bloc) : 409."""
     study_id, open_lesson, session_id = live
     if open_lesson != lesson_id:
         raise study_already_open(study_id)
@@ -101,7 +107,9 @@ async def _insert(
         target = await _target(rt, db, user_id, body)
         live = await _live(db, user_id)
         if live is not None:
-            return _existing(live, target.lesson_id), "", ""
+            return _existing(live, target.lesson_id if target else None), "", ""
+        if target is None:
+            raise no_block_today()
         repo = StudyRepository(db, user_id)
         try:
             row = await repo.add(

@@ -6,20 +6,24 @@ import asyncio
 import logging
 from dataclasses import replace
 from datetime import UTC, datetime
+from typing import Any
 
 import httpx
 import pytest
 from sqlalchemy import select, update
 
+from app.agents.tools.study_port import StudyOutcome
 from app.core.errors import AppError
 from app.core.skills import evidence
 from app.db.models.lessons import Lesson
+from app.db.models.memory import MemoryItem
 from app.db.models.program import Task
 from app.db.models.skills import UserSkill
 from app.db.models.study import Flashcard, JournalEntry, StudySession
 from app.features.program.schemas import TaskPatch
 from app.features.program.service.editing import move_or_edit_task
 from app.features.skills.service import SkillsService
+from app.features.study.service import finish as finish_module
 from app.features.study.service.store import AgentStudyStore
 from tests.features.study.conftest import Seeded
 from tests.features.study.stub import full_outcome
@@ -217,3 +221,65 @@ async def test_logs_carry_ids_only(
     assert study_id in text and "Session guidée rangée" in text
     for secret in ("softmax", "Bilan très personnel", "Module Bases", "Lire le chapitre", "pandas"):
         assert secret not in text
+
+
+EN_COURS = {"Index": "en_cours", "Séries": "en_cours", "pandas": "en_cours"}
+NO_TRACE = StudyOutcome(outcomes=[], exercise_done=False, ended_early=True, summary="")
+
+
+async def _acquis(s: Seeded) -> dict[str, str]:
+    async with s.rt.session_factory() as db:
+        items = (await db.execute(select(MemoryItem).where(MemoryItem.kind == "acquis"))).scalars()
+        return {item.title: (item.meta or {}).get("level", "") for item in items}
+
+
+async def test_missed_reflection_is_caught_up_on_replay(
+    client: httpx.AsyncClient, seeded: Seeded, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """m1 : le back s'arrête entre le commit et le reflet ; le rejeu de `wrap_up` refléte les
+    acquis dans la mémoire (comme le quiz), sans rien écrire de plus ailleurs."""
+    real = finish_module.reflect_skill_levels
+    calls: list[int] = []
+
+    async def failing_once(*args: Any, **kwargs: Any) -> list[str]:
+        calls.append(1)
+        if len(calls) == 1:
+            raise RuntimeError("database is locked")
+        return await real(*args, **kwargs)
+
+    monkeypatch.setattr(finish_module, "reflect_skill_levels", failing_once)
+    study_id = await _open(client, seeded)
+    store = AgentStudyStore(seeded.rt)
+    first = await store.finish(seeded.user_id, "s-tutor", study_id, full_outcome())
+    assert await _acquis(seeded) == {}  # reflet manqué
+    replayed = await store.finish(seeded.user_id, "s-tutor", study_id, full_outcome())
+    assert replayed == first
+    assert await _acquis(seeded) == EN_COURS
+    assert await count(seeded, JournalEntry) == 1 and await count(seeded, Flashcard) == 3
+    await store.finish(seeded.user_id, "s-tutor", study_id, full_outcome())  # encore : rien de plus
+    assert await _acquis(seeded) == EN_COURS
+
+
+async def test_no_time_and_no_answer_raises_no_skill(
+    client: httpx.AsyncClient, seeded: Seeded
+) -> None:
+    """m2 : sans minute ni réponse, la fin n'est la trace de rien : aucun acquis ne monte."""
+    study_id = await _open(client, seeded, worked=None)
+    done = await AgentStudyStore(seeded.rt).finish(seeded.user_id, "s-tutor", study_id, NO_TRACE)
+    assert (done.minutes, done.skills) == (0, [])
+    async with seeded.rt.session_factory() as db:
+        assert await SkillsService(db, seeded.user_id).levels_of(["Index", "Séries"]) == []
+    assert await _acquis(seeded) == {}
+
+
+async def test_time_alone_or_one_answer_alone_raises_skills(
+    client: httpx.AsyncClient, seeded: Seeded
+) -> None:
+    """m2 : du temps seul, ou une réponse seule, suffit à monter les acquis."""
+    timed = await _open(client, seeded, worked=5)
+    done = await AgentStudyStore(seeded.rt).finish(seeded.user_id, "s-tutor", timed, NO_TRACE)
+    assert sorted(done.skills) == sorted(EN_COURS.items())
+    answered = await _open(client, seeded, worked=None, lesson_id=seeded.lessons[1])
+    one = replace(NO_TRACE, outcomes=full_outcome().outcomes[:1])
+    other = await AgentStudyStore(seeded.rt).finish(seeded.user_id, "s-tutor", answered, one)
+    assert (other.minutes, other.skills) == (0, [("numpy", "en_cours")])
