@@ -61,6 +61,10 @@ specs = {
     ),
     "color_rgb_name": spec(accent="red", header_band="rgb(0, 0, 0)"),
     "no_identity": spec(columns=_columns((100, ["summary", "experience"]))),
+    "band_without_identity_head": spec(
+        header_band="#1f4e79",
+        columns=_columns((30, ["skills", "identity"]), (70, ["experience"])),
+    ),
 }
 
 
@@ -76,6 +80,7 @@ def test_valid_spec_has_no_problem() -> None:
         ("unknown_font", 1),
         ("color_rgb_name", 2),
         ("no_identity", 1),
+        ("band_without_identity_head", 1),
     ],
 )
 def test_template_problems(bad: str, count: int) -> None:

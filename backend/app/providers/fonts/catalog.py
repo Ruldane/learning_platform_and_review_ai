@@ -37,6 +37,21 @@ FREE_FAMILIES: frozenset[str] = frozenset(
 )
 DEFAULT_SANS = "Liberation Sans"
 DEFAULT_SERIF = "Liberation Serif"
+# Familles du catalogue à empattement (repli CSS `serif` ; les autres : `sans-serif`).
+SERIF_FAMILIES: frozenset[str] = frozenset(
+    {
+        "Merriweather",
+        "Lora",
+        "PT Serif",
+        "Noto Serif",
+        "Caladea",
+        "Liberation Serif",
+        "EB Garamond",
+        "Gelasio",
+        "Roboto Slab",
+        "Playfair Display",
+    }
+)
 
 # Police propriétaire (début du nom nettoyé, en minuscules sans espace) → famille libre proche ;
 # les métriques sont compatibles pour Arial, Helvetica, Times, Calibri et Cambria.

@@ -13,7 +13,12 @@ from collections.abc import Sequence
 from app.agents.tools.cv_schema import CvContent, CvSection
 from app.agents.tools.template_schema import ColumnBlock, TemplateSpec
 from app.providers.fonts.base import FontFile
-from app.providers.fonts.catalog import DEFAULT_SANS, DEFAULT_SERIF, FREE_FAMILIES
+from app.providers.fonts.catalog import (
+    DEFAULT_SANS,
+    DEFAULT_SERIF,
+    FREE_FAMILIES,
+    SERIF_FAMILIES,
+)
 from app.providers.pdf.base import HtmlDocument, PageSetup
 from app.templates import render_template
 from app.templates.assets import template_file
@@ -25,10 +30,6 @@ _HEX = re.compile(r"#[0-9a-fA-F]{6}")
 _FONT_ASSET = re.compile(r"[a-z0-9][a-z0-9-]{0,56}\.(ttf|woff2)")
 _FORMATS = {"ttf": "truetype", "woff2": "woff2"}
 _FAMILIES = {family.casefold(): family for family in FREE_FAMILIES}
-_SERIF = {
-    "Merriweather", "Lora", "PT Serif", "Noto Serif", "Caladea", "Liberation Serif",
-    "EB Garamond", "Gelasio", "Roboto Slab", "Playfair Display",
-}  # fmt: skip
 _TITLES = {"plain", "underline", "left_bar", "band"}
 _DATES = {"right", "below", "left"}
 _BULLETS = {"dot", "dash", "none"}
@@ -57,15 +58,19 @@ def _family(name: str) -> str:
 
 def _stack(name: str) -> str:
     family = _family(name)
-    if family in _SERIF:
+    if family in SERIF_FAMILIES:
         return f"'{family}', '{DEFAULT_SERIF}', serif"
     return f"'{family}', '{DEFAULT_SANS}', sans-serif"
 
 
+def _dark(color: str) -> bool:
+    red, green, blue = (int(color[index : index + 2], 16) for index in (1, 3, 5))
+    return 0.299 * red + 0.587 * green + 0.114 * blue < _DARK_LUMA
+
+
 def _on(color: str, fallback: str) -> str:
     """Couleur lisible posée sur `color` : blanc sur un fond sombre, `fallback` sinon."""
-    red, green, blue = (int(color[index : index + 2], 16) for index in (1, 3, 5))
-    return "#ffffff" if 0.299 * red + 0.587 * green + 0.114 * blue < _DARK_LUMA else fallback
+    return "#ffffff" if _dark(color) else fallback
 
 
 def _font_face(font: FontFile) -> str:
@@ -107,9 +112,15 @@ def _columns_css(spec: TemplateSpec) -> list[str]:
     rules = [f":root {{ --grid: {widths}; }}"]
     for rank, column in enumerate(spec.columns, start=1):
         background = _hex(column.background) if column.background else "transparent"
-        color = _hex(column.text_color) if column.text_color else "var(--text)"
-        title = _hex(column.text_color) if column.text_color else "var(--accent)"
-        rules.append(f".col-{rank} {{ background: {background}; color: {color}; }}")
+        dark = background != "transparent" and _dark(background)
+        if column.text_color:
+            color = title = _hex(column.text_color)
+        elif dark:  # fond sombre sans couleur de texte : texte blanc, jamais illisible
+            color = title = "#ffffff"
+        else:
+            color, title = "var(--text)", "var(--accent)"
+        muted = "--muted: #d9d9d9; " if dark and not column.text_color else ""
+        rules.append(f".col-{rank} {{ background: {background}; color: {color}; {muted}}}")
         rules.append(f"body:not(.titles-band) .col-{rank} h2 {{ color: {title}; }}")
     return rules
 
@@ -126,17 +137,26 @@ def cv_css(spec: TemplateSpec, fonts: Sequence[FontFile]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _blocks(
+    block: ColumnBlock, by_key: dict[str, list[CvSection]]
+) -> list[ColumnBlock | CvSection]:
+    if block == "identity":
+        return ["identity"]
+    return list(by_key.get(block, []))
+
+
 def _place(spec: TemplateSpec, content: CvContent) -> list[list[ColumnBlock | CvSection]]:
     """Blocs de chaque colonne dans l'ordre du spec ; une section du contenu absente du spec va à
     la fin de la colonne la plus large (rien n'est perdu) ; sans bloc « identity » dans le spec,
     l'identité ouvre la première colonne."""
-    by_key = {section.key: section for section in content.sections}
+    by_key: dict[str, list[CvSection]] = {}
+    for section in content.sections:  # deux sections de même clé : rendues toutes les deux
+        by_key.setdefault(section.key, []).append(section)
     placed = {block for column in spec.columns for block in column.sections}
     columns: list[list[ColumnBlock | CvSection]] = [
-        [block if block == "identity" else by_key[block] for block in column.sections
-         if block == "identity" or block in by_key]
+        [item for block in column.sections for item in _blocks(block, by_key)]
         for column in spec.columns
-    ]  # fmt: skip
+    ]
     widest = max(range(len(spec.columns)), key=lambda rank: spec.columns[rank].width_pct)
     columns[widest] += [section for section in content.sections if section.key not in placed]
     if "identity" not in placed:

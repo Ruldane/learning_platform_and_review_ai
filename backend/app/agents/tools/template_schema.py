@@ -77,6 +77,12 @@ def _layout_problems(spec: TemplateSpec) -> list[str]:
             f"Le bloc « identity » doit figurer exactement une fois (il figure "
             f"{counts['identity']} fois)."
         )
+    heads = {column.sections[0] for column in spec.columns}
+    if spec.header_band is not None and counts["identity"] == 1 and "identity" not in heads:
+        problems.append(
+            "Le bandeau (« header_band ») porte le bloc « identity » : place « identity » en "
+            "tête d'une colonne, ou retire le bandeau."
+        )
     for block, count in counts.items():
         if block != "identity" and count > 1:
             problems.append(

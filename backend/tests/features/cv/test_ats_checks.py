@@ -1,6 +1,6 @@
 """Contrôles de lisibilité machine d'un CV (6.4, SPEC 5.3 et 5.4) sur des mises en page fictives."""
 
-from app.agents.tools.cv_schema import CvContent
+from app.agents.tools.cv_schema import CvContent, CvLine, CvSection
 from app.agents.tools.posting_schema import Keyword
 from app.features.cv.service.ats_checks import (
     MIN_BODY_PT,
@@ -9,9 +9,12 @@ from app.features.cv.service.ats_checks import (
     keyword_hits,
 )
 from app.features.cv.service.indicators import AtsCheck
+from app.features.cv.service.template import cv_document
 from app.providers.pdf.base import PageLayout, PdfLayout, TextBlock
+from app.providers.pdf.layout import LocalPdfLayoutExtractor
 from scripts.sample_cv import CV_FACTS
-from tests.support.cv_template import content
+from tests.support.cv_template import content, spec
+from tests.support.text_renderer import TextHtmlRenderer
 
 WIDTH, HEIGHT = 595.0, 842.0
 
@@ -201,3 +204,48 @@ def test_empty_content_passes_order_and_headings() -> None:
     layout = _layout([cv.name, CV_FACTS["email"]])
     checks = _by_id(ats_checks(layout, cv))
     assert checks["reading_order"].passed and checks["standard_headings"].passed
+
+
+async def _rendered(cv: CvContent) -> PdfLayout:
+    """Notre gabarit, rendu textuel dans l'ordre du DOM (une ligne par bloc), relu par
+    l'extracteur réel."""
+    document = cv_document(spec(), cv, [])
+    return await LocalPdfLayoutExtractor().extract_layout(
+        await TextHtmlRenderer().html_to_pdf(document)
+    )
+
+
+async def test_heading_word_in_headline_does_not_misplace_section() -> None:
+    """« Chef de projets » dans le titre ne place pas la section « Projets »."""
+    projects = CvSection(
+        key="projects",
+        title="Projets",
+        items=[
+            CvLine(text=f"Projet fictif numéro {n} : outil interne", fact_ids=["p1"])
+            for n in range(6)
+        ],
+    )
+    cv = content(headline="Chef de projets data")
+    cv.sections.append(projects)
+    check = _by_id(ats_checks(await _rendered(cv), cv))["reading_order"]
+    found, _, _, total = check.detail.split()[:4]
+    assert check.passed and (found, total) == ("21", "21"), check.detail
+
+
+async def test_heading_word_in_a_bullet_does_not_misplace_section() -> None:
+    """La puce « Animé la formation… » ne place pas la section « Formation »."""
+    cv = content(lines=["Animé la formation des nouveaux arrivants", "Conçu un outil de suivi"])
+    check = _by_id(ats_checks(await _rendered(cv), cv))["reading_order"]
+    found, _, _, total = check.detail.split()[:4]
+    assert check.passed and (found, total) == ("15", "15"), check.detail
+
+
+def test_short_line_needs_a_whole_word() -> None:
+    """La compétence « C » n'est pas trouvée dans « Conçu »."""
+    cv = content()
+    cv.sections[3].items = [CvLine(text="C", fact_ids=["c9"])]
+    texts = _texts(cv)
+    without = "\n".join("Conçu" if text == "C" else text for text in texts)
+    found = _by_id(ats_checks(_layout(texts), cv))["reading_order"].detail
+    missing = _by_id(ats_checks(_layout(texts, stream=without), cv))["reading_order"].detail
+    assert int(found.split()[0]) == int(missing.split()[0]) + 1

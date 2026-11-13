@@ -71,37 +71,71 @@ def _selectable(layout: PdfLayout) -> AtsCheck:
     return AtsCheck("selectable_text", layout.selectable and not hidden, detail)
 
 
-def _section_lines(section: CvSection) -> list[str]:
+def _needles(section: CvSection) -> list[str]:
+    """Ce qu'on cherche de chaque ligne de la section dans le flux normalisé : ses
+    `LINE_START_CHARS` premiers caractères (début de mot à gauche), ou la ligne entière entre deux
+    frontières de mot si elle est plus courte (« C » ne se trouve pas dans « Conçu »)."""
     lines: list[str] = []
     for entry in section.entries:
         lines += [entry.heading, entry.subheading or "", entry.dates or ""]
         lines += [line.text for line in entry.lines]
     lines += [item.text for item in section.items]
-    return [start for line in lines if (start := normalize_term(line)[:LINE_START_CHARS].strip())]
+    needles: list[str] = []
+    for line in lines:
+        text = normalize_term(line)
+        if len(text) <= LINE_START_CHARS:
+            needles += [f" {text} "] if text else []
+        else:
+            needles.append(f" {text[:LINE_START_CHARS].strip()}")
+    return needles
 
 
-def _title_positions(stream: str, sections: Sequence[CvSection]) -> list[tuple[int, int, int]]:
-    """(début, fin, rang de la section) de la première occurrence de chaque intitulé trouvé
-    dans le flux normalisé, triés par position."""
+def _stream_lines(layout: PdfLayout) -> tuple[str, list[tuple[int, str]]]:
+    """Flux normalisé (une espace entre deux lignes, une aux bords) et (début, texte) de chacune
+    de ses lignes non vides."""
+    stream = " "
+    lines: list[tuple[int, str]] = []
+    for page in layout.pages:
+        for raw in page.stream_text.splitlines():
+            text = normalize_term(raw)
+            if text:
+                lines.append((len(stream), text))
+                stream += text + " "
+    return stream, lines
+
+
+def _title_positions(
+    stream: str, lines: list[tuple[int, str]], sections: Sequence[CvSection]
+) -> list[tuple[int, int, int]]:
+    """(début, fin, rang de la section) de chaque intitulé trouvé, triés par position :
+    l'intitulé est cherché comme **ligne entière** du flux (un `<h2>` est une ligne à lui seul ;
+    « Chef de projets » ne place pas la section « Projets ») ; à défaut, sa première occurrence
+    en mots entiers."""
     found: list[tuple[int, int, int]] = []
+    taken: set[int] = set()
     for rank, section in enumerate(sections):
         title = normalize_term(section.title)
-        start = stream.find(f" {title} ") if title else -1
+        if not title:
+            continue
+        start = next((s for s, text in lines if text == title and s not in taken), -1)
+        if start < 0:
+            start = stream.find(f" {title} ") + 1 if f" {title} " in stream else -1
         if start >= 0:
-            found.append((start, start + len(title) + 2, rank))
+            taken.add(start)
+            found.append((start, start + len(title), rank))
     return sorted(found)
 
 
 def _reading_order(layout: PdfLayout, content: CvContent) -> AtsCheck:
-    stream = f" {normalize_term(' '.join(page.stream_text for page in layout.pages))} "
-    expected = [_section_lines(section) for section in content.sections]
-    total = sum(len(lines) for lines in expected)
-    positions = _title_positions(stream, content.sections)
+    stream, lines = _stream_lines(layout)
+    expected = [_needles(section) for section in content.sections]
+    total = sum(len(needles) for needles in expected)
+    positions = _title_positions(stream, lines, content.sections)
     found = 0
     for index, (_start, end, rank) in enumerate(positions):
-        stop = positions[index + 1][0] + 1 if index + 1 < len(positions) else len(stream)
-        segment = stream[end - 1 : stop]
-        found += sum(f" {line}" in segment for line in expected[rank])
+        stop = positions[index + 1][0] if index + 1 < len(positions) else len(stream)
+        segment = stream[end:stop]
+        found += sum(needle in segment for needle in expected[rank])
     passed = total == 0 or found >= READING_SHARE * total
     detail = (
         f"{found} ligne(s) sur {total} lues dans leur section, dans l'ordre du texte du PDF."

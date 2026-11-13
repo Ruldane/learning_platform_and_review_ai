@@ -171,3 +171,28 @@ async def test_text_renderer_pages_are_adjustable() -> None:
     assert len(renderer.documents) == 2
     assert "Camille Exemple" in visible_lines(document.index_html)
     assert "CV" not in visible_lines(document.index_html)  # <title> n'est pas visible
+
+
+def test_dark_column_without_text_color_gets_light_text() -> None:
+    columns = [
+        ColumnSpec(width_pct=32, background="#2b2b2b", sections=["identity", "skills"]),
+        ColumnSpec(width_pct=68, sections=["experience"]),
+    ]
+    css = cv_css(spec(columns=columns), [])
+    assert ".col-1 { background: #2b2b2b; color: #ffffff; --muted: #d9d9d9; }" in css
+    assert "body:not(.titles-band) .col-1 h2 { color: #ffffff; }" in css
+    assert ".col-2 { background: transparent; color: var(--text); }" in css
+
+
+def test_sections_sharing_a_key_are_all_rendered() -> None:
+    cv = content()
+    cv.sections.append(cv.sections[3].model_copy(update={"title": "Outils"}))
+    html = cv_document(spec(), cv, []).index_html
+    assert "<h2>Compétences</h2>" in html and "<h2>Outils</h2>" in html
+
+
+def test_serif_families_fall_back_to_a_serif() -> None:
+    template = spec()
+    template.fonts.heading = "Lora"
+    css = cv_css(template, [])
+    assert "--heading-font: 'Lora', 'Liberation Serif', serif;" in css

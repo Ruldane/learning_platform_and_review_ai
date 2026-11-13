@@ -1,8 +1,10 @@
 """Score de ressemblance entre l'original et le rendu d'un gabarit (6.4, D120), sur des pages
-fictives dessinées par le test (72 dpi : 1 pixel = 1 point)."""
+fictives dessinées par le test (72 dpi : 1 pixel = 1 point) et sur du texte réel relu par
+l'extracteur (`make_pdf`, calibration du score)."""
 
 import io
 
+import pytest
 from PIL import Image, ImageDraw
 
 from app.agents.tools.template_similarity import (
@@ -17,11 +19,18 @@ from app.agents.tools.template_similarity import (
     similarity,
 )
 from app.providers.pdf.base import PageLayout, TextBlock
+from app.providers.pdf.layout import LocalPdfLayoutExtractor
+from scripts.sample_pdf import make_pdf
 
 WIDTH, HEIGHT = 595, 842
 BLUE = (33, 84, 154)
 RED = (190, 30, 30)
 INK = (34, 34, 34)
+# 50 lignes de longueurs variées, comme un CV (des lignes toutes égales seraient indiscernables
+# d'une ligne à l'autre).
+_SENTENCE = "Conception d un assistant interne avec LangGraph pour le support client et la gestion"
+_WORDS = [*_SENTENCE.split(), "des", "demandes"]
+LINES = [" ".join(_WORDS[: 2 + (index * 7) % 15]) for index in range(50)]
 
 
 def _png(image: Image.Image) -> bytes:
@@ -54,6 +63,11 @@ def blank_page() -> PageLayout:
     return PageLayout(WIDTH, HEIGHT, [], _png(Image.new("RGB", (WIDTH, HEIGHT), "white")), "")
 
 
+async def _text_pages(**changes: int) -> list[PageLayout]:
+    pdf = make_pdf(LINES, size=(WIDTH, HEIGHT), **changes)
+    return (await LocalPdfLayoutExtractor().extract_layout(pdf)).pages
+
+
 def test_constants_are_the_planned_ones() -> None:
     assert (TARGET_SCORE, MAX_FIX_PASSES) == (85, 3)
     assert (W_INK, W_TEXT, W_COLOR) == (0.45, 0.35, 0.20)
@@ -81,18 +95,48 @@ def test_wider_left_column_is_described() -> None:
     assert left.render > left.original
 
 
+@pytest.mark.parametrize("shift", [1, 2, 3])
+async def test_small_shift_still_reaches_target(shift: int) -> None:
+    """Police substituée, moteur de rendu : quelques points de décalage restent « fidèles »."""
+    sim = similarity(await _text_pages(), await _text_pages(top=72 + shift))
+    assert sim.score >= TARGET_SCORE, sim
+
+
+async def test_line_spacing_gap_stays_under_target_and_is_described() -> None:
+    """Interligne 15 au lieu de 14 sur une page pleine : un vrai écart, sous la cible, dit."""
+    sim = similarity(await _text_pages(), await _text_pages(leading=15))
+    assert sim.score < TARGET_SCORE
+    text = describe(sim)
+    assert text.startswith(("L'encre du rendu ne recouvre", "Les blocs de texte du rendu"))
+    assert "surtout" in text
+
+
+async def test_large_shift_is_described() -> None:
+    sim = similarity(await _text_pages(), await _text_pages(top=84))
+    assert sim.score < TARGET_SCORE and describe(sim) != ""
+
+
 def test_missing_page_counts() -> None:
     sim = similarity([cv_page(), cv_page()], [cv_page()])
     assert (sim.pages_original, sim.pages_render) == (2, 1)
     assert sim.ink < 0.6 and "Pages : 1 au lieu de 2." in describe(sim)
-    assert describe(sim).endswith("Pages : 1 au lieu de 2.")
+    assert describe(sim).endswith("Le rendu doit garder le nombre de pages de l'original.")
 
 
-def test_color_mismatch_lowers_color_part() -> None:
+def test_page_count_gap_caps_score_under_target() -> None:
+    """Une page de débordement presque vide : le reste est identique, la cible reste manquée."""
+    overflow = PageLayout(WIDTH, HEIGHT, [_block(60, 60, 200, 70)], blank_page().image_png, "")
+    sim = similarity([cv_page()], [cv_page(), overflow])
+    assert sim.score == TARGET_SCORE - 1 and "Pages : 2 au lieu de 1." in describe(sim)
+
+
+def test_color_mismatch_lowers_color_part_and_names_the_accent() -> None:
     same = similarity([cv_page()], [cv_page()])
     other = similarity([cv_page()], [cv_page(accent=RED)])
     assert other.ink == same.ink == 1.0 and other.text == 1.0
     assert other.color < 0.9 and other.score < same.score
+    assert other.accent_differs and not same.accent_differs
+    assert "La couleur d'accent du rendu diffère de celle de l'original." in describe(other)
 
 
 def test_describe_keeps_four_largest_gaps_over_five_points() -> None:
@@ -103,12 +147,23 @@ def test_describe_keeps_four_largest_gaps_over_five_points() -> None:
         ZoneDiff("gauche", 0.60, 0.18),
         ZoneDiff("droite", 0.20, 0.27),
     ]
-    sim = Similarity(70, 0.5, 0.5, 0.9, 1, 1, zones)
-    assert describe(sim) == (
+    zone_sentences = (
         "Le rendu a 42 % d'encre en moins à gauche que l'original. "
         "Le rendu a 30 % d'encre en plus en bas que l'original. "
         "Le rendu a 20 % d'encre en moins en haut que l'original. "
         "Le rendu a 7 % d'encre en plus à droite que l'original."
+    )
+    assert describe(Similarity(90, 0.9, 0.9, 0.9, 1, 1, zones)) == zone_sentences
+    # Sous la cible : la composante la plus faible d'abord.
+    assert describe(Similarity(70, 0.6, 0.5, 0.9, 1, 1, zones)) == (
+        "Les blocs de texte du rendu ne recouvrent ceux de l'original qu'à 50 %. " + zone_sentences
+    )
+
+
+def test_describe_under_target_always_says_something() -> None:
+    weak_color = Similarity(80, 1.0, 1.0, 0.3, 1, 1, [])
+    assert describe(weak_color) == (
+        "Les couleurs du rendu s'écartent de celles de l'original (ressemblance de 30 %)."
     )
 
 
@@ -117,6 +172,21 @@ def test_invisible_blocks_do_not_count_as_text() -> None:
     trap = TextBlock("piège", 10, 800, 200, 801, "Lato", 1, "#ffffff", False, True)
     with_trap = PageLayout(WIDTH, HEIGHT, [*page.blocks, trap], page.image_png, "")
     assert similarity([page], [with_trap]).text == 1.0
+
+
+def test_blocks_outside_the_page_are_bounded() -> None:
+    """Un bloc visible hors du repère ne marque pas toute la page comme du texte."""
+    page = blank_page()
+    stray = PageLayout(WIDTH, HEIGHT, [_block(-50, -40, -10, -8)], page.image_png, "")
+    assert similarity([page], [stray]).text == 1.0
+
+
+def test_image_outside_the_page_frame_is_refused() -> None:
+    page = cv_page()
+    double = Image.new("RGB", (2 * WIDTH, 2 * HEIGHT), "white")
+    at_144_dpi = PageLayout(WIDTH, HEIGHT, page.blocks, _png(double), "")
+    with pytest.raises(ValueError, match="72 dpi"):
+        similarity([page], [at_144_dpi])
 
 
 def test_empty_documents_are_identical() -> None:

@@ -6,7 +6,7 @@ import math
 
 _HEADER = b"%PDF-1.4\n"
 LETTER = (612, 792)
-_TOP_PT = 72  # première ligne de base à 72 pt du haut de la page
+TOP_PT = 72  # première ligne de base à 72 pt du haut de la page
 LEADING_PT = 14
 
 
@@ -16,15 +16,15 @@ def _escape(line: str) -> bytes:
     return escaped.encode("cp1252", errors="replace")
 
 
-def _content(lines: list[str], height: int) -> bytes:
-    ops = [b"BT", b"/F1 12 Tf", b"%d TL" % LEADING_PT, b"72 %d Td" % (height - _TOP_PT)]
+def _content(lines: list[str], height: int, top: int, leading: int) -> bytes:
+    ops = [b"BT", b"/F1 12 Tf", b"%d TL" % leading, b"72 %d Td" % (height - top)]
     ops += [b"(" + _escape(line) + b") Tj T*" for line in lines]
     ops.append(b"ET")
     return b"\n".join(ops)
 
 
-def _stream(lines: list[str], height: int) -> bytes:
-    stream = _content(lines, height)
+def _stream(lines: list[str], height: int, top: int, leading: int) -> bytes:
+    stream = _content(lines, height, top, leading)
     return b"<< /Length %d >>\nstream\n" % len(stream) + stream + b"\nendstream"
 
 
@@ -35,9 +35,17 @@ def _page(width: int, height: int, contents: int) -> bytes:
     )
 
 
-def make_pdf(lines: list[str], *, size: tuple[int, int] = LETTER, pages: int = 1) -> bytes:
+def make_pdf(
+    lines: list[str],
+    *,
+    size: tuple[int, int] = LETTER,
+    pages: int = 1,
+    top: int = TOP_PT,
+    leading: int = LEADING_PT,
+) -> bytes:
     """`lines` réparties dans l'ordre sur `pages` pages (autant de lignes par page, la dernière
-    en a moins ; une page sans ligne reste blanche) de `size` points (largeur, hauteur)."""
+    en a moins ; une page sans ligne reste blanche) de `size` points (largeur, hauteur) ; première
+    ligne de base à `top` points du haut, `leading` points d'une ligne à la suivante."""
     if pages < 1:
         raise ValueError("au moins une page")
     width, height = size
@@ -52,10 +60,10 @@ def make_pdf(lines: list[str], *, size: tuple[int, int] = LETTER, pages: int = 1
         % (b" ".join(b"%d 0 R" % kid for kid in kids), pages),
         _page(width, height, 5),
         b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
-        _stream(chunks[0], height),
+        _stream(chunks[0], height, top, leading),
     ]
     for kid, chunk in zip(kids[1:], chunks[1:], strict=True):
-        objects += [_page(width, height, kid + 1), _stream(chunk, height)]
+        objects += [_page(width, height, kid + 1), _stream(chunk, height, top, leading)]
     out = bytearray(_HEADER)
     offsets: list[int] = []
     for number, body in enumerate(objects, start=1):
