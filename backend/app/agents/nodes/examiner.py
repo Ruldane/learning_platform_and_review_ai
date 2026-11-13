@@ -7,9 +7,10 @@ quiz est déclaré invalide (`failure`) et le parcours le range en échec.
 
 `grade_open` fait une seule demande pour toutes les réponses ouvertes (aucune : pas d'appel).
 Chaque réponse est encadrée comme non fiable (`untrusted`, SPEC 17.4), la leçon aussi ; les QCM,
-notés par le code, ne sont jamais envoyés au modèle. Une référence inconnue est ignorée, une
-question sans note vaut 0 avec `MISSING_FEEDBACK` ; une note hors de {0 ; 0,5 ; 1} est refusée
-par le schéma et redemandée.
+notés par le code, ne sont jamais envoyés au modèle. Une référence inconnue est ignorée ; si des
+questions restent sans note (oubliées ou renumérotées), une seule nouvelle demande les nomme
+(revue finale de la phase 5, A-I1) ; ensuite, une question sans note vaut 0 avec
+`MISSING_FEEDBACK`. Une note hors de {0 ; 0,5 ; 1} est refusée par le schéma et redemandée.
 
 Aucun de ces nœuds ne touche un port : rejoués, ils redemandent au modèle sans rien écrire."""
 
@@ -36,6 +37,7 @@ from app.agents.tools.quiz_port import (
 )
 
 MAX_QUIZ_ASKS = 3  # une demande + deux re-demandes avec les problèmes de `quiz_problems`
+MAX_GRADE_ASKS = 2  # une demande + une re-demande si des questions restent sans note
 MISSING_FEEDBACK = "Réponse non évaluée : relis la correction."
 WRITE_REQUEST = "Écris le quiz du module."
 GRADE_REQUEST = "Note les réponses ouvertes."
@@ -143,19 +145,56 @@ def _item_prompt(item: GradingItem) -> str:
     )
 
 
-def _grades_by_ref(found: Grades, items: list[GradingItem]) -> tuple[dict[str, list[Any]], int]:
+def _grades_by_ref(
+    found: list[GradeDraft], items: list[GradingItem]
+) -> tuple[dict[str, list[Any]], list[str]]:
     """Note de chaque question ouverte (la première donnée pour une référence) ; sans note : 0 et
-    `MISSING_FEEDBACK`. Rend aussi le nombre de questions sans note."""
+    `MISSING_FEEDBACK`. Rend aussi les références restées sans note, dans l'ordre du quiz."""
     refs = {item.ref for item in items}
     given: dict[str, GradeDraft] = {}
-    for draft in found.items:
+    for draft in found:
         if draft.ref in refs:
             given.setdefault(draft.ref, draft)
     grades: dict[str, list[Any]] = {}
     for item in items:
         grade = given.get(item.ref)
         grades[item.ref] = [grade.score, grade.feedback] if grade else [0.0, MISSING_FEEDBACK]
-    return grades, len(refs - given.keys())
+    return grades, [item.ref for item in items if item.ref not in given]
+
+
+def _missing_text(missing: list[str]) -> str:
+    return (
+        "Ta notation oublie ces questions : "
+        + ", ".join(missing)
+        + ". Reprends exactement la référence de chaque question (celle de son titre « ### qN ») "
+        "et rends la notation complète de toutes les questions."
+    )
+
+
+async def _ask_grades(
+    deps: GraphDeps, prompt: str, items: list[GradingItem]
+) -> tuple[list[GradeDraft], list[str]]:
+    """Une demande ; si des questions restent sans note, une seule nouvelle demande qui les nomme.
+    Rend toutes les notes reçues (la première d'une référence gagne) et les références sans note."""
+    model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
+    messages: list[BaseMessage] = [SystemMessage(prompt), HumanMessage(GRADE_REQUEST)]
+    received: list[GradeDraft] = []
+    missing: list[str] = []
+    for ask in range(1, MAX_GRADE_ASKS + 1):
+        found = await structured_call(
+            model,
+            Grades,
+            messages,
+            agent=AGENT,
+            step=f"notation-{ask}",
+            intent="je note tes réponses ouvertes" if ask == 1 else "je complète la notation",
+        )
+        received += found.items
+        missing = _grades_by_ref(received, items)[1]
+        if not missing:
+            break
+        messages += [AIMessage(found.model_dump_json()), HumanMessage(_missing_text(missing))]
+    return received, missing
 
 
 def make_grade_open(deps: GraphDeps) -> Node:
@@ -174,24 +213,16 @@ def make_grade_open(deps: GraphDeps) -> Node:
             lesson=_lesson(attempt.lesson_markdown),
             items="\n\n".join(_item_prompt(item) for item in items),
         )
-        model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
-        found = await structured_call(
-            model,
-            Grades,
-            [SystemMessage(prompt), HumanMessage(GRADE_REQUEST)],
-            agent=AGENT,
-            step="notation",
-            intent="je note tes réponses ouvertes",
-        )
-        open_grades, missing = _grades_by_ref(found, items)
-        unknown = sum(1 for grade in found.items if grade.ref not in open_grades)
+        received, missing = await _ask_grades(deps, prompt, items)
+        open_grades, _ = _grades_by_ref(received, items)
+        unknown = sum(1 for grade in received if grade.ref not in open_grades)
         logger.info(
             "Réponses notées : session %s, tentative %s, %d ouverte(s), %d sans note, "
             "%d référence(s) inconnue(s)",
             deps.session_id,
             attempt.attempt_id,
             len(items),
-            missing,
+            len(missing),
             unknown,
         )
         return {"grades": grades | open_grades}

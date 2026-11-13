@@ -167,18 +167,35 @@ async def test_grade_out_of_scale_is_refused(make_quiz_runner: MakeQuiz) -> None
         _grader(grades(("q2", 0.8, "Presque.")), grades(("q2", 0.5, "Presque."))), mode="grade"
     )
     await run.wait_status("completed")
-    _, second = run.prompts()  # refusée par le schéma, redemandée avec le motif
+    second = run.prompts()[1]  # refusée par le schéma, redemandée avec le motif
     assert "items.0.score : Value error, la note vaut exactement 0, 0.5 ou 1" in second
     assert run.store.grades[ATTEMPT_ID]["q2"] == (0.5, "Presque.")
 
 
 async def test_missing_grade_scores_zero_with_neutral_feedback(make_quiz_runner: MakeQuiz) -> None:
+    """Toujours sans note après la nouvelle demande : 0 et le retour neutre (D100 n° 3)."""
     reply = grades(("q2", 1, "Juste."), ("q3", 1, "Juste."), ("q9", 1, "Inventée."))
-    run = await make_quiz_runner(_grader(reply), mode="grade")
+    run = await make_quiz_runner(_grader(reply, reply), mode="grade")
     await run.wait_status("completed")
+    assert len(run.prompts()) == 2
     found = run.store.grades[ATTEMPT_ID]
     assert found["q4"] == (0.0, MISSING_FEEDBACK) and "q9" not in found
     assert found["q2"] == (1.0, "Juste.")
+
+
+async def test_renumbered_grades_are_reasked_once(make_quiz_runner: MakeQuiz) -> None:
+    """Revue finale 5, A-I1 : le modèle renumérote (q1, q2, q3 au lieu de q2, q3, q4). Une seule
+    nouvelle demande nomme la question restée sans note ; sa note est gardée, la première note
+    d'une référence gagne."""
+    renumbered = grades(("q1", 1, "Juste."), ("q2", 1, "Juste."), ("q3", 1, "Juste."))
+    completed = grades(("q2", 0, "Autre."), ("q4", 1, "Juste aussi."))
+    run = await make_quiz_runner(_grader(renumbered, completed), mode="grade")
+    await run.wait_status("completed")
+    _, second = run.prompts()
+    assert "Ta notation oublie ces questions : q4." in second
+    found = run.store.grades[ATTEMPT_ID]
+    assert found["q4"] == (1.0, "Juste aussi.") and found["q2"] == (1.0, "Juste.")
+    assert found["q1"] == (1.0, "")  # le QCM garde le point du code
 
 
 async def test_quiz_input_requires_matching_id(make_quiz_runner: MakeQuiz) -> None:
