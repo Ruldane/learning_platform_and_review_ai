@@ -37,6 +37,13 @@ __all__ = ["NewTask", "NewWeek", "PlannedTask", "RepackResult", "fingerprint", "
 DAYS = 7
 
 
+class ProgramFinished(PlanningImpossible):
+    """Plus aucune semaine à replanifier : le programme est terminé."""
+
+    def __init__(self) -> None:
+        super().__init__("Le programme est terminé : plus aucune semaine à replanifier.")
+
+
 def fingerprint(rows: ProgramRows) -> str:
     """sha256 des `(tâche, jour, statut, minutes)` triés : toute modification de January (jour,
     durée, case cochée, ajout, suppression) change l'empreinte."""
@@ -222,7 +229,7 @@ def repack(
     from_day = _start_day(today, budget)
     current = _span(starts, from_day)
     if current >= len(starts):
-        raise PlanningImpossible("Le programme est terminé : plus aucune semaine à replanifier.")
+        raise ProgramFinished()
     removed, kept = _drops(found, starts, drop)
     late, own = _own(found, starts, current, removed, add)
     used = _done_minutes(found)

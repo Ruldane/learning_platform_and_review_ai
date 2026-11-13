@@ -54,6 +54,7 @@ STALE_NOTE = "Le programme a changé entre-temps : nouvelle proposition sur le p
 EMPTY_NOTE_HINT = "Écris ce que tu veux changer."
 EMPTY_TEXT = "Rien à changer : ton plan tient tel quel dans ton budget."
 IMPOSSIBLE_TEXT = "Le plafond de cette semaine ne tient pas une pratique et le quiz."
+FINISHED_TEXT = "Ton programme est terminé : plus aucune semaine à replanifier."
 REFUSED_TEXT = "Plan actuel gardé : la proposition est refusée."
 MAX_NOTE_CHARS = 2000
 MAX_REASON_CHARS = 300
@@ -231,4 +232,6 @@ def end_text(outcome: str, version: int) -> str:
         return REFUSED_TEXT
     if outcome == "impossible":
         return IMPOSSIBLE_TEXT
+    if outcome == "finished":
+        return FINISHED_TEXT
     return EMPTY_TEXT

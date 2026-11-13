@@ -13,7 +13,7 @@ from app.features.program.service.runtime import ProgramRuntime
 from app.features.replan.service.runtime import ReplanRuntime
 from app.features.replan.service.store import AgentReplanStore
 from tests.features.lessons.conftest import RecordingLauncher
-from tests.features.replan.conftest import NOW, OTHER, drafted, validated
+from tests.features.replan.conftest import NOW, OTHER, drafted, validated, versions
 
 API = "/api/v1"
 
@@ -132,3 +132,33 @@ async def test_generic_session_route_refuses_replan(
         json={"graph": "replan", "input": {"program_id": program_id, "trigger": "message"}},
     )
     assert (r.status_code, r.json()["error"]["code"]) == (409, "graph_has_route")
+
+
+async def test_pending_of_closed_session_reads_superseded(
+    client: httpx.AsyncClient, routes: Routes
+) -> None:
+    """I1 (relecture 5.9) : session annulée pendant qu'une proposition attend : lue
+    `superseded` (D91, sans écriture) ; tant que la session est ouverte, `pending`."""
+    program_id = await validated(routes.program, routes.user_id)
+    r = await client.post(f"{API}/programs/{program_id}/replan", json={})
+    session_id = r.json()["session_id"]
+    store = AgentReplanStore(routes.rt)
+    ctx = await store.context(
+        routes.user_id, program_id, trigger="message", review_entry_id=None,
+        available_minutes=None, message=None,
+    )  # fmt: skip
+    await store.preview(
+        routes.user_id, session_id, program_id, ReplanDraft(summary="Je range."),
+        refs=ctx.refs(), option=None, revision=0, reason="Message de January",
+        week_cap_override=None,
+    )  # fmt: skip
+
+    async def status() -> str:
+        listed = (await client.get(f"{API}/programs/{program_id}/versions")).json()
+        return str(listed[0]["status"])
+
+    assert await status() == "pending"
+    await routes.launcher.end(routes.user_id, session_id, "cancelled")
+    assert await status() == "superseded"
+    stored = await versions(routes.app.state.session_factory, program_id)
+    assert stored[-1]["status"] == "pending"  # lecture seule : rien n'est réécrit

@@ -143,7 +143,8 @@ class WeekLoad:
 class PreviewSaved:
     """La proposition rangée et enregistrée. `empty` : rien ne change. `kept` : retraits
     ignorés (le dernier quiz ou la dernière pratique d'une semaine, D105). `impossible` : le
-    plafond ne tient pas une pratique et le quiz (F10).
+    plafond ne tient pas une pratique et le quiz (F10) ; avec `finished`, parce que le
+    programme est terminé (plus aucune semaine à replanifier).
 
     Cycle de vie de la version écrite (D106) : `impossible` → statut clos `impossible` ;
     `empty` sans option → statut clos `empty` ; ces deux-là ne sont jamais `pending` ni
@@ -160,6 +161,7 @@ class PreviewSaved:
     loads: list[WeekLoad]
     kept: int = 0
     impossible: bool = False
+    finished: bool = False
 
 
 @dataclass(frozen=True)

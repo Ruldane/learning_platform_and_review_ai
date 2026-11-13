@@ -16,7 +16,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.agents.tools.replan_port import Applied, PreviewSaved, WeekLoad
+from app.agents.tools.replan_port import Applied, PreviewSaved
 from app.agents.tools.study_schema import ReplanOption
 from app.core.errors import AppError
 from app.db.models.program import PlanVersion
@@ -32,8 +32,19 @@ from app.features.program.service.diff import PlanDiff, diff_plans, snapshot
 from app.features.program.service.drafting import budget_of
 from app.features.program.service.planning import PlanningImpossible
 from app.features.program.service.programs import Loaded, day_budget, load, rows_of
+from app.features.program.service.replan_json import (
+    changes_json,
+    earliest_date,
+    loads_json,
+    saved_of,
+)
 from app.features.program.service.replan_rows import NewTask, NewWeek, PlannedTask, after_rows
-from app.features.program.service.replanning import RepackResult, fingerprint, repack
+from app.features.program.service.replanning import (
+    ProgramFinished,
+    RepackResult,
+    fingerprint,
+    repack,
+)
 from app.features.program.service.runtime import ProgramRuntime
 
 logger = logging.getLogger(__name__)
@@ -69,66 +80,6 @@ async def program_budget(db: AsyncSession, user_id: str, loaded: Loaded) -> Budg
     return await budget_of(db, user_id, goal.weekly_minutes)
 
 
-def _loads_json(result: RepackResult | None, kept: int) -> dict[str, Any]:
-    loads = result.loads if result is not None else []
-    return {
-        "loads": [
-            {
-                "rank": w.rank,
-                "start_date": w.start_date.isoformat(),
-                "before": w.before,
-                "after": w.after,
-                "cap": w.cap,
-            }
-            for w in loads
-        ],
-        "kept": kept,
-    }
-
-
-def loads_of(version: PlanVersion) -> list[WeekLoad]:
-    raw = (version.week_loads or {}).get("loads", [])
-    return [
-        WeekLoad(
-            int(w["rank"]),
-            date.fromisoformat(str(w["start_date"])),
-            int(w["before"]),
-            int(w["after"]),
-            int(w["cap"]),
-        )
-        for w in raw
-    ]
-
-
-def saved_of(version: PlanVersion) -> PreviewSaved:
-    diff: dict[str, Any] = version.diff or {}
-    added, removed = list(diff.get("added", [])), list(diff.get("removed", []))
-    moved = list(diff.get("moved", []))
-    weeks_before, weeks_after = int(diff.get("weeks_before", 0)), int(diff.get("weeks_after", 0))
-    return PreviewSaved(
-        version=version.version,
-        empty=not (added or removed or moved) and weeks_before == weeks_after,
-        added=len(added),
-        removed=len(removed),
-        moved=len(moved),
-        weeks_before=weeks_before,
-        weeks_after=weeks_after,
-        loads=loads_of(version),
-        kept=int((version.week_loads or {}).get("kept", 0)),
-        impossible=version.status == "impossible",
-    )
-
-
-def _changes(result: RepackResult | None) -> dict[str, Any]:
-    if result is None:
-        return {"tasks": [], "removed": [], "new_weeks": []}
-    return {
-        "tasks": [t.to_json() for t in result.tasks],
-        "removed": list(result.removed),
-        "new_weeks": [w.to_json() for w in result.new_weeks],
-    }
-
-
 def _status(result: RepackResult | None, diff: PlanDiff, option: ReplanOption | None) -> str:
     if result is None:
         return "impossible"
@@ -153,8 +104,10 @@ async def _write_proposal(
             option=proposal.option,
             week_cap_override=proposal.week_cap_override,
         )
-    except PlanningImpossible:
-        result = None
+    except PlanningImpossible as exc:
+        result, finished = None, isinstance(exc, ProgramFinished)
+    else:
+        finished = False
     before = snapshot(rows)
     after = before
     if result is not None:
@@ -162,13 +115,14 @@ async def _write_proposal(
     diff = diff_plans(before, after)
     status = _status(result, diff, proposal.option)
     versions = PlanVersionRepository(db, user_id)
-    if status == "pending":  # la nouvelle proposition remplace celle qui attendait (D99)
-        await versions.supersede_pending(loaded.program.id)
+    # Toute nouvelle version, même close, remplace celle qui attendait (D99, D106) : aucune
+    # proposition ne reste `pending` sans question qui l'attende.
+    await versions.supersede_pending(loaded.program.id)
     days = {"weekday_minutes": budget.weekday_minutes, "weekend_minutes": budget.weekend_minutes}
     return await versions.add(
         program_id=loaded.program.id,
         version=await versions.next_version(loaded.program.id),
-        snapshot={**after, "budget": days, "changes": _changes(result)},
+        snapshot={**after, "budget": days, "changes": changes_json(result, finished=finished)},
         diff=diff.to_json(),
         reason=proposal.reason[:300],
         session_id=proposal.session_id,
@@ -177,7 +131,7 @@ async def _write_proposal(
         status=status,
         base_fingerprint=fingerprint(rows),
         review_entry_id=proposal.review_entry_id,
-        week_loads=_loads_json(result, result.kept if result is not None else 0),
+        week_loads=loads_json(result, result.kept if result is not None else 0),
     )
 
 
@@ -244,12 +198,22 @@ async def _write_changes(db: AsyncSession, user_id: str, loaded: Loaded, raw: An
     await tasks_repo.delete_many(list(raw.get("removed", [])))
 
 
+def _outdated(row: PlanVersion, loaded: Loaded, today: date) -> bool:
+    """Périmée : plus en attente, lignes changées depuis la proposition, ou un jour qu'elle
+    écrirait est déjà passé (acceptée trop tard)."""
+    if row.status != "pending" or fingerprint(rows_of(loaded)) != row.base_fingerprint:
+        return True
+    first = earliest_date(row.snapshot.get("changes", {}))
+    return first is not None and first < today
+
+
 async def apply_version(
-    rt: ProgramRuntime, user_id: str, program_id: str, version: int, now: datetime
+    rt: ProgramRuntime, user_id: str, program_id: str, version: int, now: datetime, today: date
 ) -> Applied:
     """Applique la proposition (voir le module). Déjà acceptée : rendue sans rien écrire (rejeu) ;
-    remplacée, refusée ou close, ou lignes changées depuis la proposition : `stale=True`, rien
-    n'est écrit. Les autres propositions en attente du programme passent `superseded`."""
+    remplacée, refusée ou close, lignes changées depuis la proposition, ou un jour à écrire
+    avant `today` (jour local) : `stale=True`, rien n'est écrit. Les autres propositions en
+    attente du programme passent `superseded`."""
     async with rt.program_lock(user_id, program_id), rt.session_factory() as db:
         versions = PlanVersionRepository(db, user_id)
         row = await versions.by_number(program_id, version)
@@ -258,7 +222,7 @@ async def apply_version(
         if row.status == "accepted":
             return Applied(version, stale=False)
         loaded = await load(db, user_id, program_id)
-        if row.status != "pending" or fingerprint(rows_of(loaded)) != row.base_fingerprint:
+        if _outdated(row, loaded, today):
             stale = True
         else:
             await _write_changes(db, user_id, loaded, row.snapshot.get("changes", {}))

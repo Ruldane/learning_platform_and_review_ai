@@ -21,5 +21,5 @@ class ReplanState(TypedDict, total=False):
     preview: dict[str, Any]  # `PreviewSaved` en JSON : la version proposée
     answer: dict[str, Any] | None  # `AcceptAnswer` en JSON ; None : réponse invalide
     hint: str  # aide ajoutée à la question d'acceptation reposée (note vide, D106)
-    outcome: str  # `empty`, `impossible`, `accepted`, `refused` : la fin du parcours
+    outcome: str  # `empty`, `impossible`, `finished`, `accepted`, `refused` : la fin du parcours
     summary: str

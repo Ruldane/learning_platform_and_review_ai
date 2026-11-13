@@ -108,7 +108,11 @@ class AgentReplanStore:
         return await save_proposal(self._rt.program, user_id, program_id, proposal)
 
     async def apply(self, user_id: str, session_id: str, program_id: str, version: int) -> Applied:
-        return await apply_version(self._rt.program, user_id, program_id, version, self._rt.now())
+        async with self._rt.session_factory() as db:
+            today = await self._rt.today(db, user_id)
+        return await apply_version(
+            self._rt.program, user_id, program_id, version, self._rt.now(), today
+        )
 
     async def refuse(self, user_id: str, session_id: str, program_id: str, version: int) -> None:
         await refuse_version(self._rt.program, user_id, program_id, version)

@@ -14,7 +14,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.errors import AppError
 from app.db.models.program import PlanVersion
 from app.features.program.service.programs import load
-from app.features.program.service.replan_versions import loads_of, version_history
+from app.features.program.service.replan_json import loads_of
+from app.features.program.service.replan_versions import version_history
 from app.features.replan.repository import ReviewRepository
 from app.features.replan.schemas import (
     PlanVersionOut,
@@ -26,9 +27,11 @@ from app.features.replan.schemas import (
 )
 from app.features.replan.service.context import program_not_validated
 from app.features.replan.service.runtime import GRAPH, SUBJECT, ReplanRuntime
-from app.features.sessions.service import find_active_session
+from app.features.sessions.service import find_active_session, session_facts
 
 logger = logging.getLogger(__name__)
+
+TERMINAL = frozenset({"completed", "failed", "cancelled"})  # sessions closes (D91)
 
 
 def replan_open(session_id: str) -> AppError:
@@ -89,11 +92,14 @@ def _diff(version: PlanVersion) -> VersionDiffOut | None:
     )
 
 
-def _out(version: PlanVersion, reviews: dict[str, str]) -> PlanVersionOut:
+def _out(version: PlanVersion, reviews: dict[str, str], closed: set[str]) -> PlanVersionOut:
+    status = (
+        "superseded" if version.status == "pending" and version.id in closed else version.status
+    )
     return PlanVersionOut(
         version=version.version,
         kind=version.kind,  # type: ignore[arg-type]  # colonne texte, valeurs de PlanKind
-        status=version.status,  # type: ignore[arg-type]  # valeurs de PlanStatus
+        status=status,  # type: ignore[arg-type]  # valeurs de PlanStatus
         reason=version.reason,
         created_at=version.created_at,
         accepted_at=version.accepted_at,
@@ -110,8 +116,21 @@ def _out(version: PlanVersion, reviews: dict[str, str]) -> PlanVersionOut:
 
 
 async def list_versions(db: AsyncSession, user_id: str, program_id: str) -> list[PlanVersionOut]:
-    """L'historique du plan, la plus récente d'abord ; 404 si le programme est à un autre."""
+    """L'historique du plan, la plus récente d'abord ; 404 si le programme est à un autre. Une
+    proposition `pending` dont la session est close est lue `superseded` (`_waiting`)."""
     versions = await version_history(db, user_id, program_id)
     ids = {v.review_entry_id for v in versions if v.review_entry_id}
     reviews = await ReviewRepository(db, user_id).texts(ids)
-    return [_out(v, reviews) for v in versions]
+    closed = {v.id for v in versions if v.status == "pending"}
+    closed -= {v.id for v in versions if v.id in closed and await _waiting(db, user_id, v)}
+    return [_out(v, reviews, closed) for v in versions]
+
+
+async def _waiting(db: AsyncSession, user_id: str, version: PlanVersion) -> bool:
+    """Une proposition `pending` n'attend que si sa session est encore ouverte ; sinon (session
+    annulée, en échec, finie ou introuvable) elle est lue `superseded`, sans écriture (D91) : la
+    proposition suivante, ou rien, la remplace."""
+    if version.session_id is None:
+        return False
+    facts = await session_facts(db, user_id, version.session_id)
+    return facts is not None and facts.status not in TERMINAL

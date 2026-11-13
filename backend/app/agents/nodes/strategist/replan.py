@@ -183,7 +183,8 @@ def make_preview(deps: GraphDeps) -> Node:
             saved.impossible,
         )
         if saved.impossible:
-            return {"preview": as_json(saved), "outcome": "impossible"}
+            outcome = "finished" if saved.finished else "impossible"
+            return {"preview": as_json(saved), "outcome": outcome}
         if saved.empty and option is None:
             _say(f"replan-{revision}", draft.summary)
             return {"preview": as_json(saved), "outcome": "empty"}
@@ -201,7 +202,9 @@ def make_preview(deps: GraphDeps) -> Node:
 
 
 def route_preview(state: ReplanState) -> str:
-    return "finalize" if state.get("outcome") in ("impossible", "empty") else "ask_accept"
+    return (
+        "finalize" if state.get("outcome") in ("impossible", "finished", "empty") else "ask_accept"
+    )
 
 
 def ask_accept(state: ReplanState) -> ReplanState:

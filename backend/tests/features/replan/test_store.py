@@ -26,6 +26,7 @@ from app.features.replan.service.store import AgentReplanStore
 from tests.features.replan.conftest import (
     CAP,
     ME,
+    NOW,
     OTHER,
     TODAY,
     drafted,
@@ -227,4 +228,45 @@ async def test_second_session_supersedes_and_first_accept_is_stale(
         "accepted",
         "superseded",
         "accepted",
+    ]
+
+
+async def test_closed_proposal_supersedes_waiting_one(
+    store: AgentReplanStore, program_rt: ProgramRuntime
+) -> None:
+    """I1 (relecture 5.9) : la révision suivante, même close, remplace celle qui attendait."""
+    program_id = await validated(program_rt)
+    waiting = (await _preview(store, program_id)).version
+    closed = await _preview(store, program_id, revision=1, available=60)
+    assert closed.impossible and not closed.finished
+    statuses = [v["status"] for v in await versions(program_rt.session_factory, program_id)]
+    assert statuses == ["accepted", "superseded", "impossible"]
+    assert (await store.apply(ME, "s-replan", program_id, waiting)).stale
+
+
+async def test_late_accept_never_writes_past_days(
+    store: AgentReplanStore, program_rt: ProgramRuntime, replan_rt: ReplanRuntime
+) -> None:
+    """m3 (relecture 5.9) : acceptée une semaine plus tard, sans rien changer d'autre, la
+    proposition écrirait des jours passés : périmée, rien n'est écrit."""
+    program_id = await validated(program_rt)
+    version = (await _preview(store, program_id)).version
+    rows = {t.id: t.planned_date for t in await tasks_of(program_rt.session_factory, program_id)}
+    replan_rt.now = lambda: NOW + timedelta(days=7)
+    assert (await store.apply(ME, "s-replan", program_id, version)).stale
+    after = {t.id: t.planned_date for t in await tasks_of(program_rt.session_factory, program_id)}
+    assert after == rows
+    assert (await versions(program_rt.session_factory, program_id))[-1]["status"] == "pending"
+
+
+async def test_finished_program_proposal_says_so(
+    store: AgentReplanStore, program_rt: ProgramRuntime
+) -> None:
+    """m4 (relecture 5.9) : programme fini (semaines du 2 et du 9/11, aujourd'hui le 18)."""
+    program_id = await validated(program_rt, start=date(2026, 11, 2))
+    saved = await _preview(store, program_id)
+    assert saved.impossible and saved.finished
+    assert [v["status"] for v in await versions(program_rt.session_factory, program_id)] == [
+        "accepted",
+        "impossible",
     ]

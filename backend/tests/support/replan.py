@@ -120,6 +120,7 @@ class FakeReplanStore:
     stale_applies: int = 0
     after_stale: ReplanContext | None = None
     block_after_apply: bool = False
+    finished: bool = False  # programme terminé : toute proposition est `impossible`
     refused: list[int] = field(default_factory=list)
     refuse_calls: int = 0
 
@@ -176,6 +177,8 @@ class FakeReplanStore:
             self.previews.append(call)
             version = 1 + len(self.saved) + 1
             self.saved[key] = _range(ctx, call, version)
+            if self.finished:
+                self.saved[key] = replace(self.saved[key], impossible=True, finished=True)
         return self.saved[key]
 
     async def apply(self, user_id: str, session_id: str, program_id: str, version: int) -> Applied:

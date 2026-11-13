@@ -1,8 +1,9 @@
 """Parcours `replan` (D106, relecture de 5.8 m3 et m4) : une note vide repose la question avec
-une aide ; une acceptation périmée garde la note de January pour la proposition suivante."""
+une aide ; une acceptation périmée garde la note de January pour la proposition suivante ; un
+programme terminé finit par un texte qui le dit (relecture 5.9, m4)."""
 
 from app.agents.graphs.replan import ACCEPT_INTERRUPT, STALE_NOTE
-from app.agents.nodes.strategist.replan_steps import EMPTY_NOTE_HINT
+from app.agents.nodes.strategist.replan_steps import EMPTY_NOTE_HINT, FINISHED_TEXT
 from tests.agents.graphs.replan_support import MakeReplan, ReplanRun
 from tests.support.replan import replan_context
 
@@ -39,3 +40,10 @@ async def test_stale_after_revision_keeps_note(make_replan_runner: MakeReplan) -
     last = run.prompts()[-1]
     assert STALE_NOTE in last and "Garde la pratique de l'API" in last
     assert run.store.previews[2].reason.endswith(": Garde la pratique de l'API")
+
+
+async def test_finished_program_ends_with_its_own_text(make_replan_runner: MakeReplan) -> None:
+    run = await make_replan_runner(prepare=lambda s: setattr(s, "finished", True))
+    await run.wait_status("completed")
+    assert (await run.events("run.completed"))[0]["summary"] == FINISHED_TEXT
+    assert (await run.said())[-1] == FINISHED_TEXT and await run.events("artifact.ready") == []
