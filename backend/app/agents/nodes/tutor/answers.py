@@ -5,7 +5,9 @@ la solution ou le saut.
 réponse illisible repose la même question. « Je bloque » et « Passer » sont des options de la
 question ; le libellé de « Je bloque » porte le compte des indices (« Je bloque (1/3) »), puis
 devient « Voir la solution » : le front ne compte rien (F15). La réponse de January est encadrée
-comme non fiable (SPEC 17.4) : une consigne qu'elle contient ne change pas le verdict."""
+comme non fiable (SPEC 17.4) : une consigne qu'elle contient ne change pas le verdict.
+Modèle muet ou trop lent (`fallback`, D115) : réponse non corrigée (`skipped`), indice compté
+sans texte ; la séance continue."""
 
 import logging
 from dataclasses import asdict
@@ -13,6 +15,7 @@ from typing import Any
 
 from langgraph.types import interrupt
 
+from app.agents.nodes.tutor.fallback import UNCHECKED, hint_unavailable, try_tutor
 from app.agents.nodes.tutor.models import (
     ANSWER_LABEL,
     MAX_ANSWER_CHARS,
@@ -21,7 +24,6 @@ from app.agents.nodes.tutor.models import (
     AnswerCheck,
     HintTurn,
     Node,
-    ask_tutor,
     context_of,
     lesson_prompt,
     outcome_record,
@@ -112,7 +114,7 @@ def make_check(deps: GraphDeps) -> Node:
             item=_item(state),
             answer=untrusted(reply["text"], ANSWER_LABEL),
         )
-        found = await ask_tutor(
+        found = await try_tutor(
             deps,
             AnswerCheck,
             prompt,
@@ -120,15 +122,17 @@ def make_check(deps: GraphDeps) -> Node:
             step=f"verdict-{_key(state)}",
             intent="je lis ta réponse",
         )
-        say(state, found.feedback, f"tutor-retour-{_key(state)}")
+        # Sans verdict du modèle : `skipped`, ni fiche ni pratique cochée (F13, D115).
+        verdict = found.verdict if found else "skipped"
+        say(state, found.feedback if found else UNCHECKED, f"tutor-retour-{_key(state)}")
         logger.info(
             "Réponse jugée : session %s, %s, verdict %s, %d indice(s)",
             deps.session_id,
             _key(state),
-            found.verdict,
+            verdict,
             state.get("hints", 0),
         )
-        return {"outcomes": outcome_record(state, found.verdict)}
+        return {"outcomes": outcome_record(state, verdict)}
 
     return check
 
@@ -154,7 +158,7 @@ def make_hint(deps: GraphDeps) -> Node:
             item=_item(state),
             previous=_previous(given),
         )
-        found = await ask_tutor(
+        found = await try_tutor(
             deps,
             HintTurn,
             prompt,
@@ -162,8 +166,11 @@ def make_hint(deps: GraphDeps) -> Node:
             step=f"indice-{_key(state)}-{level}",
             intent="je prépare un indice",
         )
-        text = f"Indice {level} sur {MAX_HINTS} : {found.hint}"
-        say(state, text, f"tutor-indice-{_key(state)}-{level}")
+        message_id = f"tutor-indice-{_key(state)}-{level}"
+        if found is None:  # l'indice compte : la solution reste à trois clics, sans le modèle
+            say(state, hint_unavailable(level, MAX_HINTS), message_id)
+            return {"hints": level, "given_hints": given}
+        say(state, f"Indice {level} sur {MAX_HINTS} : {found.hint}", message_id)
         return {"hints": level, "given_hints": [*given, found.hint]}
 
     return hint

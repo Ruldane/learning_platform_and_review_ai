@@ -4,8 +4,10 @@ from collections.abc import Callable
 import pytest
 from langchain_core.messages import AIMessageChunk, HumanMessage
 
+from app.config import Settings
 from app.core.errors import AppError
 from app.core.security import SecretUnreadable
+from app.providers.llm.base import CALL_DEADLINE_KEY, LLM_CALL_DEADLINE_S
 from app.providers.llm.factory import LlmFactory
 from app.providers.llm.fake import FakeLlmProvider
 from app.providers.llm.glm import GlmProvider
@@ -131,3 +133,12 @@ def test_every_default_model_has_a_price() -> None:
     for entry in prices.values():
         assert set(entry) == {"input_per_mtok", "output_per_mtok"}
         assert all(isinstance(v, int | float) and v >= 0 for v in entry.values())
+
+
+async def test_built_models_carry_the_call_deadline(factory_with: FactoryWith) -> None:
+    """Contrôle 5.18 : l'échéance totale d'un appel voyage dans les métadonnées du modèle
+    (lue par `call_with_retries`), sans perdre celles du fournisseur."""
+    f = factory_with(tiers={"rapide": ("fake", "m1")}, keys={"fake": "k"})
+    model = await f.get_chat_model("u1", "rapide")
+    assert (model.metadata or {})[CALL_DEADLINE_KEY] == LLM_CALL_DEADLINE_S == 300.0
+    assert Settings().llm_call_deadline_s == LLM_CALL_DEADLINE_S

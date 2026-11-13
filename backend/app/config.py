@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Literal
 from urllib.parse import urlsplit
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Les ports sont publiés sur 127.0.0.1 : l'interface s'ouvre aussi bien par `localhost` que par
@@ -32,6 +32,8 @@ class Settings(BaseSettings):
     zai_api_key: str | None = None
     brave_api_key: str | None = None
     zai_base_url: str = "https://api.z.ai/api/paas/v4/"
+    # Échéance totale d'un appel à un modèle, en secondes (voir `LLM_CALL_DEADLINE_S`, D115).
+    llm_call_deadline_s: float = Field(default=300.0, gt=0)
 
     qdrant_url: str = "http://qdrant:6333"
     # Adresse du tableau de bord de Qdrant vue du navigateur (lien des statistiques, D67).

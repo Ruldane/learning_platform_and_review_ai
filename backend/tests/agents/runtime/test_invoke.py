@@ -12,7 +12,7 @@ from typing_extensions import TypedDict
 from app.agents.runtime import invoke as invoke_module
 from app.agents.runtime.invoke import NODE_TIMEOUT_S, RETRY_DELAYS_S, invoke_agent, node_timeout
 from app.core.errors import AppError
-from app.providers.llm.base import LLM_CALL_TIMEOUT_S
+from app.providers.llm.base import CALL_DEADLINE_KEY, LLM_CALL_TIMEOUT_S
 from tests.agents.runtime.fakes import FlakyModel, fake_model
 
 
@@ -195,3 +195,35 @@ async def test_node_timeout_keeps_result_and_signature() -> None:
     assert await fast({"x": 1}) == {"ok": 1}
     assert fast.__name__ == "fast" and fast.__doc__ == "Doc."
     assert invoke_module.NODE_TIMEOUT_S == 120
+
+
+class HangingModel(FlakyModel):
+    """Ne répond jamais (une réponse en flux qui n'en finit pas, contrôle 5.18)."""
+
+    async def _agenerate(self, messages: Any, *args: Any, **kwargs: Any) -> Any:
+        self.calls += 1
+        await asyncio.Event().wait()
+
+
+@pytest.mark.usefixtures("emitted")
+async def test_call_deadline_cuts_a_hanging_call_then_retries(
+    sleeps: list[float], caplog: pytest.LogCaptureFixture
+) -> None:
+    """Le délai du SDK ne borne que l'attente de chaque morceau : l'échéance totale posée par la
+    fabrique coupe l'appel, qui est retenté (journal : type d'erreur seulement), puis rendu en
+    `llm_timeout` lisible."""
+    meta = {"tremplin_provider": "glm", "tremplin_provider_label": "GLM (Z.ai)"}
+    model = HangingModel(metadata=meta | {CALL_DEADLINE_KEY: 0.02})
+    with pytest.raises(AppError) as e:
+        await invoke_agent(model, [HumanMessage("x")], agent="tutor", step="s", intent="i")
+    assert e.value.code == "llm_timeout"
+    assert model.calls == 1 + len(RETRY_DELAYS_S) and sleeps == list(RETRY_DELAYS_S)
+    assert caplog.text.count("Appel LLM retenté : agent tutor") == len(RETRY_DELAYS_S)
+    assert "TimeoutError" in caplog.text
+
+
+@pytest.mark.usefixtures("emitted")
+async def test_without_deadline_metadata_a_call_is_not_cut(sleeps: list[float]) -> None:
+    model = FlakyModel(reply="ok", metadata={CALL_DEADLINE_KEY: "abc"})  # valeur ignorée
+    msg = await invoke_agent(model, [HumanMessage("x")], agent="a", step="s", intent="i")
+    assert msg.content == "ok" and model.calls == 1

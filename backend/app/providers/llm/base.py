@@ -9,9 +9,17 @@ from typing import Literal, Protocol
 from langchain_core.language_models import BaseChatModel
 from pydantic import BaseModel, Field
 
-# Délai d'un appel au fournisseur (SDK). Deux appels complets et une attente tiennent dans le
-# plafond d'un nœud (`NODE_TIMEOUT_S`, 120 s) : un appel qui pend laisse place à un nouvel essai.
+# Délai du SDK (httpx) : connexion, et attente de CHAQUE morceau de la réponse, pas de l'appel
+# entier. Une réponse en flux qui continue d'arriver (réflexion de GLM-5.3, morceau après
+# morceau) ne le déclenche jamais (contrôle 5.18) : d'où l'échéance totale ci-dessous.
 LLM_CALL_TIMEOUT_S = 45
+# Échéance totale d'un appel (réglable : `LLM_CALL_DEADLINE_S`), posée par la fabrique dans les
+# métadonnées du modèle sous `CALL_DEADLINE_KEY` et appliquée par `call_with_retries` ; au-delà,
+# l'appel est un délai dépassé, retenté. Plus longue que la plus longue réponse attendue (une
+# leçon de 2 500 mots du Rédacteur, nœud de 600 s) ; les nœuds courts restent bornés par leur
+# propre plafond (le Tuteur : `TUTOR_CALL_TIMEOUT_S`, D115).
+LLM_CALL_DEADLINE_S = 300.0
+CALL_DEADLINE_KEY = "tremplin_call_deadline_s"
 
 Tier = Literal["rapide", "standard", "fort", "vision"]
 TIERS: tuple[Tier, ...] = ("rapide", "standard", "fort", "vision")

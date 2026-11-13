@@ -105,6 +105,7 @@ def build_providers(
         DbKeyReader(session_factory, cipher, env_keys),
         llm,
         {"glm": settings.zai_base_url},
+        call_deadline_s=settings.llm_call_deadline_s,
     )
     llm_keys = LlmKeysCheck(session_factory, cipher, env_keys, llm, local_user_id)
     # Écran des clés : les LLM puis Brave, qui n'est ni dans la fabrique ni dans les modèles.

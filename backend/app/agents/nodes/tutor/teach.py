@@ -4,6 +4,8 @@ mode), l'exercice de la leçon, les trois questions finales, et le passage à la
 Aucun de ces nœuds n'écrit dans un port : rejoués après un arrêt, ils redemandent au modèle et
 republient leurs messages sous le même id (le front remplace la bulle, D57). Le tableau n'a
 aucune ligne `boards` (il n'est lié à aucun objectif) : seulement des `board.update`.
+Modèle muet ou trop lent (`fallback`, D115) : section présentée telle qu'écrite, questions
+finales tirées de la leçon, message de January laissé sans réponse ; la séance continue.
 Journaux : identifiants et nombres seulement (SPEC 17.2)."""
 
 import logging
@@ -18,13 +20,19 @@ from app.agents.nodes.mermaid_rules import (
     mermaid_problems,
     normalize_mermaid,
 )
+from app.agents.nodes.tutor.fallback import (
+    FALLBACK_FINAL_INTRO,
+    NO_REPLY,
+    final_questions_from_lesson,
+    teach_section_as_written,
+    try_tutor,
+)
 from app.agents.nodes.tutor.models import (
     AGENT,
     FinalQuestions,
     Node,
     TeachTurn,
     TutorReply,
-    ask_tutor,
     context_of,
     lesson_prompt,
     notes_prompt,
@@ -144,10 +152,10 @@ async def _reply(deps: GraphDeps, state: StudySessionState, notes: list[str], ke
         lesson=whole_lesson(context_of(state)),
         notes=notes_prompt(notes),
     )
-    reply = await ask_tutor(
+    reply = await try_tutor(
         deps, TutorReply, prompt, REPLY_REQUEST, step=f"reponse-{key}", intent="je te réponds"
     )
-    say(state, reply.message, f"{AGENT}-reponse-{key}")
+    say(state, reply.message if reply else NO_REPLY, f"{AGENT}-reponse-{key}")
 
 
 def make_open(deps: GraphDeps) -> Node:
@@ -203,7 +211,7 @@ async def _teach_section(
         max_chars=MAX_MERMAID_CHARS,
         max_label=MAX_LABEL_CHARS,
     )
-    turn = await ask_tutor(
+    turn = await try_tutor(
         deps,
         TeachTurn,
         prompt,
@@ -211,6 +219,10 @@ async def _teach_section(
         step=f"section-{index + 1}",
         intent="je prépare la section",
     )
+    if turn is None:  # la section telle qu'écrite dans la leçon, sans schéma (D115)
+        message, question, expected = teach_section_as_written(state)
+        say(state, message, f"{AGENT}-section-{index + 1}")
+        return {"question": question, "expected": expected}
     say(state, turn.message, f"{AGENT}-section-{index + 1}")
     step = draw_board(state, turn.mermaid, section.title, session=deps.session_id)
     return {"question": turn.question.strip(), "expected": turn.expected, "board_step": step}
@@ -262,7 +274,7 @@ def make_final_intro(deps: GraphDeps) -> Node:
             lesson=whole_lesson(context_of(state)),
             outcomes=outcomes_prompt(state),
         )
-        found = await ask_tutor(
+        found = await try_tutor(
             deps,
             FinalQuestions,
             prompt,
@@ -270,6 +282,9 @@ def make_final_intro(deps: GraphDeps) -> Node:
             step="questions-finales",
             intent="je prépare les trois questions finales",
         )
+        if found is None:  # tirées des objectifs et des sections de la leçon (D115)
+            say(state, FALLBACK_FINAL_INTRO, f"{AGENT}-final")
+            return {"finals": final_questions_from_lesson(context_of(state), FINAL_COUNT)}
         finals = [{"question": q.question.strip(), "expected": q.expected} for q in found.questions]
         say(state, FINAL_INTRO, f"{AGENT}-final")
         return {"finals": finals}

@@ -8,6 +8,8 @@ from langchain_core.language_models import BaseChatModel
 from app.core.errors import AppError
 from app.core.security import SecretUnreadable
 from app.providers.llm.base import (
+    CALL_DEADLINE_KEY,
+    LLM_CALL_DEADLINE_S,
     KeyReader,
     LlmProvider,
     ModelChoice,
@@ -25,11 +27,16 @@ class LlmFactory:
         keys: KeyReader,
         providers: Mapping[str, LlmProvider],
         base_urls: Mapping[str, str],
+        *,
+        call_deadline_s: float = LLM_CALL_DEADLINE_S,
     ) -> None:
+        """`call_deadline_s` : échéance totale de chaque appel des modèles construits (voir
+        `base.LLM_CALL_DEADLINE_S`), lue de la configuration par la composition."""
         self._choices = choices
         self._keys = keys
         self._providers = providers
         self._base_urls = base_urls
+        self._call_deadline_s = call_deadline_s
 
     async def resolve(self, user_id: str, tier: Tier, agent: str | None = None) -> ModelChoice:
         """Fournisseur et modèle retenus : surcharge de l'agent si elle existe, sinon le niveau."""
@@ -48,7 +55,10 @@ class LlmFactory:
                 {"provider": choice.provider},
             )
         key = await self._read_key(user_id, tier, provider)
-        return provider.build(choice.model, key, base_url=self._base_urls.get(provider.name))
+        model = provider.build(choice.model, key, base_url=self._base_urls.get(provider.name))
+        # Modèle neuf à chaque appel : l'échéance s'ajoute à ses métadonnées sans rien partager.
+        model.metadata = {**(model.metadata or {}), CALL_DEADLINE_KEY: self._call_deadline_s}
+        return model
 
     async def _read_key(self, user_id: str, tier: Tier, provider: LlmProvider) -> str:
         try:

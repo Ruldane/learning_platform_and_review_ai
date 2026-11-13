@@ -17,6 +17,7 @@ from langgraph.constants import TAG_NOSTREAM
 
 from app.agents.runtime.emit import emit
 from app.core.errors import AppError
+from app.providers.llm.base import CALL_DEADLINE_KEY
 from app.providers.llm.errors import describe_provider_error, is_transient
 
 logger = logging.getLogger(__name__)
@@ -62,15 +63,25 @@ async def call_with_retries(
     """
     tags = [f"agent:{agent}"] if stream else [f"agent:{agent}", TAG_NOSTREAM]
     chat = model.with_config(metadata={"agent": agent}, tags=tags)
-    for attempt in range(len(RETRY_DELAYS_S) + 1):
-        last = attempt == len(RETRY_DELAYS_S)
+    deadline = _deadline(model)
+    attempts = len(RETRY_DELAYS_S) + 1
+    for attempt in range(attempts):
+        last = attempt == attempts - 1
         try:
-            reply = await chat.ainvoke(messages)
+            async with asyncio.timeout(deadline):  # échéance totale (`None` : aucune)
+                reply = await chat.ainvoke(messages)
         except Exception as exc:
             if last or not is_transient(exc):
                 if (readable := _readable(exc, model, agent)) is None:
                     raise
                 raise readable from None  # ni message ni corps du fournisseur en chaîne
+            logger.warning(
+                "Appel LLM retenté : agent %s, essai %d/%d, %s",
+                agent,
+                attempt + 1,
+                attempts,
+                type(exc).__name__,
+            )
         else:
             text = message_text(reply)
             if allow_empty or text.strip() or reply.tool_calls:
@@ -84,6 +95,13 @@ async def call_with_retries(
                 )
         await _sleep(RETRY_DELAYS_S[attempt])
     raise AssertionError("inatteignable")  # pragma: no cover
+
+
+def _deadline(model: BaseChatModel) -> float | None:
+    """Échéance totale d'un appel, posée par la fabrique (`CALL_DEADLINE_KEY`) ; le délai du SDK
+    ne borne que l'attente de chaque morceau d'une réponse en flux (contrôle 5.18)."""
+    value = (model.metadata or {}).get(CALL_DEADLINE_KEY)
+    return float(value) if isinstance(value, int | float) and value > 0 else None
 
 
 def _readable(exc: Exception, model: BaseChatModel, agent: str) -> AppError | None:
