@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { createMemoryRouter, RouterProvider } from "react-router";
@@ -8,20 +8,27 @@ import { apiError, recordPosts } from "@/test/councilHarness";
 import { createQueryWrapper } from "@/test/queryWrapper";
 import { attemptOut, firstOrder, quizApi, quizOut, secondOrder } from "@/test/quizApi";
 import { server } from "@/test/server";
+import { GRADE_POLL_MS, GRADE_POLLS } from "../../hooks/useAttempt";
+import { PREPARE_POLL_MS, PREPARE_POLLS } from "../../hooks/useQuiz";
 import { QuizPage } from "./QuizPage";
 
-function setup(api: Parameters<typeof quizApi>[0] = {}) {
+const TODAY = new Date(2026, 10, 17, 12);
+
+/** `realPolling` : la page relit aux cadences réelles (tests sous faux minuteurs). */
+function setup(api: Parameters<typeof quizApi>[0] = {}, realPolling = false) {
   const quiz = quizApi(api);
   server.use(...quiz.handlers);
+  const page = realPolling ? <QuizPage /> : <QuizPage preparePollMs={5} gradePollMs={5} />;
   const router = createMemoryRouter(
     [
-      { path: "/etudier/quiz/:quizId", element: <QuizPage preparePollMs={5} gradePollMs={5} /> },
+      { path: "/etudier/quiz/:quizId", element: page },
       { path: "/etudier/quiz", element: <p>Liste des quiz</p> },
     ],
     { initialEntries: ["/etudier/quiz/z1"] },
   );
   render(<RouterProvider router={router} />, { wrapper: createQueryWrapper() });
-  return { state: quiz.state, router, user: userEvent.setup() };
+  const user = userEvent.setup(realPolling ? { advanceTimers: vi.advanceTimersByTime } : {});
+  return { state: quiz.state, router, user };
 }
 
 const started = { attempt_id: "a1", session_id: "s9" };
@@ -39,7 +46,7 @@ describe("QuizPage", () => {
   // Le jour du poste est figé : les dates de nouvel essai des doublures (19 novembre) sont à venir.
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ["Date"], shouldAdvanceTime: true });
-    vi.setSystemTime(new Date(2026, 10, 17, 12));
+    vi.setSystemTime(TODAY);
   });
   afterEach(() => vi.useRealTimers());
 
@@ -192,27 +199,51 @@ describe("QuizPage", () => {
     expect(state.attemptReads).toBeGreaterThanOrEqual(2);
   });
 
-  it("says when the preparation takes too long and waits again on request", async () => {
-    const generating = quizOut({ status: "generating" });
-    const { user } = setup({
-      quizzes: [...Array.from({ length: 42 }, () => generating), quizOut()],
+  // Cadences réelles sous faux minuteurs : l'horloge saute les relectures, aucune attente réelle
+  // (sous charge, 40 ou 90 relectures en vrai temps dépassaient le délai de `findBy`). Les
+  // `clear*` sont faussés aussi : sinon TanStack ne peut plus arrêter un intervalle faux, et les
+  // relectures s'additionnent.
+  function fakePollingClock() {
+    vi.useFakeTimers({
+      toFake: ["Date", "setTimeout", "clearTimeout", "setInterval", "clearInterval"],
+      shouldAdvanceTime: true,
     });
-    expect(await screen.findByText(/La préparation prend plus de temps/)).toBeInTheDocument();
+    vi.setSystemTime(TODAY);
+  }
+
+  /** `polls` relectures, une cadence à la fois : d'un seul saut, les tops de l'intervalle
+   * tomberaient pendant la première lecture en cours, et TanStack n'en ferait qu'une. */
+  async function pollFor(pollMs: number, polls: number) {
+    for (let i = 0; i < polls; i += 1) await act(() => vi.advanceTimersByTimeAsync(pollMs));
+  }
+
+  it("says when the preparation takes too long and waits again on request", async () => {
+    fakePollingClock();
+    const generating = quizOut({ status: "generating" });
+    const { user } = setup(
+      { quizzes: [...Array.from({ length: PREPARE_POLLS + 2 }, () => generating), quizOut()] },
+      true,
+    );
+    await pollFor(PREPARE_POLL_MS, PREPARE_POLLS + 2);
+    expect(screen.getByText(/La préparation prend plus de temps/)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Continuer d'attendre" }));
+    await pollFor(PREPARE_POLL_MS, 3);
     expect(await screen.findByRole("form", { name: "Quiz" })).toBeInTheDocument();
   });
 
   it("says when the grading takes too long and reads the grade again on request", async () => {
+    fakePollingClock();
     recordPosts("/quizzes/z1/attempts", 202, started);
     const grading = attemptOut({ status: "grading", score: null, passed: null });
-    const { user } = setup({
-      attempts: [...Array.from({ length: 92 }, () => grading), attemptOut()],
-    });
+    const { user } = setup(
+      { attempts: [...Array.from({ length: GRADE_POLLS + 2 }, () => grading), attemptOut()] },
+      true,
+    );
     await answerAndSend(user);
-    expect(
-      await screen.findByText(/La correction prend plus de temps/, {}, { timeout: 3000 }),
-    ).toBeInTheDocument();
+    await pollFor(GRADE_POLL_MS, GRADE_POLLS + 2);
+    expect(screen.getByText(/La correction prend plus de temps/)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Relire la note" }));
+    await pollFor(GRADE_POLL_MS, 3);
     expect(await screen.findByRole("heading", { name: "Résultat du quiz" })).toBeInTheDocument();
   });
 

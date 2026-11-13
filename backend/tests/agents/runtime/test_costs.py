@@ -4,19 +4,27 @@ from pathlib import Path
 
 import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.agents.runtime import invoke as invoke_module
 from app.agents.runtime.bus import EventBus
 from app.agents.runtime.costs import (
+    APPROX_CHARS_PER_TOKEN,
     CostTracker,
     ModelPrice,
     TokenBudgetExceeded,
+    approx_tokens,
     estimate_cost,
     load_prices,
 )
+from app.agents.runtime.invoke import RETRY_DELAYS_S, call_with_retries
 from app.agents.runtime.repositories import EventRepository, LlmCallRepository, SessionRepository
+from app.core.errors import AppError
+from app.db.models.agents import LlmCall
+from app.providers.llm.base import CALL_DEADLINE_KEY
 from app.providers.llm.fake import FakeLlmProvider
+from tests.agents.runtime.fakes import HangingStream
 
 PRICES = {"m": ModelPrice(1.0, 5.0), "modele-test": ModelPrice(1_000_000.0, 2_000_000.0)}
 
@@ -165,3 +173,96 @@ async def test_cost_tracker_does_not_fail_the_call_when_bookkeeping_fails(
     async with db_factory() as db:
         assert len(await LlmCallRepository(db, other_user_id).list()) == 1
         assert await EventRepository(db, user_id).list_after(session_id, 0) == []
+
+
+# --- Appels coupés : tokens estimés (D117) --------------------------------------------------
+
+PROVIDER_META = {"tremplin_provider": "glm", "tremplin_provider_label": "GLM (Z.ai)"}
+
+
+@pytest.fixture
+def tracker(
+    db_factory: async_sessionmaker[AsyncSession], bus: EventBus, user_id: str, session_id: str
+) -> CostTracker:
+    return make_tracker(db_factory, bus, user_id, session_id)
+
+
+@pytest.fixture(autouse=True)
+def no_retry_wait(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def instant(seconds: float) -> None:
+        return None
+
+    monkeypatch.setattr(invoke_module, "_sleep", instant)
+
+
+def messages_of(chars: int) -> list[BaseMessage]:
+    return [SystemMessage("s" * (chars // 2)), HumanMessage("h" * (chars - chars // 2))]
+
+
+async def llm_calls(db_factory: async_sessionmaker[AsyncSession], user_id: str) -> list[LlmCall]:
+    async with db_factory() as db:
+        return await LlmCallRepository(db, user_id).list()
+
+
+def test_approx_tokens_counts_text_only() -> None:
+    image = {"type": "image_url", "image_url": {"url": "data:image/png;base64," + "A" * 4000}}
+    text = {"type": "text", "text": "x" * 40}
+    assert approx_tokens([[HumanMessage(content=[text, image])]]) == 10
+    assert approx_tokens([messages_of(400)]) == 100
+    assert approx_tokens([[HumanMessage("")]]) == 1 and APPROX_CHARS_PER_TOKEN == 4
+
+
+async def test_cut_call_is_counted_as_estimated(
+    tracker: CostTracker, db_factory: async_sessionmaker[AsyncSession], user_id: str
+) -> None:
+    """L'échéance coupe l'appel (annulation : LangChain n'appelle ni `on_llm_end` ni
+    `on_llm_error`) ; la fin de l'exécution (`flush_cut`) l'écrit avec des tokens estimés."""
+    meta = PROVIDER_META | {CALL_DEADLINE_KEY: 0.05}
+    model = HangingStream(streaming=True, chunks=3, callbacks=[tracker], metadata=meta)
+    with pytest.raises(AppError):
+        await call_with_retries(model, messages_of(400), agent="tutor")
+    await tracker.flush_cut()
+    rows = await llm_calls(db_factory, user_id)
+    assert len(rows) == model.calls == 1 + len(RETRY_DELAYS_S)
+    assert all(r.estimated and (r.tokens_in, r.tokens_out) == (100, 3) for r in rows)
+    assert {r.agent for r in rows} == {"tutor"}
+
+
+async def test_provider_error_is_counted_once(
+    tracker: CostTracker,
+    db_factory: async_sessionmaker[AsyncSession],
+    user_id: str,
+    session_id: str,
+) -> None:
+    model = HangingStream(streaming=True, chunks=2, fail=RuntimeError("coupé"), callbacks=[tracker])
+    with pytest.raises(RuntimeError):
+        await call_with_retries(model, messages_of(80), agent="tutor")
+    await tracker.flush_cut()  # le départ a été retiré par `on_llm_error` : rien de plus
+    [row] = await llm_calls(db_factory, user_id)
+    assert row.estimated and (row.tokens_in, row.tokens_out) == (20, 2)
+    async with db_factory() as db:
+        events = await EventRepository(db, user_id).list_after(session_id, 0)
+    assert [e.type for e in events] == ["cost.updated"]
+    assert (events[0].payload["tokens_in"], events[0].payload["tokens_out"]) == (20, 2)
+
+
+async def test_completed_call_is_not_estimated(
+    tracker: CostTracker, db_factory: async_sessionmaker[AsyncSession], user_id: str
+) -> None:
+    await call(model_with(["a b"]), tracker)
+    await tracker.flush_cut()
+    [row] = await llm_calls(db_factory, user_id)
+    assert not row.estimated and (row.tokens_in, row.tokens_out) == (4, 2)
+
+
+async def test_cut_tokens_count_toward_cap(
+    db_factory: async_sessionmaker[AsyncSession], bus: EventBus, user_id: str, session_id: str
+) -> None:
+    capped = make_tracker(db_factory, bus, user_id, session_id, cap_tokens=100)
+    meta = PROVIDER_META | {CALL_DEADLINE_KEY: 0.05}
+    model = HangingStream(streaming=True, chunks=3, callbacks=[capped], metadata=meta)
+    with pytest.raises(AppError):
+        await call_with_retries(model, messages_of(400), agent="tutor")
+    await capped.flush_cut()
+    with pytest.raises(TokenBudgetExceeded):
+        await call(model_with(["jamais lu"]), capped)

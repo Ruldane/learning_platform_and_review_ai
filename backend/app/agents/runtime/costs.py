@@ -1,6 +1,13 @@
 """Suivi des coûts : chaque appel LLM est journalisé (`llm_calls`), cumulé dans la session, publié
 en direct (`cost.updated`) ; un plafond de tokens par session coupe les appels suivants (9.6).
 
+Un appel coupé (échéance, `node_timeout`, annulation, erreur du fournisseur) n'a pas d'usage
+rendu par le modèle : il est compté avec des tokens **estimés** (`estimated`, D117) ; entrée :
+caractères du texte / 4, sortie : morceaux reçus. LangChain n'appelle `on_llm_error` que pour une
+erreur levée par le modèle ; un appel annulé (`CancelledError`, ce que font `asyncio.timeout` et
+`node_timeout`) n'appelle ni `on_llm_end` ni `on_llm_error` : `flush_cut()`, appelé en fin
+d'exécution (`runtime/execution.py`), écrit ces départs restés sans fin.
+
 `CostTracker` est un callback LangChain asynchrone exécuté sur la boucle de l'appelant : le bus ne
 sait pas publier depuis un autre fil (D42), un callback synchrone (exécuté dans un fil) est exclu.
 """
@@ -8,7 +15,7 @@ sait pas publier depuis un autre fil (D42), un callback synchrone (exécuté dan
 import json
 import logging
 import time
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -26,6 +33,7 @@ from app.core.errors import AppError
 logger = logging.getLogger(__name__)
 
 _UNKNOWN = "inconnu"
+APPROX_CHARS_PER_TOKEN = 4
 
 
 @dataclass(frozen=True)
@@ -68,12 +76,33 @@ class TokenBudgetExceeded(AppError):
         )
 
 
+def _chars(message: BaseMessage) -> int:
+    """Caractères du texte d'un message ; une image (ou tout autre bloc) compte 0."""
+    content = message.content
+    if isinstance(content, str):
+        return len(content)
+    total = 0
+    for block in content:
+        if isinstance(block, str):
+            total += len(block)
+        elif block.get("type") == "text":
+            total += len(str(block.get("text", "")))
+    return total
+
+
+def approx_tokens(messages: Sequence[Sequence[BaseMessage]]) -> int:
+    """Estimation des tokens d'entrée : caractères du texte // 4, au moins 1."""
+    chars = sum(_chars(message) for batch in messages for message in batch)
+    return max(1, chars // APPROX_CHARS_PER_TOKEN)
+
+
 @dataclass(frozen=True)
 class _CallStart:
     started: float
     agent: str | None
     provider: str
     model: str
+    approx_in: int
 
 
 def _usage(response: LLMResult) -> tuple[int, int]:
@@ -112,6 +141,7 @@ class CostTracker(AsyncCallbackHandler):
         self._prices = prices
         self._cap = cap_tokens
         self._calls: dict[UUID, _CallStart] = {}
+        self._chunks: dict[UUID, int] = {}  # morceaux reçus par appel en cours
 
     async def on_chat_model_start(
         self,
@@ -137,21 +167,54 @@ class CostTracker(AsyncCallbackHandler):
             agent=meta.get("agent"),
             provider=str(meta.get("tremplin_provider") or meta.get("ls_provider") or _UNKNOWN),
             model=str(meta.get("tremplin_model") or meta.get("ls_model_name") or _UNKNOWN),
+            approx_in=approx_tokens(messages),
         )
 
+    async def on_llm_new_token(
+        self, token: str | list[str | dict[str, Any]], *, run_id: UUID, **kwargs: Any
+    ) -> None:
+        """Un morceau de réponse reçu (un morceau ≈ un token) : la sortie d'un appel coupé."""
+        if run_id in self._calls:
+            self._chunks[run_id] = self._chunks.get(run_id, 0) + 1
+
     async def on_llm_error(self, error: BaseException, *, run_id: UUID, **kwargs: Any) -> None:
-        self._calls.pop(run_id, None)
+        """Appel en échec : compté avec des tokens estimés. Le départ est retiré au premier
+        événement de fin : jamais deux lignes pour un même `run_id`."""
+        await self._record_cut(run_id)
 
     async def on_llm_end(self, response: LLMResult, *, run_id: UUID, **kwargs: Any) -> None:
         start = self._calls.pop(run_id, None)
+        self._chunks.pop(run_id, None)
         if start is None:
             return
+        await self._record_safely(start, *_usage(response))
+
+    async def flush_cut(self) -> int:
+        """Écrit, en tokens estimés, les appels partis sans `on_llm_end` ni `on_llm_error`
+        (annulés) ; rend leur nombre. Appelé en fin d'exécution, quand aucun appel ne court."""
+        cut = list(self._calls)
+        for run_id in cut:
+            await self._record_cut(run_id)
+        return len(cut)
+
+    async def _record_cut(self, run_id: UUID) -> None:
+        start = self._calls.pop(run_id, None)
+        chunks = self._chunks.pop(run_id, 0)
+        if start is None:
+            return
+        await self._record_safely(start, start.approx_in, chunks, estimated=True)
+
+    async def _record_safely(
+        self, start: _CallStart, tokens_in: int, tokens_out: int, *, estimated: bool = False
+    ) -> None:
         try:
-            await self._record(start, *_usage(response))
-        except Exception:  # la comptabilité ne doit jamais faire échouer la réponse du modèle
+            await self._record(start, tokens_in, tokens_out, estimated=estimated)
+        except Exception:  # la comptabilité ne doit jamais faire échouer l'appel ni son issue
             logger.exception("Suivi des coûts impossible pour la session %s", self._session_id)
 
-    async def _record(self, start: _CallStart, tokens_in: int, tokens_out: int) -> None:
+    async def _record(
+        self, start: _CallStart, tokens_in: int, tokens_out: int, *, estimated: bool
+    ) -> None:
         cost = estimate_cost(start.model, tokens_in, tokens_out, self._prices)
         async with self._factory() as db:
             await LlmCallRepository(db, self._user_id).add(
@@ -164,6 +227,7 @@ class CostTracker(AsyncCallbackHandler):
                 tokens_out=tokens_out,
                 latency_ms=round((time.monotonic() - start.started) * 1000),
                 cost_usd=cost,
+                estimated=estimated,
             )
             totals = await SessionRepository(db, self._user_id).add_usage(
                 self._session_id, tokens_in=tokens_in, tokens_out=tokens_out, cost_usd=cost

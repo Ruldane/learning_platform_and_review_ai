@@ -62,3 +62,5 @@ class LlmCall(UserScopedMixin, Base):
     tokens_out: Mapped[int] = mapped_column(Integer, default=0)
     latency_ms: Mapped[int] = mapped_column(Integer, default=0)
     cost_usd: Mapped[float] = mapped_column(default=0.0)
+    # Tokens estimés (appel coupé : échéance, `node_timeout`, annulation, erreur ; D117).
+    estimated: Mapped[bool] = mapped_column(default=False, server_default="0")

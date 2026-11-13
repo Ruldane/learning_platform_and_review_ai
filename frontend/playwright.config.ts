@@ -11,6 +11,10 @@ import { defineConfig, devices } from "@playwright/test";
  * données réelles). `E2E_BACKEND_COMMAND` remplace sa commande (Docker, par exemple) ; avec
  * `E2E_REUSE_BACKEND=1`, un serveur déjà lancé sur `E2E_API_URL` est repris tel quel. L'API doit
  * rester locale, et Vite est toujours relancé : un Vite déjà ouvert pourrait viser une autre API.
+ *
+ * Arrêt (D117) : le back reçoit `SIGTERM` (`gracefulShutdown`, 10 s avant `SIGKILL`) ; un back
+ * lancé dans Docker (`pnpm e2e:docker`, `e2e/support/dockerBackend.ts`) est en plus retiré par
+ * le démontage global (`E2E_DOCKER_NAME`), seul moyen sous Windows, qui ignore les signaux.
  */
 const API_PORT = 8765;
 const WEB_PORT = 5180;
@@ -26,6 +30,7 @@ const backendCommand =
 
 export default defineConfig({
   testDir: "./e2e",
+  globalTeardown: "./e2e/support/teardown.ts",
   timeout: 240_000,
   expect: { timeout: 15_000 },
   fullyParallel: false,
@@ -50,6 +55,7 @@ export default defineConfig({
       reuseExistingServer: process.env.E2E_REUSE_BACKEND === "1",
       timeout: 180_000,
       stdout: "pipe",
+      gracefulShutdown: { signal: "SIGTERM", timeout: 10_000 },
     },
     {
       command: `pnpm exec vite --port ${WEB_PORT} --strictPort`,

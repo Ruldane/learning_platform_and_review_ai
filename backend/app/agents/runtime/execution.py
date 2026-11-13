@@ -12,6 +12,8 @@
   `running` sans tâche dans le processus. Si même le repli échoue (base vraiment
   indisponible), la session reste `running` et sera reprise au prochain démarrage.
 - L'issue s'écrit en entier même si la tâche est annulée à ce moment (`_settle`).
+- Les appels LLM coupés sans fin (annulés : `node_timeout`, pause, arrêt) sont comptés en tokens
+  estimés à la fin de chaque parcours de `astream`, quelle qu'en soit l'issue (`flush_cut`, D117).
 - `bus.close` seulement si la session est en base dans un statut terminal (et `cancelled`, par
   le runner) ; jamais sur `waiting_user` ni `paused` (D42), ni sur une issue non écrite (la
   session reste ouverte : un 1000 serait pris pour une fin définitive, D50).
@@ -128,6 +130,7 @@ class _Run:
         self.ctx = ctx
         self.user_id = user_id
         self.session_id = session_id
+        self.tracker: CostTracker | None = None
 
     async def prepare(
         self, command: Command[Any] | None
@@ -155,7 +158,7 @@ class _Run:
             ctx.ports,
         )
         graph = spec.build(deps).compile(checkpointer=ctx.checkpointer)
-        tracker = CostTracker(
+        tracker = self.tracker = CostTracker(
             user_id=self.user_id,
             session_id=self.session_id,
             graph=row.graph,
@@ -176,15 +179,23 @@ class _Run:
         """Publie le flux ; rend la première question posée (une à la fois : les autres
         interruptions en attente reviendront à la reprise, avec le même id)."""
         pending: dict[str, Any] | None = None
-        async for mode, chunk in graph.astream(
-            graph_input, config, stream_mode=STREAM_MODES, durability="sync"
-        ):
-            for event in translate_chunk(mode, chunk):
-                if event.type == "interrupt.requested":
-                    pending = pending or event.payload
-                    continue
-                await self.publish(event.type, event.payload, event.agent)
+        try:
+            async for mode, chunk in graph.astream(
+                graph_input, config, stream_mode=STREAM_MODES, durability="sync"
+            ):
+                for event in translate_chunk(mode, chunk):
+                    if event.type == "interrupt.requested":
+                        pending = pending or event.payload
+                        continue
+                    await self.publish(event.type, event.payload, event.agent)
+        finally:
+            await self._flush_cut()
         return pending
+
+    async def _flush_cut(self) -> None:
+        """Compte les appels coupés, jusqu'au bout même si la tâche est annulée pendant."""
+        if self.tracker is not None:
+            await asyncio.shield(self.tracker.flush_cut())
 
     async def publish(self, type: Any, payload: dict[str, Any], agent: str | None = None) -> None:
         await self.ctx.bus.publish(
