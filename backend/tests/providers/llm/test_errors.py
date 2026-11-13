@@ -94,7 +94,7 @@ def _status_error(cls: type, status: int, code: str | None = None) -> BaseExcept
             _status_error(openai.RateLimitError, 429, "1305"),
             "glm",
             "GLM (Z.ai)",
-            "llm_rate_limited",
+            "llm_unavailable",
             "Service Z.ai surchargé",
         ),
         (
@@ -222,3 +222,19 @@ def test_read_httpx_body_code_is_a_string() -> None:
     body = httpx.Response(429, request=REQUEST, json={"error": {"code": 1113}})
     exc = httpx.HTTPStatusError(LEAKY, request=REQUEST, response=body)
     assert _body_code(exc) == "1113"
+
+
+def test_overload_is_unavailable_while_quota_and_unknown_429_stay_rate_limited() -> None:
+    """Re-revue 5.18 (N-I1) : la surcharge Z.ai (1305) est une panne passagère, pas une limite ;
+    les quotas et les 429 sans code connu restent `llm_rate_limited`."""
+
+    def code_of(body_code: str | None) -> str:
+        exc = _status_error(openai.RateLimitError, 429, body_code)
+        error = describe_provider_error(exc, provider="glm", label="GLM (Z.ai)")
+        assert error is not None
+        return error.code
+
+    assert code_of("1305") == "llm_unavailable"
+    assert code_of("1308") == "llm_rate_limited"
+    assert code_of(None) == "llm_rate_limited"
+    assert code_of("1113") == "llm_credit_exhausted"

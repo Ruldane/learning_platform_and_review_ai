@@ -9,6 +9,8 @@ tests restaient sans question nouvelle et échouaient."""
 import json
 from types import SimpleNamespace
 
+import httpx
+import openai
 import pytest
 
 from app.agents.nodes.tutor import fallback
@@ -24,6 +26,7 @@ from app.agents.nodes.tutor.fallback import (
 from app.agents.nodes.tutor.models import UNCHECKED_LABEL
 from app.agents.nodes.tutor.teach import FINAL_REQUEST, REPLY_REQUEST, TEACH_REQUEST
 from app.agents.nodes.tutor.wrap import SUMMARY_REQUEST
+from app.agents.runtime import invoke
 from app.core.errors import AppError
 from app.features.study.service.finish import _cards
 from tests.agents.graphs.council_models import CouncilModels
@@ -112,6 +115,33 @@ async def test_unreadable_check_falls_back_but_a_rejected_key_fails(
     assert [o.verdict for o in run.store.finished.outcomes] == ["skipped"]
 
 
+async def test_zai_overload_falls_back_instead_of_failing(
+    make_study_runner: MakeStudy, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Re-revue 5.18 (N-I1) : une surcharge Z.ai (429, code 1305) qui dure pendant les nouveaux
+    essais est une panne passagère : le Tuteur se replie, la séance ne passe pas en échec."""
+
+    async def no_wait(seconds: float) -> None:
+        return None
+
+    monkeypatch.setattr(invoke, "_sleep", no_wait)
+    models = CouncilModels()
+    request = httpx.Request("POST", "https://api.z.ai/api/paas/v4/chat/completions")
+
+    async def overloaded(agent: str, prompt: str) -> None:
+        if CHECK_REQUEST in prompt:
+            response = httpx.Response(429, request=request)
+            body = {"code": "1305", "message": "surchargé"}
+            raise openai.RateLimitError("surchargé", response=response, body=body)
+
+    models.hooks.append(overloaded)
+    run = await make_study_runner(models)
+    await run.answer_all(1)
+    await _end(run)
+    assert run.store.finished is not None
+    assert [o.verdict for o in run.store.finished.outcomes] == ["skipped"]
+
+
 async def test_unanswered_hint_still_counts_then_the_solution_shows(
     make_study_runner: MakeStudy,
 ) -> None:
@@ -166,7 +196,9 @@ async def test_unanswered_final_questions_come_from_the_lesson(
     expected = [o.expected for o in run.store.finished.outcomes if o.phase == "final"]
     assert expected == ["", "", SECTION_TEXTS[0]]  # seule la question de section a un corrigé
     assert FALLBACK_FINAL_INTRO in await _said(run)
-    assert NO_EXPECTED in run.prompts(CHECK_REQUEST)[3]  # jugée d'après toute la leçon
+    final_check = run.prompts(CHECK_REQUEST)[3]
+    assert f"Réponse attendue : {NO_EXPECTED}" in final_check  # donnée, pas consigne (N-m1)
+    assert "juge d'après la référence seule" in final_check
 
 
 async def test_fallback_final_question_reveals_no_foreign_solution_and_makes_no_card(

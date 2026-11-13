@@ -33,7 +33,7 @@ UNCHECKED = "Je n'ai pas pu corriger cette réponse, on continue."
 NO_REPLY = "Je n'ai pas pu répondre à ton message, on continue."
 FALLBACK_FINAL_INTRO = "Trois questions pour finir, tirées des objectifs et des sections."
 NO_SOLUTION = "Pas de solution préparée pour cette question : reprends la leçon."
-NO_EXPECTED = "Aucune réponse attendue écrite : juge d'après la leçon."
+NO_EXPECTED = "(aucune)"  # donnée neutre ; la consigne est dans le prompt (`check`)
 MAX_QUESTION_CHARS = 500
 MAX_EXPECTED_CHARS = 800
 

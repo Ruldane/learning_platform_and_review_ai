@@ -26,6 +26,9 @@ PROVIDER_ERROR_CODES: Mapping[str, Mapping[str, str]] = {
 }
 # Crédit épuisé : un nouvel essai échouerait de même, inutile d'attendre.
 _CREDIT_CODES = frozenset({"1113", "insufficient_quota"})
+# Surcharge du service renvoyée en 429 (Z.ai 1305) : retentée comme tout 429, mais rendue en
+# `llm_unavailable` (panne passagère), pas en `llm_rate_limited` (limite ou quota).
+_OVERLOAD_CODES = frozenset({"1305"})
 
 _TIMEOUTS = (
     anthropic.APITimeoutError,
@@ -95,6 +98,9 @@ def _by_status(status: int, label: str, known: str | None, code: str | None) -> 
         message = f"Clé refusée par {label} : vérifie-la dans les réglages des modèles."
         return AppError("llm_key_rejected", message, 502, details)
     if status == 429:
+        if code in _OVERLOAD_CODES:  # surcharge passagère, pas une limite : D115 n° 17
+            message = known or f"{label} est surchargé, réessaie plus tard."
+            return AppError("llm_unavailable", message, 502, details)
         if code in _CREDIT_CODES:
             message = known or f"Crédit épuisé chez {label}."
             return AppError("llm_credit_exhausted", message, 502, details)
