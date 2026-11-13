@@ -57,6 +57,7 @@ class HangingStream(BaseChatModel):
     chunks: int = 3
     fail: BaseException | None = None
     calls: int = 0
+    waiting: bool = False  # morceaux envoyés, attente sans fin commencée
 
     @property
     def _llm_type(self) -> str:
@@ -77,4 +78,5 @@ class HangingStream(BaseChatModel):
             yield ChatGenerationChunk(message=AIMessageChunk(content=f"m{index} "))
         if self.fail is not None:
             raise self.fail
+        self.waiting = True
         await asyncio.Event().wait()

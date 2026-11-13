@@ -3,10 +3,13 @@ en direct (`cost.updated`) ; un plafond de tokens par session coupe les appels s
 
 Un appel coupé (échéance, `node_timeout`, annulation, erreur du fournisseur) n'a pas d'usage
 rendu par le modèle : il est compté avec des tokens **estimés** (`estimated`, D117) ; entrée :
-caractères du texte / 4, sortie : morceaux reçus. LangChain n'appelle `on_llm_error` que pour une
-erreur levée par le modèle ; un appel annulé (`CancelledError`, ce que font `asyncio.timeout` et
-`node_timeout`) n'appelle ni `on_llm_end` ni `on_llm_error` : `flush_cut()`, appelé en fin
-d'exécution (`runtime/execution.py`), écrit ces départs restés sans fin.
+caractères du texte / 4 (définitions d'outils et schémas non comptés), sortie : morceaux reçus.
+Une erreur du fournisseur rendue avant tout morceau (429, 401, 5xx, connexion refusée) n'a rien
+consommé : elle ne compte rien, et ses nouveaux essais non plus. LangChain n'appelle
+`on_llm_error` que pour une erreur levée par le modèle ; un appel annulé (`CancelledError`, ce
+que font `asyncio.timeout` et `node_timeout`) n'appelle ni `on_llm_end` ni `on_llm_error` :
+`flush_cut()`, appelé en fin d'exécution (`runtime/execution.py`), écrit ces départs restés
+sans fin.
 
 `CostTracker` est un callback LangChain asynchrone exécuté sur la boucle de l'appelant : le bus ne
 sait pas publier depuis un autre fil (D42), un callback synchrone (exécuté dans un fil) est exclu.
@@ -29,6 +32,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.agents.runtime.bus import EventBus
 from app.agents.runtime.repositories import LlmCallRepository, SessionRepository
 from app.core.errors import AppError
+from app.providers.llm.errors import is_timeout
 
 logger = logging.getLogger(__name__)
 
@@ -178,9 +182,11 @@ class CostTracker(AsyncCallbackHandler):
             self._chunks[run_id] = self._chunks.get(run_id, 0) + 1
 
     async def on_llm_error(self, error: BaseException, *, run_id: UUID, **kwargs: Any) -> None:
-        """Appel en échec : compté avec des tokens estimés. Le départ est retiré au premier
-        événement de fin : jamais deux lignes pour un même `run_id`."""
-        await self._record_cut(run_id)
+        """Appel en échec : compté en tokens estimés s'il a commencé à répondre (morceaux reçus)
+        ou s'il a dépassé un délai ; une erreur rendue avant toute réponse (429, 401, 5xx,
+        connexion refusée) ne compte rien. Le départ est retiré au premier événement de fin :
+        jamais deux lignes pour un même `run_id`."""
+        await self._record_cut(run_id, only_if_answered=not is_timeout(error))
 
     async def on_llm_end(self, response: LLMResult, *, run_id: UUID, **kwargs: Any) -> None:
         start = self._calls.pop(run_id, None)
@@ -197,10 +203,12 @@ class CostTracker(AsyncCallbackHandler):
             await self._record_cut(run_id)
         return len(cut)
 
-    async def _record_cut(self, run_id: UUID) -> None:
+    async def _record_cut(self, run_id: UUID, *, only_if_answered: bool = False) -> None:
+        """`only_if_answered` : rien n'est écrit si aucun morceau n'est arrivé (erreur rendue
+        avant toute réponse). Sinon (annulation, délai) : la requête a pu être traitée."""
         start = self._calls.pop(run_id, None)
         chunks = self._chunks.pop(run_id, 0)
-        if start is None:
+        if start is None or (only_if_answered and chunks == 0):
             return
         await self._record_safely(start, start.approx_in, chunks, estimated=True)
 

@@ -2,6 +2,8 @@ import asyncio
 import json
 from pathlib import Path
 
+import httpx
+import openai
 import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
@@ -266,3 +268,33 @@ async def test_cut_tokens_count_toward_cap(
     await capped.flush_cut()
     with pytest.raises(TokenBudgetExceeded):
         await call(model_with(["jamais lu"]), capped)
+
+
+async def test_retried_429_adds_no_estimated_tokens(
+    tracker: CostTracker,
+    db_factory: async_sessionmaker[AsyncSession],
+    user_id: str,
+    session_id: str,
+) -> None:
+    response = httpx.Response(429, request=httpx.Request("POST", "https://exemple.test/v1"))
+    refused = openai.RateLimitError("limite", response=response, body=None)
+    model = HangingStream(streaming=True, chunks=0, fail=refused, callbacks=[tracker])
+    with pytest.raises(AppError):
+        await call_with_retries(model, messages_of(40_000), agent="tutor")
+    await tracker.flush_cut()
+    assert model.calls == 1 + len(RETRY_DELAYS_S) and await llm_calls(db_factory, user_id) == []
+    async with db_factory() as db:
+        session = await SessionRepository(db, user_id).get(session_id)
+    assert session is not None and (session.tokens_in, session.tokens_out) == (0, 0)
+
+
+async def test_timeout_before_any_chunk_is_counted(
+    tracker: CostTracker, db_factory: async_sessionmaker[AsyncSession], user_id: str
+) -> None:
+    late = httpx.ReadTimeout("t")
+    model = HangingStream(streaming=True, chunks=0, fail=late, callbacks=[tracker])
+    with pytest.raises(AppError):
+        await call_with_retries(model, messages_of(80), agent="tutor")
+    rows = await llm_calls(db_factory, user_id)
+    assert len(rows) == model.calls == 1 + len(RETRY_DELAYS_S)
+    assert {(r.estimated, r.tokens_in, r.tokens_out) for r in rows} == {(True, 20, 0)}

@@ -44,6 +44,11 @@ _CONNECTION = (
 )
 
 
+def is_timeout(exc: BaseException) -> bool:
+    """Délai dépassé (SDK, httpx, échéance) : la requête a pu être traitée, donc facturée."""
+    return isinstance(exc, _TIMEOUTS)
+
+
 def _transient_status(status: int) -> bool:
     return status in _TRANSIENT_STATUSES or status >= 500
 
