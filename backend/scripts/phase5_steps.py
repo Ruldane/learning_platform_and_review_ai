@@ -11,14 +11,12 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from scripts.phase4_steps import CheckFailed, Run, expect_ok
+from scripts.phase5_map_rules import SkillState
 from scripts.phase5_rules import (
     READING_TYPES,
-    RETRY_DAYS,
     STUCK_LABELS,
     STUDY_DEAD,
     WORKED_MINUTES,
-    check_attempt,
-    check_quiz,
     check_study_summary,
     option_value,
 )
@@ -28,7 +26,6 @@ DEAD_SESSION = ("failed", "cancelled", "completed")
 MAX_TUTOR_QUESTIONS = 20
 STUCK_AT, SKIP_AT = 2, 3  # rang de la question où January bloque quatre fois, puis où elle passe
 SHORT_ANSWER = "Je dirais que ça normalise les scores en poids, en gros."
-QUIZ_ANSWER = "Une réponse courte."
 
 
 @dataclass
@@ -42,6 +39,14 @@ class Etude:
     session_id: str = ""
     quiz_id: str = ""
     due_before: set[str] = field(default_factory=set)  # fiches dues avant la session
+    skills: list[str] = field(default_factory=list)  # compétences du module (noms du programme)
+    before: dict[str, SkillState] = field(default_factory=dict)  # leur état avant la session
+    attempt_id: str = ""  # tentative du quiz
+    passed: bool = False  # quiz réussi (≥ 80 %) : les compétences passent à `valide`
+    retry_on: str = ""  # nouvel essai du quiz, quand il est raté (J+2)
+    program_version: int = 0  # version du programme après la replanification acceptée
+    captures: list[str] = field(default_factory=list)  # sessions d'agents des captures rangées
+    review_entry_id: str | None = ""  # entrée du bilan hebdomadaire de ce passage
 
     @property
     def module_id(self) -> str:
@@ -175,7 +180,7 @@ async def check_balance(run: Run, st: Etude) -> None:
     check_study_summary(study, program, st.reading)
 
 
-async def _local_today(run: Run, step: str) -> date:
+async def local_today(run: Run, step: str) -> date:
     settings = await expect_ok(run, step, "GET", "/settings")
     return datetime.now(ZoneInfo(settings["timezone"])).date()
 
@@ -185,60 +190,10 @@ async def around[T](
 ) -> tuple[T, set[date]]:
     """Le résultat de `action` et les jours « aujourd'hui + `days` » acceptés (heure locale de
     January, lue avant et après : un minuit peut tomber pendant l'appel)."""
-    before = await _local_today(run, step)
+    before = await local_today(run, step)
     result = await action()
-    after = await _local_today(run, step)
+    after = await local_today(run, step)
     return result, {before + timedelta(days=days), after + timedelta(days=days)}
-
-
-async def _quiz_ready(run: Run, st: Etude) -> dict[str, Any]:
-    path = f"/modules/{st.module_id}/quiz"
-    started = await expect_ok(run, "quiz", "POST", path)
-    st.quiz_id = started["quiz_id"]
-    quiz: dict[str, Any] = {}
-
-    async def ready() -> bool:
-        quiz.update(await expect_ok(run, "quiz", "GET", f"/quizzes/{st.quiz_id}"))
-        if quiz["status"] == "failed":
-            raise CheckFailed("quiz", f"Quiz {st.quiz_id} en échec.")
-        return bool(quiz["status"] == "ready")
-
-    await run.until("quiz", ready, "quiz jamais prêt")
-    return quiz
-
-
-def _answers(quiz: dict[str, Any]) -> list[dict[str, Any]]:
-    """Une réponse courte à chaque question, dans l'ordre affiché ; le premier choix aux QCM."""
-    return [
-        {"question_id": q["id"], "choice": 0}
-        if q["type"] == "qcm"
-        else {"question_id": q["id"], "text": QUIZ_ANSWER}
-        for q in quiz["questions"]
-    ]
-
-
-async def play_quiz(run: Run, st: Etude) -> None:
-    quiz = await _quiz_ready(run, st)  # relu avant de répondre : l'ordre change à chaque essai
-    check_quiz(quiz)
-    path = f"/quizzes/{st.quiz_id}/attempts"
-
-    async def send() -> dict[str, Any]:
-        sent: dict[str, Any] = await expect_ok(
-            run, "quiz", "POST", path, json={"answers": _answers(quiz)}
-        )
-        return sent
-
-    started, retry_days = await around(run, "quiz", send, RETRY_DAYS)
-    attempt: dict[str, Any] = {}
-
-    async def graded() -> bool:
-        attempt.update(await expect_ok(run, "quiz", "GET", f"{path}/{started['attempt_id']}"))
-        if attempt["status"] == "failed":
-            raise CheckFailed("quiz", f"Tentative {started['attempt_id']} en échec.")
-        return bool(attempt["status"] == "graded")
-
-    await run.until("quiz", graded, "tentative jamais notée")
-    check_attempt(attempt, len(quiz["questions"]), retry_days)
 
 
 async def check_cards(run: Run, st: Etude) -> None:

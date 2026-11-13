@@ -1,13 +1,17 @@
-"""Contrôle de fin de phase 5 : l'étude (session guidée, quiz, fiches), joué contre l'API en marche
-(Docker : le modèle réel ; tests : modèles scriptés).
+"""Contrôle de fin de phase 5, joué contre l'API en marche (Docker : le modèle réel ; tests :
+modèles scriptés).
 
-    uv run python -m scripts.check_phase5 --api http://localhost:8000 --part etude [--with-phase4]
+    uv run python -m scripts.check_phase5 --api http://localhost:8000 [--part etude] [--with-phase4]
 
 Il faut un programme validé avec une leçon prête : celui de la phase 4, ou `--with-phase4` qui
-lance d'abord `scripts.check_phase4` (programme et leçons réels). Six étapes, arrêt à la première
-ratée (`CheckFailed`, message en français, code de sortie 1). Rien de ce qui est envoyé ou reçu
-n'est affiché : seulement les étapes, des nombres et des codes. La partie « tout » (les parcours
-des autres tâches de la phase) s'ajoute en 5.18 : d'ici là, elle rejoue l'étude."""
+lance d'abord `scripts.check_phase4` (programme et leçons réels). Partie `etude` : six étapes
+(session guidée, quiz, fiches). Partie `tout` (par défaut) : douze, avec la carte de compétences
+avant et après, la replanification de la semaine, la capture rapide, le bilan hebdomadaire et le
+journal. Arrêt à la première ratée (`CheckFailed`, message en français, code de sortie 1). Rien
+de ce qui est envoyé ou reçu n'est affiché : seulement les étapes, des nombres, des codes et des
+identifiants. Le bilan hebdomadaire change l'heure du bilan dans les réglages (remise ensuite) et
+attend la tâche planifiée jusqu'à 16 minutes ; le quiz n'atteint `valide` qu'au second passage
+(nouvel essai à J+2, voir `phase5_quiz`)."""
 
 import argparse
 import asyncio
@@ -19,23 +23,35 @@ import httpx
 
 from scripts import check_phase4
 from scripts.phase4_steps import API, CheckFailed, EventFeed, Run, expect_ok, websocket_feed
-from scripts.phase5_steps import (
-    Etude,
-    check_balance,
-    check_cards,
-    pick_program,
-    play_quiz,
-    play_session,
-)
+from scripts.phase5_capture import check_capture
+from scripts.phase5_map import map_after, map_before
+from scripts.phase5_quiz import play_quiz
+from scripts.phase5_replan import replan_week
+from scripts.phase5_steps import Etude, check_balance, check_cards, pick_program, play_session
+from scripts.phase5_weekly import check_journal_step, weekly_review
 
 type Part = Literal["etude", "tout"]
 
 ETUDE_STEPS = ("santé", "programme", "session", "bilan de session", "quiz", "fiches")
-STEPS_BY_PART: dict[str, tuple[str, ...]] = {"etude": ETUDE_STEPS, "tout": ETUDE_STEPS}
+ALL_STEPS = (
+    "santé",
+    "programme",
+    "carte avant",
+    "session",
+    "bilan de session",
+    "quiz",
+    "fiches",
+    "carte après",
+    "replanification",
+    "capture",
+    "bilan hebdomadaire",
+    "journal",
+)
+STEPS_BY_PART: dict[str, tuple[str, ...]] = {"etude": ETUDE_STEPS, "tout": ALL_STEPS}
 REQUIRED_SERVICES = ("db", "llm")
 HTTP_TIMEOUT_S = 60.0
 
-__all__ = ["ETUDE_STEPS", "CheckFailed", "EventFeed", "main", "run_check"]
+__all__ = ["ALL_STEPS", "ETUDE_STEPS", "CheckFailed", "EventFeed", "main", "run_check"]
 
 
 async def _health(run: Run, st: Etude) -> None:
@@ -65,10 +81,16 @@ async def run_check(
     actions: dict[str, Callable[[Run, Etude], Awaitable[None]]] = {
         "santé": _health,
         "programme": pick_program,
+        "carte avant": map_before,
         "session": play_session,
         "bilan de session": check_balance,
         "quiz": play_quiz,
         "fiches": check_cards,
+        "carte après": map_after,
+        "replanification": replan_week,
+        "capture": check_capture,
+        "bilan hebdomadaire": weekly_review,
+        "journal": check_journal_step,
     }
     done: list[str] = []
     for step in STEPS_BY_PART[part]:
@@ -91,7 +113,7 @@ async def _main(api: str, part: Part, with_phase4: bool, timeout_s: float) -> in
 
 
 def main(argv: Sequence[str] | None = None) -> None:
-    parser = argparse.ArgumentParser(description="Contrôle de fin de phase 5 : l'étude.")
+    parser = argparse.ArgumentParser(description="Contrôle de fin de phase 5.")
     parser.add_argument("--api", default="http://localhost:8000", help=f"racine de l'API ({API})")
     parser.add_argument("--part", choices=("etude", "tout"), default="tout")
     parser.add_argument("--with-phase4", action="store_true", help="lance d'abord la phase 4")

@@ -1,8 +1,10 @@
-"""Contrôle de fin de phase 5 (étude), joué de bout en bout contre l'application réelle (lifespan,
-moteur, features) : un programme validé semé avec ses leçons prêtes, le Tuteur et l'Examinateur
-scriptés (`study_script`), les fournisseurs factices. Aucun réseau ni LLM réel ; la santé est
-remplacée par une réponse OK."""
+"""Contrôle de fin de phase 5 (étude, puis « tout »), joué de bout en bout contre l'application
+réelle (lifespan, moteur, features) : un programme validé semé avec ses leçons prêtes, le Tuteur,
+l'Examinateur, le Stratège et l'Archiviste scriptés (`study_script`), les fournisseurs factices, le
+planificateur appelé directement. Aucun réseau ni LLM réel ; la santé est remplacée par une réponse
+OK."""
 
+import asyncio
 from datetime import UTC, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -21,12 +23,18 @@ from app.db.models.program import Task
 from app.db.models.study import Flashcard
 from app.features.health.router import get_health_service
 from app.main import create_app
-from scripts.check_phase5 import ETUDE_STEPS, CheckFailed, run_check
+from scripts.check_phase5 import ALL_STEPS, ETUDE_STEPS, CheckFailed, run_check
 from tests.e2e.scripted_models import ScriptedModels
 from tests.e2e.server import healthy_service
 from tests.e2e.study_script import study_scripts
 from tests.features.study.conftest import DATES, Seeded, seed
 from tests.scripts.phase4_fakes import api
+from tests.scripts.phase5_support import (
+    freeze_weekly_clock,
+    readable_page,
+    rebase_program,
+    weekly_scheduler,
+)
 
 ZONE = ZoneInfo("Europe/Paris")
 
@@ -127,6 +135,44 @@ async def test_check_etude_without_a_due_card(
     assert {c.due_date for c in await _cards(seeded_program)} == {tomorrow}
 
 
+@pytest.mark.timeout(300)
+async def test_check_all_runs_against_the_app(
+    client: httpx.AsyncClient,
+    app: FastAPI,
+    seeded_program: Seeded,
+    models: ScriptedModels,
+    memory_providers: MemoryProviders,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    await _add_due_card(seeded_program)
+    monday = await rebase_program(seeded_program)
+    readable_page(memory_providers)
+    sunday = freeze_weekly_clock(monkeypatch, monday)
+    scheduler = asyncio.create_task(weekly_scheduler(client, app, sunday))
+    try:
+        steps = await run_check(client, part="tout", timeout_s=240)
+        await asyncio.wait_for(scheduler, 5)
+    finally:
+        scheduler.cancel()
+
+    assert steps == list(ALL_STEPS)
+    assert steps == [
+        "santé", "programme", "carte avant", "session", "bilan de session", "quiz", "fiches",
+        "carte après", "replanification", "capture", "bilan hebdomadaire", "journal",
+    ]  # fmt: skip
+    assert models.served["strategist"] >= 1  # la semaine de 5 heures (le bilan est annulé)
+    assert models.served["archivist"] == 2  # le lien lisible, puis le texte collé
+    settings = (await client.get("/api/v1/settings")).json()
+    assert settings["weekly_review"] == {"day": "sunday", "time": "18:00"}  # remis comme avant
+    program_id = seeded_program.program_id
+    program = (await client.get(f"/api/v1/programs/{program_id}")).json()
+    assert program["version"] == 2  # la proposition acceptée
+    replans = (await client.get("/api/v1/sessions", params={"graph": "replan"})).json()
+    assert len(replans) == 2  # la semaine de 5 heures, puis le bilan
+    assert {r["subject_id"] for r in replans} == {program_id}
+    assert "completed" in {r["status"] for r in replans}  # la proposition acceptée
+
+
 async def test_check_fails_without_a_validated_program(client: httpx.AsyncClient) -> None:
     with pytest.raises(CheckFailed, match="check_phase4") as caught:
         await run_check(client, part="etude", timeout_s=5)
@@ -190,3 +236,18 @@ def test_main_passes_its_options_and_exits_with_zero(monkeypatch: pytest.MonkeyP
 
     assert exited.value.code == 0
     assert seen == {"part": "etude", "with_phase4": True, "timeout_s": 3600.0}
+
+
+def test_main_runs_every_step_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen: dict[str, Any] = {}
+
+    async def passing(client: httpx.AsyncClient, **kwargs: Any) -> list[str]:
+        seen.update(kwargs)
+        return list(ALL_STEPS)
+
+    monkeypatch.setattr(check, "run_check", passing)
+    with pytest.raises(SystemExit) as exited:
+        check.main(["--api", "http://localhost:1", "--timeout", "3600"])
+
+    assert exited.value.code == 0
+    assert seen == {"part": "tout", "with_phase4": False, "timeout_s": 3600.0}

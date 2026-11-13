@@ -6,7 +6,10 @@ l'ordre des appels (indices, nouveaux essais, questions reposées).
 Tuteur : une question par section (énoncé numéroté, donc différent d'une question à l'autre), des
 verdicts `correct`, `partial` puis `wrong` en tournant, trois finales, un bilan. Examinateur : un
 quiz de 10 questions sur les 4 types avec 4 fiches ; notation : la première réponse ouverte à 0,5,
-les autres à 0 (la note finale reste sous 80 %, le suivi de révision est donc joué)."""
+les autres à 0 (la note finale reste sous 80 %, le suivi de révision est donc joué).
+
+Stratège (replanification de la semaine, bilan hebdomadaire) : un résumé seul, le code range.
+Archiviste (capture rapide) : un résumé relié à la tâche `t1`, avec une fiche proposée."""
 
 import itertools
 import json
@@ -15,12 +18,15 @@ from collections.abc import Callable, Sequence
 
 from langchain_core.messages import BaseMessage
 
+from app.agents.nodes.archivist_capture_steps import CAPTURE_REQUEST
 from app.agents.nodes.examiner import GRADE_REQUEST, WRITE_REQUEST
+from app.agents.nodes.strategist.replan_steps import REPLAN_REQUEST
 from app.agents.nodes.tutor.answers import CHECK_REQUEST, HINT_REQUEST
 from app.agents.nodes.tutor.teach import FINAL_REQUEST, REPLY_REQUEST, TEACH_REQUEST
 from app.agents.nodes.tutor.wrap import SUMMARY_REQUEST
 from tests.e2e.lesson_script import prompt_of
 from tests.e2e.scripted_models import Reply
+from tests.support.capture import card, digest_reply
 from tests.support.quiz import quiz_draft
 
 REPLIES = 80  # appels possibles par agent (un indice ou un essai de plus ne vide pas la file)
@@ -95,6 +101,24 @@ def _examiner() -> Reply:
     return reply
 
 
+def _strategist() -> Reply:
+    summary = json.dumps({"summary": "Le plan est rangé dans ton budget."})
+    return _dispatch("strategist", {REPLAN_REQUEST: lambda: summary})
+
+
+def _archivist() -> Reply:
+    digest = digest_reply(
+        covered_task="t1", flashcards=[card("Que fait une liste en compréhension ?")]
+    )
+    return _dispatch("archivist", {CAPTURE_REQUEST: lambda: digest})
+
+
 def study_scripts() -> dict[str, list[Reply]]:
-    """Les files du Tuteur et de l'Examinateur (la même fonction, `REPLIES` fois)."""
-    return {"tutor": [_tutor()] * REPLIES, "examiner": [_examiner()] * REPLIES}
+    """Les files du Tuteur, de l'Examinateur, du Stratège et de l'Archiviste (la même fonction
+    pour chacun, `REPLIES` fois)."""
+    return {
+        "tutor": [_tutor()] * REPLIES,
+        "examiner": [_examiner()] * REPLIES,
+        "strategist": [_strategist()] * REPLIES,
+        "archivist": [_archivist()] * REPLIES,
+    }

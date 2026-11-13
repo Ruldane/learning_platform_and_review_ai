@@ -20,14 +20,16 @@ STUCK_LABELS = ("Je bloque (1/3)", "Je bloque (2/3)", "Je bloque (3/3)", "Voir l
 STUDY_DEAD = ("interrupted", "cancelled")
 
 
-def option_value(question: dict[str, Any], value: str, label: str | None = None) -> str:
+def option_value(
+    question: dict[str, Any], value: str, label: str | None = None, step: str = "session"
+) -> str:
     """La valeur de l'option `value` de la question (la réponse se donne par la valeur, jamais
     par le libellé) ; `label` : le libellé que le back doit lui avoir donné."""
     found = [o for o in question.get("options") or [] if o.get("value") == value]
     if not found:
-        raise CheckFailed("session", f"Option « {value} » absente de la question.")
+        raise CheckFailed(step, f"Option « {value} » absente de la question.")
     if label is not None and found[0].get("label") != label:
-        raise CheckFailed("session", f"Option « {value} » au mauvais libellé (attendu {label!r}).")
+        raise CheckFailed(step, f"Option « {value} » au mauvais libellé (attendu {label!r}).")
     return str(found[0]["value"])
 
 
