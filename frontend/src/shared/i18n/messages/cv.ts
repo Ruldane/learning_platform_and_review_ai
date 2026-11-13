@@ -1,5 +1,8 @@
-/** Textes du profil maître : import des documents, formulaire de relecture, versions. */
+import { cvReview } from "./cvReview";
+
+/** Textes du CV : profil maître (import, formulaire, versions) ; le CV ciblé est dans `cvReview.ts`. */
 export const cv = {
+  ...cvReview,
   source: { cv: "CV", linkedin: "LinkedIn", note: "Note", january: "Toi" },
   sources: { label: "Sources de ce fait" },
   import: {

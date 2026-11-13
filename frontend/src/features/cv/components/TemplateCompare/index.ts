@@ -1,0 +1,1 @@
+export { TemplateCompare } from "./TemplateCompare";

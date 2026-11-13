@@ -110,3 +110,101 @@ export interface ProfileSaveErrorView {
 
 export const MAX_PDF_BYTES = 10 * 1024 * 1024;
 export const MAX_NOTE_CHARS = 4000;
+
+/** Les sections d'un CV ciblé (miroir de `SectionKey`). */
+export type CvSectionView =
+  "summary" | "experience" | "education" | "skills" | "projects" | "languages" | "links";
+
+export type ModificationStatusView = "proposed" | "to_confirm" | "accepted" | "refused";
+export type ModificationActionView = "rewrite" | "add" | "remove" | "move";
+export type ModificationTypeView = "keyword" | "clarity" | "impact" | "order" | "length" | "title";
+
+/** Ce qu'on peut décider d'une modification : l'accepter ou la refuser. */
+export type DecisionView = "accepted" | "refused";
+
+/** Ce que January joint à sa décision : le texte qu'elle a modifié, et la confirmation d'un fait. */
+export interface DecideOptions {
+  after?: string;
+  confirm?: boolean;
+}
+
+/** Un fait du profil maître sur lequel s'appuie une modification (G2, F4). */
+export interface FactRefView {
+  id: string;
+  label: string;
+}
+
+/** Une modification proposée par la revue du CV. */
+export interface ModificationView {
+  id: string;
+  ref: string;
+  section: CvSectionView;
+  action: ModificationActionView;
+  type: ModificationTypeView;
+  before: string;
+  after: string;
+  reason: string;
+  status: ModificationStatusView;
+  /** Pourquoi la modification est « à confirmer » : un chiffre, un outil ou un titre absent du profil. */
+  blocks: string[];
+  /** Le slug de l'agent qui l'a proposée (`agentIdentity`). */
+  author: string;
+  facts: FactRefView[];
+}
+
+export const MAX_EDIT_CHARS = 600;
+
+/**
+ * Un écart de mise en page entre l'original et le modèle recréé : la part d'encre (de 0 à 1) de
+ * chaque côté, dans une zone de la page.
+ */
+export interface ZoneView {
+  zone: "haut" | "milieu" | "bas" | "gauche" | "droite";
+  original: number;
+  render: number;
+}
+
+export type AtsCheckIdView =
+  "selectable_text" | "reading_order" | "standard_headings" | "contact_in_body" | "font_sizes";
+
+export interface AtsCheckView {
+  id: AtsCheckIdView;
+  passed: boolean;
+  /** Une phrase en français, sans donnée du CV. */
+  detail: string;
+}
+
+/** Les deux indicateurs d'un CV : couverture des exigences et lisibilité machine. */
+export interface IndicatorsView {
+  coveragePercent: number;
+  covered: number;
+  total: number;
+  /** Les exigences obligatoires que le CV ne couvre pas. */
+  missing: string[];
+  checks: AtsCheckView[];
+}
+
+export type VersionStatusView = "rendering" | "ready" | "pages_exceeded" | "failed";
+
+export interface VersionView {
+  id: string;
+  number: number;
+  status: VersionStatusView;
+  pageCount: number | null;
+  originalPageCount: number;
+  filename: string;
+  /** Instant ISO de la création. */
+  createdAt: string;
+  failureReason: string | null;
+}
+
+/** Le rapport de la revue : ce qui joue pour et contre ce CV face à cette offre. */
+export interface ReportView {
+  /** Le logiciel de recrutement reconnu (« Greenhouse »), ou `null`. */
+  ats: string | null;
+  atsNotes: string[];
+  companySummary: string | null;
+  strengths: string[];
+  risks: string[];
+  eliminatory: string[];
+}

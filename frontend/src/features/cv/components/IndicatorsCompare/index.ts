@@ -1,0 +1,1 @@
+export { IndicatorsCompare } from "./IndicatorsCompare";
