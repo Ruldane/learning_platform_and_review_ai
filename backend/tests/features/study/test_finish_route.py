@@ -6,7 +6,9 @@ from datetime import timedelta
 from typing import Any
 
 import httpx
+import pytest
 
+from app.core.errors import AppError
 from app.db.models.program import Task
 from app.db.models.study import Flashcard, JournalEntry, StudySession
 from app.features.study.service.store import AgentStudyStore
@@ -175,3 +177,49 @@ async def test_second_finish_without_minutes_keeps_the_kept_time(
     r = await patch(client, sid, action="finish")
     assert r.status_code == 202 and r.json()["status"] == "finished"
     assert r.json()["minutes"] == 45
+
+
+async def test_dead_session_with_kept_time_is_finished_on_next_start(
+    client: httpx.AsyncClient, tutored: Seeded, stub_tutor: StubControl
+) -> None:
+    """Revue finale 5 (S-I1) : « Terminer » a gardé 45 min, puis le Tuteur a échoué avant de
+    conclure. Le départ suivant range cette fin (temps, journal ; sans lecture cochée, aucun
+    résultat de question n'étant connu) au lieu de l'annuler."""
+    stub_tutor.fail = True
+    out = await started(client, lesson_id=tutored.lessons[0])
+    await wait_status(client, out["session_id"], "failed")
+    sid = out["study_session_id"]
+    async with tutored.rt.session_factory() as db:
+        found = await db.get(StudySession, sid)
+        assert found is not None
+        found.worked_minutes = 45
+        await db.commit()
+    stub_tutor.fail = False
+    second = await started(client, lesson_id=tutored.lessons[1])
+    old = await study(client, sid)
+    assert old["status"] == "finished" and old["minutes"] == 45 and old["tasks_done"] == []
+    assert (await row(tutored, sid)).ended_at is not None
+    assert await count(tutored, JournalEntry, kind="study_session") == 1
+    assert (await row(tutored, second["study_session_id"])).status == "open"
+
+
+async def test_failed_resume_keeps_previously_kept_time(
+    client: httpx.AsyncClient, tutored: Seeded, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Revue finale 5 (S-m5) : 30 min gardées par un premier « Terminer » (arrêt du back avant
+    la reprise) ; la reprise du second échoue : les 30 min restent, jamais remises à rien."""
+    out = await _waiting(client, tutored)
+    sid = out["study_session_id"]
+    async with tutored.rt.session_factory() as db:
+        found = await db.get(StudySession, sid)
+        assert found is not None
+        found.worked_minutes = 30
+        await db.commit()
+
+    async def stale(*args: Any, **kwargs: Any) -> None:
+        raise AppError("stale_interrupt", "Question déjà répondue.", 409)
+
+    monkeypatch.setattr("app.features.study.service.control._resume", stale)
+    r = await patch(client, sid, action="finish", worked_minutes=5)
+    assert (r.status_code, r.json()["error"]["code"]) == (409, "study_not_waiting")
+    assert (await row(tutored, sid)).worked_minutes == 30

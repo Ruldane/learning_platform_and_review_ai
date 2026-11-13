@@ -19,21 +19,18 @@ import math
 from datetime import datetime
 
 from app.agents.runtime.handle import AgentRuntime
-from app.agents.tools.study_port import StudyOutcome
 from app.core.errors import AppError
 from app.db.models.study import StudySession
 from app.features.sessions.service import ResumeRequest, SessionsService, SessionView
 from app.features.study.repository import StudyRepository
 from app.features.study.schemas import StudySessionOut, StudyUpdate
-from app.features.study.service.finish import finish_study
+from app.features.study.service.finish import NO_OUTCOME, finish_study
 from app.features.study.service.runtime import StudyRuntime
 from app.features.study.service.view import is_dead, read_row, session_out
 
 logger = logging.getLogger(__name__)
 
 FINISH = {"action": "finish"}
-# Fin rangée par la route quand le Tuteur ne peut plus conclure : aucune question n'est connue.
-NO_OUTCOME = StudyOutcome(outcomes=[], exercise_done=False, ended_early=True, summary="")
 
 
 def study_not_waiting(status: str) -> AppError:
@@ -61,9 +58,11 @@ async def _keep_minutes(
         await db.commit()
 
 
-async def _forget_minutes(rt: StudyRuntime, user_id: str, study_id: str) -> None:
+async def _forget_minutes(rt: StudyRuntime, user_id: str, row: StudySession) -> None:
+    """La reprise a échoué : le temps redevient celui d'avant CE clic (un temps gardé par un
+    « Terminer » précédent n'est jamais effacé ; revue finale de la phase 5, S-m5)."""
     async with rt.session_factory() as db:
-        await StudyRepository(db, user_id).close_open(study_id, worked_minutes=None)
+        await StudyRepository(db, user_id).close_open(row.id, worked_minutes=row.worked_minutes)
         await db.commit()
 
 
@@ -106,7 +105,7 @@ async def _finish(
     try:
         await _resume(runtime, rt, user_id, row.session_id, pending.interrupt_id)
     except BaseException as exc:
-        await _forget_minutes(rt, user_id, row.id)
+        await _forget_minutes(rt, user_id, row)
         if isinstance(exc, AppError) and exc.code == "stale_interrupt":
             raise study_not_waiting(
                 (await _agent_view(runtime, rt, user_id, row.session_id)).status

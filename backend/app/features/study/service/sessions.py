@@ -4,16 +4,19 @@ leçon choisie, avec ou sans question pour le Tuteur.
 Sous le verrou de l'utilisatrice : la leçon (404 `lesson_not_found`, 409 `lesson_not_ready`) ou
 le bloc du jour (404 `no_block_today`, seulement s'il n'y a pas de session ouverte : « Commencer
 mon bloc » sans bloc, avec une session vivante, rend 409 `study_already_open` vers elle) ; une
-session `open` dont la session d'agents est terminée passe à `cancelled` dans la même
-transaction que l'insertion de la nouvelle (F11) ; une session vivante sur la même leçon est
+session `open` dont la session d'agents est terminée est rangée comme par un second « Terminer »
+si son temps a été gardé (« Terminer » envoyé, Tuteur arrêté avant de conclure : revue finale de
+la phase 5, S-I1), sinon passe à `cancelled` (avec `ended_at`) dans la même transaction que
+l'insertion de la nouvelle (F11) ; une session vivante sur la même leçon est
 rendue telle quelle (200), sur une autre leçon : 409 `study_already_open`
 (`details.study_session_id`). L'index unique partiel tranche une course qui passerait quand
 même : le second relit la session ouverte. La ligne est commitée AVANT `launcher.start` (jamais
 le verrou d'écriture de SQLite tenu pendant le lancement, D66, D72) ; un lancement refusé
-laisse la session `cancelled`. Journaux : identifiants seulement."""
+laisse la session `cancelled` (avec `ended_at`). Journaux : identifiants seulement."""
 
 import logging
 from dataclasses import dataclass
+from datetime import datetime
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,6 +25,7 @@ from app.core.errors import AppError
 from app.features.study.repository import StudyReadRepository, StudyRepository
 from app.features.study.schemas import StudyStart, StudyStarted
 from app.features.study.service.block import block_of_day, module_block
+from app.features.study.service.finish import NO_OUTCOME, finish_study
 from app.features.study.service.runtime import GRAPH, SUBJECT, StudyRuntime
 from app.features.study.service.store import lesson_not_ready
 from app.features.study.service.view import agent_status, is_dead
@@ -73,18 +77,34 @@ async def _target(
     return Target(lesson.id, lesson.module_id, lesson.program_id, tasks)
 
 
-async def _live(db: AsyncSession, user_id: str) -> tuple[str, str, str] | None:
+async def _settle_kept(rt: StudyRuntime, user_id: str) -> None:
+    """Sous le verrou, avant l'insertion : une session ouverte morte dont le temps a été gardé
+    (« Terminer » envoyé, puis le Tuteur s'est arrêté avant de conclure) est rangée comme le
+    ferait un second « Terminer » (temps, journal, série ; sans résultat de questions), jamais
+    annulée (revue finale de la phase 5, S-I1). Ordre des verrous : étude, puis programme (F4)."""
+    async with rt.session_factory() as db:
+        row = await StudyRepository(db, user_id).open_one()
+        if row is None or row.worked_minutes is None:
+            return
+        status = await agent_status(db, user_id, row.session_id)
+        dead = row.session_id is None or is_dead(row, status)
+    if dead:
+        await finish_study(rt, user_id, None, row.id, NO_OUTCOME)
+        logger.info("Fin rangée au départ suivant (Tuteur arrêté) : étude %s", row.id)
+
+
+async def _live(db: AsyncSession, user_id: str, now: datetime) -> tuple[str, str, str] | None:
     """`(id, leçon, session)` de la session ouverte encore vivante ; une session morte (sa
     session d'agents est terminée, ou son lancement s'est arrêté : sous le verrou, une session
     sans session d'agents n'est plus en cours de lancement) passe à `cancelled` (F11), non
-    commitée."""
+    commitée. Une session morte au temps gardé a déjà été rangée par `_settle_kept`."""
     repo = StudyRepository(db, user_id)
     row = await repo.open_one()
     if row is None:
         return None
     status = await agent_status(db, user_id, row.session_id)
     if row.session_id is None or is_dead(row, status):
-        await repo.close_open(row.id, status="cancelled")
+        await repo.close_open(row.id, status="cancelled", ended_at=now)
         logger.info("Session d'étude interrompue annulée : étude %s", row.id)
         return None
     return row.id, row.lesson_id, row.session_id
@@ -105,7 +125,7 @@ async def _insert(
     la session insérée et commitée."""
     async with rt.session_factory() as db:
         target = await _target(rt, db, user_id, body)
-        live = await _live(db, user_id)
+        live = await _live(db, user_id, rt.now())
         if live is not None:
             return _existing(live, target.lesson_id if target else None), "", ""
         if target is None:
@@ -124,7 +144,7 @@ async def _insert(
             await db.commit()
         except IntegrityError:
             await db.rollback()
-            live = await _live(db, user_id)
+            live = await _live(db, user_id, rt.now())
             if live is None:
                 raise
             return _existing(live, target.lesson_id), "", ""
@@ -135,7 +155,7 @@ async def _set_session(rt: StudyRuntime, user_id: str, study_id: str, sid: str |
     async with rt.session_factory() as db:
         repo = StudyRepository(db, user_id)
         if sid is None:
-            await repo.close_open(study_id, status="cancelled")
+            await repo.close_open(study_id, status="cancelled", ended_at=rt.now())
         else:
             await repo.update(study_id, session_id=sid)
         await db.commit()
@@ -146,6 +166,7 @@ async def start_study(
 ) -> tuple[StudyStarted, bool]:
     """Ouvre la session et lance le Tuteur ; rend `(départ, créée)` (créée : 202, sinon 200)."""
     async with rt.study_lock(user_id):
+        await _settle_kept(rt, user_id)
         existing, study_id, lesson_id = await _insert(rt, user_id, body)
         if existing is not None:
             return existing, False

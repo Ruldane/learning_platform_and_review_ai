@@ -89,6 +89,16 @@ def _local(moment: datetime, zone: ZoneInfo) -> datetime:
     return moment.astimezone(zone)
 
 
+async def _open_live(db: AsyncSession, user_id: str) -> str | None:
+    """La session ouverte encore vivante ; une session morte (lue `interrupted`, D91) n'est pas
+    proposée à la reprise : l'accueil offre un nouveau départ, qui la range ou l'annule (revue
+    finale de la phase 5, revue front I1)."""
+    current = await StudyRepository(db, user_id).open_one()
+    if current is None or is_dead(current, await agent_status(db, user_id, current.session_id)):
+        return None
+    return current.id
+
+
 async def summary(rt: StudyRuntime, db: AsyncSession, user_id: str) -> StudySummaryOut:
     settings = await SettingsService(db, user_id).get()
     zone = user_zone(settings.timezone)
@@ -99,13 +109,12 @@ async def summary(rt: StudyRuntime, db: AsyncSession, user_id: str) -> StudySumm
         for at, minutes in await StudyRepository(db, user_id).finished()
     ]
     week = sum(m for day, m in ended if monday <= day < monday + timedelta(days=7))
-    current = await StudyRepository(db, user_id).open_one()
     block = await block_of_day(db, user_id, today)
     return StudySummaryOut(
         streak_days=streak({day for day, _ in ended}, today),
         week_minutes=week,
         work_minutes=settings.study_work_minutes,
         break_minutes=settings.study_break_minutes,
-        open_session_id=current.id if current is not None else None,
+        open_session_id=await _open_live(db, user_id),
         block=block.out() if block is not None else None,
     )

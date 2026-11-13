@@ -6,6 +6,7 @@ quelle question, 5.6) : le temps vient du minuteur, la feature le compte. `wrap_
 écriture du parcours, idempotente (session d'étude déjà `finished` : relue) ; le message de fin
 vient après. Journaux : identifiants et nombres seulement (SPEC 17.2)."""
 
+import asyncio
 import logging
 from dataclasses import asdict
 from typing import Any
@@ -33,7 +34,8 @@ from app.core.errors import AppError
 FINISH_QUESTION = "La séance est finie. Termine-la pour enregistrer ton temps et tes acquis."
 FINISH_OPTION = {"value": "finish", "label": "Terminer la session"}
 SUMMARY_REQUEST = "Rédige le bilan."
-INVALID_OUTPUT_CODE = "structured_output_invalid"
+# Plus court que le plafond du nœud (120 s) : au-delà, le bilan chiffré, jamais `node_timeout`.
+SUMMARY_TIMEOUT_S = 90.0
 LEVEL_NAMES = {"declare": "Déclaré", "en_cours": "En cours", "valide": "Validé", "prouve": "Prouvé"}
 SAVE_TIMEOUT_S = 300  # la feature range le temps, les tâches, les fiches, les acquis, le journal
 
@@ -67,8 +69,9 @@ def _fallback_summary(outcomes: list[Outcome]) -> str:
 def make_summarize(deps: GraphDeps) -> Node:
     @node_timeout()
     async def summarize(state: StudySessionState) -> StudySessionState:
-        """Le bilan du Tuteur. Illisible après ses nouveaux essais : un bilan chiffré à la place
-        (la séance n'échoue pas à la dernière marche)."""
+        """Le bilan du Tuteur. Illisible après ses nouveaux essais, erreur du fournisseur ou délai
+        dépassé : un bilan chiffré à la place (la séance n'échoue pas à la dernière marche ; revue
+        finale de la phase 5, A-m1)."""
         outcomes = outcomes_of(state)
         prompt = tutor_prompt(
             state,
@@ -78,18 +81,20 @@ def make_summarize(deps: GraphDeps) -> Node:
             exercise_done=exercise_done(outcomes),
         )
         try:
-            found = await ask_tutor(
-                deps,
-                SessionSummary,
-                prompt,
-                SUMMARY_REQUEST,
-                step="bilan",
-                intent="je fais le bilan de la séance",
+            async with asyncio.timeout(SUMMARY_TIMEOUT_S):
+                found = await ask_tutor(
+                    deps,
+                    SessionSummary,
+                    prompt,
+                    SUMMARY_REQUEST,
+                    step="bilan",
+                    intent="je fais le bilan de la séance",
+                )
+        except (AppError, TimeoutError) as exc:
+            code = exc.code if isinstance(exc, AppError) else "timeout"
+            logger.warning(
+                "Bilan indisponible (%s), bilan chiffré : session %s", code, deps.session_id
             )
-        except AppError as exc:
-            if exc.code != INVALID_OUTPUT_CODE:
-                raise
-            logger.warning("Bilan illisible, bilan chiffré : session %s", deps.session_id)
             return {"session_summary": _fallback_summary(outcomes)}
         return {"session_summary": found.summary}
 

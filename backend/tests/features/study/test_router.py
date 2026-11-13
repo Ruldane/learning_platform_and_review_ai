@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 
 import httpx
 from fastapi import FastAPI
-from sqlalchemy import update
+from sqlalchemy import select, update
 
 from app.db.models.lessons import Lesson
 from app.db.models.program import Task
@@ -141,8 +141,12 @@ async def test_dead_open_session_is_shown_interrupted_then_cancelled_on_start(
     await seeded.launcher.end(seeded.user_id, first["session_id"], "failed")
     assert (await study(client, first["study_session_id"]))["status"] == "interrupted"
     assert (await row(seeded, first["study_session_id"])).status == "open"
+    # Revue finale 5 (revue front I1) : une session morte n'est pas proposée à la reprise.
+    assert (await client.get(f"{API}/summary")).json()["open_session_id"] is None
     second = await started(client, lesson_id=seeded.lessons[1])
-    assert (await row(seeded, first["study_session_id"])).status == "cancelled"
+    cancelled = await row(seeded, first["study_session_id"])
+    # Revue finale 5 (5.6 m7) : l'annulation au départ pose aussi `ended_at`.
+    assert cancelled.status == "cancelled" and cancelled.ended_at is not None
     assert (await row(seeded, second["study_session_id"])).status == "open"
 
 
@@ -154,6 +158,9 @@ async def test_refused_launch_leaves_session_cancelled(
     r = await start(client)
     assert r.status_code == 503
     assert await count(seeded, StudySession, status="cancelled") == 1
+    async with seeded.rt.session_factory() as db:  # revue finale 5 (5.6 m7) : `ended_at` posé
+        refused = (await db.execute(select(StudySession))).scalars().one()
+        assert refused.ended_at is not None
     seeded.launcher.refuse = False
     await started(client)
 

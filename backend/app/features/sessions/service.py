@@ -40,10 +40,13 @@ __all__ = [
 
 
 # Parcours lancés seulement par la route de leur feature, qui vérifie l'objet et la concurrence
-# (D106 : une replanification par programme, programme validé ; 409 `replan_open`).
+# (D106 : une replanification par programme, programme validé ; 409 `replan_open` ; quiz et
+# séance : verrou, sujet et ligne de la feature, revue finale de la phase 5).
 ROUTE_ONLY: dict[str, str] = {
     "replan": "POST /programs/{program_id}/replan",
     "capture": "POST /capture",
+    "quiz": "POST /modules/{module_id}/quiz",
+    "study_session": "POST /study-sessions",
 }
 
 

@@ -7,6 +7,7 @@ import logging
 import pytest
 
 from app.agents.nodes.mermaid_rules import mermaid_problems
+from app.agents.nodes.tutor import wrap
 from app.agents.nodes.tutor.answers import CHECK_REQUEST
 from app.agents.nodes.tutor.models import TeachTurn
 from app.agents.nodes.tutor.teach import (
@@ -18,6 +19,7 @@ from app.agents.nodes.tutor.teach import (
 from app.agents.nodes.tutor.wrap import SUMMARY_REQUEST
 from app.agents.tools.memory_port import NO_MEMORY
 from app.agents.tools.study_port import StudyOutcome
+from app.core.errors import AppError
 from tests.agents.graphs.council_models import CouncilModels
 from tests.agents.graphs.quiz_support import between_untrusted_markers
 from tests.agents.graphs.study_support import MakeStudy, StudyRun, teach_turn
@@ -124,6 +126,34 @@ async def test_replay_of_wrap_up_finishes_once(make_study_runner: MakeStudy) -> 
     assert second.store.finish_calls == 2
     assert second.prompts(SUMMARY_REQUEST) == []  # le bilan n'est pas redemandé
     assert len(await second.events("run.completed")) == 1
+
+
+@pytest.mark.parametrize("failure", ["provider", "timeout"])
+async def test_summary_failure_falls_back_to_counts(
+    make_study_runner: MakeStudy, monkeypatch: pytest.MonkeyPatch, failure: str
+) -> None:
+    """Revue finale 5 (A-m1) : une erreur du fournisseur ou un délai au bilan donne le bilan
+    chiffré ; la séance est rangée avec ses résultats au lieu d'échouer à la dernière marche."""
+    models = CouncilModels()
+    if failure == "provider":
+
+        async def refuse(agent: str, prompt: str) -> None:
+            if SUMMARY_REQUEST in prompt:
+                raise AppError("llm_provider_error", "Fournisseur indisponible.", 502)
+
+        models.hooks.append(refuse)
+    else:
+        monkeypatch.setattr(wrap, "SUMMARY_TIMEOUT_S", 0.05, raising=False)
+        models.block = lambda agent, prompt: SUMMARY_REQUEST in prompt
+    run = await make_study_runner(models)
+    await run.answer_all(1)
+    await run.wait_question()
+    await run.resume({"action": "finish"})
+    await run.wait_status("completed")
+    assert run.store.finished is not None
+    assert (
+        run.store.finished.summary == "Séance terminée : 1 réponse(s) juste(s) sur 1 question(s)."
+    )
 
 
 @pytest.mark.parametrize(

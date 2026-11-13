@@ -36,6 +36,17 @@ async def test_unknown_graph_returns_404_in_french(client: httpx.AsyncClient):
     assert r.json()["error"]["message"].startswith("Parcours inconnu")
 
 
+async def test_generic_route_refuses_quiz_and_study_session(client: httpx.AsyncClient):
+    """Revue finale 5 (S-m3) : comme `replan` et `capture`, ces parcours ont leur route."""
+    for graph, route in [
+        ("quiz", "POST /modules/{module_id}/quiz"),
+        ("study_session", "POST /study-sessions"),
+    ]:
+        r = await client.post(API, json={"graph": graph, "input": {}})
+        assert (r.status_code, r.json()["error"]["code"]) == (409, "graph_has_route")
+        assert r.json()["error"]["details"] == {"graph": graph, "route": route}
+
+
 async def test_invalid_input_returns_422_without_echoing_values(client: httpx.AsyncClient):
     r = await client.post(API, json={"graph": "with_topic", "input": {"topic": {"k": "sk-secret"}}})
     assert r.status_code == 422

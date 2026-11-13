@@ -43,6 +43,8 @@ PRACTICE = ("pratiquer",)
 CARD_VERDICTS = ("partial", "wrong", "revealed")  # « Passer » ne crée pas de fiche (D103)
 CEILING: SkillLevel = "en_cours"  # jamais au-delà (4.5)
 EMPTY = StudyFinished(minutes=0, tasks_done=[], flashcards_created=0, skills=[])
+# Fin rangée par la route quand le Tuteur ne peut plus conclure : aucune question n'est connue.
+NO_OUTCOME = StudyOutcome(outcomes=[], exercise_done=False, ended_early=True, summary="")
 
 
 def study_not_found() -> AppError:
