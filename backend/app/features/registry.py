@@ -2,10 +2,12 @@ from fastapi import APIRouter
 
 from app.features.auth.router import router as auth_router
 from app.features.capture.router import router as capture_router
+from app.features.gap.router import router as gap_router
 from app.features.health.router import router as health_router
 from app.features.learning.router import router as learning_router
 from app.features.lessons.router import router as lessons_router
 from app.features.memory.router import router as memory_router
+from app.features.postings.router import router as postings_router
 from app.features.program.router import router as program_router
 from app.features.quiz.router import router as quiz_router
 from app.features.replan.router import router as replan_router
@@ -33,4 +35,6 @@ FEATURE_ROUTERS: list[APIRouter] = [
     replan_router,
     skills_router,
     capture_router,
+    postings_router,
+    gap_router,
 ]

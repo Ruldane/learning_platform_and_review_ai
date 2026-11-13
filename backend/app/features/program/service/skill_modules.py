@@ -41,3 +41,27 @@ async def program_skill_names(db: AsyncSession, user_id: str, program_id: str) -
     n'est pas à l'utilisateur."""
     loaded = await load(db, user_id, program_id)
     return list(dict.fromkeys(norm for module in loaded.modules for norm in _norms(module)))
+
+
+async def skill_weeks(db: AsyncSession, user_id: str) -> dict[str, int]:
+    """`nom normalisé → semaine` des compétences enseignées par un module non sauté d'un
+    programme validé (le plus récent d'abord, puis l'ordre du programme ; le premier module
+    gagne). La semaine est celle de la 1re tâche du module (rang de la semaine du programme qui
+    contient sa date), sinon celle du module (écart d'une offre, D122)."""
+    weeks: dict[str, int] = {}
+    for program in await ProgramRepository(db, user_id).list_recent():
+        if program.status != "validated":
+            continue
+        loaded = await load(db, user_id, program.id)
+        rank = {week.id: week.rank for week in loaded.weeks}
+        for module in loaded.modules:
+            if module.skipped:
+                continue
+            tasks = loaded.tasks_of_module(module.id)
+            week = loaded.week_of(tasks[0].planned_date) if tasks else None
+            number = week.rank if week is not None else rank.get(module.week_id)
+            if number is None:
+                continue
+            for norm in _norms(module):
+                weeks.setdefault(norm, number)
+    return weeks

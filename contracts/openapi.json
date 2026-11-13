@@ -1342,6 +1342,21 @@
         "title": "CostUpdatedPayload",
         "type": "object"
       },
+      "DistinctIn": {
+        "properties": {
+          "other_id": {
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Other Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "other_id"
+        ],
+        "title": "DistinctIn",
+        "type": "object"
+      },
       "DocumentCreated": {
         "properties": {
           "document": {
@@ -1545,6 +1560,84 @@
         "title": "DueQueue",
         "type": "object"
       },
+      "DuplicateOut": {
+        "properties": {
+          "company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "level": {
+            "enum": [
+              "certain",
+              "probable",
+              "possible"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "posting_id": {
+            "title": "Posting Id",
+            "type": "string"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "required": [
+          "level",
+          "posting_id",
+          "title",
+          "company",
+          "created_at"
+        ],
+        "title": "DuplicateOut",
+        "type": "object"
+      },
+      "EliminatoryOut": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "experience_years",
+              "location",
+              "language",
+              "degree",
+              "other"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "text"
+        ],
+        "title": "EliminatoryOut",
+        "type": "object"
+      },
       "EvidenceOut": {
         "properties": {
           "at": {
@@ -1664,6 +1757,142 @@
           "unplaced"
         ],
         "title": "FollowupOut",
+        "type": "object"
+      },
+      "GapOut": {
+        "description": "`pending` tant que l'analyse tourne ; `failed` : offre refusée ou analyse arrêtée.",
+        "properties": {
+          "posting_id": {
+            "title": "Posting Id",
+            "type": "string"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/GapRowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "ready",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "posting_id",
+          "status",
+          "score",
+          "rows",
+          "session_id"
+        ],
+        "title": "GapOut",
+        "type": "object"
+      },
+      "GapRowOut": {
+        "properties": {
+          "action": {
+            "enum": [
+              "in_program",
+              "to_add",
+              "out_of_scope"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "enum": [
+                  "declare",
+                  "en_cours",
+                  "valide",
+                  "prouve"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level"
+          },
+          "required": {
+            "title": "Required",
+            "type": "boolean"
+          },
+          "skill": {
+            "title": "Skill",
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "posting",
+              "cv_review"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "week": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Week"
+          }
+        },
+        "required": [
+          "skill",
+          "required",
+          "level",
+          "action",
+          "week",
+          "source"
+        ],
+        "title": "GapRowOut",
+        "type": "object"
+      },
+      "GapStarted": {
+        "properties": {
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id"
+        ],
+        "title": "GapStarted",
         "type": "object"
       },
       "GoalCreate": {
@@ -2228,6 +2457,27 @@
           "message"
         ],
         "title": "KeyTestResult",
+        "type": "object"
+      },
+      "KeywordOut": {
+        "properties": {
+          "term": {
+            "title": "Term",
+            "type": "string"
+          },
+          "variants": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Variants",
+            "type": "array"
+          }
+        },
+        "required": [
+          "term",
+          "variants"
+        ],
+        "title": "KeywordOut",
         "type": "object"
       },
       "LearnedStarted": {
@@ -3679,6 +3929,326 @@
         "title": "PlanVersionOut",
         "type": "object"
       },
+      "PostingAnalysisOut": {
+        "description": "L'analyse de l'Analyste (`PostingAnalysis`, D121), telle qu'elle est rangée.",
+        "properties": {
+          "apply_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Apply Url"
+          },
+          "company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "eliminatory": {
+            "items": {
+              "$ref": "#/components/schemas/EliminatoryOut"
+            },
+            "title": "Eliminatory",
+            "type": "array"
+          },
+          "keywords": {
+            "items": {
+              "$ref": "#/components/schemas/KeywordOut"
+            },
+            "title": "Keywords",
+            "type": "array"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "level": {
+            "enum": [
+              "junior",
+              "confirme",
+              "senior",
+              "lead",
+              "inconnu"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "remote": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remote"
+          },
+          "requirements": {
+            "items": {
+              "$ref": "#/components/schemas/RequirementOut"
+            },
+            "title": "Requirements",
+            "type": "array"
+          },
+          "skills": {
+            "items": {
+              "$ref": "#/components/schemas/SkillNeedOut"
+            },
+            "title": "Skills",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "tools": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tools",
+            "type": "array"
+          }
+        },
+        "required": [
+          "title",
+          "company",
+          "level",
+          "location",
+          "remote",
+          "language",
+          "requirements",
+          "keywords",
+          "eliminatory",
+          "tools",
+          "skills",
+          "apply_url"
+        ],
+        "title": "PostingAnalysisOut",
+        "type": "object"
+      },
+      "PostingCreatedOut": {
+        "description": "`created` faux : même lien ou même texte (doublon « certain »), l'offre existante ;\n`session_id` : l'analyse lancée (ou relancée), sinon `None`.",
+        "properties": {
+          "created": {
+            "title": "Created",
+            "type": "boolean"
+          },
+          "posting": {
+            "$ref": "#/components/schemas/PostingOut"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          }
+        },
+        "required": [
+          "posting",
+          "created",
+          "session_id"
+        ],
+        "title": "PostingCreatedOut",
+        "type": "object"
+      },
+      "PostingIn": {
+        "description": "Exactement une source : le lien de l'offre ou son texte collé ; sinon 422\n`posting_source`.",
+        "properties": {
+          "text": {
+            "anyOf": [
+              {
+                "maxLength": 60000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "maxLength": 2048,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "title": "PostingIn",
+        "type": "object"
+      },
+      "PostingOut": {
+        "properties": {
+          "analysis": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PostingAnalysisOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "duplicates": {
+            "items": {
+              "$ref": "#/components/schemas/DuplicateOut"
+            },
+            "title": "Duplicates",
+            "type": "array"
+          },
+          "failure_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Reason"
+          },
+          "gap_session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gap Session Id"
+          },
+          "has_review": {
+            "title": "Has Review",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "source": {
+            "enum": [
+              "url",
+              "text"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "analyzing",
+              "ready",
+              "rejected",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "company",
+          "status",
+          "source",
+          "score",
+          "created_at",
+          "has_review",
+          "url",
+          "text",
+          "analysis",
+          "duplicates",
+          "failure_reason",
+          "gap_session_id"
+        ],
+        "title": "PostingOut",
+        "type": "object"
+      },
       "PostingRefOut": {
         "description": "Une offre qui exige la compétence (phase 6) ; liste vide d'ici là.",
         "properties": {
@@ -3708,6 +4278,86 @@
           "url"
         ],
         "title": "PostingRefOut",
+        "type": "object"
+      },
+      "PostingSummaryOut": {
+        "properties": {
+          "company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "has_review": {
+            "title": "Has Review",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "source": {
+            "enum": [
+              "url",
+              "text"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "analyzing",
+              "ready",
+              "rejected",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "company",
+          "status",
+          "source",
+          "score",
+          "created_at",
+          "has_review"
+        ],
+        "title": "PostingSummaryOut",
         "type": "object"
       },
       "ProgramOut": {
@@ -4437,6 +5087,32 @@
           "session_id"
         ],
         "title": "ReplanStarted",
+        "type": "object"
+      },
+      "RequirementOut": {
+        "properties": {
+          "required": {
+            "title": "Required",
+            "type": "boolean"
+          },
+          "skills": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Skills",
+            "type": "array"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "required",
+          "skills"
+        ],
+        "title": "RequirementOut",
         "type": "object"
       },
       "ResourceOut": {
@@ -5459,6 +6135,41 @@
           "level"
         ],
         "title": "SkillLevelOut",
+        "type": "object"
+      },
+      "SkillNeedOut": {
+        "properties": {
+          "domain": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domain"
+          },
+          "learnable": {
+            "title": "Learnable",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "required": {
+            "title": "Required",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "required",
+          "domain",
+          "learnable"
+        ],
+        "title": "SkillNeedOut",
         "type": "object"
       },
       "SkillNodeOut": {
@@ -6560,6 +7271,29 @@
         "title": "ToolResultPayload",
         "type": "object"
       },
+      "TopMissingOut": {
+        "properties": {
+          "postings": {
+            "title": "Postings",
+            "type": "integer"
+          },
+          "required_in": {
+            "title": "Required In",
+            "type": "integer"
+          },
+          "skill": {
+            "title": "Skill",
+            "type": "string"
+          }
+        },
+        "required": [
+          "skill",
+          "postings",
+          "required_in"
+        ],
+        "title": "TopMissingOut",
+        "type": "object"
+      },
       "UserMessageEvent": {
         "properties": {
           "agent": {
@@ -7412,6 +8146,32 @@
         "summary": "Review Card",
         "tags": [
           "quiz"
+        ]
+      }
+    },
+    "/api/v1/gap/top-missing": {
+      "get": {
+        "description": "Les 10 compétences absentes demandées par le plus d'offres.",
+        "operationId": "get_top_missing_api_v1_gap_top_missing_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TopMissingOut"
+                  },
+                  "title": "Response Get Top Missing Api V1 Gap Top Missing Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Top Missing",
+        "tags": [
+          "gap"
         ]
       }
     },
@@ -8402,6 +9162,288 @@
         "summary": "Start Quiz",
         "tags": [
           "quiz"
+        ]
+      }
+    },
+    "/api/v1/postings": {
+      "get": {
+        "description": "Les offres de January, les plus récentes d'abord.",
+        "operationId": "get_postings_api_v1_postings_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PostingSummaryOut"
+                  },
+                  "title": "Response Get Postings Api V1 Postings Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Postings",
+        "tags": [
+          "postings"
+        ]
+      },
+      "post": {
+        "description": "201 : offre créée, analyse lancée. 200 : même lien ou même texte, l'offre existante\n(relancée si elle était refusée, en échec ou interrompue). 422 `posting_source`,\n`posting_unreadable`, `posting_too_short`, `invalid_url`, `url_forbidden` : jamais l'entrée\ndans la réponse.",
+        "operationId": "add_posting_api_v1_postings_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostingIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostingCreatedOut"
+                }
+              }
+            },
+            "description": "Offre déjà ajoutée"
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostingCreatedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Posting",
+        "tags": [
+          "postings"
+        ]
+      }
+    },
+    "/api/v1/postings/{posting_id}": {
+      "delete": {
+        "description": "Retire l'offre, son élément de mémoire `offre`, ses revues et versions ; 409\n`review_in_progress` si une revue de CV tourne.",
+        "operationId": "remove_posting_api_v1_postings__posting_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "posting_id",
+            "required": true,
+            "schema": {
+              "title": "Posting Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Remove Posting",
+        "tags": [
+          "postings"
+        ]
+      },
+      "get": {
+        "operationId": "get_posting_api_v1_postings__posting_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "posting_id",
+            "required": true,
+            "schema": {
+              "title": "Posting Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Posting",
+        "tags": [
+          "postings"
+        ]
+      }
+    },
+    "/api/v1/postings/{posting_id}/distinct": {
+      "post": {
+        "description": "« Offres distinctes » : le doublon disparaît des deux côtés.",
+        "operationId": "distinct_postings_api_v1_postings__posting_id__distinct_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "posting_id",
+            "required": true,
+            "schema": {
+              "title": "Posting Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DistinctIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Distinct Postings",
+        "tags": [
+          "postings"
+        ]
+      }
+    },
+    "/api/v1/postings/{posting_id}/gap": {
+      "get": {
+        "description": "`pending` tant que l'analyse tourne ; offre d'une autre : 404 `posting_not_found`.",
+        "operationId": "get_gap_api_v1_postings__posting_id__gap_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "posting_id",
+            "required": true,
+            "schema": {
+              "title": "Posting Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GapOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Gap",
+        "tags": [
+          "gap"
+        ]
+      },
+      "post": {
+        "description": "Relance l'analyse d'écart ; 409 `gap_in_progress` si elle tourne déjà.",
+        "operationId": "relaunch_gap_api_v1_postings__posting_id__gap_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "posting_id",
+            "required": true,
+            "schema": {
+              "title": "Posting Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GapStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Relaunch Gap",
+        "tags": [
+          "postings"
         ]
       }
     },

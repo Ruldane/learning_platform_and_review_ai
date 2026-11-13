@@ -125,6 +125,15 @@ class SkillsService:
             if norm in rows and rows[norm].id in levels
         ]
 
+    async def catalog(self) -> list[tuple[str, SkillLevel | None]]:
+        """`(nom affiché, niveau ou None)` de chaque compétence du référentiel de January, par
+        nom (écart d'une offre, D122)."""
+        levels = await self._levels.by_skill()
+        return [
+            (skill.name, _as_level(levels[skill.id]) if skill.id in levels else None)
+            for skill in await self._skills.list_all()
+        ]
+
     async def known_levels(self) -> dict[str, SkillLevel]:
         """`nom normalisé → niveau` de chaque compétence connue de January."""
         return {norm: _as_level(level) for norm, level in await self._levels.levels()}

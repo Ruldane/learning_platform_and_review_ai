@@ -157,6 +157,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/gap/top-missing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Top Missing
+         * @description Les 10 compétences absentes demandées par le plus d'offres.
+         */
+        get: operations["get_top_missing_api_v1_gap_top_missing_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/goals": {
         parameters: {
             query?: never;
@@ -485,6 +505,99 @@ export interface paths {
          *     échec : relancé. Leçon pas prête : 409 `lesson_not_ready`.
          */
         post: operations["start_quiz_api_v1_modules__module_id__quiz_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/postings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Postings
+         * @description Les offres de January, les plus récentes d'abord.
+         */
+        get: operations["get_postings_api_v1_postings_get"];
+        put?: never;
+        /**
+         * Add Posting
+         * @description 201 : offre créée, analyse lancée. 200 : même lien ou même texte, l'offre existante
+         *     (relancée si elle était refusée, en échec ou interrompue). 422 `posting_source`,
+         *     `posting_unreadable`, `posting_too_short`, `invalid_url`, `url_forbidden` : jamais l'entrée
+         *     dans la réponse.
+         */
+        post: operations["add_posting_api_v1_postings_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/postings/{posting_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Posting */
+        get: operations["get_posting_api_v1_postings__posting_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Remove Posting
+         * @description Retire l'offre, son élément de mémoire `offre`, ses revues et versions ; 409
+         *     `review_in_progress` si une revue de CV tourne.
+         */
+        delete: operations["remove_posting_api_v1_postings__posting_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/postings/{posting_id}/distinct": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Distinct Postings
+         * @description « Offres distinctes » : le doublon disparaît des deux côtés.
+         */
+        post: operations["distinct_postings_api_v1_postings__posting_id__distinct_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/postings/{posting_id}/gap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Gap
+         * @description `pending` tant que l'analyse tourne ; offre d'une autre : 404 `posting_not_found`.
+         */
+        get: operations["get_gap_api_v1_postings__posting_id__gap_get"];
+        put?: never;
+        /**
+         * Relaunch Gap
+         * @description Relance l'analyse d'écart ; 409 `gap_in_progress` si elle tourne déjà.
+         */
+        post: operations["relaunch_gap_api_v1_postings__posting_id__gap_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1734,6 +1847,11 @@ export interface components {
             /** Tokens Out */
             tokens_out: number;
         };
+        /** DistinctIn */
+        DistinctIn: {
+            /** Other Id */
+            other_id: string;
+        };
         /** DocumentCreated */
         DocumentCreated: {
             document: components["schemas"]["DocumentOut"];
@@ -1806,6 +1924,35 @@ export interface components {
             /** Reviewed Today */
             reviewed_today: number;
         };
+        /** DuplicateOut */
+        DuplicateOut: {
+            /** Company */
+            company: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "certain" | "probable" | "possible";
+            /** Posting Id */
+            posting_id: string;
+            /** Title */
+            title: string | null;
+        };
+        /** EliminatoryOut */
+        EliminatoryOut: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "experience_years" | "location" | "language" | "degree" | "other";
+            /** Text */
+            text: string;
+        };
         /** EvidenceOut */
         EvidenceOut: {
             /** At */
@@ -1839,6 +1986,51 @@ export interface components {
             revision_tasks: string[];
             /** Unplaced */
             unplaced: number;
+        };
+        /**
+         * GapOut
+         * @description `pending` tant que l'analyse tourne ; `failed` : offre refusée ou analyse arrêtée.
+         */
+        GapOut: {
+            /** Posting Id */
+            posting_id: string;
+            /** Rows */
+            rows: components["schemas"]["GapRowOut"][];
+            /** Score */
+            score: number | null;
+            /** Session Id */
+            session_id: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "ready" | "failed";
+        };
+        /** GapRowOut */
+        GapRowOut: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "in_program" | "to_add" | "out_of_scope";
+            /** Level */
+            level: ("declare" | "en_cours" | "valide" | "prouve") | null;
+            /** Required */
+            required: boolean;
+            /** Skill */
+            skill: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "posting" | "cv_review";
+            /** Week */
+            week: number | null;
+        };
+        /** GapStarted */
+        GapStarted: {
+            /** Session Id */
+            session_id: string;
         };
         /**
          * GoalCreate
@@ -2059,6 +2251,13 @@ export interface components {
             message: string;
             /** Ok */
             ok: boolean;
+        };
+        /** KeywordOut */
+        KeywordOut: {
+            /** Term */
+            term: string;
+            /** Variants */
+            variants: string[];
         };
         /**
          * LearnedStarted
@@ -2583,6 +2782,101 @@ export interface components {
             week_loads: components["schemas"]["WeekLoadOut"][];
         };
         /**
+         * PostingAnalysisOut
+         * @description L'analyse de l'Analyste (`PostingAnalysis`, D121), telle qu'elle est rangée.
+         */
+        PostingAnalysisOut: {
+            /** Apply Url */
+            apply_url: string | null;
+            /** Company */
+            company: string | null;
+            /** Eliminatory */
+            eliminatory: components["schemas"]["EliminatoryOut"][];
+            /** Keywords */
+            keywords: components["schemas"]["KeywordOut"][];
+            /** Language */
+            language: string;
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "junior" | "confirme" | "senior" | "lead" | "inconnu";
+            /** Location */
+            location: string | null;
+            /** Remote */
+            remote: string | null;
+            /** Requirements */
+            requirements: components["schemas"]["RequirementOut"][];
+            /** Skills */
+            skills: components["schemas"]["SkillNeedOut"][];
+            /** Title */
+            title: string;
+            /** Tools */
+            tools: string[];
+        };
+        /**
+         * PostingCreatedOut
+         * @description `created` faux : même lien ou même texte (doublon « certain »), l'offre existante ;
+         *     `session_id` : l'analyse lancée (ou relancée), sinon `None`.
+         */
+        PostingCreatedOut: {
+            /** Created */
+            created: boolean;
+            posting: components["schemas"]["PostingOut"];
+            /** Session Id */
+            session_id: string | null;
+        };
+        /**
+         * PostingIn
+         * @description Exactement une source : le lien de l'offre ou son texte collé ; sinon 422
+         *     `posting_source`.
+         */
+        PostingIn: {
+            /** Text */
+            text?: string | null;
+            /** Url */
+            url?: string | null;
+        };
+        /** PostingOut */
+        PostingOut: {
+            analysis: components["schemas"]["PostingAnalysisOut"] | null;
+            /** Company */
+            company: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Duplicates */
+            duplicates: components["schemas"]["DuplicateOut"][];
+            /** Failure Reason */
+            failure_reason: string | null;
+            /** Gap Session Id */
+            gap_session_id: string | null;
+            /** Has Review */
+            has_review: boolean;
+            /** Id */
+            id: string;
+            /** Score */
+            score: number | null;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "url" | "text";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "analyzing" | "ready" | "rejected" | "failed";
+            /** Text */
+            text: string;
+            /** Title */
+            title: string | null;
+            /** Url */
+            url: string | null;
+        };
+        /**
          * PostingRefOut
          * @description Une offre qui exige la compétence (phase 6) ; liste vide d'ici là.
          */
@@ -2593,6 +2887,34 @@ export interface components {
             title: string;
             /** Url */
             url: string | null;
+        };
+        /** PostingSummaryOut */
+        PostingSummaryOut: {
+            /** Company */
+            company: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Has Review */
+            has_review: boolean;
+            /** Id */
+            id: string;
+            /** Score */
+            score: number | null;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "url" | "text";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "analyzing" | "ready" | "rejected" | "failed";
+            /** Title */
+            title: string | null;
         };
         /** ProgramOut */
         ProgramOut: {
@@ -2844,6 +3166,15 @@ export interface components {
         ReplanStarted: {
             /** Session Id */
             session_id: string;
+        };
+        /** RequirementOut */
+        RequirementOut: {
+            /** Required */
+            required: boolean;
+            /** Skills */
+            skills: string[];
+            /** Text */
+            text: string;
         };
         /**
          * ResourceOut
@@ -3222,6 +3553,17 @@ export interface components {
             level: "declare" | "en_cours" | "valide" | "prouve";
             /** Name */
             name: string;
+        };
+        /** SkillNeedOut */
+        SkillNeedOut: {
+            /** Domain */
+            domain: string | null;
+            /** Learnable */
+            learnable: boolean;
+            /** Name */
+            name: string;
+            /** Required */
+            required: boolean;
         };
         /** SkillNodeOut */
         SkillNodeOut: {
@@ -3614,6 +3956,15 @@ export interface components {
             summary: string;
             /** Tool */
             tool: string;
+        };
+        /** TopMissingOut */
+        TopMissingOut: {
+            /** Postings */
+            postings: number;
+            /** Required In */
+            required_in: number;
+            /** Skill */
+            skill: string;
         };
         /** UserMessageEvent */
         UserMessageEvent: {
@@ -4140,6 +4491,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_top_missing_api_v1_gap_top_missing_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopMissingOut"][];
                 };
             };
         };
@@ -4777,6 +5148,223 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["QuizStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_postings_api_v1_postings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PostingSummaryOut"][];
+                };
+            };
+        };
+    };
+    add_posting_api_v1_postings_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PostingIn"];
+            };
+        };
+        responses: {
+            /** @description Offre déjà ajoutée */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PostingCreatedOut"];
+                };
+            };
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PostingCreatedOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_posting_api_v1_postings__posting_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                posting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PostingOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_posting_api_v1_postings__posting_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                posting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    distinct_postings_api_v1_postings__posting_id__distinct_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                posting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DistinctIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_gap_api_v1_postings__posting_id__gap_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                posting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GapOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    relaunch_gap_api_v1_postings__posting_id__gap_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                posting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GapStarted"];
                 };
             };
             /** @description Validation Error */

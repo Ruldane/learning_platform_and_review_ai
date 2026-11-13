@@ -27,6 +27,7 @@ from app.bootstrap import (
 from app.bootstrap import memory_providers as open_memory_providers
 from app.bootstrap import publishing_providers as open_publishing_providers
 from app.bootstrap import research_providers as open_research_providers
+from app.bootstrap_career import career_runtimes
 from app.config import Settings, get_settings
 from app.core.errors import register_error_handlers
 from app.core.limits import BodySizeLimit
@@ -174,6 +175,12 @@ def _compose_features(app: FastAPI) -> StudyRuntimes:
     app.state.study = study.study
     app.state.replan = study.replan
     app.state.capture = study.capture
+    app.state.career = career_runtimes(
+        app.state.session_factory,
+        app.state.launcher,
+        research=app.state.research,
+        memory=app.state.memory,
+    )
     return study
 
 
@@ -199,6 +206,7 @@ async def _open_agents(app: FastAPI, stack: AsyncExitStack) -> None:
                 program=app.state.program,
                 lessons=app.state.lessons,
                 study=study,
+                gap=app.state.career.gap,
             ),
         )
     )
