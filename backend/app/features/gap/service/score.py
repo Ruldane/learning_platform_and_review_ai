@@ -1,6 +1,5 @@
 """Score de match d'une offre et compétences les plus manquantes (SPEC F8, D118)."""
 
-import math
 from collections import Counter
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
@@ -17,6 +16,10 @@ LEVEL_VALUE: dict[SkillLevel | None, float] = {
     "declare": 0.6,
     "en_cours": 0.3,
     None: 0.0,
+}
+# Les mêmes valeurs en dixièmes : le score se calcule en entiers.
+LEVEL_TENTHS: dict[SkillLevel | None, int] = {
+    level: round(value * 10) for level, value in LEVEL_VALUE.items()
 }
 TOP_MISSING = 10
 
@@ -55,8 +58,10 @@ def match_score(rows: Sequence[GapRow]) -> int:
     total = sum(_weight(row) for row in counted)
     if total == 0:
         return 0
-    earned = sum(_weight(row) * LEVEL_VALUE[row.level] for row in counted)
-    return math.floor(100 * earned / total + 0.5)
+    # En entiers (valeurs en dixièmes) : 0,6 et 0,3 ne sont pas exacts en flottant, et 57,5
+    # tomberait à 57. score = ⌊10 × earned / total + ½⌋ = (20 × earned + total) // (2 × total).
+    earned = sum(_weight(row) * LEVEL_TENTHS[row.level] for row in counted)
+    return (20 * earned + total) // (2 * total)
 
 
 def _weight(row: GapRow) -> int:

@@ -37,15 +37,19 @@ class Indicators:
     checks: list[AtsCheck]
 
 
+def _recoups(text: str, skills: set[str], form: str) -> bool:
+    return contains_term(text, form, plural=True) or normalize_term(form, plural=True) in skills
+
+
 def requirement_words(requirement: Requirement, keywords: Sequence[Keyword]) -> list[str]:
     """Les mots qui couvrent une exigence : ses compétences, puis le terme et les variantes de
     chaque mot clé qui la recoupe (une de ses formes figure dans l'exigence ou nomme une de ses
-    compétences)."""
+    compétences), pluriel simple ignoré comme dans la couverture."""
     words = list(requirement.skills)
-    skills = {normalize_term(skill) for skill in requirement.skills}
+    skills = {normalize_term(skill, plural=True) for skill in requirement.skills}
     for keyword in keywords:
         forms = [keyword.term, *keyword.variants]
-        if any(contains_term(requirement.text, f) or normalize_term(f) in skills for f in forms):
+        if any(_recoups(requirement.text, skills, form) for form in forms):
             words.extend(forms)
     return list(dict.fromkeys(words))
 

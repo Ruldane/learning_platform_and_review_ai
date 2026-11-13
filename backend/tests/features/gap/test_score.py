@@ -1,5 +1,9 @@
 """Score de match et compétences les plus manquantes (6.2, F8)."""
 
+import math
+from fractions import Fraction
+from itertools import combinations_with_replacement
+
 from app.db.models.skills import SkillLevel
 from app.features.gap.service.score import (
     GapAction,
@@ -27,6 +31,29 @@ def test_match_score_levels() -> None:
     assert match_score([row(False, "en_cours")]) == 30
     assert match_score([row(True, "prouve"), row(True, "en_cours")]) == 65
     assert match_score([row(False, "valide"), row(False, None)]) == 50
+
+
+def test_match_score_rounds_half_up_exactly() -> None:
+    # 100 × (2 × 1 + 1 × 0,3 + 1 × 0) / 4 = 57,5 → 58 (en flottant : 57,499… → 57).
+    assert match_score([row(True, "valide"), row(False, "en_cours"), row(False, None)]) == 58
+
+
+def test_match_score_matches_exact_fractions() -> None:
+    levels: list[SkillLevel | None] = ["valide", "declare", "en_cours", None]
+    exact: dict[SkillLevel | None, Fraction] = {
+        "valide": Fraction(1),
+        "declare": Fraction(6, 10),
+        "en_cours": Fraction(3, 10),
+        None: Fraction(0),
+    }
+    choices = [(required, level) for required in (True, False) for level in levels]
+    for size in range(1, 6):
+        for combo in combinations_with_replacement(choices, size):
+            rows = [row(required, level) for required, level in combo]
+            weight = sum(2 if required else 1 for required, _ in combo)
+            earned = sum((2 if r else 1) * exact[level] for r, level in combo)
+            expected = math.floor(100 * Fraction(earned) / weight + Fraction(1, 2))
+            assert match_score(rows) == expected, combo
 
 
 def test_match_score_without_rows_is_zero() -> None:

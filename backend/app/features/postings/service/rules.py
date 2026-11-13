@@ -9,8 +9,10 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from app.core.skills import normalize_skill_name
 from app.features.memory.service.upload import normalize_url
 
-# Paramètres de suivi retirés d'un lien : une entrée finie par « _ » est un préfixe.
-TRACKING_PARAMS = ("utm_", "gclid", "fbclid", "mc_cid", "mc_eid", "trk", "ref", "src")
+# Paramètres de suivi retirés d'un lien : une entrée finie par « _ » est un préfixe. « ref » et
+# « src » n'en sont pas (écart voulu au plan, D118) : des sites carrières y mettent l'offre.
+TRACKING_PARAMS = ("utm_", "gclid", "fbclid", "mc_cid", "mc_eid", "trk")
+_DEFAULT_PORTS = {"http": 80, "https": 443}
 LEGAL_SUFFIXES = (
     "sa",
     "sas",
@@ -62,19 +64,32 @@ def _is_tracking(key: str) -> bool:
     )
 
 
+def _route_fragment(url: str) -> str:
+    """Le fragment d'un site à routage par ancre (`#/offre/1`, `#!/offre/1`) : il désigne
+    l'offre et reste dans la clé. Tout autre fragment (`#postuler`) est retiré."""
+    fragment = urlsplit(url.strip()).fragment
+    return fragment if fragment.startswith(("/", "!")) else ""
+
+
 def posting_url_key(url: str) -> str:
     """La clé d'un lien d'offre : `normalize_url` (lève `invalid_url` ou `url_forbidden`), puis
-    « www. » retiré, paramètres de suivi retirés, requête triée, « / » final retiré. Une clé
-    passée de nouveau donne la même clé."""
+    « www. » et port par défaut retirés, paramètres de suivi retirés, requête triée, « / »
+    final retiré, fragment retiré sauf une route (`_route_fragment`). Une clé passée de
+    nouveau donne la même clé. Deux offres distinctes ne partagent jamais une clé : un vrai
+    doublon manqué ici est rattrapé au niveau « probable » ou « possible »."""
     parts = urlsplit(normalize_url(url))
-    netloc = parts.netloc.removeprefix("www.")
+    netloc = parts.netloc
+    if parts.port is not None and _DEFAULT_PORTS.get(parts.scheme) == parts.port:
+        netloc = netloc.rsplit(":", 1)[0]
     query = sorted(
         (key, value)
         for key, value in parse_qsl(parts.query, keep_blank_values=True)
         if not _is_tracking(key)
     )
     path = parts.path.rstrip("/")
-    return urlunsplit((parts.scheme, netloc, path, urlencode(query), ""))
+    return urlunsplit(
+        (parts.scheme, netloc.removeprefix("www."), path, urlencode(query), _route_fragment(url))
+    )
 
 
 def _words(text: str) -> list[str]:

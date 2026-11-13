@@ -15,6 +15,7 @@ from app.agents.tools.cv_schema import (
     MasterProfileData,
     Project,
     SkillFact,
+    SourcedLine,
     assign_fact_ids,
     facts_of,
     in_cv,
@@ -66,8 +67,8 @@ def test_duplicate_or_malformed_id_is_reassigned() -> None:
 def test_every_kind_has_its_prefix() -> None:
     p = assign_fact_ids(
         profile(
-            title=Line(text="Ingénieure IA"),
-            summary=Line(text="Résumé"),
+            title=SourcedLine(text="Ingénieure IA"),
+            summary=SourcedLine(text="Résumé"),
             experiences=[exp()],
             education=[Education(degree="Master", school="Université", details=[Line(text="d")])],
             skills=[SkillFact(name="Python")],
@@ -94,7 +95,8 @@ def test_every_kind_has_its_prefix() -> None:
 def test_facts_of_and_in_cv() -> None:
     p = assign_fact_ids(
         profile(
-            title=Line(text="Ingénieure IA"),
+            title=SourcedLine(text="Ingénieure IA", sources=["cv"]),
+            summary=SourcedLine(text="Passionnée de data", sources=["linkedin"]),
             experiences=[
                 exp(sources=["cv", "linkedin"]),
                 exp(role="Stagiaire", sources=["linkedin"]),
@@ -110,7 +112,24 @@ def test_facts_of_and_in_cv() -> None:
     assert facts["x1"] == "Développeuse — Société Fictive"
     assert facts["x2a1"] == "Réalisation 1"
     assert (facts["c2"], facts["l1"], facts["t1"]) == ("Rust", "Anglais — C1", "Ingénieure IA")
+    # Le résumé venu seulement de LinkedIn n'est pas « dans le CV ».
+    assert facts["s1"] == "Passionnée de data"
     assert in_cv(p) == {"t1", "x1", "x1a1", "c1"}
+
+
+def test_summary_without_cv_source_is_not_in_cv() -> None:
+    p = assign_fact_ids(profile(summary=SourcedLine(text="Résumé", sources=["linkedin"])))
+    assert in_cv(p) == set()
+    p = assign_fact_ids(profile(summary=SourcedLine(text="Résumé", sources=["cv", "linkedin"])))
+    assert in_cv(p) == {"s1"}
+
+
+def test_ids_are_never_reused_and_may_pass_ninety_nine() -> None:
+    # Un fait gardé d'une version précédente (« c99 ») : les nouveaux suivent, sans réutiliser
+    # les numéros libérés (d'anciennes modifications peuvent les citer).
+    skills = [SkillFact(id="c99", name="Python"), SkillFact(name="Rust"), SkillFact(name="SQL")]
+    p = assign_fact_ids(profile(skills=skills))
+    assert [s.id for s in p.skills] == ["c99", "c100", "c101"]
 
 
 def test_unnumbered_facts_are_omitted() -> None:

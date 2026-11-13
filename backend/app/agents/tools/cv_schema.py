@@ -4,7 +4,8 @@ les features (le moteur n'importe aucune feature, contrat 6).
 Chaque fait du profil porte un identifiant stable attribué par le code, jamais par le modèle
 (`assign_fact_ids`) : préfixe par genre (`x` expérience, `x1a2` réalisation, `f` formation,
 `f1d1` détail, `c` compétence, `p` projet, `p1a1` réalisation de projet, `l` langue, `k` lien,
-`t` titre, `s` résumé) puis un numéro. Les modifications d'un CV citent ces identifiants.
+`t` titre, `s` résumé) puis un numéro : le plus grand déjà pris + 1, jamais un numéro libéré (les
+modifications d'anciennes revues citent ces identifiants), donc sans borne (« c100 » est permis).
 """
 
 import re
@@ -31,6 +32,13 @@ def _sources() -> Any:
 class Line(BaseModel):
     id: str = ""
     text: str = Field(min_length=1, max_length=600)
+
+
+class SourcedLine(Line):
+    """Le titre ou le résumé du profil : un fait à part entière, avec ses sources (un résumé tiré
+    de LinkedIn seul n'est pas « dans le CV »)."""
+
+    sources: list[FactSource] = _sources()
 
 
 class Experience(BaseModel):
@@ -94,8 +102,8 @@ class Identity(BaseModel):
 
 class MasterProfileData(BaseModel):
     identity: Identity
-    title: Line | None = None
-    summary: Line | None = None
+    title: SourcedLine | None = None
+    summary: SourcedLine | None = None
     experiences: list[Experience] = Field(default_factory=list, max_length=30)
     education: list[Education] = Field(default_factory=list, max_length=15)
     skills: list[SkillFact] = Field(default_factory=list, max_length=80)
@@ -186,9 +194,8 @@ def facts_of(profile: MasterProfileData) -> dict[str, str]:
 
 def in_cv(profile: MasterProfileData) -> set[str]:
     """Les ids des faits venus du CV d'origine : ceux dont `sources` contient « cv », avec les
-    réalisations et détails de leurs parents ; le titre et le résumé, sans sources, en font
-    partie."""
-    ids = {line.id for line in (profile.title, profile.summary) if line is not None}
+    réalisations et détails de leurs parents (une `Line` n'a pas de sources)."""
+    ids: set[str] = set()
     for experience in profile.experiences:
         if "cv" in experience.sources:
             ids |= {experience.id, *(line.id for line in experience.achievements)}
@@ -198,7 +205,8 @@ def in_cv(profile: MasterProfileData) -> set[str]:
     for project in profile.projects:
         if "cv" in project.sources:
             ids |= {project.id, *(line.id for line in project.achievements)}
-    flat: list[_Sourced] = [*profile.skills, *profile.languages, *profile.links]
+    heads = [line for line in (profile.title, profile.summary) if line is not None]
+    flat: list[_Sourced] = [*heads, *profile.skills, *profile.languages, *profile.links]
     ids |= {fact.id for fact in flat if "cv" in fact.sources}
     ids.discard("")
     return ids

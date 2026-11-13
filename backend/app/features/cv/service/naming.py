@@ -6,17 +6,20 @@ import unicodedata
 
 MAX_PART = 40
 _NOT_KEPT = re.compile(r"[^A-Za-z0-9-]")
+# Ligatures et lettres que NFKD ne décompose pas.
+_LIGATURES = str.maketrans({"œ": "oe", "Œ": "Oe", "æ": "ae", "Æ": "Ae", "ß": "ss"})
 
 
 def _part(text: str | None) -> str:
-    """Une partie du nom : accents retirés, mots joints par « _ », caractères hors
-    `[A-Za-z0-9-]` retirés, 40 caractères au plus (sans « _ » ni « - » final)."""
+    """Une partie du nom : ligatures développées, accents retirés, mots joints par « _ »,
+    caractères hors `[A-Za-z0-9-]` retirés (un mot fait de tirets seulement aussi), 40
+    caractères au plus (sans « _ » ni « - » final). Un nom non latin disparaît."""
     if not text:
         return ""
-    decomposed = unicodedata.normalize("NFKD", text)
+    decomposed = unicodedata.normalize("NFKD", text.translate(_LIGATURES))
     plain = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
     words = [_NOT_KEPT.sub("", word) for word in plain.split()]
-    joined = "_".join(word for word in words if word)
+    joined = "_".join(word for word in words if word.strip("-"))
     return joined[:MAX_PART].rstrip("_-")
 
 

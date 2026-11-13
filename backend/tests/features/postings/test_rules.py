@@ -19,13 +19,37 @@ from app.features.postings.service.rules import (
         ("https://www.Exemple.org/jobs/42/?utm_source=x", "https://exemple.org/jobs/42"),
         ("https://exemple.org/j?b=2&a=1", "https://exemple.org/j?a=1&b=2"),
         (
-            "https://exemple.org/j?id=7&gclid=g&utm_campaign=c&ref=r#postuler",
+            "https://exemple.org/j?id=7&gclid=g&utm_campaign=c&trk=t#postuler",
             "https://exemple.org/j?id=7",
         ),
+        ("https://exemple.org:443/j", "https://exemple.org/j"),
+        ("http://www.exemple.org:80/j/", "http://exemple.org/j"),
+        ("https://exemple.org/#/offre/1", "https://exemple.org#/offre/1"),
     ],
 )
 def test_posting_url_key(a: str, b: str) -> None:
     assert posting_url_key(a) == posting_url_key(b)
+
+
+@pytest.mark.parametrize(
+    "a,b",
+    [
+        ("https://exemple.org/offre.php?ref=A1", "https://exemple.org/offre.php?ref=B2"),
+        ("https://exemple.org/offre.php?src=A1", "https://exemple.org/offre.php?src=B2"),
+        ("https://careers.exemple.org/#/offre/1", "https://careers.exemple.org/#/offre/2"),
+        ("https://careers.exemple.org/#!/offre/1", "https://careers.exemple.org/#!/offre/2"),
+        ("https://exemple.org:8443/j", "https://exemple.org/j"),
+    ],
+)
+def test_distinct_postings_keep_distinct_keys(a: str, b: str) -> None:
+    assert posting_url_key(a) != posting_url_key(b)
+
+
+def test_posting_url_key_keeps_route_fragment_only() -> None:
+    assert posting_url_key("https://careers.exemple.org/#/offre/1?utm_source=x") == (
+        "https://careers.exemple.org#/offre/1?utm_source=x"
+    )
+    assert posting_url_key("https://exemple.org/j#postuler") == "https://exemple.org/j"
 
 
 @pytest.mark.parametrize(
@@ -34,6 +58,7 @@ def test_posting_url_key(a: str, b: str) -> None:
         "https://www.exemple.org/jobs/42/?utm_source=x&q=d%C3%A9v+ia&b=",
         "HTTPS://Exemple.org:8443/",
         "https://exemple.org/offre?ref=1",
+        "https://www.exemple.org:443/#!/offre/12",
     ],
 )
 def test_posting_url_key_is_idempotent(url: str) -> None:

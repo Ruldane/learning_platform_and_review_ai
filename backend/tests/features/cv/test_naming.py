@@ -23,6 +23,13 @@ def test_cv_filename_drops_odd_characters_and_empty_parts() -> None:
     assert cv_filename("Jean-Émile", "Ça & Co", None) == "CV_Jean-Emile_Ca_Co.pdf"
 
 
+def test_cv_filename_expands_ligatures_and_drops_lone_dashes() -> None:
+    assert (
+        cv_filename("Cœur Sœur", "L'Œil SAS", "Dev - IA – Strauß")
+        == "CV_Coeur_Soeur_LOeil_SAS_Dev_IA_Strauss.pdf"
+    )
+
+
 def test_cv_filename_parts_are_at_most_forty_characters() -> None:
     name = cv_filename("Camille", None, "Ingénieure " * 10)
     title = name.removeprefix("CV_Camille_").removesuffix(".pdf")

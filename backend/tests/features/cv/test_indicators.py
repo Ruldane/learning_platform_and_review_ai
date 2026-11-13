@@ -52,5 +52,13 @@ def test_requirement_words_take_overlapping_keywords() -> None:
     assert requirement_words(PYTHON, keywords) == ["Python", "Py"]
 
 
+def test_requirement_words_ignore_plural_when_recouping() -> None:
+    llm = Requirement(text="Pratique des modèles de langages", required=True)
+    keyword = Keyword(term="Modèle de langage", variants=["LLM"])
+    assert requirement_words(llm, [keyword]) == ["Modèle de langage", "LLM"]
+    lines = [CvLine(text="Agents bâtis sur des LLMs", fact_ids=["x1a1"])]
+    assert coverage([llm], [keyword], lines).covered == 1
+
+
 def test_coverage_without_required_requirement_is_full() -> None:
     assert coverage([NICE], KEYWORDS, []) == Coverage(covered=0, total=0, percent=100, missing=[])

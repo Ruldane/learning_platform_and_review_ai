@@ -69,10 +69,18 @@ def test_valid_spec_has_no_problem() -> None:
 
 
 @pytest.mark.parametrize(
-    "bad", ["widths_99", "section_twice", "unknown_font", "color_rgb_name", "no_identity"]
+    "bad,count",
+    [
+        ("widths_99", 1),
+        ("section_twice", 1),
+        ("unknown_font", 1),
+        ("color_rgb_name", 2),
+        ("no_identity", 1),
+    ],
 )
-def test_template_problems(bad: str) -> None:
-    assert template_problems(specs[bad], FONTS)
+def test_template_problems(bad: str, count: int) -> None:
+    # Un défaut par cas (deux couleurs fausses : deux phrases), sans effet de bord.
+    assert len(template_problems(specs[bad], FONTS)) == count
 
 
 def test_problems_are_french_sentences() -> None:

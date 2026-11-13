@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from alembic import command
 from app.db.models.career import CvModification, CvReview, CvTemplate, CvVersion, MasterProfile
-from app.db.models.postings import JobPosting
+from app.db.models.postings import Company, JobPosting
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 CAREER_TABLES = {
@@ -152,40 +152,48 @@ async def test_two_active_templates_violate_index(db_session: AsyncSession) -> N
         await db_session.flush()
 
 
-async def test_posting_delete_cascades_to_review_tree(db_session: AsyncSession) -> None:
+async def _review(db: AsyncSession) -> tuple[JobPosting, CvReview]:
     posting = _posting()
-    db_session.add(posting)
-    await db_session.flush()
+    db.add(posting)
+    await db.flush()
     review = CvReview(user_id="u1", posting_id=posting.id, template_id="t1", profile_version=1)
-    db_session.add(review)
-    await db_session.flush()
-    db_session.add_all(
-        [
-            CvModification(
-                user_id="u1",
-                review_id=review.id,
-                ref="m1",
-                section="experience",
-                action="rewrite",
-                before="a",
-                after="b",
-                reason="r",
-                type="clarity",
-                status="proposed",
-                author="recruiter",
-            ),
-            CvVersion(
-                user_id="u1",
-                review_id=review.id,
-                posting_id=posting.id,
-                template_id="t1",
-                number=1,
-                content={"name": "Camille Exemple"},
-                filename="CV_Camille_Exemple.pdf",
-                original_page_count=1,
-            ),
-        ]
+    db.add(review)
+    await db.flush()
+    return posting, review
+
+
+def _modification(review_id: str, ref: str = "m1") -> CvModification:
+    return CvModification(
+        user_id="u1",
+        review_id=review_id,
+        ref=ref,
+        section="experience",
+        action="rewrite",
+        before="a",
+        after="b",
+        reason="r",
+        type="clarity",
+        status="proposed",
+        author="recruiter",
     )
+
+
+def _version(review_id: str, posting_id: str, number: int = 1) -> CvVersion:
+    return CvVersion(
+        user_id="u1",
+        review_id=review_id,
+        posting_id=posting_id,
+        template_id="t1",
+        number=number,
+        content={"name": "Camille Exemple"},
+        filename="CV_Camille_Exemple.pdf",
+        original_page_count=1,
+    )
+
+
+async def test_posting_delete_cascades_to_review_tree(db_session: AsyncSession) -> None:
+    posting, review = await _review(db_session)
+    db_session.add_all([_modification(review.id), _version(review.id, posting.id)])
     await db_session.flush()
     assert review.status == "running"
 
@@ -204,5 +212,34 @@ async def test_profile_version_is_unique_per_user(db_session: AsyncSession) -> N
     stored = (await db_session.execute(select(MasterProfile))).scalars().first()
     assert stored is not None and (stored.status, stored.dropped) == ("draft", [])
     db_session.add(profile("u1"))
+    with pytest.raises(IntegrityError):
+        await db_session.flush()
+
+
+async def test_modification_ref_is_unique_per_review(db_session: AsyncSession) -> None:
+    _, review = await _review(db_session)
+    db_session.add_all([_modification(review.id, "m1"), _modification(review.id, "m2")])
+    await db_session.flush()
+    db_session.add(_modification(review.id, "m1"))
+    with pytest.raises(IntegrityError):
+        await db_session.flush()
+
+
+async def test_version_number_is_unique_per_posting(db_session: AsyncSession) -> None:
+    posting, review = await _review(db_session)
+    db_session.add_all([_version(review.id, posting.id, 1), _version(review.id, posting.id, 2)])
+    await db_session.flush()
+    db_session.add(_version(review.id, posting.id, 2))
+    with pytest.raises(IntegrityError):
+        await db_session.flush()
+
+
+async def test_company_key_is_unique_per_user(db_session: AsyncSession) -> None:
+    def company(user_id: str) -> Company:
+        return Company(user_id=user_id, name="Société Fictive", name_norm="societe fictive")
+
+    db_session.add_all([company("u1"), company("u2")])
+    await db_session.flush()
+    db_session.add(company("u1"))
     with pytest.raises(IntegrityError):
         await db_session.flush()
