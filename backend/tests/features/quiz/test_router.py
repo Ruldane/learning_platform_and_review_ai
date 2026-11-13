@@ -11,6 +11,7 @@ from fastapi import FastAPI
 
 from app.db.models.study import QuizAttempt
 from app.features.quiz.repository import AttemptRepository
+from app.features.quiz.service import shuffle
 from tests.features.quiz.conftest import Seeded
 from tests.features.quiz.support import (
     API,
@@ -168,9 +169,20 @@ async def test_failed_grading_allows_a_new_attempt(
     assert await count(seeded, QuizAttempt, status="failed") == 1
 
 
-async def test_retry_too_soon_after_failure(client: httpx.AsyncClient, seeded: Seeded) -> None:
+async def test_retry_too_soon_after_failure(
+    client: httpx.AsyncClient, seeded: Seeded, monkeypatch: pytest.MonkeyPatch
+) -> None:
     quiz_id = await ready_quiz(seeded)
     first_order = [q["id"] for q in (await quiz_view(client, quiz_id))["questions"]]
+
+    def reversed_rank(*parts: object) -> str:
+        """Mélange déterministe (l'id du quiz est tiré au hasard) : questions et choix à
+        l'envers, donc la bonne réponse des QCM (en tête) passe en dernier."""
+        last = parts[-1]
+        position = last if isinstance(last, int) else first_order.index(str(last))
+        return f"{99 - position:02d}"
+
+    monkeypatch.setattr(shuffle, "_rank", reversed_rank)
     attempt_id = await started_attempt(client, quiz_id, right=False)
     assert (await grade(seeded, attempt_id, [0.5] * 7)).score == 35
     r = await post_attempt(client, quiz_id)
@@ -180,9 +192,9 @@ async def test_retry_too_soon_after_failure(client: httpx.AsyncClient, seeded: S
     seeded.at(datetime(2026, 11, 18, 23, 30, tzinfo=UTC))
     view = await quiz_view(client, quiz_id)
     order = [q["id"] for q in view["questions"]]
-    assert sorted(order) == sorted(first_order) and order != first_order
+    assert order == first_order[::-1]
     choices = [q["choices"] for q in view["questions"] if q["type"] == "qcm"]
-    assert any(c.index("Elle normalise") != 0 for c in choices)
+    assert choices and all(c.index("Elle normalise") == len(c) - 1 for c in choices)
     retry = await started_attempt(client, quiz_id, right=True)
     saved = await grade(seeded, retry, PASS_85[:7])
     assert (saved.score, saved.passed) == (85, True)  # bons choix affichés = bons choix rangés
