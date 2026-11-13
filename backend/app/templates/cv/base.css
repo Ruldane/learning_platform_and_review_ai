@@ -1,0 +1,184 @@
+/* Gabarit de CV (D120) : règles fixes. Les valeurs du design (page, marges, couleurs, polices,
+   tailles, largeurs des colonnes) viennent de `cv.css`, écrit par le code à partir du spec du
+   Maquettiste. Aucun script, aucune image, aucune ressource distante. Toute taille de texte vaut
+   au moins le corps (contrôle `font_sizes`). */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #ffffff;
+}
+
+body {
+  width: var(--page-w);
+  min-height: calc(var(--page-h) - 2pt);
+  display: flex;
+  flex-direction: column;
+  color: var(--text);
+  font-family: var(--body-font);
+  font-size: var(--body-pt);
+  line-height: var(--line-height);
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--heading-font);
+  margin: 0;
+}
+
+p,
+ul {
+  margin: 0;
+  padding: 0;
+}
+
+ul {
+  list-style: none;
+}
+
+.band {
+  background: var(--band);
+  color: var(--band-text);
+  padding: var(--m-top) var(--m-right) var(--gap) var(--m-left);
+}
+
+.band h1,
+.band .headline,
+.band .contact {
+  color: var(--band-text);
+}
+
+.cols {
+  flex: 1;
+  display: grid;
+  grid-template-columns: var(--grid);
+}
+
+.col {
+  padding: var(--m-top) var(--gap) var(--m-bottom) var(--gap);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.has-band .col {
+  padding-top: var(--gap);
+}
+
+.col:first-child {
+  padding-left: var(--m-left);
+}
+
+.col:last-child {
+  padding-right: var(--m-right);
+}
+
+.identity {
+  margin-bottom: var(--gap);
+}
+
+.band .identity {
+  margin-bottom: 0;
+}
+
+h1 {
+  font-size: var(--name-pt);
+  line-height: 1.15;
+}
+
+.headline {
+  font-size: var(--heading-pt);
+}
+
+.contact li {
+  font-size: var(--body-pt);
+}
+
+.cv-section {
+  margin-bottom: var(--gap);
+  break-inside: auto;
+}
+
+h2 {
+  font-size: var(--heading-pt);
+  line-height: 1.25;
+  margin-bottom: calc(var(--gap) / 2);
+  break-after: avoid;
+}
+
+.upper h2 {
+  text-transform: uppercase;
+}
+
+.titles-underline h2 {
+  border-bottom: 0.75pt solid var(--accent);
+  padding-bottom: 1pt;
+}
+
+.titles-left_bar h2 {
+  border-left: 3pt solid var(--accent);
+  padding-left: 4pt;
+}
+
+.titles-band h2 {
+  background: var(--accent);
+  color: var(--accent-text);
+  padding: 1pt 4pt;
+}
+
+.entry {
+  margin-bottom: calc(var(--gap) / 2);
+  break-inside: avoid;
+}
+
+.entry-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 6pt;
+}
+
+h3 {
+  font-size: var(--body-pt);
+  font-weight: 700;
+}
+
+.dates,
+.sub {
+  color: var(--muted);
+  font-size: var(--body-pt);
+  white-space: nowrap;
+}
+
+.sub {
+  white-space: normal;
+}
+
+.dates-below .entry-head {
+  display: block;
+}
+
+.dates-left .dates {
+  order: -1;
+  min-width: 22%;
+}
+
+.dates-left .entry-head {
+  justify-content: flex-start;
+}
+
+.bullets-dot li.line::before {
+  content: "\2022\00a0\00a0";
+}
+
+.bullets-dash li.line::before {
+  content: "\2013\00a0\00a0";
+}

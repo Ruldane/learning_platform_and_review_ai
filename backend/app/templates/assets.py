@@ -15,7 +15,7 @@ MERMAID_SHA256 = "336df803d87a38b70a01e736e666c8f7601d2ce42f5e47c8fafe5d721074b9
 _ASSETS_DIR = TEMPLATES_DIR / "assets"
 # Un nom simple (aucun séparateur de chemin) ou `dossier/nom` sous les gabarits.
 _NAME = re.compile(r"[a-z0-9][a-z0-9_.-]{0,63}")
-_PATH = re.compile(r"(lesson|program)/[a-z0-9][a-z0-9_.-]{0,63}")
+_PATH = re.compile(r"(lesson|program|cv)/[a-z0-9][a-z0-9_.-]{0,63}")
 
 
 @cache

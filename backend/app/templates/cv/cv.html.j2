@@ -1,0 +1,71 @@
+{#- Gabarit unique du CV (D120) : rempli par le code à partir du spec du Maquettiste, échappement
+    automatique de tout le contenu, aucun script, aucune image. Ordre du DOM = ordre de lecture
+    d'un parseur : colonne 1 puis colonne 2 ; coordonnées dans le corps de la page. -#}
+{% macro identity() %}
+<section class="identity">
+<h1>{{ content.name }}</h1>
+{% if content.headline %}<p class="headline">{{ content.headline }}</p>{% endif %}
+{% if content.contact %}
+<ul class="contact">
+{% for value in content.contact %}<li>{{ value }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+</section>
+{% endmacro %}
+{% macro section(block) %}
+<section class="cv-section section-{{ block.key }}">
+<h2>{{ block.title }}</h2>
+{% for entry in block.entries %}
+<div class="entry">
+<div class="entry-head">
+{% if entry.heading %}<h3>{{ entry.heading }}</h3>{% endif %}
+{% if entry.dates %}<span class="dates">{{ entry.dates }}</span>{% endif %}
+</div>
+{% if entry.subheading %}<p class="sub">{{ entry.subheading }}</p>{% endif %}
+{% if entry.lines %}
+<ul>
+{% for line in entry.lines %}<li class="line">{{ line.text }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+</div>
+{% endfor %}
+{% if block.items %}
+<ul class="items">
+{% for item in block.items %}<li class="line">{{ item.text }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+</section>
+{% endmacro %}
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="{{ csp }}">
+<title>CV</title>
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="cv.css">
+</head>
+<body class="{{ classes }}">
+{% if band %}
+<div class="band">
+{{ identity() }}
+</div>
+{% endif %}
+<div class="cols">
+{% for column in columns %}
+<div class="col col-{{ loop.index }}">
+{% for block in column %}
+{% if block == "identity" %}
+{{ identity() }}
+{% else %}
+{{ section(block) }}
+{% endif %}
+{% endfor %}
+</div>
+{% endfor %}
+</div>
+</body>
+</html>
