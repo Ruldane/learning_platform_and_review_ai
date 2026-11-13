@@ -1,7 +1,9 @@
 import { agents } from "./messages/agents";
 import { appMessages } from "./messages/app";
 import { capture } from "./messages/capture";
+import { cv } from "./messages/cv";
 import { demo } from "./messages/demo";
+import { gap } from "./messages/gap";
 import { learning } from "./messages/learning";
 import { lessons } from "./messages/lessons";
 import { memory } from "./messages/memory";
@@ -35,4 +37,6 @@ export const fr = {
   skills,
   replan,
   capture,
+  gap,
+  cv,
 } as const;

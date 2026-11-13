@@ -1,0 +1,49 @@
+import { t } from "@/shared/i18n/t";
+import type { GapRowView } from "../viewTypes";
+
+interface GapRowProps {
+  row: GapRowView;
+  checked: boolean;
+  /** La case est grisée : la limite de sélection est atteinte (ou un ajout est en cours). */
+  locked: boolean;
+  onToggle: (skill: string) => void;
+}
+
+function actionText(row: GapRowView): string {
+  if (row.action === "in_program") {
+    return row.week === null
+      ? t("gap.table.inProgramNoWeek")
+      : t("gap.table.inProgram", { week: row.week });
+  }
+  return row.action === "to_add" ? t("gap.table.toAdd") : t("gap.table.outOfScope");
+}
+
+/** Une ligne du tableau : seules les compétences « À ajouter » ont une case à cocher. */
+export function GapRow({ row, checked, locked, onToggle }: GapRowProps) {
+  return (
+    <tr className="border-t align-top">
+      <td className="w-10 px-2 py-2">
+        {row.action === "to_add" ? (
+          <input
+            type="checkbox"
+            checked={checked}
+            disabled={locked}
+            onChange={() => onToggle(row.skill)}
+            aria-label={t("gap.table.selectRow", { skill: row.skill })}
+          />
+        ) : null}
+      </td>
+      <th scope="row" className="px-2 py-2 text-left font-medium">
+        {row.skill}
+        {row.source === "cv_review" ? (
+          <span className="block text-xs font-normal text-muted-foreground">
+            {t("gap.table.fromReview")}
+          </span>
+        ) : null}
+      </th>
+      <td className="px-2 py-2">{row.required ? t("gap.table.yes") : t("gap.table.no")}</td>
+      <td className="px-2 py-2">{t(`gap.level.${row.level ?? "absent"}`)}</td>
+      <td className="px-2 py-2">{actionText(row)}</td>
+    </tr>
+  );
+}

@@ -1,0 +1,32 @@
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
+import type { ProfileVersionView } from "../viewTypes";
+import { ProfileVersionList } from "./ProfileVersionList";
+
+const versions: ProfileVersionView[] = [
+  { version: 1, status: "validated", source: "archivist", createdAt: "2026-11-03T12:00:00Z" },
+  { version: 3, status: "draft", source: "archivist", createdAt: "2026-11-12T12:00:00Z" },
+  { version: 2, status: "validated", source: "january", createdAt: "2026-11-05T12:00:00Z" },
+];
+
+describe("ProfileVersionList", () => {
+  it("lists the newest first, with state, origin and day", () => {
+    render(<ProfileVersionList versions={versions} />);
+    const items = screen.getAllByRole("listitem").map((item) => item.textContent);
+    expect(items).toEqual([
+      "Version 3BrouillonLue dans tes documentsCréée le 12/11/2026",
+      "Version 2ValidéeEn vigueurModifiée par toiCréée le 05/11/2026",
+      "Version 1ValidéeLue dans tes documentsCréée le 03/11/2026",
+    ]);
+  });
+
+  it("flags only the latest validated version", () => {
+    render(<ProfileVersionList versions={versions} />);
+    expect(screen.getAllByText("En vigueur")).toHaveLength(1);
+  });
+
+  it("says when there is no version", () => {
+    render(<ProfileVersionList versions={[]} />);
+    expect(screen.getByText("Aucune version pour l'instant.")).toBeInTheDocument();
+  });
+});

@@ -11,7 +11,7 @@ export const agents = {
   archivist: { name: "Archiviste", role: "Range et retrouve la mémoire" },
   ats_reader: { name: "Lecteur ATS", role: "Lit comme un logiciel de tri" },
   recruiter: { name: "Recruteur", role: "Regarde comme un recruteur" },
-  designer: { name: "Designer", role: "Soigne la mise en page" },
+  designer: { name: "Maquettiste", role: "Soigne la mise en page" },
   analyst: { name: "Analyste", role: "Mesure et compare" },
   examiner: { name: "Examinateur", role: "Pose les questions d'examen" },
   interviewer: { name: "Intervieweur", role: "Mène l'entretien" },
