@@ -9,6 +9,7 @@ from typing import Any
 from scripts.phase4_steps import CheckFailed, Run, expect_ok
 
 DEAD = ("failed", "cancelled")
+OPEN = ("running", "waiting_user", "paused")
 type Answer = Callable[[dict[str, Any]], Any]
 
 
@@ -50,3 +51,20 @@ async def drive(
 
     await run.until(step, finished, f"session {session_id} jamais finie")
     return asked
+
+
+async def close_open_replans(run: Run, step: str) -> int:
+    """Annule les replanifications ouvertes du programme (une proposition laissée en attente par
+    un passage interrompu bloque la suivante : 409 `replan_open`) ; rend leur nombre. Une
+    proposition en attente est de toute façon remplacée par la suivante (D106)."""
+    sessions = await expect_ok(run, step, "GET", "/sessions", params={"graph": "replan"})
+    opened = [s for s in sessions if s["subject_id"] == run.program_id and s["status"] in OPEN]
+    for session in opened:
+        await expect_ok(run, step, "POST", f"/sessions/{session['id']}/cancel")
+    if opened:
+        ids = ", ".join(s["id"] for s in opened)
+        print(
+            f"    {len(opened)} replanification(s) restée(s) ouverte(s), annulée(s) : {ids}",
+            flush=True,
+        )
+    return len(opened)

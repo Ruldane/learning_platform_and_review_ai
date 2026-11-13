@@ -12,6 +12,7 @@ from scripts.phase5_plan_rules import (
     capped_start,
     check_accepted,
     check_journal,
+    check_nothing_to_change,
     check_pending,
     feasible_minutes,
     local_target,
@@ -191,3 +192,17 @@ def test_a_missing_journal_entry_is_named(want: JournalWant, message: str) -> No
 def test_a_journal_without_any_review_fails_even_when_any_review_would_do() -> None:
     with pytest.raises(CheckFailed, match="weekly_review"):
         check_journal(journal()[:4], JournalWant("e1", "a1", None, ["c1"]))
+
+
+def test_a_journal_with_a_blocked_quiz_accepts_any_quiz_entry() -> None:
+    check_journal(journal(), JournalWant("e1", "", "r1", ["c1"]))
+    without = [e for e in journal() if e["kind"] != "quiz"]
+    with pytest.raises(CheckFailed, match="Aucune entrée `quiz`"):
+        check_journal(without, JournalWant("e1", "", "r1", ["c1"]))
+
+
+def test_nothing_to_change_is_true_only_when_the_capped_week_fits() -> None:
+    week = {"rank": 1, "start_date": "2026-11-16", "load_minutes": 255}
+    check_nothing_to_change({"weeks": [week]}, date(2026, 11, 18), CAP)
+    with pytest.raises(CheckFailed, match="semaine 1 compte 256 min"):
+        check_nothing_to_change({"weeks": [week | {"load_minutes": 256}]}, date(2026, 11, 18), CAP)

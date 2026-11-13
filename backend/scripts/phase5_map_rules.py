@@ -5,7 +5,7 @@ jamais le nom d'une compétence ni le libellé d'une preuve."""
 
 import re
 import unicodedata
-from collections.abc import Mapping
+from collections.abc import Collection, Mapping
 from dataclasses import dataclass
 from datetime import date
 from typing import Any
@@ -58,22 +58,30 @@ def read_states(graph: dict[str, Any], names: list[str]) -> dict[str, SkillState
 
 
 def check_states(
-    step: str, before: Mapping[str, SkillState], after: Mapping[str, SkillState], *, passed: bool
+    step: str,
+    before: Mapping[str, SkillState],
+    after: Mapping[str, SkillState],
+    *,
+    studied: Collection[str],
+    validated: Collection[str],
 ) -> None:
-    """Chaque compétence du module : niveau d'au moins `en_cours` (`valide` après un quiz réussi)
-    et au moins une preuve de plus (deux après un quiz réussi), le compte plafonnant à 20."""
-    if not before:
+    """Les compétences du module étudié (`studied`) : niveau d'au moins `en_cours` et une preuve
+    de plus ; celles du module dont le quiz est réussi (`validated`, le même ou un autre) :
+    `valide` au moins et une preuve de plus (deux pour une compétence dans les deux). Le compte de
+    preuves plafonne à 20. Les autres compétences ne sont pas contrôlées."""
+    if not studied:
         raise CheckFailed(step, "Le module n'a aucune compétence.")
-    wanted = QUIZ_LEVELS if passed else STUDY_LEVELS
-    for rank, (key, old) in enumerate(before.items(), start=1):
-        new = after.get(key)
+    keys = [key for key in before if key in studied or key in validated]
+    for rank, key in enumerate(keys, start=1):
+        old, new = before[key], after.get(key)
         if new is None or not new.skill_id:
             raise CheckFailed(step, f"Compétence n° {rank} du module absente de la carte.")
+        wanted = QUIZ_LEVELS if key in validated else STUDY_LEVELS
         if new.level not in wanted:
             raise CheckFailed(
                 step, f"Compétence n° {rank} au niveau {new.level} : {' ou '.join(wanted)} attendu."
             )
-        need = min(old.evidence + 1 + int(passed), EVIDENCE_MAX)
+        need = min(old.evidence + (key in studied) + (key in validated), EVIDENCE_MAX)
         if new.evidence < need:
             raise CheckFailed(
                 step,
@@ -83,13 +91,14 @@ def check_states(
 
 
 def check_detail(
-    step: str, detail: dict[str, Any], *, study_id: str, quiz_id: str, passed: bool
+    step: str, detail: dict[str, Any], *, study_id: str | None, quiz_id: str | None
 ) -> None:
-    """La fiche de la compétence cite la session (et le quiz, s'il est réussi) par leur adresse."""
+    """La fiche de la compétence cite la session (si elle a été étudiée) et le quiz (s'il est
+    réussi) par leur adresse."""
     urls = {(e["kind"], e["url"]) for e in detail["evidence"]}
-    if ("study", f"/etudier/session/{study_id}") not in urls:
+    if study_id and ("study", f"/etudier/session/{study_id}") not in urls:
         raise CheckFailed(step, f"Preuve de la session {study_id} absente de la compétence.")
-    if passed and ("quiz", f"/etudier/quiz/{quiz_id}") not in urls:
+    if quiz_id and ("quiz", f"/etudier/quiz/{quiz_id}") not in urls:
         raise CheckFailed(step, f"Preuve du quiz {quiz_id} absente de la compétence.")
 
 

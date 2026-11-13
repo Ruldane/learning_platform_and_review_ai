@@ -45,19 +45,39 @@ def test_a_skill_the_map_does_not_know_has_no_level_and_no_proof() -> None:
     assert found["pandas"] == SkillState("", None, 0)
 
 
+A, B = {"a"}, {"b"}
+
+
 def test_the_session_raises_every_skill_to_in_progress_with_one_more_proof() -> None:
     before = {"a": state(None, 0), "b": state("declare", 2)}
-    check_states(STEP, before, {"a": state("en_cours", 1), "b": state("valide", 4)}, passed=False)
+    after = {"a": state("en_cours", 1), "b": state("valide", 4)}
+    check_states(STEP, before, after, studied={"a", "b"}, validated=set())
 
 
 def test_a_passed_quiz_needs_two_proofs_and_the_validated_level() -> None:
     before = {"a": state("en_cours", 1)}
 
-    check_states(STEP, before, {"a": state("valide", 3)}, passed=True)
+    check_states(STEP, before, {"a": state("valide", 3)}, studied=A, validated=A)
     with pytest.raises(CheckFailed, match="n° 1 au niveau en_cours : valide ou prouve"):
-        check_states(STEP, before, {"a": state("en_cours", 3)}, passed=True)
+        check_states(STEP, before, {"a": state("en_cours", 3)}, studied=A, validated=A)
     with pytest.raises(CheckFailed, match=r"2 preuve\(s\), 3 au moins"):
-        check_states(STEP, before, {"a": state("valide", 2)}, passed=True)
+        check_states(STEP, before, {"a": state("valide", 2)}, studied=A, validated=A)
+
+
+def test_a_quiz_passed_on_another_module_validates_its_skills_with_one_proof() -> None:
+    before = {"a": state("declare", 1), "b": state(None, 0)}
+    after = {"a": state("en_cours", 2), "b": state("valide", 1)}
+
+    check_states(STEP, before, after, studied=A, validated=B)
+    with pytest.raises(CheckFailed, match="n° 2 au niveau en_cours"):
+        check_states(STEP, before, after | {"b": state("en_cours", 1)}, studied=A, validated=B)
+
+
+def test_a_failed_quiz_on_another_module_changes_nothing_to_check() -> None:
+    before = {"a": state("declare", 1), "b": state(None, 0)}
+    check_states(
+        STEP, before, {"a": state("en_cours", 2), "b": state(None, 0)}, studied=A, validated=set()
+    )
 
 
 @pytest.mark.parametrize(
@@ -72,19 +92,19 @@ def test_a_passed_quiz_needs_two_proofs_and_the_validated_level() -> None:
 )
 def test_the_map_must_show_the_session(after: dict[str, SkillState], message: str) -> None:
     with pytest.raises(CheckFailed, match=message) as caught:
-        check_states(STEP, {"a": state(None, 1)}, after, passed=False)
+        check_states(STEP, {"a": state(None, 1)}, after, studied=A, validated=set())
 
     assert caught.value.step == STEP
 
 
 def test_the_proof_count_stops_at_twenty() -> None:
     before = {"a": state("valide", 20)}
-    check_states(STEP, before, {"a": state("valide", 20)}, passed=True)
+    check_states(STEP, before, {"a": state("valide", 20)}, studied=A, validated=A)
 
 
 def test_a_module_without_skills_is_a_failure() -> None:
     with pytest.raises(CheckFailed, match="aucune compétence"):
-        check_states(STEP, {}, {}, passed=False)
+        check_states(STEP, {}, {}, studied=set(), validated=set())
 
 
 def test_the_skill_page_cites_the_session_and_the_passed_quiz() -> None:
@@ -94,12 +114,13 @@ def test_the_skill_page_cites_the_session_and_the_passed_quiz() -> None:
     ]
     detail: dict[str, Any] = {"evidence": evidence}
 
-    check_detail(STEP, detail, study_id="e1", quiz_id="q1", passed=True)
-    check_detail(STEP, {"evidence": evidence[:1]}, study_id="e1", quiz_id="q1", passed=False)
+    check_detail(STEP, detail, study_id="e1", quiz_id="q1")
+    check_detail(STEP, {"evidence": evidence[:1]}, study_id="e1", quiz_id=None)
+    check_detail(STEP, {"evidence": evidence[1:]}, study_id=None, quiz_id="q1")
     with pytest.raises(CheckFailed, match="session e2"):
-        check_detail(STEP, detail, study_id="e2", quiz_id="q1", passed=False)
+        check_detail(STEP, detail, study_id="e2", quiz_id=None)
     with pytest.raises(CheckFailed, match="quiz q1"):
-        check_detail(STEP, {"evidence": evidence[:1]}, study_id="e1", quiz_id="q1", passed=True)
+        check_detail(STEP, {"evidence": evidence[:1]}, study_id="e1", quiz_id="q1")
 
 
 def history(week: str = "2026-11-16", score: int = 25) -> dict[str, Any]:

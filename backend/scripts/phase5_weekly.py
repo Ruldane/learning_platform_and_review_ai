@@ -14,6 +14,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from scripts.phase4_steps import CheckFailed, Run, expect_ok
+from scripts.phase5_drive import OPEN, close_open_replans
 from scripts.phase5_plan_rules import (
     WEEKLY_LAUNCH_S,
     JournalWant,
@@ -27,7 +28,6 @@ STEP = "bilan hebdomadaire"
 POLL_WEEKLY_S = 5.0  # la tâche passe toutes les 15 minutes : inutile d'interroger plus vite
 JOURNAL_PAGE = 100
 JOURNAL_PAGES = 10
-OPEN = ("running", "waiting_user", "paused")
 
 
 def local_now(zone: str) -> datetime:
@@ -117,6 +117,7 @@ async def weekly_review(run: Run, st: Etude) -> None:
     if any(e["occurred_on"] == target.date().isoformat() for e in reviews):
         await _already_written(run, st, seen)
         return
+    await close_open_replans(run, STEP)
     changed = settings | {"weekly_review": {"day": day, "time": hour}}
     put_at = datetime.now(UTC)
     await _put(run, changed)

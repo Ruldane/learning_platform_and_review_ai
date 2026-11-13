@@ -4,8 +4,9 @@ tenue. Les messages ne portent que des étapes, des nombres et des identifiants 
 question, une réponse, une fiche ni un titre."""
 
 from collections.abc import Iterable
-from datetime import date
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from scripts.phase4_rules import CheckFailed
 
@@ -117,3 +118,32 @@ def check_study_summary(study: dict[str, Any], program: dict[str, Any], reading:
         raise CheckFailed(
             "bilan de session", f"{absent} tâche(s) de lecture du bloc non cochée(s)."
         )
+
+
+def is_blocked(summary: dict[str, Any] | None, today: date) -> bool:
+    """Le quiz d'un module attend son nouvel essai (`retry_on` dans le futur, jour local)."""
+    retry_on: str | None = (summary or {}).get("retry_on")
+    return retry_on is not None and date.fromisoformat(retry_on) > today
+
+
+def check_blocked_quiz(
+    retry_on: str, last: dict[str, Any], detail: dict[str, Any], zone: ZoneInfo
+) -> None:
+    """Quiz bloqué, comme le contrat le veut : la dernière tentative notée est ratée, le nouvel
+    essai tombe à J+2 local de cette tentative (J+3 si elle date de la dernière heure du jour :
+    la note peut tomber après minuit), et des révisions sont posées."""
+    score = last["score"]
+    if score is None or score >= PASS_SCORE:
+        raise CheckFailed("quiz", f"Nouvel essai bloqué ({retry_on}) après une tentative réussie.")
+    created = datetime.fromisoformat(last["created_at"])
+    local = (created if created.tzinfo else created.replace(tzinfo=UTC)).astimezone(zone)
+    days = (RETRY_DAYS, RETRY_DAYS + 1) if local.hour == 23 else (RETRY_DAYS,)
+    if retry_on not in {(local.date() + timedelta(days=n)).isoformat() for n in days}:
+        raise CheckFailed(
+            "quiz", f"Nouvel essai le {retry_on}, tentative du {local.date()} : J+2 attendu."
+        )
+    followup = detail.get("followup")
+    if not followup or followup["retry_on"] != retry_on:
+        raise CheckFailed("quiz", f"Tentative {detail['id']} sans le nouvel essai du {retry_on}.")
+    if not (followup["revision_tasks"] or followup["unplaced"]):
+        raise CheckFailed("quiz", f"Tentative {detail['id']} ratée sans aucune révision posée.")

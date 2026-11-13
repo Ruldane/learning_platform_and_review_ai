@@ -7,12 +7,13 @@ la sortie : seulement des étapes, des nombres, des codes et des identifiants.""
 from typing import Any
 
 from scripts.phase4_steps import CheckFailed, Run, expect_ok
-from scripts.phase5_drive import DEAD, resume
+from scripts.phase5_drive import DEAD, close_open_replans, resume
 from scripts.phase5_plan_rules import (
     REPLAN_MESSAGE,
     WEEK_MINUTES,
     capped_start,
     check_accepted,
+    check_nothing_to_change,
     check_pending,
     feasible_minutes,
     week_cap,
@@ -31,9 +32,11 @@ async def _versions(run: Run) -> list[dict[str, Any]]:
     return found
 
 
-async def _wait_proposal(run: Run, session_id: str) -> dict[str, Any]:
-    """La question d'acceptation ; si la session s'arrête avant, la dernière version dit pourquoi
-    (`empty` : rien à changer, `impossible` : la semaine ne tient pas une pratique et le quiz)."""
+async def _wait_proposal(run: Run, session_id: str) -> dict[str, Any] | None:
+    """La question d'acceptation ; `None` si la session finit sur une version `empty` (rien à
+    changer : le plan tient déjà, après un passage précédent). Si elle s'arrête autrement, la
+    dernière version dit pourquoi (`impossible` : la semaine ne tient pas une pratique et le
+    quiz)."""
     pending: dict[str, Any] = {}
 
     async def asked() -> bool:
@@ -41,6 +44,12 @@ async def _wait_proposal(run: Run, session_id: str) -> dict[str, Any]:
         done = view["status"] in (*DEAD, "completed")
         if done:
             newest = (await _versions(run) or [{}])[0]
+            if (
+                view["status"] == "completed"
+                and newest.get("status") == "empty"
+                and newest.get("session_id") == session_id
+            ):
+                return True
             raise CheckFailed(
                 STEP, f"Session {session_id} arrêtée ({view['status']}) sans proposition à "
                 f"accepter ; dernière version : {newest.get('version')} {newest.get('status')}."
@@ -52,7 +61,7 @@ async def _wait_proposal(run: Run, session_id: str) -> dict[str, Any]:
         return False
 
     await run.until(STEP, asked, "proposition jamais faite")
-    return pending
+    return pending or None
 
 
 async def _wait_completed(run: Run, session_id: str) -> None:
@@ -78,9 +87,15 @@ async def replan_week(run: Run, st: Etude) -> None:
         )
     cap_week = week_cap(minutes)
     body = {"available_minutes": minutes, "message": message}
+    await close_open_replans(run, STEP)
     started = await expect_ok(run, STEP, "POST", f"/programs/{run.program_id}/replan", json=body)
     session_id = str(started["session_id"])
     question = await _wait_proposal(run, session_id)
+    if question is None:  # rien à changer : le plan tient déjà sous le plafond
+        today = await local_today(run, STEP)
+        check_nothing_to_change(before, today, cap_week)
+        print(f"    rien à changer : la semaine tient déjà sous {cap_week} min", flush=True)
+        return
     proposal = (await _versions(run))[0]
     check_pending(proposal, before, session_id, cap_week)
     unchanged = await expect_ok(run, STEP, "GET", f"/programs/{run.program_id}")

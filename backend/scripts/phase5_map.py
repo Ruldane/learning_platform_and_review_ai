@@ -12,6 +12,7 @@ from scripts.phase5_map_rules import (
     check_history,
     check_states,
     module_skill_names,
+    norm_skill,
     read_states,
 )
 from scripts.phase5_steps import Etude, around
@@ -20,23 +21,32 @@ HISTORY_WEEKS = 12
 
 
 async def map_before(run: Run, st: Etude) -> None:
-    """La carte avant la session : niveau et preuves de chaque compétence du module."""
+    """La carte avant la session : niveau et preuves des compétences de chaque module qui a une
+    leçon prête (le quiz peut porter sur un autre module que la session)."""
     program = await expect_ok(run, "carte avant", "GET", f"/programs/{run.program_id}")
-    st.skills = module_skill_names(program, st.module_id, "carte avant")
+    for module_id in dict.fromkeys(st.lessons.values()):
+        st.module_skills[module_id] = module_skill_names(program, module_id, "carte avant")
     graph = await expect_ok(run, "carte avant", "GET", "/skills/graph")
-    st.before = read_states(graph, st.skills)
+    names = [name for skills in st.module_skills.values() for name in skills]
+    st.before = read_states(graph, names)
 
 
 async def map_after(run: Run, st: Etude) -> None:
     """La carte après la session et le quiz ; `valide` seulement si le quiz est réussi (une
     seule passe suffit rarement : un nouvel essai ne vient qu'à J+2)."""
     graph = await expect_ok(run, "carte après", "GET", "/skills/graph")
-    after = read_states(graph, st.skills)
-    check_states("carte après", st.before, after, passed=st.passed)
-    for state in after.values():
-        detail = await expect_ok(run, "carte après", "GET", f"/skills/{state.skill_id}")
+    after = read_states(graph, [name for skills in st.module_skills.values() for name in skills])
+    studied = {norm_skill(name) for name in st.skills}
+    quiz_skills = st.module_skills.get(st.quiz_module_id or st.module_id, [])
+    validated = {norm_skill(name) for name in quiz_skills} if st.passed else set()
+    check_states("carte après", st.before, after, studied=studied, validated=validated)
+    for key in [key for key in after if key in studied or key in validated]:
+        detail = await expect_ok(run, "carte après", "GET", f"/skills/{after[key].skill_id}")
         check_detail(
-            "carte après", detail, study_id=st.study_id, quiz_id=st.quiz_id, passed=st.passed
+            "carte après",
+            detail,
+            study_id=st.study_id if key in studied else None,
+            quiz_id=st.quiz_id if key in validated else None,
         )
 
     async def read() -> dict[str, Any]:
@@ -47,17 +57,23 @@ async def map_after(run: Run, st: Etude) -> None:
 
     history, days = await around(run, "carte après", read, 0)
     mondays = {day - timedelta(days=day.weekday()) for day in days}
-    check_history("carte après", history, mondays, len(st.skills))
-    levels = sorted({s.level or "aucun" for s in after.values()})
-    gained = sum(
-        new.evidence - old.evidence
-        for old, new in zip(st.before.values(), after.values(), strict=True)
+    check_history("carte après", history, mondays, len(studied))
+    levels = sorted({after[key].level or "aucun" for key in studied})
+    gained = sum(after[key].evidence - st.before[key].evidence for key in studied | validated)
+    print(
+        f"    {len(studied)} compétence(s) du module : niveau {'/'.join(levels)}, "
+        f"{gained:+d} preuve(s) en tout",
+        flush=True,
     )
-    print(f"    {len(st.skills)} compétence(s) du module : niveau {'/'.join(levels)}, "
-          f"{gained:+d} preuve(s) en tout", flush=True)  # fmt: skip
     if not st.passed:
         print(
-            "    `valide` non atteint : quiz sous 80 % en une passe ; un nouvel essai ne vient "
-            f"qu'à J+2 ({st.retry_on}), relancer le contrôle alors répond avec les "
-            "bonnes réponses de la tentative précédente.", flush=True,
-        )  # fmt: skip
+            "    `valide` non attendu : "
+            + (
+                "quiz bloqué, aucune tentative"
+                if st.quiz_blocked
+                else "quiz sous 80 % en une passe"
+            )
+            + f" ; nouvel essai à J+2 ({st.retry_on}), le relancer alors lit les bonnes "
+            "réponses de la tentative précédente.",
+            flush=True,
+        )

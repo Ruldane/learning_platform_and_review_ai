@@ -27,16 +27,22 @@ def week_cap(minutes: int) -> int:
     return minutes * 85 // 100
 
 
+def capped_week(program: dict[str, Any], today: date) -> date | None:
+    """Le lundi de la semaine plafonnée par January : celle d'aujourd'hui, ou la première du
+    programme s'il n'a pas commencé."""
+    starts = sorted(date.fromisoformat(week["start_date"]) for week in program["weeks"])
+    begun = [start for start in starts if start <= today]
+    return begun[-1] if begun else (starts[0] if starts else None)
+
+
 def feasible_minutes(program: dict[str, Any], today: date) -> int:
     """Les minutes à dire au Stratège : 300 (« 5 heures ») quand la semaine plafonnée tient encore
     une pratique et un quiz au-delà de ce qui est déjà fait, sinon le plus petit multiple de 15
     qui les tient (le back refuse une semaine sans cette place : version `impossible`). La semaine
     plafonnée est celle d'aujourd'hui, ou la première du programme s'il n'a pas commencé."""
-    starts = sorted(date.fromisoformat(week["start_date"]) for week in program["weeks"])
-    if not starts:
+    first = capped_week(program, today)
+    if first is None:
         return WEEK_MINUTES
-    begun = [start for start in starts if start <= today]
-    first = begun[-1] if begun else starts[0]
     done = sum(
         int(task["minutes"])
         for week in program["weeks"]
@@ -49,6 +55,19 @@ def feasible_minutes(program: dict[str, Any], today: date) -> int:
     while week_cap(minutes) < done + ROOM_MINUTES and minutes < MAX_MINUTES:
         minutes += 15
     return minutes
+
+
+def check_nothing_to_change(program: dict[str, Any], today: date, cap_week: int) -> None:
+    """Version `empty` : le plan tient déjà (replanification déjà acceptée, par exemple) ; la
+    semaine plafonnée ne doit alors pas dépasser le plafond de January, sinon le back a eu tort."""
+    first = capped_week(program, today)
+    for week in program["weeks"]:
+        if date.fromisoformat(week["start_date"]) == first and week["load_minutes"] > cap_week:
+            raise CheckFailed(
+                "replanification",
+                f"Rien à changer, mais la semaine {week['rank']} compte {week['load_minutes']} min "
+                f"(plafond {cap_week}).",
+            )
 
 
 def check_pending(
@@ -150,7 +169,7 @@ class JournalWant:
     """Ce que le journal doit montrer à la fin du passage."""
 
     study_id: str
-    attempt_id: str
+    attempt_id: str  # vide : quiz bloqué, aucune tentative ce jour-là, n'importe quelle entrée
     review_id: str | None  # None : bilan déjà écrit plus tôt, n'importe quelle entrée convient
     captures: list[str] = field(default_factory=list)  # sessions d'agents des captures
 
@@ -164,8 +183,10 @@ def check_journal(entries: list[dict[str, Any]], want: JournalWant) -> None:
 
     if not has("study_session", "study_session_id", want.study_id):
         raise CheckFailed(step, f"Aucune entrée `study_session` pour la session {want.study_id}.")
-    if not has("quiz", "quiz_attempt_id", want.attempt_id):
+    if want.attempt_id and not has("quiz", "quiz_attempt_id", want.attempt_id):
         raise CheckFailed(step, f"Aucune entrée `quiz` pour la tentative {want.attempt_id}.")
+    if not want.attempt_id and not any(e["kind"] == "quiz" for e in entries):
+        raise CheckFailed(step, "Aucune entrée `quiz` : le quiz bloqué a une tentative ratée.")
     for session_id in want.captures:
         if not has("capture", "session_id", session_id):
             raise CheckFailed(step, f"Aucune entrée `capture` pour la session {session_id}.")

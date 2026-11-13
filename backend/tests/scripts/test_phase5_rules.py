@@ -3,14 +3,17 @@ l'étape et un nombre, jamais un texte reçu."""
 
 from datetime import date
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import pytest
 
 from scripts.phase4_rules import CheckFailed
 from scripts.phase5_rules import (
     check_attempt,
+    check_blocked_quiz,
     check_quiz,
     check_study_summary,
+    is_blocked,
     option_value,
 )
 
@@ -146,3 +149,57 @@ def test_option_is_read_by_value_and_label_is_checked() -> None:
         option_value(stuck, "stuck", "Voir la solution")
     with pytest.raises(CheckFailed, match="absente"):
         option_value(stuck, "skip")
+
+
+PARIS = ZoneInfo("Europe/Paris")
+TODAY = date(2026, 11, 13)
+
+
+def test_a_quiz_waits_for_its_retry_only_until_the_day() -> None:
+    assert is_blocked({"retry_on": "2026-11-14"}, TODAY)
+    assert not is_blocked({"retry_on": "2026-11-13"}, TODAY)
+    assert not is_blocked({"retry_on": None}, TODAY)
+    assert not is_blocked(None, TODAY)  # pas encore de quiz
+
+
+def last_attempt(score: int | None = 35, created: str = "2026-11-12T09:00:00Z") -> dict[str, Any]:
+    return {"id": "a1", "score": score, "created_at": created}
+
+
+def failed_detail(
+    retry_on: str = "2026-11-14", revisions: int = 2, unplaced: int = 0
+) -> dict[str, Any]:
+    followup = {"retry_on": retry_on, "revision_tasks": ["t"] * revisions, "unplaced": unplaced}
+    return {"id": "a1", "followup": followup}
+
+
+def test_a_blocked_quiz_retries_two_local_days_after_the_missed_attempt() -> None:
+    check_blocked_quiz("2026-11-14", last_attempt(), failed_detail(), PARIS)
+    # 23 h 30 à Paris le 12 : la note peut tomber après minuit, J+3 est admis
+    late = last_attempt(created="2026-11-12T22:30:00Z")
+    check_blocked_quiz("2026-11-15", late, failed_detail("2026-11-15"), PARIS)
+
+
+@pytest.mark.parametrize(
+    ("retry_on", "attempt", "detail", "message"),
+    [
+        ("2026-11-14", last_attempt(90), failed_detail(), "après une tentative réussie"),
+        ("2026-11-14", last_attempt(None), failed_detail(), "après une tentative réussie"),
+        ("2026-11-15", last_attempt(), failed_detail("2026-11-15"), r"J\+2 attendu"),
+        ("2026-11-14", last_attempt(), {"id": "a1", "followup": None}, "sans le nouvel essai"),
+        ("2026-11-14", last_attempt(), failed_detail("2026-11-16"), "sans le nouvel essai"),
+        ("2026-11-14", last_attempt(), failed_detail(revisions=0), "aucune révision posée"),
+    ],
+)
+def test_a_wrongly_blocked_quiz_is_refused(
+    retry_on: str, attempt: dict[str, Any], detail: dict[str, Any], message: str
+) -> None:
+    with pytest.raises(CheckFailed, match=message) as caught:
+        check_blocked_quiz(retry_on, attempt, detail, PARIS)
+
+    assert caught.value.step == "quiz"
+
+
+def test_unplaced_revisions_count_as_posed() -> None:
+    detail = failed_detail(revisions=0, unplaced=1)
+    check_blocked_quiz("2026-11-14", last_attempt(), detail, PARIS)

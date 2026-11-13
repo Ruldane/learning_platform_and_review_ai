@@ -173,6 +173,40 @@ async def test_check_all_runs_against_the_app(
     assert "completed" in {r["status"] for r in replans}  # la proposition acceptée
 
 
+@pytest.mark.timeout(600)
+async def test_check_all_can_be_rerun_on_the_same_base(
+    client: httpx.AsyncClient,
+    app: FastAPI,
+    seeded_program: Seeded,
+    models: ScriptedModels,
+    memory_providers: MemoryProviders,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Trois passages de suite sur la même base : le quiz du module 1 rate, puis attend son nouvel
+    essai (J+2) : le deuxième passage prend le module 2, le troisième ne trouve plus de quiz libre
+    et vérifie le blocage. La replanification, le bilan et le journal se rejouent sans erreur."""
+    await _add_due_card(seeded_program)
+    monday = await rebase_program(seeded_program)
+    readable_page(memory_providers)
+    scheduler = asyncio.create_task(
+        weekly_scheduler(client, app, freeze_weekly_clock(monkeypatch, monday))
+    )
+    try:
+        first = await run_check(client, part="tout", timeout_s=240)
+        await asyncio.wait_for(scheduler, 5)
+        served = models.served["examiner"]
+        second = await run_check(client, part="tout", timeout_s=240)
+        assert models.served["examiner"] == served + 2  # un quiz et sa notation : le module 2
+        third = await run_check(client, part="tout", timeout_s=240)
+    finally:
+        scheduler.cancel()
+
+    assert first == second == third == list(ALL_STEPS)
+    assert models.served["examiner"] == served + 2  # le troisième passage ne note rien
+    settings = (await client.get("/api/v1/settings")).json()
+    assert settings["weekly_review"] == {"day": "sunday", "time": "18:00"}
+
+
 async def test_check_fails_without_a_validated_program(client: httpx.AsyncClient) -> None:
     with pytest.raises(CheckFailed, match="check_phase4") as caught:
         await run_check(client, part="etude", timeout_s=5)

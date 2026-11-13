@@ -39,8 +39,13 @@ class Etude:
     session_id: str = ""
     quiz_id: str = ""
     due_before: set[str] = field(default_factory=set)  # fiches dues avant la session
-    skills: list[str] = field(default_factory=list)  # compétences du module (noms du programme)
+    # compétences (noms du programme) de chaque module qui a une leçon prête
+    module_skills: dict[str, list[str]] = field(default_factory=dict)
     before: dict[str, SkillState] = field(default_factory=dict)  # leur état avant la session
+    quiz_module_id: str = ""  # module du quiz : celui de la session, ou un autre si son quiz attend
+    quiz_blocked: bool = (
+        False  # aucun quiz libre : le blocage (J+2) a été vérifié, pas de tentative
+    )
     attempt_id: str = ""  # tentative du quiz
     passed: bool = False  # quiz réussi (≥ 80 %) : les compétences passent à `valide`
     retry_on: str = ""  # nouvel essai du quiz, quand il est raté (J+2)
@@ -51,6 +56,11 @@ class Etude:
     @property
     def module_id(self) -> str:
         return self.lessons[self.lesson_id]
+
+    @property
+    def skills(self) -> list[str]:
+        """Compétences du module de la session."""
+        return self.module_skills.get(self.module_id, [])
 
 
 async def pick_program(run: Run, st: Etude) -> None:
