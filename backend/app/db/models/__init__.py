@@ -2,9 +2,11 @@
 from app.db.models import (
     accounts,
     agents,
+    career,
     learning,
     lessons,
     memory,
+    postings,
     program,
     research,
     skills,
@@ -14,9 +16,11 @@ from app.db.models import (
 __all__ = [
     "accounts",
     "agents",
+    "career",
     "learning",
     "lessons",
     "memory",
+    "postings",
     "program",
     "research",
     "skills",
