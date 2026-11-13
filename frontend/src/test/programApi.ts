@@ -141,9 +141,12 @@ export function programApi(
   const state = {
     program: initial.program ?? programOut(),
     session: initial.session === undefined ? validationSession() : initial.session,
+    /** Les replanifications qui attendent une réponse (`GET /sessions?graph=replan`). */
+    waitingReplans: [] as Record<string, unknown>[],
   };
   const handlers = [
     http.get(`${API}/programs/p1`, () => HttpResponse.json(state.program)),
+    http.get(`${API}/sessions`, () => HttpResponse.json(state.waitingReplans)),
     http.get(`${API}/sessions/s1`, () =>
       state.session ? HttpResponse.json(state.session) : HttpResponse.json({}, { status: 404 }),
     ),

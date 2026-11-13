@@ -46,4 +46,11 @@ describe("PlanDiff", () => {
     render(<PlanDiff diff={{ added: [], removed: [], moved: [] }} />);
     expect(screen.getByText("Aucun changement.")).toBeInTheDocument();
   });
+
+  it("leaves out the module line when the module is unknown", () => {
+    const task = { id: "a", title: "Tâche seule", moduleTitle: "", plannedDate: null };
+    render(<PlanDiff diff={{ added: [task], removed: [], moved: [] }} />);
+    expect(screen.getByText("Tâche seule")).toBeInTheDocument();
+    expect(screen.queryByText(/Module/)).toBeNull();
+  });
 });

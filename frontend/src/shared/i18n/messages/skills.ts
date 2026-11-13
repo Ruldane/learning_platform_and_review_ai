@@ -2,6 +2,18 @@ import { memory } from "./memory";
 
 /** Textes de la carte de compétences : graphe, légende, radar, progression, tiroir, comparaison. */
 export const skills = {
+  nav: { map: "Carte" },
+  page: {
+    title: "Carte des compétences",
+    loading: "Chargement de la carte…",
+    detailLoading: "Chargement de la compétence…",
+    panelLoading: "Chargement…",
+  },
+  compareNone: {
+    title: "Aucun poste cible à comparer",
+    description: "Crée d'abord un objectif et son programme : la comparaison part de ses modules.",
+    action: "Créer un objectif",
+  },
   level: { ...memory.level, absent: "Absent" },
   views: {
     label: "Vues de la carte",

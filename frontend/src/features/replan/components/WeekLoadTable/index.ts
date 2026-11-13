@@ -1,0 +1,1 @@
+export { WeekLoadTable } from "./WeekLoadTable";

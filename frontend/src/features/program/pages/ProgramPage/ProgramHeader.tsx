@@ -1,11 +1,15 @@
-import { Download } from "lucide-react";
+import { Download, RefreshCw } from "lucide-react";
+import { Link } from "react-router";
 import { longDay } from "@/shared/lib/format";
 import { t } from "@/shared/i18n/t";
 import { buttonVariants } from "@/shared/ui/button";
 import { exportIcsUrl, exportPdfUrl } from "../../api";
 import type { ProgramOut } from "../../types";
 
-/** Titre du programme, son état (brouillon ou validé, version, début) et les exports PDF et .ics. */
+/**
+ * Titre du programme, son état (brouillon ou validé, version, début), le bouton « Replanifier »
+ * (programme validé) et les exports PDF et .ics.
+ */
 export function ProgramHeader({ program }: { program: ProgramOut }) {
   const link = buttonVariants({ variant: "outline" });
   return (
@@ -22,6 +26,12 @@ export function ProgramHeader({ program }: { program: ProgramOut }) {
           </p>
         </div>
         <nav aria-label={t("program.exports.label")} className="flex flex-wrap gap-2">
+          {program.status === "validated" ? (
+            <Link to={`/apprendre/programme/${program.id}/replanification`} className={link}>
+              <RefreshCw aria-hidden="true" />
+              {t("program.replan.button")}
+            </Link>
+          ) : null}
           <a href={exportPdfUrl(program.id)} className={link}>
             <Download aria-hidden="true" />
             {t("program.exports.pdf")}

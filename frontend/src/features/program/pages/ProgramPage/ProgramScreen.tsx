@@ -6,6 +6,7 @@ import { toModuleLessons, toPlanDiffView, toProgressView, toWeekViews } from "..
 import type { ProgramOut } from "../../types";
 import { ProgramHeader } from "./ProgramHeader";
 import { ProgramViews } from "./ProgramViews";
+import { ReplanBanner } from "./ReplanBanner";
 import { ValidationBar } from "./ValidationBar";
 import { useValidationFlow } from "./useValidationFlow";
 
@@ -32,6 +33,7 @@ export function ProgramScreen({ program }: { program: ProgramOut }) {
   return (
     <div className="flex flex-col gap-6">
       <ProgramHeader program={program} />
+      <ReplanBanner programId={program.id} enabled={program.status === "validated"} />
       <ValidationBar flow={flow} />
       {diff ? (
         <section aria-labelledby="program-changes-title" className="flex flex-col gap-2">

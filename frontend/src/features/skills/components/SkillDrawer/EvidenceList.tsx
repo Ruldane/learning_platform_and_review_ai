@@ -12,12 +12,15 @@ export function EvidenceList({ evidence }: { evidence: EvidenceView[] }) {
   return (
     <ul aria-label={t("skills.drawer.evidence")} className="flex flex-col gap-1 text-sm">
       {evidence.map((item) => {
-        const text = t("skills.drawer.evidenceAt", {
-          label: item.label,
-          date: DAY.format(new Date(item.at)),
-        });
+        const text =
+          item.at === null
+            ? item.label
+            : t("skills.drawer.evidenceAt", {
+                label: item.label,
+                date: DAY.format(new Date(item.at)),
+              });
         return (
-          <li key={`${item.kind}:${item.label}:${item.at}`}>
+          <li key={`${item.kind}:${item.label}:${item.at ?? ""}`}>
             {item.url ? <SmartLink url={item.url}>{text}</SmartLink> : text}
           </li>
         );

@@ -100,4 +100,13 @@ describe("SkillDrawer", () => {
     await userEvent.keyboard("{Escape}");
     expect(onClose).toHaveBeenCalledTimes(2);
   });
+
+  it("lists a phase 4 evidence without a date", () => {
+    renderDrawer({
+      ...detail,
+      evidence: [{ kind: "program", label: "Programme web", at: null, url: null }],
+    });
+    expect(screen.getByText("Programme web")).toBeInTheDocument();
+    expect(screen.queryByText(/Invalid Date/)).toBeNull();
+  });
 });

@@ -6,14 +6,16 @@ interface DiffEntryProps {
   detail?: string | null;
 }
 
-/** Une tâche du diff : son titre, son module et ce qui la concerne (jour prévu ou déplacement). */
+/** Une tâche du diff : son titre, son module (omis s'il est inconnu) et ce qui la concerne (jour ou déplacement). */
 export function DiffEntry({ title, moduleTitle, detail }: DiffEntryProps) {
   return (
     <li className="flex flex-col gap-0.5">
       <span className="font-medium">{title}</span>
-      <span className="text-sm text-muted-foreground">
-        {t("session.diff.module", { module: moduleTitle })}
-      </span>
+      {moduleTitle === "" ? null : (
+        <span className="text-sm text-muted-foreground">
+          {t("session.diff.module", { module: moduleTitle })}
+        </span>
+      )}
       {detail ? <span className="text-sm tabular-nums">{detail}</span> : null}
     </li>
   );

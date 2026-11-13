@@ -1,0 +1,87 @@
+/** Textes de la capture rapide (Ctrl+K) et du journal d'apprentissage. */
+export const capture = {
+  nav: { journal: "Journal" },
+  topbar: {
+    button: "Capture rapide",
+    hint: "Ctrl K",
+  },
+  dialog: {
+    title: "Capture rapide",
+    description:
+      "Colle un lien ou une note, ou dépose un fichier : l'Archiviste en fait un résumé et le range dans ta mémoire.",
+    close: "Fermer",
+  },
+  input: {
+    label: "Un lien ou une note",
+    hintEmpty:
+      "Une adresse commençant par http ou https est lue comme un lien, le reste comme une note.",
+    hintLink: "Lien détecté : l'Archiviste va le lire.",
+    hintText: "Note : elle sera résumée et gardée dans ta mémoire.",
+    tooLong: "20 000 caractères au plus.",
+    submit: "Capturer",
+    submitting: "Envoi…",
+    or: "ou",
+    drop: "Dépose un fichier ici",
+    chooseFile: "Choisir un fichier",
+    fileHint: "PDF, DOCX, Markdown ou texte, 20 Mo au maximum.",
+    badType: "Type de fichier non pris en charge : PDF, DOCX, Markdown ou texte.",
+    tooBig: "Fichier trop volumineux : 20 Mo au maximum.",
+    uploading: "Envoi du fichier…",
+  },
+  run: {
+    label: "Suivi de la capture",
+    loading: "Ouverture de la capture…",
+    reconnecting: "Reconnexion au direct…",
+    completed: "Capture terminée.",
+    failed: "La capture s'est arrêtée.",
+    cancelled: "Capture abandonnée.",
+    again: "Nouvelle capture",
+    journal: "Voir le journal",
+  },
+  textCard: {
+    send: "Envoyer le texte",
+    cancel: "Abandonner",
+    answered: "Réponse envoyée",
+    count: "{count} / {max} caractères",
+  },
+  errors: {
+    invalid_input: "Choisis une seule source : un lien, une note ou un fichier.",
+    invalid_url: "Ce lien n'est pas une adresse http ou https.",
+    url_forbidden: "Ce lien contient des identifiants : retire-les de l'adresse.",
+    document_not_found: "Ce fichier est introuvable : dépose-le à nouveau.",
+    document_failed:
+      "L'import de ce fichier a échoué : supprime-le de tes documents, puis recommence.",
+    document_not_indexed: "Le fichier n'a pas pu être lu à temps : réessaie dans un moment.",
+  },
+  journal: {
+    title: "Journal d'apprentissage",
+    intro: "Tes captures, tes sessions, tes quiz et le bilan de chaque semaine.",
+    loading: "Chargement du journal…",
+    filter: {
+      label: "Type d'entrée",
+      all: "Tout",
+      capture: "Captures",
+      study_session: "Sessions d'étude",
+      quiz: "Quiz",
+      weekly_review: "Bilans hebdomadaires",
+    },
+    kind: {
+      capture: "Capture",
+      study_session: "Session d'étude",
+      quiz: "Quiz",
+      weekly_review: "Bilan hebdomadaire",
+    },
+    week: "Semaine du {day}",
+    weeks: "Entrées par semaine",
+    more: "Voir les entrées plus anciennes",
+    loadingMore: "Chargement…",
+    emptyTitle: "Ton journal est vide",
+    emptyDescription:
+      "Il se remplit avec tes captures, tes sessions d'étude, tes quiz et ton bilan du dimanche.",
+    emptyAction: "Capturer une note",
+    emptyFilterTitle: "Aucune entrée de ce type",
+    emptyFilterAction: "Tout voir",
+    openStudy: "Voir la session",
+    openMemory: "Voir dans la mémoire",
+  },
+} as const;

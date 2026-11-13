@@ -54,3 +54,15 @@ export async function postPause(sessionId: string): Promise<SessionView> {
 export async function postCancel(sessionId: string): Promise<SessionView> {
   return unwrap(await api.POST("/sessions/{session_id}/cancel", path(sessionId)));
 }
+
+/**
+ * `GET /sessions?graph=&status=` : les sessions d'un parcours dans un état donné, par exemple les
+ * replanifications qui attendent une réponse. Le sujet suivi est dans `subject_type` / `subject_id`.
+ */
+export async function listSessions(
+  graph: string,
+  status: SessionView["status"],
+  signal?: AbortSignal,
+): Promise<SessionView[]> {
+  return unwrap(await api.GET("/sessions", { params: { query: { graph, status } }, signal }));
+}

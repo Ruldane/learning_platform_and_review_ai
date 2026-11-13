@@ -8,9 +8,16 @@ describe("registre des features", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("expose l'accueil, Apprendre, Étudier, la mémoire et les réglages dans la navigation", () => {
+  it("expose l'accueil, Apprendre, Étudier, Compétences, la mémoire et les réglages dans la navigation", () => {
     const groups = buildNav(FEATURES);
-    expect(groups.map((g) => g.section)).toEqual(["home", "learn", "study", "memory", "settings"]);
+    expect(groups.map((g) => g.section)).toEqual([
+      "home",
+      "learn",
+      "study",
+      "skills",
+      "memory",
+      "settings",
+    ]);
     expect(groups[0]?.items).toEqual([{ labelKey: "nav.home", path: "/" }]);
     expect(groups[1]?.items.map((item) => item.path)).toEqual([
       "/apprendre/objectifs",
@@ -23,14 +30,16 @@ describe("registre des features", () => {
       "/etudier/session",
       "/etudier/revisions",
       "/etudier/quiz",
+      "/etudier/journal",
     ]);
-    expect(groups[3]?.items.map((item) => item.path)).toEqual([
+    expect(groups[3]?.items).toEqual([{ labelKey: "skills.nav.map", path: "/competences" }]);
+    expect(groups[4]?.items.map((item) => item.path)).toEqual([
       "/memoire",
       "/memoire/carte",
       "/memoire/banc",
       "/memoire/documents",
     ]);
-    expect(groups[4]?.items).toEqual([
+    expect(groups[5]?.items).toEqual([
       { labelKey: "settings.models.navLabel", path: "/reglages/modeles" },
       { labelKey: "settings.search.navLabel", path: "/reglages/recherche" },
       { labelKey: "research.nav.bench", path: "/reglages/recherche/essai" },

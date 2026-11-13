@@ -44,8 +44,8 @@ export interface EvidenceView {
   /** Nature de la preuve : `lesson`, `quiz`, `study`, `program`, `capture`… */
   kind: string;
   label: string;
-  /** Date ISO de la preuve. */
-  at: string;
+  /** Date ISO de la preuve ; `null` pour une preuve ancienne (phase 4), affichée sans date. */
+  at: string | null;
   /** Chemin dans l'application ; `null` quand la preuve n'a pas de page. */
   url: string | null;
 }

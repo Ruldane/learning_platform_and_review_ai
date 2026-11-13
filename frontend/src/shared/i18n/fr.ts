@@ -1,11 +1,13 @@
 import { agents } from "./messages/agents";
 import { appMessages } from "./messages/app";
+import { capture } from "./messages/capture";
 import { demo } from "./messages/demo";
 import { learning } from "./messages/learning";
 import { lessons } from "./messages/lessons";
 import { memory } from "./messages/memory";
 import { program } from "./messages/program";
 import { quiz } from "./messages/quiz";
+import { replan } from "./messages/replan";
 import { research } from "./messages/research";
 import { session } from "./messages/session";
 import { settings } from "./messages/settings";
@@ -31,4 +33,6 @@ export const fr = {
   study,
   quiz,
   skills,
+  replan,
+  capture,
 } as const;

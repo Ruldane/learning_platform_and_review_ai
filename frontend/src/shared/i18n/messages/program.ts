@@ -24,6 +24,12 @@ export const program = {
     next: "Semaine suivante",
     option: "Semaine {rank} : {theme}",
   },
+  replan: {
+    button: "Replanifier",
+    waitingTitle: "Une replanification attend ta réponse",
+    waitingHint: "Le Stratège a préparé une proposition : accepte-la ou garde ton plan actuel.",
+    open: "Voir la proposition",
+  },
   exports: {
     label: "Exports",
     pdf: "Exporter en PDF",
