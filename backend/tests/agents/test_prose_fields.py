@@ -12,6 +12,14 @@ from app.agents.nodes.moderator_rounds import RoundPlan, RoundReview
 from app.agents.nodes.scout.models import PlannedQuery, SourceScore
 from app.agents.nodes.scout.people import PersonModel
 from app.agents.nodes.scribe import BoardDraft
+from app.agents.nodes.tutor import (
+    AnswerCheck,
+    FinalQuestion,
+    HintTurn,
+    SessionSummary,
+    TeachTurn,
+    TutorReply,
+)
 from app.agents.runtime.prose import ShortenToMax
 from app.agents.tools.council_port import ProposalDraft
 from app.agents.tools.lesson_port import ResourcePick
@@ -48,6 +56,13 @@ def _shortens(model: type[BaseModel], name: str) -> bool:
         (QuestionDraft, "rubric"),
         (QuestionDraft, "explanation"),
         (GradeDraft, "feedback"),
+        (TeachTurn, "message"),
+        (TeachTurn, "expected"),
+        (AnswerCheck, "feedback"),
+        (HintTurn, "hint"),
+        (FinalQuestion, "expected"),
+        (SessionSummary, "summary"),
+        (TutorReply, "message"),
     ],
 )
 def test_free_text_fields_are_shortened(model: type[BaseModel], name: str) -> None:
@@ -70,6 +85,9 @@ def test_free_text_fields_are_shortened(model: type[BaseModel], name: str) -> No
         (QuestionDraft, "skill"),
         (QuizDraft, "title"),
         (GradeDraft, "ref"),
+        (TeachTurn, "question"),
+        (TeachTurn, "mermaid"),
+        (FinalQuestion, "question"),
     ],
 )
 def test_identifiers_names_and_code_stay_strict(model: type[BaseModel], name: str) -> None:
