@@ -1,7 +1,7 @@
 """Pièces du rangement d'une replanification (`replanning.repack`, D106) : tâches rangées,
-semaines « Suite », budget d'une semaine entamée, avance des tâches (« avancer »), charges et
-règles des semaines touchées, et le plan après la proposition (pour l'instantané et la
-différence). Fonctions pures."""
+semaines « Suite », budget d'une semaine entamée, charges et règles des semaines touchées, et le
+plan après la proposition (pour l'instantané et la différence). L'avance (« avancer ») et les
+semaines gardées telles quelles sont dans `replan_stable`. Fonctions pures."""
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field, replace
@@ -10,10 +10,10 @@ from typing import Any, Protocol
 
 from app.agents.tools.replan_port import WeekLoad
 from app.db.models.program import TaskType
-from app.features.program.service.advance import Dated, WeekSlots, plan_advances
 from app.features.program.service.budget import Budget
 from app.features.program.service.diff import ModuleRow, ProgramRows, TaskRow, WeekRow
 from app.features.program.service.planning import (
+    MAX_WEEKS,
     PRACTICE_MINUTES,
     QUIZ_MINUTES,
     PlanningImpossible,
@@ -170,6 +170,24 @@ def suite_tasks(week: NewWeek) -> list[PlannedTask]:
     ]
 
 
+def open_week(
+    rows: ProgramRows,
+    index: int,
+    new_weeks: list[NewWeek],
+    own: dict[int, list[PlannedTask]],
+) -> date:
+    """Le début de la semaine `index` ; au-delà de la dernière, une semaine « Suite » est ouverte
+    avec sa pratique et son quiz (52 semaines au plus)."""
+    starts = [week.start_date for week in rows.weeks]
+    if index >= MAX_WEEKS:
+        raise PlanningImpossible("Le programme dépasse 52 semaines avec ce budget.")
+    if index < len(starts):
+        return starts[index]
+    new_weeks.append(suite_week(rows.weeks[-1], index + 1, starts[-1], len(starts)))
+    own[index] = suite_tasks(new_weeks[-1])
+    return new_weeks[-1].start_date
+
+
 class _Found(Protocol):
     @property
     def task(self) -> TaskRow: ...
@@ -196,48 +214,6 @@ class Slots:
             for f in self.found
             if f.task.status == "done" and self.within(index, f.task.planned_date)
         ]
-
-
-def _reserved(items: list[PlannedTask]) -> set[int]:
-    """Rangs du dernier quiz et de la première pratique d'une semaine (jamais avancés)."""
-    quizzes = [i for i, t in enumerate(items) if t.type == "quiz"]
-    practices = [i for i, t in enumerate(items) if t.type == "pratiquer"]
-    return set(quizzes[-1:] + practices[:1])
-
-
-def advance(tasks: list[PlannedTask], slots: Slots, *, skip_current: bool) -> list[PlannedTask]:
-    """« Avancer » (D98, `plan_advances` à 100 % du plafond) depuis la semaine en cours (la
-    suivante si January a donné ses heures de la semaine) : seule la date des tâches change."""
-    first = slots.current + (1 if skip_current else 0)
-    weeks: list[WeekSlots] = []
-    owners: list[list[int | None]] = []  # rang dans `tasks` de chaque tâche datée (faites : None)
-    for index in range(first, len(slots.starts)):
-        mine = sorted(
-            (n for n, t in enumerate(tasks) if slots.within(index, t.planned_date)),
-            key=lambda n: tasks[n].planned_date,
-        )
-        reserved = _reserved([tasks[n] for n in mine])
-        done = slots.done(index)
-        dated = [Dated(t.minutes, t.planned_date, True) for t in done]
-        dated += [
-            Dated(tasks[n].minutes, tasks[n].planned_date, i in reserved)
-            for i, n in enumerate(mine)
-        ]
-        weeks.append(WeekSlots(slots.starts[index], dated))
-        owners.append([None] * len(done) + list(mine))
-    budget = WeekBudget(
-        slots.budget.weekday_minutes,
-        slots.budget.weekend_minutes,
-        slots.budget.cap_minutes,
-        {},
-        slots.from_day,
-    )
-    result = list(tasks)
-    for move in plan_advances(weeks, budget, floor_share=1.0):
-        owner = owners[move.source][move.index]
-        if owner is not None:
-            result[owner] = result[owner].moved(move.day)
-    return result
 
 
 def week_loads(slots: Slots, tasks: list[PlannedTask], override: int | None) -> list[WeekLoad]:

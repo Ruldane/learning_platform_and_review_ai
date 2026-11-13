@@ -186,7 +186,8 @@ def make_preview(deps: GraphDeps) -> Node:
             outcome = "finished" if saved.finished else "impossible"
             return {"preview": as_json(saved), "outcome": outcome}
         if saved.empty and option is None:
-            _say(f"replan-{revision}", draft.summary)
+            # Seul « Rien à changer » est dit : le résumé du Stratège pourrait le contredire
+            # (relecture 5.8 m5, revue finale de la phase 5).
             return {"preview": as_json(saved), "outcome": "empty"}
         _say(f"replan-{revision}", preview_text(draft.summary, saved))
         artifact = {

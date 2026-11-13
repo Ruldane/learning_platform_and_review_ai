@@ -14,6 +14,12 @@ from app.db.models.program import TaskType
 WeekRule = Literal["week_over_budget", "week_needs_practice", "week_needs_quiz"]
 # Part du plafond qu'une semaine du Stratège atteint au moins, sauf la dernière (D98).
 UNDERLOAD_SHARE = 0.6
+# Titre du nouvel essai d'un quiz échoué, posé à J+2 (F9) : jamais avancé par un rangement.
+RETRY_PREFIX = "Refaire le quiz : "
+
+
+def is_retry(title: str, kind: TaskType) -> bool:
+    return kind == "quiz" and title.startswith(RETRY_PREFIX)
 
 
 def floor_minutes(cap_minutes: int, share: float = UNDERLOAD_SHARE) -> int:

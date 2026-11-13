@@ -9,7 +9,9 @@ import pytest
 from fastapi import FastAPI
 
 from app.agents.tools.replan_port import ReplanDraft
+from app.db.models.program import PlanKind, PlanStatus
 from app.features.program.service.runtime import ProgramRuntime
+from app.features.replan.schemas import PlanKindOut, PlanStatusOut
 from app.features.replan.service.runtime import ReplanRuntime
 from app.features.replan.service.store import AgentReplanStore
 from tests.features.lessons.conftest import RecordingLauncher
@@ -162,3 +164,19 @@ async def test_pending_of_closed_session_reads_superseded(
     assert await status() == "superseded"
     stored = await versions(routes.app.state.session_factory, program_id)
     assert stored[-1]["status"] == "pending"  # lecture seule : rien n'est réécrit
+
+
+async def test_pending_build_version_is_never_read_superseded(
+    client: httpx.AsyncClient, routes: Routes
+) -> None:
+    """Revue finale 5 (relecture 5.9) : la lecture `superseded` d'une version `pending` à session
+    close ne vaut que pour une proposition `replan` ; la version `build` d'un brouillon, dont la
+    session du constructeur est close, reste `pending` (la validation peut l'accepter)."""
+    program_id = await drafted(routes.program, routes.user_id)
+    listed = (await client.get(f"{API}/programs/{program_id}/versions")).json()
+    assert [(v["kind"], v["status"]) for v in listed] == [("build", "pending")]
+
+
+def test_version_values_come_from_the_model() -> None:
+    """Revue finale 5 (relecture 5.9 m6) : statuts et genres lus du modèle, jamais recopiés."""
+    assert PlanStatusOut is PlanStatus and PlanKindOut is PlanKind

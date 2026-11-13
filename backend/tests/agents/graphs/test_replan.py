@@ -16,7 +16,7 @@ from app.agents.nodes.strategist.replan_steps import (
 from app.agents.tools.replan_port import ReplanContext
 from app.core.errors import AppError
 from tests.agents.graphs.council_models import CouncilModels
-from tests.agents.graphs.replan_support import SUMMARY, MakeReplan, ReplanRun, reply
+from tests.agents.graphs.replan_support import MakeReplan, ReplanRun, reply
 from tests.agents.runtime.runner_helpers import wait_until
 from tests.support.replan import (
     PROGRAM_ID,
@@ -55,7 +55,8 @@ async def test_on_track_without_changes_completes_without_question(
     done = await run.wait_status("completed")
     assert await run.kinds() == [] and done.pending_interrupt is None
     assert (await run.events("run.completed"))[0]["summary"] == EMPTY_TEXT
-    assert await run.said() == [REVIEW_TEXT, SUMMARY, EMPTY_TEXT]
+    # Revue finale 5 (5.8 m5) : le résumé du Stratège n'est pas dit avant « Rien à changer ».
+    assert await run.said() == [REVIEW_TEXT, EMPTY_TEXT]
     assert await run.events("artifact.ready") == []
     call = run.store.previews[0]
     assert call.option is None and call.draft.drop == [] and call.draft.add == []

@@ -24,10 +24,15 @@ class NoRoom(Exception):
 
 @dataclass(frozen=True)
 class Entry:
-    """Une tâche à placer ; `origin` = (semaine, module, tâche) du brouillon, ordre naturel."""
+    """Une tâche à placer ; `origin` = (semaine, module, tâche) du brouillon, ordre naturel.
+    Replanification (D106, revue finale de la phase 5) : `not_before`, la date actuelle d'une
+    tâche (jamais placée avant ; la pratique et le quiz réservés la préfèrent seulement) ;
+    `retry`, un « Refaire le quiz » (jamais le quiz qui ferme la semaine)."""
 
     task: TaskDraft
     origin: tuple[int, int, int]
+    not_before: date | None = None
+    retry: bool = False
 
 
 @dataclass(frozen=True)
@@ -49,7 +54,7 @@ def week_days(start: date) -> list[date]:
 
 def final_quiz(own: list[Entry]) -> Entry | None:
     """Le dernier quiz de la semaine : il ferme la semaine."""
-    quizzes = [entry for entry in own if entry.task.type == "quiz"]
+    quizzes = [entry for entry in own if entry.task.type == "quiz" and not entry.retry]
     return quizzes[-1] if quizzes else None
 
 
@@ -65,6 +70,23 @@ def _quiz_day(days: list[date], remaining: dict[date, int], minutes: int) -> dat
         if remaining[day] >= minutes:
             return day
     raise NoRoom
+
+
+def _practice_day(usable: list[date], remaining: dict[date, int], entry: Entry) -> date:
+    """Le premier jour qui a la place de la pratique, à partir de sa date si elle en a une."""
+    fits = [day for day in usable if remaining[day] >= entry.task.minutes]
+    later = [day for day in fits if entry.not_before is None or day >= entry.not_before]
+    if not fits:
+        raise NoRoom
+    return (later or fits)[0]
+
+
+def _first_index(usable: list[date], cursor: int, entry: Entry) -> int:
+    """Le premier rang de jour utilisable pour `entry` : jamais avant le curseur ni sa date."""
+    floor = entry.not_before
+    while floor is not None and cursor < len(usable) and usable[cursor] < floor:
+        cursor += 1
+    return cursor
 
 
 def pack_week(carried: list[Entry], own: list[Entry], budget: Budget, start: date) -> WeekPacking:
@@ -89,9 +111,7 @@ def pack_week(carried: list[Entry], own: list[Entry], budget: Budget, start: dat
         placed.append(Placement(quiz, last_day, final_quiz=True))
     usable = [day for day in days if day <= last_day]
     if practice is not None:
-        day = next((d for d in usable if remaining[d] >= practice.task.minutes), None)
-        if day is None:
-            raise NoRoom
+        day = _practice_day(usable, remaining, practice)
         remaining[day] -= practice.task.minutes
         placed.append(Placement(practice, day))
     queue = carried + [entry for entry in own if entry not in reserved]
@@ -99,8 +119,9 @@ def pack_week(carried: list[Entry], own: list[Entry], budget: Budget, start: dat
     charge, cursor = 0, 0
     for entry in queue:
         minutes = entry.task.minutes
+        first = _first_index(usable, cursor, entry)
         index = next(
-            (i for i in range(cursor, len(usable)) if remaining[usable[i]] >= minutes), None
+            (i for i in range(first, len(usable)) if remaining[usable[i]] >= minutes), None
         )
         if deferred or index is None or charge + minutes > budget.cap_minutes - reserve:
             deferred.append(entry)

@@ -29,8 +29,8 @@ _RIGHTS = {
         "en retirer : ce qui approfondit l'objectif, sans alourdir une semaine au-delà du plafond."
     ),
     "push_deadline": (
-        "aucun. Le code reporte ce qui ne tient pas en semaines « Suite » : l'échéance recule. "
-        + _NO_RIGHT
+        "aucun. Le code allège les semaines à venir (60 % du plafond au plus) et reporte ce qui "
+        "ne tient plus en semaines « Suite » : l'échéance recule. " + _NO_RIGHT
     ),
     "advance": "aucun. Le code avance les tâches suivantes jusqu'au plafond. " + _NO_RIGHT,
 }

@@ -3,12 +3,15 @@ que 5 heures »), historique des versions du plan. Les schémas de différence p
 nom (`VersionDiffOut`, `VersionMoveOut`), mêmes champs que `PlanDiffOut` du programme (F8)."""
 
 from datetime import date, datetime
-from typing import Literal
 
 from pydantic import BaseModel, Field
 
-PlanKindOut = Literal["build", "replan"]
-PlanStatusOut = Literal["accepted", "pending", "refused", "superseded", "empty", "impossible"]
+from app.db.models.program import PlanKind, PlanStatus
+
+# Les valeurs du modèle, jamais recopiées : un statut ajouté plus tard ne ferait pas de 500 sur
+# `GET /versions` (relecture 5.9 m6, revue finale de la phase 5). Contrat inchangé.
+PlanKindOut = PlanKind
+PlanStatusOut = PlanStatus
 
 
 class ReplanRequest(BaseModel):

@@ -4,7 +4,11 @@ rangement d'une proposition (`repack`). Fonctions pures, sans base ni modèle.
 Seules les tâches à faire bougent, de la semaine en cours et des suivantes ; une tâche garde son
 module, seule sa date change (D88 §1 : la semaine d'une tâche est celle de son jour). Le budget
 passe avant l'échéance : ce qui ne tient pas part dans des semaines « Suite », quelle que soit
-l'option. L'écriture (proposition, acceptation) est dans `replan_versions`."""
+l'option. Le rangement est stable (revue finale de la phase 5, P-I1) : une semaine qui ne reçoit
+ni retard ni ajout garde ses dates (`replan_stable.keeps_dates`), et une tâche à faire n'est
+jamais placée avant sa date, hors option « avancer », qui n'avance jamais un « Refaire le quiz ».
+« Repousser l'échéance » range les semaines à venir sous 60 % du plafond (P-I2) : le surplus part
+en semaines « Suite », l'échéance recule. L'écriture est dans `replan_versions`."""
 
 import hashlib
 import json
@@ -19,22 +23,27 @@ from app.core.clock import week_start
 from app.features.program.service.budget import Budget
 from app.features.program.service.diff import ProgramRows, TaskRow
 from app.features.program.service.packing import Entry, NoRoom, WeekPacking, pack_week
-from app.features.program.service.planning import MAX_WEEKS, PlanningImpossible
+from app.features.program.service.planning import (
+    PRACTICE_MINUTES,
+    QUIZ_MINUTES,
+    PlanningImpossible,
+)
 from app.features.program.service.replan_rows import (
     NewTask,
     NewWeek,
     PlannedTask,
     Slots,
     WeekBudget,
-    advance,
-    suite_tasks,
-    suite_week,
+    open_week,
     week_loads,
 )
+from app.features.program.service.replan_stable import advance, keeps_dates
+from app.features.program.service.rules import UNDERLOAD_SHARE, floor_minutes, is_retry
 
 __all__ = ["NewTask", "NewWeek", "PlannedTask", "RepackResult", "fingerprint", "repack"]
 
 DAYS = 7
+PUSH_SHARE = UNDERLOAD_SHARE  # « Repousser l'échéance » : semaines à venir à 60 % du plafond
 
 
 class ProgramFinished(PlanningImpossible):
@@ -137,10 +146,13 @@ def _planned(row: _Row) -> PlannedTask:
 
 
 def _entry(task: PlannedTask, seq: int) -> Entry:
+    """Une tâche existante n'est jamais placée avant sa date (`not_before`) ; un « Refaire le
+    quiz » ne ferme jamais la semaine à la place de son quiz."""
     draft = TaskDraft.model_construct(
         title=task.title, type=task.type, minutes=task.minutes, done_criterion=task.done_criterion
     )
-    return Entry(draft, (seq, 0, 0))
+    floor = task.planned_date if task.task_id else None
+    return Entry(draft, (seq, 0, 0), floor, is_retry(task.title, task.type))
 
 
 @dataclass
@@ -191,18 +203,29 @@ def _done_minutes(found: list[_Row]) -> dict[date, int]:
 
 
 def _budget(
-    budget: Budget, cap: int, used: dict[date, int], start: date, from_day: date
+    budget: Budget, cap: int, used: dict[date, int], start: date, from_day: date, *, lower: bool
 ) -> WeekBudget:
-    done = sum(m for day, m in used.items() if start <= day < start + timedelta(days=DAYS))
+    """Le budget de la semaine, minutes faites retirées. `lower` (« Repousser l'échéance ») :
+    plafond abaissé à 60 %, en gardant toujours la place d'une pratique et d'un quiz au-delà des
+    minutes faites, et jamais au-delà du plafond (85 %)."""
     week_used = {d: m for d, m in used.items() if start <= d < start + timedelta(days=DAYS)}
+    done = sum(week_used.values())
+    if lower:
+        room = min(cap, done + PRACTICE_MINUTES + QUIZ_MINUTES)
+        cap = max(floor_minutes(cap, PUSH_SHARE), room)
     return WeekBudget(
         budget.weekday_minutes, budget.weekend_minutes, max(0, cap - done), week_used, from_day
     )
 
 
-def _cap(budget: Budget, current: bool, override: int | None) -> int:
-    """Le plafond de la semaine : celui de January pour la semaine en cours, s'il est donné."""
-    return override if current and override is not None else budget.cap_minutes
+def _cap(
+    budget: Budget, current: bool, override: int | None, option: ReplanOption | None
+) -> tuple[int, bool]:
+    """Le plafond de la semaine (celui de January pour la semaine en cours, s'il est donné), et
+    s'il faut l'abaisser (« Repousser l'échéance », toute autre semaine)."""
+    if current and override is not None:
+        return override, False
+    return budget.cap_minutes, option == "push_deadline"
 
 
 def _pack(carried: list[Entry], mine: list[Entry], week: WeekBudget, start: date) -> WeekPacking:
@@ -210,6 +233,12 @@ def _pack(carried: list[Entry], mine: list[Entry], week: WeekBudget, start: date
         return pack_week(carried, mine, week, start)
     except NoRoom:
         raise PlanningImpossible() from None
+
+
+def _kept(queue: _Queue, tasks: list[PlannedTask]) -> list[tuple[int, date]]:
+    """Une semaine gardée telle quelle : chaque tâche à sa date."""
+    entries = queue.entries(tasks)
+    return [(e.origin[0], t.planned_date) for e, t in zip(entries, tasks, strict=True)]
 
 
 def repack(
@@ -239,23 +268,22 @@ def repack(
     new_weeks: list[NewWeek] = []
     index = current
     while index < len(starts) or carried:
-        if index >= MAX_WEEKS:
-            raise PlanningImpossible("Le programme dépasse 52 semaines avec ce budget.")
-        if index >= len(starts):
-            new_weeks.append(suite_week(rows.weeks[-1], index + 1, starts[-1], len(starts)))
-            own[index] = suite_tasks(new_weeks[-1])
-        start = starts[index] if index < len(starts) else new_weeks[-1].start_date
-        cap = _cap(budget, index == current, week_cap_override)
+        start = open_week(rows, index, new_weeks, own)
+        cap, lower = _cap(budget, index == current, week_cap_override, option)
+        week = _budget(budget, cap, used, start, from_day, lower=lower)
+        if not carried and keeps_dates(own.get(index, []), week, start):
+            placed += _kept(queue, own.get(index, []))  # ni retard ni ajout : dates gardées
+            index += 1
+            continue
         mine = queue.entries(own.get(index, []))
-        packing = _pack(carried, mine, _budget(budget, cap, used, start, from_day), start)
+        packing = _pack(carried, mine, week, start)
         if index >= len(starts) and not any(p.entry not in mine for p in packing.placed):
             raise PlanningImpossible()
         placed += [(p.entry.origin[0], p.day) for p in packing.placed]
         carried = packing.deferred
         index += 1
     tasks = [queue.tasks[seq].moved(day) for seq, day in sorted(placed)]
-    starts_all = starts + [w.start_date for w in new_weeks]
-    slots = Slots(starts_all, current, found, budget, from_day)
+    slots = Slots(starts + [w.start_date for w in new_weeks], current, found, budget, from_day)
     if option == "advance":
         tasks = advance(tasks, slots, skip_current=week_cap_override is not None)
     loads = week_loads(slots, tasks, week_cap_override)

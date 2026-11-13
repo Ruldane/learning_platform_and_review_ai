@@ -18,12 +18,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.models.program import Task, TaskType, Week
 from app.features.program.repository import TaskRepository
 from app.features.program.service.programs import Loaded, load, program_of_module
-from app.features.program.service.rules import week_breaks
+from app.features.program.service.rules import RETRY_PREFIX, week_breaks
 from app.features.program.service.runtime import ProgramRuntime
 from app.features.quiz.service.graded import graded_modules
 
 SUNDAY = 6  # dimanche libre (SPEC 3.4) : aucune tâche de suivi n'y est posée
-RETRY_PREFIX = "Refaire le quiz : "
 TITLE_MAX = 200
 
 

@@ -129,7 +129,10 @@ async def list_versions(db: AsyncSession, user_id: str, program_id: str) -> list
 async def _waiting(db: AsyncSession, user_id: str, version: PlanVersion) -> bool:
     """Une proposition `pending` n'attend que si sa session est encore ouverte ; sinon (session
     annulée, en échec, finie ou introuvable) elle est lue `superseded`, sans écriture (D91) : la
-    proposition suivante, ou rien, la remplace."""
+    proposition suivante, ou rien, la remplace. Ne vaut que pour une proposition `replan` : la
+    version `build` d'un brouillon peut encore être acceptée par la validation."""
+    if version.kind != "replan":
+        return True
     if version.session_id is None:
         return False
     facts = await session_facts(db, user_id, version.session_id)
