@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     brave_api_key: str | None = None
     zai_base_url: str = "https://api.z.ai/api/paas/v4/"
     # Échéance totale d'un appel à un modèle, en secondes (voir `LLM_CALL_DEADLINE_S`, D115).
-    llm_call_deadline_s: float = Field(default=300.0, gt=0)
+    llm_call_deadline_s: float = Field(default=600.0, gt=0)
 
     qdrant_url: str = "http://qdrant:6333"
     # Adresse du tableau de bord de Qdrant vue du navigateur (lien des statistiques, D67).

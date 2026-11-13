@@ -140,5 +140,5 @@ async def test_built_models_carry_the_call_deadline(factory_with: FactoryWith) -
     (lue par `call_with_retries`), sans perdre celles du fournisseur."""
     f = factory_with(tiers={"rapide": ("fake", "m1")}, keys={"fake": "k"})
     model = await f.get_chat_model("u1", "rapide")
-    assert (model.metadata or {})[CALL_DEADLINE_KEY] == LLM_CALL_DEADLINE_S == 300.0
+    assert (model.metadata or {})[CALL_DEADLINE_KEY] == LLM_CALL_DEADLINE_S == 600.0
     assert Settings().llm_call_deadline_s == LLM_CALL_DEADLINE_S

@@ -192,9 +192,13 @@ def notes_prompt(notes: list[str]) -> str:
     return "\n".join(f"- {' '.join(note.split())}" for note in notes)
 
 
-def outcome_record(state: StudySessionState, verdict: str) -> list[dict[str, Any]]:
-    """`outcomes` complété du sort de la question en cours."""
-    record = {
+def outcome_record(
+    state: StudySessionState, verdict: str, *, checked: bool = True
+) -> list[dict[str, Any]]:
+    """`outcomes` complété du sort de la question en cours. `checked=False` : January a répondu
+    mais le modèle n'a pas pu juger (repli, `skipped`) ; marqué dans l'état seulement (`unchecked`),
+    jamais dans `StudyOutcome` (D115 n° 17)."""
+    record: dict[str, Any] = {
         "phase": state["phase"],
         "index": state.get("index", 0),
         "question": state["question"],
@@ -202,6 +206,8 @@ def outcome_record(state: StudySessionState, verdict: str) -> list[dict[str, Any
         "verdict": verdict,
         "hints": state.get("hints", 0),
     }
+    if not checked:
+        record["unchecked"] = True
     return [*state.get("outcomes", []), record]
 
 
@@ -212,6 +218,11 @@ _VERDICTS = {
     "skipped": "passée",
     "revealed": "solution montrée",
 }
+UNCHECKED_LABEL = "répondue, non corrigée (le modèle n'a pas répondu)"
+
+
+def _verdict_label(outcome: dict[str, Any]) -> str:
+    return UNCHECKED_LABEL if outcome.get("unchecked") else _VERDICTS[outcome["verdict"]]
 
 
 def outcomes_prompt(state: StudySessionState) -> str:
@@ -221,8 +232,7 @@ def outcomes_prompt(state: StudySessionState) -> str:
     if not outcomes:
         return "Aucune question réglée pour l'instant."
     lines = [
-        f"- {' '.join(o['question'].split())[:300]} : {_VERDICTS[o['verdict']]}, "
-        f"{o['hints']} indice(s)"
+        f"- {' '.join(o['question'].split())[:300]} : {_verdict_label(o)}, {o['hints']} indice(s)"
         for o in outcomes
     ]
     return untrusted("\n".join(lines), "séance")

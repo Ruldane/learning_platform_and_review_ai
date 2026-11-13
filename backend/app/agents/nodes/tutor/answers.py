@@ -15,7 +15,13 @@ from typing import Any
 
 from langgraph.types import interrupt
 
-from app.agents.nodes.tutor.fallback import UNCHECKED, hint_unavailable, try_tutor
+from app.agents.nodes.tutor.fallback import (
+    NO_EXPECTED,
+    NO_SOLUTION,
+    UNCHECKED,
+    hint_unavailable,
+    try_tutor,
+)
 from app.agents.nodes.tutor.models import (
     ANSWER_LABEL,
     MAX_ANSWER_CHARS,
@@ -98,7 +104,8 @@ def _reference(state: StudySessionState) -> str:
 
 def _item(state: StudySessionState) -> str:
     """Question et réponse attendue : écrites par le Tuteur ou tirées de la leçon (non fiable)."""
-    text = f"Question : {state['question']}\nRéponse attendue : {state['expected']}"
+    expected = state["expected"].strip() or NO_EXPECTED  # question finale de repli (D115)
+    text = f"Question : {state['question']}\nRéponse attendue : {expected}"
     return untrusted(text, "question")
 
 
@@ -132,7 +139,7 @@ def make_check(deps: GraphDeps) -> Node:
             verdict,
             state.get("hints", 0),
         )
-        return {"outcomes": outcome_record(state, verdict)}
+        return {"outcomes": outcome_record(state, verdict, checked=found is not None)}
 
     return check
 
@@ -177,8 +184,11 @@ def make_hint(deps: GraphDeps) -> Node:
 
 
 def reveal(state: StudySessionState) -> StudySessionState:
-    """Après trois indices : la solution (la réponse attendue), et la question est réglée."""
-    say(state, f"Voici la solution :\n\n{state['expected']}", f"tutor-solution-{_key(state)}")
+    """Après trois indices : la solution (la réponse attendue), et la question est réglée. Sans
+    réponse attendue (question finale de repli) : aucune solution inventée, et aucune fiche."""
+    expected = state["expected"].strip()
+    text = f"Voici la solution :\n\n{expected}" if expected else NO_SOLUTION
+    say(state, text, f"tutor-solution-{_key(state)}")
     return {"outcomes": outcome_record(state, "revealed")}
 
 

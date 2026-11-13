@@ -20,21 +20,20 @@ from app.agents.state.study_session import StudySessionState
 from app.agents.tools.study_port import LessonSection, StudyContext
 from app.core.errors import AppError
 
-# Plus court que le plafond d'un nœud (`NODE_TIMEOUT_S`, 120 s), avec marge pour le repli.
-TUTOR_CALL_TIMEOUT_S = 90.0
-# Lenteur, panne passagère, réponse vide ou illisible : on se replie. Le reste échoue.
+# Plus court que le plafond d'un nœud (`NODE_TIMEOUT_S`, 120 s) : le repli ne fait que deux
+# `emit` (quelques millisecondes), 15 s de marge suffisent aux lectures faites avant l'appel.
+TUTOR_CALL_TIMEOUT_S = 105.0
+# Lenteur, panne passagère, réponse vide ou illisible : on se replie. Le reste échoue, dont
+# `llm_rate_limited` (429 encore là après les nouveaux essais : souvent un quota Z.ai épuisé pour
+# la période, que la séance doit dire au lieu de continuer sans correction ; D115 n° 17).
 RECOVERABLE_CODES = frozenset(
-    {
-        "llm_timeout",
-        "llm_unavailable",
-        "llm_rate_limited",
-        "llm_empty_reply",
-        "structured_output_invalid",
-    }
+    {"llm_timeout", "llm_unavailable", "llm_empty_reply", "structured_output_invalid"}
 )
 UNCHECKED = "Je n'ai pas pu corriger cette réponse, on continue."
 NO_REPLY = "Je n'ai pas pu répondre à ton message, on continue."
 FALLBACK_FINAL_INTRO = "Trois questions pour finir, tirées des objectifs et des sections."
+NO_SOLUTION = "Pas de solution préparée pour cette question : reprends la leçon."
+NO_EXPECTED = "Aucune réponse attendue écrite : juge d'après la leçon."
 MAX_QUESTION_CHARS = 500
 MAX_EXPECTED_CHARS = 800
 
@@ -96,24 +95,18 @@ def teach_section_as_written(state: StudySessionState) -> tuple[str, str, str]:
     return message, question, expected
 
 
-def _essentials(context: StudyContext) -> str:
-    if context.sections:
-        return excerpt(context.sections[0].markdown)
-    if context.solution.strip():
-        return excerpt(context.solution)
-    return f"Réponse libre, appuyée sur la leçon « {context.module_title} »."
-
-
 def final_questions_from_lesson(context: StudyContext, count: int) -> list[dict[str, str]]:
     """`count` questions finales sans le modèle : les objectifs, puis les sections, puis des
-    questions générales sur le module (toujours `count`, jamais de doublon)."""
-    essentials, title = _essentials(context), context.module_title
-    candidates = [(f"Explique avec tes mots : {o.strip()}", essentials) for o in context.objectives]
+    questions générales sur le module (toujours `count`, jamais de doublon). Seules les questions
+    de section ont une réponse attendue (le début de leur section) : les autres n'en ont pas
+    (`""`), jugées d'après toute la leçon, sans fiche ni « solution » étrangère (D115 n° 17)."""
+    title = context.module_title
+    candidates = [(f"Explique avec tes mots : {o.strip()}", "") for o in context.objectives]
     candidates += [section_question(s) for s in context.sections]
     candidates += [
-        (f"Qu'as-tu retenu de « {title} » ?", essentials),
-        (f"Quelle idée de « {title} » vas-tu appliquer, et comment ?", essentials),
-        (f"Quelle erreur éviter avec « {title} », et pourquoi ?", essentials),
+        (f"Qu'as-tu retenu de « {title} » ?", ""),
+        (f"Quelle idée de « {title} » vas-tu appliquer, et comment ?", ""),
+        (f"Quelle erreur éviter avec « {title} », et pourquoi ?", ""),
     ]
     finals: list[dict[str, str]] = []
     for question, expected in candidates:

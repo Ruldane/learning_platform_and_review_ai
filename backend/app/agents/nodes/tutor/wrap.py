@@ -58,12 +58,18 @@ def route_finish(state: StudySessionState) -> str:
 
 
 def outcomes_of(state: StudySessionState) -> list[Outcome]:
-    return [Outcome(**o) for o in state.get("outcomes", [])]
+    """Les résultats du port ; la marque `unchecked` de l'état n'y entre pas (D115 n° 17)."""
+    return [
+        Outcome(**{k: v for k, v in o.items() if k != "unchecked"})
+        for o in state.get("outcomes", [])
+    ]
 
 
-def _fallback_summary(outcomes: list[Outcome]) -> str:
+def _fallback_summary(state: StudySessionState, outcomes: list[Outcome]) -> str:
     good = sum(1 for o in outcomes if o.verdict == "correct")
-    return f"Séance terminée : {good} réponse(s) juste(s) sur {len(outcomes)} question(s)."
+    text = f"Séance terminée : {good} réponse(s) juste(s) sur {len(outcomes)} question(s)."
+    unchecked = sum(1 for o in state.get("outcomes", []) if o.get("unchecked"))
+    return text + (f" {unchecked} réponse(s) non corrigée(s)." if unchecked else "")
 
 
 def make_summarize(deps: GraphDeps) -> Node:
@@ -95,7 +101,7 @@ def make_summarize(deps: GraphDeps) -> Node:
             logger.warning(
                 "Bilan indisponible (%s), bilan chiffré : session %s", code, deps.session_id
             )
-            return {"session_summary": _fallback_summary(outcomes)}
+            return {"session_summary": _fallback_summary(state, outcomes)}
         return {"session_summary": found.summary}
 
     return summarize

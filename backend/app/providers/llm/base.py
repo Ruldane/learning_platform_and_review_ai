@@ -15,10 +15,11 @@ from pydantic import BaseModel, Field
 LLM_CALL_TIMEOUT_S = 45
 # Échéance totale d'un appel (réglable : `LLM_CALL_DEADLINE_S`), posée par la fabrique dans les
 # métadonnées du modèle sous `CALL_DEADLINE_KEY` et appliquée par `call_with_retries` ; au-delà,
-# l'appel est un délai dépassé, retenté. Plus longue que la plus longue réponse attendue (une
-# leçon de 2 500 mots du Rédacteur, nœud de 600 s) ; les nœuds courts restent bornés par leur
-# propre plafond (le Tuteur : `TUTOR_CALL_TIMEOUT_S`, D115).
-LLM_CALL_DEADLINE_S = 300.0
+# l'appel est un délai dépassé, retenté. Égale au plus long plafond de nœud (600 s : Rédacteur,
+# Stratège, Examinateur) : elle ne coupe jamais un appel avant son nœud (le minuteur du nœud
+# part avant), elle borne seulement un appel hors de tout plafond plus court. Le Tuteur a sa
+# propre échéance, plus courte (`TUTOR_CALL_TIMEOUT_S`, D115 n° 17).
+LLM_CALL_DEADLINE_S = 600.0
 CALL_DEADLINE_KEY = "tremplin_call_deadline_s"
 
 Tier = Literal["rapide", "standard", "fort", "vision"]

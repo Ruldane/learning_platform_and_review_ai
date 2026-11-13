@@ -12,7 +12,7 @@ from typing_extensions import TypedDict
 from app.agents.runtime import invoke as invoke_module
 from app.agents.runtime.invoke import NODE_TIMEOUT_S, RETRY_DELAYS_S, invoke_agent, node_timeout
 from app.core.errors import AppError
-from app.providers.llm.base import CALL_DEADLINE_KEY, LLM_CALL_TIMEOUT_S
+from app.providers.llm.base import CALL_DEADLINE_KEY, LLM_CALL_DEADLINE_S, LLM_CALL_TIMEOUT_S
 from tests.agents.runtime.fakes import FlakyModel, fake_model
 
 
@@ -227,3 +227,14 @@ async def test_without_deadline_metadata_a_call_is_not_cut(sleeps: list[float]) 
     model = FlakyModel(reply="ok", metadata={CALL_DEADLINE_KEY: "abc"})  # valeur ignorée
     msg = await invoke_agent(model, [HumanMessage("x")], agent="a", step="s", intent="i")
     assert msg.content == "ok" and model.calls == 1
+
+
+def test_call_deadline_never_cuts_a_call_before_its_node() -> None:
+    """Revue 5.18, I1 : l'échéance totale d'un appel n'est jamais plus courte que le plus long
+    plafond de nœud ; sinon un appel qui aurait réussi est coupé, puis repayé sans pouvoir tenir
+    dans le temps restant au nœud."""
+    from app.agents.nodes.examiner import WRITE_TIMEOUT_S as EXAMINER_WRITE
+    from app.agents.nodes.strategist.plan import PLAN_TIMEOUT_S
+    from app.agents.nodes.writer import WRITE_TIMEOUT_S as WRITER_WRITE
+
+    assert max(EXAMINER_WRITE, PLAN_TIMEOUT_S, WRITER_WRITE, NODE_TIMEOUT_S) <= LLM_CALL_DEADLINE_S
