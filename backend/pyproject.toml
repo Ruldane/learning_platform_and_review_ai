@@ -169,6 +169,7 @@ forbidden_modules = [
     "app.providers.pdf.html",
     "app.providers.pdf.layout",
     "app.providers.pdf.layout_extract",
+    "app.providers.pdf.layout_ink",
     "app.providers.pdf.layout_worker",
     "app.providers.fonts.google",
     "app.providers.fonts.fake",

@@ -85,7 +85,8 @@ class SubprocessPdfLayoutExtractor:
         if output is None or code != 0:
             logger.info("Mise en page PDF : worker en échec (code %s)", code)
             raise PdfUnreadable() from None
-        layout = parse_layout(output)
+        # Hors de la boucle d'événements : relire 40 Mo de JSON bloque (revue 6.3, I4).
+        layout = await asyncio.to_thread(parse_layout, output)
         logger.info("Mise en page PDF extraite (code %s, %s pages)", code, len(layout.pages))
         return layout
 
@@ -118,7 +119,7 @@ class LocalPdfLayoutExtractor:
         except Exception as exc:
             logger.info("Mise en page PDF illisible (%s)", type(exc).__name__)
             raise PdfUnreadable() from None
-        return parse_layout(output)
+        return await asyncio.to_thread(parse_layout, output)
 
 
 def _block(raw: Any) -> TextBlock:

@@ -58,3 +58,25 @@ def test_font_names_must_be_slugs(name: str) -> None:
 def test_page_setup_refuses_other_than_inches(setup: tuple[str, str]) -> None:
     with pytest.raises(ValueError):
         PageSetup(*setup)
+
+
+@pytest.mark.parametrize(
+    ("width", "height", "margins"),
+    [
+        ("0", "11", ("0", "0", "0", "0")),
+        ("8.5", "0.0", ("0", "0", "0", "0")),
+        ("21", "11", ("0", "0", "0", "0")),
+        ("8.5", "11", ("5.5", "0", "0", "0")),
+        ("8.5", "11", ("0", "4.25", "0", "0")),
+    ],
+)
+def test_page_setup_refuses_absurd_sizes(
+    width: str, height: str, margins: tuple[str, str, str, str]
+) -> None:
+    """Côté dans ]0 ; 20] pouces, marge sous la moitié de son côté (revue 6.3, M6)."""
+    with pytest.raises(ValueError):
+        PageSetup(width, height, margins)
+
+
+def test_page_setup_accepts_real_pages() -> None:
+    assert PageSetup("20", "11.6929", ("1", "2", "1", "2")).width_in == "20"

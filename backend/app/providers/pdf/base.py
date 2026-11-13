@@ -57,6 +57,7 @@ _RESERVED = {"index.html", "footer.html", "header.html"}
 _ASSET_NAME = re.compile(r"[a-z0-9][a-z0-9_.-]{0,63}\.(css|js|woff2|ttf)")
 # Une mesure en pouces (unité de Gotenberg) : « 8.27 », « 0 », « 0.6 ».
 _INCHES = re.compile(r"\d{1,2}(\.\d{1,4})?")
+_MAX_SIDE_IN = 20.0
 
 
 @dataclass(frozen=True)
@@ -73,6 +74,13 @@ class PageSetup:
         for value in (self.width_in, self.height_in, *self.margins_in):
             if not _INCHES.fullmatch(value):
                 raise ValueError("mesure de page refusée")
+        # Côté dans ]0 ; 20] pouces (`MAX_PAGE_SIDE_PT`), marge sous la moitié de son côté.
+        width, height = float(self.width_in), float(self.height_in)
+        top, right, bottom, left = (float(value) for value in self.margins_in)
+        if not (0 < width <= _MAX_SIDE_IN and 0 < height <= _MAX_SIDE_IN):
+            raise ValueError("mesure de page refusée")
+        if max(top, bottom) * 2 >= height or max(left, right) * 2 >= width:
+            raise ValueError("mesure de page refusée")
 
 
 @dataclass(frozen=True)

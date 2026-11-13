@@ -113,8 +113,9 @@ class GoogleFontsSource:
         spec = f"{name}:wght@{';'.join(str(w) for w in weights)}"
         css = (await _get(self._http, CSS_URL, _CSS_MAX_BYTES, family=spec)).decode("utf-8")
         faces = _faces(css, set(weights))
-        if not faces:
-            raise _Refused("aucune face")
+        if set(faces) != set(weights):
+            # Résultat jamais partiel : le gabarit compte sur chaque graisse (revue 6.3, M5).
+            raise _Refused("graisse absente")
         files: list[FontFile] = []
         for weight, (url, kind) in sorted(faces.items()):
             suffix = _SUFFIXES[kind]

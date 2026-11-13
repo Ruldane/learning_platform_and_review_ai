@@ -10,10 +10,11 @@ de mise en page, gabarit, profil maître, revue) et par les contrôles réels.""
 from dataclasses import dataclass
 from typing import Literal
 
+from scripts.pdf_writer import assemble_pdf
+
 Rgb = tuple[float, float, float]
 
 PAGE_SIZES: dict[str, tuple[int, int]] = {"A4": (595, 842), "Letter": (612, 792)}
-_HEADER = b"%PDF-1.4\n"
 _WHITE: Rgb = (1.0, 1.0, 1.0)
 _INK: Rgb = (0.13, 0.13, 0.13)
 _MUTED: Rgb = (0.4, 0.4, 0.4)
@@ -231,25 +232,6 @@ def _descriptor(base_font: str) -> bytes:
         b" /ItalicAngle 0 /Ascent 950 /Descent -250 /CapHeight 700 /StemV 80 >>"
         % _pdf_name(base_font)
     )
-
-
-def assemble_pdf(objects: list[bytes], *, trailer_extra: bytes = b"") -> bytes:
-    """Fichier PDF à partir des corps d'objets (numérotés à partir de 1, le 1 étant le catalogue) :
-    table `xref` calculée."""
-    out = bytearray(_HEADER)
-    offsets: list[int] = []
-    for number, body in enumerate(objects, start=1):
-        offsets.append(len(out))
-        out += b"%d 0 obj\n" % number + body + b"\nendobj\n"
-    xref = len(out)
-    out += b"xref\n0 %d\n0000000000 65535 f \n" % (len(objects) + 1)
-    out += b"".join(b"%010d 00000 n \n" % offset for offset in offsets)
-    out += b"trailer\n<< /Size %d /Root 1 0 R%b >>\nstartxref\n%d\n%%%%EOF\n" % (
-        len(objects) + 1,
-        trailer_extra,
-        xref,
-    )
-    return bytes(out)
 
 
 def _objects(cv: SampleCv) -> list[bytes]:

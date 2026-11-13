@@ -93,7 +93,17 @@ async def test_family_outside_catalog_is_never_requested(
 
 
 @pytest.mark.parametrize(
-    "case", ["css_500", "file_404", "redirect", "too_big", "not_a_font", "no_face", "network"]
+    "case",
+    [
+        "css_500",
+        "file_404",
+        "redirect",
+        "too_big",
+        "not_a_font",
+        "no_face",
+        "network",
+        "missing_weight",
+    ],
 )
 async def test_google_source_unavailable_is_readable(
     respx_mock: respx.MockRouter,
@@ -119,7 +129,7 @@ async def test_google_source_unavailable_is_readable(
     }
     font.mock(return_value=responses.get(case, httpx.Response(200, content=_TTF)))
     with pytest.raises(FontUnavailable) as caught:
-        await source.fetch("Lato", (400,))
+        await source.fetch("Lato", (400, 700) if case == "missing_weight" else (400,))
     assert caught.value.status_code == 502 and caught.value.code == "font_unavailable"
     assert caught.value.__cause__ is None
     ours = " ".join(r.getMessage() for r in caplog.records if r.name == google.__name__)
