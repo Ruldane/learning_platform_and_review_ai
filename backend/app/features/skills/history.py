@@ -34,15 +34,19 @@ def _point(week: date, levels: Iterable[object]) -> HistoryPointOut:
 
 
 async def skill_history(db: AsyncSession, user_id: str, weeks: int, now: datetime) -> HistoryOut:
-    """Un point par semaine relevée parmi les `weeks` dernières (semaine en cours comprise),
-    du plus ancien au plus récent ; une semaine sans relevé n'a pas de point. Le point de la
-    semaine en cours est toujours calculé en direct (son relevé, s'il existe, est ignoré)."""
+    """Un point par semaine parmi les `weeks` dernières (semaine en cours comprise), du plus
+    ancien au plus récent ; une semaine sans relevé n'a pas de point. Le relevé de la semaine W
+    est écrit au premier passage de W : c'est l'état de FIN de W − 1, tracé sous W − 1 (relecture
+    5.10 m7, revue finale de la phase 5). Le point de la semaine en cours est calculé en direct."""
     zone = user_zone((await SettingsService(db, user_id).get()).timezone)
     current = week_start(local_today(zone, now))
     first = current - timedelta(weeks=weeks - 1)
-    snapshots = await SkillSnapshotRepository(db, user_id).between(first, current)
+    week = timedelta(weeks=1)
+    snapshots = await SkillSnapshotRepository(db, user_id).between(first + week, current + week)
     points = [
-        _point(snap.week_start, snap.levels.values() if isinstance(snap.levels, dict) else [])
+        _point(
+            snap.week_start - week, snap.levels.values() if isinstance(snap.levels, dict) else []
+        )
         for snap in snapshots
     ]
     live = await UserSkillRepository(db, user_id).by_skill()

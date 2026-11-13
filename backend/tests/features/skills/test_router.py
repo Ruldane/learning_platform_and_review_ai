@@ -83,7 +83,8 @@ async def test_history_route_uses_clock(
     app.dependency_overrides[clock] = lambda: NOW
     me = _me(app)
     skill_id = await add_skill(db_session_factory, me, "Pandas", None, "en_cours")
-    await add_snapshot(db_session_factory, me, WEEK.replace(day=9), {skill_id: "declare"})
+    # Relevé écrit au début de la semaine du 16/11 : état de fin de la semaine du 9/11 (5.10 m7).
+    await add_snapshot(db_session_factory, me, WEEK, {skill_id: "declare"})
     r = await client.get(f"{API}/skills/history")
     assert r.status_code == 200 and r.headers["cache-control"] == "no-store"
     assert r.json() == {

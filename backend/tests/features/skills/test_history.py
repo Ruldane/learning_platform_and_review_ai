@@ -23,24 +23,27 @@ def _points(out: Any) -> list[tuple[date, tuple[int, int, int, int], int]]:
 
 
 async def test_history_includes_live_current_week(db_session_factory: Factory) -> None:
+    """Le relevé de la semaine W (écrit au début de W) est l'état de fin de W − 1 : tracé sous
+    W − 1 (revue finale 5, relecture 5.10 m7)."""
     a = await add_skill(db_session_factory, ME, "Pandas", None, "valide")
     b = await add_skill(db_session_factory, ME, "SQL", None, "prouve")
     await add_skill(db_session_factory, ME, "Git")  # sans niveau : hors de la courbe
     await add_snapshot(db_session_factory, ME, date(2026, 8, 3), {a: "declare"})  # trop ancien
     await add_snapshot(db_session_factory, ME, date(2026, 11, 2), {a: "declare", b: "en_cours"})
     await add_snapshot(db_session_factory, ME, date(2026, 11, 9), {a: "en_cours", b: "valide"})
-    await add_snapshot(db_session_factory, ME, WEEK, {a: "declare"})  # remplacé par le direct
+    await add_snapshot(db_session_factory, ME, WEEK, {a: "declare"})  # fin de la semaine du 9/11
     await add_snapshot(db_session_factory, OTHER, date(2026, 11, 9), {"x": "prouve"})
     async with db_session_factory() as db:
         twelve = await skill_history(db, ME, 12, NOW)
         two = await skill_history(db, ME, 2, NOW)
         one = await skill_history(db, ME, 1, NOW)
     assert _points(twelve) == [
-        (date(2026, 11, 2), (1, 1, 0, 0), 38),  # (25 + 50) / 2 = 37,5 → 38
-        (date(2026, 11, 9), (0, 1, 1, 0), 63),  # 62,5 → 63
+        (date(2026, 10, 26), (1, 1, 0, 0), 38),  # relevé du 2/11 : (25 + 50) / 2 = 37,5 → 38
+        (date(2026, 11, 2), (0, 1, 1, 0), 63),  # relevé du 9/11 : 62,5 → 63
+        (date(2026, 11, 9), (1, 0, 0, 0), 25),  # relevé du 16/11
         (WEEK, (0, 0, 1, 1), 88),  # en direct : (75 + 100) / 2 = 87,5 → 88
     ]
-    assert _points(two) == _points(twelve)[1:]
+    assert _points(two) == _points(twelve)[2:]
     assert _points(one) == [(WEEK, (0, 0, 1, 1), 88)]
 
 
