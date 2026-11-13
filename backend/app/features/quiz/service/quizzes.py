@@ -115,6 +115,13 @@ async def start_quiz(rt: QuizRuntime, user_id: str, module_id: str) -> QuizStart
     return QuizStarted(quiz_id=quiz_id, session_id=sid, status="generating")
 
 
+async def ready_quiz_of_module(db: AsyncSession, user_id: str, module_id: str) -> str | None:
+    """Le quiz prêt du module, `None` sinon (prochaine action de la carte, D107). Lecture pour
+    les autres features (contrat 2)."""
+    quiz = await QuizRepository(db, user_id).by_module(module_id)
+    return quiz.id if quiz is not None and quiz.status == "ready" else None
+
+
 def _best(attempts: Sequence[QuizAttempt]) -> int | None:
     scores = [a.score for a in attempts if a.status == "graded" and a.score is not None]
     return max(scores) if scores else None

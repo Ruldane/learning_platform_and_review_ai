@@ -114,3 +114,10 @@ async def ready_markdown(db: AsyncSession, user_id: str, module_id: str) -> str 
     Lecture pour les autres features (contrat 2)."""
     lesson = await LessonRepository(db, user_id).by_module(module_id)
     return lesson.markdown if lesson is not None and lesson.status == "ready" else None
+
+
+async def ready_lesson_id(db: AsyncSession, user_id: str, module_id: str) -> str | None:
+    """La leçon prête du module, `None` sinon (prochaine action de la carte, D107). Lecture
+    pour les autres features (contrat 2)."""
+    lesson = await LessonRepository(db, user_id).by_module(module_id)
+    return lesson.id if lesson is not None and lesson.status == "ready" else None

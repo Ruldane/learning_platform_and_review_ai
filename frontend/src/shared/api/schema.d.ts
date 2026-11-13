@@ -968,6 +968,90 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/skills/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Compare
+         * @description Moi face au poste cible : les compétences du programme de l'objectif (`goal_id`, sinon
+         *     le plus récent qui a un programme), attendues `valide`. 404 `goal_not_found` ou
+         *     `no_compare_target`.
+         */
+        get: operations["get_compare_api_v1_skills_compare_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/skills/graph": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Graph
+         * @description Compétences (nœuds), prérequis (liens) et radar par domaine. `demand` vaut `null`
+         *     jusqu'au Radar du marché (phase 8).
+         */
+        get: operations["get_graph_api_v1_skills_graph_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/skills/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get History
+         * @description Relevés hebdomadaires des `weeks` dernières semaines, plus la semaine en cours en direct.
+         */
+        get: operations["get_history_api_v1_skills_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/skills/{skill_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Skill
+         * @description Détail d'une compétence : preuves, offres (vides jusqu'à la phase 6), prochaine action.
+         *     404 `skill_not_found`.
+         */
+        get: operations["get_skill_api_v1_skills__skill_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/study-sessions": {
         parameters: {
             query?: never;
@@ -1527,6 +1611,33 @@ export interface components {
              */
             url: string | null;
         };
+        /** CompareOut */
+        CompareOut: {
+            /** Coverage */
+            coverage: number;
+            /** Rows */
+            rows: components["schemas"]["CompareRowOut"][];
+            /** Target Label */
+            target_label: string;
+        };
+        /** CompareRowOut */
+        CompareRowOut: {
+            /** Domain */
+            domain: string;
+            /** Gap */
+            gap: number;
+            /** Mine */
+            mine: ("declare" | "en_cours" | "valide" | "prouve") | null;
+            /** Name */
+            name: string;
+            /** Skill Id */
+            skill_id: string;
+            /**
+             * Target
+             * @enum {string}
+             */
+            target: "declare" | "en_cours" | "valide" | "prouve";
+        };
         /** CostUpdatedEvent */
         CostUpdatedEvent: {
             /**
@@ -1617,6 +1728,13 @@ export interface components {
             /** Url */
             url: string | null;
         };
+        /** DomainScoreOut */
+        DomainScoreOut: {
+            /** Domain */
+            domain: string;
+            /** Score */
+            score: number;
+        };
         /** DueQueue */
         DueQueue: {
             /** Cards */
@@ -1627,6 +1745,20 @@ export interface components {
             remaining_due: number;
             /** Reviewed Today */
             reviewed_today: number;
+        };
+        /** EvidenceOut */
+        EvidenceOut: {
+            /** At */
+            at: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "program" | "lesson" | "study" | "quiz" | "project" | "cv" | "capture";
+            /** Label */
+            label: string;
+            /** Url */
+            url: string | null;
         };
         /** FlashcardOut */
         FlashcardOut: {
@@ -1727,6 +1859,22 @@ export interface components {
             detail: string;
             /** Ok */
             ok: boolean;
+        };
+        /** HistoryOut */
+        HistoryOut: {
+            /** Points */
+            points: components["schemas"]["HistoryPointOut"][];
+        };
+        /** HistoryPointOut */
+        HistoryPointOut: {
+            counts: components["schemas"]["LevelCountsOut"];
+            /** Score */
+            score: number;
+            /**
+             * Week Start
+             * Format: date
+             */
+            week_start: string;
         };
         /**
          * InterruptField
@@ -1874,6 +2022,17 @@ export interface components {
             week_rank: number;
             /** Word Count */
             word_count: number;
+        };
+        /** LevelCountsOut */
+        LevelCountsOut: {
+            /** Declare */
+            declare: number;
+            /** En Cours */
+            en_cours: number;
+            /** Prouve */
+            prouve: number;
+            /** Valide */
+            valide: number;
         };
         /** MapPoint */
         MapPoint: {
@@ -2242,6 +2401,18 @@ export interface components {
             /** Title */
             title: string;
         };
+        /** NextActionOut */
+        NextActionOut: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "study" | "quiz" | "review" | "project";
+            /** Label */
+            label: string;
+            /** Url */
+            url: string | null;
+        };
         /**
          * PasteCreate
          * @description Texte collé (`POST /documents/text`, corps JSON). La longueur du texte (500 000
@@ -2305,6 +2476,18 @@ export interface components {
             version: number;
             /** Week Loads */
             week_loads: components["schemas"]["WeekLoadOut"][];
+        };
+        /**
+         * PostingRefOut
+         * @description Une offre qui exige la compétence (phase 6) ; liste vide d'ici là.
+         */
+        PostingRefOut: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /** Url */
+            url: string | null;
         };
         /** ProgramOut */
         ProgramOut: {
@@ -2891,6 +3074,40 @@ export interface components {
             readonly vision_enabled: boolean;
             weekly_review?: components["schemas"]["WeeklyReview"];
         };
+        /** SkillDetailOut */
+        SkillDetailOut: {
+            /** Domain */
+            domain: string;
+            /** Evidence */
+            evidence: components["schemas"]["EvidenceOut"][];
+            /** Id */
+            id: string;
+            /** Level */
+            level: ("declare" | "en_cours" | "valide" | "prouve") | null;
+            /** Name */
+            name: string;
+            next_action: components["schemas"]["NextActionOut"] | null;
+            /** Postings */
+            postings: components["schemas"]["PostingRefOut"][];
+            /** Synonyms */
+            synonyms: string[];
+        };
+        /** SkillEdgeOut */
+        SkillEdgeOut: {
+            /** After Id */
+            after_id: string;
+            /** Before Id */
+            before_id: string;
+        };
+        /** SkillGraphOut */
+        SkillGraphOut: {
+            /** Domains */
+            domains: components["schemas"]["DomainScoreOut"][];
+            /** Edges */
+            edges: components["schemas"]["SkillEdgeOut"][];
+            /** Nodes */
+            nodes: components["schemas"]["SkillNodeOut"][];
+        };
         /** SkillLevelOut */
         SkillLevelOut: {
             /**
@@ -2898,6 +3115,21 @@ export interface components {
              * @enum {string}
              */
             level: "declare" | "en_cours" | "valide" | "prouve";
+            /** Name */
+            name: string;
+        };
+        /** SkillNodeOut */
+        SkillNodeOut: {
+            /** Demand */
+            demand: number | null;
+            /** Domain */
+            domain: string;
+            /** Evidence Count */
+            evidence_count: number;
+            /** Id */
+            id: string;
+            /** Level */
+            level: ("declare" | "en_cours" | "valide" | "prouve") | null;
             /** Name */
             name: string;
         };
@@ -5388,6 +5620,120 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ModelsOut"];
+                };
+            };
+        };
+    };
+    get_compare_api_v1_skills_compare_get: {
+        parameters: {
+            query?: {
+                target?: "goal";
+                goal_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompareOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_graph_api_v1_skills_graph_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SkillGraphOut"];
+                };
+            };
+        };
+    };
+    get_history_api_v1_skills_history_get: {
+        parameters: {
+            query?: {
+                weeks?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_skill_api_v1_skills__skill_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                skill_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SkillDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

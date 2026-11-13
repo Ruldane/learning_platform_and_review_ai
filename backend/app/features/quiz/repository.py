@@ -180,6 +180,19 @@ class FlashcardRepository(UserScopedRepository[Flashcard]):
         )
         return builtins.list((await self.session.execute(stmt)).scalars().all())
 
+    async def due_skills(self, today: date) -> builtins.list[str]:
+        """Les compétences (telles qu'écrites) des fiches dues, une fois chacune."""
+        stmt = (
+            select(Flashcard.skill)
+            .where(
+                Flashcard.user_id == self.user_id,
+                Flashcard.due_date <= today,
+                Flashcard.skill.is_not(None),
+            )
+            .distinct()
+        )
+        return [str(skill) for skill in (await self.session.execute(stmt)).scalars()]
+
     async def count_due(self, today: date) -> int:
         stmt = select(func.count()).where(
             Flashcard.user_id == self.user_id, Flashcard.due_date <= today

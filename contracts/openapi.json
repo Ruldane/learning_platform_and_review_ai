@@ -1124,6 +1124,89 @@
         "title": "Citation",
         "type": "object"
       },
+      "CompareOut": {
+        "properties": {
+          "coverage": {
+            "title": "Coverage",
+            "type": "integer"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/CompareRowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "target_label": {
+            "title": "Target Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target_label",
+          "coverage",
+          "rows"
+        ],
+        "title": "CompareOut",
+        "type": "object"
+      },
+      "CompareRowOut": {
+        "properties": {
+          "domain": {
+            "title": "Domain",
+            "type": "string"
+          },
+          "gap": {
+            "title": "Gap",
+            "type": "integer"
+          },
+          "mine": {
+            "anyOf": [
+              {
+                "enum": [
+                  "declare",
+                  "en_cours",
+                  "valide",
+                  "prouve"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mine"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "skill_id": {
+            "title": "Skill Id",
+            "type": "string"
+          },
+          "target": {
+            "enum": [
+              "declare",
+              "en_cours",
+              "valide",
+              "prouve"
+            ],
+            "title": "Target",
+            "type": "string"
+          }
+        },
+        "required": [
+          "skill_id",
+          "name",
+          "domain",
+          "mine",
+          "target",
+          "gap"
+        ],
+        "title": "CompareRowOut",
+        "type": "object"
+      },
       "CostUpdatedEvent": {
         "properties": {
           "agent": {
@@ -1357,6 +1440,24 @@
         "title": "DocumentOut",
         "type": "object"
       },
+      "DomainScoreOut": {
+        "properties": {
+          "domain": {
+            "title": "Domain",
+            "type": "string"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "domain",
+          "score"
+        ],
+        "title": "DomainScoreOut",
+        "type": "object"
+      },
       "DueQueue": {
         "properties": {
           "cards": {
@@ -1386,6 +1487,58 @@
           "remaining_due"
         ],
         "title": "DueQueue",
+        "type": "object"
+      },
+      "EvidenceOut": {
+        "properties": {
+          "at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "At"
+          },
+          "kind": {
+            "enum": [
+              "program",
+              "lesson",
+              "study",
+              "quiz",
+              "project",
+              "cv",
+              "capture"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "kind",
+          "label",
+          "at",
+          "url"
+        ],
+        "title": "EvidenceOut",
         "type": "object"
       },
       "FlashcardOut": {
@@ -1692,6 +1845,45 @@
           "detail"
         ],
         "title": "HealthStatus",
+        "type": "object"
+      },
+      "HistoryOut": {
+        "properties": {
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/HistoryPointOut"
+            },
+            "title": "Points",
+            "type": "array"
+          }
+        },
+        "required": [
+          "points"
+        ],
+        "title": "HistoryOut",
+        "type": "object"
+      },
+      "HistoryPointOut": {
+        "properties": {
+          "counts": {
+            "$ref": "#/components/schemas/LevelCountsOut"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          },
+          "week_start": {
+            "format": "date",
+            "title": "Week Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "week_start",
+          "counts",
+          "score"
+        ],
+        "title": "HistoryPointOut",
         "type": "object"
       },
       "InterruptField": {
@@ -2010,6 +2202,34 @@
           "pdf_available"
         ],
         "title": "LessonSummaryOut",
+        "type": "object"
+      },
+      "LevelCountsOut": {
+        "properties": {
+          "declare": {
+            "title": "Declare",
+            "type": "integer"
+          },
+          "en_cours": {
+            "title": "En Cours",
+            "type": "integer"
+          },
+          "prouve": {
+            "title": "Prouve",
+            "type": "integer"
+          },
+          "valide": {
+            "title": "Valide",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "declare",
+          "en_cours",
+          "valide",
+          "prouve"
+        ],
+        "title": "LevelCountsOut",
         "type": "object"
       },
       "MapPoint": {
@@ -3065,6 +3285,42 @@
         "title": "NeighborOut",
         "type": "object"
       },
+      "NextActionOut": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "study",
+              "quiz",
+              "review",
+              "project"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "kind",
+          "label",
+          "url"
+        ],
+        "title": "NextActionOut",
+        "type": "object"
+      },
       "PasteCreate": {
         "description": "Texte collé (`POST /documents/text`, corps JSON). La longueur du texte (500 000\ncaractères au plus) est contrôlée par le service, qui répond `paste_too_long` ; le corps est\nborné à 21 Mo par le middleware.",
         "properties": {
@@ -3235,6 +3491,37 @@
           "week_loads"
         ],
         "title": "PlanVersionOut",
+        "type": "object"
+      },
+      "PostingRefOut": {
+        "description": "Une offre qui exige la compétence (phase 6) ; liste vide d'ici là.",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "url"
+        ],
+        "title": "PostingRefOut",
         "type": "object"
       },
       "ProgramOut": {
@@ -4838,6 +5125,132 @@
         "title": "SettingsOut",
         "type": "object"
       },
+      "SkillDetailOut": {
+        "properties": {
+          "domain": {
+            "title": "Domain",
+            "type": "string"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceOut"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "enum": [
+                  "declare",
+                  "en_cours",
+                  "valide",
+                  "prouve"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "next_action": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NextActionOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "postings": {
+            "items": {
+              "$ref": "#/components/schemas/PostingRefOut"
+            },
+            "title": "Postings",
+            "type": "array"
+          },
+          "synonyms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Synonyms",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "domain",
+          "synonyms",
+          "level",
+          "evidence",
+          "postings",
+          "next_action"
+        ],
+        "title": "SkillDetailOut",
+        "type": "object"
+      },
+      "SkillEdgeOut": {
+        "properties": {
+          "after_id": {
+            "title": "After Id",
+            "type": "string"
+          },
+          "before_id": {
+            "title": "Before Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "before_id",
+          "after_id"
+        ],
+        "title": "SkillEdgeOut",
+        "type": "object"
+      },
+      "SkillGraphOut": {
+        "properties": {
+          "domains": {
+            "items": {
+              "$ref": "#/components/schemas/DomainScoreOut"
+            },
+            "title": "Domains",
+            "type": "array"
+          },
+          "edges": {
+            "items": {
+              "$ref": "#/components/schemas/SkillEdgeOut"
+            },
+            "title": "Edges",
+            "type": "array"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/SkillNodeOut"
+            },
+            "title": "Nodes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "nodes",
+          "edges",
+          "domains"
+        ],
+        "title": "SkillGraphOut",
+        "type": "object"
+      },
       "SkillLevelOut": {
         "properties": {
           "level": {
@@ -4860,6 +5273,64 @@
           "level"
         ],
         "title": "SkillLevelOut",
+        "type": "object"
+      },
+      "SkillNodeOut": {
+        "properties": {
+          "demand": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Demand"
+          },
+          "domain": {
+            "title": "Domain",
+            "type": "string"
+          },
+          "evidence_count": {
+            "title": "Evidence Count",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "enum": [
+                  "declare",
+                  "en_cours",
+                  "valide",
+                  "prouve"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "domain",
+          "level",
+          "demand",
+          "evidence_count"
+        ],
+        "title": "SkillNodeOut",
         "type": "object"
       },
       "SourceFoundEvent": {
@@ -9171,6 +9642,179 @@
         "summary": "List Models",
         "tags": [
           "settings"
+        ]
+      }
+    },
+    "/api/v1/skills/compare": {
+      "get": {
+        "description": "Moi face au poste cible : les compétences du programme de l'objectif (`goal_id`, sinon\nle plus récent qui a un programme), attendues `valide`. 404 `goal_not_found` ou\n`no_compare_target`.",
+        "operationId": "get_compare_api_v1_skills_compare_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "target",
+            "required": false,
+            "schema": {
+              "const": "goal",
+              "default": "goal",
+              "title": "Target",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "goal_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Goal Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompareOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Compare",
+        "tags": [
+          "skills"
+        ]
+      }
+    },
+    "/api/v1/skills/graph": {
+      "get": {
+        "description": "Compétences (nœuds), prérequis (liens) et radar par domaine. `demand` vaut `null`\njusqu'au Radar du marché (phase 8).",
+        "operationId": "get_graph_api_v1_skills_graph_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SkillGraphOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Graph",
+        "tags": [
+          "skills"
+        ]
+      }
+    },
+    "/api/v1/skills/history": {
+      "get": {
+        "description": "Relevés hebdomadaires des `weeks` dernières semaines, plus la semaine en cours en direct.",
+        "operationId": "get_history_api_v1_skills_history_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "weeks",
+            "required": false,
+            "schema": {
+              "default": 12,
+              "maximum": 52,
+              "minimum": 1,
+              "title": "Weeks",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get History",
+        "tags": [
+          "skills"
+        ]
+      }
+    },
+    "/api/v1/skills/{skill_id}": {
+      "get": {
+        "description": "Détail d'une compétence : preuves, offres (vides jusqu'à la phase 6), prochaine action.\n404 `skill_not_found`.",
+        "operationId": "get_skill_api_v1_skills__skill_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "skill_id",
+            "required": true,
+            "schema": {
+              "title": "Skill Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SkillDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Skill",
+        "tags": [
+          "skills"
         ]
       }
     },

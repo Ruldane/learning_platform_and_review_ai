@@ -44,6 +44,16 @@ class SkillRepository(UserScopedRepository[Skill]):
         )
         return {row.norm_name: row for row in (await self.session.execute(stmt)).scalars()}
 
+    async def list_all(self) -> builtins.list[Skill]:
+        """Toutes les compétences de January, relues (la carte n'a aucun cache, F15)."""
+        stmt = (
+            select(Skill)
+            .where(Skill.user_id == self.user_id)
+            .order_by(Skill.name, Skill.id)
+            .execution_options(populate_existing=True)
+        )
+        return builtins.list((await self.session.execute(stmt)).scalars().all())
+
 
 class SkillEdgeRepository(UserScopedRepository[SkillEdge]):
     model = SkillEdge
@@ -55,6 +65,15 @@ class SkillEdgeRepository(UserScopedRepository[SkillEdge]):
         await self.session.execute(
             stmt.on_conflict_do_nothing(index_elements=["before_id", "after_id"])
         )
+
+    async def pairs(self) -> builtins.list[tuple[str, str]]:
+        """`(avant, après)` de chaque lien de prérequis de January."""
+        stmt = (
+            select(SkillEdge.before_id, SkillEdge.after_id)
+            .where(SkillEdge.user_id == self.user_id)
+            .order_by(SkillEdge.before_id, SkillEdge.after_id)
+        )
+        return [(row[0], row[1]) for row in (await self.session.execute(stmt)).all()]
 
 
 class UserSkillRepository(UserScopedRepository[UserSkill]):
@@ -96,6 +115,15 @@ class UserSkillRepository(UserScopedRepository[UserSkill]):
         stmt = select(UserSkill.skill_id, UserSkill.level).where(UserSkill.user_id == self.user_id)
         return {row[0]: row[1] for row in (await self.session.execute(stmt)).all()}
 
+    async def rows(self) -> dict[str, UserSkill]:
+        """`compétence → ligne de niveau` (niveau et preuves), relues."""
+        stmt = (
+            select(UserSkill)
+            .where(UserSkill.user_id == self.user_id)
+            .execution_options(populate_existing=True)
+        )
+        return {row.skill_id: row for row in (await self.session.execute(stmt)).scalars()}
+
 
 class SkillSnapshotRepository(UserScopedRepository[SkillSnapshot]):
     model = SkillSnapshot
@@ -110,6 +138,19 @@ class SkillSnapshotRepository(UserScopedRepository[SkillSnapshot]):
             .returning(SkillSnapshot.id)
         )
         return (await self.session.execute(stmt)).scalar_one_or_none() is not None
+
+    async def between(self, first: date, before: date) -> builtins.list[SkillSnapshot]:
+        """Relevés des semaines de `first` (compris) à `before` (exclu), dans l'ordre."""
+        stmt = (
+            select(SkillSnapshot)
+            .where(
+                SkillSnapshot.user_id == self.user_id,
+                SkillSnapshot.week_start >= first,
+                SkillSnapshot.week_start < before,
+            )
+            .order_by(SkillSnapshot.week_start)
+        )
+        return builtins.list((await self.session.execute(stmt)).scalars().all())
 
 
 async def users_with_levels(session: AsyncSession) -> builtins.list[str]:

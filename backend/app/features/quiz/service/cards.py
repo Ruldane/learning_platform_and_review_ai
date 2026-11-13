@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.tools.study_schema import card_hash
 from app.core.errors import AppError
+from app.core.skills import normalize_skill_name
 from app.db.models.study import CardSource
 from app.features.memory.service.skill_levels import reflect_skill_level
 from app.features.quiz.repository import FlashcardRepository
@@ -76,6 +77,13 @@ async def due_queue(rt: QuizRuntime, db: AsyncSession, user_id: str) -> DueQueue
         daily_cards=DAILY_CARDS,
         remaining_due=max(0, total - len(cards)),
     )
+
+
+async def due_skill_names(db: AsyncSession, user_id: str, today: date) -> set[str]:
+    """Noms normalisés des compétences qui ont une fiche due (≤ `today`, jour de January) :
+    prochaine action « Réviser » de la carte (D107). Lecture pour les autres features."""
+    skills = await FlashcardRepository(db, user_id).due_skills(today)
+    return {norm for norm in map(normalize_skill_name, skills) if norm}
 
 
 def card_not_found() -> AppError:

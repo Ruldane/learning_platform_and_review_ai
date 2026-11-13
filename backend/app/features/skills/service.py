@@ -14,6 +14,7 @@ from app.core.skills import Evidence, normalize_skill_name, read_evidence
 from app.db.models.skills import LEVEL_ORDER, SkillLevel, UserSkill
 from app.features.quiz.service.spacing import DEMOTE_AFTER
 from app.features.settings.service import SettingsService
+from app.features.skills.radar import as_level as _as_level
 from app.features.skills.repository import (
     SkillEdgeRepository,
     SkillRepository,
@@ -45,13 +46,6 @@ def _with_proof(raw: Sequence[Any], proof: Evidence) -> list[Evidence]:
     if all(_proof_key(item) != _proof_key(proof) for item in kept):
         kept.append(proof)
     return kept[-EVIDENCE_MAX:]
-
-
-def _as_level(value: str) -> SkillLevel:
-    for level in LEVEL_ORDER:
-        if level == value:
-            return level
-    return "declare"
 
 
 class SkillsService:
