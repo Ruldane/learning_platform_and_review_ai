@@ -28,6 +28,11 @@ export interface BoardCanvasProps {
   onSceneChange: (elements: readonly SceneElementLike[], reference: boolean) => void;
 }
 
+/** Identité de la scène : chaque ajustement d'Excalidraw fait monter la version d'un élément. */
+function sceneKey(elements: readonly { id: string; version?: number }[]): string {
+  return elements.map((el) => `${el.id}@${el.version}`).join("|");
+}
+
 /**
  * Le canevas Excalidraw. Chargé par `React.lazy` : Excalidraw (et ses polices) ne pèse que sur
  * l'écran qui affiche un tableau. Pendant l'animation, le canevas est en lecture seule.
@@ -38,6 +43,7 @@ export default function BoardCanvas(props: BoardCanvasProps) {
   const { visible, done } = useReveal(elements, { animate, reducedMotion });
   const [changeTick, setChangeTick] = useState(0);
   const settled = useSettled(done, changeTick);
+  const lastKey = useRef<string | null>(null);
   const [initial] = useState(visible);
   const [api, setApi] = useState<BoardApi | null>(null);
   const frame = useRef<HTMLDivElement>(null);
@@ -62,8 +68,14 @@ export default function BoardCanvas(props: BoardCanvasProps) {
         onChange={(current) => {
           if (!settled && !done) return;
           onSceneChange(current as readonly SceneElementLike[], !settled);
-          // Un changement avant le calme relance l'attente : c'est un ajustement d'Excalidraw.
-          if (!settled) setChangeTick((tick) => tick + 1);
+          if (settled) return;
+          // Un ajustement d'Excalidraw avant le calme relance l'attente. Excalidraw appelle
+          // `onChange` à chaque mise à jour, même sans rien changer : seule une scène modifiée
+          // compte, sinon ce rendu en appellerait un autre, sans fin.
+          const key = sceneKey(current);
+          if (key === lastKey.current) return;
+          lastKey.current = key;
+          setChangeTick((tick) => tick + 1);
         }}
         langCode="fr-FR"
         UIOptions={{

@@ -3,7 +3,7 @@
  * Usage : `vi.mock("@excalidraw/excalidraw", async () => (await import("./excalidrawMock")).module)`.
  */
 import { act } from "@testing-library/react";
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { vi } from "vitest";
 
 export interface FakeExcalidrawProps {
@@ -31,11 +31,22 @@ export const fake: {
   mountChange: ((elements: { id: string }[]) => unknown[]) | null;
   /** Nombre d'ajustements de montage déjà signalés. */
   adjusted: number;
-} = { props: null, mountChange: null, adjusted: 0 };
+  /**
+   * Comme le vrai `componentDidUpdate` d'Excalidraw : `onChange` à chaque mise à jour du composant
+   * (nouvelles props comprises), avec la scène du moment, même inchangée.
+   */
+  changeOnUpdate: boolean;
+} = { props: null, mountChange: null, adjusted: 0, changeOnUpdate: false };
 
 function Excalidraw(props: FakeExcalidrawProps) {
+  const mounted = useRef(false);
   useEffect(() => {
     fake.props = props;
+  });
+  useLayoutEffect(() => {
+    if (mounted.current && fake.changeOnUpdate)
+      props.onChange?.(props.initialData?.elements ?? [], {}, {});
+    mounted.current = true;
   });
   useEffect(() => {
     props.excalidrawAPI?.(fakeApi);
@@ -78,6 +89,7 @@ export function resetExcalidrawMock(): void {
   fake.props = null;
   fake.mountChange = null;
   fake.adjusted = 0;
+  fake.changeOnUpdate = false;
   for (const fn of Object.values(fakeApi)) fn.mockClear();
   exportToBlob.mockReset();
   exportToSvg.mockReset();

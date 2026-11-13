@@ -115,6 +115,18 @@ describe("BoardCanvas", () => {
     expect(screen.getByTestId("excalidraw")).toHaveAttribute("data-view-mode", "false");
   });
 
+  it("settles although Excalidraw signals every update, even when the scene has not moved", async () => {
+    // Le vrai Excalidraw appelle `onChange` à chaque `componentDidUpdate`, donc à chaque nouveau
+    // rendu du canevas : ce signal ne doit pas, à son tour, provoquer un rendu sans fin.
+    fake.changeOnUpdate = true;
+    const onSceneChange = vi.fn();
+    render(canvas({ animate: false, onSceneChange }));
+    act(() => fake.props?.onChange?.(elements, {}, {}));
+    expect(onSceneChange).toHaveBeenLastCalledWith(elements, true);
+    await act(() => vi.advanceTimersByTimeAsync(QUIET_MS));
+    expect(screen.getByTestId("excalidraw")).toHaveAttribute("data-view-mode", "false");
+  });
+
   it("passes nothing on while the elements are still appearing", async () => {
     const onSceneChange = vi.fn();
     render(canvas({ onSceneChange }));
