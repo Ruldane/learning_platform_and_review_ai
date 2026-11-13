@@ -9,6 +9,7 @@ from langgraph.graph import StateGraph
 from pydantic import BaseModel
 
 from app.agents.graphs import (
+    capture,
     demo_debate,
     learned_document,
     learning_council,
@@ -48,6 +49,7 @@ GRAPHS: dict[str, GraphSpec] = {
         GraphSpec("quiz", quiz.QuizInput, quiz.build),
         GraphSpec("study_session", study_session.StudySessionInput, study_session.build),
         GraphSpec("replan", replan.ReplanInput, replan.build),
+        GraphSpec("capture", capture.CaptureInput, capture.build),
     )
 }
 

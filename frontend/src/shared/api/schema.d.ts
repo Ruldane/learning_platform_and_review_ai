@@ -38,6 +38,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/capture": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Capture
+         * @description Lance la capture. Zéro ou plusieurs sources : 422 `invalid_input` ; lien non http(s) :
+         *     422 `invalid_url` ; document d'une autre : 404 `document_not_found`.
+         */
+        post: operations["start_capture_api_v1_capture_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/documents": {
         parameters: {
             query?: never;
@@ -238,6 +259,27 @@ export interface paths {
          * @description Toujours 200 et sans authentification : le front lit `status`.
          */
         get: operations["health_api_v1_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/journal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Journal
+         * @description Le journal (captures, sessions, quiz, bilans hebdomadaires), le plus récent d'abord ;
+         *     `before` : `next_before` de la page précédente.
+         */
+        get: operations["read_journal_api_v1_journal_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1552,6 +1594,24 @@ export interface components {
             used: number;
         };
         /**
+         * CaptureRequest
+         * @description Une seule source : un lien http(s), un texte, ou un document déjà importé
+         *     (`POST /documents`). Zéro ou plusieurs : 422 `invalid_input`.
+         */
+        CaptureRequest: {
+            /** Document Id */
+            document_id?: string | null;
+            /** Text */
+            text?: string | null;
+            /** Url */
+            url?: string | null;
+        };
+        /** CaptureStarted */
+        CaptureStarted: {
+            /** Session Id */
+            session_id: string;
+        };
+        /**
          * ChooseOut
          * @description `already_chosen` : ce même choix était déjà fait (double clic, reprise générique) ; la
          *     requête n'a rien changé, `start_date` comprise (D87). Faux aussi quand ce même choix relance
@@ -1944,6 +2004,51 @@ export interface components {
             options?: components["schemas"]["InterruptOption"][];
             /** Question */
             question: string;
+        };
+        /** JournalEntryOut */
+        JournalEntryOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "capture" | "study_session" | "quiz" | "weekly_review";
+            links: components["schemas"]["JournalLinksOut"];
+            /**
+             * Occurred On
+             * Format: date
+             */
+            occurred_on: string;
+            /** Text */
+            text: string;
+        };
+        /** JournalLinksOut */
+        JournalLinksOut: {
+            /** Memory Item Id */
+            memory_item_id: string | null;
+            /** Quiz Attempt Id */
+            quiz_attempt_id: string | null;
+            /** Session Id */
+            session_id: string | null;
+            /** Study Session Id */
+            study_session_id: string | null;
+        };
+        /**
+         * JournalPage
+         * @description Les lignes, les plus récentes d'abord ; `next_before` : curseur de la page suivante
+         *     (`?before=`), `None` à la dernière.
+         */
+        JournalPage: {
+            /** Entries */
+            entries: components["schemas"]["JournalEntryOut"][];
+            /** Next Before */
+            next_before: string | null;
         };
         /**
          * KeyTestResult
@@ -3816,6 +3921,39 @@ export interface operations {
             };
         };
     };
+    start_capture_api_v1_capture_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CaptureRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaptureStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_documents_api_v1_documents_get: {
         parameters: {
             query?: never;
@@ -4199,6 +4337,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthReport"];
+                };
+            };
+        };
+    };
+    read_journal_api_v1_journal_get: {
+        parameters: {
+            query?: {
+                kind?: ("capture" | "study_session" | "quiz" | "weekly_review") | null;
+                before?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JournalPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

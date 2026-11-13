@@ -72,6 +72,7 @@ def make_extract(deps: GraphDeps) -> Node:
     async def extract(state: LearnedDocumentState) -> LearnedDocumentState:
         prompt = render_prompt(
             AGENT,
+            mode="learned",
             title=untrusted(state["title"], "titre"),
             known=untrusted(state["known"], "memoire:acquis"),
             document=untrusted(state["text"], "document"),

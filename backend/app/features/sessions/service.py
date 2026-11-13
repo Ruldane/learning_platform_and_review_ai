@@ -41,7 +41,10 @@ __all__ = [
 
 # Parcours lancés seulement par la route de leur feature, qui vérifie l'objet et la concurrence
 # (D106 : une replanification par programme, programme validé ; 409 `replan_open`).
-ROUTE_ONLY: dict[str, str] = {"replan": "POST /programs/{program_id}/replan"}
+ROUTE_ONLY: dict[str, str] = {
+    "replan": "POST /programs/{program_id}/replan",
+    "capture": "POST /capture",
+}
 
 
 def to_view(row: AgentSession, last_seq: int) -> SessionView:

@@ -21,6 +21,7 @@ from app.features.memory.service.runtime import MemoryRuntime, memory_runtime
 from app.features.research.service.gateway import AgentWebGateway
 from app.providers.llm.fake import FakeLlmProvider
 from app.providers.search.fake import FakeSearch
+from tests.agents.graphs.capture_support import make_capture_runner  # noqa: F401
 from tests.agents.graphs.council_support import make_council_runner  # noqa: F401
 from tests.agents.graphs.lesson_support import make_lesson_runner  # noqa: F401
 from tests.agents.graphs.program_support import make_builder_runner  # noqa: F401

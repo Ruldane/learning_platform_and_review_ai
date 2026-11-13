@@ -13,6 +13,8 @@ from app.agents.runtime.run_settings import RunSettingsSource
 from app.agents.tools.memory_port import MemoryGateway
 from app.agents.tools.web_port import WebGateway
 from app.core.providers import MemoryProviders, PublishingProviders
+from app.features.capture.service.runtime import CaptureRuntime
+from app.features.capture.service.store import AgentCaptureStore
 from app.features.learning.service.runtime import LearningRuntime
 from app.features.learning.service.store import AgentCouncilStore
 from app.features.lessons.service.runtime import LessonsRuntime
@@ -59,6 +61,7 @@ class StudyRuntimes:
     quiz: QuizRuntime
     study: StudyRuntime
     replan: ReplanRuntime
+    capture: CaptureRuntime
 
 
 def study_runtimes(
@@ -68,13 +71,14 @@ def study_runtimes(
     program: ProgramRuntime,
     memory: MemoryRuntime,
 ) -> StudyRuntimes:
-    """Quiz et révisions (D101), sessions guidées (D103), replanification (D106) : lanceur
-    (lié au moteur ensuite), programme (verrou, tâches cochées ou de suivi, versions), mémoire
-    (reflet des niveaux)."""
+    """Quiz et révisions (D101), sessions guidées (D103), replanification (D106), capture rapide
+    (D108) : lanceur (lié au moteur ensuite), programme (verrou, tâches cochées ou de suivi,
+    versions), mémoire (reflet des niveaux, capture rangée)."""
     return StudyRuntimes(
         quiz=QuizRuntime(session_factory, launcher, program, memory),
         study=StudyRuntime(session_factory, launcher, program, memory),
         replan=ReplanRuntime(session_factory, launcher, program),
+        capture=CaptureRuntime(session_factory, launcher, program, memory),
     )
 
 
@@ -88,9 +92,9 @@ def agent_ports(
     study: StudyRuntimes,
 ) -> AgentPorts:
     """Tous les ports du moteur (D82) : un port de plus = un champ d'`AgentPorts` et une ligne ici.
-    Conseil (D84), programme (D86), leçons (D90), quiz (D100), sessions d'étude (D102) et
-    replanification (D105) adaptés des features `learning` (D87), `program` (D88), `lessons`
-    (D91), `quiz` (D101), `study` (D103) et `replan` (D106)."""
+    Conseil (D84), programme (D86), leçons (D90), quiz (D100), sessions d'étude (D102),
+    replanification (D105) et capture (D108) adaptés des features `learning` (D87), `program`
+    (D88), `lessons` (D91), `quiz` (D101), `study` (D103), `replan` (D106) et `capture` (D108)."""
     council = AgentCouncilStore(learning.session_factory, learning.launcher, learning)
     program_store = AgentProgramStore(program)
     return AgentPorts(
@@ -102,6 +106,7 @@ def agent_ports(
         AgentQuizStore(study.quiz),
         AgentStudyStore(study.study),
         AgentReplanStore(study.replan),
+        AgentCaptureStore(study.capture),
     )
 
 

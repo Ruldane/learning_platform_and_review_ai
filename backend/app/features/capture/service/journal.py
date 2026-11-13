@@ -15,8 +15,10 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models.study import JournalKind
+from app.core.errors import AppError
+from app.db.models.study import JournalEntry, JournalKind
 from app.features.capture.repository import JournalRepository
+from app.features.capture.schemas import JournalEntryOut, JournalLinksOut, JournalPage
 
 
 @dataclass(frozen=True)
@@ -56,4 +58,45 @@ async def add_entry(
         quiz_attempt_id=links.quiz_attempt_id,
         memory_item_id=links.memory_item_id,
         data=dict(data),
+    )
+
+
+async def entry_by_ref(db: AsyncSession, user_id: str, ref_key: str) -> JournalEntry | None:
+    """La ligne de cette clé (« capture:{session} »…), `None` si elle n'est pas encore écrite."""
+    return await JournalRepository(db, user_id).by_ref(ref_key)
+
+
+def invalid_cursor() -> AppError:
+    return AppError("invalid_cursor", "Curseur du journal inconnu.", 422)
+
+
+def _out(row: JournalEntry) -> JournalEntryOut:
+    """`data` n'est jamais rendu tel quel (texte du Tuteur, faits du bilan, concepts)."""
+    return JournalEntryOut(
+        id=row.id,
+        kind=row.kind,  # type: ignore[arg-type]  # colonne texte, valeurs de JournalKind
+        text=row.text,
+        occurred_on=row.occurred_on,
+        created_at=row.created_at,
+        links=JournalLinksOut(
+            session_id=row.session_id,
+            study_session_id=row.study_session_id,
+            quiz_attempt_id=row.quiz_attempt_id,
+            memory_item_id=row.memory_item_id,
+        ),
+    )
+
+
+async def journal_page(
+    db: AsyncSession, user_id: str, *, kind: JournalKind | None, before: str | None, limit: int
+) -> JournalPage:
+    """Le journal de l'utilisateur, le plus récent d'abord (`kind` : un genre seulement) ;
+    `before` : id de la dernière ligne déjà lue, 422 `invalid_cursor` s'il n'est pas à lui."""
+    rows = await JournalRepository(db, user_id).page(kind, before, limit + 1)
+    if rows is None:
+        raise invalid_cursor()
+    shown = rows[:limit]
+    more = len(rows) > limit
+    return JournalPage(
+        entries=[_out(row) for row in shown], next_before=shown[-1].id if more else None
     )

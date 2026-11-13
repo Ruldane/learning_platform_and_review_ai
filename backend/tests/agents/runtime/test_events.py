@@ -192,10 +192,12 @@ def test_interrupt_fields_are_bounded():
         {"id": "Goal", "label": "x"},
         {"id": "a" * 33, "label": "x"},
         {"id": "ok", "label": "x", "max_length": 0},
-        {"id": "ok", "label": "x", "max_length": 4001},
+        {"id": "ok", "label": "x", "max_length": 20001},
     ):
         with pytest.raises(ValueError):
             InterruptField.model_validate(bad)
+    # Le texte d'une page collée après un lien illisible (capture, F6 / D108).
+    assert InterruptField(id="text", label="x", max_length=20000).max_length == 20000
 
 
 def test_board_kind_is_one_of_four():

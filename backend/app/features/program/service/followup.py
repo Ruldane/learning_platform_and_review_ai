@@ -155,3 +155,10 @@ async def tick_tasks(
     ticked = _done(found)
     await db.flush()
     return [task.title for task in ticked]
+
+
+async def program_of_task(db: AsyncSession, user_id: str, task_id: str) -> str | None:
+    """Le programme d'une tâche de l'utilisateur (`None` : inconnue ou d'un autre), pour prendre
+    son verrou avant de la cocher (F4). Lecture pour les autres features (contrat 2)."""
+    task = await TaskRepository(db, user_id).get(task_id)
+    return None if task is None else task.program_id

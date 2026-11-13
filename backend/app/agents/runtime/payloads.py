@@ -97,7 +97,7 @@ class InterruptField(BaseModel):
     id: str = Field(pattern=r"^[a-z0-9_]{1,32}$")
     label: str
     required: bool = False
-    max_length: int = Field(default=2000, ge=1, le=4000)
+    max_length: int = Field(default=2000, ge=1, le=20000)  # texte d'une page collée (F6)
 
 
 class InterruptRequestedPayload(BaseModel):

@@ -5,6 +5,7 @@ contrat 6). Un port de plus = un champ ici, avec sa valeur « non branché », e
 
 from dataclasses import dataclass
 
+from app.agents.tools.capture_port import NO_CAPTURE, CaptureStore
 from app.agents.tools.council_port import NO_COUNCIL, CouncilStore
 from app.agents.tools.lesson_port import NO_LESSONS, LessonStore
 from app.agents.tools.memory_port import NO_MEMORY, MemoryGateway
@@ -25,6 +26,7 @@ class AgentPorts:
     quiz: QuizStore = NO_QUIZ  # quiz de l'Examinateur (D100)
     study: StudyStore = NO_STUDY  # sessions d'étude du Tuteur (D102)
     replan: ReplanStore = NO_REPLAN  # replanification du Stratège (D105)
+    capture: CaptureStore = NO_CAPTURE  # capture rapide de l'Archiviste (D108)
 
 
 NO_PORTS = AgentPorts()

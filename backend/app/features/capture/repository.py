@@ -1,9 +1,11 @@
 """Journal (SPEC F18) : les écritures passent par `INSERT … ON CONFLICT DO NOTHING`, pour qu'un
-rejeu (ou deux requêtes simultanées) de la même `ref_key` ne lève jamais d'erreur d'unicité."""
+rejeu (ou deux requêtes simultanées) de la même `ref_key` ne lève jamais d'erreur d'unicité. La
+lecture va de la plus récente à la plus ancienne (`created_at`, puis ordre d'insertion)."""
 
+import builtins
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import ColumnElement, and_, literal_column, or_, select
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 
 from app.db.models.study import JournalEntry
@@ -30,3 +32,38 @@ class JournalRepository(UserScopedRepository[JournalEntry]):
             JournalEntry.user_id == self.user_id, JournalEntry.ref_key == ref_key
         )
         return (await self.session.execute(existing)).scalar_one()
+
+    async def by_ref(self, ref_key: str) -> JournalEntry | None:
+        stmt = select(JournalEntry).where(
+            JournalEntry.user_id == self.user_id, JournalEntry.ref_key == ref_key
+        )
+        return (await self.session.execute(stmt)).scalar_one_or_none()
+
+    async def page(
+        self, kind: str | None, before: str | None, limit: int
+    ) -> builtins.list[JournalEntry] | None:
+        """Jusqu'à `limit` lignes, les plus récentes d'abord, plus anciennes que la ligne
+        `before` (curseur) ; `None` si ce curseur n'est pas une ligne de l'utilisateur."""
+        rowid: ColumnElement[int] = literal_column("rowid")
+        stmt = select(JournalEntry).where(JournalEntry.user_id == self.user_id)
+        if kind is not None:
+            stmt = stmt.where(JournalEntry.kind == kind)
+        if before is not None:
+            cursor = (
+                await self.session.execute(
+                    select(JournalEntry.created_at, rowid).where(
+                        JournalEntry.user_id == self.user_id, JournalEntry.id == before
+                    )
+                )
+            ).first()
+            if cursor is None:
+                return None
+            at, seq = cursor
+            stmt = stmt.where(
+                or_(
+                    JournalEntry.created_at < at,
+                    and_(JournalEntry.created_at == at, rowid < seq),
+                )
+            )
+        stmt = stmt.order_by(JournalEntry.created_at.desc(), rowid.desc()).limit(limit)
+        return builtins.list((await self.session.execute(stmt)).scalars().all())

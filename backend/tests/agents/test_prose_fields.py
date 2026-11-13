@@ -21,6 +21,7 @@ from app.agents.nodes.tutor import (
     TutorReply,
 )
 from app.agents.runtime.prose import ShortenToMax
+from app.agents.tools.capture_port import CaptureDigest
 from app.agents.tools.council_port import ProposalDraft
 from app.agents.tools.lesson_port import ResourcePick
 from app.agents.tools.plan_schema import SkillDraft, TaskDraft, WeekDraft
@@ -66,6 +67,7 @@ def _shortens(model: type[BaseModel], name: str) -> bool:
         (TutorReply, "message"),
         (ReplanDraft, "summary"),
         (ReplanTaskDraft, "done_criterion"),
+        (CaptureDigest, "summary"),
     ],
 )
 def test_free_text_fields_are_shortened(model: type[BaseModel], name: str) -> None:
@@ -94,6 +96,9 @@ def test_free_text_fields_are_shortened(model: type[BaseModel], name: str) -> No
         (ReplanDraft, "drop"),
         (ReplanTaskDraft, "module"),
         (ReplanTaskDraft, "title"),
+        (CaptureDigest, "title"),
+        (CaptureDigest, "concepts"),
+        (CaptureDigest, "modules"),
     ],
 )
 def test_identifiers_names_and_code_stay_strict(model: type[BaseModel], name: str) -> None:

@@ -29,6 +29,8 @@ class WriteDraft:
     session_id: str | None = None
     source_id: str | None = None
     lang: str | None = None
+    # Capture rapide de January (D108) : l'Archiviste range sa page ou sa note en `document`.
+    captured: bool = False
 
 
 def clean_tags(tags: list[str] | tuple[str, ...]) -> list[str]:
@@ -60,10 +62,12 @@ def _level(draft: WriteDraft, is_agent: bool) -> MasteryLevel | None:
 def resolve_write(draft: WriteDraft) -> tuple[ItemStatus, dict[str, Any]]:
     """Statut du nouvel élément et sa `meta` (`level`, `evidence`, `reason`, clés absentes si sans
     objet). Un agent ne peut ni écrire un document ni écrire sans raison ; sa décision attend la
-    confirmation de l'utilisateur (`pending`) ; ses acquis restent déclarés ou en cours."""
+    confirmation de l'utilisateur (`pending`) ; ses acquis restent déclarés ou en cours. Seule
+    exception au document : la capture rapide de January (`captured`, D108), rangée par la feature
+    `capture`, jamais par un outil d'agent."""
     is_agent = draft.author != USER_AUTHOR
     reason = (draft.reason or "").strip()
-    if is_agent and draft.kind == "document":
+    if is_agent and draft.kind == "document" and not draft.captured:
         raise AppError("memory_kind_forbidden", "Un agent ne peut pas écrire de document.", 422)
     if is_agent and not reason:
         raise AppError(

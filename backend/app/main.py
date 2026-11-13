@@ -173,6 +173,7 @@ def _compose_features(app: FastAPI) -> StudyRuntimes:
     app.state.quiz = study.quiz
     app.state.study = study.study
     app.state.replan = study.replan
+    app.state.capture = study.capture
     return study
 
 

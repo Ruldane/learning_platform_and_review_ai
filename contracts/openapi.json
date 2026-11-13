@@ -990,6 +990,62 @@
         "title": "BraveUsageOut",
         "type": "object"
       },
+      "CaptureRequest": {
+        "description": "Une seule source : un lien http(s), un texte, ou un document déjà importé\n(`POST /documents`). Zéro ou plusieurs : 422 `invalid_input`.",
+        "properties": {
+          "document_id": {
+            "anyOf": [
+              {
+                "maxLength": 36,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Id"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "maxLength": 20000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "maxLength": 2048,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "title": "CaptureRequest",
+        "type": "object"
+      },
+      "CaptureStarted": {
+        "properties": {
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id"
+        ],
+        "title": "CaptureStarted",
+        "type": "object"
+      },
       "ChooseOut": {
         "description": "`already_chosen` : ce même choix était déjà fait (double clic, reprise générique) ; la\nrequête n'a rien changé, `start_date` comprise (D87). Faux aussi quand ce même choix relance\nle Stratège, dont la session a échoué sans programme (D97).",
         "properties": {
@@ -1900,7 +1956,7 @@
           },
           "max_length": {
             "default": 2000,
-            "maximum": 4000,
+            "maximum": 20000,
             "minimum": 1,
             "title": "Max Length",
             "type": "integer"
@@ -2023,6 +2079,136 @@
           "question"
         ],
         "title": "InterruptRequestedPayload",
+        "type": "object"
+      },
+      "JournalEntryOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "capture",
+              "study_session",
+              "quiz",
+              "weekly_review"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "links": {
+            "$ref": "#/components/schemas/JournalLinksOut"
+          },
+          "occurred_on": {
+            "format": "date",
+            "title": "Occurred On",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "text",
+          "occurred_on",
+          "created_at",
+          "links"
+        ],
+        "title": "JournalEntryOut",
+        "type": "object"
+      },
+      "JournalLinksOut": {
+        "properties": {
+          "memory_item_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Memory Item Id"
+          },
+          "quiz_attempt_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quiz Attempt Id"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
+          "study_session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Study Session Id"
+          }
+        },
+        "required": [
+          "session_id",
+          "study_session_id",
+          "quiz_attempt_id",
+          "memory_item_id"
+        ],
+        "title": "JournalLinksOut",
+        "type": "object"
+      },
+      "JournalPage": {
+        "description": "Les lignes, les plus récentes d'abord ; `next_before` : curseur de la page suivante\n(`?before=`), `None` à la dernière.",
+        "properties": {
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/JournalEntryOut"
+            },
+            "title": "Entries",
+            "type": "array"
+          },
+          "next_before": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Before"
+          }
+        },
+        "required": [
+          "entries",
+          "next_before"
+        ],
+        "title": "JournalPage",
         "type": "object"
       },
       "KeyTestResult": {
@@ -6944,6 +7130,48 @@
         ]
       }
     },
+    "/api/v1/capture": {
+      "post": {
+        "description": "Lance la capture. Zéro ou plusieurs sources : 422 `invalid_input` ; lien non http(s) :\n422 `invalid_url` ; document d'une autre : 404 `document_not_found`.",
+        "operationId": "start_capture_api_v1_capture_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaptureRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaptureStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Capture",
+        "tags": [
+          "capture"
+        ]
+      }
+    },
     "/api/v1/documents": {
       "get": {
         "description": "Les 200 plus récents, du plus récent au plus ancien.",
@@ -7447,6 +7675,91 @@
         "summary": "Health",
         "tags": [
           "health"
+        ]
+      }
+    },
+    "/api/v1/journal": {
+      "get": {
+        "description": "Le journal (captures, sessions, quiz, bilans hebdomadaires), le plus récent d'abord ;\n`before` : `next_before` de la page précédente.",
+        "operationId": "read_journal_api_v1_journal_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "capture",
+                    "study_session",
+                    "quiz",
+                    "weekly_review"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 36,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Before"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JournalPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read Journal",
+        "tags": [
+          "capture"
         ]
       }
     },
