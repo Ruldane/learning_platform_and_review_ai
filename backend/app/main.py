@@ -172,6 +172,7 @@ def _compose_features(app: FastAPI) -> StudyRuntimes:
     )
     app.state.quiz = study.quiz
     app.state.study = study.study
+    app.state.replan = study.replan
     return study
 
 
@@ -207,7 +208,7 @@ async def _open_agents(app: FastAPI, stack: AsyncExitStack) -> None:
     # `scheduler_enabled` à `false` (tests d'application) : pas de planificateur du tout.
     if app.state.settings.scheduler_enabled:
         context = scheduler_context(
-            app.state.session_factory, app.state.launcher, app.state.lessons
+            app.state.session_factory, app.state.launcher, app.state.lessons, app.state.replan
         )
         await stack.enter_async_context(open_scheduler(JOBS, context))
 

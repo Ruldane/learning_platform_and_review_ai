@@ -141,10 +141,14 @@ class WeekLoad:
 
 @dataclass(frozen=True)
 class PreviewSaved:
-    """La proposition rangée et enregistrée (version `pending`). `empty` : rien ne change.
-    `kept` : retraits ignorés (le dernier quiz ou la dernière pratique d'une semaine, D105).
-    `impossible` : le plafond ne tient pas une pratique et le quiz ; version vide, jamais
-    proposée à January (F10)."""
+    """La proposition rangée et enregistrée. `empty` : rien ne change. `kept` : retraits
+    ignorés (le dernier quiz ou la dernière pratique d'une semaine, D105). `impossible` : le
+    plafond ne tient pas une pratique et le quiz (F10).
+
+    Cycle de vie de la version écrite (D106) : `impossible` → statut clos `impossible` ;
+    `empty` sans option → statut clos `empty` ; ces deux-là ne sont jamais `pending` ni
+    proposées à January. Sinon `pending` (attend la réponse de January dans la session), et les
+    `pending` précédents du programme passent `superseded` (D99)."""
 
     version: int
     empty: bool
@@ -193,13 +197,15 @@ class ReplanStore(Protocol):
         week_cap_override: int | None,
     ) -> PreviewSaved:
         """Résout les références par `refs` (inconnues : ignorées), applique les droits de
-        l'option, range et enregistre une version `pending` ; idempotent par
-        `(session, revision)`. Jamais `planning_impossible` : `PreviewSaved.impossible`."""
+        l'option, range et enregistre la version (statut : voir `PreviewSaved`) ; idempotent
+        par `(session, revision)`. Jamais `planning_impossible` : `PreviewSaved.impossible`."""
         ...
 
     async def apply(self, user_id: str, session_id: str, program_id: str, version: int) -> Applied:
         """Applique la version (idempotent : déjà acceptée → `stale=False` sans écrire). Lignes
-        changées depuis la proposition → `stale=True`, rien n'est écrit."""
+        changées depuis la proposition, ou version qui n'attend plus (`superseded` par une autre
+        session, refusée, close) → `stale=True`, rien n'est écrit, jamais d'erreur. Le port
+        prend lui-même le verrou du programme, avant sa transaction (F4)."""
         ...
 
     async def refuse(self, user_id: str, session_id: str, program_id: str, version: int) -> None:

@@ -1,22 +1,30 @@
 """Compétences de January (SPEC 4.2, 13.4 ; D6, D7) : référentiel du Stratège (compétences,
 prérequis) et niveaux, qui ne baissent jamais. Le commit appartient à l'appelant."""
 
+import logging
 from collections.abc import Sequence
+from datetime import datetime
 from typing import Any
 
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.agents.tools.plan_schema import EdgeDraft, SkillDraft
+from app.core.clock import local_today, user_zone, week_start
 from app.core.skills import Evidence, normalize_skill_name, read_evidence
 from app.db.models.skills import LEVEL_ORDER, SkillLevel, UserSkill
 from app.features.quiz.service.spacing import DEMOTE_AFTER
+from app.features.settings.service import SettingsService
 from app.features.skills.repository import (
     SkillEdgeRepository,
     SkillRepository,
+    SkillSnapshotRepository,
     UserSkillRepository,
+    users_with_levels,
 )
 
-__all__ = ["SkillLevel", "SkillsService", "higher_level"]
+__all__ = ["SkillLevel", "SkillsService", "higher_level", "write_weekly_snapshots"]
+
+logger = logging.getLogger(__name__)
 
 EVIDENCE_MAX = 20  # preuves gardées par compétence (les plus récentes)
 
@@ -165,3 +173,26 @@ class SkillsService:
         """Le nom affiché de la compétence, `None` si elle n'a pas de niveau."""
         found = await self._level_row(skill)
         return None if found is None else found[0]
+
+
+async def write_weekly_snapshots(
+    session_factory: async_sessionmaker[AsyncSession], now: datetime
+) -> int:
+    """Un relevé des niveaux (`compétence → niveau`) par utilisateur et par semaine locale
+    (D98) : le premier passage de la semaine l'écrit, les suivants ne changent rien (D106).
+    Appelé par la tâche planifiée `skill_snapshots` ; rend le nombre de relevés écrits."""
+    async with session_factory() as db:
+        users = await users_with_levels(db)
+    written = 0
+    for user_id in users:
+        async with session_factory() as db:
+            zone = user_zone((await SettingsService(db, user_id).get()).timezone)
+            levels = await UserSkillRepository(db, user_id).by_skill()
+            week = week_start(local_today(zone, now))
+            written += await SkillSnapshotRepository(db, user_id).insert_once(week, levels)
+            await db.commit()
+    level = logging.INFO if written else logging.DEBUG
+    logger.log(
+        level, "Relevés des compétences : %d utilisateur(s), %d écrit(s)", len(users), written
+    )
+    return written

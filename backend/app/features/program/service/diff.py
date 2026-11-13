@@ -11,11 +11,17 @@ from app.features.program.service.planning import ScheduledPlan
 
 @dataclass(frozen=True)
 class TaskRow:
+    """Une tâche ; `task_id`, `status` et `done_criterion` ne vont pas dans l'instantané : ils
+    servent à la replanification (empreinte, tâches figées, D106)."""
+
     title: str
     type: TaskType
     minutes: int
     planned_date: date
     already_known: bool = False
+    task_id: str = ""
+    status: str = "todo"
+    done_criterion: str = ""
 
 
 @dataclass(frozen=True)
@@ -23,6 +29,7 @@ class ModuleRow:
     title: str
     skipped: bool = False
     tasks: list[TaskRow] = field(default_factory=list)
+    module_id: str = ""
 
 
 @dataclass(frozen=True)
@@ -31,6 +38,8 @@ class WeekRow:
     theme: str
     start_date: date
     modules: list[ModuleRow] = field(default_factory=list)
+    objective: str = ""
+    deliverable: str = ""
 
 
 @dataclass(frozen=True)

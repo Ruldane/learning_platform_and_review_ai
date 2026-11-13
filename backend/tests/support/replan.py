@@ -106,7 +106,8 @@ class FakeReplanStore:
     """`plans` : le contexte par (utilisateur, programme) ; `context_calls` : les arguments de
     chaque lecture ; `previews` : les versions écrites (une par `(session, revision)`) ;
     `applied` / `refused` : les versions effectives, `apply_calls` / `refuse_calls` tous les
-    appels. `stale_applies` : nombre d'acceptations à rendre périmées ; `block_after_apply` fige
+    appels. `stale_applies` : nombre d'acceptations à rendre périmées ; `after_stale` : le plan
+    que January laisse avant une acceptation périmée (relu ensuite) ; `block_after_apply` fige
     l'appel après l'écriture (arrêt du back en plein nœud)."""
 
     plans: dict[tuple[str, str], ReplanContext] = field(default_factory=dict)
@@ -117,6 +118,7 @@ class FakeReplanStore:
     applied: list[int] = field(default_factory=list)
     apply_calls: int = 0
     stale_applies: int = 0
+    after_stale: ReplanContext | None = None
     block_after_apply: bool = False
     refused: list[int] = field(default_factory=list)
     refuse_calls: int = 0
@@ -183,6 +185,8 @@ class FakeReplanStore:
             return Applied(version, stale=False)
         if self.stale_applies:
             self.stale_applies -= 1
+            if self.after_stale is not None:
+                self.plans[(user_id, program_id)] = self.after_stale
             return Applied(version, stale=True)
         self.applied.append(version)
         if self.block_after_apply:

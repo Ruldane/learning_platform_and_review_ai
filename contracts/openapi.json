@@ -3134,6 +3134,109 @@
         "title": "PlanDiffOut",
         "type": "object"
       },
+      "PlanVersionOut": {
+        "description": "Une version du plan. `pending` : proposition qui attend January (dans sa session) ;\n`empty` et `impossible` : propositions closes dès leur écriture, jamais à valider.",
+        "properties": {
+          "accepted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accepted At"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "diff": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VersionDiffOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "kind": {
+            "enum": [
+              "build",
+              "replan"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "review": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
+          "status": {
+            "enum": [
+              "accepted",
+              "pending",
+              "refused",
+              "superseded",
+              "empty",
+              "impossible"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "week_loads": {
+            "items": {
+              "$ref": "#/components/schemas/WeekLoadOut"
+            },
+            "title": "Week Loads",
+            "type": "array"
+          }
+        },
+        "required": [
+          "version",
+          "kind",
+          "status",
+          "reason",
+          "created_at",
+          "accepted_at",
+          "session_id",
+          "review",
+          "diff",
+          "week_loads"
+        ],
+        "title": "PlanVersionOut",
+        "type": "object"
+      },
       "ProgramOut": {
         "properties": {
           "cap_minutes": {
@@ -3817,6 +3920,50 @@
           "error"
         ],
         "title": "ReindexState",
+        "type": "object"
+      },
+      "ReplanRequest": {
+        "properties": {
+          "available_minutes": {
+            "anyOf": [
+              {
+                "maximum": 10080.0,
+                "minimum": 60.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Available Minutes"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          }
+        },
+        "title": "ReplanRequest",
+        "type": "object"
+      },
+      "ReplanStarted": {
+        "properties": {
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id"
+        ],
+        "title": "ReplanStarted",
         "type": "object"
       },
       "ResourceOut": {
@@ -6056,6 +6203,108 @@
         "title": "ValidationError",
         "type": "object"
       },
+      "VersionDiffOut": {
+        "properties": {
+          "added": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Added",
+            "type": "array"
+          },
+          "moved": {
+            "items": {
+              "$ref": "#/components/schemas/VersionMoveOut"
+            },
+            "title": "Moved",
+            "type": "array"
+          },
+          "removed": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Removed",
+            "type": "array"
+          },
+          "weeks_after": {
+            "title": "Weeks After",
+            "type": "integer"
+          },
+          "weeks_before": {
+            "title": "Weeks Before",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "added",
+          "removed",
+          "moved",
+          "weeks_before",
+          "weeks_after"
+        ],
+        "title": "VersionDiffOut",
+        "type": "object"
+      },
+      "VersionMoveOut": {
+        "properties": {
+          "after": {
+            "format": "date",
+            "title": "After",
+            "type": "string"
+          },
+          "before": {
+            "format": "date",
+            "title": "Before",
+            "type": "string"
+          },
+          "task": {
+            "title": "Task",
+            "type": "string"
+          }
+        },
+        "required": [
+          "task",
+          "before",
+          "after"
+        ],
+        "title": "VersionMoveOut",
+        "type": "object"
+      },
+      "WeekLoadOut": {
+        "description": "Charge d'une semaine touchée, avant et après la proposition, et son plafond.",
+        "properties": {
+          "after": {
+            "title": "After",
+            "type": "integer"
+          },
+          "before": {
+            "title": "Before",
+            "type": "integer"
+          },
+          "cap": {
+            "title": "Cap",
+            "type": "integer"
+          },
+          "rank": {
+            "title": "Rank",
+            "type": "integer"
+          },
+          "start_date": {
+            "format": "date",
+            "title": "Start Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rank",
+          "start_date",
+          "before",
+          "after",
+          "cap"
+        ],
+        "title": "WeekLoadOut",
+        "type": "object"
+      },
       "WeekOut": {
         "description": "Une semaine : sa charge se lit sur le calendrier (tâches dont `planned_date` tombe dans\nses sept jours), ses modules sont ceux que le Stratège y a rangés. Après un déplacement, la\nsomme des tâches de `modules` peut donc différer de `load_minutes`.",
         "properties": {
@@ -7667,6 +7916,59 @@
         ]
       }
     },
+    "/api/v1/programs/{program_id}/replan": {
+      "post": {
+        "description": "Lance une replanification du Stratège. Brouillon : 409 `program_not_validated` ;\nreplanification ouverte : 409 `replan_open` (`details.session_id`).",
+        "operationId": "start_replan_api_v1_programs__program_id__replan_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "program_id",
+            "required": true,
+            "schema": {
+              "title": "Program Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplanStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Replan",
+        "tags": [
+          "replan"
+        ]
+      }
+    },
     "/api/v1/programs/{program_id}/validate": {
       "post": {
         "operationId": "validate_program_api_v1_programs__program_id__validate_post",
@@ -7706,6 +8008,53 @@
         "summary": "Validate Program",
         "tags": [
           "program"
+        ]
+      }
+    },
+    "/api/v1/programs/{program_id}/versions": {
+      "get": {
+        "description": "Les versions du plan, la plus récente d'abord, avec leur statut.",
+        "operationId": "list_versions_api_v1_programs__program_id__versions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "program_id",
+            "required": true,
+            "schema": {
+              "title": "Program Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PlanVersionOut"
+                  },
+                  "title": "Response List Versions Api V1 Programs  Program Id  Versions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Versions",
+        "tags": [
+          "replan"
         ]
       }
     },

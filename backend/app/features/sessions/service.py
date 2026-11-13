@@ -39,6 +39,11 @@ __all__ = [
 ]
 
 
+# Parcours lancés seulement par la route de leur feature, qui vérifie l'objet et la concurrence
+# (D106 : une replanification par programme, programme validé ; 409 `replan_open`).
+ROUTE_ONLY: dict[str, str] = {"replan": "POST /programs/{program_id}/replan"}
+
+
 def to_view(row: AgentSession, last_seq: int) -> SessionView:
     pending = row.pending_interrupt
     return SessionView(
@@ -118,7 +123,15 @@ class SessionsService:
         self._runner = runtime.runner
 
     async def start(self, req: StartSessionRequest) -> str:
-        """Crée la session et lance le parcours en tâche de fond : rend la main aussitôt."""
+        """Crée la session et lance le parcours en tâche de fond : rend la main aussitôt. Un
+        parcours qui a sa propre route (`ROUTE_ONLY`) y est renvoyé (409 `graph_has_route`)."""
+        if req.graph in ROUTE_ONLY:
+            raise AppError(
+                "graph_has_route",
+                "Ce parcours se lance depuis son écran.",
+                409,
+                {"graph": req.graph, "route": ROUTE_ONLY[req.graph]},
+            )
         return await self._runner.start(
             self._user_id, req.graph, req.input, req.subject_type, req.subject_id
         )

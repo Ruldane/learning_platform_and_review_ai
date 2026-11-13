@@ -16,12 +16,14 @@ from langgraph.types import interrupt
 
 from app.agents.nodes.strategist.replan_prompt import replan_vars
 from app.agents.nodes.strategist.replan_steps import (
-    ACCEPT_INTERRUPT,
     AGENT,
+    EMPTY_NOTE_HINT,
     REPLAN_REQUEST,
     STALE_NOTE,
+    accept_payload,
     as_json,
     context_from_state,
+    empty_note,
     end_text,
     option_payload,
     parse_accept,
@@ -204,15 +206,23 @@ def route_preview(state: ReplanState) -> str:
 
 def ask_accept(state: ReplanState) -> ReplanState:
     """Point d'arrêt : accepter, garder le plan actuel, ou une note pour une autre proposition.
-    Rien avant `interrupt()` ; une réponse invalide repose la question."""
-    answer = parse_accept(interrupt(ACCEPT_INTERRUPT))
+    Rien avant `interrupt()` (la question ne dépend que de l'état) ; une réponse invalide repose
+    la question, une note vide avec une aide (« Écris ce que tu veux changer. »)."""
+    value = interrupt(accept_payload(state.get("hint", "")))
+    answer = parse_accept(value)
     if answer is None:
-        return {"answer": None}
+        return {"answer": None, "hint": EMPTY_NOTE_HINT if empty_note(value) else ""}
     if answer.action == "revise":
         revision = state.get("revision", 0) + 1
         note = answer.note
-        return {"answer": answer.model_dump(), "revision": revision, "note": note, "stale": False}
-    return {"answer": answer.model_dump()}
+        return {
+            "answer": answer.model_dump(),
+            "revision": revision,
+            "note": note,
+            "stale": False,
+            "hint": "",
+        }
+    return {"answer": answer.model_dump(), "hint": ""}
 
 
 def route_accept(state: ReplanState) -> str:
@@ -238,7 +248,8 @@ def make_apply(deps: GraphDeps) -> Node:
         if applied.stale:
             revision = state.get("revision", 0)
             _say(f"replan-perimee-{revision}", STALE_NOTE)
-            return {"stale": True, "revision": revision + 1, "note": ""}
+            # La note de January reste pour la proposition suivante (D106, relecture m4).
+            return {"stale": True, "revision": revision + 1}
         return {"stale": False, "outcome": "accepted"}
 
     return apply

@@ -11,7 +11,7 @@ from app.scheduler.base import JobContext, JobSpec
 from app.scheduler.registry import JOBS
 from app.scheduler.runner import open_scheduler
 
-CTX = JobContext(None, None, None)  # type: ignore[arg-type]  # les tâches de test ne le lisent pas
+CTX = JobContext(None, None, None, None)  # type: ignore[arg-type]  # les tâches de test ne le lisent pas
 
 
 async def wait_for(predicate: object, timeout: float = 3.0) -> None:
@@ -20,9 +20,11 @@ async def wait_for(predicate: object, timeout: float = 3.0) -> None:
             await asyncio.sleep(0.01)
 
 
-def test_lessons_due_runs_every_fifteen_minutes_and_at_startup() -> None:
+def test_jobs_run_every_fifteen_minutes_and_at_startup() -> None:
     assert [(j.name, j.every, j.at_startup) for j in JOBS] == [
-        ("lessons_due", timedelta(minutes=15), True)
+        ("lessons_due", timedelta(minutes=15), True),
+        ("weekly_review", timedelta(minutes=15), True),
+        ("skill_snapshots", timedelta(minutes=15), True),
     ]
 
 

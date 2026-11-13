@@ -5,12 +5,14 @@ créent la même compétence (même `norm_name`) ne lèvent jamais d'erreur d'un
 
 import builtins
 from collections.abc import Collection
+from datetime import date
 from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models.skills import Skill, SkillEdge, UserSkill
+from app.db.models.skills import Skill, SkillEdge, SkillSnapshot, UserSkill
 from app.db.repository import UserScopedRepository
 
 
@@ -88,3 +90,32 @@ class UserSkillRepository(UserScopedRepository[UserSkill]):
             .where(Skill.user_id == self.user_id, UserSkill.user_id == self.user_id)
         )
         return [(row[0], row[1]) for row in (await self.session.execute(stmt)).all()]
+
+    async def by_skill(self) -> dict[str, str]:
+        """`compétence → niveau` de toutes les compétences de January."""
+        stmt = select(UserSkill.skill_id, UserSkill.level).where(UserSkill.user_id == self.user_id)
+        return {row[0]: row[1] for row in (await self.session.execute(stmt)).all()}
+
+
+class SkillSnapshotRepository(UserScopedRepository[SkillSnapshot]):
+    model = SkillSnapshot
+
+    async def insert_once(self, week_start: date, levels: dict[str, str]) -> bool:
+        """Le relevé de la semaine, s'il n'existe pas encore (sinon rien : le premier gagne) ;
+        rend vrai s'il vient d'être écrit."""
+        stmt = (
+            sqlite_insert(SkillSnapshot)
+            .values(user_id=self.user_id, week_start=week_start, levels=levels)
+            .on_conflict_do_nothing(index_elements=["user_id", "week_start"])
+            .returning(SkillSnapshot.id)
+        )
+        return (await self.session.execute(stmt)).scalar_one_or_none() is not None
+
+
+async def users_with_levels(session: AsyncSession) -> builtins.list[str]:
+    """Les utilisateurs qui ont au moins un niveau de compétence, identifiants seulement.
+
+    Lecture sans `user_id` (D18, D91, D106) réservée à la tâche planifiée des relevés
+    (`app.scheduler`), qui écrit ensuite chaque relevé sous son utilisateur."""
+    stmt = select(UserSkill.user_id).distinct().order_by(UserSkill.user_id)
+    return [str(user_id) for user_id in (await session.execute(stmt)).scalars()]

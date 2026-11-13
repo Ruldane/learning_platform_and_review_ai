@@ -8,16 +8,18 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.agents.runtime.launcher import SessionLauncher
 from app.features.lessons.service.production import ProductionContext
+from app.features.replan.service.runtime import ReplanRuntime
 
 
 @dataclass(frozen=True)
 class JobContext:
     """Composé par `app.bootstrap.scheduler_context` : la base, le lanceur de sessions (lié au
-    moteur) et la production des leçons."""
+    moteur), la production des leçons et la replanification (bilan hebdomadaire, D106)."""
 
     session_factory: async_sessionmaker[AsyncSession]
     launcher: SessionLauncher
     production: ProductionContext
+    replan: ReplanRuntime
 
 
 @dataclass(frozen=True)

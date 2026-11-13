@@ -11,7 +11,9 @@ TaskType = Literal["lire", "regarder", "pratiquer", "quiz", "projet"]
 TaskStatus = Literal["todo", "done"]
 ProgramStatus = Literal["draft", "validated"]
 PlanKind = Literal["build", "replan"]
-PlanStatus = Literal["accepted", "pending", "refused", "superseded"]
+# `empty` et `impossible` (D106) : propositions closes dès leur écriture (rien à changer sans
+# option, rangement impossible), jamais montrées « à valider ».
+PlanStatus = Literal["accepted", "pending", "refused", "superseded", "empty", "impossible"]
 
 
 class Program(UserScopedMixin, Base):

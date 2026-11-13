@@ -22,6 +22,7 @@ from app.features.memory.service.runtime import memory_runtime
 from app.features.program.service.programs import load
 from app.features.program.service.runtime import ProgramRuntime
 from app.features.program.service.store import AgentProgramStore
+from app.features.replan.service.runtime import ReplanRuntime
 from app.features.research.service.runtime import ResearchRuntime
 from app.features.settings.keys_service import DbKeyReader
 from app.scheduler.base import JobContext
@@ -134,8 +135,13 @@ def store(lessons_rt: LessonsRuntime) -> AgentLessonStore:
 
 
 @pytest.fixture
-def job_ctx(lessons_rt: LessonsRuntime) -> JobContext:
-    return JobContext(lessons_rt.session_factory, lessons_rt.launcher, lessons_rt)  # type: ignore[arg-type]
+def replan_rt(lessons_rt: LessonsRuntime, program_rt: ProgramRuntime) -> ReplanRuntime:
+    return ReplanRuntime(lessons_rt.session_factory, lessons_rt.launcher, program_rt)
+
+
+@pytest.fixture
+def job_ctx(lessons_rt: LessonsRuntime, replan_rt: ReplanRuntime) -> JobContext:
+    return JobContext(lessons_rt.session_factory, lessons_rt.launcher, lessons_rt, replan_rt)  # type: ignore[arg-type]
 
 
 @dataclass(frozen=True)

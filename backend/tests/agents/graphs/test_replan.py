@@ -2,6 +2,7 @@
 accepte, refuse ou demande une autre proposition ; rejeu après un arrêt sans double écriture."""
 
 import logging
+from dataclasses import replace
 
 import pytest
 
@@ -12,11 +13,18 @@ from app.agents.nodes.strategist.replan_steps import (
     REFUSED_TEXT,
     REPLAN_REQUEST,
 )
+from app.agents.tools.replan_port import ReplanContext
 from app.core.errors import AppError
 from tests.agents.graphs.council_models import CouncilModels
 from tests.agents.graphs.replan_support import SUMMARY, MakeReplan, ReplanRun, reply
 from tests.agents.runtime.runner_helpers import wait_until
-from tests.support.replan import PROGRAM_ID, REVIEW_TEXT, replan_context, task_id
+from tests.support.replan import (
+    PROGRAM_ID,
+    REVIEW_TEXT,
+    FakeReplanStore,
+    replan_context,
+    task_id,
+)
 
 FIVE_HOURS = {
     "program_id": PROGRAM_ID,
@@ -137,11 +145,21 @@ async def test_accept_applies_once_after_replay(make_replan_runner: MakeReplan) 
     assert summary == f"Nouveau plan appliqué (version {version})."
 
 
+def _moved_by_january() -> ReplanContext:
+    """Le plan après une modification de January : « Lire la doc de l'API » (t5) n'y est plus,
+    une nouvelle lecture prend sa place."""
+    plan = replan_context("late_twice", late=1)
+    changed = replace(plan.tasks[4], title="Lire le guide de l'API", task_id="task-id-new")
+    return replace(plan, tasks=[*plan.tasks[:4], changed, *plan.tasks[5:]])
+
+
+def _stale_once(store: FakeReplanStore) -> None:
+    store.stale_applies = 1
+    store.after_stale = _moved_by_january()
+
+
 async def test_stale_apply_reproposes(make_replan_runner: MakeReplan) -> None:
-    run = await make_replan_runner(
-        plan=replan_context("late_twice", late=1),
-        prepare=lambda s: setattr(s, "stale_applies", 1),
-    )
+    run = await make_replan_runner(plan=replan_context("late_twice", late=1), prepare=_stale_once)
     await _proposed(run, "push_deadline")
     await run.resume("accept")
     await run.wait_question()
@@ -149,6 +167,11 @@ async def test_stale_apply_reproposes(make_replan_runner: MakeReplan) -> None:
     assert STALE_NOTE in await run.said() and STALE_NOTE in run.prompts()[1]
     assert STALE_NOTE not in run.prompts()[0]
     assert len(run.store.context_calls) == 2  # le plan est relu avant la nouvelle proposition
+    # La nouvelle proposition part du plan relu : prompt et références (relecture 5.8, m2).
+    assert "Lire le guide de l'API" in run.prompts()[1]
+    assert "Lire la doc de l'API" not in run.prompts()[1]
+    assert run.store.previews[1].refs == _moved_by_january().refs()
+    assert run.store.previews[1].refs["t5"] == "task-id-new"
     assert run.store.applied == []
     await run.resume("accept")
     await run.wait_status("completed")

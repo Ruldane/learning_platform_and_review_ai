@@ -7,6 +7,7 @@ from app.features.lessons.router import router as lessons_router
 from app.features.memory.router import router as memory_router
 from app.features.program.router import router as program_router
 from app.features.quiz.router import router as quiz_router
+from app.features.replan.router import router as replan_router
 from app.features.research.router import router as research_router
 from app.features.sessions.router import router as sessions_router
 from app.features.settings.keys_router import router as keys_router
@@ -27,4 +28,5 @@ FEATURE_ROUTERS: list[APIRouter] = [
     lessons_router,
     quiz_router,
     study_router,
+    replan_router,
 ]

@@ -51,6 +51,7 @@ ACCEPT_INTERRUPT: dict[str, Any] = {
     "fields": [{"id": "note", "label": "Ce qu'il faut revoir (pour une autre proposition)"}],
 }
 STALE_NOTE = "Le programme a changé entre-temps : nouvelle proposition sur le plan à jour."
+EMPTY_NOTE_HINT = "Écris ce que tu veux changer."
 EMPTY_TEXT = "Rien à changer : ton plan tient tel quel dans ton budget."
 IMPOSSIBLE_TEXT = "Le plafond de cette semaine ne tient pas une pratique et le quiz."
 REFUSED_TEXT = "Plan actuel gardé : la proposition est refusée."
@@ -176,6 +177,24 @@ def parse_accept(value: Any) -> AcceptAnswer | None:
     if answer.action == "revise":
         return answer if answer.note else None
     return AcceptAnswer(action=answer.action)
+
+
+def empty_note(value: Any) -> bool:
+    """Une demande d'autre proposition sans rien d'écrit (D106) : la question revient avec
+    `EMPTY_NOTE_HINT`, jamais en silence."""
+    if not isinstance(value, dict):
+        return False
+    if "action" not in value and isinstance(value.get("answers"), dict):
+        value = {"action": "revise", "note": value["answers"].get("note")}
+    note = value.get("note")
+    return value.get("action") == "revise" and not (isinstance(note, str) and note.strip())
+
+
+def accept_payload(hint: str) -> dict[str, Any]:
+    """La question d'acceptation, précédée de l'aide quand elle est reposée."""
+    if not hint:
+        return ACCEPT_INTERRUPT
+    return {**ACCEPT_INTERRUPT, "question": f"{hint} {ACCEPT_INTERRUPT['question']}"}
 
 
 # --- Textes -------------------------------------------------------------------------------------

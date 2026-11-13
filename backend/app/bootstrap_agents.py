@@ -23,6 +23,8 @@ from app.features.program.service.runtime import ProgramRuntime
 from app.features.program.service.store import AgentProgramStore
 from app.features.quiz.service.runtime import QuizRuntime
 from app.features.quiz.service.store import AgentQuizStore
+from app.features.replan.service.runtime import ReplanRuntime
+from app.features.replan.service.store import AgentReplanStore
 from app.features.research.service.gateway import AgentWebGateway
 from app.features.research.service.runtime import ResearchRuntime
 from app.features.settings.service import SettingsRunReader
@@ -56,6 +58,7 @@ class StudyRuntimes:
 
     quiz: QuizRuntime
     study: StudyRuntime
+    replan: ReplanRuntime
 
 
 def study_runtimes(
@@ -65,11 +68,13 @@ def study_runtimes(
     program: ProgramRuntime,
     memory: MemoryRuntime,
 ) -> StudyRuntimes:
-    """Quiz et révisions (D101), sessions guidées (D103) : lanceur (lié au moteur ensuite),
-    programme (verrou, tâches cochées ou de suivi), mémoire (reflet des niveaux)."""
+    """Quiz et révisions (D101), sessions guidées (D103), replanification (D106) : lanceur
+    (lié au moteur ensuite), programme (verrou, tâches cochées ou de suivi, versions), mémoire
+    (reflet des niveaux)."""
     return StudyRuntimes(
         quiz=QuizRuntime(session_factory, launcher, program, memory),
         study=StudyRuntime(session_factory, launcher, program, memory),
+        replan=ReplanRuntime(session_factory, launcher, program),
     )
 
 
@@ -83,9 +88,9 @@ def agent_ports(
     study: StudyRuntimes,
 ) -> AgentPorts:
     """Tous les ports du moteur (D82) : un port de plus = un champ d'`AgentPorts` et une ligne ici.
-    Conseil (D84), programme (D86), leçons (D90), quiz (D100) et sessions d'étude (D102)
-    adaptés des features `learning` (D87), `program` (D88), `lessons` (D91), `quiz` (D101) et
-    `study` (D103)."""
+    Conseil (D84), programme (D86), leçons (D90), quiz (D100), sessions d'étude (D102) et
+    replanification (D105) adaptés des features `learning` (D87), `program` (D88), `lessons`
+    (D91), `quiz` (D101), `study` (D103) et `replan` (D106)."""
     council = AgentCouncilStore(learning.session_factory, learning.launcher, learning)
     program_store = AgentProgramStore(program)
     return AgentPorts(
@@ -96,6 +101,7 @@ def agent_ports(
         AgentLessonStore(lessons),
         AgentQuizStore(study.quiz),
         AgentStudyStore(study.study),
+        AgentReplanStore(study.replan),
     )
 
 
@@ -117,6 +123,8 @@ def scheduler_context(
     session_factory: async_sessionmaker[AsyncSession],
     launcher: SessionLauncher,
     lessons: LessonsRuntime,
+    replan: ReplanRuntime,
 ) -> JobContext:
-    """Ce que reçoivent les tâches planifiées (D91) : base, lanceur, production des leçons."""
-    return JobContext(session_factory, launcher, lessons)
+    """Ce que reçoivent les tâches planifiées (D91) : base, lanceur, production des leçons,
+    replanification (bilan hebdomadaire, D106)."""
+    return JobContext(session_factory, launcher, lessons, replan)

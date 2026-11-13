@@ -8,4 +8,5 @@ from tests.features.lessons.conftest import (  # noqa: F401  (fixtures réutilis
     launcher,
     lessons_rt,
     program_rt,
+    replan_rt,
 )

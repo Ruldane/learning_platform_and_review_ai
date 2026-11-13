@@ -555,6 +555,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/programs/{program_id}/replan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Replan
+         * @description Lance une replanification du Stratège. Brouillon : 409 `program_not_validated` ;
+         *     replanification ouverte : 409 `replan_open` (`details.session_id`).
+         */
+        post: operations["start_replan_api_v1_programs__program_id__replan_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/programs/{program_id}/validate": {
         parameters: {
             query?: never;
@@ -566,6 +587,26 @@ export interface paths {
         put?: never;
         /** Validate Program */
         post: operations["validate_program_api_v1_programs__program_id__validate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/programs/{program_id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Versions
+         * @description Les versions du plan, la plus récente d'abord, avec leur statut.
+         */
+        get: operations["list_versions_api_v1_programs__program_id__versions_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2230,6 +2271,41 @@ export interface components {
             /** Weeks Before */
             weeks_before: number;
         };
+        /**
+         * PlanVersionOut
+         * @description Une version du plan. `pending` : proposition qui attend January (dans sa session) ;
+         *     `empty` et `impossible` : propositions closes dès leur écriture, jamais à valider.
+         */
+        PlanVersionOut: {
+            /** Accepted At */
+            accepted_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            diff: components["schemas"]["VersionDiffOut"] | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "build" | "replan";
+            /** Reason */
+            reason: string;
+            /** Review */
+            review: string | null;
+            /** Session Id */
+            session_id: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "accepted" | "pending" | "refused" | "superseded" | "empty" | "impossible";
+            /** Version */
+            version: number;
+            /** Week Loads */
+            week_loads: components["schemas"]["WeekLoadOut"][];
+        };
         /** ProgramOut */
         ProgramOut: {
             /** Cap Minutes */
@@ -2468,6 +2544,18 @@ export interface components {
             status: "idle" | "queued" | "running" | "done" | "failed";
             /** Total */
             total: number;
+        };
+        /** ReplanRequest */
+        ReplanRequest: {
+            /** Available Minutes */
+            available_minutes?: number | null;
+            /** Message */
+            message?: string | null;
+        };
+        /** ReplanStarted */
+        ReplanStarted: {
+            /** Session Id */
+            session_id: string;
         };
         /**
          * ResourceOut
@@ -3332,6 +3420,53 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** VersionDiffOut */
+        VersionDiffOut: {
+            /** Added */
+            added: string[];
+            /** Moved */
+            moved: components["schemas"]["VersionMoveOut"][];
+            /** Removed */
+            removed: string[];
+            /** Weeks After */
+            weeks_after: number;
+            /** Weeks Before */
+            weeks_before: number;
+        };
+        /** VersionMoveOut */
+        VersionMoveOut: {
+            /**
+             * After
+             * Format: date
+             */
+            after: string;
+            /**
+             * Before
+             * Format: date
+             */
+            before: string;
+            /** Task */
+            task: string;
+        };
+        /**
+         * WeekLoadOut
+         * @description Charge d'une semaine touchée, avant et après la proposition, et son plafond.
+         */
+        WeekLoadOut: {
+            /** After */
+            after: number;
+            /** Before */
+            before: number;
+            /** Cap */
+            cap: number;
+            /** Rank */
+            rank: number;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
         };
         /**
          * WeekOut
@@ -4462,6 +4597,41 @@ export interface operations {
             };
         };
     };
+    start_replan_api_v1_programs__program_id__replan_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                program_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReplanRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReplanStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     validate_program_api_v1_programs__program_id__validate_post: {
         parameters: {
             query?: never;
@@ -4480,6 +4650,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ValidateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_versions_api_v1_programs__program_id__versions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                program_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanVersionOut"][];
                 };
             };
             /** @description Validation Error */

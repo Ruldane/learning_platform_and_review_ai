@@ -79,6 +79,19 @@ async def load(db: AsyncSession, user_id: str, program_id: str) -> Loaded:
     return Loaded(program, weeks, modules, tasks)
 
 
+def _task_row(t: Task) -> TaskRow:
+    return TaskRow(
+        t.title,
+        t.type,  # type: ignore[arg-type]  # colonne texte, valeurs de TaskType
+        t.minutes,
+        t.planned_date,
+        t.already_known,
+        task_id=t.id,
+        status=t.status,
+        done_criterion=t.done_criterion,
+    )
+
+
 def rows_of(loaded: Loaded) -> ProgramRows:
     """Le programme en lignes, pour l'instantané d'une version (`diff.snapshot`)."""
     weeks = [
@@ -90,14 +103,14 @@ def rows_of(loaded: Loaded) -> ProgramRows:
                 ModuleRow(
                     title=module.title,
                     skipped=module.skipped,
-                    tasks=[
-                        TaskRow(t.title, t.type, t.minutes, t.planned_date, t.already_known)  # type: ignore[arg-type]
-                        for t in loaded.tasks_of_module(module.id)
-                    ],
+                    tasks=[_task_row(t) for t in loaded.tasks_of_module(module.id)],
+                    module_id=module.id,
                 )
                 for module in loaded.modules
                 if module.week_id == week.id
             ],
+            objective=week.objective,
+            deliverable=week.deliverable,
         )
         for week in loaded.weeks
     ]

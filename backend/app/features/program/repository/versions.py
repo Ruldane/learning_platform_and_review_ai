@@ -1,7 +1,16 @@
-from sqlalchemy import func, select
+import builtins
+
+from sqlalchemy import ColumnElement, func, or_, select
 
 from app.db.models.program import PlanVersion
 from app.db.repository import UserScopedRepository
+
+
+def _applied() -> ColumnElement[bool]:
+    """Versions qui décrivent des lignes écrites : celles du Stratège et de January (`build`,
+    écrites dès leur rangement) et les replanifications acceptées. Une proposition `replan`
+    en attente, refusée, remplacée ou close n'a jamais touché le plan (F2, D106)."""
+    return or_(PlanVersion.kind == "build", PlanVersion.status == "accepted")
 
 
 class PlanVersionRepository(UserScopedRepository[PlanVersion]):
@@ -23,9 +32,14 @@ class PlanVersionRepository(UserScopedRepository[PlanVersion]):
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def latest(self, program_id: str) -> PlanVersion | None:
+        """La dernière version appliquée au plan (jamais une proposition non acceptée)."""
         stmt = (
             select(PlanVersion)
-            .where(PlanVersion.user_id == self.user_id, PlanVersion.program_id == program_id)
+            .where(
+                PlanVersion.user_id == self.user_id,
+                PlanVersion.program_id == program_id,
+                _applied(),
+            )
             .order_by(PlanVersion.version.desc())
             .limit(1)
             .execution_options(populate_existing=True)
@@ -40,6 +54,7 @@ class PlanVersionRepository(UserScopedRepository[PlanVersion]):
                 PlanVersion.user_id == self.user_id,
                 PlanVersion.program_id == program_id,
                 PlanVersion.revision.is_not(None),
+                PlanVersion.kind == "build",
             )
             .order_by(PlanVersion.version.desc())
             .limit(1)
@@ -65,3 +80,24 @@ class PlanVersionRepository(UserScopedRepository[PlanVersion]):
         )
         current = (await self.session.execute(stmt)).scalar_one_or_none()
         return 1 if current is None else int(current) + 1
+
+    async def by_number(self, program_id: str, version: int) -> PlanVersion | None:
+        stmt = (
+            select(PlanVersion)
+            .where(
+                PlanVersion.user_id == self.user_id,
+                PlanVersion.program_id == program_id,
+                PlanVersion.version == version,
+            )
+            .execution_options(populate_existing=True)
+        )
+        return (await self.session.execute(stmt)).scalar_one_or_none()
+
+    async def history(self, program_id: str) -> builtins.list[PlanVersion]:
+        """Toutes les versions du programme, la plus récente d'abord."""
+        stmt = (
+            select(PlanVersion)
+            .where(PlanVersion.user_id == self.user_id, PlanVersion.program_id == program_id)
+            .order_by(PlanVersion.version.desc())
+        )
+        return builtins.list((await self.session.execute(stmt)).scalars().all())
