@@ -23,7 +23,9 @@ describe("boardStatesFromEvents", () => {
     expect(states.map((state) => state.id)).toEqual(["b1", "step-2"]);
     expect(states[0]).toMatchObject({
       mermaid: "flowchart TD\n A-->C",
-      title: "Carte du domaine",
+      title: "Schéma de la leçon",
+      kind: "lesson",
+      author: "tutor",
       createdAt: "2026-11-17T10:00:01Z",
     });
   });

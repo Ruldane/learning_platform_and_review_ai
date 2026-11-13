@@ -18,6 +18,8 @@ interface BoardWorkspaceProps {
   onSeen: (id: string) => void;
   /** January a des modifications non envoyées sur cet état (ou n'en a plus). */
   onDirtyChange: (id: string, dirty: boolean) => void;
+  /** Texte de l'attente pendant la conversion du schéma. */
+  drawingLabel: string;
 }
 
 /** Un état du tableau : canevas, barre d'actions et repli Mermaid. Remonté à chaque état. */
@@ -67,6 +69,7 @@ export function BoardWorkspace(props: BoardWorkspaceProps) {
         readOnly={readOnly}
         onReady={actions.setApi}
         onSceneChange={edits.onSceneChange}
+        drawingLabel={props.drawingLabel}
       />
     </div>
   );

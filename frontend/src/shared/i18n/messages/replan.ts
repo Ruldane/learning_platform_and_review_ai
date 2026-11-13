@@ -5,8 +5,9 @@ export const replan = {
   loading: "Chargement de la replanification…",
   form: {
     label: "Replanifier ma semaine",
-    hours: "Heures disponibles cette semaine",
-    hoursHint: "De 1 h à 168 h. Laisse vide si ton budget ne change pas.",
+    hours: "Heures pour toute la semaine (déjà faites comprises)",
+    hoursHint:
+      "Compte toute la semaine, y compris les heures déjà faites : de 1 h à 168 h. Laisse vide si ton budget ne change pas.",
     hoursInvalid: "Entre un nombre d'heures compris entre 1 et 168.",
     message: "Un message pour le Stratège",
     messageHint: "Facultatif : 1 000 caractères au plus.",
@@ -17,6 +18,8 @@ export const replan = {
     label: "Échange avec le Stratège",
     reconnecting: "Reconnexion au direct…",
     completed: "Replanification terminée.",
+    accepted: "Nouveau plan accepté : ton programme est à jour.",
+    refused: "Plan actuel gardé : rien n'a changé.",
     failed: "La replanification s'est arrêtée.",
     cancelled: "Replanification annulée.",
     again: "Nouvelle replanification",
@@ -26,6 +29,7 @@ export const replan = {
     review: "Bilan de la semaine",
     changes: "Changements",
     loads: "Charge par semaine",
+    weeks: "Durée du programme : {before} → {after} semaines",
   },
   loads: {
     caption: "Charge par semaine, avant et après la proposition, sous son plafond",
@@ -44,6 +48,7 @@ export const replan = {
     heading: "Historique des versions",
     empty: "Aucune version pour l'instant",
     emptyHint: "Chaque replanification ajoutera une ligne ici.",
+    emptyAction: "Voir le programme",
     version: "Version {version}",
     kind: { build: "Construction du programme", replan: "Replanification" },
     status: {

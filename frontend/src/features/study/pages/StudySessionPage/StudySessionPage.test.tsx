@@ -1,12 +1,14 @@
 import { screen, waitFor } from "@testing-library/react";
-import { HttpResponse } from "msw";
+import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useSessionStore } from "@/shared/realtime/sessionStore";
+import { API } from "@/test/councilApi";
 import { councilEvents } from "@/test/councilEvents";
 import { apiError, recordPosts } from "@/test/councilHarness";
 import { studyOut } from "@/test/studyApi";
 import { openStudyStream, recordPatches, renderStudySession } from "@/test/studyHarness";
 import { finishedOut, resumedSession, tutorOptions, tutorQuestion } from "@/test/studySessionKit";
+import { server } from "@/test/server";
 import { StudySessionPage } from "./StudySessionPage";
 
 vi.mock(
@@ -17,9 +19,10 @@ vi.mock("@excalidraw/excalidraw/index.css", () => ({}));
 vi.mock("@excalidraw/mermaid-to-excalidraw", () => ({ parseMermaidToExcalidraw: vi.fn() }));
 vi.mock("mermaid", () => ({ default: { initialize: vi.fn(), render: vi.fn() } }));
 // Le minuteur réel compte des secondes de mur : ce faux annonce 100 s de travail (2 min arrondies).
-vi.mock("../../components/StudyTimer", async () => {
+vi.mock("../../components/StudyTimer", async (importOriginal) => {
   const { useEffect } = await import("react");
   return {
+    ...(await importOriginal<object>()),
     StudyTimer: ({ onWorkedChange }: { onWorkedChange: (seconds: number) => void }) => {
       useEffect(() => onWorkedChange(100));
       return <p>Minuteur de test</p>;
@@ -95,10 +98,30 @@ describe("StudySessionPage", () => {
     expect(router.state.location.pathname).toBe("/etudier/session/st1");
   });
 
-  it("offers a new block from an interrupted session", async () => {
+  it("starts a new block from an interrupted session, without going back to it", async () => {
+    // Revue finale 5 (E-I1) : le départ part d'ici ; le back range ou annule la session morte.
+    const starts = recordPosts("/study-sessions", 202, {
+      study_session_id: "st2",
+      session_id: "s2",
+    });
+    server.use(
+      http.get(`${API}/study-sessions/st2`, () =>
+        HttpResponse.json(studyOut({ id: "st2", session_id: null })),
+      ),
+    );
+    const { user, router } = setup({
+      sessions: [studyOut({ status: "interrupted", mode: "feynman" })],
+    });
+    await user.click(await screen.findByRole("button", { name: "Commencer un nouveau bloc" }));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/etudier/session/st2"));
+    expect(starts).toEqual([{ mode: "feynman" }]);
+  });
+
+  it("goes to the start page when no block is planned today", async () => {
+    recordPosts("/study-sessions", 404, apiError("no_block_today", "Aucun bloc."));
     const { user, router } = setup({ sessions: [studyOut({ status: "interrupted" })] });
     await user.click(await screen.findByRole("button", { name: "Commencer un nouveau bloc" }));
-    expect(router.state.location.pathname).toBe("/etudier/session");
+    await waitFor(() => expect(router.state.location.pathname).toBe("/etudier/session"));
   });
 
   it("reads the session again when the agents session fails", async () => {
@@ -111,11 +134,33 @@ describe("StudySessionPage", () => {
     expect(screen.getByRole("button", { name: "Terminer" })).toBeEnabled();
   });
 
+  it("keeps the session on screen when a background read fails", async () => {
+    // Revue finale 5 (E-I2) : une relecture ratée ne démonte ni la page ni le minuteur.
+    let calls = 0;
+    const { fake } = setup({
+      status: "failed",
+      sessionReply: () => {
+        calls += 1;
+        return calls === 1
+          ? HttpResponse.json(studyOut())
+          : HttpResponse.json(apiError("boom", "Panne du serveur."), { status: 500 });
+      },
+    });
+    (await openStudyStream(fake)).push(councilEvents("s1").failed());
+    expect(await screen.findByRole("alert")).toHaveTextContent("Panne du serveur.");
+    expect(screen.getByText("Minuteur de test")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Réessayer" })).toBeInTheDocument();
+  });
+
   it("shows the board of the tutor on the right", async () => {
     const { fake } = setup();
-    (await openStudyStream(fake)).push(councilEvents("s1").boardUpdate("b1", 1));
+    const socket = await openStudyStream(fake);
+    // Revue finale 5 (E-m2) : le tableau est celui du Tuteur, pas « Carte du domaine · Scribe ».
+    expect(await screen.findByText("Le tuteur n'a encore rien dessiné.")).toBeInTheDocument();
+    socket.push(councilEvents("s1").boardUpdate("b1", 1, { kind: null, title: null }));
     expect(await screen.findByRole("region", { name: "Tableau du tuteur" })).toBeInTheDocument();
-    expect(await screen.findByText("Carte du domaine")).toBeInTheDocument();
+    expect(await screen.findByText("Schéma de la leçon · Tuteur")).toBeInTheDocument();
+    expect(screen.queryByText(/Scribe/)).not.toBeInTheDocument();
   });
 
   it("shows the summary of a session that is already finished, without a stream", async () => {

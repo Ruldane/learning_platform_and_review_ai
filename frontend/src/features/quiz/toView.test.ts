@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 import type { QuestionView } from "./components/viewTypes";
-import { dayOf, percent, toAttemptResultView, toQuizSummaryView } from "./toView";
-import type { AttemptOut } from "./types";
+import {
+  dayOf,
+  pendingRetryOn,
+  percent,
+  toAttemptResultView,
+  toQuizSummaryView,
+  upcoming,
+} from "./toView";
+import type { AttemptOut, AttemptSummaryOut } from "./types";
 
 const questions: QuestionView[] = [
   {
@@ -35,7 +42,7 @@ const attempt: AttemptOut = {
 
 describe("toView", () => {
   it("joins each result to the statement it answered, at the rank shown", () => {
-    const view = toAttemptResultView(attempt, questions);
+    const view = toAttemptResultView(attempt, questions, "2026-11-17");
     expect(view.score).toBe(62);
     expect(view.passed).toBe(false);
     expect(view.results[0]).toMatchObject({
@@ -94,6 +101,45 @@ describe("toView", () => {
       status: "ready",
       bestScore: 75,
       retryOn: null,
+    });
+  });
+
+  describe("date of the next try (revue finale 5, E-I3 et E-m3)", () => {
+    const row = {
+      module_id: "m1",
+      module_title: "REST",
+      week_rank: 2,
+      quiz_id: "z1",
+      status: "ready" as const,
+      best_score: 60,
+      retry_on: "2026-11-09",
+    };
+
+    it("keeps a day only while it is to come", () => {
+      expect(upcoming("2026-11-19", "2026-11-17")).toBe("2026-11-19");
+      expect(upcoming("2026-11-17", "2026-11-17")).toBeNull();
+      expect(upcoming(null, "2026-11-17")).toBeNull();
+    });
+
+    it("drops a past date from the list and from a result", () => {
+      expect(toQuizSummaryView(row, "2026-12-01").retryOn).toBeNull();
+      expect(toQuizSummaryView(row, "2026-11-08").retryOn).toBe("2026-11-09");
+      expect(toAttemptResultView(attempt, questions, "2026-11-20").followup?.retryOn).toBeNull();
+    });
+
+    it("finds the next try two local days after the last graded attempt under 80 percent", () => {
+      const at = (
+        id: string,
+        score: number | null,
+        day: string,
+        status: AttemptSummaryOut["status"] = "graded",
+      ): AttemptSummaryOut => ({ id, status, score, created_at: `${day}T10:00:00Z` });
+      const failed = [at("a0", 90, "2026-11-10"), at("a1", 60, "2026-11-16")];
+      expect(pendingRetryOn(failed, "2026-11-17")).toBe("2026-11-18");
+      expect(pendingRetryOn(failed, "2026-11-18")).toBeNull();
+      // Réussi en dernier, ou rien de noté : rien n'attend.
+      expect(pendingRetryOn([...failed, at("a2", 85, "2026-11-17")], "2026-11-17")).toBeNull();
+      expect(pendingRetryOn([at("a3", null, "2026-11-17", "grading")], "2026-11-17")).toBeNull();
     });
   });
 });

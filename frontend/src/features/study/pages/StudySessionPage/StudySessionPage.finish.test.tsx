@@ -16,9 +16,10 @@ vi.mock("@excalidraw/excalidraw/index.css", () => ({}));
 vi.mock("@excalidraw/mermaid-to-excalidraw", () => ({ parseMermaidToExcalidraw: vi.fn() }));
 vi.mock("mermaid", () => ({ default: { initialize: vi.fn(), render: vi.fn() } }));
 // Le minuteur réel compte des secondes de mur : ce faux annonce 100 s de travail (2 min arrondies).
-vi.mock("../../components/StudyTimer", async () => {
+vi.mock("../../components/StudyTimer", async (importOriginal) => {
   const { useEffect } = await import("react");
   return {
+    ...(await importOriginal<object>()),
     StudyTimer: ({ onWorkedChange }: { onWorkedChange: (seconds: number) => void }) => {
       useEffect(() => onWorkedChange(100));
       return <p>Minuteur de test</p>;

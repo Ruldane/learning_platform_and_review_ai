@@ -1,4 +1,3 @@
-import ELK from "elkjs/lib/elk.bundled.js";
 import type { SkillEdgeView, SkillNodeView } from "./viewTypes";
 
 /** Demande supposée d'une compétence tant que le marché n'a pas été analysé (phase 8). */
@@ -37,7 +36,8 @@ const LAYOUT_OPTIONS = {
 
 /**
  * Place les compétences de gauche à droite, du prérequis vers ce qui en dépend (elkjs `layered`).
- * Les liens vers une compétence inconnue et les boucles sur soi-même sont ignorés.
+ * Les liens vers une compétence inconnue et les boucles sur soi-même sont ignorés. elkjs (lourd)
+ * n'est chargé qu'ici, à la première mise en page : il reste hors du paquet principal.
  */
 export async function layoutGraph(
   nodes: SkillNodeView[],
@@ -48,6 +48,7 @@ export async function layoutGraph(
   const links = edges.filter(
     (edge) => edge.beforeId !== edge.afterId && known.has(edge.beforeId) && known.has(edge.afterId),
   );
+  const { default: ELK } = await import("elkjs/lib/elk.bundled.js");
   const result = await new ELK().layout({
     id: "root",
     layoutOptions: LAYOUT_OPTIONS,

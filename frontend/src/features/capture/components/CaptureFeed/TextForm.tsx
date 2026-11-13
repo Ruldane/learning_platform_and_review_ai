@@ -1,4 +1,4 @@
-import { useId, useState, type FormEvent } from "react";
+import { useId, type FormEvent } from "react";
 import { t } from "@/shared/i18n/t";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
@@ -13,12 +13,14 @@ interface TextFormProps {
   interrupt: QuestionView;
   disabled: boolean;
   onAnswer: (value: unknown) => void;
+  /** Le texte saisi (gardé hors du dialogue) ; vidé à l'envoi et à « Abandonner ». */
+  text: string;
+  onText: (text: string) => void;
 }
 
 /** La zone de texte (taille et libellé du contrat), « Envoyer le texte » et « Abandonner ». */
-export function TextForm({ interrupt, disabled, onAnswer }: TextFormProps) {
+export function TextForm({ interrupt, disabled, onAnswer, text, onText }: TextFormProps) {
   const id = useId();
-  const [text, setText] = useState("");
   const field = interrupt.fields?.find((item) => item.id === FIELD);
   const max = field?.max_length ?? MAX_TEXT;
   const cancel = interrupt.options?.find((option) => option.value === CANCEL);
@@ -26,7 +28,9 @@ export function TextForm({ interrupt, disabled, onAnswer }: TextFormProps) {
 
   const send = (event: FormEvent) => {
     event.preventDefault();
-    if (!disabled && ready) onAnswer({ answers: { [FIELD]: text.trim() } });
+    if (disabled || !ready) return;
+    onAnswer({ answers: { [FIELD]: text.trim() } });
+    onText("");
   };
 
   return (
@@ -41,7 +45,7 @@ export function TextForm({ interrupt, disabled, onAnswer }: TextFormProps) {
         value={text}
         maxLength={max}
         disabled={disabled}
-        onChange={(event) => setText(event.target.value)}
+        onChange={(event) => onText(event.target.value)}
         className={cn(fieldClass, "h-auto min-h-32 py-1.5")}
       />
       <p className="text-xs text-muted-foreground">
@@ -55,7 +59,10 @@ export function TextForm({ interrupt, disabled, onAnswer }: TextFormProps) {
           type="button"
           variant="outline"
           disabled={disabled}
-          onClick={() => onAnswer(cancel?.value ?? CANCEL)}
+          onClick={() => {
+            onAnswer(cancel?.value ?? CANCEL);
+            onText("");
+          }}
         >
           {cancel?.label ?? t("capture.textCard.cancel")}
         </Button>

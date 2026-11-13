@@ -38,6 +38,8 @@ export const summaryOut = (over: Record<string, unknown> = {}) => ({
 
 interface StudyApi {
   summary?: Record<string, unknown>;
+  /** Remplace la réponse de `GET /study-sessions/summary` (une lecture qui change). */
+  summaryReply?: () => Response;
   /** Les lectures successives de `GET /study-sessions/st1` (la dernière est répétée). */
   sessions?: Record<string, unknown>[];
   status?: string;
@@ -53,7 +55,9 @@ export function studyApi(api: StudyApi = {}) {
   const reads = api.sessions ?? [studyOut()];
   const state = { reads: 0, status: api.status ?? "running" };
   const handlers = [
-    http.get(`${API}/study-sessions/summary`, () => HttpResponse.json(api.summary ?? summaryOut())),
+    http.get(`${API}/study-sessions/summary`, () =>
+      api.summaryReply ? api.summaryReply() : HttpResponse.json(api.summary ?? summaryOut()),
+    ),
     http.get(`${API}/study-sessions/st1`, () => {
       if (api.sessionReply) return api.sessionReply();
       const read = reads[Math.min(state.reads, reads.length - 1)];

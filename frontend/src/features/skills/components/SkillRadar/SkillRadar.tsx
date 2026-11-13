@@ -16,16 +16,24 @@ const TICKS = [0, 25, 50, 75, 100];
 
 interface SkillRadarProps {
   domains: DomainScoreView[];
+  /** L'action de l'état vide (règle 15.4 : jamais d'impasse). */
+  emptyAction?: { label: string; onClick: () => void };
 }
 
 /**
  * Radar des scores par domaine, de 0 à 100. Les mêmes scores sont écrits en liste sous le dessin :
  * le dessin seul ne se lit pas au lecteur d'écran.
  */
-export function SkillRadar({ domains }: SkillRadarProps) {
+export function SkillRadar({ domains, emptyAction }: SkillRadarProps) {
   const reduced = useReducedMotion();
   if (domains.length === 0) {
-    return <EmptyState title={t("skills.radar.empty")} description={t("skills.radar.emptyHint")} />;
+    return (
+      <EmptyState
+        title={t("skills.radar.empty")}
+        description={t("skills.radar.emptyHint")}
+        action={emptyAction}
+      />
+    );
   }
   return (
     <section aria-label={t("skills.radar.label")} className="flex flex-col gap-3">

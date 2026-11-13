@@ -1,13 +1,10 @@
-import { useEffect, useRef } from "react";
-import { Link } from "react-router";
 import { errorMessage } from "@/shared/api/errors";
 import { t } from "@/shared/i18n/t";
-import { Button, buttonVariants } from "@/shared/ui/button";
 import { ErrorState } from "@/shared/ui/states/ErrorState";
 import { LoadingState } from "@/shared/ui/states/LoadingState";
-import { QuizResult } from "../../components/QuizResult";
 import { useAttempt } from "../../hooks/useAttempt";
 import { toAttemptResultView } from "../../toView";
+import { AttemptResult } from "./AttemptResult";
 import { GradingFailed } from "./GradingFailed";
 import { GradingLate } from "./GradingLate";
 import type { TakenAttempt } from "./takenAttempt";
@@ -19,6 +16,8 @@ interface AttemptPanelProps {
   refreshing: boolean;
   /** Message d'un renvoi refusé. */
   error: string | null;
+  /** Un renvoi est en route : « Renvoyer mes réponses » est coupé. */
+  sending: boolean;
   gradePollMs: number;
   onResend: () => void;
   onBack: () => void;
@@ -26,18 +25,13 @@ interface AttemptPanelProps {
 
 /**
  * Après l'envoi : la note se prépare (relue toutes les 2 s, 90 fois), puis le résultat ; une note
- * échouée propose de renvoyer les réponses ; une note trop longue propose de la relire.
+ * échouée propose de renvoyer les réponses ; une note trop longue propose de la relire. Après un
+ * échec, « Refaire le quiz » n'apparaît qu'une fois la date du nouvel essai venue (F9).
  */
 export function AttemptPanel(props: AttemptPanelProps) {
-  const { quizId, taken, refreshing, error, gradePollMs, onResend, onBack } = props;
+  const { quizId, taken, refreshing, error, sending, gradePollMs, onResend, onBack } = props;
   const { query, budget } = useAttempt(quizId, taken.attemptId, gradePollMs);
-  const result = useRef<HTMLDivElement>(null);
   const attempt = query.data;
-  const graded = attempt?.status === "graded";
-  // Le résultat arrive à la place du formulaire : le focus y va pour que la note soit lue.
-  useEffect(() => {
-    if (graded) result.current?.focus();
-  }, [graded]);
 
   if (query.isError) {
     return <ErrorState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />;
@@ -60,22 +54,17 @@ export function AttemptPanel(props: AttemptPanelProps) {
       <GradingFailed
         canResend={taken.drafts !== null}
         error={error}
+        sending={sending}
         onResend={onResend}
         onBack={onBack}
       />
     );
   }
   return (
-    <div ref={result} tabIndex={-1} className="flex flex-col gap-4 outline-none">
-      <QuizResult result={toAttemptResultView(attempt, taken.questions)} />
-      <div className="flex flex-wrap gap-2">
-        <Button disabled={refreshing} onClick={onBack}>
-          {t("quiz.page.again")}
-        </Button>
-        <Link to="/etudier/quiz" className={buttonVariants({ variant: "outline" })}>
-          {t("quiz.page.allQuizzes")}
-        </Link>
-      </div>
-    </div>
+    <AttemptResult
+      result={toAttemptResultView(attempt, taken.questions)}
+      refreshing={refreshing}
+      onBack={onBack}
+    />
   );
 }

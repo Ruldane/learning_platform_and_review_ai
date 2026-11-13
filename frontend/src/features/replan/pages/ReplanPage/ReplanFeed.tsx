@@ -7,8 +7,14 @@ import type { ReplanRun } from "../../hooks/useReplanRun";
 /**
  * Le fil de la replanification : bulles du Stratège et cartes de question (`replan_option`,
  * `accept_replan`). Une réponse part par la reprise de la session ; le champ de message reste
- * ouvert tant que la session vit.
+ * ouvert tant que la session vit. Sur `accept_replan`, le bouton cliqué décide même avec une note
+ * (`{ action, note }`) ; « Répondre » seul demande une autre proposition.
  */
+const withNote = (action: string, answers: Record<string, string>) => ({
+  action,
+  note: answers.note ?? "",
+});
+
 export function ReplanFeed({ run }: { run: ReplanRun }) {
   const { stream, actions, over } = run;
   return (
@@ -26,6 +32,7 @@ export function ReplanFeed({ run }: { run: ReplanRun }) {
             answered={answered}
             disabled={actions.pending || !isAwaitingAnswer(stream.view, interrupt.interrupt_id)}
             onAnswer={(value) => void actions.resume(interrupt.interrupt_id, value)}
+            optionWithAnswers={interrupt.kind === "accept_replan" ? withNote : undefined}
           />
         )}
       />

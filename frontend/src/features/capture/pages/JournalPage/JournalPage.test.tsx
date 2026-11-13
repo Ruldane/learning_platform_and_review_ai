@@ -84,6 +84,22 @@ describe("JournalPage", () => {
     await waitFor(() => expect(queries.some((query) => query.get("kind") === "quiz")).toBe(true));
   });
 
+  it("keeps the filter and its focus while the new type loads (revue finale 5, C-m2)", async () => {
+    const { user } = setup([
+      { entries: [entryOut("e1")], next_before: null },
+      { entries: [entryOut("e2", { kind: "quiz", text: "Quiz réussi" })], next_before: null },
+    ]);
+    await screen.findByText("Entrée e1");
+    const filter = screen.getByLabelText("Type d'entrée");
+    filter.focus();
+    await user.selectOptions(filter, "quiz");
+    // Pendant la lecture du nouveau type, la liste n'est pas démontée : le focus reste au filtre.
+    expect(screen.getByLabelText("Type d'entrée")).toBe(filter);
+    expect(filter).toHaveFocus();
+    expect(await screen.findByText("Quiz réussi")).toBeInTheDocument();
+    expect(filter).toHaveFocus();
+  });
+
   it("loads the next page from next_before", async () => {
     const { queries, user } = setup([
       { entries: [entryOut("e1", { occurred_on: "2026-11-24" })], next_before: "e1" },

@@ -10,7 +10,7 @@ import { useStartCapture } from "./hooks/useStartCapture";
  * n'est nécessaire (le raccourci vit dans `CaptureOverlay`).
  */
 export function CaptureDialogBody({ createSocket }: { createSocket?: SocketFactory }) {
-  const { sessionId, follow, restart, closeDialog } = useCaptureDialog();
+  const { sessionId, follow, restart, closeDialog, draft, setDraft } = useCaptureDialog();
   const capture = useStartCapture(follow);
   return (
     <CommandCapture open onOpenChange={(open) => (open ? undefined : closeDialog())}>
@@ -24,6 +24,8 @@ export function CaptureDialogBody({ createSocket }: { createSocket?: SocketFacto
         />
       ) : (
         <CaptureInput
+          draft={draft}
+          onDraft={setDraft}
           busy={capture.pending}
           uploading={capture.uploading}
           error={capture.error}

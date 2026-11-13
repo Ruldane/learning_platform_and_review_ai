@@ -34,3 +34,17 @@ export function formatMinutes(total: number): string {
   if (hours === 0) return `${rest} min`;
   return rest === 0 ? `${hours} h` : `${hours} h ${String(rest).padStart(2, "0")}`;
 }
+
+/** Le jour `AAAA-MM-JJ` d'un instant, dans le fuseau du poste (aujourd'hui par défaut). */
+export function localDay(at: Date = new Date()): string {
+  const month = String(at.getMonth() + 1).padStart(2, "0");
+  const day = String(at.getDate()).padStart(2, "0");
+  return `${at.getFullYear()}-${month}-${day}`;
+}
+
+/** Le jour `AAAA-MM-JJ` situé `days` jours après `iso` (calcul en UTC : pas de saut d'heure). */
+export function addDays(iso: string, days: number): string {
+  const date = parseDay(iso);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}

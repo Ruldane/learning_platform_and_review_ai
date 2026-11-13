@@ -35,6 +35,7 @@ export const skills = {
     node: "{name} : {level}",
     empty: "Aucune compétence sur la carte",
     emptyHint: "Elles apparaissent avec ton premier programme.",
+    emptyAction: "Créer un objectif",
     a11y: {
       node: "Entrée ou Espace ouvre le détail de la compétence.",
       edge: "Lien de prérequis.",
@@ -53,6 +54,7 @@ export const skills = {
     score: "{domain} : {score} sur 100",
     empty: "Aucun domaine à afficher",
     emptyHint: "Le radar se remplit avec tes premiers acquis.",
+    emptyAction: "Créer un objectif",
   },
   progress: {
     label: "Progression par semaine",
@@ -63,6 +65,7 @@ export const skills = {
     latest: "Dernier relevé, semaine du {day} : {counts} · score {score} sur 100",
     empty: "Aucun relevé pour l'instant",
     emptyHint: "Un relevé est pris chaque semaine.",
+    emptyAction: "Commencer une session",
   },
   drawer: {
     domain: "Domaine : {domain}",
@@ -92,5 +95,6 @@ export const skills = {
     gapMany: "Manque {gap} niveaux",
     empty: "Aucune compétence à comparer",
     emptyHint: "La cible se remplit avec le programme de ton objectif.",
+    emptyAction: "Voir mes objectifs",
   },
 } as const;

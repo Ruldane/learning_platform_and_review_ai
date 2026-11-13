@@ -25,5 +25,9 @@ export interface VersionView {
   /** Texte du bilan hebdomadaire qui a déclenché la version, ou `null`. */
   review: string | null;
   diff: PlanDiffView | null;
+  /** Durée du programme en semaines avant et après la version ; `null` sans diff. */
+  weeks: { before: number; after: number } | null;
   weekLoads: WeekLoadView[];
+  /** La session de replanification qui a produit la version, ou `null`. */
+  sessionId: string | null;
 }

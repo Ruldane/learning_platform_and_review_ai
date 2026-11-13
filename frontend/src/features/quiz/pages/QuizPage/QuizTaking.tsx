@@ -1,13 +1,11 @@
 import { useMemo, useState } from "react";
-import { QuizForm } from "../../components/QuizForm";
 import type { AnswerDraft, QuestionView } from "../../components/viewTypes";
 import { useSubmitAttempt } from "../../hooks/useSubmitAttempt";
-import { toQuestionViews } from "../../toView";
+import { pendingRetryOn, toQuestionViews } from "../../toView";
 import type { QuizOut } from "../../types";
-import { AttemptHistory } from "./AttemptHistory";
 import { AttemptPanel } from "./AttemptPanel";
+import { QuizEntry } from "./QuizEntry";
 import type { TakenAttempt } from "./takenAttempt";
-import { InlineError } from "@/shared/ui/states/InlineError";
 
 interface QuizTakingProps {
   quiz: QuizOut;
@@ -27,7 +25,8 @@ function resumeGrading(quiz: QuizOut): TakenAttempt | null {
 /**
  * Un quiz prêt : le formulaire, puis, une fois les réponses envoyées, la note et le résultat. Les
  * questions jointes au résultat sont celles de l'envoi : le quiz relu après la note, lui, montre
- * déjà l'ordre du prochain essai (F27).
+ * déjà l'ordre du prochain essai (F27). Après un échec, tant que la date du nouvel essai n'est pas
+ * venue, la date remplace le formulaire (le back refuserait l'envoi : 409 `retry_too_soon`).
  */
 export function QuizTaking({ quiz, refreshing, gradePollMs }: QuizTakingProps) {
   const submitter = useSubmitAttempt(quiz.id);
@@ -53,10 +52,12 @@ export function QuizTaking({ quiz, refreshing, gradePollMs }: QuizTakingProps) {
   if (taken) {
     return (
       <AttemptPanel
+        key={taken.attemptId}
         quizId={quiz.id}
         taken={taken}
         refreshing={refreshing}
         error={submitter.error}
+        sending={submitter.pending}
         gradePollMs={gradePollMs}
         onResend={resend}
         onBack={back}
@@ -64,15 +65,14 @@ export function QuizTaking({ quiz, refreshing, gradePollMs }: QuizTakingProps) {
     );
   }
   return (
-    <>
-      <AttemptHistory attempts={quiz.attempts} />
-      {submitter.error ? <InlineError message={submitter.error} /> : null}
-      <QuizForm
-        key={round}
-        questions={questions}
-        disabled={submitter.pending}
-        onSubmit={(drafts) => void send(drafts)}
-      />
-    </>
+    <QuizEntry
+      attempts={quiz.attempts}
+      questions={questions}
+      retryOn={pendingRetryOn(quiz.attempts)}
+      error={submitter.error}
+      pending={submitter.pending}
+      round={round}
+      onSubmit={(drafts) => void send(drafts)}
+    />
   );
 }

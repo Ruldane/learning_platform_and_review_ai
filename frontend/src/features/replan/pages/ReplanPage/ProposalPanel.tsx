@@ -6,8 +6,8 @@ import { ProposalBlock } from "./ProposalBlock";
 
 /**
  * La proposition qui attend une réponse : le bilan de la semaine, les changements (ajoutées,
- * retirées, déplacées) et la charge de chaque semaine avant et après, sous son plafond. La réponse
- * se donne dans la carte du fil.
+ * retirées, déplacées, et la durée du programme quand l'échéance bouge) et la charge de chaque
+ * semaine avant et après, sous son plafond. La réponse se donne dans la carte du fil.
  */
 export function ProposalPanel({ version }: { version: VersionView }) {
   return (
@@ -25,6 +25,14 @@ export function ProposalPanel({ version }: { version: VersionView }) {
       ) : null}
       {version.diff ? (
         <ProposalBlock title={t("replan.proposal.changes")}>
+          {version.weeks && version.weeks.before !== version.weeks.after ? (
+            <p className="text-sm font-medium">
+              {t("replan.proposal.weeks", {
+                before: version.weeks.before,
+                after: version.weeks.after,
+              })}
+            </p>
+          ) : null}
           <PlanDiff diff={version.diff} />
         </ProposalBlock>
       ) : null}

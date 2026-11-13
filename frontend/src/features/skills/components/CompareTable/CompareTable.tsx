@@ -9,16 +9,22 @@ interface CompareTableProps {
   /** Part des compétences cibles atteintes, en pourcentage entier. */
   coverage: number;
   targetLabel: string;
+  /** L'action de l'état vide (règle 15.4 : jamais d'impasse). */
+  emptyAction?: { label: string; onClick: () => void };
 }
 
 /**
  * Comparaison entre mon niveau et celui du poste cible : couverture en tête, puis les compétences
  * du plus grand écart au plus petit (à écart égal, l'ordre reçu est gardé).
  */
-export function CompareTable({ rows, coverage, targetLabel }: CompareTableProps) {
+export function CompareTable({ rows, coverage, targetLabel, emptyAction }: CompareTableProps) {
   if (rows.length === 0) {
     return (
-      <EmptyState title={t("skills.compare.empty")} description={t("skills.compare.emptyHint")} />
+      <EmptyState
+        title={t("skills.compare.empty")}
+        description={t("skills.compare.emptyHint")}
+        action={emptyAction}
+      />
     );
   }
   return (

@@ -104,4 +104,62 @@ describe("StudyTimer", () => {
       .filter((name) => /^(transition|animate|duration)/.test(name));
     expect(bare).toEqual([]);
   });
+
+  describe("kept across a reload (revue finale 5, E-I2 et E-m8)", () => {
+    const key = "study-timer:st1";
+    afterEach(() => window.sessionStorage.clear());
+
+    it("takes the worked time back after an unmount", () => {
+      const first = render(
+        <StudyTimer workMinutes={50} breakMinutes={10} onWorkedChange={vi.fn()} storageKey={key} />,
+      );
+      pass(10 * MINUTE);
+      first.unmount();
+      const onWorked = vi.fn();
+      render(
+        <StudyTimer
+          workMinutes={50}
+          breakMinutes={10}
+          onWorkedChange={onWorked}
+          storageKey={key}
+        />,
+      );
+      expect(lastWorked(onWorked)).toBe(600);
+      expect(screen.getByRole("timer")).toHaveTextContent("40:00");
+      pass(MINUTE);
+      expect(lastWorked(onWorked)).toBe(660);
+    });
+
+    it("starts fresh when the stored timer is unreadable or the storage refuses", () => {
+      window.sessionStorage.setItem(key, "{pas du json");
+      const onWorked = vi.fn();
+      const { unmount } = render(
+        <StudyTimer
+          workMinutes={50}
+          breakMinutes={10}
+          onWorkedChange={onWorked}
+          storageKey={key}
+        />,
+      );
+      expect(screen.getByRole("timer")).toHaveTextContent("50:00");
+      unmount();
+      const spy = vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+        throw new Error("refusé");
+      });
+      render(
+        <StudyTimer workMinutes={50} breakMinutes={10} onWorkedChange={vi.fn()} storageKey={key} />,
+      );
+      expect(screen.getByRole("timer")).toHaveTextContent("50:00");
+      spy.mockRestore();
+    });
+
+    it("stops the clock while halted", () => {
+      const onWorked = vi.fn();
+      render(<StudyTimer workMinutes={50} breakMinutes={10} onWorkedChange={onWorked} halted />);
+      pass(5 * MINUTE);
+      expect(screen.getByRole("timer")).toHaveTextContent("50:00");
+      expect(onWorked).not.toHaveBeenCalled();
+      expect(screen.getByRole("button", { name: "Reprendre" })).toBeDisabled();
+    });
+  });
 });

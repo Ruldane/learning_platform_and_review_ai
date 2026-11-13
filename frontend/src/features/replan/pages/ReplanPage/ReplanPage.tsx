@@ -7,7 +7,7 @@ import { ErrorState } from "@/shared/ui/states/ErrorState";
 import { LoadingState } from "@/shared/ui/states/LoadingState";
 import { useVersions } from "../../hooks/useVersions";
 import { useWaitingReplan } from "../../hooks/useWaitingReplan";
-import { pendingVersion, toVersionView } from "../../toView";
+import { decisionOf, pendingVersion, toVersionView } from "../../toView";
 import { ProposalPanel } from "./ProposalPanel";
 import { ReplanHistory } from "./ReplanHistory";
 import { ReplanRun } from "./ReplanRun";
@@ -17,7 +17,8 @@ import { ReplanStart } from "./ReplanStart";
  * Replanification d'un programme (`/apprendre/programme/:programId/replanification`). Sans
  * replanification en cours : le formulaire (heures disponibles, message). Avec une : la
  * proposition (changements, charge avant et après, plafond), le fil du Stratège et la carte pour
- * accepter ou refuser. Une replanification qui attend déjà une réponse est rejointe d'office.
+ * accepter ou refuser. Une replanification qui attend déjà une réponse est rejointe d'office, et
+ * reste suivie après sa fin (elle n'attend plus, mais son message de fin doit rester à l'écran).
  */
 export function ReplanPage({ createSocket }: { createSocket?: SocketFactory }) {
   const { programId = "" } = useParams();
@@ -26,6 +27,9 @@ export function ReplanPage({ createSocket }: { createSocket?: SocketFactory }) {
   // `undefined` : on suit la session qui attend (si elle existe) ; `null` : nouvelle demande.
   const [followed, setFollowed] = useState<string | null | undefined>(undefined);
   const sessionId = followed === undefined ? (waiting.data ?? null) : followed;
+  // La session rejointe est figée (ajustement pendant le rendu, sans effet) : la relecture de fin,
+  // où plus rien n'attend, ne la fait pas oublier.
+  if (followed === undefined && waiting.data) setFollowed(waiting.data);
   const views = useMemo(() => versions.data?.map(toVersionView), [versions.data]);
   const proposal = sessionId && views ? pendingVersion(views) : null;
 
@@ -51,10 +55,12 @@ export function ReplanPage({ createSocket }: { createSocket?: SocketFactory }) {
           sessionId={sessionId}
           programId={programId}
           onAgain={() => setFollowed(null)}
+          decision={decisionOf(views, sessionId)}
           createSocket={createSocket}
         />
       ) : null}
       <ReplanHistory
+        programId={programId}
         versions={views}
         loading={versions.isPending}
         error={versions.error}

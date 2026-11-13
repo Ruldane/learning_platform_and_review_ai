@@ -1,5 +1,5 @@
 /** Types de vue du tableau : locaux, sans lien avec `shared/api` (D34). */
-export type BoardKind = "domain_map" | "prerequisites" | "timeline" | "comparison";
+export type BoardKind = "domain_map" | "prerequisites" | "timeline" | "comparison" | "lesson";
 
 export interface BoardStateView {
   id: string;
@@ -10,8 +10,18 @@ export interface BoardStateView {
   mermaid: string;
   /** Scène Excalidraw enregistrée (états de January) ; `null` tant que le front doit convertir. */
   scene: Record<string, unknown> | null;
-  author: "scribe" | "user";
+  author: "scribe" | "tutor" | "user";
   createdAt: string;
+}
+
+/**
+ * Textes du tableau propres à la page qui l'affiche (le Tuteur dessine aussi, pas seulement le
+ * Scribe) ; absents, ceux du Conseil.
+ */
+export interface BoardLabels {
+  label: string;
+  empty: string;
+  drawing: string;
 }
 
 /** Les modifications de January : la scène complète et la note qui les résume pour les agents. */

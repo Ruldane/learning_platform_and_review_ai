@@ -1,10 +1,10 @@
 import { useId } from "react";
-import { useNavigate } from "react-router";
 import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
-import { StudyTimer } from "../../components/StudyTimer";
+import { StudyTimer, timerKey } from "../../components/StudyTimer";
 import type { StudyRun } from "../../hooks/useStudyRun";
 import type { StudySessionOut } from "../../types";
+import { NewBlockStart } from "./NewBlockStart";
 import { SessionTitle } from "./SessionTitle";
 
 interface SessionHeaderProps {
@@ -18,11 +18,11 @@ interface SessionHeaderProps {
 /**
  * En-tête de la session : la leçon, le mode, le minuteur et « Terminer ». « Terminer » n'est actif
  * que lorsque le Tuteur attend une réponse ; sinon une phrase dit pourquoi. Une session du Tuteur
- * arrêtée (`interrupted`) se dit ici, avec « Terminer » (le temps est rangé) et un nouveau départ.
+ * arrêtée (`interrupted`) se dit ici, avec « Terminer » (le temps est rangé) et un nouveau départ ;
+ * le minuteur s'arrête tant que la session est arrêtée.
  */
 export function SessionHeader(props: SessionHeaderProps) {
   const { session, run, finishing, workMinutes, breakMinutes } = props;
-  const navigate = useNavigate();
   const hintId = useId();
   const interrupted = session.status === "interrupted";
   const hinted = !run.canFinish && !finishing && !interrupted;
@@ -44,6 +44,8 @@ export function SessionHeader(props: SessionHeaderProps) {
             workMinutes={workMinutes}
             breakMinutes={breakMinutes}
             onWorkedChange={run.onWorkedChange}
+            storageKey={timerKey(session.id)}
+            halted={interrupted}
           />
         )}
         <Button
@@ -53,11 +55,7 @@ export function SessionHeader(props: SessionHeaderProps) {
         >
           {t("study.session.finish")}
         </Button>
-        {interrupted ? (
-          <Button variant="outline" onClick={() => void navigate("/etudier/session")}>
-            {t("study.session.newBlock")}
-          </Button>
-        ) : null}
+        {interrupted ? <NewBlockStart mode={session.mode} /> : null}
       </div>
       {hinted ? (
         <p id={hintId} className="text-sm text-muted-foreground">

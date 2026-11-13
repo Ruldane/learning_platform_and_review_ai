@@ -1,4 +1,4 @@
-import { useId, useState, type FormEvent, type KeyboardEvent } from "react";
+import { useId, type FormEvent, type KeyboardEvent } from "react";
 import { t } from "@/shared/i18n/t";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
@@ -6,8 +6,12 @@ import { fieldClass } from "@/shared/ui/fieldClass";
 import { InlineError } from "@/shared/ui/states/InlineError";
 import { MAX_TEXT, MAX_URL, detectSource } from "../source";
 import type { CaptureSource } from "../viewTypes";
+import { FieldNotes } from "./FieldNotes";
 
 interface LinkNoteFormProps {
+  /** Le texte saisi (gardé hors du dialogue : une fermeture ne le perd pas). */
+  value: string;
+  onValueChange: (value: string) => void;
   busy: boolean;
   /** Le fichier est en cours d'import : le bouton garde son libellé. */
   uploading: boolean;
@@ -27,11 +31,12 @@ const isSendShortcut = (event: KeyboardEvent) =>
 
 /**
  * Le champ unique : un lien (adresse `http(s)://` seule) ou une note. Le focus y arrive d'office.
- * La phrase sous le champ dit comment il sera lu.
+ * La phrase sous le champ dit comment il sera lu ; un compteur montre la limite de 20 000
+ * caractères, et un lien de plus de 2 048 caractères est refusé en le disant.
  */
-export function LinkNoteForm({ busy, uploading, error, onSubmit }: LinkNoteFormProps) {
+export function LinkNoteForm(props: LinkNoteFormProps) {
+  const { value, onValueChange, busy, uploading, error, onSubmit } = props;
   const id = useId();
-  const [value, setValue] = useState("");
   const source = detectSource(value);
   const tooLong = source?.kind === "url" ? source.url.length > MAX_URL : false;
 
@@ -58,14 +63,12 @@ export function LinkNoteForm({ busy, uploading, error, onSubmit }: LinkNoteFormP
         value={value}
         maxLength={MAX_TEXT}
         disabled={busy}
-        aria-describedby={`${id}-hint`}
-        onChange={(event) => setValue(event.target.value)}
+        aria-describedby={`${id}-hint ${id}-count`}
+        onChange={(event) => onValueChange(event.target.value)}
         onKeyDown={onKeyDown}
         className={cn(fieldClass, "h-auto min-h-24 py-1.5")}
       />
-      <p id={`${id}-hint`} role="status" className="text-xs text-muted-foreground">
-        {tooLong ? t("capture.input.tooLong") : hintOf(source)}
-      </p>
+      <FieldNotes id={id} count={value.length} tooLong={tooLong} hint={hintOf(source)} />
       {error ? <InlineError message={error} /> : null}
       <Button type="submit" disabled={busy || source === null || tooLong} className="self-start">
         {busy && !uploading ? t("capture.input.submitting") : t("capture.input.submit")}

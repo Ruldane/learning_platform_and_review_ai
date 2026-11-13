@@ -12,6 +12,7 @@ interface AnswerInputsProps {
   onDraft: (draft: Record<string, string>) => void;
   disabled: boolean;
   onAnswer: (value: unknown) => void;
+  optionWithAnswers?: (value: string, answers: Record<string, string>) => unknown;
 }
 
 /** Ce que la carte ouverte propose : des champs, des options, ou à défaut un texte libre. */
@@ -23,11 +24,13 @@ export function AnswerInputs({
   onDraft,
   disabled,
   onAnswer,
+  optionWithAnswers,
 }: AnswerInputsProps) {
   // Des réponses déjà saisies partent avec l'option (« Lancer la recherche ») : jamais perdues.
   const pickOption = (value: string) => {
     const answers = fieldAnswers(fields, draft);
-    onAnswer(Object.keys(answers).length > 0 ? { answers } : value);
+    if (Object.keys(answers).length === 0) onAnswer(value);
+    else onAnswer(optionWithAnswers ? optionWithAnswers(value, answers) : { answers });
   };
   return (
     <>

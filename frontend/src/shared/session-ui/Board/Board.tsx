@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { t } from "@/shared/i18n/t";
 import { EmptyState } from "@/shared/ui/states/EmptyState";
-import type { BoardEdit, BoardStateView } from "../boardTypes";
+import type { BoardEdit, BoardLabels, BoardStateView } from "../boardTypes";
 import { BoardStateList } from "./BoardStateList";
 import { BoardWorkspace } from "./BoardWorkspace";
 
@@ -17,6 +17,8 @@ export interface BoardProps {
   onSendEdit: (boardId: string, edit: BoardEdit) => void | Promise<void>;
   sending: boolean;
   readOnly?: boolean;
+  /** Textes propres à la page (titre, tableau vide, dessin en cours) ; absents, ceux du Scribe. */
+  labels?: BoardLabels;
 }
 
 function latestOf(states: readonly BoardStateView[]): BoardStateView | undefined {
@@ -33,6 +35,11 @@ function latestOf(states: readonly BoardStateView[]): BoardStateView | undefined
  */
 export function Board(props: BoardProps) {
   const { states, activeId, onSelect, onSendEdit, sending, readOnly = false } = props;
+  const labels = props.labels ?? {
+    label: t("session.board.label"),
+    empty: t("session.board.empty"),
+    drawing: t("session.board.converting"),
+  };
   const [seen, setSeen] = useState<ReadonlySet<string>>(new Set());
   const onSeen = useCallback(
     (id: string) => setSeen((prev) => (prev.has(id) ? prev : new Set(prev).add(id))),
@@ -48,12 +55,12 @@ export function Board(props: BoardProps) {
   const active = find(activeId) ?? find(editing) ?? latestOf(states);
 
   if (!active) {
-    return <EmptyState title={t("session.board.label")} description={t("session.board.empty")} />;
+    return <EmptyState title={labels.label} description={labels.empty} />;
   }
   return (
     // Mise en page selon la largeur de la zone (et non de l'écran) : dans la colonne de droite du
     // Conseil, la liste des états passe au-dessus du canevas au lieu de lui prendre 14 rem.
-    <section aria-label={t("session.board.label")} className="@container">
+    <section aria-label={labels.label} className="@container">
       <div className="grid gap-4 @2xl:grid-cols-[14rem_minmax(0,1fr)]">
         <BoardStateList states={states} activeId={active.id} onSelect={onSelect} />
         <BoardWorkspace
@@ -65,6 +72,7 @@ export function Board(props: BoardProps) {
           onSendEdit={onSendEdit}
           onSeen={onSeen}
           onDirtyChange={onDirtyChange}
+          drawingLabel={labels.drawing}
         />
       </div>
     </section>

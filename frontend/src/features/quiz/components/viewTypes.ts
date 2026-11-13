@@ -36,7 +36,7 @@ export interface QuestionResultView {
 /** Ce qui suit un échec : révisions ajoutées, nouvel essai, tâches sans place dans le budget. */
 export interface FollowupView {
   revisionTasks: string[];
-  /** Jour `AAAA-MM-JJ` du nouvel essai ; `null` quand il n'y en a pas. */
+  /** Jour `AAAA-MM-JJ` du nouvel essai, s'il est à venir ; `null` sinon. */
   retryOn: string | null;
   /** Révisions qu'aucune semaine du budget n'a pu accueillir. */
   unplaced: number;
@@ -70,6 +70,6 @@ export interface QuizSummaryView {
   status: QuizStatusView | null;
   /** Meilleur score en pourcentage ; `null` tant qu'aucune tentative n'est notée. */
   bestScore: number | null;
-  /** Jour `AAAA-MM-JJ` du prochain essai possible après un échec. */
+  /** Jour `AAAA-MM-JJ` du prochain essai après un échec, s'il est à venir (sinon `null`). */
   retryOn: string | null;
 }

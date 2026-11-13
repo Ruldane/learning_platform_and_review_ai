@@ -19,10 +19,12 @@ export function submitErrorMessage(error: unknown): string {
  * Envoi des réponses d'un quiz (`POST /quizzes/{id}/attempts`) : renvoie l'identifiant de la
  * tentative, ou `null` si l'envoi est refusé (le message est dans `error`). Un seul envoi à la
  * fois, posé de façon synchrone : deux clics dans le même instant n'envoient qu'une tentative. Une
- * tentative acceptée garde le verrou jusqu'à `release` (retour au formulaire).
+ * tentative acceptée garde le verrou jusqu'à `release` (retour au formulaire, renvoi) ; `release`
+ * ne fait rien tant qu'un envoi est en route : un double clic sur « Renvoyer » n'en part qu'un.
  */
 export function useSubmitAttempt(quizId: string) {
   const sending = useRef(false);
+  const inFlight = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const mutation = useMutation({
     mutationFn: (answers: AnswerBody[]) => createAttempt(quizId, answers),
@@ -32,6 +34,7 @@ export function useSubmitAttempt(quizId: string) {
   const submit = async (answers: AnswerBody[]): Promise<string | null> => {
     if (sending.current) return null;
     sending.current = true;
+    inFlight.current = true;
     setError(null);
     try {
       const started = await mutateAsync(answers);
@@ -40,9 +43,12 @@ export function useSubmitAttempt(quizId: string) {
       setError(submitErrorMessage(failure));
       sending.current = false;
       return null;
+    } finally {
+      inFlight.current = false;
     }
   };
   const release = () => {
+    if (inFlight.current) return;
     sending.current = false;
     setError(null);
   };

@@ -8,6 +8,8 @@ import { LEVELS, chartParts } from "./chartParts";
 
 interface ProgressChartProps {
   points: HistoryPointView[];
+  /** L'action de l'état vide (règle 15.4 : jamais d'impasse). */
+  emptyAction?: { label: string; onClick: () => void };
 }
 
 function chartRows(points: HistoryPointView[]) {
@@ -25,11 +27,15 @@ function countsText(counts: LevelCounts): string {
  * à gauche) et le score de 0 à 100 (en pointillés, à droite). Le dernier relevé est écrit sous le
  * dessin pour les lecteurs d'écran ; le tracé ne s'anime pas quand le mouvement est réduit.
  */
-export function ProgressChart({ points }: ProgressChartProps) {
+export function ProgressChart({ points, emptyAction }: ProgressChartProps) {
   const reduced = useReducedMotion();
   if (points.length === 0) {
     return (
-      <EmptyState title={t("skills.progress.empty")} description={t("skills.progress.emptyHint")} />
+      <EmptyState
+        title={t("skills.progress.empty")}
+        description={t("skills.progress.emptyHint")}
+        action={emptyAction}
+      />
     );
   }
   const rows = chartRows(points);

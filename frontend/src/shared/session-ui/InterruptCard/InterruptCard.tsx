@@ -15,6 +15,11 @@ interface InterruptCardProps {
    * clique après saisie envoie ces réponses, jamais perdues) ; sinon le texte libre.
    */
   onAnswer: (value: unknown) => void;
+  /**
+   * Valeur envoyée quand une option est cliquée alors que des champs sont remplis ; par défaut
+   * `{ answers }`. Sert quand l'option doit garder le dessus (« Accepter » avec une note).
+   */
+  optionWithAnswers?: (value: string, answers: Record<string, string>) => unknown;
 }
 
 /**
@@ -30,6 +35,7 @@ export function InterruptCard({
   answered,
   disabled = false,
   onAnswer,
+  optionWithAnswers,
 }: InterruptCardProps) {
   const questionId = useId();
   const fields = interrupt.fields ?? [];
@@ -59,6 +65,7 @@ export function InterruptCard({
         onDraft={setDraft}
         disabled={disabled}
         onAnswer={onAnswer}
+        optionWithAnswers={optionWithAnswers}
       />
     </section>
   );

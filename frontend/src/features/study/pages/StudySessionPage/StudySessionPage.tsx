@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { ApiError, errorMessage } from "@/shared/api/errors";
+import { errorMessage } from "@/shared/api/errors";
 import { t } from "@/shared/i18n/t";
 import type { SocketFactory } from "@/shared/realtime/socket";
 import { EmptyState } from "@/shared/ui/states/EmptyState";
-import { ErrorState } from "@/shared/ui/states/ErrorState";
+import { InlineError } from "@/shared/ui/states/InlineError";
 import { LoadingState } from "@/shared/ui/states/LoadingState";
 import { SUMMARY_POLL_MS, useStudySession } from "../../hooks/useStudySession";
+import { LoadFailed } from "./LoadFailed";
 import { StudyEnd } from "./StudyEnd";
 import { StudyRunning } from "./StudyRunning";
 
@@ -20,7 +21,8 @@ interface StudySessionPageProps {
 /**
  * Une session d'étude (`/etudier/session/:studyId`). Ouverte : le Tuteur, le minuteur et le
  * tableau. Terminée : le bilan (relu jusqu'à `finished` après « Terminer »). Abandonnée ou
- * introuvable : un état vide qui ramène au départ.
+ * introuvable : un état vide qui ramène au départ. Une relecture ratée en arrière-plan se dit en
+ * ligne, sans remplacer la page (le minuteur reste monté).
  */
 export function StudySessionPage({
   createSocket,
@@ -33,19 +35,14 @@ export function StudySessionPage({
   const home = () => void navigate("/etudier/session");
 
   if (query.isPending) return <LoadingState label={t("study.session.loading")} />;
-  if (query.isError) {
-    if (query.error instanceof ApiError && query.error.status === 404) {
-      return (
-        <EmptyState
-          title={t("study.session.notFoundTitle")}
-          description={t("study.session.notFoundDescription")}
-          action={{ label: t("study.session.back"), onClick: home }}
-        />
-      );
-    }
-    return <ErrorState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />;
+  if (query.isError && query.data === undefined) {
+    return <LoadFailed error={query.error} onRetry={() => void query.refetch()} onHome={home} />;
   }
   const session = query.data;
+  const failure =
+    query.isError && !query.isFetching ? (
+      <InlineError message={errorMessage(query.error)} onRetry={() => void query.refetch()} />
+    ) : null;
   if (session.status === "finished") return <StudyEnd session={session} />;
   if (session.status === "cancelled") {
     return (
@@ -57,17 +54,20 @@ export function StudySessionPage({
     );
   }
   return (
-    <StudyRunning
-      key={session.id}
-      session={session}
-      finishing={finishing}
-      onFinishing={() => setFinishing(true)}
-      summaryLate={finishing && budget.exhausted}
-      onRetrySummary={() => {
-        budget.restart();
-        void query.refetch();
-      }}
-      createSocket={createSocket}
-    />
+    <div className="flex flex-col gap-4">
+      {failure}
+      <StudyRunning
+        key={session.id}
+        session={session}
+        finishing={finishing}
+        onFinishing={() => setFinishing(true)}
+        summaryLate={finishing && budget.exhausted}
+        onRetrySummary={() => {
+          budget.restart();
+          void query.refetch();
+        }}
+        createSocket={createSocket}
+      />
+    </div>
   );
 }

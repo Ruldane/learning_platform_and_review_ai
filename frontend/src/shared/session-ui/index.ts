@@ -3,7 +3,7 @@ export type { AgentIdentity, AgentSlug } from "./agentColors";
 export { AgentBubble } from "./AgentBubble";
 export { Board } from "./Board";
 export type { BoardProps } from "./Board";
-export type { BoardEdit, BoardKind, BoardStateView } from "./boardTypes";
+export type { BoardEdit, BoardKind, BoardLabels, BoardStateView } from "./boardTypes";
 export { CitationChips } from "./CitationChips";
 export { CostBadge } from "./CostBadge";
 export { DebateFeed } from "./DebateFeed";

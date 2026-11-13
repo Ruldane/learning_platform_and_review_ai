@@ -11,12 +11,15 @@ interface ReplanRunProps {
   sessionId: string;
   programId: string;
   onAgain: () => void;
+  /** Ce que January a décidé de la proposition (lu dans l'historique), pour le message de fin. */
+  decision: "accepted" | "refused" | null;
   /** Ne sert qu'aux tests (faux WebSocket). */
   createSocket?: SocketFactory;
 }
 
 /** Une replanification suivie en direct : état, fil du Stratège, commandes, puis sa fin. */
-export function ReplanRun({ sessionId, programId, onAgain, createSocket }: ReplanRunProps) {
+export function ReplanRun(props: ReplanRunProps) {
+  const { sessionId, programId, onAgain, decision, createSocket } = props;
   const run = useReplanRun(sessionId, programId, createSocket);
   const { stream, actions, over } = run;
   if (stream.connection === "failed") {
@@ -40,6 +43,7 @@ export function ReplanRun({ sessionId, programId, onAgain, createSocket }: Repla
           programId={programId}
           status={stream.status}
           failure={stream.view.error?.message ?? null}
+          decision={decision}
           onAgain={onAgain}
         />
       ) : null}

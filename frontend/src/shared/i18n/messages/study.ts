@@ -105,6 +105,8 @@ export const study = {
     cancelledDescription: "Rien n'a été enregistré pour cette session.",
     feed: "Échange avec le tuteur",
     board: "Tableau du tuteur",
+    boardEmpty: "Le tuteur n'a encore rien dessiné.",
+    boardDrawing: "Le tuteur dessine…",
     reconnecting: "Reconnexion au tuteur…",
     writingSummary: "Le tuteur rédige ton bilan…",
     summaryLate: "Le bilan met du temps à arriver. Ton temps de travail est enregistré.",

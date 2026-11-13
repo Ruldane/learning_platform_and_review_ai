@@ -11,7 +11,8 @@ export function boardStatesFromEvents(events: readonly SessionEvent[]): BoardSta
   for (const event of events) {
     if (event.type !== "board.update") continue;
     const { board_id, kind, title, step, mermaid } = event.payload;
-    const resolved = kind ?? "domain_map";
+    // Le Tuteur n'envoie pas de genre : c'est un schéma de la leçon, dessiné par lui (pas le Scribe).
+    const resolved = kind ?? "lesson";
     const id = board_id ?? `step-${step}`;
     states.set(id, {
       id,
@@ -20,7 +21,7 @@ export function boardStatesFromEvents(events: readonly SessionEvent[]): BoardSta
       step,
       mermaid,
       scene: null,
-      author: "scribe",
+      author: "tutor",
       createdAt: states.get(id)?.createdAt ?? event.ts,
     });
   }

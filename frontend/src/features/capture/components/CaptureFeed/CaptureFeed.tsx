@@ -12,6 +12,9 @@ interface CaptureFeedProps {
   /** Une réponse est en route : les cartes sont désactivées. */
   pending: boolean;
   onAnswer: (interruptId: string, value: unknown) => void;
+  /** Le brouillon du texte collé (`capture_text`), gardé à la fermeture du dialogue. */
+  textDraft: string;
+  onTextDraft: (text: string) => void;
 }
 
 /**
@@ -19,7 +22,8 @@ interface CaptureFeedProps {
  * `capture_text` : une zone de texte (lien illisible) ; `capture_task` et `capture_cards` : oui ou
  * non, par la carte commune.
  */
-export function CaptureFeed({ items, isAwaiting, pending, onAnswer }: CaptureFeedProps) {
+export function CaptureFeed(props: CaptureFeedProps) {
+  const { items, isAwaiting, pending, onAnswer, textDraft, onTextDraft } = props;
   return (
     <DebateFeed
       items={items}
@@ -32,6 +36,8 @@ export function CaptureFeed({ items, isAwaiting, pending, onAnswer }: CaptureFee
             answered={answered}
             disabled={disabled}
             onAnswer={answer}
+            draft={textDraft}
+            onDraft={onTextDraft}
           />
         ) : (
           <InterruptCard

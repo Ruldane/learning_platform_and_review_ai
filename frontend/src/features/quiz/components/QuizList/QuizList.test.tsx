@@ -104,10 +104,12 @@ describe("QuizList", () => {
     expect(onPrepare).toHaveBeenCalledWith("m4");
   });
 
-  it("shows the date of the next try", () => {
+  it("shows the date of the next try instead of the retry button", () => {
     setup();
     expect(row("Docker")).toHaveTextContent("Nouvel essai à partir du mardi 17 novembre");
     expect(row("Docker")).toHaveTextContent("Meilleur score : 60 %");
+    // Revue finale 5 (E-I3) : pas de « Refaire » tant que le nouvel essai n'est pas venu.
+    expect(within(row("Docker")).queryByRole("button")).not.toBeInTheDocument();
   });
 
   it("disables the buttons while a module is being prepared", () => {

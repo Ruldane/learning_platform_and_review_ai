@@ -2,7 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { createMemoryRouter, RouterProvider } from "react-router";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { API } from "@/test/councilApi";
 import { apiError, recordPosts } from "@/test/councilHarness";
 import { createQueryWrapper } from "@/test/queryWrapper";
@@ -36,6 +36,13 @@ async function answerAndSend(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("QuizPage", () => {
+  // Le jour du poste est figé : les dates de nouvel essai des doublures (19 novembre) sont à venir.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"], shouldAdvanceTime: true });
+    vi.setSystemTime(new Date(2026, 10, 17, 12));
+  });
+  afterEach(() => vi.useRealTimers());
+
   it("prepares then takes a quiz and shows the result", async () => {
     const posts = recordPosts("/quizzes/z1/attempts", 202, started);
     const { user } = setup({
@@ -62,6 +69,10 @@ describe("QuizPage", () => {
     recordPosts("/quizzes/z1/attempts", 202, started);
     const { user, state } = setup({
       quizzes: [quizOut(), quizOut({ questions: secondOrder })],
+      // Nouvel essai possible dès aujourd'hui : « Refaire le quiz » est proposé.
+      attempts: [
+        attemptOut({ followup: { revision_tasks: [], retry_on: "2026-11-17", unplaced: 0 } }),
+      ],
     });
     await answerAndSend(user);
     expect(await screen.findByRole("heading", { name: "Résultat du quiz" })).toBeInTheDocument();
@@ -91,6 +102,23 @@ describe("QuizPage", () => {
       "Nouvel essai possible à partir du jeudi 19 novembre.",
     );
     expect(screen.getByRole("button", { name: "Envoyer" })).toBeEnabled();
+  });
+
+  it("keeps the result on screen when the quiz cannot be read again (E-I2)", async () => {
+    recordPosts("/quizzes/z1/attempts", 202, started);
+    let reads = 0;
+    const { user } = setup({
+      quizReply: () => {
+        reads += 1;
+        return reads === 1
+          ? HttpResponse.json(quizOut())
+          : HttpResponse.json(apiError("boom", "Panne du serveur."), { status: 500 });
+      },
+    });
+    await answerAndSend(user);
+    expect(await screen.findByRole("alert")).toHaveTextContent("Panne du serveur.");
+    expect(screen.getByRole("heading", { name: "Résultat du quiz" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Réessayer" })).toBeInTheDocument();
   });
 
   it("sends the answers once on a double click", async () => {
@@ -126,6 +154,26 @@ describe("QuizPage", () => {
     expect(await screen.findByRole("heading", { name: "Résultat du quiz" })).toBeInTheDocument();
     expect(posts).toHaveLength(2);
     expect(posts[1]).toEqual(posts[0]);
+  });
+
+  it("resends once on a double click (revue finale 5, E-m5)", async () => {
+    const { user } = setup({
+      attempts: [attemptOut({ status: "failed", score: null, passed: null, results: [] })],
+    });
+    const posts: unknown[] = [];
+    server.use(
+      http.post(`${API}/quizzes/z1/attempts`, async ({ request }) => {
+        posts.push(await request.json());
+        return HttpResponse.json(
+          { attempt_id: posts.length === 1 ? "a1" : "a2", session_id: "s9" },
+          { status: 202 },
+        );
+      }),
+    );
+    await answerAndSend(user);
+    await user.dblClick(await screen.findByRole("button", { name: "Renvoyer mes réponses" }));
+    expect(await screen.findByRole("heading", { name: "Résultat du quiz" })).toBeInTheDocument();
+    expect(posts).toHaveLength(2);
   });
 
   it("takes up a grading that was already running after a reload", async () => {

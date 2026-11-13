@@ -14,6 +14,7 @@ function setup(api: Parameters<typeof skillsApi>[0] = {}) {
     [
       { path: "/competences", element: <SkillsPage /> },
       { path: "/apprendre/objectifs", element: <p>Objectifs</p> },
+      { path: "/etudier/session", element: <p>Session guidée</p> },
     ],
     "/competences",
   );
@@ -69,5 +70,42 @@ describe("SkillsPage", () => {
     failing = false;
     await user.click(screen.getByRole("button", { name: "Réessayer" }));
     expect(await screen.findByText("Aucune compétence sur la carte")).toBeInTheDocument();
+  });
+
+  describe("empty states with an action (revue finale 5, C-m5)", () => {
+    const empty = () => HttpResponse.json(graphOut({ nodes: [], edges: [], domains: [] }));
+
+    it("offers to create a goal from an empty graph", async () => {
+      const { user, router } = setup({ graph: empty });
+      expect(await screen.findByText("Aucune compétence sur la carte")).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "Créer un objectif" }));
+      expect(router.state.location.pathname).toBe("/apprendre/objectifs");
+    });
+
+    it("offers to create a goal from an empty radar", async () => {
+      const { user, router } = setup({ graph: empty });
+      await user.click(screen.getByRole("tab", { name: "Radar" }));
+      expect(await screen.findByText("Aucun domaine à afficher")).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "Créer un objectif" }));
+      expect(router.state.location.pathname).toBe("/apprendre/objectifs");
+    });
+
+    it("offers to study from an empty progress", async () => {
+      const { user, router } = setup({ history: () => HttpResponse.json({ points: [] }) });
+      await user.click(screen.getByRole("tab", { name: "Progression" }));
+      expect(await screen.findByText("Aucun relevé pour l'instant")).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "Commencer une session" }));
+      expect(router.state.location.pathname).toBe("/etudier/session");
+    });
+
+    it("offers to see the goals from an empty comparison", async () => {
+      const { user, router } = setup({
+        compare: () => HttpResponse.json({ target_label: "Data", coverage: 0, rows: [] }),
+      });
+      await user.click(screen.getByRole("tab", { name: "Comparaison" }));
+      expect(await screen.findByText("Aucune compétence à comparer")).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "Voir mes objectifs" }));
+      expect(router.state.location.pathname).toBe("/apprendre/objectifs");
+    });
   });
 });

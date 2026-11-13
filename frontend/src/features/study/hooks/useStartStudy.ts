@@ -11,9 +11,10 @@ const sessionPath = (studyId: string) => `/etudier/session/${studyId}`;
 /**
  * Départ d'une session : ouvre la session puis va sur sa page. Une session déjà ouverte (409
  * `study_already_open`, ou 200 pour la même leçon) n'est pas une erreur : on y va. 404
- * `no_block_today` : `noBlock`, pour proposer de choisir une leçon. Un seul départ à la fois.
+ * `no_block_today` : `noBlock`, pour proposer de choisir une leçon (et `onNoBlock`, s'il est
+ * donné). Un seul départ à la fois.
  */
-export function useStartStudy() {
+export function useStartStudy(onNoBlock?: () => void) {
   const navigate = useNavigate();
   const sending = useRef(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,8 +40,10 @@ export function useStartStudy() {
         void navigate(sessionPath(open));
         return;
       }
-      if (failure instanceof ApiError && failure.code === "no_block_today") setNoBlock(true);
-      else setError(errorMessage(failure));
+      if (failure instanceof ApiError && failure.code === "no_block_today") {
+        setNoBlock(true);
+        onNoBlock?.();
+      } else setError(errorMessage(failure));
     }
     sending.current = false;
   };

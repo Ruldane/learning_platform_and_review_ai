@@ -11,6 +11,10 @@ interface StudyTimerProps {
   breakMinutes: number;
   /** Temps de travail cumulé, en secondes entières, à chaque seconde gagnée (jamais la pause). */
   onWorkedChange: (seconds: number) => void;
+  /** Clé `sessionStorage` du minuteur : il survit à un rechargement ou à un détour. */
+  storageKey?: string;
+  /** Horloge arrêtée d'office (session du Tuteur arrêtée) : rien ne s'ajoute, pas de reprise. */
+  halted?: boolean;
 }
 
 function announcementFor(phase: TimerPhase, switches: number, breakMinutes: number): string {
@@ -25,10 +29,14 @@ function announcementFor(phase: TimerPhase, switches: number, breakMinutes: numb
  * et « Reprendre ». Seul le travail compte. Le changement de phase est annoncé (zone `polite`),
  * jamais le décompte ; la barre n'est animée que si la personne n'a pas demandé moins de mouvement.
  */
-export function StudyTimer({ workMinutes, breakMinutes, onWorkedChange }: StudyTimerProps) {
+export function StudyTimer(props: StudyTimerProps) {
+  const { workMinutes, breakMinutes, onWorkedChange, storageKey, halted = false } = props;
   const workSeconds = Math.max(1, workMinutes) * 60;
   const breakSeconds = Math.max(1, breakMinutes) * 60;
-  const { timer, switches, toggle } = useStudyTimer(workSeconds, breakSeconds, onWorkedChange);
+  const { timer, switches, toggle } = useStudyTimer(workSeconds, breakSeconds, onWorkedChange, {
+    storageKey,
+    halted,
+  });
   const phaseSeconds = timer.phase === "work" ? workSeconds : breakSeconds;
   const progress = Math.min(100, Math.max(0, 100 - (timer.secondsLeft / phaseSeconds) * 100));
   const Icon = timer.running ? Pause : Play;
@@ -41,7 +49,7 @@ export function StudyTimer({ workMinutes, breakMinutes, onWorkedChange }: StudyT
       <p className="text-sm tabular-nums text-muted-foreground">
         {t("study.timer.worked", { time: formatMinutes(Math.floor(timer.workedSeconds / 60)) })}
       </p>
-      <Button variant="outline" onClick={toggle}>
+      <Button variant="outline" disabled={halted} onClick={toggle}>
         <Icon aria-hidden="true" data-icon="inline-start" />
         {timer.running ? t("study.timer.pause") : t("study.timer.resume")}
       </Button>

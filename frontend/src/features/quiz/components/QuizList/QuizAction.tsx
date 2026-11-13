@@ -10,10 +10,14 @@ interface QuizActionProps {
   onOpen: (quizId: string) => void;
 }
 
-/** Le bouton d'une ligne : préparer, réessayer une préparation ratée, passer ou refaire le quiz. */
+/**
+ * Le bouton d'une ligne : préparer, réessayer une préparation ratée, passer ou refaire le quiz.
+ * Tant que le nouvel essai n'est pas venu (`retryOn`), pas de bouton : la ligne dit la date.
+ */
 export function QuizAction({ item, pending, onPrepare, onOpen }: QuizActionProps) {
   const label = (action: string) => t("quiz.list.action", { action, module: item.moduleTitle });
   if (item.status === "generating") return null;
+  if (item.status === "ready" && item.retryOn !== null) return null;
   if (item.status === "ready" && item.quizId !== null) {
     const quizId = item.quizId;
     const text = t(item.bestScore === null ? "quiz.list.take" : "quiz.list.again");

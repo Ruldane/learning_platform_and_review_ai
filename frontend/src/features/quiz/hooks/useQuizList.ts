@@ -24,7 +24,7 @@ export function useQuizList(programId: string | undefined, pollMs = PREPARING_PO
     queryKey: quizKeys.list(programId ?? ""),
     queryFn: ({ signal }) => fetchQuizzes(programId ?? "", signal),
     enabled: programId !== undefined,
-    select: (items) => items.map(toQuizSummaryView),
+    select: (items) => items.map((item) => toQuizSummaryView(item)),
     refetchInterval: (query) =>
       query.state.data?.some((item) => item.status === "generating") ? pollMs : false,
   });

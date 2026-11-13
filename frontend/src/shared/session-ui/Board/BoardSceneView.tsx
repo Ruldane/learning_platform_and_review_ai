@@ -20,12 +20,14 @@ interface BoardSceneViewProps {
   readOnly: boolean;
   onReady: (api: BoardApi) => void;
   onSceneChange: (elements: readonly SceneElementLike[]) => void;
+  /** Texte de l'attente pendant la conversion du schéma. */
+  drawingLabel: string;
 }
 
 /** Selon la conversion : attente, repli Mermaid simple (SPEC 3.3) ou canevas Excalidraw. */
 export function BoardSceneView(props: BoardSceneViewProps) {
   const { scene, title, mermaid, animate, reducedMotion, readOnly } = props;
-  if (scene.status === "loading") return <LoadingState label={t("session.board.converting")} />;
+  if (scene.status === "loading") return <LoadingState label={props.drawingLabel} />;
   if (scene.status === "failed") {
     return (
       <div className="flex flex-col gap-2">

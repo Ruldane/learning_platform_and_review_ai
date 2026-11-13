@@ -10,7 +10,10 @@ interface HoursFieldProps {
   onChange: (value: string) => void;
 }
 
-/** Le champ « Heures disponibles cette semaine » : sa consigne devient l'erreur quand la saisie est refusée. */
+/**
+ * Le champ des heures de la semaine (le back lit un total, heures déjà faites comprises) : sa
+ * consigne devient l'erreur quand la saisie est refusée.
+ */
 export function HoursField({ value, invalid, disabled, onChange }: HoursFieldProps) {
   const id = useId();
   return (

@@ -31,7 +31,15 @@ export function ComparePanel() {
       {(compare) => {
         const view = toCompareView(compare);
         return (
-          <CompareTable rows={view.rows} coverage={view.coverage} targetLabel={view.targetLabel} />
+          <CompareTable
+            rows={view.rows}
+            coverage={view.coverage}
+            targetLabel={view.targetLabel}
+            emptyAction={{
+              label: t("skills.compare.emptyAction"),
+              onClick: () => void navigate("/apprendre/objectifs"),
+            }}
+          />
         );
       }}
     </QueryPanel>

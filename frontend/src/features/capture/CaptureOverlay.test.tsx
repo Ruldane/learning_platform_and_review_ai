@@ -22,7 +22,7 @@ const setup = () =>
   ));
 
 const reset = () => {
-  useCaptureDialog.setState({ open: false, sessionId: null });
+  useCaptureDialog.setState({ open: false, sessionId: null, draft: "", textDraft: "" });
   useSessionStore.getState().reset("s5");
 };
 

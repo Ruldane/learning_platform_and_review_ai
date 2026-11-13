@@ -17,6 +17,11 @@ export function SessionBoard({ events }: { events: SessionEvent[] }) {
         onSendEdit={() => undefined}
         sending={false}
         readOnly
+        labels={{
+          label: t("study.session.board"),
+          empty: t("study.session.boardEmpty"),
+          drawing: t("study.session.boardDrawing"),
+        }}
       />
     </section>
   );

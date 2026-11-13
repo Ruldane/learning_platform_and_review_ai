@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { TimerState } from "../viewTypes";
 import { advance, initialTimer } from "./timer";
+import { readTimer, writeTimer } from "./timerStorage";
 
 const TICK_MS = 1000;
 /**
@@ -19,21 +20,28 @@ interface Model {
 /**
  * Le minuteur de la session : travail puis pause, en boucle, en marche dès l'affichage. L'écart
  * est lu sur l'horloge (pas compté en tours) et plafonné ; la pause arrête tout. `onWorkedChange`
- * reçoit le temps de travail, en secondes entières, à chaque seconde gagnée.
+ * reçoit le temps de travail, en secondes entières, à chaque seconde gagnée. Avec `storageKey`,
+ * l'état est gardé dans `sessionStorage` et repris au montage. `halted` arrête l'horloge sans
+ * toucher au choix de la personne (session du Tuteur arrêtée).
  */
 export function useStudyTimer(
   workSeconds: number,
   breakSeconds: number,
   onWorkedChange: (seconds: number) => void,
+  { storageKey, halted = false }: { storageKey?: string; halted?: boolean } = {},
 ) {
   const [model, setModel] = useState<Model>(() => ({
-    timer: initialTimer(workSeconds),
+    timer: readTimer(storageKey) ?? initialTimer(workSeconds),
     switches: 0,
   }));
   const lastTick = useRef(0);
   const reported = useRef(0);
-  const { running } = model.timer;
+  const running = model.timer.running && !halted;
   const worked = Math.floor(model.timer.workedSeconds);
+
+  useEffect(() => {
+    writeTimer(storageKey, model.timer);
+  }, [storageKey, model.timer]);
 
   useEffect(() => {
     if (!running) return;
@@ -58,5 +66,5 @@ export function useStudyTimer(
 
   const toggle = () =>
     setModel((prev) => ({ ...prev, timer: { ...prev.timer, running: !prev.timer.running } }));
-  return { timer: model.timer, switches: model.switches, toggle };
+  return { timer: { ...model.timer, running }, switches: model.switches, toggle };
 }

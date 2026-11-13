@@ -48,8 +48,28 @@ export function toVersionView(version: PlanVersionOut): VersionView {
     createdAt: version.created_at,
     review: version.review,
     diff: version.diff ? toPlanDiffView(version.diff) : null,
+    weeks: version.diff
+      ? { before: version.diff.weeks_before, after: version.diff.weeks_after }
+      : null,
     weekLoads: toWeekLoads(version.week_loads),
+    sessionId: version.session_id,
   };
+}
+
+/**
+ * Ce qu'a décidé January dans une session de replanification : la version de cette session
+ * acceptée ou refusée (la plus récente d'abord), sinon `null`.
+ */
+export function decisionOf(
+  versions: readonly VersionView[] | undefined,
+  sessionId: string | null,
+): "accepted" | "refused" | null {
+  if (!versions || sessionId === null) return null;
+  for (const version of versions) {
+    if (version.sessionId !== sessionId) continue;
+    if (version.status === "accepted" || version.status === "refused") return version.status;
+  }
+  return null;
 }
 
 /** La proposition qui attend une réponse (`pending`), s'il y en a une. */

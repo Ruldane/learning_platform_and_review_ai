@@ -9,6 +9,9 @@ interface CaptureTextCardProps {
   disabled: boolean;
   /** Reçoit `{ answers: { text } }`, ou la valeur de l'option « Abandonner ». */
   onAnswer: (value: unknown) => void;
+  /** Le texte saisi, gardé hors du dialogue ; vidé à l'envoi et à « Abandonner ». */
+  draft: string;
+  onDraft: (text: string) => void;
 }
 
 /**
@@ -16,7 +19,8 @@ interface CaptureTextCardProps {
  * caractères au plus et « Abandonner ». Abandonner n'envoie jamais le texte saisi : c'est pourquoi
  * la carte commune des questions n'est pas utilisée ici. Répondue, la carte se replie.
  */
-export function CaptureTextCard({ interrupt, answered, disabled, onAnswer }: CaptureTextCardProps) {
+export function CaptureTextCard(props: CaptureTextCardProps) {
+  const { interrupt, answered, disabled, onAnswer, draft, onDraft } = props;
   const id = useId();
   return (
     <section aria-labelledby={id} className="rounded-xl border-2 border-primary bg-card px-4 py-3">
@@ -26,7 +30,13 @@ export function CaptureTextCard({ interrupt, answered, disabled, onAnswer }: Cap
       {answered ? (
         <p className="mt-1 text-sm text-muted-foreground">{t("capture.textCard.answered")}</p>
       ) : (
-        <TextForm interrupt={interrupt} disabled={disabled} onAnswer={onAnswer} />
+        <TextForm
+          interrupt={interrupt}
+          disabled={disabled}
+          onAnswer={onAnswer}
+          text={draft}
+          onText={onDraft}
+        />
       )}
     </section>
   );
