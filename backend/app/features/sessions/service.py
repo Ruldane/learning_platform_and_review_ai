@@ -47,6 +47,7 @@ ROUTE_ONLY: dict[str, str] = {
     "capture": "POST /capture",
     "quiz": "POST /modules/{module_id}/quiz",
     "study_session": "POST /study-sessions",
+    "gap_analysis": "POST /postings",  # l'offre est créée et vérifiée par sa route (D121)
 }
 
 

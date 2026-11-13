@@ -41,6 +41,7 @@ async def test_generic_route_refuses_quiz_and_study_session(client: httpx.AsyncC
     for graph, route in [
         ("quiz", "POST /modules/{module_id}/quiz"),
         ("study_session", "POST /study-sessions"),
+        ("gap_analysis", "POST /postings"),
     ]:
         r = await client.post(API, json={"graph": graph, "input": {}})
         assert (r.status_code, r.json()["error"]["code"]) == (409, "graph_has_route")

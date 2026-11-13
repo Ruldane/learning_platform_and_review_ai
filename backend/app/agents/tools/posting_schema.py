@@ -13,6 +13,8 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
+from app.agents.runtime.prose import Prose
+
 # Tout ce qui n'est ni lettre, ni chiffre, ni « + », ni « # » (C++, C#) sépare deux mots.
 _SEPARATORS = re.compile(r"[^\w+#]|_")
 _MIN_PLURAL_WORD = 4  # « s » final retiré des mots de 4 lettres au moins (« aws » reste)
@@ -47,7 +49,7 @@ def contains_term(text: str, term: str, *, plural: bool = False) -> bool:
 class Requirement(BaseModel):
     """Une exigence de l'offre ; `skills` : les compétences qu'elle demande, nommées."""
 
-    text: str = Field(min_length=3, max_length=300)
+    text: Prose = Field(min_length=3, max_length=300)
     required: bool
     skills: list[Short] = Field(default_factory=list, max_length=6)
 
@@ -64,7 +66,7 @@ class Eliminatory(BaseModel):
     """Un critère éliminatoire (années d'expérience, lieu, langue, diplôme…)."""
 
     kind: Literal["experience_years", "location", "language", "degree", "other"]
-    text: str = Field(min_length=3, max_length=200)
+    text: Prose = Field(min_length=3, max_length=200)
 
 
 class SkillNeed(BaseModel):
@@ -101,4 +103,15 @@ def keyword_problems(analysis: PostingAnalysis, text: str) -> list[str]:
         "recopie-le exactement comme il est écrit, ou retire-le."
         for keyword in analysis.keywords
         if not contains_term(text, keyword.term)
+    ]
+
+
+def requirement_problems(analysis: PostingAnalysis) -> list[str]:
+    """Une phrase française, rendue au modèle, par exigence obligatoire qui ne nomme aucune
+    compétence : sans compétence, elle ne serait jamais couverte (revue 6.2, m3)."""
+    return [
+        f"L'exigence obligatoire « {' '.join(requirement.text.split())[:80]} » ne nomme aucune "
+        "compétence : ajoute dans `skills` au moins une compétence qu'elle demande."
+        for requirement in analysis.requirements
+        if requirement.required and not requirement.skills
     ]

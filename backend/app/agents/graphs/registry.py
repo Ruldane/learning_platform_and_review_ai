@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from app.agents.graphs import (
     capture,
     demo_debate,
+    gap_analysis,
     learned_document,
     learning_council,
     lesson_factory,
@@ -50,6 +51,7 @@ GRAPHS: dict[str, GraphSpec] = {
         GraphSpec("study_session", study_session.StudySessionInput, study_session.build),
         GraphSpec("replan", replan.ReplanInput, replan.build),
         GraphSpec("capture", capture.CaptureInput, capture.build),
+        GraphSpec("gap_analysis", gap_analysis.GapAnalysisInput, gap_analysis.build),
     )
 }
 

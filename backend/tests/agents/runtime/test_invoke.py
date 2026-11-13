@@ -233,8 +233,10 @@ def test_call_deadline_never_cuts_a_call_before_its_node() -> None:
     """Revue 5.18, I1 : l'échéance totale d'un appel n'est jamais plus courte que le plus long
     plafond de nœud ; sinon un appel qui aurait réussi est coupé, puis repayé sans pouvoir tenir
     dans le temps restant au nœud."""
+    from app.agents.nodes.analyst import ANALYZE_TIMEOUT_S
     from app.agents.nodes.examiner import WRITE_TIMEOUT_S as EXAMINER_WRITE
     from app.agents.nodes.strategist.plan import PLAN_TIMEOUT_S
     from app.agents.nodes.writer import WRITE_TIMEOUT_S as WRITER_WRITE
 
-    assert max(EXAMINER_WRITE, PLAN_TIMEOUT_S, WRITER_WRITE, NODE_TIMEOUT_S) <= LLM_CALL_DEADLINE_S
+    longest = max(EXAMINER_WRITE, PLAN_TIMEOUT_S, WRITER_WRITE, ANALYZE_TIMEOUT_S, NODE_TIMEOUT_S)
+    assert longest <= LLM_CALL_DEADLINE_S

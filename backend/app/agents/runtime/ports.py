@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 from app.agents.tools.capture_port import NO_CAPTURE, CaptureStore
 from app.agents.tools.council_port import NO_COUNCIL, CouncilStore
+from app.agents.tools.gap_port import NO_GAP, GapStore
 from app.agents.tools.lesson_port import NO_LESSONS, LessonStore
 from app.agents.tools.memory_port import NO_MEMORY, MemoryGateway
 from app.agents.tools.program_port import NO_PROGRAM, ProgramStore
@@ -27,6 +28,7 @@ class AgentPorts:
     study: StudyStore = NO_STUDY  # sessions d'étude du Tuteur (D102)
     replan: ReplanStore = NO_REPLAN  # replanification du Stratège (D105)
     capture: CaptureStore = NO_CAPTURE  # capture rapide de l'Archiviste (D108)
+    gap: GapStore = NO_GAP  # analyse d'une offre et son écart (D121)
 
 
 NO_PORTS = AgentPorts()

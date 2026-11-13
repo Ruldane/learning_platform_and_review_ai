@@ -25,6 +25,7 @@ from app.agents.tools.capture_port import CaptureDigest
 from app.agents.tools.council_port import ProposalDraft
 from app.agents.tools.lesson_port import ResourcePick
 from app.agents.tools.plan_schema import SkillDraft, TaskDraft, WeekDraft
+from app.agents.tools.posting_schema import Eliminatory, Requirement
 from app.agents.tools.quiz_port import GradeDraft, QuestionDraft, QuizDraft
 from app.agents.tools.replan_port import ReplanDraft, ReplanTaskDraft
 
@@ -68,6 +69,8 @@ def _shortens(model: type[BaseModel], name: str) -> bool:
         (ReplanDraft, "summary"),
         (ReplanTaskDraft, "done_criterion"),
         (CaptureDigest, "summary"),
+        (Requirement, "text"),
+        (Eliminatory, "text"),
     ],
 )
 def test_free_text_fields_are_shortened(model: type[BaseModel], name: str) -> None:
