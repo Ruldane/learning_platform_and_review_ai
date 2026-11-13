@@ -1,7 +1,9 @@
 """Faux port de l'analyse d'offre (`FakeGapStore`) en mémoire, idempotent comme le contrat, et les
 réponses de l'Analyste pour l'offre fictive de `scripts/sample_posting.py`. Les lignes de l'écart
 et le score sont calculés comme le fera `AgentGapStore` (6.6) : niveaux du référentiel,
-`learnable` faux → hors périmètre, `match_score`. Aucun réseau ni LLM."""
+`learnable` faux → hors périmètre, `match_score`. Comme le contrat (revue 6.5, I2), le
+référentiel ne reçoit les besoins de l'offre restés sans rattachement qu'à `save_gap`, après le
+rattachement. Aucun réseau ni LLM."""
 
 import asyncio
 import json
@@ -13,9 +15,11 @@ from app.agents.tools.gap_port import (
     AnalysisSaved,
     DuplicateHit,
     GapSaved,
+    KnownSkill,
     PostingView,
     SkillMatch,
     gap_result,
+    ordered_known,
 )
 from app.agents.tools.posting_schema import PostingAnalysis
 from app.core.errors import AppError
@@ -82,7 +86,9 @@ def analysis_data(**over: Any) -> dict[str, Any]:
             requirement("Python avancé", True, "Python"),
             requirement("LangGraph ou un cadre d'agents équivalent", True, "LangGraph"),
             requirement("RAG : indexation, recherche vectorielle, évaluation", True, "RAG"),
-            requirement("3 ans d'expérience en développement logiciel", True, "Développement"),
+            requirement(
+                "3 ans d'expérience en développement logiciel", True, "Développement logiciel"
+            ),
             requirement("Docker et intégration continue", False, "Docker"),
             requirement("Anglais professionnel", False),
         ],
@@ -121,9 +127,34 @@ def not_a_posting_reply() -> str:
     )
 
 
-def matches_reply(matches: dict[str, str | None] | None = None) -> str:
-    items = [{"need": need, "known": known} for need, known in (matches or MATCHES).items()]
+NEED_REFS = {name: f"n{rank}" for rank, (name, _, _) in enumerate(SKILLS, start=1)}
+
+
+def known_skills_of(levels: dict[str, SkillLevel | None]) -> list[KnownSkill]:
+    return ordered_known([KnownSkill(name, level) for name, level in levels.items()])
+
+
+def known_refs(levels: dict[str, SkillLevel | None] | None = None) -> dict[str, str]:
+    """Nom du référentiel → identifiant montré au modèle (`k1`…, ordre de `ordered_known`)."""
+    skills = known_skills_of(LEVELS if levels is None else levels)
+    return {skill.name: f"k{rank}" for rank, skill in enumerate(skills, start=1)}
+
+
+def items_reply(items: list[dict[str, Any]]) -> str:
     return json.dumps({"items": items}, ensure_ascii=False)
+
+
+def matches_reply(
+    matches: dict[str, str | None] | None = None,
+    levels: dict[str, SkillLevel | None] | None = None,
+) -> str:
+    """Réponse du mode `match` par identifiants : `matches` (besoin → nom du référentiel)."""
+    refs = known_refs(levels)
+    items = [
+        {"need": NEED_REFS[need], "known": refs[known] if known else None}
+        for need, known in (matches or MATCHES).items()
+    ]
+    return items_reply(items)
 
 
 @dataclass
@@ -140,7 +171,9 @@ class FakeGapStore:
     save_analysis_calls: int = 0
     save_gap_calls: int = 0
     gap_writes: int = 0
+    catalog_added: list[str] = field(default_factory=list)  # besoins entrés au référentiel
     block_after_gap: bool = False
+    block_after_analysis: bool = False
 
     async def posting(self, user_id: str, posting_id: str) -> PostingView:
         if posting_id not in self.texts:
@@ -157,15 +190,17 @@ class FakeGapStore:
         if first:
             self.analysis[posting_id] = analysis
             self.status[posting_id] = "ready"
-        hits = self.duplicates.get(posting_id, [])
+        hits = self.duplicates.get(posting_id, [])  # rendus aussi quand `first` est faux
+        if self.block_after_analysis:
+            await asyncio.Event().wait()
         return AnalysisSaved(posting_id, self.analysis[posting_id], hits, first)
 
     async def reject(self, user_id: str, posting_id: str, reason: str) -> None:
         self.status[posting_id] = "rejected"
         self.rejected.setdefault(posting_id, reason)
 
-    async def known_skills(self, user_id: str) -> list[str]:
-        return list(self.levels)
+    async def known_skills(self, user_id: str) -> list[KnownSkill]:
+        return known_skills_of(self.levels)
 
     def rows(self, posting_id: str, matches: Sequence[SkillMatch]) -> list[GapRow]:
         by_need = {m.need: m.known for m in matches}
@@ -192,6 +227,10 @@ class FakeGapStore:
             self.gaps[posting_id] = GapSaved(
                 match_score(rows), len(rows), len(absent), sum(row.required for row in absent)
             )
+            for match in matches:  # après le rattachement : jamais un homonyme sans niveau
+                if match.known is None and match.need not in self.levels:
+                    self.levels[match.need] = None
+                    self.catalog_added.append(match.need)
         if self.block_after_gap:
             await asyncio.Event().wait()
         return self.gaps[posting_id]

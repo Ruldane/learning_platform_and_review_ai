@@ -13,6 +13,11 @@ plus :
   gagne (`UPDATE … WHERE analysis IS NULL`), les suivantes relisent celle qui est rangée ;
 - `reject` : une offre refusée le reste ;
 - `save_gap` : par session (`job_postings.gap.session_id`).
+
+Le rattachement se fait sur le référentiel **existant** (revue 6.5, I2) : les compétences de
+l'offre n'y entrent qu'après lui, par `save_gap`, et seulement celles restées sans rattachement.
+Sinon chaque besoin trouverait son propre nom, sans niveau, au lieu de la notion de même sens que
+January a déjà acquise.
 """
 
 from collections.abc import Sequence
@@ -24,9 +29,11 @@ from pydantic import BaseModel, Field
 from app.agents.tools.posting_schema import PostingAnalysis
 from app.core.errors import AppError
 from app.db.models.postings import GapMatch, GapResult, PostingStatus
+from app.db.models.skills import LEVEL_ORDER, SkillLevel
 
 MAX_KNOWN_SKILLS = 300  # noms du référentiel montrés au modèle
 MAX_MATCHES = 40  # autant que de compétences dans une analyse
+SKILL_NAME_MAX = 120  # `skills.name`, `SkillDraft.name` (revue 6.5, I1)
 
 DuplicateLevel = Literal["certain", "probable", "possible"]
 
@@ -57,6 +64,27 @@ class DuplicateHit:
 
 
 @dataclass(frozen=True)
+class KnownSkill:
+    """Une compétence du référentiel de January et son niveau (`None` : sans niveau)."""
+
+    name: str
+    level: SkillLevel | None
+
+
+def known_rank(skill: KnownSkill) -> int:
+    """Ordre de `known_skills` : `prouve`, `valide`, `en_cours`, `declare`, puis sans niveau."""
+    if skill.level is None:
+        return len(LEVEL_ORDER)
+    return len(LEVEL_ORDER) - 1 - LEVEL_ORDER.index(skill.level)
+
+
+def ordered_known(skills: Sequence[KnownSkill]) -> list[KnownSkill]:
+    """Les compétences acquises d'abord (ordre stable), `MAX_KNOWN_SKILLS` au plus : le plafond
+    écarte d'abord les noms sans niveau."""
+    return sorted(skills, key=known_rank)[:MAX_KNOWN_SKILLS]
+
+
+@dataclass(frozen=True)
 class AnalysisSaved:
     """L'analyse rangée (celle d'une session plus rapide si `first` est faux) et les doublons
     calculés après elle (entreprise et titre connus)."""
@@ -72,13 +100,21 @@ class SkillMatch(BaseModel):
     rien (`None`). Un nom hors du référentiel n'est jamais gardé (D121 n° 3)."""
 
     need: str = Field(min_length=2, max_length=80)
-    known: str | None = Field(default=None, max_length=80)
+    known: str | None = Field(default=None, max_length=SKILL_NAME_MAX)
+
+
+class NeedMatch(BaseModel):
+    """Réponse du modèle pour un besoin : son identifiant (`n3`) et celui de la compétence du
+    référentiel (`k7`), ou `None`. Des identifiants, jamais des noms recopiés (revue 6.5, I3)."""
+
+    need: str = Field(min_length=1, max_length=SKILL_NAME_MAX)
+    known: str | None = Field(default=None, max_length=SKILL_NAME_MAX)
 
 
 class SkillMatches(BaseModel):
     """Sortie structurée de l'Analyste en mode `match`."""
 
-    items: list[SkillMatch] = Field(default_factory=list, max_length=MAX_MATCHES)
+    items: list[NeedMatch] = Field(default_factory=list, max_length=MAX_MATCHES)
 
 
 @dataclass(frozen=True)
@@ -112,16 +148,20 @@ class GapStore(Protocol):
     ) -> AnalysisSaved:
         """Idempotent et partagé avec `cv_review` : `UPDATE … WHERE analysis IS NULL` ; une offre
         déjà analysée est relue (`first` faux). Pose le titre, l'entreprise (et sa clé), le statut
-        `ready`, l'élément de mémoire `offre` indexé, les doublons probables et possibles, et
-        ajoute les compétences de l'offre au référentiel (`upsert_catalog`, sans lien)."""
+        `ready`, l'élément de mémoire `offre` indexé, et calcule les doublons probables et
+        possibles. Les doublons sont rendus aussi quand `first` est faux (recalculés ou relus) :
+        un rejeu après un arrêt les annonce encore. Les compétences de l'offre n'entrent **pas**
+        au référentiel ici (voir `save_gap`)."""
         ...
 
     async def reject(self, user_id: str, posting_id: str, reason: str) -> None:
         """Statut `rejected` et sa raison ; idempotent."""
         ...
 
-    async def known_skills(self, user_id: str) -> list[str]:
-        """Les noms du référentiel de January (`MAX_KNOWN_SKILLS` au plus)."""
+    async def known_skills(self, user_id: str) -> list[KnownSkill]:
+        """Le référentiel **existant** de January, avec les niveaux (`user_skills`), dans l'ordre
+        de `ordered_known` : `prouve`, `valide`, `en_cours`, `declare`, puis sans niveau ;
+        `MAX_KNOWN_SKILLS` au plus, les compétences acquises gardées d'abord."""
         ...
 
     async def save_gap(
@@ -130,7 +170,8 @@ class GapStore(Protocol):
         """Idempotent par session : `gap` = `gap_result(session_id, matches)`. Les lignes sont
         calculées par le code (niveaux de `user_skills`, semaine du programme validé dont un
         module vise la compétence, `learnable` faux → `out_of_scope`), le score par
-        `match_score`."""
+        `match_score`. Puis les besoins restés sans rattachement (`known` vide) entrent au
+        référentiel (`upsert_catalog`, sans lien, sans niveau), après le rattachement."""
         ...
 
 
@@ -152,7 +193,7 @@ class _NoGap:
     async def reject(self, user_id: str, posting_id: str, reason: str) -> None:
         raise gap_unavailable()
 
-    async def known_skills(self, user_id: str) -> list[str]:
+    async def known_skills(self, user_id: str) -> list[KnownSkill]:
         raise gap_unavailable()
 
     async def save_gap(

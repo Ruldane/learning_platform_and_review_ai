@@ -6,6 +6,9 @@ from collections.abc import Iterable
 from difflib import SequenceMatcher
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
+from app.agents.tools.posting_schema import MIN_POSTING_CHARS as MIN_POSTING_CHARS
+from app.agents.tools.posting_schema import MIN_POSTING_WORDS as MIN_POSTING_WORDS
+from app.agents.tools.posting_schema import enough_text as enough_text
 from app.core.skills import normalize_skill_name
 from app.features.memory.service.upload import normalize_url
 
@@ -31,8 +34,6 @@ LEGAL_SUFFIXES = (
 
 PROBABLE_TITLE = 0.85  # même entreprise et titres à 0,85 au moins : doublon probable
 POSSIBLE_COSINE = 0.90  # meilleur fragment de mémoire à 0,90 au moins : doublon possible
-MIN_POSTING_CHARS = 300
-MIN_POSTING_WORDS = 50
 
 # Domaine (suffixe d'hôte) → nom de l'ATS.
 ATS_HOSTS: dict[str, str] = {
@@ -115,12 +116,6 @@ def title_similarity(a: str, b: str) -> float:
     if not left or not right:
         return 0.0
     return SequenceMatcher(None, left, right).ratio()
-
-
-def enough_text(text: str) -> bool:
-    """Assez de texte pour une offre : 300 caractères et 50 mots au moins."""
-    stripped = text.strip()
-    return len(stripped) >= MIN_POSTING_CHARS and len(stripped.split()) >= MIN_POSTING_WORDS
 
 
 def _host(url: str) -> str | None:

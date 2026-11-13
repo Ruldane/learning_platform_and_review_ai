@@ -9,6 +9,7 @@ class GapAnalysisState(TypedDict, total=False):
     posting_id: str
     analysis: dict[str, Any] | None  # `PostingAnalysis` en JSON ; None : pas encore analysée
     reused: bool  # l'analyse était déjà rangée : l'Analyste ne l'a pas refaite
+    rejection: str  # raison du refus sans appel au modèle (texte trop court)
     duplicates: list[dict[str, Any]]  # `DuplicateHit` en JSON (offre analysée ici)
     matches: list[dict[str, Any]]  # `SkillMatch` en JSON, un par besoin de l'offre
     saved: dict[str, Any]  # `GapSaved` en JSON

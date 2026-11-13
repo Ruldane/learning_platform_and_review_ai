@@ -14,12 +14,22 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, Field
 
 from app.agents.runtime.prose import Prose
+from app.core.skills import normalize_skill_name
 
 # Tout ce qui n'est ni lettre, ni chiffre, ni « + », ni « # » (C++, C#) sépare deux mots.
 _SEPARATORS = re.compile(r"[^\w+#]|_")
 _MIN_PLURAL_WORD = 4  # « s » final retiré des mots de 4 lettres au moins (« aws » reste)
 
 Short = Annotated[str, Field(min_length=1, max_length=80)]
+# Assez de texte pour une offre (la route de 6.6 et l'Analyste appliquent la même borne).
+MIN_POSTING_CHARS = 300
+MIN_POSTING_WORDS = 50
+
+
+def enough_text(text: str) -> bool:
+    """Assez de texte pour une offre : 300 caractères et 50 mots au moins."""
+    stripped = text.strip()
+    return len(stripped) >= MIN_POSTING_CHARS and len(stripped.split()) >= MIN_POSTING_WORDS
 
 
 def normalize_term(text: str, *, plural: bool = False) -> str:
@@ -106,12 +116,42 @@ def keyword_problems(analysis: PostingAnalysis, text: str) -> list[str]:
     ]
 
 
+def requirement_issues(analysis: PostingAnalysis) -> list[tuple[int, str]]:
+    """`(rang de l'exigence, phrase française)` par exigence obligatoire qui ne nomme aucune
+    compétence (sans compétence, elle ne serait jamais couverte : revue 6.2, m3) ou qui nomme une
+    compétence absente de `skills` (l'écart et la couverture parleraient de deux listes). La
+    phrase ne cite rien de l'offre : seulement des rangs (revue 6.5, m2)."""
+    needs = {normalize_skill_name(skill.name) for skill in analysis.skills}
+    issues: list[tuple[int, str]] = []
+    for rank, requirement in enumerate(analysis.requirements, start=1):
+        if not requirement.required:
+            continue
+        if not requirement.skills:
+            issues.append(
+                (
+                    rank,
+                    f"L'exigence n° {rank} est obligatoire mais ne nomme aucune compétence : "
+                    "ajoute dans ses `skills` au moins une compétence qu'elle demande.",
+                )
+            )
+            continue
+        absent = [
+            str(position)
+            for position, name in enumerate(requirement.skills, start=1)
+            if normalize_skill_name(name) not in needs
+        ]
+        if absent:
+            issues.append(
+                (
+                    rank,
+                    f"L'exigence n° {rank} nomme une compétence absente de la liste `skills` de "
+                    f"l'analyse (n° {', '.join(absent)} de ses `skills`) : ajoute-la à `skills` "
+                    "sous le même nom, ou corrige-la.",
+                )
+            )
+    return issues
+
+
 def requirement_problems(analysis: PostingAnalysis) -> list[str]:
-    """Une phrase française, rendue au modèle, par exigence obligatoire qui ne nomme aucune
-    compétence : sans compétence, elle ne serait jamais couverte (revue 6.2, m3)."""
-    return [
-        f"L'exigence obligatoire « {' '.join(requirement.text.split())[:80]} » ne nomme aucune "
-        "compétence : ajoute dans `skills` au moins une compétence qu'elle demande."
-        for requirement in analysis.requirements
-        if requirement.required and not requirement.skills
-    ]
+    """Les phrases de `requirement_issues`, seules."""
+    return [sentence for _, sentence in requirement_issues(analysis)]

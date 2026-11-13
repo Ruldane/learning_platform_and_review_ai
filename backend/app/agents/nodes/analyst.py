@@ -2,11 +2,13 @@
 compétences au référentiel de January. Parcours `gap_analysis`.
 
 `load` lit l'offre par le port ; une offre déjà analysée (par une autre session ou une revue de
-CV) n'est jamais réanalysée. `analyze` demande l'analyse (texte de l'offre encadré par
-`untrusted`), la fait vérifier (mots clés tels quels dans l'offre, une compétence au moins par
-exigence obligatoire) et la redemande deux fois au plus ; les mots clés encore absents sont
+CV) n'est jamais réanalysée. `analyze` refuse sans appel un texte trop court (`enough_text`, même
+borne que la route), demande l'analyse (texte de l'offre encadré par `untrusted`), la fait
+vérifier (mots clés tels quels dans l'offre, exigences obligatoires reliées à `skills`) et la
+redemande deux fois au plus, en gardant la meilleure réponse ; les mots clés encore absents sont
 retirés. Un texte qui n'est pas une offre est refusé (`reject`). `match` demande le rattachement
-des besoins au référentiel ; le code calcule ensuite les lignes et le score (`save_gap`).
+des besoins au référentiel existant, par identifiants ; le code calcule ensuite les lignes et le
+score, puis ajoute au référentiel les besoins restés sans rattachement (`save_gap`).
 
 Aucun point d'arrêt. Les écritures du port (`save_analysis`, `reject`, `save_gap`) sont
 idempotentes : un nœud rejoué après un arrêt (SPEC 9.4) n'écrit rien de plus.
@@ -24,9 +26,13 @@ from app.agents.nodes.analyst_steps import (
     ANALYZE_REQUEST,
     MATCH_REQUEST,
     MAX_ANALYZE_ASKS,
+    MAX_POSTING_CHARS,
     NOT_A_POSTING,
+    TOO_SHORT,
+    Problem,
     analysis_problems,
     analyze_vars,
+    better_answer,
     clean_matches,
     drop_absent_keywords,
     duplicate_text,
@@ -43,8 +49,8 @@ from app.agents.runtime.emit import emit
 from app.agents.runtime.invoke import node_timeout
 from app.agents.runtime.structured import structured_call
 from app.agents.state.gap_analysis import GapAnalysisState
-from app.agents.tools.gap_port import GapSaved, SkillMatch, SkillMatches
-from app.agents.tools.posting_schema import PostingAnalysis
+from app.agents.tools.gap_port import GapSaved, KnownSkill, SkillMatch, SkillMatches
+from app.agents.tools.posting_schema import PostingAnalysis, enough_text
 
 ANALYZE_TIMEOUT_S = 600  # trois demandes d'une analyse longue (GLM), avec leurs nouveaux essais
 MATCH_TIMEOUT_S = 300
@@ -82,16 +88,16 @@ def route_load(state: GapAnalysisState) -> str:
     return "match" if state.get("analysis") else "analyze"
 
 
-async def _ask_analysis(deps: GraphDeps, text: str) -> tuple[PostingAnalysis, list[str]]:
-    """Une demande, puis deux re-demandes au plus ; rend la dernière analyse et ses problèmes."""
+async def _ask_analysis(deps: GraphDeps, text: str) -> tuple[PostingAnalysis, list[Problem]]:
+    """Une demande, puis deux re-demandes au plus ; rend la meilleure analyse (`better_answer`)
+    et ses problèmes."""
     model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
     prompt = render_prompt(AGENT, **analyze_vars(text))
     messages: list[BaseMessage] = [SystemMessage(prompt), HumanMessage(ANALYZE_REQUEST)]
-    found: PostingAnalysis | None = None
-    problems: list[str] = []
+    best: tuple[PostingAnalysis, list[Problem]] | None = None
     for ask in range(1, MAX_ANALYZE_ASKS + 1):
-        if found is not None:
-            messages += [AIMessage(found.model_dump_json()), HumanMessage(problems_text(problems))]
+        if best is not None:
+            messages += [AIMessage(best[0].model_dump_json()), HumanMessage(problems_text(best[1]))]
         found = await structured_call(
             model,
             PostingAnalysis,
@@ -100,11 +106,11 @@ async def _ask_analysis(deps: GraphDeps, text: str) -> tuple[PostingAnalysis, li
             step=f"analyse-{ask}",
             intent="j'analyse l'offre" if ask == 1 else "je corrige l'analyse de l'offre",
         )
-        problems = analysis_problems(found, text)
-        if not problems:
+        best = better_answer(best, found, analysis_problems(found, text))
+        if not best[1]:
             break
-    assert found is not None
-    return found, problems
+    assert best is not None
+    return best
 
 
 def make_analyze(deps: GraphDeps) -> Node:
@@ -112,6 +118,19 @@ def make_analyze(deps: GraphDeps) -> Node:
     async def analyze(state: GapAnalysisState) -> GapAnalysisState:
         """L'analyse de l'Analyste, vérifiée ; rejoué, il redemande sans rien écrire."""
         view = await deps.ports.gap.posting(deps.user_id, state["posting_id"])
+        if not enough_text(view.text):  # même borne que la route (revue 6.5, m6) : aucun appel
+            logger.info(
+                "Offre trop courte : session %s, offre %s", deps.session_id, view.posting_id
+            )
+            return {"analysis": None, "reused": False, "rejection": TOO_SHORT}
+        if len(view.text) > MAX_POSTING_CHARS:
+            logger.info(
+                "Offre tronquée pour l'analyse : session %s, offre %s, %d caractères sur %d",
+                deps.session_id,
+                view.posting_id,
+                MAX_POSTING_CHARS,
+                len(view.text),
+            )
         found, problems = await _ask_analysis(deps, view.text)
         analysis, dropped = drop_absent_keywords(found, view.text)
         if problems:
@@ -136,10 +155,11 @@ def route_analyze(state: GapAnalysisState) -> str:
 def make_reject(deps: GraphDeps) -> Node:
     @node_timeout()
     async def reject(state: GapAnalysisState) -> GapAnalysisState:
-        await deps.ports.gap.reject(deps.user_id, state["posting_id"], NOT_A_POSTING)
+        reason = state.get("rejection") or NOT_A_POSTING
+        await deps.ports.gap.reject(deps.user_id, state["posting_id"], reason)
         logger.info("Offre refusée : session %s, offre %s", deps.session_id, state["posting_id"])
-        _say("refus", NOT_A_POSTING)
-        return {"summary": NOT_A_POSTING}
+        _say("refus", reason)
+        return {"summary": reason}
 
     return reject
 
@@ -169,7 +189,7 @@ def make_save_analysis(deps: GraphDeps) -> Node:
 
 
 async def _ask_matches(
-    deps: GraphDeps, analysis: PostingAnalysis, known: list[str]
+    deps: GraphDeps, analysis: PostingAnalysis, known: list[KnownSkill]
 ) -> SkillMatches | None:
     """Le rattachement demandé au modèle ; sans besoin ou sans référentiel, aucun appel."""
     if not analysis.skills or not known:
@@ -195,8 +215,8 @@ def make_match(deps: GraphDeps) -> Node:
         found = await _ask_matches(deps, analysis, known)
         matches, unknown = clean_matches(analysis, found, known)
         logger.info(
-            "Rattachement : session %s, offre %s, %d besoin(s), %d rattaché(s), %d nom(s) hors "
-            "référentiel ignoré(s)",
+            "Rattachement : session %s, offre %s, %d besoin(s), %d rattaché(s), %d réponse(s) "
+            "hors besoins ou hors référentiel ignorée(s)",
             deps.session_id,
             state["posting_id"],
             len(matches),
