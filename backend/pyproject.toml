@@ -24,7 +24,9 @@ dependencies = [
     "numpy>=2.5.4",
     "openai>=3.49.0",
     "pdfplumber>=0.11.10",
+    "pillow>=13.0.0",
     "pydantic-settings>=2.16.2",
+    "pypdfium2>=5.15.2",
     "python-docx>=1.2.0",
     "python-multipart>=0.0.33",
     "qdrant-client>=1.20.0",
@@ -66,6 +68,11 @@ python_version = "3.12"
 # APScheduler 3.x n'est pas typé (pas de `py.typed`) : utilisé par `app/scheduler/runner.py`.
 [[tool.mypy.overrides]]
 module = ["apscheduler", "apscheduler.*"]
+ignore_missing_imports = true
+
+# pypdfium2 n'est pas typé (pas de `py.typed`) : utilisé par `app/providers/pdf/layout_extract.py`.
+[[tool.mypy.overrides]]
+module = ["pypdfium2", "pypdfium2.*"]
 ignore_missing_imports = true
 
 [dependency-groups]
@@ -160,6 +167,11 @@ forbidden_modules = [
     "app.providers.pdf.worker",
     "app.providers.pdf.gotenberg",
     "app.providers.pdf.html",
+    "app.providers.pdf.layout",
+    "app.providers.pdf.layout_extract",
+    "app.providers.pdf.layout_worker",
+    "app.providers.fonts.google",
+    "app.providers.fonts.fake",
     "app.providers.web.fetch",
     "app.providers.web._body",
     "app.providers.web.transport",

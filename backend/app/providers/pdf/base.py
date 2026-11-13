@@ -1,5 +1,6 @@
 """Ports du PDF : extraction du texte (fichier importé ou URL lue), rendu d'une page web en PDF
-(repli des pages rendues en JavaScript) et rendu de nos gabarits HTML (leçons, programme ; D89)."""
+(repli des pages rendues en JavaScript), rendu de nos gabarits HTML (leçons, programme ; D89)
+et mise en page d'un CV (positions, polices, couleurs, images des pages ; D119)."""
 
 import re
 from collections.abc import Mapping
@@ -49,22 +50,43 @@ class PageRenderer(Protocol):
         ...
 
 
-# Rendu d'un gabarit HTML (leçon avec schémas Mermaid, programme) : 45 s au plus (D89).
+# Rendu d'un gabarit HTML (leçon avec schémas Mermaid, programme, CV) : 45 s au plus (D89).
 HTML_RENDER_TIMEOUT_S = 45.0
 _RESERVED = {"index.html", "footer.html", "header.html"}
-_ASSET_NAME = re.compile(r"[a-z0-9][a-z0-9_.-]{0,63}\.(css|js)")
+# Nos fichiers figés (CSS, JS) et les polices jointes (noms « slugifiés » : `lato-400.ttf`).
+_ASSET_NAME = re.compile(r"[a-z0-9][a-z0-9_.-]{0,63}\.(css|js|woff2|ttf)")
+# Une mesure en pouces (unité de Gotenberg) : « 8.27 », « 0 », « 0.6 ».
+_INCHES = re.compile(r"\d{1,2}(\.\d{1,4})?")
+
+
+@dataclass(frozen=True)
+class PageSetup:
+    """Taille de la page et marges (haut, droite, bas, gauche) en pouces, telles que Gotenberg
+    les lit ; le gabarit d'un CV suit la page du PDF d'origine, marges nulles (la mise en page
+    est dans le CSS)."""
+
+    width_in: str
+    height_in: str
+    margins_in: tuple[str, str, str, str] = ("0", "0", "0", "0")
+
+    def __post_init__(self) -> None:
+        for value in (self.width_in, self.height_in, *self.margins_in):
+            if not _INCHES.fullmatch(value):
+                raise ValueError("mesure de page refusée")
 
 
 @dataclass(frozen=True)
 class HtmlDocument:
-    """Page à rendre : `index.html`, ressources jointes à côté (noms simples, CSS ou JS : nos
-    fichiers figés seulement), pied de page (`pageNumber`, `totalPages`) et expression attendue
-    avant l'impression (`waitForExpression`)."""
+    """Page à rendre : `index.html`, ressources jointes à côté (noms simples, CSS, JS ou police :
+    nos fichiers figés et les polices libres), pied de page (`pageNumber`, `totalPages`),
+    expression attendue avant l'impression (`waitForExpression`) et page (`None` : A4, marges de
+    0,6 pouce, comme les leçons)."""
 
     index_html: str
     assets: Mapping[str, bytes]
     footer_html: str | None = None
     wait_for_expression: str | None = None
+    page: PageSetup | None = None
 
     def __post_init__(self) -> None:
         for name in self.assets:
@@ -76,5 +98,66 @@ class HtmlPdfRenderer(Protocol):
     async def html_to_pdf(
         self, document: HtmlDocument, *, timeout_s: float = HTML_RENDER_TIMEOUT_S
     ) -> bytes:
-        """PDF A4 de `document`, en `timeout_s` au plus ; `RenderFailed` sinon."""
+        """PDF de `document` (A4 ou `document.page`), en `timeout_s` au plus ; `RenderFailed`
+        sinon."""
+        ...
+
+
+# Mise en page d'un CV (D119) : même sous-processus borné que l'extraction du texte (D72).
+MAX_CV_PAGES = 4
+LAYOUT_DPI = 72
+LAYOUT_TIMEOUT_S = 60.0
+# Sortie du worker (JSON, images PNG en base64) : 40 Mo au plus.
+LAYOUT_MAX_OUTPUT_BYTES = 40 * 1024 * 1024
+# Une page plus grande que 20 pouces de côté n'est pas une page de CV (et son image serait énorme).
+MAX_PAGE_SIDE_PT = 1440
+CV_TOO_LONG_MESSAGE = "Un CV de plus de 4 pages n'est pas pris en charge."
+
+
+@dataclass(frozen=True)
+class TextBlock:
+    """Une ligne de mots de même police, taille et couleur. Coordonnées en points depuis le coin
+    haut gauche de la page ; `color` en `#rrggbb` ; `invisible` : couleur proche du fond lu sur
+    l'image de la page, taille sous 2 pt, ou hors de la page."""
+
+    text: str
+    x0: float
+    top: float
+    x1: float
+    bottom: float
+    font: str
+    size: float
+    color: str
+    bold: bool
+    invisible: bool
+
+
+@dataclass(frozen=True)
+class PageLayout:
+    """Page en points ; blocs dans l'ordre du flux du contenu ; image PNG de la page à
+    `LAYOUT_DPI` ; texte dans l'ordre du flux (ce que lit un parseur, texte invisible compris)."""
+
+    width_pt: float
+    height_pt: float
+    blocks: list[TextBlock]
+    image_png: bytes
+    stream_text: str
+
+
+@dataclass(frozen=True)
+class PdfLayout:
+    """`fonts` : polices du texte visible, sans préfixe de sous-ensemble (« ABCDEF+ »), de la
+    plus employée à la moins employée ; `selectable` : au moins 20 caractères visibles sur la
+    première page (un CV scanné ne l'est pas)."""
+
+    pages: list[PageLayout]
+    fonts: list[str]
+    selectable: bool
+
+
+class PdfLayoutExtractor(Protocol):
+    async def extract_layout(self, data: bytes) -> PdfLayout:
+        """Mise en page des `MAX_CV_PAGES` pages au plus. `PdfUnreadable` : PDF protégé,
+        endommagé, trop long à lire, page démesurée ou plus de `MAX_CV_PAGES` pages
+        (`CV_TOO_LONG_MESSAGE`). Un PDF scanné rend des pages sans blocs, pas une erreur."""
         ...

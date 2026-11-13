@@ -36,7 +36,7 @@ def worker_command(max_pages: int, max_chars: int, max_memory_bytes: int) -> lis
     return [sys.executable, "-m", WORKER_MODULE, *(str(value) for value in limits)]
 
 
-async def _spawn(command: list[str]) -> asyncio.subprocess.Process:
+async def spawn_worker(command: list[str]) -> asyncio.subprocess.Process:
     return await asyncio.create_subprocess_exec(
         *command,
         stdin=asyncio.subprocess.PIPE,
@@ -67,27 +67,29 @@ class SubprocessPdfExtractor:
         command = worker_command(base.MAX_PDF_PAGES, max_chars, self._max_memory_bytes)
         async with self._slots:
             try:
-                process = await _spawn(command)
+                process = await spawn_worker(command)
             except OSError as exc:
                 # EAGAIN, ENOMEM, interpréteur absent : page illisible, jamais le chemin.
                 logger.info("Extraction PDF : worker non lancé (%s)", type(exc).__name__)
                 raise PdfUnreadable() from None
             try:
                 async with asyncio.timeout(self._timeout_s):
-                    output = await _exchange(process, data, max_chars * _BYTES_PER_CHAR)
+                    output = await exchange_with_worker(process, data, max_chars * _BYTES_PER_CHAR)
             except TimeoutError:
                 logger.info("Extraction PDF interrompue : délai dépassé")
                 raise PdfUnreadable(PDF_TIMEOUT_MESSAGE) from None
             finally:
                 # Délai, annulation ou erreur : le worker ne survit jamais à l'appel.
-                await _reap(process)
+                await reap_worker(process)
         if output is None or process.returncode != 0:
             logger.info("Extraction PDF : worker en échec (code %s)", process.returncode)
             raise PdfUnreadable() from None
         return output.decode("utf-8", errors="replace")
 
 
-async def _exchange(process: asyncio.subprocess.Process, data: bytes, limit: int) -> bytes | None:
+async def exchange_with_worker(
+    process: asyncio.subprocess.Process, data: bytes, limit: int
+) -> bytes | None:
     """Envoie le PDF, lit au plus `limit` octets de texte et attend la fin du worker. `None` :
     worker mort avant d'avoir tout lu, ou sortie au-delà du plafond."""
     assert process.stdin is not None and process.stdout is not None
@@ -107,7 +109,7 @@ async def _exchange(process: asyncio.subprocess.Process, data: bytes, limit: int
     return output
 
 
-async def _reap(process: asyncio.subprocess.Process) -> None:
+async def reap_worker(process: asyncio.subprocess.Process) -> None:
     if process.returncode is None:
         with contextlib.suppress(ProcessLookupError):  # mort entre-temps
             process.kill()

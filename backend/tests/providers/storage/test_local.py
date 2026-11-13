@@ -116,3 +116,11 @@ async def test_key_of_another_user_is_refused(tmp_path: Path, owner: str) -> Non
     with pytest.raises(StorageKeyInvalid):
         await storage.delete(owner, key)
     assert await storage.read("u1", key) == b"secret"
+
+
+@pytest.mark.parametrize("suffix", [".png", ".woff2", ".ttf"])
+async def test_cv_template_files_are_accepted(tmp_path: Path, suffix: str) -> None:
+    """Images des pages et polices d'un gabarit de CV (D119)."""
+    storage = LocalFileStorage(tmp_path)
+    key = await storage.save("u1", "cv_templates", b"x", suffix)
+    assert key.endswith(suffix) and await storage.read("u1", key) == b"x"

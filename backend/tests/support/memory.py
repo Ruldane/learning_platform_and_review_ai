@@ -11,8 +11,10 @@ from qdrant_client import AsyncQdrantClient
 from app.core.errors import AppError
 from app.core.providers import MemoryProviders, PublishingProviders
 from app.providers.embeddings.fake import HashingEmbedder
+from app.providers.fonts.fake import FakeFontSource
 from app.providers.pdf.base import HTML_RENDER_TIMEOUT_S, HtmlDocument, RenderFailed
 from app.providers.pdf.extract import PdfPlumberExtractor
+from app.providers.pdf.layout import LocalPdfLayoutExtractor
 from app.providers.storage.local import LocalFileStorage
 from app.providers.vector.base import ChunkPayload, ChunkToIndex
 from app.providers.vector.qdrant import QdrantMemoryRepository
@@ -75,8 +77,16 @@ class FakeHtmlRenderer:
         return self.pdf
 
 
-def fake_publishing_providers() -> PublishingProviders:
-    return PublishingProviders(html_pdf=FakeHtmlRenderer())
+def fake_publishing_providers(
+    html_pdf: FakeHtmlRenderer | None = None, fonts: FakeFontSource | None = None
+) -> PublishingProviders:
+    """Faux rendu Gotenberg, extracteur de mise en page réel mais local (aucun processus lancé),
+    fausses polices (aucun réseau)."""
+    return PublishingProviders(
+        html_pdf=html_pdf or FakeHtmlRenderer(),
+        layout=LocalPdfLayoutExtractor(),
+        fonts=fonts or FakeFontSource(),
+    )
 
 
 @dataclass

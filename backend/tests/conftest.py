@@ -13,7 +13,7 @@ from app.core.providers import MemoryProviders, PublishingProviders, ResearchPro
 from app.db.base import Base
 from app.db.engine import create_engine, create_session_factory
 from app.main import create_app
-from tests.support.memory import FakeHtmlRenderer, fake_memory_providers
+from tests.support.memory import FakeHtmlRenderer, fake_memory_providers, fake_publishing_providers
 from tests.support.research import fake_research_providers
 
 
@@ -78,7 +78,7 @@ def fake_html_renderer() -> FakeHtmlRenderer:
 
 @pytest.fixture
 def publishing_providers(fake_html_renderer: FakeHtmlRenderer) -> PublishingProviders:
-    return PublishingProviders(html_pdf=fake_html_renderer)
+    return fake_publishing_providers(fake_html_renderer)
 
 
 @pytest.fixture

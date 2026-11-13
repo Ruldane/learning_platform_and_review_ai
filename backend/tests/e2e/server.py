@@ -26,7 +26,6 @@ from fastapi import FastAPI
 
 from alembic import command
 from app.config import Settings
-from app.core.providers import PublishingProviders
 from app.features.health.router import get_health_service
 from app.features.health.service import HealthService
 from app.main import create_app
@@ -35,7 +34,12 @@ from app.providers.search.fake import FakeSearch
 from scripts.sample_pdf import make_pdf
 from tests.e2e.council_script import DEBATERS, council_scripts, script_web
 from tests.e2e.scripted_models import ScriptedModels
-from tests.support.memory import FakeHtmlRenderer, FakeWebReader, fake_memory_providers
+from tests.support.memory import (
+    FakeHtmlRenderer,
+    FakeWebReader,
+    fake_memory_providers,
+    fake_publishing_providers,
+)
 from tests.support.research import fake_research_providers
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
@@ -76,9 +80,7 @@ def build_app(settings: Settings, *, delays: Mapping[str, float] | None = None) 
         settings,
         memory_providers=memory,
         research_providers=fake_research_providers(memory.web, searxng=search),
-        publishing_providers=PublishingProviders(
-            html_pdf=FakeHtmlRenderer(pdf=make_pdf(PDF_LINES))
-        ),
+        publishing_providers=fake_publishing_providers(FakeHtmlRenderer(pdf=make_pdf(PDF_LINES))),
         chat_models=ScriptedModels(council_scripts(), delays=delays),
     )
     app.dependency_overrides[get_health_service] = healthy_service

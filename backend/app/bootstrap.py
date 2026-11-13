@@ -29,6 +29,7 @@ from app.features.settings.keys_service import DbKeyReader
 from app.features.settings.service import SettingsModelReader
 from app.providers.embeddings.ollama import OllamaEmbedder
 from app.providers.embeddings.ollama_probe import OllamaProbe
+from app.providers.fonts.google import GoogleFontsSource, fonts_http
 from app.providers.health import HealthCheck
 from app.providers.keys import KeyProvider
 from app.providers.llm.base import LlmProvider
@@ -39,6 +40,7 @@ from app.providers.pdf.base import HTML_RENDER_TIMEOUT_S, PageRenderer
 from app.providers.pdf.gotenberg import GotenbergRenderer
 from app.providers.pdf.gotenberg_probe import GotenbergProbe
 from app.providers.pdf.html import GotenbergHtmlRenderer
+from app.providers.pdf.layout import SubprocessPdfLayoutExtractor
 from app.providers.pdf.subprocess import SubprocessPdfExtractor
 from app.providers.search.base import SEARCH_TIMEOUT_S, SearchProvider
 from app.providers.search.brave import BraveKeyProvider, BraveSearch
@@ -148,9 +150,14 @@ def _render_http(timeout_s: float = FETCH_TIMEOUT_S) -> httpx.AsyncClient:
 
 @asynccontextmanager
 async def publishing_providers(settings: Settings) -> AsyncIterator[PublishingProviders]:
-    """PDF de nos gabarits (leçons, programme) par Gotenberg (D89) ; client fermé à la sortie."""
-    async with _render_http(HTML_RENDER_TIMEOUT_S) as http:
-        yield PublishingProviders(html_pdf=GotenbergHtmlRenderer(http, settings.gotenberg_url))
+    """PDF de nos gabarits par Gotenberg (D89), mise en page d'un CV en sous-processus et polices
+    de Google Fonts (D119) ; clients fermés à la sortie."""
+    async with _render_http(HTML_RENDER_TIMEOUT_S) as http, fonts_http() as fonts:
+        yield PublishingProviders(
+            html_pdf=GotenbergHtmlRenderer(http, settings.gotenberg_url),
+            layout=SubprocessPdfLayoutExtractor(),
+            fonts=GoogleFontsSource(fonts),
+        )
 
 
 def page_renderer(settings: Settings, http: httpx.AsyncClient) -> PageRenderer | None:

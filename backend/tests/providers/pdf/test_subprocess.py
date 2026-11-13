@@ -20,12 +20,12 @@ _DEFAULT_MESSAGE = "PDF illisible (protégé par mot de passe ou endommagé)."
 
 
 class _Spawned:
-    """Espion de `_spawn` : garde chaque processus lancé et le nombre maximal de vivants."""
+    """Espion de `spawn_worker` : garde chaque processus lancé et le nombre maximal de vivants."""
 
     def __init__(self, monkeypatch: pytest.MonkeyPatch) -> None:
         self.processes: list[asyncio.subprocess.Process] = []
         self.max_alive = 0
-        real = pdf_subprocess._spawn
+        real = pdf_subprocess.spawn_worker
 
         async def spy(command: list[str]) -> asyncio.subprocess.Process:
             process = await real(command)
@@ -34,7 +34,7 @@ class _Spawned:
             self.max_alive = max(self.max_alive, alive)
             return process
 
-        monkeypatch.setattr(pdf_subprocess, "_spawn", spy)
+        monkeypatch.setattr(pdf_subprocess, "spawn_worker", spy)
 
 
 def _fake_worker(monkeypatch: pytest.MonkeyPatch, code: str) -> None:

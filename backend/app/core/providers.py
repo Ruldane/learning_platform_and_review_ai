@@ -6,11 +6,12 @@ from dataclasses import dataclass, field
 
 from app.core.security import Cipher
 from app.providers.embeddings.base import Embedder
+from app.providers.fonts.base import FontSource
 from app.providers.health import HealthCheck
 from app.providers.keys import KeyProvider
 from app.providers.llm.base import LlmProvider
 from app.providers.llm.factory import LlmFactory
-from app.providers.pdf.base import HtmlPdfRenderer, PdfTextExtractor
+from app.providers.pdf.base import HtmlPdfRenderer, PdfLayoutExtractor, PdfTextExtractor
 from app.providers.search.base import SearchProvider
 from app.providers.storage.base import FileStorage
 from app.providers.vector.base import MemoryRepository
@@ -61,7 +62,9 @@ class ResearchProviders:
 
 @dataclass(frozen=True)
 class PublishingProviders:
-    """Documents produits par l'application (D89) : PDF de nos gabarits HTML (leçons, programme)
-    par Gotenberg."""
+    """Documents produits par l'application : PDF de nos gabarits HTML (leçons, programme, CV)
+    par Gotenberg (D89), mise en page d'un CV importé et polices libres de ses gabarits (D119)."""
 
     html_pdf: HtmlPdfRenderer
+    layout: PdfLayoutExtractor
+    fonts: FontSource
