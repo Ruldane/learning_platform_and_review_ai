@@ -14,7 +14,7 @@ import pytest
 from app.agents.tools.cv_schema import CvContent
 from app.agents.tools.template_schema import ColumnSpec, PageSpec, TemplateSpec
 from app.agents.tools.template_similarity import TARGET_SCORE, similarity
-from app.features.cv.service.ats_checks import ats_checks
+from app.features.cv.service.ats_checks import EDGE_BAND, ats_checks
 from app.features.cv.service.template import cv_document
 from app.providers.pdf.base import HTML_RENDER_TIMEOUT_S, PdfLayout
 from app.providers.pdf.html import GotenbergHtmlRenderer
@@ -81,3 +81,34 @@ async def test_small_margin_change_still_reaches_target(gotenberg: str) -> None:
     other.fonts.body = other.fonts.heading = "Liberation Sans"
     _, different = await _render(gotenberg, other, cv)
     assert similarity(original.pages, different.pages).score < TARGET_SCORE
+
+
+def _margins(top: float, side: float = 12) -> PageSpec:
+    return PageSpec(width_pt=595, height_pt=842, margins_mm=(top, side, side, side))
+
+
+async def test_thin_top_margin_is_kept_and_reaches_target(gotenberg: str) -> None:
+    """Revue 6.4, round 2, R1 : un original à 5 mm de marge haute garde ses 5 mm (aucun plancher
+    n'abaisse le contenu), et un rendu fidèle à 1 mm près atteint la cible."""
+    cv = content()
+    _, original = await _render(gotenberg, _template(page=_margins(5)), cv)
+    first = min(block.top for block in original.pages[0].blocks)
+    assert first < 8 * 72 / 25.4, first  # sous 8 mm : le contenu suit la marge du spec
+    _, faithful = await _render(gotenberg, _template(page=_margins(6)), cv)
+    sim = similarity(original.pages, faithful.pages)
+    assert sim.score >= TARGET_SCORE, sim
+
+
+async def test_contact_in_band_with_zero_margin_passes(gotenberg: str) -> None:
+    """Revue 6.4, round 2, R1 : bandeau collé au haut de la page (marges à 0), coordonnées sous le
+    nom dans la bande haute des 4 % : `contact_in_body` passe. Nom de 14 pt sans titre, pour que
+    les coordonnées tombent vraiment dans la bande."""
+    cv = content(headline=None)
+    template = _template(page=_margins(0, side=0))
+    template.fonts.name_pt = 14
+    _, layout = await _render(gotenberg, template, cv)
+    page = layout.pages[0]
+    contact = [b for b in page.blocks if CV_FACTS["email"] in b.text or CV_FACTS["phone"] in b.text]
+    assert contact and min(block.top for block in contact) < EDGE_BAND * page.height_pt
+    checks = {check.id: check for check in ats_checks(layout, cv)}
+    assert checks["contact_in_body"].passed, checks["contact_in_body"]

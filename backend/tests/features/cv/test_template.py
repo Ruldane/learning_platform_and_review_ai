@@ -139,8 +139,10 @@ def test_sections_use_h2_and_fact_text_only() -> None:
     assert html.count("<h2>") == 5 and "x1a1" not in html  # ids de faits jamais rendus
 
 
-async def test_ats_checks_pass_on_our_template_layout() -> None:
-    """Rendu textuel (ordre du DOM) puis extraction réelle : les cinq contrôles passent."""
+async def test_dom_order_and_headings_pass_reading_checks_on_text_render() -> None:
+    """Rendu textuel (ordre du DOM) puis extraction réelle : l'ordre de lecture et les intitulés
+    du gabarit passent. Tailles et place du contact viennent du faux rendu (12 pt, 72 pt du haut) :
+    elles ne se vérifient qu'en `live` (`test_template_live.py`)."""
     renderer = TextHtmlRenderer()
     cv = content()
     pdf = await renderer.html_to_pdf(cv_document(spec(), cv, []))

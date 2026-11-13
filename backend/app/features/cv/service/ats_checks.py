@@ -49,6 +49,7 @@ READING_SHARE = 0.9
 LINE_START_CHARS = 30  # début normalisé d'une ligne cherché dans le flux
 _SIZE_TOLERANCE = 0.05
 _MIN_PHONE_DIGITS = 8
+_EDGE_SLACK_PT = 1.0  # chevauchement toléré entre deux lignes voisines
 _NON_DIGIT = re.compile(r"\D")
 
 
@@ -160,6 +161,18 @@ def _standard_headings(content: CvContent) -> AtsCheck:
     return AtsCheck("standard_headings", not odd, detail)
 
 
+def _in_body(block: TextBlock, visible: Sequence[TextBlock], height: float) -> bool:
+    """Le bloc est dans le corps de la page : hors des bandes haute et basse (`EDGE_BAND`), ou
+    dans l'une d'elles mais séparé du bord par un autre bloc visible (un contact sous le nom,
+    dans un bandeau collé au haut de la page, suit le flux du corps ; une ligne isolée au bord,
+    seule entre le bord et le reste, se lit comme un en-tête ou un pied de page)."""
+    if block.top < EDGE_BAND * height:
+        return any(other.bottom <= block.top + _EDGE_SLACK_PT for other in visible)
+    if block.bottom > (1 - EDGE_BAND) * height:
+        return any(other.top >= block.bottom - _EDGE_SLACK_PT for other in visible)
+    return True
+
+
 def _contact_in_body(layout: PdfLayout, content: CvContent) -> AtsCheck:
     emails = [normalize_term(value) for value in content.contact if "@" in value]
     phones = [
@@ -168,14 +181,18 @@ def _contact_in_body(layout: PdfLayout, content: CvContent) -> AtsCheck:
         if "@" not in value and len(digits := _NON_DIGIT.sub("", value)) >= _MIN_PHONE_DIGITS
     ]
     found = False
-    for height, block in _visible(layout):
-        if block.top < EDGE_BAND * height or block.bottom > (1 - EDGE_BAND) * height:
-            continue
-        text, digits = f" {normalize_term(block.text)} ", _NON_DIGIT.sub("", block.text)
-        if any(f" {email} " in text for email in emails if email) or any(
-            phone in digits for phone in phones
-        ):
-            found = True
+    for page in layout.pages:
+        visible = [block for block in page.blocks if not block.invisible]
+        for block in visible:
+            text, digits = f" {normalize_term(block.text)} ", _NON_DIGIT.sub("", block.text)
+            if not any(f" {email} " in text for email in emails if email) and not any(
+                phone in digits for phone in phones
+            ):
+                continue
+            if _in_body(block, visible, page.height_pt):
+                found = True
+                break
+        if found:
             break
     if not emails and not phones:
         detail = "Aucun email ni téléphone dans les coordonnées."

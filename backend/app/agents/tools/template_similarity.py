@@ -19,8 +19,11 @@ import numpy as np
 from app.agents.tools.template_grids import (
     GRID_PT,
     INK_LUMA,
+    SHIFT_MAX_PT,
+    SHIFT_MIN_PT,
     ZONES,
     Grid,
+    ShiftCosts,
     Zone,
     accent_differs,
     color_match,
@@ -89,7 +92,8 @@ class ZoneMatch:
 @dataclass(frozen=True)
 class Similarity:
     """`score` est plafonné à `TARGET_SCORE − 1` si le nombre de pages diffère ;
-    `accent_differs` : la couleur d'accent du rendu n'est pas celle de l'original."""
+    `accent_differs` : la couleur d'accent du rendu n'est pas celle de l'original ; `shifts` :
+    décalage vertical du rendu (points, positif vers le bas) par tiers haut, milieu, bas."""
 
     score: int
     ink: float
@@ -100,6 +104,7 @@ class Similarity:
     zones: list[ZoneDiff]
     matches: list[ZoneMatch] = field(default_factory=list)
     accent_differs: bool = False
+    shifts: dict[Zone, int] = field(default_factory=dict)
 
 
 @dataclass
@@ -141,10 +146,13 @@ class _Tally:
     cells: Counter[Zone] = field(default_factory=Counter)
     original: Counter[Zone] = field(default_factory=Counter)
     render: Counter[Zone] = field(default_factory=Counter)
+    shift: ShiftCosts = field(default_factory=ShiftCosts)
 
     def add(self, page_o: PageLayout | None, page_r: PageLayout | None) -> None:
         shapes = [page_shape(page) for page in (page_o, page_r) if page is not None]
         shape = (max(s[0] for s in shapes), max(s[1] for s in shapes))
+        if page_o is not None and page_r is not None:
+            self.shift.add(page_o, page_r, shape[0] * GRID_PT)
         ink_o, ink_r, text_o, text_r = (
             grid(page, shape) if page is not None else np.zeros(shape, dtype=np.bool_)
             for grid, page in (
@@ -204,6 +212,7 @@ def similarity(original: Sequence[PageLayout], render: Sequence[PageLayout]) -> 
         zones=tally.zones(),
         matches=tally.matches(),
         accent_differs=accent_differs(palette_o, palette_r),
+        shifts=tally.shift.shifts(),
     )
 
 
@@ -233,16 +242,43 @@ def _weakest(sim: Similarity) -> str | None:
     return sentence + "."
 
 
+def _shift_sentence(shifts: dict[Zone, int]) -> str | None:
+    """Sens et ampleur du plus grand décalage vertical (`SHIFT_MIN_PT` ou plus), et la piste de
+    correction : dès le haut et à peu près égal partout → marge haute ; plus fort plus bas →
+    interligne ou espaces entre blocs."""
+    if not shifts:
+        return None
+    # À égalité (plafond atteint dans deux tiers), le tiers le plus bas : c'est là que l'écart naît.
+    zone, points = max(reversed(list(shifts.items())), key=lambda item: abs(item[1]))
+    if abs(points) < SHIFT_MIN_PT:
+        return None
+    amount = "d'au moins" if abs(points) >= SHIFT_MAX_PT else "d'environ"
+    sentence = (
+        f"Le contenu du rendu est décalé {'vers le bas' if points > 0 else 'vers le haut'} "
+        f"{amount} {abs(points)} pt"
+    )
+    if zone == "haut" or abs(points - shifts.get("haut", 0)) < SHIFT_MIN_PT:
+        return f"{sentence} dès le haut de la page : revoir la marge haute ou l'en-tête."
+    return (
+        f"{sentence}, surtout {_ZONE_WORDS[zone]} (l'écart grandit en descendant) : "
+        "revoir l'interligne ou les espaces entre les blocs."
+    )
+
+
 def describe(sim: Similarity) -> str:
     """Phrases pour le Maquettiste. Sous `TARGET_SCORE`, toujours au moins une : la composante la
-    plus faible et sa zone ; puis la couleur d'accent si elle diffère ; les zones dont la part
-    d'encre diffère de plus de `ZONE_THRESHOLD` points (les plus grands écarts d'abord,
+    plus faible et sa zone ; puis le décalage vertical s'il atteint `SHIFT_MIN_PT` (sens, zone,
+    piste de correction) ; la couleur d'accent si elle diffère ; les zones dont la part d'encre
+    diffère de plus de `ZONE_THRESHOLD` points (les plus grands écarts d'abord,
     `MAX_ZONE_SENTENCES` au plus) ; le nombre de pages s'il diffère. Chaîne vide si rien n'est à
     signaler."""
     sentences: list[str] = []
     weakest = _weakest(sim) if sim.score < TARGET_SCORE else None
     if weakest:
         sentences.append(weakest)
+    shift = _shift_sentence(sim.shifts)
+    if shift:
+        sentences.append(shift)
     if sim.accent_differs:
         sentences.append("La couleur d'accent du rendu diffère de celle de l'original.")
     gaps = sorted(

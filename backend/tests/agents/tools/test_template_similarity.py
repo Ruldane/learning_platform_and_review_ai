@@ -7,6 +7,7 @@ import io
 import pytest
 from PIL import Image, ImageDraw
 
+from app.agents.tools.template_grids import SHIFT_MIN_PT
 from app.agents.tools.template_similarity import (
     MAX_FIX_PASSES,
     TARGET_SCORE,
@@ -91,6 +92,7 @@ def test_wider_left_column_is_described() -> None:
     assert 30 < sim.score < 100
     text = describe(sim)
     assert "gauche" in text and "d'encre en plus à gauche que l'original." in text
+    assert sim.shifts == {"haut": 0, "milieu": 0, "bas": 0} and "décalé" not in text
     left = next(zone for zone in sim.zones if zone.zone == "gauche")
     assert left.render > left.original
 
@@ -114,6 +116,26 @@ async def test_line_spacing_gap_stays_under_target_and_is_described() -> None:
 async def test_large_shift_is_described() -> None:
     sim = similarity(await _text_pages(), await _text_pages(top=84))
     assert sim.score < TARGET_SCORE and describe(sim) != ""
+
+
+@pytest.mark.parametrize(("top", "way"), [(80, "vers le bas"), (64, "vers le haut")])
+async def test_vertical_shift_is_described_with_its_direction(top: int, way: str) -> None:
+    """Revue 6.4, round 2, R3 : un décalage de 8 pt est dit avec son sens, son ampleur et la
+    piste de la marge haute, en plus de la zone du recouvrement le plus faible."""
+    sim = similarity(await _text_pages(), await _text_pages(top=top))
+    assert sim.shifts == {"haut": top - 72, "milieu": top - 72, "bas": top - 72}, sim.shifts
+    text = describe(sim)
+    assert f"décalé {way} d'environ 8 pt dès le haut de la page : revoir la marge haute" in text
+
+
+async def test_growing_shift_points_to_line_spacing() -> None:
+    """Interligne 15 au lieu de 14 : le décalage grandit en descendant ; la phrase nomme le tiers
+    où il est le plus fort et l'interligne."""
+    sim = similarity(await _text_pages(), await _text_pages(leading=15))
+    assert abs(sim.shifts["haut"]) < SHIFT_MIN_PT < sim.shifts["bas"], sim.shifts
+    text = describe(sim)
+    assert "décalé vers le bas d'au moins 30 pt, surtout en bas" in text
+    assert "revoir l'interligne" in text
 
 
 def test_missing_page_counts() -> None:

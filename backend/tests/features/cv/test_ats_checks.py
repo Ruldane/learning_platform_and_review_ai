@@ -3,6 +3,7 @@
 from app.agents.tools.cv_schema import CvContent, CvLine, CvSection
 from app.agents.tools.posting_schema import Keyword
 from app.features.cv.service.ats_checks import (
+    EDGE_BAND,
     MIN_BODY_PT,
     STANDARD_HEADINGS,
     ats_checks,
@@ -134,6 +135,29 @@ def test_contact_in_top_band_fails() -> None:
     # En bas de page aussi.
     blocks = [_block(text, 820 if text in contact else 80) for text in texts]
     page = PageLayout(WIDTH, HEIGHT, blocks, b"", "\n".join(texts))
+    assert not _by_id(ats_checks(PdfLayout([page], ["Lato"], True), cv))["contact_in_body"].passed
+
+
+def test_contact_under_the_name_in_a_band_at_the_page_top_passes() -> None:
+    """Bandeau collé au haut de la page (marge 0) : le contact, sous le nom, tombe dans la bande
+    haute des 4 % mais un bloc visible le sépare du bord ; il suit le flux du corps (revue 6.4,
+    round 2, R1)."""
+    cv = content()
+    texts = _texts(cv)
+    contact = " · ".join(cv.contact)
+    body = [text for text in texts[1:] if text not in cv.contact]
+    blocks = [
+        _block(cv.name, 2, size=20),
+        _block(contact, 24),
+        *(_block(text, 60 + 15 * index) for index, text in enumerate(body)),
+    ]
+    assert blocks[1].top < EDGE_BAND * HEIGHT
+    stream = "\n".join([cv.name, contact, *body])
+    page = PageLayout(WIDTH, HEIGHT, blocks, b"", stream)
+    assert _by_id(ats_checks(PdfLayout([page], ["Lato"], True), cv))["contact_in_body"].passed
+    # Le bloc au-dessus doit être visible : un nom invisible ne sépare pas le contact du bord.
+    blocks[0] = _block(cv.name, 2, size=20, invisible=True)
+    page = PageLayout(WIDTH, HEIGHT, blocks, b"", stream)
     assert not _by_id(ats_checks(PdfLayout([page], ["Lato"], True), cv))["contact_in_body"].passed
 
 

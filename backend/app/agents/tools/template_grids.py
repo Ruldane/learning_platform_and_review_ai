@@ -6,6 +6,7 @@ import io
 import math
 from collections import Counter
 from collections.abc import Sequence
+from dataclasses import dataclass, field
 from typing import Any, Literal
 
 import numpy as np
@@ -30,8 +31,14 @@ ACCENT_MAX_DISTANCE = 60
 # Écart d'image toléré (arrondi du rendu) entre la taille de l'image et celle de la page.
 _SIZE_SLACK_PX = 1
 
+# Décalage vertical : cherché dans ±30 pt par tiers de page, signalé à partir de 3 pt.
+SHIFT_MAX_PT = 30
+SHIFT_MIN_PT = 3
+SHIFT_WINDOW_PT = 24
+
 Zone = Literal["haut", "milieu", "bas", "gauche", "droite"]
 ZONES: tuple[Zone, ...] = ("haut", "milieu", "bas", "gauche", "droite")
+VERTICAL_ZONES: tuple[Zone, ...] = ("haut", "milieu", "bas")
 Grid = NDArray[np.bool_]
 Rgb = tuple[int, int, int]
 
@@ -156,3 +163,59 @@ def accent_differs(original: Counter[Rgb], render: Counter[Rgb]) -> bool:
     if accent_o is None:
         return False
     return accent_r is None or math.dist(accent_o, accent_r) > ACCENT_MAX_DISTANCE
+
+
+@dataclass
+class ShiftCosts:
+    """Décalage vertical du rendu par tiers de page (haut, milieu, bas) : pour chaque décalage `s`
+    de −`SHIFT_MAX_PT` à +`SHIFT_MAX_PT` points (s > 0 : le rendu est plus bas), somme sur les
+    pages appariées des |profil_original(y) − profil_rendu(y + s)| (`_text_rows`)."""
+
+    costs: dict[Zone, NDArray[np.float64]] = field(default_factory=dict)
+
+    def add(self, page_o: PageLayout, page_r: PageLayout, height: int) -> None:
+        original, render = _text_rows(page_o, height), _text_rows(page_r, height)
+        padded = np.pad(render, SHIFT_MAX_PT)
+        cuts = (0, height // 3, 2 * height // 3, height)
+        for index, zone in enumerate(VERTICAL_ZONES):
+            low, high = cuts[index], cuts[index + 1]
+            part = original[low:high]
+            cost = np.array(
+                [
+                    np.abs(part - padded[low + SHIFT_MAX_PT + s : high + SHIFT_MAX_PT + s]).sum()
+                    for s in range(-SHIFT_MAX_PT, SHIFT_MAX_PT + 1)
+                ],
+                dtype=np.float64,
+            )
+            self.costs[zone] = self.costs.get(zone, np.zeros_like(cost)) + cost
+
+    def shifts(self) -> dict[Zone, int]:
+        """Décalage de moindre coût par tiers ; à égalité, le plus petit en valeur absolue."""
+        span = range(-SHIFT_MAX_PT, SHIFT_MAX_PT + 1)
+        out: dict[Zone, int] = {}
+        for zone, cost in self.costs.items():
+            values = [float(value) for value in cost]
+            out[zone] = min(span, key=lambda s: (values[s + SHIFT_MAX_PT], abs(s)))
+        return out
+
+
+def _text_rows(page: PageLayout, height: int) -> NDArray[np.float64]:
+    """Profil vertical du texte : pour chaque point de hauteur, largeur cumulée des blocs de texte
+    visibles qui le couvrent ; sommé sur une fenêtre glissante de `SHIFT_WINDOW_PT` (le motif
+    régulier des lignes ferait prendre une ligne pour sa voisine quand l'interligne diffère ; un
+    décalage uniforme reste exact), puis ramené à un total de 1 (une colonne plus étroite ou une
+    police plus large ne passent pas pour un décalage). Le fond (bandeau, colonne colorée)
+    n'entre pas : c'est le contenu qui se décale."""
+    rows = np.zeros(height, dtype=np.float64)
+    for block in page.blocks:
+        if not block.invisible:
+            top, bottom = _cells_pt(block.top, block.bottom, height)
+            rows[top:bottom] += block.x1 - block.x0
+    smoothed: NDArray[np.float64] = np.convolve(rows, np.ones(SHIFT_WINDOW_PT), "same")
+    total = float(smoothed.sum())
+    return smoothed / total if total > 0 else smoothed
+
+
+def _cells_pt(start: float, end: float, size: int) -> tuple[int, int]:
+    low = min(size, max(0, math.floor(start)))
+    return low, max(low, min(size, math.ceil(end)))
