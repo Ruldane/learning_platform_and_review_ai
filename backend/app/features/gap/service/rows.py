@@ -10,7 +10,8 @@ tard, la ligne le montre). Ensuite :
   1re tâche ;
 - sinon → `to_add`.
 Les mots clés envoyés vers l'écart par une revue de CV (G3) suivent, `source="cv_review"`,
-action `to_add`, sauf s'ils sont déjà une ligne ; `match_score` les ignore."""
+action `to_add` (ou `in_program`, même règle), sauf s'ils sont déjà une ligne ; `match_score`
+les ignore."""
 
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -70,7 +71,8 @@ def review_rows(
     terms: Sequence[str], rows: Sequence[GapRow], gap: GapResult, ctx: GapContext
 ) -> list[GapRow]:
     """Les mots clés des revues de CV qui ne sont pas déjà une ligne (nom du besoin ou du
-    référentiel rattaché), une fois chacun."""
+    référentiel rattaché), une fois chacun ; `in_program` dès qu'un module d'un programme
+    validé les vise (« Ajouter au planning » accepté, D123), sinon `to_add`."""
     seen = {normalize_skill_name(row.skill) for row in rows}
     seen |= {normalize_skill_name(m["known"]) for m in gap["matches"] if m["known"]}
     added: list[GapRow] = []
@@ -79,8 +81,9 @@ def review_rows(
         if not norm or norm in seen:
             continue
         seen.add(norm)
-        level = ctx.levels.get(norm)
-        added.append(GapRow(term[:SKILL_MAX], False, level, "to_add", None, "cv_review"))
+        level, week = ctx.levels.get(norm), ctx.weeks.get(norm)
+        action: GapAction = "in_program" if week is not None else "to_add"
+        added.append(GapRow(term[:SKILL_MAX], False, level, action, week, "cv_review"))
     return added
 
 

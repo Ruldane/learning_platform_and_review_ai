@@ -76,9 +76,10 @@ async def postings_citing(
 
 async def posting_skills(db: AsyncSession, user_id: str, posting_id: str) -> PostingSkills | None:
     """Les compétences apprenables d'une offre de January ; `None` tant qu'elle n'est pas
-    analysée. 404 `posting_not_found` si elle n'est pas à elle."""
+    analysée et son écart rangé (ses besoins n'entrent au référentiel qu'à `save_gap`).
+    404 `posting_not_found` si elle n'est pas à elle."""
     posting = await get_posting(db, user_id, posting_id)
-    if posting.analysis is None or posting.status == "rejected":
+    if posting.analysis is None or posting.gap is None or posting.status == "rejected":
         return None
     title = posting.title or "Offre"
     label = f"{title} — {posting.company}" if posting.company else title

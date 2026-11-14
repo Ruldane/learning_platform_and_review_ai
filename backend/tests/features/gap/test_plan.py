@@ -12,6 +12,7 @@ import pytest
 from fastapi import FastAPI
 
 from app.agents.tools.replan_port import GAP_MODULE_TITLE, ReplanDraft, ReplanTaskDraft
+from app.db.models.career import CvReview
 from app.features.program.service.programs import load
 from app.features.program.service.runtime import ProgramRuntime
 from app.features.replan.service.store import AgentReplanStore
@@ -184,3 +185,31 @@ async def test_refused_proposal_creates_no_module(client: httpx.AsyncClient, pla
         loaded = await load(db, plan.user_id, program_id)
     assert all(m.title != GAP_MODULE_TITLE for m in loaded.modules) and len(loaded.tasks) == 12
     assert (await _row(client, posting_id, "LangGraph"))["action"] == "to_add"
+
+
+async def test_review_row_becomes_in_program_after_apply(
+    client: httpx.AsyncClient, plan: Plan
+) -> None:
+    # Revue 6.7, I1 : un mot clé envoyé vers l'écart par une revue de CV, ajouté au planning
+    # puis accepté, passe `in_program` ; il ne peut plus être ajouté une seconde fois.
+    program_id = await validated(plan.program, plan.user_id)
+    posting_id = await _posting(client, plan)
+    async with plan.app.state.session_factory() as db:
+        db.add(
+            CvReview(
+                user_id=plan.user_id, posting_id=posting_id, template_id="t", profile_version=1,
+                status="done", keywords_to_gap=["Kubernetes"],
+            )
+        )  # fmt: skip
+        await db.commit()
+    row = await _row(client, posting_id, "Kubernetes")
+    assert (row["source"], row["action"]) == ("cv_review", "to_add")
+    r = await client.post(f"{API}/postings/{posting_id}/gap/plan", json={"skills": ["Kubernetes"]})
+    assert r.status_code == 202, r.text
+    await _apply(plan, r.json()["session_id"], program_id, "Kubernetes", "Pratiquer Kubernetes")
+    row = await _row(client, posting_id, "Kubernetes")
+    assert (row["source"], row["action"], row["week"]) == ("cv_review", "in_program", 2)
+    again = await client.post(
+        f"{API}/postings/{posting_id}/gap/plan", json={"skills": ["Kubernetes"]}
+    )
+    assert (again.status_code, again.json()["error"]["details"]) == (422, {"fields": ["skills.0"]})

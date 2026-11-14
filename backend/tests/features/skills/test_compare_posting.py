@@ -14,7 +14,7 @@ from app.core.skills import evidence
 from app.features.skills.service import SkillsService
 from scripts.sample_posting import POSTING_TEXT
 from tests.features.lessons.conftest import RecordingLauncher
-from tests.features.postings.conftest import analyzed_posting
+from tests.features.postings.conftest import analysis, analyzed_posting
 from tests.features.skills.support import API
 from tests.support.gap import LEVELS, SKILLS
 
@@ -82,6 +82,12 @@ async def test_compare_posting_requires_id(
     r = await client.get(f"{API}/skills/compare", params=unknown)
     assert (r.status_code, r.json()["error"]["code"]) == (404, "posting_not_found")
     pending = await client.post(f"{API}/postings", json={"text": POSTING_TEXT})
-    params = {"target": "posting", "posting_id": pending.json()["posting"]["id"]}
+    created = pending.json()
+    params = {"target": "posting", "posting_id": created["posting"]["id"]}
+    r = await client.get(f"{API}/skills/compare", params=params)
+    assert (r.status_code, r.json()["error"]["code"]) == (404, "no_compare_target")
+    # Revue 6.7, M8 : analysée mais écart pas encore rangé → toujours rien à comparer.
+    store, me = app.state.career.gap, app.state.local_user_id
+    await store.save_analysis(me, created["session_id"], created["posting"]["id"], analysis())
     r = await client.get(f"{API}/skills/compare", params=params)
     assert (r.status_code, r.json()["error"]["code"]) == (404, "no_compare_target")
