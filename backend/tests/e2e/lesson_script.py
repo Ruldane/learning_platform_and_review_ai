@@ -21,7 +21,7 @@ from app.agents.tools.plan_schema import (
     WeekDraft,
 )
 from app.db.models.program import TaskType
-from tests.e2e.scripted_models import Reply
+from tests.e2e.scripted_models import OutOfOrder, Reply
 from tests.support.lessons import lesson_markdown
 
 LESSON_WORDS = 1500
@@ -43,7 +43,7 @@ def expect(marker: str, reply: Reply) -> Callable[[Sequence[BaseMessage]], str]:
 
     def answer(messages: Sequence[BaseMessage]) -> str:
         if marker not in prompt_of(messages):
-            raise RuntimeError(f"Réponse scriptée hors d'ordre : attendu « {marker} ».")
+            raise OutOfOrder(f"Réponse scriptée hors d'ordre : attendu « {marker} ».")
         return reply if isinstance(reply, str) else reply(messages)
 
     return answer

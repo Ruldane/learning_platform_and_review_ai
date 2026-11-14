@@ -13,14 +13,16 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 import scripts.check_phase4 as check
 from app.config import Settings
 from scripts.check_phase4 import STEPS, CheckFailed, run_check
+from tests.e2e.council_script import council_scripts
 from tests.e2e.server import build_app
 from tests.scripts.live_server import serving
 
 
 @pytest.fixture
 def app(settings: Settings, db_engine: AsyncEngine) -> FastAPI:
-    """Serveur de bout en bout : santé remplacée par une réponse OK, modèles scriptés."""
-    return build_app(settings)
+    """Serveur de bout en bout : santé remplacée par une réponse OK, modèles scriptés du Conseil
+    (le script du CV, parcours n° 2, n'est pas joué par ce contrôle)."""
+    return build_app(settings, scripts=council_scripts())
 
 
 @pytest.mark.timeout(600)

@@ -1,8 +1,10 @@
 """Serveur du parcours de bout en bout (SPEC 18.2) : l'application réelle (lifespan, moteur,
 features, migrations Alembic) sur des fournisseurs factices et les modèles scriptés du Conseil.
 Aucun réseau ni LLM réel : mémoire en local (`HashingEmbedder`, Qdrant en mémoire), web factice
-de 10 pages, rendu PDF factice (un vrai petit PDF), modèles scriptés par agent, santé sans
-sonde (tous les services annoncés disponibles).
+de 10 pages et de la fiche d'une entreprise fictive, rendu PDF textuel (`TextHtmlRenderer` : le
+texte du HTML écrit en un vrai PDF, relisible), polices factices, mise en page des PDF locale,
+modèles scriptés par agent (Conseil et CV), santé sans sonde (tous les services annoncés
+disponibles). Le modèle de vision est celui du niveau par défaut (il lit les images).
 
     uv run python -m tests.e2e.server --port 8765 --data-dir <dossier> [--host 0.0.0.0]
 
@@ -31,20 +33,15 @@ from app.features.health.service import HealthService
 from app.main import create_app
 from app.providers.health import HealthStatus
 from app.providers.search.fake import FakeSearch
-from scripts.sample_pdf import make_pdf
 from tests.e2e.council_script import DEBATERS, council_scripts, script_web
-from tests.e2e.scripted_models import ScriptedModels
-from tests.support.memory import (
-    FakeHtmlRenderer,
-    FakeWebReader,
-    fake_memory_providers,
-    fake_publishing_providers,
-)
+from tests.e2e.cv_script import cv_scripts, script_company_web
+from tests.e2e.scripted_models import Reply, ScriptedModels, merge_scripts
+from tests.support.memory import FakeWebReader, fake_memory_providers, fake_publishing_providers
 from tests.support.research import fake_research_providers
+from tests.support.text_renderer import TextHtmlRenderer
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 DEFAULT_ORIGIN = "http://localhost:5180"
-PDF_LINES = ["Tremplin", "Document de test du parcours de bout en bout."]
 
 HEALTH_CHECKS = ("db", "qdrant", "ollama", "searxng", "gotenberg", "llm")
 MARKER = ".tremplin-e2e"
@@ -70,18 +67,27 @@ def healthy_service() -> HealthService:
     return HealthService([_Faked(name) for name in HEALTH_CHECKS])
 
 
-def build_app(settings: Settings, *, delays: Mapping[str, float] | None = None) -> FastAPI:
-    """L'application sur les fournisseurs factices ; le schéma doit déjà exister."""
+def build_app(
+    settings: Settings,
+    *,
+    delays: Mapping[str, float] | None = None,
+    scripts: Mapping[str, Sequence[Reply]] | None = None,
+) -> FastAPI:
+    """L'application sur les fournisseurs factices ; le schéma doit déjà exister. `scripts` : les
+    réponses des agents (par défaut celles du Conseil et du CV, parcours n° 1 et n° 2)."""
     memory = fake_memory_providers(settings.data_dir)
     assert isinstance(memory.web, FakeWebReader)
     search = FakeSearch("searxng")
     script_web(memory.web, search)
+    script_company_web(memory.web, search)
     app = create_app(
         settings,
         memory_providers=memory,
         research_providers=fake_research_providers(memory.web, searxng=search),
-        publishing_providers=fake_publishing_providers(FakeHtmlRenderer(pdf=make_pdf(PDF_LINES))),
-        chat_models=ScriptedModels(council_scripts(), delays=delays),
+        publishing_providers=fake_publishing_providers(TextHtmlRenderer()),
+        chat_models=ScriptedModels(
+            scripts or merge_scripts(council_scripts(), cv_scripts()), delays=delays
+        ),
     )
     app.dependency_overrides[get_health_service] = healthy_service
     return app
@@ -129,7 +135,9 @@ def e2e_settings(data_dir: Path, *, origin: str) -> Settings:
 
 
 def _parse(argv: Sequence[str] | None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Serveur du parcours de bout en bout n° 1.")
+    parser = argparse.ArgumentParser(
+        description="Serveur des parcours de bout en bout (n° 1 et n° 2)."
+    )
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--data-dir", type=Path, required=True, help="temporaire ou dédié")

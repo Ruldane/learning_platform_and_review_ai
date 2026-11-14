@@ -12,6 +12,9 @@ import { defineConfig, devices } from "@playwright/test";
  * `E2E_REUSE_BACKEND=1`, un serveur déjà lancé sur `E2E_API_URL` est repris tel quel. L'API doit
  * rester locale, et Vite est toujours relancé : un Vite déjà ouvert pourrait viser une autre API.
  *
+ * Vite est lancé par `node` sur son script (comme `pnpm exec vite`, sans dépendre de `pnpm` : un
+ * poste où `pnpm` est bloqué lance les parcours de la même façon).
+ *
  * Arrêt (D117) : le back reçoit `SIGTERM` (`gracefulShutdown`, 10 s avant `SIGKILL`) ; un back
  * lancé dans Docker (`pnpm e2e:docker`, `e2e/support/dockerBackend.ts`) est en plus retiré par
  * le démontage global (`E2E_DOCKER_NAME`), seul moyen sous Windows, qui ignore les signaux.
@@ -58,7 +61,7 @@ export default defineConfig({
       gracefulShutdown: { signal: "SIGTERM", timeout: 10_000 },
     },
     {
-      command: `pnpm exec vite --port ${WEB_PORT} --strictPort`,
+      command: `node node_modules/vite/bin/vite.js --port ${WEB_PORT} --strictPort`,
       url: webUrl,
       env: { VITE_API_URL: apiUrl },
       reuseExistingServer: false,

@@ -12,7 +12,12 @@ from app.core.errors import AppError
 from app.core.providers import MemoryProviders, PublishingProviders
 from app.providers.embeddings.fake import HashingEmbedder
 from app.providers.fonts.fake import FakeFontSource
-from app.providers.pdf.base import HTML_RENDER_TIMEOUT_S, HtmlDocument, RenderFailed
+from app.providers.pdf.base import (
+    HTML_RENDER_TIMEOUT_S,
+    HtmlDocument,
+    HtmlPdfRenderer,
+    RenderFailed,
+)
 from app.providers.pdf.extract import PdfPlumberExtractor
 from app.providers.pdf.layout import LocalPdfLayoutExtractor
 from app.providers.storage.local import LocalFileStorage
@@ -78,10 +83,11 @@ class FakeHtmlRenderer:
 
 
 def fake_publishing_providers(
-    html_pdf: FakeHtmlRenderer | None = None, fonts: FakeFontSource | None = None
+    html_pdf: HtmlPdfRenderer | None = None, fonts: FakeFontSource | None = None
 ) -> PublishingProviders:
-    """Faux rendu Gotenberg, extracteur de mise en page réel mais local (aucun processus lancé),
-    fausses polices (aucun réseau)."""
+    """Faux rendu Gotenberg (`FakeHtmlRenderer`, ou `TextHtmlRenderer` pour un PDF lisible),
+    extracteur de mise en page réel mais local (aucun processus lancé), fausses polices (aucun
+    réseau)."""
     return PublishingProviders(
         html_pdf=html_pdf or FakeHtmlRenderer(),
         layout=LocalPdfLayoutExtractor(),

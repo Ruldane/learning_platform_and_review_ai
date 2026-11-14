@@ -4,9 +4,9 @@ des leçons se suivent ou tournent en même temps sans ordre global ; seul l'ord
 même agent compte.
 
 Une réponse est un texte ou une fonction des messages reçus (identifiants lus dans le prompt,
-leçon au titre du module…). File épuisée : `RuntimeError` qui nomme l'agent, jamais le contenu
-des messages. `delays` : attente avant chaque réponse d'un agent (le parcours Playwright a le temps
-d'écrire pendant un tour)."""
+leçon au titre du module…) ; elle lève `OutOfOrder` quand l'appel n'est pas celui qu'elle attend.
+File épuisée : `RuntimeError` qui nomme l'agent, jamais le contenu des messages. `delays` : attente
+avant chaque réponse d'un agent (le parcours Playwright a le temps d'écrire pendant un tour)."""
 
 import asyncio
 import itertools
@@ -22,6 +22,11 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 from app.providers.llm.base import Tier
 
 type Reply = str | Callable[[Sequence[BaseMessage]], str]
+
+
+class OutOfOrder(RuntimeError):
+    """Une réponse scriptée qui n'est pas celle de l'appel reçu (étape attendue différente)."""
+
 
 MODEL_NAME = "modele-scripte"
 
@@ -131,3 +136,42 @@ class ScriptedChat(BaseChatModel):
             if run_manager:
                 await run_manager.on_llm_new_token(str(chunk.message.content), chunk=chunk)
             yield chunk
+
+
+def _lanes(lanes: list[list[Reply]], agent: str) -> Reply:
+    """Une réponse partagée par plusieurs scénarios : elle prend la réponse suivante du premier
+    scénario dont l'étape attendue est celle de l'appel (les autres ne bougent pas)."""
+
+    def answer(messages: Sequence[BaseMessage]) -> str:
+        for lane in lanes:
+            if not lane:
+                continue
+            reply = lane[0]
+            try:
+                text = reply if isinstance(reply, str) else reply(messages)
+            except OutOfOrder:
+                continue
+            lane.pop(0)
+            return text
+        raise OutOfOrder(
+            f"Modèles scriptés : aucun scénario n'attend cet appel de l'agent {agent}."
+        )
+
+    return answer
+
+
+def merge_scripts(*scripts: Mapping[str, Sequence[Reply]]) -> dict[str, list[Reply]]:
+    """Les files de plusieurs scénarios réunies. Un agent que plusieurs scénarios se partagent
+    (l'Éclaireur du Conseil et celui de la fiche entreprise) garde une file par scénario, chacune
+    dans son ordre : un appel prend la réponse suivante du scénario qui l'attend (`OutOfOrder` :
+    ce n'est pas le sien). Les parcours se jouent donc dans n'importe quel ordre, et un scénario
+    décalé échoue toujours."""
+    agents = dict.fromkeys(agent for script in scripts for agent in script)
+    merged: dict[str, list[Reply]] = {}
+    for agent in agents:
+        lanes = [list(script[agent]) for script in scripts if agent in script]
+        if len(lanes) == 1:
+            merged[agent] = lanes[0]
+            continue
+        merged[agent] = [_lanes(lanes, agent) for _ in range(sum(len(lane) for lane in lanes))]
+    return merged
