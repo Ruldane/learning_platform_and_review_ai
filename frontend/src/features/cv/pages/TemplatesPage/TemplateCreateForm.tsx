@@ -1,18 +1,24 @@
-import { useId } from "react";
 import { Link } from "react-router";
 import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
-import { fieldClass } from "@/shared/ui/fieldClass";
 import { InlineError } from "@/shared/ui/states/InlineError";
+import { NameField } from "./NameField";
 import { PdfFields } from "./PdfFields";
+import { ProfileCvAction } from "./ProfileCvAction";
 import { useTemplateForm } from "./useTemplateForm";
 
 /**
  * Créer un modèle : un nom, puis un PDF envoyé ou un PDF déjà importé. Un refus se dit en français ;
  * quand le modèle de vision manque (409), un lien mène aux réglages.
  */
-export function TemplateCreateForm({ onCreated }: { onCreated: (templateId: string) => void }) {
-  const nameId = useId();
+export function TemplateCreateForm({
+  onCreated,
+  profileDocumentId = null,
+}: {
+  onCreated: (templateId: string) => void;
+  /** Le CV du dernier import du profil, s'il est encore là : l'action « Utiliser le CV de mon profil ». */
+  profileDocumentId?: string | null;
+}) {
   const form = useTemplateForm(onCreated);
   return (
     <form
@@ -21,20 +27,13 @@ export function TemplateCreateForm({ onCreated }: { onCreated: (templateId: stri
       aria-busy={form.pending}
       className="flex max-w-xl flex-col gap-4"
     >
-      <div className="flex flex-col gap-1">
-        <label htmlFor={nameId} className="text-sm font-medium">
-          {t("cv.templatesPage.name")}
-        </label>
-        <input
-          id={nameId}
-          className={fieldClass}
-          value={form.name}
-          maxLength={120}
-          required
+      <NameField value={form.name} disabled={form.pending} onChange={form.setName} />
+      {profileDocumentId ? (
+        <ProfileCvAction
           disabled={form.pending}
-          onChange={(event) => form.setName(event.target.value)}
+          onUse={() => form.createFromProfile(profileDocumentId)}
         />
-      </div>
+      ) : null}
       <PdfFields
         disabled={form.pending}
         fileChosen={form.file !== null}

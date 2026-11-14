@@ -44,6 +44,7 @@ describe("ReviewPage: reading and deciding", () => {
         {
           draft: null,
           session_id: null,
+          source_document_id: null,
           validated: {
             version: 1,
             status: "validated",

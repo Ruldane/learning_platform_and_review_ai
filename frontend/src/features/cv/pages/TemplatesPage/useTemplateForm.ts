@@ -31,6 +31,13 @@ export function useTemplateForm(onCreated: (templateId: string) => void) {
     setFile(picked);
     setLocal(picked ? fileProblem(picked) : null);
   };
+  const createFromProfile = (profileDocumentId: string) => {
+    if (!pending)
+      create({
+        name: name.trim() || t("cv.templatesPage.nameDefault"),
+        documentId: profileDocumentId,
+      });
+  };
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (pending) return;
@@ -51,5 +58,6 @@ export function useTemplateForm(onCreated: (templateId: string) => void) {
     problem: local ?? error,
     visionUnavailable,
     submit,
+    createFromProfile,
   };
 }

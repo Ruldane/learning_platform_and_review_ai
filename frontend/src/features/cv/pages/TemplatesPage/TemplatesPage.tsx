@@ -6,6 +6,7 @@ import { ErrorState } from "@/shared/ui/states/ErrorState";
 import { LoadingState } from "@/shared/ui/states/LoadingState";
 import { POLL_MS } from "../../hooks/useProfile";
 import { useTemplates } from "../../hooks/useTemplates";
+import { useProfile } from "../../hooks/useProfile";
 import { FILE_FIELD_ID } from "./PdfFields";
 import { TemplateCreateForm } from "./TemplateCreateForm";
 import { TemplateList } from "./TemplateList";
@@ -21,6 +22,7 @@ const focusFileField = () => document.getElementById(FILE_FIELD_ID)?.focus();
 export function TemplatesPage({ pollMs = POLL_MS }: { pollMs?: number }) {
   const navigate = useNavigate();
   const query = useTemplates(pollMs);
+  const profile = useProfile(pollMs);
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-2">
@@ -55,7 +57,10 @@ export function TemplatesPage({ pollMs = POLL_MS }: { pollMs?: number }) {
       )}
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-medium">{t("cv.templatesPage.formTitle")}</h2>
-        <TemplateCreateForm onCreated={(id) => void navigate(`/carriere/cv/modeles/${id}`)} />
+        <TemplateCreateForm
+          onCreated={(id) => void navigate(`/carriere/cv/modeles/${id}`)}
+          profileDocumentId={profile.data?.source_document_id ?? null}
+        />
       </section>
     </div>
   );

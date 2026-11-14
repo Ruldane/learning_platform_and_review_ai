@@ -57,6 +57,9 @@ export const cvPages = {
     submit: "Créer le modèle",
     pending: "Envoi en cours…",
     needFile: "Choisis un PDF, ou un PDF déjà importé.",
+    profileCv: "Utiliser le CV de mon profil",
+    profileCvHint:
+      "Le CV que tu as importé pour ton profil sert de modèle ; tu peux aussi en choisir un autre ci-dessous.",
     existingLabel: "Ou utiliser un PDF déjà importé",
     existingNone: "Choisir un PDF déjà importé",
     existingUse: "Utiliser ce PDF",

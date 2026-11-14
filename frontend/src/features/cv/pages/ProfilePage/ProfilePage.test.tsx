@@ -9,8 +9,13 @@ import { openStream, renderCv } from "@/test/cvHarness";
 import { server } from "@/test/server";
 import { ProfilePage } from "./ProfilePage";
 
-const draftState = { draft: profileOut(), validated: null, session_id: null };
-const capturing = { draft: null, validated: null, session_id: "s1" };
+const draftState = {
+  draft: profileOut(),
+  validated: null,
+  session_id: null,
+  source_document_id: null,
+};
+const capturing = { draft: null, validated: null, session_id: "s1", source_document_id: null };
 
 function setup(api: Parameters<typeof renderCv>[3] = {}) {
   return renderCv(
@@ -89,6 +94,7 @@ describe("ProfilePage", () => {
           draft: null,
           validated: profileOut({ version: 4, status: "validated" }),
           session_id: null,
+          source_document_id: null,
         },
       ],
       profileVersions: [

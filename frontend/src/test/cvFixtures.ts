@@ -43,7 +43,12 @@ export const profileOut = (over: Over = {}) => ({
   ...over,
 });
 
-export const emptyProfile = { draft: null, validated: null, session_id: null };
+export const emptyProfile = {
+  draft: null,
+  validated: null,
+  session_id: null,
+  source_document_id: null,
+};
 
 /** Un modèle de CV (`TemplateOut`) prêt et actif, après deux passes. */
 export const templateOut = (over: Over = {}) => ({

@@ -1,9 +1,13 @@
 import { screen, waitFor } from "@testing-library/react";
 import { HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
-import { refusal, templateSummary } from "@/test/cvApi";
+import { describe, expect, it, vi } from "vitest";
+import { emptyProfile, refusal, templateSummary } from "@/test/cvApi";
 import { renderCv } from "@/test/cvHarness";
+import * as cvApiModule from "../../api";
 import { TemplatesPage } from "./TemplatesPage";
+
+// Le corps multipart n'est pas relisible sous jsdom : on observe la source passée à l'appel.
+const createSpy = vi.spyOn(cvApiModule, "createTemplate");
 
 function setup(api: Parameters<typeof renderCv>[3] = {}) {
   return renderCv("/carriere/cv", "/carriere/cv", () => <TemplatesPage pollMs={40} />, api);
@@ -45,6 +49,22 @@ describe("TemplatesPage", () => {
     await user.click(screen.getByRole("button", { name: "Créer le modèle" }));
     expect(await screen.findByText("Page du modèle")).toBeInTheDocument();
     expect(state.creates).toHaveLength(1);
+  });
+
+  it("creates the template from the profile's CV when its document is known", async () => {
+    const { user, state } = setup({
+      profiles: [{ ...emptyProfile, source_document_id: "d-profil" }],
+    });
+    await user.click(await screen.findByRole("button", { name: "Utiliser le CV de mon profil" }));
+    expect(await screen.findByText("Page du modèle")).toBeInTheDocument();
+    expect(state.creates).toHaveLength(1);
+    expect(createSpy).toHaveBeenCalledWith({ name: "Mon CV", documentId: "d-profil" });
+  });
+
+  it("hides « Utiliser le CV de mon profil » without a source document", async () => {
+    setup({ profiles: [{ ...emptyProfile, source_document_id: null }] });
+    await screen.findByRole("button", { name: "Créer le modèle" });
+    expect(screen.queryByRole("button", { name: "Utiliser le CV de mon profil" })).toBeNull();
   });
 
   it("asks for a PDF before sending anything", async () => {
