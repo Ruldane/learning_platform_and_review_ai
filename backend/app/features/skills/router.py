@@ -9,7 +9,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query, Response
 
 from app.core.deps import CurrentUserDep, Db
-from app.features.skills.compare import compare_with_goal
+from app.features.skills.compare import compare_with
 from app.features.skills.history import DEFAULT_WEEKS, MAX_WEEKS, skill_history
 from app.features.skills.map import skill_detail, skill_graph
 from app.features.skills.schemas import (
@@ -50,12 +50,14 @@ async def get_compare(
     response: Response,
     target: CompareTarget = "goal",
     goal_id: Annotated[str | None, Query(max_length=64)] = None,
+    posting_id: Annotated[str | None, Query(max_length=64)] = None,
 ) -> CompareOut:
-    """Moi face au poste cible : les compétences du programme de l'objectif (`goal_id`, sinon
-    le plus récent qui a un programme), attendues `valide`. 404 `goal_not_found` ou
-    `no_compare_target`."""
+    """Moi face au poste cible (`goal` : les compétences du programme de l'objectif `goal_id`,
+    sinon du plus récent qui a un programme) ou face à une offre (`posting` : ses compétences
+    apprenables, `posting_id` obligatoire, 422 `posting_id_required` sinon), attendues
+    `valide`. 404 `goal_not_found`, `posting_not_found` ou `no_compare_target`."""
     _no_store(response)
-    return await compare_with_goal(db, current.id, goal_id)  # `target` : « goal » seul (phase 5)
+    return await compare_with(db, current.id, target, goal_id=goal_id, posting_id=posting_id)
 
 
 @router.get("/history", response_model=HistoryOut)
@@ -75,7 +77,7 @@ async def get_history(
 async def get_skill(
     skill_id: str, current: CurrentUserDep, db: Db, response: Response, now: NowDep
 ) -> SkillDetailOut:
-    """Détail d'une compétence : preuves, offres (vides jusqu'à la phase 6), prochaine action.
-    404 `skill_not_found`."""
+    """Détail d'une compétence : preuves, offres prêtes qui la citent (10 au plus), prochaine
+    action. 404 `skill_not_found`."""
     _no_store(response)
     return await skill_detail(db, current.id, skill_id, now)

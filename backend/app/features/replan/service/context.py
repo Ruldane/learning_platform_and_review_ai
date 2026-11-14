@@ -3,18 +3,29 @@ de January, son bilan (et les options qu'il offre), son budget et le plan à fai
 
 Les références sont stables dans un instantané : `m1…` pour les modules non sautés dans l'ordre
 du programme, `t1…` pour toutes les tâches à faire, par jour puis par ordre du programme (les
-retards en tête : `late`, datées avant aujourd'hui). Les ids ne vont jamais au modèle (F7)."""
+retards en tête : `late`, datées avant aujourd'hui) ; `m0` pour le module « Compétences des
+offres » du déclencheur `gap` (D123). Les ids ne vont jamais au modèle (F7)."""
 
+from collections.abc import Sequence
 from datetime import date, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.tools.program_port import BudgetView
-from app.agents.tools.replan_port import ModuleRef, ReplanContext, ReviewView, TaskRef, week_cap
+from app.agents.tools.replan_port import (
+    GAP_MODULE_REF,
+    GAP_MODULE_TITLE,
+    ModuleRef,
+    ReplanContext,
+    ReviewView,
+    TaskRef,
+    week_cap,
+)
 from app.agents.tools.study_schema import ReplanTrigger, ReviewState
 from app.core.errors import AppError
 from app.features.learning.service.goals import owned_goal
 from app.features.program.service.programs import Loaded, load
+from app.features.program.service.replan_gap import gap_module_id
 from app.features.program.service.replan_versions import program_budget
 from app.features.program.service.rules import floor_minutes
 from app.features.replan.repository import ReviewRepository
@@ -82,9 +93,12 @@ async def build_context(
     review_entry_id: str | None,
     available_minutes: int | None,
     message: str | None,
+    skills: Sequence[str] = (),
 ) -> ReplanContext:
     """404 `program_not_found` (programme d'un autre), 409 `program_not_validated`, 404
-    `review_not_found` (bilan d'un autre programme ou d'un autre utilisateur)."""
+    `review_not_found` (bilan d'un autre programme ou d'un autre utilisateur). Déclencheur
+    `gap` : le module cible « Compétences des offres » en `m0` (existant, ou provisoire tant
+    qu'aucune proposition n'a été acceptée, D123), sans option."""
     loaded = await load(db, user_id, program_id)
     program = loaded.program
     if program.status != "validated":
@@ -95,6 +109,9 @@ async def build_context(
     budget = await program_budget(db, user_id, loaded)
     goal = await owned_goal(db, user_id, program.goal_id)
     modules, tasks = _refs(loaded, today)
+    if trigger == "gap":
+        target = ModuleRef(GAP_MODULE_REF, GAP_MODULE_TITLE, list(skills), gap_module_id(loaded))
+        modules.insert(0, target)
     deadline = loaded.weeks[-1].start_date + timedelta(days=6) if loaded.weeks else None
     return ReplanContext(
         program_id=program_id,
@@ -114,4 +131,5 @@ async def build_context(
         tasks=tasks,
         week_cap_override=week_cap(available_minutes) if available_minutes else None,
         message=message,
+        skills=tuple(skills) if trigger == "gap" else (),
     )

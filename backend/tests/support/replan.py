@@ -6,13 +6,15 @@ version vide `impossible` si ce plafond ne tient pas une pratique et le quiz (F1
 ni LLM."""
 
 import asyncio
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from datetime import date, timedelta
 from typing import Any
 
 from app.agents.tools.program_port import BudgetView
 from app.agents.tools.replan_port import (
+    GAP_MODULE_REF,
+    GAP_MODULE_TITLE,
     Applied,
     ModuleRef,
     PreviewSaved,
@@ -33,6 +35,7 @@ REVIEW_ID = "eeeeeeee-bbbb-cccc-dddd-000000000002"
 MONDAY = date(2026, 11, 16)
 REVIEW_TEXT = "Semaine du 09/11 : 6 h prévues, 2 h faites, 2 tâches sur 7, aucun quiz."
 GOAL = "Devenir AI product engineer"
+GAP_MODULE_ID = "module-id-m0"
 MIN_WEEK = 65  # une pratique (45 min) et le quiz (20 min)
 _TASKS: list[tuple[str, TaskType, int, int, str]] = [  # titre, type, minutes, jour, module
     ("Lire le tutoriel Python", "lire", 120, 0, "m1"),
@@ -142,12 +145,23 @@ class FakeReplanStore:
         review_entry_id: str | None,
         available_minutes: int | None,
         message: str | None,
+        skills: Sequence[str] = (),
     ) -> ReplanContext:
         ctx = self._plan(user_id, program_id)
         self.context_calls.append(
-            {"trigger": trigger, "available_minutes": available_minutes, "message": message}
+            {
+                "trigger": trigger,
+                "available_minutes": available_minutes,
+                "message": message,
+                "skills": list(skills),
+            }
         )
-        if trigger == "message":
+        if trigger == "gap":  # module cible `m0` en tête, comme le vrai port (D123)
+            target = ModuleRef(GAP_MODULE_REF, GAP_MODULE_TITLE, list(skills), GAP_MODULE_ID)
+            ctx = replace(
+                ctx, review=None, options=(), skills=tuple(skills), modules=[target, *ctx.modules]
+            )
+        elif trigger == "message":
             ctx = replace(ctx, review=None, options=())
         elif ctx.review is None or ctx.review.entry_id != review_entry_id:
             raise AppError("review_not_found", "Bilan introuvable.", 404)

@@ -13,7 +13,8 @@ Chaque écriture est idempotente : `preview` par `(session, revision)`, `apply` 
 version ; un nœud rejoué après un arrêt (SPEC 9.4) relit la même chose, jamais une ligne de plus.
 """
 
-from collections.abc import Mapping
+import re
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
 from typing import Annotated, Protocol
@@ -24,11 +25,16 @@ from app.agents.runtime.prose import Prose
 from app.agents.tools.program_port import BudgetView
 from app.agents.tools.study_schema import ReplanOption, ReplanTrigger, ReviewState
 from app.core.errors import AppError
+from app.core.skills import normalize_skill_name
 from app.db.models.program import TaskType
 
 WEEK_CAP_PERCENT = 85
 TASK_REF = r"^t\d{1,4}$"
 MODULE_REF = r"^m\d{1,3}$"
+# Déclencheur `gap` (« Ajouter au planning », D123) : le module cible des ajouts, créé en fin de
+# programme à la 1re application puis réutilisé, toujours montré au modèle sous `m0`.
+GAP_MODULE_REF = "m0"
+GAP_MODULE_TITLE = "Compétences des offres"
 
 
 def week_cap(available_minutes: int) -> int:
@@ -83,6 +89,7 @@ class ReplanContext:
     tasks: list[TaskRef]  # à faire, de la semaine en cours et des suivantes, retards compris
     week_cap_override: int | None  # `week_cap(minutes disponibles cette semaine)`, si données
     message: str | None  # texte de January (« je n'ai que 5 heures… ») : une note du Stratège
+    skills: tuple[str, ...] = ()  # compétences des offres à ajouter (déclencheur `gap` seul)
 
     def refs(self) -> dict[str, str]:
         """Référence (`t12`, `m3`) → id réel, sur cet instantané."""
@@ -103,6 +110,19 @@ class ReplanTaskDraft(BaseModel):
     type: TaskType
     minutes: int = Field(ge=15, le=120)
     done_criterion: Prose = Field(min_length=3, max_length=200)
+
+
+def skills_named(task: ReplanTaskDraft, skills: Sequence[str]) -> list[str]:
+    """Les compétences de `skills` que la tâche nomme en mots entiers, dans son titre ou son
+    critère de fin (casse, accents et espaces ignorés) : « Pratiquer LangGraph » nomme
+    « LangGraph » ; « Lire sur le C » ne nomme pas « C++ »."""
+    text = normalize_skill_name(f"{task.title} {task.done_criterion}")
+    found: list[str] = []
+    for skill in skills:
+        norm = normalize_skill_name(skill)
+        if norm and re.search(rf"(?<!\w){re.escape(norm)}(?!\w)", text):
+            found.append(skill)
+    return found
 
 
 class ReplanSummary(BaseModel):
@@ -180,8 +200,10 @@ class ReplanStore(Protocol):
         review_entry_id: str | None,
         available_minutes: int | None,
         message: str | None,
+        skills: Sequence[str] = (),
     ) -> ReplanContext:
         """Programme, bilan et options, budget, modules et tâches à faire par référence.
+        Déclencheur `gap` : aucune option, `skills` rendues, module cible en `m0`.
         `program_not_found` (404) si le programme n'est pas à l'utilisateur."""
         ...
 
@@ -199,8 +221,10 @@ class ReplanStore(Protocol):
         week_cap_override: int | None,
     ) -> PreviewSaved:
         """Résout les références par `refs` (inconnues : ignorées), applique les droits de
-        l'option, range et enregistre la version (statut : voir `PreviewSaved`) ; idempotent
-        par `(session, revision)`. Jamais `planning_impossible` : `PreviewSaved.impossible`."""
+        l'option (déclencheur `gap` de la session : ajouts seuls, dans `m0`, chacun nommant une
+        compétence de la session ; le reste ignoré), range et enregistre la version (statut :
+        voir `PreviewSaved`) ; idempotent par `(session, revision)`. Jamais
+        `planning_impossible` : `PreviewSaved.impossible`."""
         ...
 
     async def apply(self, user_id: str, session_id: str, program_id: str, version: int) -> Applied:
@@ -233,6 +257,7 @@ class _NoReplan:
         review_entry_id: str | None,
         available_minutes: int | None,
         message: str | None,
+        skills: Sequence[str] = (),
     ) -> ReplanContext:
         raise replan_unavailable()
 

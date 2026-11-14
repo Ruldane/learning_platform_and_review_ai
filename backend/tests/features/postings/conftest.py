@@ -10,6 +10,7 @@ import pytest
 from fastapi import FastAPI
 from sqlalchemy import func, select
 
+from app.agents.tools.gap_port import SkillMatch
 from app.agents.tools.posting_schema import PostingAnalysis
 from app.core.providers import MemoryProviders
 from app.db.models.postings import JobPosting
@@ -19,7 +20,7 @@ from app.providers.web.base import WebDocument
 from scripts.sample_posting import POSTING_TEXT
 from tests.features.lessons.conftest import RecordingLauncher
 from tests.features.program.support import Factory
-from tests.support.gap import analysis_data
+from tests.support.gap import MATCHES, analysis_data
 from tests.support.memory import FakeWebReader
 
 API = "/api/v1"
@@ -94,3 +95,18 @@ def store(db_session_factory: Factory, memory: MemoryRuntime) -> AgentGapStore:
 
 async def post_link(client: httpx.AsyncClient, url: str = LINK) -> httpx.Response:
     return await client.post(f"{API}/postings", json={"url": url})
+
+
+async def analyzed_posting(
+    client: httpx.AsyncClient, app: FastAPI, text: str = POSTING_TEXT, **over: Any
+) -> str:
+    """Une offre ajoutée par la route puis analysée par le vrai port, écart rangé avec les
+    rattachements de `tests.support.gap.MATCHES` (le lanceur des offres doit être factice)."""
+    r = await client.post(f"{API}/postings", json={"text": text})
+    assert r.status_code == 201, r.text
+    posting_id, session = r.json()["posting"]["id"], r.json()["session_id"]
+    store, user = app.state.career.gap, app.state.local_user_id
+    await store.save_analysis(user, session, posting_id, analysis(**over))
+    found = [SkillMatch(need=need, known=known) for need, known in MATCHES.items()]
+    await store.save_gap(user, session, posting_id, found)
+    return str(posting_id)

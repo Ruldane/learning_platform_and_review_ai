@@ -1,8 +1,10 @@
 """Parcours `replan` (SPEC F13, D105) : le Stratège propose une replanification après le bilan
-hebdomadaire ou un message de January (« cette semaine je n'ai que 5 heures »), le code la range
-dans le budget, January l'accepte, la refuse ou demande une autre proposition.
+hebdomadaire ou un message de January (« cette semaine je n'ai que 5 heures »), ou quand January
+ajoute au planning des compétences d'une offre (déclencheur `gap`, D123 : sans option, ajouts
+seuls dans le module « Compétences des offres »), le code la range dans le budget, January
+l'accepte, la refuse ou demande une autre proposition.
 
-START -> context -> (options ? ask_option : propose)
+START -> context -> (options ? ask_option : propose) ; déclencheur `gap` : propose (D123)
 ask_option -> propose (réponse invalide : ask_option)
 propose -> preview -> (impossible, ou rien à changer sans option ? finalize : ask_accept)
 ask_accept : accept -> apply -> (périmée ? propose : finalize) ; refuse -> refuse -> finalize ;
@@ -12,7 +14,7 @@ finalize -> END
 Deux points d'arrêt (`ask_option`, `ask_accept`), chacun seul dans son nœud (SPEC 9.4). Les
 écritures du port (`preview`, `apply`, `refuse`) sont idempotentes."""
 
-from typing import Any, Self
+from typing import Annotated, Any, Self
 
 from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel, Field, model_validator
@@ -60,12 +62,23 @@ class ReplanInput(BaseModel):
     review_entry_id: str | None = None
     available_minutes: int | None = Field(default=None, ge=60, le=10080)
     message: str | None = Field(default=None, max_length=1000)
+    # Déclencheur `gap` seulement (« Ajouter au planning », D123) : noms de lignes `to_add`.
+    skills: list[Annotated[str, Field(min_length=1, max_length=120)]] = Field(
+        default_factory=list, max_length=10
+    )
 
     @model_validator(mode="after")
     def _review_of_weekly(self) -> Self:
         """Le bilan hebdomadaire demande son entrée (422 `invalid_input` sinon)."""
         if self.trigger == "weekly_review" and self.review_entry_id is None:
             raise ValueError("Une replanification du bilan demande `review_entry_id`.")
+        return self
+
+    @model_validator(mode="after")
+    def _skills_of_gap(self) -> Self:
+        """Des compétences avec le déclencheur `gap`, et avec lui seul."""
+        if (self.trigger == "gap") != bool(self.skills):
+            raise ValueError("`skills` accompagne le déclencheur `gap`, et lui seul.")
         return self
 
 

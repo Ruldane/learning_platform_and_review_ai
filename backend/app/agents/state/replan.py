@@ -8,10 +8,11 @@ from typing import Any, TypedDict
 
 class ReplanState(TypedDict, total=False):
     program_id: str
-    trigger: str  # `weekly_review` ou `message`
+    trigger: str  # `weekly_review`, `message` ou `gap`
     review_entry_id: str | None
     available_minutes: int | None
     message: str | None
+    skills: list[str]  # déclencheur `gap` : compétences des offres à ajouter (D123)
     context: dict[str, Any]  # `ReplanContext` en JSON (dates ISO) : l'instantané des références
     option: str | None  # option choisie par January ; None : aucune (ou réponse invalide)
     revision: int  # 0 : première proposition ; +1 à chaque révision ou proposition périmée

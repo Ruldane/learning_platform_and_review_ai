@@ -1,5 +1,6 @@
 """Routes de la replanification (D106) : lancer une replanification sur un message de January
-(`POST /programs/{id}/replan`) et lire l'historique des versions (`GET /programs/{id}/versions`).
+(`POST /programs/{id}/replan`) ou depuis l'écart d'une offre (`start_gap_replan`, D123), et lire
+l'historique des versions (`GET /programs/{id}/versions`).
 
 Le lancement passe sous le verrou de lancement du programme : programme d'un autre → 404,
 brouillon → 409 `program_not_validated`, replanification déjà ouverte → 409 `replan_open`
@@ -7,6 +8,7 @@ brouillon → 409 `program_not_validated`, replanification déjà ouverte → 40
 est la trace (D66, D72). Journaux : identifiants seulement."""
 
 import logging
+from collections.abc import Sequence
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -50,9 +52,8 @@ async def open_replan(db: AsyncSession, user_id: str, program_id: str) -> str | 
     )
 
 
-async def start_replan(
-    rt: ReplanRuntime, user_id: str, program_id: str, body: ReplanRequest
-) -> ReplanStarted:
+async def _start(rt: ReplanRuntime, user_id: str, payload: dict[str, Any]) -> str:
+    program_id = str(payload["program_id"])
     async with rt.launch_lock(user_id, program_id):
         async with rt.session_factory() as db:
             loaded = await load(db, user_id, program_id)
@@ -61,22 +62,39 @@ async def start_replan(
             running = await open_replan(db, user_id, program_id)
         if running is not None:
             raise replan_open(running)
-        payload: dict[str, Any] = {
-            "program_id": program_id,
-            "trigger": "message",
-            "available_minutes": body.available_minutes,
-            "message": body.message,
-        }
         sid = await rt.launcher.start(
             user_id, GRAPH, payload, subject_type=SUBJECT, subject_id=program_id
         )
     logger.info(
-        "Replanification lancée : utilisateur %s, programme %s, session %s",
+        "Replanification lancée (%s) : utilisateur %s, programme %s, session %s",
+        payload["trigger"],
         user_id,
         program_id,
         sid,
     )
-    return ReplanStarted(session_id=sid)
+    return sid
+
+
+async def start_replan(
+    rt: ReplanRuntime, user_id: str, program_id: str, body: ReplanRequest
+) -> ReplanStarted:
+    payload: dict[str, Any] = {
+        "program_id": program_id,
+        "trigger": "message",
+        "available_minutes": body.available_minutes,
+        "message": body.message,
+    }
+    return ReplanStarted(session_id=await _start(rt, user_id, payload))
+
+
+async def start_gap_replan(
+    rt: ReplanRuntime, user_id: str, program_id: str, skills: Sequence[str]
+) -> str:
+    """« Ajouter au planning » (F8, D123) : une replanification au déclencheur `gap`, ajouts
+    seuls dans le module « Compétences des offres », validée par January. Mêmes refus que
+    `start_replan` (404, 409 `program_not_validated`, 409 `replan_open`)."""
+    payload = {"program_id": program_id, "trigger": "gap", "skills": list(skills)}
+    return await _start(rt, user_id, payload)
 
 
 def _diff(version: PlanVersion) -> VersionDiffOut | None:

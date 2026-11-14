@@ -2,11 +2,12 @@
 
 `context` lit le bilan, les options et le plan à faire par références (port) ; `ask_option` et
 `ask_accept` ne font qu'`interrupt()` puis analysent la réponse (pur, rien avant l'arrêt,
-SPEC 9.4). `propose` demande au modèle ce que ses droits permettent (schéma de l'option) ; une
-référence inconnue est renvoyée une fois au modèle, puis retirée. `preview` fait ranger et
-enregistrer la proposition par le port (idempotent par `(session, revision)`), séparé de
-`propose` : rejoué, il ne rappelle pas le modèle. `apply` et `refuse` sont idempotents ; une
-acceptation périmée (lignes changées) repart de `propose` sur le plan relu."""
+SPEC 9.4). `propose` demande au modèle ce que ses droits permettent (schéma de l'option, ou
+ajouts seuls avec le déclencheur `gap`, `replan_gap`) ; une référence inconnue, ou un ajout
+`gap` qui ne nomme aucune compétence, est renvoyé une fois au modèle, puis retiré. `preview`
+fait ranger et enregistrer la proposition par le port (idempotent par `(session, revision)`),
+séparé de `propose` : rejoué, il ne rappelle pas le modèle. `apply` et `refuse` sont
+idempotents ; une acceptation périmée (lignes changées) repart de `propose` sur le plan relu."""
 
 import logging
 from typing import Protocol
@@ -14,6 +15,7 @@ from typing import Protocol
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langgraph.types import interrupt
 
+from app.agents.nodes.strategist.replan_gap import cleaned, draft_of, problem_text, schema_of
 from app.agents.nodes.strategist.replan_prompt import replan_vars
 from app.agents.nodes.strategist.replan_steps import (
     AGENT,
@@ -30,11 +32,6 @@ from app.agents.nodes.strategist.replan_steps import (
     parse_option,
     preview_text,
     reason_text,
-    schema_for,
-    to_draft,
-    unknown_refs,
-    unknown_text,
-    without_unknown,
 )
 from app.agents.prompts.loader import render_prompt
 from app.agents.registry import get_agent
@@ -68,6 +65,7 @@ async def _read(deps: GraphDeps, state: ReplanState) -> ReplanContext:
         review_entry_id=state.get("review_entry_id"),
         available_minutes=state.get("available_minutes"),
         message=state.get("message"),
+        skills=state.get("skills") or [],
     )
 
 
@@ -84,7 +82,10 @@ def make_context(deps: GraphDeps) -> Node:
 
 
 def route_start(state: ReplanState) -> str:
-    return "ask_option" if state["context"]["options"] else "propose"
+    """Le déclencheur `gap` n'a pas d'option (ajouts seuls, D123) : `ask_option` est sauté."""
+    if state.get("trigger") == "gap" or not state["context"]["options"]:
+        return "propose"
+    return "ask_option"
 
 
 def ask_option(state: ReplanState) -> ReplanState:
@@ -107,24 +108,26 @@ async def _write(
     for ask in range(1, MAX_ASKS + 1):
         found = await structured_call(
             model,
-            schema_for(option),
+            schema_of(option, ctx),
             messages,
             agent=AGENT,
             step=f"replanification-{revision}-{ask}",
-            intent="je replanifie" if ask == 1 else "je corrige les références",
+            intent="je replanifie" if ask == 1 else "je corrige la proposition",
         )
-        draft = to_draft(found, option)
-        unknown = unknown_refs(draft, ctx)
-        if not unknown:
+        draft = draft_of(found, option, ctx)
+        problem = problem_text(draft, ctx)
+        if problem is None:
             return draft
-        messages += [AIMessage(found.model_dump_json()), HumanMessage(unknown_text(unknown))]
+        messages += [AIMessage(found.model_dump_json()), HumanMessage(problem)]
+    draft, removed = cleaned(draft, ctx)
     logger.info(
-        "Replanification : %d référence(s) inconnue(s) retirée(s) (session %s, proposition %d)",
-        len(unknown_refs(draft, ctx)),
+        "Replanification : %d retrait(s) ou ajout(s) invalide(s) retiré(s) (session %s, "
+        "proposition %d)",
+        removed,
         deps.session_id,
         revision,
     )
-    return without_unknown(draft, ctx)
+    return draft
 
 
 def make_propose(deps: GraphDeps) -> Node:

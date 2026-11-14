@@ -1,5 +1,5 @@
-"""Carte de compétences (SPEC F15, D107) : graphe et radar, détail d'une compétence (preuves,
-offres, prochaine action).
+"""Carte de compétences (SPEC F15, D107, D123) : graphe et radar, détail d'une compétence
+(preuves, offres qui la citent, prochaine action).
 
 Hors de `service` : la carte lit les services `program`, `lessons` et `quiz`, et
 `program.service` importe `skills.service` (un import dans l'autre sens ferait un cycle).
@@ -16,6 +16,7 @@ from app.core.clock import local_today, user_zone
 from app.core.errors import AppError
 from app.core.skills import Evidence, EvidenceKind, read_evidence
 from app.db.models.skills import Skill, SkillLevel
+from app.features.gap.service.links import postings_citing
 from app.features.lessons.service.lessons import ready_lesson_id
 from app.features.program.service.skill_modules import module_teaching
 from app.features.quiz.service.cards import due_skill_names
@@ -31,6 +32,7 @@ from app.features.skills.schemas import (
     DomainScoreOut,
     EvidenceOut,
     NextActionOut,
+    PostingRefOut,
     SkillDetailOut,
     SkillEdgeOut,
     SkillGraphOut,
@@ -41,6 +43,7 @@ STUDY_URL = "/etudier/session"
 QUIZ_URL = "/etudier/quiz"
 REVIEW_URL = "/etudier/revisions"
 JOURNAL_URL = "/etudier/journal"
+POSTING_PAGE = "/carriere/offres/"
 # Page de chaque genre de preuve qui désigne un objet (`ref_id`) ; « capture » mène au journal.
 _EVIDENCE_PAGES: dict[EvidenceKind, str] = {
     "lesson": "/apprendre/lecons/",
@@ -153,11 +156,25 @@ async def _facts(
     return ActionFacts(module=module.title, lesson_id=lesson_id)
 
 
+async def _postings(db: AsyncSession, user_id: str, skill: Skill) -> list[PostingRefOut]:
+    """Les offres prêtes qui citent la compétence ou un synonyme (D123)."""
+    names = [skill.name, *(str(synonym) for synonym in skill.synonyms)]
+    return [
+        PostingRefOut(
+            id=ref.posting_id,
+            title=ref.title,
+            url=f"{POSTING_PAGE}{quote(ref.posting_id, safe='')}",
+        )
+        for ref in await postings_citing(db, user_id, names)
+    ]
+
+
 async def skill_detail(
     db: AsyncSession, user_id: str, skill_id: str, now: datetime
 ) -> SkillDetailOut:
-    """Une compétence de January : preuves (la plus récente d'abord), offres (vides jusqu'à la
-    phase 6) et prochaine action ; 404 `skill_not_found` si elle n'est pas à elle."""
+    """Une compétence de January : preuves (la plus récente d'abord), offres qui la citent
+    (10 au plus, les plus récentes d'abord) et prochaine action ; 404 `skill_not_found` si elle
+    n'est pas à elle."""
     skill = await SkillRepository(db, user_id).get(skill_id)
     if skill is None:
         raise skill_not_found()
@@ -172,6 +189,6 @@ async def skill_detail(
         synonyms=[str(synonym) for synonym in skill.synonyms],
         level=level,
         evidence=[_evidence_out(item) for item in reversed(proofs)],
-        postings=[],  # offres en phase 6
+        postings=await _postings(db, user_id, skill),
         next_action=next_action(level, skill.name, facts),
     )

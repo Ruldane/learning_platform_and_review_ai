@@ -32,6 +32,7 @@ from app.features.program.service.diff import PlanDiff, diff_plans, snapshot
 from app.features.program.service.drafting import budget_of
 from app.features.program.service.planning import PlanningImpossible
 from app.features.program.service.programs import Loaded, day_budget, load, rows_of
+from app.features.program.service.replan_gap import NEW_GAP_MODULE, gap_target, with_gap_module
 from app.features.program.service.replan_json import (
     changes_json,
     earliest_date,
@@ -67,6 +68,7 @@ class Proposal:
     week_cap_override: int | None
     review_entry_id: str | None
     today: date
+    skills: Sequence[str] = ()  # déclencheur `gap` : compétences du module des offres (D123)
 
 
 async def program_budget(db: AsyncSession, user_id: str, loaded: Loaded) -> Budget:
@@ -90,10 +92,10 @@ def _status(result: RepackResult | None, diff: PlanDiff, option: ReplanOption | 
 async def _write_proposal(
     db: AsyncSession, user_id: str, loaded: Loaded, proposal: Proposal
 ) -> PlanVersion:
-    rows = rows_of(loaded)
+    rows = with_gap_module(rows_of(loaded), proposal.add)
     budget = await program_budget(db, user_id, loaded)
     todo = {t.id for t in loaded.tasks if t.status == "todo"}
-    modules = {m.id for m in loaded.modules if not m.skipped}
+    modules = {m.id for m in loaded.modules if not m.skipped} | {NEW_GAP_MODULE}
     try:
         result: RepackResult | None = repack(
             rows,
@@ -119,10 +121,11 @@ async def _write_proposal(
     # proposition ne reste `pending` sans question qui l'attende.
     await versions.supersede_pending(loaded.program.id)
     days = {"weekday_minutes": budget.weekday_minutes, "weekend_minutes": budget.weekend_minutes}
+    changes = {**changes_json(result, finished=finished), "gap_skills": list(proposal.skills)}
     return await versions.add(
         program_id=loaded.program.id,
         version=await versions.next_version(loaded.program.id),
-        snapshot={**after, "budget": days, "changes": changes_json(result, finished=finished)},
+        snapshot={**after, "budget": days, "changes": changes},
         diff=diff.to_json(),
         reason=proposal.reason[:300],
         session_id=proposal.session_id,
@@ -161,7 +164,8 @@ async def save_proposal(
 
 
 async def _write_changes(db: AsyncSession, user_id: str, loaded: Loaded, raw: Any) -> None:
-    """Dates déplacées, tâches retirées et ajoutées, semaines « Suite » et leur module."""
+    """Dates déplacées, tâches retirées et ajoutées, semaines « Suite » et leur module, module
+    « Compétences des offres » (créé ou complété, D123)."""
     tasks_repo = TaskRepository(db, user_id)
     program_id = loaded.program.id
     suite_modules: dict[int, str] = {}
@@ -179,11 +183,14 @@ async def _write_changes(db: AsyncSession, user_id: str, loaded: Loaded, raw: An
         )
         suite_modules[week.rank] = module.id
     by_id = {t.id: t for t in loaded.tasks}
-    for task in (PlannedTask.from_json(t) for t in raw.get("tasks", [])):
+    tasks = [PlannedTask.from_json(t) for t in raw.get("tasks", [])]
+    gap_id = await gap_target(db, user_id, loaded, list(raw.get("gap_skills", [])), tasks)
+    for task in tasks:
         if task.task_id:
             by_id[task.task_id].planned_date = task.planned_date
             continue
         module_id = task.module_id or suite_modules[task.suite_rank or 0]
+        module_id = gap_id if module_id == NEW_GAP_MODULE else module_id
         await tasks_repo.add(
             module_id=module_id,
             program_id=program_id,

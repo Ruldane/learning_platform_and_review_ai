@@ -32,6 +32,19 @@ class GapRepository:
         )
         return builtins.list((await self.session.execute(stmt)).scalars().all())
 
+    async def ready_recent(self) -> builtins.list[JobPosting]:
+        """Les offres prêtes (analysées), les plus récentes d'abord."""
+        stmt = (
+            select(JobPosting)
+            .where(
+                JobPosting.user_id == self.user_id,
+                JobPosting.status == "ready",
+                JobPosting.analysis.is_not(None),
+            )
+            .order_by(JobPosting.created_at.desc(), literal_column("rowid").desc())
+        )
+        return builtins.list((await self.session.execute(stmt)).scalars().all())
+
     async def review_terms(self, posting_ids: Collection[str]) -> dict[str, list[str]]:
         """`offre → termes` des revues de CV de ces offres, dans l'ordre des revues."""
         if not posting_ids:

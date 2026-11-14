@@ -604,6 +604,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/postings/{posting_id}/gap/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Gap Plan
+         * @description « Ajouter au planning » : lance une replanification du programme validé le plus récent,
+         *     ajouts seuls (module « Compétences des offres »), proposée à January avant toute écriture.
+         *     422 `gap_skill_unknown` (`details.fields` : `skills.{rang}`, sans valeur) si une compétence
+         *     n'est pas une ligne `to_add` de l'écart ; 409 `no_program` ; 409 `replan_open`
+         *     (`details.session_id`) si une replanification est déjà ouverte.
+         */
+        post: operations["post_gap_plan_api_v1_postings__posting_id__gap_plan_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/programs": {
         parameters: {
             query?: never;
@@ -1132,9 +1156,10 @@ export interface paths {
         };
         /**
          * Get Compare
-         * @description Moi face au poste cible : les compétences du programme de l'objectif (`goal_id`, sinon
-         *     le plus récent qui a un programme), attendues `valide`. 404 `goal_not_found` ou
-         *     `no_compare_target`.
+         * @description Moi face au poste cible (`goal` : les compétences du programme de l'objectif `goal_id`,
+         *     sinon du plus récent qui a un programme) ou face à une offre (`posting` : ses compétences
+         *     apprenables, `posting_id` obligatoire, 422 `posting_id_required` sinon), attendues
+         *     `valide`. 404 `goal_not_found`, `posting_not_found` ou `no_compare_target`.
          */
         get: operations["get_compare_api_v1_skills_compare_get"];
         put?: never;
@@ -1195,8 +1220,8 @@ export interface paths {
         };
         /**
          * Get Skill
-         * @description Détail d'une compétence : preuves, offres (vides jusqu'à la phase 6), prochaine action.
-         *     404 `skill_not_found`.
+         * @description Détail d'une compétence : preuves, offres prêtes qui la citent (10 au plus), prochaine
+         *     action. 404 `skill_not_found`.
          */
         get: operations["get_skill_api_v1_skills__skill_id__get"];
         put?: never;
@@ -2747,6 +2772,19 @@ export interface components {
             weeks_before: number;
         };
         /**
+         * PlanGapIn
+         * @description « Ajouter au planning » : des noms de lignes `to_add` de l'écart de l'offre.
+         */
+        PlanGapIn: {
+            /** Skills */
+            skills: string[];
+        };
+        /** PlanGapStarted */
+        PlanGapStarted: {
+            /** Session Id */
+            session_id: string;
+        };
+        /**
          * PlanVersionOut
          * @description Une version du plan. `pending` : proposition qui attend January (dans sa session) ;
          *     `empty` et `impossible` : propositions closes dès leur écriture, jamais à valider.
@@ -2878,7 +2916,8 @@ export interface components {
         };
         /**
          * PostingRefOut
-         * @description Une offre qui exige la compétence (phase 6) ; liste vide d'ici là.
+         * @description Une offre prête dont l'analyse cite la compétence (D123) ; `url` : sa page dans
+         *     l'application.
          */
         PostingRefOut: {
             /** Id */
@@ -5378,6 +5417,41 @@ export interface operations {
             };
         };
     };
+    post_gap_plan_api_v1_postings__posting_id__gap_plan_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                posting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanGapIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanGapStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_programs_api_v1_programs_get: {
         parameters: {
             query?: never;
@@ -6386,8 +6460,9 @@ export interface operations {
     get_compare_api_v1_skills_compare_get: {
         parameters: {
             query?: {
-                target?: "goal";
+                target?: "goal" | "posting";
                 goal_id?: string | null;
+                posting_id?: string | null;
             };
             header?: never;
             path?: never;

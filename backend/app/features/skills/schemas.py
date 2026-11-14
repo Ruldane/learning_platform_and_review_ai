@@ -10,7 +10,7 @@ from app.core.skills import EvidenceKind
 from app.db.models.skills import SkillLevel
 
 NextActionKind = Literal["study", "quiz", "review", "project"]
-CompareTarget = Literal["goal"]  # « offre précise » en phase 6
+CompareTarget = Literal["goal", "posting"]  # poste cible ; offre précise (D123)
 
 
 class SkillNodeOut(BaseModel):
@@ -46,7 +46,8 @@ class EvidenceOut(BaseModel):
 
 
 class PostingRefOut(BaseModel):
-    """Une offre qui exige la compétence (phase 6) ; liste vide d'ici là."""
+    """Une offre prête dont l'analyse cite la compétence (D123) ; `url` : sa page dans
+    l'application."""
 
     id: str
     title: str
@@ -66,7 +67,7 @@ class SkillDetailOut(BaseModel):
     synonyms: list[str]
     level: SkillLevel | None
     evidence: list[EvidenceOut]  # la plus récente d'abord
-    postings: list[PostingRefOut]
+    postings: list[PostingRefOut]  # 10 au plus, les plus récentes d'abord
     next_action: NextActionOut | None  # `None` : compétence prouvée
 
 

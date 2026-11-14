@@ -1,9 +1,9 @@
-"""Schémas de l'écart (SPEC F8, D122) : tableau recalculé à chaque lecture et compétences qui
-manquent le plus souvent."""
+"""Schémas de l'écart (SPEC F8, D122) : tableau recalculé à chaque lecture, compétences qui
+manquent le plus souvent et « Ajouter au planning » (D123)."""
 
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.db.models.skills import SkillLevel
 from app.features.gap.service.score import GapAction, GapSource
@@ -32,3 +32,15 @@ class TopMissingOut(BaseModel):
     skill: str
     postings: int  # offres qui la demandent
     required_in: int  # dont obligatoire
+
+
+class PlanGapIn(BaseModel):
+    """« Ajouter au planning » : des noms de lignes `to_add` de l'écart de l'offre."""
+
+    skills: list[Annotated[str, Field(min_length=1, max_length=120)]] = Field(
+        min_length=1, max_length=10
+    )
+
+
+class PlanGapStarted(BaseModel):
+    session_id: str  # la replanification `replan` (déclencheur `gap`) à suivre et à valider

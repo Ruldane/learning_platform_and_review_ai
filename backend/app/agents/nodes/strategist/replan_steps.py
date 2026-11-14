@@ -56,6 +56,7 @@ EMPTY_TEXT = "Rien à changer : ton plan tient tel quel dans ton budget."
 IMPOSSIBLE_TEXT = "Le plafond de cette semaine ne tient pas une pratique et le quiz."
 FINISHED_TEXT = "Ton programme est terminé : plus aucune semaine à replanifier."
 REFUSED_TEXT = "Plan actuel gardé : la proposition est refusée."
+REASONS = {"weekly_review": "Bilan hebdomadaire", "gap": "Compétences des offres"}
 MAX_NOTE_CHARS = 2000
 MAX_REASON_CHARS = 300
 
@@ -89,6 +90,7 @@ def context_from_state(data: dict[str, Any]) -> ReplanContext:
         ],
         week_cap_override=data["week_cap_override"],
         message=data["message"],
+        skills=tuple(data.get("skills", ())),  # absent d'un instantané d'avant D123
     )
 
 
@@ -202,7 +204,7 @@ def accept_payload(hint: str) -> dict[str, Any]:
 
 
 def reason_text(state_trigger: str, option: str | None, revision: int, note: str) -> str:
-    parts = ["Bilan hebdomadaire" if state_trigger == "weekly_review" else "Message de January"]
+    parts = [REASONS.get(state_trigger, "Message de January")]
     if option:
         parts.append(OPTION_LABELS[option])
     if revision:

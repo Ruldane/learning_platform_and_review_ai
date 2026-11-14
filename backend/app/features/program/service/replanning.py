@@ -83,17 +83,11 @@ class RepackResult:
 class _Row:
     task: TaskRow
     module_id: str
-    module_week: int  # rang (0…) de la semaine du module
 
 
 def _rows(rows: ProgramRows) -> list[_Row]:
     """Les tâches dans l'ordre du programme (semaine, module, rang), par date ensuite."""
-    found = [
-        _Row(t, m.module_id, index)
-        for index, week in enumerate(rows.weeks)
-        for m in week.modules
-        for t in m.tasks
-    ]
+    found = [_Row(t, m.module_id) for week in rows.weeks for m in week.modules for t in m.tasks]
     order = {id(r): n for n, r in enumerate(found)}
     return sorted(found, key=lambda r: (r.task.planned_date, order[id(r)]))
 
@@ -170,11 +164,12 @@ class _Queue:
 
 
 def _own(
-    found: list[_Row], starts: list[date], current: int, removed: set[str], add: Sequence[NewTask]
+    rows: ProgramRows, found: list[_Row], current: int, removed: set[str], add: Sequence[NewTask]
 ) -> tuple[list[PlannedTask], dict[int, list[PlannedTask]]]:
     """Les retards des semaines passées, puis les tâches à faire de chaque semaine ; un ajout du
-    Stratège va à la fin de la semaine de son module si elle est en cours ou à venir, sinon de
-    la semaine en cours."""
+    Stratège va à la fin de la semaine de son module (même vide : « Compétences des offres »,
+    D123) si elle est en cours ou à venir, sinon de la semaine en cours."""
+    starts = [week.start_date for week in rows.weeks]
     late: list[PlannedTask] = []
     own: dict[int, list[PlannedTask]] = {}
     for row in found:
@@ -182,7 +177,7 @@ def _own(
             continue
         week = _span(starts, row.task.planned_date)
         (late if week < current else own.setdefault(week, [])).append(_planned(row))
-    weeks = {r.module_id: r.module_week for r in found}
+    weeks = {m.module_id: index for index, week in enumerate(rows.weeks) for m in week.modules}
     for new in add:
         week = max(weeks.get(new.module_id, current), current)
         day = starts[week] if week < len(starts) else starts[-1]
@@ -260,7 +255,7 @@ def repack(
     if current >= len(starts):
         raise ProgramFinished()
     removed, kept = _drops(found, starts, drop)
-    late, own = _own(found, starts, current, removed, add)
+    late, own = _own(rows, found, current, removed, add)
     used = _done_minutes(found)
     queue = _Queue([])
     carried = queue.entries(late)

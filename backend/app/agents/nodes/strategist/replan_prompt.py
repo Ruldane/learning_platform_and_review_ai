@@ -2,7 +2,8 @@
 
 Le modèle ne voit que les références (`t12`, `m3`), jamais les ids (F7). Les titres des modules
 et des tâches mêlent des textes du Stratège et de January : le plan est encadré par `untrusted()`
-(17.4), comme le message et la note de January. L'objectif est son souhait : non encadré (D53 §5,
+(17.4), comme le message et la note de January, et les compétences du déclencheur `gap` (tirées
+d'offres d'emploi par l'Analyste, D123). L'objectif est son souhait : non encadré (D53 §5,
 D84), comme pour le mode `plan`. Le bilan est écrit par le code."""
 
 from typing import Any
@@ -34,6 +35,12 @@ _RIGHTS = {
     ),
     "advance": "aucun. Le code avance les tâches suivantes jusqu'au plafond. " + _NO_RIGHT,
 }
+_GAP_RIGHT = (
+    "ajouter des tâches (`add`) dans le module `m0` seulement (« Compétences des offres », que le "
+    "code place en fin de programme), jamais en retirer : de quoi apprendre les compétences de la "
+    "liste ci-dessous. Chaque tâche ajoutée nomme une de ces compétences, telle qu'elle est "
+    "écrite, dans son titre ou son critère de fin."
+)
 _DEFAULT_RIGHT = (
     "aucun. Le code range les tâches à faire (retards compris) dans le budget. " + _NO_RIGHT
 )
@@ -55,6 +62,17 @@ def _plan(ctx: ReplanContext) -> str:
     return untrusted("\n".join(lines), "plan à faire")
 
 
+def _skills(ctx: ReplanContext) -> str:
+    listed = "\n".join(f"- {skill}" for skill in ctx.skills)
+    return untrusted(listed, "competences des offres") if listed else ""
+
+
+def _rights(ctx: ReplanContext, option: str | None) -> str:
+    if ctx.skills:
+        return _GAP_RIGHT
+    return _RIGHTS.get(option or "", _DEFAULT_RIGHT)
+
+
 def replan_vars(
     ctx: ReplanContext, option: str | None, *, revision: int, note: str, stale: bool
 ) -> dict[str, Any]:
@@ -69,7 +87,9 @@ def replan_vars(
         "review": review.text if review else "",
         "review_state": _STATES.get(review.state, review.state) if review else "",
         "option": OPTION_LABELS[option] if option else "",
-        "rights": _RIGHTS.get(option or "", _DEFAULT_RIGHT),
+        "rights": _rights(ctx, option),
+        "trigger": "gap" if ctx.skills else "",
+        "skills": _skills(ctx),
         "plan": _plan(ctx),
         "late_count": sum(1 for t in ctx.tasks if t.late),
         "message": untrusted(ctx.message, "message de January") if ctx.message else "",

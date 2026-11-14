@@ -3826,6 +3826,40 @@
         "title": "PlanDiffOut",
         "type": "object"
       },
+      "PlanGapIn": {
+        "description": "« Ajouter au planning » : des noms de lignes `to_add` de l'écart de l'offre.",
+        "properties": {
+          "skills": {
+            "items": {
+              "maxLength": 120,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 10,
+            "minItems": 1,
+            "title": "Skills",
+            "type": "array"
+          }
+        },
+        "required": [
+          "skills"
+        ],
+        "title": "PlanGapIn",
+        "type": "object"
+      },
+      "PlanGapStarted": {
+        "properties": {
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id"
+        ],
+        "title": "PlanGapStarted",
+        "type": "object"
+      },
       "PlanVersionOut": {
         "description": "Une version du plan. `pending` : proposition qui attend January (dans sa session) ;\n`empty` et `impossible` : propositions closes dès leur écriture, jamais à valider.",
         "properties": {
@@ -4250,7 +4284,7 @@
         "type": "object"
       },
       "PostingRefOut": {
-        "description": "Une offre qui exige la compétence (phase 6) ; liste vide d'ici là.",
+        "description": "Une offre prête dont l'analyse cite la compétence (D123) ; `url` : sa page dans\nl'application.",
         "properties": {
           "id": {
             "title": "Id",
@@ -9447,6 +9481,59 @@
         ]
       }
     },
+    "/api/v1/postings/{posting_id}/gap/plan": {
+      "post": {
+        "description": "« Ajouter au planning » : lance une replanification du programme validé le plus récent,\najouts seuls (module « Compétences des offres »), proposée à January avant toute écriture.\n422 `gap_skill_unknown` (`details.fields` : `skills.{rang}`, sans valeur) si une compétence\nn'est pas une ligne `to_add` de l'écart ; 409 `no_program` ; 409 `replan_open`\n(`details.session_id`) si une replanification est déjà ouverte.",
+        "operationId": "post_gap_plan_api_v1_postings__posting_id__gap_plan_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "posting_id",
+            "required": true,
+            "schema": {
+              "title": "Posting Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanGapIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanGapStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Post Gap Plan",
+        "tags": [
+          "gap"
+        ]
+      }
+    },
     "/api/v1/programs": {
       "get": {
         "operationId": "list_programs_api_v1_programs_get",
@@ -11002,7 +11089,7 @@
     },
     "/api/v1/skills/compare": {
       "get": {
-        "description": "Moi face au poste cible : les compétences du programme de l'objectif (`goal_id`, sinon\nle plus récent qui a un programme), attendues `valide`. 404 `goal_not_found` ou\n`no_compare_target`.",
+        "description": "Moi face au poste cible (`goal` : les compétences du programme de l'objectif `goal_id`,\nsinon du plus récent qui a un programme) ou face à une offre (`posting` : ses compétences\napprenables, `posting_id` obligatoire, 422 `posting_id_required` sinon), attendues\n`valide`. 404 `goal_not_found`, `posting_not_found` ou `no_compare_target`.",
         "operationId": "get_compare_api_v1_skills_compare_get",
         "parameters": [
           {
@@ -11010,8 +11097,11 @@
             "name": "target",
             "required": false,
             "schema": {
-              "const": "goal",
               "default": "goal",
+              "enum": [
+                "goal",
+                "posting"
+              ],
               "title": "Target",
               "type": "string"
             }
@@ -11031,6 +11121,23 @@
                 }
               ],
               "title": "Goal Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "posting_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Posting Id"
             }
           }
         ],
@@ -11132,7 +11239,7 @@
     },
     "/api/v1/skills/{skill_id}": {
       "get": {
-        "description": "Détail d'une compétence : preuves, offres (vides jusqu'à la phase 6), prochaine action.\n404 `skill_not_found`.",
+        "description": "Détail d'une compétence : preuves, offres prêtes qui la citent (10 au plus), prochaine\naction. 404 `skill_not_found`.",
         "operationId": "get_skill_api_v1_skills__skill_id__get",
         "parameters": [
           {

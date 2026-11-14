@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 from app.agents.runtime.prose import Prose
 
-ReplanTrigger = Literal["weekly_review", "message"]
+ReplanTrigger = Literal["weekly_review", "message", "gap"]
 ReplanOption = Literal["reduce_scope", "push_deadline", "advance", "deepen"]
 ReviewState = Literal["late_twice", "late", "ahead", "on_track"]
 

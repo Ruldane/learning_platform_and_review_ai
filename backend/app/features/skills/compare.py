@@ -1,7 +1,8 @@
-"""Comparaison de la carte avec une cible (SPEC F15, D107 n° 2) : « poste cible » = les
-compétences du programme de l'objectif, attendues au niveau `valide` ; « offre précise » en
-phase 6. Lecture seule, hors de `service` comme `map` (cycle avec `program`) ; l'objectif est lu
-par `learning.service`, le programme par `program.service` (contrat 2)."""
+"""Comparaison de la carte avec une cible (SPEC F15, D107 n° 2, D123) : « poste cible » = les
+compétences du programme de l'objectif ; « offre précise » = les compétences apprenables de
+l'offre ; attendues au niveau `valide`. Lecture seule, hors de `service` comme `map` (cycle avec
+`program`) ; l'objectif est lu par `learning.service`, le programme par `program.service`,
+l'offre par `gap.service` (contrat 2)."""
 
 from math import floor
 
@@ -9,11 +10,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
 from app.db.models.skills import LEVEL_ORDER, SkillLevel
+from app.features.gap.service.links import posting_skills
 from app.features.learning.service.goals import get_goal, list_goals
 from app.features.program.service.skill_modules import program_skill_names
 from app.features.skills.radar import as_level, domain_name
 from app.features.skills.repository import SkillRepository, UserSkillRepository
-from app.features.skills.schemas import CompareOut, CompareRowOut
+from app.features.skills.schemas import CompareOut, CompareRowOut, CompareTarget
 
 TARGET_LEVEL: SkillLevel = "valide"
 LABEL_MAX = 120
@@ -42,11 +44,10 @@ async def _target(db: AsyncSession, user_id: str, goal_id: str | None) -> tuple[
     raise no_compare_target()
 
 
-async def compare_with_goal(db: AsyncSession, user_id: str, goal_id: str | None) -> CompareOut:
-    """Une ligne par compétence du programme (dans son ordre), cible `valide` ; `coverage` =
-    part des lignes atteintes, en %, 0,5 arrondi au-dessus (0 sans ligne)."""
-    label, program_id = await _target(db, user_id, goal_id)
-    names = await program_skill_names(db, user_id, program_id)
+async def _compare(db: AsyncSession, user_id: str, label: str, names: list[str]) -> CompareOut:
+    """Une ligne par compétence de `names` (noms normalisés, dans leur ordre) présente au
+    référentiel, cible `valide` ; `coverage` = part des lignes atteintes, en %, 0,5 arrondi
+    au-dessus (0 sans ligne)."""
     found = await SkillRepository(db, user_id).by_norm(names)
     skills = [found[name] for name in names if name in found]
     levels = await UserSkillRepository(db, user_id).for_skills([skill.id for skill in skills])
@@ -66,3 +67,43 @@ async def compare_with_goal(db: AsyncSession, user_id: str, goal_id: str | None)
     reached = sum(1 for row in rows if row.gap <= 0)
     coverage = floor(100 * reached / len(rows) + 0.5) if rows else 0
     return CompareOut(target_label=label, coverage=coverage, rows=rows)
+
+
+async def compare_with_goal(db: AsyncSession, user_id: str, goal_id: str | None) -> CompareOut:
+    """Les compétences du programme de l'objectif, dans son ordre (voir `_compare`)."""
+    label, program_id = await _target(db, user_id, goal_id)
+    return await _compare(db, user_id, label, await program_skill_names(db, user_id, program_id))
+
+
+async def compare_with_posting(db: AsyncSession, user_id: str, posting_id: str) -> CompareOut:
+    """« Moi face à cette offre » (D123) : ses compétences apprenables (nom rattaché au
+    référentiel, sinon celui du besoin), dans l'ordre de l'analyse, attendues `valide` ;
+    libellé « Titre — Entreprise ». 404 `posting_not_found`, ou `no_compare_target` tant que
+    l'offre n'est pas analysée."""
+    found = await posting_skills(db, user_id, posting_id)
+    if found is None:
+        message = "Cette offre n'est pas encore analysée : rien à comparer pour l'instant."
+        raise AppError("no_compare_target", message, 404)
+    return await _compare(db, user_id, found.label, found.names)
+
+
+def posting_id_required() -> AppError:
+    return AppError(
+        "posting_id_required", "Choisis l'offre à comparer.", 422, {"fields": ["posting_id"]}
+    )
+
+
+async def compare_with(
+    db: AsyncSession,
+    user_id: str,
+    target: CompareTarget,
+    *,
+    goal_id: str | None,
+    posting_id: str | None,
+) -> CompareOut:
+    """La comparaison demandée ; `posting` sans `posting_id` : 422 `posting_id_required`."""
+    if target == "goal":
+        return await compare_with_goal(db, user_id, goal_id)
+    if posting_id is None:
+        raise posting_id_required()
+    return await compare_with_posting(db, user_id, posting_id)
