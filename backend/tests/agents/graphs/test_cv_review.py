@@ -101,6 +101,39 @@ async def test_both_drop_removes_proposal(
     assert len(confront_calls(models, 2)) == 1  # seul le Recruteur a une proposition contestée
 
 
+async def test_amend_then_author_drop_removes_and_says_so(
+    review_runner: MakeReview, review_store: FakeCvReviewStore
+) -> None:
+    models = reviewers(
+        ats_confront=[stances(("r1", "amend", AMENDED))],
+        recruiter_confront=[stances(), stances(("r1", "drop", None))],
+    )
+    run = await review_runner(models)
+    await run.question()
+    assert review_store.saved_refs == ["a1", "a2"]
+    said = await run.said()
+    assert any("- r1 : je retire." in s for s in said)
+
+
+async def test_amend_then_author_keep_restores_original_text(
+    review_runner: MakeReview, review_store: FakeCvReviewStore
+) -> None:
+    models = reviewers(
+        ats_confront=[stances(("r1", "amend", "Mène l'équipe"))],
+        recruiter_confront=[stances(), stances(("r1", "keep", None))],
+    )
+    run = await review_runner(models)
+    await run.question()
+    [second] = [p for p in confront_calls(models, 2) if "Tu es le Recruteur" in p]
+    assert "Texte d'origine (le tien) : Anime l'équipe au quotidien" in second
+    assert "Texte amendé par l'autre agent : Mène l'équipe" in second
+    assert in_untrusted(second, "Anime l'équipe au quotidien")
+    assert in_untrusted(second, "Mène l'équipe")
+    assert review_store.saved["r1"][0].after == "Anime l'équipe au quotidien"
+    said = await run.said()
+    assert any("- r1 : je maintiens mon texte d'origine." in s for s in said)
+
+
 async def test_amended_text_is_revalidated(
     review_runner: MakeReview, review_store: FakeCvReviewStore
 ) -> None:

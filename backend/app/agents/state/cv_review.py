@@ -21,8 +21,9 @@ class CvReviewState(TypedDict, total=False):
     strengths: list[str]  # forces vues par le Recruteur (rapport)
     risks: list[str]  # risques vus par le Recruteur (rapport)
     proposals: list[dict[str, Any]]  # `Proposal` en JSON, texte courant (amendements compris)
-    contested: dict[str, dict[str, str]]  # réf. → {stance, reason} de l'autre agent au tour 1
-    removed: list[str]  # réf. retirées : `drop` des deux côtés
+    # réf. → {stance, reason[, original]} de l'autre agent au tour 1 (original : avant `amend`)
+    contested: dict[str, dict[str, str]]
+    removed: list[str]  # réf. retirées au tour 2 : l'auteur a dit `drop`
     items: list[dict[str, Any]]  # {proposal, status, blocks} après le validateur
     gap_terms: list[str]  # mots clés de l'offre absents du profil : vers l'écart
     saved: int  # modifications rangées

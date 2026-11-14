@@ -1,16 +1,14 @@
 """La confrontation du Lecteur ATS et du Recruteur (SPEC 5.3, D129), deux tours au plus (5.3).
 
-Tour 1 : chaque agent prend position (`Confrontation`) sur les propositions de l'autre : `keep`
-(gardée), `drop` (à retirer : contestée), `amend` (autre formulation : le texte est remplacé, la
-proposition reste contestée). Tour 2 : seules les propositions contestées reviennent, à leur
-auteur, avec l'objection ; il maintient (`keep`), retire (`drop`) ou reformule (`amend`). Une
-proposition n'est retirée que si les **deux** côtés disent `drop` ; sinon elle reste et January
-tranche. Jamais de troisième tour. Un texte amendé repasse par le validateur (`validate`).
+Tour 1 : chaque agent prend position (`Confrontation`) sur les propositions de l'autre : `keep`,
+`drop` (contestée), `amend` (texte remplacé, proposition contestée, origine gardée). Tour 2 : les
+propositions contestées reviennent à leur auteur (objection, texte d'origine, amendement) ; `keep`
+rend son texte d'origine, `drop` retire la proposition, `amend` pose son nouveau texte. Jamais de
+troisième tour ; le reste, January tranche. Un texte amendé repasse par le validateur.
 
 Une position sur une référence inconnue, en double, ou un `amend` sans texte est renvoyé au
-modèle, deux fois au plus, puis ignoré (la proposition est gardée telle quelle). Une sortie
-structurée invalide après ses essais vaut « tout garder » : la revue continue. Le débat est
-publié dans le fil (`agent.message`) ; aucune écriture de port. Journaux : nombres seulement."""
+modèle, deux fois au plus, puis ignoré (proposition gardée telle quelle). Une sortie invalide vaut
+« tout garder ». Débat publié dans le fil, sans écriture de port. Journaux : nombres seulement."""
 
 import logging
 from typing import Any, Protocol
@@ -65,6 +63,11 @@ def proposals_text(proposals: list[Proposal], critiques: dict[str, dict[str, str
             f"  Raison : {p.reason}",
         ]
         if (critique := critiques.get(p.ref)) is not None:
+            if original := critique.get("original"):
+                lines[1:2] = [
+                    f"  Texte d'origine (le tien) : {original}",
+                    f"  Texte amendé par l'autre agent : {p.after or '(aucun)'}",
+                ]
             lines.append(f"  Objection : {critique['stance']} — {critique['reason']}")
         blocks.append("\n".join(lines))
     return untrusted("\n".join(blocks), "propositions")
@@ -112,7 +115,8 @@ def clean_stances(found: Confrontation, by_ref: dict[str, Proposal]) -> dict[str
 def apply_first(
     proposals: list[Proposal], stances: dict[str, Stance]
 ) -> tuple[list[Proposal], dict[str, dict[str, str]]]:
-    """Tour 1 : `amend` remplace le texte ; `drop` et `amend` rendent la proposition contestée."""
+    """Tour 1 : `amend` remplace le texte (l'origine reste dans `contested`, pour le tour 2) ;
+    `drop` et `amend` rendent la proposition contestée."""
     out: list[Proposal] = []
     contested: dict[str, dict[str, str]] = {}
     for p in proposals:
@@ -120,6 +124,7 @@ def apply_first(
         if stance is not None and stance.stance != "keep":
             contested[p.ref] = {"stance": stance.stance, "reason": stance.reason}
             if stance.stance == "amend" and stance.after:
+                contested[p.ref]["original"] = p.after or ""
                 p = p.model_copy(update={"after": stance.after.strip()})
         out.append(p)
     return out, contested
@@ -128,33 +133,50 @@ def apply_first(
 def apply_second(
     proposals: list[Proposal], contested: dict[str, dict[str, str]], stances: dict[str, Stance]
 ) -> tuple[list[Proposal], list[str]]:
-    """Tour 2 : `drop` des deux côtés → retirée ; `amend` de l'auteur → texte remplacé."""
+    """Tour 2, l'auteur : `drop` retire, `keep` rend l'origine, `amend` remplace, silence : rien."""
     out: list[Proposal] = []
     removed: list[str] = []
     for p in proposals:
         stance = stances.get(p.ref)
-        critic = contested.get(p.ref, {}).get("stance")
-        if stance is not None and stance.stance == "drop" and critic == "drop":
+        kind = stance.stance if stance is not None else "silent"
+        if p.ref not in contested or kind == "silent":
+            out.append(p)
+        elif kind == "drop":
             removed.append(p.ref)
-            continue
-        if stance is not None and stance.stance == "amend" and stance.after:
-            p = p.model_copy(update={"after": stance.after.strip()})
-        out.append(p)
+        elif kind == "amend" and stance is not None and stance.after:
+            out.append(p.model_copy(update={"after": stance.after.strip()}))
+        else:
+            original = contested[p.ref].get("original")
+            out.append(p if original is None else p.model_copy(update={"after": original}))
     return out, removed
 
 
+def verb_of(round_no: int, stance: Stance | None, critique: dict[str, str]) -> str:
+    """Le verbe du fil : il dit ce qui arrive à la proposition."""
+    kind = stance.stance if stance else "keep"
+    if round_no == 2 and "original" in critique:
+        if stance is None:
+            return "sans réponse, l'amendement de l'autre agent reste"
+        if kind == "keep":
+            return "je maintiens mon texte d'origine"
+    return _VERB[round_no][kind]
+
+
 def debate_text(
-    round_no: int, agent: str, judged: list[Proposal], stances: dict[str, Stance]
+    round_no: int,
+    agent: str,
+    judged: list[Proposal],
+    stances: dict[str, Stance],
+    contested: dict[str, dict[str, str]] | None = None,
 ) -> str:
     """Ce que l'agent dit dans le fil : sa position sur chaque proposition jugée."""
+    head = "Tour 2 : je réponds aux objections sur mes propositions."
     if round_no == 1:
         head = f"Tour 1 : mes positions sur les propositions du {LABEL[other(agent)]}."
-    else:
-        head = "Tour 2 : je réponds aux objections sur mes propositions."
     lines = [head]
     for p in judged:
         stance = stances.get(p.ref)
-        verb = _VERB[round_no][stance.stance if stance else "keep"]
+        verb = verb_of(round_no, stance, (contested or {}).get(p.ref, {}))
         lines.append(f"- {p.ref} : {verb}." + (f" {stance.reason}" if stance else ""))
     return "\n".join(lines)
 
@@ -257,10 +279,8 @@ def make_confront(deps: GraphDeps, round_no: int) -> Node:
                 continue
             mine = await ask_stances(deps, agent, round_no, variables, judged, contested)
             stances |= mine
-            message = {
-                "message_id": f"{agent}-tour-{round_no}",
-                "text": debate_text(round_no, agent, judged, mine),
-            }
+            text = debate_text(round_no, agent, judged, mine, contested)
+            message = {"message_id": f"{agent}-tour-{round_no}", "text": text}
             emit("agent.message", message, agent=agent)
         if round_no == 1:
             kept, found = apply_first(proposals, stances)
