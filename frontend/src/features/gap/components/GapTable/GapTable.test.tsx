@@ -63,6 +63,20 @@ describe("GapTable", () => {
     expect(within(rowOf("SAP")).queryByRole("checkbox")).not.toBeInTheDocument();
   });
 
+  it("offers no checkbox for a skill already validated or proved", () => {
+    setup({
+      rows: [
+        row("Go", { level: "valide" }),
+        row("Rust", { level: "prouve" }),
+        row("SQL", { level: "en_cours" }),
+      ],
+    });
+    expect(within(rowOf("Go")).getByText("Déjà acquise")).toBeInTheDocument();
+    expect(within(rowOf("Go")).queryByRole("checkbox")).toBeNull();
+    expect(within(rowOf("Rust")).queryByRole("checkbox")).toBeNull();
+    expect(within(rowOf("SQL")).getByRole("checkbox")).toBeInTheDocument();
+  });
+
   it("marks the keywords sent by the CV review", () => {
     setup();
     expect(within(rowOf("Kafka")).getByText("relevé par la revue du CV")).toBeInTheDocument();

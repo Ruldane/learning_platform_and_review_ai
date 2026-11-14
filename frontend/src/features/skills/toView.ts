@@ -1,12 +1,19 @@
 import type {
   CompareRowView,
+  PostingChoiceView,
   DomainScoreView,
   HistoryPointView,
   SkillDetailView,
   SkillEdgeView,
   SkillNodeView,
 } from "./components/viewTypes";
-import type { CompareOut, HistoryOut, SkillDetailOut, SkillGraphOut } from "./types";
+import type {
+  CompareOut,
+  HistoryOut,
+  PostingSummaryOut,
+  SkillDetailOut,
+  SkillGraphOut,
+} from "./types";
 
 /** Le graphe du contrat → les types de vue de la carte (camelCase). */
 export function toGraphView(graph: SkillGraphOut): {
@@ -73,4 +80,13 @@ export function toCompareView(compare: CompareOut): {
       gap: row.gap,
     })),
   };
+}
+
+/** Les offres analysées (prêtes et titrées) sont les seules cibles possibles d'une comparaison. */
+export function toPostingChoices(postings: PostingSummaryOut[]): PostingChoiceView[] {
+  return postings.flatMap((posting) =>
+    posting.status === "ready" && posting.title !== null
+      ? [{ id: posting.id, title: posting.title, company: posting.company }]
+      : [],
+  );
 }

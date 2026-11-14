@@ -1,47 +1,37 @@
-import { useNavigate } from "react-router";
-import { ApiError } from "@/shared/api/errors";
-import { t } from "@/shared/i18n/t";
-import { EmptyState } from "@/shared/ui/states/EmptyState";
-import { CompareTable } from "../../components/CompareTable";
-import { useSkillCompare } from "../../hooks/useSkillCompare";
-import { toCompareView } from "../../toView";
-import { QueryPanel } from "./QueryPanel";
+import { useMemo, useState } from "react";
+import { CompareTargetPicker } from "../../components/CompareTargetPicker";
+import type { CompareTargetView } from "../../components/viewTypes";
+import { usePostingChoices } from "../../hooks/usePostingChoices";
+import { toPostingChoices } from "../../toView";
+import { GoalCompare } from "./GoalCompare";
+import { PostingCompare } from "./PostingCompare";
 
 /**
- * L'onglet Comparaison avec le poste cible. Sans objectif qui ait un programme (404
- * `no_compare_target`), un état vide propose d'en créer un.
+ * L'onglet Comparaison : avec le poste cible de l'objectif, ou avec une offre analysée (choisie
+ * dans la liste). Seule la cible ouverte lit ses données.
  */
 export function ComparePanel() {
-  const query = useSkillCompare(true);
-  const navigate = useNavigate();
-  if (query.error instanceof ApiError && query.error.code === "no_compare_target") {
-    return (
-      <EmptyState
-        title={t("skills.compareNone.title")}
-        description={t("skills.compareNone.description")}
-        action={{
-          label: t("skills.compareNone.action"),
-          onClick: () => void navigate("/apprendre/objectifs"),
-        }}
-      />
-    );
-  }
+  const [target, setTarget] = useState<CompareTargetView>("goal");
+  const [postingId, setPostingId] = useState<string | null>(null);
+  const postings = usePostingChoices(target === "posting");
+  const choices = useMemo(
+    () => (postings.data ? toPostingChoices(postings.data) : []),
+    [postings.data],
+  );
   return (
-    <QueryPanel query={query}>
-      {(compare) => {
-        const view = toCompareView(compare);
-        return (
-          <CompareTable
-            rows={view.rows}
-            coverage={view.coverage}
-            targetLabel={view.targetLabel}
-            emptyAction={{
-              label: t("skills.compare.emptyAction"),
-              onClick: () => void navigate("/apprendre/objectifs"),
-            }}
-          />
-        );
-      }}
-    </QueryPanel>
+    <div className="flex flex-col gap-4">
+      <CompareTargetPicker
+        target={target}
+        onTarget={setTarget}
+        postings={choices}
+        postingId={postingId}
+        onPosting={setPostingId}
+      />
+      {target === "goal" ? (
+        <GoalCompare />
+      ) : (
+        <PostingCompare postings={postings} choices={choices} postingId={postingId} />
+      )}
+    </div>
   );
 }

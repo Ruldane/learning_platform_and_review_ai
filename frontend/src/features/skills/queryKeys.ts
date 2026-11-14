@@ -3,5 +3,6 @@ export const skillKeys = {
   graph: ["skills", "graph"],
   detail: (skillId: string) => ["skills", "detail", skillId] as const,
   history: (weeks: number) => ["skills", "history", weeks] as const,
-  compare: ["skills", "compare"],
+  compare: (postingId: string | null) => ["skills", "compare", postingId ?? "goal"] as const,
+  postings: ["skills", "postings"],
 } as const;

@@ -2,9 +2,10 @@ import { screen, waitFor, within } from "@testing-library/react";
 import { HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { apiError } from "@/test/councilHarness";
+import { summaryOut } from "@/test/postingsApi";
 import { renderRoutes } from "@/test/renderRoutes";
 import { server } from "@/test/server";
-import { graphOut, skillsApi } from "@/test/skillsApi";
+import { compareOut, graphOut, skillsApi } from "@/test/skillsApi";
 import { SkillsPage } from "./SkillsPage";
 
 function setup(api: Parameters<typeof skillsApi>[0] = {}) {
@@ -15,6 +16,7 @@ function setup(api: Parameters<typeof skillsApi>[0] = {}) {
       { path: "/competences", element: <SkillsPage /> },
       { path: "/apprendre/objectifs", element: <p>Objectifs</p> },
       { path: "/etudier/session", element: <p>Session guidée</p> },
+      { path: "/carriere/offres", element: <p>Liste des offres</p> },
     ],
     "/competences",
   );
@@ -70,6 +72,78 @@ describe("SkillsPage", () => {
     failing = false;
     await user.click(screen.getByRole("button", { name: "Réessayer" }));
     expect(await screen.findByText("Aucune compétence sur la carte")).toBeInTheDocument();
+  });
+
+  describe("comparison with a posting", () => {
+    const postings = () =>
+      HttpResponse.json([
+        summaryOut(),
+        summaryOut({ id: "p2", title: "En cours", status: "analyzing" }),
+        summaryOut({ id: "p3", title: null, status: "rejected" }),
+      ]);
+
+    it("compares with the posting picked in the list", async () => {
+      const { user, reads } = setup({
+        postings,
+        compare: (request) =>
+          new URL(request.url).searchParams.get("target") === "posting"
+            ? HttpResponse.json({
+                ...compareOut(),
+                target_label: "Ingénieure données",
+                coverage: 50,
+              })
+            : HttpResponse.json(compareOut()),
+      });
+      await user.click(screen.getByRole("tab", { name: "Comparaison" }));
+      expect(await screen.findByText("Cible : Data engineer")).toBeInTheDocument();
+      expect(reads.postings).toBe(0);
+      await user.click(screen.getByRole("radio", { name: "Une offre" }));
+      const select = await screen.findByRole("combobox", { name: "Offre" });
+      expect(screen.getAllByRole("option")).toHaveLength(2);
+      expect(screen.getByText("Choisis une offre pour la comparer à ta carte.")).toBeVisible();
+      await user.selectOptions(select, "p1");
+      expect(await screen.findByText("Cible : Ingénieure données")).toBeInTheDocument();
+      expect(reads.compareQueries.at(-1)).toBe("?target=posting&posting_id=p1");
+    });
+
+    it("says when the posting has no computed gap yet", async () => {
+      const { user } = setup({
+        postings,
+        compare: (request) =>
+          new URL(request.url).searchParams.get("target") === "posting"
+            ? HttpResponse.json(apiError("no_compare_target", "Pas d'écart."), { status: 404 })
+            : HttpResponse.json(compareOut()),
+      });
+      await user.click(screen.getByRole("tab", { name: "Comparaison" }));
+      await user.click(await screen.findByRole("radio", { name: "Une offre" }));
+      await user.selectOptions(await screen.findByRole("combobox", { name: "Offre" }), "p1");
+      expect(await screen.findByText(/n'a pas encore d'écart calculé/)).toBeInTheDocument();
+    });
+
+    it("offers to add a posting when none is analysed", async () => {
+      const { user, router } = setup({ postings: () => HttpResponse.json([]) });
+      await user.click(screen.getByRole("tab", { name: "Comparaison" }));
+      await user.click(await screen.findByRole("radio", { name: "Une offre" }));
+      expect(await screen.findByText("Aucune offre analysée")).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "Ajouter une offre" }));
+      expect(router.state.location.pathname).toBe("/carriere/offres");
+    });
+
+    it("shows a retryable error when the postings cannot be read", async () => {
+      let failing = true;
+      const { user } = setup({
+        postings: () =>
+          failing
+            ? HttpResponse.json(apiError("internal_error", "Panne du serveur."), { status: 500 })
+            : postings(),
+      });
+      await user.click(screen.getByRole("tab", { name: "Comparaison" }));
+      await user.click(await screen.findByRole("radio", { name: "Une offre" }));
+      expect(await screen.findByText("Panne du serveur.")).toBeInTheDocument();
+      failing = false;
+      await user.click(screen.getByRole("button", { name: "Réessayer" }));
+      expect(await screen.findByRole("combobox", { name: "Offre" })).toBeInTheDocument();
+    });
   });
 
   describe("empty states with an action (revue finale 5, C-m5)", () => {

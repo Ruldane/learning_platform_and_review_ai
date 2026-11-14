@@ -88,3 +88,13 @@ export interface CompareRowView {
 }
 
 export type SkillViewId = "graph" | "radar" | "progress" | "compare";
+
+/** Ce à quoi on se compare : le poste cible de l'objectif, ou une offre ajoutée. */
+export type CompareTargetView = "goal" | "posting";
+
+/** Une offre analysée, proposée comme cible de la comparaison. */
+export interface PostingChoiceView {
+  id: string;
+  title: string;
+  company: string | null;
+}

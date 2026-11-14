@@ -65,19 +65,28 @@ interface SkillsApi {
   graph?: () => Response;
   detail?: () => Response;
   history?: () => Response;
-  compare?: () => Response;
+  compare?: (request: Request) => Response;
+  /** `GET /postings` : les offres proposées à la comparaison. */
+  postings?: () => Response;
 }
 
 /** Les quatre lectures de la carte ; `reads.graph` compte les relectures du graphe. */
 export function skillsApi(api: SkillsApi = {}) {
-  const reads = { graph: 0, detail: 0 };
+  const reads = { graph: 0, detail: 0, postings: 0, compareQueries: [] as string[] };
   const handlers = [
     http.get(`${API}/skills/graph`, () => {
       reads.graph += 1;
       return api.graph?.() ?? HttpResponse.json(graphOut());
     }),
     http.get(`${API}/skills/history`, () => api.history?.() ?? HttpResponse.json(historyOut())),
-    http.get(`${API}/skills/compare`, () => api.compare?.() ?? HttpResponse.json(compareOut())),
+    http.get(`${API}/skills/compare`, ({ request }) => {
+      reads.compareQueries.push(new URL(request.url).search);
+      return api.compare?.(request) ?? HttpResponse.json(compareOut());
+    }),
+    http.get(`${API}/postings`, () => {
+      reads.postings += 1;
+      return api.postings?.() ?? HttpResponse.json([]);
+    }),
     http.get(`${API}/skills/s2`, () => {
       reads.detail += 1;
       return api.detail?.() ?? HttpResponse.json(detailOut());

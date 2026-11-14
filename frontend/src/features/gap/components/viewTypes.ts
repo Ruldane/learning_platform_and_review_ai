@@ -29,6 +29,14 @@ export interface GapRowView {
   source: GapSourceView;
 }
 
+/**
+ * La ligne peut être ajoutée au planning : elle est « À ajouter » et manque vraiment (une
+ * compétence déjà validée ou prouvée n'est pas à apprendre).
+ */
+export function isAddable(row: GapRowView): boolean {
+  return row.action === "to_add" && row.level !== "valide" && row.level !== "prouve";
+}
+
 export interface MissingSkillView {
   skill: string;
   /** Nombre d'offres où la compétence manque. */
@@ -61,3 +69,16 @@ export interface FormErrorView {
 
 /** Nombre maximal de compétences ajoutées au planning en un seul envoi. */
 export const MAX_PLAN_SKILLS = 10;
+
+export type PostingStatusView = "analyzing" | "ready" | "rejected" | "failed";
+
+/** Une ligne de la liste des offres. */
+export interface PostingListItemView {
+  id: string;
+  /** `null` tant que l'analyse n'a pas trouvé le titre. */
+  title: string | null;
+  company: string | null;
+  /** Score de match de 0 à 100 ; `null` tant que l'écart n'est pas calculé. */
+  score: number | null;
+  status: PostingStatusView;
+}

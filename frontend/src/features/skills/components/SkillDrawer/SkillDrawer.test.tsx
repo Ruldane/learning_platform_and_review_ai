@@ -54,7 +54,7 @@ describe("SkillDrawer", () => {
 
   it("shows empty postings state", () => {
     renderDrawer(detail);
-    expect(screen.getByText("Les offres arriveront avec l'analyse d'écart.")).toBeInTheDocument();
+    expect(screen.getByText("Aucune offre ajoutée n'exige cette compétence.")).toBeInTheDocument();
   });
 
   it("lists postings when there are some", () => {
@@ -66,7 +66,7 @@ describe("SkillDrawer", () => {
       "href",
       "/offres/p1",
     );
-    expect(screen.queryByText("Les offres arriveront avec l'analyse d'écart.")).toBeNull();
+    expect(screen.queryByText("Aucune offre ajoutée n'exige cette compétence.")).toBeNull();
   });
 
   it("shows a next action that is not available yet as text", () => {

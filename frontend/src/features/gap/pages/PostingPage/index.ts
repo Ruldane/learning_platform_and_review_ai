@@ -1,0 +1,1 @@
+export { PostingPage } from "./PostingPage";
