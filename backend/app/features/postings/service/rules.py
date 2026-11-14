@@ -1,11 +1,13 @@
 """Règles pures des offres (D118) : clé d'un lien d'offre, clé d'entreprise, ressemblance de deux
-titres, texte suffisant, ATS reconnu par son domaine."""
+titres, texte suffisant, ATS reconnu par son domaine (`detect_ats`, réexporté de
+`app.agents.tools.ats_hosts`, partagé avec le parcours `cv_review`)."""
 
 import re
-from collections.abc import Iterable
 from difflib import SequenceMatcher
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
+from app.agents.tools.ats_hosts import ATS_HOSTS as ATS_HOSTS
+from app.agents.tools.ats_hosts import detect_ats as detect_ats
 from app.agents.tools.posting_schema import MIN_POSTING_CHARS as MIN_POSTING_CHARS
 from app.agents.tools.posting_schema import MIN_POSTING_WORDS as MIN_POSTING_WORDS
 from app.agents.tools.posting_schema import enough_text as enough_text
@@ -34,25 +36,6 @@ LEGAL_SUFFIXES = (
 
 PROBABLE_TITLE = 0.85  # même entreprise et titres à 0,85 au moins : doublon probable
 POSSIBLE_COSINE = 0.90  # meilleur fragment de mémoire à 0,90 au moins : doublon possible
-
-# Domaine (suffixe d'hôte) → nom de l'ATS.
-ATS_HOSTS: dict[str, str] = {
-    "greenhouse.io": "Greenhouse",
-    "lever.co": "Lever",
-    "myworkdayjobs.com": "Workday",
-    "smartrecruiters.com": "SmartRecruiters",
-    "teamtailor.com": "Teamtailor",
-    "ashbyhq.com": "Ashby",
-    "recruitee.com": "Recruitee",
-    "workable.com": "Workable",
-    "welcometothejungle.com": "Welcome to the Jungle",
-    "taleo.net": "Taleo",
-    "icims.com": "iCIMS",
-    "jobvite.com": "Jobvite",
-    "bamboohr.com": "BambooHR",
-    "successfactors.com": "SAP SuccessFactors",
-    "successfactors.eu": "SAP SuccessFactors",
-}
 
 _NON_ALNUM = re.compile(r"[^0-9a-z+#]+")
 
@@ -116,22 +99,3 @@ def title_similarity(a: str, b: str) -> float:
     if not left or not right:
         return 0.0
     return SequenceMatcher(None, left, right).ratio()
-
-
-def _host(url: str) -> str | None:
-    try:
-        return urlsplit(url.strip()).hostname
-    except ValueError:
-        return None
-
-
-def detect_ats(urls: Iterable[str]) -> str | None:
-    """Le premier ATS reconnu parmi les liens (hôte égal au domaine ou sous-domaine de lui)."""
-    for url in urls:
-        host = _host(url)
-        if not host:
-            continue
-        for domain, name in ATS_HOSTS.items():
-            if host == domain or host.endswith(f".{domain}"):
-                return name
-    return None

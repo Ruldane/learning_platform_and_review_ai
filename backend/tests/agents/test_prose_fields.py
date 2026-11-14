@@ -23,11 +23,13 @@ from app.agents.nodes.tutor import (
 from app.agents.runtime.prose import ShortenToMax
 from app.agents.tools.capture_port import CaptureDigest
 from app.agents.tools.council_port import ProposalDraft
+from app.agents.tools.cv_review_port import ReviewReport
 from app.agents.tools.lesson_port import ResourcePick
 from app.agents.tools.plan_schema import SkillDraft, TaskDraft, WeekDraft
 from app.agents.tools.posting_schema import Eliminatory, Requirement
 from app.agents.tools.quiz_port import GradeDraft, QuestionDraft, QuizDraft
 from app.agents.tools.replan_port import ReplanDraft, ReplanTaskDraft
+from app.agents.tools.review_schema import AtsReading, RecruiterReading
 
 
 def _shortens(model: type[BaseModel], name: str) -> bool:
@@ -71,6 +73,12 @@ def _shortens(model: type[BaseModel], name: str) -> bool:
         (CaptureDigest, "summary"),
         (Requirement, "text"),
         (Eliminatory, "text"),
+        (AtsReading, "notes"),
+        (RecruiterReading, "strengths"),
+        (RecruiterReading, "risks"),
+        (ReviewReport, "ats_notes"),
+        (ReviewReport, "strengths"),
+        (ReviewReport, "risks"),
     ],
 )
 def test_free_text_fields_are_shortened(model: type[BaseModel], name: str) -> None:

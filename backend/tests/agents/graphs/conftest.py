@@ -30,6 +30,7 @@ from tests.agents.graphs.profile_support import profile_runner, profile_store  #
 from tests.agents.graphs.program_support import make_builder_runner  # noqa: F401
 from tests.agents.graphs.quiz_support import make_quiz_runner, quiz_store  # noqa: F401
 from tests.agents.graphs.replan_support import make_replan_runner  # noqa: F401
+from tests.agents.graphs.review_support import review_runner, review_store, review_web  # noqa: F401
 from tests.agents.graphs.study_support import make_study_runner, study_store  # noqa: F401
 from tests.agents.graphs.web_support import MakeWeb, Web, add_users, research_runtime
 from tests.agents.runtime.conftest import emitted  # noqa: F401  (fixture partagée)

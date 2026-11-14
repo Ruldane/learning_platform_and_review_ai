@@ -11,7 +11,7 @@ from typing import Annotated, Literal, get_args
 
 from pydantic import BaseModel, Field
 
-from app.agents.runtime.prose import Prose
+from app.agents.runtime.prose import Prose, ShortenToMax
 from app.agents.tools.cv_schema import (
     MasterProfileData,
     ModificationAction,
@@ -60,6 +60,24 @@ class Proposal(BaseModel):
 
 class ProposalList(BaseModel):
     items: list[Proposal] = Field(max_length=25)
+
+
+_Note = Annotated[str, Field(max_length=300), ShortenToMax()]
+
+
+class AtsReading(ProposalList):
+    """Sortie du Lecteur ATS (D129) : ses propositions et ses notes sur la lecture du CV par
+    l'ATS de l'offre (rapport, `ats_notes`)."""
+
+    notes: list[_Note] = Field(default_factory=list, max_length=6)
+
+
+class RecruiterReading(ProposalList):
+    """Sortie du Recruteur (D129) : ses propositions, les forces et les risques du CV face à
+    l'offre (rapport)."""
+
+    strengths: list[_Note] = Field(default_factory=list, max_length=5)
+    risks: list[_Note] = Field(default_factory=list, max_length=5)
 
 
 class Stance(BaseModel):
