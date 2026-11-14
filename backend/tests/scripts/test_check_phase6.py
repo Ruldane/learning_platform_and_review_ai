@@ -98,9 +98,9 @@ async def test_logs_step_fails_without_logs_or_with_personal_data(
     assert "Camille" not in str(leaked.value)  # le message ne recopie pas ce qui a fuité
 
 
-async def test_part_not_written_yet_is_refused(client: httpx.AsyncClient) -> None:
+async def test_unknown_part_is_refused(client: httpx.AsyncClient) -> None:
     with pytest.raises(CheckFailed) as refused:
-        await run_check(client, part="revue", timeout_s=10)
+        await run_check(client, part="autre", timeout_s=10)  # type: ignore[arg-type]
     assert refused.value.step == "partie"
 
 

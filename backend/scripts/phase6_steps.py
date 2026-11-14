@@ -30,6 +30,9 @@ class Capture:
 
     fresh: bool = False
     posting_id: str = ""
+    review_id: str = ""
+    session_id: str = ""
+    profile_text: str = ""
 
 
 def pdf_file(field: str) -> dict[str, tuple[str, bytes, str]]:
