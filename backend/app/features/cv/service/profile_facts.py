@@ -20,6 +20,8 @@ from app.features.cv.service.runtime import CvRuntime
 SEP = " — "  # séparateur des faits composés (« Rôle — Entreprise », `facts_of`)
 _MAX_SOURCES = 4
 _SEP = re.compile(r"\s+—(?:\s+|$)")  # « Anglais — C1 », aussi quand la fin a été rognée
+_LANG_SEP = re.compile(r"\s+[—–-](?:\s+|$)|\s*:\s*")  # « Anglais — C1 », « - C1 », « : C1 »
+_LANG_PAREN = re.compile(r"^(.+?)\s*\((.+)\)$")  # « Anglais (C1) »
 _URL_LIKE = re.compile(r"://|\b[\w-]+(?:\.[\w-]+)+/|www\.", re.IGNORECASE)
 
 
@@ -49,25 +51,34 @@ def invalid_after() -> AppError:
     )
 
 
-def _head(text: str, tail: str | None) -> str:
-    """« Rôle — Entreprise » → « Rôle » (la partie connue retirée)."""
-    suffix = f"{SEP}{tail}" if tail else ""
-    return text[: -len(suffix)].strip() if suffix and text.endswith(suffix) else text
-
-
 def _valid_url(url: str) -> bool:
     """Une URL http(s) avec un hôte, sans espace (jamais de `javascript:` dans le profil)."""
-    parts = urlsplit(url)
+    try:
+        parts = urlsplit(url)
+    except ValueError:  # « http://[::1 »
+        return False
     return parts.scheme in ("http", "https") and bool(parts.hostname) and not re.search(r"\s", url)
 
 
 def _write_language(item: Any, text: str) -> None:
-    """« Nom — niveau » écrit le nom et le niveau ; sans séparateur, le niveau reste."""
-    name, *level = _SEP.split(text)
-    if level:
-        item.name, item.level = name, " — ".join(level) or None
-    else:
-        item.name = _head(text, item.level)
+    """« Nom — niveau » (aussi « - », « : » et « Nom (niveau) ») écrit le nom et le niveau ; sans
+    séparateur le texte entier est le nom et le niveau est effacé : jamais l'ancien niveau à côté
+    d'un texte neuf."""
+    parts = _LANG_SEP.split(text, maxsplit=1)
+    if len(parts) == 1 and (paren := _LANG_PAREN.match(text)):
+        parts = [paren.group(1), paren.group(2)]
+    item.name = parts[0].strip()
+    item.level = parts[1].strip() or None if len(parts) > 1 else None
+
+
+def _split_company(text: str, current: str) -> tuple[str, str]:
+    """« Rôle — Entreprise » → (rôle, entreprise) ; le texte qui finit par l'entreprise connue la
+    garde, un texte sans « — » ne change que le rôle (l'entreprise reste)."""
+    suffix = f"{SEP}{current}"
+    if text.endswith(suffix):
+        return text[: -len(suffix)].strip(), current
+    *head, tail = _SEP.split(text)
+    return (" — ".join(head), tail) if head else (text, current)
 
 
 def _write_link(item: Any, text: str) -> None:
@@ -102,13 +113,13 @@ def _entries(data: MasterProfileData, target: str, text: str) -> bool:
     """Expériences, formations, projets : l'intitulé ou une de leurs lignes."""
     for x in data.experiences:
         if x.id == target:
-            x.role = _head(text, x.company)
+            x.role, x.company = _split_company(text, x.company)
         if x.id == target or _write_lines(x.achievements, target, text):
             _sourced(x)
             return True
     for e in data.education:
         if e.id == target:
-            e.degree = _head(text, e.school)
+            e.degree, e.school = _split_company(text, e.school)
         if e.id == target or _write_lines(e.details, target, text):
             _sourced(e)
             return True

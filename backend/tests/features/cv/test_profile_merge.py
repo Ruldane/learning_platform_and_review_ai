@@ -1,7 +1,11 @@
 """Ids des faits d'une nouvelle version du profil (D124) : un fait inchangé garde son id, un
 fait neuf reçoit un numéro jamais pris, la version de January garde ses ids connus."""
 
+from typing import Any
+
 from app.agents.tools.cv_schema import (
+    Experience,
+    Identity,
     Language,
     Line,
     Link,
@@ -151,6 +155,7 @@ def test_reimport_does_not_duplicate_a_fact_january_confirmed_in_a_review() -> N
     draft.experiences[0].role = "Développeuse"
     draft.experiences[0].company = company
     draft.skills[0].name = "Python"
+    draft.languages[0].level = None  # le CV ne dit pas le niveau : celui de January reste
     draft.links.append(Link(label="GitHub", url="https://github.com/camille"))
     merged = merge_draft(draft, previous, all_ids([previous]))
     experiences = [x for x in merged.experiences if x.company == company]
@@ -169,6 +174,7 @@ def test_reimport_does_not_duplicate_a_fact_january_confirmed_in_a_review() -> N
 def test_a_new_achievement_of_the_draft_joins_the_january_experience() -> None:
     previous = _confirmed_in_review()
     draft = blank_facts(profile())
+    draft.experiences[0].role = "Développeuse"
     draft.experiences[0].company = previous.experiences[0].company
     draft.experiences[0].achievements.append(Line(text="Nouvelle réalisation du CV"))
     merged = merge_draft(draft, previous, all_ids([previous]))
@@ -176,3 +182,115 @@ def test_a_new_achievement_of_the_draft_joins_the_january_experience() -> None:
     assert "Nouvelle réalisation du CV" in [a.text for a in kept.achievements]
     ids = [a.id for a in kept.achievements]
     assert len(ids) == len(set(ids)) and "" not in ids
+
+
+def _bare(**kw: Any) -> MasterProfileData:
+    return MasterProfileData(identity=Identity(name="Camille Exemple"), **kw)
+
+
+def _numbered(data: MasterProfileData) -> MasterProfileData:
+    return assign_fact_ids(data)
+
+
+def _merge(previous: MasterProfileData, draft: MasterProfileData) -> MasterProfileData:
+    previous = _numbered(previous)
+    return merge_draft(draft, previous, all_ids([previous]))
+
+
+def test_skills_with_the_same_first_word_are_all_kept() -> None:
+    previous = _bare(
+        skills=[
+            SkillFact(name="Gestion d'équipe", sources=["january"]),
+            SkillFact(name="Adobe Illustrator", sources=["january"]),
+        ]
+    )
+    draft = _bare(skills=[SkillFact(name="Gestion de projet"), SkillFact(name="Adobe Photoshop")])
+    merged = _merge(previous, draft)
+    assert sorted(s.name for s in merged.skills) == [
+        "Adobe Illustrator",
+        "Adobe Photoshop",
+        "Gestion d'équipe",
+        "Gestion de projet",
+    ]
+
+
+def test_a_promotion_at_the_same_company_keeps_the_new_cv_fact() -> None:
+    previous = _bare(
+        experiences=[
+            Experience(
+                role="Développeuse Python",
+                company="Acme",
+                start="2020-01",
+                sources=["cv", "january"],
+            )
+        ]
+    )
+    draft = _bare(
+        experiences=[
+            Experience(role="Lead Développeuse", company="Acme", start="2019-09", sources=["cv"])
+        ]
+    )
+    merged = _merge(previous, draft)
+    assert sorted((x.role, x.start) for x in merged.experiences) == [
+        ("Développeuse Python", "2020-01"),
+        ("Lead Développeuse", "2019-09"),
+    ]
+
+
+def test_two_jobs_at_one_company_in_another_order_lose_and_duplicate_nothing() -> None:
+    previous = _bare(
+        experiences=[
+            Experience(
+                role="Développeuse Python",
+                company="Acme",
+                achievements=[Line(text="Conçu l'API")],
+                sources=["cv", "january"],
+            ),
+            Experience(
+                role="Stagiaire",
+                company="Acme",
+                achievements=[Line(text="Écrit des tests")],
+                sources=["cv"],
+            ),
+        ]
+    )
+    draft = _bare(
+        experiences=[
+            Experience(
+                role="Stagiaire développement",
+                company="Acme",
+                achievements=[Line(text="Écrit des tests")],
+            ),
+            Experience(
+                role="Développeuse", company="Acme", achievements=[Line(text="Conçu l'API")]
+            ),
+        ]
+    )
+    merged = _merge(previous, draft)
+    assert sorted(x.role for x in merged.experiences) == [
+        "Développeuse Python",
+        "Stagiaire développement",
+    ]
+    by_role = {x.role: [a.text for a in x.achievements] for x in merged.experiences}
+    assert by_role["Développeuse Python"] == ["Conçu l'API"]
+    assert by_role["Stagiaire développement"] == ["Écrit des tests"]
+
+
+def test_a_confirmed_level_yields_to_another_level_of_the_new_cv() -> None:
+    previous = _bare(
+        languages=[
+            Language(name="Allemand", level=None, sources=["january"]),
+            Language(name="Anglais", level="C1", sources=["cv", "january"]),
+            Language(name="Italien", level="B1", sources=["cv", "january"]),
+        ]
+    )
+    draft = _bare(
+        languages=[
+            Language(name="Allemand", level="B1"),
+            Language(name="Anglais", level="C2"),
+            Language(name="Italien"),
+        ]
+    )
+    merged = _merge(previous, draft)
+    levels = {lang.name: lang.level for lang in merged.languages}
+    assert levels == {"Allemand": "B1", "Anglais": "C2", "Italien": "B1"}

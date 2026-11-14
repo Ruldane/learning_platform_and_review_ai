@@ -11,8 +11,8 @@ Règles, dans l'ordre (chacune ajoute une raison, jamais le texte du CV) :
    confirmer » ;
 4. un mot de titre (« lead », « senior »…) ou l'intitulé de l'offre absent des rôles du profil ;
 5. un fait structuré (titre, rôle, diplôme, langue et niveau, compétence, lien) dont un mot ou
-   l'URL n'est pas dans le fait visé lui-même ni dans les rôles du profil : citer un fait voisin
-   ne lève pas cette règle (`cv_validator_facts`).
+   l'URL n'est pas dans le fait visé lui-même (les rôles du profil ne comptent que pour le titre) :
+   citer un fait voisin ne lève pas cette règle (`cv_validator_facts`).
 
 « Écart » l'emporte sur « à confirmer », qui l'emporte sur « ok ». `remove` et `move` n'écrivent
 aucun texte : toujours « ok ». Les termes sont comparés mots entiers, sans casse ni accent, au
@@ -156,6 +156,12 @@ def _titles(profile: MasterProfileData) -> str:
     return _padded(" ".join(_title_texts(profile)))
 
 
+def _known_titles(p: Proposal, profile: MasterProfileData) -> str:
+    """Les rôles et titres du profil ne comptent que pour réécrire le titre (`t…`) : un autre rôle
+    lèverait « Lead » ou « Senior » sur une expérience, une compétence ou une langue."""
+    return " ".join(_title_texts(profile)) if (p.target or "").startswith("t") else ""
+
+
 def _title_claimed(after: str, profile: MasterProfileData, analysis: PostingAnalysis) -> bool:
     """Un mot de titre ou l'intitulé de l'offre dans `after`, absent des rôles du profil."""
     known = _titles(profile)
@@ -209,7 +215,7 @@ def validate(p: Proposal, profile: MasterProfileData, analysis: PostingAnalysis)
     seen = {tok for term in [*gap, *tools] for tok in normalize_term(term, plural=True).split()}
     if _names(after, profile, skip_first=skip_first) - seen:
         blocks.append(NAME)
-    if is_structured(p) and unbacked(after, own, " ".join(_title_texts(profile))):
+    if is_structured(p) and unbacked(after, own, _known_titles(p, profile)):
         blocks.append(FOREIGN)
     status: VerdictStatus = "to_gap" if gap else "to_confirm" if blocks else "ok"
     return Verdict(status, blocks, gap)

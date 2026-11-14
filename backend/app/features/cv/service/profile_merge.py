@@ -26,7 +26,10 @@ from app.agents.tools.cv_schema import (
     assign_fact_ids,
     facts_of,
 )
+from app.agents.tools.cv_validator_facts import significant_words
 from app.agents.tools.profile_check import plain
+
+_MAX_SOURCES = 4
 
 
 class _HasId(Protocol):
@@ -96,32 +99,46 @@ def _first_word(skill: SkillFact) -> str:
     return plain(skill.name).split(" ")[0]
 
 
+def _text_in(small: str, big: str) -> bool:
+    """Tous les mots significatifs de `small` sont dans `big` (« Python » dans « Python (expert) »),
+    et il y en a au moins un."""
+    words = significant_words(small)
+    return bool(words) and words <= significant_words(big)
+
+
 def _carried[T: _Copyable](
     out: list[T],
     old: Sequence[T],
     pairs: Iterable[tuple[object, object]],
     loose: Callable[[T], str],
+    text: Callable[[T], str],
     field: str | None = None,
 ) -> None:
-    """Les faits de January de `old` que le brouillon n'a pas repris (aucun apparié). Un fait qui
-    a un équivalent non apparié du brouillon (même clé lâche) le remplace, avec les lignes du
-    brouillon qu'il n'a pas ; sinon il est ajouté. Les ids de `old` sont gardés."""
+    """Les faits de January de `old` que le brouillon n'a pas repris (aucun apparié). Un fait dont
+    le brouillon n'a qu'un équivalent (même clé lâche, non apparié, tous ses mots dans le texte de
+    January : « Python » / « Python (expert) ») le remplace, avec les lignes du brouillon qu'il n'a
+    pas et ses sources ; sinon les deux sont gardés (un doublon que January efface vaut mieux
+    qu'un fait du nouveau CV perdu). Les ids de `old` sont gardés."""
     used = {id(previous) for _, previous in pairs}
     for fact in old:
         if id(fact) in used or "january" not in fact.sources:
             continue
         kept, key = fact.model_copy(deep=True), loose(fact)
-        twin = next(
-            (i for i, item in enumerate(out) if key and not item.id and loose(item) == key), None
-        )
-        if twin is None:
+        twins = [
+            i
+            for i, item in enumerate(out)
+            if key and not item.id and loose(item) == key and _text_in(text(item), text(fact))
+        ]
+        if len(twins) != 1:
             out.append(kept)
             continue
+        draft = out[twins[0]]
         if field:
             lines: list[Line] = getattr(kept, field)
             have = {_line_key(line) for line in lines}
-            lines.extend(x for x in getattr(out[twin], field) if _line_key(x) not in have)
-        out[twin] = kept
+            lines.extend(x for x in getattr(draft, field) if _line_key(x) not in have)
+        kept.sources = list(dict.fromkeys([*kept.sources, *draft.sources]))[:_MAX_SOURCES]
+        out[twins[0]] = kept
 
 
 def _carry_lines(pairs: Iterable[tuple[Any, Any]], field: str) -> None:
@@ -145,9 +162,10 @@ def _carry_lines(pairs: Iterable[tuple[Any, Any]], field: str) -> None:
 
 
 def _keep_levels(pairs: Iterable[tuple[Language, Language]]) -> None:
-    """Une langue appariée par son nom garde le niveau que January a confirmé ou saisi."""
+    """Une langue appariée par son nom garde le niveau de January quand le nouveau CV n'en dit pas ;
+    un niveau écrit par le CV l'emporte (le niveau d'avant la confirmation n'est pas conservé)."""
     for language, previous in pairs:
-        if "january" in previous.sources:
+        if "january" in previous.sources and language.level is None:
             language.level = previous.level
             language.sources = list(dict.fromkeys([*language.sources, "january"]))
 
@@ -158,6 +176,34 @@ def _carry_heads(out: MasterProfileData, old: MasterProfileData) -> None:
         previous: _Copyable | None = getattr(old, name)
         if getattr(out, name) is None and previous is not None and "january" in previous.sources:
             setattr(out, name, previous.model_copy(deep=True))
+
+
+def _carry_facts(out: MasterProfileData, old: MasterProfileData, pairs: tuple[Any, ...]) -> None:
+    """Reporte les faits de January que le brouillon n'a pas repris, sorte par sorte (`_carried`) ;
+    `pairs` : les paires appariées de `_reuse` dans l'ordre expériences, formations, compétences,
+    projets, langues, liens."""
+    jobs, schools, skills, projects, languages, links = pairs
+    name: Callable[[Any], str] = lambda x: x.name  # noqa: E731
+    _carried(
+        out.experiences,
+        old.experiences,
+        jobs,
+        lambda x: plain(x.company),
+        lambda x: x.role,
+        "achievements",
+    )
+    _carried(
+        out.education,
+        old.education,
+        schools,
+        lambda x: plain(x.school),
+        lambda x: x.degree,
+        "details",
+    )
+    _carried(out.skills, old.skills, skills, _first_word, name)
+    _carried(out.projects, old.projects, projects, lambda x: plain(x.name), name, "achievements")
+    _carried(out.languages, old.languages, languages, lambda x: plain(x.name), name)
+    _carried(out.links, old.links, links, lambda x: plain(x.label), lambda x: x.label)
 
 
 def merge_draft(
@@ -184,12 +230,7 @@ def merge_draft(
     _carry_lines(schools, "details")
     _carry_lines(projects, "achievements")
     _carry_heads(out, old)
-    _carried(out.experiences, old.experiences, jobs, lambda x: plain(x.company), "achievements")
-    _carried(out.education, old.education, schools, lambda x: plain(x.school), "details")
-    _carried(out.skills, old.skills, skills, _first_word)
-    _carried(out.projects, old.projects, projects, lambda x: plain(x.name), "achievements")
-    _carried(out.languages, old.languages, languages, lambda x: plain(x.name))
-    _carried(out.links, old.links, links, lambda x: plain(x.label))
+    _carry_facts(out, old, (jobs, schools, skills, projects, languages, links))
     return number_new(out, taken)
 
 

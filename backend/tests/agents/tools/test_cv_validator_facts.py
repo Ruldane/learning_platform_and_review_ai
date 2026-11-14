@@ -135,3 +135,33 @@ def test_citing_a_sibling_fact_never_lifts_the_structured_word_check(
     v = validate(rewrite(target, after, fact_ids=[cited]), siblings(), OFFER)
     assert v.status == "to_confirm"
     assert FOREIGN in v.blocks
+
+
+def with_senior_role() -> MasterProfileData:
+    """Le profil de `structured()` avec un second rôle « Lead Développeuse Senior » (x2)."""
+    data = structured()
+    data.experiences.append(
+        Experience(role="Lead Développeuse Senior", company="Autre SA", sources=["cv"])
+    )
+    return assign_fact_ids(data)
+
+
+@pytest.mark.parametrize(
+    ("target", "after"),
+    [
+        ("x1", "Lead Développeuse — Société Fictive"),  # une promotion que le profil ne dit pas
+        ("x1", "Senior Développeuse — Société Fictive"),
+        ("c1", "Python (senior)"),
+        ("c1", "Python Lead"),
+        ("l1", "Anglais — B2 Senior"),
+        ("f1", "Licence informatique Lead — Université Exemple"),
+    ],
+)
+def test_the_roles_of_the_profile_only_lift_a_title_target(target: str, after: str) -> None:
+    v = validate(rewrite(target, after), with_senior_role(), OFFER)
+    assert v.status == "to_confirm"
+    assert FOREIGN in v.blocks
+
+
+def test_a_title_target_may_use_a_role_of_the_profile() -> None:
+    assert validate(rewrite("t1", "Lead Développeuse"), with_senior_role(), OFFER).status == "ok"

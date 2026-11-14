@@ -5,6 +5,8 @@ dans le nom ou le libellé. Une URL invalide est refusée par le 422 habituel.""
 import pytest
 
 from app.agents.tools.cv_schema import (
+    Education,
+    Experience,
     Identity,
     Language,
     Link,
@@ -33,9 +35,25 @@ def test_a_confirmed_language_rewrite_writes_the_name_and_the_level() -> None:
     assert "january" in out.languages[0].sources
 
 
-def test_a_language_text_without_separator_keeps_the_level() -> None:
+@pytest.mark.parametrize(
+    "text", ["Anglais (C1)", "Anglais - C1", "Anglais : C1", "Anglais – C1", "Anglais — C1"]
+)
+def test_a_language_written_with_another_separator_still_splits(text: str) -> None:
+    out = with_fact(data(), "l1", text)
+    assert (out.languages[0].name, out.languages[0].level) == ("Anglais", "C1")
+    assert facts_of(out)["l1"] == "Anglais — C1"
+
+
+def test_a_language_text_without_separator_clears_the_old_level() -> None:
     out = with_fact(data(), "l1", "Anglais courant")
-    assert (out.languages[0].name, out.languages[0].level) == ("Anglais courant", "B2")
+    assert (out.languages[0].name, out.languages[0].level) == ("Anglais courant", None)
+    assert facts_of(out)["l1"] == "Anglais courant"  # jamais le niveau B2 à côté du texte neuf
+
+
+def test_a_malformed_url_is_refused_not_a_crash() -> None:
+    with pytest.raises(AppError) as err:
+        with_fact(data(), "k1", "GitHub — http://[::1")
+    assert err.value.status_code == 422
 
 
 def test_a_confirmed_link_rewrite_writes_the_label_and_the_url() -> None:
@@ -71,3 +89,43 @@ def test_a_link_with_an_invalid_url_is_refused_without_echoing_it(text: str) -> 
         with_fact(data(), "k1", text)
     assert err.value.status_code == 422
     assert text not in str(err.value.message)
+
+
+def jobs() -> MasterProfileData:
+    return assign_fact_ids(
+        MasterProfileData(
+            identity=Identity(name="Camille Exemple"),
+            experiences=[Experience(role="Développeuse", company="Société Fictive")],
+            education=[Education(degree="Licence", school="Université Exemple")],
+        )
+    )
+
+
+def test_a_confirmed_experience_writes_the_role_and_the_company() -> None:
+    out = with_fact(jobs(), "x1", "Lead Développeuse — Autre SA")
+    assert (out.experiences[0].role, out.experiences[0].company) == (
+        "Lead Développeuse",
+        "Autre SA",
+    )
+    assert facts_of(out)["x1"] == "Lead Développeuse — Autre SA"
+
+
+def test_a_confirmed_experience_with_a_suffix_keeps_one_company() -> None:
+    out = with_fact(jobs(), "x1", "Développeuse — Société Fictive (CDI)")
+    assert facts_of(out)["x1"] == "Développeuse — Société Fictive (CDI)"
+
+
+def test_a_confirmed_experience_with_the_same_company_is_unchanged_in_shape() -> None:
+    out = with_fact(jobs(), "x1", "Lead Développeuse — Société Fictive")
+    assert facts_of(out)["x1"] == "Lead Développeuse — Société Fictive"
+
+
+def test_a_confirmed_role_alone_keeps_the_company() -> None:
+    out = with_fact(jobs(), "x1", "Lead Développeuse")
+    assert facts_of(out)["x1"] == "Lead Développeuse — Société Fictive"
+
+
+def test_a_confirmed_education_writes_the_degree_and_the_school() -> None:
+    out = with_fact(jobs(), "f1", "Master — École B")
+    assert (out.education[0].degree, out.education[0].school) == ("Master", "École B")
+    assert facts_of(out)["f1"] == "Master — École B"

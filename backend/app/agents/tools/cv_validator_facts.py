@@ -66,7 +66,7 @@ def is_structured(p: Proposal) -> bool:
     return bool(p.target) and _STRUCTURED.match(p.target or "") is not None
 
 
-def _significant(text: str) -> set[str]:
+def significant_words(text: str) -> set[str]:
     """Les mots significatifs : hors mots outils, hors nombres seuls (règle des chiffres)."""
     words = normalize_term(text, plural=True).split()
     return {w for w in words if w not in _STOP_WORDS and not w.isdigit()}
@@ -79,7 +79,7 @@ def _links_of(text: str) -> set[str]:
 def unbacked(after: str, reference: str, titles: str) -> bool:
     """`after` dit un mot ou un lien que `reference` (le texte du fait visé seul) et `titles` (les
     rôles et titres du profil) ne disent pas."""
-    known = _significant(f"{reference} {titles}")
-    if _significant(after) - known:
+    known = significant_words(f"{reference} {titles}")
+    if significant_words(after) - known:
         return True
     return bool(_links_of(after) - _links_of(reference))
