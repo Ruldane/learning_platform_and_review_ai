@@ -1,4 +1,5 @@
 import { captureManifest } from "@/features/capture/manifest";
+import { cvManifest } from "@/features/cv/manifest";
 import { demoManifest } from "@/features/demo/manifest";
 import { gapManifest } from "@/features/gap/manifest";
 import { healthManifest } from "@/features/health/manifest";
@@ -27,6 +28,7 @@ export const FEATURES: FeatureManifest[] = [
   captureManifest,
   skillsManifest,
   gapManifest,
+  cvManifest,
   replanManifest,
   memoryManifest,
   settingsManifest,

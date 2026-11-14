@@ -35,6 +35,8 @@ describe("registre des features", () => {
     ]);
     expect(groups[3]?.items).toEqual([{ labelKey: "skills.nav.map", path: "/competences" }]);
     expect(groups[4]?.items).toEqual([
+      { labelKey: "cv.nav.profile", path: "/carriere/profil" },
+      { labelKey: "cv.nav.cv", path: "/carriere/cv" },
       { labelKey: "gap.nav.postings", path: "/carriere/offres" },
       { labelKey: "gap.nav.overview", path: "/carriere/ecarts" },
     ]);

@@ -18,7 +18,7 @@ export function TextLineSection({ kind, line, onChange }: TextLineSectionProps) 
         label={t(kind === "title" ? "cv.profile.titleText" : "cv.profile.summaryText")}
         value={line?.text ?? ""}
         multiline={kind === "summary"}
-        onChange={(text) => onChange({ id: line?.id ?? "", text })}
+        onChange={(text) => onChange({ ...line, id: line?.id ?? "", text })}
       />
     </Section>
   );

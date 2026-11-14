@@ -60,7 +60,7 @@ function setup(props: Props = {}) {
 }
 
 const open = (name: string) => userEvent.click(screen.getByRole("button", { name }));
-const save = () => userEvent.click(screen.getByRole("button", { name: "Enregistrer le profil" }));
+const save = () => userEvent.click(screen.getByRole("button", { name: "Valider mon profil" }));
 const saved = (onSave: ReturnType<typeof vi.fn>): MasterProfileView =>
   onSave.mock.calls[0]?.[0] as MasterProfileView;
 
@@ -234,7 +234,7 @@ describe("MasterProfileForm", () => {
 
   it("locks everything while saving", () => {
     setup({ saving: true });
-    expect(screen.getByRole("button", { name: "Enregistrement…" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Validation…" })).toBeDisabled();
     expect(screen.getByRole("textbox", { name: "Nom" })).toBeDisabled();
   });
 
@@ -253,7 +253,7 @@ describe("MasterProfileForm", () => {
     await userEvent.tab();
     expect(screen.getByRole("textbox", { name: "Compétence (Compétence 1)" })).toHaveFocus();
     await userEvent.keyboard("{End} 2");
-    screen.getByRole("button", { name: "Enregistrer le profil" }).focus();
+    screen.getByRole("button", { name: "Valider mon profil" }).focus();
     await userEvent.keyboard("{Enter}");
     expect(saved(onSave).skills[0]?.name).toBe("React 2");
   });

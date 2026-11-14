@@ -1,0 +1,35 @@
+import { ApiError, errorMessage } from "@/shared/api/errors";
+import { fr } from "@/shared/i18n/fr";
+import { t } from "@/shared/i18n/t";
+import type { ProfileSaveErrorView } from "./components/viewTypes";
+
+type KnownCode = keyof typeof fr.cv.errors;
+
+const isKnown = (code: string): code is KnownCode => Object.hasOwn(fr.cv.errors, code);
+
+/** Le code d'une erreur d'API, ou `null` pour toute autre erreur. */
+export const errorCode = (error: unknown): string | null =>
+  error instanceof ApiError ? error.code : null;
+
+/** Message français : le texte propre à un refus connu, sinon celui du back (ou le général). */
+export function cvErrorMessage(error: unknown): string {
+  if (error instanceof ApiError && isKnown(error.code)) return t(`cv.errors.${error.code}`);
+  return errorMessage(error);
+}
+
+/** Les chemins de champs que le back nomme dans un 422 (`details.fields`), sans aucune valeur. */
+function fieldPaths(error: unknown): string[] {
+  if (!(error instanceof ApiError)) return [];
+  const details = error.details;
+  if (typeof details !== "object" || details === null) return [];
+  const fields = (details as { fields?: unknown }).fields;
+  return Array.isArray(fields) ? fields.filter((f): f is string => typeof f === "string") : [];
+}
+
+/** Une erreur d'enregistrement du profil → son message et, par chemin, le texte sous chaque champ fautif. */
+export function profileSaveError(error: unknown): ProfileSaveErrorView {
+  const fields: Record<string, string> = {};
+  for (const path of fieldPaths(error)) fields[path] = t("cv.profile.fieldInvalid");
+  const invalid = Object.keys(fields).length > 0;
+  return { message: invalid ? t("cv.profile.invalid") : cvErrorMessage(error), fields };
+}

@@ -8,6 +8,8 @@ export interface LineView {
   /** Vide pour une ligne ajoutée à la main : l'identifiant est attribué à l'enregistrement. */
   id: string;
   text: string;
+  /** Seuls le titre et le résumé portent leurs sources ; elles repartent telles quelles à l'enregistrement. */
+  sources?: FactSourceView[];
 }
 
 export interface IdentityView {

@@ -1,8 +1,10 @@
+import { cvPages } from "./cvPages";
 import { cvReview } from "./cvReview";
 
 /** Textes du CV : profil maître (import, formulaire, versions) ; le CV ciblé est dans `cvReview.ts`. */
 export const cv = {
   ...cvReview,
+  ...cvPages,
   source: { cv: "CV", linkedin: "LinkedIn", note: "Note", january: "Toi" },
   sources: { label: "Sources de ce fait" },
   import: {
@@ -20,8 +22,8 @@ export const cv = {
   },
   profile: {
     label: "Profil maître",
-    save: "Enregistrer le profil",
-    saving: "Enregistrement…",
+    save: "Valider mon profil",
+    saving: "Validation…",
     invalid: "Certains champs sont à corriger.",
     sourcesHint: "Chaque ligne garde sa source : CV, LinkedIn, note ou toi.",
     dropped: {
