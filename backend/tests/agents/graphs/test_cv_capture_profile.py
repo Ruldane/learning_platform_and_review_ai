@@ -211,6 +211,6 @@ def test_input_and_route() -> None:
         CvCaptureInput.model_validate({"mode": "profile", "document_ids": []})
     with pytest.raises(ValueError):
         CvCaptureInput.model_validate({"mode": "profile", "document_ids": ["a", "b", "c", "d"]})
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # le design part d'un gabarit (6.9)
         CvCaptureInput.model_validate({"mode": "design", "document_ids": ["a"]})
     assert profile_data()["identity"]["name"] == CV_FACTS["name"]

@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 from app.agents.tools.capture_port import NO_CAPTURE, CaptureStore
 from app.agents.tools.council_port import NO_COUNCIL, CouncilStore
+from app.agents.tools.cv_template_port import NO_CV_TEMPLATES, CvTemplateStore
 from app.agents.tools.gap_port import NO_GAP, GapStore
 from app.agents.tools.lesson_port import NO_LESSONS, LessonStore
 from app.agents.tools.memory_port import NO_MEMORY, MemoryGateway
@@ -31,6 +32,7 @@ class AgentPorts:
     capture: CaptureStore = NO_CAPTURE  # capture rapide de l'Archiviste (D108)
     gap: GapStore = NO_GAP  # analyse d'une offre et son écart (D121)
     profile: ProfileStore = NO_PROFILE  # profil maître de l'Archiviste (D124)
+    cv_templates: CvTemplateStore = NO_CV_TEMPLATES  # gabarits du Maquettiste (D125)
 
 
 NO_PORTS = AgentPorts()
