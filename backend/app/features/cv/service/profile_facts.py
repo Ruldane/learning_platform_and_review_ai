@@ -3,8 +3,10 @@ confirme une modification « à confirmer » (chiffre, outil, titre absent du pr
 par la modification est réécrit avec son texte dans une **nouvelle version validée** (source
 `january`, ids gardés, compétences déclarées : `save_profile`). Jamais journalisé."""
 
+import re
 from collections.abc import Callable
 from typing import Any
+from urllib.parse import urlsplit
 
 from pydantic import ValidationError
 
@@ -17,6 +19,8 @@ from app.features.cv.service.runtime import CvRuntime
 
 SEP = " — "  # séparateur des faits composés (« Rôle — Entreprise », `facts_of`)
 _MAX_SOURCES = 4
+_SEP = re.compile(r"\s+—(?:\s+|$)")  # « Anglais — C1 », aussi quand la fin a été rognée
+_URL_LIKE = re.compile(r"://|\b[\w-]+(?:\.[\w-]+)+/|www\.", re.IGNORECASE)
 
 
 def fact_not_found() -> AppError:
@@ -49,6 +53,35 @@ def _head(text: str, tail: str | None) -> str:
     """« Rôle — Entreprise » → « Rôle » (la partie connue retirée)."""
     suffix = f"{SEP}{tail}" if tail else ""
     return text[: -len(suffix)].strip() if suffix and text.endswith(suffix) else text
+
+
+def _valid_url(url: str) -> bool:
+    """Une URL http(s) avec un hôte, sans espace (jamais de `javascript:` dans le profil)."""
+    parts = urlsplit(url)
+    return parts.scheme in ("http", "https") and bool(parts.hostname) and not re.search(r"\s", url)
+
+
+def _write_language(item: Any, text: str) -> None:
+    """« Nom — niveau » écrit le nom et le niveau ; sans séparateur, le niveau reste."""
+    name, *level = _SEP.split(text)
+    if level:
+        item.name, item.level = name, " — ".join(level) or None
+    else:
+        item.name = _head(text, item.level)
+
+
+def _write_link(item: Any, text: str) -> None:
+    """« Libellé — URL » écrit le libellé et l'URL (http ou https, sinon 422) ; une URL seule
+    remplace l'URL ; un texte sans URL ne change que le libellé."""
+    *label, url = _SEP.split(text)
+    if label:
+        item.label, item.url = " — ".join(label), url
+    elif _URL_LIKE.search(text):
+        item.url = text
+    else:
+        item.label = text
+    if (label or _URL_LIKE.search(text)) and not _valid_url(item.url):
+        raise invalid_after()
 
 
 def _sourced(item: Any) -> None:
@@ -94,8 +127,8 @@ def _flat(data: MasterProfileData, target: str, text: str) -> bool:
     writers: list[tuple[list[Any], Callable[[Any], None]]] = [
         (heads, lambda item: setattr(item, "text", text)),
         (data.skills, lambda item: setattr(item, "name", text)),
-        (data.languages, lambda item: setattr(item, "name", _head(text, item.level))),
-        (data.links, lambda item: setattr(item, "label", _head(text, item.url))),
+        (data.languages, lambda item: _write_language(item, text)),
+        (data.links, lambda item: _write_link(item, text)),
     ]
     for items, write in writers:
         for item in items:

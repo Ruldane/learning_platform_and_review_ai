@@ -4,10 +4,11 @@ son niveau, un lien. Ce ne sont pas des phrases libres : un mot de plus (« Ing�
 « Développeuse », « Master » pour « Licence », « C1 » pour « B2 », « expert » pour une
 compétence) est un fait que le profil ne dit pas, et une URL n'est jamais réécrite.
 
-Règle : chaque mot significatif de `after` figure dans les faits cités ou dans les rôles et
-titres du profil (mots entiers, sans casse ni accent, pluriel simple près ; le féminin n'est pas
-le masculin) ; chaque lien ou nom de domaine écrit dans `after` est celui des faits cités, à
-l'identique. Sinon le bloc fixe `FOREIGN` (« à confirmer »)."""
+Règle : chaque mot significatif de `after` figure dans le fait visé lui-même ou dans les rôles
+et titres du profil (jamais dans un fait voisin cité, qui lèverait « C1 » ou « Master » ; mots
+entiers, sans casse ni accent, pluriel simple près ; le féminin n'est pas le masculin) ; chaque
+lien ou nom de domaine écrit dans `after` est celui du fait visé, à l'identique. Sinon le bloc
+fixe `FOREIGN` (« à confirmer »)."""
 
 import re
 
@@ -76,8 +77,8 @@ def _links_of(text: str) -> set[str]:
 
 
 def unbacked(after: str, reference: str, titles: str) -> bool:
-    """`after` dit un mot ou un lien que `reference` (les faits cités) et `titles` (les rôles et
-    titres du profil) ne disent pas."""
+    """`after` dit un mot ou un lien que `reference` (le texte du fait visé seul) et `titles` (les
+    rôles et titres du profil) ne disent pas."""
     known = _significant(f"{reference} {titles}")
     if _significant(after) - known:
         return True

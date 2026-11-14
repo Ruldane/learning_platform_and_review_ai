@@ -208,6 +208,9 @@ def _hay(text: str) -> Hay:
         ("Voici le plan : go to market, puis c'est fini", "Go"),
         ("Stockage de 500 Go et 2 To", "Go"),
         ("Rédigé avec soin, j'ai suivi.", "AI"),
+        ("Ingénieur R&D chez Société Fictive", "R"),
+        ("Rôle de C-level advisor", "C"),
+        ("Stratégie Go-to-market", "Go"),
     ],
 )
 def test_a_short_skill_is_not_found_in_an_elision_a_unit_or_a_longer_name(

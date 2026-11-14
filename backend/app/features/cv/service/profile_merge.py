@@ -6,7 +6,9 @@ jamais pris par aucune version passée (`taken`), même si le fait qui le portai
   au même texte normalisé (rôle et entreprise, diplôme et école, nom, lien, texte d'une ligne ; une
   réalisation ou un détail sous le même parent), reporte les faits de January (`sources` contient
   `january` : saisis ou confirmés en revue) que le brouillon ne reprend pas, avec leur id, puis
-  numérote le reste ;
+  numérote le reste ; un fait de January réécrit en revue n'a plus le texte du CV : il remplace
+  son équivalent du brouillon, trouvé à une clé lâche (entreprise, école, nom, libellé, premier
+  mot d'une compétence), au lieu de s'y ajouter (D124) ;
 - version de January : `keep_known` garde les ids déjà attribués (un fait modifié garde son id),
   efface les autres, puis numérote le reste ; un fait sans source vient d'elle (`january`)."""
 
@@ -17,8 +19,10 @@ from typing import Any, Protocol, Self
 from app.agents.tools.cv_schema import (
     FactSource,
     Identity,
+    Language,
     Line,
     MasterProfileData,
+    SkillFact,
     assign_fact_ids,
     facts_of,
 )
@@ -88,14 +92,36 @@ def _clear_children(profile: MasterProfileData) -> None:
         line.id = ""
 
 
-def _carried[T: _Copyable](old: Sequence[T], pairs: Iterable[tuple[object, object]]) -> list[T]:
-    """Les faits de January de `old` que le brouillon n'a pas repris (aucun apparié), copiés."""
+def _first_word(skill: SkillFact) -> str:
+    return plain(skill.name).split(" ")[0]
+
+
+def _carried[T: _Copyable](
+    out: list[T],
+    old: Sequence[T],
+    pairs: Iterable[tuple[object, object]],
+    loose: Callable[[T], str],
+    field: str | None = None,
+) -> None:
+    """Les faits de January de `old` que le brouillon n'a pas repris (aucun apparié). Un fait qui
+    a un équivalent non apparié du brouillon (même clé lâche) le remplace, avec les lignes du
+    brouillon qu'il n'a pas ; sinon il est ajouté. Les ids de `old` sont gardés."""
     used = {id(previous) for _, previous in pairs}
-    return [
-        fact.model_copy(deep=True)
-        for fact in old
-        if id(fact) not in used and "january" in fact.sources
-    ]
+    for fact in old:
+        if id(fact) in used or "january" not in fact.sources:
+            continue
+        kept, key = fact.model_copy(deep=True), loose(fact)
+        twin = next(
+            (i for i, item in enumerate(out) if key and not item.id and loose(item) == key), None
+        )
+        if twin is None:
+            out.append(kept)
+            continue
+        if field:
+            lines: list[Line] = getattr(kept, field)
+            have = {_line_key(line) for line in lines}
+            lines.extend(x for x in getattr(out[twin], field) if _line_key(x) not in have)
+        out[twin] = kept
 
 
 def _carry_lines(pairs: Iterable[tuple[Any, Any]], field: str) -> None:
@@ -116,6 +142,14 @@ def _carry_lines(pairs: Iterable[tuple[Any, Any]], field: str) -> None:
         sources = item.sources
         if extra and "january" not in sources:
             sources.append("january")
+
+
+def _keep_levels(pairs: Iterable[tuple[Language, Language]]) -> None:
+    """Une langue appariée par son nom garde le niveau que January a confirmé ou saisi."""
+    for language, previous in pairs:
+        if "january" in previous.sources:
+            language.level = previous.level
+            language.sources = list(dict.fromkeys([*language.sources, "january"]))
 
 
 def _carry_heads(out: MasterProfileData, old: MasterProfileData) -> None:
@@ -145,16 +179,17 @@ def merge_draft(
     _reuse_lines(projects, "achievements")
     languages = _reuse(out.languages, old.languages, lambda x: plain(x.name))
     links = _reuse(out.links, old.links, lambda x: plain(x.url))
+    _keep_levels(languages)
     _carry_lines(jobs, "achievements")
     _carry_lines(schools, "details")
     _carry_lines(projects, "achievements")
     _carry_heads(out, old)
-    out.experiences += _carried(old.experiences, jobs)
-    out.education += _carried(old.education, schools)
-    out.skills += _carried(old.skills, skills)
-    out.projects += _carried(old.projects, projects)
-    out.languages += _carried(old.languages, languages)
-    out.links += _carried(old.links, links)
+    _carried(out.experiences, old.experiences, jobs, lambda x: plain(x.company), "achievements")
+    _carried(out.education, old.education, schools, lambda x: plain(x.school), "details")
+    _carried(out.skills, old.skills, skills, _first_word)
+    _carried(out.projects, old.projects, projects, lambda x: plain(x.name), "achievements")
+    _carried(out.languages, old.languages, languages, lambda x: plain(x.name))
+    _carried(out.links, old.links, links, lambda x: plain(x.label))
     return number_new(out, taken)
 
 

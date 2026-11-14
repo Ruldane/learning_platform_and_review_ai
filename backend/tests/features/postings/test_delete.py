@@ -55,7 +55,7 @@ async def test_delete_allowed_once_the_review_is_closed(
 ) -> None:
     created = await _create(client)
     await _ready(app, launcher_spy, created)
-    await _review(app, created["id"], "completed")
+    await _review(app, created["id"], "done")
     assert (await client.delete(f"{API}/postings/{created['id']}")).status_code == 204
 
 
@@ -75,7 +75,7 @@ async def test_delete_cascades_rows_then_erases_version_files(
 ) -> None:
     created = await _create(client)
     await _ready(app, launcher_spy, created)
-    review_id = await _review(app, created["id"], "completed")
+    review_id = await _review(app, created["id"], "done")
     user = app.state.local_user_id
     storage = app.state.career.postings.memory.providers.storage
     pdf = await storage.save(user, CATEGORY, b"%PDF-1.4 cv", ".pdf")

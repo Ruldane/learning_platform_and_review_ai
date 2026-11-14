@@ -11,7 +11,8 @@ Règles, dans l'ordre (chacune ajoute une raison, jamais le texte du CV) :
    confirmer » ;
 4. un mot de titre (« lead », « senior »…) ou l'intitulé de l'offre absent des rôles du profil ;
 5. un fait structuré (titre, rôle, diplôme, langue et niveau, compétence, lien) dont un mot ou
-   l'URL n'est pas dans les faits cités ni dans les rôles du profil (`cv_validator_facts`).
+   l'URL n'est pas dans le fait visé lui-même ni dans les rôles du profil : citer un fait voisin
+   ne lève pas cette règle (`cv_validator_facts`).
 
 « Écart » l'emporte sur « à confirmer », qui l'emporte sur « ok ». `remove` et `move` n'écrivent
 aucun texte : toujours « ok ». Les termes sont comparés mots entiers, sans casse ni accent, au
@@ -191,6 +192,7 @@ def validate(p: Proposal, profile: MasterProfileData, analysis: PostingAnalysis)
     cited = _cited(p, facts_of(profile))
     after = clean_text(p.after)
     reference = clean_text(" ".join(cited))
+    own = clean_text(facts_of(profile).get(p.target or "", ""))  # le fait visé seul (I-1)
     blocks: list[str] = [] if cited else [NO_FACT]
     if figures_in(after) - figures_in(reference):
         blocks.append(NUMBER)
@@ -207,7 +209,7 @@ def validate(p: Proposal, profile: MasterProfileData, analysis: PostingAnalysis)
     seen = {tok for term in [*gap, *tools] for tok in normalize_term(term, plural=True).split()}
     if _names(after, profile, skip_first=skip_first) - seen:
         blocks.append(NAME)
-    if is_structured(p) and unbacked(after, reference, " ".join(_title_texts(profile))):
+    if is_structured(p) and unbacked(after, own, " ".join(_title_texts(profile))):
         blocks.append(FOREIGN)
     status: VerdictStatus = "to_gap" if gap else "to_confirm" if blocks else "ok"
     return Verdict(status, blocks, gap)

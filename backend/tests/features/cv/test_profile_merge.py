@@ -126,3 +126,53 @@ def test_a_cv_fact_missing_from_the_draft_is_not_carried() -> None:
     draft.skills = draft.skills[1:]  # c1, venu du CV, n'est plus dans l'import
     merged = merge_draft(draft, previous, all_ids([previous]))
     assert "c1" not in [s.id for s in merged.skills]
+
+
+def _confirmed_in_review() -> MasterProfileData:
+    """v validée : January a confirmé, en revue, « Lead Développeuse » et « Python (expert) »
+    (faits du CV réécrits : ids gardés, textes neufs, sources `cv` et `january`)."""
+    version = first()
+    version.experiences[0].role = "Lead Développeuse"
+    version.experiences[0].sources = ["cv", "january"]
+    version.skills[0].name = "Python (expert)"
+    version.skills[0].sources = ["cv", "january"]
+    version.languages[0].level = "C2"  # « Anglais — C2 » confirmé en revue
+    version.languages[0].sources = ["cv", "january"]
+    version.links.append(
+        Link(id="k1", label="GitHub", url="https://github.com/autre", sources=["cv", "january"])
+    )
+    return version
+
+
+def test_reimport_does_not_duplicate_a_fact_january_confirmed_in_a_review() -> None:
+    previous = _confirmed_in_review()
+    company = previous.experiences[0].company
+    draft = blank_facts(profile())  # le même CV : « Développeuse » d'origine, « Python »
+    draft.experiences[0].role = "Développeuse"
+    draft.experiences[0].company = company
+    draft.skills[0].name = "Python"
+    draft.links.append(Link(label="GitHub", url="https://github.com/camille"))
+    merged = merge_draft(draft, previous, all_ids([previous]))
+    experiences = [x for x in merged.experiences if x.company == company]
+    assert [(x.id, x.role) for x in experiences] == [("x1", "Lead Développeuse")]
+    texts = [a.text for a in experiences[0].achievements]
+    assert len(texts) == len(set(texts))  # les réalisations ne sont pas doublées
+    python = [(s.id, s.name) for s in merged.skills if s.name.startswith("Python")]
+    assert python == [("c1", "Python (expert)")]
+    assert [(lang.id, lang.name, lang.level) for lang in merged.languages] == [
+        ("l1", "Anglais", "C2")
+    ]
+    assert [(k.id, k.url) for k in merged.links] == [("k1", "https://github.com/autre")]
+    assert len(set(facts_of(merged))) == len(facts_of(merged))
+
+
+def test_a_new_achievement_of_the_draft_joins_the_january_experience() -> None:
+    previous = _confirmed_in_review()
+    draft = blank_facts(profile())
+    draft.experiences[0].company = previous.experiences[0].company
+    draft.experiences[0].achievements.append(Line(text="Nouvelle réalisation du CV"))
+    merged = merge_draft(draft, previous, all_ids([previous]))
+    kept = next(x for x in merged.experiences if x.id == "x1")
+    assert "Nouvelle réalisation du CV" in [a.text for a in kept.achievements]
+    ids = [a.id for a in kept.achievements]
+    assert len(ids) == len(set(ids)) and "" not in ids

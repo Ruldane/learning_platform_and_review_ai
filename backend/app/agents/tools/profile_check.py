@@ -88,8 +88,9 @@ def named_terms(text: str) -> set[str]:
 
 def _short_name_in(needle: str, raw: str) -> bool:
     """Un nom d'une ou deux lettres (« C », « Go », « R ») s'écrit tel quel dans le texte : ni
-    élision (« C'est »), ni unité (« 10 Go »), ni suite d'un autre nom (« C++ », « C# »)."""
-    pattern = rf"(?<![\w'’.\-])(?<!\d )(?<!\d\u00a0){re.escape(needle.strip())}(?![\w'’+#])"
+    élision (« C'est »), ni unité (« 10 Go »), ni suite d'un autre nom
+    (« C++ », « C# », « R&D », « C-level »)."""
+    pattern = rf"(?<![\w'’.\-])(?<!\d )(?<!\d\u00a0){re.escape(needle.strip())}(?![\w'’+#&\-])"
     return re.search(pattern, raw) is not None
 
 

@@ -107,3 +107,31 @@ def test_a_free_line_is_not_a_structured_fact() -> None:
     data = assign_fact_ids(data)
     v = validate(rewrite("x1a1", "Réalisation soignée plus claire"), data, OFFER)
     assert FOREIGN not in v.blocks
+
+
+def siblings() -> MasterProfileData:
+    """Le profil de `structured()` avec un second fait de chaque sorte (l2, f2, k2) et une
+    réalisation qui dit « experts » (x1a1)."""
+    data = structured()
+    data.experiences[0].achievements = [Line(text="Formé des développeurs experts en Python")]
+    data.education.append(Education(degree="Master gestion", school="École B", sources=["cv"]))
+    data.languages.append(Language(name="Espagnol", level="C1", sources=["cv"]))
+    data.links.append(Link(label="LinkedIn", url="https://linkedin.com/in/camille", sources=["cv"]))
+    return assign_fact_ids(data)
+
+
+@pytest.mark.parametrize(
+    ("target", "after", "cited"),
+    [
+        ("l1", "Anglais — C1", "l2"),  # le niveau d'une autre langue
+        ("f1", "Master informatique — Université Exemple", "f2"),  # le diplôme d'un autre
+        ("c1", "Python (expert)", "x1a1"),  # un mot d'une réalisation
+        ("k1", "GitHub — https://linkedin.com/in/camille", "k2"),  # l'URL d'un autre lien
+    ],
+)
+def test_citing_a_sibling_fact_never_lifts_the_structured_word_check(
+    target: str, after: str, cited: str
+) -> None:
+    v = validate(rewrite(target, after, fact_ids=[cited]), siblings(), OFFER)
+    assert v.status == "to_confirm"
+    assert FOREIGN in v.blocks
