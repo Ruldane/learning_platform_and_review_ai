@@ -961,6 +961,44 @@
         "title": "Body_create_document_api_v1_documents_post",
         "type": "object"
       },
+      "Body_import_profile_api_v1_profile_import_post": {
+        "properties": {
+          "cv": {
+            "contentMediaType": "application/octet-stream",
+            "title": "Cv",
+            "type": "string"
+          },
+          "linkedin": {
+            "anyOf": [
+              {
+                "contentMediaType": "application/octet-stream",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linkedin"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "required": [
+          "cv"
+        ],
+        "title": "Body_import_profile_api_v1_profile_import_post",
+        "type": "object"
+      },
       "BraveUsageOut": {
         "description": "Requêtes Brave du mois civil UTC (`month` : « AAAA-MM ») pour la clé en vigueur.",
         "properties": {
@@ -1613,6 +1651,79 @@
         "title": "DuplicateOut",
         "type": "object"
       },
+      "Education": {
+        "properties": {
+          "degree": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Degree",
+            "type": "string"
+          },
+          "details": {
+            "items": {
+              "$ref": "#/components/schemas/Line"
+            },
+            "maxItems": 6,
+            "title": "Details",
+            "type": "array"
+          },
+          "end": {
+            "anyOf": [
+              {
+                "pattern": "^\\d{4}(-(0[1-9]|1[0-2]))?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End"
+          },
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "school": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "School",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "enum": [
+                "cv",
+                "linkedin",
+                "note",
+                "january"
+              ],
+              "type": "string"
+            },
+            "maxItems": 4,
+            "title": "Sources",
+            "type": "array"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "pattern": "^\\d{4}(-(0[1-9]|1[0-2]))?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
+          }
+        },
+        "required": [
+          "degree",
+          "school"
+        ],
+        "title": "Education",
+        "type": "object"
+      },
       "EliminatoryOut": {
         "properties": {
           "kind": {
@@ -1688,6 +1799,91 @@
           "url"
         ],
         "title": "EvidenceOut",
+        "type": "object"
+      },
+      "Experience": {
+        "properties": {
+          "achievements": {
+            "items": {
+              "$ref": "#/components/schemas/Line"
+            },
+            "maxItems": 15,
+            "title": "Achievements",
+            "type": "array"
+          },
+          "company": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Company",
+            "type": "string"
+          },
+          "end": {
+            "anyOf": [
+              {
+                "pattern": "^\\d{4}(-(0[1-9]|1[0-2]))?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End"
+          },
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "role": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Role",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "enum": [
+                "cv",
+                "linkedin",
+                "note",
+                "january"
+              ],
+              "type": "string"
+            },
+            "maxItems": 4,
+            "title": "Sources",
+            "type": "array"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "pattern": "^\\d{4}(-(0[1-9]|1[0-2]))?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
+          }
+        },
+        "required": [
+          "role",
+          "company"
+        ],
+        "title": "Experience",
         "type": "object"
       },
       "FlashcardOut": {
@@ -2171,6 +2367,69 @@
         "title": "HistoryPointOut",
         "type": "object"
       },
+      "Identity": {
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "headline": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Headline"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "Identity",
+        "type": "object"
+      },
       "InterruptField": {
         "description": "Une question d'un cadrage à plusieurs champs (D82) ; la reprise porte\n`{\"answers\": {id: texte}}` (ou la valeur d'une option, `\"go\"`, D84).",
         "properties": {
@@ -2480,6 +2739,52 @@
         "title": "KeywordOut",
         "type": "object"
       },
+      "Language": {
+        "properties": {
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level"
+          },
+          "name": {
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "enum": [
+                "cv",
+                "linkedin",
+                "note",
+                "january"
+              ],
+              "type": "string"
+            },
+            "maxItems": 4,
+            "title": "Sources",
+            "type": "array"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "Language",
+        "type": "object"
+      },
       "LearnedStarted": {
         "description": "Session `learned_document` lancée par `POST /documents/{id}/learned`.",
         "properties": {
@@ -2668,6 +2973,66 @@
         "title": "LevelCountsOut",
         "type": "object"
       },
+      "Line": {
+        "properties": {
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 600,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "Line",
+        "type": "object"
+      },
+      "Link": {
+        "properties": {
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "enum": [
+                "cv",
+                "linkedin",
+                "note",
+                "january"
+              ],
+              "type": "string"
+            },
+            "maxItems": 4,
+            "title": "Sources",
+            "type": "array"
+          },
+          "url": {
+            "maxLength": 300,
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "url"
+        ],
+        "title": "Link",
+        "type": "object"
+      },
       "MapPoint": {
         "properties": {
           "item_id": {
@@ -2735,6 +3100,86 @@
           "truncated"
         ],
         "title": "MapResponse",
+        "type": "object"
+      },
+      "MasterProfileData": {
+        "properties": {
+          "education": {
+            "items": {
+              "$ref": "#/components/schemas/Education"
+            },
+            "maxItems": 15,
+            "title": "Education",
+            "type": "array"
+          },
+          "experiences": {
+            "items": {
+              "$ref": "#/components/schemas/Experience"
+            },
+            "maxItems": 30,
+            "title": "Experiences",
+            "type": "array"
+          },
+          "identity": {
+            "$ref": "#/components/schemas/Identity"
+          },
+          "languages": {
+            "items": {
+              "$ref": "#/components/schemas/Language"
+            },
+            "maxItems": 10,
+            "title": "Languages",
+            "type": "array"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "maxItems": 10,
+            "title": "Links",
+            "type": "array"
+          },
+          "projects": {
+            "items": {
+              "$ref": "#/components/schemas/Project"
+            },
+            "maxItems": 20,
+            "title": "Projects",
+            "type": "array"
+          },
+          "skills": {
+            "items": {
+              "$ref": "#/components/schemas/SkillFact"
+            },
+            "maxItems": 80,
+            "title": "Skills",
+            "type": "array"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SourcedLine"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SourcedLine"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "identity"
+        ],
+        "title": "MasterProfileData",
         "type": "object"
       },
       "MeOut": {
@@ -4394,6 +4839,183 @@
         "title": "PostingSummaryOut",
         "type": "object"
       },
+      "ProfileImportStarted": {
+        "description": "Capture du profil lancée : la session `cv_capture` et les documents rangés dans la mémoire\n(CV d'abord, puis LinkedIn).",
+        "properties": {
+          "document_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Document Ids",
+            "type": "array"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "document_ids"
+        ],
+        "title": "ProfileImportStarted",
+        "type": "object"
+      },
+      "ProfileOut": {
+        "description": "Une version du profil. `source` : `archivist` (brouillon tiré des documents) ou `january`\n(version qu'elle a validée). `dropped` : lignes retirées du brouillon (chiffre ou fait\nintrouvable dans les documents, texte invisible), montrées à January seule.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/MasterProfileData"
+          },
+          "dropped": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Dropped",
+            "type": "array"
+          },
+          "source": {
+            "enum": [
+              "archivist",
+              "january"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "validated"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "status",
+          "data",
+          "source",
+          "created_at",
+          "dropped"
+        ],
+        "title": "ProfileOut",
+        "type": "object"
+      },
+      "ProfilePutIn": {
+        "description": "`base_version` : la version que January a relue (la dernière, sinon 409\n`profile_conflict`) ; `None` s'il n'existe encore aucune version.",
+        "properties": {
+          "base_version": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Version"
+          },
+          "data": {
+            "$ref": "#/components/schemas/MasterProfileData"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "ProfilePutIn",
+        "type": "object"
+      },
+      "ProfileStateOut": {
+        "description": "`draft` : seulement s'il est plus récent que la version validée. `session_id` : capture\ndu profil en cours (à suivre par ses événements), sinon `None`.",
+        "properties": {
+          "draft": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProfileOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
+          "validated": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProfileOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "validated",
+          "draft",
+          "session_id"
+        ],
+        "title": "ProfileStateOut",
+        "type": "object"
+      },
+      "ProfileVersionOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "archivist",
+              "january"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "validated"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "status",
+          "source",
+          "created_at"
+        ],
+        "title": "ProfileVersionOut",
+        "type": "object"
+      },
       "ProgramOut": {
         "properties": {
           "cap_minutes": {
@@ -4602,6 +5224,66 @@
           "total_minutes"
         ],
         "title": "ProgressOut",
+        "type": "object"
+      },
+      "Project": {
+        "properties": {
+          "achievements": {
+            "items": {
+              "$ref": "#/components/schemas/Line"
+            },
+            "maxItems": 8,
+            "title": "Achievements",
+            "type": "array"
+          },
+          "description": {
+            "default": "",
+            "maxLength": 600,
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "link": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "enum": [
+                "cv",
+                "linkedin",
+                "note",
+                "january"
+              ],
+              "type": "string"
+            },
+            "maxItems": 4,
+            "title": "Sources",
+            "type": "array"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "Project",
         "type": "object"
       },
       "ProposalOut": {
@@ -6115,6 +6797,52 @@
         "title": "SkillEdgeOut",
         "type": "object"
       },
+      "SkillFact": {
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "enum": [
+                "cv",
+                "linkedin",
+                "note",
+                "january"
+              ],
+              "type": "string"
+            },
+            "maxItems": 4,
+            "title": "Sources",
+            "type": "array"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "SkillFact",
+        "type": "object"
+      },
       "SkillGraphOut": {
         "properties": {
           "domains": {
@@ -6567,6 +7295,41 @@
           "kind"
         ],
         "title": "SourceOut",
+        "type": "object"
+      },
+      "SourcedLine": {
+        "description": "Le titre ou le résumé du profil : un fait à part entière, avec ses sources (un résumé tiré\nde LinkedIn seul n'est pas « dans le CV »).",
+        "properties": {
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "enum": [
+                "cv",
+                "linkedin",
+                "note",
+                "january"
+              ],
+              "type": "string"
+            },
+            "maxItems": 4,
+            "title": "Sources",
+            "type": "array"
+          },
+          "text": {
+            "maxLength": 600,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "SourcedLine",
         "type": "object"
       },
       "StartSessionRequest": {
@@ -9531,6 +10294,136 @@
         "summary": "Post Gap Plan",
         "tags": [
           "gap"
+        ]
+      }
+    },
+    "/api/v1/profile": {
+      "get": {
+        "description": "La version validée, le brouillon s'il est plus récent, la capture en cours.",
+        "operationId": "get_profile_api_v1_profile_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileStateOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Profile",
+        "tags": [
+          "profile"
+        ]
+      },
+      "put": {
+        "description": "Nouvelle version validée (source `january`), ids des faits gardés, compétences du profil\ndéclarées. 409 `profile_conflict` : `base_version` n'est pas la dernière version.",
+        "operationId": "put_profile_api_v1_profile_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfilePutIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Profile",
+        "tags": [
+          "profile"
+        ]
+      }
+    },
+    "/api/v1/profile/import": {
+      "post": {
+        "description": "CV en PDF (10 Mo au plus), profil LinkedIn en PDF facultatif, note facultative. 409\n`capture_in_progress`, 413 `file_too_large`, 415 `unsupported_file_type`.",
+        "operationId": "import_profile_api_v1_profile_import_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_import_profile_api_v1_profile_import_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileImportStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Import Profile",
+        "tags": [
+          "profile"
+        ]
+      }
+    },
+    "/api/v1/profile/versions": {
+      "get": {
+        "description": "Toutes les versions, la plus récente d'abord.",
+        "operationId": "get_profile_versions_api_v1_profile_versions_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProfileVersionOut"
+                  },
+                  "title": "Response Get Profile Versions Api V1 Profile Versions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Profile Versions",
+        "tags": [
+          "profile"
         ]
       }
     },

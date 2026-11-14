@@ -10,6 +10,7 @@ from app.providers.pdf.base import (
     CV_TOO_LONG_MESSAGE,
     LAYOUT_DPI,
     MAX_CV_PAGES,
+    ROTATED_PAGE_MESSAGE,
     PdfLayout,
     PdfLayoutExtractor,
     PdfUnreadable,
@@ -135,8 +136,9 @@ async def test_rotated_page_with_text_is_unreadable(extractor: PdfLayoutExtracto
     rotated = make_cv_pdf().replace(
         b"/MediaBox [0 0 595 842]", b"/MediaBox [0 0 595 842] /Rotate 90"
     )
-    with pytest.raises(PdfUnreadable):
+    with pytest.raises(PdfUnreadable) as refused:
         await extractor.extract_layout(rotated)
+    assert refused.value.message == ROTATED_PAGE_MESSAGE  # D124 : exporter sans rotation
     scan = make_cv_pdf(SampleCv(scanned=True))
     layout = await extractor.extract_layout(
         scan.replace(b"/MediaBox [0 0 595 842]", b"/MediaBox [0 0 595 842] /Rotate 90")

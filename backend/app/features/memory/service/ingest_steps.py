@@ -90,7 +90,10 @@ async def claim(runtime: MemoryRuntime, user_id: str, document_id: str) -> Claim
         doc.status = "processing"
         await db.commit()
         return Claim(
-            SourceInput(doc.id, user_id, doc.name, doc.url, doc.storage_key), doc.source_kind
+            SourceInput(
+                doc.id, user_id, doc.name, doc.url, doc.storage_key, tuple(map(str, doc.tags))
+            ),
+            doc.source_kind,
         )
 
 
@@ -136,6 +139,7 @@ async def _create(
         reason=f"Import du document « {src.name} ».",
         source_id=src.document_id,
         lang=lang,
+        tags=src.tags,
     )
     outcome = await MemoryService(db, src.user_id, runtime).write(draft, index=False)
     if not outcome.created and outcome.item.source_id != src.document_id:

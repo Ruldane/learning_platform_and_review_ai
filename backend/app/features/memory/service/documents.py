@@ -5,7 +5,8 @@ Ni les messages ni les journaux ne citent un nom de fichier, un lien ou un conte
 
 import builtins
 import logging
-from dataclasses import dataclass
+from collections.abc import Sequence
+from dataclasses import dataclass, replace
 from datetime import date
 from urllib.parse import urlsplit
 
@@ -56,6 +57,7 @@ class _Incoming:
     data: bytes | None = None
     suffix: str | None = None
     url: str | None = None
+    tags: tuple[str, ...] = ()
 
 
 def default_paste_title() -> str:
@@ -125,18 +127,26 @@ class DocumentService:
         self._docs = DocumentRepository(db, user_id)
 
     async def create(
-        self, *, file: UploadFile | None, url: str | None, text: str | None, title: str | None
+        self,
+        *,
+        file: UploadFile | None,
+        url: str | None,
+        text: str | None,
+        title: str | None,
+        tags: Sequence[str] = (),
     ) -> tuple[DocumentOut, bool]:
         """(document, nouveau ?). Exactement une source. Même contenu déjà importé : l'existant,
         sauf s'il est en erreur ou bloqué, auquel cas il repart en file (`_again`). Le commit
-        précède la mise en file du worker (qui doit voir la ligne)."""
+        précède la mise en file du worker (qui doit voir la ligne). `tags` : étiquettes posées
+        par une feature (`cv`, `linkedin`, D124), ajoutées à celles d'un document existant."""
         url = url.strip() if url and url.strip() else None
         text = text if text and text.strip() else None
         if [file is not None, url is not None, text is not None].count(True) != 1:
             raise invalid_source()
-        incoming = await self._incoming(file, url, text, title)
+        incoming = await self._incoming(file, url, text, title, tags)
         existing = await self._docs.find_by_source_hash(incoming.digest)
         if existing is not None:
+            await self._tag(existing, incoming.tags)
             return await self._again(existing, incoming)
         doc, created = await self._insert(incoming)
         if not created:  # course perdue : un import identique a gagné
@@ -146,17 +156,31 @@ class DocumentService:
         return to_document_out(doc), True
 
     async def _incoming(
-        self, file: UploadFile | None, url: str | None, text: str | None, title: str | None
+        self,
+        file: UploadFile | None,
+        url: str | None,
+        text: str | None,
+        title: str | None,
+        tags: Sequence[str],
     ) -> _Incoming:
         if url is not None:
-            return _from_url(url)
-        if text is not None:
-            return _from_text(text, title)
-        assert file is not None
-        data = await _read_upload(file)
-        kind = detect_upload(file.filename, data)
-        name = display_name(file.filename)
-        return _Incoming(kind, name, source_hash(data), data=data, suffix=SUFFIX_OF[kind])
+            incoming = _from_url(url)
+        elif text is not None:
+            incoming = _from_text(text, title)
+        else:
+            assert file is not None
+            data = await _read_upload(file)
+            kind = detect_upload(file.filename, data)
+            name = display_name(file.filename)
+            incoming = _Incoming(kind, name, source_hash(data), data=data, suffix=SUFFIX_OF[kind])
+        return replace(incoming, tags=tuple(tags))
+
+    async def _tag(self, doc: Document, tags: tuple[str, ...]) -> None:
+        """Étiquettes ajoutées à un document déjà importé (validées aussitôt)."""
+        merged = list(dict.fromkeys([*map(str, doc.tags), *tags]))
+        if merged != list(doc.tags):
+            doc.tags = merged
+            await self._db.commit()
 
     async def _again(self, existing: Document, incoming: _Incoming) -> tuple[DocumentOut, bool]:
         """Doublon rendu tel quel, sauf s'il est en erreur, ou en file ou en cours sans job prévu
@@ -209,6 +233,7 @@ class DocumentService:
                 storage_key=key,
                 size_bytes=len(incoming.data) if incoming.data is not None else None,
                 source_hash=incoming.digest,
+                tags=list(incoming.tags),
             )
             await self._db.commit()
             committed = True

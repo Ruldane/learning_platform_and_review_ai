@@ -18,6 +18,7 @@ class SourceInput:
     name: str
     url: str | None
     storage_key: str | None
+    tags: tuple[str, ...] = ()  # étiquettes du document, reprises par son élément (D124)
 
 
 @dataclass(frozen=True)

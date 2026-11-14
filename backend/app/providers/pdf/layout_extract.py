@@ -48,6 +48,11 @@ class PageTooLarge(Exception):
     """Page démesurée (son image ne serait pas une page de CV)."""
 
 
+class RotatedPage(Exception):
+    """Page tournée avec du texte : ses positions n'ont pas le repère de son image (revue 6.3,
+    M1) ; le refus invite à exporter le PDF sans rotation (D124)."""
+
+
 class TooManyBlocks(Exception):
     """Plus de `MAX_LAYOUT_BLOCKS` blocs : PDF refusé comme illisible."""
 
@@ -198,7 +203,7 @@ def _render_page(page: Any, dpi: int, max_side: float) -> tuple[Image.Image, str
     textpage = page.get_textpage()
     if page.get_rotation() and textpage.count_chars():
         # Une page tournée avec du texte n'a pas le repère de son image (revue 6.3, M1).
-        raise ValueError("page tournée")
+        raise RotatedPage()
     left, _bottom, _right, top = page.get_cropbox()
     frame = _Frame(left, top, page.get_mediabox()[1], width, height)
     image = page.render(scale=dpi / 72).to_pil().convert("RGB")
@@ -212,7 +217,7 @@ def _render(
     data: bytes, max_pages: int, dpi: int, max_side: float
 ) -> list[tuple[Image.Image, str, _Frame]]:
     """Image (RVB), texte du flux et repère de chaque page, par PDFium. Lève `TooManyPages`,
-    `PageTooLarge`, ou une erreur (protégé, endommagé, pas un PDF, page tournée avec texte)."""
+    `PageTooLarge`, `RotatedPage`, ou une erreur (protégé, endommagé, pas un PDF)."""
     document = pdfium.PdfDocument(data)
     try:
         count = len(document)

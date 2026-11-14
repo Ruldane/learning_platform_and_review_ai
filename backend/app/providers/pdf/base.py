@@ -120,6 +120,9 @@ LAYOUT_MAX_OUTPUT_BYTES = 40 * 1024 * 1024
 # Une page plus grande que 20 pouces de côté n'est pas une page de CV (et son image serait énorme).
 MAX_PAGE_SIDE_PT = 1440
 CV_TOO_LONG_MESSAGE = "Un CV de plus de 4 pages n'est pas pris en charge."
+ROTATED_PAGE_MESSAGE = (
+    "Une page de ce PDF est tournée : exporte-le de nouveau sans rotation, puis réessaie."
+)
 
 
 @dataclass(frozen=True)

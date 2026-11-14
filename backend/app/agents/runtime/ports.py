@@ -10,6 +10,7 @@ from app.agents.tools.council_port import NO_COUNCIL, CouncilStore
 from app.agents.tools.gap_port import NO_GAP, GapStore
 from app.agents.tools.lesson_port import NO_LESSONS, LessonStore
 from app.agents.tools.memory_port import NO_MEMORY, MemoryGateway
+from app.agents.tools.profile_port import NO_PROFILE, ProfileStore
 from app.agents.tools.program_port import NO_PROGRAM, ProgramStore
 from app.agents.tools.quiz_port import NO_QUIZ, QuizStore
 from app.agents.tools.replan_port import NO_REPLAN, ReplanStore
@@ -29,6 +30,7 @@ class AgentPorts:
     replan: ReplanStore = NO_REPLAN  # replanification du Stratège (D105)
     capture: CaptureStore = NO_CAPTURE  # capture rapide de l'Archiviste (D108)
     gap: GapStore = NO_GAP  # analyse d'une offre et son écart (D121)
+    profile: ProfileStore = NO_PROFILE  # profil maître de l'Archiviste (D124)
 
 
 NO_PORTS = AgentPorts()

@@ -628,6 +628,72 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Profile
+         * @description La version validée, le brouillon s'il est plus récent, la capture en cours.
+         */
+        get: operations["get_profile_api_v1_profile_get"];
+        /**
+         * Put Profile
+         * @description Nouvelle version validée (source `january`), ids des faits gardés, compétences du profil
+         *     déclarées. 409 `profile_conflict` : `base_version` n'est pas la dernière version.
+         */
+        put: operations["put_profile_api_v1_profile_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/profile/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import Profile
+         * @description CV en PDF (10 Mo au plus), profil LinkedIn en PDF facultatif, note facultative. 409
+         *     `capture_in_progress`, 413 `file_too_large`, 415 `unsupported_file_type`.
+         */
+        post: operations["import_profile_api_v1_profile_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/profile/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Profile Versions
+         * @description Toutes les versions, la plus récente d'abord.
+         */
+        get: operations["get_profile_versions_api_v1_profile_versions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/programs": {
         parameters: {
             query?: never;
@@ -1717,6 +1783,15 @@ export interface components {
             /** Url */
             url?: string | null;
         };
+        /** Body_import_profile_api_v1_profile_import_post */
+        Body_import_profile_api_v1_profile_import_post: {
+            /** Cv */
+            cv: string;
+            /** Linkedin */
+            linkedin?: string | null;
+            /** Note */
+            note?: string | null;
+        };
         /**
          * BraveUsageOut
          * @description Requêtes Brave du mois civil UTC (`month` : « AAAA-MM ») pour la clé en vigueur.
@@ -1968,6 +2043,26 @@ export interface components {
             /** Title */
             title: string | null;
         };
+        /** Education */
+        Education: {
+            /** Degree */
+            degree: string;
+            /** Details */
+            details?: components["schemas"]["Line"][];
+            /** End */
+            end?: string | null;
+            /**
+             * Id
+             * @default
+             */
+            id: string;
+            /** School */
+            school: string;
+            /** Sources */
+            sources?: ("cv" | "linkedin" | "note" | "january")[];
+            /** Start */
+            start?: string | null;
+        };
         /** EliminatoryOut */
         EliminatoryOut: {
             /**
@@ -1991,6 +2086,28 @@ export interface components {
             label: string;
             /** Url */
             url: string | null;
+        };
+        /** Experience */
+        Experience: {
+            /** Achievements */
+            achievements?: components["schemas"]["Line"][];
+            /** Company */
+            company: string;
+            /** End */
+            end?: string | null;
+            /**
+             * Id
+             * @default
+             */
+            id: string;
+            /** Location */
+            location?: string | null;
+            /** Role */
+            role: string;
+            /** Sources */
+            sources?: ("cv" | "linkedin" | "note" | "january")[];
+            /** Start */
+            start?: string | null;
         };
         /** FlashcardOut */
         FlashcardOut: {
@@ -2153,6 +2270,19 @@ export interface components {
              */
             week_start: string;
         };
+        /** Identity */
+        Identity: {
+            /** Email */
+            email?: string | null;
+            /** Headline */
+            headline?: string | null;
+            /** Location */
+            location?: string | null;
+            /** Name */
+            name: string;
+            /** Phone */
+            phone?: string | null;
+        };
         /**
          * InterruptField
          * @description Une question d'un cadrage à plusieurs champs (D82) ; la reprise porte
@@ -2284,6 +2414,20 @@ export interface components {
             /** Variants */
             variants: string[];
         };
+        /** Language */
+        Language: {
+            /**
+             * Id
+             * @default
+             */
+            id: string;
+            /** Level */
+            level?: string | null;
+            /** Name */
+            name: string;
+            /** Sources */
+            sources?: ("cv" | "linkedin" | "note" | "january")[];
+        };
         /**
          * LearnedStarted
          * @description Session `learned_document` lancée par `POST /documents/{id}/learned`.
@@ -2363,6 +2507,30 @@ export interface components {
             /** Valide */
             valide: number;
         };
+        /** Line */
+        Line: {
+            /**
+             * Id
+             * @default
+             */
+            id: string;
+            /** Text */
+            text: string;
+        };
+        /** Link */
+        Link: {
+            /**
+             * Id
+             * @default
+             */
+            id: string;
+            /** Label */
+            label: string;
+            /** Sources */
+            sources?: ("cv" | "linkedin" | "note" | "january")[];
+            /** Url */
+            url: string;
+        };
         /** MapPoint */
         MapPoint: {
             /** Item Id */
@@ -2394,6 +2562,24 @@ export interface components {
             points: components["schemas"]["MapPoint"][];
             /** Truncated */
             truncated: boolean;
+        };
+        /** MasterProfileData */
+        MasterProfileData: {
+            /** Education */
+            education?: components["schemas"]["Education"][];
+            /** Experiences */
+            experiences?: components["schemas"]["Experience"][];
+            identity: components["schemas"]["Identity"];
+            /** Languages */
+            languages?: components["schemas"]["Language"][];
+            /** Links */
+            links?: components["schemas"]["Link"][];
+            /** Projects */
+            projects?: components["schemas"]["Project"][];
+            /** Skills */
+            skills?: components["schemas"]["SkillFact"][];
+            summary?: components["schemas"]["SourcedLine"] | null;
+            title?: components["schemas"]["SourcedLine"] | null;
         };
         /** MeOut */
         MeOut: {
@@ -2955,6 +3141,86 @@ export interface components {
             /** Title */
             title: string | null;
         };
+        /**
+         * ProfileImportStarted
+         * @description Capture du profil lancée : la session `cv_capture` et les documents rangés dans la mémoire
+         *     (CV d'abord, puis LinkedIn).
+         */
+        ProfileImportStarted: {
+            /** Document Ids */
+            document_ids: string[];
+            /** Session Id */
+            session_id: string;
+        };
+        /**
+         * ProfileOut
+         * @description Une version du profil. `source` : `archivist` (brouillon tiré des documents) ou `january`
+         *     (version qu'elle a validée). `dropped` : lignes retirées du brouillon (chiffre ou fait
+         *     introuvable dans les documents, texte invisible), montrées à January seule.
+         */
+        ProfileOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            data: components["schemas"]["MasterProfileData"];
+            /** Dropped */
+            dropped: string[];
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "archivist" | "january";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "validated";
+            /** Version */
+            version: number;
+        };
+        /**
+         * ProfilePutIn
+         * @description `base_version` : la version que January a relue (la dernière, sinon 409
+         *     `profile_conflict`) ; `None` s'il n'existe encore aucune version.
+         */
+        ProfilePutIn: {
+            /** Base Version */
+            base_version?: number | null;
+            data: components["schemas"]["MasterProfileData"];
+        };
+        /**
+         * ProfileStateOut
+         * @description `draft` : seulement s'il est plus récent que la version validée. `session_id` : capture
+         *     du profil en cours (à suivre par ses événements), sinon `None`.
+         */
+        ProfileStateOut: {
+            draft: components["schemas"]["ProfileOut"] | null;
+            /** Session Id */
+            session_id: string | null;
+            validated: components["schemas"]["ProfileOut"] | null;
+        };
+        /** ProfileVersionOut */
+        ProfileVersionOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "archivist" | "january";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "validated";
+            /** Version */
+            version: number;
+        };
         /** ProgramOut */
         ProgramOut: {
             /** Cap Minutes */
@@ -3035,6 +3301,27 @@ export interface components {
             total_minutes: number;
             /** Total Tasks */
             total_tasks: number;
+        };
+        /** Project */
+        Project: {
+            /** Achievements */
+            achievements?: components["schemas"]["Line"][];
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Id
+             * @default
+             */
+            id: string;
+            /** Link */
+            link?: string | null;
+            /** Name */
+            name: string;
+            /** Sources */
+            sources?: ("cv" | "linkedin" | "note" | "january")[];
         };
         /** ProposalOut */
         ProposalOut: {
@@ -3574,6 +3861,20 @@ export interface components {
             /** Before Id */
             before_id: string;
         };
+        /** SkillFact */
+        SkillFact: {
+            /** Category */
+            category?: string | null;
+            /**
+             * Id
+             * @default
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Sources */
+            sources?: ("cv" | "linkedin" | "note" | "january")[];
+        };
         /** SkillGraphOut */
         SkillGraphOut: {
             /** Domains */
@@ -3724,6 +4025,22 @@ export interface components {
              * @enum {string}
              */
             verdict: "pending" | "kept" | "rejected";
+        };
+        /**
+         * SourcedLine
+         * @description Le titre ou le résumé du profil : un fait à part entière, avec ses sources (un résumé tiré
+         *     de LinkedIn seul n'est pas « dans le CV »).
+         */
+        SourcedLine: {
+            /**
+             * Id
+             * @default
+             */
+            id: string;
+            /** Sources */
+            sources?: ("cv" | "linkedin" | "note" | "january")[];
+            /** Text */
+            text: string;
         };
         /** StartSessionRequest */
         StartSessionRequest: {
@@ -5448,6 +5765,112 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_profile_api_v1_profile_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileStateOut"];
+                };
+            };
+        };
+    };
+    put_profile_api_v1_profile_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfilePutIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_profile_api_v1_profile_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_profile_api_v1_profile_import_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileImportStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_profile_versions_api_v1_profile_versions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileVersionOut"][];
                 };
             };
         };

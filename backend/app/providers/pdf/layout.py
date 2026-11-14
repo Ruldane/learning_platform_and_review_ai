@@ -25,6 +25,7 @@ from app.providers.pdf.base import (
     LAYOUT_TIMEOUT_S,
     PDF_MAX_MEMORY_BYTES,
     PDF_TIMEOUT_MESSAGE,
+    ROTATED_PAGE_MESSAGE,
     PageLayout,
     PdfLayout,
     PdfUnreadable,
@@ -35,9 +36,10 @@ from app.providers.pdf.subprocess import exchange_with_worker, reap_worker, spaw
 logger = logging.getLogger(__name__)
 
 WORKER_MODULE = "app.providers.pdf.layout_worker"
-# Code de sortie du worker pour « trop de pages » (`layout_worker.EXIT_TOO_MANY_PAGES`, qui n'est
-# pas importé ici : le parent ne charge ni pdfplumber ni PDFium).
+# Codes de sortie du worker (`layout_worker.EXIT_*`, non importés ici : le parent ne charge ni
+# pdfplumber ni PDFium) : trop de pages, page tournée avec du texte.
 EXIT_TOO_MANY_PAGES = 4
+EXIT_ROTATED_PAGE = 5
 _BLOCK_FIELDS = 10
 
 
@@ -82,6 +84,9 @@ class SubprocessPdfLayoutExtractor:
         if code == EXIT_TOO_MANY_PAGES:
             logger.info("Mise en page PDF refusée : trop de pages (code %s)", code)
             raise PdfUnreadable(CV_TOO_LONG_MESSAGE) from None
+        if code == EXIT_ROTATED_PAGE:
+            logger.info("Mise en page PDF refusée : page tournée (code %s)", code)
+            raise PdfUnreadable(ROTATED_PAGE_MESSAGE) from None
         if output is None or code != 0:
             logger.info("Mise en page PDF : worker en échec (code %s)", code)
             raise PdfUnreadable() from None
@@ -110,12 +115,14 @@ class LocalPdfLayoutExtractor:
     worker, mêmes refus."""
 
     async def extract_layout(self, data: bytes) -> PdfLayout:
-        from app.providers.pdf.layout_extract import TooManyPages
+        from app.providers.pdf.layout_extract import RotatedPage, TooManyPages
 
         try:
             output = await asyncio.to_thread(_extract_locally, data)
         except TooManyPages:
             raise PdfUnreadable(CV_TOO_LONG_MESSAGE) from None
+        except RotatedPage:
+            raise PdfUnreadable(ROTATED_PAGE_MESSAGE) from None
         except Exception as exc:
             logger.info("Mise en page PDF illisible (%s)", type(exc).__name__)
             raise PdfUnreadable() from None

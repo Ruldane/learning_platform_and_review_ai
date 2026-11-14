@@ -9,10 +9,14 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.agents.runtime.launcher import SessionLauncher
 from app.agents.tools.gap_port import GapStore
+from app.agents.tools.profile_port import ProfileStore
+from app.features.cv.service.profile_store import AgentProfileStore
+from app.features.cv.service.runtime import CvRuntime
 from app.features.memory.service.runtime import MemoryRuntime
 from app.features.postings.service.agent_store import AgentGapStore
 from app.features.postings.service.runtime import PostingsRuntime
 from app.features.research.service.runtime import ResearchRuntime
+from app.providers.pdf.base import PdfLayoutExtractor
 
 
 @dataclass(frozen=True)
@@ -22,6 +26,8 @@ class CareerRuntimes:
 
     postings: PostingsRuntime
     gap: GapStore  # port de l'Analyste (D121)
+    cv: CvRuntime  # profil maître (D124)
+    profile: ProfileStore  # port de l'Archiviste en mode `profile` (D124)
 
 
 def career_runtimes(
@@ -30,8 +36,17 @@ def career_runtimes(
     *,
     research: ResearchRuntime,
     memory: MemoryRuntime,
+    layout: PdfLayoutExtractor,
 ) -> CareerRuntimes:
     """Offres (lecture du lien par la recherche web, élément `offre` et doublons par la mémoire,
-    analyse lancée par le lanceur, lié au moteur ensuite) et port de l'écart."""
+    analyse lancée par le lanceur, lié au moteur ensuite) et port de l'écart ; profil maître
+    (documents rangés par la mémoire, PDF relus par la mise en page, capture lancée par le
+    lanceur) et port de l'Archiviste."""
     postings = PostingsRuntime(session_factory, research, memory, launcher)
-    return CareerRuntimes(postings=postings, gap=AgentGapStore(session_factory, memory))
+    cv = CvRuntime(session_factory, memory, launcher, layout)
+    return CareerRuntimes(
+        postings=postings,
+        gap=AgentGapStore(session_factory, memory),
+        cv=cv,
+        profile=AgentProfileStore(cv),
+    )

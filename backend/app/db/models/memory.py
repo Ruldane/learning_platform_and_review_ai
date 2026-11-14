@@ -44,6 +44,9 @@ class Document(UserScopedMixin, Base):
     )
     learned: Mapped[bool] = mapped_column(default=False)
     error: Mapped[dict[str, Any] | None] = mapped_column(default=None)  # {code, message}
+    # Étiquettes posées par la feature qui range le document (`cv`, `linkedin` : profil maître,
+    # D124), reprises par l'élément `document` à l'ingestion.
+    tags: Mapped[list[Any]] = mapped_column(default=list)
 
 
 class MemoryItem(UserScopedMixin, Base):

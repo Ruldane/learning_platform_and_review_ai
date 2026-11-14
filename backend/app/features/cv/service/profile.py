@@ -1,0 +1,130 @@
+"""Le profil maître de January (SPEC 5.1, D124) : état (version validée, brouillon plus récent,
+capture en cours), versions, et validation par January.
+
+Valider crée une version `validated` (source `january`) : jamais d'écrasement, les ids des faits
+gardés (`keep_known`), les compétences du profil montées à `declare` au moins avec une preuve
+`cv` (jamais de baisse). Journaux : identifiants et nombres seulement (17.2)."""
+
+import logging
+
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.agents.tools.cv_schema import MasterProfileData
+from app.core.errors import AppError
+from app.core.skills import evidence
+from app.db.models.career import MasterProfile
+from app.features.cv.repository import ProfileRepository
+from app.features.cv.schemas_profile import (
+    ProfileOut,
+    ProfilePutIn,
+    ProfileStateOut,
+    ProfileVersionOut,
+)
+from app.features.cv.service.profile_merge import all_ids, keep_known
+from app.features.cv.service.runtime import CAPTURE_GRAPH, PROFILE_SUBJECT, CvRuntime
+from app.features.sessions.service import find_active_session
+from app.features.skills.service import SkillsService
+
+logger = logging.getLogger(__name__)
+
+EVIDENCE_LABEL = "Profil maître"
+
+
+def profile_conflict() -> AppError:
+    return AppError(
+        "profile_conflict",
+        "Le profil a changé depuis ta lecture : recharge-le avant de valider.",
+        409,
+    )
+
+
+def to_profile_out(row: MasterProfile) -> ProfileOut:
+    return ProfileOut.model_validate(
+        {
+            "version": row.version,
+            "status": row.status,
+            "data": row.data,
+            "source": row.source,
+            "created_at": row.created_at,
+            "dropped": [str(line) for line in row.dropped],
+        }
+    )
+
+
+async def capture_session(db: AsyncSession, user_id: str) -> str | None:
+    """La capture du profil encore ouverte, `None` sinon."""
+    return await find_active_session(
+        db, user_id, graph=CAPTURE_GRAPH, subject_type=PROFILE_SUBJECT, subject_id=user_id
+    )
+
+
+async def profile_state(db: AsyncSession, user_id: str) -> ProfileStateOut:
+    repo = ProfileRepository(db, user_id)
+    validated = await repo.latest("validated")
+    draft = await repo.latest("draft")
+    if draft is not None and validated is not None and draft.version < validated.version:
+        draft = None
+    return ProfileStateOut(
+        validated=to_profile_out(validated) if validated else None,
+        draft=to_profile_out(draft) if draft else None,
+        session_id=await capture_session(db, user_id),
+    )
+
+
+async def profile_versions(db: AsyncSession, user_id: str) -> list[ProfileVersionOut]:
+    rows = await ProfileRepository(db, user_id).all_versions()
+    return [
+        ProfileVersionOut(
+            version=row.version,
+            status=row.status,  # type: ignore[arg-type]  # colonne texte, valeurs de ProfileStatus
+            source=row.source,  # type: ignore[arg-type]  # colonne texte, valeurs de ProfileOrigin
+            created_at=row.created_at,
+        )
+        for row in rows
+    ]
+
+
+async def _write(
+    rt: CvRuntime, db: AsyncSession, user_id: str, body: ProfilePutIn
+) -> MasterProfile:
+    repo = ProfileRepository(db, user_id)
+    rows = await repo.all_versions()
+    top = rows[0].version if rows else None
+    if body.base_version != top:
+        raise profile_conflict()
+    taken = all_ids(MasterProfileData.model_validate(row.data) for row in rows)
+    data = keep_known(body.data, taken)
+    row = await repo.add(
+        version=(top or 0) + 1,
+        status="validated",
+        data=data.model_dump(mode="json"),
+        source="january",
+        dropped=[],
+    )
+    names = [skill.name for skill in data.skills]
+    proof = evidence("cv", row.id, EVIDENCE_LABEL, rt.now())
+    changed = await SkillsService(db, user_id).raise_levels(names, "declare", proof)
+    logger.info(
+        "Profil validé : utilisateur %s, profil %s, version %d, %d compétence(s), %d niveau(x) "
+        "monté(s)",
+        user_id,
+        row.id,
+        row.version,
+        len(names),
+        len(changed),
+    )
+    return row
+
+
+async def save_profile(rt: CvRuntime, user_id: str, body: ProfilePutIn) -> ProfileOut:
+    """Nouvelle version validée ; 409 `profile_conflict` si `base_version` n'est pas la dernière
+    (ou si une autre version a été écrite pendant ce temps)."""
+    async with rt.version_lock(user_id), rt.session_factory() as db:
+        row = await _write(rt, db, user_id, body)
+        try:
+            await db.commit()
+        except IntegrityError:
+            await db.rollback()
+            raise profile_conflict() from None
+        return to_profile_out(row)

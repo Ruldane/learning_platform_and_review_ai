@@ -12,6 +12,7 @@ from app.agents.runtime.ports import AgentPorts
 from app.agents.runtime.run_settings import RunSettingsSource
 from app.agents.tools.gap_port import NO_GAP, GapStore
 from app.agents.tools.memory_port import MemoryGateway
+from app.agents.tools.profile_port import NO_PROFILE, ProfileStore
 from app.agents.tools.web_port import WebGateway
 from app.core.providers import MemoryProviders, PublishingProviders
 from app.features.capture.service.runtime import CaptureRuntime
@@ -92,12 +93,14 @@ def agent_ports(
     lessons: LessonsRuntime,
     study: StudyRuntimes,
     gap: GapStore = NO_GAP,
+    profile: ProfileStore = NO_PROFILE,
 ) -> AgentPorts:
     """Tous les ports du moteur (D82) : un port de plus = un champ d'`AgentPorts` et une ligne ici.
     Conseil (D84), programme (D86), leçons (D90), quiz (D100), sessions d'étude (D102),
     replanification (D105) et capture (D108) adaptés des features `learning` (D87), `program`
     (D88), `lessons` (D91), `quiz` (D101), `study` (D103), `replan` (D106) et `capture` (D108) ;
-    analyse d'offre (D121) adaptée de la feature `postings` (D122, `app.bootstrap_career`)."""
+    analyse d'offre (D121) adaptée de la feature `postings` (D122) et profil maître (D124) de la
+    feature `cv`, composés par `app.bootstrap_career`."""
     council = AgentCouncilStore(learning.session_factory, learning.launcher, learning)
     program_store = AgentProgramStore(program)
     return AgentPorts(
@@ -111,6 +114,7 @@ def agent_ports(
         AgentReplanStore(study.replan),
         AgentCaptureStore(study.capture),
         gap,
+        profile,
     )
 
 

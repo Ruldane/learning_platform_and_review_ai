@@ -25,6 +25,7 @@ from tests.agents.graphs.capture_support import make_capture_runner  # noqa: F40
 from tests.agents.graphs.council_support import make_council_runner  # noqa: F401
 from tests.agents.graphs.gap_support import gap_runner, gap_store  # noqa: F401
 from tests.agents.graphs.lesson_support import make_lesson_runner  # noqa: F401
+from tests.agents.graphs.profile_support import profile_runner, profile_store  # noqa: F401
 from tests.agents.graphs.program_support import make_builder_runner  # noqa: F401
 from tests.agents.graphs.quiz_support import make_quiz_runner, quiz_store  # noqa: F401
 from tests.agents.graphs.replan_support import make_replan_runner  # noqa: F401
