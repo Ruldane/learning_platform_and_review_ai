@@ -1,7 +1,7 @@
 """API du profil maître (D124) : versions validées par January (jamais d'écrasement, ids gardés,
-conflit de version), compétences déclarées sans baisse, 422 sans valeur, import du CV et de
-LinkedIn comme documents de la mémoire puis capture lancée, refus des fichiers qui ne sont pas des
-PDF, une capture à la fois, rien du profil dans les journaux."""
+conflit de version), compétences déclarées sans baisse et reflétées dans les acquis (D6), 422
+sans valeur, import du CV et de LinkedIn comme documents de la mémoire puis capture lancée, refus
+des fichiers qui ne sont pas des PDF, une capture à la fois, rien du profil dans les journaux."""
 
 import logging
 from typing import Any
@@ -50,6 +50,10 @@ async def test_put_profile_creates_validated_version_and_raises_skills(
     }
     [proof] = levels["Python"][1]
     assert (proof["kind"], proof["label"]) == ("cv", "Profil maître") and proof["ref_id"]
+    async with app.state.session_factory() as db:  # reflet dans les acquis de la mémoire (D6)
+        acquis = (await db.execute(select(MemoryItem).where(MemoryItem.kind == "acquis"))).scalars()
+        reflected = {item.title: item.meta["level"] for item in acquis}
+    assert reflected == {name: "declare" for name in CV_FACTS["tools"].split(", ")}
     state = (await client.get(f"{API}/profile")).json()
     assert state["validated"]["version"] == 1 and state["draft"] is None
     assert state["session_id"] is None
@@ -68,6 +72,13 @@ async def test_put_profile_never_lowers_a_skill(client: httpx.AsyncClient, app: 
     assert (await put(client, profile_data(), None)).status_code == 200
     levels = await skill_rows(app.state.session_factory, user)
     assert levels["Python"][0] == "valide" and levels["Docker"][0] == "declare"
+    async with app.state.session_factory() as db:  # l'acquis suit le niveau qui fait foi
+        python = (
+            await db.execute(
+                select(MemoryItem).where(MemoryItem.kind == "acquis", MemoryItem.title == "Python")
+            )
+        ).scalar_one()
+    assert python.meta["level"] == "valide"
     assert [p["kind"] for p in levels["Python"][1]] == ["quiz", "cv"]
 
 

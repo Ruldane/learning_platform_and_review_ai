@@ -91,20 +91,26 @@ async def test_number_absent_from_sources_is_dropped(
     ]
 
 
-async def test_fact_absent_from_documents_is_dropped_unless_note(
+async def test_fact_absent_from_documents_is_dropped_unless_the_note_says_it(
     profile_runner: MakeProfile, profile_store: FakeProfileStore
 ) -> None:
     skills = [{"name": "Python"}, {"name": "Kubernetes"}]
-    run = await profile_runner(archivist(profile_reply(skills=skills)))
+    projects = [{"name": "Atelier interne sur les agents"}]
+    reply = profile_reply(skills=skills, projects=projects)
+    run = await profile_runner(archivist(reply))
     await run.wait_status("completed")
     assert [s.name for s in profile_store.drafts[0].skills] == ["Python"]
-    assert profile_store.dropped == [["Kubernetes"]]
-    assert (await run.said())[0].endswith("1 fait retiré : introuvable dans tes documents.")
+    assert profile_store.dropped == [["Kubernetes", "Atelier interne sur les agents"]]
+    assert (await run.said())[0].endswith("2 faits retirés : introuvable dans tes documents.")
 
-    again = await profile_runner(archivist(profile_reply(skills=skills)), note=NOTE)
+    again = await profile_runner(archivist(reply), note=NOTE)
     await again.wait_status("completed")
-    kept = {s.name: s.sources for s in profile_store.drafts[1].skills}
-    assert kept == {"Python": ["cv"], "Kubernetes": ["note"]}
+    draft = profile_store.drafts[1]
+    assert {s.name: s.sources for s in draft.skills} == {"Python": ["cv"]}  # note muette
+    assert [(p.name, p.sources) for p in draft.projects] == [
+        ("Atelier interne sur les agents", ["note"])
+    ]
+    assert profile_store.dropped[1] == ["Kubernetes"]
 
 
 async def test_sources_are_untrusted(

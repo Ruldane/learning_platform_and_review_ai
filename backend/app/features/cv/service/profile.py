@@ -3,7 +3,8 @@ capture en cours), versions, et validation par January.
 
 Valider crée une version `validated` (source `january`) : jamais d'écrasement, les ids des faits
 gardés (`keep_known`), les compétences du profil montées à `declare` au moins avec une preuve
-`cv` (jamais de baisse). Journaux : identifiants et nombres seulement (17.2)."""
+`cv` (jamais de baisse), puis reflétées dans les acquis de la mémoire hors du verrou (D6).
+Journaux : identifiants et nombres seulement (17.2)."""
 
 import logging
 
@@ -23,12 +24,14 @@ from app.features.cv.schemas_profile import (
 )
 from app.features.cv.service.profile_merge import all_ids, keep_known
 from app.features.cv.service.runtime import CAPTURE_GRAPH, PROFILE_SUBJECT, CvRuntime
+from app.features.memory.service.skill_levels import reflect_skill_levels
 from app.features.sessions.service import find_active_session
-from app.features.skills.service import SkillsService
+from app.features.skills.service import SkillLevel, SkillsService
 
 logger = logging.getLogger(__name__)
 
 EVIDENCE_LABEL = "Profil maître"
+REFLECT_REASON = "Profil maître validé : January déclare ces compétences."
 
 
 def profile_conflict() -> AppError:
@@ -87,7 +90,8 @@ async def profile_versions(db: AsyncSession, user_id: str) -> list[ProfileVersio
 
 async def _write(
     rt: CvRuntime, db: AsyncSession, user_id: str, body: ProfilePutIn
-) -> MasterProfile:
+) -> tuple[MasterProfile, list[tuple[str, SkillLevel]]]:
+    """La nouvelle version et le niveau actuel de ses compétences (à refléter en mémoire)."""
     repo = ProfileRepository(db, user_id)
     rows = await repo.all_versions()
     top = rows[0].version if rows else None
@@ -104,7 +108,8 @@ async def _write(
     )
     names = [skill.name for skill in data.skills]
     proof = evidence("cv", row.id, EVIDENCE_LABEL, rt.now())
-    changed = await SkillsService(db, user_id).raise_levels(names, "declare", proof)
+    skills = SkillsService(db, user_id)
+    changed = await skills.raise_levels(names, "declare", proof)
     logger.info(
         "Profil validé : utilisateur %s, profil %s, version %d, %d compétence(s), %d niveau(x) "
         "monté(s)",
@@ -114,17 +119,35 @@ async def _write(
         len(names),
         len(changed),
     )
-    return row
+    return row, await skills.levels_of(names)
+
+
+async def _reflect(rt: CvRuntime, user_id: str, levels: list[tuple[str, SkillLevel]]) -> None:
+    """Reflète les niveaux dans les acquis (D6), HORS du verrou : la vectorisation d'un acquis
+    créé appelle le fournisseur d'embeddings. Idempotent ; une panne est journalisée (type seul)
+    et rattrapée par la validation suivante."""
+    try:
+        await reflect_skill_levels(
+            rt.memory, user_id, levels, author="user", session_id=None, reason=REFLECT_REASON
+        )
+    except Exception as exc:
+        logger.warning(
+            "Acquis non reflétés après validation du profil : utilisateur %s (%s)",
+            user_id,
+            type(exc).__name__,
+        )
 
 
 async def save_profile(rt: CvRuntime, user_id: str, body: ProfilePutIn) -> ProfileOut:
     """Nouvelle version validée ; 409 `profile_conflict` si `base_version` n'est pas la dernière
     (ou si une autre version a été écrite pendant ce temps)."""
     async with rt.version_lock(user_id), rt.session_factory() as db:
-        row = await _write(rt, db, user_id, body)
+        row, levels = await _write(rt, db, user_id, body)
         try:
             await db.commit()
         except IntegrityError:
             await db.rollback()
             raise profile_conflict() from None
-        return to_profile_out(row)
+        out = to_profile_out(row)
+    await _reflect(rt, user_id, levels)
+    return out

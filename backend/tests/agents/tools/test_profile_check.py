@@ -1,14 +1,17 @@
 """Contrôles du brouillon du profil maître par le code (D124) : nombres canonisés
-(`cv_lexicon.numbers_in`), lignes au chiffre introuvable, sources posées par le code, faits
-introuvables retirés (sauf note)."""
+(`cv_lexicon.numbers_in`), lignes au chiffre introuvable (titre, résumé et description de projet
+compris), sources posées par le code, nombres et noms gardés par un texte reformulé, faits
+introuvables retirés (la note ne compte que si elle les porte)."""
 
 import pytest
 
 from app.agents.tools.cv_lexicon import numbers_in
 from app.agents.tools.cv_schema import MasterProfileData, assign_fact_ids
 from app.agents.tools.profile_check import (
+    Hay,
     appears,
     blank_facts,
+    named_terms,
     plain,
     removed_facts,
     tag_sources,
@@ -16,7 +19,7 @@ from app.agents.tools.profile_check import (
     without_lines,
 )
 from app.agents.tools.profile_port import ProfileSource
-from tests.support.profile import CV_TEXT, LINKEDIN_TEXT, NOTE, profile
+from tests.support.profile import CV_TEXT, LINKEDIN_TEXT, NOTE, profile, profile_data
 
 CV = ProfileSource("cv", CV_TEXT)
 LINKEDIN = ProfileSource("linkedin", LINKEDIN_TEXT)
@@ -46,12 +49,58 @@ def test_numbers_are_canonical(text: str, expected: set[str]) -> None:
 def test_plain_and_appears_use_whole_words() -> None:
     assert plain("Développeuse IA — Atelier Fictif") == "developpeuse ia atelier fictif"
     assert plain("C++ et C#") == "c++ et c#"
-    hay = plain(CV_TEXT)
+    hay = Hay.of(CV)
     assert appears("SQL", hay) and not appears("SQ", hay) and not appears("C", hay)
     assert appears("développeuse ia", hay)
     long = "Développeuse Python et IA forte de cinq ans d'expérience en données et en agents"
     assert appears(long, hay)  # 80 % des mots, reformulé
     assert not appears("Experte Kubernetes, AWS et Terraform depuis dix ans au moins", hay)
+
+
+def test_named_terms_are_acronyms_names_and_tools() -> None:
+    text = "Développeuse IA. Déployé sur AWS S3 avec Python, puis Kubernetes ; Écrit 3 tests."
+    assert named_terms(text) == {"ia", "aws", "s3", "python", "kubernetes"}
+
+
+SUMMARY = profile_data()["summary"]["text"]
+
+
+@pytest.mark.parametrize(
+    "summary",
+    [
+        SUMMARY.replace("cinq ans", "15 ans"),  # mot de deux lettres : hors des 80 %
+        SUMMARY.replace("utiles.", "utiles, Kubernetes."),  # outil ajouté
+        SUMMARY.replace("en données", "en données chez AWS"),  # sigle ajouté
+    ],
+)
+def test_reworded_text_keeps_every_number_and_name(summary: str) -> None:
+    assert appears(SUMMARY.replace("Aime", "Elle aime"), Hay.of(CV))  # reformulé : passe
+    assert not appears(summary, Hay.of(CV))
+    tagged = tag_sources(numbered(summary={"text": summary}), [CV, LINKEDIN])
+    assert tagged.summary is None
+
+
+def test_numbers_of_title_summary_and_description_are_checked() -> None:
+    draft = numbered(
+        title={"text": "Développeuse IA, 15 ans d'expérience"},
+        summary={"text": SUMMARY.replace("cinq ans", "15 ans")},
+        projects=[
+            {"name": "Assistant interne", "description": "Augmenté de 40 % les conversions"},
+            {"name": "Tests", "description": "Couvert 12000 factures"},
+        ],
+    )
+    assert unsupported_lines(draft, [CV]) == ["t1", "s1", "p1"]
+    kept = without_lines(draft, ["t1", "s1", "p1"])
+    assert kept.title is None and kept.summary is None
+    assert [p.description for p in kept.projects] == ["", "Couvert 12000 factures"]
+
+
+def test_tool_invented_in_a_project_description_drops_the_project() -> None:
+    cv = ProfileSource("cv", f"{CV_TEXT}\nAssistant interne : un agent pour le support")
+    real = {"name": "Assistant interne", "description": "Un agent pour le support, avec LangGraph"}
+    fake = {"name": "Assistant interne", "description": "Un agent déployé sur Kubernetes"}
+    assert tag_sources(numbered(projects=[real]), [cv]).projects[0].sources == ["cv"]
+    assert tag_sources(numbered(projects=[fake]), [cv]).projects == []
 
 
 def numbered(**over: object) -> MasterProfileData:
@@ -97,19 +146,24 @@ def test_link_matches_without_scheme() -> None:
     assert tag_sources(draft, [CV]).links == []
 
 
-def test_untraced_fact_goes_to_note_or_is_removed() -> None:
+def test_untraced_fact_is_removed_unless_the_note_says_it() -> None:
     draft = numbered(
         skills=[{"name": "Python"}, {"name": "Kubernetes"}],
         title={"text": "Architecte cloud"},
+        projects=[{"name": "Atelier interne sur les agents"}],
     )
     tagged = tag_sources(draft, [CV])
     assert [s.name for s in tagged.skills] == ["Python"] and tagged.title is None
-    assert removed_facts(draft, tagged) == ["Architecte cloud", "Kubernetes"]
+    assert removed_facts(draft, tagged) == [
+        "Architecte cloud",
+        "Kubernetes",
+        "Atelier interne sur les agents",
+    ]
     with_note = tag_sources(draft, [CV, ProfileSource("note", NOTE)])
-    assert {s.name: s.sources for s in with_note.skills} == {
-        "Python": ["cv"],
-        "Kubernetes": ["note"],
-    }
+    assert {s.name: s.sources for s in with_note.skills} == {"Python": ["cv"]}  # note muette
+    assert with_note.title is None
+    assert [p.sources for p in with_note.projects] == [["note"]]  # la note le dit
+    assert removed_facts(draft, with_note) == ["Architecte cloud", "Kubernetes"]
 
 
 def test_removed_experience_is_reported_once_with_its_lines() -> None:
