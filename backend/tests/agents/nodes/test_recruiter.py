@@ -41,6 +41,10 @@ async def test_recruiter_prompts() -> None:
         "Confrontation, tour 2 sur 2." in second and "Ces propositions sont les tiennes" in second
     )
     assert '<<<CONTENU_NON_FIABLE source="propositions">>>' in second
+    # `keep` restaure le texte d'origine ; le silence laisse l'amendement (D129).
+    flat = " ".join(second.split())
+    assert "restaure ton texte d'origine" in flat
+    assert "l'amendement de l'autre agent reste" in flat
 
 
 def test_author_of_ref() -> None:
@@ -139,6 +143,12 @@ def test_round_two_debate_matches_outcome() -> None:
     plain = {"r1": {"stance": "drop", "reason": "y"}}
     assert debate_text(2, "recruiter", [R1], {"r1": _stance("r1", "keep")}, plain).endswith(
         "- r1 : je maintiens. Avis."
+    )
+    # Un auteur muet ne « maintient » rien : la proposition reste telle quelle.
+    silent = debate_text(2, "recruiter", [R1], {}, plain)
+    assert silent.endswith("- r1 : sans réponse, la proposition reste.")
+    assert "maintiens" not in silent and "maintiens" not in debate_text(
+        2, "recruiter", [R1], {}, contested
     )
 
 

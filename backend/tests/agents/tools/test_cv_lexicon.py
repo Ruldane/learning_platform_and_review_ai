@@ -122,3 +122,11 @@ def test_ambiguous_terms_are_tech_terms_with_qualifiers() -> None:
 )
 def test_ratio_verbs_and_english_forms(text: str, families: set[str]) -> None:
     assert ratio_families(text) == families
+
+
+def test_ambiguous_terms_are_only_common_words() -> None:
+    """Revue 6.12 : un outil qui n'a que sa lecture d'outil reste un outil en minuscules."""
+    assert set(AMBIGUOUS_TERMS) == {
+        "vue", "vite", "spring", "rest", "swift", "hive", "consul", "sketch", "unity", "unreal",
+        "oracle", "tableau", "soap", "vault", "rust", "transformers", "rails",
+    }  # fmt: skip

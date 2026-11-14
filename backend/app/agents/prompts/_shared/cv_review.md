@@ -57,8 +57,9 @@ Prends position sur chacune de ces propositions de l'autre agent : `keep` (elle 
 écrite dans `after`, toujours adossée aux mêmes faits).
 {% else %}
 Ces propositions sont les tiennes ; l'autre agent les a contestées (objection sous chacune).
-Réponds : `keep` (tu la maintiens), `drop` (tu la retires), `amend` (tu la reformules, texte dans
-`after`).
+Réponds : `keep` (tu la maintiens : si l'autre agent a amendé ton texte, `keep` **restaure ton
+texte d'origine**, il n'accepte pas l'amendement), `drop` (tu la retires), `amend` (tu la
+reformules, texte dans `after`). Sans réponse de ta part, l'amendement de l'autre agent reste.
 {% endif %}
 Réponse : `stances`, une position par proposition, avec `ref` (copiée de la liste), `stance`,
 `after` (seulement pour `amend`) et `reason` (une phrase). `amend` ne vaut que pour `rewrite` et

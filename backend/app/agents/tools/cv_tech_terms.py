@@ -39,12 +39,16 @@ TECH_TERMS: frozenset[str] = frozenset(
     """.split()  # noqa: SIM905
 )
 
-# Les termes de `TECH_TERMS` qui sont aussi des mots courants (« vue », « vite », « tableau »,
-# « spring », « rest »…) : ils ne comptent comme outil que sous leur forme de produit, un mot
-# capitalisé hors début de phrase (« Vue », « REST ») ou suivi d'un qualificatif (« vue.js »,
-# « spring boot », « rest api »). Écrits en minuscules, ils sont du français ou de l'anglais
-# ordinaire (« vue d'ensemble », « plus vite »). Un terme que l'offre nomme reste un terme de
-# l'offre.
+# Les termes de `TECH_TERMS` qui sont aussi des mots courants du français ou de l'anglais, et
+# seulement eux : ils ne comptent comme outil que sous leur forme de produit, un mot capitalisé hors
+# début de phrase (« Vue », « REST ») ou suivi d'un qualificatif (« vue.js », « spring boot »,
+# « rest api »). Écrits en minuscules, ils sont du langage ordinaire (« vue d'ensemble », « plus
+# vite », « tableaux de bord »). Un terme que l'offre nomme reste un terme de l'offre.
+# Un outil qui n'a, dans un CV, que sa lecture d'outil (« react », « bash », « excel », « spark »,
+# « windows », « slack », « helm », « sap »…) n'entre pas ici : en minuscules, il reste un outil.
+# Chaque mot gardé a un sens courant fréquent : vue, vite, spring, rest, swift, hive, consul,
+# sketch, unity, unreal, oracle, tableau (« tableau de bord »), soap, vault, rust, transformers
+# (le verbe « transformer »), rails.
 _JS = ("js",)
 AMBIGUOUS_TERMS: dict[str, frozenset[str]] = {
     "vue": frozenset({*_JS, "2", "3", "router", "native"}),
@@ -59,38 +63,9 @@ AMBIGUOUS_TERMS: dict[str, frozenset[str]] = {
     "unreal": frozenset({"engine"}),
     "oracle": frozenset({"db", "database", "cloud", "sql", "apex"}),
     "tableau": frozenset({"software", "desktop", "server", "prep", "public"}),
-    "flask": frozenset({"api", "app"}),
-    "helm": frozenset({"chart", "charts"}),
-    "angular": frozenset({*_JS, "material", "cli"}),
-    "react": frozenset({*_JS, "native", "router", "query"}),
-    "rails": frozenset({"app", "api"}),
-    "spark": frozenset({"sql", "streaming", "job", "cluster"}),
-    "rust": frozenset({"lang"}),
-    "ruby": frozenset({"on", "gem"}),
-    "dart": frozenset({"lang"}),
-    "scala": frozenset({"spark"}),
-    "julia": frozenset({"lang"}),
-    "elixir": frozenset({"lang"}),
-    "bash": frozenset({"script", "scripts"}),
     "soap": frozenset({"api", "ui"}),
-    "slack": frozenset({"api", "bot"}),
-    "excel": frozenset({"vba"}),
-    "windows": frozenset({"server"}),
-    "poetry": frozenset({"lock"}),
-    "sentry": frozenset({"io"}),
-    "confluence": frozenset({"cloud"}),
-    "workday": frozenset({"hcm"}),
-    "cypress": frozenset({"io"}),
-    "puppet": frozenset({"enterprise"}),
     "vault": frozenset({"server"}),
-    "envoy": frozenset({"proxy"}),
-    "mocha": frozenset({"js"}),
-    "jest": frozenset({"js"}),
-    "babel": frozenset({"js"}),
-    "yarn": frozenset({"berry"}),
-    "presto": frozenset({"db"}),
-    "llama": frozenset({"cpp", "index"}),
-    "sap": frozenset({"hana", "erp"}),
+    "rust": frozenset({"lang"}),
     "transformers": frozenset({"library"}),
-    "cucumber": frozenset({"js"}),
+    "rails": frozenset({"app", "api"}),
 }

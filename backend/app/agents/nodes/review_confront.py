@@ -1,14 +1,13 @@
 """La confrontation du Lecteur ATS et du Recruteur (SPEC 5.3, D129), deux tours au plus (5.3).
 
 Tour 1 : chaque agent prend position (`Confrontation`) sur les propositions de l'autre : `keep`,
-`drop` (contestée), `amend` (texte remplacé, proposition contestée, origine gardée). Tour 2 : les
-propositions contestées reviennent à leur auteur (objection, texte d'origine, amendement) ; `keep`
-rend son texte d'origine, `drop` retire la proposition, `amend` pose son nouveau texte. Jamais de
-troisième tour ; le reste, January tranche. Un texte amendé repasse par le validateur.
-
-Une position sur une référence inconnue, en double, ou un `amend` sans texte est renvoyé au
-modèle, deux fois au plus, puis ignoré (proposition gardée telle quelle). Une sortie invalide vaut
-« tout garder ». Débat publié dans le fil, sans écriture de port. Journaux : nombres seulement."""
+`drop` (contestée), `amend` (texte remplacé, contestée, origine gardée). Tour 2 : les propositions
+contestées reviennent à leur auteur (objection, origine, amendement) ; `keep` rend son texte
+d'origine, `drop` retire, `amend` pose son nouveau texte, le silence laisse l'amendement. Jamais
+de troisième tour ; sinon January tranche. Un texte amendé repasse par le validateur. Une position
+sur une référence inconnue, en double, ou un `amend` sans texte est renvoyée au modèle (deux fois
+au plus), puis ignorée. Sortie invalide : « tout garder ». Débat publié dans le fil, sans écriture
+de port."""
 
 import logging
 from typing import Any, Protocol
@@ -51,8 +50,7 @@ def other(agent: str) -> str:
 
 
 def proposals_text(proposals: list[Proposal], critiques: dict[str, dict[str, str]]) -> str:
-    """Les propositions à juger, encadrées (leur texte vient d'un modèle qui a lu l'offre et le
-    CV, 17.4) ; au tour 2, avec l'objection de l'autre agent."""
+    """Les propositions à juger, encadrées (17.4) ; au tour 2, avec l'objection de l'autre agent."""
     blocks = []
     for p in proposals:
         cited = ", ".join(p.fact_ids) or "aucun"
@@ -152,13 +150,15 @@ def apply_second(
 
 
 def verb_of(round_no: int, stance: Stance | None, critique: dict[str, str]) -> str:
-    """Le verbe du fil : il dit ce qui arrive à la proposition."""
-    kind = stance.stance if stance else "keep"
-    if round_no == 2 and "original" in critique:
-        if stance is None:
+    """Le verbe du fil : ce qui arrive à la proposition (un auteur muet ne « maintient » rien)."""
+    amended = "original" in critique
+    if round_no == 2 and stance is None:
+        if amended:
             return "sans réponse, l'amendement de l'autre agent reste"
-        if kind == "keep":
-            return "je maintiens mon texte d'origine"
+        return "sans réponse, la proposition reste"
+    kind = stance.stance if stance else "keep"
+    if round_no == 2 and amended and kind == "keep":
+        return "je maintiens mon texte d'origine"
     return _VERB[round_no][kind]
 
 

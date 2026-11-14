@@ -110,3 +110,44 @@ def test_ambiguous_term_named_by_the_posting_still_goes_to_gap() -> None:
 def test_ambiguous_term_in_the_skills_is_ok() -> None:
     v = validate(rewrite("x1a1", "Interface en Vue"), profile(skills=["Vue"]), A)
     assert v.status == "ok"
+
+
+@pytest.mark.parametrize(
+    "after",
+    [
+        "Interfaces développées en react",
+        "Migration du front vers angular",
+        "Automatisation via des scripts bash",
+        "Reporting sous excel",
+        "Traitements batch en spark",
+        "Jobs spark quotidiens",
+        "Déploiement sur des postes windows",
+        "Alertes envoyées sur slack",
+        "Déploiements via helm",
+        "Tests avec jest",
+        "Tests avec mocha",
+        "Tests avec cypress",
+        "Intégration avec sap",
+        "Scripts en ruby",
+        "Services en scala",
+        "API en flask",
+        "Application en dart",
+    ],
+)
+def test_real_tools_in_lowercase_are_flagged_again(after: str) -> None:
+    """Un outil qui n'a que sa lecture d'outil n'est pas un terme ambigu (revue 6.12)."""
+    v = validate(rewrite("x1a1", after), profile(line="Réalisation"), A)
+    assert v.status == "to_confirm"
+    assert TOOL in v.blocks
+
+
+@pytest.mark.parametrize(
+    "word", ["react", "angular", "bash", "excel", "spark", "windows", "slack", "helm", "sap"]
+)
+def test_removed_tools_start_a_sentence_flagged_too(word: str) -> None:
+    v = validate(
+        rewrite("x1a1", f"{word.capitalize()} pour le reporting interne"),
+        profile(line="Réalisation"),
+        A,
+    )
+    assert TOOL in v.blocks
