@@ -119,7 +119,12 @@ async def test_draft_is_shown_only_when_newer(client: httpx.AsyncClient, app: Fa
     launcher = RecordingLauncher(app.state.session_factory)
     sid = await launcher.start(user, "cv_capture", {"mode": "profile", "document_ids": ["d"]})
     draft = (await client.get(f"{API}/profile")).json()
-    assert draft == {"validated": None, "draft": None, "session_id": None}
+    assert draft == {
+        "validated": None,
+        "draft": None,
+        "session_id": None,
+        "source_document_id": None,
+    }
     await store.save_draft(user, sid, MasterProfileData.model_validate(profile_data()), ["x"])
     state = (await client.get(f"{API}/profile")).json()
     assert state["draft"]["version"] == 1 and state["draft"]["dropped"] == ["x"]
@@ -150,6 +155,29 @@ async def test_import_launches_capture(
     async with app.state.session_factory() as db:
         items = {i.source_id: i for i in (await db.execute(select(MemoryItem))).scalars()}
     assert items[cv_id].tags == ["cv"] and items[linkedin_id].tags == ["linkedin"]
+
+
+async def test_state_exposes_the_imported_cv_document(
+    client: httpx.AsyncClient, app: FastAPI, launcher_spy: RecordingLauncher
+) -> None:
+    """`source_document_id` : le CV (étiqueté `cv`) du dernier import, jamais LinkedIn ; `None`
+    tant qu'aucun brouillon n'en garde la trace."""
+    assert (await client.get(f"{API}/profile")).json()["source_document_id"] is None
+    r = await client.post(f"{API}/profile/import", files=pdf_files(), data={"note": NOTE})
+    cv_id, linkedin_id = r.json()["document_ids"]
+    assert (await client.get(f"{API}/profile")).json()["source_document_id"] is None
+    draft = MasterProfileData.model_validate(profile_data())
+    await app.state.career.profile.save_draft(
+        app.state.local_user_id, r.json()["session_id"], draft, []
+    )
+    state = (await client.get(f"{API}/profile")).json()
+    assert state["source_document_id"] == cv_id != linkedin_id
+    assert (await put(client, state["draft"]["data"], 1)).status_code == 200  # version validée
+    assert (await client.get(f"{API}/profile")).json()["source_document_id"] == cv_id
+    async with app.state.session_factory() as db:  # document retiré de la mémoire
+        await db.delete(await db.get(Document, cv_id))
+        await db.commit()
+    assert (await client.get(f"{API}/profile")).json()["source_document_id"] is None
 
 
 async def test_import_rejects_non_pdf(

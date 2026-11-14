@@ -28,6 +28,14 @@ def fact_not_found() -> AppError:
     )
 
 
+def profile_draft_pending() -> AppError:
+    return AppError(
+        "profile_draft_pending",
+        "Un brouillon de ton profil attend ta validation : valide-le avant de confirmer ce fait.",
+        409,
+    )
+
+
 def invalid_after() -> AppError:
     return AppError(
         "validation_error",
@@ -111,13 +119,17 @@ def with_fact(profile: MasterProfileData, target: str, text: str) -> MasterProfi
 
 
 async def confirm_fact(rt: CvRuntime, user_id: str, target: str | None, text: str) -> int:
-    """Nouvelle version validée du profil avec le fait confirmé ; rend son numéro."""
+    """Nouvelle version validée du profil avec le fait confirmé ; rend son numéro. 409
+    `profile_draft_pending` quand un brouillon plus récent que la version validée attend January :
+    la nouvelle version passerait au-dessus de lui et l'enterrerait (revue 6.14, I-1)."""
     async with rt.session_factory() as db:
         repo = ProfileRepository(db, user_id)
         latest = await repo.latest("validated")
         top = await repo.top_version()
     if latest is None or not target:
         raise fact_not_found()
+    if top > latest.version:  # une version plus récente que la validée est un brouillon
+        raise profile_draft_pending()
     data = with_fact(MasterProfileData.model_validate(latest.data), target, text)
     saved = await save_profile(rt, user_id, ProfilePutIn(data=data, base_version=top or None))
     return saved.version

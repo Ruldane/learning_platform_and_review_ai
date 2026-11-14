@@ -5435,7 +5435,7 @@
         "type": "object"
       },
       "ProfileStateOut": {
-        "description": "`draft` : seulement s'il est plus récent que la version validée. `session_id` : capture\ndu profil en cours (à suivre par ses événements), sinon `None`.",
+        "description": "`draft` : seulement s'il est plus récent que la version validée. `session_id` : capture\ndu profil en cours (à suivre par ses événements), sinon `None`. `source_document_id` : le CV\n(PDF étiqueté `cv`) du dernier import du profil, s'il est encore dans la mémoire, sinon\n`None` (« Utiliser le CV de mon profil » pour capturer un gabarit).",
         "properties": {
           "draft": {
             "anyOf": [
@@ -5458,6 +5458,17 @@
             ],
             "title": "Session Id"
           },
+          "source_document_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Document Id"
+          },
           "validated": {
             "anyOf": [
               {
@@ -5472,7 +5483,8 @@
         "required": [
           "validated",
           "draft",
-          "session_id"
+          "session_id",
+          "source_document_id"
         ],
         "title": "ProfileStateOut",
         "type": "object"
@@ -9686,7 +9698,7 @@
                 }
               }
             },
-            "description": "`review_closed`, `confirmation_required` (« à confirmer » sans `confirm: true`), `fact_not_found` (le fait visé n'est plus dans le profil), `profile_conflict`"
+            "description": "`review_closed`, `confirmation_required` (« à confirmer » sans `confirm: true`), `fact_not_found` (le fait visé n'est plus dans le profil), `profile_conflict`, `profile_draft_pending` (un brouillon du profil attend sa validation : le valider avant de confirmer un fait)"
           },
           "422": {
             "content": {

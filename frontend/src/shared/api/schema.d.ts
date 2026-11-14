@@ -3674,12 +3674,16 @@ export interface components {
         /**
          * ProfileStateOut
          * @description `draft` : seulement s'il est plus récent que la version validée. `session_id` : capture
-         *     du profil en cours (à suivre par ses événements), sinon `None`.
+         *     du profil en cours (à suivre par ses événements), sinon `None`. `source_document_id` : le CV
+         *     (PDF étiqueté `cv`) du dernier import du profil, s'il est encore dans la mémoire, sinon
+         *     `None` (« Utiliser le CV de mon profil » pour capturer un gabarit).
          */
         ProfileStateOut: {
             draft: components["schemas"]["ProfileOut"] | null;
             /** Session Id */
             session_id: string | null;
+            /** Source Document Id */
+            source_document_id: string | null;
             validated: components["schemas"]["ProfileOut"] | null;
         };
         /** ProfileVersionOut */
@@ -5348,7 +5352,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorOut"];
                 };
             };
-            /** @description `review_closed`, `confirmation_required` (« à confirmer » sans `confirm: true`), `fact_not_found` (le fait visé n'est plus dans le profil), `profile_conflict` */
+            /** @description `review_closed`, `confirmation_required` (« à confirmer » sans `confirm: true`), `fact_not_found` (le fait visé n'est plus dans le profil), `profile_conflict`, `profile_draft_pending` (un brouillon du profil attend sa validation : le valider avant de confirmer un fait) */
             409: {
                 headers: {
                     [name: string]: unknown;

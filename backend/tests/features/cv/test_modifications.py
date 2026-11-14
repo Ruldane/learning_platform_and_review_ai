@@ -123,3 +123,48 @@ async def test_edited_text_is_revalidated(
     assert r.status_code == 422 and r.json()["error"]["details"] == {"fields": ["after"]}
     long = await decide(client, mid, "accepted", after="x" * 601)
     assert long.status_code == 422 and "x" * 601 not in long.text
+
+
+async def test_confirm_refused_while_a_profile_draft_is_pending(
+    client: httpx.AsyncClient, app: FastAPI, launcher_spy: RecordingLauncher
+) -> None:
+    """Revue 6.14, I-1 : confirmer un fait passerait au-dessus du brouillon de l'Archiviste et le
+    cacherait ; refusé (409), rien n'est écrit, puis possible une fois le brouillon validé."""
+    review_id, _ = await open_review(client, app)
+    mid = (await mods(client, review_id))["r1"]["id"]
+    user = app.state.local_user_id
+    session_id = await launcher_spy.start(
+        user, "cv_capture", {"mode": "profile", "document_ids": ["d"]}
+    )
+    validated = await latest_profile(app)  # le profil de la revue, repris en brouillon v2
+    draft = MasterProfileData.model_validate(validated.data)
+    await app.state.career.profile.save_draft(user, session_id, draft, [])
+    r = await decide(client, mid, "accepted", confirm=True)
+    error = r.json()["error"]
+    assert (r.status_code, error["code"]) == (409, "profile_draft_pending")
+    assert error["message"] == (
+        "Un brouillon de ton profil attend ta validation : valide-le avant de confirmer ce fait."
+    )
+    assert (await mods(client, review_id))["r1"]["status"] == "to_confirm"  # rien d'écrit
+    assert (await latest_profile(app)).status == "draft"
+    state = (await client.get(f"{API}/profile")).json()
+    assert state["draft"]["version"] == 2 and state["validated"]["version"] == 1
+    r = await client.put(f"{API}/profile", json={"data": state["draft"]["data"], "base_version": 2})
+    assert r.status_code == 200 and r.json()["version"] == 3
+    r = await decide(client, mid, "accepted", confirm=True)
+    assert r.status_code == 200, r.text
+    assert (await latest_profile(app)).version == 4
+
+
+async def test_blank_after_is_422_without_echo(
+    client: httpx.AsyncClient, app: FastAPI, launcher_spy: RecordingLauncher
+) -> None:
+    review_id, _ = await open_review(client, app)
+    mid = (await mods(client, review_id))["a1"]["id"]
+    before = (await mods(client, review_id))["a1"]["after"]
+    for blank in ("   ", "\n\t "):
+        r = await decide(client, mid, "accepted", after=blank)
+        assert r.status_code == 422, r.text
+        assert r.json()["error"]["details"] == {"fields": ["after"]}
+        assert blank not in r.text
+    assert (await mods(client, review_id))["a1"]["after"] == before

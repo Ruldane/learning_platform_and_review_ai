@@ -24,6 +24,7 @@ from app.features.cv.schemas_profile import (
 )
 from app.features.cv.service.profile_merge import all_ids, keep_known
 from app.features.cv.service.runtime import CAPTURE_GRAPH, PROFILE_SUBJECT, CvRuntime
+from app.features.memory.service.document_files import document_tags
 from app.features.memory.service.skill_levels import reflect_skill_levels
 from app.features.sessions.service import find_active_session
 from app.features.skills.service import SkillLevel, SkillsService
@@ -62,6 +63,16 @@ async def capture_session(db: AsyncSession, user_id: str) -> str | None:
     )
 
 
+async def source_document_id(db: AsyncSession, user_id: str) -> str | None:
+    """Le CV du dernier import du profil (`document_ids` des brouillons de l'Archiviste, CV
+    d'abord) : le document étiqueté `cv` qui existe encore, sinon `None`."""
+    for row in await ProfileRepository(db, user_id).all_versions():
+        for document_id in map(str, row.document_ids):
+            if "cv" in (await document_tags(db, user_id, document_id) or ()):
+                return document_id
+    return None
+
+
 async def profile_state(db: AsyncSession, user_id: str) -> ProfileStateOut:
     repo = ProfileRepository(db, user_id)
     validated = await repo.latest("validated")
@@ -72,6 +83,7 @@ async def profile_state(db: AsyncSession, user_id: str) -> ProfileStateOut:
         validated=to_profile_out(validated) if validated else None,
         draft=to_profile_out(draft) if draft else None,
         session_id=await capture_session(db, user_id),
+        source_document_id=await source_document_id(db, user_id),
     )
 
 

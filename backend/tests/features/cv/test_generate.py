@@ -160,6 +160,8 @@ async def test_generate_snapshots_decisions(
     first = CvContent.model_validate((await stored(app, v1)).content)
     texts = [line.text for s in first.sections for e in s.entries for line in e.lines]
     assert "Réduit les coûts de 30 % avec Python" in texts
+    # le PDF rendu vient du contenu figé au clic, non des décisions prises pendant le rendu
+    assert "avec Python" in " ".join((await pdf_text(app, client, v1)).split())
 
 
 async def test_generate_needs_the_output_question(

@@ -121,7 +121,9 @@ async def post_generate(
         e404="`modification_not_found`",
         e409=(
             "`review_closed`, `confirmation_required` (« à confirmer » sans `confirm: true`), "
-            "`fact_not_found` (le fait visé n'est plus dans le profil), `profile_conflict`"
+            "`fact_not_found` (le fait visé n'est plus dans le profil), `profile_conflict`, "
+            "`profile_draft_pending` (un brouillon du profil attend sa validation : le valider "
+            "avant de confirmer un fait)"
         ),
         e422=(
             "`validation_error` (`details.fields`), `keyword_not_in_profile` (le texte cite un "

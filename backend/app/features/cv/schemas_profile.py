@@ -24,11 +24,14 @@ class ProfileOut(BaseModel):
 
 class ProfileStateOut(BaseModel):
     """`draft` : seulement s'il est plus récent que la version validée. `session_id` : capture
-    du profil en cours (à suivre par ses événements), sinon `None`."""
+    du profil en cours (à suivre par ses événements), sinon `None`. `source_document_id` : le CV
+    (PDF étiqueté `cv`) du dernier import du profil, s'il est encore dans la mémoire, sinon
+    `None` (« Utiliser le CV de mon profil » pour capturer un gabarit)."""
 
     validated: ProfileOut | None
     draft: ProfileOut | None
     session_id: str | None
+    source_document_id: str | None
 
 
 class ProfilePutIn(BaseModel):

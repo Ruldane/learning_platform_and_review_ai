@@ -5,7 +5,7 @@ seule, jamais journalisés ; une 422 nomme les champs (`details.fields`), jamais
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.agents.tools.cv_indicators import AtsCheckId
 from app.agents.tools.cv_review_port import ReviewReport
@@ -128,6 +128,14 @@ class ModificationPatch(BaseModel):
     status: Decision
     after: str | None = Field(default=None, min_length=1, max_length=600)
     confirm: bool = False
+
+    @field_validator("after")
+    @classmethod
+    def _not_blank(cls, value: str | None) -> str | None:
+        """Un texte fait seulement d'espaces est refusé (422 `fields: ["after"]`)."""
+        if value is not None and not value.strip():
+            raise ValueError("texte vide")
+        return value
 
 
 class BulkDecision(BaseModel):
