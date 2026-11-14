@@ -11,6 +11,7 @@ from app.agents.tools.cv_lexicon import (
     TITLE_WORDS,
     clean_text,
     figures_in,
+    numbers_in,
     ratio_families,
 )
 
@@ -130,3 +131,22 @@ def test_ambiguous_terms_are_only_common_words() -> None:
         "vue", "vite", "spring", "rest", "swift", "hive", "consul", "sketch", "unity", "unreal",
         "oracle", "tableau", "soap", "vault", "rust", "transformers", "rails",
     }  # fmt: skip
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("1,000 stagiaires", {"1000"}),
+        ("1.000 stagiaires", {"1000"}),
+        ("12.345 lignes", {"12345"}),
+        ("1,000,000 de visites", {"1000000"}),
+        ("1.000,50 €", {"1000.5"}),
+        ("1,000.50 €", {"1000.5"}),
+        ("1 stagiaire", {"1"}),
+        ("1,5 point", {"1.5"}),
+        ("1,50 point", {"1.5"}),
+        ("0,125 s", {"0.125"}),
+    ],
+)
+def test_thousands_separators_are_not_decimals(text: str, expected: set[str]) -> None:
+    assert numbers_in(text) == expected

@@ -27,12 +27,21 @@ export function toProfileVersionViews(versions: ProfileVersionOut[]): ProfileVer
   }));
 }
 
-/** Les modifications du contrat → les cartes ; un fait dont on ne retrouve plus le texte n'est pas cité. */
+/**
+ * Les modifications du contrat → les cartes ; un fait dont on ne retrouve plus le texte n'est pas
+ * cité. `placed` est la dernière version prête : une modification acceptée que sa composition n'a
+ * pas pu placer (`decisions[ref] === "ignored"`) le dit sur sa carte.
+ */
 export function toModificationViews(
   mods: ModificationOut[],
   labels: Map<string, string>,
+  placed: VersionOut | null = null,
 ): ModificationView[] {
   return mods.map((mod) => ({
+    ignoredIn:
+      placed !== null && mod.status === "accepted" && placed.decisions[mod.ref] === "ignored"
+        ? placed.number
+        : null,
     id: mod.id,
     ref: mod.ref,
     section: mod.section,
@@ -98,6 +107,18 @@ export function toZoneViews(zones: TemplateOut["zones"]): ZoneView[] {
     return known ? [{ zone: known, original, render }] : [];
   });
 }
+
+/** La dernière version prête d'une revue : la seule dont les décisions disent ce qui est dans le PDF. */
+export function latestReadyVersion(review: CvReviewOut): VersionOut | null {
+  return latestVersion({
+    ...review,
+    versions: review.versions.filter((v) => v.status === "ready"),
+  });
+}
+
+/** Le nombre de modifications acceptées que la composition n'a pas pu placer dans cette version. */
+export const ignoredCount = (version: VersionOut): number =>
+  Object.values(version.decisions).filter((decision) => decision === "ignored").length;
 
 /** La version la plus récente d'une revue (numéros croissants), ou `null`. */
 export function latestVersion(review: CvReviewOut): VersionOut | null {

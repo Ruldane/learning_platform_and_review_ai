@@ -96,8 +96,8 @@ export const gap = {
       "Une replanification est déjà ouverte : termine-la avant d'ajouter d'autres compétences.",
     skills_stale:
       "Une de ces compétences n'est plus à ajouter. Le tableau a été relu : choisis à nouveau.",
-    review_in_progress:
-      "Une revue de CV est en cours pour cette offre : attends sa fin pour la supprimer.",
+    review_in_progress: "Termine d'abord la revue de CV de cette offre.",
+    analysis_in_progress: "Une analyse de cette offre est en cours : réessaie dans un instant.",
     notFound: "Cette offre n'existe pas ou a été supprimée.",
   },
   postings: {
@@ -143,6 +143,9 @@ export const gap = {
     delete: "Supprimer l'offre",
     deleteAsk: "Supprimer cette offre ?",
     deleteHint: "L'offre et son analyse seront effacées.",
+    deleteHintWithReview:
+      "L'offre et son analyse seront effacées, ainsi que ses revues de CV et les PDF générés pour cette offre.",
+    openReview: "Ouvrir la revue de CV",
     deleteConfirm: "Oui, supprimer",
     deleteCancel: "Annuler",
     deleting: "Suppression…",

@@ -127,6 +127,30 @@ async def test_unreadable_link_is_422_without_echo(
     assert launcher_spy.started == []
 
 
+@pytest.mark.parametrize(
+    "link", ["https://exemple.org/#/offre/42", "https://exemple.org/#!/jobs/7"]
+)
+async def test_link_whose_route_is_in_the_fragment_is_never_read_at_the_root(
+    client: httpx.AsyncClient, app: FastAPI, fake_reader: FakeWebReader,
+    launcher_spy: RecordingLauncher, link: str,
+) -> None:  # fmt: skip
+    fake_reader.pages["https://exemple.org/"] = page("https://exemple.org/")  # la page d'accueil
+    r = await client.post(f"{API}/postings", json={"url": link})
+    assert r.status_code == 422 and r.json()["error"]["code"] == "posting_unreadable"
+    assert r.json()["error"]["details"] == {"fields": ["url"]}
+    assert "exemple.org" not in r.text and await count_postings(app.state.session_factory) == 0
+    assert launcher_spy.started == []
+
+
+async def test_a_plain_fragment_does_not_stop_the_reading(
+    client: httpx.AsyncClient, app: FastAPI, fake_reader: FakeWebReader,
+    launcher_spy: RecordingLauncher,
+) -> None:  # fmt: skip
+    fake_reader.pages[LINK] = page(LINK)
+    r = await client.post(f"{API}/postings", json={"url": f"{LINK}#postuler"})
+    assert r.status_code == 201, r.text
+
+
 async def test_short_page_is_unreadable(
     client: httpx.AsyncClient, app: FastAPI, fake_reader: FakeWebReader
 ) -> None:

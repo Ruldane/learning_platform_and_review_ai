@@ -4,13 +4,15 @@ jamais pris par aucune version passée (`taken`), même si le fait qui le portai
 
 - brouillon de l'Archiviste : `merge_draft` reprend l'id d'un fait de la dernière version validée
   au même texte normalisé (rôle et entreprise, diplôme et école, nom, lien, texte d'une ligne ; une
-  réalisation ou un détail sous le même parent), puis numérote le reste ;
+  réalisation ou un détail sous le même parent), reporte les faits de January (`sources` contient
+  `january` : saisis ou confirmés en revue) que le brouillon ne reprend pas, avec leur id, puis
+  numérote le reste ;
 - version de January : `keep_known` garde les ids déjà attribués (un fait modifié garde son id),
   efface les autres, puis numérote le reste ; un fait sans source vient d'elle (`january`)."""
 
 import re
 from collections.abc import Callable, Collection, Iterable, Sequence
-from typing import Protocol
+from typing import Any, Protocol, Self
 
 from app.agents.tools.cv_schema import (
     FactSource,
@@ -30,6 +32,10 @@ class _HasId(Protocol):
 class _Fact(Protocol):
     id: str
     sources: list[FactSource]
+
+
+class _Copyable(_Fact, Protocol):
+    def model_copy(self, *, deep: bool = False) -> Self: ...
 
 
 def all_ids(profiles: Iterable[MasterProfileData]) -> set[str]:
@@ -82,10 +88,49 @@ def _clear_children(profile: MasterProfileData) -> None:
         line.id = ""
 
 
+def _carried[T: _Copyable](old: Sequence[T], pairs: Iterable[tuple[object, object]]) -> list[T]:
+    """Les faits de January de `old` que le brouillon n'a pas repris (aucun apparié), copiés."""
+    used = {id(previous) for _, previous in pairs}
+    return [
+        fact.model_copy(deep=True)
+        for fact in old
+        if id(fact) not in used and "january" in fact.sources
+    ]
+
+
+def _carry_lines(pairs: Iterable[tuple[Any, Any]], field: str) -> None:
+    """Sous un parent apparié de January, les lignes de l'ancienne version absentes du brouillon
+    (un fait confirmé en revue est une ligne dont le parent porte `january`) ; le parent du
+    brouillon le devient aussi."""
+    for item, previous in pairs:
+        if "january" not in previous.sources:
+            continue
+        lines = getattr(item, field)
+        have = {_line_key(line) for line in lines}
+        extra = [
+            line.model_copy(deep=True)
+            for line in getattr(previous, field)
+            if _line_key(line) not in have
+        ]
+        lines.extend(extra)
+        sources = item.sources
+        if extra and "january" not in sources:
+            sources.append("january")
+
+
+def _carry_heads(out: MasterProfileData, old: MasterProfileData) -> None:
+    """Le titre et le résumé de January, si le brouillon n'en a pas."""
+    for name in ("title", "summary"):
+        previous: _Copyable | None = getattr(old, name)
+        if getattr(out, name) is None and previous is not None and "january" in previous.sources:
+            setattr(out, name, previous.model_copy(deep=True))
+
+
 def merge_draft(
     draft: MasterProfileData, previous: MasterProfileData | None, taken: Collection[str]
 ) -> MasterProfileData:
-    """Le brouillon de l'Archiviste numéroté : ids de `previous` repris, les autres neufs."""
+    """Le brouillon de l'Archiviste numéroté : ids de `previous` repris, les faits de January que
+    le brouillon ne reprend pas reportés avec leur id, les autres ids neufs."""
     out = draft.model_copy(deep=True)
     _clear_children(out)
     old = previous or MasterProfileData(identity=Identity(name="-"))
@@ -95,10 +140,21 @@ def merge_draft(
     _reuse_lines(jobs, "achievements")
     schools = _reuse(out.education, old.education, lambda x: plain(f"{x.degree} {x.school}"))
     _reuse_lines(schools, "details")
-    _reuse(out.skills, old.skills, lambda x: plain(x.name))
-    _reuse_lines(_reuse(out.projects, old.projects, lambda x: plain(x.name)), "achievements")
-    _reuse(out.languages, old.languages, lambda x: plain(x.name))
-    _reuse(out.links, old.links, lambda x: plain(x.url))
+    skills = _reuse(out.skills, old.skills, lambda x: plain(x.name))
+    projects = _reuse(out.projects, old.projects, lambda x: plain(x.name))
+    _reuse_lines(projects, "achievements")
+    languages = _reuse(out.languages, old.languages, lambda x: plain(x.name))
+    links = _reuse(out.links, old.links, lambda x: plain(x.url))
+    _carry_lines(jobs, "achievements")
+    _carry_lines(schools, "details")
+    _carry_lines(projects, "achievements")
+    _carry_heads(out, old)
+    out.experiences += _carried(old.experiences, jobs)
+    out.education += _carried(old.education, schools)
+    out.skills += _carried(old.skills, skills)
+    out.projects += _carried(old.projects, projects)
+    out.languages += _carried(old.languages, languages)
+    out.links += _carried(old.links, links)
     return number_new(out, taken)
 
 

@@ -20,6 +20,7 @@ from app.agents.tools.cv_review_port import ReviewReport
 from app.agents.tools.cv_schema import MasterProfileData
 from app.agents.tools.cv_validator import Verdict, validate
 from app.agents.tools.posting_schema import PostingAnalysis
+from app.agents.tools.review_notes import without_promises
 from app.agents.tools.review_schema import CompanyBrief, Proposal
 
 AGENT = "recruiter"  # la voix qui annonce le résultat de la revue
@@ -78,10 +79,10 @@ def report_of(state: CvReviewState, analysis: PostingAnalysis) -> ReviewReport:
     brief = CompanyBrief.model_validate(raw) if raw else None
     return ReviewReport(
         ats=state.get("ats"),
-        ats_notes=state.get("ats_notes", [])[:6],
+        ats_notes=without_promises(state.get("ats_notes", []))[:6],
         company_summary=brief.summary if brief else None,
-        strengths=state.get("strengths", [])[:5],
-        risks=state.get("risks", [])[:5],
+        strengths=without_promises(state.get("strengths", []))[:5],
+        risks=without_promises(state.get("risks", []))[:5],
         eliminatory=[e.text for e in analysis.eliminatory][:10],
     )
 

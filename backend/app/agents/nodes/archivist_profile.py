@@ -28,6 +28,7 @@ from app.agents.tools.profile_check import (
     removed_facts,
     tag_sources,
     unsupported_lines,
+    untraced_lines,
     without_lines,
 )
 from app.agents.tools.profile_port import ProfileSource, SourceKind
@@ -124,16 +125,17 @@ def check(state: CvCaptureState) -> CvCaptureState:
     sources = _sources(state)
     draft = MasterProfileData.model_validate(state["draft"])
     bad = unsupported_lines(draft, sources)
+    loose = [line_id for line_id in untraced_lines(draft, sources) if line_id not in bad]
     facts = facts_of(draft)
-    cleaned = without_lines(draft, bad)
+    cleaned = without_lines(draft, [*bad, *loose])
     tagged = tag_sources(cleaned, sources)
     untraced = removed_facts(cleaned, tagged)
     hidden = state.get("hidden", [])
     return {
         "draft": tagged.model_dump(mode="json"),
-        "dropped": [facts[line_id] for line_id in bad] + untraced + list(hidden),
+        "dropped": [facts[line_id] for line_id in [*bad, *loose]] + untraced + list(hidden),
         "unsupported": len(bad),
-        "untraced": len(untraced),
+        "untraced": len(loose) + len(untraced),
     }
 
 

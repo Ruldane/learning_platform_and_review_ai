@@ -65,12 +65,25 @@ async def get_posting(posting_id: str, current: CurrentUserDep, db: Db) -> Posti
     return await read_posting(db, current.id, posting_id)
 
 
-@router.delete("/postings/{posting_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/postings/{posting_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        404: {"description": "`posting_not_found`"},
+        409: {
+            "description": (
+                "`review_in_progress` (une revue de CV de l'offre est lancée ou proposée : "
+                "la terminer d'abord), `analysis_in_progress` (l'analyse de l'offre tourne : "
+                "réessayer dans un instant)"
+            )
+        },
+    },
+)
 async def remove_posting(
     posting_id: str, current: CurrentUserDep, db: Db, rt: PostingsDep
 ) -> Response:
-    """Retire l'offre, son élément de mémoire `offre`, ses revues et versions ; 409
-    `review_in_progress` si une revue de CV tourne."""
+    """Retire l'offre, son élément de mémoire `offre`, ses revues et versions (PDF et images
+    compris) ; 409 `review_in_progress` ou `analysis_in_progress` si l'une tourne."""
     await delete_posting(db, rt.memory, current.id, posting_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 

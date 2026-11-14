@@ -4,7 +4,11 @@ import { t } from "@/shared/i18n/t";
 import { deletePosting } from "../api";
 import { gapKeys } from "../queryKeys";
 
-/** Supprime l'offre ; 409 `review_in_progress` (une revue de CV tourne) a son texte. */
+/**
+ * Supprime l'offre. Les 409 `review_in_progress` (une revue de CV tourne ou attend) et
+ * `analysis_in_progress` (une analyse est ouverte) ont leur texte ; `code` permet à la page de
+ * proposer le lien vers la revue.
+ */
 export function useDeletePosting(postingId: string, onDeleted: () => void) {
   const client = useQueryClient();
   const mutation = useMutation({
@@ -17,15 +21,20 @@ export function useDeletePosting(postingId: string, onDeleted: () => void) {
     },
   });
   const failure = mutation.error;
-  const error = !mutation.isError
-    ? null
-    : failure instanceof ApiError && failure.code === "review_in_progress"
-      ? t("gap.errors.review_in_progress")
-      : errorMessage(failure);
+  const code = failure instanceof ApiError ? failure.code : null;
+  const error = !mutation.isError ? null : deleteMessage(code, failure);
   return {
     remove: () => mutation.mutate(),
     pending: mutation.isPending,
     error,
+    code,
     reset: mutation.reset,
   };
+}
+
+const REFUSALS = ["review_in_progress", "analysis_in_progress"] as const;
+
+function deleteMessage(code: string | null, failure: unknown): string {
+  const known = REFUSALS.find((refused) => refused === code);
+  return known ? t(`gap.errors.${known}`) : errorMessage(failure);
 }

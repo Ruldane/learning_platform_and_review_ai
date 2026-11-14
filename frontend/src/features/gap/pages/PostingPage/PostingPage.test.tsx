@@ -128,16 +128,6 @@ describe("PostingPage", () => {
     expect(confirm).not.toHaveBeenCalled();
   });
 
-  it("explains that a review in progress prevents the deletion (409)", async () => {
-    const { user } = setup({
-      remove: () => refusal(409, "review_in_progress", "Message du serveur."),
-    });
-    await user.click(await screen.findByRole("button", { name: "Supprimer l'offre" }));
-    await user.click(screen.getByRole("button", { name: "Oui, supprimer" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("revue de CV est en cours");
-    expect(screen.getByRole("group", { name: "Supprimer cette offre ?" })).toBeVisible();
-  });
-
   it("shows a rejected posting without relaunch", async () => {
     setup({
       postings: [

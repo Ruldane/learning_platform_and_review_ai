@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
-import type { DecideOptions, DecisionView, ModificationView } from "../viewTypes";
+import type { DecideOptions, DecideResult, DecisionView, ModificationView } from "../viewTypes";
 import { FilterBar, matches, type Filter } from "./FilterBar";
 import { groupBySection } from "./groupBySection";
 import { SectionGroupView } from "./SectionGroupView";
 
 interface ReviewDiffProps {
   mods: ModificationView[];
-  onDecide: (id: string, status: DecisionView, opts?: DecideOptions) => void;
+  onDecide: (id: string, status: DecisionView, opts?: DecideOptions) => DecideResult;
+  /** Le refus de la dernière décision, affiché sur la carte de la modification concernée. */
+  error?: { id: string; message: string } | null;
   /** « Tout accepter » : les modifications « à confirmer » restent à décider une par une. */
   onBulk: (status: DecisionView) => void;
   busy: boolean;
@@ -31,7 +33,7 @@ function statusText(toConfirm: number, announced: boolean): string {
  * Les modifications d'une revue, regroupées par section, avec des filtres (toutes, à décider, à
  * confirmer) et « Tout accepter », qui laisse les modifications « à confirmer » à décider une par une.
  */
-export function ReviewDiff({ mods, onDecide, onBulk, busy }: ReviewDiffProps) {
+export function ReviewDiff({ mods, onDecide, error = null, onBulk, busy }: ReviewDiffProps) {
   const [filter, setFilter] = useState<Filter>("all");
   const [announced, setAnnounced] = useState(false);
   if (mods.length === 0) {
@@ -61,7 +63,13 @@ export function ReviewDiff({ mods, onDecide, onBulk, busy }: ReviewDiffProps) {
         <p className="text-sm text-muted-foreground">{t("cv.review.emptyFilter")}</p>
       ) : null}
       {groups.map((group) => (
-        <SectionGroupView key={group.section} group={group} busy={busy} onDecide={onDecide} />
+        <SectionGroupView
+          key={group.section}
+          group={group}
+          busy={busy}
+          onDecide={onDecide}
+          error={error}
+        />
       ))}
     </section>
   );

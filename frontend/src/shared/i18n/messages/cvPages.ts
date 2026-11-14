@@ -148,8 +148,14 @@ export const cvPages = {
     pdfFailedFallback: "Le rendu s'est arrêté avant la fin.",
     retryGenerate: "Réessayer la génération",
     pagesExceeded:
-      "Le CV ciblé dépasse la longueur de ton CV d'origine ({count} pages). Refuse une modification pour retirer une ligne, ou autorise une page de plus.",
+      "Le CV ciblé fait {count}, ton CV d'origine {original}. Refuse une modification pour retirer une ligne, ou autorise une page de plus.",
+    pagesExceededUnknown:
+      "Le CV ciblé est plus long que ton CV d'origine ({original}). Refuse une modification pour retirer une ligne, ou autorise une page de plus.",
     allowExtra: "Autoriser une page de plus",
+    ignoredNote: {
+      one: "1 modification acceptée n'a pas pu être placée dans ce CV.",
+      many: "{count} modifications acceptées n'ont pas pu être placées dans ce CV.",
+    },
     versionNumber: "Version {number}",
   },
   versionsPage: {

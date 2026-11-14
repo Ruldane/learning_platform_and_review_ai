@@ -16,6 +16,7 @@ from app.agents.tools.profile_check import (
     removed_facts,
     tag_sources,
     unsupported_lines,
+    untraced_lines,
     without_lines,
 )
 from app.agents.tools.profile_port import ProfileSource
@@ -117,6 +118,26 @@ def test_unsupported_lines_need_a_number_from_a_source() -> None:
     assert [x.id for x in kept.experiences[0].achievements] == ["x1a2"]
 
 
+def test_untraced_lines_without_a_number_are_found_and_dropped() -> None:
+    draft = numbered()
+    draft.experiences[0].achievements[0].text = "Migré la production vers Kubernetes"  # inventé
+    draft.experiences[1].achievements[0].text = "Fait quelque chose d'inventé sans chiffre"
+    assert untraced_lines(draft, [CV]) == ["x1a1", "x2a1"]
+    assert (
+        unsupported_lines(draft, [CV]) == []
+    )  # aucun nombre : l'ancien contrôle ne les voyait pas
+    assert untraced_lines(
+        draft, [CV, ProfileSource("note", "Migré la production vers Kubernetes")]
+    ) == ["x2a1"]
+    kept = without_lines(draft, untraced_lines(draft, [CV]))
+    assert [x.id for e in kept.experiences for x in e.achievements] == ["x1a2"]
+
+
+def test_real_lines_of_the_cv_are_never_untraced() -> None:
+    assert untraced_lines(numbered(), [CV]) == []
+    assert untraced_lines(numbered(), []) != []  # sans document, rien n'est établi
+
+
 def test_blank_facts_clears_model_ids_and_sources() -> None:
     clean = blank_facts(profile())
     assert clean.title is not None and (clean.title.id, clean.title.sources) == ("", [])
@@ -172,3 +193,39 @@ def test_removed_experience_is_reported_once_with_its_lines() -> None:
     tagged = tag_sources(draft, [CV])
     assert len(tagged.experiences) == 1
     assert removed_facts(draft, tagged) == ["Développeuse Python — Société Inventée"]
+
+
+def _hay(text: str) -> Hay:
+    return Hay.of(ProfileSource("cv", text))
+
+
+@pytest.mark.parametrize(
+    ("text", "name"),
+    [
+        ("C'est un CV d'ingénieure. J'ai travaillé sur 10 Go de logs.", "C"),
+        ("C'est un CV d'ingénieure. J'ai travaillé sur 10 Go de logs.", "Go"),
+        ("Compétences : C++ et C#", "C"),
+        ("Voici le plan : go to market, puis c'est fini", "Go"),
+        ("Stockage de 500 Go et 2 To", "Go"),
+        ("Rédigé avec soin, j'ai suivi.", "AI"),
+    ],
+)
+def test_a_short_skill_is_not_found_in_an_elision_a_unit_or_a_longer_name(
+    text: str, name: str
+) -> None:
+    assert not appears(name, _hay(text))
+
+
+@pytest.mark.parametrize(
+    ("text", "name"),
+    [
+        ("Compétences : Python, C, SQL", "C"),
+        ("Langages : Python, Go et Rust", "Go"),
+        ("Langages\nGo\nPython", "Go"),
+        ("Compétences : C++ et C#", "C++"),
+        ("Compétences : C++ et C#", "C#"),
+        ("Statistiques avec R.", "R"),
+    ],
+)
+def test_a_short_skill_written_as_a_skill_is_found(text: str, name: str) -> None:
+    assert appears(name, _hay(text))

@@ -29,6 +29,7 @@ class CvCaptureState(TypedDict, total=False):
     score: int  # score de la dernière passe
     kept_pass: int  # passe gardée par le port (`keeps_pass`) : la meilleure, D125
     kept_score: int  # score de la passe gardée : celui que January valide
+    kept_spec: dict[str, Any]  # description de la passe gardée : « Ajuster » repart d'elle
     stalled: bool  # la dernière correction n'a pas donné de description valable
     adjustments: int  # ajustements demandés par January (5 au plus)
     instruction: str | None  # dernière consigne de January (500 caractères au plus)

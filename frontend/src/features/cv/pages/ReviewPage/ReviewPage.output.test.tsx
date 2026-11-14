@@ -98,11 +98,25 @@ describe("ReviewPage: the output question", () => {
     });
     await askOutput(sockets);
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      /dépasse la longueur de ton CV d'origine \(2 pages\)/,
+      "Le CV ciblé fait 2 pages, ton CV d'origine 1 page.",
     );
     await user.click(screen.getByRole("button", { name: "Autoriser une page de plus" }));
     await waitFor(() => expect(state.generates).toHaveLength(1));
     expect(state.generates[0]).toEqual({ allow_extra_pages: true });
+  });
+
+  it("never says « 0 pages » when the rendered page count is missing", async () => {
+    const unknown = versionOut({
+      status: "pages_exceeded",
+      page_count: null,
+      original_page_count: 2,
+      indicators: null,
+    });
+    const { sockets } = renderReview({ reviews: [reviewOut({ versions: [unknown] })] });
+    await askOutput(sockets);
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Le CV ciblé est plus long que ton CV d'origine (2 pages).");
+    expect(alert).not.toHaveTextContent("0 page");
   });
 
   it("says why a rendering failed and lets the user try again", async () => {

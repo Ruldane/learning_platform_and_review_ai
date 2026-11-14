@@ -255,3 +255,38 @@ async def test_after_indicators_computed_on_rendered_pdf(
     page = await client.get(f"{API}/cv/versions/{v['id']}/pages/1")
     assert page.status_code == 200 and page.headers["content-type"] == "image/png"
     assert (await client.get(f"{API}/cv/versions/{v['id']}/pages/2")).status_code == 404
+
+
+async def test_a_version_stuck_in_rendering_does_not_block_generate(
+    client: httpx.AsyncClient,
+    app: FastAPI,
+    launcher_spy: RecordingLauncher,
+    resume_spy: ResumeSpy,
+    fake_renderer: TextHtmlRenderer,
+) -> None:
+    """Le processus est mort entre l'enregistrement de la version et la reprise : la session
+    attend toujours la question de sortie, la version reste `rendering`. « Générer » la règle
+    en `failed` au lieu de répondre 409 pour toujours (revue 6.14, M-1)."""
+    review_id, session_id = await open_review(client, app)
+    resume_spy.render = False
+    stuck = (await post_generate(client, review_id)).json()["version_id"]
+    await wait_output(rt_of(app), session_id, "i-2")  # la session est revenue à sa question
+    assert (await stored(app, stuck)).status == "rendering"
+    fresh = await generate(client, review_id)
+    assert fresh["status"] in ("rendering", "ready") and fresh["id"] != stuck
+    old = await stored(app, stuck)
+    assert old.status == "failed" and old.failure_reason is not None
+
+
+async def test_a_running_session_keeps_the_409_while_rendering(
+    client: httpx.AsyncClient,
+    app: FastAPI,
+    launcher_spy: RecordingLauncher,
+    resume_spy: ResumeSpy,
+    fake_renderer: TextHtmlRenderer,
+) -> None:
+    review_id, _ = await open_review(client, app)
+    resume_spy.render = False  # la session est `running` : un rendu tourne vraiment
+    assert (await post_generate(client, review_id)).status_code == 202
+    again = await post_generate(client, review_id)
+    assert (again.status_code, again.json()["error"]["code"]) == (409, "generation_in_progress")

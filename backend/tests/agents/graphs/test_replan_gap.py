@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 
-from app.agents.nodes.strategist.replan_steps import REPLAN_REQUEST
+from app.agents.nodes.strategist.replan_steps import EMPTY_TEXT, GAP_EMPTY_TEXT, REPLAN_REQUEST
 from app.core.errors import AppError
 from tests.agents.graphs.council_models import CouncilModels
 from tests.agents.graphs.replan_support import MakeReplan, reply
@@ -120,3 +120,16 @@ async def test_gap_logs_carry_ids_only(
     for text in ("Résumé secret", "article secret", "LangGraph", "Évaluation de RAG"):
         assert text not in caplog.text
     assert run.sid in caplog.text
+
+
+async def test_gap_with_nothing_added_says_what_happened(make_replan_runner: MakeReplan) -> None:
+    """Deux réponses qui n'ajoutent rien d'utile : jamais « ton plan tient tel quel » juste après
+    « Ajouter au planning » (revue 6.7, M7)."""
+    vague = reply("J'ajoute.", add=[_task("Lire un article")])  # aucune compétence nommée
+    run = await make_replan_runner(_models(vague, vague), body=GAP)
+    done = await run.wait_status("completed")
+    assert done.pending_interrupt is None
+    [summary] = [e["summary"] for e in await run.events("run.completed")]
+    assert summary == GAP_EMPTY_TEXT and EMPTY_TEXT not in summary
+    assert "Ajouter au planning" in summary and "n'a pas changé" in summary
+    assert await run.said() == [GAP_EMPTY_TEXT]

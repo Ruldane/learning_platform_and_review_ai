@@ -56,6 +56,7 @@ export const cvReview = {
       refused: "Refusée",
     },
     author: "Proposée par {name}",
+    ignored: "Non placée dans la version {number}",
     before: "Avant",
     after: "Après",
     nothingBefore: "Rien : ligne ajoutée.",

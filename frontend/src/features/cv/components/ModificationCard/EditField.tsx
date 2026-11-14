@@ -6,7 +6,7 @@ import { MAX_EDIT_CHARS } from "../viewTypes";
 
 interface EditFieldProps {
   initial: string;
-  /** Faux tant qu'un fait à confirmer n'est pas confirmé : l'enregistrement est refusé. */
+  /** Faux tant qu'un fait à confirmer n'est pas confirmé : le texte inchangé ne s'enregistre pas. */
   confirmed: boolean;
   busy: boolean;
   onSave: (text: string) => void;
@@ -18,6 +18,9 @@ export function EditField({ initial, confirmed, busy, onSave, onCancel }: EditFi
   const id = useId();
   const [text, setText] = useState(initial);
   const empty = text.trim() === "";
+  // Un texte corrigé repart sans confirmation (le back le revérifie) ; seul le texte inchangé
+  // d'une modification « à confirmer » attend la case.
+  const needsConfirm = !confirmed && text.trim() === initial;
   return (
     <div className="flex flex-col gap-2">
       <label htmlFor={id} className="text-sm font-medium">
@@ -34,10 +37,10 @@ export function EditField({ initial, confirmed, busy, onSave, onCancel }: EditFi
         className={`${fieldClass} h-auto py-1.5`}
       />
       <p id={`${id}-hint`} className="text-xs text-muted-foreground">
-        {confirmed ? t("cv.mod.editHint", { max: MAX_EDIT_CHARS }) : t("cv.mod.confirmFirst")}
+        {!needsConfirm ? t("cv.mod.editHint", { max: MAX_EDIT_CHARS }) : t("cv.mod.confirmFirst")}
       </p>
       <div className="flex gap-2">
-        <Button onClick={() => onSave(text.trim())} disabled={busy || empty || !confirmed}>
+        <Button onClick={() => onSave(text.trim())} disabled={busy || empty || needsConfirm}>
           {t("cv.mod.editSave")}
         </Button>
         <Button variant="outline" onClick={onCancel} disabled={busy}>

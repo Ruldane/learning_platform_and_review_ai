@@ -5,12 +5,12 @@ dernière passe et repose la question (revue 6.9, I2)."""
 
 import inspect
 
-from app.agents.graphs.cv_capture_design import ask_validate
+from app.agents.graphs.cv_capture_design import ask_validate, kept_score_of
 from app.agents.nodes.designer import FIX_REQUEST
 from app.agents.nodes.designer_steps import MAX_ADJUSTMENTS
 from tests.agents.graphs.design_support import INSTRUCTION, MakeDesign, designer, values
 from tests.support.cv_template import spec as cv_spec
-from tests.support.cv_templates import FakeCvTemplateStore
+from tests.support.cv_templates import FakeCvTemplateStore, spec_reply
 
 NOT_JSON = "Voici la description corrigée, sans JSON."
 STALLED = "Je n'ai pas su corriger la description : le modèle reste tel quel."
@@ -125,3 +125,32 @@ async def test_stalled_adjustment_is_consumed_then_validate_keeps_the_last_pass(
     await run.wait_status("completed")
     assert design_store.finished == {"t1": ("ready", None)}
     assert design_store.rendered == [1, 2, 3, 4, 5] and design_store.spec_of(5) == cv_spec()
+
+
+async def test_adjust_after_a_worse_last_pass_starts_from_the_kept_pass(
+    design_runner: MakeDesign, design_store: FakeCvTemplateStore
+) -> None:
+    """Scores 69, 78, 69 : la passe 2 est gardée ; « Ajuster » repart d'elle (sa description, son
+    score, ses images), jamais de la passe 3 (revue 6.10, N1)."""
+    design_store.scores = [69, 78, 69, 80]
+    fixes = [
+        spec_reply(accent="#a11111"),
+        spec_reply(accent="#a22222"),
+        spec_reply(accent="#a33333"),
+    ]
+    run = await design_runner(designer(fix=fixes))
+    await run.question()
+    assert design_store.kept == 2
+    await run.answer({"answers": {"instruction": INSTRUCTION}})
+    await run.question()
+    third = run.prompts(FIX_REQUEST)[2]
+    assert "#a11111" in third and "#a22222" not in third  # la description de la passe 2
+    assert "Passe 2 : ressemblance de 78 %." in third
+    assert design_store.passes[4][0].accent == "#a33333" and design_store.kept == 4
+
+
+async def test_ask_validate_reads_an_older_checkpoint_without_kept_score() -> None:
+    """Un checkpoint d'avant `kept_score` montre le score de la dernière passe (revue 6.10, N2)."""
+    assert kept_score_of({"score": 72}) == 72
+    assert kept_score_of({"score": 72, "kept_score": 78}) == 78
+    assert kept_score_of({}) == 0

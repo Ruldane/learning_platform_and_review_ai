@@ -111,6 +111,18 @@ describe("TemplatePage", () => {
     await waitFor(() => expect(state.activated).toEqual(["t1"]));
   });
 
+  it("shows « C'est ton modèle actif. » once the activation is done", async () => {
+    const { user } = setup({
+      template: [
+        templateOut({ active: false, session_id: null }),
+        templateOut({ active: true, session_id: null }),
+      ],
+    });
+    await user.click(await screen.findByRole("button", { name: "Utiliser ce modèle pour mes CV" }));
+    expect(await screen.findByText("C'est ton modèle actif.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Utiliser ce modèle pour mes CV" })).toBeNull();
+  });
+
   it("says the model is unknown on a 404", async () => {
     setup({ templateRead: () => refusal(404, "template_not_found", "Introuvable.") });
     expect(await screen.findByText("Modèle introuvable")).toBeInTheDocument();

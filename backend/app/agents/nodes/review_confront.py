@@ -6,15 +6,18 @@ contestées reviennent à leur auteur (objection, origine, amendement) ; `keep` 
 d'origine, `drop` retire, `amend` pose son nouveau texte, le silence laisse l'amendement. Jamais
 de troisième tour ; sinon January tranche. Un texte amendé repasse par le validateur. Une position
 sur une référence inconnue, en double, ou un `amend` sans texte est renvoyée au modèle (deux fois
-au plus), puis ignorée. Sortie invalide : « tout garder ». Débat publié dans le fil, sans écriture
-de port."""
+au plus), puis ignorée. Sortie invalide ou délai d'un agent (`STANCE_TIMEOUT_S`, chaque agent a le
+sien) : « tout garder » pour cet agent, les propositions déjà obtenues restent et la revue
+continue. Débat publié dans le fil, sans écriture de port."""
 
+import asyncio
 import logging
 from typing import Any, Protocol
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 
-from app.agents.nodes.review_common import LABEL, author_of, problems_text, review_inputs
+from app.agents.nodes.review_common import author_of, problems_text, review_inputs
+from app.agents.nodes.review_debate import AGENTS, debate_text
 from app.agents.prompts.loader import render_prompt, untrusted
 from app.agents.registry import get_agent
 from app.agents.runtime.deps import GraphDeps
@@ -30,23 +33,14 @@ CONFRONT_REQUEST = {
     2: "Réponds aux objections sur tes propositions.",
 }
 MAX_STANCE_ASKS = 3
-CONFRONT_TIMEOUT_S = 600
-AGENTS = ("ats_reader", "recruiter")
+STANCE_TIMEOUT_S = 420  # les positions d'un agent (demandes et nouveaux essais compris)
+CONFRONT_TIMEOUT_S = 2 * STANCE_TIMEOUT_S + 60  # deux agents, puis la marge du nœud
 _TEXT_ACTIONS = ("rewrite", "add")
-_VERB = {
-    1: {"keep": "je garde", "drop": "à retirer", "amend": "autre formulation proposée"},
-    2: {"keep": "je maintiens", "drop": "je retire", "amend": "je reformule"},
-}
-
 logger = logging.getLogger(__name__)
 
 
 class Node(Protocol):
     async def __call__(self, state: CvReviewState) -> CvReviewState: ...
-
-
-def other(agent: str) -> str:
-    return AGENTS[1] if agent == AGENTS[0] else AGENTS[0]
 
 
 def proposals_text(proposals: list[Proposal], critiques: dict[str, dict[str, str]]) -> str:
@@ -149,38 +143,6 @@ def apply_second(
     return out, removed
 
 
-def verb_of(round_no: int, stance: Stance | None, critique: dict[str, str]) -> str:
-    """Le verbe du fil : ce qui arrive à la proposition (un auteur muet ne « maintient » rien)."""
-    amended = "original" in critique
-    if round_no == 2 and stance is None:
-        if amended:
-            return "sans réponse, l'amendement de l'autre agent reste"
-        return "sans réponse, la proposition reste"
-    kind = stance.stance if stance else "keep"
-    if round_no == 2 and amended and kind == "keep":
-        return "je maintiens mon texte d'origine"
-    return _VERB[round_no][kind]
-
-
-def debate_text(
-    round_no: int,
-    agent: str,
-    judged: list[Proposal],
-    stances: dict[str, Stance],
-    contested: dict[str, dict[str, str]] | None = None,
-) -> str:
-    """Ce que l'agent dit dans le fil : sa position sur chaque proposition jugée."""
-    head = "Tour 2 : je réponds aux objections sur mes propositions."
-    if round_no == 1:
-        head = f"Tour 1 : mes positions sur les propositions du {LABEL[other(agent)]}."
-    lines = [head]
-    for p in judged:
-        stance = stances.get(p.ref)
-        verb = verb_of(round_no, stance, (contested or {}).get(p.ref, {}))
-        lines.append(f"- {p.ref} : {verb}." + (f" {stance.reason}" if stance else ""))
-    return "\n".join(lines)
-
-
 async def _ask(
     deps: GraphDeps, agent: str, round_no: int, variables: dict[str, Any], text: str
 ) -> Confrontation:
@@ -209,12 +171,18 @@ async def ask_stances(
     by_ref = {p.ref: p for p in judged}
     text = proposals_text(judged, critiques)
     try:
-        found = await _ask(deps, agent, round_no, variables, text)
-        for _ in range(MAX_STANCE_ASKS - 1):
-            problems = stance_problems(found, by_ref)
-            if not problems:
-                break
-            found = await _reask(deps, agent, round_no, variables, text, found, problems)
+        async with asyncio.timeout(STANCE_TIMEOUT_S):
+            found = await _ask(deps, agent, round_no, variables, text)
+            for _ in range(MAX_STANCE_ASKS - 1):
+                problems = stance_problems(found, by_ref)
+                if not problems:
+                    break
+                found = await _reask(deps, agent, round_no, variables, text, found, problems)
+    except TimeoutError:
+        logger.info(
+            "Confrontation sans réponse à temps : session %s, agent %s", deps.session_id, agent
+        )
+        return {}
     except AppError as exc:
         if exc.code != "structured_output_invalid":
             raise

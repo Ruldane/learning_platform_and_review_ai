@@ -12,6 +12,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, ValidationError
 
+from app.agents.prompts.loader import untrusted
 from app.agents.tools.cv_schema import CvContent, CvEntry, CvLine, CvSection
 
 MAX_ADJUSTMENTS = 5  # consignes de January, hors des passes automatiques
@@ -89,10 +90,12 @@ def verbatim(content: CvContent, invented: list[str]) -> CvContent:
 
 
 def copy_retry(invented: list[str]) -> str:
+    """La re-demande : ces textes sont des copies presque exactes de lignes du CV, donc non
+    fiables (17.4) ; seule la consigne reste hors de l'encadrement."""
     shown = "\n".join(f"- {text}" for text in invented[:MAX_INVENTED_SHOWN])
     return (
         "Ces textes ne figurent pas tels quels dans le CV :\n"
-        f"{shown}\n"
+        f"{untrusted(shown, 'cv:textes à recopier')}\n"
         "Recopie chaque texte mot pour mot depuis le CV (sans puce ni tiret de début de ligne), "
         "ou retire-le. Rends le contenu complet."
     )

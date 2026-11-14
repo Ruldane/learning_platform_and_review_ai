@@ -12,17 +12,19 @@ from app.agents.tools.cv_tech_terms import AMBIGUOUS_TERMS as AMBIGUOUS_TERMS  #
 from app.agents.tools.cv_tech_terms import TECH_TERMS as TECH_TERMS  # noqa: PLC0414
 from app.agents.tools.posting_schema import normalize_term
 
-# Un nombre : groupes de milliers séparés par une espace (normale, insécable, fine insécable) ou
-# chiffres collés ; partie décimale à la virgule ou au point ; multiplicateur « k » ou « M »
-# (pas « Mo », « km ») ; signe « % » éventuel. Jamais au milieu d'un mot ni d'un autre nombre.
+# Un nombre : groupes de milliers séparés par une espace (normale, insécable, fine insécable), par
+# un point ou une virgule (« 1,000 » et « 1.000 » : trois chiffres exactement, premier groupe sans
+# zéro de tête : « 0,125 » reste décimal) ou chiffres collés ; partie décimale à la virgule ou au
+# point ; multiplicateur « k » ou « M » (pas « Mo », « km ») ; signe « % » éventuel. Jamais au
+# milieu d'un mot ni d'un autre nombre.
 _NUMBER = re.compile(
     r"(?<![\w.,])"
-    r"(?P<int>\d{1,3}(?:[   ]\d{3})+(?!\d)|\d+)"
+    r"(?P<int>\d{1,3}(?:[   ]\d{3})+(?!\d)|[1-9]\d{0,2}(?:[.,]\d{3})+(?!\d)|\d+)"
     r"(?:[.,](?P<dec>\d+))?"
     r"(?:[   ]?(?P<mult>[kKM])(?![A-Za-zÀ-ÿ]))?"
     r"(?P<pct>[   ]?%)?"
 )
-_SEPARATORS = re.compile(r"[   ]")
+_SEPARATORS = re.compile(r"[   .,]")  # espaces et points ou virgules de milliers
 _MULTIPLIERS = {"k": Decimal(1000), "K": Decimal(1000), "M": Decimal(1_000_000)}
 
 

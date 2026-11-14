@@ -3,7 +3,8 @@ export const cvKeys = {
   profile: ["cv", "profile"],
   profileVersions: ["cv", "profile", "versions"],
   templates: ["cv", "templates"],
-  template: (templateId: string) => ["cv", "template", templateId] as const,
+  /** Sous le préfixe de la liste : invalider `templates` relit aussi chaque détail (modèle actif). */
+  template: (templateId: string) => ["cv", "templates", templateId] as const,
   documents: ["cv", "documents"],
   review: (reviewId: string) => ["cv", "review", reviewId] as const,
   versions: ["cv", "versions"],

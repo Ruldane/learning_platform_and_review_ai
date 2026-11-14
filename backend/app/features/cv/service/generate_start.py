@@ -27,6 +27,7 @@ from app.features.cv.repository import (
     VersionRepository,
 )
 from app.features.cv.schemas_reviews import GenerateIn, GenerateStarted
+from app.features.cv.service.generate import RENDER_FAILED
 from app.features.cv.service.naming import cv_filename
 from app.features.cv.service.review_data import posting_title, review_closed
 from app.features.cv.service.review_store import frozen_base, review_row
@@ -109,10 +110,19 @@ async def _checked(db: AsyncSession, user_id: str, review_id: str) -> tuple[CvRe
     review = await review_row(db, user_id, review_id)
     if review.status not in ("running", "proposed"):
         raise review_closed()
+    interrupt_id = await waiting_output(db, user_id, review)
     rendering = await VersionRepository(db, user_id).rendering([review.id])
+    if rendering and interrupt_id is not None:
+        # Le rendu ne tourne que session `running` : une version `rendering` alors que la session
+        # attend la question de sortie est restée là (processus mort entre son enregistrement et
+        # la reprise) ; elle ne bloque plus « Générer » (revue 6.14, M-1).
+        for stale in rendering:
+            stale.status, stale.failure_reason = "failed", RENDER_FAILED
+        await db.commit()
+        logger.info("Version restée en rendu : utilisateur %s, revue %s", user_id, review.id)
+        rendering = []
     if rendering:
         raise generation_in_progress(rendering[0].id)
-    interrupt_id = await waiting_output(db, user_id, review)
     if interrupt_id is None or review.session_id is None:
         raise review_not_waiting()
     return review, interrupt_id

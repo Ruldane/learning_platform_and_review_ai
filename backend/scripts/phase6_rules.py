@@ -8,11 +8,14 @@ import unicodedata
 from typing import Any
 
 from scripts.phase4_rules import CheckFailed
-from scripts.sample_cv import CV_FACTS, visible_text
+from scripts.sample_cv import CV_FACTS, SampleCv, visible_text
 from scripts.sample_posting import POSTING_TEXT
 
+CV_FACTS_FONT = SampleCv().font  # « Helvetica »
 CV_EXPERIENCES = 2  # rôles du CV fictif (`role_1`, `role_2`)
-# Ce que les journaux ne contiennent jamais (17.2) : identité, entreprises, texte de l'offre.
+# Ce que les journaux ne contiennent jamais (17.2) : identité, entreprises, texte de l'offre, nom
+# d'une police (celle du CV fictif et ses substituts libres) et nom de
+# fichier `CV_…`.
 POSTING_SENTENCES = (
     "Société Fictive édite des assistants conversationnels pour les équipes support.",
     "Concevoir des agents avec LangGraph et les mettre en production.",
@@ -26,6 +29,10 @@ LOG_FORBIDDEN = (
     CV_FACTS["company_1"],
     CV_FACTS["company_2"],
     *POSTING_SENTENCES,
+    CV_FACTS_FONT,
+    "Liberation Sans",
+    "Arimo",
+    "CV_Camille",
 )
 
 

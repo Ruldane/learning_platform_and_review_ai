@@ -96,6 +96,7 @@ async def test_delete_removes_memory_item(
 ) -> None:
     created = await _create(client)
     await _analyze(app, created)
+    await launcher_spy.end(app.state.local_user_id, created["session"])  # l'analyse est finie
     assert await _items(app) == 1
     r = await client.delete(f"{API}/postings/{created['id']}")
     assert r.status_code == 204

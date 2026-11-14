@@ -1,7 +1,8 @@
 """Lectures et suppression des offres (SPEC 14.2, D122) : liste (plus récentes d'abord), détail
 (texte figé, analyse, doublons relus, statut montré), suppression avec l'élément de mémoire
-`offre` (revues et versions en cascade ; 409 si une revue tourne). Journaux : identifiants
-seulement."""
+`offre` (revues et versions en cascade, puis leurs fichiers ; 409 `review_in_progress` si une revue
+de CV tourne ou attend, 409 `analysis_in_progress` si l'analyse de l'offre est ouverte). Journaux :
+identifiants seulement."""
 
 import logging
 from collections.abc import Sequence
@@ -23,7 +24,7 @@ from app.features.postings.schemas import (
     PostingSummaryOut,
 )
 from app.features.postings.service.duplicates import not_found, shown_duplicates, zone_of
-from app.features.postings.service.status import read_with_sessions, shown_status
+from app.features.postings.service.status import open_sessions, read_with_sessions, shown_status
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,14 @@ logger = logging.getLogger(__name__)
 def review_in_progress() -> AppError:
     return AppError(
         "review_in_progress", "Une revue de CV de cette offre est en cours : attends sa fin.", 409
+    )
+
+
+def analysis_in_progress() -> AppError:
+    return AppError(
+        "analysis_in_progress",
+        "Une analyse de cette offre est en cours : réessaie dans un instant.",
+        409,
     )
 
 
@@ -114,17 +123,34 @@ async def list_postings(db: AsyncSession, user_id: str) -> list[PostingSummaryOu
     ]
 
 
+async def _erase_files(memory: MemoryRuntime, user_id: str, keys: list[str]) -> None:
+    """Retire les PDF et les images des versions, après le commit ; un échec n'est journalisé que
+    par son type (la ligne a disparu : le fichier est orphelin, jamais l'inverse)."""
+    for key in keys:
+        try:
+            await memory.providers.storage.delete(user_id, key)
+        except Exception as exc:  # noqa: BLE001 - un fichier de moins ne défait pas la suppression
+            logger.warning(
+                "Fichier de version non retiré : utilisateur %s, %s", user_id, type(exc).__name__
+            )
+
+
 async def delete_posting(
     db: AsyncSession, memory: MemoryRuntime, user_id: str, posting_id: str
 ) -> None:
-    """Supprime l'offre (revues et versions en cascade) et son élément de mémoire `offre`, sauf
-    s'il sert encore à une autre offre (même texte). **Valide la transaction.**"""
+    """Supprime l'offre (revues et versions en cascade), l'élément de mémoire `offre` (sauf s'il
+    sert encore à une autre offre) puis, la transaction validée, les fichiers des versions.
+    409 `review_in_progress` (revue lancée ou proposée) ou `analysis_in_progress` (session
+    d'analyse ouverte). **Valide la transaction.**"""
     repo = PostingRepository(db, user_id)
     posting = await get_posting(db, user_id, posting_id)
     if await repo.running_reviews(posting_id):
         raise review_in_progress()
+    if await open_sessions(db, user_id, posting_id):
+        raise analysis_in_progress()
     item_id = posting.memory_item_id
     shared = item_id is not None and await repo.item_shared(item_id, posting_id)
+    files = await repo.version_files(posting_id)
     await db.delete(posting)
     await db.flush()
     if item_id is not None and not shared:
@@ -136,4 +162,5 @@ async def delete_posting(
             await db.commit()  # élément déjà retiré par January
     else:
         await db.commit()
+    await _erase_files(memory, user_id, files)
     logger.info("Offre supprimée : utilisateur %s, offre %s", user_id, posting_id)

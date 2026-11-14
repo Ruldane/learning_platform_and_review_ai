@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router";
 import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 import { InlineError } from "@/shared/ui/states/InlineError";
@@ -6,13 +7,15 @@ import { useDeletePosting } from "../../hooks/useDeletePosting";
 
 interface DeleteSectionProps {
   postingId: string;
+  /** `PostingOut.has_review` : des revues de CV et des PDF partent avec l'offre. */
+  hasReview: boolean;
   onDeleted: () => void;
 }
 
 /** « Supprimer » avec une confirmation dans la page (jamais `window.confirm`) ; Échap annule. */
-export function DeleteSection({ postingId, onDeleted }: DeleteSectionProps) {
+export function DeleteSection({ postingId, hasReview, onDeleted }: DeleteSectionProps) {
   const [asking, setAsking] = useState(false);
-  const { remove, pending, error, reset } = useDeletePosting(postingId, onDeleted);
+  const { remove, pending, error, code, reset } = useDeletePosting(postingId, onDeleted);
   const cancel = () => {
     reset();
     setAsking(false);
@@ -35,8 +38,15 @@ export function DeleteSection({ postingId, onDeleted }: DeleteSectionProps) {
       className="flex flex-col items-start gap-2 rounded-xl border border-destructive/40 bg-card p-3"
     >
       <p className="font-medium">{t("gap.posting.deleteAsk")}</p>
-      <p className="text-sm text-muted-foreground">{t("gap.posting.deleteHint")}</p>
+      <p className="text-sm text-muted-foreground">
+        {hasReview ? t("gap.posting.deleteHintWithReview") : t("gap.posting.deleteHint")}
+      </p>
       {error ? <InlineError message={error} /> : null}
+      {code === "review_in_progress" ? (
+        <Link to={`/carriere/cv/revue/nouvelle/${postingId}`} className="text-sm underline">
+          {t("gap.posting.openReview")}
+        </Link>
+      ) : null}
       <div className="flex gap-2">
         <Button variant="destructive" onClick={remove} disabled={pending}>
           {pending ? t("gap.posting.deleting") : t("gap.posting.deleteConfirm")}

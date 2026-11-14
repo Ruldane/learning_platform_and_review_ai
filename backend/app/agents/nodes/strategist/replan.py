@@ -284,6 +284,6 @@ def make_refuse(deps: GraphDeps) -> Node:
 
 def finalize(state: ReplanState) -> ReplanState:
     """La fin annoncée : appliquée, refusée, rien à changer ou rangement impossible."""
-    text = end_text(state.get("outcome", ""), state["preview"]["version"])
+    text = end_text(state.get("outcome", ""), state["preview"]["version"], state["trigger"])
     _say("replan-fin", text)
     return {"summary": text}

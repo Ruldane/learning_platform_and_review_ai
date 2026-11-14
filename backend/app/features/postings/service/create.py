@@ -31,7 +31,7 @@ from app.features.postings.repository import PostingRepository
 from app.features.postings.schemas import TEXT_MAX, URL_MAX, PostingCreatedOut, PostingIn
 from app.features.postings.service.launch import launch_new, relaunch
 from app.features.postings.service.queries import read_posting
-from app.features.postings.service.rules import posting_url_key
+from app.features.postings.service.rules import posting_url_key, route_fragment
 from app.features.postings.service.runtime import PostingsRuntime
 from app.features.research.service.reading import read
 
@@ -107,6 +107,8 @@ def source_of(body: PostingIn) -> Source:
             raise
         if len(url) > URL_MAX or len(key) > URL_MAX:
             raise AppError("invalid_url", "Lien trop long.", 422, {"fields": ["url"]})
+        if route_fragment(body.url):  # l'offre est dans l'ancre : la racine du site n'est pas elle
+            raise posting_unreadable()
         return Source(url, key, None)
     text = (body.text or "").strip()
     if not enough_text(text):

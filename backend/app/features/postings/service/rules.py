@@ -48,7 +48,7 @@ def _is_tracking(key: str) -> bool:
     )
 
 
-def _route_fragment(url: str) -> str:
+def route_fragment(url: str) -> str:
     """Le fragment d'un site à routage par ancre (`#/offre/1`, `#!/offre/1`) : il désigne
     l'offre et reste dans la clé. Tout autre fragment (`#postuler`) est retiré."""
     fragment = urlsplit(url.strip()).fragment
@@ -58,7 +58,7 @@ def _route_fragment(url: str) -> str:
 def posting_url_key(url: str) -> str:
     """La clé d'un lien d'offre : `normalize_url` (lève `invalid_url` ou `url_forbidden`), puis
     « www. » et port par défaut retirés, paramètres de suivi retirés, requête triée, « / »
-    final retiré, fragment retiré sauf une route (`_route_fragment`). Une clé passée de
+    final retiré, fragment retiré sauf une route (`route_fragment`). Une clé passée de
     nouveau donne la même clé. Deux offres distinctes ne partagent jamais une clé : un vrai
     doublon manqué ici est rattrapé au niveau « probable » ou « possible »."""
     parts = urlsplit(normalize_url(url))
@@ -72,7 +72,7 @@ def posting_url_key(url: str) -> str:
     )
     path = parts.path.rstrip("/")
     return urlunsplit(
-        (parts.scheme, netloc.removeprefix("www."), path, urlencode(query), _route_fragment(url))
+        (parts.scheme, netloc.removeprefix("www."), path, urlencode(query), route_fragment(url))
     )
 
 

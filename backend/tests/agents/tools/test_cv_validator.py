@@ -31,6 +31,8 @@ from tests.support.cv_review import A, add, analysis, profile, rewrite
         ("Coûts réduits de 30 %", "Coûts réduits de 30 pour cent"),
         ("Équipe de cinq personnes", "Équipe de 5 personnes"),
         ("Équipe de 5 personnes", "Équipe de cinq personnes"),
+        ("1,000 h gagnées", "Réduit les délais de 1 000 h"),
+        ("1.000 h gagnées", "Réduit les délais de 1000 h"),
     ],
 )
 def test_number_formats_match(fact: str, after: str) -> None:
@@ -50,6 +52,8 @@ def test_number_formats_match(fact: str, after: str) -> None:
         ("Équipe de 5 personnes", "Équipe de 15 personnes"),
         ("Équipe de 5 personnes", "Équipe de plusieurs dizaines de personnes"),
         ("Coûts réduits", "Plus de cent clients accompagnés"),
+        ("Formé 1 stagiaire en 2021", "Formé 1,000 stagiaires en 2021"),  # milliers, pas décimale
+        ("Formé 1 stagiaire en 2021", "Formé 1.000 stagiaires en 2021"),
     ],
 )
 def test_absent_number_needs_confirmation(fact: str, after: str) -> None:

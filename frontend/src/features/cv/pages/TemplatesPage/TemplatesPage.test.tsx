@@ -90,6 +90,19 @@ describe("TemplatesPage", () => {
     expect(await screen.findByText("Réglages des modèles")).toBeInTheDocument();
   });
 
+  it("shows the back's message when a template capture is already running (409)", async () => {
+    const { user } = setup({
+      createTemplate: () =>
+        refusal(409, "capture_in_progress", "Une capture de modèle de CV est déjà en cours."),
+    });
+    await user.upload(await screen.findByLabelText(/Ton CV \(PDF/), pdf());
+    await user.click(screen.getByRole("button", { name: "Créer le modèle" }));
+    expect(
+      await screen.findByText("Une capture de modèle de CV est déjà en cours."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/lecture de documents/)).toBeNull();
+  });
+
   it("shows an empty state whose action leads to the file field", async () => {
     const { user } = setup({ templates: [[]] });
     expect(await screen.findByText("Aucun modèle de CV pour l'instant")).toBeInTheDocument();

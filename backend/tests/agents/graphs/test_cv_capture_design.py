@@ -121,6 +121,9 @@ async def test_sample_lines_are_verbatim(
     await run.question()
     first, second = run.prompts("Recopie le contenu")[:2]
     assert "ne figurent pas tels quels" in second and invented in second
+    framed = second.split('<<<CONTENU_NON_FIABLE source="cv:textes à recopier">>>')[1]
+    assert invented in framed.split("<<<FIN_CONTENU_NON_FIABLE>>>")[0]  # encadré (revue BA-M3)
+    assert "Recopie chaque texte mot pour mot" in framed.split("<<<FIN_CONTENU_NON_FIABLE>>>")[1]
     assert "ne figurent pas tels quels" not in first
     _, content, _ = design_store.passes[1]
     lines = [line.text for line in content.sections[1].entries[0].lines]

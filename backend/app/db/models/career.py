@@ -74,6 +74,9 @@ class CvTemplate(UserScopedMixin, Base):
     pass_log: Mapped[list[Any]] = mapped_column(default=list)
 
 
+OPEN_REVIEW_STATUSES = ("running", "proposed")  # une revue en cours : session ouverte
+
+
 class CvReview(UserScopedMixin, Base):
     """La revue d'un CV contre une offre : indicateurs avant et après, rapport, mots clés partis
     vers l'écart (F8)."""

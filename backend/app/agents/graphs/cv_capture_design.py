@@ -97,6 +97,7 @@ def make_render(deps: GraphDeps) -> Node:
         out: CvCaptureState = {"pass_no": pass_no, "score": done.score}
         if keeps_pass(adjusted, done.score, kept):
             out["kept_pass"], out["kept_score"] = pass_no, done.score
+            out["kept_spec"] = state["spec"]
         else:  # une passe moins bonne ne remplace pas la meilleure (le port fait de même)
             text += f" Je garde la passe {state['kept_pass']} ({kept} %)."
         emit("agent.message", {"message_id": f"{AGENT}-passe-{pass_no}", "text": text}, agent=AGENT)
@@ -118,10 +119,15 @@ def route_fix(state: CvCaptureState) -> str:
     return "ask_validate" if state.get("stalled") else "render"
 
 
+def kept_score_of(state: CvCaptureState) -> int:
+    """Le score de la passe gardée ; un checkpoint d'avant ce champ montre la dernière passe."""
+    return state.get("kept_score", state.get("score", 0))
+
+
 def ask_validate(state: CvCaptureState) -> CvCaptureState:
     """`interrupt()` seul : rien avant lui ; la réponse est analysée sans aucun port."""
     adjustments = state.get("adjustments", 0)
-    answer = parse_answer(interrupt(question(state["kept_score"], adjustments)), adjustments)
+    answer = parse_answer(interrupt(question(kept_score_of(state), adjustments)), adjustments)
     return {"answer": answer.model_dump() if answer is not None else None}
 
 
@@ -152,7 +158,7 @@ def make_apply_answer(deps: GraphDeps) -> Node:
         store = deps.ports.cv_templates
         if answer.action == "validate":
             await store.finish(deps.user_id, template_id, "ready", None)
-            text = f"Modèle de CV prêt : il ressemble à ton CV à {state['kept_score']} %."
+            text = f"Modèle de CV prêt : il ressemble à ton CV à {kept_score_of(state)} %."
         else:
             await store.finish(deps.user_id, template_id, "failed", RESTARTED)
             text = f"{RESTARTED} Tu peux relancer la capture du modèle."

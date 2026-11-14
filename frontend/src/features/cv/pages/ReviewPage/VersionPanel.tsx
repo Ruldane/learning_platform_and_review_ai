@@ -2,9 +2,9 @@ import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 import { InlineError } from "@/shared/ui/states/InlineError";
 import { LoadingState } from "@/shared/ui/states/LoadingState";
-import { PdfPreview } from "../../components/PdfPreview";
 import type { useGenerate } from "../../hooks/useGenerate";
-import { pageRange, versionPageUrl, versionPdfUrl } from "../../urls";
+import { ReadyVersion } from "./ReadyVersion";
+import { exceededText } from "./versionTexts";
 import type { CvReviewOut, VersionOut } from "../../types";
 
 interface VersionPanelProps {
@@ -27,18 +27,7 @@ export function VersionPanel({ review, version, generate }: VersionPanelProps) {
     case "rendering":
       return <LoadingState label={t("cv.reviewPage.pdfRendering")} />;
     case "ready":
-      return (
-        <section aria-label={title} className="flex flex-col gap-2">
-          <h3 className="font-medium">{title}</h3>
-          <PdfPreview
-            pages={pageRange(version.page_count ?? 0, (n) => versionPageUrl(version.id, n))}
-            pageCount={version.page_count ?? 0}
-            originalPageCount={version.original_page_count}
-            filename={version.filename}
-            downloadUrl={versionPdfUrl(version.id)}
-          />
-        </section>
-      );
+      return <ReadyVersion version={version} title={title} />;
     case "pages_exceeded":
       return (
         <section aria-label={title} className="flex flex-col items-start gap-2">
@@ -46,7 +35,7 @@ export function VersionPanel({ review, version, generate }: VersionPanelProps) {
             role="alert"
             className="rounded-lg border-2 border-foreground/60 bg-muted/60 p-2 text-sm"
           >
-            {t("cv.reviewPage.pagesExceeded", { count: version.page_count ?? 0 })}
+            {exceededText(version)}
           </p>
           <Button disabled={!canRegenerate} onClick={() => generate.generate(true)}>
             {t("cv.reviewPage.allowExtra")}

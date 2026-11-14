@@ -124,6 +124,9 @@ export type ModificationTypeView = "keyword" | "clarity" | "impact" | "order" | 
 /** Ce qu'on peut décider d'une modification : l'accepter ou la refuser. */
 export type DecisionView = "accepted" | "refused";
 
+/** Une décision envoyée au back : résout à `false` quand elle est refusée (l'éditeur reste ouvert). */
+export type DecideResult = void | Promise<boolean>;
+
 /** Ce que January joint à sa décision : le texte qu'elle a modifié, et la confirmation d'un fait. */
 export interface DecideOptions {
   after?: string;
@@ -152,6 +155,8 @@ export interface ModificationView {
   /** Le slug de l'agent qui l'a proposée (`agentIdentity`). */
   author: string;
   facts: FactRefView[];
+  /** Le numéro de la version générée où cette modification acceptée n'a pas pu être placée. */
+  ignoredIn?: number | null;
 }
 
 export const MAX_EDIT_CHARS = 600;

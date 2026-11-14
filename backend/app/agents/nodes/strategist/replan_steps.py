@@ -53,6 +53,10 @@ ACCEPT_INTERRUPT: dict[str, Any] = {
 STALE_NOTE = "Le programme a changé entre-temps : nouvelle proposition sur le plan à jour."
 EMPTY_NOTE_HINT = "Écris ce que tu veux changer."
 EMPTY_TEXT = "Rien à changer : ton plan tient tel quel dans ton budget."
+GAP_EMPTY_TEXT = (
+    "Aucune tâche n'a pu être ajoutée pour ces compétences : ton plan n'a pas changé. "
+    "Relance « Ajouter au planning » pour une nouvelle proposition."
+)
 IMPOSSIBLE_TEXT = "Le plafond de cette semaine ne tient pas une pratique et le quiz."
 FINISHED_TEXT = "Ton programme est terminé : plus aucune semaine à replanifier."
 REFUSED_TEXT = "Plan actuel gardé : la proposition est refusée."
@@ -227,7 +231,7 @@ def preview_text(summary: str, saved: PreviewSaved) -> str:
     return f"{summary}\n\n{facts}"
 
 
-def end_text(outcome: str, version: int) -> str:
+def end_text(outcome: str, version: int, trigger: str = "") -> str:
     if outcome == "accepted":
         return f"Nouveau plan appliqué (version {version})."
     if outcome == "refused":
@@ -236,4 +240,4 @@ def end_text(outcome: str, version: int) -> str:
         return IMPOSSIBLE_TEXT
     if outcome == "finished":
         return FINISHED_TEXT
-    return EMPTY_TEXT
+    return GAP_EMPTY_TEXT if trigger == "gap" else EMPTY_TEXT

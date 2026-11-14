@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { ModificationView } from "../viewTypes";
@@ -116,7 +116,17 @@ describe("ModificationCard", () => {
     expect(onDecide).not.toHaveBeenCalled();
   });
 
-  it("needs the confirmation before saving an edit of a to-confirm modification", async () => {
+  it("sends an edited to-confirm text without the confirmation: the back checks it again", async () => {
+    const { onDecide } = setup({ status: "to_confirm" });
+    await userEvent.click(screen.getByRole("button", { name: "Modifier" }));
+    const field = screen.getByRole("textbox", { name: "Texte modifié" });
+    await userEvent.clear(field);
+    await userEvent.type(field, "Dirige 6 personnes");
+    await userEvent.click(screen.getByRole("button", { name: "Enregistrer et accepter" }));
+    expect(onDecide).toHaveBeenCalledWith("accepted", { after: "Dirige 6 personnes" });
+  });
+
+  it("keeps the confirmation for the unedited text of a to-confirm modification", async () => {
     const { onDecide } = setup({ status: "to_confirm" });
     await userEvent.click(screen.getByRole("button", { name: "Modifier" }));
     const save = screen.getByRole("button", { name: "Enregistrer et accepter" });
@@ -127,6 +137,53 @@ describe("ModificationCard", () => {
       after: "Dirige une équipe de 4 personnes",
       confirm: true,
     });
+  });
+
+  it("offers « Modifier » only for a rewrite or an addition", () => {
+    const { unmount } = setup({ action: "remove", before: "Ligne", after: "" });
+    expect(screen.queryByRole("button", { name: "Modifier" })).toBeNull();
+    unmount();
+    const moved = setup({ action: "move" });
+    expect(screen.queryByRole("button", { name: "Modifier" })).toBeNull();
+    moved.unmount();
+    setup({ action: "add", before: "", after: "Pilote la migration" });
+    expect(screen.getByRole("button", { name: "Modifier" })).toBeInTheDocument();
+  });
+
+  it("keeps the editor open with the typed text when the decision is refused", async () => {
+    const onDecide = vi.fn().mockResolvedValue(false);
+    render(
+      <ModificationCard
+        mod={mod()}
+        onDecide={onDecide}
+        busy={false}
+        error="Ce mot clé n'est pas dans ton profil."
+      />,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Modifier" }));
+    const field = screen.getByRole("textbox", { name: "Texte modifié" });
+    await userEvent.clear(field);
+    await userEvent.type(field, "Dirige une équipe sur AWS");
+    await userEvent.click(screen.getByRole("button", { name: "Enregistrer et accepter" }));
+    await waitFor(() => expect(onDecide).toHaveBeenCalled());
+    expect(screen.getByRole("textbox", { name: "Texte modifié" })).toHaveValue(
+      "Dirige une équipe sur AWS",
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("Ce mot clé n'est pas dans ton profil.");
+  });
+
+  it("closes the editor once the decision is taken", async () => {
+    const onDecide = vi.fn().mockResolvedValue(true);
+    render(<ModificationCard mod={mod()} onDecide={onDecide} busy={false} />);
+    await userEvent.click(screen.getByRole("button", { name: "Modifier" }));
+    await userEvent.type(screen.getByRole("textbox"), " bien");
+    await userEvent.click(screen.getByRole("button", { name: "Enregistrer et accepter" }));
+    await waitFor(() => expect(screen.queryByRole("textbox")).not.toBeInTheDocument());
+  });
+
+  it("says when an accepted line could not be placed in the generated version", () => {
+    setup({ status: "accepted", ignoredIn: 2 });
+    expect(screen.getByText("Non placée dans la version 2")).toBeInTheDocument();
   });
 
   it("locks every button while a decision is on its way", () => {

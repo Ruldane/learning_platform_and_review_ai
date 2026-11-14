@@ -821,8 +821,8 @@ export interface paths {
         post?: never;
         /**
          * Remove Posting
-         * @description Retire l'offre, son élément de mémoire `offre`, ses revues et versions ; 409
-         *     `review_in_progress` si une revue de CV tourne.
+         * @description Retire l'offre, son élément de mémoire `offre`, ses revues et versions (PDF et images
+         *     compris) ; 409 `review_in_progress` ou `analysis_in_progress` si l'une tourne.
          */
         delete: operations["remove_posting_api_v1_postings__posting_id__delete"];
         options?: never;
@@ -6907,6 +6907,20 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `posting_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `review_in_progress` (une revue de CV de l'offre est lancée ou proposée : la terminer d'abord), `analysis_in_progress` (l'analyse de l'offre tourne : réessayer dans un instant) */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

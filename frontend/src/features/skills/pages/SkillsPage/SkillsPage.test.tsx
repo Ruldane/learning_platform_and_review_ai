@@ -120,6 +120,25 @@ describe("SkillsPage", () => {
       expect(await screen.findByText(/n'a pas encore d'écart calculé/)).toBeInTheDocument();
     });
 
+    it("lets the user re-query a posting whose gap is not computed yet", async () => {
+      let ready = false;
+      const { user } = setup({
+        postings,
+        compare: (request) =>
+          new URL(request.url).searchParams.get("target") === "posting" && !ready
+            ? HttpResponse.json(apiError("no_compare_target", "Pas d'écart."), { status: 404 })
+            : HttpResponse.json({ ...compareOut(), target_label: "Ingénieure données" }),
+      });
+      await user.click(screen.getByRole("tab", { name: "Comparaison" }));
+      await user.click(await screen.findByRole("radio", { name: "Une offre" }));
+      await user.selectOptions(await screen.findByRole("combobox", { name: "Offre" }), "p1");
+      expect(await screen.findByText(/n'a pas encore d'écart calculé/)).toBeInTheDocument();
+      ready = true;
+      await user.click(screen.getByRole("button", { name: "Réessayer" }));
+      expect(await screen.findByText("Cible : Ingénieure données")).toBeInTheDocument();
+      expect(screen.queryByText(/n'a pas encore d'écart calculé/)).toBeNull();
+    });
+
     it("offers to add a posting when none is analysed", async () => {
       const { user, router } = setup({ postings: () => HttpResponse.json([]) });
       await user.click(screen.getByRole("tab", { name: "Comparaison" }));

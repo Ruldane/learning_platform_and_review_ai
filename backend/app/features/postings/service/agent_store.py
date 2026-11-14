@@ -187,13 +187,14 @@ class AgentGapStore:
     async def _add_unmatched(
         self, db: AsyncSession, user_id: str, posting: JobPosting, matches: Sequence[SkillMatch]
     ) -> None:
-        """Les besoins de l'analyse sans rattachement entrent au référentiel (sans niveau)."""
+        """Les besoins apprenables de l'analyse sans rattachement entrent au référentiel (sans
+        niveau) ; un besoin hors du champ d'un programme (« Permis B », « Bac+5 ») n'y entre pas."""
         analysis = PostingAnalysis.model_validate(posting.analysis)
         matched = {normalize_skill_name(m.need) for m in matches if m.known}
         drafts = [
             SkillDraft(name=need.name, domain=_domain(need.domain), synonyms=[])
             for need in analysis.skills
-            if normalize_skill_name(need.name) not in matched
+            if need.learnable and normalize_skill_name(need.name) not in matched
         ]
         if drafts:
             await SkillsService(db, user_id).upsert_catalog(drafts, [])

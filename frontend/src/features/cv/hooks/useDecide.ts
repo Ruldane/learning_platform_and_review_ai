@@ -25,14 +25,22 @@ export function useDecide(reviewId: string) {
         replaceMod(review, updated),
       ),
   });
-  const { mutate, reset } = mutation;
+  const { mutateAsync, reset } = mutation;
   return {
-    decide: (id: string, decision: Decision) => {
+    /** Résout à `true` quand le back a pris la décision, `false` sur un refus (lisible dans `error`). */
+    decide: async (id: string, decision: Decision): Promise<boolean> => {
       reset();
-      mutate({ id, decision });
+      try {
+        await mutateAsync({ id, decision });
+        return true;
+      } catch {
+        return false;
+      }
     },
     pending: mutation.isPending,
     error: mutation.isError ? cvErrorMessage(mutation.error) : null,
+    /** La modification dont la dernière décision a été refusée : l'erreur s'affiche sur sa carte. */
+    errorId: mutation.isError ? (mutation.variables?.id ?? null) : null,
     code: mutation.isError ? errorCode(mutation.error) : null,
   };
 }

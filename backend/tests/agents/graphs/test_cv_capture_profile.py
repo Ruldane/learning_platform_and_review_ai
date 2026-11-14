@@ -91,6 +91,31 @@ async def test_number_absent_from_sources_is_dropped(
     ]
 
 
+async def test_line_without_number_absent_from_documents_is_dropped(
+    profile_runner: MakeProfile, profile_store: FakeProfileStore
+) -> None:
+    invented = "Migré la production vers Kubernetes"
+    reply = profile_reply(
+        experiences=[
+            experience(
+                CV_FACTS["role_1"],
+                CV_FACTS["company_1"],
+                "2023",
+                "2026",
+                ["Conçu un assistant interne avec LangGraph pour le support", invented],
+            ),
+            experience(CV_FACTS["role_2"], CV_FACTS["company_2"], "2020", "2023", []),
+        ]
+    )
+    run = await profile_runner(archivist(reply))
+    await run.wait_status("completed")
+    [draft] = profile_store.drafts
+    texts = [line.text for x in draft.experiences for line in x.achievements]
+    assert invented not in texts and len(texts) == 1
+    assert profile_store.dropped == [[invented]]
+    assert (await run.said())[0].endswith("1 fait retiré : introuvable dans tes documents.")
+
+
 async def test_fact_absent_from_documents_is_dropped_unless_the_note_says_it(
     profile_runner: MakeProfile, profile_store: FakeProfileStore
 ) -> None:

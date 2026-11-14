@@ -151,3 +151,20 @@ async def test_save_gap_needs_an_analysis(
     with pytest.raises(AppError) as caught:
         await store.save_gap(ME, "s1", posting_id, [])
     assert caught.value.code == "posting_not_analyzed"
+
+
+async def test_unlearnable_needs_never_enter_the_referential(
+    store: AgentGapStore, db_session_factory: Factory
+) -> None:
+    posting_id = await add_posting(db_session_factory)
+    skills = [
+        {"name": "Rust", "required": True, "domain": "Langages", "learnable": True},
+        {"name": "Permis B", "required": True, "domain": None, "learnable": False},
+        {"name": "Bac+5", "required": False, "domain": None, "learnable": False},
+    ]
+    await store.save_analysis(ME, "s1", posting_id, analysis(skills=skills))
+    await store.save_gap(ME, "s1", posting_id, [SkillMatch(need="Rust", known=None)])
+    async with db_session_factory() as db:
+        names = [s.name for s in (await db.execute(select(Skill))).scalars()]
+    assert names == ["Rust"]
+    assert await store.known_skills(ME) == [KnownSkill("Rust", None)]

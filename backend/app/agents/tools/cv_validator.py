@@ -9,7 +9,9 @@ Règles, dans l'ordre (chacune ajoute une raison, jamais le texte du CV) :
 3. un outil du lexique, de l'offre (outils, mots clés) ou un nom propre, absent des faits cités et
    des compétences : terme de l'offre → « écart » (il n'entre jamais dans le CV), autre → « à
    confirmer » ;
-4. un mot de titre (« lead », « senior »…) ou l'intitulé de l'offre absent des rôles du profil.
+4. un mot de titre (« lead », « senior »…) ou l'intitulé de l'offre absent des rôles du profil ;
+5. un fait structuré (titre, rôle, diplôme, langue et niveau, compétence, lien) dont un mot ou
+   l'URL n'est pas dans les faits cités ni dans les rôles du profil (`cv_validator_facts`).
 
 « Écart » l'emporte sur « à confirmer », qui l'emporte sur « ok ». `remove` et `move` n'écrivent
 aucun texte : toujours « ok ». Les termes sont comparés mots entiers, sans casse ni accent, au
@@ -29,6 +31,7 @@ from app.agents.tools.cv_lexicon import (
     ratio_families,
 )
 from app.agents.tools.cv_schema import MasterProfileData, facts_of
+from app.agents.tools.cv_validator_facts import FOREIGN, is_structured, unbacked
 from app.agents.tools.posting_schema import PostingAnalysis, normalize_term
 from app.agents.tools.review_schema import Proposal
 
@@ -141,11 +144,15 @@ def _term_findings(
     return list(gap.values()), tools
 
 
-def _titles(profile: MasterProfileData) -> str:
+def _title_texts(profile: MasterProfileData) -> list[str]:
     texts = [experience.role for experience in profile.experiences]
     texts += [line.text for line in (profile.title,) if line is not None]
     texts.append(profile.identity.headline or "")
-    return _padded(" ".join(texts))
+    return texts
+
+
+def _titles(profile: MasterProfileData) -> str:
+    return _padded(" ".join(_title_texts(profile)))
 
 
 def _title_claimed(after: str, profile: MasterProfileData, analysis: PostingAnalysis) -> bool:
@@ -200,5 +207,7 @@ def validate(p: Proposal, profile: MasterProfileData, analysis: PostingAnalysis)
     seen = {tok for term in [*gap, *tools] for tok in normalize_term(term, plural=True).split()}
     if _names(after, profile, skip_first=skip_first) - seen:
         blocks.append(NAME)
+    if is_structured(p) and unbacked(after, reference, " ".join(_title_texts(profile))):
+        blocks.append(FOREIGN)
     status: VerdictStatus = "to_gap" if gap else "to_confirm" if blocks else "ok"
     return Verdict(status, blocks, gap)

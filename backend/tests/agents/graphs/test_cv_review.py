@@ -3,6 +3,9 @@ confrontation au plus, validateur contre le profil maître, mots clés absents v
 entreprise, contenu non fiable encadré. La sortie (question `cv_output`) et le rejeu :
 `test_cv_review_output.py`."""
 
+import pytest
+
+from app.agents.nodes import review_confront
 from app.agents.nodes.review_common import PROPOSE_REQUEST
 from app.agents.nodes.scout.company import UNKNOWN
 from app.agents.tools.cv_schema import CvLine
@@ -86,6 +89,24 @@ async def test_confrontation_stops_after_two_rounds(
         s.startswith("Tour 1 : mes positions sur les propositions du Recruteur.") for s in said
     )
     assert any(s.startswith("Tour 2 : je réponds aux objections") for s in said)
+
+
+async def test_a_silent_agent_does_not_lose_the_proposals(
+    review_runner: MakeReview, review_store: FakeCvReviewStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Le Lecteur ATS ne répond pas à temps à la confrontation (délai propre à chaque agent) : ses
+    positions sont `{}` (tout garder), les propositions déjà payées restent, la revue continue
+    avec les positions du Recruteur (revue 6.13, m1)."""
+    monkeypatch.setattr(review_confront, "STANCE_TIMEOUT_S", 0.2)
+    models = reviewers(recruiter_confront=[stances(("a2", "drop", None))])
+    models.block = lambda agent, prompt: agent == "ats_reader" and "Confrontation, tour" in prompt
+    run = await review_runner(models)
+    await run.question()  # la session n'a pas échoué : la question de sortie est posée
+    assert review_store.saved_refs == ["a1", "a2", "r1"]  # a2 contestée, January tranche
+    said = await run.said()
+    assert any(s.startswith("Tour 1 : mes positions sur les propositions du Lecteur") for s in said)
+    assert any("r1 : je garde." in s for s in said)
+    assert review_confront.CONFRONT_TIMEOUT_S > 2 * review_confront.STANCE_TIMEOUT_S
 
 
 async def test_both_drop_removes_proposal(

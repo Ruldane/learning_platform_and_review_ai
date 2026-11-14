@@ -7,6 +7,7 @@ from collections.abc import Collection
 from sqlalchemy import func, literal_column, select
 
 from app.db.models.career import (
+    OPEN_REVIEW_STATUSES,
     CvModification,
     CvReview,
     CvTemplate,
@@ -17,7 +18,7 @@ from app.db.models.career import (
 from app.db.models.postings import Company
 from app.db.repository import UserScopedRepository
 
-OPEN_REVIEW = ("running", "proposed")
+OPEN_REVIEW = OPEN_REVIEW_STATUSES
 
 
 class ProfileRepository(UserScopedRepository[MasterProfile]):

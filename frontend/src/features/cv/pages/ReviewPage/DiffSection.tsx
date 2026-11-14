@@ -6,7 +6,7 @@ import type { DecideOptions, DecisionView } from "../../components/viewTypes";
 import { useBulkDecide, useDecide } from "../../hooks/useDecide";
 import { useProfile } from "../../hooks/useProfile";
 import { factLabels } from "../../profileView";
-import { toModificationViews } from "../../toView";
+import { latestReadyVersion, toModificationViews } from "../../toView";
 import type { CvReviewOut } from "../../types";
 import { InlineError } from "@/shared/ui/states/InlineError";
 
@@ -25,9 +25,10 @@ export function DiffSection({ review, locked }: { review: CvReviewOut; locked: b
     () => (profile.data?.validated ? factLabels(profile.data.validated.data) : new Map()),
     [profile.data],
   );
+  const placed = useMemo(() => latestReadyVersion(review), [review]);
   const mods = useMemo(
-    () => toModificationViews(review.modifications, labels),
-    [review.modifications, labels],
+    () => toModificationViews(review.modifications, labels, placed),
+    [review.modifications, labels, placed],
   );
   const onDecide = (id: string, status: DecisionView, opts?: DecideOptions) =>
     decide.decide(id, { status, ...opts });
@@ -37,17 +38,21 @@ export function DiffSection({ review, locked }: { review: CvReviewOut; locked: b
       .map((mod) => mod.id);
     if (ids.length > 0) bulk.decide(ids, status);
   };
-  const error = decide.error ?? bulk.error;
   return (
     <div className="flex flex-col gap-3">
       {locked ? <p className="text-sm text-muted-foreground">{t("cv.reviewPage.closed")}</p> : null}
       <ReviewDiff
         mods={mods}
         onDecide={onDecide}
+        error={
+          decide.error !== null && decide.errorId !== null
+            ? { id: decide.errorId, message: decide.error }
+            : null
+        }
         onBulk={onBulk}
         busy={locked || decide.pending || bulk.pending}
       />
-      {error ? <InlineError message={error} /> : null}
+      {bulk.error ? <InlineError message={bulk.error} /> : null}
       {decide.code === PENDING_DRAFT ? (
         <Link to="/carriere/profil" className="text-sm font-medium underline underline-offset-4">
           {t("cv.reviewPage.draftLink")}

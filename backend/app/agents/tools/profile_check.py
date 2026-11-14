@@ -4,6 +4,8 @@ l'Archiviste, sans appel au modèle.
 - `unsupported_lines` : une réalisation, un détail, le titre, le résumé ou la description d'un
   projet dont un nombre n'apparaît dans aucune source est retiré (formats canonisés par
   `cv_lexicon.numbers_in`) ;
+- `untraced_lines` : une réalisation ou un détail sans nombre que les documents ne disent ni mot
+  pour mot ni à 80 % de ses mots (règle de `appears`) est retiré de même (revue finale 6.8 M3) ;
 - `tag_sources` : les `sources` d'un fait sont posées par le code, d'après les documents où son
   texte principal apparaît ; un fait introuvable dans les documents vient de la note seulement si
   la note le porte (même règle), sinon il est retiré.
@@ -31,6 +33,7 @@ _SCHEME = re.compile(r"^\s*(https?://)?(www\.)?", re.IGNORECASE)
 _TOKEN = re.compile(r"[\w+#]+")
 _SENTENCE_BREAK = re.compile(r"[.!?:;\u2022\n]")
 # Un texte long (résumé) reformulé ligne à ligne : 80 % de ses mots de 3 lettres et plus suffisent.
+_SHORT_NAME = 2  # « C », « Go » : cherchés avec leur casse (`_short_name_in`)
 _LONG_WORDS = 6
 _LONG_SHARE = 0.8
 
@@ -55,11 +58,13 @@ class Hay:
     text: str
     words: frozenset[str]
     numbers: frozenset[str]
+    raw: str = ""  # le texte tel qu'écrit : un nom d'une ou deux lettres s'y cherche avec sa casse
 
     @classmethod
     def of(cls, source: ProfileSource) -> "Hay":
         text = plain(source.text)
-        return cls(source.kind, text, frozenset(text.split()), frozenset(numbers_in(source.text)))
+        words, numbers = frozenset(text.split()), frozenset(numbers_in(source.text))
+        return cls(source.kind, text, words, numbers, source.text)
 
 
 def named_terms(text: str) -> set[str]:
@@ -81,12 +86,21 @@ def named_terms(text: str) -> set[str]:
     return found
 
 
+def _short_name_in(needle: str, raw: str) -> bool:
+    """Un nom d'une ou deux lettres (« C », « Go », « R ») s'écrit tel quel dans le texte : ni
+    élision (« C'est »), ni unité (« 10 Go »), ni suite d'un autre nom (« C++ », « C# »)."""
+    pattern = rf"(?<![\w'’.\-])(?<!\d )(?<!\d\u00a0){re.escape(needle.strip())}(?![\w'’+#])"
+    return re.search(pattern, raw) is not None
+
+
 def appears(needle: str, hay: Hay) -> bool:
     """`needle` figure dans `hay`, en mots entiers et avec tous ses nombres ; un texte d'au moins
     `_LONG_WORDS` mots y figure si `_LONG_SHARE` de ses mots y sont, et tous ses noms aussi."""
     wanted = plain(needle)
     if not wanted or not numbers_in(needle) <= hay.numbers:
         return False
+    if len(wanted) <= _SHORT_NAME and wanted.isalpha():
+        return _short_name_in(needle, hay.raw)
     if f" {wanted} " in f" {hay.text} ":
         return True
     words = [word for word in wanted.split() if len(word) >= 3]
@@ -135,6 +149,17 @@ def unsupported_lines(profile: MasterProfileData, sources: Sequence[ProfileSourc
     lines = [line.id for line in [*heads, *_lines(profile)] if numbers_in(line.text) - known]
     described = [p.id for p in profile.projects if numbers_in(p.description) - known]
     return lines + described
+
+
+def untraced_lines(profile: MasterProfileData, sources: Sequence[ProfileSource]) -> list[str]:
+    """Ids des réalisations et détails sans nombre qu'aucune source ne porte (`appears`, note
+    comprise) : « Migré la production vers Kubernetes » inventé sous une vraie expérience."""
+    hays = [Hay.of(source) for source in sources if source.text.strip()]
+    return [
+        line.id
+        for line in _lines(profile)
+        if not numbers_in(line.text) and not any(appears(line.text, hay) for hay in hays)
+    ]
 
 
 def without_lines(profile: MasterProfileData, ids: Iterable[str]) -> MasterProfileData:

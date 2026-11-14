@@ -1,7 +1,15 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { errorMessage } from "@/shared/api/errors";
 import { activateTemplate, createTemplate, type TemplateSource } from "../api";
 import { cvErrorMessage, errorCode } from "../errors";
 import { cvKeys } from "../queryKeys";
+
+/**
+ * Le texte d'un refus de création. `capture_in_progress` garde le message du back (une capture de
+ * modèle est en cours) : le texte du profil parle d'une lecture de documents, ce qui est faux ici.
+ */
+const createMessage = (error: unknown): string =>
+  errorCode(error) === "capture_in_progress" ? errorMessage(error) : cvErrorMessage(error);
 
 /** `POST /cv/templates` : renvoie l'identifiant du modèle créé à `onCreated`. */
 export function useCreateTemplate(onCreated: (templateId: string) => void) {
@@ -20,7 +28,7 @@ export function useCreateTemplate(onCreated: (templateId: string) => void) {
       mutate(source);
     },
     pending: mutation.isPending,
-    error: mutation.isError ? cvErrorMessage(mutation.error) : null,
+    error: mutation.isError ? createMessage(mutation.error) : null,
     /** Un 409 `vision_unavailable` renvoie vers les réglages. */
     visionUnavailable: mutation.isError && errorCode(mutation.error) === "vision_unavailable",
   };

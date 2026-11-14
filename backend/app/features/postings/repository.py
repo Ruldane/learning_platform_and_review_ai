@@ -8,11 +8,9 @@ from typing import Any
 
 from sqlalchemy import func, literal_column, select, update
 
-from app.db.models.career import CvReview
+from app.db.models.career import OPEN_REVIEW_STATUSES, CvReview, CvVersion
 from app.db.models.postings import JobPosting
 from app.db.repository import UserScopedRepository
-
-RUNNING_REVIEW = "running"
 
 
 class PostingRepository(UserScopedRepository[JobPosting]):
@@ -109,12 +107,23 @@ class PostingRepository(UserScopedRepository[JobPosting]):
         return bool((await self.session.execute(stmt)).scalar_one())
 
     async def running_reviews(self, posting_id: str) -> int:
+        """Les revues de CV de l'offre encore ouvertes (lancées ou proposées)."""
         stmt = select(func.count()).where(
             CvReview.user_id == self.user_id,
             CvReview.posting_id == posting_id,
-            CvReview.status == RUNNING_REVIEW,
+            CvReview.status.in_(OPEN_REVIEW_STATUSES),
         )
         return int((await self.session.execute(stmt)).scalar_one())
+
+    async def version_files(self, posting_id: str) -> builtins.list[str]:
+        """Les clés rangées des versions de CV de l'offre : PDF et images des pages."""
+        stmt = select(CvVersion.storage_key, CvVersion.page_images).where(
+            CvVersion.user_id == self.user_id, CvVersion.posting_id == posting_id
+        )
+        keys: builtins.list[str] = []
+        for storage_key, images in (await self.session.execute(stmt)).all():
+            keys += [key for key in (storage_key, *images) if isinstance(key, str) and key]
+        return keys
 
     async def reviewed(self, posting_ids: Collection[str]) -> set[str]:
         """Les offres qui ont au moins une revue de CV."""

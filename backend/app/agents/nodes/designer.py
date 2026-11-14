@@ -204,13 +204,19 @@ def make_fix(deps: GraphDeps) -> Node:
     async def fix(state: CvCaptureState) -> CvCaptureState:
         template_id, pass_no = str(state["template_id"]), state["pass_no"]
         view = await _view(deps, state)
-        done = await deps.ports.cv_templates.read_pass(deps.user_id, template_id, pass_no)
-        instruction = state.get("instruction") if state.get("adjustments", 0) else None
+        adjusting = state.get("adjustments", 0) > 0
+        # Un ajustement repart de la passe gardée (la meilleure : 69, 78, 69 repart de 78), avec
+        # sa description ; un checkpoint d'avant `kept_spec` repart de la dernière passe.
+        from_kept = adjusting and "kept_spec" in state and "kept_pass" in state
+        base_no = state["kept_pass"] if from_kept else pass_no
+        base_spec = state["kept_spec"] if from_kept else state["spec"]
+        done = await deps.ports.cv_templates.read_pass(deps.user_id, template_id, base_no)
+        instruction = state.get("instruction") if adjusting else None
         prompt = render_prompt(
             AGENT,
             mode="fix",
-            spec=TemplateSpec.model_validate(state["spec"]).model_dump_json(indent=1),
-            pass_no=pass_no,
+            spec=TemplateSpec.model_validate(base_spec).model_dump_json(indent=1),
+            pass_no=base_no,
             score=done.score,
             hints=describe(done.similarity) if done.score < TARGET_SCORE else "",
             instruction=untrusted(instruction, "consigne de January") if instruction else "",

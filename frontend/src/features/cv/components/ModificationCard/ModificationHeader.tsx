@@ -20,6 +20,11 @@ export function ModificationHeader({ mod, headingId }: ModificationHeaderProps) 
       <span className="rounded-md border px-1.5 py-0.5 text-xs font-medium">
         {t(`cv.mod.status.${mod.status}`)}
       </span>
+      {mod.ignoredIn != null ? (
+        <span className="rounded-md border border-foreground/60 px-1.5 py-0.5 text-xs font-medium">
+          {t("cv.mod.ignored", { number: mod.ignoredIn })}
+        </span>
+      ) : null}
       <span className="text-xs text-muted-foreground">
         {t("cv.mod.author", { name: agentIdentity(mod.author).name })}
       </span>

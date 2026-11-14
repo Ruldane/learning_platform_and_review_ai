@@ -1,17 +1,18 @@
 import { useId } from "react";
 import { t } from "@/shared/i18n/t";
 import { ModificationCard } from "../ModificationCard";
-import type { DecideOptions, DecisionView } from "../viewTypes";
+import type { DecideOptions, DecideResult, DecisionView } from "../viewTypes";
 import type { SectionGroup } from "./groupBySection";
 
 interface SectionGroupViewProps {
   group: SectionGroup;
   busy: boolean;
-  onDecide: (id: string, status: DecisionView, opts?: DecideOptions) => void;
+  onDecide: (id: string, status: DecisionView, opts?: DecideOptions) => DecideResult;
+  error: { id: string; message: string } | null;
 }
 
 /** Les modifications d'une section du CV, sous son titre et leur nombre. */
-export function SectionGroupView({ group, busy, onDecide }: SectionGroupViewProps) {
+export function SectionGroupView({ group, busy, onDecide, error }: SectionGroupViewProps) {
   const headingId = useId();
   return (
     <section aria-labelledby={headingId}>
@@ -24,6 +25,7 @@ export function SectionGroupView({ group, busy, onDecide }: SectionGroupViewProp
             key={mod.id}
             mod={mod}
             busy={busy}
+            error={error?.id === mod.id ? error.message : null}
             onDecide={(status, opts) =>
               opts ? onDecide(mod.id, status, opts) : onDecide(mod.id, status)
             }

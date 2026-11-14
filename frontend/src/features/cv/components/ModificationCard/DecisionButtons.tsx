@@ -9,7 +9,8 @@ interface DecisionButtonsProps {
   busy: boolean;
   onAccept: () => void;
   onRefuse: () => void;
-  onEdit: () => void;
+  /** `null` pour un retrait ou un déplacement : il n'y a pas de texte à corriger. */
+  onEdit: (() => void) | null;
 }
 
 /** Accepter, refuser, modifier : le bouton de l'état déjà pris est désactivé. */
@@ -29,9 +30,11 @@ export function DecisionButtons({
       <Button variant="outline" onClick={onRefuse} disabled={busy || status === "refused"}>
         {t("cv.mod.refuse")}
       </Button>
-      <Button variant="ghost" onClick={onEdit} disabled={busy}>
-        {t("cv.mod.edit")}
-      </Button>
+      {onEdit ? (
+        <Button variant="ghost" onClick={onEdit} disabled={busy}>
+          {t("cv.mod.edit")}
+        </Button>
+      ) : null}
     </div>
   );
 }
