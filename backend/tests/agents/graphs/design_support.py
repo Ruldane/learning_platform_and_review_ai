@@ -25,9 +25,22 @@ from app.db.models.agents import AgentSession
 from tests.agents.graphs.council_models import CouncilModels
 from tests.agents.graphs.web_support import add_users
 from tests.agents.runtime.runner_helpers import TIMEOUT, all_events, get_session, wait_status
+from tests.support.cv_template import spec as cv_spec
 from tests.support.cv_templates import FakeCvTemplateStore, sample_reply, spec_reply
 
 TEMPLATE_ID = "t1"
+INSTRUCTION = "Mets les titres de section en bleu marine."
+OPTIONS = ["validate", "adjust", "restart"]
+
+
+def bad_font_spec() -> str:
+    """Une description valable, sauf la police du texte (absente des polices citables)."""
+    fonts = cv_spec().fonts.model_dump() | {"body": "Comic Sans"}
+    return spec_reply(fonts=fonts)
+
+
+def values(question: dict[str, Any]) -> list[str]:
+    return [option["value"] for option in question["options"]]
 
 
 class _Settings:

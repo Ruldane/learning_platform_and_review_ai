@@ -1,23 +1,19 @@
 """Parcours `cv_capture` en mode `design` (D125) : le Maquettiste recopie le contenu, décrit le
 design et le corrige d'après le score ; trois passes automatiques au plus, puis la question
-`cv_template` quel que soit le score ; cinq ajustements au plus ; une passe n'est jamais rendue
-deux fois ; l'interruption est seule dans son nœud."""
+`cv_template` quel que soit le score ; une passe n'est jamais rendue deux fois. Les réponses à la
+question : `test_cv_capture_design_answers.py`."""
 
 import base64
-import inspect
 import logging
 
 import pytest
 
 from app.agents.graphs.cv_capture import CvCaptureInput
-from app.agents.graphs.cv_capture_design import ask_validate
 from app.agents.nodes.designer import DRAFT_REQUEST, FIX_REQUEST, NO_SAMPLE, NO_SPEC
-from app.agents.nodes.designer_steps import MAX_ADJUSTMENTS
 from app.agents.tools.cv_schema import CvContent
 from scripts.sample_cv import CV_FACTS
-from tests.agents.graphs.design_support import MakeDesign, designer
+from tests.agents.graphs.design_support import OPTIONS, MakeDesign, bad_font_spec, designer, values
 from tests.agents.runtime.runner_helpers import wait_until
-from tests.support.cv_template import spec as cv_spec
 from tests.support.cv_templates import (
     ORIGINAL_PNG,
     FakeCvTemplateStore,
@@ -25,20 +21,7 @@ from tests.support.cv_templates import (
     render_png,
     sample_dict,
     sample_reply,
-    spec_reply,
 )
-
-INSTRUCTION = "Mets les titres de section en bleu marine."
-OPTIONS = ["validate", "adjust", "restart"]
-
-
-def bad_font_spec() -> str:
-    fonts = cv_spec().fonts.model_dump() | {"body": "Comic Sans"}
-    return spec_reply(fonts=fonts)
-
-
-def values(question: dict[str, object]) -> list[str]:
-    return [o["value"] for o in question["options"]]  # type: ignore[attr-defined, index]
 
 
 async def test_design_capture_reaches_target_in_two_passes(
@@ -77,71 +60,6 @@ async def test_three_passes_at_most(
     assert design_store.finished == {}  # jamais d'échec silencieux : la question est posée
 
 
-async def test_validate_finishes_ready(
-    design_runner: MakeDesign, design_store: FakeCvTemplateStore
-) -> None:
-    run = await design_runner()
-    await run.question()
-    await run.answer("validate")
-    await run.wait_status("completed")
-    assert design_store.finished == {"t1": ("ready", None)}
-    [artifact] = await run.events("artifact.ready")
-    assert artifact == {
-        "artifact_id": "modele-t1",
-        "kind": "cv_template",
-        "title": "Modèle de CV",
-        "url": "/carriere/cv/modeles/t1",
-    }
-    [done] = await run.events("run.completed")
-    assert done["summary"] == "Modèle de CV prêt : il ressemble à ton CV à 90 %."
-
-
-async def test_restart_finishes_failed(
-    design_runner: MakeDesign, design_store: FakeCvTemplateStore
-) -> None:
-    run = await design_runner()
-    await run.question()
-    await run.answer("restart")
-    await run.wait_status("completed")
-    assert design_store.finished == {"t1": ("failed", "Capture abandonnée.")}
-    assert await run.events("artifact.ready") == []
-
-
-async def test_adjust_runs_fix_with_instruction(
-    design_runner: MakeDesign, design_store: FakeCvTemplateStore
-) -> None:
-    design_store.scores = [90, 80]
-    run = await design_runner()
-    await run.question()
-    await run.answer({"answers": {"instruction": f"  {INSTRUCTION}  "}})
-    question = await run.question()  # passe d'un ajustement : question aussitôt, même sous 85
-    assert design_store.rendered == [1, 2]
-    assert question["question"].startswith("Le modèle ressemble à ton CV à 80 %.")
-    [fix] = run.prompts(FIX_REQUEST)
-    assert '<<<CONTENU_NON_FIABLE source="consigne de January">>>' in fix
-    assert INSTRUCTION in fix and "Écarts mesurés" not in fix  # 90 % : pas d'écarts décrits
-    assert design_store.spec_of(2) == cv_spec()
-
-
-async def test_adjustments_capped_at_five(
-    design_runner: MakeDesign, design_store: FakeCvTemplateStore
-) -> None:
-    run = await design_runner()
-    await run.question()
-    for n in range(MAX_ADJUSTMENTS):
-        await run.answer({"action": "adjust", "instruction": f"{INSTRUCTION} ({n})"})
-        question = await run.question()
-    assert design_store.rendered == [1, 2, 3, 4, 5, 6]
-    assert values(question) == ["validate", "restart"] and question["fields"] == []
-    assert "5 ajustements possibles" in question["question"]
-    await run.answer({"answers": {"instruction": INSTRUCTION}})
-    again = await run.question()  # sixième ajustement refusé : même question, aucun rendu
-    assert again["question"] == question["question"] and design_store.rendered[-1] == 6
-    await run.answer("validate")
-    await run.wait_status("completed")
-    assert design_store.finished["t1"] == ("ready", None)
-
-
 async def test_replay_between_passes_renders_once(
     design_runner: MakeDesign, design_store: FakeCvTemplateStore
 ) -> None:
@@ -160,19 +78,6 @@ async def test_replay_between_passes_renders_once(
     question = await second.question()
     assert design_store.render_calls == {1: 1, 2: 1, 3: 1}
     assert question["question"].startswith("Le modèle ressemble à ton CV à 90 %.")
-
-
-async def test_interrupt_node_has_no_write(
-    design_runner: MakeDesign, design_store: FakeCvTemplateStore
-) -> None:
-    assert list(inspect.signature(ask_validate).parameters) == ["state"]  # ni port ni modèle
-    run = await design_runner()
-    first = await run.question()
-    calls, model_calls = list(design_store.calls), len(run.models.calls)
-    await run.answer("adjust")  # sans consigne : la question est reposée
-    again = await run.question()
-    assert again["interrupt_id"] != first["interrupt_id"]
-    assert design_store.calls == calls and len(run.models.calls) == model_calls
 
 
 async def test_sample_lines_are_verbatim(

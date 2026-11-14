@@ -3,6 +3,7 @@ parcours `cv_capture` (mode `design`) lancé par le service des gabarits, avec d
 le rendu de test lisible et l'extracteur réel. Validée, la passe rendue devient le gabarit actif ;
 une panne du modèle laisse un gabarit en échec, jamais « en capture »."""
 
+import asyncio
 import json
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AsyncExitStack
@@ -11,6 +12,8 @@ from typing import Any
 
 import pytest
 
+from app.agents.nodes import designer as designer_node
+from app.agents.nodes.designer import DRAFT_REQUEST
 from app.agents.runtime.bus import EventBus
 from app.agents.runtime.checkpointer import open_checkpointer
 from app.agents.runtime.costs import ModelPrice
@@ -18,7 +21,7 @@ from app.agents.runtime.ports import AgentPorts
 from app.agents.runtime.runner import SessionRunner
 from app.features.cv.schemas_templates import TemplateOut
 from app.features.cv.service.runtime import CvRuntime
-from app.features.cv.service.templates import get_template
+from app.features.cv.service.templates import INTERRUPTED, get_template, list_templates
 from app.features.cv.service.templates_store import AgentCvTemplateStore
 from tests.agents.graphs.design_support import _Settings, designer
 from tests.agents.graphs.web_support import add_users
@@ -107,3 +110,26 @@ def test_fake_store_follows_the_same_port() -> None:
     real = {name for name in dir(AgentCvTemplateStore) if not name.startswith("_")}
     fake = {name for name in dir(FakeCvTemplateStore) if not name.startswith("_")}
     assert real <= fake
+
+
+async def test_node_timeout_in_design_reports_a_failed_template(
+    launch: Launch, cv_runtime: CvRuntime, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Revue 6.9, I1 : un délai de nœud (ici `draft`) fait échouer la session ; la liste et le
+    détail des gabarits (lecture du service, celle des routes) le disent `failed`, jamais
+    « en capture »."""
+    monkeypatch.setattr(designer_node, "VISION_TIMEOUT_S", 0.5)
+
+    async def stuck(agent: str, prompt: str) -> None:
+        if DRAFT_REQUEST in prompt:
+            await asyncio.sleep(30)
+
+    models = designer()
+    models.hooks.append(stuck)
+    _, template_id, sid = await launch(models)
+    row = await wait_status(cv_runtime.session_factory, USER, sid, "failed")
+    assert row.error is not None and row.error["code"] == "node_timeout"
+    [summary] = await list_templates(cv_runtime, USER)
+    assert (summary.id, summary.status) == (template_id, "failed")
+    template = await get_template(cv_runtime, USER, template_id)
+    assert template.failure_reason == INTERRUPTED

@@ -7,8 +7,8 @@ scanné : le contenu du profil validé (`sample_fallback`), sinon un échec lisi
 redemandés deux fois au plus, puis la capture échoue lisiblement.
 `fix` : une description corrigée, depuis la description courante, les écarts du score
 (`describe`, seulement sous `TARGET_SCORE`), les images d'origine et du rendu, et la consigne de
-January si elle existe ; sans description valable, la description courante est gardée
-(`stalled`) et la question est posée.
+January si elle existe ; sans description valable (défauts après les re-demandes, ou sortie
+structurée invalide), la description courante est gardée (`stalled`) et la question est posée.
 
 Journaux : identifiants et nombres, jamais un texte, une image ni une police du CV (17.2)."""
 
@@ -44,6 +44,7 @@ NO_SAMPLE = (
     "puis relance la capture du modèle."
 )
 NO_SPEC = "Le Maquettiste n'a pas su décrire le design de ce CV. Recommence la capture."
+STRUCTURED_INVALID = "structured_output_invalid"  # code de `structured_call` après ses essais
 
 logger = logging.getLogger(__name__)
 
@@ -184,6 +185,20 @@ def compared(original: list[bytes], render: list[bytes]) -> tuple[str, list[byte
     return legend, [png for _, png in kept]
 
 
+async def _correction(
+    deps: GraphDeps, messages: list[BaseMessage], fonts: list[str], step: str
+) -> TemplateSpec | None:
+    """`ask_spec`, où une sortie structurée invalide (GLM : JSON tronqué) vaut « aucune
+    description valable » : une passe rendue existe, la question reste posable (revue 6.9, I2)."""
+    try:
+        return await ask_spec(deps, messages, fonts, step)
+    except AppError as exc:
+        if exc.code != STRUCTURED_INVALID:
+            raise
+        logger.info("Correction sans sortie valable : session %s", deps.session_id)
+        return None
+
+
 def make_fix(deps: GraphDeps) -> Node:
     @node_timeout(VISION_TIMEOUT_S)
     async def fix(state: CvCaptureState) -> CvCaptureState:
@@ -206,7 +221,7 @@ def make_fix(deps: GraphDeps) -> Node:
             SystemMessage(prompt),
             image_message(f"{FIX_REQUEST}\n{legend}", images),
         ]
-        spec = await ask_spec(deps, messages, view.available_fonts, f"correction-{pass_no}")
+        spec = await _correction(deps, messages, view.available_fonts, f"correction-{pass_no}")
         if spec is None:
             emit(
                 "agent.message",
