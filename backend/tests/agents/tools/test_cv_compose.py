@@ -10,8 +10,11 @@ from app.agents.tools.cv_schema import (
     CvEntry,
     CvLine,
     CvSection,
+    Education,
+    Experience,
     Identity,
     MasterProfileData,
+    Project,
     SectionKey,
     SkillFact,
     assign_fact_ids,
@@ -248,3 +251,16 @@ def test_application_order_is_remove_rewrite_add_move() -> None:
 def test_move_puts_the_section_before_the_other() -> None:
     out = apply_modifications(BASE, P, [proposal("move", None, "skills", section="education")])
     assert keys(out) == ["education", "skills", "experience", "projects", "languages"]
+
+
+def test_unnumbered_profile_gives_an_empty_content_and_ignores_every_change() -> None:
+    bare = MasterProfileData(
+        identity=Identity(name="Camille Exemple"),
+        experiences=[Experience(role="AI Engineer", company="Société Fictive", sources=["cv"])],
+        education=[Education(degree="Master", school="École", sources=["cv"])],
+        projects=[Project(name="Projet", sources=["cv"])],
+    )
+    base = base_content(bare, ORDER)
+    assert base.sections == []
+    applied = apply_with_report(base, bare, [proposal("add", "x1", "AI Engineer")])
+    assert (applied.content.sections, applied.ignored) == ([], ["a1"])

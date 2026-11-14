@@ -38,3 +38,59 @@ TECH_TERMS: frozenset[str] = frozenset(
     iso27001 rgpd gdpr soc2 hipaa
     """.split()  # noqa: SIM905
 )
+
+# Les termes de `TECH_TERMS` qui sont aussi des mots courants (« vue », « vite », « tableau »,
+# « spring », « rest »…) : ils ne comptent comme outil que sous leur forme de produit, un mot
+# capitalisé hors début de phrase (« Vue », « REST ») ou suivi d'un qualificatif (« vue.js »,
+# « spring boot », « rest api »). Écrits en minuscules, ils sont du français ou de l'anglais
+# ordinaire (« vue d'ensemble », « plus vite »). Un terme que l'offre nomme reste un terme de
+# l'offre.
+_JS = ("js",)
+AMBIGUOUS_TERMS: dict[str, frozenset[str]] = {
+    "vue": frozenset({*_JS, "2", "3", "router", "native"}),
+    "vite": frozenset(_JS),
+    "spring": frozenset({"boot", "framework", "cloud", "mvc", "security", "data", "batch"}),
+    "rest": frozenset({"api", "apis", "ful"}),
+    "swift": frozenset({"ui", "package"}),
+    "hive": frozenset({"ql", "metastore"}),
+    "consul": frozenset({"connect"}),
+    "sketch": frozenset({"app"}),
+    "unity": frozenset({"engine", "3d"}),
+    "unreal": frozenset({"engine"}),
+    "oracle": frozenset({"db", "database", "cloud", "sql", "apex"}),
+    "tableau": frozenset({"software", "desktop", "server", "prep", "public"}),
+    "flask": frozenset({"api", "app"}),
+    "helm": frozenset({"chart", "charts"}),
+    "angular": frozenset({*_JS, "material", "cli"}),
+    "react": frozenset({*_JS, "native", "router", "query"}),
+    "rails": frozenset({"app", "api"}),
+    "spark": frozenset({"sql", "streaming", "job", "cluster"}),
+    "rust": frozenset({"lang"}),
+    "ruby": frozenset({"on", "gem"}),
+    "dart": frozenset({"lang"}),
+    "scala": frozenset({"spark"}),
+    "julia": frozenset({"lang"}),
+    "elixir": frozenset({"lang"}),
+    "bash": frozenset({"script", "scripts"}),
+    "soap": frozenset({"api", "ui"}),
+    "slack": frozenset({"api", "bot"}),
+    "excel": frozenset({"vba"}),
+    "windows": frozenset({"server"}),
+    "poetry": frozenset({"lock"}),
+    "sentry": frozenset({"io"}),
+    "confluence": frozenset({"cloud"}),
+    "workday": frozenset({"hcm"}),
+    "cypress": frozenset({"io"}),
+    "puppet": frozenset({"enterprise"}),
+    "vault": frozenset({"server"}),
+    "envoy": frozenset({"proxy"}),
+    "mocha": frozenset({"js"}),
+    "jest": frozenset({"js"}),
+    "babel": frozenset({"js"}),
+    "yarn": frozenset({"berry"}),
+    "presto": frozenset({"db"}),
+    "llama": frozenset({"cpp", "index"}),
+    "sap": frozenset({"hana", "erp"}),
+    "transformers": frozenset({"library"}),
+    "cucumber": frozenset({"js"}),
+}

@@ -1,6 +1,8 @@
 """Validateur des modifications (6.12) : proposition sans fait cité, titres, noms propres, raisons
 sans texte du CV."""
 
+import pytest
+
 from app.agents.tools.cv_schema import SourcedLine
 from app.agents.tools.cv_validator import GAP, NAME, NO_FACT, NUMBER, RATIO, TITLE, TOOL, validate
 from tests.support.cv_review import A, add, analysis, profile, proposal, rewrite
@@ -128,3 +130,30 @@ def test_blocks_never_quote_cv_text() -> None:
         w for w in after.lower().split() if len(w) > 3 and any(w in b.lower() for b in v.blocks)
     ]
     assert quoted == []
+
+
+# --- revue 6.12 : minors ---
+
+
+def test_text_after_a_colon_or_semicolon_is_not_a_sentence_start() -> None:
+    for after in ("Stack : Streamlit", "Outils ; Streamlit"):
+        assert validate(rewrite("x1a1", after), profile(), A).blocks == [NAME]
+
+
+@pytest.mark.parametrize(
+    "after", ["Staff AI Engineer", "Consultant AI Engineer", "Director of AI", "Chief AI Officer"]
+)
+def test_more_title_words(after: str) -> None:
+    assert TITLE in validate(rewrite("x1", after), profile(role="AI Engineer"), A).blocks
+
+
+def test_the_location_of_an_experience_is_known_text() -> None:
+    p = profile()
+    p.experiences[0].location = "Montpellier"
+    assert validate(rewrite("x1a1", "Projet mené à Montpellier"), p, A).status == "ok"
+
+
+def test_gap_block_says_the_cited_facts_not_the_profile() -> None:
+    v = validate(rewrite("x1a1", "Pilote Terraform"), profile(), analysis(tools=["Terraform"]))
+    assert "faits cités" in GAP
+    assert GAP in v.blocks

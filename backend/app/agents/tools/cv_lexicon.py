@@ -8,6 +8,7 @@ import re
 import unicodedata
 from decimal import Decimal, InvalidOperation
 
+from app.agents.tools.cv_tech_terms import AMBIGUOUS_TERMS as AMBIGUOUS_TERMS  # noqa: PLC0414
 from app.agents.tools.cv_tech_terms import TECH_TERMS as TECH_TERMS  # noqa: PLC0414
 from app.agents.tools.posting_schema import normalize_term
 
@@ -61,9 +62,17 @@ NUMBER_WORDS: dict[str, str] = {
     "thirty": "30", "quarante": "40", "forty": "40", "cinquante": "50", "fifty": "50",
     "soixante": "60", "sixty": "60", "cent": "100", "cents": "100", "hundred": "100",
     "mille": "1000", "thousand": "1000", "million": "1000000", "millions": "1000000",
-    "milliard": "1000000000", "billion": "1000000000", "dizaine": "dizaines",
-    "dizaines": "dizaines", "douzaine": "dizaines", "centaine": "centaines",
-    "centaines": "centaines", "millier": "milliers", "milliers": "milliers",
+    "milliard": "1000000000", "billion": "1000000000", "zero": "0", "dozen": "12",
+    # Approximations : un mot, un ordre de grandeur (« une trentaine » n'est pas « 32 »).
+    **{w: "dizaines" for w in ("dizaine", "dizaines", "dozens")},
+    **{w: "centaines" for w in ("centaine", "centaines", "hundreds")},
+    **{w: "milliers" for w in ("millier", "milliers", "thousands")},
+    **{
+        w: w if w.endswith("s") else f"{w}s"
+        for w in ("douzaine", "douzaines", "quinzaine", "quinzaines", "vingtaine", "vingtaines",
+                  "trentaine", "trentaines", "quarantaine", "quarantaines", "cinquantaine",
+                  "cinquantaines", "soixantaine", "soixantaines")
+    },
 }  # fmt: skip
 
 # Mots de proportion → famille (« moitié » → « half »). Un mot de proportion exige un chiffre de
@@ -73,7 +82,19 @@ RATIO_WORDS: dict[str, str] = {
     "double": "double", "doubler": "double", "doublé": "double", "doublement": "double",
     "x2": "double", "triple": "triple", "tripler": "triple", "triplé": "triple", "x3": "triple",
     "quadruple": "quadruple", "quadrupler": "quadruple", "x4": "quadruple",
+    "quadruplé": "quadruple", "doubled": "double", "doubles": "double", "twice": "double",
+    "twofold": "double", "tripled": "triple", "thrice": "triple", "threefold": "triple",
+    "quadrupled": "quadruple", "fourfold": "quadruple", "halved": "half", "halve": "half",
+    "halving": "half", "tenfold": "x10", "décuplé": "x10", "décupler": "x10",
+    "décuplement": "x10", "quintuplé": "x5", "quintuple": "x5", "quintupled": "x5",
+    "fivefold": "x5",
 }  # fmt: skip
+# « divisé par deux » : la moitié ; « par trois » : le tiers ; « par quatre » : le quart.
+_RATIO_PHRASES = (
+    (re.compile(r"divis\w* (?:par|by) (?:deux|2|two)(?!\d)|divided by (?:two|2)(?!\d)"), "half"),
+    (re.compile(r"divis\w* par (?:trois|3)(?!\d)|divided by (?:three|3)(?!\d)"), "third"),
+    (re.compile(r"divis\w* par (?:quatre|4)(?!\d)|divided by (?:four|4)(?!\d)"), "quarter"),
+)
 RATIO_NUMBERS: dict[str, frozenset[str]] = {
     "half": frozenset({"50%"}),
     "third": frozenset({"33%"}),
@@ -87,7 +108,7 @@ RATIO_NUMBERS: dict[str, frozenset[str]] = {
 TITLE_WORDS: frozenset[str] = frozenset(
     """lead senior principal head manager directeur directrice chef cheffe responsable vp cto ceo
     cio coo architecte architect fondateur fondatrice founder président presidente gérant
-    gérante
+    gérante director chief staff owner consultant consultante
     """.split()  # noqa: SIM905
 )
 
@@ -124,7 +145,9 @@ def ratio_families(text: str) -> set[str]:
     """Les familles de proportion de `text` : « moitié », « un tiers », « doublé », « x2 »."""
     clean = clean_text(text)
     words = {normalize_term(word): family for word, family in RATIO_WORDS.items()}
-    found = {words[token] for token in normalize_term(clean).split() if token in words}
+    plain = normalize_term(clean)
+    found = {words[token] for token in plain.split() if token in words}
+    found |= {family for pattern, family in _RATIO_PHRASES if pattern.search(plain)}
     for match in _MULTIPLIER.finditer(clean):
         times = int(match.group(1) or match.group(2))
         found.add({2: "double", 3: "triple", 4: "quadruple"}.get(times, f"x{times}"))

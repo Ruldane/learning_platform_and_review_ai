@@ -40,17 +40,19 @@ def heads(profile: MasterProfileData, facts: dict[str, str]) -> dict[str, CvEntr
     """Une entrée sans ligne par expérience, formation et projet du profil (`fact_id` = son id)."""
     out: dict[str, CvEntry] = {}
     for x in profile.experiences:
-        out[x.id] = CvEntry(
-            heading=facts[x.id],
-            subheading=x.location,
-            dates=period(x.start, x.end),
-            fact_id=x.id,
-        )
+        if x.id in facts:  # un fait sans identifiant n'existe pas pour le CV
+            out[x.id] = CvEntry(
+                heading=facts[x.id],
+                subheading=x.location,
+                dates=period(x.start, x.end),
+                fact_id=x.id,
+            )
     for e in profile.education:
-        out[e.id] = CvEntry(heading=facts[e.id], dates=period(e.start, e.end), fact_id=e.id)
+        if e.id in facts:
+            out[e.id] = CvEntry(heading=facts[e.id], dates=period(e.start, e.end), fact_id=e.id)
     for p in profile.projects:
-        out[p.id] = CvEntry(heading=p.name, fact_id=p.id)
-    out.pop("", None)
+        if p.id in facts:
+            out[p.id] = CvEntry(heading=p.name, fact_id=p.id)
     return out
 
 

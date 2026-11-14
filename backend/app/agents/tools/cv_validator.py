@@ -20,6 +20,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 from app.agents.tools.cv_lexicon import (
+    AMBIGUOUS_TERMS,
     RATIO_NUMBERS,
     TECH_TERMS,
     TITLE_WORDS,
@@ -39,14 +40,18 @@ RATIO = "Proportion sans chiffre dans ton profil"
 TOOL = "Outil absent de ton profil"
 NAME = "Nom propre absent de ton profil"
 TITLE = "Titre absent de ton profil"
-GAP = "Mot clé de l'offre absent de ton profil : il part vers l'écart"
+GAP = "Mot clé de l'offre absent des faits cités et de tes compétences : il part vers l'écart"
 
 _TECH = {normalize_term(term, plural=True): term for term in TECH_TERMS}
 _TITLE_WORDS = {normalize_term(word, plural=True) for word in TITLE_WORDS}
 _WORD = re.compile(r"\w[\w+#]*")
-_SENTENCE_END = ".!?:;\n"
+_SENTENCE_END = ".!?\n"  # ni « : » ni « ; » : « Stack : Streamlit » nomme un outil
 _BULLETS = " \t\n-•*–—«\"'("
 _MIN_NAME = 3
+_AMBIGUOUS = {
+    normalize_term(term, plural=True): frozenset(normalize_term(q) for q in qualifiers)
+    for term, qualifiers in AMBIGUOUS_TERMS.items()
+}
 
 
 @dataclass(frozen=True)
@@ -88,6 +93,30 @@ def _posting_terms(analysis: PostingAnalysis) -> dict[str, str]:
     return terms
 
 
+def _starts_sentence(text: str, match: re.Match[str]) -> bool:
+    before = text[: match.start()].rstrip(_BULLETS)
+    return not before or before[-1] in _SENTENCE_END
+
+
+def _product_forms(after: str) -> set[str]:
+    """Les termes ambigus (« vue », « spring », « rest »…) que `after` écrit sous leur forme de
+    produit : un mot capitalisé hors début de phrase (ou un sigle, « REST »), ou suivi d'un
+    qualificatif (« vue.js », « spring boot »)."""
+    words = list(_WORD.finditer(after))
+    found: set[str] = set()
+    for rank, match in enumerate(words):
+        word = match.group()
+        form = normalize_term(word, plural=True)
+        if form not in _AMBIGUOUS:
+            continue
+        following = normalize_term(words[rank + 1].group()) if rank + 1 < len(words) else ""
+        shouted = word.isupper() and len(word) > 1
+        capital = word[0].isupper() and (shouted or not _starts_sentence(after, match))
+        if capital or following in _AMBIGUOUS[form]:
+            found.add(form)
+    return found
+
+
 def _term_findings(
     after: str, known: str, profile: MasterProfileData, analysis: PostingAnalysis
 ) -> tuple[list[str], list[str]]:
@@ -97,10 +126,13 @@ def _term_findings(
     haystack = _padded(after)
     skills = _padded(" ".join(skill.name for skill in profile.skills))
     posting = _posting_terms(analysis)
+    product = _product_forms(after)
     gap: dict[str, str] = {}
     tools: list[str] = []
     for form, label in {**_TECH, **posting}.items():
         if f" {form} " not in haystack or f" {form} " in known or f" {form} " in skills:
+            continue
+        if form in _AMBIGUOUS and form not in posting and form not in product:
             continue
         if form in posting:
             gap.setdefault(normalize_term(label), label)
@@ -130,13 +162,12 @@ def _names(after: str, profile: MasterProfileData, *, skip_first: bool) -> set[s
     """Les mots capitalisés de `after` (hors début de phrase, hors sigles) qu'aucun texte du
     profil ne contient : un outil ou une entreprise qu'aucune liste ne connaît."""
     known = _padded(" ".join(facts_of(profile).values()))
-    known += _padded(" ".join([profile.identity.name, profile.identity.location or ""]))
+    places = [experience.location or "" for experience in profile.experiences]
+    known += _padded(" ".join([profile.identity.name, profile.identity.location or "", *places]))
     found: set[str] = set()
     for match in _WORD.finditer(after):
         word = match.group()
-        before = after[: match.start()].rstrip(_BULLETS)
-        starts = not before or before[-1] in _SENTENCE_END
-        if starts and (skip_first or before):
+        if _starts_sentence(after, match) and (skip_first or match.start() > 0):
             continue
         if len(word) < _MIN_NAME or not word[0].isupper() or word.isupper():
             continue

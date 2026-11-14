@@ -3,6 +3,7 @@
 import pytest
 
 from app.agents.tools.cv_lexicon import (
+    AMBIGUOUS_TERMS,
     NUMBER_WORDS,
     RATIO_NUMBERS,
     RATIO_WORDS,
@@ -87,4 +88,37 @@ def test_clean_text_removes_invisible_characters() -> None:
     ],
 )
 def test_ratio_families(text: str, families: set[str]) -> None:
+    assert ratio_families(text) == families
+
+
+@pytest.mark.parametrize(
+    "word", ["vingtaine", "trentaine", "quarantaine", "cinquantaine", "soixantaine", "quinzaine"]
+)
+def test_approximate_number_words(word: str) -> None:
+    assert figures_in(f"une {word} de clients") and figures_in(f"une {word} de clients") != {"2"}
+    assert figures_in("zéro incident") == {"0"}
+
+
+def test_ambiguous_terms_are_tech_terms_with_qualifiers() -> None:
+    assert {"vue", "vite", "spring", "rest", "swift", "hive", "oracle", "tableau"} <= set(
+        AMBIGUOUS_TERMS
+    )
+    assert set(AMBIGUOUS_TERMS) <= TECH_TERMS
+
+
+@pytest.mark.parametrize(
+    ("text", "families"),
+    [
+        ("traffic doubled", {"double"}),
+        ("twice as fast", {"double"}),
+        ("tripled", {"triple"}),
+        ("halved", {"half"}),
+        ("tenfold", {"x10"}),
+        ("décuplé", {"x10"}),
+        ("divisé par deux", {"half"}),
+        ("divisés par trois", {"third"}),
+        ("moitié moins", {"half"}),
+    ],
+)
+def test_ratio_verbs_and_english_forms(text: str, families: set[str]) -> None:
     assert ratio_families(text) == families
