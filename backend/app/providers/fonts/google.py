@@ -7,7 +7,8 @@ tous les caractères), là où un navigateur reçoit du `woff2` découpé par al
 Sans » et « Liberation Serif » n'y sont pas : Google sert leurs jumelles « Arimo » et « Tinos »
 (même dessin, mêmes métriques), rendues sous le nom du catalogue.
 
-Journal : famille du catalogue et statut, jamais l'adresse ni la réponse."""
+Journal : statut et nombre de fichiers, jamais la famille (elle trahirait la police du PDF, D126),
+l'adresse ni la réponse."""
 
 import asyncio
 import logging
@@ -102,10 +103,10 @@ class GoogleFontsSource:
         try:
             return await self._fetch(family, wanted)
         except _Refused as refused:
-            logger.info("Police %s indisponible (%s)", family, refused.reason)
+            logger.info("Police indisponible (%s)", refused.reason)
         except (TimeoutError, httpx.HTTPError, UnicodeDecodeError) as exc:
             # Type seul : le message d'une erreur httpx peut citer l'adresse.
-            logger.info("Police %s indisponible (%s)", family, type(exc).__name__)
+            logger.info("Police indisponible (%s)", type(exc).__name__)
         raise FontUnavailable() from None
 
     async def _fetch(self, family: str, weights: list[int]) -> list[FontFile]:
@@ -123,5 +124,5 @@ class GoogleFontsSource:
             if not data.startswith(_MAGIC[suffix]):
                 raise _Refused("fichier invalide")
             files.append(FontFile(family, weight, "normal", data, suffix))
-        logger.info("Police %s chargée (%s fichiers)", family, len(files))
+        logger.info("Police chargée (%s fichiers)", len(files))
         return files

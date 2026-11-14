@@ -27,6 +27,8 @@ class CvCaptureState(TypedDict, total=False):
     spec: dict[str, Any]  # `TemplateSpec` en JSON : description courante
     pass_no: int  # dernière passe rendue (1 à 3 automatiques, puis une par ajustement)
     score: int  # score de la dernière passe
+    kept_pass: int  # passe gardée par le port (`keeps_pass`) : la meilleure, D125
+    kept_score: int  # score de la passe gardée : celui que January valide
     stalled: bool  # la dernière correction n'a pas donné de description valable
     adjustments: int  # ajustements demandés par January (5 au plus)
     instruction: str | None  # dernière consigne de January (500 caractères au plus)

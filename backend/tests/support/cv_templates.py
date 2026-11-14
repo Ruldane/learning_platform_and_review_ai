@@ -12,7 +12,12 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from app.agents.tools.cv_schema import CvContent
-from app.agents.tools.cv_template_port import OriginalView, PassResult, TemplateOutcome
+from app.agents.tools.cv_template_port import (
+    OriginalView,
+    PassResult,
+    TemplateOutcome,
+    keeps_pass,
+)
 from app.agents.tools.template_schema import TemplateSpec
 from app.agents.tools.template_similarity import Similarity, ZoneDiff
 from app.core.errors import AppError
@@ -122,6 +127,8 @@ class FakeCvTemplateStore:
     passes: dict[int, tuple[TemplateSpec, CvContent, PassResult]] = field(default_factory=dict)
     finished: dict[str, tuple[TemplateOutcome, str | None]] = field(default_factory=dict)
     prepared: list[str] = field(default_factory=list)
+    kept: int | None = None  # passe gardée (`keeps_pass`) ; rangée avec `finish`
+    finished_pass: dict[str, int | None] = field(default_factory=dict)  # passe gardée au `finish`
 
     async def prepare(self, user_id: str, template_id: str) -> OriginalView:
         self.calls.append("prepare")
@@ -134,7 +141,13 @@ class FakeCvTemplateStore:
         return self.profile_content
 
     async def render_pass(
-        self, user_id: str, template_id: str, pass_no: int, spec: TemplateSpec, content: CvContent
+        self,
+        user_id: str,
+        template_id: str,
+        pass_no: int,
+        spec: TemplateSpec,
+        content: CvContent,
+        adjusted: bool = False,
     ) -> PassResult:
         self.calls.append("render_pass")
         self.render_calls[pass_no] += 1
@@ -143,6 +156,9 @@ class FakeCvTemplateStore:
             result = PassResult(pass_no, score, similarity(score), [render_png(pass_no)])
             self.passes[pass_no] = (spec, content, result)
             self.rendered.append(pass_no)
+            kept = None if self.kept is None else self.passes[self.kept][2].score
+            if keeps_pass(adjusted, score, kept):
+                self.kept = pass_no
         return self.passes[pass_no][2]
 
     async def read_pass(self, user_id: str, template_id: str, pass_no: int) -> PassResult:
@@ -156,6 +172,7 @@ class FakeCvTemplateStore:
     ) -> None:
         self.calls.append("finish")
         self.finished.setdefault(template_id, (status, reason))
+        self.finished_pass.setdefault(template_id, self.kept)
 
     def spec_of(self, pass_no: int) -> TemplateSpec:
         return self.passes[pass_no][0]

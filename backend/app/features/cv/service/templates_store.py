@@ -14,7 +14,12 @@ import logging
 from typing import Any
 
 from app.agents.tools.cv_schema import CvContent, MasterProfileData
-from app.agents.tools.cv_template_port import OriginalView, PassResult, TemplateOutcome
+from app.agents.tools.cv_template_port import (
+    OriginalView,
+    PassResult,
+    TemplateOutcome,
+    keeps_pass,
+)
 from app.agents.tools.template_schema import TemplateSpec
 from app.agents.tools.template_similarity import similarity
 from app.core.errors import AppError
@@ -24,6 +29,8 @@ from app.features.cv.service.fonts import (
     StoredFont,
     available_families,
     load_files,
+    offered_choices,
+    offered_summary,
     resolve_roles,
     roles_from_json,
 )
@@ -36,7 +43,6 @@ from app.features.cv.service.templates_data import (
     similarity_to_json,
     template_not_found,
 )
-from app.providers.fonts.catalog import FontChoice
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +52,10 @@ MAX_REASON_CHARS = 300
 
 def pass_not_found() -> AppError:
     return AppError("template_pass_not_found", "Passe du modèle introuvable.", 404)
+
+
+def capture_over() -> AppError:
+    return AppError("template_not_capturing", "La capture de ce modèle est terminée.", 409)
 
 
 class AgentCvTemplateStore:
@@ -90,15 +100,16 @@ class AgentCvTemplateStore:
         prepared = await self._fonts(user_id, row)
         stored = [StoredFont.from_json(f) for f in prepared["font_files"]]
         roles = roles_from_json(prepared.get("roles", []))
+        available = available_families(stored)
         return OriginalView(
             template_id=row.id,
             page_count=row.page_count,
             page_size=(float(row.page_size["width_pt"]), float(row.page_size["height_pt"])),
             selectable=row.selectable,
             pages_png=await self._images(user_id, row.original_pages),
-            blocks_summary=str(prepared.get("blocks_summary", "")),
-            fonts=[FontChoice(r.original, r.family, r.free) for r in roles],
-            available_fonts=available_families(stored),
+            blocks_summary=offered_summary(str(prepared.get("blocks_summary", "")), available),
+            fonts=offered_choices(roles, available),
+            available_fonts=available,
             original_text=str(prepared.get("original_text", "")),
         )
 
@@ -124,10 +135,43 @@ class AgentCvTemplateStore:
             raise pass_not_found()
         return done
 
+    async def _store_pass(
+        self,
+        user_id: str,
+        template_id: str,
+        entry: dict[str, Any],
+        current: dict[str, Any],
+        adjusted: bool,
+    ) -> bool:
+        """La passe entre dans le journal ; elle devient la passe courante (colonnes `current`)
+        seulement si `keeps_pass` : la meilleure fait le gabarit (D125)."""
+        async with self._rt.session_factory() as db:
+            fresh = await TemplateRepository(db, user_id).get(template_id)
+            if fresh is None:
+                raise template_not_found()
+            if fresh.status == "failed":
+                raise capture_over()
+            fresh.pass_log = [*fresh.pass_log, entry]
+            fresh.passes = max(fresh.passes, entry["pass_no"])
+            kept = keeps_pass(adjusted, entry["score"], fresh.score)
+            if kept:
+                for column, value in current.items():
+                    setattr(fresh, column, value)
+            await db.commit()
+        return kept
+
     async def render_pass(
-        self, user_id: str, template_id: str, pass_no: int, spec: TemplateSpec, content: CvContent
+        self,
+        user_id: str,
+        template_id: str,
+        pass_no: int,
+        spec: TemplateSpec,
+        content: CvContent,
+        adjusted: bool = False,
     ) -> PassResult:
         row = await self._row(user_id, template_id)
+        if row.status == "failed":  # session annulée pendant un rendu : rien n'est rangé (M2)
+            raise capture_over()
         if (done := await self._stored_pass(user_id, row, pass_no)) is not None:
             return done
         prepared = await self._fonts(user_id, row)
@@ -144,26 +188,24 @@ class AgentCvTemplateStore:
         keys = [await self._rt.storage.save(user_id, IMAGE_CATEGORY, png, ".png") for png in images]
         detail = similarity_to_json(sim)
         entry = {"pass_no": pass_no, "score": sim.score, "similarity": detail, "render_pages": keys}
-        async with self._rt.session_factory() as db:
-            fresh = await TemplateRepository(db, user_id).get(template_id)
-            if fresh is None:
-                raise template_not_found()
-            fresh.pass_log = [*fresh.pass_log, entry]
-            fresh.passes = max(fresh.passes, pass_no)
-            fresh.spec = spec.model_dump(mode="json")
-            fresh.html = document.index_html
-            fresh.css = document.assets["cv.css"].decode()
-            fresh.score, fresh.score_detail = sim.score, detail
-            fresh.render_pages = keys
-            fresh.sample_content = content.model_dump(mode="json")
-            await db.commit()
+        current = {
+            "spec": spec.model_dump(mode="json"),
+            "html": document.index_html,
+            "css": document.assets["cv.css"].decode(),
+            "score": sim.score,
+            "score_detail": detail,
+            "render_pages": keys,
+            "sample_content": content.model_dump(mode="json"),
+        }
+        kept = await self._store_pass(user_id, template_id, entry, current, adjusted)
         logger.info(
-            "Passe rangée : utilisateur %s, gabarit %s, passe %d, score %d, %d page(s)",
+            "Passe rangée : utilisateur %s, gabarit %s, passe %d, score %d, %d page(s), gardée %s",
             user_id,
             template_id,
             pass_no,
             sim.score,
             len(keys),
+            kept,
         )
         return PassResult(pass_no, sim.score, sim, images)
 
@@ -177,6 +219,10 @@ class AgentCvTemplateStore:
             if row is None:
                 raise template_not_found()
             if row.status in ("ready", "archived"):
+                return
+            if row.status == "failed":  # figé : `failed` redit est sans effet, `ready` refusé
+                if status == "ready":
+                    raise capture_over()
                 return
             if status == "ready":
                 row.status, row.failure_reason = "ready", None

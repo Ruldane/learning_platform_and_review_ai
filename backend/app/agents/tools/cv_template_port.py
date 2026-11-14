@@ -47,6 +47,15 @@ class PassResult:
     render_png: list[bytes]
 
 
+def keeps_pass(adjusted: bool, score: int, kept_score: int | None) -> bool:
+    """La passe rendue devient-elle la passe gardée du gabarit ? Parmi les passes automatiques,
+    la meilleure l'emporte (à égalité, la plus récente) : 69, 78, 69 garde la passe 2. Une passe
+    d'ajustement suit la consigne de January, que le score ne voit pas : elle remplace toujours.
+    Règle commune au port réel, au faux et au graphe : le score montré est celui de la passe
+    gardée."""
+    return kept_score is None or adjusted or score >= kept_score
+
+
 class CvTemplateStore(Protocol):
     async def prepare(self, user_id: str, template_id: str) -> OriginalView:
         """Idempotent : mise en page (6.3), images rangées, polices choisies et téléchargées,
@@ -58,11 +67,18 @@ class CvTemplateStore(Protocol):
         ...
 
     async def render_pass(
-        self, user_id: str, template_id: str, pass_no: int, spec: TemplateSpec, content: CvContent
+        self,
+        user_id: str,
+        template_id: str,
+        pass_no: int,
+        spec: TemplateSpec,
+        content: CvContent,
+        adjusted: bool = False,
     ) -> PassResult:
         """Idempotent par `(template_id, pass_no)` : passe déjà rendue → relue sans nouveau
         rendu ; sinon `cv_document`, `html_to_pdf`, extraction du rendu, `similarity`, rangement
-        (spec, html, css, score, zones, images)."""
+        (spec, html, css, score, zones, images) de la passe seulement si `keeps_pass` ; la passe
+        reste dans le journal des passes dans tous les cas."""
         ...
 
     async def read_pass(self, user_id: str, template_id: str, pass_no: int) -> PassResult:
@@ -72,8 +88,9 @@ class CvTemplateStore(Protocol):
     async def finish(
         self, user_id: str, template_id: str, status: TemplateOutcome, reason: str | None
     ) -> None:
-        """`ready` : la dernière passe rendue devient le gabarit, actif si aucun autre ne l'est ;
-        `failed` : `reason` (phrase française, sans donnée du CV) rangée. Idempotent."""
+        """`ready` : la passe gardée (`keeps_pass`) devient le gabarit, actif si aucun
+        autre ne l'est ; `failed` : `reason` (phrase française, sans donnée du CV) rangée.
+        Idempotent ; un gabarit `failed` ne passe plus à `ready` (409 `template_not_capturing`)."""
         ...
 
 
@@ -93,7 +110,13 @@ class _NoCvTemplates:
         raise cv_templates_unavailable()
 
     async def render_pass(
-        self, user_id: str, template_id: str, pass_no: int, spec: TemplateSpec, content: CvContent
+        self,
+        user_id: str,
+        template_id: str,
+        pass_no: int,
+        spec: TemplateSpec,
+        content: CvContent,
+        adjusted: bool = False,
     ) -> PassResult:
         raise cv_templates_unavailable()
 

@@ -133,7 +133,7 @@ async def test_google_source_unavailable_is_readable(
     assert caught.value.status_code == 502 and caught.value.code == "font_unavailable"
     assert caught.value.__cause__ is None
     ours = " ".join(r.getMessage() for r in caplog.records if r.name == google.__name__)
-    assert "Lato" in ours and "gstatic" not in ours and "googleapis" not in ours
+    assert "Lato" not in ours and ours and "gstatic" not in ours and "googleapis" not in ours
 
 
 async def test_timeout_is_total_per_request(

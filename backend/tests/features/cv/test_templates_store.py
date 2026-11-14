@@ -19,6 +19,7 @@ from tests.features.cv.templates_support import (
 )
 from tests.features.cv.test_profile_store import ME, add_version
 from tests.support.cv_template import content as cv_content
+from tests.support.cv_templates import similarity
 from tests.support.text_renderer import TextHtmlRenderer
 
 PNG = b"\x89PNG\r\n\x1a\n"
@@ -97,12 +98,67 @@ async def test_font_unavailable_falls_back(
     ]
     view = await store_real.prepare(ME, template_id)
     assert "Carlito" not in view.available_fonts
+    # Revue 6.10, M1 : rien d'indisponible n'est proposé au Maquettiste (vue ni blocs résumés).
+    assert {font.family for font in view.fonts} <= set(view.available_fonts)
+    assert "Carlito" not in view.blocks_summary and "| Liberation Sans |" in view.blocks_summary
     row = await template_row(cv_runtime, template_id)
     assert {(use["family"], use["substitute"]) for use in row.fonts} == {("Liberation Sans", True)}
     assert row.font_gaps == [
         "La police du texte et des titres n'a pas pu être chargée : remplacée par Liberation Sans."
     ]
     assert not any("Calibri" in gap for gap in row.font_gaps)
+
+
+async def test_failed_template_refuses_passes_and_ready(
+    cv_runtime: CvRuntime, store_real: AgentCvTemplateStore
+) -> None:
+    """Revue 6.10, M2 : un gabarit en échec est figé."""
+    template_id = await capture(cv_runtime)
+    await store_real.prepare(ME, template_id)
+    await store_real.finish(ME, template_id, "failed", "Capture abandonnée.")
+    renderer = cv_runtime.html_pdf
+    assert isinstance(renderer, TextHtmlRenderer)
+    with pytest.raises(AppError) as caught:
+        await store_real.render_pass(ME, template_id, 1, liberation_spec(), cv_content())
+    assert (caught.value.code, caught.value.status_code) == ("template_not_capturing", 409)
+    assert renderer.documents == []
+    with pytest.raises(AppError) as caught:
+        await store_real.finish(ME, template_id, "ready", None)
+    assert caught.value.code == "template_not_capturing"
+    await store_real.finish(ME, template_id, "failed", "Autre raison.")  # idempotent
+    row = await template_row(cv_runtime, template_id)
+    assert (row.status, row.failure_reason, row.pass_log) == ("failed", "Capture abandonnée.", [])
+
+
+async def test_best_pass_is_the_one_kept(
+    cv_runtime: CvRuntime, store_real: AgentCvTemplateStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Scores 69, 78, 69 : le gabarit garde la passe 2 ; à égalité, la plus récente ; une passe
+    d'ajustement remplace toujours. Toutes restent dans le journal des passes."""
+    scores = iter([69, 78, 69, 78, 50])
+    monkeypatch.setattr(
+        "app.features.cv.service.templates_store.similarity",
+        lambda original, render: similarity(next(scores)),
+    )
+    template_id = await capture(cv_runtime)
+    await store_real.prepare(ME, template_id)
+    seen: list[tuple[int | None, str | None]] = []
+    for pass_no, mark in ((1, "#aa0000"), (2, "#bb0000"), (3, "#cc0000"), (4, "#dd0000")):
+        spec = liberation_spec().model_copy(update={"accent": mark})
+        await store_real.render_pass(ME, template_id, pass_no, spec, cv_content())
+        row = await template_row(cv_runtime, template_id)
+        seen.append((row.score, (row.spec or {}).get("accent")))
+    assert seen == [
+        (69, "#aa0000"),
+        (78, "#bb0000"),
+        (78, "#bb0000"),
+        (78, "#dd0000"),
+    ]  # 4 : égalité, la plus récente
+    spec = liberation_spec().model_copy(update={"accent": "#ee0000"})
+    await store_real.render_pass(ME, template_id, 5, spec, cv_content(), adjusted=True)
+    row = await template_row(cv_runtime, template_id)
+    assert (row.score, (row.spec or {}).get("accent"), len(row.pass_log)) == (50, "#ee0000", 5)
+    assert row.score_detail is not None and row.score_detail["score"] == 50
 
 
 async def test_fonts_downloaded_once_for_all_templates(

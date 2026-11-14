@@ -12,7 +12,9 @@ apply_answer : Valider -> finish(ready) -> END ; Recommencer -> finish(failed) -
 Chaque écriture du port est idempotente (`prepare` par gabarit, `render_pass` par passe,
 `finish` par gabarit) : un nœud rejoué ne rend jamais une passe deux fois, et `durability="sync"`
 (D46) ne rejoue jamais un nœud terminé. La question est posée **quel que soit le score** : jamais
-d'échec silencieux."""
+d'échec silencieux. Le gabarit garde la **meilleure** des passes automatiques
+(`keeps_pass` : à égalité la plus récente ; un ajustement remplace toujours) ;
+la question et le message final disent le score de la passe gardée."""
 
 import logging
 from typing import Any
@@ -27,6 +29,7 @@ from app.agents.runtime.emit import emit
 from app.agents.runtime.invoke import node_timeout
 from app.agents.state.cv_capture import CvCaptureState
 from app.agents.tools.cv_schema import CvContent
+from app.agents.tools.cv_template_port import keeps_pass
 from app.agents.tools.template_schema import TemplateSpec
 from app.agents.tools.template_similarity import MAX_FIX_PASSES, TARGET_SCORE
 from app.providers.fonts.base import FONT_TIMEOUT_S
@@ -78,8 +81,9 @@ def make_render(deps: GraphDeps) -> Node:
         )
         spec = TemplateSpec.model_validate(state["spec"])
         content = CvContent.model_validate(state["sample"])
+        adjusted = state.get("adjustments", 0) > 0
         done = await deps.ports.cv_templates.render_pass(
-            deps.user_id, template_id, pass_no, spec, content
+            deps.user_id, template_id, pass_no, spec, content, adjusted
         )
         logger.info(
             "Passe rendue : session %s, gabarit %s, passe %d, score %d",
@@ -89,8 +93,14 @@ def make_render(deps: GraphDeps) -> Node:
             done.score,
         )
         text = f"Passe {pass_no} : le rendu ressemble à ton CV à {done.score} %."
+        kept = state.get("kept_score")
+        out: CvCaptureState = {"pass_no": pass_no, "score": done.score}
+        if keeps_pass(adjusted, done.score, kept):
+            out["kept_pass"], out["kept_score"] = pass_no, done.score
+        else:  # une passe moins bonne ne remplace pas la meilleure (le port fait de même)
+            text += f" Je garde la passe {state['kept_pass']} ({kept} %)."
         emit("agent.message", {"message_id": f"{AGENT}-passe-{pass_no}", "text": text}, agent=AGENT)
-        return {"pass_no": pass_no, "score": done.score}
+        return out
 
     return render
 
@@ -111,7 +121,7 @@ def route_fix(state: CvCaptureState) -> str:
 def ask_validate(state: CvCaptureState) -> CvCaptureState:
     """`interrupt()` seul : rien avant lui ; la réponse est analysée sans aucun port."""
     adjustments = state.get("adjustments", 0)
-    answer = parse_answer(interrupt(question(state["score"], adjustments)), adjustments)
+    answer = parse_answer(interrupt(question(state["kept_score"], adjustments)), adjustments)
     return {"answer": answer.model_dump() if answer is not None else None}
 
 
@@ -142,7 +152,7 @@ def make_apply_answer(deps: GraphDeps) -> Node:
         store = deps.ports.cv_templates
         if answer.action == "validate":
             await store.finish(deps.user_id, template_id, "ready", None)
-            text = f"Modèle de CV prêt : il ressemble à ton CV à {state['score']} %."
+            text = f"Modèle de CV prêt : il ressemble à ton CV à {state['kept_score']} %."
         else:
             await store.finish(deps.user_id, template_id, "failed", RESTARTED)
             text = f"{RESTARTED} Tu peux relancer la capture du modèle."

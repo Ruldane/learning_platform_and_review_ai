@@ -55,6 +55,7 @@ async def test_adjust_runs_fix_with_instruction(
     await run.answer({"answers": {"instruction": f"  {INSTRUCTION}  "}})
     question = await run.question()  # passe d'un ajustement : question aussitôt, même sous 85
     assert design_store.rendered == [1, 2]
+    assert design_store.kept == 2  # l'ajustement remplace la passe gardée, même moins bien noté
     assert question["question"].startswith("Le modèle ressemble à ton CV à 80 %.")
     [fix] = run.prompts(FIX_REQUEST)
     assert '<<<CONTENU_NON_FIABLE source="consigne de January">>>' in fix

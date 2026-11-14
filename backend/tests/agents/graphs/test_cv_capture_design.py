@@ -60,6 +60,36 @@ async def test_three_passes_at_most(
     assert design_store.finished == {}  # jamais d'échec silencieux : la question est posée
 
 
+async def test_best_pass_is_kept_and_its_score_shown(
+    design_runner: MakeDesign, design_store: FakeCvTemplateStore
+) -> None:
+    """Scores 69, 78, 69 : le gabarit garde la passe 2, la question et le message final disent
+    78 %, jamais 69 % (essai réel de 6.11)."""
+    design_store.scores = [69, 78, 69]
+    run = await design_runner()
+    question = await run.question()
+    assert design_store.rendered == [1, 2, 3] and design_store.kept == 2
+    assert question["question"].startswith("Le modèle ressemble à ton CV à 78 %.")
+    assert (await run.said())[
+        -1
+    ] == "Passe 3 : le rendu ressemble à ton CV à 69 %. Je garde la passe 2 (78 %)."
+    await run.answer("validate")
+    await run.wait_status("completed")
+    assert design_store.finished_pass == {"t1": 2}
+    [done] = await run.events("run.completed")
+    assert done["summary"] == "Modèle de CV prêt : il ressemble à ton CV à 78 %."
+
+
+async def test_tie_keeps_the_later_pass(
+    design_runner: MakeDesign, design_store: FakeCvTemplateStore
+) -> None:
+    design_store.scores = [70, 70, 60]
+    run = await design_runner()
+    question = await run.question()
+    assert design_store.kept == 2
+    assert question["question"].startswith("Le modèle ressemble à ton CV à 70 %.")
+
+
 async def test_replay_between_passes_renders_once(
     design_runner: MakeDesign, design_store: FakeCvTemplateStore
 ) -> None:

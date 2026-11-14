@@ -24,6 +24,7 @@ from app.providers.fonts.catalog import (
     DEFAULT_SERIF,
     SERIF_FAMILIES,
     SUBSTITUTES,
+    FontChoice,
     choose_font,
     clean_name,
 )
@@ -233,6 +234,28 @@ async def resolve_fonts(
     """Fichiers des polices employées (joints au rendu), polices employées et écarts."""
     stored, uses, gaps = await resolve_roles(rt, user_id, font_roles(layout))
     return await load_files(rt, user_id, stored, {use.family for use in uses}), uses, gaps
+
+
+def offered_choices(roles: Sequence[FontRole], available: Collection[str]) -> list[FontChoice]:
+    """Polices libres retenues, ramenées à ce qui est réellement disponible : une famille sans
+    fichier ni présence dans l'image cède la place à son repli (revue 6.10, M1)."""
+    return [
+        FontChoice(r.original, r.family, r.free)
+        if r.family in available
+        else FontChoice(r.original, _fallback(r.family), False)
+        for r in roles
+    ]
+
+
+def offered_summary(summary: str, available: Collection[str]) -> str:
+    """Blocs résumés dont la colonne « police » ne cite que des familles disponibles."""
+    lines: list[str] = []
+    for line in summary.splitlines():
+        parts = line.split(" | ", 2)
+        if len(parts) == 3 and parts[1] not in available:
+            line = " | ".join((parts[0], _fallback(parts[1]), parts[2]))
+        lines.append(line)
+    return "\n".join(lines)
 
 
 def roles_to_json(roles: Sequence[FontRole]) -> list[dict[str, Any]]:
