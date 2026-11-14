@@ -55,6 +55,7 @@ _UPLOAD_BODY_MAX = MAX_UPLOAD_BYTES + 1024 * 1024
 BOARD_BODY_MAX = 2 * 1024 * 1024
 # Import du profil maître : CV et LinkedIn (10 Mo chacun), la note et l'enveloppe (D124).
 PROFILE_IMPORT_BODY_MAX = 2 * MAX_PROFILE_FILE_BYTES + 1024 * 1024
+TEMPLATE_BODY_MAX = MAX_PROFILE_FILE_BYTES + 1024 * 1024  # gabarit : le CV et son nom
 
 
 async def _ensure_local_user(app: FastAPI) -> None:
@@ -183,7 +184,7 @@ def _compose_features(app: FastAPI) -> StudyRuntimes:
         app.state.launcher,
         research=app.state.research,
         memory=app.state.memory,
-        layout=app.state.publishing_providers.layout,
+        publishing=app.state.publishing_providers,
     )
     return study
 
@@ -212,6 +213,7 @@ async def _open_agents(app: FastAPI, stack: AsyncExitStack) -> None:
                 study=study,
                 gap=app.state.career.gap,
                 profile=app.state.career.profile,
+                cv_templates=app.state.career.cv_templates,
             ),
         )
     )
@@ -234,6 +236,12 @@ def _add_body_limits(app: FastAPI) -> None:
         BodySizeLimit,
         path=f"{API_PREFIX}/profile/import",
         max_bytes=PROFILE_IMPORT_BODY_MAX,
+        message=TOO_LARGE_MESSAGE,
+    )
+    app.add_middleware(  # CV d'origine d'un gabarit, 10 Mo (D126)
+        BodySizeLimit,
+        path=f"{API_PREFIX}/cv/templates",
+        max_bytes=TEMPLATE_BODY_MAX,
         message=TOO_LARGE_MESSAGE,
     )
     app.add_middleware(

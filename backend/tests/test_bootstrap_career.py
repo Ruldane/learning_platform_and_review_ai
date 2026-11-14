@@ -9,6 +9,7 @@ from asgi_lifespan import LifespanManager
 
 import app.main as main_module
 from app.agents.runtime.launcher import SessionLauncher
+from app.agents.tools.cv_template_port import NO_CV_TEMPLATES
 from app.agents.tools.gap_port import NO_GAP
 from app.agents.tools.profile_port import NO_PROFILE
 from app.bootstrap import agent_ports
@@ -16,8 +17,10 @@ from app.bootstrap_career import career_runtimes
 from app.config import Settings
 from app.core.providers import MemoryProviders, PublishingProviders, ResearchProviders
 from app.features.cv.service.profile_store import AgentProfileStore
+from app.features.cv.service.templates_store import AgentCvTemplateStore
 from app.features.postings.service.agent_store import AgentGapStore
 from app.main import create_app
+from tests.support.memory import fake_publishing_providers
 
 
 async def test_lifespan_wires_postings_and_the_gap_port(
@@ -54,6 +57,10 @@ async def test_lifespan_wires_postings_and_the_gap_port(
         assert cv.layout is app.state.publishing_providers.layout
         assert isinstance(app.state.career.profile, AgentProfileStore)
         assert seen["ports"].profile is app.state.career.profile
+        assert cv.html_pdf is app.state.publishing_providers.html_pdf
+        assert cv.fonts is app.state.publishing_providers.fonts
+        assert isinstance(app.state.career.cv_templates, AgentCvTemplateStore)
+        assert seen["ports"].cv_templates is app.state.career.cv_templates
 
 
 def test_agent_ports_default_to_no_gap() -> None:
@@ -62,10 +69,12 @@ def test_agent_ports_default_to_no_gap() -> None:
         SessionLauncher(),
         research=object(),  # type: ignore[arg-type]
         memory=object(),  # type: ignore[arg-type]
-        layout=object(),  # type: ignore[arg-type]
+        publishing=fake_publishing_providers(),
     )
     assert isinstance(career.gap, AgentGapStore)
     assert isinstance(career.profile, AgentProfileStore)
     assert agent_ports.__kwdefaults__ is not None
     assert agent_ports.__kwdefaults__["gap"] is NO_GAP
     assert agent_ports.__kwdefaults__["profile"] is NO_PROFILE
+    assert agent_ports.__kwdefaults__["cv_templates"] is NO_CV_TEMPLATES
+    assert isinstance(career.cv_templates, AgentCvTemplateStore)

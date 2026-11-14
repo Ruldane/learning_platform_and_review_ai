@@ -1,11 +1,11 @@
-"""Versions du profil maître (D118, D124) : la plus récente (d'un statut), celle d'une session,
-toutes les versions. Chaque requête filtre par `user_id`."""
+"""Versions du profil maître (D118, D124) et gabarits de CV (D126). Chaque requête filtre par
+`user_id`."""
 
 import builtins
 
 from sqlalchemy import func, select
 
-from app.db.models.career import MasterProfile, ProfileStatus
+from app.db.models.career import CvReview, CvTemplate, MasterProfile, ProfileStatus
 from app.db.repository import UserScopedRepository
 
 
@@ -39,3 +39,44 @@ class ProfileRepository(UserScopedRepository[MasterProfile]):
             .order_by(MasterProfile.version.desc())
         )
         return builtins.list((await self.session.execute(stmt)).scalars().all())
+
+
+class TemplateRepository(UserScopedRepository[CvTemplate]):
+    """Gabarits de CV (D126) ; les archivés ne sont rendus que par `get`."""
+
+    model = CvTemplate
+
+    async def visible(self) -> builtins.list[CvTemplate]:
+        """Les gabarits non archivés, le plus récent d'abord."""
+        stmt = (
+            select(CvTemplate)
+            .where(CvTemplate.user_id == self.user_id, CvTemplate.status != "archived")
+            .order_by(CvTemplate.created_at.desc())
+        )
+        return builtins.list((await self.session.execute(stmt)).scalars().all())
+
+    async def capturing(self) -> builtins.list[CvTemplate]:
+        stmt = select(CvTemplate).where(
+            CvTemplate.user_id == self.user_id, CvTemplate.status == "capturing"
+        )
+        return builtins.list((await self.session.execute(stmt)).scalars().all())
+
+    async def active(self) -> CvTemplate | None:
+        stmt = select(CvTemplate).where(CvTemplate.user_id == self.user_id, CvTemplate.active)
+        return (await self.session.execute(stmt.limit(1))).scalar_one_or_none()
+
+    async def prepared_rows(self) -> builtins.list[CvTemplate]:
+        """Gabarits déjà préparés (polices rangées réutilisables), archivés compris."""
+        stmt = select(CvTemplate).where(
+            CvTemplate.user_id == self.user_id, CvTemplate.prepared.is_not(None)
+        )
+        return builtins.list((await self.session.execute(stmt)).scalars().all())
+
+    async def in_review(self, template_id: str) -> bool:
+        """Une revue en cours (lancée ou proposée) emploie ce gabarit."""
+        stmt = select(CvReview.id).where(
+            CvReview.user_id == self.user_id,
+            CvReview.template_id == template_id,
+            CvReview.status.in_(("running", "proposed")),
+        )
+        return (await self.session.execute(stmt.limit(1))).first() is not None

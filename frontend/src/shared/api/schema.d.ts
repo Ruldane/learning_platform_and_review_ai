@@ -59,6 +59,93 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cv/templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Templates
+         * @description Les gabarits non archivés, le plus récent d'abord.
+         */
+        get: operations["get_templates_api_v1_cv_templates_get"];
+        put?: never;
+        /**
+         * Post Template
+         * @description CV en PDF (10 Mo au plus, 4 pages au plus) OU `document_id` d'un CV importé. 409
+         *     `vision_unavailable`, 409 `capture_in_progress`, 413 `file_too_large`, 415
+         *     `unsupported_file_type`, 422 `pdf_unreadable`.
+         */
+        post: operations["post_template_api_v1_cv_templates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cv/templates/{template_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get One Template */
+        get: operations["get_one_template_api_v1_cv_templates__template_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Template
+         * @description Archivé (statut `archived`) ; 409 `template_in_use` si une revue en cours l'emploie.
+         */
+        delete: operations["delete_template_api_v1_cv_templates__template_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cv/templates/{template_id}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Activate
+         * @description Le gabarit devient le seul actif ; 409 `template_not_ready` s'il n'est pas prêt.
+         */
+        post: operations["post_activate_api_v1_cv_templates__template_id__activate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cv/templates/{template_id}/pages/{kind}/{number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Template Page
+         * @description Page `number` (depuis 1) du CV d'origine ou du rendu de la passe courante ; 404 sinon.
+         */
+        get: operations["get_template_page_api_v1_cv_templates__template_id__pages__kind___number__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/documents": {
         parameters: {
             query?: never;
@@ -1792,6 +1879,15 @@ export interface components {
             /** Note */
             note?: string | null;
         };
+        /** Body_post_template_api_v1_cv_templates_post */
+        Body_post_template_api_v1_cv_templates_post: {
+            /** Document Id */
+            document_id?: string | null;
+            /** File */
+            file?: string | null;
+            /** Name */
+            name: string;
+        };
         /**
          * BraveUsageOut
          * @description Requêtes Brave du mois civil UTC (`month` : « AAAA-MM ») pour la clé en vigueur.
@@ -2128,6 +2224,21 @@ export interface components {
             revision_tasks: string[];
             /** Unplaced */
             unplaced: number;
+        };
+        /**
+         * FontUseOut
+         * @description Police libre employée pour un rôle ; `substitute` : elle remplace celle du PDF.
+         */
+        FontUseOut: {
+            /** Family */
+            family: string;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "body" | "heading";
+            /** Substitute */
+            substitute: boolean;
         };
         /**
          * GapOut
@@ -4241,6 +4352,86 @@ export interface components {
             /** Title */
             title?: string | null;
         };
+        /**
+         * TemplateCreated
+         * @description Capture du design lancée : le gabarit (`capturing`) et sa session `cv_capture`.
+         */
+        TemplateCreated: {
+            /** Session Id */
+            session_id: string;
+            /** Template Id */
+            template_id: string;
+        };
+        /**
+         * TemplateOut
+         * @description `selectable` : faux pour un CV scanné ; `session_id` : la capture du design ;
+         *     `failure_reason` : phrase française d'un échec (sans donnée du CV).
+         */
+        TemplateOut: {
+            /** Active */
+            active: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Failure Reason */
+            failure_reason: string | null;
+            /** Font Gaps */
+            font_gaps: string[];
+            /** Fonts */
+            fonts: components["schemas"]["FontUseOut"][];
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Page Count */
+            page_count: number;
+            /** Passes */
+            passes: number;
+            /** Score */
+            score: number | null;
+            /** Selectable */
+            selectable: boolean;
+            /** Session Id */
+            session_id: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "capturing" | "review" | "ready" | "failed" | "archived";
+            /** Zones */
+            zones: components["schemas"]["ZoneDiffOut"][];
+        };
+        /**
+         * TemplateSummaryOut
+         * @description `score` : ressemblance de la passe courante (0 à 100), `None` avant la première passe ;
+         *     `passes` : passes rendues.
+         */
+        TemplateSummaryOut: {
+            /** Active */
+            active: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Page Count */
+            page_count: number;
+            /** Passes */
+            passes: number;
+            /** Score */
+            score: number | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "capturing" | "review" | "ready" | "failed" | "archived";
+        };
         /** ToolCalledEvent */
         ToolCalledEvent: {
             /**
@@ -4564,6 +4755,19 @@ export interface components {
              */
             time: string;
         };
+        /**
+         * ZoneDiffOut
+         * @description Part d'encre (0 à 1) d'une zone de la page (`haut`, `milieu`, `bas`, `gauche`, `droite`)
+         *     dans l'original et dans le rendu de la passe courante.
+         */
+        ZoneDiffOut: {
+            /** Original */
+            original: number;
+            /** Render */
+            render: number;
+            /** Zone */
+            zone: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -4648,6 +4852,181 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CaptureStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_templates_api_v1_cv_templates_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateSummaryOut"][];
+                };
+            };
+        };
+    };
+    post_template_api_v1_cv_templates_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_post_template_api_v1_cv_templates_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateCreated"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_one_template_api_v1_cv_templates__template_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_template_api_v1_cv_templates__template_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_activate_api_v1_cv_templates__template_id__activate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_template_page_api_v1_cv_templates__template_id__pages__kind___number__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+                kind: string;
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Image PNG de la page. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/png": unknown;
                 };
             };
             /** @description Validation Error */

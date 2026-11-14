@@ -44,7 +44,7 @@ def pdf_too_large() -> AppError:
     return AppError("file_too_large", TOO_LARGE_MESSAGE, 413)
 
 
-async def _check_pdf(file: UploadFile) -> None:
+async def check_pdf(file: UploadFile) -> None:
     """PDF (extension et contenu) de 10 Mo au plus ; le fichier est rembobiné pour son envoi."""
     blocks: list[bytes] = []
     size = 0
@@ -85,7 +85,7 @@ async def start_import(
 ) -> ProfileImportStarted:
     files = [(cv, "cv")] + ([(linkedin, "linkedin")] if linkedin is not None else [])
     for file, _ in files:
-        await _check_pdf(file)
+        await check_pdf(file)
     note = note.strip() if note and note.strip() else None
     async with rt.import_lock(user_id):
         if (open_id := await capture_session(db, user_id)) is not None:

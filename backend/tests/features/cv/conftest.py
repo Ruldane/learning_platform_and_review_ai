@@ -14,9 +14,11 @@ from app.core.providers import MemoryProviders
 from app.db.models.skills import Skill, UserSkill
 from app.features.cv.service.runtime import CvRuntime
 from app.features.memory.service.runtime import MemoryRuntime, memory_runtime
+from app.providers.fonts.fake import FakeFontSource
 from app.providers.pdf.layout import LocalPdfLayoutExtractor
 from tests.features.lessons.conftest import RecordingLauncher
 from tests.features.program.support import Factory
+from tests.support.text_renderer import TextHtmlRenderer
 
 API = "/api/v1"
 
@@ -41,7 +43,14 @@ async def memory(
 def cv_runtime(
     db_session_factory: Factory, memory: MemoryRuntime, launcher: RecordingLauncher
 ) -> CvRuntime:
-    return CvRuntime(db_session_factory, memory, launcher, LocalPdfLayoutExtractor())
+    return CvRuntime(
+        db_session_factory,
+        memory,
+        launcher,
+        LocalPdfLayoutExtractor(),
+        TextHtmlRenderer(),
+        FakeFontSource(),
+    )
 
 
 @pytest.fixture

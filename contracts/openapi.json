@@ -999,6 +999,47 @@
         "title": "Body_import_profile_api_v1_profile_import_post",
         "type": "object"
       },
+      "Body_post_template_api_v1_cv_templates_post": {
+        "properties": {
+          "document_id": {
+            "anyOf": [
+              {
+                "maxLength": 36,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Id"
+          },
+          "file": {
+            "anyOf": [
+              {
+                "contentMediaType": "application/octet-stream",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "pattern": "\\S",
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "Body_post_template_api_v1_cv_templates_post",
+        "type": "object"
+      },
       "BraveUsageOut": {
         "description": "Requêtes Brave du mois civil UTC (`month` : « AAAA-MM ») pour la clé en vigueur.",
         "properties": {
@@ -1953,6 +1994,34 @@
           "unplaced"
         ],
         "title": "FollowupOut",
+        "type": "object"
+      },
+      "FontUseOut": {
+        "description": "Police libre employée pour un rôle ; `substitute` : elle remplace celle du PDF.",
+        "properties": {
+          "family": {
+            "title": "Family",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "body",
+              "heading"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "substitute": {
+            "title": "Substitute",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "role",
+          "family",
+          "substitute"
+        ],
+        "title": "FontUseOut",
         "type": "object"
       },
       "GapOut": {
@@ -7914,6 +7983,206 @@
         "title": "TaskPatch",
         "type": "object"
       },
+      "TemplateCreated": {
+        "description": "Capture du design lancée : le gabarit (`capturing`) et sa session `cv_capture`.",
+        "properties": {
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "template_id": {
+            "title": "Template Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "template_id",
+          "session_id"
+        ],
+        "title": "TemplateCreated",
+        "type": "object"
+      },
+      "TemplateOut": {
+        "description": "`selectable` : faux pour un CV scanné ; `session_id` : la capture du design ;\n`failure_reason` : phrase française d'un échec (sans donnée du CV).",
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "failure_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Reason"
+          },
+          "font_gaps": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Font Gaps",
+            "type": "array"
+          },
+          "fonts": {
+            "items": {
+              "$ref": "#/components/schemas/FontUseOut"
+            },
+            "title": "Fonts",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "page_count": {
+            "title": "Page Count",
+            "type": "integer"
+          },
+          "passes": {
+            "title": "Passes",
+            "type": "integer"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "selectable": {
+            "title": "Selectable",
+            "type": "boolean"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
+          "status": {
+            "enum": [
+              "capturing",
+              "review",
+              "ready",
+              "failed",
+              "archived"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "zones": {
+            "items": {
+              "$ref": "#/components/schemas/ZoneDiffOut"
+            },
+            "title": "Zones",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "status",
+          "active",
+          "score",
+          "passes",
+          "page_count",
+          "created_at",
+          "selectable",
+          "fonts",
+          "font_gaps",
+          "zones",
+          "session_id",
+          "failure_reason"
+        ],
+        "title": "TemplateOut",
+        "type": "object"
+      },
+      "TemplateSummaryOut": {
+        "description": "`score` : ressemblance de la passe courante (0 à 100), `None` avant la première passe ;\n`passes` : passes rendues.",
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "page_count": {
+            "title": "Page Count",
+            "type": "integer"
+          },
+          "passes": {
+            "title": "Passes",
+            "type": "integer"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "status": {
+            "enum": [
+              "capturing",
+              "review",
+              "ready",
+              "failed",
+              "archived"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "status",
+          "active",
+          "score",
+          "passes",
+          "page_count",
+          "created_at"
+        ],
+        "title": "TemplateSummaryOut",
+        "type": "object"
+      },
       "ToolCalledEvent": {
         "properties": {
           "agent": {
@@ -8579,6 +8848,30 @@
         },
         "title": "WeeklyReview",
         "type": "object"
+      },
+      "ZoneDiffOut": {
+        "description": "Part d'encre (0 à 1) d'une zone de la page (`haut`, `milieu`, `bas`, `gauche`, `droite`)\ndans l'original et dans le rendu de la passe courante.",
+        "properties": {
+          "original": {
+            "title": "Original",
+            "type": "number"
+          },
+          "render": {
+            "title": "Render",
+            "type": "number"
+          },
+          "zone": {
+            "title": "Zone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "zone",
+          "original",
+          "render"
+        ],
+        "title": "ZoneDiffOut",
+        "type": "object"
       }
     }
   },
@@ -8700,6 +8993,249 @@
         "summary": "Start Capture",
         "tags": [
           "capture"
+        ]
+      }
+    },
+    "/api/v1/cv/templates": {
+      "get": {
+        "description": "Les gabarits non archivés, le plus récent d'abord.",
+        "operationId": "get_templates_api_v1_cv_templates_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TemplateSummaryOut"
+                  },
+                  "title": "Response Get Templates Api V1 Cv Templates Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Templates",
+        "tags": [
+          "cv-templates"
+        ]
+      },
+      "post": {
+        "description": "CV en PDF (10 Mo au plus, 4 pages au plus) OU `document_id` d'un CV importé. 409\n`vision_unavailable`, 409 `capture_in_progress`, 413 `file_too_large`, 415\n`unsupported_file_type`, 422 `pdf_unreadable`.",
+        "operationId": "post_template_api_v1_cv_templates_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_post_template_api_v1_cv_templates_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateCreated"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Post Template",
+        "tags": [
+          "cv-templates"
+        ]
+      }
+    },
+    "/api/v1/cv/templates/{template_id}": {
+      "delete": {
+        "description": "Archivé (statut `archived`) ; 409 `template_in_use` si une revue en cours l'emploie.",
+        "operationId": "delete_template_api_v1_cv_templates__template_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "template_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Template Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Template",
+        "tags": [
+          "cv-templates"
+        ]
+      },
+      "get": {
+        "operationId": "get_one_template_api_v1_cv_templates__template_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "template_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Template Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get One Template",
+        "tags": [
+          "cv-templates"
+        ]
+      }
+    },
+    "/api/v1/cv/templates/{template_id}/activate": {
+      "post": {
+        "description": "Le gabarit devient le seul actif ; 409 `template_not_ready` s'il n'est pas prêt.",
+        "operationId": "post_activate_api_v1_cv_templates__template_id__activate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "template_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Template Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Post Activate",
+        "tags": [
+          "cv-templates"
+        ]
+      }
+    },
+    "/api/v1/cv/templates/{template_id}/pages/{kind}/{number}": {
+      "get": {
+        "description": "Page `number` (depuis 1) du CV d'origine ou du rendu de la passe courante ; 404 sinon.",
+        "operationId": "get_template_page_api_v1_cv_templates__template_id__pages__kind___number__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "template_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Template Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "title": "Kind",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "number",
+            "required": true,
+            "schema": {
+              "title": "Number",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "image/png": {}
+            },
+            "description": "Image PNG de la page."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Template Page",
+        "tags": [
+          "cv-templates"
         ]
       }
     },

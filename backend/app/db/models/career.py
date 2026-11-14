@@ -67,6 +67,11 @@ class CvTemplate(UserScopedMixin, Base):
     selectable: Mapped[bool] = mapped_column(Boolean)
     session_id: Mapped[str | None] = mapped_column(String(36), default=None)
     failure_reason: Mapped[str | None] = mapped_column(String(300), default=None)
+    # CV d'origine préparé (D126) : géométrie des pages, blocs résumés, texte visible, polices
+    # (rôles et fichiers rangés) ; relu tel quel, jamais extrait deux fois.
+    prepared: Mapped[dict[str, Any] | None] = mapped_column(default=None)
+    # Une entrée par passe rendue : numéro, score, ressemblance, clés des images du rendu.
+    pass_log: Mapped[list[Any]] = mapped_column(default=list)
 
 
 class CvReview(UserScopedMixin, Base):
