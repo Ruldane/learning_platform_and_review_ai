@@ -16,6 +16,7 @@ from app.features.cv.service.runtime import CvRuntime
 from app.features.memory.service.runtime import MemoryRuntime, memory_runtime
 from app.providers.fonts.fake import FakeFontSource
 from app.providers.pdf.layout import LocalPdfLayoutExtractor
+from tests.features.cv.reviews_support import ResumeSpy
 from tests.features.lessons.conftest import RecordingLauncher
 from tests.features.program.support import Factory
 from tests.support.text_renderer import TextHtmlRenderer
@@ -66,3 +67,19 @@ async def skill_rows(factory: Factory, user_id: str) -> dict[str, tuple[str, lis
         )
         rows = (await db.execute(stmt.where(Skill.user_id == user_id))).all()
     return {name: (level, list(evidence)) for name, level, evidence in rows}
+
+
+@pytest.fixture
+def resume_spy(client: httpx.AsyncClient, app: FastAPI) -> ResumeSpy:
+    """Remplace la reprise des questions du CV (« Générer le PDF »), une fois l'app démarrée."""
+    spy = ResumeSpy(app.state.career.cv)
+    app.state.career.cv.resumer = spy
+    return spy
+
+
+@pytest.fixture
+def fake_renderer(client: httpx.AsyncClient, app: FastAPI) -> TextHtmlRenderer:
+    """Rendu lisible des CV de l'app (une page par défaut ; `pages` réglable par le test)."""
+    renderer = TextHtmlRenderer()
+    app.state.career.cv.html_pdf = renderer
+    return renderer

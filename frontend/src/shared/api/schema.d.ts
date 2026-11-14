@@ -59,6 +59,112 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cv/modifications/{modification_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Modification
+         * @description Accepte ou refuse ; `after` : texte réécrit, revalidé (il peut rester « à confirmer ») ;
+         *     `confirm: true` : accepte une modification « à confirmer », son fait entre au profil maître
+         *     (nouvelle version validée).
+         */
+        patch: operations["patch_modification_api_v1_cv_modifications__modification_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/cv/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Reviews
+         * @description Les revues (d'une offre), la plus récente d'abord.
+         */
+        get: operations["get_reviews_api_v1_cv_reviews_get"];
+        put?: never;
+        /**
+         * Post Review
+         * @description Lance la revue du CV contre l'offre ; le profil (sa version) et le gabarit sont figés.
+         */
+        post: operations["post_review_api_v1_cv_reviews_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cv/reviews/{review_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get One Review */
+        get: operations["get_one_review_api_v1_cv_reviews__review_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cv/reviews/{review_id}/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Generate
+         * @description Crée la version (décisions figées au clic) et reprend la question de sortie ; le PDF se
+         *     suit par `GET /cv/versions/{id}` (statut `rendering` puis `ready`, `pages_exceeded` ou
+         *     `failed`) ou par l'événement `artifact.ready` de la session.
+         */
+        post: operations["post_generate_api_v1_cv_reviews__review_id__generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cv/reviews/{review_id}/modifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Modifications
+         * @description Décision groupée (50 au plus) ; les « à confirmer » ne sont jamais acceptés en groupe :
+         *     ils reviennent dans `skipped`, avec les identifiants inconnus.
+         */
+        patch: operations["patch_modifications_api_v1_cv_reviews__review_id__modifications_patch"];
+        trace?: never;
+    };
     "/api/v1/cv/templates": {
         parameters: {
             query?: never;
@@ -138,6 +244,83 @@ export interface paths {
          * @description Page `number` (depuis 1) du CV d'origine ou du rendu de la passe courante ; 404 sinon.
          */
         get: operations["get_template_page_api_v1_cv_templates__template_id__pages__kind___number__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cv/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Versions
+         * @description Les versions (d'une offre), la plus récente d'abord.
+         */
+        get: operations["get_versions_api_v1_cv_versions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cv/versions/{version_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get One Version */
+        get: operations["get_one_version_api_v1_cv_versions__version_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cv/versions/{version_id}/pages/{number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Version Page
+         * @description Page `number` (depuis 1) d'une version prête ; 404 sinon.
+         */
+        get: operations["get_version_page_api_v1_cv_versions__version_id__pages__number__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cv/versions/{version_id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Version Pdf
+         * @description Téléchargement (`attachment`) ; 404 tant que la version n'est pas `ready`.
+         */
+        get: operations["get_version_pdf_api_v1_cv_versions__version_id__pdf_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1651,6 +1834,21 @@ export interface components {
              */
             url: string | null;
         };
+        /**
+         * AtsCheckOut
+         * @description Un contrôle de lisibilité par un ATS ; `detail` : phrase française sans texte du CV.
+         */
+        AtsCheckOut: {
+            /** Detail */
+            detail: string;
+            /**
+             * Id
+             * @enum {string}
+             */
+            id: "selectable_text" | "reading_order" | "standard_headings" | "contact_in_body" | "font_sizes";
+            /** Passed */
+            passed: boolean;
+        };
         /** AttemptCreate */
         AttemptCreate: {
             /** Answers */
@@ -1902,6 +2100,27 @@ export interface components {
             /** Used */
             used: number;
         };
+        /** BulkDecision */
+        BulkDecision: {
+            /** Ids */
+            ids: string[];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "accepted" | "refused";
+        };
+        /**
+         * BulkResult
+         * @description `skipped` : les modifications « à confirmer » (jamais acceptées en groupe) et les
+         *     identifiants inconnus de la revue.
+         */
+        BulkResult: {
+            /** Skipped */
+            skipped: string[];
+            /** Updated */
+            updated: number;
+        };
         /**
          * CaptureRequest
          * @description Une seule source : un lien http(s), un texte, ou un document déjà importé
@@ -2043,6 +2262,40 @@ export interface components {
             /** Tokens Out */
             tokens_out: number;
         };
+        /**
+         * CvReviewOut
+         * @description `before` : indicateurs du CV d'origine ; `gap_terms` : mots clés de l'offre absents du
+         *     profil, partis vers l'écart ; `waiting_output` : la session attend « Que veux-tu
+         *     maintenant ? » (seul moment où « Générer le PDF » est possible).
+         */
+        CvReviewOut: {
+            before: components["schemas"]["IndicatorsOut"] | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Gap Terms */
+            gap_terms: string[];
+            /** Id */
+            id: string;
+            /** Modifications */
+            modifications: components["schemas"]["ModificationOut"][];
+            /** Posting Id */
+            posting_id: string;
+            report: components["schemas"]["ReviewReport"] | null;
+            /** Session Id */
+            session_id: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "running" | "proposed" | "done" | "failed" | "cancelled";
+            /** Versions */
+            versions: components["schemas"]["VersionOut"][];
+            /** Waiting Output */
+            waiting_output: boolean;
+        };
         /** DistinctIn */
         DistinctIn: {
             /** Other Id */
@@ -2169,6 +2422,24 @@ export interface components {
             /** Text */
             text: string;
         };
+        /** ErrorDetailOut */
+        ErrorDetailOut: {
+            /** Code */
+            code: string;
+            /** Details */
+            details: {
+                [key: string]: unknown;
+            } | null;
+            /** Message */
+            message: string;
+        };
+        /**
+         * ErrorOut
+         * @description L'enveloppe de toute erreur métier : `{error: {code, message, details}}`.
+         */
+        ErrorOut: {
+            error: components["schemas"]["ErrorDetailOut"];
+        };
         /** EvidenceOut */
         EvidenceOut: {
             /** At */
@@ -2286,6 +2557,22 @@ export interface components {
             session_id: string;
         };
         /**
+         * GenerateIn
+         * @description `allow_extra_pages` : garder un CV plus long que l'original plutôt que s'arrêter.
+         */
+        GenerateIn: {
+            /**
+             * Allow Extra Pages
+             * @default false
+             */
+            allow_extra_pages: boolean;
+        };
+        /** GenerateStarted */
+        GenerateStarted: {
+            /** Version Id */
+            version_id: string;
+        };
+        /**
          * GoalCreate
          * @description L'objectif saisi par January (SPEC 3.1, étape 1). Une échéance passée est refusée (422,
          *     chemin du champ seulement, jamais la saisie).
@@ -2393,6 +2680,23 @@ export interface components {
             name: string;
             /** Phone */
             phone?: string | null;
+        };
+        /**
+         * IndicatorsOut
+         * @description Couverture des exigences obligatoires de l'offre (`missing` : leur texte, tel que l'offre
+         *     l'écrit) et contrôles ATS. Aucune garantie de passage n'est promise.
+         */
+        IndicatorsOut: {
+            /** Checks */
+            checks: components["schemas"]["AtsCheckOut"][];
+            /** Coverage Percent */
+            coverage_percent: number;
+            /** Covered */
+            covered: number;
+            /** Missing */
+            missing: string[];
+            /** Total */
+            total: number;
         };
         /**
          * InterruptField
@@ -2974,6 +3278,72 @@ export interface components {
             };
             /** Providers */
             providers: components["schemas"]["ProviderModels"][];
+        };
+        /**
+         * ModificationOut
+         * @description Une modification proposée. `ref` : « a3 » (Lecteur ATS) ou « r2 » (Recruteur) ; `before` :
+         *     le texte visé dans le CV d'origine (vide pour un ajout ou un déplacement) ; `after` : le
+         *     nouveau texte (pour `move`, la clé de la section avant laquelle `section` passe) ;
+         *     `blocks` : pourquoi elle est « à confirmer » (phrases fixes) ; `fact_ids` : les faits du
+         *     profil sur lesquels elle repose ; `author` : `ats_reader` ou `recruiter`.
+         */
+        ModificationOut: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "rewrite" | "add" | "remove" | "move";
+            /** After */
+            after: string;
+            /** Author */
+            author: string;
+            /** Before */
+            before: string;
+            /** Blocks */
+            blocks: string[];
+            /** Fact Ids */
+            fact_ids: string[];
+            /** Id */
+            id: string;
+            /** Reason */
+            reason: string;
+            /** Ref */
+            ref: string;
+            /**
+             * Section
+             * @enum {string}
+             */
+            section: "summary" | "experience" | "education" | "skills" | "projects" | "languages" | "links";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "proposed" | "to_confirm" | "accepted" | "refused";
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "keyword" | "clarity" | "impact" | "order" | "length" | "title";
+        };
+        /**
+         * ModificationPatch
+         * @description Décision sur une modification. `after` : texte réécrit par January (revalidé contre le
+         *     profil) ; `confirm` : « Je confirme que c'est vrai », seul moyen d'accepter une modification
+         *     « à confirmer » (le fait entre alors au profil maître).
+         */
+        ModificationPatch: {
+            /** After */
+            after?: string | null;
+            /**
+             * Confirm
+             * @default false
+             */
+            confirm: boolean;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "accepted" | "refused";
         };
         /** ModuleOut */
         ModuleOut: {
@@ -3715,6 +4085,42 @@ export interface components {
             due_date: string;
             /** Step */
             step: number;
+        };
+        /**
+         * ReviewReport
+         * @description Le rapport de la revue : ATS repéré et ses notes, résumé de la fiche entreprise, forces et
+         *     risques vus par le Recruteur, critères éliminatoires de l'offre. Aucune garantie de passage
+         *     d'un ATS n'y est promise.
+         */
+        ReviewReport: {
+            /** Ats */
+            ats?: string | null;
+            /** Ats Notes */
+            ats_notes?: string[];
+            /** Company Summary */
+            company_summary?: string | null;
+            /** Eliminatory */
+            eliminatory?: string[];
+            /** Risks */
+            risks?: string[];
+            /** Strengths */
+            strengths?: string[];
+        };
+        /** ReviewStart */
+        ReviewStart: {
+            /** Posting Id */
+            posting_id: string;
+        };
+        /**
+         * ReviewStarted
+         * @description Revue lancée : la revue (`running`) et sa session `cv_review` (à suivre par ses
+         *     événements).
+         */
+        ReviewStarted: {
+            /** Review Id */
+            review_id: string;
+            /** Session Id */
+            session_id: string;
         };
         /** RunCompletedEvent */
         RunCompletedEvent: {
@@ -4685,6 +5091,50 @@ export interface components {
             task: string;
         };
         /**
+         * VersionOut
+         * @description Un CV produit pour une offre (`number` compte par offre). `indicators` : après le rendu
+         *     (couverture des lignes adossées à un fait, contrôles ATS du PDF rendu), `None` avant ;
+         *     `filename` : nom ASCII du PDF (`CV_<Nom>_<Entreprise>_<Poste>.pdf`) ; `decisions` : la
+         *     décision de chaque modification au clic (`ref` → `accepted`, `refused`, `proposed`,
+         *     `to_confirm`, ou `ignored` pour une acceptée que la composition n'a pas pu placer) ;
+         *     `failure_reason` : phrase française d'un échec du rendu.
+         */
+        VersionOut: {
+            /** Allow Extra Pages */
+            allow_extra_pages: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Decisions */
+            decisions: {
+                [key: string]: string;
+            };
+            /** Failure Reason */
+            failure_reason: string | null;
+            /** Filename */
+            filename: string;
+            /** Id */
+            id: string;
+            indicators: components["schemas"]["IndicatorsOut"] | null;
+            /** Number */
+            number: number;
+            /** Original Page Count */
+            original_page_count: number;
+            /** Page Count */
+            page_count: number | null;
+            /** Posting Id */
+            posting_id: string;
+            /** Review Id */
+            review_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "rendering" | "ready" | "pages_exceeded" | "failed";
+        };
+        /**
          * WeekLoadOut
          * @description Charge d'une semaine touchée, avant et après la proposition, et son plafond.
          */
@@ -4865,6 +5315,305 @@ export interface operations {
             };
         };
     };
+    patch_modification_api_v1_cv_modifications__modification_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                modification_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModificationPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModificationOut"];
+                };
+            };
+            /** @description `modification_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description `review_closed`, `confirmation_required` (« à confirmer » sans `confirm: true`), `fact_not_found` (le fait visé n'est plus dans le profil), `profile_conflict` */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description `validation_error` (`details.fields`), `keyword_not_in_profile` (le texte cite un mot clé de l'offre absent du profil) ; jamais la valeur reçue */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    get_reviews_api_v1_cv_reviews_get: {
+        parameters: {
+            query?: {
+                posting_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CvReviewOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_review_api_v1_cv_reviews_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewStart"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewStarted"];
+                };
+            };
+            /** @description `posting_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description `posting_not_ready` (offre pas encore analysée), `profile_required` (aucun profil validé), `template_required` (aucun modèle actif prêt), `review_in_progress` (`details.review_id` : la revue en cours de cette offre) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description `engine_unavailable` */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    get_one_review_api_v1_cv_reviews__review_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                review_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CvReviewOut"];
+                };
+            };
+            /** @description `review_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_generate_api_v1_cv_reviews__review_id__generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                review_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["GenerateIn"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerateStarted"];
+                };
+            };
+            /** @description `review_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description `review_closed` (revue terminée ou en échec), `generation_in_progress` (`details.version_id` : la version en rendu), `review_not_waiting` (la revue n'attend pas « Que veux-tu maintenant ? ») */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description `engine_unavailable` */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    patch_modifications_api_v1_cv_reviews__review_id__modifications_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                review_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkDecision"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkResult"];
+                };
+            };
+            /** @description `review_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description `review_closed` */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_templates_api_v1_cv_templates_get: {
         parameters: {
             query?: never;
@@ -5027,6 +5776,158 @@ export interface operations {
                 };
                 content: {
                     "image/png": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_versions_api_v1_cv_versions_get: {
+        parameters: {
+            query?: {
+                posting_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_one_version_api_v1_cv_versions__version_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionOut"];
+                };
+            };
+            /** @description `version_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_version_page_api_v1_cv_versions__version_id__pages__number__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                version_id: string;
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Image PNG de la page. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/png": unknown;
+                };
+            };
+            /** @description `version_not_found`, `version_page_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_version_pdf_api_v1_cv_versions__version_id__pdf_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Le CV ciblé en PDF. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": unknown;
+                };
+            };
+            /** @description `version_not_found`, `version_not_ready` (pas encore `ready`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
                 };
             };
             /** @description Validation Error */

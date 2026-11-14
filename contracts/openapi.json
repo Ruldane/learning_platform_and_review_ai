@@ -430,6 +430,37 @@
         "title": "ArtifactReadyPayload",
         "type": "object"
       },
+      "AtsCheckOut": {
+        "description": "Un contrôle de lisibilité par un ATS ; `detail` : phrase française sans texte du CV.",
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "id": {
+            "enum": [
+              "selectable_text",
+              "reading_order",
+              "standard_headings",
+              "contact_in_body",
+              "font_sizes"
+            ],
+            "title": "Id",
+            "type": "string"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "passed",
+          "detail"
+        ],
+        "title": "AtsCheckOut",
+        "type": "object"
+      },
       "AttemptCreate": {
         "properties": {
           "answers": {
@@ -1069,6 +1100,55 @@
         "title": "BraveUsageOut",
         "type": "object"
       },
+      "BulkDecision": {
+        "properties": {
+          "ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Ids",
+            "type": "array"
+          },
+          "status": {
+            "enum": [
+              "accepted",
+              "refused"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ids",
+          "status"
+        ],
+        "title": "BulkDecision",
+        "type": "object"
+      },
+      "BulkResult": {
+        "description": "`skipped` : les modifications « à confirmer » (jamais acceptées en groupe) et les\nidentifiants inconnus de la revue.",
+        "properties": {
+          "skipped": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Skipped",
+            "type": "array"
+          },
+          "updated": {
+            "title": "Updated",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "updated",
+          "skipped"
+        ],
+        "title": "BulkResult",
+        "type": "object"
+      },
       "CaptureRequest": {
         "description": "Une seule source : un lien http(s), un texte, ou un document déjà importé\n(`POST /documents`). Zéro ou plusieurs : 422 `invalid_input`.",
         "properties": {
@@ -1419,6 +1499,106 @@
           "cap_tokens"
         ],
         "title": "CostUpdatedPayload",
+        "type": "object"
+      },
+      "CvReviewOut": {
+        "description": "`before` : indicateurs du CV d'origine ; `gap_terms` : mots clés de l'offre absents du\nprofil, partis vers l'écart ; `waiting_output` : la session attend « Que veux-tu\nmaintenant ? » (seul moment où « Générer le PDF » est possible).",
+        "properties": {
+          "before": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IndicatorsOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "gap_terms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Gap Terms",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "modifications": {
+            "items": {
+              "$ref": "#/components/schemas/ModificationOut"
+            },
+            "title": "Modifications",
+            "type": "array"
+          },
+          "posting_id": {
+            "title": "Posting Id",
+            "type": "string"
+          },
+          "report": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReviewReport"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
+          "status": {
+            "enum": [
+              "running",
+              "proposed",
+              "done",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "versions": {
+            "items": {
+              "$ref": "#/components/schemas/VersionOut"
+            },
+            "title": "Versions",
+            "type": "array"
+          },
+          "waiting_output": {
+            "title": "Waiting Output",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "posting_id",
+          "status",
+          "session_id",
+          "before",
+          "modifications",
+          "gap_terms",
+          "report",
+          "versions",
+          "waiting_output",
+          "created_at"
+        ],
+        "title": "CvReviewOut",
         "type": "object"
       },
       "DistinctIn": {
@@ -1788,6 +1968,50 @@
           "text"
         ],
         "title": "EliminatoryOut",
+        "type": "object"
+      },
+      "ErrorDetailOut": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "details"
+        ],
+        "title": "ErrorDetailOut",
+        "type": "object"
+      },
+      "ErrorOut": {
+        "description": "L'enveloppe de toute erreur métier : `{error: {code, message, details}}`.",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorDetailOut"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "title": "ErrorOut",
         "type": "object"
       },
       "EvidenceOut": {
@@ -2160,6 +2384,31 @@
         "title": "GapStarted",
         "type": "object"
       },
+      "GenerateIn": {
+        "description": "`allow_extra_pages` : garder un CV plus long que l'original plutôt que s'arrêter.",
+        "properties": {
+          "allow_extra_pages": {
+            "default": false,
+            "title": "Allow Extra Pages",
+            "type": "boolean"
+          }
+        },
+        "title": "GenerateIn",
+        "type": "object"
+      },
+      "GenerateStarted": {
+        "properties": {
+          "version_id": {
+            "title": "Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version_id"
+        ],
+        "title": "GenerateStarted",
+        "type": "object"
+      },
       "GoalCreate": {
         "description": "L'objectif saisi par January (SPEC 3.1, étape 1). Une échéance passée est refusée (422,\nchemin du champ seulement, jamais la saisie).",
         "properties": {
@@ -2497,6 +2746,46 @@
           "name"
         ],
         "title": "Identity",
+        "type": "object"
+      },
+      "IndicatorsOut": {
+        "description": "Couverture des exigences obligatoires de l'offre (`missing` : leur texte, tel que l'offre\nl'écrit) et contrôles ATS. Aucune garantie de passage n'est promise.",
+        "properties": {
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/AtsCheckOut"
+            },
+            "title": "Checks",
+            "type": "array"
+          },
+          "coverage_percent": {
+            "title": "Coverage Percent",
+            "type": "integer"
+          },
+          "covered": {
+            "title": "Covered",
+            "type": "integer"
+          },
+          "missing": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "coverage_percent",
+          "covered",
+          "total",
+          "missing",
+          "checks"
+        ],
+        "title": "IndicatorsOut",
         "type": "object"
       },
       "InterruptField": {
@@ -4085,6 +4374,146 @@
           "presets"
         ],
         "title": "ModelsOut",
+        "type": "object"
+      },
+      "ModificationOut": {
+        "description": "Une modification proposée. `ref` : « a3 » (Lecteur ATS) ou « r2 » (Recruteur) ; `before` :\nle texte visé dans le CV d'origine (vide pour un ajout ou un déplacement) ; `after` : le\nnouveau texte (pour `move`, la clé de la section avant laquelle `section` passe) ;\n`blocks` : pourquoi elle est « à confirmer » (phrases fixes) ; `fact_ids` : les faits du\nprofil sur lesquels elle repose ; `author` : `ats_reader` ou `recruiter`.",
+        "properties": {
+          "action": {
+            "enum": [
+              "rewrite",
+              "add",
+              "remove",
+              "move"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "after": {
+            "title": "After",
+            "type": "string"
+          },
+          "author": {
+            "title": "Author",
+            "type": "string"
+          },
+          "before": {
+            "title": "Before",
+            "type": "string"
+          },
+          "blocks": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Blocks",
+            "type": "array"
+          },
+          "fact_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Fact Ids",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "ref": {
+            "title": "Ref",
+            "type": "string"
+          },
+          "section": {
+            "enum": [
+              "summary",
+              "experience",
+              "education",
+              "skills",
+              "projects",
+              "languages",
+              "links"
+            ],
+            "title": "Section",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "proposed",
+              "to_confirm",
+              "accepted",
+              "refused"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "keyword",
+              "clarity",
+              "impact",
+              "order",
+              "length",
+              "title"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "ref",
+          "section",
+          "action",
+          "type",
+          "before",
+          "after",
+          "reason",
+          "status",
+          "blocks",
+          "fact_ids",
+          "author"
+        ],
+        "title": "ModificationOut",
+        "type": "object"
+      },
+      "ModificationPatch": {
+        "description": "Décision sur une modification. `after` : texte réécrit par January (revalidé contre le\nprofil) ; `confirm` : « Je confirme que c'est vrai », seul moyen d'accepter une modification\n« à confirmer » (le fait entre alors au profil maître).",
+        "properties": {
+          "after": {
+            "anyOf": [
+              {
+                "maxLength": 600,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "After"
+          },
+          "confirm": {
+            "default": false,
+            "title": "Confirm",
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "accepted",
+              "refused"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "ModificationPatch",
         "type": "object"
       },
       "ModuleOut": {
@@ -6178,6 +6607,107 @@
           "demoted_skill"
         ],
         "title": "ReviewOut",
+        "type": "object"
+      },
+      "ReviewReport": {
+        "description": "Le rapport de la revue : ATS repéré et ses notes, résumé de la fiche entreprise, forces et\nrisques vus par le Recruteur, critères éliminatoires de l'offre. Aucune garantie de passage\nd'un ATS n'y est promise.",
+        "properties": {
+          "ats": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ats"
+          },
+          "ats_notes": {
+            "items": {
+              "maxLength": 300,
+              "type": "string"
+            },
+            "maxItems": 6,
+            "title": "Ats Notes",
+            "type": "array"
+          },
+          "company_summary": {
+            "anyOf": [
+              {
+                "maxLength": 800,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company Summary"
+          },
+          "eliminatory": {
+            "items": {
+              "maxLength": 300,
+              "type": "string"
+            },
+            "maxItems": 10,
+            "title": "Eliminatory",
+            "type": "array"
+          },
+          "risks": {
+            "items": {
+              "maxLength": 300,
+              "type": "string"
+            },
+            "maxItems": 5,
+            "title": "Risks",
+            "type": "array"
+          },
+          "strengths": {
+            "items": {
+              "maxLength": 300,
+              "type": "string"
+            },
+            "maxItems": 5,
+            "title": "Strengths",
+            "type": "array"
+          }
+        },
+        "title": "ReviewReport",
+        "type": "object"
+      },
+      "ReviewStart": {
+        "properties": {
+          "posting_id": {
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Posting Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "posting_id"
+        ],
+        "title": "ReviewStart",
+        "type": "object"
+      },
+      "ReviewStarted": {
+        "description": "Revue lancée : la revue (`running`) et sa session `cv_review` (à suivre par ses\névénements).",
+        "properties": {
+          "review_id": {
+            "title": "Review Id",
+            "type": "string"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "review_id",
+          "session_id"
+        ],
+        "title": "ReviewStarted",
         "type": "object"
       },
       "RunCompletedEvent": {
@@ -8727,6 +9257,110 @@
         "title": "VersionMoveOut",
         "type": "object"
       },
+      "VersionOut": {
+        "description": "Un CV produit pour une offre (`number` compte par offre). `indicators` : après le rendu\n(couverture des lignes adossées à un fait, contrôles ATS du PDF rendu), `None` avant ;\n`filename` : nom ASCII du PDF (`CV_<Nom>_<Entreprise>_<Poste>.pdf`) ; `decisions` : la\ndécision de chaque modification au clic (`ref` → `accepted`, `refused`, `proposed`,\n`to_confirm`, ou `ignored` pour une acceptée que la composition n'a pas pu placer) ;\n`failure_reason` : phrase française d'un échec du rendu.",
+        "properties": {
+          "allow_extra_pages": {
+            "title": "Allow Extra Pages",
+            "type": "boolean"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "decisions": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Decisions",
+            "type": "object"
+          },
+          "failure_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Reason"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "indicators": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IndicatorsOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "number": {
+            "title": "Number",
+            "type": "integer"
+          },
+          "original_page_count": {
+            "title": "Original Page Count",
+            "type": "integer"
+          },
+          "page_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Count"
+          },
+          "posting_id": {
+            "title": "Posting Id",
+            "type": "string"
+          },
+          "review_id": {
+            "title": "Review Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "rendering",
+              "ready",
+              "pages_exceeded",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "review_id",
+          "posting_id",
+          "number",
+          "status",
+          "page_count",
+          "original_page_count",
+          "allow_extra_pages",
+          "filename",
+          "decisions",
+          "indicators",
+          "created_at",
+          "failure_reason"
+        ],
+        "title": "VersionOut",
+        "type": "object"
+      },
       "WeekLoadOut": {
         "description": "Charge d'une semaine touchée, avant et après la proposition, et son plafond.",
         "properties": {
@@ -8996,6 +9630,428 @@
         ]
       }
     },
+    "/api/v1/cv/modifications/{modification_id}": {
+      "patch": {
+        "description": "Accepte ou refuse ; `after` : texte réécrit, revalidé (il peut rester « à confirmer ») ;\n`confirm: true` : accepte une modification « à confirmer », son fait entre au profil maître\n(nouvelle version validée).",
+        "operationId": "patch_modification_api_v1_cv_modifications__modification_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "modification_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Modification Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModificationPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModificationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "`modification_not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "`review_closed`, `confirmation_required` (« à confirmer » sans `confirm: true`), `fact_not_found` (le fait visé n'est plus dans le profil), `profile_conflict`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "`validation_error` (`details.fields`), `keyword_not_in_profile` (le texte cite un mot clé de l'offre absent du profil) ; jamais la valeur reçue"
+          }
+        },
+        "summary": "Patch Modification",
+        "tags": [
+          "cv-reviews"
+        ]
+      }
+    },
+    "/api/v1/cv/reviews": {
+      "get": {
+        "description": "Les revues (d'une offre), la plus récente d'abord.",
+        "operationId": "get_reviews_api_v1_cv_reviews_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "posting_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 36,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Posting Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CvReviewOut"
+                  },
+                  "title": "Response Get Reviews Api V1 Cv Reviews Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Reviews",
+        "tags": [
+          "cv-reviews"
+        ]
+      },
+      "post": {
+        "description": "Lance la revue du CV contre l'offre ; le profil (sa version) et le gabarit sont figés.",
+        "operationId": "post_review_api_v1_cv_reviews_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewStart"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "`posting_not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "`posting_not_ready` (offre pas encore analysée), `profile_required` (aucun profil validé), `template_required` (aucun modèle actif prêt), `review_in_progress` (`details.review_id` : la revue en cours de cette offre)"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "`engine_unavailable`"
+          }
+        },
+        "summary": "Post Review",
+        "tags": [
+          "cv-reviews"
+        ]
+      }
+    },
+    "/api/v1/cv/reviews/{review_id}": {
+      "get": {
+        "operationId": "get_one_review_api_v1_cv_reviews__review_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "review_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Review Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CvReviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "`review_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get One Review",
+        "tags": [
+          "cv-reviews"
+        ]
+      }
+    },
+    "/api/v1/cv/reviews/{review_id}/generate": {
+      "post": {
+        "description": "Crée la version (décisions figées au clic) et reprend la question de sortie ; le PDF se\nsuit par `GET /cv/versions/{id}` (statut `rendering` puis `ready`, `pages_exceeded` ou\n`failed`) ou par l'événement `artifact.ready` de la session.",
+        "operationId": "post_generate_api_v1_cv_reviews__review_id__generate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "review_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Review Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/GenerateIn"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerateStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "`review_not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "`review_closed` (revue terminée ou en échec), `generation_in_progress` (`details.version_id` : la version en rendu), `review_not_waiting` (la revue n'attend pas « Que veux-tu maintenant ? »)"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "`engine_unavailable`"
+          }
+        },
+        "summary": "Post Generate",
+        "tags": [
+          "cv-reviews"
+        ]
+      }
+    },
+    "/api/v1/cv/reviews/{review_id}/modifications": {
+      "patch": {
+        "description": "Décision groupée (50 au plus) ; les « à confirmer » ne sont jamais acceptés en groupe :\nils reviennent dans `skipped`, avec les identifiants inconnus.",
+        "operationId": "patch_modifications_api_v1_cv_reviews__review_id__modifications_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "review_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Review Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkDecision"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "`review_not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "`review_closed`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Patch Modifications",
+        "tags": [
+          "cv-reviews"
+        ]
+      }
+    },
     "/api/v1/cv/templates": {
       "get": {
         "description": "Les gabarits non archivés, le plus récent d'abord.",
@@ -9236,6 +10292,227 @@
         "summary": "Get Template Page",
         "tags": [
           "cv-templates"
+        ]
+      }
+    },
+    "/api/v1/cv/versions": {
+      "get": {
+        "description": "Les versions (d'une offre), la plus récente d'abord.",
+        "operationId": "get_versions_api_v1_cv_versions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "posting_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 36,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Posting Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/VersionOut"
+                  },
+                  "title": "Response Get Versions Api V1 Cv Versions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Versions",
+        "tags": [
+          "cv-versions"
+        ]
+      }
+    },
+    "/api/v1/cv/versions/{version_id}": {
+      "get": {
+        "operationId": "get_one_version_api_v1_cv_versions__version_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "`version_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get One Version",
+        "tags": [
+          "cv-versions"
+        ]
+      }
+    },
+    "/api/v1/cv/versions/{version_id}/pages/{number}": {
+      "get": {
+        "description": "Page `number` (depuis 1) d'une version prête ; 404 sinon.",
+        "operationId": "get_version_page_api_v1_cv_versions__version_id__pages__number__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "number",
+            "required": true,
+            "schema": {
+              "title": "Number",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "image/png": {}
+            },
+            "description": "Image PNG de la page."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "`version_not_found`, `version_page_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Version Page",
+        "tags": [
+          "cv-versions"
+        ]
+      }
+    },
+    "/api/v1/cv/versions/{version_id}/pdf": {
+      "get": {
+        "description": "Téléchargement (`attachment`) ; 404 tant que la version n'est pas `ready`.",
+        "operationId": "get_version_pdf_api_v1_cv_versions__version_id__pdf_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {}
+            },
+            "description": "Le CV ciblé en PDF."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "`version_not_found`, `version_not_ready` (pas encore `ready`)"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Version Pdf",
+        "tags": [
+          "cv-versions"
         ]
       }
     },

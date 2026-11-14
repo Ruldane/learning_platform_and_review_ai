@@ -59,3 +59,20 @@ class SessionLauncher:
                 raise
             logger.warning("Session non lancée (utilisateur %s) : serveur en arrêt", user_id)
             raise engine_unavailable() from None
+
+    async def resume(self, user_id: str, session_id: str, interrupt_id: str, value: Any) -> None:
+        """Comme `SessionRunner.resume` : réponse à la question en attente, donnée par la route
+        d'une feature (« Générer le PDF » d'une revue de CV, D130). Erreurs du runner telles
+        quelles (`stale_interrupt`…), sauf l'arrêt du serveur, rendu comme un moteur
+        indisponible."""
+        runner = self._runner
+        if runner is None:
+            logger.warning("Session non reprise (utilisateur %s) : moteur non lié", user_id)
+            raise engine_unavailable()
+        try:
+            await runner.resume(user_id, session_id, interrupt_id, value)
+        except AppError as exc:
+            if exc.code != STOPPING_CODE:
+                raise
+            logger.warning("Session non reprise (utilisateur %s) : serveur en arrêt", user_id)
+            raise engine_unavailable() from None

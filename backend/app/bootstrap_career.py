@@ -8,11 +8,13 @@ from dataclasses import dataclass
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.agents.runtime.launcher import SessionLauncher
+from app.agents.tools.cv_review_port import CvReviewStore
 from app.agents.tools.cv_template_port import CvTemplateStore
 from app.agents.tools.gap_port import GapStore
 from app.agents.tools.profile_port import ProfileStore
 from app.core.providers import PublishingProviders
 from app.features.cv.service.profile_store import AgentProfileStore
+from app.features.cv.service.review_store import AgentCvReviewStore
 from app.features.cv.service.runtime import CvRuntime
 from app.features.cv.service.templates_store import AgentCvTemplateStore
 from app.features.memory.service.runtime import MemoryRuntime
@@ -28,9 +30,10 @@ class CareerRuntimes:
 
     postings: PostingsRuntime
     gap: GapStore  # port de l'Analyste (D121)
-    cv: CvRuntime  # profil maître (D124), gabarits (D126)
+    cv: CvRuntime  # profil maître (D124), gabarits (D126), revues et versions (D130)
     profile: ProfileStore  # port de l'Archiviste en mode `profile` (D124)
     cv_templates: CvTemplateStore  # port du Maquettiste en mode `design` (D125, D126)
+    cv_review: CvReviewStore  # port du parcours `cv_review` (D129, D130)
 
 
 def career_runtimes(
@@ -45,10 +48,17 @@ def career_runtimes(
     analyse lancée par le lanceur, lié au moteur ensuite) et port de l'écart ; profil maître
     (documents rangés par la mémoire, PDF relus par la mise en page, capture lancée par le
     lanceur) et port de l'Archiviste ; gabarits (mise en page, rendu de nos gabarits HTML, polices
-    libres, images et polices rangées par le stockage de la mémoire) et port du Maquettiste."""
+    libres, images et polices rangées par le stockage de la mémoire) et port du Maquettiste ; revues
+    (lancées et reprises par le lanceur) et port du parcours `cv_review`."""
     postings = PostingsRuntime(session_factory, research, memory, launcher)
     cv = CvRuntime(
-        session_factory, memory, launcher, publishing.layout, publishing.html_pdf, publishing.fonts
+        session_factory,
+        memory,
+        launcher,
+        publishing.layout,
+        publishing.html_pdf,
+        publishing.fonts,
+        resumer=launcher,  # « Générer le PDF » reprend la question de sortie (D130)
     )
     return CareerRuntimes(
         postings=postings,
@@ -56,4 +66,5 @@ def career_runtimes(
         cv=cv,
         profile=AgentProfileStore(cv),
         cv_templates=AgentCvTemplateStore(cv),
+        cv_review=AgentCvReviewStore(cv),
     )

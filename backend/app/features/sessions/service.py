@@ -49,6 +49,7 @@ ROUTE_ONLY: dict[str, str] = {
     "study_session": "POST /study-sessions",
     "gap_analysis": "POST /postings",  # l'offre est créée et vérifiée par sa route (D121)
     "cv_capture": "POST /profile/import ou POST /cv/templates",  # documents rangés d'abord (D124)
+    "cv_review": "POST /cv/reviews",  # profil, gabarit et offre vérifiés puis figés (D130)
 }
 
 
@@ -115,13 +116,16 @@ async def find_latest_session(
 class SessionFacts:
     status: str
     input: dict[str, Any]
+    pending: dict[str, Any] | None = None  # question en attente (`InterruptRequestedPayload`)
 
 
 async def session_facts(db: AsyncSession, user_id: str, session_id: str) -> SessionFacts | None:
     """Statut et entrée d'une session de l'utilisateur (relance d'un parcours en échec, D97),
     `None` si elle n'existe pas. Lecture pour les autres features (contrat 2)."""
     row = await SessionReadRepository(db, user_id).get(session_id)
-    return None if row is None else SessionFacts(row.status, dict(row.input or {}))
+    if row is None:
+        return None
+    return SessionFacts(row.status, dict(row.input or {}), row.pending_interrupt)
 
 
 class SessionsService:

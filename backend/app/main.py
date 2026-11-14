@@ -214,6 +214,7 @@ async def _open_agents(app: FastAPI, stack: AsyncExitStack) -> None:
                 gap=app.state.career.gap,
                 profile=app.state.career.profile,
                 cv_templates=app.state.career.cv_templates,
+                cv_review=app.state.career.cv_review,
             ),
         )
     )
