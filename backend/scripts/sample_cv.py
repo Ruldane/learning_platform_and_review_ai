@@ -262,6 +262,14 @@ def make_cv_pdf(cv: SampleCv = SampleCv()) -> bytes:  # noqa: B008 (valeur figé
     return assemble_pdf(_objects(cv))
 
 
+def visible_text(cv: SampleCv = SampleCv()) -> str:  # noqa: B008 (valeur figée)
+    """Le texte visible de la première page, une ligne par texte posé (contrôles réels : un
+    fait du profil tiré du CV doit y figurer)."""
+    width, height = PAGE_SIZES[cv.page]
+    _rects, texts = _first_page(cv, width, height)
+    return "\n".join(text[5] for text in texts if text[4] != _WHITE or text[3] > 1)
+
+
 def make_protected_pdf() -> bytes:
     """Le CV fictif déclaré chiffré (gestionnaire standard, RC4 40 bits) avec des empreintes de
     mot de passe qui ne correspondent à aucun mot de passe vide : il faut un mot de passe pour
