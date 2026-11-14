@@ -300,6 +300,60 @@ Registres d'agents et de graphes, chargeur de prompts, checkpointer SQLite async
 - Front : `auth/`, premier lancement en 5 étapes, `settings/` (coûts, journal, disponibilité, style, données), README.
 - **Terminée quand** les 3 parcours Playwright passent et tous les critères transverses de 18.3 sont vérifiés.
 
+### Phases 10 à 20 — fonctionnalités ajoutées (demande du 2026-11-14)
+
+Hors de la spec d'origine : une fonctionnalité par phase, dans l'ordre d'importance. Chaque phase commence par une séance de conception (brainstorming) avec l'utilisatrice, puis son propre plan, comme les phases 2 à 9.
+
+| Phase | Fonctionnalité | Idée | S'appuie sur |
+| --- | --- | --- | --- |
+| 10 | IDE avec professeur en temps réel | Éditeur (Monaco) et terminal (xterm) dans le navigateur ; Python et JS dans un conteneur isolé par utilisateur (`uv`, `npm`, réseau limité aux dépôts de paquets, limites CPU / mémoire / temps) ; agent « professeur » en mode guide (explique les erreurs, indices gradués, ne touche pas au code) ou binôme (annotations en marge, corrections proposées à accepter) ; intervient à l'exécution, à l'erreur ou sur demande | Phases 0 à 5 (Tuteur, carte, fiches, journal) |
+| 11 | Extension navigateur « Capturer l'offre » | Un clic sur une page d'offre (LinkedIn, Indeed, Welcome to the Jungle…) envoie son texte à Tremplin | Phase 6 (offres) |
+| 12 | Mode « Explique-moi » (Feynman) | January enseigne un concept à un agent élève naïf qui repère les trous ; bilan de maîtrise | Phase 5 (Tuteur, carte) |
+| 13 | Alertes d'offres compatibles | Le radar hebdomadaire cherche des offres, calcule le score de match et l'écart, envoie les 5 meilleures | Phases 6 et 8 |
+| 14 | Liaison GitHub | Dépôts et commits lus comme preuves de compétences ; l'évaluation de projets relit un vrai dépôt | Phases 5 et 8 |
+| 15 | Profil LinkedIn optimisé | Titre, résumé, compétences proposés depuis le profil maître et les offres visées, passés au validateur d'honnêteté | Phase 6 (profil, validateur) |
+| 16 | Entraînement « system design » | Sujet d'architecture sur le tableau Excalidraw, critique par un évaluateur comme en entretien | Phases 3 et 7 |
+| 17 | Mode vocal | Oral d'explication et d'entretien : transcription, retours sur la clarté et la structure | Phases 5 et 7 |
+| 18 | Google Agenda | Blocs d'étude et entretiens dans l'agenda ; replanification sur les vrais créneaux libres | Phases 4, 5 et 7 |
+| 19 | Application mobile (PWA) | Révisions et brief sur le téléphone, notifications, fiches hors ligne | Phases 5 et 8 |
+| 20 | Site portfolio généré | Site personnel statique tiré du profil maître et des projets, déployable en un clic | Phases 6 et 8 |
+
+#### Phase 10 — coût des appels au modèle (exigence du 2026-11-14)
+
+Le professeur doit rester peu coûteux en appels API. Ces règles sont fixées dès la conception :
+
+- **Déclencheurs :** le professeur réagit seulement à l'exécution, à une erreur, à une question ou, en option, après 30 s d'arrêt sur une même ligne. Jamais à chaque frappe.
+- **Contexte envoyé :** l'énoncé de l'exercice, le fichier en cours (ou seulement la partie modifiée), la sortie d'erreur tronquée et les derniers échanges. Jamais tout le projet ni tout l'historique.
+- **Mise en cache :** l'énoncé et les consignes du professeur forment un début de prompt fixe, mis en cache entre les appels d'une séance.
+- **Deux niveaux de modèle :** un modèle léger pour les indices et les annotations en marge, le modèle fort seulement pour les vraies explications et les corrections proposées. Les deux sont choisis dans le registre `LLM_PROVIDERS`.
+- **Plafond par séance :** un plafond de tokens par séance et un autre par jour, réglables, avec la consommation affichée à l'utilisateur. Une fois le plafond atteint, le professeur passe en mode « sur demande ».
+- **Anti-répétition :** une même erreur au même endroit ne déclenche pas une nouvelle explication. Le professeur renvoie à la précédente.
+- **Mesure :** chaque appel journalise uniquement son identifiant de séance, le modèle et les tokens. La phase se termine par une séance réelle mesurée, comparée à la cible d'environ 150 000 tokens en entrée et 15 000 en sortie par heure.
+
+#### Liens entre les phases
+
+Chaque phase branche ses liens par les registres existants (manifeste front, `AGENTS`, `GRAPHS`, ports, tâches planifiées), sans retoucher le code des autres phases. Quand une phase prépare un lien vers une phase qui n'existe pas encore, elle expose seulement le point d'accroche (événement, port ou champ) ; la phase suivante s'y branche.
+
+- **Point d'accroche commun : les preuves de compétence.** Les phases 10, 12, 14 et 16 produisent des **preuves** rangées sur la carte des compétences (phase 5). Elles utilisent le même type de preuve, avec une source (`ide`, `feynman`, `github`, `system_design`) et le même plafond de niveau (`en_cours` par la pratique, `valide` seulement par un quiz ou une évaluation notée).
+- **Point d'accroche commun : les erreurs fréquentes.** Les phases 10, 12, 16 et 17 transforment les erreurs repérées en **fiches de révision** (phase 5), par le même service de fiches.
+- **Point d'accroche commun : le fil d'activité et le brief.** Toute phase qui produit un événement notable l'écrit dans le fil d'activité (phase 8). Le brief du matin le reprend : exercice IDE réussi, offre capturée, alerte, entretien à venir, bloc d'étude.
+
+| Phase | Reçoit de | Donne à |
+| --- | --- | --- |
+| 10 IDE + professeur | Leçons et exercices (3, 5), compétences ciblées (5) | Preuves sur la carte (5) ; fiches des erreurs (5) ; journal et série (5) ; exercices de code de l'entretien (7) ; dépôt local envoyable vers GitHub (14) ; base du mode « Explique-moi » sur du code (12) |
+| 11 Extension « Capturer l'offre » | Analyse d'offre et doublons (6), connexion (9) | Offre analysée → écart et revue de CV (6) ; candidature créée (7) ; source d'offres pour les alertes (13) |
+| 12 Mode « Explique-moi » | Concepts des leçons (3, 5), code de l'IDE (10) | Preuves sur la carte (5) ; fiches des trous repérés (5) ; version orale par le mode vocal (17) |
+| 13 Alertes d'offres compatibles | Radar (8), score de match et écart (6), offres capturées (11) | Brief du matin (8) ; notifications mobiles (19) ; « Ajouter au planning » des manques (4, 6) |
+| 14 Liaison GitHub | Connexion (9), dépôts poussés depuis l'IDE (10) | Preuves sur la carte (5) ; évaluation de projets sur un vrai dépôt (8) ; projets du profil maître (6) ; contenu du portfolio (20) ; liens du profil LinkedIn (15) |
+| 15 Profil LinkedIn optimisé | Profil maître et validateur (6), offres visées (6, 13), projets GitHub (14) | Textes cohérents avec le CV ; contenu réutilisé par le portfolio (20) |
+| 16 Entraînement « system design » | Tableau Excalidraw (3), Recruteur et personas d'entretien (7) | Preuves sur la carte (5) ; fiches (5) ; épreuve dans la simulation d'entretien (7) ; version orale (17) |
+| 17 Mode vocal | Tuteur (5), Intervieweur (7), « Explique-moi » (12), system design (16) | Retours de clarté et de structure ; fiches (5) ; bilan d'entretien (7) |
+| 18 Google Agenda | Connexion Google (9), planning et replanification (4, 5), entretiens et relances (7) | Créneaux réels pour la replanification (5) ; rappels dans l'agenda ; brief (8) |
+| 19 Application mobile (PWA) | Fiches (5), brief et fil (8), alertes (13), agenda (18) | Révisions hors ligne et notifications ; capture rapide depuis le téléphone (5, 11) |
+| 20 Site portfolio généré | Profil maître (6), projets évalués (8), GitHub (14), textes LinkedIn (15) | Lien du portfolio dans le CV, le profil LinkedIn et le kit de candidature (6, 7, 15) |
+
+Ordre et dépendances : une phase ne dépend que de phases déjà livrées. Les liens vers une phase plus tardive (par exemple 10 → 14, 11 → 13, 12 → 17) sont branchés par la phase tardive, qui ajoute sa ligne dans le registre concerné.
+
 ## 6. Stratégie de tests
 
 - **Back** : pytest + pytest-asyncio ; base SQLite en mémoire par test ; `FakeLlmProvider` (réponses scriptées, déterministes) branché via `dependency_overrides` ; faux fournisseurs pour vecteurs, recherche, PDF ; aucun appel réseau. Un test d'API par routeur, dont un test d'isolation entre deux utilisateurs.
