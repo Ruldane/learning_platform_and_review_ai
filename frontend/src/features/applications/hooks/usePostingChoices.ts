@@ -18,11 +18,12 @@ const toChoices = (rows: PostingSummaryOut[]): PostingChoice[] =>
       label: [row.company, row.title].filter(Boolean).join(", ") || row.id,
     }));
 
-/** `GET /postings` : les offres analysées, à choisir pour un entretien sans fiche. */
-export function usePostingChoices() {
+/** `GET /postings` : les offres analysées, à choisir pour un entretien sans fiche (rien n'est lu sans `enabled`). */
+export function usePostingChoices(enabled = true) {
   return useQuery({
     queryKey: applicationsKeys.postings,
     queryFn: ({ signal }) => fetchPostings(signal),
     select: toChoices,
+    enabled,
   });
 }

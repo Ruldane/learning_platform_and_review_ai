@@ -10,7 +10,12 @@ const STOP = "stop";
  * question (la carte commune du fil s'en charge). Répondre envoie `{ answers: { answer } }`,
  * « Terminer l'entretien » envoie la valeur de l'option (`stop`).
  */
-export function renderQuestion(item: InterruptItem, run: Run, total: number) {
+export function renderQuestion(
+  item: InterruptItem,
+  run: Run,
+  total: number,
+  onStopped: () => void,
+) {
   if (item.interrupt.kind !== ANSWER_KIND) return undefined;
   const position = questionPosition(run.stream.view.feed, item);
   const id = item.interrupt.interrupt_id;
@@ -24,7 +29,10 @@ export function renderQuestion(item: InterruptItem, run: Run, total: number) {
       disabled={!canAnswer(run, item)}
       stopLabel={stop?.label ?? null}
       onAnswer={(text) => void run.actions.resume(id, { answers: { answer: text } })}
-      onStop={() => void run.actions.resume(id, STOP)}
+      onStop={() => {
+        onStopped();
+        void run.actions.resume(id, STOP);
+      }}
     />
   );
 }

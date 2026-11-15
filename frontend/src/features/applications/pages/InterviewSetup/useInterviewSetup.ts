@@ -17,7 +17,7 @@ export function useInterviewSetup(
   const [settings, setSettings] = useState(DEFAULTS);
   const [target, setTarget] = useState(EMPTY_TARGET);
   const [missing, setMissing] = useState(false);
-  const postings = usePostingChoices().data ?? [];
+  const postings = usePostingChoices(free).data ?? [];
   const launcher = useStartInterview(applicationId);
 
   async function submit(event: FormEvent) {

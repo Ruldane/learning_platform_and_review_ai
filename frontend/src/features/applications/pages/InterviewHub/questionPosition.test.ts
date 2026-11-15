@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { FeedItem } from "@/shared/realtime/types";
-import { announcementOf, questionPosition } from "./questionPosition";
+import { announcementOf, isFinishing, questionPosition } from "./questionPosition";
 
 const turn = (messageId: string): FeedItem => ({
   kind: "turn",
@@ -78,5 +78,22 @@ describe("announcementOf", () => {
     expect(announcementOf([], null, 7)).toBe("");
     const other = { ...ask(2).interrupt, kind: "choice" };
     expect(announcementOf([], other, 7)).toBe("");
+  });
+});
+
+describe("isFinishing", () => {
+  const answered = (seq: number) => ({ ...ask(seq), answered: true });
+
+  it("is true once the answer to the last question is sent, or the interview is stopped", () => {
+    const feed = [turn("interviewer-q4"), answered(5)];
+    expect(isFinishing(feed, null, 4, false)).toBe(true);
+    expect(isFinishing([turn("interviewer-q1"), answered(2)], null, 4, true)).toBe(true);
+  });
+
+  it("is false before the last question, while a question is open, and with nothing asked", () => {
+    expect(isFinishing([turn("interviewer-q2"), answered(3)], null, 4, false)).toBe(false);
+    const open = ask(5);
+    expect(isFinishing([turn("interviewer-q4"), open], open.interrupt, 4, true)).toBe(false);
+    expect(isFinishing([], null, 4, false)).toBe(false);
   });
 });

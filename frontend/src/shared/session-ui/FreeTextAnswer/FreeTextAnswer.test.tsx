@@ -41,7 +41,7 @@ describe("FreeTextAnswer, long answer", () => {
     expect(onSubmit).toHaveBeenCalledWith("Première ligne\nSeconde ligne");
   });
 
-  it("limits the length, takes its own label and names the limit", () => {
+  it("limits the length and takes its own label", () => {
     render(
       <FreeTextAnswer
         disabled={false}

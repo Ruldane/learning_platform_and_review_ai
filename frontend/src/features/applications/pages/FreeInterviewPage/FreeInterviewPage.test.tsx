@@ -111,6 +111,15 @@ describe("FreeInterviewPage", () => {
     expect(await screen.findByRole("heading", { name: "Débrief de l'entretien" })).toBeVisible();
   });
 
+  it("names a free interview on an offer by the offer", async () => {
+    setup({
+      postings: [postingOut({ id: "p1", company: "Acme", title: "Data engineer" })],
+      interviews: [interviewOut({ id: "f2", application_id: null, posting_id: "p1", role: null })],
+    });
+    const list = await screen.findByRole("list", { name: "Entretiens passés" });
+    expect(await within(list).findByText("Offre : Acme, Data engineer")).toBeVisible();
+  });
+
   it("asks the first question of a free interview like any other", async () => {
     const view = setup({ postings: [] });
     await view.user.type(

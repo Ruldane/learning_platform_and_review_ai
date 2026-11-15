@@ -45,3 +45,25 @@ export function announcementOf(
     : t("applications.interviewRun.announceQuestion", { number: position.number, total });
   return `${lead} ${pending.question}`;
 }
+
+/**
+ * L'entretien n'attend plus rien de January et le débrief va s'écrire : elle a terminé l'entretien,
+ * ou répondu à la dernière question principale (une relance pourrait encore venir : elle effacerait
+ * cette phrase). Faux tant qu'une question est ouverte.
+ */
+export function isFinishing(
+  feed: FeedItem[],
+  pending: InterruptPayload | null,
+  total: number,
+  stopped: boolean,
+): boolean {
+  if (pending !== null) return false;
+  const answers = feed.filter(
+    (entry): entry is Extract<FeedItem, { kind: "interrupt" }> =>
+      entry.kind === "interrupt" && entry.interrupt.kind === ANSWER_KIND,
+  );
+  const last = answers[answers.length - 1];
+  if (!last?.answered) return false;
+  if (stopped) return true;
+  return (questionPosition(feed, last)?.number ?? 0) >= total;
+}

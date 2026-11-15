@@ -135,4 +135,33 @@ describe("InterviewPage, débrief", () => {
     ).toBeVisible();
     expect(screen.getByText("Non notée")).toBeVisible();
   });
+
+  it("keeps the debrief of an interview taken up on arrival when it ends, instead of going back to the settings", async () => {
+    useSessionStore.getState().reset("iv-s5");
+    const view = setup({
+      interviews: [
+        past({ id: "iv5", status: "running", session_id: "iv-s5", exchanges: [], debrief: null }),
+      ],
+    });
+    const stream = await openStream(view.sockets, "iv-s5");
+    const e = councilEvents("iv-s5");
+    stream.push(...ask(e, 1, "q1", "Première ?"));
+    await screen.findByRole("region", { name: "Question 1 sur 4" });
+    view.interviews.finish("iv5");
+    stream.push(e.completed());
+    const title = await screen.findByRole("heading", { name: "Débrief de l'entretien" });
+    // La liste est relue : l'entretien n'y est plus « en cours », le débrief reste.
+    await waitFor(() => expect(view.interviews.state.lists.length).toBeGreaterThan(1));
+    expect(title).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Commencer l'entretien" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Commencer un autre entretien" })).toBeVisible();
+    await view.user.click(screen.getByRole("button", { name: "Commencer un autre entretien" }));
+    expect(await screen.findByRole("button", { name: "Commencer l'entretien" })).toBeVisible();
+  });
+
+  it("does not read the offers from the page of an application", async () => {
+    const view = setup();
+    await screen.findByRole("button", { name: "Commencer l'entretien" });
+    expect(view.interviews.state.postingReads).toBe(0);
+  });
 });

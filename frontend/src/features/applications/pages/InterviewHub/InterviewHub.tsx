@@ -4,10 +4,11 @@ import { t } from "@/shared/i18n/t";
 import type { SocketFactory } from "@/shared/realtime/socket";
 import { ErrorState } from "@/shared/ui/states/ErrorState";
 import { LoadingState } from "@/shared/ui/states/LoadingState";
-import { InterviewList } from "../../components/InterviewList";
 import { useInterviews } from "../../hooks/useInterviews";
+import { usePostingChoices } from "../../hooks/usePostingChoices";
 import { InterviewSetup } from "../InterviewSetup";
 import { InterviewFollow } from "./InterviewFollow";
+import { PastInterviews } from "./PastInterviews";
 
 interface InterviewHubProps {
   /** La fiche dont on voit les entretiens ; `null` : les entretiens sans fiche. */
@@ -29,13 +30,20 @@ interface Followed {
 export function InterviewHub({ applicationId, createSocket }: InterviewHubProps) {
   const list = useInterviews(applicationId);
   const [followed, setFollowed] = useState<Followed | null>(null);
+  // Les entretiens refermés : un entretien fini ne se reprend pas tant que la liste le dit « en cours ».
+  const [closed, setClosed] = useState<string[]>([]);
+  const postings = usePostingChoices(applicationId === null).data;
 
   if (list.isPending) return <LoadingState label={t("applications.interviewPage.loading")} />;
   if (list.isError) {
     return <ErrorState message={errorMessage(list.error)} onRetry={() => void list.refetch()} />;
   }
   const running = list.data.find((interview) => interview.status === "running");
-  const current = followed ?? (running ? { id: running.id, resumed: false, live: true } : null);
+  // L'entretien en cours trouvé à l'arrivée est suivi pour de bon : sa fin ne le fait pas disparaître.
+  if (!followed && running && !closed.includes(running.id)) {
+    setFollowed({ id: running.id, resumed: false, live: true });
+  }
+  const current = followed;
   if (current) {
     return (
       <InterviewFollow
@@ -44,7 +52,11 @@ export function InterviewHub({ applicationId, createSocket }: InterviewHubProps)
         resumed={current.resumed}
         live={current.live}
         createSocket={createSocket}
-        onClose={() => setFollowed(null)}
+        applicationId={applicationId}
+        onClose={() => {
+          setClosed([...closed, current.id]);
+          setFollowed(null);
+        }}
       />
     );
   }
@@ -54,19 +66,11 @@ export function InterviewHub({ applicationId, createSocket }: InterviewHubProps)
         applicationId={applicationId}
         onStarted={(id, resumed) => setFollowed({ id, resumed, live: true })}
       />
-      <section aria-labelledby="past-interviews" className="flex flex-col gap-2">
-        <h2 id="past-interviews" className="text-lg font-semibold">
-          {t("applications.interviewPage.pastTitle")}
-        </h2>
-        {list.data.length === 0 ? (
-          <p className="text-muted-foreground">{t("applications.interviewPage.pastEmpty")}</p>
-        ) : (
-          <InterviewList
-            interviews={list.data}
-            onOpen={(id) => setFollowed({ id, resumed: false, live: false })}
-          />
-        )}
-      </section>
+      <PastInterviews
+        interviews={list.data}
+        postings={postings ?? []}
+        onOpen={(id) => setFollowed({ id, resumed: false, live: false })}
+      />
     </div>
   );
 }

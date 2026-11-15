@@ -65,6 +65,7 @@ export interface InterviewApiOptions {
 const newState = () => ({
   starts: [] as { applicationId: string | null; body: Over }[],
   lists: [] as (string | null)[],
+  postingReads: 0,
 });
 
 /** Ce qu'un lancement accepté range : un entretien en cours, au début de la liste. */
@@ -131,9 +132,10 @@ export function interviewApi(options: InterviewApiOptions = {}) {
         start(String(params.id))({ request }),
       ),
       http.post(`${API}/interviews`, start(null)),
-      http.get(`${API}/postings`, () =>
-        HttpResponse.json(options.postings ?? [postingOut({ id: "p1" })]),
-      ),
+      http.get(`${API}/postings`, () => {
+        state.postingReads += 1;
+        return HttpResponse.json(options.postings ?? [postingOut({ id: "p1" })]);
+      }),
     ],
     /** Le serveur termine l'entretien `id` (ce que fait la session en rangeant son résultat). */
     finish(id: string, over: Over = {}) {

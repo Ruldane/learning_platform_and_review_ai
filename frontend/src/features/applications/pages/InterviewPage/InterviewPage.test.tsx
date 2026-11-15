@@ -94,6 +94,36 @@ describe("InterviewPage, réglages", () => {
     expect(screen.queryByRole("alert")).toBeNull();
   });
 
+  it("says when the interview taken up belongs to another application, with a link to it", async () => {
+    const view = setup({
+      start: () =>
+        HttpResponse.json(
+          apiError("interview_in_progress", "Déjà en cours.", { interview_id: "iv9" }),
+          { status: 409 },
+        ),
+    });
+    const start = await screen.findByRole("button", { name: "Commencer l'entretien" });
+    view.interviews.interviews.push(
+      interviewOut({
+        id: "iv9",
+        application_id: "a2",
+        status: "running",
+        session_id: "iv-s9",
+        exchanges: [],
+        debrief: null,
+      }),
+    );
+    await view.user.click(start);
+    await openStream(view.sockets, "iv-s9");
+    expect(
+      await screen.findByText("Un entretien est déjà en cours sur une autre candidature."),
+    ).toBeVisible();
+    expect(screen.getByRole("link", { name: "Ouvrir cette candidature" })).toHaveAttribute(
+      "href",
+      "/candidatures/a2/entretien",
+    );
+  });
+
   it("says the agents are unavailable and keeps the settings", async () => {
     const view = setup({
       start: () =>
@@ -211,5 +241,39 @@ describe("InterviewPage, échange écrit", () => {
     await view.user.click(await screen.findByRole("button", { name: "Terminer l'entretien" }));
     await waitFor(() => expect(resumes).toEqual([{ interrupt_id: "q1", value: "stop" }]));
     expect(await screen.findByText("Tu as terminé l'entretien.")).toBeVisible();
+  });
+
+  it("says the debrief is being written as soon as « Terminer l'entretien » is sent", async () => {
+    recordPosts(`/sessions/${SESSION}/resume`, 200, sessionOut(SESSION, "running"));
+    const view = setup();
+    const { stream, e } = await startInterview(view);
+    stream.push(...ask(e, 1, "q1", "Première ?"));
+    await view.user.click(await screen.findByRole("button", { name: "Terminer l'entretien" }));
+    expect(await screen.findByText(/le débrief s'écrit/)).toBeVisible();
+  });
+
+  it("says it after the answer to the last question, and takes it back if a follow-up comes", async () => {
+    recordPosts(`/sessions/${SESSION}/resume`, 200, sessionOut(SESSION, "running"));
+    const view = setup();
+    await view.user.click(await screen.findByRole("radio", { name: "15 minutes" }));
+    await view.user.click(screen.getByRole("button", { name: "Commencer l'entretien" }));
+    const stream = await openStream(view.sockets, SESSION);
+    const e = councilEvents(SESSION);
+    stream.push(...ask(e, 3, "q3", "Troisième ?"));
+    const third = await screen.findByRole("region", { name: "Question 3 sur 4" });
+    await view.user.type(within(third).getByRole("textbox"), "Réponse");
+    await view.user.click(within(third).getByRole("button", { name: "Répondre" }));
+    expect(screen.queryByText(/le débrief s'écrit/)).toBeNull();
+    stream.push(...ask(e, 4, "q4", "Dernière ?"));
+    const last = await screen.findByRole("region", { name: "Question 4 sur 4" });
+    await view.user.type(within(last).getByRole("textbox"), "Fin");
+    await view.user.click(within(last).getByRole("button", { name: "Répondre" }));
+    expect(await screen.findByText(/le débrief s'écrit/)).toBeVisible();
+    stream.push(
+      e.message("interviewer-q4-relance", "Précise ?", "interviewer"),
+      e.interrupt("interview_answer", "q4r", { question: "Précise ?", options: [] }),
+    );
+    await screen.findByRole("region", { name: "Relance sur la question 4 sur 4" });
+    expect(screen.queryByText(/le débrief s'écrit/)).toBeNull();
   });
 });

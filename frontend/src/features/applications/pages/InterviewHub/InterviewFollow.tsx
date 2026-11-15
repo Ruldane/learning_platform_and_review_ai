@@ -7,6 +7,7 @@ import { ErrorState } from "@/shared/ui/states/ErrorState";
 import { LoadingState } from "@/shared/ui/states/LoadingState";
 import { useInterview } from "../../hooks/useInterview";
 import { applicationsKeys } from "../../queryKeys";
+import { ResumedNote } from "./ResumedNote";
 import { InterviewLive } from "./InterviewLive";
 import { InterviewOutcome } from "./InterviewOutcome";
 
@@ -16,6 +17,8 @@ interface InterviewFollowProps {
   resumed: boolean;
   /** L'entretien vient d'être suivi en direct : le retour propose d'en commencer un autre. */
   live: boolean;
+  /** La fiche de la page ; `null` : la page libre. */
+  applicationId: string | null;
   createSocket?: SocketFactory;
   onClose: () => void;
 }
@@ -29,6 +32,7 @@ export function InterviewFollow({
   interviewId,
   resumed,
   live,
+  applicationId,
   createSocket,
   onClose,
 }: InterviewFollowProps) {
@@ -56,11 +60,7 @@ export function InterviewFollow({
   if (interview.data.status === "running") {
     return (
       <div className="flex flex-col gap-3">
-        {resumed ? (
-          <p role="status" className="text-sm">
-            {t("applications.interviewPage.resumed")}
-          </p>
-        ) : null}
+        {resumed ? <ResumedNote interview={interview.data} applicationId={applicationId} /> : null}
         <InterviewLive interview={interview.data} createSocket={createSocket} />
       </div>
     );

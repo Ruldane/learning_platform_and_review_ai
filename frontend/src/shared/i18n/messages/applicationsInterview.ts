@@ -14,6 +14,10 @@ export const applicationsInterview = {
     pastTitle: "Entretiens passés",
     pastEmpty: "Aucun entretien pour l'instant.",
     resumed: "Un entretien était déjà en cours : tu le reprends ici.",
+    resumedElsewhere: "Un entretien est déjà en cours sur une autre candidature.",
+    resumedFree: "Un entretien libre est déjà en cours.",
+    openElsewhere: "Ouvrir cette candidature",
+    openFree: "Ouvrir l'entretien libre",
     another: "Commencer un autre entretien",
     backToSettings: "Retour aux réglages",
   },
@@ -61,12 +65,10 @@ export const applicationsInterview = {
     answerLabel: "Ta réponse écrite",
     hint: "4 000 caractères au plus. Ctrl+Entrée envoie ta réponse.",
     stopHint: "Terminer l'entretien : le débrief est écrit d'après les réponses déjà données.",
-    stop: "Terminer l'entretien",
     sent: "Réponse envoyée",
-    yourAnswer: "Ta réponse",
     stopped: "Tu as terminé l'entretien.",
     ending: "L'entretien est terminé : le débrief s'écrit, cela peut prendre une minute.",
-    sessionOver: "La session est terminée : je relis l'entretien.",
+    writing: "Ta dernière réponse est envoyée : le débrief s'écrit, cela peut prendre une minute.",
   },
   interviewOutcome: {
     stopped:
@@ -90,6 +92,7 @@ export const applicationsInterview = {
     },
     languageName: { fr: "en français", en: "en anglais" },
     role: "Poste : {role}",
+    posting: "Offre : {posting}",
   },
   debrief: {
     title: "Débrief de l'entretien",
