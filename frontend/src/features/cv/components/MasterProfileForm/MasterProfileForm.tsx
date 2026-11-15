@@ -4,7 +4,7 @@ import { Button } from "@/shared/ui/button";
 import { InlineError } from "@/shared/ui/states/InlineError";
 import type { MasterProfileView, ProfileSaveErrorView } from "../viewTypes";
 import { DroppedBanner } from "./DroppedBanner";
-import { FieldErrorsContext } from "./fieldErrors";
+import { displayedErrors, FieldErrorsContext } from "./fieldErrors";
 import { cleanProfile } from "./profileDraft";
 import { ProfileSections } from "./ProfileSections";
 
@@ -30,15 +30,20 @@ export function MasterProfileForm({
   onSave,
 }: MasterProfileFormProps) {
   const [draft, setDraft] = useState(profile);
+  // Le brouillon tel qu'il est parti : c'est sur lui que se lisent les indices d'un 422.
+  const [sent, setSent] = useState(profile);
   const [source, setSource] = useState(profile);
   if (source !== profile) {
     setSource(profile);
     setDraft(profile);
+    setSent(profile);
   }
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (!saving) onSave(cleanProfile(draft));
+    if (saving) return;
+    setSent(draft);
+    onSave(cleanProfile(draft));
   };
 
   return (
@@ -51,7 +56,7 @@ export function MasterProfileForm({
     >
       <DroppedBanner dropped={dropped} />
       <p className="text-sm text-muted-foreground">{t("cv.profile.sourcesHint")}</p>
-      <FieldErrorsContext value={error?.fields ?? {}}>
+      <FieldErrorsContext value={displayedErrors(sent, error?.fields ?? {})}>
         <fieldset disabled={saving} className="flex flex-col gap-3">
           <ProfileSections
             profile={draft}

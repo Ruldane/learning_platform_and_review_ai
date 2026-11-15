@@ -3,6 +3,7 @@ import { t } from "@/shared/i18n/t";
 import { fieldClass } from "@/shared/ui/fieldClass";
 import { Button } from "@/shared/ui/button";
 import { MAX_EDIT_CHARS } from "../viewTypes";
+import { isUnchanged } from "./useEditing";
 
 interface EditFieldProps {
   initial: string;
@@ -20,7 +21,7 @@ export function EditField({ initial, confirmed, busy, onSave, onCancel }: EditFi
   const empty = text.trim() === "";
   // Un texte corrigé repart sans confirmation (le back le revérifie) ; seul le texte inchangé
   // d'une modification « à confirmer » attend la case.
-  const needsConfirm = !confirmed && text.trim() === initial;
+  const needsConfirm = !confirmed && isUnchanged(text, initial);
   return (
     <div className="flex flex-col gap-2">
       <label htmlFor={id} className="text-sm font-medium">

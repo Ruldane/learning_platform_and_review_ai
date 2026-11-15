@@ -44,10 +44,10 @@ describe("ReviewReportView", () => {
     expect(screen.getByText("Société Fictive édite un logiciel de paie.")).toBeInTheDocument();
   });
 
-  it("lists the posting keywords missing from the profile, with a link to the gap", () => {
+  it("gap terms label", () => {
     setup(REPORT, ["AWS", "Kafka"]);
     expect(
-      screen.getByText(/Mots clés de l'offre absents de ton profil : AWS, Kafka/),
+      screen.getByText(/Mots clés de l'offre à appuyer par un fait ou à acquérir : AWS, Kafka/),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Voir l'écart" })).toHaveAttribute(
       "href",

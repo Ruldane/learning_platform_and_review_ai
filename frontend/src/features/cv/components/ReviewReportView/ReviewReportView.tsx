@@ -5,7 +5,7 @@ import { ReportList } from "./ReportList";
 
 interface ReviewReportViewProps {
   report: ReportView;
-  /** Les mots clés de l'offre que le profil ne contient pas : ils partent vers l'écart. */
+  /** Les mots clés de l'offre que les faits cités ne portent pas : à appuyer par un fait ou à acquérir. */
   gapTerms: string[];
   /** L'adresse de l'écran de l'écart. */
   gapHref: string;
@@ -13,7 +13,7 @@ interface ReviewReportViewProps {
 
 /**
  * Le rapport de la revue : forces, risques, critères éliminatoires, logiciel de recrutement détecté,
- * fiche entreprise, et les mots clés de l'offre absents du profil (jamais ajoutés au CV).
+ * fiche entreprise, et les mots clés de l'offre que les faits cités ne portent pas (jamais ajoutés au CV).
  * Tout est rendu en texte brut.
  */
 export function ReviewReportView({ report, gapTerms, gapHref }: ReviewReportViewProps) {

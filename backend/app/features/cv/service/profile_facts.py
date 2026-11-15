@@ -11,6 +11,7 @@ from urllib.parse import urlsplit
 from pydantic import ValidationError
 
 from app.agents.tools.cv_schema import FactSource, MasterProfileData
+from app.agents.tools.profile_check import plain
 from app.core.errors import AppError
 from app.features.cv.repository import ProfileRepository
 from app.features.cv.schemas_profile import ProfilePutIn
@@ -19,10 +20,11 @@ from app.features.cv.service.runtime import CvRuntime
 
 SEP = " — "  # séparateur des faits composés (« Rôle — Entreprise », `facts_of`)
 _MAX_SOURCES = 4
-# Séparateur rôle / entreprise, libellé / URL (D137) : « — », ou « – » et « - » entourés
-# d'espaces (un trait d'union collé aux mots n'en est jamais un) ; aussi quand la fin a été rognée.
+# Séparateurs (D137) : « — » coupe toujours ; « – » et « - » entourés d'espaces ne coupent qu'à
+# des conditions (une entreprise ou une école inchangée, une URL) ; un trait d'union collé aux mots
+# n'en est jamais un. « — » aussi quand la fin a été rognée.
 _EM_SEP = re.compile(r"\s+—(?:\s+|$)")
-_SEP = re.compile(r"\s+[—–-](?:\s+|$)")
+_SEP = re.compile(r"\s+[–-](?:\s+|$)")
 _LANG_SEP = re.compile(r"\s+[—–-](?:\s+|$)|\s*:\s*")  # « Anglais — C1 », « - C1 », « : C1 »
 _LANG_PAREN = re.compile(r"^(.+?)\s*\((.+)\)$")  # « Anglais (C1) »
 _URL_LIKE = re.compile(r"://|\b[\w-]+(?:\.[\w-]+)+/|www\.", re.IGNORECASE)
@@ -49,6 +51,15 @@ def invalid_after() -> AppError:
     return AppError(
         "validation_error",
         "Requête invalide : vérifie les champs signalés.",
+        422,
+        {"fields": ["after"]},
+    )
+
+
+def ambiguous_separator() -> AppError:
+    return AppError(
+        "ambiguous_separator",
+        "Pour changer d'entreprise ou d'école, écris « Intitulé — Entreprise » avec un tiret long.",
         422,
         {"fields": ["after"]},
     )
@@ -81,29 +92,37 @@ def _write_language(item: Any, text: str) -> None:
     item.level = parts[1].strip() or None if len(parts) > 1 else None
 
 
-def _split_last(text: str) -> tuple[str, str] | None:
-    """Coupe `text` au dernier séparateur : le dernier « — » s'il y en a un, sinon le dernier
-    « – » ou « - » entouré d'espaces ; `None` sans séparateur (D137)."""
-    for pattern in (_EM_SEP, _SEP):
-        if found := list(pattern.finditer(text)):
-            return text[: found[-1].start()], text[found[-1].end() :]
-    return None
+def _split_at(pattern: re.Pattern[str], text: str) -> tuple[str, str] | None:
+    """Coupe `text` au dernier séparateur de `pattern` ; `None` s'il n'y en a pas."""
+    found = list(pattern.finditer(text))
+    return (text[: found[-1].start()], text[found[-1].end() :]) if found else None
 
 
 def _split_company(text: str, current: str) -> tuple[str, str]:
     """« Rôle — Entreprise » → (rôle, entreprise) ; le texte qui finit par l'entreprise connue la
-    garde, un texte sans séparateur ne change que le rôle (l'entreprise reste, D137)."""
+    garde ; un texte sans séparateur ne change que le rôle (l'entreprise reste). Le dernier « — »
+    coupe toujours ; un « – » ou « - » espacé ne coupe que si ce qui le suit est l'entreprise
+    (ou l'école) actuelle (seul l'intitulé change), sinon 422 `ambiguous_separator` : une
+    confirmation ne réécrit jamais une entreprise d'après une lecture devinée (D137 n° 2)."""
     suffix = f"{SEP}{current}"
     if text.endswith(suffix):
         return text[: -len(suffix)].strip(), current
-    cut = _split_last(text)
-    return cut if cut else (text, current)
+    if cut := _split_at(_EM_SEP, text):
+        return cut
+    if cut := _split_at(_SEP, text):
+        if plain(cut[1]) == plain(current):
+            return cut[0], current
+        raise ambiguous_separator()
+    return text, current
 
 
 def _write_link(item: Any, text: str) -> None:
-    """« Libellé — URL » écrit le libellé et l'URL (http ou https, sinon 422) ; une URL seule
-    remplace l'URL ; un texte sans URL ne change que le libellé."""
-    cut = _split_last(text)
+    """« Libellé — URL » écrit le libellé et l'URL (http ou https, sinon 422) ; « Libellé - URL »
+    (« – » ou « - » espacé) aussi quand ce qui suit ressemble à une URL ; une URL seule remplace
+    l'URL ; un texte sans URL ne change que le libellé (« Portfolio - Design » est un libellé)."""
+    cut = _split_at(_EM_SEP, text)
+    if cut is None and (spaced := _split_at(_SEP, text)) and _URL_LIKE.search(spaced[1]):
+        cut = spaced
     label, url = cut if cut else ("", text)
     if label:
         item.label, item.url = label, url

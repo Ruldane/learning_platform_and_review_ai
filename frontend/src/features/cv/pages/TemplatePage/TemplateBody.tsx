@@ -55,6 +55,7 @@ export function TemplateBody({ template, onChange, createSocket }: TemplateBodyP
         <TemplateRun
           sessionId={template.session_id}
           onChange={onChange}
+          ready={template.status === "ready"}
           createSocket={createSocket}
         />
       ) : null}

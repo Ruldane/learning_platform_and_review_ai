@@ -60,6 +60,12 @@ describe("PostingAnalysisCard", () => {
     expect(screen.getByText("Aucune exigence relevée.")).toBeInTheDocument();
   });
 
+  it("leaves the title out when the page already shows it", () => {
+    render(<PostingAnalysisCard analysis={analysis} showTitle={false} />);
+    expect(screen.queryByRole("heading", { name: "Développeuse front" })).toBeNull();
+    expect(screen.getByText("Entreprise : Société Fictive")).toBeInTheDocument();
+  });
+
   it("renders the offer text as plain text, never as markup", () => {
     render(
       <PostingAnalysisCard

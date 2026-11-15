@@ -131,17 +131,56 @@ def test_a_confirmed_education_writes_the_degree_and_the_school() -> None:
     assert facts_of(out)["f1"] == "Master — École B"
 
 
-@pytest.mark.parametrize("dash", ["—", "–", "-"])
-def test_experience_split_on_any_dash(dash: str) -> None:
-    out = with_fact(jobs(), "x1", f"Développeuse {dash} Autre SA")
+def test_em_dash_still_changes_company() -> None:
+    out = with_fact(jobs(), "x1", "Développeuse — Autre SA")
     assert (out.experiences[0].role, out.experiences[0].company) == ("Développeuse", "Autre SA")
     assert facts_of(out)["x1"] == "Développeuse — Autre SA"
+    school = with_fact(jobs(), "f1", "Master — École B")
+    assert (school.education[0].degree, school.education[0].school) == ("Master", "École B")
 
 
-@pytest.mark.parametrize("dash", ["—", "–", "-"])
-def test_education_split_on_any_dash(dash: str) -> None:
-    out = with_fact(jobs(), "f1", f"Master {dash} École B")
-    assert (out.education[0].degree, out.education[0].school) == ("Master", "École B")
+@pytest.mark.parametrize("dash", ["–", "-"])
+def test_spaced_dash_restating_current_company_splits(dash: str) -> None:
+    """Un « – » ou « - » espacé coupe quand ce qui le suit est l'entreprise (ou l'école) actuelle,
+    à la normalisation près : seul l'intitulé change (D137 n° 2)."""
+    out = with_fact(jobs(), "x1", f"Lead Développeuse {dash} société fictive")
+    assert (out.experiences[0].role, out.experiences[0].company) == (
+        "Lead Développeuse",
+        "Société Fictive",
+    )
+    school = with_fact(jobs(), "f1", f"Master {dash} Universite Exemple")
+    assert (school.education[0].degree, school.education[0].school) == (
+        "Master",
+        "Université Exemple",
+    )
+
+
+@pytest.mark.parametrize("dash", ["–", "-"])
+@pytest.mark.parametrize(
+    ("target", "text"),
+    [
+        ("x1", "Développeuse {d} IA générative"),
+        ("x1", "Développeuse {d} Autre SA"),
+        ("f1", "Master Informatique {d} Parcours IA"),
+    ],
+)
+def test_spaced_hyphen_title_without_company_is_422(dash: str, target: str, text: str) -> None:
+    """Un intitulé à tiret espacé n'est pas « Rôle — Entreprise » : jamais une entreprise ou une
+    école devinée ; 422 `ambiguous_separator`, sans écho de l'entrée."""
+    given = text.format(d=dash)
+    with pytest.raises(AppError) as err:
+        with_fact(jobs(), target, given)
+    assert (err.value.status_code, err.value.code) == (422, "ambiguous_separator")
+    assert "tiret long" in err.value.message
+    assert given not in err.value.message and err.value.details == {"fields": ["after"]}
+
+
+def test_link_label_with_a_spaced_hyphen_and_no_url_stays_a_label_change() -> None:
+    out = with_fact(data(), "k1", "Portfolio - Design")
+    assert (out.links[0].label, out.links[0].url) == (
+        "Portfolio - Design",
+        "https://github.com/camille",
+    )
 
 
 def test_experience_without_separator_keeps_role_only_rule_documented() -> None:

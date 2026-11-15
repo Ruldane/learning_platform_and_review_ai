@@ -171,7 +171,7 @@ export const cvReview = {
     ats: "Logiciel de recrutement détecté : {name}",
     atsNone: "Logiciel de recrutement non détecté.",
     company: "Fiche entreprise",
-    gap: "Mots clés de l'offre absents de ton profil : {terms}",
+    gap: "Mots clés de l'offre à appuyer par un fait ou à acquérir : {terms}",
     gapLink: "Voir l'écart",
   },
 } as const;

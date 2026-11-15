@@ -37,7 +37,7 @@ export function ReadyBlock({ posting, pollMs, createSocket }: ReadyBlockProps) {
         onDistinct={distinct}
       />
       {error ? <InlineError message={error} /> : null}
-      {analysis ? <PostingAnalysisCard analysis={analysis} /> : null}
+      {analysis ? <PostingAnalysisCard analysis={analysis} showTitle={false} /> : null}
       <GapSection postingId={posting.id} pollMs={pollMs} createSocket={createSocket} />
       <div className="flex flex-wrap gap-2">
         <Link to={`/carriere/cv/revue/nouvelle/${posting.id}`} className={buttonVariants()}>

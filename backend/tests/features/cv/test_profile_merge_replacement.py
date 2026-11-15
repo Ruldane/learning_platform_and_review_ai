@@ -8,6 +8,7 @@ from app.agents.tools.cv_schema import (
     Education,
     Experience,
     Identity,
+    Link,
     MasterProfileData,
     Project,
     assign_fact_ids,
@@ -84,3 +85,17 @@ def test_replacement_takes_the_draft_end_of_a_school() -> None:
     assert [(e.degree, e.start, e.end) for e in merged.education] == [
         ("Licence informatique", "2018-09", "2021-06")
     ]
+
+
+def test_replacement_takes_new_link_url() -> None:
+    """Le lien de January (même libellé) et celui du nouveau CV : l'URL du CV l'emporte, le
+    libellé confirmé par January reste, sous l'id de January."""
+    previous = _bare(
+        links=[Link(label="GitHub", url="https://github.com/old", sources=["january"])]
+    )
+    draft = _bare(links=[Link(label="GitHub", url="https://github.com/new")])
+    merged = _merge(previous, draft)
+    assert [(k.id, k.label, k.url) for k in merged.links] == [
+        ("k1", "GitHub", "https://github.com/new")
+    ]
+    assert "january" in merged.links[0].sources

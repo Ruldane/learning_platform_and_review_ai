@@ -152,4 +152,12 @@ describe("ReviewPage: the output question", () => {
     expect(resumes[0]).toEqual({ interrupt_id: "o1", value: "report" });
     expect(screen.getByRole("heading", { name: "Rapport" })).toBeInTheDocument();
   });
+
+  it("report button moves focus to the report title", async () => {
+    const { sockets, user } = renderReview();
+    recordPosts("/sessions/r1/resume", 200, sessionOut("r1", "running"));
+    await askOutput(sockets);
+    await user.click(screen.getByRole("button", { name: "Voir le rapport" }));
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Rapport" })).toHaveFocus());
+  });
 });

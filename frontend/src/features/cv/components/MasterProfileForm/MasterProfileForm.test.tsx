@@ -215,6 +215,38 @@ describe("MasterProfileForm", () => {
     ).toHaveAccessibleDescription("Trop long.");
   });
 
+  it("profile 422 index mapping after empty rows", () => {
+    const [first] = PROFILE.experiences;
+    if (!first) throw new Error("fixture");
+    const profile = {
+      ...PROFILE,
+      experiences: [
+        {
+          ...first,
+          achievements: [
+            { id: "a1", text: "Refonte du tableau de bord" },
+            { id: "", text: "  " },
+            { id: "a3", text: "Mise en production" },
+          ],
+        },
+      ],
+    };
+    // Le serveur a vu la liste nettoyée (sans la ligne vide) : sa ligne 1 est la 3e affichée.
+    setup({
+      profile,
+      error: {
+        message: "À corriger.",
+        fields: { "experiences.0.achievements.1.text": "Trop long." },
+      },
+    });
+    expect(
+      screen.getByRole("textbox", { name: "Réalisation 3 (Expérience 1)" }),
+    ).toHaveAccessibleDescription("Trop long.");
+    expect(
+      screen.getByRole("textbox", { name: "Réalisation 2 (Expérience 1)" }),
+    ).not.toHaveAttribute("aria-invalid");
+  });
+
   it("announces the dropped lines", () => {
     const { rerender } = setup({ dropped: ["Augmenté les ventes de 400 %"] });
     expect(

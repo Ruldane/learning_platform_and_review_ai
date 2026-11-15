@@ -37,6 +37,12 @@ describe("PostingPage", () => {
     );
   });
 
+  it("posting title rendered once", async () => {
+    setup();
+    await screen.findByRole("region", { name: "Analyse de l'offre" });
+    expect(screen.getAllByRole("heading", { name: "Ingénieure données" })).toHaveLength(1);
+  });
+
   it("offers only the rows that are really missing and sends the ticked skills", async () => {
     const { user, state } = setup();
     const python = await screen.findByRole("checkbox", { name: "Ajouter Python au planning" });

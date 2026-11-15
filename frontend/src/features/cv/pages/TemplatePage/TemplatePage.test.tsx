@@ -61,6 +61,24 @@ describe("TemplatePage", () => {
     expect(screen.getByText("C'est ton modèle actif.")).toBeInTheDocument();
   });
 
+  it("hides answered template question when ready", async () => {
+    const { sockets } = setup();
+    const stream = await openStream(sockets, "d1");
+    const e = councilEvents("d1");
+    stream.push(
+      e.message("m1", "Voici ma passe 2.", "designer"),
+      e.interrupt("cv_template", "i1", {
+        question: "Ressemblance : 91 %. Tu valides ?",
+        options: OPTIONS,
+        fields: [INSTRUCTION],
+      }),
+    );
+    expect(await screen.findByText("Voici ma passe 2.")).toBeInTheDocument();
+    expect(await screen.findByText("C'est ton modèle actif.")).toBeInTheDocument();
+    expect(screen.queryByText("Ressemblance : 91 %. Tu valides ?")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Valider" })).toBeNull();
+  });
+
   it("sends the instruction when asked to adjust", async () => {
     const { sockets, user } = setup({ template: [templateOut({ status: "review" })] });
     const resumes = recordPosts("/sessions/d1/resume", 200, sessionOut("d1", "running"));

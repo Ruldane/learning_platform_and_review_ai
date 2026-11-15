@@ -167,7 +167,8 @@ def test_reimport_does_not_duplicate_a_fact_january_confirmed_in_a_review() -> N
     assert [(lang.id, lang.name, lang.level) for lang in merged.languages] == [
         ("l1", "Anglais", "C2")
     ]
-    assert [(k.id, k.url) for k in merged.links] == [("k1", "https://github.com/autre")]
+    # l'URL écrite par le nouveau CV l'emporte (D137 n° 1, comme le niveau de langue)
+    assert [(k.id, k.url) for k in merged.links] == [("k1", "https://github.com/camille")]
     assert len(set(facts_of(merged))) == len(facts_of(merged))
 
 

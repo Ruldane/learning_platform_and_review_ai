@@ -18,12 +18,18 @@ import { VersionPanel } from "./VersionPanel";
 
 const OUTPUT_QUESTION = "cv_output";
 
-/** Le lien `#rapport` (rapport demandé dans le fil) mène à la section du rapport. */
+/**
+ * Le lien `#rapport` (rapport demandé dans le fil) mène à la section du rapport et place le focus
+ * sur son titre : au clavier ou au lecteur d'écran, la lecture continue là où l'on vient d'aller.
+ * La clé de l'adresse change à chaque navigation, un second clic sur « Voir le rapport » compris.
+ */
 function useScrollToReport(ready: boolean) {
-  const { hash } = useLocation();
+  const { hash, key } = useLocation();
   useEffect(() => {
-    if (ready && hash === "#rapport") document.getElementById("rapport")?.scrollIntoView?.();
-  }, [ready, hash]);
+    if (!ready || hash !== "#rapport") return;
+    document.getElementById("rapport")?.scrollIntoView?.();
+    document.getElementById("rapport-titre")?.focus();
+  }, [ready, hash, key]);
 }
 
 interface ReviewBodyProps {

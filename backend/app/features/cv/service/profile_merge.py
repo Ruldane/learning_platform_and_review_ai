@@ -201,7 +201,9 @@ def _carry_facts(out: MasterProfileData, old: MasterProfileData, pairs: tuple[An
     _carried(out.skills, old.skills, skills, _first_word, name, None, ("category",))
     _carried(out.projects, old.projects, projects, lambda x: plain(x.name), name, "achievements")
     _carried(out.languages, old.languages, languages, lambda x: plain(x.name), name)
-    _carried(out.links, old.links, links, lambda x: plain(x.label), lambda x: x.label)
+    _carried(
+        out.links, old.links, links, lambda x: plain(x.label), lambda x: x.label, None, ("url",)
+    )
 
 
 def merge_draft(

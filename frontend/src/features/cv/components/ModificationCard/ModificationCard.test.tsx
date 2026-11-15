@@ -139,6 +139,22 @@ describe("ModificationCard", () => {
     });
   });
 
+  it("keeps the confirmation when only the edge spaces of the text differ", async () => {
+    const { onDecide } = setup({
+      status: "to_confirm",
+      after: "  Dirige une équipe de 4 personnes ",
+    });
+    await userEvent.click(screen.getByRole("button", { name: "Modifier" }));
+    const save = screen.getByRole("button", { name: "Enregistrer et accepter" });
+    expect(save).toBeDisabled();
+    await userEvent.click(screen.getByRole("checkbox", { name: "Je confirme que c'est vrai" }));
+    await userEvent.click(save);
+    expect(onDecide).toHaveBeenCalledWith("accepted", {
+      after: "Dirige une équipe de 4 personnes",
+      confirm: true,
+    });
+  });
+
   it("offers « Modifier » only for a rewrite or an addition", () => {
     const { unmount } = setup({ action: "remove", before: "Ligne", after: "" });
     expect(screen.queryByRole("button", { name: "Modifier" })).toBeNull();

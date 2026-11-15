@@ -34,7 +34,7 @@ describe("ReviewPage: reading and deciding", () => {
     expect(screen.getByRole("heading", { name: "Rapport" })).toBeInTheDocument();
     expect(screen.getByText("Logiciel de recrutement détecté : Greenhouse")).toBeInTheDocument();
     expect(
-      screen.getByText(/Mots clés de l'offre absents de ton profil : Kubernetes/),
+      screen.getByText(/Mots clés de l'offre à appuyer par un fait ou à acquérir : Kubernetes/),
     ).toBeInTheDocument();
   });
 
