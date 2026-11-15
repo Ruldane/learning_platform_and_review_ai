@@ -93,4 +93,28 @@ describe("buildNav", () => {
       "settings",
     ]);
   });
+
+  it("transmet la pastille d'une entrée (hook et texte) et rien aux autres", () => {
+    const useBadge = () => 2;
+    const badgeLabel = (count: number) => `${count} relances dues`;
+    const [group] = buildNav([
+      {
+        id: "applications",
+        routes: [],
+        nav: [
+          { section: "applications", labelKey: "applications.nav.board", path: "/c", order: 1 },
+          {
+            section: "applications",
+            labelKey: "applications.nav.reminders",
+            path: "/c/relances",
+            order: 2,
+            useBadge,
+            badgeLabel,
+          },
+        ],
+      },
+    ]);
+    expect(group?.items[0]).toEqual({ labelKey: "applications.nav.board", path: "/c" });
+    expect(group?.items[1]).toMatchObject({ useBadge, badgeLabel });
+  });
 });

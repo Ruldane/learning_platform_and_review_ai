@@ -5,7 +5,10 @@ import type {
   PostingAnalysisView,
   PostingListItemView,
 } from "./components/viewTypes";
+import type { DuplicateAlertView } from "@/shared/ui/DuplicateAlert";
 import type {
+  ApplicationAlertOut,
+  ApplicationCheckOut,
   DuplicateOut,
   GapRowOut,
   PostingAnalysisOut,
@@ -81,4 +84,20 @@ export function certainDuplicate(posting: {
     company: posting.company,
     createdAt: posting.created_at,
   };
+}
+
+/** Une alerte de candidature du contrat → celle que l'alerte de doublon partagée affiche. */
+export function toApplicationAlertView(alert: ApplicationAlertOut): DuplicateAlertView {
+  return {
+    level: alert.level,
+    applicationId: alert.application_id,
+    company: alert.company,
+    title: alert.title,
+    status: alert.status,
+    message: alert.message,
+  };
+}
+
+export function toExistingApplicationView(ref: NonNullable<ApplicationCheckOut["own"]>) {
+  return { id: ref.id, company: ref.company, title: ref.title, status: ref.status };
 }

@@ -11,3 +11,5 @@ export type GapOut = Schemas["GapOut"];
 export type GapRowOut = Schemas["GapRowOut"];
 export type TopMissingOut = Schemas["TopMissingOut"];
 export type PlanGapStarted = Schemas["PlanGapStarted"];
+export type ApplicationCheckOut = Schemas["CheckOut"];
+export type ApplicationAlertOut = Schemas["AlertOut"];

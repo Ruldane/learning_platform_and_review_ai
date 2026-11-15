@@ -119,6 +119,10 @@ interface PostingsApi {
   remove?: Reply;
   relaunch?: Reply;
   distinct?: Reply;
+  /** Réponse de `GET /applications/check` (sans fiche ni alerte par défaut). */
+  check?: () => Response;
+  /** Remplace la création de la candidature (`POST /applications`). */
+  application?: Reply;
 }
 
 const at = <T>(items: T[], index: number): T => items[Math.min(index, items.length - 1)]!;
@@ -129,6 +133,8 @@ const newState = () => ({
   created: [] as unknown[],
   plans: [] as unknown[],
   distincts: [] as unknown[],
+  applications: [] as unknown[],
+  checks: [] as string[],
   removed: 0,
   relaunched: 0,
   reads: { list: 0, posting: 0, gap: 0 },
@@ -183,6 +189,27 @@ function gapRoutes(api: PostingsApi, state: State) {
   ];
 }
 
+/** La candidature de l'offre : la recherche de fiche existante et la création. */
+function applicationRoutes(api: PostingsApi, state: State) {
+  return [
+    http.get(`${API}/applications/check`, ({ request }) => {
+      state.checks.push(new URL(request.url).search);
+      return api.check?.() ?? HttpResponse.json({ own: null, alerts: [], info: [] });
+    }),
+    http.post(`${API}/applications`, async ({ request }) => {
+      state.applications.push(await request.clone().json());
+      if (api.application) return api.application(request);
+      return HttpResponse.json(
+        {
+          application: { id: "ap1", company: "Société Fictive", title: "Ingénieure données" },
+          info: [],
+        },
+        { status: 201 },
+      );
+    }),
+  ];
+}
+
 /** `r1` : une replanification du programme `pg1` ; `a1` : l'analyse de l'offre. */
 const sessionRoutes = () => [
   http.get(`${API}/sessions/r1`, () =>
@@ -203,7 +230,12 @@ const sessionRoutes = () => [
  */
 export function postingsApi(api: PostingsApi = {}) {
   const state = newState();
-  const handlers = [...postingRoutes(api, state), ...gapRoutes(api, state), ...sessionRoutes()];
+  const handlers = [
+    ...postingRoutes(api, state),
+    ...gapRoutes(api, state),
+    ...applicationRoutes(api, state),
+    ...sessionRoutes(),
+  ];
   return { state, handlers };
 }
 

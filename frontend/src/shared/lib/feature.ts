@@ -6,12 +6,19 @@ import type { MessageKey } from "@/shared/i18n/t";
 export type NavSection =
   "home" | "learn" | "study" | "skills" | "career" | "applications" | "memory" | "settings";
 
-/** Une entrée de la navigation latérale ; `order` trie les entrées d'une même section. */
+/**
+ * Une entrée de la navigation latérale ; `order` trie les entrées d'une même section. `useBadge`
+ * est un hook (appelé à chaque rendu de l'entrée) qui rend le nombre à signaler dans une pastille :
+ * rien, ou zéro, n'en affiche aucune.
+ */
 export interface NavEntry {
   section: NavSection;
   labelKey: MessageKey;
   path: string;
   order: number;
+  useBadge?: () => number | undefined;
+  /** Le texte lu par les lecteurs d'écran pour la pastille (« 3 relances dues »). */
+  badgeLabel?: (count: number) => string;
 }
 
 /**

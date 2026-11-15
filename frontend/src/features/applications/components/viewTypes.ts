@@ -18,8 +18,17 @@ export const STATUS_ORDER = [
 
 export type StatusView = (typeof STATUS_ORDER)[number];
 
-export type ChannelView =
-  "company_site" | "job_board" | "linkedin" | "email" | "referral" | "other";
+/** Les six canaux de candidature, dans l'ordre des listes déroulantes. */
+export const CHANNEL_ORDER = [
+  "company_site",
+  "job_board",
+  "linkedin",
+  "email",
+  "referral",
+  "other",
+] as const;
+
+export type ChannelView = (typeof CHANNEL_ORDER)[number];
 
 /** Un jour `AAAA-MM-JJ`. */
 export type DayString = string;
@@ -85,3 +94,25 @@ export interface StatsView {
 }
 
 export const MAX_CONTACTS = 10;
+
+/** Un champ pré rempli de la confirmation d'une fiche lue dans une phrase. */
+export interface ConfirmationFieldView {
+  id: string;
+  label: string;
+  required: boolean;
+  maxLength: number;
+  value: string;
+}
+
+/** Une issue proposée par le serveur (`create`, `distinct`, `open`, `cancel`). */
+export interface ConfirmationOptionView {
+  value: string;
+  label: string;
+}
+
+/** La question « Je crée cette fiche ? » de l'Assistant de suivi, avec la fiche telle qu'il l'a lue. */
+export interface ConfirmationView {
+  question: string;
+  fields: ConfirmationFieldView[];
+  options: ConfirmationOptionView[];
+}

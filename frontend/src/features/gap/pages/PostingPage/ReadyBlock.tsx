@@ -9,6 +9,7 @@ import { PostingAnalysisCard } from "../../components/PostingAnalysisCard";
 import { useMarkDistinct } from "../../hooks/useMarkDistinct";
 import { toAnalysisView, toDuplicateViews } from "../../toView";
 import type { PostingOut } from "../../types";
+import { ApplicationBlock } from "./ApplicationBlock";
 import { GapSection } from "./GapSection";
 
 interface ReadyBlockProps {
@@ -39,6 +40,7 @@ export function ReadyBlock({ posting, pollMs, createSocket }: ReadyBlockProps) {
       {error ? <InlineError message={error} /> : null}
       {analysis ? <PostingAnalysisCard analysis={analysis} showTitle={false} /> : null}
       <GapSection postingId={posting.id} pollMs={pollMs} createSocket={createSocket} />
+      <ApplicationBlock postingId={posting.id} />
       <div className="flex flex-wrap gap-2">
         <Link to={`/carriere/cv/revue/nouvelle/${posting.id}`} className={buttonVariants()}>
           {t("gap.posting.reviewCv")}

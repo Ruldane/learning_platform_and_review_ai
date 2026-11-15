@@ -1,7 +1,7 @@
 import { t } from "@/shared/i18n/t";
 import type { SocketFactory } from "@/shared/realtime/socket";
-import { useRun } from "../../hooks/useRun";
-import { RunFeed } from "../RunFeed";
+import { useRun } from "@/shared/realtime/useRun";
+import { RunFeed } from "@/shared/session-ui";
 import { TEMPLATE_QUESTION, TemplateQuestion } from "./TemplateQuestion";
 
 interface TemplateRunProps {

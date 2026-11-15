@@ -2,9 +2,11 @@ import type { ReactNode } from "react";
 import { t } from "@/shared/i18n/t";
 import { isAwaitingAnswer } from "@/shared/realtime/feedHelpers";
 import type { FeedItem } from "@/shared/realtime/types";
-import { DebateFeed, InterruptCard, SessionStatusBar } from "@/shared/session-ui";
+import type { Run } from "@/shared/realtime/useRun";
 import { InlineError } from "@/shared/ui/states/InlineError";
-import type { Run } from "../hooks/useRun";
+import { DebateFeed } from "../DebateFeed";
+import { InterruptCard } from "../InterruptCard";
+import { SessionStatusBar } from "../SessionStatusBar";
 
 export type InterruptItem = Extract<FeedItem, { kind: "interrupt" }>;
 
@@ -19,7 +21,7 @@ interface RunFeedProps {
 export const canAnswer = (run: Run, item: InterruptItem): boolean =>
   isAwaitingAnswer(run.stream.view, item.interrupt.interrupt_id) && !run.actions.pending;
 
-/** Le fil d'une session du CV : état, bulles des agents, questions ; la carte commune sert de repli. */
+/** Le fil d'une session suivie par `useRun` (CV, candidatures) : état, bulles des agents, questions ; la carte commune sert de repli. */
 export function RunFeed({ run, label, renderInterrupt }: RunFeedProps) {
   const { stream, actions } = run;
   const common = (item: InterruptItem) => (

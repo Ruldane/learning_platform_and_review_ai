@@ -119,7 +119,14 @@ export default tseslint.config(
         {
           patterns: [
             {
-              group: ["**/realtime/*", "!**/realtime/types", "!**/realtime/eventRenderers"],
+              group: [
+                "**/realtime/*",
+                "!**/realtime/types",
+                "!**/realtime/eventRenderers",
+                // `RunFeed` suit une session déjà ouverte : le type `Run` et un test pur (`canAnswer`).
+                "!**/realtime/useRun",
+                "!**/realtime/feedHelpers",
+              ],
               message: "session-ui reste présentationnel : ni store, ni flux, ni hook de données.",
             },
             {

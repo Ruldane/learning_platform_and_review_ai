@@ -21,6 +21,7 @@ export function renderPosting(
     [
       { path: "/carriere/offres/:postingId", element: makePage(sockets.factory) },
       { path: "/carriere/offres", element: <p>Liste des offres</p> },
+      { path: "/candidatures/:applicationId", element: <p>Fiche de candidature</p> },
       {
         path: "/apprendre/programme/:programId/replanification",
         element: <p>Replanification</p>,

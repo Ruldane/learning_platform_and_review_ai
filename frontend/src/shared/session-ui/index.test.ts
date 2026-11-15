@@ -21,6 +21,8 @@ describe("session-ui public API", () => {
       "SourcesPanel",
       "SourceCard",
       "sourcesFromEvents",
+      "RunFeed",
+      "canAnswer",
       "AGENT_COLORS",
       "agentIdentity",
     ];

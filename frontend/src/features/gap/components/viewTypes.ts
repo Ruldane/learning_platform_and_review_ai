@@ -1,4 +1,5 @@
 /** Types de vue des composants des offres et de l'écart : indépendants du contrat d'API (D34). */
+import type { DuplicateAlertView } from "@/shared/ui/DuplicateAlert";
 
 /** Niveau de maîtrise d'une compétence ; `null` : aucune ligne (absente). */
 export type SkillLevelView = "declare" | "en_cours" | "valide" | "prouve";
@@ -81,4 +82,12 @@ export interface PostingListItemView {
   /** Score de match de 0 à 100 ; `null` tant que l'écart n'est pas calculé. */
   score: number | null;
   status: PostingStatusView;
+}
+
+/** La candidature qui existe déjà pour une offre. */
+export interface ExistingApplicationView {
+  id: string;
+  company: string;
+  title: string;
+  status: DuplicateAlertView["status"];
 }

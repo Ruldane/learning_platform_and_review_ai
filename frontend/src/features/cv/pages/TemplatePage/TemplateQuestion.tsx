@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { t } from "@/shared/i18n/t";
 import { InterruptCard } from "@/shared/session-ui";
-import type { Run } from "../../hooks/useRun";
-import { canAnswer, type InterruptItem } from "../RunFeed";
+import type { Run } from "@/shared/realtime/useRun";
+import { canAnswer, type InterruptItem } from "@/shared/session-ui";
 
 export const TEMPLATE_QUESTION = "cv_template";
 export const MAX_INSTRUCTION = 500;

@@ -60,6 +60,33 @@ export async function planGap(postingId: string, skills: string[]) {
   );
 }
 
+/**
+ * `GET /applications/check?posting_id=` : la candidature de cette offre (`own`), les fiches qui lui
+ * ressemblent (`alerts`) et les simples informations (`info`). Lecture seule, sans effet.
+ */
+export async function fetchApplicationCheck(postingId: string, signal?: AbortSignal) {
+  return unwrap(
+    await api.GET("/applications/check", { params: { query: { posting_id: postingId } }, signal }),
+  );
+}
+
+/**
+ * `POST /applications` depuis une offre : la fiche reprend entreprise, poste, lien et texte de
+ * l'offre. 409 `application_exists` (`details.application_id`) ou `application_duplicate`
+ * (`details.alerts`) ; `distinctFrom` : les fiches que January a confirmées « autre poste ».
+ */
+export async function createApplicationFromPosting(postingId: string, distinctFrom: string[]) {
+  return unwrap(
+    await api.POST("/applications", {
+      body: {
+        posting_id: postingId,
+        status: "to_apply",
+        ...(distinctFrom.length > 0 ? { distinct_from: distinctFrom } : {}),
+      },
+    }),
+  );
+}
+
 /** `GET /gap/top-missing` : les 10 compétences qui manquent le plus souvent. */
 export async function fetchTopMissing(signal?: AbortSignal) {
   return unwrap(await api.GET("/gap/top-missing", { signal }));

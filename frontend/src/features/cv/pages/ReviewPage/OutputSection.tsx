@@ -4,7 +4,7 @@ import { isAwaitingAnswer } from "@/shared/realtime/feedHelpers";
 import { InterruptCard } from "@/shared/session-ui";
 import { InlineError } from "@/shared/ui/states/InlineError";
 import type { useGenerate } from "../../hooks/useGenerate";
-import type { Run } from "../../hooks/useRun";
+import type { Run } from "@/shared/realtime/useRun";
 import type { CvReviewOut } from "../../types";
 
 const PDF = "pdf";

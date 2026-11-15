@@ -2,6 +2,7 @@ import { NavLink } from "react-router";
 import { t } from "@/shared/i18n/t";
 import { cn } from "@/shared/lib/utils";
 import type { NavGroup } from "../../buildNav";
+import { NavItemLabel } from "../NavItemLabel";
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
@@ -28,7 +29,7 @@ export function SidebarGroup({ group }: { group: NavGroup }) {
     return (
       <NavLink to={single.path} end={needsEnd(single.path, group.items)} className={linkClass}>
         <Icon aria-hidden="true" className="size-4" />
-        {t(single.labelKey)}
+        <NavItemLabel item={single} />
       </NavLink>
     );
   }
@@ -42,7 +43,7 @@ export function SidebarGroup({ group }: { group: NavGroup }) {
         {group.items.map((item) => (
           <li key={item.path}>
             <NavLink to={item.path} end={needsEnd(item.path, group.items)} className={linkClass}>
-              {t(item.labelKey)}
+              <NavItemLabel item={item} />
             </NavLink>
           </li>
         ))}

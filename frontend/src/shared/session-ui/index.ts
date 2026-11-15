@@ -22,3 +22,5 @@ export { SourcesPanel } from "./SourcesPanel";
 export { sourcesFromEvents } from "./sourcesFromEvents";
 export type { QueryView, SourcesViewModel, SourceView } from "./sourceTypes";
 export { webUrl } from "./webUrl";
+export { canAnswer, RunFeed } from "./RunFeed";
+export type { InterruptItem } from "./RunFeed";

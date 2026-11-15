@@ -128,4 +128,50 @@ describe("SidebarGroup", () => {
     );
     expect(screen.getByRole("link", { name: "Étudier" })).toHaveAttribute("aria-current", "page");
   });
+
+  describe("pastille d'une entrée", () => {
+    const entry = (count: number | undefined) =>
+      ({
+        ...base,
+        items: [
+          { labelKey: "applications.nav.board", path: "/candidatures" },
+          {
+            labelKey: "applications.nav.reminders",
+            path: "/candidatures/relances",
+            useBadge: () => count,
+            badgeLabel: (n: number) => `${n} relances dues`,
+          },
+        ],
+      }) satisfies NavGroup;
+
+    it("montre le nombre et le dit aux lecteurs d'écran (« 3 relances dues »)", () => {
+      render(
+        <MemoryRouter>
+          <SidebarGroup group={entry(3)} />
+        </MemoryRouter>,
+      );
+      const link = screen.getByRole("link", { name: /Relances/ });
+      expect(link).toHaveAccessibleName("Relances, 3 relances dues");
+      expect(screen.getByText("3")).toHaveAttribute("aria-hidden", "true");
+    });
+
+    it.each([[0], [undefined]])("n'affiche aucune pastille pour %s", (count) => {
+      render(
+        <MemoryRouter>
+          <SidebarGroup group={entry(count)} />
+        </MemoryRouter>,
+      );
+      expect(screen.getByRole("link", { name: "Relances" })).toBeInTheDocument();
+      expect(screen.queryByText("0")).toBeNull();
+    });
+
+    it("n'ajoute rien aux entrées sans pastille", () => {
+      render(
+        <MemoryRouter>
+          <SidebarGroup group={entry(2)} />
+        </MemoryRouter>,
+      );
+      expect(screen.getByRole("link", { name: "Suivi" })).toBeInTheDocument();
+    });
+  });
 });

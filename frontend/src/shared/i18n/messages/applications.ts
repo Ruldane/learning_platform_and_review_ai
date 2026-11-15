@@ -1,5 +1,8 @@
+import { applicationsPages } from "./applicationsPages";
+
 /** Textes des candidatures : tableau, tableau de suivi, relances, alerte de doublon, fil, indicateurs. */
 export const applications = {
+  ...applicationsPages,
   status: {
     to_apply: "À postuler",
     applied: "Postulée",

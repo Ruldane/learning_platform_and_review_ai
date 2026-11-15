@@ -1,11 +1,11 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { t } from "@/shared/i18n/t";
 import type { SocketFactory } from "@/shared/realtime/socket";
+import { useRun } from "@/shared/realtime/useRun";
+import { RunFeed } from "@/shared/session-ui";
 import { Button } from "@/shared/ui/button";
 import { InlineError } from "@/shared/ui/states/InlineError";
-import { useRun } from "../../hooks/useRun";
 import { cvKeys } from "../../queryKeys";
-import { RunFeed } from "../RunFeed";
 
 interface ProfileRunProps {
   sessionId: string;
