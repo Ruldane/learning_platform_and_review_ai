@@ -30,8 +30,8 @@ def follows_version(row: Application) -> bool:
 
 
 async def freeze_version(db: AsyncSession, user_id: str, row: Application, at: datetime) -> None:
-    """À « Postulée » pour la première fois : la fiche garde la version prête la plus récente de
-    son offre (événement `version`) ; sans version prête, elle garde celle qu'elle suivait."""
+    """À la première sortie de « À postuler » (voir `events`) : la fiche garde la version prête la
+    plus récente de son offre (événement `version`) ; sans version prête, celle qu'elle suivait."""
     if row.posting_id is None:
         return
     ready = (await ready_versions_by_posting(db, user_id)).get(row.posting_id)

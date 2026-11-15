@@ -99,14 +99,16 @@ def _source(body: ApplicationIn, posting: JobPosting | None) -> Source:
 
 
 def _incoming(source: Source, posting: JobPosting | None, body: ApplicationIn) -> Incoming:
-    if posting is not None:
-        return incoming_from_posting(posting, body.distinct_from)
+    """L'offre entrante, telle que la fiche sera écrite (`source` : entreprise, intitulé, lien, y
+    compris ce que January a saisi pour une offre pas encore analysée) ; de l'offre, seuls
+    l'identifiant et ses offres « possibles » comptent."""
+    possible = incoming_from_posting(posting).possible_posting_ids if posting else frozenset()
     return Incoming(
         url_norm=source.url_norm,
         company_norm=company_key(source.company),
         title=source.title,
-        posting_id=None,
-        possible_posting_ids=frozenset(),
+        posting_id=source.posting_id,
+        possible_posting_ids=possible,
         distinct_from=frozenset(body.distinct_from),
     )
 
@@ -151,11 +153,11 @@ def confirm_distinct(rows: list[Application], new: Application, confirmed: list[
 
 
 async def _link_version(db: AsyncSession, user_id: str, row: Application, now: datetime) -> None:
-    """Une fiche « À postuler » suit la version prête de son offre ; une fiche créée « Postulée »
-    la fige."""
+    """Une fiche « À postuler » suit la version prête de son offre ; une fiche créée à un autre
+    statut que « Retirée » la fige (la version envoyée est celle du jour)."""
     if row.posting_id is None:
         return
-    if row.status == "applied":
+    if row.status not in ("to_apply", "withdrawn"):
         await freeze_version(db, user_id, row, now)
     elif follows_version(row):
         ready = (await ready_versions_by_posting(db, user_id)).get(row.posting_id)

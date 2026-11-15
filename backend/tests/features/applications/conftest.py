@@ -43,19 +43,37 @@ async def add_posting(app: FastAPI, **over: Any) -> str:
     title = over.pop("title", "Développeuse IA")
     url = over.pop("url", f"https://jobs.example.org/offres/{number}")
     user_id = over.pop("user_id", app.state.local_user_id)
+    if not over.pop("analyzed", True):  # offre ajoutée, analyse pas encore rendue
+        return await _store_posting(app, user_id, number, url, over.pop("text", None), None, None)
+    return await _store_posting(
+        app, user_id, number, url, over.pop("text", None), company, title, **over
+    )
+
+
+async def _store_posting(
+    app: FastAPI,
+    user_id: str,
+    number: int,
+    url: str,
+    text: str | None,
+    company: str | None,
+    title: str | None,
+    **over: Any,
+) -> str:
+    analysis = {"title": title, "company": company, "language": "fr"} if company else None
     async with app.state.session_factory() as db:
         row = JobPosting(
             user_id=user_id,
             source="url",
             url=url,
             url_norm=posting_url_key(url),
-            text=over.pop("text", f"Texte de l'offre fictive numéro {number}."),
+            text=text or f"Texte de l'offre fictive numéro {number}.",
             text_hash=f"hash-{number}",
-            status="ready",
+            status="ready" if company else "analyzing",
             company=company,
-            company_norm=company_key(company),
+            company_norm=company_key(company) if company else None,
             title=title,
-            analysis={"title": title, "company": company, "language": "fr"},
+            analysis=analysis,
             **over,
         )
         db.add(row)
@@ -63,9 +81,15 @@ async def add_posting(app: FastAPI, **over: Any) -> str:
         return row.id
 
 
-async def add_version(app: FastAPI, posting_id: str, number: int = 1, status: str = "ready") -> str:
+async def add_version(
+    app: FastAPI,
+    posting_id: str,
+    number: int = 1,
+    status: str = "ready",
+    user_id: str | None = None,
+) -> str:
     """Une version de CV de l'offre (avec sa revue), rangée directement."""
-    user_id = app.state.local_user_id
+    user_id = user_id or app.state.local_user_id
     async with app.state.session_factory() as db:
         review = CvReview(
             user_id=user_id, posting_id=posting_id, template_id="t", profile_version=1,

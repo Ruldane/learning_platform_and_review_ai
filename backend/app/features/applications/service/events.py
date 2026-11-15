@@ -36,13 +36,16 @@ async def change_status(
     when: tuple[date, datetime, ZoneInfo],
 ) -> None:
     """Applique le nouveau statut : dates de `on_status`, jour d'entretien donné, version figée à
-    « Postulée » (la première fois), événement `status`. Sans effet si le statut ne change pas."""
+    la première sortie de « À postuler » (sauf vers « Retirée »), événement `status`. Sans effet
+    si le statut ne change pas."""
     assert body.status is not None
     day, at, zone = when
     old = row.status
     if body.status == old:
         return
-    first_application = body.status == "applied" and row.applied_on is None
+    leaves_to_apply = body.status not in ("to_apply", "withdrawn") and (
+        old == "to_apply" or (body.status == "applied" and row.applied_on is None)
+    )
     effects = on_status(view_of(row, zone), body.status, day).fields()
     for name, value in effects.items():
         setattr(row, name, value)
@@ -57,7 +60,7 @@ async def change_status(
         status_to=body.status,
         text=body.text,
     )
-    if first_application:
+    if leaves_to_apply:
         await freeze_version(db, user_id, row, at)
     logger.info(
         "Statut changé : utilisateur %s, fiche %s, %s vers %s", user_id, row.id, old, body.status

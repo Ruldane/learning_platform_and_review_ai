@@ -146,3 +146,55 @@ async def test_422_never_echoes_input(client: httpx.AsyncClient) -> None:
     assert r.json()["error"]["details"] == {"fields": ["contacts"]}
     r = await create(client, **SOCIETE, status="inconnu")
     assert r.json()["error"]["details"] == {"fields": ["status"]}
+
+
+async def test_unanalysed_posting_with_typed_fields_is_checked_like_a_manual_one(
+    client: httpx.AsyncClient, app: FastAPI
+) -> None:
+    """L'offre n'est pas analysée (ni entreprise ni intitulé rangés) : le contrôle lit ce que
+    January a saisi, comme pour une fiche manuelle identique (409, et `info` pour un autre
+    intitulé de la même entreprise)."""
+    first = await created_id(client, **SOCIETE, status="applied", applied_on="2026-11-03")
+    fresh = await add_posting(app, analyzed=False)
+    r = await create(client, posting_id=fresh, **SOCIETE)
+    assert (r.status_code, r.json()["error"]["code"]) == (409, "application_duplicate")
+    assert [a["application_id"] for a in r.json()["error"]["details"]["alerts"]] == [first]
+    other = await add_posting(app, analyzed=False)
+    r = await create(client, posting_id=other, company="Société Fictive", title="Comptable")
+    assert r.status_code == 201, r.text
+    assert [(i["level"], i["application_id"]) for i in r.json()["info"]] == [("info", first)]
+    assert r.json()["application"]["posting_id"] == other
+
+
+async def test_distinct_confirmation_silences_pair_in_the_reverse_direction(
+    client: httpx.AsyncClient, app: FastAPI
+) -> None:
+    """A née d'une offre PA ; B manuelle, confirmée « autre poste » de A : le contrôle de PA ne
+    rappelle pas B, et une fiche identique à B qui ne confirme que A est acceptée."""
+    posting_a = await add_posting(app, title="Développeuse IA")
+    fiche_a = await created_id(client, posting_id=posting_a)
+    refused = await create(client, company="Société Fictive", title="Développeuse IA (H/F)")
+    assert refused.status_code == 409
+    fiche_b = await created_id(
+        client, company="Société Fictive", title="Développeuse IA (H/F)", distinct_from=[fiche_a]
+    )
+    check = (await client.get(f"{API}/check", params={"posting_id": posting_a})).json()
+    assert check["alerts"] == [] and check["own"]["id"] == fiche_a
+    again = await create(
+        client, company="Société Fictive", title="Développeuse IA (H/F)", distinct_from=[fiche_a]
+    )
+    assert again.status_code == 409  # B ne l'est pas : seule A est confirmée
+    assert [a["application_id"] for a in again.json()["error"]["details"]["alerts"]] == [fiche_b]
+    both = await create(
+        client,
+        company="Société Fictive",
+        title="Développeuse IA (H/F)",
+        distinct_from=[fiche_a, fiche_b],
+    )
+    assert both.status_code == 201
+
+
+async def test_other_user_posting_is_404(client: httpx.AsyncClient, app: FastAPI) -> None:
+    theirs = await add_posting(app, user_id="autre-utilisatrice")
+    r = await create(client, posting_id=theirs)
+    assert (r.status_code, r.json()["error"]["code"]) == (404, "posting_not_found")

@@ -130,3 +130,34 @@ async def test_version_frozen_after_applied(
     second_version = await add_version(app, second)
     other = await created_id(client, posting_id=second, status="applied")
     assert (await client.get(f"{API}/{other}")).json()["cv_version_id"] == second_version
+
+
+async def test_version_frozen_when_leaving_to_apply_for_any_status_but_withdrawn(
+    client: httpx.AsyncClient, app: FastAPI
+) -> None:
+    """La version envoyée est celle du jour où January quitte « À postuler » (sauf « Retirée »)."""
+    postings = [await add_posting(app, company=f"Exemple {n}", title=f"Poste {n}") for n in "ABC"]
+    first = [await add_version(app, p) for p in postings]
+    ids = [await created_id(client, posting_id=p) for p in postings]
+    for application_id, new in zip(ids, ("interview", "withdrawn", "applied"), strict=True):
+        r = await _event(client, application_id, kind="status", status=new)
+        assert r.status_code == 200, r.text
+    second = [await add_version(app, p, number=2) for p in postings]
+    listed = {a["id"]: a for a in (await client.get(API)).json()}
+    assert listed[ids[0]]["cv_version_id"] == first[0]  # « Entretien » : figée
+    assert listed[ids[1]]["cv_version_id"] == first[1]  # « Retirée » : rien de figé, rien de suivi
+    assert second[1] != first[1]
+    assert listed[ids[2]]["cv_version_id"] == first[2]  # « Postulée » : figée
+    thread = (await client.get(f"{API}/{ids[0]}")).json()["events"]
+    assert [e["ref_id"] for e in thread if e["kind"] == "version"] == [first[0]]
+    # une fiche créée directement à « Entretien » fige aussi la version prête du jour
+    direct = await add_posting(app, company="Exemple D", title="Poste D")
+    wanted = await add_version(app, direct)
+    created = await created_id(client, posting_id=direct, status="interview")
+    await add_version(app, direct, number=2)
+    assert (await client.get(f"{API}/{created}")).json()["cv_version_id"] == wanted
+    # ... mais pas une fiche créée « Retirée » : rien n'est figé
+    gone = await add_posting(app, company="Exemple E", title="Poste E")
+    await add_version(app, gone)
+    kept = await created_id(client, posting_id=gone, status="withdrawn")
+    assert (await client.get(f"{API}/{kept}")).json()["cv_version_id"] is None

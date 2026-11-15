@@ -6,6 +6,7 @@ from fastapi import FastAPI
 
 from app.features.applications.service.adopt import adopt_versions
 from tests.features.applications.conftest import API, add_posting, add_version
+from tests.sessions_support import act_as
 
 
 async def test_adopt_creates_to_apply_once(
@@ -66,10 +67,22 @@ async def test_adopt_uses_an_existing_manual_application(
 async def test_adopt_is_per_user_and_stats_adopt_too(
     client: httpx.AsyncClient, app: FastAPI, posting: str, ready_version: str
 ) -> None:
-    await add_posting(app, company="Autre SA", title="Poste", user_id="autre-utilisatrice")
-    async with app.state.session_factory() as db:
-        assert await adopt_versions(db, "autre-utilisatrice") == 0  # aucune version à elle
-        await db.commit()
+    """Chaque utilisatrice a son offre et sa version prête : chacune n'adopte que la sienne."""
+    other_user = "autre-utilisatrice"
+    theirs = await add_posting(app, company="Autre SA", title="Poste", user_id=other_user)
+    their_version = await add_version(app, theirs, user_id=other_user)
     stats = (await client.get(f"{API}/stats")).json()  # adopte avant de compter
     assert stats["by_status"]["to_apply"] == 1
-    assert len((await client.get(API)).json()) == 1
+    [mine] = (await client.get(API)).json()
+    assert (mine["posting_id"], mine["cv_version_id"]) == (posting, ready_version)
+    act_as(app, other_user)
+    [hers] = (await client.get(API)).json()
+    assert (hers["posting_id"], hers["cv_version_id"], hers["company"]) == (
+        theirs,
+        their_version,
+        "Autre SA",
+    )
+    async with app.state.session_factory() as db:
+        assert await adopt_versions(db, other_user) == 0  # déjà adoptée
+        assert await adopt_versions(db, "troisieme-utilisatrice") == 0  # rien à elle
+        await db.commit()
