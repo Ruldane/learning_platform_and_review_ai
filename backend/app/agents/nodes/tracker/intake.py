@@ -141,6 +141,7 @@ def reading_schema(today: date, text: str) -> type[IntakeReading]:
 
 def parse_vars(text: str, today: date, language: str) -> dict[str, object]:
     return {
+        "mode": "intake",
         "phrase": untrusted(text, "phrase de January"),
         "today_line": day_label(today),
         "calendar": calendar_lines(today),

@@ -11,6 +11,7 @@ from app.agents.tools.council_port import NO_COUNCIL, CouncilStore
 from app.agents.tools.cv_review_port import NO_CV_REVIEW, CvReviewStore
 from app.agents.tools.cv_template_port import NO_CV_TEMPLATES, CvTemplateStore
 from app.agents.tools.gap_port import NO_GAP, GapStore
+from app.agents.tools.kit_port import NO_KIT, KitStore
 from app.agents.tools.lesson_port import NO_LESSONS, LessonStore
 from app.agents.tools.memory_port import NO_MEMORY, MemoryGateway
 from app.agents.tools.profile_port import NO_PROFILE, ProfileStore
@@ -37,6 +38,7 @@ class AgentPorts:
     cv_templates: CvTemplateStore = NO_CV_TEMPLATES  # gabarits du Maquettiste (D125)
     cv_review: CvReviewStore = NO_CV_REVIEW  # revue du CV contre une offre (D129)
     applications: ApplicationStore = NO_APPLICATIONS  # fiche créée en une phrase (D141)
+    kit: KitStore = NO_KIT  # kit de candidature (D142)
 
 
 NO_PORTS = AgentPorts()

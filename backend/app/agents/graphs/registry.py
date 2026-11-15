@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 from app.agents.graphs import (
     application_intake,
+    application_kit,
     capture,
     cv_capture,
     cv_review,
@@ -62,6 +63,7 @@ GRAPHS: dict[str, GraphSpec] = {
             application_intake.ApplicationIntakeInput,
             application_intake.build,
         ),
+        GraphSpec("application_kit", application_kit.ApplicationKitInput, application_kit.build),
     )
 }
 

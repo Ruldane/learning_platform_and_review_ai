@@ -14,6 +14,7 @@ from app.agents.tools.applications_port import NO_APPLICATIONS, ApplicationStore
 from app.agents.tools.cv_review_port import NO_CV_REVIEW, CvReviewStore
 from app.agents.tools.cv_template_port import NO_CV_TEMPLATES, CvTemplateStore
 from app.agents.tools.gap_port import NO_GAP, GapStore
+from app.agents.tools.kit_port import NO_KIT, KitStore
 from app.agents.tools.memory_port import MemoryGateway
 from app.agents.tools.profile_port import NO_PROFILE, ProfileStore
 from app.agents.tools.web_port import WebGateway
@@ -101,6 +102,7 @@ def agent_ports(
     cv_templates: CvTemplateStore = NO_CV_TEMPLATES,
     cv_review: CvReviewStore = NO_CV_REVIEW,
     applications: ApplicationStore = NO_APPLICATIONS,
+    kit: KitStore = NO_KIT,
 ) -> AgentPorts:
     """Tous les ports du moteur (D82) : un port de plus = un champ d'`AgentPorts` et une ligne ici.
     Conseil (D84), programme (D86), leçons (D90), quiz (D100), sessions d'étude (D102),
@@ -108,7 +110,8 @@ def agent_ports(
     (D88), `lessons` (D91), `quiz` (D101), `study` (D103), `replan` (D106) et `capture` (D108) ;
     analyse d'offre (D121) adaptée de la feature `postings` (D122), profil maître (D124), gabarits
     de CV (D126) et revue de CV (D130) de la feature `cv`, fiche créée en une phrase (D141) de la
-    feature `applications`, composés par `app.bootstrap_career`."""
+    feature `applications` ; kit de candidature (D142) de la même feature (port réel : tâche 7.6) ;
+    composés par `app.bootstrap_career`."""
     council = AgentCouncilStore(learning.session_factory, learning.launcher, learning)
     program_store = AgentProgramStore(program)
     return AgentPorts(
@@ -126,6 +129,7 @@ def agent_ports(
         cv_templates,
         cv_review,
         applications,
+        kit,
     )
 
 
