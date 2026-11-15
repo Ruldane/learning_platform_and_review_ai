@@ -37,7 +37,7 @@ export function RunFeed({ run, label, renderInterrupt }: RunFeedProps) {
       <SessionStatusBar status={stream.status} cost={stream.view.cost} />
       {stream.connection === "reconnecting" ? (
         <p role="status" className="text-sm text-muted-foreground">
-          {t("cv.templatePage.reconnecting")}
+          {t("session.reconnecting")}
         </p>
       ) : null}
       <DebateFeed

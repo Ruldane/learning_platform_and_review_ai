@@ -23,3 +23,10 @@ export function formatPercent(share: number): string {
 export function formatNumber(value: number): string {
   return NUMBER.format(value);
 }
+
+/** Le jour `AAAA-MM-JJ` de `now` dans le fuseau de l'appareil (jamais décalé par l'UTC). */
+export function todayString(now: Date = new Date()): string {
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${now.getFullYear()}-${month}-${day}`;
+}

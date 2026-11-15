@@ -103,7 +103,6 @@ export const cvPages = {
     activeNow: "C'est ton modèle actif.",
     activate: "Utiliser ce modèle pour mes CV",
     reviewLink: "Revoir mon CV pour une offre",
-    reconnecting: "Reconnexion au fil…",
   },
   newReview: {
     loading: "Préparation de la revue…",
@@ -135,7 +134,6 @@ export const cvPages = {
       cancelled: "La revue a été annulée.",
     },
     feed: "Fil de la revue",
-    reconnecting: "Reconnexion au fil…",
     indicators: "Indicateurs",
     noIndicators: "Les indicateurs du CV d'origine ne sont pas disponibles.",
     modifications: "Modifications proposées",

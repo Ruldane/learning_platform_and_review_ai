@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { t } from "@/shared/i18n/t";
 import type { SocketFactory } from "@/shared/realtime/socket";
@@ -10,6 +10,7 @@ import { InlineError } from "@/shared/ui/states/InlineError";
 import { ConfirmationCard } from "../../components/ConfirmationCard";
 import { toConfirmationView } from "../../toView";
 import { applicationPath } from "../../urls";
+import { asReasked } from "./reasked";
 
 const CONFIRM_KIND = "application_confirm";
 
@@ -28,15 +29,24 @@ export function announcedApplication(events: SessionEvent[]): string | null {
 const answerOf = (choice: string, fields: Record<string, string>) =>
   Object.keys(fields).length === 0 ? choice : { choice, fields };
 
-function confirmation(item: InterruptItem, run: Run) {
+interface Answers {
+  /** Ce que January a envoyé à la dernière réponse avec des champs, `null` avant. */
+  sent: Record<string, string> | null;
+  onSent: (fields: Record<string, string>) => void;
+}
+
+function confirmation(item: InterruptItem, run: Run, { sent, onSent }: Answers) {
   if (item.interrupt.kind !== CONFIRM_KIND || item.answered) return undefined;
   const id = item.interrupt.interrupt_id;
   return (
     <ConfirmationCard
       key={id}
-      confirmation={toConfirmationView(item.interrupt)}
+      confirmation={asReasked(toConfirmationView(item.interrupt), sent)}
       disabled={!canAnswer(run, item)}
-      onChoose={(choice, fields) => void run.actions.resume(id, answerOf(choice, fields))}
+      onChoose={(choice, fields) => {
+        if (Object.keys(fields).length > 0) onSent(fields);
+        void run.actions.resume(id, answerOf(choice, fields));
+      }}
     />
   );
 }
@@ -57,6 +67,7 @@ export function IntakeRun({ sessionId, createSocket, onLeave }: IntakeRunProps) 
   const navigate = useNavigate();
   const run = useRun(sessionId, () => undefined, createSocket);
   const opened = announcedApplication(run.stream.events);
+  const [sent, setSent] = useState<Record<string, string> | null>(null);
 
   useEffect(() => {
     if (opened) void navigate(applicationPath(opened));
@@ -67,7 +78,7 @@ export function IntakeRun({ sessionId, createSocket, onLeave }: IntakeRunProps) 
       <RunFeed
         run={run}
         label={t("applications.newPage.sentenceFeed")}
-        renderInterrupt={(item) => confirmation(item, run)}
+        renderInterrupt={(item) => confirmation(item, run, { sent, onSent: setSent })}
       />
       {run.stream.view.error ? <InlineError message={run.stream.view.error.message} /> : null}
       {run.over && !opened ? (

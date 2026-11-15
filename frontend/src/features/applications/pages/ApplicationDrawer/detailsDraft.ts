@@ -63,3 +63,36 @@ export function changesOf(draft: DetailsDraft, detail: ApplicationDetail): Appli
   }
   return patch as ApplicationPatch;
 }
+
+const TEXT_KEYS: TextKey[] = [
+  "company",
+  "title",
+  "url",
+  "channel",
+  "notes",
+  "nextAction",
+  "nextActionOn",
+  "appliedOn",
+  "interviewOn",
+];
+
+const sameContacts = (a: ContactView[], b: ContactView[]) =>
+  JSON.stringify(toContactsIn(a)) === JSON.stringify(toContactsIn(b));
+
+/**
+ * La fiche a été relue (un statut, une note, une relance, la sauvegarde elle-même) : chaque champ que
+ * January n'a pas touché prend sa nouvelle valeur (une date posée par un changement de statut, par
+ * exemple), chaque champ qu'elle a retouché garde sa retouche, enregistrée ou non.
+ */
+export function rebase(
+  draft: DetailsDraft,
+  before: DetailsDraft,
+  after: DetailsDraft,
+): DetailsDraft {
+  const next = { ...draft };
+  for (const key of TEXT_KEYS) {
+    if (draft[key] === before[key]) next[key] = after[key];
+  }
+  if (sameContacts(draft.contacts, before.contacts)) next.contacts = after.contacts;
+  return next;
+}

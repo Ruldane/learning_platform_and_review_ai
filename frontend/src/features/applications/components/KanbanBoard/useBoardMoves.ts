@@ -23,7 +23,8 @@ export function useBoardMoves(
   function move(id: string, status: StatusView, source: MoveSource) {
     const application = applications.find((item) => item.id === id);
     if (!application || application.status === status) return;
-    if (source !== "pointer") moved(id, status, source === "menu" ? "menu" : "handle");
+    if (source !== "pointer")
+      moved(id, application.status, status, source === "menu" ? "menu" : "handle");
     if (source === "menu") {
       const values = { title: application.title, status: statusName(status) };
       setAnnouncement(t("applications.board.announce.moved", values));

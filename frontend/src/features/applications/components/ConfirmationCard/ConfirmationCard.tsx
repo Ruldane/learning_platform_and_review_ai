@@ -1,8 +1,7 @@
 import { useId } from "react";
-import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
-import type { ConfirmationFieldView, ConfirmationView } from "../viewTypes";
-import { DraftField, type FieldKind } from "../DraftField";
+import type { ConfirmationView } from "../viewTypes";
+import { ConfirmationFields } from "./ConfirmationFields";
 import { useConfirmationValues } from "./useConfirmationValues";
 
 interface ConfirmationCardProps {
@@ -16,26 +15,6 @@ interface ConfirmationCardProps {
 /** Les issues qui enregistrent une fiche : seules elles envoient les champs relus. */
 const WRITES = ["create", "distinct"];
 
-/** La nature d'un champ : statut, canal, date et notes ont leur propre commande, le reste est du texte. */
-const KINDS: Record<string, FieldKind> = {
-  status: "status",
-  channel: "channel",
-  applied_on: "date",
-  notes: "textarea",
-};
-
-function specOf(field: ConfirmationFieldView, value: string) {
-  const todayHint = field.id === "applied_on" && value === "";
-  return {
-    key: field.id,
-    label: field.label,
-    kind: KINDS[field.id] ?? "text",
-    required: field.required,
-    maxLength: field.maxLength,
-    hint: todayHint ? t("applications.confirm.todayHint") : undefined,
-  };
-}
-
 /**
  * La fiche que l'Assistant de suivi a lue dans la phrase, à confirmer : un champ par information,
  * déjà rempli et modifiable, puis les issues du serveur (créer, c'est un autre poste, ouvrir la
@@ -48,7 +27,7 @@ export function ConfirmationCard({
   onChoose,
 }: ConfirmationCardProps) {
   const questionId = useId();
-  const { values, setValue, complete } = useConfirmationValues(confirmation);
+  const { values, setValue, complete, roleWithoutName } = useConfirmationValues(confirmation);
   const choose = (choice: string) => onChoose(choice, WRITES.includes(choice) ? { ...values } : {});
 
   return (
@@ -59,22 +38,18 @@ export function ConfirmationCard({
       <p id={questionId} className="font-medium">
         {confirmation.question}
       </p>
-      <div
-        role="group"
-        aria-label={t("applications.confirm.label")}
-        className="grid gap-3 sm:grid-cols-2"
-      >
-        {confirmation.fields.map((field, index) => (
-          <DraftField
-            key={field.id}
-            spec={specOf(field, values[field.id] ?? "")}
-            value={values[field.id] ?? ""}
-            disabled={disabled}
-            autoFocus={!disabled && index === 0}
-            onChange={(value) => setValue(field.id, value)}
-          />
-        ))}
-      </div>
+      {confirmation.reason ? (
+        <p role="alert" className="text-sm text-destructive">
+          {confirmation.reason}
+        </p>
+      ) : null}
+      <ConfirmationFields
+        confirmation={confirmation}
+        values={values}
+        disabled={disabled}
+        roleWithoutName={roleWithoutName}
+        onChange={setValue}
+      />
       <div className="flex flex-wrap gap-2">
         {confirmation.options.map((option) => (
           <Button

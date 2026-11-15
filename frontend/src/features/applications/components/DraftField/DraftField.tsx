@@ -1,8 +1,7 @@
 import { t } from "@/shared/i18n/t";
-import { cn } from "@/shared/lib/utils";
-import { fieldClass } from "@/shared/ui/fieldClass";
 import { Field } from "../Field";
 import { ChoiceSelect, type ChoiceView } from "./ChoiceSelect";
+import { TextControl } from "./TextControl";
 import { CHANNEL_ORDER, STATUS_ORDER } from "../viewTypes";
 
 export type FieldKind = "text" | "url" | "date" | "textarea" | "channel" | "status";
@@ -15,6 +14,8 @@ export interface FieldSpec {
   required?: boolean;
   hint?: string;
   maxLength?: number;
+  /** Borne haute d'un champ date (`AAAA-MM-JJ`). */
+  max?: string;
 }
 
 interface DraftFieldProps {
@@ -49,9 +50,7 @@ export function DraftField({
   options,
   onChange,
 }: DraftFieldProps) {
-  const { kind, maxLength, required } = spec;
-  const common = { value, disabled, autoFocus, required, maxLength };
-  const change = (event: { target: { value: string } }) => onChange(event.target.value);
+  const { kind } = spec;
   return (
     <Field label={spec.label} error={error} hint={spec.hint}>
       {(control) => {
@@ -67,20 +66,15 @@ export function DraftField({
             />
           );
         }
-        if (kind === "textarea") {
-          return (
-            <textarea
-              {...control}
-              {...common}
-              rows={3}
-              maxLength={maxLength ?? 2000}
-              onChange={change}
-              className={cn(fieldClass, "h-auto min-h-16 py-1.5")}
-            />
-          );
-        }
         return (
-          <input {...control} {...common} type={kind} onChange={change} className={fieldClass} />
+          <TextControl
+            control={control}
+            spec={spec}
+            value={value}
+            disabled={disabled}
+            autoFocus={autoFocus}
+            onChange={onChange}
+          />
         );
       }}
     </Field>

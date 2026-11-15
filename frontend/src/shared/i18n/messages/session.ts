@@ -78,6 +78,7 @@ export const session = {
     resume: "Reprendre",
     cancel: "Annuler",
   },
+  reconnecting: "Reconnexion au fil…",
   composer: { label: "Ton message", send: "Envoyer" },
   sources: {
     label: "Sources de la recherche",

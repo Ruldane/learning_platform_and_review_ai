@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 import type { ApplicationDetail, ApplicationPatch } from "../../types";
-import { changesOf, problemOf, toDraft, type DetailsDraft } from "./detailsDraft";
+import { changesOf, problemOf, rebase, toDraft, type DetailsDraft } from "./detailsDraft";
 import { DetailsFields } from "./DetailsFields";
 
 interface DetailsFormProps {
@@ -15,11 +15,17 @@ interface DetailsFormProps {
 /**
  * Les champs modifiables de la fiche et ses contacts, enregistrés d'un coup (`PATCH`, seulement ce
  * qui a changé). Un nom d'entreprise ou de poste vide, ou un contact sans nom, n'est pas envoyé : le
- * champ le dit. Monté sous `key={detail.updated_at}` : une écriture ailleurs relit le formulaire.
+ * champ le dit. Quand la fiche est relue (écriture ailleurs dans le tiroir), les retouches non enregistrées sont gardées.
  */
 export function DetailsForm({ detail, pending, onSave }: DetailsFormProps) {
   const [draft, setDraft] = useState<DetailsDraft>(() => toDraft(detail));
   const [refused, setRefused] = useState(false);
+  const [seen, setSeen] = useState(detail);
+  if (seen !== detail) {
+    // La fiche a été relue : les retouches non enregistrées restent, le reste se met à jour.
+    setDraft(rebase(draft, toDraft(seen), toDraft(detail)));
+    setSeen(detail);
+  }
   const patch = changesOf(draft, detail);
   const problem = problemOf(draft);
 

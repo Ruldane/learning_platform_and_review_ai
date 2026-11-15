@@ -174,4 +174,29 @@ describe("SidebarGroup", () => {
       expect(screen.getByRole("link", { name: "Suivi" })).toBeInTheDocument();
     });
   });
+
+  it("garde l'entrée la plus générale active sur une sous-route qui n'est celle d'aucune sœur (fiche ouverte)", () => {
+    const group: NavGroup = {
+      ...base,
+      items: [
+        { labelKey: "applications.nav.board", path: "/candidatures" },
+        { labelKey: "applications.nav.reminders", path: "/candidatures/relances" },
+      ],
+    };
+    const { unmount } = render(
+      <MemoryRouter initialEntries={["/candidatures/a1"]}>
+        <SidebarGroup group={group} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole("link", { name: "Suivi" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Relances" })).not.toHaveAttribute("aria-current");
+    unmount();
+    render(
+      <MemoryRouter initialEntries={["/candidatures/relances"]}>
+        <SidebarGroup group={group} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole("link", { name: "Relances" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Suivi" })).not.toHaveAttribute("aria-current");
+  });
 });

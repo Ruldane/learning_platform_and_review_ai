@@ -115,4 +115,6 @@ export interface ConfirmationView {
   question: string;
   fields: ConfirmationFieldView[];
   options: ConfirmationOptionView[];
+  /** Pourquoi la question est reposée (la réponse précédente n'a pas pu être prise), s'il y a lieu. */
+  reason?: string | null;
 }

@@ -124,6 +124,34 @@ describe("NewApplicationPage, en une phrase", () => {
     await waitFor(() => expect(resumes).toEqual([{ interrupt_id: "q1", value: "open" }]));
   });
 
+  it("keeps January's edits and says why when the server asks the question again", async () => {
+    recordPosts("/sessions/i1/resume", 200, sessionOut("i1", "running"));
+    const { user, stream, e } = await askConfirmation();
+    const first = within(await confirmation());
+    await user.clear(first.getByLabelText("Entreprise"));
+    await user.type(first.getByLabelText("Entreprise"), "Acme Corp");
+    await user.type(first.getByLabelText("Date de candidature (AAAA-MM-JJ)"), "2099-01-01");
+    await user.click(first.getByRole("button", { name: "Créer la fiche" }));
+    // Le serveur refuse la date : même question, brouillon d'origine, nouvel identifiant.
+    stream.push(
+      e.interrupt("application_confirm", "q2", {
+        question: "Je crée cette fiche ?",
+        options: [
+          { value: "create", label: "Créer la fiche" },
+          { value: "cancel", label: "Annuler" },
+        ],
+        fields: CONFIRM_FIELDS,
+      }),
+    );
+    expect(await screen.findByText(/La date ne peut pas être dans le futur/)).toBeVisible();
+    const again = within(
+      (await screen.findAllByRole("region", { name: /Je crée cette fiche/ })).at(-1)!,
+    );
+    expect(again.getByLabelText("Entreprise")).toHaveValue("Acme Corp");
+    expect(again.getByLabelText("Date de candidature (AAAA-MM-JJ)")).toHaveValue("2099-01-01");
+    expect(again.getByRole("button", { name: "Créer la fiche" })).toBeEnabled();
+  });
+
   it("opens the existing fiche the session announces after « Ouvrir »", async () => {
     const { stream, e, router } = await askConfirmation();
     stream.push(e.artifactReady("application", "a9", "/candidatures/a9"));

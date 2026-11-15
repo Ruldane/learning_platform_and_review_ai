@@ -121,4 +121,28 @@ describe("ConfirmationCard", () => {
     expect(screen.getByLabelText("Entreprise")).toBeDisabled();
     expect(screen.getByRole("button", { name: "Annuler" })).toBeDisabled();
   });
+
+  it("refuses a contact role without a contact name, and says why", async () => {
+    const user = userEvent.setup();
+    const onChoose = setup();
+    await user.type(screen.getByLabelText("Rôle du contact"), "Responsable data");
+    expect(screen.getByLabelText("Contact")).toBeInvalid();
+    expect(screen.getByText("Donne le nom du contact, sinon son rôle est perdu.")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Créer la fiche" })).toBeDisabled();
+    await user.type(screen.getByLabelText("Contact"), "Camille");
+    expect(screen.getByRole("button", { name: "Créer la fiche" })).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: "Créer la fiche" }));
+    expect(onChoose).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not let a future date be picked", () => {
+    setup();
+    const max = screen.getByLabelText("Date de candidature (AAAA-MM-JJ)").getAttribute("max");
+    expect(max).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it("shows why the question is asked again", () => {
+    setup({ ...CONFIRMATION, reason: "La date ne peut pas être dans le futur." });
+    expect(screen.getByRole("alert")).toHaveTextContent("La date ne peut pas être dans le futur.");
+  });
 });

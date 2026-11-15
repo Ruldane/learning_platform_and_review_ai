@@ -52,12 +52,7 @@ export function DrawerBody({ detail, info }: DrawerBodyProps) {
       </p>
       {update.error ? <InlineError message={update.error} /> : null}
       <DrawerSection title={t("applications.drawer.detailsTitle")}>
-        <DetailsForm
-          key={detail.updated_at}
-          detail={detail}
-          pending={update.pending}
-          onSave={saveAndSay}
-        />
+        <DetailsForm key={detail.id} detail={detail} pending={update.pending} onSave={saveAndSay} />
       </DrawerSection>
       <DrawerSection title={t("applications.drawer.statusTitle")}>
         {detail.status === "to_apply" ? (

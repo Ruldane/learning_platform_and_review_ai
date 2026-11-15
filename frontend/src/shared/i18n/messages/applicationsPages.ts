@@ -118,6 +118,11 @@ export const applicationsPages = {
   },
   confirm: {
     label: "Confirmation de la fiche",
+    roleNeedsName: "Donne le nom du contact, sinon son rôle est perdu.",
+    reasonFuture:
+      "La date ne peut pas être dans le futur : corrige-la, tes autres retouches sont gardées.",
+    reasonGeneric:
+      "L'Assistant de suivi n'a pas pu enregistrer ces valeurs : vérifie les champs, tes retouches sont gardées.",
     todayHint: "Sans date, la fiche prend la date d'aujourd'hui.",
   },
   check: {

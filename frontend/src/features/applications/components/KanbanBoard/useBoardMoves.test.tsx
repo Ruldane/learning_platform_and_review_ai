@@ -77,4 +77,42 @@ describe("useBoardMoves focus", () => {
     rerender(<Board applications={[moved(card, "applied")]} onMove={vi.fn()} />);
     expect(document.body).toHaveFocus();
   });
+
+  it("gives the focus back once more when the server refuses and the card returns to its column", () => {
+    const card = makeApplication({ id: "z", status: "to_apply" });
+    const { rerender } = render(<Board applications={[card]} onMove={vi.fn()} />);
+    act(() => call("z", "applied", "keyboard"));
+    rerender(<Board applications={[moved(card, "applied")]} onMove={vi.fn()} />);
+    expect(screen.getByRole("button", { name: "Poignée" })).toHaveFocus();
+    // Le tableau a suivi tout de suite, puis le serveur refuse : la carte revient (autre nœud).
+    rerender(<Board applications={[]} onMove={vi.fn()} />);
+    expect(document.body).toHaveFocus();
+    rerender(<Board applications={[{ ...card }]} onMove={vi.fn()} />);
+    expect(screen.getByRole("button", { name: "Poignée" })).toHaveFocus();
+  });
+
+  it("does not take the focus back on the return of a card when the user has moved on", () => {
+    const card = makeApplication({ id: "y", status: "to_apply" });
+    const { rerender } = render(
+      <>
+        <Board applications={[card]} onMove={vi.fn()} />
+        <input aria-label="Ailleurs" />
+      </>,
+    );
+    act(() => call("y", "applied", "keyboard"));
+    rerender(
+      <>
+        <Board applications={[moved(card, "applied")]} onMove={vi.fn()} />
+        <input aria-label="Ailleurs" />
+      </>,
+    );
+    screen.getByLabelText("Ailleurs").focus();
+    rerender(
+      <>
+        <Board applications={[{ ...card }]} onMove={vi.fn()} />
+        <input aria-label="Ailleurs" />
+      </>,
+    );
+    expect(screen.getByLabelText("Ailleurs")).toHaveFocus();
+  });
 });

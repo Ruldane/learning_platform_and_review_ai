@@ -84,6 +84,44 @@ describe("ApplicationDrawer", () => {
     expect(dialog).toHaveAccessibleName("Acme, Data engineer senior");
   });
 
+  it("keeps unsaved edits when another write in the drawer re-reads the application", async () => {
+    const { user, state, dialog } = await openDrawer("/candidatures/a2");
+    const title = within(dialog).getByLabelText("Poste");
+    await user.clear(title);
+    await user.type(title, "Analyste senior");
+    await user.type(within(dialog).getByLabelText("Note"), "Rappeler jeudi");
+    await user.click(within(dialog).getByRole("button", { name: "Ajouter la note" }));
+    await within(dialog).findByText("Note ajoutée.");
+    expect(within(dialog).getByLabelText("Poste")).toHaveValue("Analyste senior");
+    await user.click(within(dialog).getByRole("button", { name: "Enregistrer" }));
+    expect(state.patches).toEqual([{ id: "a2", body: { title: "Analyste senior" } }]);
+  });
+
+  it("takes the date a status change sets, and never sends it back as an edit", async () => {
+    const { user, state, dialog } = await openDrawer("/candidatures/a2");
+    expect(within(dialog).getByLabelText("Postulée le")).toHaveValue("");
+    const company = within(dialog).getByLabelText("Entreprise");
+    await user.clear(company);
+    await user.type(company, "Beta SAS");
+    await user.click(within(dialog).getByRole("button", { name: "J'ai postulé" }));
+    await within(dialog).findByText("Statut changé : Postulée.");
+    expect(within(dialog).getByLabelText("Postulée le")).toHaveValue(todayString());
+    expect(within(dialog).getByLabelText("Entreprise")).toHaveValue("Beta SAS");
+    await user.click(within(dialog).getByRole("button", { name: "Enregistrer" }));
+    expect(state.patches).toEqual([{ id: "a2", body: { company: "Beta SAS" } }]);
+  });
+
+  it("clears the unsaved mark once its own save went through", async () => {
+    const { user, dialog } = await openDrawer();
+    const title = within(dialog).getByLabelText("Poste");
+    await user.clear(title);
+    await user.type(title, "Data engineer senior");
+    await user.click(within(dialog).getByRole("button", { name: "Enregistrer" }));
+    await within(dialog).findByText("Fiche enregistrée.");
+    expect(within(dialog).getByLabelText("Poste")).toHaveValue("Data engineer senior");
+    expect(within(dialog).getByRole("button", { name: "Enregistrer" })).toBeDisabled();
+  });
+
   it("clears an optional field with null", async () => {
     const { user, state, dialog } = await openDrawer();
     await user.clear(within(dialog).getByLabelText("Notes"));

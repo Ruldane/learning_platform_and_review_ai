@@ -114,7 +114,7 @@ export default tseslint.config(
     files: ["src/shared/session-ui/**/*.{ts,tsx}"],
     ignores: ["**/*.test.{ts,tsx}"],
     rules: {
-      "no-restricted-imports": [
+      "@typescript-eslint/no-restricted-imports": [
         "error",
         {
           patterns: [
@@ -123,11 +123,17 @@ export default tseslint.config(
                 "**/realtime/*",
                 "!**/realtime/types",
                 "!**/realtime/eventRenderers",
-                // `RunFeed` suit une session déjà ouverte : le type `Run` et un test pur (`canAnswer`).
-                "!**/realtime/useRun",
+                // `RunFeed` suit une session déjà ouverte : un test pur (`canAnswer`) et le type `Run`.
                 "!**/realtime/feedHelpers",
+                "!**/realtime/useRun",
               ],
               message: "session-ui reste présentationnel : ni store, ni flux, ni hook de données.",
+            },
+            {
+              // Le hook lui-même reste interdit : seul son type (`Run`) est importable.
+              group: ["**/realtime/useRun"],
+              allowTypeImports: true,
+              message: "session-ui n'importe de `useRun` que son type.",
             },
             {
               group: ["**/shared/api/*", "**/shared/api"],
