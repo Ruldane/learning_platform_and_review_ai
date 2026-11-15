@@ -1,0 +1,178 @@
+"""Le débrief de l'entretien et son rangement (SPEC F10, 1, 18.3, D145).
+
+`debrief` donne les échanges (dans `untrusted`) à l'Intervieweur : quatre notes, trois points
+forts, trois corrections, la version améliorée de la réponse la plus faible et les points attendus
+des questions ratées. Le code décide de ce qui se compte : la réponse la plus faible est celle de
+la note interne la plus basse (la plus ancienne en cas d'égalité), les questions ratées celles
+dont la note est de 2 au plus ; le modèle écrit, il ne choisit pas. La réponse améliorée est écrite
+au nom de January : `text_claims` signale ce que son profil ne dit pas (`flags`), la réponse est
+montrée « à vérifier ». Arrêté avant toute réponse : aucun appel, aucun débrief (`stopped`).
+
+`save` range l'issue par le port, idempotent par session (SPEC 9.4) : le seul nœud qui écrit. Une
+fiche de révision par question ratée : recto la question, verso les points d'une bonne réponse.
+Journaux : identifiants et nombres seulement (17.2)."""
+
+import logging
+
+from langchain_core.messages import HumanMessage, SystemMessage
+
+from app.agents.nodes.interviewer.context import exchanges_block, head_vars, profile_block
+from app.agents.nodes.interviewer.plan import AGENT, Node, context_of
+from app.agents.prompts.loader import render_prompt
+from app.agents.registry import get_agent
+from app.agents.runtime.deps import GraphDeps
+from app.agents.runtime.emit import emit
+from app.agents.runtime.invoke import node_timeout
+from app.agents.runtime.prose import shorten
+from app.agents.runtime.structured import structured_call
+from app.agents.state.interview import InterviewState
+from app.agents.tools.interview_schema import (
+    Debrief,
+    Exchange,
+    InterviewContext,
+    debrief_schema,
+)
+from app.agents.tools.study_schema import CardDraft
+from app.agents.tools.text_claims import text_claims
+
+DEBRIEF_REQUEST = "Écris le débrief de l'entretien."
+DEBRIEF_TIMEOUT_S = 300  # trois demandes au plus, chacune avec ses nouveaux essais (GLM)
+MISSED_MAX_NOTE = 2
+FRONT_MAX = 300
+NOTHING_TO_GRADE = "L'entretien s'arrête ici : sans réponse, il n'y a rien à noter."
+
+logger = logging.getLogger(__name__)
+
+
+def weakest_index(exchanges: list[Exchange]) -> int:
+    """La question de la note interne la plus basse, la plus ancienne en cas d'égalité."""
+    return min(exchanges, key=lambda e: (e.note, e.index)).index
+
+
+def missed_indices(exchanges: list[Exchange]) -> list[int]:
+    return [e.index for e in exchanges if e.note <= MISSED_MAX_NOTE]
+
+
+def allowed_phrases(ctx: InterviewContext) -> list[str]:
+    """Les expressions entières que la réponse peut écrire : l'entreprise et l'intitulé du poste,
+    jamais un outil ni un chiffre de l'offre."""
+    names = [ctx.role]
+    if ctx.analysis is not None:
+        names += [ctx.analysis.company or "", ctx.analysis.title]
+    return list(dict.fromkeys(name for name in names if name))
+
+
+def flagged_terms(text: str, ctx: InterviewContext) -> list[str]:
+    """Les termes que le profil ne dit pas, sans doublon, dans l'ordre du texte."""
+    claims = text_claims(text, ctx.profile, allowed=allowed_phrases(ctx))
+    return list(dict.fromkeys(claim.term for claim in claims))
+
+
+def revision_cards(exchanges: list[Exchange], debrief: Debrief) -> list[CardDraft]:
+    """Une fiche par question ratée : recto la question, verso les points d'une bonne réponse."""
+    points = {item.index: item.points for item in debrief.expected}
+    by_index = {e.index: e for e in exchanges}
+    return [
+        CardDraft(
+            front=shorten(by_index[index].question, FRONT_MAX),
+            back="\n".join(f"- {point}" for point in points[index]),
+        )
+        for index in debrief.missed
+        if index in by_index and index in points
+    ]
+
+
+def debrief_vars(
+    ctx: InterviewContext, exchanges: list[Exchange], weakest: int, missed: list[int]
+) -> dict[str, object]:
+    return {
+        **head_vars(ctx),
+        "mode": "debrief",
+        "answered": len(exchanges),
+        "exchanges": exchanges_block(exchanges),
+        "profile": profile_block(ctx),
+        "weakest": weakest,
+        "missed": ", ".join(str(index) for index in missed) or "aucune",
+    }
+
+
+async def _written(deps: GraphDeps, ctx: InterviewContext, exchanges: list[Exchange]) -> Debrief:
+    weakest, missed = weakest_index(exchanges), missed_indices(exchanges)
+    prompt = render_prompt(AGENT, **debrief_vars(ctx, exchanges, weakest, missed))
+    model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
+    found = await structured_call(
+        model,
+        debrief_schema(missed),
+        [SystemMessage(prompt), HumanMessage(DEBRIEF_REQUEST)],
+        agent=AGENT,
+        step="debrief",
+        intent="j'écris ton débrief",
+    )
+    kept = [item for item in found.expected if item.index in missed]
+    update = {"weakest_index": weakest, "missed": missed, "expected": kept}
+    return Debrief.model_validate(found.model_copy(update=update).model_dump())
+
+
+def make_debrief(deps: GraphDeps) -> Node:
+    @node_timeout(DEBRIEF_TIMEOUT_S)
+    async def debrief(state: InterviewState) -> InterviewState:
+        """Le débrief des questions répondues ; aucune réponse : aucun appel, aucun débrief."""
+        exchanges = [Exchange.model_validate(e) for e in state["exchanges"]]
+        if not exchanges:
+            return {"debrief": None, "flags": [], "cards": []}
+        ctx = context_of(state)
+        written = await _written(deps, ctx, exchanges)
+        flags = flagged_terms(written.improved_answer, ctx)
+        cards = revision_cards(exchanges, written)
+        logger.info(
+            "Débrief écrit : session %s, %d question(s), %d ratée(s), %d terme(s) signalé(s)",
+            deps.session_id,
+            len(exchanges),
+            len(written.missed),
+            len(flags),
+        )
+        return {
+            "debrief": written.model_dump(),
+            "flags": flags,
+            "cards": [card.model_dump() for card in cards],
+        }
+
+    return debrief
+
+
+def _closing(debrief: Debrief | None, cards: list[CardDraft], answered: int) -> str:
+    if debrief is None:
+        return NOTHING_TO_GRADE
+    text = f"Entretien terminé : {answered} question(s) notée(s), débrief prêt."
+    return f"{text} {len(cards)} fiche(s) de révision créée(s)." if cards else text
+
+
+def make_save(deps: GraphDeps) -> Node:
+    @node_timeout()
+    async def save(state: InterviewState) -> InterviewState:
+        """L'issue de l'entretien, la seule écriture ; rejoué, le port relit celle de la session."""
+        exchanges = [Exchange.model_validate(e) for e in state["exchanges"]]
+        raw = state["debrief"]
+        debrief = None if raw is None else Debrief.model_validate(raw)
+        cards = [CardDraft.model_validate(c) for c in state["cards"]]
+        await deps.ports.interviews.save_result(
+            deps.user_id,
+            deps.session_id,
+            state["interview_id"],
+            exchanges,
+            debrief,
+            state["flags"],
+            cards,
+        )
+        logger.info(
+            "Entretien rangé : session %s, entretien %s, %d échange(s), %d fiche(s)",
+            deps.session_id,
+            state["interview_id"],
+            len(exchanges),
+            len(cards),
+        )
+        text = _closing(debrief, cards, len(exchanges))
+        emit("agent.message", {"message_id": f"{AGENT}-fin", "text": text}, agent=AGENT)
+        return {"summary": text}
+
+    return save
