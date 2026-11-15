@@ -3,6 +3,7 @@ import { t } from "@/shared/i18n/t";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
 import { fieldClass } from "@/shared/ui/fieldClass";
+import { MAX_CONTENT } from "./useKitDraft";
 import type { Part } from "./parts";
 
 interface KitPartFieldProps {
@@ -52,7 +53,8 @@ export function KitPartField({ part, pieceTitle, busy, onChange, onCopy }: KitPa
         aria-label={part.label ? undefined : t("applications.kitPiece.field", { name })}
         aria-describedby={marker ? `${id}-blank` : undefined}
         value={part.text}
-        placeholder={marker ?? undefined}
+        data-part={part.key}
+        maxLength={MAX_CONTENT}
         rows={rowsOf(part.text)}
         readOnly={busy}
         onChange={(event) => onChange(event.target.value)}

@@ -1,4 +1,4 @@
-import { useState, type RefObject } from "react";
+import { useRef, useState, type RefObject } from "react";
 import { t } from "@/shared/i18n/t";
 import type { KitSaveResult, KitStatusView } from "../viewTypes";
 
@@ -8,40 +8,52 @@ function savedMessage(status: KitStatusView): string {
   return t("applications.kitPiece.saved");
 }
 
-interface Handlers {
+interface Draft {
   /** Le texte à envoyer au serveur. */
-  text: () => string;
+  text: string;
   /** Le serveur a pris la modification. */
-  onSaved: () => void;
+  markSaved: () => void;
+}
+
+interface Handlers {
   onSave: (content: string) => Promise<KitSaveResult>;
   onCopy: (text: string) => void | Promise<void>;
 }
 
 /**
- * Ce que January fait d'une pièce : l'enregistrer (le focus reste dans son texte, le bouton se
- * désactive : `root` est la pièce) et copier un de ses textes. `note` est le dernier résultat, lu dans une zone vocale ;
- * `error` le refus du serveur.
+ * Ce que January fait d'une pièce : l'enregistrer (le focus revient au texte qu'elle modifiait,
+ * le bouton se désactive : `root` est la pièce) et copier un de ses textes. `note` est le dernier
+ * résultat, lu dans une zone vocale ; `error` le refus du serveur.
  */
 export function useKitPieceActions(
   root: RefObject<HTMLElement | null>,
-  { text, onSaved, onSave, onCopy }: Handlers,
+  draft: Draft,
+  { onSave, onCopy }: Handlers,
 ) {
   const [saving, setSaving] = useState(false);
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
+  const lastEdited = useRef<string | null>(null);
+
+  function refocus() {
+    const field = lastEdited.current
+      ? root.current?.querySelector<HTMLElement>(`[data-part="${lastEdited.current}"]`)
+      : null;
+    (field ?? root.current?.querySelector<HTMLElement>("textarea"))?.focus();
+  }
 
   async function save() {
     setSaving(true);
     setError("");
-    const result = await onSave(text());
+    const result = await onSave(draft.text);
     setSaving(false);
     if (!result.ok) {
       setError(result.message);
       return;
     }
-    onSaved();
+    draft.markSaved();
     setNote(savedMessage(result.status));
-    root.current?.querySelector("textarea")?.focus();
+    refocus();
   }
 
   async function copy(content: string) {
@@ -53,5 +65,16 @@ export function useKitPieceActions(
     }
   }
 
-  return { saving, note, error, save, copy, clearNote: () => setNote("") };
+  return {
+    saving,
+    note,
+    error,
+    save,
+    copy,
+    /** January modifie le texte `key` : la note disparaît, le focus lui reviendra après l'enregistrement. */
+    edited: (key: string) => {
+      lastEdited.current = key;
+      setNote("");
+    },
+  };
 }

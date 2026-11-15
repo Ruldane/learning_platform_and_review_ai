@@ -8,7 +8,7 @@ import { Button } from "@/shared/ui/button";
 import { useKitSync } from "../../hooks/useKitSync";
 
 /** Les pièces que la session a rangées : chaque `artifact.ready` de genre `kit_item` (rien pour une pièce en échec). */
-export function kitArrivals(events: SessionEvent[]): number {
+function kitArrivals(events: SessionEvent[]): number {
   return events.filter(
     (event) => event.type === "artifact.ready" && event.payload.kind === "kit_item",
   ).length;

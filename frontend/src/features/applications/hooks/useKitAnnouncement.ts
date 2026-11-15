@@ -11,10 +11,17 @@ function arrived(before: KitPieceView | undefined, after: KitPieceView, running:
 function finishedSentence(pieces: KitPieceView[]): string {
   const count = (status: KitPieceView["status"]) =>
     pieces.filter((piece) => piece.status === status).length;
+  const phrase = (
+    key: "finishedReady" | "finishedCheck" | "finishedFailed",
+    status: KitPieceView["status"],
+  ) => {
+    const n = count(status);
+    return t(`applications.kitPage.${key}.${n === 1 ? "one" : "many"}`, { count: n });
+  };
   return t("applications.kitPage.finished", {
-    ready: count("ready"),
-    check: count("to_check"),
-    failed: count("failed"),
+    ready: phrase("finishedReady", "ready"),
+    check: phrase("finishedCheck", "to_check"),
+    failed: phrase("finishedFailed", "failed"),
   });
 }
 
@@ -41,15 +48,17 @@ export function describeKitChange(before: KitView, after: KitView): string {
 
 /**
  * La phrase à annoncer (zone vocale) quand une pièce arrive ou que le kit se termine. La première
- * lecture n'annonce rien : ce qui est déjà là n'est pas une arrivée.
+ * lecture n'annonce rien : ce qui est déjà là n'est pas une arrivée. `count` change à chaque
+ * annonce, même identique.
  */
-export function useKitAnnouncement(kit: KitView | undefined): string {
+export function useKitAnnouncement(kit: KitView | undefined): { message: string; count: number } {
   const [last, setLast] = useState<KitView | undefined>(undefined);
-  const [message, setMessage] = useState("");
+  const [spoken, setSpoken] = useState({ message: "", count: 0 });
   if (kit && kit !== last) {
     setLast(kit);
     const sentence = last ? describeKitChange(last, kit) : "";
-    if (sentence) setMessage(sentence);
+    // Le compteur change à chaque annonce : une phrase identique est relue quand même.
+    if (sentence) setSpoken({ message: sentence, count: spoken.count + 1 });
   }
-  return message;
+  return spoken;
 }

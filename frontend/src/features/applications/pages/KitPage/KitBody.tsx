@@ -43,7 +43,7 @@ export function KitBody({ applicationId, kit, createSocket }: KitBodyProps) {
   return (
     <div className="flex flex-col gap-4">
       <p role="status" className="sr-only">
-        {announcement}
+        <span key={announcement.count}>{announcement.message}</span>
       </p>
       <KitControls
         applicationId={applicationId}

@@ -28,12 +28,7 @@ export function KitPiece({ piece, running, onSave, onCopy }: KitPieceProps) {
   const headingId = useId();
   const draft = useKitDraft(piece.kind, piece.content);
   const root = useRef<HTMLElement>(null);
-  const actions = useKitPieceActions(root, {
-    text: draft.text,
-    onSaved: draft.clear,
-    onSave,
-    onCopy,
-  });
+  const actions = useKitPieceActions(root, draft, { onSave, onCopy });
   const title = t(`applications.kitPiece.title.${piece.kind}`);
   const editable = piece.status !== "pending";
 
@@ -51,7 +46,7 @@ export function KitPiece({ piece, running, onSave, onCopy }: KitPieceProps) {
           pieceTitle={title}
           busy={actions.saving}
           onChange={(key, text) => {
-            actions.clearNote();
+            actions.edited(key);
             draft.change(key, text);
           }}
           onCopy={(text) => void actions.copy(text)}
@@ -67,6 +62,7 @@ export function KitPiece({ piece, running, onSave, onCopy }: KitPieceProps) {
         title={title}
         editable={editable}
         dirty={draft.dirty}
+        tooLong={draft.tooLong}
         saving={actions.saving}
         note={actions.note}
         error={actions.error}

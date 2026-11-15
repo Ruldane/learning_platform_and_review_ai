@@ -6,6 +6,8 @@ interface KitPieceFooterProps {
   /** La pièce a un texte à enregistrer (elle n'est pas « pas encore arrivée »). */
   editable: boolean;
   dirty: boolean;
+  /** Le texte dépasse ce que le serveur accepte. */
+  tooLong: boolean;
   saving: boolean;
   /** Le dernier résultat (copié, enregistré…), lu dans une zone vocale. */
   note: string;
@@ -19,6 +21,7 @@ export function KitPieceFooter({
   title,
   editable,
   dirty,
+  tooLong,
   saving,
   note,
   error,
@@ -26,6 +29,11 @@ export function KitPieceFooter({
 }: KitPieceFooterProps) {
   return (
     <>
+      {tooLong ? (
+        <p role="alert" className="text-sm text-destructive">
+          {t("applications.kitPiece.tooLong", { max: "20 000" })}
+        </p>
+      ) : null}
       {error ? (
         <p role="alert" className="text-sm text-destructive">
           {error}
@@ -36,7 +44,7 @@ export function KitPieceFooter({
           <Button
             type="button"
             size="sm"
-            disabled={!dirty || saving}
+            disabled={!dirty || tooLong || saving}
             aria-label={t("applications.kitPiece.saveOf", { name: title })}
             onClick={onSave}
           >

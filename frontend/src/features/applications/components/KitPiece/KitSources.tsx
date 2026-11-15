@@ -16,7 +16,7 @@ export function KitSources({ sources }: { sources: KitSourceView[] }) {
   if (sources.length === 0) return null;
   return (
     <section aria-label={t("applications.kitPiece.sources")} className="flex flex-col gap-1">
-      <h4 className="text-sm font-medium">{t("applications.kitPiece.sources")}</h4>
+      <h3 className="text-sm font-medium">{t("applications.kitPiece.sources")}</h3>
       <ol className="flex flex-col gap-1 text-sm">
         {[...sources]
           .sort((a, b) => a.rank - b.rank)

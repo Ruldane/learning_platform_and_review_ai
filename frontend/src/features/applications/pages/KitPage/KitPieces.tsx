@@ -1,7 +1,8 @@
 import { t } from "@/shared/i18n/t";
+import { copyToClipboard } from "../../clipboard";
 import { KitPiece } from "../../components/KitPiece";
-import { copyToClipboard } from "../../hooks/useReminderHandlers";
 import type { KitKindView, KitPieceView, KitSaveResult } from "../../types";
+import { useArrivedCount } from "./useArrivedCount";
 
 interface KitPiecesProps {
   pieces: KitPieceView[];
@@ -11,8 +12,8 @@ interface KitPiecesProps {
 
 /** Les sept pièces dans l'ordre du serveur ; avant tout lancement, une seule phrase au lieu de sept cases vides. */
 export function KitPieces({ pieces, running, onSave }: KitPiecesProps) {
-  const arrived = pieces.filter((piece) => piece.status !== "pending").length;
-  if (arrived === 0 && !running) {
+  const arrived = useArrivedCount(pieces, running);
+  if (!running && pieces.every((piece) => piece.status === "pending")) {
     return <p className="text-muted-foreground">{t("applications.kitPage.emptyHint")}</p>;
   }
   return (

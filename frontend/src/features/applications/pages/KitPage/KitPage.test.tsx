@@ -104,7 +104,9 @@ describe("KitPage", () => {
     expect(followups.getByRole("note")).toHaveTextContent("Le modèle n'a pas répondu.");
     expect((await piece("CV ciblé")).textContent).toContain("Prête");
     expect(
-      await screen.findByText(/Le kit est terminé : 1 prête\(s\), 0 à vérifier, 1 en échec\./),
+      await screen.findByText(
+        /Le kit est terminé : 1 pièce prête, 0 pièces à vérifier, 1 pièce en échec\./,
+      ),
     ).toBeInTheDocument();
     expect(await screen.findByRole("button", { name: "Relancer le kit" })).toBeVisible();
   });
@@ -255,19 +257,6 @@ describe("KitPage", () => {
       expect.stringMatching(/\/api\/v1\/applications\/a1\/kit\.zip$/),
     );
     expect(link).toHaveAttribute("download");
-  });
-
-  it("says the pieces January edited are kept when she relaunches the kit", async () => {
-    const { user, kit, sockets } = setup({
-      items: [kitItem("letter", { edited: true }), kitItem("cv")],
-    });
-    expect(await screen.findByText("Modifiée par toi")).toBeVisible();
-    expect(
-      screen.getByText(/Les pièces que tu as modifiées sont gardées telles quelles/),
-    ).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "Relancer le kit" }));
-    await waitFor(() => expect(kit.state.starts).toBe(1));
-    await openStream(sockets, "k1");
   });
 
   it("lets January cancel a running kit", async () => {

@@ -21,7 +21,13 @@ function reasons(piece: KitPieceView, parts: Part[]): string[] {
   if (list.length === 0 && piece.kind === "company_brief") {
     list.push(t("applications.kitPiece.removed"));
   }
-  return list.length > 0 ? list : [t("applications.kitPiece.generic")];
+  if (list.length > 0) return list;
+  // Texte vide enregistré : le serveur rend la pièce « à vérifier » sans autre motif.
+  return [
+    t(
+      piece.content.trim() === "" ? "applications.kitPiece.empty" : "applications.kitPiece.generic",
+    ),
+  ];
 }
 
 interface KitPieceNotesProps {

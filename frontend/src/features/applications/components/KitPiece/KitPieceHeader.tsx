@@ -13,9 +13,9 @@ export function KitPieceHeader({ piece, headingId, running }: KitPieceHeaderProp
   const { words } = piece;
   return (
     <header className="flex flex-wrap items-center gap-x-3 gap-y-1">
-      <h3 id={headingId} className="text-base font-medium">
+      <h2 id={headingId} className="text-base font-medium">
         {t(`applications.kitPiece.title.${piece.kind}`)}
-      </h3>
+      </h2>
       <KitStatusBadge status={piece.status} running={running} />
       {piece.edited ? (
         <span className="text-xs text-muted-foreground">{t("applications.kitPiece.edited")}</span>

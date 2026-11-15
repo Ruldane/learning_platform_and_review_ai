@@ -25,7 +25,10 @@ export const applicationsKit = {
     cancel: "Annuler le kit",
     openProfile: "Ouvrir mon profil",
     arrived: "{title} : {status}.",
-    finished: "Le kit est terminé : {ready} prête(s), {check} à vérifier, {failed} en échec.",
+    finished: "Le kit est terminé : {ready}, {check}, {failed}.",
+    finishedReady: { one: "1 pièce prête", many: "{count} pièces prêtes" },
+    finishedCheck: { one: "1 pièce à vérifier", many: "{count} pièces à vérifier" },
+    finishedFailed: { one: "1 pièce en échec", many: "{count} pièces en échec" },
   },
   kitPiece: {
     title: {
@@ -70,6 +73,8 @@ export const applicationsKit = {
     },
     removed:
       "Des passages sans source ont été retirés du dossier : ce qui reste cite ses sources, mais il peut être incomplet.",
+    empty: "Cette pièce est vide : écris-la toi-même, ou relance le kit.",
+    tooLong: "Le texte dépasse {max} caractères : raccourcis-le pour pouvoir l'enregistrer.",
     generic: "Cette pièce est à vérifier : relis-la avant de t'en servir.",
     failedReason: "Cette pièce n'a pas pu être produite : {error}",
     failedNoReason: "Cette pièce n'a pas pu être produite.",

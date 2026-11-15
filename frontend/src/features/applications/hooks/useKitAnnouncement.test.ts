@@ -73,7 +73,7 @@ describe("describeKitChange", () => {
       cv: { ...ready, status: "failed" },
     });
     expect(describeKitChange(before, after)).toBe(
-      "CV ciblé : en échec. Pitch de présentation : à vérifier. Le kit est terminé : 1 prête(s), 1 à vérifier, 1 en échec.",
+      "CV ciblé : en échec. Pitch de présentation : à vérifier. Le kit est terminé : 1 pièce prête, 1 pièce à vérifier, 1 pièce en échec.",
     );
   });
 });
@@ -83,8 +83,26 @@ describe("useKitAnnouncement", () => {
     const { result, rerender } = renderHook(({ view }) => useKitAnnouncement(view), {
       initialProps: { view: kit(true, { cv: ready }) as KitView | undefined },
     });
-    expect(result.current).toBe("");
+    expect(result.current.message).toBe("");
     rerender({ view: kit(true, { cv: ready, letter: ready }) });
-    expect(result.current).toBe("Lettre de motivation : prête.");
+    expect(result.current.message).toBe("Lettre de motivation : prête.");
+  });
+
+  it("changes its counter on a sentence it already said, so it is read again", () => {
+    const { result, rerender } = renderHook(({ view }) => useKitAnnouncement(view), {
+      initialProps: { view: kit(true) as KitView | undefined },
+    });
+    rerender({ view: kit(true, { letter: ready }) });
+    const first = result.current;
+    rerender({ view: kit(true) });
+    rerender({ view: kit(true, { letter: { ...ready, updatedAt: "2026-11-15T12:00:00Z" } }) });
+    expect(result.current.message).toBe(first.message);
+    expect(result.current.count).toBeGreaterThan(first.count);
+  });
+
+  it("counts the pieces by the plural: one piece, then several", () => {
+    expect(
+      describeKitChange(kit(true), kit(false, { cv: ready, letter: ready, pitch: ready })),
+    ).toContain("Le kit est terminé : 3 pièces prêtes, 0 pièces à vérifier, 0 pièces en échec.");
   });
 });
