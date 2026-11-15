@@ -10,6 +10,7 @@ import pytest
 from app.agents.graphs.application_intake import ApplicationIntakeInput
 from app.agents.graphs.registry import get_graph
 from app.agents.registry import AGENTS
+from app.agents.tools.applications_port import InfoView
 from app.features.sessions.service import ROUTE_ONLY
 from tests.agents.graphs.intake_support import (
     SENTENCE,
@@ -218,3 +219,47 @@ def test_graph_is_registered_with_its_own_route() -> None:
         with pytest.raises(ValueError):
             ApplicationIntakeInput.model_validate({"text": text})
     assert ApplicationIntakeInput(text=SENTENCE).model_dump() == {"text": SENTENCE}
+
+
+async def test_same_company_information_reaches_january_after_creation(
+    intake_runner: MakeIntake, intake_store: FakeApplicationStore
+) -> None:
+    """M4 : « même entreprise depuis 30 jours » n'est pas une alerte (rien ne bloque) : la session
+    l'annonce avec la fiche créée, dans son message et dans l'artefact."""
+    note = InfoView(
+        EXISTING_ID,
+        "Société Fictive",
+        "Chef de cuisine",
+        "applied",
+        "Pour info : tu as postulé chez Société Fictive il y a 3 jours, pour le poste X.",
+    )
+    intake_store.info = [note]
+    run = await intake_runner()
+    question = await run.question()
+    assert [o["value"] for o in question["options"]] == ["create", "cancel"]  # rien ne bloque
+    values = field_values(question)
+    await run.answer({"choice": "create", "fields": values})
+    await run.wait_status("completed")
+    [artifact] = await run.events("artifact.ready")
+    assert artifact["info"] == [
+        {
+            "application_id": EXISTING_ID,
+            "company": "Société Fictive",
+            "title": "Chef de cuisine",
+            "status": "applied",
+            "message": note.message,
+        }
+    ]
+    texts = [m["text"] for m in await run.events("agent.message")]
+    assert any(note.message in text and "Fiche créée" in text for text in texts)
+
+
+async def test_no_information_leaves_the_artifact_plain(
+    intake_runner: MakeIntake, intake_store: FakeApplicationStore
+) -> None:
+    run = await intake_runner()
+    values = field_values(await run.question())
+    await run.answer({"choice": "create", "fields": values})
+    await run.wait_status("completed")
+    [artifact] = await run.events("artifact.ready")
+    assert "info" not in artifact

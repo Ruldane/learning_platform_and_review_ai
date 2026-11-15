@@ -13,4 +13,5 @@ class ApplicationIntakeState(TypedDict, total=False):
     alerts: list[dict[str, Any]]  # `AlertView` en JSON, la plus forte d'abord
     answer: dict[str, Any] | None  # réponse relue : `{choice, draft}` ; `None` : question reposée
     application_id: str  # la fiche créée (`create`, `distinct`) ou ouverte (`open`)
+    info: list[dict[str, Any]]  # `InfoView` en JSON : « même entreprise » à la création
     summary: str

@@ -108,3 +108,23 @@ async def test_other_user_sees_nothing(client: httpx.AsyncClient, app: FastAPI) 
     assert sum(stats["by_status"].values()) == 0
     # sa propre fiche ne rappelle pas celle de January : pas de doublon entre utilisatrices
     assert (await create(client, **SOCIETE)).status_code == 201
+
+
+async def test_patch_posting_text_attaches_the_posting_to_a_manual_fiche(
+    client: httpx.AsyncClient,
+) -> None:
+    """I1 : une fiche sans texte d'offre peut le recevoir (de quoi préparer son kit)."""
+    application_id = await created_id(client, **SOCIETE)
+    assert (await client.get(f"{API}/{application_id}")).json()["posting_text"] is None
+    r = await client.patch(f"{API}/{application_id}", json={"posting_text": "  Le texte collé.  "})
+    assert r.status_code == 200, r.text
+    assert r.json()["posting_text"] == "Le texte collé."
+    r = await client.patch(f"{API}/{application_id}", json={"posting_text": ""})
+    assert r.json()["posting_text"] is None  # un texte vide l'efface
+
+
+async def test_patch_posting_text_too_long_is_422_without_echo(client: httpx.AsyncClient) -> None:
+    application_id = await created_id(client, **SOCIETE)
+    r = await client.patch(f"{API}/{application_id}", json={"posting_text": "x" * 60_001})
+    assert r.status_code == 422
+    assert "xxxxxxxx" not in r.text

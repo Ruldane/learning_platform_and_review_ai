@@ -9,6 +9,8 @@ l'implémentation elles ne sont journalisées (17.2).
 - `intake_alerts` : mêmes règles que la création à la main (`match`, 7.1), **sans** les simples
   informations (« même entreprise dans les 30 jours ») qui ne bloquent rien ; les fiches sont
   rendues de la plus forte alerte à la plus faible.
+- `intake_info` : les mêmes fiches, mais les simples informations seules (« même entreprise dans
+  les 30 jours », SPEC 6.3) : elles ne bloquent rien, la session les annonce à la création.
 - `save_intake` : la création passe par le service de la route `POST /applications` (même contrôle
   des doublons : sans `distinct_from` qui les couvre, une fiche qui ressemble est refusée) et
   **idempotente par session** : un nœud rejoué après un arrêt (SPEC 9.4) ne crée pas de seconde
@@ -79,6 +81,17 @@ class AlertView:
     message: str
 
 
+@dataclass(frozen=True)
+class InfoView:
+    """Une information « même entreprise » : la fiche proche et le message en français."""
+
+    application_id: str
+    company: str
+    title: str
+    status: ApplicationStatus
+    message: str
+
+
 class ApplicationStore(Protocol):
     async def intake_context(self, user_id: str) -> IntakeContext:
         """Le jour de January (fuseau de ses réglages) et la langue de son interface."""
@@ -86,6 +99,10 @@ class ApplicationStore(Protocol):
 
     async def intake_alerts(self, user_id: str, draft: IntakeDraft) -> list[AlertView]:
         """Les fiches qui bloquent la création (voir le module), la plus forte d'abord."""
+        ...
+
+    async def intake_info(self, user_id: str, draft: IntakeDraft) -> list[InfoView]:
+        """Les simples informations (même entreprise dans les 30 jours), la plus récente d'abord."""
         ...
 
     async def save_intake(
@@ -110,6 +127,9 @@ class _NoApplications:
         raise applications_unavailable()
 
     async def intake_alerts(self, user_id: str, draft: IntakeDraft) -> list[AlertView]:
+        raise applications_unavailable()
+
+    async def intake_info(self, user_id: str, draft: IntakeDraft) -> list[InfoView]:
         raise applications_unavailable()
 
     async def save_intake(

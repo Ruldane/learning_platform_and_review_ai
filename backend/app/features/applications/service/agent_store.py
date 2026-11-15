@@ -6,6 +6,7 @@ Chaque appel ouvre ses propres sessions de base, courtes.
 - `intake_alerts` : les mêmes règles que la création à la main (`match`, 7.1) sur les fiches de
   January, sans les simples informations (« même entreprise dans les 30 jours ») ; la fiche en
   préparation n'a ni lien ni offre, seuls l'entreprise et l'intitulé comptent.
+- `intake_info` : les simples informations seules, que la session annonce à la création (M4).
 - `save_intake` : `create_application` (le service de `POST /applications` : même contrôle des
   doublons, même verrou, même fil), idempotent par session (`ref_id` de l'événement `created`) ;
   `distinct_from` : les fiches de l'alerte que January a confirmées « autre poste ».
@@ -16,10 +17,16 @@ from typing import cast
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.agents.tools.applications_port import AlertStrength, AlertView, IntakeContext, IntakeDraft
+from app.agents.tools.applications_port import (
+    AlertStrength,
+    AlertView,
+    InfoView,
+    IntakeContext,
+    IntakeDraft,
+)
 from app.core.clock import local_today
 from app.features.applications.repository import ApplicationRepository, user_language
-from app.features.applications.schemas import ApplicationIn, ContactIn
+from app.features.applications.schemas import AlertOut, ApplicationIn, ContactIn
 from app.features.applications.service.create import create_application
 from app.features.applications.service.matching import Incoming, match
 from app.features.applications.service.runtime import ApplicationsRuntime
@@ -59,7 +66,8 @@ class AgentApplicationStore:
             language = await user_language(db, user_id)
         return IntakeContext(local_today(zone, self._rt.now()), language)
 
-    async def intake_alerts(self, user_id: str, draft: IntakeDraft) -> list[AlertView]:
+    async def _alerts(self, user_id: str, draft: IntakeDraft, *, info: bool) -> list[AlertOut]:
+        """Les fiches qui ressemblent (les simples informations seules, ou sans elles)."""
         incoming = Incoming(
             url_norm=None,
             company_norm=company_key(draft.company),
@@ -72,11 +80,20 @@ class AgentApplicationStore:
             today = local_today(zone, self._rt.now())
             rows = await ApplicationRepository(db, user_id).recent()
             hits = match(incoming, [view_of(row, zone) for row in rows], today)
-            blocking = [hit for hit in hits if hit.level != "info"]
-            alerts = await alerts_out(db, user_id, blocking, zone, today)
+            kept = [hit for hit in hits if (hit.level == "info") == info]
+            return await alerts_out(db, user_id, kept, zone, today)
+
+    async def intake_alerts(self, user_id: str, draft: IntakeDraft) -> list[AlertView]:
+        alerts = await self._alerts(user_id, draft, info=False)
         return [
             AlertView(cast(AlertStrength, alert.level), alert.application_id, alert.message)
             for alert in alerts
+        ]
+
+    async def intake_info(self, user_id: str, draft: IntakeDraft) -> list[InfoView]:
+        return [
+            InfoView(a.application_id, a.company, a.title, a.status, a.message)
+            for a in await self._alerts(user_id, draft, info=True)
         ]
 
     async def save_intake(

@@ -19,7 +19,7 @@ import re
 import unicodedata
 from dataclasses import asdict
 from datetime import date, timedelta
-from typing import Protocol
+from typing import Any, Protocol
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import Field, field_validator
@@ -214,11 +214,18 @@ def make_save(deps: GraphDeps) -> Node:
         distinct = (
             [a["application_id"] for a in state["alerts"]] if answer["choice"] == DISTINCT else []
         )
+        draft = IntakeDraft.model_validate(answer["draft"])
+        info = await deps.ports.applications.intake_info(deps.user_id, draft)
         application_id = await deps.ports.applications.save_intake(
-            deps.user_id, deps.session_id, IntakeDraft.model_validate(answer["draft"]), distinct
+            deps.user_id, deps.session_id, draft, distinct
         )
-        logger.info("Fiche créée : session %s, fiche %s", deps.session_id, application_id)
-        return {"application_id": application_id}
+        logger.info(
+            "Fiche créée : session %s, fiche %s, %d information(s)",
+            deps.session_id,
+            application_id,
+            len(info),
+        )
+        return {"application_id": application_id, "info": [asdict(item) for item in info]}
 
     return save
 
@@ -227,23 +234,28 @@ def _say(message_id: str, text: str) -> None:
     emit("agent.message", {"message_id": f"{AGENT}-{message_id}", "text": text}, agent=AGENT)
 
 
-def _artifact(application_id: str, title: str) -> None:
-    artifact = {
+def _artifact(application_id: str, title: str, info: list[dict[str, Any]] | None = None) -> None:
+    artifact: dict[str, Any] = {
         "artifact_id": application_id,
         "kind": "application",
         "title": title,
         "url": f"/candidatures/{application_id}",
     }
+    if info:
+        artifact["info"] = info  # « même entreprise depuis 30 jours » (SPEC 6.3), pour l'écran
     emit("artifact.ready", artifact, agent=AGENT)
 
 
 def announce(state: ApplicationIntakeState) -> ApplicationIntakeState:
-    """La fiche créée, à ouvrir."""
+    """La fiche créée, à ouvrir, avec les simples informations « même entreprise » (M4)."""
     assert state["answer"] is not None  # garanti par `route_confirm`
     draft = state["answer"]["draft"]
-    text = f"Fiche créée : {draft['company']}, {draft['title']}."
+    info = state.get("info", [])
+    text = " ".join(
+        [f"Fiche créée : {draft['company']}, {draft['title']}.", *(i["message"] for i in info)]
+    )
     _say("fin", text)
-    _artifact(state["application_id"], f"Candidature chez {draft['company']}")
+    _artifact(state["application_id"], f"Candidature chez {draft['company']}", info)
     return {"summary": text}
 
 

@@ -972,7 +972,7 @@
       },
       "ApplicationPatch": {
         "additionalProperties": false,
-        "description": "Les champs à changer (ceux qui sont envoyés, `null` efface un champ facultatif) ; `contacts`\nremplace la liste. Le statut ne se change que par `POST /applications/{id}/events` : l'envoyer\nici est une 422 (`fields: [\"status\"]`), comme tout champ inconnu.",
+        "description": "Les champs à changer (ceux qui sont envoyés, `null` efface un champ facultatif) ; `contacts`\nremplace la liste. `posting_text` : le texte de l'offre d'une fiche saisie sans lui (il ouvre\nson kit) ; un texte vide l'efface. Le statut ne se change que par\n`POST /applications/{id}/events` : l'envoyer ici est une 422 (`fields: [\"status\"]`), comme tout\nchamp inconnu.",
         "properties": {
           "applied_on": {
             "anyOf": [
@@ -1091,6 +1091,18 @@
               }
             ],
             "title": "Notes"
+          },
+          "posting_text": {
+            "anyOf": [
+              {
+                "maxLength": 60000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Posting Text"
           },
           "title": {
             "anyOf": [
@@ -1229,6 +1241,40 @@
         "title": "ApplicationStatsOut",
         "type": "object"
       },
+      "ArtifactInfo": {
+        "description": "Une information jointe à un artefact : une fiche proche de celle qui vient d'être créée\n(« même entreprise depuis 30 jours », SPEC 6.3), avec le message du serveur.",
+        "properties": {
+          "application_id": {
+            "title": "Application Id",
+            "type": "string"
+          },
+          "company": {
+            "title": "Company",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "application_id",
+          "company",
+          "title",
+          "status",
+          "message"
+        ],
+        "title": "ArtifactInfo",
+        "type": "object"
+      },
       "ArtifactReadyEvent": {
         "properties": {
           "agent": {
@@ -1285,6 +1331,13 @@
           "artifact_id": {
             "title": "Artifact Id",
             "type": "string"
+          },
+          "info": {
+            "items": {
+              "$ref": "#/components/schemas/ArtifactInfo"
+            },
+            "title": "Info",
+            "type": "array"
           },
           "kind": {
             "title": "Kind",

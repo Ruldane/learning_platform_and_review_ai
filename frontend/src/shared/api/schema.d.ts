@@ -2309,8 +2309,10 @@ export interface components {
         /**
          * ApplicationPatch
          * @description Les champs à changer (ceux qui sont envoyés, `null` efface un champ facultatif) ; `contacts`
-         *     remplace la liste. Le statut ne se change que par `POST /applications/{id}/events` : l'envoyer
-         *     ici est une 422 (`fields: ["status"]`), comme tout champ inconnu.
+         *     remplace la liste. `posting_text` : le texte de l'offre d'une fiche saisie sans lui (il ouvre
+         *     son kit) ; un texte vide l'efface. Le statut ne se change que par
+         *     `POST /applications/{id}/events` : l'envoyer ici est une 422 (`fields: ["status"]`), comme tout
+         *     champ inconnu.
          */
         ApplicationPatch: {
             /** Applied On */
@@ -2331,6 +2333,8 @@ export interface components {
             next_action_on?: string | null;
             /** Notes */
             notes?: string | null;
+            /** Posting Text */
+            posting_text?: string | null;
             /** Title */
             title?: string | null;
             /** Url */
@@ -2368,6 +2372,23 @@ export interface components {
             /** Response Rate */
             response_rate: number | null;
         };
+        /**
+         * ArtifactInfo
+         * @description Une information jointe à un artefact : une fiche proche de celle qui vient d'être créée
+         *     (« même entreprise depuis 30 jours », SPEC 6.3), avec le message du serveur.
+         */
+        ArtifactInfo: {
+            /** Application Id */
+            application_id: string;
+            /** Company */
+            company: string;
+            /** Message */
+            message: string;
+            /** Status */
+            status: string;
+            /** Title */
+            title: string;
+        };
         /** ArtifactReadyEvent */
         ArtifactReadyEvent: {
             /**
@@ -2397,6 +2418,8 @@ export interface components {
         ArtifactReadyPayload: {
             /** Artifact Id */
             artifact_id: string;
+            /** Info */
+            info?: components["schemas"]["ArtifactInfo"][];
             /** Kind */
             kind: string;
             /** Title */

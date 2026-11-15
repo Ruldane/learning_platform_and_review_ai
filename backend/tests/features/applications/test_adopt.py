@@ -4,8 +4,9 @@ version prête, une seule fois, qui suit la plus récente tant qu'elle n'est pas
 import httpx
 from fastapi import FastAPI
 
+from app.db.models.applications import Application
 from app.features.applications.service.adopt import adopt_versions
-from tests.features.applications.conftest import API, add_posting, add_version
+from tests.features.applications.conftest import API, add_posting, add_version, created_id
 from tests.sessions_support import act_as
 
 
@@ -86,3 +87,66 @@ async def test_adopt_is_per_user_and_stats_adopt_too(
         assert await adopt_versions(db, other_user) == 0  # déjà adoptée
         assert await adopt_versions(db, "troisieme-utilisatrice") == 0  # rien à elle
         await db.commit()
+
+
+async def test_adopt_links_a_manual_application_without_posting(
+    client: httpx.AsyncClient, app: FastAPI
+) -> None:
+    """I1 : la fiche saisie à la main (même entreprise, intitulé proche) reçoit l'offre quand sa
+    version est prête, au lieu qu'une seconde fiche naisse."""
+    manual = await created_id(client, company="Société Fictive", title="Développeuse IA")
+    posting = await add_posting(app, text="Le texte collé plus tard.")
+    version = await add_version(app, posting)
+    listed = (await client.get(API)).json()
+    assert [a["id"] for a in listed] == [manual]
+    assert (listed[0]["posting_id"], listed[0]["cv_version_id"]) == (posting, version)
+    detail = (await client.get(f"{API}/{manual}")).json()
+    assert detail["posting_text"] == "Le texte collé plus tard."
+    assert (await client.get(API)).json() == listed  # rejouée : rien de plus
+
+
+async def test_adopt_links_by_same_link(client: httpx.AsyncClient, app: FastAPI) -> None:
+    url = "https://jobs.example.org/offres/lien-commun"
+    manual = await created_id(client, company="Autre SA", title="Tout autre intitulé", url=url)
+    posting = await add_posting(app, company="Société Fictive", title="Développeuse IA", url=url)
+    await add_version(app, posting)
+    listed = (await client.get(API)).json()
+    assert [(a["id"], a["posting_id"]) for a in listed] == [(manual, posting)]
+
+
+async def test_adopt_keeps_a_postulated_manual_application_version_frozen(
+    client: httpx.AsyncClient, app: FastAPI
+) -> None:
+    manual = await created_id(client, company="Société Fictive", title="Développeuse IA")
+    await client.post(f"{API}/{manual}/events", json={"kind": "status", "status": "applied"})
+    posting = await add_posting(app)
+    version = await add_version(app, posting)
+    [fiche] = (await client.get(API)).json()
+    assert (fiche["id"], fiche["posting_id"], fiche["cv_version_id"]) == (manual, posting, version)
+    detail = (await client.get(f"{API}/{manual}")).json()
+    assert "version" in [e["kind"] for e in detail["events"]]
+
+
+async def test_adopt_never_steals_an_application_linked_to_another_posting(
+    client: httpx.AsyncClient, app: FastAPI, posting: str, ready_version: str
+) -> None:
+    [first] = (await client.get(API)).json()
+    other = await add_posting(app, url="https://jobs.example.org/offres/autre-lien")
+    await add_version(app, other)
+    listed = (await client.get(API)).json()
+    assert [(a["id"], a["posting_id"]) for a in listed] == [(first["id"], posting)]
+
+
+async def test_adopt_skips_an_application_confirmed_distinct(
+    client: httpx.AsyncClient, app: FastAPI
+) -> None:
+    manual = await created_id(client, company="Société Fictive", title="Développeuse IA")
+    posting = await add_posting(app)
+    async with app.state.session_factory() as db:
+        row = await db.get(Application, manual)
+        assert row is not None
+        row.distinct_from = [posting]
+        await db.commit()
+    await add_version(app, posting)
+    listed = (await client.get(API)).json()
+    assert {a["posting_id"] for a in listed} == {None, posting} and len(listed) == 2

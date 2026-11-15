@@ -19,7 +19,7 @@ from app.features.applications.service.views import detail_out, get_application,
 from app.features.postings.service.rules import company_key
 
 _PLAIN = ("channel", "applied_on", "interview_on", "next_action_on")
-_TEXTS = ("letter", "notes", "next_action")  # un texte vide efface le champ
+_TEXTS = ("letter", "notes", "next_action", "posting_text")  # un texte vide efface le champ
 
 
 def _required(body: ApplicationPatch, row: Application) -> None:

@@ -96,14 +96,17 @@ class IntakeOut(BaseModel):
 
 class ApplicationPatch(BaseModel):
     """Les champs à changer (ceux qui sont envoyés, `null` efface un champ facultatif) ; `contacts`
-    remplace la liste. Le statut ne se change que par `POST /applications/{id}/events` : l'envoyer
-    ici est une 422 (`fields: ["status"]`), comme tout champ inconnu."""
+    remplace la liste. `posting_text` : le texte de l'offre d'une fiche saisie sans lui (il ouvre
+    son kit) ; un texte vide l'efface. Le statut ne se change que par
+    `POST /applications/{id}/events` : l'envoyer ici est une 422 (`fields: ["status"]`), comme tout
+    champ inconnu."""
 
     model_config = ConfigDict(extra="forbid")
 
     company: Company | None = None
     title: Title | None = None
     url: Link | None = None
+    posting_text: Annotated[str, _text(POSTING_TEXT_MAX)] | None = None
     channel: Channel | None = None
     applied_on: date | None = None
     interview_on: date | None = None

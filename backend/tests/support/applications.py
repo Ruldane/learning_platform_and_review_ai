@@ -5,7 +5,7 @@ import asyncio
 from dataclasses import dataclass, field
 from datetime import date
 
-from app.agents.tools.applications_port import AlertView, IntakeContext, IntakeDraft
+from app.agents.tools.applications_port import AlertView, InfoView, IntakeContext, IntakeDraft
 from app.core.errors import AppError
 
 TODAY = date(2026, 11, 15)
@@ -26,6 +26,7 @@ class FakeApplicationStore:
     today: date = TODAY
     language: str = "fr"
     alerts: list[AlertView] = field(default_factory=list)
+    info: list[InfoView] = field(default_factory=list)
     context_calls: int = 0
     alert_calls: list[IntakeDraft] = field(default_factory=list)
     save_calls: int = 0
@@ -46,6 +47,9 @@ class FakeApplicationStore:
     async def intake_alerts(self, user_id: str, draft: IntakeDraft) -> list[AlertView]:
         self.alert_calls.append(draft)
         return list(self.alerts)
+
+    async def intake_info(self, user_id: str, draft: IntakeDraft) -> list[InfoView]:
+        return list(self.info)
 
     async def save_intake(
         self, user_id: str, session_id: str, draft: IntakeDraft, distinct_from: list[str]

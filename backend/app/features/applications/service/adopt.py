@@ -12,10 +12,14 @@ from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.clock import local_today
 from app.db.models.applications import Application
+from app.db.models.postings import JobPosting
 from app.features.applications.repository import ApplicationRepository, EventRepository
+from app.features.applications.service.adopt_link import link_posting, target_of
 from app.features.applications.service.runtime import ApplicationsRuntime
 from app.features.cv.service.versions import ready_versions_by_posting
+from app.features.postings.service.duplicates import zone_of
 from app.features.postings.service.queries import postings_by_ids
 from app.features.postings.service.rules import company_key
 from app.features.postings.service.runtime import utc_now
@@ -50,6 +54,42 @@ async def freeze_version(db: AsyncSession, user_id: str, row: Application, at: d
     )
 
 
+async def _link(
+    db: AsyncSession, user_id: str, row: Application, posting: JobPosting, ready: tuple[str, int]
+) -> None:
+    """Relie la fiche sans offre à l'offre dont la version est prête (voir `adopt_link`) : une
+    fiche « À postuler » suit la version prête, une fiche déjà postulée la fige."""
+    link_posting(row, posting)
+    if row.status not in ("to_apply", "withdrawn"):
+        await freeze_version(db, user_id, row, utc_now())
+    elif follows_version(row):
+        row.cv_version_id = ready[0]
+    logger.info("Fiche reliée à une offre : utilisateur %s, fiche %s", user_id, row.id)
+
+
+async def _create(db: AsyncSession, user_id: str, posting: JobPosting, version_id: str) -> None:
+    analysis = posting.analysis or {}
+    company = posting.company or analysis.get("company") or UNKNOWN_COMPANY
+    row = await ApplicationRepository(db, user_id).add(
+        posting_id=posting.id,
+        company=company,
+        company_norm=company_key(company),
+        title=posting.title or analysis.get("title") or UNKNOWN_TITLE,
+        url=posting.url,
+        url_norm=posting.url_norm,
+        posting_text=posting.text,
+        status="to_apply",
+        cv_version_id=version_id,
+    )
+    await EventRepository(db, user_id).add(
+        application_id=row.id,
+        kind="created",
+        at=utc_now(),
+        status_to="to_apply",
+        ref_id=version_id,
+    )
+
+
 async def adopt_versions(db: AsyncSession, user_id: str) -> int:
     """Crée les fiches des offres qui ont une version prête et aucune fiche, fait suivre leur
     version aux fiches « À postuler » ; rend le nombre de fiches créées. Le commit appartient à
@@ -69,32 +109,20 @@ async def adopt_versions(db: AsyncSession, user_id: str) -> int:
         ):
             row.cv_version_id = ready[posting_id][0]
     postings = await postings_by_ids(db, user_id, missing)
+    zone = await zone_of(db, user_id)
+    today = local_today(zone, utc_now())
+    rows = await repo.recent()
     created = 0
     for posting_id in missing:
         posting = postings.get(posting_id)
         if posting is None:
             continue
-        analysis = posting.analysis or {}
-        company = posting.company or analysis.get("company") or UNKNOWN_COMPANY
-        row = await repo.add(
-            posting_id=posting_id,
-            company=company,
-            company_norm=company_key(company),
-            title=posting.title or analysis.get("title") or UNKNOWN_TITLE,
-            url=posting.url,
-            url_norm=posting.url_norm,
-            posting_text=posting.text,
-            status="to_apply",
-            cv_version_id=ready[posting_id][0],
-        )
-        await EventRepository(db, user_id).add(
-            application_id=row.id,
-            kind="created",
-            at=utc_now(),
-            status_to="to_apply",
-            ref_id=ready[posting_id][0],
-        )
-        created += 1
+        target, similar = target_of(posting, rows, zone, today)
+        if target is not None:
+            await _link(db, user_id, target, posting, ready[posting_id])
+        elif not similar:
+            await _create(db, user_id, posting, ready[posting_id][0])
+            created += 1
     await db.flush()
     if created:
         logger.info("Fiches créées par les versions de CV : utilisateur %s, %d", user_id, created)

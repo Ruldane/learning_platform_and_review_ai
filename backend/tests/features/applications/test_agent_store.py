@@ -67,6 +67,24 @@ async def test_no_alert_for_another_company_or_for_a_mere_information(
     assert await store.intake_alerts(me, other) == []
 
 
+async def test_intake_info_gives_the_same_company_information(
+    client: httpx.AsyncClient, store: AgentApplicationStore, me: str
+) -> None:
+    """M4 : la simple information (même entreprise, autre poste, 30 jours) est lue à part."""
+    other = await created_id(
+        client, company="Société Fictive", title="Chef de cuisine", status="applied"
+    )
+    [info] = await store.intake_info(me, DRAFT)
+    assert (info.application_id, info.company, info.title, info.status) == (
+        other,
+        "Société Fictive",
+        "Chef de cuisine",
+        "applied",
+    )
+    assert info.message.startswith("Pour info : tu as postulé chez Société Fictive")
+    assert await store.intake_info(me, DRAFT.model_copy(update={"company": "Autre SA"})) == []
+
+
 async def test_save_creates_the_application_like_the_route(
     client: httpx.AsyncClient, store: AgentApplicationStore, me: str
 ) -> None:

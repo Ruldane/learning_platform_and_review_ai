@@ -129,11 +129,31 @@ class ProposalReadyPayload(BaseModel):
     title: str
 
 
+class ArtifactInfo(BaseModel):
+    """Une information jointe à un artefact : une fiche proche de celle qui vient d'être créée
+    (« même entreprise depuis 30 jours », SPEC 6.3), avec le message du serveur."""
+
+    application_id: str
+    company: str
+    title: str
+    status: str
+    message: str
+
+
 class ArtifactReadyPayload(BaseModel):
     artifact_id: str
     kind: str
     title: str
     url: str | None = None
+    info: list[ArtifactInfo] = Field(default_factory=list)
+
+    def model_dump(self, **kwargs: Any) -> dict[str, Any]:
+        """Sans information, la clé `info` n'est pas écrite : la charge des autres artefacts reste
+        celle d'avant (les événements déjà stockés, et ceux des parcours qui n'en ont pas)."""
+        data = super().model_dump(**kwargs)
+        if not data.get("info"):
+            data.pop("info", None)
+        return data
 
 
 class CostUpdatedPayload(BaseModel):

@@ -62,6 +62,10 @@ async def test_kit_launch_needs_a_posting_and_a_profile(
     no_posting = await ready_application(client, app, posting_text=None)
     r = await client.post(f"{API}/{no_posting}/kit")
     assert (r.status_code, r.json()["error"]["code"]) == (409, "posting_required")
+    # Le texte collé ensuite par `PATCH` (I1) ouvre le kit.
+    patched = await client.patch(f"{API}/{no_posting}", json={"posting_text": "Texte collé."})
+    assert patched.status_code == 200
+    assert (await client.post(f"{API}/{no_posting}/kit")).status_code == 202
     no_profile = await ready_application(client, app, profile=False, title="Autre poste")
     # Le profil de la fiche précédente est validé : on le retire pour ce cas.
     async with app.state.session_factory() as db:
@@ -71,7 +75,7 @@ async def test_kit_launch_needs_a_posting_and_a_profile(
     assert (r.status_code, r.json()["error"]["code"]) == (409, "profile_required")
     missing = await client.post(f"{API}/00000000-0000-4000-8000-000000000000/kit")
     assert (missing.status_code, missing.json()["error"]["code"]) == (404, "application_not_found")
-    assert launcher.started == []
+    assert len(launcher.started) == 1  # le seul kit lancé : celui du texte collé
 
 
 async def test_kit_launch_when_the_engine_is_down(client: httpx.AsyncClient, app: FastAPI) -> None:
