@@ -63,6 +63,15 @@ describe("CommitteePage", () => {
     expect(within(panel).getByText("Les voix : 3 oui ; 1 non ; 0 peut-être.")).toBeVisible();
   });
 
+  it("nests its headings under the page title without skipping a level or doubling a region", async () => {
+    setup({ runs: [committeeOut()] });
+    await screen.findByRole("tab", { name: "Verdict" });
+    expect(screen.getByRole("heading", { level: 2, name: "Verdict du comité" })).toBeVisible();
+    expect(screen.getByRole("heading", { level: 3, name: /Objections/ })).toBeVisible();
+    expect(screen.queryByRole("region", { name: "Verdict du comité" })).toBeNull();
+    expect(screen.queryByRole("heading", { level: 4 })).toBeNull();
+  });
+
   it("shows the four motivated votes with each main objection on the Votes tab, navigable by keyboard", async () => {
     const { user } = setup({ runs: [committeeOut()] });
     const verdict = await screen.findByRole("tab", { name: "Verdict" });

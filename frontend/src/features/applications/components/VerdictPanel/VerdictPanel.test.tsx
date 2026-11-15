@@ -43,6 +43,21 @@ describe("VerdictPanel", () => {
     expect(screen.getByText("Les voix : 2 oui ; 2 non ; 0 peut-être.")).toBeVisible();
   });
 
+  it("says the committee hesitates, not that nobody has a majority, when three readers vote maybe", () => {
+    const votes = [
+      makeVote({ persona: "ats_reader", vote: "peut_etre" }),
+      makeVote({ persona: "recruiter", vote: "peut_etre" }),
+      makeVote({ persona: "manager", vote: "peut_etre" }),
+      makeVote({ persona: "colleague", vote: "non" }),
+    ];
+    render(<VerdictPanel verdict="peut_etre" votes={votes} objections={[]} changes={[]} />);
+    expect(
+      screen.getByText("Au moins 3 des 4 lecteurs ont voté peut-être : le comité hésite."),
+    ).toBeVisible();
+    expect(screen.queryByText(/Aucune réponse n'obtient/)).toBeNull();
+    expect(screen.getByText("Les voix : 0 oui ; 1 non ; 3 peut-être.")).toBeVisible();
+  });
+
   it("ranks the objections and names who raised each", () => {
     render(<VerdictPanel verdict="oui" votes={makeVotes()} objections={objections} changes={[]} />);
     const items = within(section(/Objections, de la plus importante/)).getAllByRole("listitem");

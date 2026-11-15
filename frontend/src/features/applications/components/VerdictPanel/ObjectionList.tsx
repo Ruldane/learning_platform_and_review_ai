@@ -13,8 +13,8 @@ export function ObjectionList({ objections }: { objections: ObjectionView[] }) {
   }
   return (
     <ol className="flex list-decimal flex-col gap-2 pl-6">
-      {objections.map((objection) => (
-        <li key={objection.text}>
+      {objections.map((objection, index) => (
+        <li key={`${index}-${objection.text}`}>
           <p>{objection.text}</p>
           <p className="text-sm text-muted-foreground">
             {t("applications.verdictPanel.raisedBy", {

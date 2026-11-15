@@ -14,3 +14,15 @@ export function tallyOf(votes: VoteView[]): string {
     peut_etre: countOf(votes, "peut_etre"),
   });
 }
+
+/**
+ * La phrase qui explique le verdict, d'après les voix : « peut-être » est un vrai verdict quand
+ * trois lecteurs au moins l'ont voté, sinon c'est l'absence de majorité.
+ */
+export function explanationOf(verdict: VoteValueView, votes: VoteView[]): string {
+  const maybe = votes.filter((vote) => vote.vote === "peut_etre").length;
+  if (verdict === "peut_etre" && maybe >= 3) {
+    return t("applications.verdictPanel.explain.peut_etre_majority");
+  }
+  return t(`applications.verdictPanel.explain.${verdict}`);
+}

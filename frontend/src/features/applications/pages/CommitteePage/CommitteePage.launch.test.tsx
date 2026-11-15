@@ -1,11 +1,13 @@
 import { screen, waitFor } from "@testing-library/react";
-import { HttpResponse } from "msw";
+import { delay, http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it } from "vitest";
 import { useSessionStore } from "@/shared/realtime/sessionStore";
 import { openStream } from "@/test/applicationsHarness";
 import { committeeOut, runningCommittee } from "@/test/committeeApi";
+import { API } from "@/test/councilApi";
 import { apiError } from "@/test/councilHarness";
 import { versionOut } from "@/test/cvFixtures";
+import { server } from "@/test/server";
 import { setup, SESSION } from "./committeeTestkit";
 
 const refuse = (status: number, code: string, details?: Record<string, unknown>) => () =>
@@ -88,6 +90,23 @@ describe("CommitteePage, lancer et relancer", () => {
     ).toBeVisible();
     expect(await screen.findByText("Le comité délibère…")).toBeVisible();
     expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("keeps the launch button disabled between the 202 and the first reading of the new committee", async () => {
+    const view = setup();
+    await screen.findByRole("button", { name: "Lancer le comité" });
+    server.use(
+      http.get(`${API}/committee/:id`, async () => {
+        await delay(400);
+        return HttpResponse.json(runningCommittee({ id: "c1-new", session_id: SESSION }));
+      }),
+    );
+    await view.user.click(screen.getByRole("button", { name: "Lancer le comité" }));
+    // « Relancer » n'apparaît qu'une fois le 202 reçu : la première lecture, retardée, n'est pas là.
+    expect(await screen.findByRole("button", { name: "Relancer le comité" })).toBeDisabled();
+    expect(screen.queryByText("Le comité délibère…")).toBeNull();
+    expect(await screen.findByText("Le comité délibère…")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Relancer le comité" })).toBeDisabled();
   });
 
   it("says that the PDF of the version is not rendered yet (409 version_not_ready)", async () => {

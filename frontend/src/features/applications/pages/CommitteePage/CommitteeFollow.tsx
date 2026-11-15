@@ -42,6 +42,7 @@ export function CommitteeFollow({ postingId, cvVersionId, createSocket }: Commit
         versionsLoading={versions.isPending}
         defaultVersionId={cvVersionId}
         view={run.data}
+        loadingRun={followed !== null && run.isPending}
         hasRuns={(committees.data?.length ?? 0) > 0 || followed !== null}
         start={start}
         onLaunch={(versionId) => void launch(versionId)}

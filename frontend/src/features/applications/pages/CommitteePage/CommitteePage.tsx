@@ -49,7 +49,6 @@ export function CommitteePage({ createSocket }: { createSocket?: SocketFactory }
       {application.data ? (
         <CommitteeWorkspace
           key={applicationId}
-          applicationId={applicationId}
           postingId={application.data.posting_id}
           cvVersionId={application.data.cv_version_id}
           createSocket={createSocket}

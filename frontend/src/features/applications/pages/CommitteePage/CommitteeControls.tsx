@@ -17,6 +17,8 @@ interface CommitteeControlsProps {
   defaultVersionId: string | null;
   /** L'exécution suivie. */
   view: CommitteeView | undefined;
+  /** Un comité vient d'être lancé (202) et sa première lecture n'est pas encore là : pas de second lancement. */
+  loadingRun: boolean;
   /** L'offre a déjà un comité : le bouton dit « Relancer ». */
   hasRuns: boolean;
   start: ReturnType<typeof useStartCommittee>;
@@ -50,6 +52,7 @@ export function CommitteeControls({
   versionsLoading,
   defaultVersionId,
   view,
+  loadingRun,
   hasRuns,
   start,
   onLaunch,
@@ -68,7 +71,7 @@ export function CommitteeControls({
         <VersionPicker
           versions={ready}
           selected={selected}
-          busy={start.pending || view?.status === "running"}
+          busy={start.pending || loadingRun || view?.status === "running"}
           hasRuns={hasRuns}
           pending={start.pending}
           onChoose={setChosen}

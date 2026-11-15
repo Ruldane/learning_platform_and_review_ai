@@ -14,8 +14,8 @@ export function ChangeList({ changes }: { changes: ChangeView[] }) {
   }
   return (
     <ol className="flex list-decimal flex-col gap-3 pl-6">
-      {changes.map((change) => (
-        <li key={change.text}>
+      {changes.map((change, index) => (
+        <li key={`${index}-${change.text}`}>
           <div className="flex flex-col items-start gap-1">
             {change.needsSkill ? (
               <span className="rounded-md border border-dashed px-1.5 py-0.5 text-xs font-semibold">

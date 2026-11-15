@@ -12,7 +12,6 @@ export const applicationsCommittee = {
       "Cette candidature n'est liée à aucune offre analysée : le comité a besoin de l'offre pour juger ton CV.",
     noRun: "Aucun comité pour cette offre : lance-le pour lire le débat.",
     feed: "Débat du comité",
-    results: "Résultats du comité",
     runLoading: "Chargement de l'exécution du comité…",
     runMissing: "Cette exécution du comité n'existe plus.",
   },
@@ -69,6 +68,7 @@ export const applicationsCommittee = {
       oui: "Au moins 3 des 4 lecteurs ont voté oui.",
       non: "Au moins 3 des 4 lecteurs ont voté non.",
       peut_etre: "Aucune réponse n'obtient 3 voix sur 4 : le comité ne tranche pas.",
+      peut_etre_majority: "Au moins 3 des 4 lecteurs ont voté peut-être : le comité hésite.",
     },
     tally: "Les voix : {oui} ; {non} ; {peut_etre}.",
     count: {
@@ -88,7 +88,6 @@ export const applicationsCommittee = {
   diffView: {
     title: "Avant et après",
     first: "C'est le premier comité pour cette offre : il n'y a rien à comparer.",
-    notDone: "L'avant et l'après apparaissent quand le comité a terminé.",
     votesLabel: "Votes de la précédente exécution et de celle-ci",
     persona: "Lecteur",
     before: "Avant",

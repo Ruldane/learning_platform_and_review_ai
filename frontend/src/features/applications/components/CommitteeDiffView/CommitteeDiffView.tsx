@@ -11,8 +11,8 @@ interface CommitteeDiffViewProps {
 /** L'avant et l'après : les votes persona par persona, les objections levées et les nouvelles. */
 export function CommitteeDiffView({ diff }: CommitteeDiffViewProps) {
   return (
-    <section aria-label={t("applications.diffView.title")} className="flex flex-col gap-4">
-      <h3 className="text-lg font-semibold">{t("applications.diffView.title")}</h3>
+    <section className="flex flex-col gap-4">
+      <h2 className="text-lg font-semibold">{t("applications.diffView.title")}</h2>
       {diff === null ? (
         <p>{t("applications.diffView.first")}</p>
       ) : (

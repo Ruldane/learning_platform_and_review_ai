@@ -3,7 +3,6 @@ import type { SocketFactory } from "@/shared/realtime/socket";
 import { CommitteeFollow } from "./CommitteeFollow";
 
 interface CommitteeWorkspaceProps {
-  applicationId: string;
   /** L'offre jugée ; `null` : la fiche n'est liée à aucune offre analysée. */
   postingId: string | null;
   /** La version de CV envoyée avec la fiche (proposée en premier). */
