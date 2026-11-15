@@ -9,6 +9,7 @@ from langgraph.graph import StateGraph
 from pydantic import BaseModel
 
 from app.agents.graphs import (
+    application_intake,
     capture,
     cv_capture,
     cv_review,
@@ -56,6 +57,11 @@ GRAPHS: dict[str, GraphSpec] = {
         GraphSpec("gap_analysis", gap_analysis.GapAnalysisInput, gap_analysis.build),
         GraphSpec("cv_capture", cv_capture.CvCaptureInput, cv_capture.build),
         GraphSpec("cv_review", cv_review.CvReviewInput, cv_review.build),
+        GraphSpec(
+            "application_intake",
+            application_intake.ApplicationIntakeInput,
+            application_intake.build,
+        ),
     )
 }
 

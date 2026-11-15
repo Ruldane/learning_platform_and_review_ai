@@ -90,14 +90,28 @@ class InterruptOption(BaseModel):
     label: str
 
 
+def _optional_in_schema(schema: dict[str, Any]) -> None:
+    """Pas de `default` dans le schéma : la clé est omise quand elle est vide, le client la lit
+    donc facultative."""
+    schema.pop("default", None)
+
+
 class InterruptField(BaseModel):
     """Une question d'un cadrage à plusieurs champs (D82) ; la reprise porte
-    `{"answers": {id: texte}}` (ou la valeur d'une option, `"go"`, D84)."""
+    `{"answers": {id: texte}}` (ou la valeur d'une option, `"go"`, D84). Une confirmation à champs
+    pré remplis (`value`) reprend `{"choice": option, "fields": {id: texte}}` (D141)."""
 
     id: str = Field(pattern=r"^[a-z0-9_]{1,32}$")
     label: str
     required: bool = False
     max_length: int = Field(default=2000, ge=1, le=20000)  # texte d'une page collée (F6)
+    # Valeur pré remplie, que January corrige (fiche en une phrase, D141) ; sans elle la clé n'est
+    # pas écrite : les questions existantes gardent exactement leur forme.
+    value: str | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        json_schema_extra=_optional_in_schema,
+    )
 
 
 class InterruptRequestedPayload(BaseModel):

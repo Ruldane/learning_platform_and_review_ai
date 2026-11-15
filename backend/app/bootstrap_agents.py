@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.agents.runtime.launcher import SessionLauncher
 from app.agents.runtime.ports import AgentPorts
 from app.agents.runtime.run_settings import RunSettingsSource
+from app.agents.tools.applications_port import NO_APPLICATIONS, ApplicationStore
 from app.agents.tools.cv_review_port import NO_CV_REVIEW, CvReviewStore
 from app.agents.tools.cv_template_port import NO_CV_TEMPLATES, CvTemplateStore
 from app.agents.tools.gap_port import NO_GAP, GapStore
@@ -99,13 +100,15 @@ def agent_ports(
     profile: ProfileStore = NO_PROFILE,
     cv_templates: CvTemplateStore = NO_CV_TEMPLATES,
     cv_review: CvReviewStore = NO_CV_REVIEW,
+    applications: ApplicationStore = NO_APPLICATIONS,
 ) -> AgentPorts:
     """Tous les ports du moteur (D82) : un port de plus = un champ d'`AgentPorts` et une ligne ici.
     Conseil (D84), programme (D86), leçons (D90), quiz (D100), sessions d'étude (D102),
     replanification (D105) et capture (D108) adaptés des features `learning` (D87), `program`
     (D88), `lessons` (D91), `quiz` (D101), `study` (D103), `replan` (D106) et `capture` (D108) ;
     analyse d'offre (D121) adaptée de la feature `postings` (D122), profil maître (D124), gabarits
-    de CV (D126) et revue de CV (D130) de la feature `cv`, composés par `app.bootstrap_career`."""
+    de CV (D126) et revue de CV (D130) de la feature `cv`, fiche créée en une phrase (D141) de la
+    feature `applications`, composés par `app.bootstrap_career`."""
     council = AgentCouncilStore(learning.session_factory, learning.launcher, learning)
     program_store = AgentProgramStore(program)
     return AgentPorts(
@@ -122,6 +125,7 @@ def agent_ports(
         profile,
         cv_templates,
         cv_review,
+        applications,
     )
 
 

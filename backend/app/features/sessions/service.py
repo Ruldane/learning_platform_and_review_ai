@@ -49,6 +49,7 @@ ROUTE_ONLY: dict[str, str] = {
     "study_session": "POST /study-sessions",
     "gap_analysis": "POST /postings",  # l'offre est créée et vérifiée par sa route (D121)
     "cv_capture": "POST /profile/import ou POST /cv/templates",  # documents rangés d'abord (D124)
+    "application_intake": "POST /applications/intake",  # une seule session ouverte (D141)
     "cv_review": "POST /cv/reviews",  # profil, gabarit et offre vérifiés puis figés (D130)
 }
 

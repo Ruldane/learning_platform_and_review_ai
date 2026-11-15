@@ -49,6 +49,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/applications/intake": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Intake
+         * @description Lance l'Assistant de suivi sur une phrase : la fiche en préparation est confirmée par
+         *     January (question `application_confirm`) avant d'être créée.
+         */
+        post: operations["post_intake_api_v1_applications_intake_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/applications/stats": {
         parameters: {
             query?: never;
@@ -3160,9 +3181,28 @@ export interface components {
             total: number;
         };
         /**
+         * IntakeIn
+         * @description La phrase de January : « j'ai postulé hier chez X pour le poste Y » (1 à 1 000 caractères).
+         *     Une 422 nomme `text`, sans jamais la citer.
+         */
+        IntakeIn: {
+            /** Text */
+            text: string;
+        };
+        /**
+         * IntakeOut
+         * @description La session de l'Assistant de suivi : la fiche en préparation arrive par ses événements
+         *     (`interrupt.requested`, `kind` `application_confirm`).
+         */
+        IntakeOut: {
+            /** Session Id */
+            session_id: string;
+        };
+        /**
          * InterruptField
          * @description Une question d'un cadrage à plusieurs champs (D82) ; la reprise porte
-         *     `{"answers": {id: texte}}` (ou la valeur d'une option, `"go"`, D84).
+         *     `{"answers": {id: texte}}` (ou la valeur d'une option, `"go"`, D84). Une confirmation à champs
+         *     pré remplis (`value`) reprend `{"choice": option, "fields": {id: texte}}` (D141).
          */
         InterruptField: {
             /** Id */
@@ -3179,6 +3219,8 @@ export interface components {
              * @default false
              */
             required: boolean;
+            /** Value */
+            value?: string | null;
         };
         /** InterruptOption */
         InterruptOption: {
@@ -5846,6 +5888,46 @@ export interface operations {
             };
             /** @description `application_not_found` */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_intake_api_v1_applications_intake_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntakeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntakeOut"];
+                };
+            };
+            /** @description `intake_in_progress` (`details.session_id`) */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

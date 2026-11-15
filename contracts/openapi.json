@@ -3987,8 +3987,38 @@
         "title": "IndicatorsOut",
         "type": "object"
       },
+      "IntakeIn": {
+        "description": "La phrase de January : « j'ai postulé hier chez X pour le poste Y » (1 à 1 000 caractères).\nUne 422 nomme `text`, sans jamais la citer.",
+        "properties": {
+          "text": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "IntakeIn",
+        "type": "object"
+      },
+      "IntakeOut": {
+        "description": "La session de l'Assistant de suivi : la fiche en préparation arrive par ses événements\n(`interrupt.requested`, `kind` `application_confirm`).",
+        "properties": {
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id"
+        ],
+        "title": "IntakeOut",
+        "type": "object"
+      },
       "InterruptField": {
-        "description": "Une question d'un cadrage à plusieurs champs (D82) ; la reprise porte\n`{\"answers\": {id: texte}}` (ou la valeur d'une option, `\"go\"`, D84).",
+        "description": "Une question d'un cadrage à plusieurs champs (D82) ; la reprise porte\n`{\"answers\": {id: texte}}` (ou la valeur d'une option, `\"go\"`, D84). Une confirmation à champs\npré remplis (`value`) reprend `{\"choice\": option, \"fields\": {id: texte}}` (D141).",
         "properties": {
           "id": {
             "pattern": "^[a-z0-9_]{1,32}$",
@@ -4010,6 +4040,17 @@
             "default": false,
             "title": "Required",
             "type": "boolean"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
           }
         },
         "required": [
@@ -11036,6 +11077,51 @@
           }
         },
         "summary": "Get Check",
+        "tags": [
+          "applications"
+        ]
+      }
+    },
+    "/api/v1/applications/intake": {
+      "post": {
+        "description": "Lance l'Assistant de suivi sur une phrase : la fiche en préparation est confirmée par\nJanuary (question `application_confirm`) avant d'être créée.",
+        "operationId": "post_intake_api_v1_applications_intake_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntakeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntakeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "description": "`intake_in_progress` (`details.session_id`)"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Post Intake",
         "tags": [
           "applications"
         ]

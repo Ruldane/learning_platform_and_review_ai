@@ -20,10 +20,13 @@ from app.features.applications.schemas import (
     CheckOut,
     CreatedOut,
     EventIn,
+    IntakeIn,
+    IntakeOut,
 )
 from app.features.applications.service.check import check_posting
 from app.features.applications.service.create import create_application
 from app.features.applications.service.events import add_event
+from app.features.applications.service.intake import start_intake
 from app.features.applications.service.queries import (
     list_applications,
     read_application,
@@ -79,6 +82,18 @@ async def post_application(
 ) -> CreatedOut:
     """Crée la fiche ; `info` : une autre fiche chez la même entreprise dans les 30 jours."""
     return await create_application(rt, current.id, body)
+
+
+@router.post(
+    "/intake",
+    response_model=IntakeOut,
+    status_code=202,
+    responses={409: {"description": "`intake_in_progress` (`details.session_id`)"}},
+)
+async def post_intake(body: IntakeIn, current: CurrentUserDep, rt: ApplicationsDep) -> IntakeOut:
+    """Lance l'Assistant de suivi sur une phrase : la fiche en préparation est confirmée par
+    January (question `application_confirm`) avant d'être créée."""
+    return IntakeOut(session_id=await start_intake(rt, current.id, body.text))
 
 
 @router.get("/check", response_model=CheckOut, responses=_NOT_FOUND)

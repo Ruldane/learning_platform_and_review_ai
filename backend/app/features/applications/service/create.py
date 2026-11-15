@@ -9,6 +9,10 @@ fil et de ses contacts dans la même transaction.
   `distinct_from` est posé dans les deux sens (avec l'offre de chaque fiche, pour que le contrôle
   par offre se taise aussi).
 
+Créée par une session de l'Assistant de suivi (`session_id`, 7.4), la fiche garde l'identifiant
+de la session dans `ref_id` de son événement `created` : une création rejouée après un arrêt (SPEC
+9.4) relit cette fiche au lieu d'en créer une seconde.
+
 Journaux : identifiants seulement, jamais l'entreprise, l'intitulé, un contact ni une note."""
 
 import logging
@@ -166,7 +170,12 @@ async def _link_version(db: AsyncSession, user_id: str, row: Application, now: d
 
 
 async def _insert(
-    db: AsyncSession, user_id: str, body: ApplicationIn, source: Source, when: tuple[date, datetime]
+    db: AsyncSession,
+    user_id: str,
+    body: ApplicationIn,
+    source: Source,
+    when: tuple[date, datetime],
+    session_id: str | None,
 ) -> Application:
     today, now = when
     row = await ApplicationRepository(db, user_id).add(
@@ -183,7 +192,7 @@ async def _insert(
         **_dates(body, source, today),
     )
     await EventRepository(db, user_id).add(
-        application_id=row.id, kind="created", at=now, status_to=body.status
+        application_id=row.id, kind="created", at=now, status_to=body.status, ref_id=session_id
     )
     await _link_version(db, user_id, row, now)
     contacts = ContactRepository(db, user_id)
@@ -194,14 +203,33 @@ async def _insert(
     return row
 
 
+async def _of_session(
+    db: AsyncSession, user_id: str, session_id: str | None, today: date
+) -> CreatedOut | None:
+    """La fiche déjà créée par cette session (rejeu), sinon `None`."""
+    if session_id is None:
+        return None
+    known = await EventRepository(db, user_id).created_by(session_id)
+    if known is None:
+        return None
+    row = await ApplicationRepository(db, user_id).get_fresh(known)
+    return (
+        None
+        if row is None
+        else CreatedOut(application=await detail_out(db, user_id, row, today), info=[])
+    )
+
+
 async def create_application(
-    rt: ApplicationsRuntime, user_id: str, body: ApplicationIn
+    rt: ApplicationsRuntime, user_id: str, body: ApplicationIn, *, session_id: str | None = None
 ) -> CreatedOut:
     """Crée la fiche (voir le module). 404 `posting_not_found` si `posting_id` est inconnu."""
     async with rt.lock(user_id), rt.session_factory() as db:
         zone = await zone_of(db, user_id)
         now = rt.now()
         today = local_today(zone, now)
+        if (again := await _of_session(db, user_id, session_id, today)) is not None:
+            return again
         repo = ApplicationRepository(db, user_id)
         posting = await get_posting(db, user_id, body.posting_id) if body.posting_id else None
         if posting is not None and (known := await repo.by_posting(posting.id)) is not None:
@@ -212,7 +240,7 @@ async def create_application(
         blocking = [hit for hit in hits if hit.level != "info"]
         if blocking:
             raise application_duplicate(await alerts_out(db, user_id, blocking, zone, today))
-        row = await _insert(db, user_id, body, source, (today, now))
+        row = await _insert(db, user_id, body, source, (today, now), session_id)
         confirm_distinct(rows, row, list(dict.fromkeys(body.distinct_from)))
         await sync_user(db, user_id, today, application_id=row.id)
         await db.commit()

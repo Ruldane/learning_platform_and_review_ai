@@ -114,6 +114,16 @@ class EventRepository(UserScopedRepository[ApplicationEvent]):
         )
         return builtins.list((await self.session.execute(stmt)).scalars().all())
 
+    async def created_by(self, session_id: str) -> str | None:
+        """La fiche créée par cette session de l'Assistant de suivi (`ref_id` de son événement
+        `created`), `None` s'il n'y en a pas."""
+        stmt = select(ApplicationEvent.application_id).where(
+            ApplicationEvent.user_id == self.user_id,
+            ApplicationEvent.kind == "created",
+            ApplicationEvent.ref_id == session_id,
+        )
+        return (await self.session.execute(stmt)).scalars().first()
+
     async def version_frozen(self) -> set[str]:
         """Les fiches dont la version de CV est figée (elles ont un événement `version`)."""
         stmt = select(ApplicationEvent.application_id).where(
@@ -213,3 +223,9 @@ async def user_ids(session: AsyncSession) -> builtins.list[str]:
     compte par compte (toutes les lectures suivantes filtrent par `user_id`)."""
     stmt = select(User.id).order_by(User.created_at, literal_column("rowid"))
     return builtins.list((await session.execute(stmt)).scalars().all())
+
+
+async def user_language(session: AsyncSession, user_id: str) -> str:
+    """La langue de l'interface de January (`fr` par défaut)."""
+    stmt = select(User.language).where(User.id == user_id)
+    return (await session.execute(stmt)).scalar_one_or_none() or "fr"

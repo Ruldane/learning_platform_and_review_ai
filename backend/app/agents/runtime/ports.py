@@ -5,6 +5,7 @@ contrat 6). Un port de plus = un champ ici, avec sa valeur « non branché », e
 
 from dataclasses import dataclass
 
+from app.agents.tools.applications_port import NO_APPLICATIONS, ApplicationStore
 from app.agents.tools.capture_port import NO_CAPTURE, CaptureStore
 from app.agents.tools.council_port import NO_COUNCIL, CouncilStore
 from app.agents.tools.cv_review_port import NO_CV_REVIEW, CvReviewStore
@@ -35,6 +36,7 @@ class AgentPorts:
     profile: ProfileStore = NO_PROFILE  # profil maître de l'Archiviste (D124)
     cv_templates: CvTemplateStore = NO_CV_TEMPLATES  # gabarits du Maquettiste (D125)
     cv_review: CvReviewStore = NO_CV_REVIEW  # revue du CV contre une offre (D129)
+    applications: ApplicationStore = NO_APPLICATIONS  # fiche créée en une phrase (D141)
 
 
 NO_PORTS = AgentPorts()

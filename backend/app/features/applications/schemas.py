@@ -80,6 +80,20 @@ class ApplicationIn(BaseModel):
     distinct_from: list[Id] = Field(default_factory=list, max_length=DISTINCT_MAX)
 
 
+class IntakeIn(BaseModel):
+    """La phrase de January : « j'ai postulé hier chez X pour le poste Y » (1 à 1 000 caractères).
+    Une 422 nomme `text`, sans jamais la citer."""
+
+    text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1000)]
+
+
+class IntakeOut(BaseModel):
+    """La session de l'Assistant de suivi : la fiche en préparation arrive par ses événements
+    (`interrupt.requested`, `kind` `application_confirm`)."""
+
+    session_id: str
+
+
 class ApplicationPatch(BaseModel):
     """Les champs à changer (ceux qui sont envoyés, `null` efface un champ facultatif) ; `contacts`
     remplace la liste. Le statut ne se change que par `POST /applications/{id}/events` : l'envoyer
