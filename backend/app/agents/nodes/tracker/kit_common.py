@@ -15,6 +15,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
+from app.agents.runtime.costs import TokenBudgetExceeded
 from app.agents.runtime.deps import GraphDeps
 from app.agents.runtime.emit import emit
 from app.agents.runtime.invoke import node_timeout
@@ -53,10 +54,14 @@ def say(agent: str, message_id: str, text: str) -> None:
 
 async def guarded(limit_s: float, work: Callable[[], Awaitable[Piece]]) -> Piece:
     """La pièce de `work`, ou une pièce en échec si l'agent échoue (`AppError`, message lisible) ou
-    dépasse `limit_s` : une branche en échec n'arrête pas les autres."""
+    dépasse `limit_s` : une branche en échec n'arrête pas les autres. Le plafond de tokens de la
+    session (`TokenBudgetExceeded`) n'est pas une pièce en échec : il remonte et arrête la
+    session."""
     try:
         async with asyncio.timeout(limit_s):
             return await work()
+    except TokenBudgetExceeded:
+        raise
     except AppError as exc:
         return Piece("failed", "", {"error": exc.message, "code": exc.code})
     except TimeoutError:

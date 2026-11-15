@@ -42,7 +42,8 @@ def build(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
             for kind in ("letter", "linkedin", "followups", "form_answers", "pitch")
         },
     }
-    assert set(nodes) == set(KIT_KINDS)
+    if set(nodes) != set(KIT_KINDS):
+        raise ValueError("Chaque pièce du kit doit avoir sa branche.")
     for name, node in nodes.items():
         graph.add_node(name, node)
         graph.add_edge(name, "close")

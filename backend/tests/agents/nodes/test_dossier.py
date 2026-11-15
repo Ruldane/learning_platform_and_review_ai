@@ -73,4 +73,31 @@ def test_render_lists_sources_by_rank() -> None:
     assert text.startswith("# Dossier : Société Fictive")
     assert "[1] Page A — https://a.example" in text
     assert "[2] https://b.example — https://b.example" in text
-    assert "## Taille\npme" in text
+    assert "Taille estimée : PME (estimation non sourcée)" in text
+    assert "## Taille" not in text
+
+
+def test_size_is_omitted_when_unknown() -> None:
+    assert "Taille" not in render_dossier("X", make(size="inconnu"), [])
+
+
+def test_empty_question_is_not_rendered() -> None:
+    checked = check_dossier(make(questions=["Q1 ?", "[8]", "Q3 ?", "Q4 ?", "Q5 ?"]), 1, TODAY)
+    text = render_dossier("X", checked.dossier, [])
+    assert "1. Q1 ?\n2. Q3 ?\n3. Q4 ?\n4. Q5 ?" in text
+    assert "[8]" not in text
+
+
+def test_news_from_an_old_page_is_dropped_even_with_a_recent_date() -> None:
+    day = TODAY.isoformat()
+    news = [
+        {"text": "Annonce [1]", "date": day},
+        {"text": "Annonce bis [2]", "date": day},
+        {"text": "Annonce ter [1, 2]", "date": day},
+        {"text": "Annonce quater [3]", "date": day},
+    ]
+    old, recent = TODAY - timedelta(days=184), TODAY - timedelta(days=10)
+    checked = check_dossier(make(news=news), 3, TODAY, page_dates=[old, recent, None])
+    kept = [n.text for n in checked.dossier.news]
+    assert kept == ["Annonce bis [2]", "Annonce ter [1, 2]", "Annonce quater [3]"]
+    assert checked.dropped == 1

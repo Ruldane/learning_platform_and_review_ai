@@ -12,6 +12,7 @@ lisible : dossier non produit. » (`to_check`, rien n'est rangé dans `companies
 Journaux : identifiants et nombres, jamais le nom de l'entreprise ni une adresse (17.2)."""
 
 import logging
+from datetime import date
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
@@ -106,6 +107,14 @@ async def _ask(deps: GraphDeps, ctx: KitContext, pages: list[PageRead]) -> Compa
     )
 
 
+def _page_date(page: PageRead) -> date | None:
+    """La date connue de la page (ISO 8601, début de la chaîne), sinon `None`."""
+    try:
+        return date.fromisoformat((page.date or "")[:10])
+    except ValueError:
+        return None
+
+
 def _sources(pages: list[PageRead]) -> list[SourceRef]:
     return [
         SourceRef(url=page.url, title=one_line(page.title or "")[:300], source_id=page.source_id)
@@ -117,7 +126,9 @@ async def _produce(deps: GraphDeps, ctx: KitContext) -> Piece:
     pages = await _read(deps, await _hits(deps, ctx))
     if not pages:
         return Piece("to_check", NO_SOURCE)
-    checked = check_dossier(await _ask(deps, ctx, pages), len(pages), ctx.today)
+    asked = await _ask(deps, ctx, pages)
+    dates = [_page_date(page) for page in pages]
+    checked = check_dossier(asked, len(pages), ctx.today, page_dates=dates)
     if not has_content(checked.dossier):
         return Piece("to_check", NO_SOURCE)
     sources = _sources(pages)

@@ -2,6 +2,7 @@
 récent, sinon recherche, quatre lectures au plus, citations vérifiées par le code."""
 
 from app.agents.tools.kit_schema import CompanyDossier, SourceRef
+from app.agents.tools.web_port import PageRead
 from tests.agents.graphs.kit_support import MakeKit, dossier, dossier_data, prompts, writers
 from tests.agents.graphs.review_support import FakeWeb
 from tests.support.kit import COMPANY, FakeKitStore
@@ -132,3 +133,26 @@ async def test_unknown_company_skips_the_dossier(
     row = kit_store.piece("company_brief")
     assert row.status == "to_check" and "Entreprise inconnue" in row.content
     assert kit_web.searches == []
+
+
+async def test_dossier_news_citing_an_old_page_is_dropped(
+    kit_runner: MakeKit, kit_store: FakeKitStore, kit_web: FakeWeb
+) -> None:
+    from dataclasses import replace
+
+    original = kit_web.read
+
+    async def dated(user_id: str, session_id: str, url: str) -> PageRead:
+        page = await original(user_id, session_id, url)
+        return replace(page, date="2025-01-10" if url == kit_web.urls[1] else None)
+
+    kit_web.read = dated  # type: ignore[method-assign]
+    news = [
+        {"text": "Annonce récente [1]", "date": "2026-11-01"},
+        {"text": "Annonce d'une page ancienne [2]", "date": "2026-11-01"},
+    ]
+    run = await kit_runner(writers(dossier=[dossier(news=news)]))
+    await run.wait_status("completed")
+    content = kit_store.piece("company_brief").content
+    assert "Annonce récente [1]" in content
+    assert "page ancienne" not in content

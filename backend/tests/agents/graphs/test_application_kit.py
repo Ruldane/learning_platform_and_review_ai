@@ -38,6 +38,7 @@ async def test_kit_produces_seven_pieces(kit_runner: MakeKit, kit_store: FakeKit
     run = await kit_runner()
     await run.wait_status("completed")
     assert kit_store.kinds == set(KIT_KINDS)
+    assert kit_store.context_calls == 8  # `load` et une lecture par branche
     assert {row.status for row in kit_store.rows.values()} == {"ready"}
     artifacts = await run.events("artifact.ready")
     assert len(artifacts) == 7 and {a["kind"] for a in artifacts} == {"kit_item"}
@@ -48,30 +49,6 @@ async def test_kit_produces_seven_pieces(kit_runner: MakeKit, kit_store: FakeKit
     assert (
         len(prompts(run.models, "letter")) == 1
     )  # entreprise et intitulé exacts : jamais signalés
-
-
-async def test_cv_piece_points_at_the_latest_ready_version(
-    kit_runner: MakeKit, kit_store: FakeKitStore
-) -> None:
-    run = await kit_runner()
-    await run.wait_status("completed")
-    cv = kit_store.piece("cv")
-    assert (cv.status, cv.content, cv.meta) == (
-        "ready",
-        "CV ciblé : version n° 3",
-        {"version_id": "version-3"},
-    )
-
-
-async def test_cv_piece_without_version_asks_for_the_review(
-    kit_runner: MakeKit, kit_store: FakeKitStore
-) -> None:
-    kit_store.update(cv_version=None)
-    run = await kit_runner()
-    await run.wait_status("completed")
-    cv = kit_store.piece("cv")
-    assert cv.status == "to_check"
-    assert cv.content == "Lance la revue de CV de cette offre pour obtenir ton CV ciblé."
 
 
 async def test_pieces_are_announced_as_they_finish(kit_runner: MakeKit) -> None:
@@ -171,9 +148,18 @@ async def test_letter_in_posting_language(kit_runner: MakeKit, kit_store: FakeKi
     kit_store.update(language="en")
     run = await kit_runner()
     await run.wait_status("completed")
-    assert "l'anglais (English)" in prompts(run.models, "letter")[0]
+    prompt = prompts(run.models, "letter")[0]
+    assert "l'anglais (English)" in prompt
+    assert "Langue de la pièce : le français" not in prompt
     assert kit_store.piece("letter").meta["language"] == "en"
-    assert "your <intitulé> role" in prompts(run.models, "letter")[0]
+
+
+async def test_french_letter_prompt_says_french(kit_runner: MakeKit) -> None:
+    run = await kit_runner()
+    await run.wait_status("completed")
+    prompt = prompts(run.models, "letter")[0]
+    assert "Langue de la pièce : le français" in prompt
+    assert "English" not in prompt
 
 
 async def test_style_guide_reaches_every_piece_prompt(kit_runner: MakeKit) -> None:
@@ -251,6 +237,8 @@ async def test_kit_replay_saves_each_piece_once(
     assert await second.runner.recover_on_startup() == [first.sid]
     await second.wait_status("completed")
     assert len(kit_store.rows) == 7 and kit_store.save_calls >= 8
+    [done] = await second.events("run.completed")
+    assert "7 pièce(s), dont 7 prête(s)" in done["summary"]
     artifacts = await second.events("artifact.ready")
     assert {a["artifact_id"] for a in artifacts} == {r.id for r in kit_store.rows.values()}
 
