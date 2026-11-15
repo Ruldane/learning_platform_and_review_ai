@@ -31,7 +31,7 @@ describe("agentColors", () => {
   });
 
   it("reserves all the slugs of the roadmap", () => {
-    expect(Object.keys(AGENT_COLORS)).toHaveLength(19);
+    expect(Object.keys(AGENT_COLORS)).toHaveLength(21);
     expect(Object.keys(AGENT_COLORS)).toContain("demo_critic");
     expect(Object.keys(AGENT_COLORS)).toContain("ats_reader");
   });
@@ -52,6 +52,22 @@ describe("agentColors", () => {
     for (const color of [examiner.color, tutor.color]) {
       expect(contrast(color, "#fafaf7")).toBeGreaterThanOrEqual(4.5);
       expect(contrast(color, "#ffffff")).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it("knows the tracker, the manager and the colleague, with a readable color each", () => {
+    const expected = {
+      tracker: "Assistant de suivi",
+      manager: "Manager",
+      colleague: "Futur collègue",
+    } as const;
+    for (const [slug, name] of Object.entries(expected)) {
+      const identity = agentIdentity(slug);
+      expect(identity.name).toBe(name);
+      expect(identity.role).not.toBe("");
+      expect(identity.color).toBe(AGENT_COLORS[slug as keyof typeof AGENT_COLORS]);
+      expect(contrast(identity.color, "#fafaf7")).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(identity.color, "#ffffff")).toBeGreaterThanOrEqual(4.5);
     }
   });
 

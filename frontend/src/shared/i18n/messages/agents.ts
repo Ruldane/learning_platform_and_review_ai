@@ -16,7 +16,9 @@ export const agents = {
   examiner: { name: "Examinateur", role: "Pose les questions d'examen" },
   interviewer: { name: "Intervieweur", role: "Mène l'entretien" },
   tutor: { name: "Tuteur", role: "Explique pas à pas" },
-  tracker: { name: "Suiveur", role: "Suit l'avancement" },
+  tracker: { name: "Assistant de suivi", role: "Suit l'avancement" },
+  manager: { name: "Manager", role: "Juge le CV en futur responsable" },
+  colleague: { name: "Futur collègue", role: "Juge le CV en pair" },
   demo_proponent: { name: "Avocat", role: "Défend l'idée" },
   demo_critic: { name: "Critique", role: "Challenge l'idée" },
 } as const;

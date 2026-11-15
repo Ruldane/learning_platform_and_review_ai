@@ -1,4 +1,5 @@
 import { agents } from "./messages/agents";
+import { applications } from "./messages/applications";
 import { appMessages } from "./messages/app";
 import { capture } from "./messages/capture";
 import { cv } from "./messages/cv";
@@ -39,4 +40,5 @@ export const fr = {
   capture,
   gap,
   cv,
+  applications,
 } as const;

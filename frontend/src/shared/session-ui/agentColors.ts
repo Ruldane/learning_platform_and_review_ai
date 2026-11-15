@@ -27,6 +27,8 @@ export const AGENT_COLORS = {
   interviewer: "#ac3982",
   tutor: "#1a7a72",
   tracker: "#5f761e",
+  manager: "#0060f0",
+  colleague: "#a000f0",
   demo_proponent: "#6834b2",
   demo_critic: "#b2345c",
 } as const;
