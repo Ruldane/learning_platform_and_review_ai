@@ -4,6 +4,7 @@ from pydantic import AfterValidator, BaseModel, Field, computed_field, field_val
 
 from app.core.clock import DEFAULT_ZONE, Weekday, is_zone
 from app.core.domains import normalize_domain
+from app.features.applications.service.schedule import validated_delays
 from app.providers.llm.base import TIERS, ModelChoice, Tier
 from app.providers.llm.model_defaults import DEFAULT_TIERS, supports_vision
 
@@ -106,6 +107,15 @@ class UserSettings(BaseModel):
     study_break_minutes: int = Field(default=10, ge=0, le=60)
     # Fuseau IANA de January (D98) : jours, semaines et bilan du dimanche se comptent en local.
     timezone: TimeZoneName = DEFAULT_ZONE
+
+    @field_validator("reminder_delays_days")
+    @classmethod
+    def _valid_delays(cls, delays: list[int]) -> list[int]:
+        """Trois délais strictement croissants de 1 à 90 jours (SPEC 6.2) : sinon le champ est
+        refusé, et une valeur déjà stockée retombe sur son défaut (`SettingsService`)."""
+        if tuple(delays) != validated_delays(delays):
+            raise ValueError("trois délais croissants de 1 à 90 jours attendus")
+        return delays
 
     @field_validator("tiers")
     @classmethod

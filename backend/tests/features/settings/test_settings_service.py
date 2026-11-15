@@ -90,6 +90,25 @@ async def test_invalid_stored_field_falls_back_to_default_for_that_field(
     assert "debate_rounds" in caplog.text and "secret-style-content-xyz" not in caplog.text
 
 
+async def test_invalid_stored_reminder_delays_fall_back_to_default(
+    db_session: AsyncSession,
+) -> None:
+    repo = UserSettingsRepository(db_session, "u1")
+    for bad in ([14, 7, 21], [0, 7, 14], [7, 14], [7, 7, 21], [7, 14, 91]):
+        await repo.save_data({"reminder_delays_days": bad, "brief_time": "06:30"})
+        s = await SettingsService(db_session, "u1").get()
+        assert s.reminder_delays_days == [7, 14, 21] and s.brief_time == "06:30"
+    await repo.save_data({"reminder_delays_days": [5, 10, 15]})
+    assert (await SettingsService(db_session, "u1").get()).reminder_delays_days == [5, 10, 15]
+
+
+@pytest.mark.parametrize("bad", [[14, 7, 21], [0, 7, 14], [7, 14], [1, 2, 3, 4], [7, 14, 91]])
+def test_reminder_delays_are_validated(bad: list[int]) -> None:
+    with pytest.raises(ValidationError):
+        UserSettings(reminder_delays_days=bad)
+    assert UserSettings(reminder_delays_days=[1, 45, 90]).reminder_delays_days == [1, 45, 90]
+
+
 async def test_repository_assigns_new_dict_and_scopes_by_user(db_session: AsyncSession) -> None:
     repo = UserSettingsRepository(db_session, "u1")
     assert await repo.get_data() is None

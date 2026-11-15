@@ -50,16 +50,21 @@ def _canonical(match: re.Match[str]) -> str | None:
     return f"{text}%" if match.group("pct") else text
 
 
+def number_spans(text: str) -> list[tuple[int, str]]:
+    """Les nombres de `text`, dans l'ordre du texte : `(position, forme canonique)`."""
+    spans: list[tuple[int, str]] = []
+    for match in _NUMBER.finditer(text):
+        canonical = _canonical(match)
+        if canonical is not None:
+            spans.append((match.start(), canonical))
+    return spans
+
+
 def numbers_in(text: str) -> set[str]:
     """Les nombres de `text`, sous forme canonique : « 30 % » → « 30% », « 1 000 » et « 1000 »
     → « 1000 », « 12 k€ » → « 12000 », « 2,50 » → « 2.5 ». Un pourcentage reste distinct du
     nombre nu (« 30 % » n'est pas « 30 personnes »)."""
-    found: set[str] = set()
-    for match in _NUMBER.finditer(text):
-        canonical = _canonical(match)
-        if canonical is not None:
-            found.add(canonical)
-    return found
+    return {canonical for _, canonical in number_spans(text)}
 
 
 # Chiffres écrits en lettres (sans accent) → forme canonique. « un », « une » et « one » manquent

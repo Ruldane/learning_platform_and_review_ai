@@ -15,7 +15,7 @@ AttemptStatus = Literal["grading", "graded", "failed"]
 StudyMode = Literal["socratic", "feynman", "direct"]
 StudyStatus = Literal["open", "finished", "cancelled"]
 JournalKind = Literal["capture", "study_session", "quiz", "weekly_review"]
-CardSource = Literal["lesson", "quiz", "study", "capture"]
+CardSource = Literal["lesson", "quiz", "study", "capture", "interview"]
 
 
 class Quiz(UserScopedMixin, Base):
@@ -94,7 +94,7 @@ class Flashcard(UserScopedMixin, Base):
     front_hash: Mapped[str] = mapped_column(String(64))
     skill: Mapped[str | None] = mapped_column(String(120), default=None)
     module_id: Mapped[str | None] = mapped_column(String(36), default=None)
-    source: Mapped[str] = mapped_column(String(8))
+    source: Mapped[str] = mapped_column(String(16))
     source_id: Mapped[str | None] = mapped_column(String(36), default=None)
     step: Mapped[int] = mapped_column(Integer, default=0)
     due_date: Mapped[date] = mapped_column(Date)

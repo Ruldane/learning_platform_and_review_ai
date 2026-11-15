@@ -86,3 +86,7 @@ class Company(UserScopedMixin, Base):
     sources: Mapped[list[Any]] = mapped_column(default=list)
     ats: Mapped[str | None] = mapped_column(String(40), default=None)
     refreshed_at: Mapped[datetime | None] = mapped_column(UTCDateTime, default=None)
+    # Dossier d'entretien sur l'entreprise (phase 7) : contenu, sources lues, date de lecture.
+    dossier: Mapped[dict[str, Any] | None] = mapped_column(default=None)
+    dossier_sources: Mapped[list[Any]] = mapped_column(default=list)
+    dossier_at: Mapped[datetime | None] = mapped_column(UTCDateTime, default=None)

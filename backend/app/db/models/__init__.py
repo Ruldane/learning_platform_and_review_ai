@@ -2,6 +2,7 @@
 from app.db.models import (
     accounts,
     agents,
+    applications,
     career,
     learning,
     lessons,
@@ -16,6 +17,7 @@ from app.db.models import (
 __all__ = [
     "accounts",
     "agents",
+    "applications",
     "career",
     "learning",
     "lessons",

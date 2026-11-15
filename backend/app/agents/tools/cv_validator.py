@@ -102,7 +102,7 @@ def _starts_sentence(text: str, match: re.Match[str]) -> bool:
     return not before or before[-1] in _SENTENCE_END
 
 
-def _product_forms(after: str) -> set[str]:
+def product_forms(after: str) -> set[str]:
     """Les termes ambigus (« vue », « spring », « rest »…) que `after` écrit sous leur forme de
     produit : un mot capitalisé hors début de phrase (ou un sigle, « REST »), ou suivi d'un
     qualificatif (« vue.js », « spring boot »)."""
@@ -130,7 +130,7 @@ def _term_findings(
     haystack = _padded(after)
     skills = _padded(" ".join(skill.name for skill in profile.skills))
     posting = _posting_terms(analysis)
-    product = _product_forms(after)
+    product = product_forms(after)
     gap: dict[str, str] = {}
     tools: list[str] = []
     for form, label in {**_TECH, **posting}.items():
@@ -172,22 +172,32 @@ def _title_claimed(after: str, profile: MasterProfileData, analysis: PostingAnal
     return bool(posting) and f" {posting} " in haystack and f" {posting} " not in known
 
 
-def _names(after: str, profile: MasterProfileData, *, skip_first: bool) -> set[str]:
-    """Les mots capitalisés de `after` (hors début de phrase, hors sigles) qu'aucun texte du
-    profil ne contient : un outil ou une entreprise qu'aucune liste ne connaît."""
-    known = _padded(" ".join(facts_of(profile).values()))
-    places = [experience.location or "" for experience in profile.experiences]
-    known += _padded(" ".join([profile.identity.name, profile.identity.location or "", *places]))
-    found: set[str] = set()
+def capitalized_names(after: str, known: str, *, skip_first: bool) -> list[tuple[int, str]]:
+    """Les mots capitalisés de `after` (hors début de phrase, hors sigles) que `known` (un texte
+    `_padded`) ne contient pas, un par forme comparée : `(position, mot tel qu'écrit)`."""
+    found: dict[str, tuple[int, str]] = {}
     for match in _WORD.finditer(after):
         word = match.group()
         if _starts_sentence(after, match) and (skip_first or match.start() > 0):
             continue
         if len(word) < _MIN_NAME or not word[0].isupper() or word.isupper():
             continue
-        if f" {normalize_term(word, plural=True)} " not in known:
-            found.add(normalize_term(word, plural=True))
-    return found
+        form = normalize_term(word, plural=True)
+        if f" {form} " not in known:
+            found.setdefault(form, (match.start(), word))
+    return list(found.values())
+
+
+def _names(after: str, profile: MasterProfileData, *, skip_first: bool) -> set[str]:
+    """Les mots capitalisés de `after` (hors début de phrase, hors sigles) qu'aucun texte du
+    profil ne contient : un outil ou une entreprise qu'aucune liste ne connaît."""
+    known = _padded(" ".join(facts_of(profile).values()))
+    places = [experience.location or "" for experience in profile.experiences]
+    known += _padded(" ".join([profile.identity.name, profile.identity.location or "", *places]))
+    return {
+        normalize_term(word, plural=True)
+        for _, word in capitalized_names(after, known, skip_first=skip_first)
+    }
 
 
 def validate(p: Proposal, profile: MasterProfileData, analysis: PostingAnalysis) -> Verdict:
