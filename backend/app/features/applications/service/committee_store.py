@@ -22,6 +22,7 @@ from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.tools.committee_schema import (
+    VERDICT_WORDS,
     CommitteeContext,
     PersonaVote,
     Synthesis,
@@ -38,7 +39,7 @@ from app.features.applications.repository import (
     EventRepository,
 )
 from app.features.applications.service.committee import committee_lock, committee_row
-from app.features.applications.service.kit_language import text_language
+from app.features.applications.service.kit_language import posting_analysis, text_language
 from app.features.applications.service.kit_store import (
     company_name_key,
     dossier_of,
@@ -51,22 +52,22 @@ from app.features.postings.service.queries import postings_by_ids
 logger = logging.getLogger(__name__)
 
 DEFAULT_TITLE = "Poste"
-VERDICT_WORDS = {"oui": "oui", "non": "non", "peut_etre": "peut-être"}
 
 
 def _analysis(posting: JobPosting, application: Application | None) -> PostingAnalysis:
-    """L'analyse rangée de l'offre ; sinon une analyse minimale (intitulé, entreprise, langue)."""
+    """L'analyse rangée de l'offre ; sinon une analyse minimale (intitulé, entreprise, langue).
+    Avec une fiche, c'est celle du kit (`kit_language.posting_analysis`, une seule règle)."""
+    if application is not None:
+        return posting_analysis(posting.analysis, application, posting.text)
     if posting.analysis:
         try:
             return PostingAnalysis.model_validate(posting.analysis)
         except ValidationError:
             pass  # une analyse illisible : le texte de l'offre reste la source
-    title = (application.title if application else posting.title) or DEFAULT_TITLE
-    company = application.company if application else posting.company
     return PostingAnalysis(
         is_job_posting=True,
-        title=title.ljust(2, "."),
-        company=company,
+        title=(posting.title or DEFAULT_TITLE).ljust(2, "."),
+        company=posting.company,
         level="inconnu",
         language=text_language(posting.text),
     )

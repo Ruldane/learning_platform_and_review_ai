@@ -3,10 +3,11 @@
 Le verdict, lui, est la majorité des quatre votes, **calculée par le code** (`majority_verdict`,
 SPEC F19 : égalité ou aucune majorité, « peut-être ») : le modèle le reçoit, il ne le choisit pas.
 
-Le code relit ce que le modèle écrit : les personas d'une objection sont celles du comité, les
-identifiants de faits inconnus du profil sont retirés, et un changement qui demande un terme que
-le profil ne dit pas devient une compétence « à acquérir » (`committee_changes`), jamais un
-« ajoute X ». `allowed` ne contient que l'entreprise et l'intitulé exact du poste.
+Le code relit ce que le modèle écrit : une persona inconnue est refusée par le schéma (`Literal`)
+et renvoyée au modèle ; les personas d'une objection sont remises dans l'ordre du comité, sans
+doublon ; les identifiants de faits inconnus du profil sont retirés, et un changement qui demande
+un terme que le profil ne dit pas devient une compétence « à acquérir » (`committee_changes`),
+jamais un « ajoute X ». `allowed` ne contient que l'entreprise et l'intitulé exact du poste.
 
 Journaux : identifiants, verdict et nombres seulement (17.2)."""
 
@@ -27,6 +28,7 @@ from app.agents.state.hiring_committee import HiringCommitteeState
 from app.agents.tools.committee_schema import (
     LABELS,
     PERSONAS,
+    VERDICT_WORDS,
     CommitteeContext,
     PersonaVote,
     RankedObjection,
@@ -38,7 +40,6 @@ from app.agents.tools.committee_schema import (
 
 AGENT = "moderator"
 SYNTHESIS_TIMEOUT_S = 180
-VERDICT_WORDS = {"oui": "oui", "non": "non", "peut_etre": "peut-être"}
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +61,8 @@ def votes_text(votes: list[PersonaVote]) -> str:
 
 
 def known_personas(objections: list[RankedObjection]) -> list[RankedObjection]:
-    """Les personas d'une objection sont celles du comité, dans l'ordre du comité, sans doublon."""
+    """Les personas d'une objection, dans l'ordre du comité, sans doublon (une persona inconnue est
+    déjà refusée par le schéma)."""
     return [
         RankedObjection(text=o.text, personas=[p for p in PERSONAS if p in o.personas])
         for o in objections

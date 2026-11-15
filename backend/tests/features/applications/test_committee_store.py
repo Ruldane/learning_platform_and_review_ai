@@ -7,6 +7,7 @@ import httpx
 import pytest
 from fastapi import FastAPI
 
+from app.agents.tools.committee_schema import CommitteeContext
 from app.core.errors import AppError
 from tests.features.applications.committee_support import (
     COMPANY,
@@ -27,7 +28,7 @@ from tests.features.applications.committee_support import (
 pytestmark = pytest.mark.usefixtures("client")
 
 
-async def _ctx(app: FastAPI, run_id: str):  # type: ignore[no-untyped-def]
+async def _ctx(app: FastAPI, run_id: str) -> CommitteeContext:
     return await committee_store(app).context(str(app.state.local_user_id), run_id)
 
 

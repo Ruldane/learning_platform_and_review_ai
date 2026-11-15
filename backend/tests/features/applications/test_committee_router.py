@@ -4,6 +4,7 @@ qui suit la session, isolation entre utilisatrices."""
 import httpx
 import pytest
 from fastapi import FastAPI
+from sqlalchemy import text
 
 from tests.features.applications.committee_support import (
     ROOT,
@@ -80,6 +81,20 @@ async def test_profile_required_409(client: httpx.AsyncClient, app: FastAPI) -> 
     r = await client.post(f"{ROOT}/committee", json={"cv_version_id": version})
     assert (r.status_code, r.json()["error"]["code"]) == (409, "profile_required")
     assert spy(app).started == []
+
+
+async def test_missing_posting_404(client: httpx.AsyncClient, app: FastAPI) -> None:
+    """L'offre de la version a disparu : 404 `posting_not_found`, rien n'est lancé."""
+    posting, version = await ready_committee(client, app)
+    launcher = spy(app)
+    async with app.state.session_factory() as db:
+        await db.execute(text("PRAGMA foreign_keys=OFF"))  # la version survit à son offre
+        await db.execute(text("DELETE FROM job_postings WHERE id = :id"), {"id": posting})
+        await db.commit()
+        await db.execute(text("PRAGMA foreign_keys=ON"))
+    r = await client.post(f"{ROOT}/committee", json={"cv_version_id": version})
+    assert (r.status_code, r.json()["error"]["code"]) == (404, "posting_not_found")
+    assert launcher.started == []
 
 
 async def test_422_no_echo(client: httpx.AsyncClient, app: FastAPI) -> None:

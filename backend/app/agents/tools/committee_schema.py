@@ -27,11 +27,11 @@ __all__ = [
     "Change",
     "ChangeDraft",
     "CommitteeContext",
-    "Impression",
     "Persona",
     "PersonaVote",
     "RankedObjection",
     "Size",
+    "VERDICT_WORDS",
     "Synthesis",
     "SynthesisDraft",
     "Verdict",
@@ -54,18 +54,12 @@ LABELS: dict[str, str] = {
     "colleague": "Futur collègue",
 }
 MAX_WORDS = 150  # une prise de parole (SPEC 9.3)
+VERDICT_WORDS: dict[str, str] = {"oui": "oui", "non": "non", "peut_etre": "peut-être"}
 MAX_OBJECTIONS = 6
 CHANGES = 3
 MAX_TERMS = 30
 Sentence = Annotated[str, Field(min_length=1, max_length=300), ShortenToMax()]
 ACQUIRE = "À acquérir : {terms}. Ton profil ne le dit pas : ne l'écris pas dans ton CV."
-
-
-class Impression(BaseModel):
-    """La première impression d'une persona (150 mots au plus, comptés par le code)."""
-
-    persona: Persona
-    text: Prose = Field(min_length=1, max_length=2000)
 
 
 class Vote(BaseModel):

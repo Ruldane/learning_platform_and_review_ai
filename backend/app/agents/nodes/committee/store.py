@@ -9,12 +9,12 @@ Journaux : identifiants et nombres seulement, jamais le CV, l'offre, une parole 
 import logging
 
 from app.agents.nodes.committee.common import Node
-from app.agents.nodes.committee.synthesis import AGENT, VERDICT_WORDS
+from app.agents.nodes.committee.synthesis import AGENT
 from app.agents.runtime.deps import GraphDeps
 from app.agents.runtime.emit import emit
 from app.agents.runtime.invoke import node_timeout
 from app.agents.state.hiring_committee import HiringCommitteeState
-from app.agents.tools.committee_schema import PersonaVote, Synthesis
+from app.agents.tools.committee_schema import VERDICT_WORDS, PersonaVote, Synthesis
 
 logger = logging.getLogger(__name__)
 
