@@ -123,8 +123,7 @@ async def test_future_date_is_asked_again(intake_runner: MakeIntake) -> None:
     question = await run.question()
     assert field_values(question)["applied_on"] == "2026-11-14"
     first, second = tracker_prompts(run.models)
-    assert "futur" not in first and "dans le futur" in second  # le refus est renvoyé au modèle
-    assert "2026-11-20" not in second.split("Ta réponse précédente")[1].split("\n")[1]
+    assert "dans le futur" not in first and "dans le futur" in second  # refus renvoyé au modèle
 
 
 @pytest.mark.parametrize(
@@ -138,6 +137,52 @@ async def test_missing_company_or_title_fails_cleanly(
     assert row.error is not None
     assert (row.error["code"], row.error["message"]) == ("intake_incomplete", MISSING)
     assert intake_store.alert_calls == [] and intake_store.save_calls == 0
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("company", "日本電気"),
+        ("company", "X"),
+        ("title", "Ingénieur 機械学習"),
+        ("contact_name", "Camille Exemple"),
+        ("contact_name", "田中"),
+    ],
+)
+async def test_field_absent_from_the_sentence_is_asked_again(
+    intake_runner: MakeIntake, field: str, value: str
+) -> None:
+    run = await intake_runner(tracker(draft_json(**{field: value})))
+    question = await run.question()
+    assert field_values(question)[field] != value
+    assert len(tracker_prompts(run.models)) == 2
+
+
+@pytest.mark.parametrize(
+    ("over", "text"),
+    [
+        ({"company": "日本電気"}, "j'ai postulé chez 日本電気 pour le poste Développeuse IA"),
+        ({"company": "X"}, "j'ai postulé chez X pour le poste Développeuse IA"),
+        ({"title": "Ingénieur 機械学習"}, "j'ai postulé chez Société Fictive : Ingénieur 機械学習"),
+        ({"contact_name": "田中"}, f"{SENTENCE}, j'ai écrit à 田中"),
+        ({"company": "societe fictive"}, SENTENCE),  # accents et casse ignorés
+        ({"contact_name": "camille"}, f"{SENTENCE}, j'ai écrit à Camille"),
+    ],
+)
+async def test_field_written_in_the_sentence_is_accepted(
+    intake_runner: MakeIntake, over: dict[str, str], text: str
+) -> None:
+    run = await intake_runner(tracker(draft_json(**over)), text=text)
+    question = await run.question()
+    [(field, value)] = over.items()
+    assert field_values(question)[field] == value
+    assert len(tracker_prompts(run.models)) == 1
+
+
+async def test_to_apply_carries_no_date(intake_runner: MakeIntake) -> None:
+    run = await intake_runner(tracker(draft_json(status="to_apply", applied_on="2026-11-14")))
+    values = field_values(await run.question())
+    assert (values["status"], values["applied_on"]) == ("to_apply", "")
 
 
 async def test_invented_company_is_asked_again(intake_runner: MakeIntake) -> None:

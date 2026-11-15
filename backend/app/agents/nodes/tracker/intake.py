@@ -83,11 +83,24 @@ def calendar_lines(today: date) -> list[str]:
     return lines
 
 
+def _plain(text: str) -> str:
+    """Le texte sans accents ni casse (NFKD, combinants retirés, `casefold`), blancs réduits."""
+    decomposed = unicodedata.normalize("NFKD", text)
+    bare = "".join(char for char in decomposed if not unicodedata.combining(char))
+    return " ".join(bare.casefold().split())
+
+
 def _words(text: str) -> set[str]:
-    """Les mots d'un texte sans accents ni casse (« L'Oréal » : `oreal`) ; un mot d'une lettre
-    ne compte pas."""
-    plain = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode().casefold()
-    return {word for word in re.findall(r"[a-z0-9]+", plain) if len(word) > 1}
+    """Les mots d'un texte (lettres de tout alphabet, chiffres), sans accents ni casse :
+    « L'Oréal » donne `l` et `oreal` ; un mot d'une lettre compte."""
+    return set(re.findall(r"\w+", _plain(text)))
+
+
+def _written(value: str, sentence: str) -> bool:
+    """Le champ est fait de mots de la phrase ; sans aucun mot (ponctuation seule), il doit y
+    figurer tel quel."""
+    words = _words(value)
+    return words <= _words(sentence) if words else _plain(value) in _plain(sentence)
 
 
 class IntakeReading(IntakeDraft):
@@ -101,7 +114,6 @@ class IntakeReading(IntakeDraft):
 def reading_schema(today: date, text: str) -> type[IntakeReading]:
     """`IntakeReading` vérifié contre le jour de January et la phrase : une réponse refusée est
     renvoyée au modèle avec le motif (sans valeur recopiée) par `structured_call`."""
-    sentence = _words(text)
 
     class Reading(IntakeReading):
         @field_validator("applied_on")
@@ -114,10 +126,10 @@ def reading_schema(today: date, text: str) -> type[IntakeReading]:
                 )
             return value
 
-        @field_validator("company", "title")
+        @field_validator("company", "title", "contact_name")
         @classmethod
-        def _written(cls, value: str) -> str:
-            if value and not _words(value) <= sentence:
+        def _from_the_sentence(cls, value: str | None) -> str | None:
+            if value and not _written(value, text):
                 raise ValueError(
                     "ce champ doit être recopié de la phrase de January, sans rien inventer : "
                     "laisse-le vide si la phrase ne le dit pas"

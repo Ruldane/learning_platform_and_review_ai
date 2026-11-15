@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Any, Literal, Protocol
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.core.errors import AppError
 from app.db.models.applications import ApplicationStatus, Channel
@@ -45,6 +45,13 @@ class IntakeDraft(BaseModel):
     contact_name: str | None = Field(default=None, max_length=CONTACT_MAX)
     contact_role: str | None = Field(default=None, max_length=CONTACT_MAX)
     notes: str | None = Field(default=None, max_length=NOTES_MAX)
+
+    @model_validator(mode="after")
+    def _planned_has_no_date(self) -> "IntakeDraft":
+        """Une candidature « à postuler » n'a pas encore de jour d'envoi."""
+        if self.status == "to_apply":
+            self.applied_on = None
+        return self
 
     @field_validator(
         "applied_on", "channel", "contact_name", "contact_role", "notes", mode="before"

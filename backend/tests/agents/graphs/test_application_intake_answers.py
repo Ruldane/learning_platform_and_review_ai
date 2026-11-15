@@ -142,7 +142,6 @@ async def test_save_is_idempotent(
 async def test_store_refusal_fails_with_its_message(
     intake_runner: MakeIntake, intake_store: FakeApplicationStore
 ) -> None:
-
     intake_store.refuse_with = AppError(
         "application_duplicate", "Cette offre ressemble à une candidature existante.", 409
     )
@@ -174,3 +173,14 @@ async def test_intake_text_never_logged(
     await second.wait_status("completed")
     for secret in (*secrets, "Note ultra secrète", text):
         assert secret not in caplog.text
+
+
+async def test_edited_to_apply_drops_the_date(
+    intake_runner: MakeIntake, intake_store: FakeApplicationStore
+) -> None:
+    run = await intake_runner()
+    values = field_values(await run.question()) | {"status": "to_apply"}
+    await run.answer({"choice": "create", "fields": values})
+    await run.wait_status("completed")
+    [draft] = intake_store.drafts
+    assert (draft.status, draft.applied_on) == ("to_apply", None)
