@@ -30,6 +30,7 @@ from app.features.applications.schemas import AlertOut, ApplicationIn, CreatedOu
 from app.features.applications.service.adopt import follows_version, freeze_version
 from app.features.applications.service.check import incoming_from_posting
 from app.features.applications.service.matching import Incoming, match
+from app.features.applications.service.reminder_sync import sync_user
 from app.features.applications.service.rules import ApplicationView, on_status
 from app.features.applications.service.runtime import ApplicationsRuntime
 from app.features.applications.service.views import alerts_out, detail_out, invalid, view_of
@@ -213,6 +214,7 @@ async def create_application(
             raise application_duplicate(await alerts_out(db, user_id, blocking, zone, today))
         row = await _insert(db, user_id, body, source, (today, now))
         confirm_distinct(rows, row, list(dict.fromkeys(body.distinct_from)))
+        await sync_user(db, user_id, today, application_id=row.id)
         await db.commit()
         info = [hit for hit in hits if hit.level == "info"]
         logger.info("Fiche créée : utilisateur %s, fiche %s", user_id, row.id)

@@ -215,7 +215,11 @@ async def _open_agents(app: FastAPI, stack: AsyncExitStack) -> None:
     # `scheduler_enabled` à `false` (tests d'application) : pas de planificateur du tout.
     if app.state.settings.scheduler_enabled:
         context = scheduler_context(
-            app.state.session_factory, app.state.launcher, app.state.lessons, app.state.replan
+            app.state.session_factory,
+            app.state.launcher,
+            app.state.lessons,
+            app.state.replan,
+            app.state.career.applications,
         )
         await stack.enter_async_context(open_scheduler(JOBS, context))
 

@@ -14,6 +14,7 @@ from app.db.models.applications import Application
 from app.features.applications.repository import EventRepository
 from app.features.applications.schemas import ApplicationDetail, EventIn
 from app.features.applications.service.adopt import freeze_version
+from app.features.applications.service.reminder_sync import sync_user
 from app.features.applications.service.rules import on_status
 from app.features.applications.service.runtime import ApplicationsRuntime
 from app.features.applications.service.views import detail_out, get_application, invalid, view_of
@@ -90,5 +91,6 @@ async def add_event(
                 application_id=row.id, kind="note", at=at, text=body.text
             )
         row.updated_at = now
+        await sync_user(db, user_id, today, application_id=row.id)
         await db.commit()
         return await detail_out(db, user_id, row, today)

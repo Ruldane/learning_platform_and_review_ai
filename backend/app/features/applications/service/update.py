@@ -11,6 +11,7 @@ from app.db.models.applications import Application
 from app.features.applications.repository import ContactRepository
 from app.features.applications.schemas import ApplicationDetail, ApplicationPatch
 from app.features.applications.service.create import link_key
+from app.features.applications.service.reminder_sync import sync_user
 from app.features.applications.service.views import detail_out, get_application, invalid
 from app.features.postings.service.rules import company_key
 
@@ -64,4 +65,5 @@ async def update_application(
             )
     row.updated_at = utcnow()
     await db.flush()
+    await sync_user(db, user_id, today, application_id=row.id)
     return await detail_out(db, user_id, row, today)

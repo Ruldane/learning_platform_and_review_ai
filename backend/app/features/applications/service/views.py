@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
-from app.db.models.applications import Application, ApplicationEvent, Contact, Reminder
+from app.db.models.applications import Application, ApplicationEvent, Contact
 from app.features.applications.repository import (
     ApplicationRepository,
     ContactRepository,
@@ -21,9 +21,9 @@ from app.features.applications.schemas import (
     ApplicationOut,
     ContactOut,
     EventOut,
-    ReminderOut,
 )
 from app.features.applications.service.matching import Hit, alert_message
+from app.features.applications.service.reminders_out import reminder_outs
 from app.features.applications.service.rules import ApplicationView
 from app.features.cv.service.versions import version_numbers
 
@@ -158,18 +158,6 @@ def _event_out(row: ApplicationEvent) -> EventOut:
     )
 
 
-def _reminder_out(row: Reminder) -> ReminderOut:
-    return ReminderOut.model_validate(
-        {
-            "id": row.id,
-            "application_id": row.application_id,
-            "kind": row.kind,
-            "due_on": row.due_on,
-            "status": row.status,
-        }
-    )
-
-
 async def detail_out(
     db: AsyncSession, user_id: str, row: Application, today: date
 ) -> ApplicationDetail:
@@ -185,7 +173,7 @@ async def detail_out(
         notes=row.notes,
         contacts=[_contact_out(c) for c in contacts],
         events=[_event_out(e) for e in events],
-        reminders=[_reminder_out(r) for r in reminders],
+        reminders=await reminder_outs(db, user_id, reminders),
     )
 
 

@@ -122,14 +122,32 @@ class EventOut(BaseModel):
     ref_id: str | None
 
 
+ReminderChannel = Literal["linkedin", "email", "none"]
+ReminderActionName = Literal["done", "postpone", "ignore"]
+
+
 class ReminderOut(BaseModel):
-    """Une relance de la fiche (7.3 y ajoute le brouillon et le contact)."""
+    """Une relance : qui contacter, un brouillon prêt à copier (gabarit fixe, aucun LLM), le canal.
+    Sans contact : `linkedin_search_url`, la recherche LinkedIn pré remplie (entreprise et poste
+    visé). `close_21` : `channel` « none », `draft` est la proposition de classer la fiche."""
 
     id: str
     application_id: str
     kind: ReminderKind
     due_on: date
     status: ReminderState
+    company: str
+    title: str
+    contact: ContactOut | None
+    linkedin_search_url: str | None
+    channel: ReminderChannel
+    draft: str
+
+
+class ReminderPatch(BaseModel):
+    """Fait, Reporter de 3 jours ou Ignorer ; toute autre valeur est une 422 sans écho."""
+
+    action: ReminderActionName
 
 
 class AlertOut(BaseModel):

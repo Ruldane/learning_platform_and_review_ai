@@ -60,7 +60,8 @@ async def _store_posting(
     title: str | None,
     **over: Any,
 ) -> str:
-    analysis = {"title": title, "company": company, "language": "fr"} if company else None
+    language = over.pop("language", "fr")
+    analysis = {"title": title, "company": company, "language": language} if company else None
     async with app.state.session_factory() as db:
         row = JobPosting(
             user_id=user_id,

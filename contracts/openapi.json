@@ -7471,10 +7471,37 @@
         "type": "object"
       },
       "ReminderOut": {
-        "description": "Une relance de la fiche (7.3 y ajoute le brouillon et le contact).",
+        "description": "Une relance : qui contacter, un brouillon prêt à copier (gabarit fixe, aucun LLM), le canal.\nSans contact : `linkedin_search_url`, la recherche LinkedIn pré remplie (entreprise et poste\nvisé). `close_21` : `channel` « none », `draft` est la proposition de classer la fiche.",
         "properties": {
           "application_id": {
             "title": "Application Id",
+            "type": "string"
+          },
+          "channel": {
+            "enum": [
+              "linkedin",
+              "email",
+              "none"
+            ],
+            "title": "Channel",
+            "type": "string"
+          },
+          "company": {
+            "title": "Company",
+            "type": "string"
+          },
+          "contact": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ContactOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "draft": {
+            "title": "Draft",
             "type": "string"
           },
           "due_on": {
@@ -7497,6 +7524,17 @@
             "title": "Kind",
             "type": "string"
           },
+          "linkedin_search_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linkedin Search Url"
+          },
           "status": {
             "enum": [
               "pending",
@@ -7505,6 +7543,10 @@
             ],
             "title": "Status",
             "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
           }
         },
         "required": [
@@ -7512,9 +7554,34 @@
           "application_id",
           "kind",
           "due_on",
-          "status"
+          "status",
+          "company",
+          "title",
+          "contact",
+          "linkedin_search_url",
+          "channel",
+          "draft"
         ],
         "title": "ReminderOut",
+        "type": "object"
+      },
+      "ReminderPatch": {
+        "description": "Fait, Reporter de 3 jours ou Ignorer ; toute autre valeur est une 422 sans écho.",
+        "properties": {
+          "action": {
+            "enum": [
+              "done",
+              "postpone",
+              "ignore"
+            ],
+            "title": "Action",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "ReminderPatch",
         "type": "object"
       },
       "ReplanRequest": {
@@ -14520,6 +14587,115 @@
         "summary": "Get Attempt",
         "tags": [
           "quiz"
+        ]
+      }
+    },
+    "/api/v1/reminders": {
+      "get": {
+        "description": "Les relances, échéance croissante, après synchronisation avec les fiches : `due=true`\n(défaut) : en attente et dues aujourd'hui ; `due=false` : toutes (à venir, faites, ignorées).",
+        "operationId": "get_reminders_api_v1_reminders_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "due",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Due",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ReminderOut"
+                  },
+                  "title": "Response Get Reminders Api V1 Reminders Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Reminders",
+        "tags": [
+          "applications"
+        ]
+      }
+    },
+    "/api/v1/reminders/{reminder_id}": {
+      "patch": {
+        "description": "`done` (la relance faite ; « Relancée » ou « Sans réponse » selon le type), `postpone`\n(+3 jours, reste en attente), `ignore`.",
+        "operationId": "patch_reminder_api_v1_reminders__reminder_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reminder_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Reminder Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReminderPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReminderOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`reminder_not_found`"
+          },
+          "409": {
+            "description": "`reminder_closed` : la relance est déjà faite ou ignorée"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Patch Reminder",
+        "tags": [
+          "applications"
         ]
       }
     },

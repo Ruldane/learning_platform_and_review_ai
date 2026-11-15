@@ -161,3 +161,28 @@ async def test_version_frozen_when_leaving_to_apply_for_any_status_but_withdrawn
     await add_version(app, gone)
     kept = await created_id(client, posting_id=gone, status="withdrawn")
     assert (await client.get(f"{API}/{kept}")).json()["cv_version_id"] is None
+
+
+async def test_version_not_refrozen_after_back_to_to_apply(
+    client: httpx.AsyncClient, app: FastAPI
+) -> None:
+    """Postulée (V1), retour à « À postuler », V2 prête, « Postulée » de nouveau : V1 reste
+    la version envoyée ; la fiche ne suit plus les nouvelles versions."""
+    posting = await add_posting(app)
+    first = await add_version(app, posting)
+    application_id = await created_id(client, posting_id=posting)
+    await _event(client, application_id, kind="status", status="applied")
+    await _event(client, application_id, kind="status", status="to_apply")
+    await add_version(app, posting, number=2)
+    assert (await client.get(API)).json()[0]["cv_version_id"] == first  # ne suit plus
+    detail = (await _event(client, application_id, kind="status", status="applied")).json()
+    assert detail["cv_version_id"] == first
+    assert [e["ref_id"] for e in detail["events"] if e["kind"] == "version"] == [first]
+    # sortie vers « Entretien » sans version prête : rien n'est figé, la fiche suit encore
+    other = await add_posting(app, company="Autre SA", title="Poste")
+    ref = await created_id(client, posting_id=other)
+    await _event(client, ref, kind="status", status="interview")
+    await _event(client, ref, kind="status", status="to_apply")
+    later = await add_version(app, other)
+    detail = (await _event(client, ref, kind="status", status="applied")).json()
+    assert detail["cv_version_id"] == later

@@ -17,6 +17,7 @@ from app.agents.tools.memory_port import MemoryGateway
 from app.agents.tools.profile_port import NO_PROFILE, ProfileStore
 from app.agents.tools.web_port import WebGateway
 from app.core.providers import MemoryProviders, PublishingProviders
+from app.features.applications.service.runtime import ApplicationsRuntime
 from app.features.capture.service.runtime import CaptureRuntime
 from app.features.capture.service.store import AgentCaptureStore
 from app.features.learning.service.runtime import LearningRuntime
@@ -143,7 +144,8 @@ def scheduler_context(
     launcher: SessionLauncher,
     lessons: LessonsRuntime,
     replan: ReplanRuntime,
+    applications: ApplicationsRuntime,
 ) -> JobContext:
     """Ce que reçoivent les tâches planifiées (D91) : base, lanceur, production des leçons,
-    replanification (bilan hebdomadaire, D106)."""
-    return JobContext(session_factory, launcher, lessons, replan)
+    replanification (bilan hebdomadaire, D106), candidatures (relances, D140)."""
+    return JobContext(session_factory, launcher, lessons, replan, applications)

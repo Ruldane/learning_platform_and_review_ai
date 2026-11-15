@@ -1,7 +1,9 @@
 """Lien version de CV ↔ candidature (SPEC 6.1 n° 1, D139). Une offre qui a une version de CV
-prête et aucune fiche reçoit sa fiche « À postuler » ; tant que la fiche n'a pas été postulée,
-`cv_version_id` suit la version prête la plus récente ; passée à « Postulée », elle fige la
-version envoyée (une nouvelle version ne la remplace plus). Idempotent : une offre qui a déjà une
+prête et aucune fiche reçoit sa fiche « À postuler » ; tant que la fiche n'a pas quitté
+« À postuler », `cv_version_id` suit la version prête la plus récente ; à la première sortie de
+« À postuler » vers tout statut sauf « Retirée », elle fige la version envoyée (événement
+`version`) : une nouvelle version ne la remplace plus, même si la fiche revient à « À postuler »
+puis repasse à « Postulée ». Idempotent : une offre qui a déjà une
 fiche, quel que soit son statut (« Retirée » comprise), n'en reçoit pas une seconde. Le CV
 (`cv`) n'importe jamais ce module : c'est la candidature qui lit les versions."""
 
@@ -31,8 +33,9 @@ def follows_version(row: Application) -> bool:
 
 async def freeze_version(db: AsyncSession, user_id: str, row: Application, at: datetime) -> None:
     """À la première sortie de « À postuler » (voir `events`) : la fiche garde la version prête la
-    plus récente de son offre (événement `version`) ; sans version prête, celle qu'elle suivait."""
-    if row.posting_id is None:
+    plus récente de son offre (événement `version`) ; sans version prête, celle qu'elle suivait.
+    Une version déjà figée (événement `version`) n'est jamais remplacée."""
+    if row.posting_id is None or row.id in await EventRepository(db, user_id).version_frozen():
         return
     ready = (await ready_versions_by_posting(db, user_id)).get(row.posting_id)
     if ready is None:
@@ -57,8 +60,13 @@ async def adopt_versions(db: AsyncSession, user_id: str) -> int:
     repo = ApplicationRepository(db, user_id)
     existing = await repo.by_postings(ready.keys())
     missing = [posting_id for posting_id in ready if posting_id not in existing]
+    frozen = await EventRepository(db, user_id).version_frozen()
     for posting_id, row in existing.items():
-        if follows_version(row) and row.cv_version_id != ready[posting_id][0]:
+        if (
+            follows_version(row)
+            and row.id not in frozen
+            and row.cv_version_id != ready[posting_id][0]
+        ):
             row.cv_version_id = ready[posting_id][0]
     postings = await postings_by_ids(db, user_id, missing)
     created = 0

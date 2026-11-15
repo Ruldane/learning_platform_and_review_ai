@@ -54,33 +54,22 @@ async def test_stats_route(client: httpx.AsyncClient) -> None:
     assert stats["by_status"]["applied"] == 1 and stats["by_status"]["interview"] == 1
     assert stats["by_status"]["to_apply"] == 1
     assert stats["response_rate"] == 0.5 and stats["mean_response_days"] == 6.0
-    assert stats["due_reminders"] == 0
+    # A (entretien le 9) : remerciement dû le 10 ; B (postulée le 5) : relance de 7 jours due le 12
+    assert stats["due_reminders"] == 2
 
 
-async def test_due_reminders_are_counted(client: httpx.AsyncClient, app) -> None:  # type: ignore[no-untyped-def]
-    from datetime import date
-
-    from app.db.models.applications import Reminder
-
+async def test_due_reminders_are_counted(client: httpx.AsyncClient) -> None:
     application_id = await created_id(
-        client, company="Société Fictive", title="A", status="applied"
+        client, company="Société Fictive", title="A", status="applied", applied_on="2026-11-08"
     )
-    async with app.state.session_factory() as db:
-        for kind, due in (("linkedin_7", date(2026, 11, 15)), ("email_14", date(2026, 11, 29))):
-            db.add(
-                Reminder(
-                    user_id=app.state.local_user_id, application_id=application_id, kind=kind,
-                    anchor_on=date(2026, 11, 8), due_on=due,
-                )
-            )  # fmt: skip
-        await db.commit()
     assert (await client.get(f"{API}/stats")).json()["due_reminders"] == 1
     [fiche] = (await client.get(API)).json()
     assert fiche["due_reminders"] == 1
     detail = (await client.get(f"{API}/{application_id}")).json()
-    assert [(r["kind"], r["status"]) for r in detail["reminders"]] == [
-        ("linkedin_7", "pending"),
-        ("email_14", "pending"),
+    assert [(r["kind"], r["status"], r["due_on"]) for r in detail["reminders"]] == [
+        ("linkedin_7", "pending", "2026-11-15"),
+        ("email_14", "pending", "2026-11-22"),
+        ("close_21", "pending", "2026-11-29"),
     ]
 
 

@@ -16,6 +16,7 @@ from app.core.errors import AppError
 from app.core.providers import MemoryProviders, PublishingProviders
 from app.core.security import Cipher
 from app.db.models.agents import AgentSession
+from app.features.applications.service.runtime import ApplicationsRuntime
 from app.features.lessons.service.runtime import LessonsRuntime
 from app.features.lessons.service.store import AgentLessonStore
 from app.features.memory.service.runtime import memory_runtime
@@ -141,7 +142,14 @@ def replan_rt(lessons_rt: LessonsRuntime, program_rt: ProgramRuntime) -> ReplanR
 
 @pytest.fixture
 def job_ctx(lessons_rt: LessonsRuntime, replan_rt: ReplanRuntime) -> JobContext:
-    return JobContext(lessons_rt.session_factory, lessons_rt.launcher, lessons_rt, replan_rt)  # type: ignore[arg-type]
+    applications = ApplicationsRuntime(lessons_rt.session_factory, lessons_rt.launcher)
+    return JobContext(
+        lessons_rt.session_factory,
+        lessons_rt.launcher,
+        lessons_rt,
+        replan_rt,
+        applications,  # type: ignore[arg-type]
+    )
 
 
 @dataclass(frozen=True)

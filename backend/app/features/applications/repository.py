@@ -6,8 +6,16 @@ from collections.abc import Collection
 from datetime import date
 
 from sqlalchemy import delete, func, literal_column, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models.applications import Application, ApplicationEvent, Contact, Reminder
+from app.db.models.accounts import User
+from app.db.models.applications import (
+    Application,
+    ApplicationEvent,
+    Contact,
+    KitItem,
+    Reminder,
+)
 from app.db.repository import UserScopedRepository
 
 
@@ -106,6 +114,13 @@ class EventRepository(UserScopedRepository[ApplicationEvent]):
         )
         return builtins.list((await self.session.execute(stmt)).scalars().all())
 
+    async def version_frozen(self) -> set[str]:
+        """Les fiches dont la version de CV est figée (elles ont un événement `version`)."""
+        stmt = select(ApplicationEvent.application_id).where(
+            ApplicationEvent.user_id == self.user_id, ApplicationEvent.kind == "version"
+        )
+        return set((await self.session.execute(stmt)).scalars())
+
 
 class ContactRepository(UserScopedRepository[Contact]):
     model = Contact
@@ -125,3 +140,76 @@ class ContactRepository(UserScopedRepository[Contact]):
                 Contact.user_id == self.user_id, Contact.application_id == application_id
             )
         )
+
+    async def of_applications(
+        self, application_ids: Collection[str]
+    ) -> dict[str, builtins.list[Contact]]:
+        """`fiche → contacts` (dans l'ordre où January les a donnés) des fiches données."""
+        if not application_ids:
+            return {}
+        stmt = (
+            select(Contact)
+            .where(
+                Contact.user_id == self.user_id,
+                Contact.application_id.in_(builtins.list(application_ids)),
+            )
+            .order_by(literal_column("rowid"))
+        )
+        found: dict[str, builtins.list[Contact]] = {}
+        for row in (await self.session.execute(stmt)).scalars():
+            found.setdefault(row.application_id, []).append(row)
+        return found
+
+
+class ReminderRepository(UserScopedRepository[Reminder]):
+    model = Reminder
+
+    async def listing(self, *, due_on: date | None) -> builtins.list[Reminder]:
+        """Les relances, échéance croissante : en attente et dues au plus `due_on`, ou toutes
+        (`due_on` vide)."""
+        stmt = select(Reminder).where(Reminder.user_id == self.user_id)
+        if due_on is not None:
+            stmt = stmt.where(Reminder.status == "pending", Reminder.due_on <= due_on)
+        stmt = stmt.order_by(Reminder.due_on, literal_column("rowid"))
+        return builtins.list((await self.session.execute(stmt)).scalars().all())
+
+    async def of_applications(
+        self, application_ids: Collection[str] | None = None
+    ) -> builtins.list[Reminder]:
+        """Les relances de toutes les fiches, ou des fiches données."""
+        stmt = select(Reminder).where(Reminder.user_id == self.user_id)
+        if application_ids is not None:
+            stmt = stmt.where(Reminder.application_id.in_(builtins.list(application_ids)))
+        return builtins.list((await self.session.execute(stmt)).scalars().all())
+
+    async def get_fresh(self, reminder_id: str) -> Reminder | None:
+        stmt = (
+            select(Reminder)
+            .where(Reminder.id == reminder_id, Reminder.user_id == self.user_id)
+            .execution_options(populate_existing=True)
+        )
+        return (await self.session.execute(stmt)).scalar_one_or_none()
+
+
+class KitRepository(UserScopedRepository[KitItem]):
+    model = KitItem
+
+    async def ready_followups(self, application_ids: Collection[str]) -> dict[str, str]:
+        """`fiche → texte` de la pièce « relances » prête (jamais « à vérifier » ni en échec)."""
+        if not application_ids:
+            return {}
+        stmt = select(KitItem.application_id, KitItem.content).where(
+            KitItem.user_id == self.user_id,
+            KitItem.kind == "followups",
+            KitItem.status == "ready",
+            KitItem.application_id.in_(builtins.list(application_ids)),
+        )
+        return {app_id: content for app_id, content in (await self.session.execute(stmt)).all()}
+
+
+async def user_ids(session: AsyncSession) -> builtins.list[str]:
+    """Les identifiants de TOUS les comptes : SEULE lecture sans `user_id` des candidatures
+    (comme D18, D75 et D91), réservée à la tâche planifiée des relances, qui travaille ensuite
+    compte par compte (toutes les lectures suivantes filtrent par `user_id`)."""
+    stmt = select(User.id).order_by(User.created_at, literal_column("rowid"))
+    return builtins.list((await session.execute(stmt)).scalars().all())

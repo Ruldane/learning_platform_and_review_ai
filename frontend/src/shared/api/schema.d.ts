@@ -1307,6 +1307,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reminders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Reminders
+         * @description Les relances, échéance croissante, après synchronisation avec les fiches : `due=true`
+         *     (défaut) : en attente et dues aujourd'hui ; `due=false` : toutes (à venir, faites, ignorées).
+         */
+        get: operations["get_reminders_api_v1_reminders_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reminders/{reminder_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Reminder
+         * @description `done` (la relance faite ; « Relancée » ou « Sans réponse » selon le type), `postpone`
+         *     (+3 jours, reste en attente), `ignore`.
+         */
+        patch: operations["patch_reminder_api_v1_reminders__reminder_id__patch"];
+        trace?: never;
+    };
     "/api/v1/research/sources": {
         parameters: {
             query?: never;
@@ -4387,11 +4429,23 @@ export interface components {
         };
         /**
          * ReminderOut
-         * @description Une relance de la fiche (7.3 y ajoute le brouillon et le contact).
+         * @description Une relance : qui contacter, un brouillon prêt à copier (gabarit fixe, aucun LLM), le canal.
+         *     Sans contact : `linkedin_search_url`, la recherche LinkedIn pré remplie (entreprise et poste
+         *     visé). `close_21` : `channel` « none », `draft` est la proposition de classer la fiche.
          */
         ReminderOut: {
             /** Application Id */
             application_id: string;
+            /**
+             * Channel
+             * @enum {string}
+             */
+            channel: "linkedin" | "email" | "none";
+            /** Company */
+            company: string;
+            contact: components["schemas"]["ContactOut"] | null;
+            /** Draft */
+            draft: string;
             /**
              * Due On
              * Format: date
@@ -4404,11 +4458,26 @@ export interface components {
              * @enum {string}
              */
             kind: "linkedin_7" | "email_14" | "close_21" | "thanks" | "news_7";
+            /** Linkedin Search Url */
+            linkedin_search_url: string | null;
             /**
              * Status
              * @enum {string}
              */
             status: "pending" | "done" | "ignored";
+            /** Title */
+            title: string;
+        };
+        /**
+         * ReminderPatch
+         * @description Fait, Reporter de 3 jours ou Ignorer ; toute autre valeur est une 422 sans écho.
+         */
+        ReminderPatch: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "done" | "postpone" | "ignore";
         };
         /** ReplanRequest */
         ReplanRequest: {
@@ -8305,6 +8374,86 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AttemptOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_reminders_api_v1_reminders_get: {
+        parameters: {
+            query?: {
+                due?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReminderOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_reminder_api_v1_reminders__reminder_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reminder_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReminderPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReminderOut"];
+                };
+            };
+            /** @description `reminder_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `reminder_closed` : la relance est déjà faite ou ignorée */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
