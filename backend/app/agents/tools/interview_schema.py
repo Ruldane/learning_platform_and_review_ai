@@ -97,6 +97,7 @@ class Exchange(BaseModel):
     follow_up: str | None = None
     follow_up_answer: str | None = None
     note: int = Field(ge=1, le=5)
+    unrated: bool = False  # le modèle n'a pas répondu : la note est neutre, posée par le code
 
 
 class ExpectedPoints(BaseModel):
@@ -114,6 +115,7 @@ class Debrief(BaseModel):
     improved_answer: Prose = Field(min_length=1, max_length=1500)
     missed: list[int] = Field(default_factory=list)  # fixé par le code : notes ≤ 2
     expected: list[ExpectedPoints] = Field(default_factory=list)  # une par question ratée
+    unrated: list[int] = Field(default_factory=list)  # fixé par le code : réponses non notées
 
     @field_validator("scores")
     @classmethod

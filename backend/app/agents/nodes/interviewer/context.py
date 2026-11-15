@@ -72,17 +72,22 @@ def profile_block(ctx: InterviewContext) -> str:
     return untrusted(profile_text(ctx.profile), "profil de January")
 
 
-def exchange_text(exchange: Exchange, *, with_note: bool = True) -> str:
-    """Un échange tel que le modèle le lit : l'index (à partir de 0), la question, les réponses."""
+def exchange_text(
+    exchange: Exchange, *, with_note: bool = True, pending_follow_up: bool = False
+) -> str:
+    """Un échange tel que le modèle le lit : l'index (à partir de 0), la question, les réponses.
+    `pending_follow_up` : la réponse à la relance est celle qu'on donne à lire, pas encore ici."""
     lines = [
         f"[index {exchange.index}] Question ({exchange.criterion}) : {exchange.question}",
         f"Réponse de January : {exchange.answer}",
     ]
     if exchange.follow_up:
         lines.append(f"Relance : {exchange.follow_up}")
+    if exchange.follow_up and not pending_follow_up:
         lines.append(f"Réponse à la relance : {exchange.follow_up_answer or '(pas de réponse)'}")
     if with_note:
-        lines.append(f"Note interne : {exchange.note}/5")
+        note = "non notée (le modèle n'a pas répondu)" if exchange.unrated else f"{exchange.note}/5"
+        lines.append(f"Note interne : {note}")
     return "\n".join(lines)
 
 

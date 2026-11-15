@@ -8,10 +8,11 @@ question en attente reste la même au redémarrage. Journaux : identifiants et n
 jamais une question, une réponse, l'entreprise ni le poste (17.2)."""
 
 import logging
-from typing import Any, Protocol
+from typing import Any
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
+from app.agents.nodes.interviewer.common import AGENT, Node, context_of, say_question
 from app.agents.nodes.interviewer.context import (
     MODE_GUIDES,
     cv_block,
@@ -24,7 +25,6 @@ from app.agents.nodes.interviewer.context import (
 from app.agents.prompts.loader import render_prompt
 from app.agents.registry import get_agent
 from app.agents.runtime.deps import GraphDeps
-from app.agents.runtime.emit import emit
 from app.agents.runtime.invoke import node_timeout
 from app.agents.runtime.structured import structured_call
 from app.agents.state.interview import InterviewState
@@ -34,29 +34,10 @@ from app.agents.tools.interview_schema import (
     plan_schema,
 )
 
-AGENT = "interviewer"
 PLAN_REQUEST = "Prépare les questions de l'entretien."
 PLAN_TIMEOUT_S = 300  # trois demandes au plus, chacune avec ses nouveaux essais (GLM)
 
 logger = logging.getLogger(__name__)
-
-
-class Node(Protocol):
-    async def __call__(self, state: InterviewState) -> InterviewState: ...
-
-
-def context_of(state: InterviewState) -> InterviewContext:
-    return InterviewContext.model_validate(state["context"])
-
-
-def say_question(number: int, text: str, *, follow_up: bool = False) -> None:
-    """La question (ou la relance) dans le fil ; même identifiant si le nœud est rejoué."""
-    suffix = "-relance" if follow_up else ""
-    emit(
-        "agent.message",
-        {"message_id": f"{AGENT}-q{number}{suffix}", "text": text},
-        agent=AGENT,
-    )
 
 
 def make_load(deps: GraphDeps) -> Node:

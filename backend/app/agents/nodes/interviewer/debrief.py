@@ -10,14 +10,20 @@ montrée « à vérifier ». Arrêté avant toute réponse : aucun appel, aucun 
 
 `save` range l'issue par le port, idempotent par session (SPEC 9.4) : le seul nœud qui écrit. Une
 fiche de révision par question ratée : recto la question, verso les points d'une bonne réponse.
+Le débrief ne fait jamais perdre les réponses : s'il échoue (réponse illisible après les nouveaux
+essais, panne passagère, lenteur : `RECOVERABLE_CODES`, ou `DEBRIEF_CALL_TIMEOUT_S`), `save`
+range quand même les échanges avec `debrief=None`, sans fiche, et le dit à January ; entretien
+`debrief_failed` côté port (échanges non vides, pas de débrief), distinct de `stopped` (échanges
+vides). Le plafond de tokens (`token_cap_reached`) et les autres erreurs arrêtent la session.
 Journaux : identifiants et nombres seulement (17.2)."""
 
+import asyncio
 import logging
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
+from app.agents.nodes.interviewer.common import AGENT, RECOVERABLE_CODES, Node, context_of
 from app.agents.nodes.interviewer.context import exchanges_block, head_vars, profile_block
-from app.agents.nodes.interviewer.plan import AGENT, Node, context_of
 from app.agents.prompts.loader import render_prompt
 from app.agents.registry import get_agent
 from app.agents.runtime.deps import GraphDeps
@@ -29,24 +35,32 @@ from app.agents.state.interview import InterviewState
 from app.agents.tools.interview_schema import (
     Debrief,
     Exchange,
+    ExpectedPoints,
     InterviewContext,
     debrief_schema,
 )
 from app.agents.tools.study_schema import CardDraft
 from app.agents.tools.text_claims import text_claims
+from app.core.errors import AppError
 
 DEBRIEF_REQUEST = "Écris le débrief de l'entretien."
-DEBRIEF_TIMEOUT_S = 300  # trois demandes au plus, chacune avec ses nouveaux essais (GLM)
+DEBRIEF_TIMEOUT_S = 300  # plafond du nœud (`node_timeout`)
+DEBRIEF_CALL_TIMEOUT_S = 270.0  # plus court : le repli (rien à écrire) a de la marge
 MISSED_MAX_NOTE = 2
 FRONT_MAX = 300
 NOTHING_TO_GRADE = "L'entretien s'arrête ici : sans réponse, il n'y a rien à noter."
+DEBRIEF_FAILED = (
+    "Je n'ai pas pu écrire le débrief : tes réponses sont gardées, mais l'entretien reste sans "
+    "notes ni fiches."
+)
 
 logger = logging.getLogger(__name__)
 
 
 def weakest_index(exchanges: list[Exchange]) -> int:
-    """La question de la note interne la plus basse, la plus ancienne en cas d'égalité."""
-    return min(exchanges, key=lambda e: (e.note, e.index)).index
+    """La question de la note interne la plus basse (une réponse non notée passe après), la plus
+    ancienne en cas d'égalité."""
+    return min(exchanges, key=lambda e: (e.unrated, e.note, e.index)).index
 
 
 def missed_indices(exchanges: list[Exchange]) -> list[int]:
@@ -96,6 +110,15 @@ def debrief_vars(
     }
 
 
+def _once_each(items: list[ExpectedPoints], missed: list[int]) -> list[ExpectedPoints]:
+    """Les points des seules questions ratées, une fois chacune (la première l'emporte)."""
+    first: dict[int, ExpectedPoints] = {}
+    for item in items:
+        if item.index in missed:
+            first.setdefault(item.index, item)
+    return [first[index] for index in missed if index in first]
+
+
 async def _written(deps: GraphDeps, ctx: InterviewContext, exchanges: list[Exchange]) -> Debrief:
     weakest, missed = weakest_index(exchanges), missed_indices(exchanges)
     prompt = render_prompt(AGENT, **debrief_vars(ctx, exchanges, weakest, missed))
@@ -108,9 +131,34 @@ async def _written(deps: GraphDeps, ctx: InterviewContext, exchanges: list[Excha
         step="debrief",
         intent="j'écris ton débrief",
     )
-    kept = [item for item in found.expected if item.index in missed]
-    update = {"weakest_index": weakest, "missed": missed, "expected": kept}
+    update = {
+        "weakest_index": weakest,
+        "missed": missed,
+        "expected": _once_each(found.expected, missed),
+        "unrated": [e.index for e in exchanges if e.unrated],
+    }
     return Debrief.model_validate(found.model_copy(update=update).model_dump())
+
+
+async def _try_written(
+    deps: GraphDeps, ctx: InterviewContext, exchanges: list[Exchange]
+) -> Debrief | None:
+    """Le débrief, ou `None` si le modèle n'a pas répondu à temps ou lisiblement : les réponses de
+    January ne se perdent pas. Les autres erreurs (dont le plafond de tokens) remontent."""
+    try:
+        async with asyncio.timeout(DEBRIEF_CALL_TIMEOUT_S):
+            return await _written(deps, ctx, exchanges)
+    except (AppError, TimeoutError) as exc:
+        code = exc.code if isinstance(exc, AppError) else "timeout"
+        if code != "timeout" and code not in RECOVERABLE_CODES:
+            raise
+        logger.warning(
+            "Intervieweur sans débrief (%s), réponses gardées : session %s, %d échange(s)",
+            code,
+            deps.session_id,
+            len(exchanges),
+        )
+        return None
 
 
 def make_debrief(deps: GraphDeps) -> Node:
@@ -121,7 +169,9 @@ def make_debrief(deps: GraphDeps) -> Node:
         if not exchanges:
             return {"debrief": None, "flags": [], "cards": []}
         ctx = context_of(state)
-        written = await _written(deps, ctx, exchanges)
+        written = await _try_written(deps, ctx, exchanges)
+        if written is None:  # les réponses sont rangées sans débrief (`save`)
+            return {"debrief": None, "flags": [], "cards": []}
         flags = flagged_terms(written.improved_answer, ctx)
         cards = revision_cards(exchanges, written)
         logger.info(
@@ -141,10 +191,14 @@ def make_debrief(deps: GraphDeps) -> Node:
 
 
 def _closing(debrief: Debrief | None, cards: list[CardDraft], answered: int) -> str:
-    if debrief is None:
-        return NOTHING_TO_GRADE
+    if debrief is None:  # sans réponse : arrêté ; avec des réponses : débrief en échec
+        return DEBRIEF_FAILED if answered else NOTHING_TO_GRADE
     text = f"Entretien terminé : {answered} question(s) notée(s), débrief prêt."
-    return f"{text} {len(cards)} fiche(s) de révision créée(s)." if cards else text
+    if cards:
+        text += f" {len(cards)} fiche(s) de révision créée(s)."
+    if debrief.unrated:
+        text += f" {len(debrief.unrated)} réponse(s) n'ont pas pu être notées."
+    return text
 
 
 def make_save(deps: GraphDeps) -> Node:

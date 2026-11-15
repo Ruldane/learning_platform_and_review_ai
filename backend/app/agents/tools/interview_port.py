@@ -7,9 +7,11 @@ fiables (17.2, 17.4) : jamais journalisés, ni ici ni par l'implémentation.
 
 - `context` : lecture seule ; 404 `interview_not_found` si l'entretien n'est pas à January.
 - `save_result` : **idempotent par session** : un nœud rejoué après un arrêt (SPEC 9.4) relit
-  l'issue de sa session, n'écrit ni second débrief ni seconde fiche. `debrief=None` : entretien
-  arrêté avant la première réponse (`stopped`, rien d'autre : ni échange, ni fiche, ni
-  événement) ; sinon entretien `done` avec ses échanges, son débrief, les termes que le profil ne
+  l'issue de sa session, n'écrit ni second débrief ni seconde fiche. `debrief=None` et
+  `exchanges=[]` : entretien arrêté avant la première réponse (`stopped`, rien d'autre : ni
+  échange, ni fiche, ni événement) ; `debrief=None` avec des échanges : le débrief a échoué,
+  entretien `debrief_failed` (les réponses sont gardées, ni fiche, ni événement de débrief) ;
+  sinon entretien `done` avec ses échanges, son débrief, les termes que le profil ne
   dit pas dans la réponse améliorée (`flags` : réponse « à vérifier ») et les fiches de révision
   des questions ratées (source `interview`)."""
 

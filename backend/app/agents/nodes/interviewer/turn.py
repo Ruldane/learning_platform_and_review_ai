@@ -20,8 +20,14 @@ from typing import Any
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.types import interrupt
 
+from app.agents.nodes.interviewer.common import (
+    AGENT,
+    RECOVERABLE_CODES,
+    Node,
+    context_of,
+    say_question,
+)
 from app.agents.nodes.interviewer.context import exchange_text, head_vars
-from app.agents.nodes.interviewer.plan import AGENT, Node, context_of, say_question
 from app.agents.prompts.loader import render_prompt, untrusted
 from app.agents.registry import get_agent
 from app.agents.runtime.deps import GraphDeps
@@ -43,9 +49,6 @@ ANSWER_FIELD = {"id": "answer", "label": "Ta réponse", "required": True, "max_l
 MAX_ANSWER_CHARS = 4000
 TURN_REQUEST = "Lis la réponse et note-la."
 TURN_CALL_TIMEOUT_S = 105.0  # plus court que le plafond d'un nœud (120 s) : le repli s'écrit
-RECOVERABLE_CODES = frozenset(
-    {"llm_timeout", "llm_unavailable", "llm_empty_reply", "structured_output_invalid"}
-)
 NEUTRAL_NOTE = 3
 CRITERION_LABELS = {
     "clarte": "clarté",
@@ -97,7 +100,9 @@ def route_turn(state: InterviewState) -> str:
 def _previous(state: InterviewState) -> str:
     """L'échange de la question en cours jusqu'à sa relance (celle-ci attend sa note)."""
     last = Exchange.model_validate(state["exchanges"][-1])
-    return untrusted(exchange_text(last, with_note=False), "échange précédent")
+    return untrusted(
+        exchange_text(last, with_note=False, pending_follow_up=True), "échange précédent"
+    )
 
 
 def turn_vars(
@@ -117,8 +122,9 @@ def turn_vars(
 
 async def _decide(
     deps: GraphDeps, state: InterviewState, planned: PlannedQuestion, text: str
-) -> TurnDecision:
-    """La décision du modèle ; sans réponse lisible à temps : note neutre, pas de relance."""
+) -> tuple[TurnDecision, bool]:
+    """La décision du modèle, et si c'est un repli ; sans réponse lisible à temps : note neutre,
+    pas de relance."""
     step = f"tour-{state['position'] + 1}" + ("-relance" if state["follow_up_open"] else "")
     prompt = render_prompt(AGENT, **turn_vars(context_of(state), planned, state, text))
     try:
@@ -126,7 +132,7 @@ async def _decide(
             model = await deps.models.get_chat_model(
                 deps.user_id, get_agent(AGENT).tier, agent=AGENT
             )
-            return await structured_call(
+            decision = await structured_call(
                 model,
                 TurnDecision,
                 [SystemMessage(prompt), HumanMessage(TURN_REQUEST)],
@@ -134,6 +140,7 @@ async def _decide(
                 step=step,
                 intent="je lis ta réponse",
             )
+            return decision, False
     except (AppError, TimeoutError) as exc:
         code = exc.code if isinstance(exc, AppError) else "timeout"
         if code != "timeout" and code not in RECOVERABLE_CODES:
@@ -144,17 +151,24 @@ async def _decide(
             deps.session_id,
             step,
         )
-        return TurnDecision(follow_up=None, note=NEUTRAL_NOTE)
+        return TurnDecision(follow_up=None, note=NEUTRAL_NOTE), True
 
 
 def _answered(
-    state: InterviewState, planned: PlannedQuestion, text: str, decision: TurnDecision
+    state: InterviewState,
+    planned: PlannedQuestion,
+    text: str,
+    decision: TurnDecision,
+    fallback: bool,
 ) -> list[dict[str, Any]]:
-    """Les échanges avec cette réponse : la relance répondue complète le dernier échange ; sinon un
-    nouvel échange (la relance, s'il y en a une, attend sa réponse)."""
+    """Les échanges avec cette réponse : la relance répondue complète le dernier échange (en repli,
+    la note de la première réponse reste) ; sinon un nouvel échange (la relance, s'il y en a une,
+    attend sa réponse)."""
     exchanges = list(state["exchanges"])
     if state["follow_up_open"]:
-        last = {**exchanges[-1], "follow_up_answer": text, "note": decision.note}
+        last = {**exchanges[-1], "follow_up_answer": text}
+        if not fallback:
+            last["note"] = decision.note
         return [*exchanges[:-1], last]
     exchange = Exchange(
         index=state["position"],
@@ -164,6 +178,7 @@ def _answered(
         answer=text,
         follow_up=decision.follow_up,
         note=decision.note,
+        unrated=fallback,
     )
     return [*exchanges, exchange.model_dump()]
 
@@ -173,10 +188,11 @@ def make_turn(deps: GraphDeps) -> Node:
     async def turn(state: InterviewState) -> InterviewState:
         """Note la réponse ; une relance au plus par question, sinon la question suivante."""
         reply = state["reply"]
-        assert reply is not None  # garanti par `route_ask`
+        if reply is None or reply["action"] != "answer":  # `route_ask` ne l'envoie pas ici
+            raise RuntimeError("`turn` demande une réponse lue par `ask`")
         planned = PlannedQuestion.model_validate(state["plan"][state["position"]])
-        decision = await _decide(deps, state, planned, reply["text"])
-        exchanges = _answered(state, planned, reply["text"], decision)
+        decision, fallback = await _decide(deps, state, planned, reply["text"])
+        exchanges = _answered(state, planned, reply["text"], decision, fallback)
         position = state["position"]
         logger.info("Réponse notée : session %s, question %d", deps.session_id, position + 1)
         if not state["follow_up_open"] and decision.follow_up:
