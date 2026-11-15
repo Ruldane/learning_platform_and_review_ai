@@ -161,3 +161,76 @@ export interface KitPieceView {
 
 /** Ce que l'enregistrement d'une modification rend à la pièce : le nouveau statut, ou le refus. */
 export type KitSaveResult = { ok: true; status: KitStatusView } | { ok: false; message: string };
+
+/** Les quatre formules d'entretien. */
+export const INTERVIEW_MODES = ["behavioral", "technical", "case", "mixed"] as const;
+export type InterviewModeView = (typeof INTERVIEW_MODES)[number];
+
+/** Les trois durées : 4, 7 ou 10 questions principales. */
+export const INTERVIEW_DURATIONS = [15, 30, 45] as const;
+export type InterviewDurationView = (typeof INTERVIEW_DURATIONS)[number];
+
+export const INTERVIEW_LANGUAGES = ["fr", "en"] as const;
+export type InterviewLanguageView = (typeof INTERVIEW_LANGUAGES)[number];
+
+/**
+ * `running` : en cours ; `done` : débrief écrit ; `stopped` : arrêté avant toute réponse ;
+ * `debrief_failed` : réponses gardées, débrief non écrit ; `failed` : session finie sans résultat.
+ */
+export type InterviewStatusView = "running" | "done" | "stopped" | "debrief_failed" | "failed";
+
+/** Les quatre notes du débrief, dans l'ordre où elles s'affichent. */
+export const SCORE_KEYS = ["clarte", "structure", "profondeur_technique", "adequation"] as const;
+export type ScoreKeyView = (typeof SCORE_KEYS)[number];
+
+/** Une question de l'entretien, la réponse de January, la relance éventuelle et la note (1 à 5). */
+export interface ExchangeView {
+  index: number;
+  question: string;
+  answer: string;
+  followUp: string | null;
+  followUpAnswer: string | null;
+  note: number;
+  /** Le modèle n'a pas pu noter cette réponse : la note n'est pas à lire. */
+  unrated: boolean;
+}
+
+/** Les points qu'une bonne réponse à la question `index` aurait donnés. */
+export interface ExpectedView {
+  index: number;
+  points: string[];
+}
+
+export interface DebriefDataView {
+  scores: { key: ScoreKeyView; value: number }[];
+  strengths: string[];
+  fixes: string[];
+  weakestIndex: number;
+  improvedAnswer: string;
+  /** Les questions de note 2 au plus, celles dont une fiche de révision est faite. */
+  missed: number[];
+  expected: ExpectedView[];
+  /** Les questions que le modèle n'a pas pu noter. */
+  unrated: number[];
+}
+
+/** Un entretien blanc tel que les pages le montrent. */
+export interface InterviewView {
+  id: string;
+  applicationId: string | null;
+  postingId: string | null;
+  role: string | null;
+  mode: InterviewModeView;
+  durationMin: InterviewDurationView;
+  /** Le nombre de questions principales (4, 7 ou 10 selon la durée). */
+  questionCount: number;
+  language: InterviewLanguageView;
+  sessionId: string;
+  status: InterviewStatusView;
+  exchanges: ExchangeView[];
+  debrief: DebriefDataView | null;
+  /** Les termes que le profil ne dit pas dans la réponse améliorée. */
+  flags: string[];
+  cardsCreated: number;
+  createdAt: string;
+}

@@ -1,6 +1,13 @@
 import { api } from "@/shared/api/client";
 import { unwrap } from "@/shared/api/errors";
-import type { ApplicationIn, ApplicationPatch, EventIn, KitKindView } from "./types";
+import type {
+  ApplicationIn,
+  ApplicationPatch,
+  EventIn,
+  FreeInterviewIn,
+  InterviewIn,
+  KitKindView,
+} from "./types";
 
 const applicationPath = (applicationId: string) => ({
   params: { path: { application_id: applicationId } },
@@ -98,4 +105,47 @@ export async function patchKitItem(applicationId: string, kind: KitKindView, con
       body: { content },
     }),
   );
+}
+
+/** `GET /interviews` : les entretiens de January, le plus récent d'abord ; `applicationId` filtre sur une fiche (404 si elle n'existe pas). */
+export async function fetchInterviews(applicationId: string | null, signal?: AbortSignal) {
+  return unwrap(
+    await api.GET("/interviews", {
+      params: { query: applicationId ? { application_id: applicationId } : {} },
+      signal,
+    }),
+  );
+}
+
+/** `GET /interviews/{id}` : un entretien (relu : une session morte le passe à `failed`) ; 404 `interview_not_found`. */
+export async function fetchInterview(interviewId: string, signal?: AbortSignal) {
+  return unwrap(
+    await api.GET("/interviews/{interview_id}", {
+      params: { path: { interview_id: interviewId } },
+      signal,
+    }),
+  );
+}
+
+/**
+ * `POST /applications/{id}/interviews` (202) : un entretien sur une fiche. 409 `interview_in_progress`
+ * (`details.interview_id`), `profile_required` ; 404 ; 503 `engine_unavailable`.
+ */
+export async function startApplicationInterview(applicationId: string, body: InterviewIn) {
+  return unwrap(
+    await api.POST("/applications/{application_id}/interviews", {
+      ...applicationPath(applicationId),
+      body,
+    }),
+  );
+}
+
+/** `POST /interviews` (202) : un entretien sans fiche, sur une offre (`posting_id`) ou un intitulé (`role`). */
+export async function startFreeInterview(body: FreeInterviewIn) {
+  return unwrap(await api.POST("/interviews", { body }));
+}
+
+/** `GET /postings` : les offres, la plus récente d'abord (le choix de l'offre d'un entretien libre). */
+export async function fetchPostings(signal?: AbortSignal) {
+  return unwrap(await api.GET("/postings", { signal }));
 }

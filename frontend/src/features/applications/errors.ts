@@ -41,6 +41,10 @@ export const openIntakeSessionId = (error: unknown): string | null =>
 export const openKitSessionId = (error: unknown): string | null =>
   errorCode(error) === "kit_in_progress" ? detail(error, "session_id") : null;
 
+/** L'entretien déjà ouvert (409 `interview_in_progress`). */
+export const openInterviewId = (error: unknown): string | null =>
+  errorCode(error) === "interview_in_progress" ? detail(error, "interview_id") : null;
+
 /** Le refus d'une modification : le texte du serveur (il parle de la modification), sauf pièce absente. */
 export const kitSaveErrorMessage = (error: unknown): string =>
   errorCode(error) === "kit_item_not_found" || errorCode(error) === "application_not_found"

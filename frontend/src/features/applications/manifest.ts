@@ -3,6 +3,8 @@ import type { FeatureManifest } from "@/shared/lib/feature";
 import { useDueCount } from "./hooks/useDueCount";
 import { ApplicationDrawer } from "./pages/ApplicationDrawer";
 import { BoardPage } from "./pages/BoardPage";
+import { FreeInterviewPage } from "./pages/FreeInterviewPage";
+import { InterviewPage } from "./pages/InterviewPage";
 import { KitPage } from "./pages/KitPage";
 import { NewApplicationPage } from "./pages/NewApplication";
 import { RemindersPage } from "./pages/RemindersPage";
@@ -10,8 +12,8 @@ import { RemindersPage } from "./pages/RemindersPage";
 /**
  * Les candidatures (SPEC 6, section « Candidatures » de la navigation) : le suivi (tableau de suivi
  * ou tableau) avec la fiche en tiroir par-dessus, les relances (pastille = relances dues), la
- * nouvelle fiche (à la main ou en une phrase), le kit d'une candidature (7.14). Les pages de
- * l'entretien et du comité (7.15 et 7.16) s'ajoutent sous `/candidatures/:applicationId/…`.
+ * nouvelle fiche (à la main ou en une phrase), le kit d'une candidature (7.14), l'entretien blanc (7.15,
+ * depuis une fiche ou libre). La page du comité (7.16) s'ajoute sous `/candidatures/:applicationId/…`.
  */
 export const applicationsManifest: FeatureManifest = {
   id: "applications",
@@ -25,7 +27,9 @@ export const applicationsManifest: FeatureManifest = {
     },
     { path: "candidatures/relances", Component: RemindersPage },
     { path: "candidatures/nouvelle", Component: NewApplicationPage },
+    { path: "candidatures/entretien", Component: FreeInterviewPage },
     { path: "candidatures/:applicationId/kit", Component: KitPage },
+    { path: "candidatures/:applicationId/entretien", Component: InterviewPage },
   ],
   nav: [
     {
@@ -42,6 +46,12 @@ export const applicationsManifest: FeatureManifest = {
       useBadge: useDueCount,
       badgeLabel: (count) =>
         t(`applications.nav.dueBadge.${count === 1 ? "one" : "many"}`, { count }),
+    },
+    {
+      section: "applications",
+      labelKey: "applications.nav.interview",
+      path: "/candidatures/entretien",
+      order: 3,
     },
   ],
 };

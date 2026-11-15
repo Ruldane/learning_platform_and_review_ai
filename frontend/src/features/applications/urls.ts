@@ -4,6 +4,7 @@ import { apiBaseUrl } from "@/shared/api/client";
 export const BOARD_PATH = "/candidatures";
 export const REMINDERS_PATH = "/candidatures/relances";
 export const NEW_APPLICATION_PATH = "/candidatures/nouvelle";
+export const FREE_INTERVIEW_PATH = "/candidatures/entretien";
 
 export const applicationPath = (applicationId: string) => `${BOARD_PATH}/${applicationId}`;
 export const kitPath = (applicationId: string) => `${applicationPath(applicationId)}/kit`;
@@ -17,6 +18,9 @@ export const CV_VERSIONS_PATH = "/carriere/cv/versions";
 /** `GET /applications/{id}/kit.zip` : l'archive du kit (les pièces, le PDF du CV, un LISEZMOI). */
 export const kitZipUrl = (applicationId: string) =>
   `${apiBaseUrl}/api/v1/applications/${applicationId}/kit.zip`;
+
+/** Les révisions (la page des fiches, feature `quiz`) : les fiches d'un entretien y attendent. */
+export const REVISIONS_PATH = "/etudier/revisions";
 
 /** Le profil maître validé (la page de la feature `cv`) : le kit part de lui. */
 export const PROFILE_PATH = "/carriere/profil";

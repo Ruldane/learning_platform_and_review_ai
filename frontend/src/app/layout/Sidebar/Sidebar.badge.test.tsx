@@ -39,12 +39,13 @@ describe("navigation des candidatures", () => {
     expect(screen.queryByText(/relances? dues?/)).toBeNull();
   });
 
-  it("lists the board first, under the Candidatures heading", () => {
+  it("lists the board first, then the reminders and the free interview, under the Candidatures heading", () => {
     renderNav(0);
     expect(screen.getByRole("heading", { name: "Candidatures" })).toBeVisible();
     expect(screen.getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
       "/candidatures",
       "/candidatures/relances",
+      "/candidatures/entretien",
     ]);
   });
 });

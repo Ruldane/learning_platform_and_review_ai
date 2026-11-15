@@ -3,6 +3,7 @@ export const applicationsPages = {
   nav: {
     board: "Suivi",
     reminders: "Relances",
+    interview: "Entretien blanc",
     dueBadge: { one: "1 relance due", many: "{count} relances dues" },
   },
   errors: {
@@ -17,6 +18,10 @@ export const applicationsPages = {
     profile_required:
       "Aucun profil maître validé : valide ton profil dans la partie CV, puis lance le kit.",
     kit_item_not_found: "Cette pièce n'est pas encore arrivée : attends qu'elle soit prête.",
+    interview_in_progress:
+      "Un entretien est déjà en cours : reprends-le avant d'en commencer un autre.",
+    interview_not_found: "Cet entretien n'existe plus.",
+    posting_not_found: "Cette offre n'existe plus.",
     engine_unavailable:
       "Les agents ne sont pas disponibles pour le moment : réessaie dans un instant.",
   },

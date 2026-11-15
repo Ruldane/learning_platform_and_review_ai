@@ -17,6 +17,12 @@ export type EventIn = Schemas["EventIn"];
 export type EventOut = Schemas["EventOut"];
 export type KitItemOut = Schemas["KitItemOut"];
 export type KitOut = Schemas["KitOut"];
+export type InterviewIn = Schemas["InterviewIn"];
+export type InterviewOut = Schemas["InterviewOut"];
+export type ExchangeOut = Schemas["ExchangeOut"];
+export type DebriefOut = Schemas["DebriefOut"];
+export type FreeInterviewIn = Schemas["FreeInterviewIn"];
+export type PostingSummaryOut = Schemas["PostingSummaryOut"];
 export type ReminderOut = Schemas["ReminderOut"];
 
 /** Le kit lu : la session ouverte (sinon la dernière), si elle tourne, les sept pièces dans l'ordre. */
@@ -30,7 +36,16 @@ export interface KitView {
  * Types de vue des candidatures. Ils vivent à côté des composants (`components/viewTypes.ts`, qui
  * ne peuvent importer que leur propre dossier) ; les pages (7.13) les importent d'ici.
  */
-export { CHANNEL_ORDER, KIT_KINDS, MAX_CONTACTS, STATUS_ORDER } from "./components/viewTypes";
+export {
+  CHANNEL_ORDER,
+  INTERVIEW_DURATIONS,
+  INTERVIEW_LANGUAGES,
+  INTERVIEW_MODES,
+  KIT_KINDS,
+  MAX_CONTACTS,
+  SCORE_KEYS,
+  STATUS_ORDER,
+} from "./components/viewTypes";
 export type {
   ApplicationView,
   ChannelView,
@@ -38,9 +53,17 @@ export type {
   ConfirmationOptionView,
   ConfirmationView,
   ContactView,
+  DebriefDataView,
   DayString,
   EventKindView,
   EventView,
+  ExchangeView,
+  ExpectedView,
+  InterviewDurationView,
+  InterviewLanguageView,
+  InterviewModeView,
+  InterviewStatusView,
+  InterviewView,
   KitKindView,
   KitPieceView,
   KitSaveResult,
@@ -48,6 +71,7 @@ export type {
   KitStatusView,
   ReminderKindView,
   ReminderView,
+  ScoreKeyView,
   StatsView,
   StatusView,
 } from "./components/viewTypes";

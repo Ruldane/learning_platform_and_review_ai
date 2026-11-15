@@ -1,7 +1,10 @@
 import type {
   ApplicationView,
   ContactView,
+  DebriefDataView,
   EventView,
+  ExchangeView,
+  InterviewView,
   ReminderView,
   StatsView,
   StatusView,
@@ -134,6 +137,62 @@ export function makeStats(overrides: Partial<StatsView> = {}): StatsView {
     responseRate: 0.4,
     meanResponseDays: 6.5,
     dueReminders: 2,
+    ...overrides,
+  };
+}
+
+/** Un échange de test : la question `index` (à partir de 0), répondue, notée 4. */
+export function makeExchange(index: number, overrides: Partial<ExchangeView> = {}): ExchangeView {
+  return {
+    index,
+    question: `Question ${index + 1} du recruteur ?`,
+    answer: `Ma réponse ${index + 1}.`,
+    followUp: null,
+    followUpAnswer: null,
+    note: 4,
+    unrated: false,
+    ...overrides,
+  };
+}
+
+/** Un débrief de test : quatre notes, trois points forts, trois points à corriger. */
+export function makeDebrief(overrides: Partial<DebriefDataView> = {}): DebriefDataView {
+  return {
+    scores: [
+      { key: "clarte", value: 4 },
+      { key: "structure", value: 3 },
+      { key: "profondeur_technique", value: 2 },
+      { key: "adequation", value: 5 },
+    ],
+    strengths: ["Exemples concrets", "Ton posé", "Résultats chiffrés"],
+    fixes: ["Structure plus nette", "Plus de détails techniques", "Une conclusion"],
+    weakestIndex: 1,
+    improvedAnswer: "Voici une réponse mieux construite.",
+    missed: [1],
+    expected: [{ index: 1, points: ["Citer le contexte", "Donner le résultat"] }],
+    unrated: [],
+    ...overrides,
+  };
+}
+
+/** Un entretien de test : terminé, trois échanges, débrief écrit. */
+export function makeInterview(overrides: Partial<InterviewView> = {}): InterviewView {
+  return {
+    id: "i1",
+    applicationId: "a1",
+    postingId: null,
+    role: null,
+    mode: "mixed",
+    durationMin: 15,
+    questionCount: 4,
+    language: "fr",
+    sessionId: "s1",
+    status: "done",
+    exchanges: [makeExchange(0), makeExchange(1, { note: 2 }), makeExchange(2)],
+    debrief: makeDebrief(),
+    flags: [],
+    cardsCreated: 1,
+    createdAt: "2026-11-12T10:00:00Z",
     ...overrides,
   };
 }

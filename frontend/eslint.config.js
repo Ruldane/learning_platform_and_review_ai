@@ -163,7 +163,10 @@ export default tseslint.config(
       ],
       // Point d'entrée : monte `app`, hors périmètre des règles.
       "boundaries/ignore": ["src/main.tsx"],
-      "boundaries/files": [{ pattern: "**/*.test.{ts,tsx}", category: "test" }],
+      // Les aides de test d'une page (`*Testkit.tsx`) sont des fichiers de test : elles montent les routes en mémoire de `src/test`.
+      "boundaries/files": [
+        { pattern: ["**/*.test.{ts,tsx}", "**/*Testkit.{ts,tsx}"], category: "test" },
+      ],
     },
     rules: {
       "boundaries/dependencies": [

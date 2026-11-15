@@ -9,4 +9,11 @@ export const applicationsKeys = {
   one: (applicationId: string) => ["applications", "one", applicationId] as const,
   reminders: ["applications", "reminders"],
   kit: (applicationId: string) => ["applications", "kit", applicationId] as const,
+  /** Tous les entretiens (le préfixe des listes). */
+  allInterviews: ["applications", "interviews"],
+  /** Les entretiens d'une fiche, ou (`null`) ceux sans fiche. */
+  interviews: (applicationId: string | null) =>
+    ["applications", "interviews", applicationId ?? "free"] as const,
+  interview: (interviewId: string) => ["applications", "interview", interviewId] as const,
+  postings: ["applications", "postings"],
 } as const;

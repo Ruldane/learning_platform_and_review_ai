@@ -44,6 +44,7 @@ describe("registre des features", () => {
     expect(groups[5]?.items.map((item) => item.path)).toEqual([
       "/candidatures",
       "/candidatures/relances",
+      "/candidatures/entretien",
     ]);
     expect(groups[6]?.items.map((item) => item.path)).toEqual([
       "/memoire",

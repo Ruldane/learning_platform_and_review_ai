@@ -10,7 +10,6 @@ import { server } from "./server";
 const LANDINGS: RouteObject[] = [
   { path: "/carriere/cv/versions", element: <p>Page des versions de CV</p> },
   { path: "/carriere/offres/:postingId", element: <p>{"Page de l'offre"}</p> },
-  { path: "/candidatures/:applicationId/entretien", element: <p>{"Page de l'entretien"}</p> },
   { path: "/candidatures/:applicationId/comite", element: <p>Page du comité</p> },
 ];
 
