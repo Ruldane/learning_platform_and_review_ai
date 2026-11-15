@@ -10,8 +10,17 @@ from tests.support.kit import COMPANY, FakeKitStore
 NO_SOURCE = "Aucune source lisible : dossier non produit."
 
 
-def fresh_dossier() -> CompanyDossier:
-    return CompanyDossier.model_validate(dossier_data(activity="Reprise du dossier [1]."))
+def fresh_dossier(**over: object) -> CompanyDossier:
+    """Un dossier rangé par un kit précédent, une seule page lue : tout cite `[1]`."""
+    cited = {
+        "activity": "Reprise du dossier [1].",
+        "product": "Une plateforme d'agents [1].",
+        "stack": ["Python [1]"],
+        "culture": "Équipe réduite [1].",
+        "watch_points": ["Rythme soutenu [1]"],
+        "news": [{"text": "Levée de fonds annoncée [1]", "date": "2026-10-01"}],
+    }
+    return CompanyDossier.model_validate(dossier_data(**(cited | over)))
 
 
 async def test_dossier_reused_when_fresh(
@@ -26,9 +35,30 @@ async def test_dossier_reused_when_fresh(
     assert prompts(run.models, "dossier") == [] and kit_web.searches == [] and kit_web.reads == []
     assert kit_store.dossiers == []  # rien n'est réécrit dans `companies`
     row = kit_store.piece("company_brief")
-    assert row.status == "ready" and row.meta == {"sources": 1, "reused": True}
+    assert row.status == "ready"
+    assert row.meta == {"sources": 1, "reused": True, "emptied": 0, "dropped": 0}
     assert "Reprise du dossier [1]." in row.content
     assert "[1] Page A — https://exemple.org/a" in row.content
+
+
+async def test_reused_dossier_with_emptied_sections_stays_to_check(
+    kit_runner: MakeKit, kit_store: FakeKitStore, kit_web: FakeWeb
+) -> None:
+    """M2 : un dossier rangé avec des textes vidés (sa production était « à vérifier ») n'est pas
+    « prêt » à la reprise ; une actualité devenue trop vieille est retirée."""
+    kit_store.update(
+        company_dossier=fresh_dossier(
+            culture="", news=[{"text": "Vieille actualité [1]", "date": "2025-01-01"}]
+        ),
+        company_dossier_sources=[SourceRef(url="https://exemple.org/a", title="Page A")],
+    )
+    run = await kit_runner()
+    await run.wait_status("completed")
+    row = kit_store.piece("company_brief")
+    assert row.status == "to_check"
+    assert row.meta == {"sources": 1, "reused": True, "emptied": 1, "dropped": 1}
+    assert "Non trouvé dans les sources lues." in row.content
+    assert "Vieille actualité" not in row.content
 
 
 async def test_dossier_researched_and_rendered_with_sources(

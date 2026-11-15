@@ -15,8 +15,8 @@ from pydantic import BaseModel, Field
 from app.agents.runtime.prose import Prose, ShortenToMax
 from app.agents.tools.cv_schema import CvContent, MasterProfileData, facts_of
 from app.agents.tools.kit_schema import CompanyDossier
-from app.agents.tools.posting_schema import Keyword, PostingAnalysis, contains_term
-from app.agents.tools.text_claims import text_claims
+from app.agents.tools.posting_schema import Keyword, PostingAnalysis, contains_term, normalize_term
+from app.agents.tools.text_claims import Claim, text_claims
 
 __all__ = [
     "LABELS",
@@ -60,6 +60,13 @@ CHANGES = 3
 MAX_TERMS = 30
 Sentence = Annotated[str, Field(min_length=1, max_length=300), ShortenToMax()]
 ACQUIRE = "À acquérir : {terms}. Ton profil ne le dit pas : ne l'écris pas dans ton CV."
+CHECK = "À vérifier : ton profil ne dit pas {terms}. Ne l'écris pas dans ton CV."
+# Les mots d'une section de CV : une consigne sur le CV (« la section Compétences »), pas un nom.
+_SECTION_NAMES = (
+    "Compétences Expériences Expérience Formation Formations Projets Langues Résumé Profil "
+    "Skills Experience Education Projects Summary Languages"
+)
+SECTION_WORDS = frozenset(normalize_term(word, plural=True) for word in _SECTION_NAMES.split())
 
 
 class Vote(BaseModel):
@@ -187,22 +194,28 @@ def ats_terms_of(analysis: PostingAnalysis, cv_text: str) -> AtsTermsView:
     return AtsTermsView(found=found[:MAX_TERMS], missing=missing[:MAX_TERMS])
 
 
+def _section(claim: Claim) -> bool:
+    return normalize_term(claim.term, plural=True) in SECTION_WORDS
+
+
 def committee_changes(
     drafts: list[ChangeDraft], profile: MasterProfileData, allowed: list[str]
 ) -> list[Change]:
     """Les changements du Modérateur relus par le code : les identifiants de faits inconnus du
     profil sont retirés ; un texte qui demande un terme que le profil ne dit pas (`text_claims`,
     `allowed` : l'entreprise et l'intitulé exact seulement) devient « à acquérir », avec ces termes
-    (outils, chiffres, titres), sans jamais garder le « ajoute X » du modèle."""
+    (outils, chiffres, titres), sans jamais garder le « ajoute X » du modèle. Un nom propre absent
+    du profil (employeur, école) donne « à vérifier » (`CHECK`) ; les mots de section d'un CV
+    (`SECTION_WORDS`) ne sont pas des noms."""
     known = set(facts_of(profile))
     changes: list[Change] = []
     for draft in drafts:
         claims = text_claims(draft.text, profile, allowed=allowed)
-        # Les noms propres ne comptent pas : un changement est une consigne sur le CV (« la
-        # section Compétences »), pas une phrase de January ; outils, chiffres et titres, si.
-        named = [claim.term for claim in claims if claim.kind != "name"]
-        terms = list(dict.fromkeys(named))[:MAX_TERMS]
-        text = ACQUIRE.format(terms=", ".join(terms)) if terms else draft.text
+        skills = list(dict.fromkeys(c.term for c in claims if c.kind != "name"))[:MAX_TERMS]
+        names = list(dict.fromkeys(c.term for c in claims if c.kind == "name" and not _section(c)))
+        terms = skills or names[:MAX_TERMS]
+        template = ACQUIRE if skills else CHECK
+        text = template.format(terms=", ".join(terms)) if terms else draft.text
         facts = list(dict.fromkeys(f for f in draft.fact_ids if f in known))
         changes.append(
             Change(

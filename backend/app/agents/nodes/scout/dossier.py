@@ -1,8 +1,9 @@
 """L'Éclaireur en mode `dossier` (SPEC 6.4, F16, D142) : la branche `company_brief` du kit de
 candidature, un dossier d'une page sur l'entreprise.
 
-Dossier de moins de 30 jours (`KitContext.company_dossier`) → repris tel quel : ni recherche, ni
-appel du modèle, ni écriture de `companies`. Sinon : `web_search` du nom de l'entreprise (deux
+Dossier de moins de 30 jours (`KitContext.company_dossier`) → repris : ni recherche, ni appel du
+modèle, ni écriture de `companies` ; `check_dossier` le revérifie (un texte vidé = « à vérifier »,
+une actualité de plus de 6 mois retirée). Sinon : `web_search` du nom de l'entreprise (deux
 requêtes au plus), quatre lectures au plus (`web_read`, pages privilégiées d'abord),
 `CompanyDossier` demandé au modèle sur les pages lues, numérotées `[n]`. Le code tient le rôle du
 Vérificateur (`kit_dossier`) : une citation sans page lue est retirée, un texte sans source lue
@@ -147,6 +148,21 @@ async def _produce(deps: GraphDeps, ctx: KitContext) -> Piece:
     return Piece(status, render_dossier(ctx.company, checked.dossier, sources), meta)
 
 
+def _reused(ctx: KitContext, dossier: CompanyDossier) -> Piece:
+    """Le dossier repris, revérifié par le code (fonction pure, sans page relue) : un texte déjà
+    vidé le garde « à vérifier », une actualité devenue trop vieille est retirée."""
+    sources = ctx.company_dossier_sources
+    checked = check_dossier(dossier, len(sources), ctx.today)
+    meta = {
+        "sources": len(sources),
+        "reused": True,
+        "emptied": checked.emptied,
+        "dropped": checked.dropped,
+    }
+    status: KitStatus = "to_check" if checked.emptied else "ready"
+    return Piece(status, render_dossier(ctx.company, checked.dossier, sources), meta)
+
+
 def make_dossier(deps: GraphDeps) -> Node:
     async def company_brief(state: ApplicationKitState) -> ApplicationKitState:
         ctx = await deps.ports.kit.context(deps.user_id, state["application_id"])
@@ -156,9 +172,7 @@ def make_dossier(deps: GraphDeps) -> Node:
             logger.info(
                 "Dossier repris : session %s, fiche %s", deps.session_id, ctx.application_id
             )
-            sources = ctx.company_dossier_sources
-            content = render_dossier(ctx.company, ctx.company_dossier, sources)
-            done = Piece("ready", content, {"sources": len(sources), "reused": True})
+            done = _reused(ctx, ctx.company_dossier)
         else:
             done = await guarded(DOSSIER_LIMIT_S, lambda: _produce(deps, ctx))
         return await finish(deps, ctx.application_id, "company_brief", done, agent=AGENT)
