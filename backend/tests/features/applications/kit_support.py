@@ -71,6 +71,9 @@ async def ready_application(
 
 
 def spy(app: FastAPI) -> RecordingLauncher:
+    current = app.state.career.applications.launcher
+    if isinstance(current, RecordingLauncher):
+        return current  # déjà posé par le test : un seul lanceur factice par application
     launcher = RecordingLauncher(app.state.session_factory)
     app.state.career.applications.launcher = launcher
     return launcher

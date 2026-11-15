@@ -31,6 +31,9 @@ KitKind = Literal["cv", "letter", "linkedin", "followups", "form_answers", "comp
 KitStatus = Literal["pending", "ready", "to_check", "failed"]
 InterviewMode = Literal["behavioral", "technical", "case", "mixed"]
 RunStatus = Literal["running", "done", "failed", "stopped"]
+# Un entretien : `stopped` (arrêté avant toute réponse), `debrief_failed` (réponses gardées, débrief
+# non écrit), `failed` (session close sans résultat, posé à la lecture).
+InterviewStatus = Literal["running", "done", "failed", "stopped", "debrief_failed"]
 
 
 def _application_fk() -> Mapped[str]:

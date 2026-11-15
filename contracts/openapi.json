@@ -2623,6 +2623,81 @@
         "title": "CvReviewOut",
         "type": "object"
       },
+      "DebriefOut": {
+        "description": "Le débrief : quatre notes (1 à 5), trois points forts, trois corrections, la réponse\naméliorée de la question `weakest_index` (à vérifier si `flags` n'est pas vide), les questions\nratées (`missed`, note interne 2 au plus) et leurs points attendus, les réponses non\nnotées (`unrated`).",
+        "properties": {
+          "expected": {
+            "items": {
+              "$ref": "#/components/schemas/ExpectedOut"
+            },
+            "title": "Expected",
+            "type": "array"
+          },
+          "fixes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Fixes",
+            "type": "array"
+          },
+          "improved_answer": {
+            "title": "Improved Answer",
+            "type": "string"
+          },
+          "missed": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Missed",
+            "type": "array"
+          },
+          "scores": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "enum": [
+                "clarte",
+                "structure",
+                "profondeur_technique",
+                "adequation"
+              ]
+            },
+            "title": "Scores",
+            "type": "object"
+          },
+          "strengths": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Strengths",
+            "type": "array"
+          },
+          "unrated": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Unrated",
+            "type": "array"
+          },
+          "weakest_index": {
+            "title": "Weakest Index",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "scores",
+          "strengths",
+          "fixes",
+          "weakest_index",
+          "improved_answer",
+          "missed",
+          "expected",
+          "unrated"
+        ],
+        "title": "DebriefOut",
+        "type": "object"
+      },
       "DistinctIn": {
         "properties": {
           "other_id": {
@@ -3265,6 +3340,109 @@
         "title": "EvidenceOut",
         "type": "object"
       },
+      "ExchangeOut": {
+        "description": "Une question principale, la réponse de January, la relance et sa réponse s'il y en a eu, la\nnote interne (1 à 5) ; `unrated` : le modèle n'a pas répondu, la note est neutre.",
+        "properties": {
+          "answer": {
+            "title": "Answer",
+            "type": "string"
+          },
+          "criterion": {
+            "enum": [
+              "clarte",
+              "structure",
+              "profondeur",
+              "adequation"
+            ],
+            "title": "Criterion",
+            "type": "string"
+          },
+          "follow_up": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Follow Up"
+          },
+          "follow_up_answer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Follow Up Answer"
+          },
+          "index": {
+            "title": "Index",
+            "type": "integer"
+          },
+          "note": {
+            "title": "Note",
+            "type": "integer"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "offre",
+              "dossier",
+              "cv",
+              "ecart",
+              "general"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "unrated": {
+            "title": "Unrated",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "index",
+          "question",
+          "criterion",
+          "source",
+          "answer",
+          "follow_up",
+          "follow_up_answer",
+          "note",
+          "unrated"
+        ],
+        "title": "ExchangeOut",
+        "type": "object"
+      },
+      "ExpectedOut": {
+        "description": "Les points qu'une bonne réponse à la question `index` aurait donnés (verso de la fiche).",
+        "properties": {
+          "index": {
+            "title": "Index",
+            "type": "integer"
+          },
+          "points": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Points",
+            "type": "array"
+          }
+        },
+        "required": [
+          "index",
+          "points"
+        ],
+        "title": "ExpectedOut",
+        "type": "object"
+      },
       "Experience": {
         "properties": {
           "achievements": {
@@ -3445,6 +3623,71 @@
           "substitute"
         ],
         "title": "FontUseOut",
+        "type": "object"
+      },
+      "FreeInterviewIn": {
+        "description": "Un entretien sans fiche : sur une offre (`posting_id`) ou sur un intitulé seul (`role`).\nAu moins l'un des deux (422 `fields: [\"posting_id\", \"role\"]` sinon).",
+        "properties": {
+          "duration_min": {
+            "enum": [
+              15,
+              30,
+              45
+            ],
+            "title": "Duration Min",
+            "type": "integer"
+          },
+          "language": {
+            "default": "fr",
+            "enum": [
+              "fr",
+              "en"
+            ],
+            "title": "Language",
+            "type": "string"
+          },
+          "mode": {
+            "enum": [
+              "behavioral",
+              "technical",
+              "case",
+              "mixed"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "posting_id": {
+            "anyOf": [
+              {
+                "maxLength": 36,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Posting Id"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          }
+        },
+        "required": [
+          "mode",
+          "duration_min"
+        ],
+        "title": "FreeInterviewIn",
         "type": "object"
       },
       "GapOut": {
@@ -4165,6 +4408,197 @@
           "question"
         ],
         "title": "InterruptRequestedPayload",
+        "type": "object"
+      },
+      "InterviewIn": {
+        "description": "Le réglage d'un entretien : la formule (comportemental, technique, étude de cas, mixte), la\ndurée (4, 7 ou 10 questions principales) et la langue des questions.",
+        "properties": {
+          "duration_min": {
+            "enum": [
+              15,
+              30,
+              45
+            ],
+            "title": "Duration Min",
+            "type": "integer"
+          },
+          "language": {
+            "default": "fr",
+            "enum": [
+              "fr",
+              "en"
+            ],
+            "title": "Language",
+            "type": "string"
+          },
+          "mode": {
+            "enum": [
+              "behavioral",
+              "technical",
+              "case",
+              "mixed"
+            ],
+            "title": "Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mode",
+          "duration_min"
+        ],
+        "title": "InterviewIn",
+        "type": "object"
+      },
+      "InterviewOut": {
+        "description": "Un entretien. `flags` : les termes que le profil ne dit pas dans la réponse améliorée.\n`cards_created` : les fiches de révision nouvelles (une par question ratée, dues demain).",
+        "properties": {
+          "application_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Application Id"
+          },
+          "cards_created": {
+            "title": "Cards Created",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "debrief": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DebriefOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "duration_min": {
+            "enum": [
+              15,
+              30,
+              45
+            ],
+            "title": "Duration Min",
+            "type": "integer"
+          },
+          "exchanges": {
+            "items": {
+              "$ref": "#/components/schemas/ExchangeOut"
+            },
+            "title": "Exchanges",
+            "type": "array"
+          },
+          "flags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Flags",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "language": {
+            "enum": [
+              "fr",
+              "en"
+            ],
+            "title": "Language",
+            "type": "string"
+          },
+          "mode": {
+            "enum": [
+              "behavioral",
+              "technical",
+              "case",
+              "mixed"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "posting_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Posting Id"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "running",
+              "done",
+              "failed",
+              "stopped",
+              "debrief_failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "application_id",
+          "posting_id",
+          "role",
+          "mode",
+          "duration_min",
+          "language",
+          "session_id",
+          "status",
+          "exchanges",
+          "debrief",
+          "cards_created",
+          "created_at"
+        ],
+        "title": "InterviewOut",
+        "type": "object"
+      },
+      "InterviewStartOut": {
+        "properties": {
+          "interview_id": {
+            "title": "Interview Id",
+            "type": "string"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "interview_id",
+          "session_id"
+        ],
+        "title": "InterviewStartOut",
         "type": "object"
       },
       "JournalEntryOut": {
@@ -11518,6 +11952,70 @@
         ]
       }
     },
+    "/api/v1/applications/{application_id}/interviews": {
+      "post": {
+        "description": "Lance l'entretien blanc de la fiche : les questions arrivent par `interrupt.requested`\n(`kind` `interview_answer`), le débrief et les fiches de révision à la fin.",
+        "operationId": "post_application_interview_api_v1_applications__application_id__interviews_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Application Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InterviewIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InterviewStartOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`application_not_found`"
+          },
+          "409": {
+            "description": "`interview_in_progress` (`details.interview_id` : l'entretien ouvert), `profile_required` (aucun profil maître validé)"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "description": "`engine_unavailable`"
+          }
+        },
+        "summary": "Post Application Interview",
+        "tags": [
+          "interviews"
+        ]
+      }
+    },
     "/api/v1/applications/{application_id}/kit": {
       "get": {
         "description": "Les sept pièces dans l'ordre fixe (`pending` : pas encore rangée).",
@@ -13268,6 +13766,161 @@
         "summary": "Health",
         "tags": [
           "health"
+        ]
+      }
+    },
+    "/api/v1/interviews": {
+      "get": {
+        "description": "Les entretiens (d'une fiche), le plus récent d'abord ; un entretien dont la session s'est\nterminée sans résultat passe en `failed`.",
+        "operationId": "get_interviews_api_v1_interviews_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "application_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 36,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Application Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/InterviewOut"
+                  },
+                  "title": "Response Get Interviews Api V1 Interviews Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`application_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Interviews",
+        "tags": [
+          "interviews"
+        ]
+      },
+      "post": {
+        "description": "Entretien libre, sans fiche : sur une offre (`posting_id`) ou sur un intitulé (`role`) ;\nrien n'est écrit au fil d'une candidature.",
+        "operationId": "post_free_interview_api_v1_interviews_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FreeInterviewIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InterviewStartOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`posting_not_found`"
+          },
+          "409": {
+            "description": "`interview_in_progress` (`details.interview_id` : l'entretien ouvert), `profile_required` (aucun profil maître validé)"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "description": "`engine_unavailable`"
+          }
+        },
+        "summary": "Post Free Interview",
+        "tags": [
+          "interviews"
+        ]
+      }
+    },
+    "/api/v1/interviews/{interview_id}": {
+      "get": {
+        "operationId": "get_one_interview_api_v1_interviews__interview_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "interview_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Interview Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InterviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`interview_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get One Interview",
+        "tags": [
+          "interviews"
         ]
       }
     },

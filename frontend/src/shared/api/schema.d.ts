@@ -132,6 +132,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/applications/{application_id}/interviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Application Interview
+         * @description Lance l'entretien blanc de la fiche : les questions arrivent par `interrupt.requested`
+         *     (`kind` `interview_answer`), le débrief et les fiches de révision à la fin.
+         */
+        post: operations["post_application_interview_api_v1_applications__application_id__interviews_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/applications/{application_id}/kit": {
         parameters: {
             query?: never;
@@ -744,6 +765,49 @@ export interface paths {
          * @description Toujours 200 et sans authentification : le front lit `status`.
          */
         get: operations["health_api_v1_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/interviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Interviews
+         * @description Les entretiens (d'une fiche), le plus récent d'abord ; un entretien dont la session s'est
+         *     terminée sans résultat passe en `failed`.
+         */
+        get: operations["get_interviews_api_v1_interviews_get"];
+        put?: never;
+        /**
+         * Post Free Interview
+         * @description Entretien libre, sans fiche : sur une offre (`posting_id`) ou sur un intitulé (`role`) ;
+         *     rien n'est écrit au fil d'une candidature.
+         */
+        post: operations["post_free_interview_api_v1_interviews_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/interviews/{interview_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get One Interview */
+        get: operations["get_one_interview_api_v1_interviews__interview_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2801,6 +2865,33 @@ export interface components {
             /** Waiting Output */
             waiting_output: boolean;
         };
+        /**
+         * DebriefOut
+         * @description Le débrief : quatre notes (1 à 5), trois points forts, trois corrections, la réponse
+         *     améliorée de la question `weakest_index` (à vérifier si `flags` n'est pas vide), les questions
+         *     ratées (`missed`, note interne 2 au plus) et leurs points attendus, les réponses non
+         *     notées (`unrated`).
+         */
+        DebriefOut: {
+            /** Expected */
+            expected: components["schemas"]["ExpectedOut"][];
+            /** Fixes */
+            fixes: string[];
+            /** Improved Answer */
+            improved_answer: string;
+            /** Missed */
+            missed: number[];
+            /** Scores */
+            scores: {
+                [key: string]: number;
+            };
+            /** Strengths */
+            strengths: string[];
+            /** Unrated */
+            unrated: number[];
+            /** Weakest Index */
+            weakest_index: number;
+        };
         /** DistinctIn */
         DistinctIn: {
             /** Other Id */
@@ -3003,6 +3094,47 @@ export interface components {
             /** Url */
             url: string | null;
         };
+        /**
+         * ExchangeOut
+         * @description Une question principale, la réponse de January, la relance et sa réponse s'il y en a eu, la
+         *     note interne (1 à 5) ; `unrated` : le modèle n'a pas répondu, la note est neutre.
+         */
+        ExchangeOut: {
+            /** Answer */
+            answer: string;
+            /**
+             * Criterion
+             * @enum {string}
+             */
+            criterion: "clarte" | "structure" | "profondeur" | "adequation";
+            /** Follow Up */
+            follow_up: string | null;
+            /** Follow Up Answer */
+            follow_up_answer: string | null;
+            /** Index */
+            index: number;
+            /** Note */
+            note: number;
+            /** Question */
+            question: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "offre" | "dossier" | "cv" | "ecart" | "general";
+            /** Unrated */
+            unrated: boolean;
+        };
+        /**
+         * ExpectedOut
+         * @description Les points qu'une bonne réponse à la question `index` aurait donnés (verso de la fiche).
+         */
+        ExpectedOut: {
+            /** Index */
+            index: number;
+            /** Points */
+            points: string[];
+        };
         /** Experience */
         Experience: {
             /** Achievements */
@@ -3059,6 +3191,33 @@ export interface components {
             role: "body" | "heading";
             /** Substitute */
             substitute: boolean;
+        };
+        /**
+         * FreeInterviewIn
+         * @description Un entretien sans fiche : sur une offre (`posting_id`) ou sur un intitulé seul (`role`).
+         *     Au moins l'un des deux (422 `fields: ["posting_id", "role"]` sinon).
+         */
+        FreeInterviewIn: {
+            /**
+             * Duration Min
+             * @enum {integer}
+             */
+            duration_min: 15 | 30 | 45;
+            /**
+             * Language
+             * @default fr
+             * @enum {string}
+             */
+            language: "fr" | "en";
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "behavioral" | "technical" | "case" | "mixed";
+            /** Posting Id */
+            posting_id?: string | null;
+            /** Role */
+            role?: string | null;
         };
         /**
          * GapOut
@@ -3336,6 +3495,85 @@ export interface components {
             options?: components["schemas"]["InterruptOption"][];
             /** Question */
             question: string;
+        };
+        /**
+         * InterviewIn
+         * @description Le réglage d'un entretien : la formule (comportemental, technique, étude de cas, mixte), la
+         *     durée (4, 7 ou 10 questions principales) et la langue des questions.
+         */
+        InterviewIn: {
+            /**
+             * Duration Min
+             * @enum {integer}
+             */
+            duration_min: 15 | 30 | 45;
+            /**
+             * Language
+             * @default fr
+             * @enum {string}
+             */
+            language: "fr" | "en";
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "behavioral" | "technical" | "case" | "mixed";
+        };
+        /**
+         * InterviewOut
+         * @description Un entretien. `flags` : les termes que le profil ne dit pas dans la réponse améliorée.
+         *     `cards_created` : les fiches de révision nouvelles (une par question ratée, dues demain).
+         */
+        InterviewOut: {
+            /** Application Id */
+            application_id: string | null;
+            /** Cards Created */
+            cards_created: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            debrief: components["schemas"]["DebriefOut"] | null;
+            /**
+             * Duration Min
+             * @enum {integer}
+             */
+            duration_min: 15 | 30 | 45;
+            /** Exchanges */
+            exchanges: components["schemas"]["ExchangeOut"][];
+            /** Flags */
+            flags?: string[];
+            /** Id */
+            id: string;
+            /**
+             * Language
+             * @enum {string}
+             */
+            language: "fr" | "en";
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "behavioral" | "technical" | "case" | "mixed";
+            /** Posting Id */
+            posting_id: string | null;
+            /** Role */
+            role: string | null;
+            /** Session Id */
+            session_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "running" | "done" | "failed" | "stopped" | "debrief_failed";
+        };
+        /** InterviewStartOut */
+        InterviewStartOut: {
+            /** Interview Id */
+            interview_id: string;
+            /** Session Id */
+            session_id: string;
         };
         /** JournalEntryOut */
         JournalEntryOut: {
@@ -6230,6 +6468,62 @@ export interface operations {
             };
         };
     };
+    post_application_interview_api_v1_applications__application_id__interviews_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InterviewIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InterviewStartOut"];
+                };
+            };
+            /** @description `application_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `interview_in_progress` (`details.interview_id` : l'entretien ouvert), `profile_required` (aucun profil maître validé) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description `engine_unavailable` */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     get_kit_api_v1_applications__application_id__kit_get: {
         parameters: {
             query?: never;
@@ -7518,6 +7812,136 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthReport"];
+                };
+            };
+        };
+    };
+    get_interviews_api_v1_interviews_get: {
+        parameters: {
+            query?: {
+                application_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InterviewOut"][];
+                };
+            };
+            /** @description `application_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_free_interview_api_v1_interviews_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FreeInterviewIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InterviewStartOut"];
+                };
+            };
+            /** @description `posting_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `interview_in_progress` (`details.interview_id` : l'entretien ouvert), `profile_required` (aucun profil maître validé) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description `engine_unavailable` */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_one_interview_api_v1_interviews__interview_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                interview_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InterviewOut"];
+                };
+            };
+            /** @description `interview_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

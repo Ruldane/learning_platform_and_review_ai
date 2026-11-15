@@ -4,9 +4,10 @@ porte le nom de January : rendu dans l'en-tête de téléchargement, jamais jour
 
 from collections.abc import Collection
 
+from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.agents.tools.cv_schema import MasterProfileData
+from app.agents.tools.cv_schema import CvContent, MasterProfileData
 from app.core.errors import AppError
 from app.db.models.career import CvVersion
 from app.features.cv.repository import ProfileRepository, VersionRepository
@@ -80,3 +81,15 @@ async def validated_profile(db: AsyncSession, user_id: str) -> MasterProfileData
     January n'en a pas validé."""
     row = await ProfileRepository(db, user_id).latest("validated")
     return MasterProfileData.model_validate(row.data) if row is not None else None
+
+
+async def version_content(db: AsyncSession, user_id: str, version_id: str) -> CvContent | None:
+    """Lecture seule, pour les candidatures : le contenu du CV de la version donnée (celle de
+    l'utilisatrice), `None` si elle n'existe pas ou n'est pas lisible."""
+    row = await VersionRepository(db, user_id).get(version_id)
+    if row is None:
+        return None
+    try:
+        return CvContent.model_validate(row.content)
+    except ValidationError:
+        return None

@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.features.applications.router import router as applications_router
+from app.features.applications.router_interviews import router as interviews_router
 from app.features.applications.router_kit import router as kit_router
 from app.features.applications.router_reminders import router as reminders_router
 from app.features.auth.router import router as auth_router
@@ -44,5 +45,6 @@ FEATURE_ROUTERS: list[APIRouter] = [
     cv_router,
     applications_router,
     kit_router,
+    interviews_router,
     reminders_router,
 ]

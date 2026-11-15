@@ -12,10 +12,12 @@ from app.agents.tools.applications_port import ApplicationStore
 from app.agents.tools.cv_review_port import CvReviewStore
 from app.agents.tools.cv_template_port import CvTemplateStore
 from app.agents.tools.gap_port import GapStore
+from app.agents.tools.interview_port import InterviewStore
 from app.agents.tools.kit_port import KitStore
 from app.agents.tools.profile_port import ProfileStore
 from app.core.providers import PublishingProviders
 from app.features.applications.service.agent_store import AgentApplicationStore
+from app.features.applications.service.interview_store import AgentInterviewStore
 from app.features.applications.service.kit_store import AgentKitStore
 from app.features.applications.service.runtime import ApplicationsRuntime
 from app.features.cv.service.profile_store import AgentProfileStore
@@ -42,6 +44,7 @@ class CareerRuntimes:
     applications: ApplicationsRuntime  # fiches, fil, doublons, indicateurs (D139)
     application_store: ApplicationStore  # port de l'Assistant de suivi (D141)
     kit_store: KitStore  # port du parcours `application_kit` (D142, D143)
+    interview_store: InterviewStore  # port du parcours `interview` (D145, D146)
 
 
 def career_runtimes(
@@ -58,8 +61,8 @@ def career_runtimes(
     lanceur) et port de l'Archiviste ; gabarits (mise en page, rendu de nos gabarits HTML, polices
     libres, images et polices rangées par le stockage de la mémoire) et port du Maquettiste ; revues
     (lancées et reprises par le lanceur) et port du parcours `cv_review` ; candidatures (base,
-    lanceur, verrous), port de l'Assistant de suivi (création en une phrase) et port du kit de
-    candidature."""
+    lanceur, verrous), port de l'Assistant de suivi (création en une phrase), port du kit de
+    candidature et port de l'entretien blanc."""
     postings = PostingsRuntime(session_factory, research, memory, launcher)
     cv = CvRuntime(
         session_factory,
@@ -81,4 +84,5 @@ def career_runtimes(
         applications=applications,
         application_store=AgentApplicationStore(applications),
         kit_store=AgentKitStore(applications),
+        interview_store=AgentInterviewStore(applications),
     )

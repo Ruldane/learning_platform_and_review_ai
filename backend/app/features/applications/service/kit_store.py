@@ -103,7 +103,7 @@ async def posting_inputs(
     return text, posting_analysis(posting.analysis if posting else None, row, text)
 
 
-def _dossier_of(
+def dossier_of(
     company: Company | None, fresh: bool
 ) -> tuple[CompanyDossier | None, list[SourceRef]]:
     """Le dossier repris (de moins de 30 jours) et ses pages, dans l'ordre où elles sont citées."""
@@ -140,7 +140,7 @@ class AgentKitStore:
             and company.dossier_at is not None
             and rt.now() - company.dossier_at < DOSSIER_MAX_AGE
         )
-        dossier, sources = _dossier_of(company, fresh)
+        dossier, sources = dossier_of(company, fresh)
         return KitContext(
             application_id=row.id,
             language="en" if analysis.language == "en" else "fr",
