@@ -132,6 +132,73 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/applications/{application_id}/kit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Kit
+         * @description Les sept pièces dans l'ordre fixe (`pending` : pas encore rangée).
+         */
+        get: operations["get_kit_api_v1_applications__application_id__kit_get"];
+        put?: never;
+        /**
+         * Post Kit
+         * @description Lance les sept pièces en parallèle ; elles arrivent par `artifact.ready` (`kind`
+         *     `kit_item`). Relancer refait les pièces que January n'a pas modifiées.
+         */
+        post: operations["post_kit_api_v1_applications__application_id__kit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/applications/{application_id}/kit.zip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Kit Zip
+         * @description Téléchargement (`attachment`) : une pièce par fichier Markdown, le PDF du CV et
+         *     `LISEZMOI.txt`.
+         */
+        get: operations["get_kit_zip_api_v1_applications__application_id__kit_zip_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/applications/{application_id}/kit/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Kit Item
+         * @description Le texte de January remplace la pièce (gardée aux relances). Une pièce « à vérifier » est
+         *     relue : `flags` mis à jour, « prête » si rien ne reste.
+         */
+        patch: operations["patch_kit_item_api_v1_applications__application_id__kit__kind__patch"];
+        trace?: never;
+    };
     "/api/v1/auth/me": {
         parameters: {
             query?: never;
@@ -3332,6 +3399,83 @@ export interface components {
             /** Variants */
             variants: string[];
         };
+        /**
+         * KitItemOut
+         * @description Une pièce. `id` : `artifact_id` de l'événement `artifact.ready` (vide tant que la pièce n'est
+         *     pas rangée, statut `pending`). `flags` : les termes que le profil ne dit pas (pièce « à
+         *     vérifier »). `salary_fields` : les réponses salariales laissées à January. `words` : le compte
+         *     des mots (le message pour `linkedin`, les deux relances ensemble pour `followups`). `error` :
+         *     le motif lisible d'une pièce en échec. `sources` : les pages du dossier (`company_brief`).
+         */
+        KitItemOut: {
+            /** Content */
+            content: string;
+            /** Edited */
+            edited: boolean;
+            /** Error */
+            error: string | null;
+            /** Flags */
+            flags: string[];
+            /** Id */
+            id: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "cv" | "letter" | "linkedin" | "followups" | "form_answers" | "company_brief" | "pitch";
+            /** Salary Fields */
+            salary_fields: number;
+            /** Sources */
+            sources: components["schemas"]["KitSourceOut"][];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "ready" | "to_check" | "failed";
+            /** Updated At */
+            updated_at: string | null;
+            /** Words */
+            words: number | null;
+        };
+        /**
+         * KitOut
+         * @description Le kit d'une fiche : toujours sept pièces, `pending` pour celles pas encore rangées.
+         *     `session_id` : la session ouverte, sinon la dernière ; `running` : une session est ouverte.
+         */
+        KitOut: {
+            /** Items */
+            items: components["schemas"]["KitItemOut"][];
+            /** Running */
+            running: boolean;
+            /** Session Id */
+            session_id: string | null;
+        };
+        /**
+         * KitPatch
+         * @description Le texte de January pour la pièce (vide permis : la pièce redevient « à vérifier »).
+         */
+        KitPatch: {
+            /** Content */
+            content: string;
+        };
+        /**
+         * KitSourceOut
+         * @description Une page lue pour le dossier de l'entreprise. `rank` : son numéro dans le texte (`[rank]`),
+         *     depuis 1.
+         */
+        KitSourceOut: {
+            /** Rank */
+            rank: number;
+            /** Title */
+            title: string | null;
+            /** Url */
+            url: string;
+        };
+        /** KitStartOut */
+        KitStartOut: {
+            /** Session Id */
+            session_id: string;
+        };
         /** Language */
         Language: {
             /**
@@ -6069,6 +6213,170 @@ export interface operations {
                 };
             };
             /** @description `application_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_kit_api_v1_applications__application_id__kit_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KitOut"];
+                };
+            };
+            /** @description `application_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_kit_api_v1_applications__application_id__kit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KitStartOut"];
+                };
+            };
+            /** @description `application_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `kit_in_progress` (`details.session_id` : la session ouverte), `posting_required` (la fiche n'a ni offre ni texte d'offre), `profile_required` (aucun profil maître validé) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_kit_zip_api_v1_applications__application_id__kit_zip_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Le kit en archive ZIP. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/zip": unknown;
+                };
+            };
+            /** @description `application_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_kit_item_api_v1_applications__application_id__kit__kind__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+                kind: "cv" | "letter" | "linkedin" | "followups" | "form_answers" | "company_brief" | "pitch";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KitPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KitItemOut"];
+                };
+            };
+            /** @description `application_not_found`, `kit_item_not_found` */
             404: {
                 headers: {
                     [name: string]: unknown;

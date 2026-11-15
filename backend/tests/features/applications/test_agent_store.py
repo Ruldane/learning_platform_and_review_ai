@@ -31,11 +31,6 @@ def store(client: httpx.AsyncClient, app: FastAPI) -> AgentApplicationStore:
     return store
 
 
-@pytest.fixture
-def me(app: FastAPI) -> str:
-    return str(app.state.local_user_id)
-
-
 async def test_context_is_the_local_day_and_language(
     app: FastAPI, store: AgentApplicationStore, me: str
 ) -> None:

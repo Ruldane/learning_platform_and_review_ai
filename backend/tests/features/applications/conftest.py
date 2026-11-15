@@ -122,3 +122,9 @@ async def posting(app: FastAPI, client: httpx.AsyncClient) -> str:
 @pytest.fixture
 async def ready_version(app: FastAPI, posting: str) -> str:
     return await add_version(app, posting)
+
+
+@pytest.fixture
+def me(app: FastAPI) -> str:
+    """L'utilisatrice locale, une fois l'app démarrée (`client`)."""
+    return str(app.state.local_user_id)

@@ -27,3 +27,9 @@ def cv_filename(name: str, company: str | None, title: str | None) -> str:
     """« CV_<Nom>_<Entreprise>_<Poste>.pdf » ; une partie vide est omise, « CV.pdf » au pire."""
     parts = [part for part in (_part(name), _part(company), _part(title)) if part]
     return "_".join(["CV", *parts]) + ".pdf"
+
+
+def kit_filename(company: str | None, title: str | None) -> str:
+    """« Kit_<Entreprise>_<Poste>.zip » (archive du kit de candidature) ; « Kit.zip » au pire."""
+    parts = [part for part in (_part(company), _part(title)) if part]
+    return "_".join(["Kit", *parts]) + ".zip"

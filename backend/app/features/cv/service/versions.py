@@ -6,9 +6,10 @@ from collections.abc import Collection
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agents.tools.cv_schema import MasterProfileData
 from app.core.errors import AppError
 from app.db.models.career import CvVersion
-from app.features.cv.repository import VersionRepository
+from app.features.cv.repository import ProfileRepository, VersionRepository
 from app.features.cv.schemas_reviews import VersionOut
 from app.features.cv.service.review_data import version_not_found, version_out
 from app.features.cv.service.reviews import settle
@@ -72,3 +73,10 @@ async def version_numbers(
 ) -> dict[str, int]:
     """Lecture seule, pour les candidatures : `version → numéro` des versions données."""
     return await VersionRepository(db, user_id).numbers(version_ids)
+
+
+async def validated_profile(db: AsyncSession, user_id: str) -> MasterProfileData | None:
+    """Lecture seule, pour les candidatures : le profil maître validé le plus récent, `None` si
+    January n'en a pas validé."""
+    row = await ProfileRepository(db, user_id).latest("validated")
+    return MasterProfileData.model_validate(row.data) if row is not None else None

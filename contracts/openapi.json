@@ -4337,6 +4337,214 @@
         "title": "KeywordOut",
         "type": "object"
       },
+      "KitItemOut": {
+        "description": "Une pièce. `id` : `artifact_id` de l'événement `artifact.ready` (vide tant que la pièce n'est\npas rangée, statut `pending`). `flags` : les termes que le profil ne dit pas (pièce « à\nvérifier »). `salary_fields` : les réponses salariales laissées à January. `words` : le compte\ndes mots (le message pour `linkedin`, les deux relances ensemble pour `followups`). `error` :\nle motif lisible d'une pièce en échec. `sources` : les pages du dossier (`company_brief`).",
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "edited": {
+            "title": "Edited",
+            "type": "boolean"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "flags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Flags",
+            "type": "array"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "kind": {
+            "enum": [
+              "cv",
+              "letter",
+              "linkedin",
+              "followups",
+              "form_answers",
+              "company_brief",
+              "pitch"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "salary_fields": {
+            "title": "Salary Fields",
+            "type": "integer"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/KitSourceOut"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "ready",
+              "to_check",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "words": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Words"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "status",
+          "content",
+          "flags",
+          "salary_fields",
+          "words",
+          "error",
+          "sources",
+          "edited",
+          "updated_at"
+        ],
+        "title": "KitItemOut",
+        "type": "object"
+      },
+      "KitOut": {
+        "description": "Le kit d'une fiche : toujours sept pièces, `pending` pour celles pas encore rangées.\n`session_id` : la session ouverte, sinon la dernière ; `running` : une session est ouverte.",
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/KitItemOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "running": {
+            "title": "Running",
+            "type": "boolean"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          }
+        },
+        "required": [
+          "session_id",
+          "running",
+          "items"
+        ],
+        "title": "KitOut",
+        "type": "object"
+      },
+      "KitPatch": {
+        "description": "Le texte de January pour la pièce (vide permis : la pièce redevient « à vérifier »).",
+        "properties": {
+          "content": {
+            "maxLength": 20000,
+            "title": "Content",
+            "type": "string"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "title": "KitPatch",
+        "type": "object"
+      },
+      "KitSourceOut": {
+        "description": "Une page lue pour le dossier de l'entreprise. `rank` : son numéro dans le texte (`[rank]`),\ndepuis 1.",
+        "properties": {
+          "rank": {
+            "minimum": 1.0,
+            "title": "Rank",
+            "type": "integer"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rank",
+          "url",
+          "title"
+        ],
+        "title": "KitSourceOut",
+        "type": "object"
+      },
+      "KitStartOut": {
+        "properties": {
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id"
+        ],
+        "title": "KitStartOut",
+        "type": "object"
+      },
       "Language": {
         "properties": {
           "id": {
@@ -11305,6 +11513,223 @@
           }
         },
         "summary": "Post Event",
+        "tags": [
+          "applications"
+        ]
+      }
+    },
+    "/api/v1/applications/{application_id}/kit": {
+      "get": {
+        "description": "Les sept pièces dans l'ordre fixe (`pending` : pas encore rangée).",
+        "operationId": "get_kit_api_v1_applications__application_id__kit_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Application Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`application_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Kit",
+        "tags": [
+          "applications"
+        ]
+      },
+      "post": {
+        "description": "Lance les sept pièces en parallèle ; elles arrivent par `artifact.ready` (`kind`\n`kit_item`). Relancer refait les pièces que January n'a pas modifiées.",
+        "operationId": "post_kit_api_v1_applications__application_id__kit_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Application Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitStartOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`application_not_found`"
+          },
+          "409": {
+            "description": "`kit_in_progress` (`details.session_id` : la session ouverte), `posting_required` (la fiche n'a ni offre ni texte d'offre), `profile_required` (aucun profil maître validé)"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Post Kit",
+        "tags": [
+          "applications"
+        ]
+      }
+    },
+    "/api/v1/applications/{application_id}/kit.zip": {
+      "get": {
+        "description": "Téléchargement (`attachment`) : une pièce par fichier Markdown, le PDF du CV et\n`LISEZMOI.txt`.",
+        "operationId": "get_kit_zip_api_v1_applications__application_id__kit_zip_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Application Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/zip": {}
+            },
+            "description": "Le kit en archive ZIP."
+          },
+          "404": {
+            "description": "`application_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Kit Zip",
+        "tags": [
+          "applications"
+        ]
+      }
+    },
+    "/api/v1/applications/{application_id}/kit/{kind}": {
+      "patch": {
+        "description": "Le texte de January remplace la pièce (gardée aux relances). Une pièce « à vérifier » est\nrelue : `flags` mis à jour, « prête » si rien ne reste.",
+        "operationId": "patch_kit_item_api_v1_applications__application_id__kit__kind__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Application Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "enum": [
+                "cv",
+                "letter",
+                "linkedin",
+                "followups",
+                "form_answers",
+                "company_brief",
+                "pitch"
+              ],
+              "title": "Kind",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KitPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitItemOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`application_not_found`, `kit_item_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Patch Kit Item",
         "tags": [
           "applications"
         ]

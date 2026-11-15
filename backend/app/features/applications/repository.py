@@ -16,6 +16,7 @@ from app.db.models.applications import (
     KitItem,
     Reminder,
 )
+from app.db.models.postings import Company
 from app.db.repository import UserScopedRepository
 
 
@@ -215,6 +216,37 @@ class KitRepository(UserScopedRepository[KitItem]):
             KitItem.application_id.in_(builtins.list(application_ids)),
         )
         return {app_id: content for app_id, content in (await self.session.execute(stmt)).all()}
+
+    async def of_application(self, application_id: str) -> builtins.list[KitItem]:
+        """Les pièces de la fiche (au plus une par type), relues en base."""
+        stmt = (
+            select(KitItem)
+            .where(KitItem.user_id == self.user_id, KitItem.application_id == application_id)
+            .order_by(literal_column("rowid"))
+            .execution_options(populate_existing=True)
+        )
+        return builtins.list((await self.session.execute(stmt)).scalars().all())
+
+    async def of_kind(self, application_id: str, kind: str) -> KitItem | None:
+        for row in await self.of_application(application_id):
+            if row.kind == kind:
+                return row
+        return None
+
+
+class CompanyRepository(UserScopedRepository[Company]):
+    """Fiches d'entreprise, pour le dossier du kit (la fiche est partagée avec les revues de CV :
+    seules les colonnes `dossier*` sont écrites ici)."""
+
+    model = Company
+
+    async def by_key(self, name_norm: str) -> Company | None:
+        stmt = (
+            select(Company)
+            .where(Company.user_id == self.user_id, Company.name_norm == name_norm)
+            .execution_options(populate_existing=True)
+        )
+        return (await self.session.execute(stmt.limit(1))).scalar_one_or_none()
 
 
 async def user_ids(session: AsyncSession) -> builtins.list[str]:
