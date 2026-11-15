@@ -3195,7 +3195,7 @@ export interface components {
         /**
          * FreeInterviewIn
          * @description Un entretien sans fiche : sur une offre (`posting_id`) ou sur un intitulé seul (`role`).
-         *     Au moins l'un des deux (422 `fields: ["posting_id", "role"]` sinon).
+         *     L'un ou l'autre, pas les deux ni aucun (422 `fields: ["posting_id", "role"]`).
          */
         FreeInterviewIn: {
             /**
@@ -3543,7 +3543,7 @@ export interface components {
             /** Exchanges */
             exchanges: components["schemas"]["ExchangeOut"][];
             /** Flags */
-            flags?: string[];
+            flags: string[];
             /** Id */
             id: string;
             /**

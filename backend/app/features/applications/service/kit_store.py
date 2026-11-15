@@ -21,7 +21,7 @@ une adresse (17.2)."""
 
 import asyncio
 import logging
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any
 
 from pydantic import ValidationError
@@ -104,10 +104,13 @@ async def posting_inputs(
 
 
 def dossier_of(
-    company: Company | None, fresh: bool
+    company: Company | None, now: datetime
 ) -> tuple[CompanyDossier | None, list[SourceRef]]:
-    """Le dossier repris (de moins de 30 jours) et ses pages, dans l'ordre où elles sont citées."""
-    if company is None or not fresh or not company.dossier:
+    """Le dossier repris (de moins de `DOSSIER_MAX_AGE`, à l'instant `now`) et ses pages, dans
+    l'ordre où elles sont citées. Une seule règle pour le kit et l'entretien blanc."""
+    if company is None or company.dossier_at is None or not company.dossier:
+        return None, []
+    if now - company.dossier_at >= DOSSIER_MAX_AGE:
         return None, []
     try:
         dossier = CompanyDossier.model_validate(company.dossier)
@@ -135,12 +138,7 @@ class AgentKitStore:
             pieces = await KitRepository(db, user_id).of_application(row.id)
             version = await self._version(db, user_id, row)
         edited = {piece.kind for piece in pieces if piece.edited}
-        fresh = (
-            company is not None
-            and company.dossier_at is not None
-            and rt.now() - company.dossier_at < DOSSIER_MAX_AGE
-        )
-        dossier, sources = dossier_of(company, fresh)
+        dossier, sources = dossier_of(company, rt.now())
         return KitContext(
             application_id=row.id,
             language="en" if analysis.language == "en" else "fr",

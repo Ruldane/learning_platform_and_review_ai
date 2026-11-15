@@ -3626,7 +3626,7 @@
         "type": "object"
       },
       "FreeInterviewIn": {
-        "description": "Un entretien sans fiche : sur une offre (`posting_id`) ou sur un intitulé seul (`role`).\nAu moins l'un des deux (422 `fields: [\"posting_id\", \"role\"]` sinon).",
+        "description": "Un entretien sans fiche : sur une offre (`posting_id`) ou sur un intitulé seul (`role`).\nL'un ou l'autre, pas les deux ni aucun (422 `fields: [\"posting_id\", \"role\"]`).",
         "properties": {
           "duration_min": {
             "enum": [
@@ -4577,6 +4577,7 @@
           "status",
           "exchanges",
           "debrief",
+          "flags",
           "cards_created",
           "created_at"
         ],

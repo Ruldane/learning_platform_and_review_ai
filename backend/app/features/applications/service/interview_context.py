@@ -19,7 +19,6 @@ from app.db.models.postings import JobPosting
 from app.features.applications.repository import ApplicationRepository, CompanyRepository
 from app.features.applications.service.kit_language import posting_analysis
 from app.features.applications.service.kit_store import (
-    DOSSIER_MAX_AGE,
     company_name_key,
     dossier_of,
     profile_required,
@@ -101,12 +100,7 @@ async def _dossier(
     if not company:
         return None
     row = await CompanyRepository(db, user_id).by_key(company_name_key(company))
-    fresh = (
-        row is not None
-        and row.dossier_at is not None
-        and rt.now() - row.dossier_at < DOSSIER_MAX_AGE
-    )
-    return dossier_of(row, fresh)[0]
+    return dossier_of(row, rt.now())[0]
 
 
 async def build_context(rt: ApplicationsRuntime, user_id: str, row: Interview) -> InterviewContext:

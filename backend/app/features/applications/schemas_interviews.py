@@ -8,7 +8,7 @@ fiches), `failed` (la session s'est terminée sans résultat)."""
 from datetime import datetime
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, StringConstraints
+from pydantic import BaseModel, StringConstraints
 
 from app.agents.tools.interview_schema import Criterion, QuestionSource, ScoreKey
 from app.db.models.applications import InterviewMode as InterviewMode
@@ -30,7 +30,7 @@ class InterviewIn(BaseModel):
 
 class FreeInterviewIn(InterviewIn):
     """Un entretien sans fiche : sur une offre (`posting_id`) ou sur un intitulé seul (`role`).
-    Au moins l'un des deux (422 `fields: ["posting_id", "role"]` sinon)."""
+    L'un ou l'autre, pas les deux ni aucun (422 `fields: ["posting_id", "role"]`)."""
 
     posting_id: Id | None = None
     role: Role | None = None
@@ -94,6 +94,6 @@ class InterviewOut(BaseModel):
     status: InterviewStatus
     exchanges: list[ExchangeOut]
     debrief: DebriefOut | None
-    flags: list[str] = Field(default_factory=list)
+    flags: list[str]
     cards_created: int
     created_at: datetime

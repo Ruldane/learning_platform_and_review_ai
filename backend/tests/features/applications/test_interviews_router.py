@@ -157,6 +157,7 @@ async def test_422_no_echo(client: httpx.AsyncClient, app: FastAPI) -> None:
         (f"{ROOT}/interviews", BODY | {"posting_id": secret * 10}),
         (f"{ROOT}/interviews", BODY),
         (f"{ROOT}/interviews", BODY | {"role": "   "}),
+        (f"{ROOT}/interviews", BODY | {"role": secret, "posting_id": UNKNOWN}),  # l'un ou l'autre
     ]
     for url, body in cases:
         r = await client.post(url, json=body)

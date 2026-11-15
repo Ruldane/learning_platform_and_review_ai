@@ -10,7 +10,8 @@ from sqlalchemy import select
 
 from app.agents.tools.interview_schema import Debrief, Exchange, ExpectedPoints
 from app.agents.tools.study_schema import CardDraft
-from app.db.models.applications import Interview
+from app.db.models.applications import Application, Interview
+from app.db.models.career import CvVersion
 from app.db.models.postings import Company, JobPosting
 from app.features.applications.service.interview_store import AgentInterviewStore
 from app.features.applications.service.kit_store import company_name_key
@@ -24,6 +25,7 @@ from tests.features.applications.kit_support import (
     spy,
 )
 from tests.support.gap import analysis_data
+from tests.support.interviews import default_cv
 
 ROOT = "/api/v1"
 BODY = {"mode": "behavioral", "duration_min": 30, "language": "fr"}
@@ -147,4 +149,22 @@ async def set_gap(app: FastAPI, posting_id: str, matches: list[dict[str, Any]]) 
         row = (await db.execute(select(JobPosting).where(JobPosting.id == posting_id))).scalar_one()
         row.gap = {"session_id": "g", "matches": matches}
         row.analysis = analysis_data()  # une analyse complète de l'offre
+        await db.commit()
+
+
+async def set_version_content(app: FastAPI, version_id: str, headline: str) -> None:
+    """Le CV de la version : un contenu valide dont seul le titre change."""
+    async with app.state.session_factory() as db:
+        row = (await db.execute(select(CvVersion).where(CvVersion.id == version_id))).scalar_one()
+        row.content = default_cv().model_copy(update={"headline": headline}).model_dump(mode="json")
+        await db.commit()
+
+
+async def send_version(app: FastAPI, application_id: str, version_id: str) -> None:
+    """La version de CV envoyée avec la fiche (`cv_version_id`)."""
+    async with app.state.session_factory() as db:
+        row = (
+            await db.execute(select(Application).where(Application.id == application_id))
+        ).scalar_one()
+        row.cv_version_id = version_id
         await db.commit()

@@ -111,7 +111,14 @@ def interview_out(row: Interview) -> InterviewOut:
 
 
 async def _launch(
-    rt: ApplicationsRuntime, db: AsyncSession, user_id: str, setup: InterviewIn, **origin: Any
+    rt: ApplicationsRuntime,
+    db: AsyncSession,
+    user_id: str,
+    setup: InterviewIn,
+    *,
+    application_id: str | None,
+    posting_id: str | None,
+    role: str | None,
 ) -> InterviewStartOut:
     """Contrôles d'entrée, entretien rangé, parcours lancé. Sous le verrou, dans `db`."""
     await settle(db, user_id)
@@ -121,7 +128,9 @@ async def _launch(
     if await validated_profile(db, user_id) is None:
         raise profile_required()
     row = await repo.add(
-        **origin,
+        application_id=application_id,
+        posting_id=posting_id,
+        role=role,
         mode=setup.mode,
         duration_min=setup.duration_min,
         language=setup.language,
@@ -172,14 +181,16 @@ async def start_free(
     rt: ApplicationsRuntime, user_id: str, body: FreeInterviewIn
 ) -> InterviewStartOut:
     """Lance un entretien sans fiche, sur une offre (404 `posting_not_found`) ou un intitulé."""
-    if body.posting_id is None and body.role is None:
-        raise invalid("posting_id", "role")
+    if (body.posting_id is None) == (body.role is None):
+        raise invalid("posting_id", "role")  # l'un ou l'autre, jamais les deux
     async with interview_lock(rt, user_id), rt.session_factory() as db:
         role = body.role
         if body.posting_id is not None:
             posting = await get_posting(db, user_id, body.posting_id)
-            role = posting.title or body.role or DEFAULT_ROLE
-        return await _launch(rt, db, user_id, body, posting_id=body.posting_id, role=role)
+            role = posting.title or DEFAULT_ROLE
+        return await _launch(
+            rt, db, user_id, body, application_id=None, posting_id=body.posting_id, role=role
+        )
 
 
 async def list_interviews(
