@@ -24,6 +24,8 @@ export type DebriefOut = Schemas["DebriefOut"];
 export type FreeInterviewIn = Schemas["FreeInterviewIn"];
 export type PostingSummaryOut = Schemas["PostingSummaryOut"];
 export type ReminderOut = Schemas["ReminderOut"];
+export type CommitteeRunOut = Schemas["CommitteeRunOut"];
+export type CvVersionOut = Schemas["VersionOut"];
 
 /** Le kit lu : la session ouverte (sinon la dernière), si elle tourne, les sept pièces dans l'ordre. */
 export interface KitView {
@@ -43,12 +45,17 @@ export {
   INTERVIEW_MODES,
   KIT_KINDS,
   MAX_CONTACTS,
+  PERSONA_ORDER,
   SCORE_KEYS,
   STATUS_ORDER,
 } from "./components/viewTypes";
 export type {
   ApplicationView,
+  ChangeView,
   ChannelView,
+  CommitteeDiffView,
+  CommitteeStatusView,
+  CommitteeView,
   ConfirmationFieldView,
   ConfirmationOptionView,
   ConfirmationView,
@@ -69,9 +76,14 @@ export type {
   KitSaveResult,
   KitSourceView,
   KitStatusView,
+  ObjectionView,
+  PersonaView,
   ReminderKindView,
   ReminderView,
   ScoreKeyView,
   StatsView,
   StatusView,
+  VoteChangeView,
+  VoteValueView,
+  VoteView,
 } from "./components/viewTypes";

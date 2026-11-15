@@ -149,3 +149,32 @@ export async function startFreeInterview(body: FreeInterviewIn) {
 export async function fetchPostings(signal?: AbortSignal) {
   return unwrap(await api.GET("/postings", { signal }));
 }
+
+/** `GET /committee?posting_id=` : les exécutions du comité d'une offre, la plus récente d'abord. */
+export async function fetchCommittees(postingId: string, signal?: AbortSignal) {
+  return unwrap(
+    await api.GET("/committee", { params: { query: { posting_id: postingId } }, signal }),
+  );
+}
+
+/** `GET /committee/{id}` : une exécution (relue : une session morte la passe à `failed`) ; 404 `committee_not_found`. */
+export async function fetchCommittee(runId: string, signal?: AbortSignal) {
+  return unwrap(
+    await api.GET("/committee/{run_id}", { params: { path: { run_id: runId } }, signal }),
+  );
+}
+
+/**
+ * `POST /committee` (202) : juge une version de CV. 404 `version_not_found`, `posting_not_found` ;
+ * 409 `version_not_ready`, `committee_in_progress` (`details.run_id`), `profile_required` ; 503.
+ */
+export async function startCommittee(cvVersionId: string) {
+  return unwrap(await api.POST("/committee", { body: { cv_version_id: cvVersionId } }));
+}
+
+/** `GET /cv/versions?posting_id=` : les versions de CV d'une offre (celles que le comité peut juger : les prêtes). */
+export async function fetchCvVersions(postingId: string, signal?: AbortSignal) {
+  return unwrap(
+    await api.GET("/cv/versions", { params: { query: { posting_id: postingId } }, signal }),
+  );
+}

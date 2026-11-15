@@ -45,6 +45,10 @@ export const openKitSessionId = (error: unknown): string | null =>
 export const openInterviewId = (error: unknown): string | null =>
   errorCode(error) === "interview_in_progress" ? detail(error, "interview_id") : null;
 
+/** L'exécution du comité déjà ouverte pour l'offre (409 `committee_in_progress`). */
+export const openCommitteeRunId = (error: unknown): string | null =>
+  errorCode(error) === "committee_in_progress" ? detail(error, "run_id") : null;
+
 /** Le refus d'une modification : le texte du serveur (il parle de la modification), sauf pièce absente. */
 export const kitSaveErrorMessage = (error: unknown): string =>
   errorCode(error) === "kit_item_not_found" || errorCode(error) === "application_not_found"

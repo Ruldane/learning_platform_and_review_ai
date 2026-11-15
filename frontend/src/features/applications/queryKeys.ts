@@ -16,4 +16,9 @@ export const applicationsKeys = {
     ["applications", "interviews", applicationId ?? "free"] as const,
   interview: (interviewId: string) => ["applications", "interview", interviewId] as const,
   postings: ["applications", "postings"],
+  /** Les exécutions du comité d'une offre (le préfixe des lectures du comité). */
+  committees: (postingId: string) => ["applications", "committees", postingId] as const,
+  committee: (runId: string) => ["applications", "committee", runId] as const,
+  /** Les versions de CV d'une offre. */
+  cvVersions: (postingId: string) => ["applications", "cv-versions", postingId] as const,
 } as const;

@@ -16,12 +16,17 @@ export const applicationsPages = {
     posting_required:
       "Cette candidature n'a ni offre liée ni texte d'offre : le kit ne peut pas être préparé sans l'offre.",
     profile_required:
-      "Aucun profil maître validé : valide ton profil dans la partie CV, puis lance le kit.",
+      "Aucun profil maître validé : valide ton profil dans la partie CV, puis réessaie.",
     kit_item_not_found: "Cette pièce n'est pas encore arrivée : attends qu'elle soit prête.",
     interview_in_progress:
       "Un entretien est déjà en cours : reprends-le avant d'en commencer un autre.",
     interview_not_found: "Cet entretien n'existe plus.",
     posting_not_found: "Cette offre n'existe plus.",
+    version_not_found: "Cette version du CV n'existe plus : choisis-en une autre.",
+    version_not_ready:
+      "Le PDF de cette version n'est pas encore rendu : attends qu'elle soit prête, ou choisis-en une autre.",
+    committee_in_progress: "Un comité est déjà en cours pour cette offre.",
+    committee_not_found: "Cette exécution du comité n'existe plus.",
     engine_unavailable:
       "Les agents ne sont pas disponibles pour le moment : réessaie dans un instant.",
   },

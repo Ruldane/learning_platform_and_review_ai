@@ -1,3 +1,4 @@
+import { applicationsCommittee } from "./applicationsCommittee";
 import { applicationsInterview } from "./applicationsInterview";
 import { applicationsKit } from "./applicationsKit";
 import { applicationsPages } from "./applicationsPages";
@@ -7,6 +8,7 @@ export const applications = {
   ...applicationsPages,
   ...applicationsKit,
   ...applicationsInterview,
+  ...applicationsCommittee,
   status: {
     to_apply: "À postuler",
     applied: "Postulée",

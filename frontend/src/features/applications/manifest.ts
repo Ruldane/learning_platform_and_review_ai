@@ -3,6 +3,7 @@ import type { FeatureManifest } from "@/shared/lib/feature";
 import { useDueCount } from "./hooks/useDueCount";
 import { ApplicationDrawer } from "./pages/ApplicationDrawer";
 import { BoardPage } from "./pages/BoardPage";
+import { CommitteePage } from "./pages/CommitteePage";
 import { FreeInterviewPage } from "./pages/FreeInterviewPage";
 import { InterviewPage } from "./pages/InterviewPage";
 import { KitPage } from "./pages/KitPage";
@@ -13,7 +14,7 @@ import { RemindersPage } from "./pages/RemindersPage";
  * Les candidatures (SPEC 6, section « Candidatures » de la navigation) : le suivi (tableau de suivi
  * ou tableau) avec la fiche en tiroir par-dessus, les relances (pastille = relances dues), la
  * nouvelle fiche (à la main ou en une phrase), le kit d'une candidature (7.14), l'entretien blanc (7.15,
- * depuis une fiche ou libre). La page du comité (7.16) s'ajoute sous `/candidatures/:applicationId/…`.
+ * depuis une fiche ou libre). Le comité de recrutement simulé (7.16) est sous `/candidatures/:applicationId/comite`.
  */
 export const applicationsManifest: FeatureManifest = {
   id: "applications",
@@ -30,6 +31,7 @@ export const applicationsManifest: FeatureManifest = {
     { path: "candidatures/entretien", Component: FreeInterviewPage },
     { path: "candidatures/:applicationId/kit", Component: KitPage },
     { path: "candidatures/:applicationId/entretien", Component: InterviewPage },
+    { path: "candidatures/:applicationId/comite", Component: CommitteePage },
   ],
   nav: [
     {

@@ -234,3 +234,63 @@ export interface InterviewView {
   cardsCreated: number;
   createdAt: string;
 }
+
+/** Les quatre personas du comité, dans l'ordre où le comité les nomme. */
+export const PERSONA_ORDER = ["ats_reader", "recruiter", "manager", "colleague"] as const;
+
+export type PersonaView = (typeof PERSONA_ORDER)[number];
+
+export type VoteValueView = "oui" | "non" | "peut_etre";
+
+export type CommitteeStatusView = "running" | "done" | "failed" | "stopped";
+
+/** Le vote motivé d'une persona, avec son objection principale. */
+export interface VoteView {
+  persona: PersonaView;
+  vote: VoteValueView;
+  objection: string;
+  reason: string;
+}
+
+/** Une objection du comité, classée (la première est la plus importante) ; `personas` : qui la soulève. */
+export interface ObjectionView {
+  text: string;
+  personas: PersonaView[];
+}
+
+/** Un changement proposé ; `needsSkill` : il demande une compétence que le profil ne dit pas. */
+export interface ChangeView {
+  text: string;
+  persona: PersonaView;
+  needsSkill: boolean;
+  terms: string[];
+}
+
+/** Le vote d'une persona à l'exécution précédente et à celle-ci. */
+export interface VoteChangeView {
+  persona: PersonaView;
+  before: VoteValueView;
+  after: VoteValueView;
+}
+
+/** L'avant et l'après : ce que la précédente exécution disait, ce qui a changé depuis. */
+export interface CommitteeDiffView {
+  votes: VoteChangeView[];
+  resolved: string[];
+  added: string[];
+}
+
+/** Une exécution du comité telle que la page la montre. */
+export interface CommitteeView {
+  id: string;
+  cvVersionId: string;
+  postingId: string;
+  sessionId: string;
+  status: CommitteeStatusView;
+  verdict: VoteValueView | null;
+  votes: VoteView[];
+  objections: ObjectionView[];
+  changes: ChangeView[];
+  /** `null` : première exécution de l'offre (ou pas terminée). */
+  diff: CommitteeDiffView | null;
+}

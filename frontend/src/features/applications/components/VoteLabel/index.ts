@@ -1,0 +1,1 @@
+export { VoteLabel } from "./VoteLabel";

@@ -8,6 +8,7 @@ import type {
   ReminderView,
   StatsView,
   StatusView,
+  VoteView,
 } from "./viewTypes";
 
 let counter = 0;
@@ -195,4 +196,25 @@ export function makeInterview(overrides: Partial<InterviewView> = {}): Interview
     createdAt: "2026-11-12T10:00:00Z",
     ...overrides,
   };
+}
+
+/** Un vote de test. */
+export function makeVote(overrides: Partial<VoteView> = {}): VoteView {
+  return {
+    persona: "ats_reader",
+    vote: "oui",
+    objection: "Il manque le mot clé Kubernetes.",
+    reason: "Le CV se lit bien par un logiciel de tri.",
+    ...overrides,
+  };
+}
+
+/** Les quatre votes d'un comité : 3 oui, 1 non. */
+export function makeVotes(): VoteView[] {
+  return [
+    makeVote({ persona: "ats_reader", vote: "oui", objection: "Mot clé Kubernetes absent." }),
+    makeVote({ persona: "recruiter", vote: "oui", objection: "Parcours un peu long." }),
+    makeVote({ persona: "manager", vote: "non", objection: "Peu de résultats chiffrés." }),
+    makeVote({ persona: "colleague", vote: "oui", objection: "Rien de personnel." }),
+  ];
 }

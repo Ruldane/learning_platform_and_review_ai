@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { applicationsManifest } from "./manifest";
 
 describe("applicationsManifest", () => {
-  it("declares the board with the drawer as its child, the reminders, the new application, the kit and the interviews", () => {
+  it("declares the board with the drawer as its child, the reminders, the new application, the kit, the interviews and the committee", () => {
     expect(applicationsManifest.id).toBe("applications");
     expect(applicationsManifest.routes.map((route) => route.path)).toEqual([
       "candidatures",
@@ -11,6 +11,7 @@ describe("applicationsManifest", () => {
       "candidatures/entretien",
       "candidatures/:applicationId/kit",
       "candidatures/:applicationId/entretien",
+      "candidatures/:applicationId/comite",
     ]);
     expect(applicationsManifest.routes[0]?.children?.map((route) => route.path)).toEqual([
       ":applicationId",
