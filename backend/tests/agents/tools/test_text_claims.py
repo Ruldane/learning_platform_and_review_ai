@@ -1,37 +1,10 @@
-"""Contrôle des faits d'un texte écrit au nom de January (7.1, critère 18.3) : un chiffre, un
-outil, un titre ou un nom propre que le profil ne dit pas est rendu, par le code. Le sens
-dangereux est le faux négatif : chaque test « invente » une phrase que le profil ne dit pas."""
+"""Contrôle des faits d'un texte écrit au nom de January (7.1, critère 18.3) : chiffres, outils,
+proportions. Le sens dangereux est le faux négatif : chaque test « invente » une phrase que le
+profil ne dit pas."""
 
-from app.agents.tools.cv_schema import Education, Link, MasterProfileData, SourcedLine
 from app.agents.tools.text_claims import Claim, text_claims
-from app.agents.tools.text_claims_names import ACRONYMS
 from tests.support.cv_review import profile
-
-
-def realistic() -> MasterProfileData:
-    """Un profil avec dates, téléphone, email et lien : leurs chiffres ne sont pas des faits."""
-    p = profile(
-        line="Réduit de 30 % le temps de traitement avec Python",
-        role="AI Engineer",
-        skills=["Python", "Docker", "machine learning"],
-        links=[Link(label="GitHub", url="https://github.com/camille-exemple")],
-        education=[
-            Education(degree="Master Informatique", school="Université Fictive", start="2015-09")
-        ],
-    )
-    p.identity.phone = "06 12 34 56 78"
-    p.identity.email = "camille.exemple@example.org"
-    p.experiences[0].start, p.experiences[0].end = "2021-03", "2024-09"
-    return p
-
-
-P = realistic()
-COMPANY, TITLE = "Société Fictive", "Lead Data Engineer"
-
-
-def terms(text: str, *, allowed: tuple[str, ...] = ()) -> list[str]:
-    return [c.term for c in text_claims(text, P, allowed=allowed)]
-
+from tests.support.text_claims import COMPANY, P, terms
 
 # --- les chiffres : le texte des faits et les années, jamais un mois ni un contact ---
 
@@ -117,102 +90,6 @@ def test_ambiguous_word_is_a_tool_only_in_its_product_form() -> None:
 
 def test_tool_written_as_several_words_keeps_the_text_form() -> None:
     assert terms("Mes pipelines Scikit-learn en production.") == ["Scikit-learn"]
-
-
-# --- allowed : des expressions citées, jamais un moyen de se donner l'offre ---
-
-
-def test_cited_company_and_posting_title_are_fine() -> None:
-    text = "Je candidate à votre poste de Lead Data chez Exemple Tech."
-    assert terms(text, allowed=("Lead Data", "Exemple Tech")) == []
-    assert "Lead" in terms(text)
-    text = "Votre offre de Lead Data Engineer (H/F) m'intéresse."
-    assert terms(text, allowed=("Lead Data Engineer (H/F)",)) == []
-
-
-def test_posting_title_claimed_as_own_is_flagged_even_if_allowed() -> None:
-    text = f"En tant que {TITLE} chez {COMPANY}, j'ai piloté Kubernetes et Terraform."
-    claims = text_claims(text, P, allowed=(COMPANY, TITLE))
-    assert claims == [
-        Claim("title", "Lead"),
-        Claim("tool", "Kubernetes"),
-        Claim("tool", "Terraform"),
-    ]
-    assert Claim("name", "Société") not in claims
-    assert terms("En tant que Lead Data, je…", allowed=("Lead Data",)) == ["Lead"]
-
-
-def test_posting_stack_claimed_as_own_is_flagged() -> None:
-    claims = text_claims(
-        "Experte Kubernetes, j'ai déployé Spark sur AWS.", P, allowed=(COMPANY, TITLE)
-    )
-    assert {Claim("tool", "Kubernetes"), Claim("tool", "Spark"), Claim("tool", "AWS")} <= set(
-        claims
-    )
-
-
-# --- les titres : seulement ceux que le texte se donne ---
-
-
-def test_text_claims_title_claimed() -> None:
-    assert Claim("title", "Lead") in text_claims("J'ai travaillé en tant que Lead Data.", P)
-    assert Claim("title", "Senior") in text_claims("As a Senior engineer, I led...", P)
-    assert terms("Je suis Lead à la maison.") == ["Lead"]
-
-
-def test_title_of_the_profile_is_fine() -> None:
-    p = profile(role="Senior AI Engineer")
-    assert text_claims("Je suis Senior AI Engineer depuis longtemps.", p) == []
-
-
-def test_title_word_outside_a_self_attribution_is_not_flagged() -> None:
-    assert terms("Responsable de la mise en production de modèles.") == []
-    assert terms("Je me réjouis de rencontrer le manager et le lead de l'équipe.") == []
-    assert terms("Je vous remercie, en tant que candidate. Le lead…") == []
-
-
-def test_title_of_the_profile_headline_is_fine() -> None:
-    p = profile(title=SourcedLine(text="Lead Data Engineer", sources=["cv"]))
-    assert text_claims("Je suis Lead Data Engineer.", p) == []
-
-
-# --- les noms propres ---
-
-
-def test_unknown_proper_name_is_claimed_unless_allowed() -> None:
-    text = "J'ai découvert votre produit chez Acme Corp et sur LinkedIn."
-    assert terms(text) == ["Acme", "Corp", "LinkedIn"]
-    assert terms(text, allowed=("Acme Corp",)) == ["LinkedIn"]
-
-
-def test_employer_names_at_sentence_start_or_in_capitals_are_claimed() -> None:
-    assert terms("Capgemini m'a confié la refonte du portail.") == ["Capgemini"]
-    assert terms("Merci.\nAccenture m'a appris la rigueur.") == ["Accenture"]
-    assert terms("J'ai travaillé chez IBM et chez BNP.") == ["IBM", "BNP"]
-    assert terms("Chez Acme, j'ai progressé.") == ["Acme"]
-    assert terms("I joined Initech in 2024.") == ["Initech"]
-
-
-def test_common_acronyms_are_not_names() -> None:
-    assert terms("Mon CV, l'IA, les RH et un CDI en PME.") == []
-    assert terms("Mon expérience chez GOOGLE.") == ["GOOGLE"]
-    assert "CV" in ACRONYMS and "IBM" not in ACRONYMS and len(ACRONYMS) <= 20
-
-
-def test_greetings_recipients_and_sentence_starts_are_not_names() -> None:
-    text = (
-        "Bonjour Madame, Monsieur,\nJe vous écris pour votre offre. Cordialement,\nCamille Exemple"
-    )
-    assert text_claims(text, P) == []
-    assert terms("Bonjour Julie,\nVotre offre m'intéresse.") == []
-    assert terms("Hello Julie Martin,\nThank you.") == []
-    assert terms("Dear Hiring Manager,\nTeam, hello. Équipe Recrutement") == []
-    assert terms("Cela m'a permis de progresser. Elle m'a aidée.") == []
-
-
-def test_contact_name_in_allowed_is_not_a_claim() -> None:
-    assert terms("À l'attention de Julie Martin.") == ["Julie", "Martin"]
-    assert terms("À l'attention de Julie Martin.", allowed=("Julie Martin",)) == []
 
 
 # --- une lettre honnête, en français et en anglais, ne signale rien ---

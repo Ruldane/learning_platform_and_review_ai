@@ -14,6 +14,7 @@ from app.agents.tools.posting_schema import normalize_term
 
 _WORD = re.compile(r"\w[\w+#]*")
 _SENTENCE_END = re.compile(r"[.!?\n]")
+_CLAUSE_END = re.compile(r"[,.;:!?\n]")
 _MIN_NAME = 3
 
 # Sigles courants d'une lettre, jamais un employeur (liste courte à dessein : tout autre sigle est
@@ -29,7 +30,7 @@ GREETINGS = frozenset(
     SALUTATIONS
     | set(
         """hiring recruiter recruteur recruteuse equipe team cordialement regards sincerely merci
-        thanks january february march april june july august september october november december
+        thanks january february march april may june july august september october november december
         monday tuesday wednesday thursday friday saturday sunday""".split()  # noqa: SIM905
     )
 )
@@ -59,10 +60,13 @@ def name_claims(text: str, known: str) -> list[tuple[int, str]]:
     greeting = 0  # noms à passer après une salutation
     for rank, match in enumerate(matches):
         word, form = match.group(), forms[rank]
+        gap = text[matches[rank - 1].end() : match.start()] if rank else ""
+        if _CLAUSE_END.search(gap):
+            greeting = 0  # la salutation s'arrête à sa virgule ou à son saut de ligne
         if form in SALUTATIONS:
             greeting = 2
             continue
-        if greeting and word[0].isupper():
+        if greeting and word[0].isupper() and not word.isupper():
             greeting -= 1
             continue
         greeting = 0

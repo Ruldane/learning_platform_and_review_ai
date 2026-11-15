@@ -42,7 +42,12 @@ from app.agents.tools.cv_lexicon import (
 from app.agents.tools.cv_schema import Education, Experience, MasterProfileData, facts_of
 from app.agents.tools.cv_validator import product_forms
 from app.agents.tools.posting_schema import normalize_term
-from app.agents.tools.text_claims_mask import mask_dates, mask_own_contacts, mask_phrases
+from app.agents.tools.text_claims_mask import (
+    SELF_CUES,
+    mask_dates,
+    mask_own_contacts,
+    mask_phrases,
+)
 from app.agents.tools.text_claims_names import GREETINGS, name_claims
 
 ClaimKind = Literal["number", "tool", "title", "name"]
@@ -51,19 +56,6 @@ _SKIPPED_KEYS = frozenset({"id", "sources"})  # identifiants et origines : pas d
 _LINK_FACT = re.compile(r"^k\d+$")  # un lien : son adresse n'est pas une référence de chiffres
 _CLAUSE_BREAK = re.compile(r"[.,;:!?\n]")
 _TIMES = re.compile(r"(?<!\w)(?:[x×]\s?\d+|\d+\s?[x×])(?!\w)", re.IGNORECASE)
-# Le texte se donne un titre : « en tant que Lead… », « je suis Senior… » (mots normalisés).
-_SELF_CUES = (
-    ("en", "tant", "que"),
-    ("je", "suis"),
-    ("j", "ai", "ete"),
-    ("comme",),
-    ("as", "a"),
-    ("as", "an"),
-    ("i", "am"),
-    ("i", "m"),
-    ("i", "was"),
-    ("my", "role", "as"),
-)
 _SELF_WINDOW = 6  # mots après la formule où un mot de titre est lu
 
 
@@ -208,7 +200,7 @@ def _title_claims(text: str, known_titles: str) -> Found:
     words = [normalize_term(m.group()) for m in matches]
     found: Found = {}
     for rank in range(len(matches)):
-        for cue in _SELF_CUES:
+        for cue in SELF_CUES:
             if tuple(words[rank : rank + len(cue)]) != cue:
                 continue
             first = rank + len(cue)
@@ -238,8 +230,7 @@ def text_claims(
     pas, sans doublon, dans l'ordre du texte. `allowed` : des expressions entières (entreprise,
     intitulé exact de l'offre, nom d'un contact), jamais des outils ni des chiffres de l'offre."""
     clean = mask_own_contacts(clean_text(text), profile)
-    names_text = mask_phrases(clean, allowed, cited_only=False)
-    body = mask_dates(mask_phrases(clean, allowed, cited_only=True))
+    body = mask_dates(mask_phrases(clean, allowed))
     facts = _fact_text(profile)
     known = _padded(" ".join(_strings(profile.model_dump())))
     found = _number_claims(body, figures_in(facts) | _years(profile))
@@ -247,7 +238,7 @@ def text_claims(
     found |= _tool_claims(body, known)
     found |= _title_claims(body, _title_texts(profile))
     taken = {form for _, form in found} | {tok for _, form in found for tok in form.split()}
-    for position, word in name_claims(mask_dates(names_text), known):
+    for position, word in name_claims(body, known):
         form = normalize_term(word, plural=True)
         if form not in taken and form not in GREETINGS:
             found[("name", form)] = (position, Claim("name", word))
