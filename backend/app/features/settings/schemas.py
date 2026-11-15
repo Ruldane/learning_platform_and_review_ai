@@ -4,7 +4,7 @@ from pydantic import AfterValidator, BaseModel, Field, computed_field, field_val
 
 from app.core.clock import DEFAULT_ZONE, Weekday, is_zone
 from app.core.domains import normalize_domain
-from app.features.applications.service.schedule import validated_delays
+from app.features.settings.delays import validated_delays
 from app.providers.llm.base import TIERS, ModelChoice, Tier
 from app.providers.llm.model_defaults import DEFAULT_TIERS, supports_vision
 
