@@ -64,7 +64,15 @@ async def get_kit(application_id: Id, current: CurrentUserDep, rt: ApplicationsD
 @router.patch(
     "/{application_id}/kit/{kind}",
     response_model=KitItemOut,
-    responses={404: {"description": "`application_not_found`, `kit_item_not_found`"}},
+    responses={
+        404: {"description": "`application_not_found`, `kit_item_not_found`"},
+        409: {
+            "description": (
+                "`profile_required`, `posting_required` : la modification d'une pièce à "
+                "vérifier ne peut pas être relue sans le profil validé ni le texte de l'offre"
+            )
+        },
+    },
 )
 async def patch_kit_item(
     application_id: Id, kind: Kind, body: KitPatch, current: CurrentUserDep, rt: ApplicationsDep

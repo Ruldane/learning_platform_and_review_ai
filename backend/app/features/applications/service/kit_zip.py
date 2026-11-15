@@ -39,6 +39,7 @@ TITLES = {
 }
 README = "LISEZMOI.txt"
 _KEPT = ("ready", "to_check")
+_FILE_MODE = 0o100644
 
 
 @dataclass(frozen=True)
@@ -110,7 +111,9 @@ def _write(files: list[tuple[str, bytes]], now: datetime) -> bytes:
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
         for name, data in files:
-            archive.writestr(zipfile.ZipInfo(name, date_time=stamp), data, zipfile.ZIP_DEFLATED)
+            info = zipfile.ZipInfo(name, date_time=stamp)
+            info.external_attr = _FILE_MODE << 16  # fichier ordinaire, rw-r--r--
+            archive.writestr(info, data, zipfile.ZIP_DEFLATED)
     return buffer.getvalue()
 
 

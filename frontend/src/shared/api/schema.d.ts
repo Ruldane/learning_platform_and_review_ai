@@ -6383,6 +6383,13 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description `profile_required`, `posting_required` : la modification d'une pièce à vérifier ne peut pas être relue sans le profil validé ni le texte de l'offre */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {

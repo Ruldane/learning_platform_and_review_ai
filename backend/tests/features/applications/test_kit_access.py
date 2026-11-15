@@ -6,9 +6,11 @@ import logging
 import httpx
 import pytest
 from fastapi import FastAPI
+from sqlalchemy import delete
 
 from app.agents.tools.kit_schema import KIT_KINDS
 from app.core.errors import AppError
+from app.db.models.career import MasterProfile
 from tests.features.applications.conftest import API
 from tests.features.applications.kit_support import (
     dossier,
@@ -89,3 +91,17 @@ async def test_kit_never_logged(
     for secret in (*secrets, piece, "ultra-secret", "source-1.example.org", "Kit_", "CV_"):
         assert secret not in logged, secret
     assert application_id in logged and session_id in logged
+
+
+async def test_patch_speaks_of_the_edit_when_the_profile_is_gone(
+    client: httpx.AsyncClient, app: FastAPI
+) -> None:
+    application_id = await ready_application(client, app)
+    await save(app, application_id, "letter", status="to_check")
+    async with app.state.session_factory() as db:
+        await db.execute(delete(MasterProfile))
+        await db.commit()
+    r = await client.patch(f"{API}/{application_id}/kit/letter", json={"content": "Mon texte."})
+    assert (r.status_code, r.json()["error"]["code"]) == (409, "profile_required")
+    message = r.json()["error"]["message"]
+    assert "modification" in message and "kit" not in message.lower()

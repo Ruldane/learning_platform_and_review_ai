@@ -8,6 +8,7 @@ courriel de 14 jours ; `linkedin` = invitation, une ligne `---`, message ; `form
 
 import re
 from dataclasses import dataclass
+from typing import cast
 
 from app.agents.nodes.tracker.honesty import allowed_phrases
 from app.agents.tools.kit_schema import (
@@ -119,8 +120,8 @@ def item_out(row: KitItem) -> KitItemOut:
     error = meta.get("error")
     return KitItemOut(
         id=row.id,
-        kind=row.kind,  # type: ignore[arg-type]  # la colonne est un texte, les valeurs sont KitKind
-        status=row.status,  # type: ignore[arg-type]  # idem, KitStatus
+        kind=cast(KitKind, row.kind),  # la colonne est un texte, les valeurs sont KitKind
+        status=cast(KitStatus, row.status),
         content=row.content,
         flags=[str(flag) for flag in flags] if isinstance(flags, list) else [],
         salary_fields=salary_fields(row.content) if row.kind == "form_answers" else 0,

@@ -5,8 +5,10 @@ from typing import Any
 
 import httpx
 from fastapi import FastAPI
+from sqlalchemy import select
 
 from app.agents.tools.kit_schema import CompanyDossier, KitKind, KitStatus, SourceRef
+from app.db.models.applications import ApplicationEvent
 from app.db.models.career import MasterProfile
 from app.features.applications.service.kit_store import AgentKitStore
 from tests.features.applications.conftest import API, created_id
@@ -105,3 +107,11 @@ async def get_kit(client: httpx.AsyncClient, application_id: str) -> dict[str, A
 def item(kit: dict[str, Any], kind: str) -> dict[str, Any]:
     found: dict[str, Any] = next(i for i in kit["items"] if i["kind"] == kind)
     return found
+
+
+async def kit_events(app: FastAPI, application_id: str) -> list[ApplicationEvent]:
+    async with app.state.session_factory() as db:
+        stmt = select(ApplicationEvent).where(
+            ApplicationEvent.application_id == application_id, ApplicationEvent.kind == "kit"
+        )
+        return list((await db.execute(stmt)).scalars())

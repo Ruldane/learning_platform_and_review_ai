@@ -162,3 +162,14 @@ def test_kit_filename_never_empty() -> None:
     assert kit_filename(COMPANY, "Poste") == "Kit_Societe_Fictive_Poste.zip"
     assert kit_filename("", None) == "Kit.zip"
     assert kit_filename("株式会社", "エンジニア") == "Kit.zip"
+
+
+async def test_zip_entries_are_regular_files_with_normal_rights(
+    client: httpx.AsyncClient, app: FastAPI
+) -> None:
+    application_id = await ready_application(client, app)
+    await save(app, application_id, "letter")
+    _, archive = await fetch(client, application_id)
+    assert archive.infolist()
+    for info in archive.infolist():
+        assert info.external_attr >> 16 == 0o100644, info.filename

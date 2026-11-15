@@ -125,6 +125,16 @@ class EventRepository(UserScopedRepository[ApplicationEvent]):
         )
         return (await self.session.execute(stmt)).scalars().first()
 
+    async def kit_ended(self, session_id: str) -> bool:
+        """L'événement « kit terminé » de cette session est déjà au fil."""
+        stmt = select(ApplicationEvent.id).where(
+            ApplicationEvent.user_id == self.user_id,
+            ApplicationEvent.kind == "kit",
+            ApplicationEvent.ref_id == session_id,
+            ApplicationEvent.text.like("Kit de candidature terminé%"),
+        )
+        return (await self.session.execute(stmt.limit(1))).first() is not None
+
     async def version_frozen(self) -> set[str]:
         """Les fiches dont la version de CV est figée (elles ont un événement `version`)."""
         stmt = select(ApplicationEvent.application_id).where(

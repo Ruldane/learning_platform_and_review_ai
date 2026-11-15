@@ -12,7 +12,7 @@ from sqlalchemy import delete, func, select
 
 from app.agents.tools.kit_schema import KIT_KINDS
 from app.core.errors import AppError
-from app.db.models.applications import ApplicationEvent, KitItem
+from app.db.models.applications import KitItem
 from app.db.models.career import MasterProfile
 from app.db.models.postings import Company, JobPosting
 from app.features.applications.service.kit_store import AgentKitStore
@@ -28,6 +28,7 @@ from tests.features.applications.kit_support import (
     add_profile,
     dossier,
     get_kit,
+    kit_events,
     kit_store,
     ready_application,
     save,
@@ -40,14 +41,6 @@ pytestmark = pytest.mark.usefixtures("client")
 async def rows(app: FastAPI, application_id: str) -> list[KitItem]:
     async with app.state.session_factory() as db:
         stmt = select(KitItem).where(KitItem.application_id == application_id)
-        return list((await db.execute(stmt)).scalars())
-
-
-async def kit_events(app: FastAPI, application_id: str) -> list[ApplicationEvent]:
-    async with app.state.session_factory() as db:
-        stmt = select(ApplicationEvent).where(
-            ApplicationEvent.application_id == application_id, ApplicationEvent.kind == "kit"
-        )
         return list((await db.execute(stmt)).scalars())
 
 
@@ -236,35 +229,6 @@ async def test_parallel_saves_of_the_same_piece_by_two_sessions_keep_one_row(
     )
     [row] = await rows(app, application_id)
     assert row.session_id in (SESSION, OTHER_SESSION)
-
-
-async def test_end_event_enters_the_thread_once_all_seven_are_in(
-    client: httpx.AsyncClient, app: FastAPI
-) -> None:
-    application_id = await ready_application(client, app)
-    for kind in KIT_KINDS[:-1]:
-        await save(app, application_id, kind, status="to_check" if kind == "letter" else "ready")
-    assert await kit_events(app, application_id) == []
-    await save(app, application_id, KIT_KINDS[-1], status="failed")
-    await save(app, application_id, KIT_KINDS[-1], status="failed")  # rejeu
-    [event] = await kit_events(app, application_id)
-    assert event.ref_id == SESSION
-    assert event.text == "Kit de candidature terminé : 5 prête(s), 1 à vérifier, 1 en échec."
-
-
-async def test_kept_pieces_count_for_the_end_event(client: httpx.AsyncClient, app: FastAPI) -> None:
-    application_id = await ready_application(client, app)
-    for kind in KIT_KINDS:
-        await save(app, application_id, kind)
-    await client.patch(f"{API}/{application_id}/kit/letter", json={"content": "À moi."})
-    for kind in KIT_KINDS:
-        if kind != "letter":
-            await save(app, application_id, kind, session=OTHER_SESSION)
-    events = await kit_events(app, application_id)
-    assert [e.ref_id for e in events] == [SESSION, OTHER_SESSION]
-    assert events[1].text.endswith(
-        "6 prête(s), 0 à vérifier, 0 en échec, 1 gardée(s) telle(s) quelle(s)."
-    )
 
 
 async def test_company_brief_keeps_the_pages_it_cites_in_rank_order(

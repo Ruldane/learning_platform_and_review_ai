@@ -59,8 +59,15 @@ from app.features.postings.service.rules import company_key
 logger = logging.getLogger(__name__)
 
 DOSSIER_MAX_AGE = timedelta(days=30)
+END_TEXT = "Kit de candidature terminé"
 GRAPH = "application_kit"
 SUBJECT = "application_kit"
+
+
+def company_name_key(name: str) -> str:
+    """La clé de la fiche entreprise d'un nom : `company_key`, sinon le nom en minuscules (un nom
+    sans lettre latine donnerait une clé vide). Une seule clé pour lire et écrire le dossier."""
+    return company_key(name) or name.strip().casefold()
 
 
 def posting_required() -> AppError:
@@ -124,7 +131,7 @@ class AgentKitStore:
                 raise profile_required()
             today = local_today(await zone_of(db, user_id), rt.now())
             contact = pick_contact(await ContactRepository(db, user_id).of_application(row.id))
-            company = await CompanyRepository(db, user_id).by_key(company_key(row.company))
+            company = await CompanyRepository(db, user_id).by_key(company_name_key(row.company))
             pieces = await KitRepository(db, user_id).of_application(row.id)
             version = await self._version(db, user_id, row)
         edited = {piece.kind for piece in pieces if piece.edited}
@@ -174,7 +181,11 @@ class AgentKitStore:
             repo = KitRepository(db, user_id)
             row = await repo.of_kind(application_id, kind)
             if row is not None and (row.session_id == session_id or row.edited):
-                return row.id  # rejeu (SPEC 9.4), ou pièce modifiée par January depuis
+                # Rejeu (SPEC 9.4), ou pièce modifiée par January depuis : rien n'est réécrit,
+                # mais la pièce compte : la fin du kit s'écrit si elle était la dernière.
+                await self._close_if_done(db, user_id, session_id, app_row)
+                await db.commit()
+                return row.id
             fields = {
                 "status": status,
                 "content": content,
@@ -208,7 +219,7 @@ class AgentKitStore:
         stored = dict(meta)
         if kind != "company_brief" or not meta.get("sources"):
             return stored
-        company = await CompanyRepository(db, user_id).by_key(company_key(row.company))
+        company = await CompanyRepository(db, user_id).by_key(company_name_key(row.company))
         if company is not None:
             stored["source_refs"] = [dict(ref) for ref in company.dossier_sources]
         return stored
@@ -218,6 +229,8 @@ class AgentKitStore:
     ) -> None:
         """Les sept pièces sont rangées (par la session, ou gardées telles quelles) : l'événement
         `kit` « terminé » entre au fil, avec le compte des statuts."""
+        if await EventRepository(db, user_id).kit_ended(session_id):
+            return
         rows = await KitRepository(db, user_id).of_application(app_row.id)
         mine = [row for row in rows if row.session_id == session_id]
         done = {row.kind for row in rows if row.session_id == session_id or row.edited}
@@ -226,7 +239,7 @@ class AgentKitStore:
         counts = [row.status for row in mine]
         kept = len(done) - len(mine)
         text = (
-            f"Kit de candidature terminé : {counts.count('ready')} prête(s), "
+            f"{END_TEXT} : {counts.count('ready')} prête(s), "
             f"{counts.count('to_check')} à vérifier, {counts.count('failed')} en échec"
             + (f", {kept} gardée(s) telle(s) quelle(s)." if kept else ".")
         )
@@ -243,7 +256,7 @@ class AgentKitStore:
         sources: list[SourceRef],
     ) -> None:
         rt = self._rt
-        key = company_key(company) or company.strip().casefold()
+        key = company_name_key(company)
         async with rt.locks.get(user_id, "kit-dossier"), rt.session_factory() as db:
             repo = CompanyRepository(db, user_id)
             row = await repo.by_key(key) or await repo.add(name=company[:200], name_norm=key[:200])

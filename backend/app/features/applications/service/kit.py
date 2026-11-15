@@ -12,6 +12,7 @@ Journaux : identifiants et statuts seulement, jamais une pièce ni l'entreprise 
 
 import logging
 
+from app.agents.tools.kit_schema import KitContext
 from app.core.errors import AppError
 from app.features.applications.repository import EventRepository, KitRepository
 from app.features.applications.schemas_kit import KIT_ORDER, KitItemOut, KitKind, KitOut
@@ -50,6 +51,26 @@ def piece_not_found() -> AppError:
     return AppError(
         "kit_item_not_found", "Cette pièce n'existe pas encore : lance d'abord le kit.", 404
     )
+
+
+_EDIT_BLOCKED = {
+    "profile_required": "Valide ton profil maître : sans lui, ta modification n'est pas relue.",
+    "posting_required": "Cette fiche n'a plus d'offre ni de texte d'offre : ta modification "
+    "ne peut pas être relue.",
+}
+
+
+async def _context_for_edit(
+    rt: ApplicationsRuntime, user_id: str, application_id: str
+) -> KitContext:
+    """Le contexte pour relire la modification ; un refus (409) parle de la modification, pas du
+    lancement du kit."""
+    try:
+        return await AgentKitStore(rt).context(user_id, application_id)
+    except AppError as exc:
+        if exc.code in _EDIT_BLOCKED:
+            raise AppError(exc.code, _EDIT_BLOCKED[exc.code], 409) from None
+        raise
 
 
 async def start_kit(rt: ApplicationsRuntime, user_id: str, application_id: str) -> str:
@@ -111,7 +132,7 @@ async def patch_piece(
         # Une pièce prête n'est pas relue : seul le contexte d'une pièce à relire est lu.
         ctx = None
         if needs_context(row.status, content):
-            ctx = await AgentKitStore(rt).context(user_id, application_id)
+            ctx = await _context_for_edit(rt, user_id, application_id)
         checked = recheck(row, content, ctx)
         row.content, row.status, row.meta = content, checked.status, checked.meta
         row.edited = True
