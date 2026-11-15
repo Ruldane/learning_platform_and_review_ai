@@ -113,6 +113,8 @@ class Reminder(UserScopedMixin, Base):
     due_on: Mapped[date] = mapped_column(Date)
     status: Mapped[str] = mapped_column(String(16), default="pending")
     done_at: Mapped[datetime | None] = mapped_column(UTCDateTime, default=None)
+    # Reportée par January (« Reporter de 3 jours ») : ne suit plus les délais des réglages.
+    postponed: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
 
 
 class KitItem(UserScopedMixin, Base):

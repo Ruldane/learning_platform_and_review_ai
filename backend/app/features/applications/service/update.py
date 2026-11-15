@@ -1,6 +1,7 @@
 """Retouche d'une fiche (SPEC 6.1, D139) : les champs envoyés changent (`null` efface un champ
 facultatif), les contacts sont remplacés s'ils sont fournis. Le statut n'est pas un champ de la
-retouche (voir `events`). Le commit appartient à la requête (`Db`)."""
+retouche (voir `events`). `update_locked` : sous le verrou des candidatures, dans sa propre
+transaction (la synchronisation des relances qui suit l'exige)."""
 
 from datetime import date
 
@@ -11,7 +12,9 @@ from app.db.models.applications import Application
 from app.features.applications.repository import ContactRepository
 from app.features.applications.schemas import ApplicationDetail, ApplicationPatch
 from app.features.applications.service.create import link_key
+from app.features.applications.service.queries import today_of
 from app.features.applications.service.reminder_sync import sync_user
+from app.features.applications.service.runtime import ApplicationsRuntime
 from app.features.applications.service.views import detail_out, get_application, invalid
 from app.features.postings.service.rules import company_key
 
@@ -67,3 +70,14 @@ async def update_application(
     await db.flush()
     await sync_user(db, user_id, today, application_id=row.id)
     return await detail_out(db, user_id, row, today)
+
+
+async def update_locked(
+    rt: ApplicationsRuntime, user_id: str, application_id: str, body: ApplicationPatch
+) -> ApplicationDetail:
+    """`update_application` sous le verrou des candidatures, validé avant de le rendre."""
+    async with rt.lock(user_id), rt.session_factory() as db:
+        today = await today_of(db, user_id, rt.now())
+        detail = await update_application(db, user_id, application_id, body, today)
+        await db.commit()
+        return detail

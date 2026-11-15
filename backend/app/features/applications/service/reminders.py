@@ -95,6 +95,7 @@ async def act_on_reminder(
         today = local_today(zone, now)
         if action == "postpone":
             row.due_on = max(row.due_on, today) + timedelta(days=POSTPONE_DAYS)
+            row.postponed = True
         else:
             row.status = "done" if action == "done" else "ignored"
             if action == "done":

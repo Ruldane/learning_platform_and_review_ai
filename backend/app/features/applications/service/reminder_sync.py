@@ -1,12 +1,14 @@
 """Synchronisation des relances attendues (SPEC 6.2, D140) : ce que `expected_reminders` (7.1) dit
 d'une fiche, comparé à ce qui est enregistré. Une relance attendue et absente est créée « en
 attente » ; une relance en attente qui n'est plus attendue (réponse reçue, ancre changée, fiche
-retirée) est supprimée ; une relance faite ou ignorée n'est jamais touchée (et n'est jamais
-recréée : l'ancre y est déjà) ; une relance en attente encore attendue garde son échéance (un
-report de January n'est pas défait). Idempotente, et sûre sans verrou : la création ignore un
-doublon `(fiche, type, ancre)` (la base l'interdit). Appelée à chaque écriture qui change le statut
-ou les dates d'une fiche, par `GET /reminders` et par la tâche planifiée. Journaux : identifiants
-et nombres seulement."""
+retirée) est supprimée (jamais une relance faite ou ignorée : la suppression re-vérifie le
+statut) ; une relance faite ou ignorée n'est jamais touchée (et n'est jamais recréée : l'ancre y
+est déjà) ; une relance en attente encore attendue, non reportée, prend l'échéance que donnent les
+délais des réglages (même ancre) ; une relance reportée par January (`postponed`) garde la sienne.
+Idempotente ; la création ignore un doublon `(fiche, type, ancre)` (la base l'interdit) ; les
+écritures de relances se font sous le verrou des candidatures. Appelée à chaque écriture qui change
+le statut ou les dates d'une fiche, par `GET /reminders` et par la tâche planifiée. Journaux :
+identifiants et nombres seulement."""
 
 import logging
 from datetime import date
@@ -57,6 +59,16 @@ async def _create(db: AsyncSession, user_id: str, application_id: str, e: Expect
     )
 
 
+def _follow_delays(current: Reminder, item: Expected) -> int:
+    """Une relance en attente, non reportée, prend l'échéance que donnent les délais (même
+    ancre) ; rend 1 si elle a bougé."""
+    if current.status != "pending" or current.postponed or current.due_on == item.due_on:
+        return 0
+    current.due_on = item.due_on
+    current.updated_at = utcnow()
+    return 1
+
+
 async def sync_reminders(
     db: AsyncSession,
     user_id: str,
@@ -77,7 +89,7 @@ async def sync_reminders(
     stored: dict[str, dict[tuple[str, date], Reminder]] = {row.id: {} for row in rows}
     for reminder in await ReminderRepository(db, user_id).of_applications(list(stored)):
         stored[reminder.application_id][(reminder.kind, reminder.anchor_on)] = reminder
-    created, removed = 0, []
+    created, moved, removed = 0, 0, []
     for row in rows:
         expected = _expected_of(row, delays)
         have = stored[row.id]
@@ -85,17 +97,23 @@ async def sync_reminders(
             r.id for key, r in have.items() if r.status == "pending" and key not in expected
         ]
         for key, item in expected.items():
-            if key not in have:
+            current = have.get(key)
+            if current is None:
                 await _create(db, user_id, row.id, item)
                 created += 1
-    if removed:
+            else:
+                moved += _follow_delays(current, item)
+    if removed:  # seulement des relances en attente, même si une autre requête vient d'en clore une
         await db.execute(
-            delete(Reminder).where(Reminder.user_id == user_id, Reminder.id.in_(removed))
+            delete(Reminder).where(
+                Reminder.user_id == user_id, Reminder.id.in_(removed), Reminder.status == "pending"
+            )
         )
-    if created or removed:
+    if created or moved or removed:
         logger.info(
-            "Relances synchronisées : utilisateur %s, jour %s, %d créée(s), %d retirée(s)",
-            user_id, today.isoformat(), created, len(removed),
+            "Relances synchronisées : utilisateur %s, jour %s, %d créée(s), %d déplacée(s), "
+            "%d retirée(s)",
+            user_id, today.isoformat(), created, moved, len(removed),
         )  # fmt: skip
 
 

@@ -28,10 +28,9 @@ from app.features.applications.service.queries import (
     list_applications,
     read_application,
     read_stats,
-    today_of,
 )
 from app.features.applications.service.runtime import ApplicationsRuntime
-from app.features.applications.service.update import update_application
+from app.features.applications.service.update import update_locked
 
 router = APIRouter(prefix="/applications", tags=["applications"], route_class=FieldPathsRoute)
 
@@ -110,16 +109,11 @@ async def get_one_application(
 
 @router.patch("/{application_id}", response_model=ApplicationDetail, responses=_NOT_FOUND)
 async def patch_application(
-    application_id: Id,
-    body: ApplicationPatch,
-    current: CurrentUserDep,
-    db: Db,
-    rt: ApplicationsDep,
+    application_id: Id, body: ApplicationPatch, current: CurrentUserDep, rt: ApplicationsDep
 ) -> ApplicationDetail:
     """Retouche les champs envoyés ; `contacts` remplace la liste. Le statut ne se change que par
     `POST /applications/{id}/events` : l'envoyer ici est une 422."""
-    today = await today_of(db, current.id, rt.now())
-    return await update_application(db, current.id, application_id, body, today)
+    return await update_locked(rt, current.id, application_id, body)
 
 
 @router.post("/{application_id}/events", response_model=ApplicationDetail, responses=_NOT_FOUND)
