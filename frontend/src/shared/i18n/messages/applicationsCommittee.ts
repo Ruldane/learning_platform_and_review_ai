@@ -83,6 +83,7 @@ export const applicationsCommittee = {
     changesEmpty: "Le comité n'a proposé aucun changement.",
     changeBy: "Proposé par : {name}",
     needsSkill: "À acquérir",
+    needsCheck: "À vérifier",
     needsSkillTerms: "Compétences concernées : {terms}",
   },
   diffView: {

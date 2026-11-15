@@ -1,4 +1,5 @@
 import { t } from "@/shared/i18n/t";
+import { todayString } from "../../dates";
 import { toContactsIn } from "../../toView";
 import type { ApplicationIn, ContactView, StatusView } from "../../types";
 import type { FieldSpec } from "../../components/DraftField";
@@ -43,10 +44,16 @@ export const MANUAL_FIELDS: FieldSpec[] = [
   { key: "notes", label: t("applications.fields.notes"), kind: "textarea" },
 ];
 
-/** Ce qui empêche d'envoyer : `name` (entreprise ou poste vide) ou `contact` (un contact sans nom). */
-export function manualProblem(draft: ManualDraft): "name" | "contact" | null {
+export type ManualProblem = "name" | "contact" | "date";
+
+/**
+ * Ce qui empêche d'envoyer : `name` (entreprise ou poste vide), `contact` (un contact sans nom) ou
+ * `date` (une date de candidature dans le futur, pour une fiche déjà postulée).
+ */
+export function manualProblem(draft: ManualDraft): ManualProblem | null {
   if (draft.company.trim() === "" || draft.title.trim() === "") return "name";
-  return draft.contacts.some((contact) => contact.name.trim() === "") ? "contact" : null;
+  if (draft.contacts.some((contact) => contact.name.trim() === "")) return "contact";
+  return draft.status !== "to_apply" && draft.appliedOn > todayString() ? "date" : null;
 }
 
 const orNull = (value: string) => (value.trim() === "" ? null : value.trim());

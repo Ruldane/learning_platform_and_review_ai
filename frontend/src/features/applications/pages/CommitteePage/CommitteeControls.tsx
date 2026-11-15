@@ -86,7 +86,7 @@ export function CommitteeControls({
         </div>
       )}
       {versionNotes(ready, view)}
-      <LaunchNotes start={start} />
+      <LaunchNotes start={start} running={loadingRun || view?.status === "running"} />
     </div>
   );
 }

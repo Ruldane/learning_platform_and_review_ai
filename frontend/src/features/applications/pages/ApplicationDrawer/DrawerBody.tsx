@@ -11,6 +11,7 @@ import { DetailsForm } from "./DetailsForm";
 import { DrawerReminders } from "./DrawerReminders";
 import { DrawerSection } from "./DrawerSection";
 import { NoteForm } from "./NoteForm";
+import { PostingTextSection } from "./PostingTextSection";
 import { StatusChange } from "./StatusChange";
 import { ToolLinks } from "./ToolLinks";
 import { useRecordMessage } from "./useRecordMessage";
@@ -66,6 +67,7 @@ export function DrawerBody({ detail, info }: DrawerBodyProps) {
         />
         <NoteForm pending={update.pending} onRecord={recordAndSay} />
       </DrawerSection>
+      <PostingTextSection detail={detail} pending={update.pending} onSave={saveAndSay} />
       <VersionSection number={detail.cv_version_number} />
       <DrawerReminders reminders={pending.map(toReminderView)} />
       <DrawerSection title={t("applications.drawer.timelineTitle")}>

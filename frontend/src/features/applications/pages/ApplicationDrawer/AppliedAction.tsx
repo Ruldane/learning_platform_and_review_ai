@@ -15,16 +15,25 @@ interface AppliedActionProps {
 /** « J'ai postulé » : le statut Postulée à la date choisie (aujourd'hui par défaut). */
 export function AppliedAction({ pending, onRecord }: AppliedActionProps) {
   const [day, setDay] = useState(() => todayString());
+  const [refused, setRefused] = useState(false);
+  const today = todayString();
+  const future = day > today;
 
   function submit(event: FormEvent) {
     event.preventDefault();
-    if (pending || day === "") return;
+    setRefused(true);
+    if (pending || day === "" || future) return;
     void onRecord({ kind: "status", status: "applied", on: day });
   }
 
   return (
     <form noValidate onSubmit={submit} className="flex flex-wrap items-end gap-3">
-      <DraftField spec={DAY} value={day} onChange={setDay} />
+      <DraftField
+        spec={{ ...DAY, max: today }}
+        value={day}
+        error={refused && future ? t("applications.fields.futureDate") : undefined}
+        onChange={setDay}
+      />
       <Button type="submit" disabled={pending || day === ""}>
         {t("applications.drawer.appliedAction")}
       </Button>

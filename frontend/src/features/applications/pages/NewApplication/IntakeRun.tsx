@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { t } from "@/shared/i18n/t";
 import type { SocketFactory } from "@/shared/realtime/socket";
@@ -9,17 +10,22 @@ import { Button } from "@/shared/ui/button";
 import { InlineError } from "@/shared/ui/states/InlineError";
 import { ConfirmationCard } from "../../components/ConfirmationCard";
 import { toConfirmationView } from "../../toView";
+import { infoFromArtifact } from "../../navState";
+import { applicationsKeys } from "../../queryKeys";
+import type { AlertOut } from "../../types";
 import { applicationPath } from "../../urls";
 import { asReasked } from "./reasked";
 
 const CONFIRM_KIND = "application_confirm";
 
-/** La fiche que la session annonce (`artifact.ready` de genre `application`), la plus récente. */
-export function announcedApplication(events: SessionEvent[]): string | null {
+/** La fiche que la session annonce (`artifact.ready` de genre `application`), la plus récente, et ses informations. */
+export function announcedApplication(
+  events: SessionEvent[],
+): { id: string; info: AlertOut[] } | null {
   for (let i = events.length - 1; i >= 0; i -= 1) {
     const event = events[i];
     if (event?.type === "artifact.ready" && event.payload.kind === "application") {
-      return event.payload.artifact_id;
+      return { id: event.payload.artifact_id, info: infoFromArtifact(event.payload.info) };
     }
   }
   return null;
@@ -65,13 +71,18 @@ interface IntakeRunProps {
  */
 export function IntakeRun({ sessionId, createSocket, onLeave }: IntakeRunProps) {
   const navigate = useNavigate();
+  const client = useQueryClient();
   const run = useRun(sessionId, () => undefined, createSocket);
-  const opened = announcedApplication(run.stream.events);
+  const announced = useMemo(() => announcedApplication(run.stream.events), [run.stream.events]);
+  const opened = announced?.id ?? null;
   const [sent, setSent] = useState<Record<string, string> | null>(null);
 
   useEffect(() => {
-    if (opened) void navigate(applicationPath(opened));
-  }, [opened, navigate]);
+    if (!announced) return;
+    // La fiche vient d'être créée (ou ouverte) : le suivi et les indicateurs la relisent.
+    void client.invalidateQueries({ queryKey: applicationsKeys.all });
+    void navigate(applicationPath(announced.id), { state: { info: announced.info } });
+  }, [announced, navigate, client]);
 
   return (
     <div className="flex flex-col gap-3">

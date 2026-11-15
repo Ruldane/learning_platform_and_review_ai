@@ -51,7 +51,7 @@ export function KitControls({ applicationId, pieces, running, start, onStart }: 
           {t("applications.kitPage.archiveHint")}
         </p>
       ) : null}
-      {start.resumed ? (
+      {start.resumed && running ? (
         <p role="status" className="text-sm">
           {t("applications.kitPage.followingOpen")}
         </p>

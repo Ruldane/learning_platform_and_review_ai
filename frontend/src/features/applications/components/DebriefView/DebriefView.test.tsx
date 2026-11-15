@@ -30,6 +30,29 @@ describe("DebriefView", () => {
     expect(bar.firstElementChild).toHaveStyle({ width: "80%" });
   });
 
+  it("says « non noté » for a score the model did not give, and leaves the average out of it", () => {
+    const base = makeInterview();
+    show({
+      ...base,
+      debrief: {
+        ...base.debrief!,
+        scores: [
+          { key: "clarte", value: 4 },
+          { key: "structure", value: null },
+          { key: "profondeur_technique", value: 2 },
+          { key: "adequation", value: 5 },
+        ],
+      },
+    });
+    const rows = within(screen.getByRole("list", { name: "Tes notes" })).getAllByRole("listitem");
+    expect(rows[1]).toHaveTextContent("Structure");
+    expect(rows[1]).toHaveTextContent("non noté");
+    expect(rows[1]).not.toHaveTextContent("0 sur 5");
+    expect(within(rows[1]!).getByTestId("score-bar").firstElementChild).toHaveStyle({
+      width: "0%",
+    });
+  });
+
   it("lists the three strengths and the three things to fix", () => {
     show();
     const strengths = screen.getByRole("heading", { name: "Tes points forts" });

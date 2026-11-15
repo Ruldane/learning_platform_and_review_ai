@@ -30,7 +30,13 @@ export function useCreateFromPosting(postingId: string) {
   const [conflict, setConflict] = useState<ApplicationAlertOut[]>([]);
   const mutation = useMutation({
     mutationFn: (distinctFrom: string[]) => createApplicationFromPosting(postingId, distinctFrom),
-    onSuccess: () => client.invalidateQueries({ queryKey: gapKeys.applicationCheck(postingId) }),
+    onSuccess: () =>
+      Promise.all([
+        client.invalidateQueries({ queryKey: gapKeys.applicationCheck(postingId) }),
+        // Le suivi, les indicateurs et le badge des relances voient la nouvelle fiche (le préfixe de
+        // la feature `applications`, que `gap` n'importe pas).
+        client.invalidateQueries({ queryKey: ["applications"] }),
+      ]),
   });
   const { mutateAsync, reset } = mutation;
 

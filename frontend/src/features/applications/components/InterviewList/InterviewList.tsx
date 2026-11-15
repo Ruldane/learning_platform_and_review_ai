@@ -10,11 +10,13 @@ interface InterviewListProps {
   postingLabels?: Record<string, string>;
 }
 
-/** La moyenne des quatre notes d'un débrief écrit, ou `null`. */
+/** La moyenne des notes rendues d'un débrief écrit (une note manquante n'en fait pas un 0), ou `null`. */
 function average(interview: InterviewView): number | null {
-  const scores = interview.debrief?.scores ?? [];
+  const scores = (interview.debrief?.scores ?? []).flatMap((score) =>
+    score.value === null ? [] : [score.value],
+  );
   if (scores.length === 0) return null;
-  return scores.reduce((sum, score) => sum + score.value, 0) / scores.length;
+  return scores.reduce((sum, value) => sum + value, 0) / scores.length;
 }
 
 function summary(interview: InterviewView): string {

@@ -28,7 +28,7 @@ function toExchangeView(out: ExchangeOut): ExchangeView {
 
 function toDebriefView(out: DebriefOut): DebriefDataView {
   return {
-    scores: SCORE_KEYS.map((key) => ({ key, value: out.scores[key] ?? 0 })),
+    scores: SCORE_KEYS.map((key) => ({ key, value: out.scores[key] ?? null })),
     strengths: out.strengths,
     fixes: out.fixes,
     weakestIndex: out.weakest_index,

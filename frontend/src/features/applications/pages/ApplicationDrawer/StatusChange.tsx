@@ -32,10 +32,14 @@ export function StatusChange({ current, pending, onRecord }: StatusChangeProps) 
   const [status, setStatus] = useState(others[0]?.value ?? current);
   const [day, setDay] = useState(() => todayString());
   const [interviewOn, setInterviewOn] = useState("");
+  const [refused, setRefused] = useState(false);
+  const today = todayString();
+  const future = day > today;
 
   function submit(event: FormEvent) {
     event.preventDefault();
-    if (pending || day === "") return;
+    setRefused(true);
+    if (pending || day === "" || future) return;
     const body: EventIn = { kind: "status", status: status as StatusView, on: day };
     if (status === "interview" && interviewOn !== "") body.interview_on = interviewOn;
     void onRecord(body);
@@ -44,7 +48,12 @@ export function StatusChange({ current, pending, onRecord }: StatusChangeProps) 
   return (
     <form noValidate onSubmit={submit} className="flex flex-wrap items-end gap-3">
       <DraftField spec={STATUS} value={status} options={others} onChange={setStatus} />
-      <DraftField spec={DAY} value={day} onChange={setDay} />
+      <DraftField
+        spec={{ ...DAY, max: today }}
+        value={day}
+        error={refused && future ? t("applications.fields.futureDate") : undefined}
+        onChange={setDay}
+      />
       {status === "interview" ? (
         <DraftField spec={INTERVIEW} value={interviewOn} onChange={setInterviewOn} />
       ) : null}

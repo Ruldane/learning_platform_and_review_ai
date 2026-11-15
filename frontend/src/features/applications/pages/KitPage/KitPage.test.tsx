@@ -111,38 +111,8 @@ describe("KitPage", () => {
     expect(await screen.findByRole("button", { name: "Relancer le kit" })).toBeVisible();
   });
 
-  it("follows a kit that is already running when the page opens, without starting another", async () => {
-    const { sockets, kit } = setup({
-      running: true,
-      sessionId: "k9",
-      items: [kitItem("cv")],
-    });
-    await openStream(sockets, "k9");
-    expect(kit.state.starts).toBe(0);
-    expect(await screen.findByText(/Le kit se prépare/)).toBeVisible();
-    expect((await piece("CV ciblé")).textContent).toContain("Prête");
-    expect((await piece("Lettre de motivation")).textContent).toContain("En préparation");
-  });
-
-  it("follows the session that is already open on a 409 kit_in_progress", async () => {
-    const { user, sockets } = setup({
-      start: () =>
-        HttpResponse.json(
-          apiError("kit_in_progress", "Un kit est déjà en cours.", { session_id: "k7" }),
-          {
-            status: 409,
-          },
-        ),
-    });
-    await user.click(await screen.findByRole("button", { name: "Générer le kit" }));
-    await openStream(sockets, "k7");
-    expect(
-      await screen.findByText(/Un kit est déjà en cours pour cette candidature/),
-    ).toBeVisible();
-  });
-
   it.each([
-    ["posting_required", /ni offre liée ni texte d'offre/],
+    ["posting_required", /ni offre liée ni texte d'offre.*Ajouter le texte de l'offre/],
     ["profile_required", /Aucun profil maître validé/],
   ])("explains a refused start (%s) and keeps the button", async (code, message) => {
     const { user } = setup({

@@ -98,6 +98,7 @@ export const applicationsInterview = {
     title: "Débrief de l'entretien",
     scores: "Tes notes",
     score: "{value} sur 5",
+    scoreMissing: "non noté",
     scoreLabel: {
       clarte: "Clarté",
       structure: "Structure",

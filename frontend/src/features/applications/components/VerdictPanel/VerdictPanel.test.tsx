@@ -89,6 +89,21 @@ describe("VerdictPanel", () => {
     expect(items[1]).toHaveTextContent("Proposé par : Lecteur ATS");
   });
 
+  it("marks a proper noun the profile does not say as « À vérifier », not as a skill to acquire", () => {
+    const changes = [
+      change({
+        text: "À vérifier : ton profil ne dit pas Capgemini. Ne l'écris pas dans ton CV.",
+        needsSkill: true,
+        terms: ["Capgemini"],
+      }),
+    ];
+    render(<VerdictPanel verdict="oui" votes={makeVotes()} objections={[]} changes={changes} />);
+    const [item] = within(section(/Trois changements/)).getAllByRole("listitem");
+    expect(within(item!).getByText("À vérifier", { selector: "span" })).toBeVisible();
+    expect(within(item!).queryByText("À acquérir")).toBeNull();
+    expect(within(item!).queryByText(/Compétences concernées/)).toBeNull();
+  });
+
   it("gives its title a focus target for the page", () => {
     render(<VerdictPanel verdict="oui" votes={makeVotes()} objections={[]} changes={[]} />);
     expect(screen.getByRole("heading", { name: "Verdict du comité" })).toHaveAttribute(

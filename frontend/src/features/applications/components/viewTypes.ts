@@ -202,7 +202,8 @@ export interface ExpectedView {
 }
 
 export interface DebriefDataView {
-  scores: { key: ScoreKeyView; value: number }[];
+  /** `null` : le modèle n'a pas rendu cette note (ce n'est pas un 0). */
+  scores: { key: ScoreKeyView; value: number | null }[];
   strengths: string[];
   fixes: string[];
   weakestIndex: number;

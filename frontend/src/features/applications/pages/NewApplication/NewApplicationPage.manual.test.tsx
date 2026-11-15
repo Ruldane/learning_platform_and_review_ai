@@ -5,6 +5,7 @@ import { alertOut, applicationOut } from "@/test/applicationsApi";
 import { renderApplications } from "@/test/applicationsHarness";
 import { apiError } from "@/test/councilHarness";
 import { createFakeSocketServer } from "@/test/fakeSocket";
+import { todayString } from "../../dates";
 import { applicationsManifest } from "../../manifest";
 import { NewApplicationPage } from "./NewApplicationPage";
 
@@ -63,6 +64,20 @@ describe("NewApplicationPage, à la main", () => {
     expect(state.creates).toHaveLength(0);
     expect(screen.getAllByText("Obligatoire.")).toHaveLength(2);
     expect(screen.getByLabelText("Entreprise")).toBeInvalid();
+  });
+
+  it("bounds the application date to today and refuses a future one", async () => {
+    const { user, state } = setup();
+    const day = screen.getByLabelText("Postulée le");
+    expect(day).toHaveAttribute("max", todayString());
+    await user.type(screen.getByLabelText("Entreprise"), "Delta");
+    await user.type(screen.getByLabelText("Poste"), "Développeuse");
+    await user.selectOptions(screen.getByLabelText("Statut"), "applied");
+    await user.type(day, "2999-01-01");
+    await user.click(screen.getByRole("button", { name: "Créer la fiche" }));
+    expect(state.creates).toHaveLength(0);
+    expect(screen.getByText("Cette date est dans le futur.")).toBeVisible();
+    expect(day).toBeInvalid();
   });
 
   it("refuses a contact without a name", async () => {

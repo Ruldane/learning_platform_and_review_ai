@@ -14,7 +14,7 @@ export const applicationsPages = {
     intake_in_progress: "Une saisie en une phrase est déjà en cours.",
     kit_in_progress: "Un kit est déjà en cours pour cette candidature.",
     posting_required:
-      "Cette candidature n'a ni offre liée ni texte d'offre : le kit ne peut pas être préparé sans l'offre.",
+      "Cette candidature n'a ni offre liée ni texte d'offre : le kit ne peut pas être préparé sans l'offre. Ouvre la fiche et utilise « Ajouter le texte de l'offre ».",
     profile_required:
       "Aucun profil maître validé : valide ton profil dans la partie CV, puis réessaie.",
     kit_item_not_found: "Cette pièce n'est pas encore arrivée : attends qu'elle soit prête.",
@@ -43,6 +43,7 @@ export const applicationsPages = {
     interviewOn: "Entretien le",
     status: "Statut",
     required: "Obligatoire.",
+    futureDate: "Cette date est dans le futur.",
   },
   channel: {
     company_site: "Site de l'entreprise",
@@ -87,6 +88,12 @@ export const applicationsPages = {
     noteField: "Note",
     noteAction: "Ajouter la note",
     noteAdded: "Note ajoutée.",
+    postingTitle: "Offre",
+    postingMissing:
+      "Cette fiche n'a pas de texte d'offre : colle-le pour pouvoir préparer le kit de candidature.",
+    postingField: "Texte de l'offre",
+    postingAction: "Ajouter le texte de l'offre",
+    postingKept: "Le texte de l'offre est enregistré : le kit de candidature peut s'en servir.",
     versionTitle: "Version du CV envoyée",
     versionNumber: "Version {number} du CV",
     versionOpen: "Voir mes versions de CV",

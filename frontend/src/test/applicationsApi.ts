@@ -76,7 +76,7 @@ export const eventOut = (over: Over = {}) => ({
 /** La fiche ouverte (`ApplicationDetail`) : une fiche de la liste et ce que le détail y ajoute. */
 export const detailOut = (row: Over = applicationOut(), extra: Over = {}) => ({
   ...row,
-  posting_text: null,
+  posting_text: row.posting_text ?? null,
   letter: null,
   notes: "Premier échange par téléphone.",
   contacts: [{ id: "c1", name: "Camille Durand", role: "Responsable data", url: null }],

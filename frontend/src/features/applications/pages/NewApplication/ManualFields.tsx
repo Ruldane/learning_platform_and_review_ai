@@ -1,12 +1,13 @@
 import { t } from "@/shared/i18n/t";
 import { ContactList } from "../../components/ContactList";
 import { DraftField } from "../../components/DraftField";
-import { MANUAL_FIELDS, type ManualDraft } from "./manualDraft";
+import { todayString } from "../../dates";
+import { MANUAL_FIELDS, type ManualDraft, type ManualProblem } from "./manualDraft";
 
 interface ManualFieldsProps {
   draft: ManualDraft;
-  /** `name` : les champs obligatoires vides le disent ; `contact` : un contact sans nom. */
-  problem: "name" | "contact" | null;
+  /** `name` : les champs obligatoires vides le disent ; `contact` : un contact sans nom ; `date` : une date future. */
+  problem: ManualProblem | null;
   onChange: (draft: ManualDraft) => void;
 }
 
@@ -20,12 +21,18 @@ export function ManualFields({ draft, problem, onChange }: ManualFieldsProps) {
         {MANUAL_FIELDS.map((spec) => {
           const value = textOf(draft, spec.key);
           const missing = problem === "name" && spec.required && value.trim() === "";
+          const future = problem === "date" && spec.key === "appliedOn";
+          const error = missing
+            ? t("applications.fields.required")
+            : future
+              ? t("applications.fields.futureDate")
+              : undefined;
           return (
             <DraftField
               key={spec.key}
-              spec={spec}
+              spec={spec.key === "appliedOn" ? { ...spec, max: todayString() } : spec}
               value={value}
-              error={missing ? t("applications.fields.required") : undefined}
+              error={error}
               onChange={(next) => onChange({ ...draft, [spec.key]: next })}
             />
           );

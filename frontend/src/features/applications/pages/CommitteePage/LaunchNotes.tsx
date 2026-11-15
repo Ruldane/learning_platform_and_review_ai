@@ -4,11 +4,17 @@ import { InlineError } from "@/shared/ui/states/InlineError";
 import type { useStartCommittee } from "../../hooks/useStartCommittee";
 import { PROFILE_PATH } from "../../urls";
 
-/** Ce que le lancement dit : un comité déjà ouvert que l'on suit, un refus en toutes lettres, le profil à valider. */
-export function LaunchNotes({ start }: { start: ReturnType<typeof useStartCommittee> }) {
+interface LaunchNotesProps {
+  start: ReturnType<typeof useStartCommittee>;
+  /** Un comité tourne : la note « tu le suis ici » n'a de sens que tant qu'il tourne. */
+  running: boolean;
+}
+
+/** Ce que le lancement dit : un comité déjà ouvert que l'on suit (tant qu'il tourne), un refus en toutes lettres, le profil à valider. */
+export function LaunchNotes({ start, running }: LaunchNotesProps) {
   return (
     <>
-      {start.resumed ? (
+      {start.resumed && running ? (
         <p role="status" className="text-sm">
           {t("applications.committeeControls.followingOpen")}
         </p>

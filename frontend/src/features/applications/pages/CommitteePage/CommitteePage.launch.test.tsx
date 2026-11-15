@@ -5,6 +5,7 @@ import { useSessionStore } from "@/shared/realtime/sessionStore";
 import { openStream } from "@/test/applicationsHarness";
 import { committeeOut, runningCommittee } from "@/test/committeeApi";
 import { API } from "@/test/councilApi";
+import { councilEvents } from "@/test/councilEvents";
 import { apiError } from "@/test/councilHarness";
 import { versionOut } from "@/test/cvFixtures";
 import { server } from "@/test/server";
@@ -84,12 +85,17 @@ describe("CommitteePage, lancer et relancer", () => {
     // Un comité s'est ouvert ailleurs depuis la lecture de la liste.
     view.committee.runs.unshift(runningCommittee({ id: "c9", session_id: "cm-s1" }));
     await view.user.click(screen.getByRole("button", { name: "Lancer le comité" }));
-    await openStream(view.sockets, "cm-s1");
+    const stream = await openStream(view.sockets, "cm-s1");
     expect(
       await screen.findByText("Un comité était déjà en cours pour cette offre : tu le suis ici."),
     ).toBeVisible();
     expect(await screen.findByText("Le comité délibère…")).toBeVisible();
     expect(screen.queryByRole("alert")).toBeNull();
+    // Le comité suivi se termine : la note « tu le suis ici » disparaît avec lui.
+    view.committee.finish("c9");
+    stream.push(councilEvents("cm-s1").completed());
+    expect(await screen.findByText("Le comité dit :")).toBeVisible();
+    expect(screen.queryByText(/tu le suis ici/)).toBeNull();
   });
 
   it("keeps the launch button disabled between the 202 and the first reading of the new committee", async () => {

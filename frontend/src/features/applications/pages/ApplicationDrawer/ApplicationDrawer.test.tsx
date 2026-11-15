@@ -178,6 +178,26 @@ describe("ApplicationDrawer", () => {
     expect(state.events[0]?.body).toEqual({ kind: "status", status: "applied", on: "2026-11-10" });
   });
 
+  it("bounds the dates of « J'ai postulé » and of a status change to today, and refuses a future one", async () => {
+    const { user, state, dialog } = await openDrawer("/candidatures/a2");
+    const applied = within(dialog).getByLabelText("Date de candidature");
+    expect(applied).toHaveAttribute("max", todayString());
+    expect(within(dialog).getByLabelText("Date du changement")).toHaveAttribute(
+      "max",
+      todayString(),
+    );
+    await user.clear(applied);
+    await user.type(applied, "2999-01-01");
+    await user.click(within(dialog).getByRole("button", { name: "J'ai postulé" }));
+    expect(within(dialog).getByText("Cette date est dans le futur.")).toBeVisible();
+    const changed = within(dialog).getByLabelText("Date du changement");
+    await user.clear(changed);
+    await user.type(changed, "2999-01-01");
+    await user.click(within(dialog).getByRole("button", { name: "Changer le statut" }));
+    expect(within(dialog).getAllByText("Cette date est dans le futur.")).toHaveLength(2);
+    expect(state.events).toEqual([]);
+  });
+
   it("changes the status at a date, with the interview date for Entretien", async () => {
     const { user, state, dialog } = await openDrawer();
     expect(within(dialog).queryByRole("option", { name: "Postulée" })).toBeNull();
@@ -189,6 +209,33 @@ describe("ApplicationDrawer", () => {
       body: { kind: "status", status: "interview", on: todayString(), interview_on: "2026-11-25" },
     });
     expect(await within(dialog).findByText("Statut changé : Entretien.")).toBeVisible();
+  });
+
+  it("lets January add the posting text to a fiche that has none, to open its kit", async () => {
+    const { user, state, dialog } = await openDrawer();
+    expect(within(dialog).getByText(/Cette fiche n'a pas de texte d'offre/)).toBeVisible();
+    const add = within(dialog).getByRole("button", { name: "Ajouter le texte de l'offre" });
+    expect(add).toBeDisabled();
+    await user.type(
+      within(dialog).getByLabelText("Texte de l'offre"),
+      "Nous cherchons une data engineer.",
+    );
+    await user.click(add);
+    expect(state.patches).toEqual([
+      { id: "a1", body: { posting_text: "Nous cherchons une data engineer." } },
+    ]);
+    expect(await within(dialog).findByText(/Le texte de l'offre est enregistré/)).toBeVisible();
+    expect(
+      within(dialog).queryByRole("button", { name: "Ajouter le texte de l'offre" }),
+    ).toBeNull();
+  });
+
+  it("offers no posting text field when the fiche already has one", async () => {
+    const { dialog } = await openDrawer("/candidatures/a1", {
+      details: { a1: { posting_text: "Texte déjà là." } },
+    });
+    expect(within(dialog).queryByLabelText("Texte de l'offre")).toBeNull();
+    expect(within(dialog).getByText(/Le texte de l'offre est enregistré/)).toBeVisible();
   });
 
   it("adds a note to the history", async () => {
