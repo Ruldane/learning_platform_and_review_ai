@@ -198,6 +198,30 @@ class VersionRepository(UserScopedRepository[CvVersion]):
         )
         return int((await self.session.execute(stmt)).scalar_one_or_none() or 0) + 1
 
+    async def ready_latest(self) -> dict[str, tuple[str, int]]:
+        """Pour chaque offre qui a une version prête : `(identifiant, numéro)` de la plus récente
+        (le plus grand numéro). Lecture seule, pour les candidatures."""
+        stmt = (
+            select(CvVersion.posting_id, CvVersion.id, CvVersion.number)
+            .where(CvVersion.user_id == self.user_id, CvVersion.status == "ready")
+            .order_by(CvVersion.number)
+        )
+        return {
+            posting_id: (version_id, number)
+            for posting_id, version_id, number in (await self.session.execute(stmt)).all()
+        }
+
+    async def numbers(self, version_ids: Collection[str]) -> dict[str, int]:
+        """`identifiant → numéro` des versions données (celles de l'utilisatrice)."""
+        if not version_ids:
+            return {}
+        stmt = select(CvVersion.id, CvVersion.number).where(
+            CvVersion.user_id == self.user_id, CvVersion.id.in_(builtins.list(version_ids))
+        )
+        return {
+            version_id: number for version_id, number in (await self.session.execute(stmt)).all()
+        }
+
     async def get_fresh(self, version_id: str) -> CvVersion | None:
         stmt = (
             select(CvVersion)

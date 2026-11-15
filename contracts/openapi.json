@@ -215,6 +215,80 @@
         "title": "AgentTokenPayload",
         "type": "object"
       },
+      "AlertOut": {
+        "description": "Une fiche existante qui ressemble à l'offre entrante : niveau, fiche, message en français\n(date et statut). `info` : simple information, ne bloque rien.",
+        "properties": {
+          "application_id": {
+            "title": "Application Id",
+            "type": "string"
+          },
+          "applied_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applied On"
+          },
+          "company": {
+            "title": "Company",
+            "type": "string"
+          },
+          "created_on": {
+            "format": "date",
+            "title": "Created On",
+            "type": "string"
+          },
+          "level": {
+            "enum": [
+              "certain",
+              "probable",
+              "possible",
+              "info"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "to_apply",
+              "applied",
+              "followed_up",
+              "interview",
+              "offer",
+              "rejected",
+              "no_answer",
+              "withdrawn"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "level",
+          "application_id",
+          "company",
+          "title",
+          "status",
+          "applied_on",
+          "created_on",
+          "message"
+        ],
+        "title": "AlertOut",
+        "type": "object"
+      },
       "AnswerIn": {
         "properties": {
           "choice": {
@@ -342,6 +416,817 @@
           "last_test_ok"
         ],
         "title": "ApiKeyOut",
+        "type": "object"
+      },
+      "ApplicationDetail": {
+        "properties": {
+          "applied_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applied On"
+          },
+          "channel": {
+            "anyOf": [
+              {
+                "enum": [
+                  "company_site",
+                  "job_board",
+                  "linkedin",
+                  "email",
+                  "referral",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Channel"
+          },
+          "company": {
+            "title": "Company",
+            "type": "string"
+          },
+          "contacts": {
+            "items": {
+              "$ref": "#/components/schemas/ContactOut"
+            },
+            "title": "Contacts",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "cv_version_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cv Version Id"
+          },
+          "cv_version_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cv Version Number"
+          },
+          "due_reminders": {
+            "title": "Due Reminders",
+            "type": "integer"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/EventOut"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "interview_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interview On"
+          },
+          "letter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Letter"
+          },
+          "next_action": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Action"
+          },
+          "next_action_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Action On"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "posting_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Posting Id"
+          },
+          "posting_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Posting Text"
+          },
+          "reminders": {
+            "items": {
+              "$ref": "#/components/schemas/ReminderOut"
+            },
+            "title": "Reminders",
+            "type": "array"
+          },
+          "status": {
+            "enum": [
+              "to_apply",
+              "applied",
+              "followed_up",
+              "interview",
+              "offer",
+              "rejected",
+              "no_answer",
+              "withdrawn"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "id",
+          "posting_id",
+          "company",
+          "title",
+          "url",
+          "channel",
+          "status",
+          "applied_on",
+          "interview_on",
+          "cv_version_id",
+          "cv_version_number",
+          "next_action",
+          "next_action_on",
+          "due_reminders",
+          "created_at",
+          "updated_at",
+          "posting_text",
+          "letter",
+          "notes",
+          "contacts",
+          "events",
+          "reminders"
+        ],
+        "title": "ApplicationDetail",
+        "type": "object"
+      },
+      "ApplicationIn": {
+        "description": "Création manuelle ou depuis une offre. Avec `posting_id`, l'entreprise, l'intitulé, le\nlien et le texte figé viennent de l'offre (les champs donnés ne servent que si l'offre ne les\ndit pas encore) ; sans `posting_id`, `company` et `title` sont obligatoires (422 `fields`).\n`distinct_from` : les fiches de l'alerte que January a confirmées « autre poste ».",
+        "properties": {
+          "applied_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applied On"
+          },
+          "channel": {
+            "anyOf": [
+              {
+                "enum": [
+                  "company_site",
+                  "job_board",
+                  "linkedin",
+                  "email",
+                  "referral",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Channel"
+          },
+          "company": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "contacts": {
+            "items": {
+              "$ref": "#/components/schemas/ContactIn"
+            },
+            "maxItems": 10,
+            "title": "Contacts",
+            "type": "array"
+          },
+          "distinct_from": {
+            "items": {
+              "maxLength": 36,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Distinct From",
+            "type": "array"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 10000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "posting_id": {
+            "anyOf": [
+              {
+                "maxLength": 36,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Posting Id"
+          },
+          "posting_text": {
+            "anyOf": [
+              {
+                "maxLength": 60000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Posting Text"
+          },
+          "status": {
+            "default": "to_apply",
+            "enum": [
+              "to_apply",
+              "applied",
+              "followed_up",
+              "interview",
+              "offer",
+              "rejected",
+              "no_answer",
+              "withdrawn"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "title": "ApplicationIn",
+        "type": "object"
+      },
+      "ApplicationOut": {
+        "properties": {
+          "applied_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applied On"
+          },
+          "channel": {
+            "anyOf": [
+              {
+                "enum": [
+                  "company_site",
+                  "job_board",
+                  "linkedin",
+                  "email",
+                  "referral",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Channel"
+          },
+          "company": {
+            "title": "Company",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "cv_version_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cv Version Id"
+          },
+          "cv_version_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cv Version Number"
+          },
+          "due_reminders": {
+            "title": "Due Reminders",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "interview_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interview On"
+          },
+          "next_action": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Action"
+          },
+          "next_action_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Action On"
+          },
+          "posting_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Posting Id"
+          },
+          "status": {
+            "enum": [
+              "to_apply",
+              "applied",
+              "followed_up",
+              "interview",
+              "offer",
+              "rejected",
+              "no_answer",
+              "withdrawn"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "id",
+          "posting_id",
+          "company",
+          "title",
+          "url",
+          "channel",
+          "status",
+          "applied_on",
+          "interview_on",
+          "cv_version_id",
+          "cv_version_number",
+          "next_action",
+          "next_action_on",
+          "due_reminders",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ApplicationOut",
+        "type": "object"
+      },
+      "ApplicationPatch": {
+        "additionalProperties": false,
+        "description": "Les champs à changer (ceux qui sont envoyés, `null` efface un champ facultatif) ; `contacts`\nremplace la liste. Le statut ne se change que par `POST /applications/{id}/events` : l'envoyer\nici est une 422 (`fields: [\"status\"]`), comme tout champ inconnu.",
+        "properties": {
+          "applied_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applied On"
+          },
+          "channel": {
+            "anyOf": [
+              {
+                "enum": [
+                  "company_site",
+                  "job_board",
+                  "linkedin",
+                  "email",
+                  "referral",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Channel"
+          },
+          "company": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "contacts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ContactIn"
+                },
+                "maxItems": 10,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contacts"
+          },
+          "interview_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interview On"
+          },
+          "letter": {
+            "anyOf": [
+              {
+                "maxLength": 20000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Letter"
+          },
+          "next_action": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Action"
+          },
+          "next_action_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Action On"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 10000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "title": "ApplicationPatch",
+        "type": "object"
+      },
+      "ApplicationRef": {
+        "properties": {
+          "applied_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applied On"
+          },
+          "company": {
+            "title": "Company",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "to_apply",
+              "applied",
+              "followed_up",
+              "interview",
+              "offer",
+              "rejected",
+              "no_answer",
+              "withdrawn"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "company",
+          "title",
+          "status",
+          "applied_on"
+        ],
+        "title": "ApplicationRef",
+        "type": "object"
+      },
+      "ApplicationStatsOut": {
+        "description": "Les indicateurs (SPEC 6.4) ; `StatsOut` est déjà le nom des statistiques de la mémoire.",
+        "properties": {
+          "by_status": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "enum": [
+                "to_apply",
+                "applied",
+                "followed_up",
+                "interview",
+                "offer",
+                "rejected",
+                "no_answer",
+                "withdrawn"
+              ]
+            },
+            "title": "By Status",
+            "type": "object"
+          },
+          "due_reminders": {
+            "title": "Due Reminders",
+            "type": "integer"
+          },
+          "mean_response_days": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mean Response Days"
+          },
+          "response_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response Rate"
+          }
+        },
+        "required": [
+          "by_status",
+          "response_rate",
+          "mean_response_days",
+          "due_reminders"
+        ],
+        "title": "ApplicationStatsOut",
         "type": "object"
       },
       "ArtifactReadyEvent": {
@@ -733,7 +1618,7 @@
         "type": "object"
       },
       "BoardEdit": {
-        "description": "Scène Excalidraw retouchée par January (`serializeAsJSON`) et sa note, renvoyée aux agents\ncomme un message. Corps plafonné à 2 Mio (`main.BOARD_BODY_MAX`).",
+        "description": "Scène Excalidraw retouchée par January (`serializeAsJSON`) et sa note, renvoyée aux agents\ncomme un message. Corps plafonné à 2 Mio (`core.body_limits.BOARD_BODY_MAX`).",
         "properties": {
           "note": {
             "maxLength": 2000,
@@ -1205,6 +2090,42 @@
         "title": "CaptureStarted",
         "type": "object"
       },
+      "CheckOut": {
+        "description": "`own` : la fiche de cette offre, si elle existe ; `alerts` : certain, probable, possible ;\n`info` : même entreprise dans les 30 jours.",
+        "properties": {
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/AlertOut"
+            },
+            "title": "Alerts",
+            "type": "array"
+          },
+          "info": {
+            "items": {
+              "$ref": "#/components/schemas/AlertOut"
+            },
+            "title": "Info",
+            "type": "array"
+          },
+          "own": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ApplicationRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "own",
+          "alerts",
+          "info"
+        ],
+        "title": "CheckOut",
+        "type": "object"
+      },
       "ChooseOut": {
         "description": "`already_chosen` : ce même choix était déjà fait (double clic, reprise générique) ; la\nrequête n'a rien changé, `start_date` comprise (D87). Faux aussi quand ce même choix relance\nle Stratège, dont la session a échoué sans programme (D97).",
         "properties": {
@@ -1422,6 +2343,87 @@
         "title": "CompareRowOut",
         "type": "object"
       },
+      "ContactIn": {
+        "properties": {
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "ContactIn",
+        "type": "object"
+      },
+      "ContactOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "role",
+          "url"
+        ],
+        "title": "ContactOut",
+        "type": "object"
+      },
       "CostUpdatedEvent": {
         "properties": {
           "agent": {
@@ -1499,6 +2501,26 @@
           "cap_tokens"
         ],
         "title": "CostUpdatedPayload",
+        "type": "object"
+      },
+      "CreatedOut": {
+        "properties": {
+          "application": {
+            "$ref": "#/components/schemas/ApplicationDetail"
+          },
+          "info": {
+            "items": {
+              "$ref": "#/components/schemas/AlertOut"
+            },
+            "title": "Info",
+            "type": "array"
+          }
+        },
+        "required": [
+          "application",
+          "info"
+        ],
+        "title": "CreatedOut",
         "type": "object"
       },
       "CvReviewOut": {
@@ -2012,6 +3034,183 @@
           "error"
         ],
         "title": "ErrorOut",
+        "type": "object"
+      },
+      "EventIn": {
+        "description": "Un événement du fil : un changement de statut (`status` obligatoire) ou une note (`text`\nobligatoire). `on` : le jour de l'événement (défaut : aujourd'hui, fuseau de January) ;\n`interview_on` : le jour de l'entretien, pour le statut « Entretien » (défaut : `on`).",
+        "properties": {
+          "interview_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interview On"
+          },
+          "kind": {
+            "enum": [
+              "status",
+              "note"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "On"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "to_apply",
+                  "applied",
+                  "followed_up",
+                  "interview",
+                  "offer",
+                  "rejected",
+                  "no_answer",
+                  "withdrawn"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "EventIn",
+        "type": "object"
+      },
+      "EventOut": {
+        "properties": {
+          "at": {
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "created",
+              "status",
+              "note",
+              "reminder",
+              "kit",
+              "interview",
+              "committee",
+              "version"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "ref_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ref Id"
+          },
+          "status_from": {
+            "anyOf": [
+              {
+                "enum": [
+                  "to_apply",
+                  "applied",
+                  "followed_up",
+                  "interview",
+                  "offer",
+                  "rejected",
+                  "no_answer",
+                  "withdrawn"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status From"
+          },
+          "status_to": {
+            "anyOf": [
+              {
+                "enum": [
+                  "to_apply",
+                  "applied",
+                  "followed_up",
+                  "interview",
+                  "offer",
+                  "rejected",
+                  "no_answer",
+                  "withdrawn"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status To"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "at",
+          "status_from",
+          "status_to",
+          "text",
+          "ref_id"
+        ],
+        "title": "EventOut",
         "type": "object"
       },
       "EvidenceOut": {
@@ -6271,6 +7470,53 @@
         "title": "ReindexState",
         "type": "object"
       },
+      "ReminderOut": {
+        "description": "Une relance de la fiche (7.3 y ajoute le brouillon et le contact).",
+        "properties": {
+          "application_id": {
+            "title": "Application Id",
+            "type": "string"
+          },
+          "due_on": {
+            "format": "date",
+            "title": "Due On",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "linkedin_7",
+              "email_14",
+              "close_21",
+              "thanks",
+              "news_7"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "done",
+              "ignored"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "application_id",
+          "kind",
+          "due_on",
+          "status"
+        ],
+        "title": "ReminderOut",
+        "type": "object"
+      },
       "ReplanRequest": {
         "properties": {
           "available_minutes": {
@@ -9527,6 +10773,390 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/applications": {
+      "get": {
+        "description": "Les fiches, la plus récente d'abord ; adopte d'abord les versions de CV prêtes.",
+        "operationId": "get_applications_api_v1_applications_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "to_apply",
+                    "applied",
+                    "followed_up",
+                    "interview",
+                    "offer",
+                    "rejected",
+                    "no_answer",
+                    "withdrawn"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "posting_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 36,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Posting Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ApplicationOut"
+                  },
+                  "title": "Response Get Applications Api V1 Applications Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Applications",
+        "tags": [
+          "applications"
+        ]
+      },
+      "post": {
+        "description": "Crée la fiche ; `info` : une autre fiche chez la même entreprise dans les 30 jours.",
+        "operationId": "post_application_api_v1_applications_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`posting_not_found`"
+          },
+          "409": {
+            "description": "`application_duplicate` (`details.alerts` : les fiches existantes qui ressemblent à l'offre), `application_exists` (`details.application_id` : une fiche existe déjà pour cette offre)"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Post Application",
+        "tags": [
+          "applications"
+        ]
+      }
+    },
+    "/api/v1/applications/check": {
+      "get": {
+        "description": "Contrôle d'une offre qui entre : par `posting_id` (la fiche de l'offre, les alertes) ou par\n`url` (avant l'analyse : « certain » seulement). Exactement une des deux entrées.",
+        "operationId": "get_check_api_v1_applications_check_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "posting_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 36,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Posting Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 2000,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Url"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`application_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Check",
+        "tags": [
+          "applications"
+        ]
+      }
+    },
+    "/api/v1/applications/stats": {
+      "get": {
+        "description": "Fiches par statut, taux et délai moyen de réponse, relances dues.",
+        "operationId": "get_stats_api_v1_applications_stats_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationStatsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Stats",
+        "tags": [
+          "applications"
+        ]
+      }
+    },
+    "/api/v1/applications/{application_id}": {
+      "get": {
+        "operationId": "get_one_application_api_v1_applications__application_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Application Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`application_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get One Application",
+        "tags": [
+          "applications"
+        ]
+      },
+      "patch": {
+        "description": "Retouche les champs envoyés ; `contacts` remplace la liste. Le statut ne se change que par\n`POST /applications/{id}/events` : l'envoyer ici est une 422.",
+        "operationId": "patch_application_api_v1_applications__application_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Application Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`application_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Patch Application",
+        "tags": [
+          "applications"
+        ]
+      }
+    },
+    "/api/v1/applications/{application_id}/events": {
+      "post": {
+        "description": "Un changement de statut ou une note, daté (aujourd'hui par défaut).",
+        "operationId": "post_event_api_v1_applications__application_id__events_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Application Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`application_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Post Event",
+        "tags": [
+          "applications"
+        ]
+      }
+    },
     "/api/v1/auth/me": {
       "get": {
         "operationId": "me_api_v1_auth_me_get",
@@ -11886,7 +13516,7 @@
             "description": "`posting_not_found`"
           },
           "409": {
-            "description": "`review_in_progress` (une revue de CV de l'offre est lancée ou proposée : la terminer d'abord), `analysis_in_progress` (l'analyse de l'offre tourne : réessayer dans un instant)"
+            "description": "`review_in_progress` (une revue de CV de l'offre est lancée ou proposée : la terminer d'abord), `analysis_in_progress` (l'analyse de l'offre tourne : réessayer dans un instant), `posting_has_application` (une fiche de candidature cite l'offre : `details.application_id`)"
           },
           "422": {
             "content": {

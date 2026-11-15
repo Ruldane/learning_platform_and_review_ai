@@ -8,6 +8,7 @@ from typing import Any
 
 from sqlalchemy import func, literal_column, select, update
 
+from app.db.models.applications import Application
 from app.db.models.career import OPEN_REVIEW_STATUSES, CvReview, CvVersion
 from app.db.models.postings import JobPosting
 from app.db.repository import UserScopedRepository
@@ -133,3 +134,13 @@ class PostingRepository(UserScopedRepository[JobPosting]):
             CvReview.user_id == self.user_id, CvReview.posting_id.in_(builtins.list(posting_ids))
         )
         return {row[0] for row in (await self.session.execute(stmt)).all()}
+
+    async def application_id(self, posting_id: str) -> str | None:
+        """La fiche de candidature qui cite l'offre, si elle existe (modèle seul : aucune
+        importation de feature)."""
+        stmt = (
+            select(Application.id)
+            .where(Application.user_id == self.user_id, Application.posting_id == posting_id)
+            .limit(1)
+        )
+        return (await self.session.execute(stmt)).scalar_one_or_none()

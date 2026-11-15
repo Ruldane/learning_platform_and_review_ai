@@ -29,16 +29,14 @@ from app.bootstrap import publishing_providers as open_publishing_providers
 from app.bootstrap import research_providers as open_research_providers
 from app.bootstrap_career import career_runtimes
 from app.config import Settings, get_settings
+from app.core.body_limits import add_body_limits
 from app.core.errors import register_error_handlers
-from app.core.limits import BodySizeLimit
 from app.core.logging import configure_logging
 from app.core.providers import MemoryProviders, PublishingProviders, ResearchProviders
 from app.core.security import Cipher, KnownSecrets, load_or_create_secret
 from app.db.engine import create_engine, create_session_factory
 from app.features.auth.service import AuthService
-from app.features.cv.service.profile_import import MAX_PROFILE_FILE_BYTES, TOO_LARGE_MESSAGE
 from app.features.learning.service.runtime import LearningRuntime
-from app.features.memory.service.upload import MAX_UPLOAD_BYTES
 from app.features.program.service.runtime import ProgramRuntime
 from app.features.registry import FEATURE_ROUTERS
 from app.scheduler.registry import JOBS
@@ -48,14 +46,6 @@ API_PREFIX = "/api/v1"
 logger = logging.getLogger(__name__)
 _LOG_LEVEL = "INFO"
 _PROBE_TIMEOUT_SECONDS = 3.0
-# Corps d'un import : le fichier (20 Mo) plus l'enveloppe multipart et les autres champs.
-_UPLOAD_BODY_MAX = MAX_UPLOAD_BYTES + 1024 * 1024
-# Corps d'une retouche du tableau : scène Excalidraw complète (`serializeAsJSON`, `files` peut
-# porter une image) et sa note (D87).
-BOARD_BODY_MAX = 2 * 1024 * 1024
-# Import du profil maître : CV et LinkedIn (10 Mo chacun), la note et l'enveloppe (D124).
-PROFILE_IMPORT_BODY_MAX = 2 * MAX_PROFILE_FILE_BYTES + 1024 * 1024
-TEMPLATE_BODY_MAX = MAX_PROFILE_FILE_BYTES + 1024 * 1024  # gabarit : le CV et son nom
 
 
 async def _ensure_local_user(app: FastAPI) -> None:
@@ -230,30 +220,6 @@ async def _open_agents(app: FastAPI, stack: AsyncExitStack) -> None:
         await stack.enter_async_context(open_scheduler(JOBS, context))
 
 
-def _add_body_limits(app: FastAPI) -> None:
-    """Taille des corps des imports, bornée avant toute analyse (413)."""
-    app.add_middleware(BodySizeLimit, path=f"{API_PREFIX}/documents", max_bytes=_UPLOAD_BODY_MAX)
-    app.add_middleware(  # CV et LinkedIn, 10 Mo chacun (D124)
-        BodySizeLimit,
-        path=f"{API_PREFIX}/profile/import",
-        max_bytes=PROFILE_IMPORT_BODY_MAX,
-        message=TOO_LARGE_MESSAGE,
-    )
-    app.add_middleware(  # CV d'origine d'un gabarit, 10 Mo (D126)
-        BodySizeLimit,
-        path=f"{API_PREFIX}/cv/templates",
-        max_bytes=TEMPLATE_BODY_MAX,
-        message=TOO_LARGE_MESSAGE,
-    )
-    app.add_middleware(
-        BodySizeLimit,
-        path=f"{API_PREFIX}/boards",
-        max_bytes=BOARD_BODY_MAX,
-        code="board_too_large",
-        message="Tableau trop volumineux : 2 Mio au maximum.",
-    )
-
-
 def create_app(
     settings: Settings | None = None,
     *,
@@ -284,7 +250,7 @@ def create_app(
     # enregistrées d'abord pour que leur 500 traverse CORS (voir `UnexpectedErrorMiddleware`).
     register_error_handlers(app)
     # Entre la gestion des erreurs et CORS : la 413 traverse CORS (lisible par le navigateur).
-    _add_body_limits(app)
+    add_body_limits(app, API_PREFIX)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,

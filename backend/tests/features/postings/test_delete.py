@@ -10,6 +10,7 @@ import pytest
 from fastapi import FastAPI
 from sqlalchemy import func, select
 
+from app.db.models.applications import Application
 from app.db.models.career import CvModification, CvReview, CvVersion
 from tests.features.lessons.conftest import RecordingLauncher
 from tests.features.postings.conftest import API
@@ -148,3 +149,34 @@ async def test_delete_races_with_review_creation(
     assert (r.status_code, r.json()["error"]["code"]) == (409, "review_in_progress")
     assert (await client.get(f"{API}/postings/{created['id']}")).status_code == 200
     assert await _count(app, CvReview) == 1
+
+
+async def test_posting_delete_refused_with_application(
+    client: httpx.AsyncClient, app: FastAPI, launcher_spy: RecordingLauncher
+) -> None:
+    """Une fiche de candidature cite l'offre : 409 `posting_has_application`, rien ne part ;
+    la fiche d'une autre utilisatrice ne compte pas."""
+    created = await _create(client)
+    await _ready(app, launcher_spy, created)
+    async with app.state.session_factory() as db:
+        db.add(
+            Application(
+                user_id="autre-utilisatrice", posting_id=created["id"], company="Autre SA",
+                company_norm="autre", title="Poste",
+            )
+        )  # fmt: skip
+        mine = Application(
+            user_id=app.state.local_user_id, posting_id=created["id"], company="Société Fictive",
+            company_norm="societe fictive", title="Développeuse IA",
+        )  # fmt: skip
+        db.add(mine)
+        await db.commit()
+        application_id = mine.id
+    r = await client.delete(f"{API}/postings/{created['id']}")
+    assert (r.status_code, r.json()["error"]["code"]) == (409, "posting_has_application")
+    assert r.json()["error"]["details"] == {"application_id": application_id}
+    assert (await client.get(f"{API}/postings/{created['id']}")).status_code == 200
+    async with app.state.session_factory() as db:
+        await db.delete(await db.get(Application, application_id))
+        await db.commit()
+    assert (await client.delete(f"{API}/postings/{created['id']}")).status_code == 204

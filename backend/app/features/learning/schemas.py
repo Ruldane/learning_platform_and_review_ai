@@ -119,7 +119,7 @@ class BoardOut(BaseModel):
 
 class BoardEdit(BaseModel):
     """Scène Excalidraw retouchée par January (`serializeAsJSON`) et sa note, renvoyée aux agents
-    comme un message. Corps plafonné à 2 Mio (`main.BOARD_BODY_MAX`)."""
+    comme un message. Corps plafonné à 2 Mio (`core.body_limits.BOARD_BODY_MAX`)."""
 
     scene: dict[str, Any]
     note: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)]

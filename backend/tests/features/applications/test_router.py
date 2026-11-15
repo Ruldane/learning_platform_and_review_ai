@@ -1,0 +1,90 @@
+"""Routes des candidatures (D139) : liste (ordre, filtres), détail, indicateurs, accès sans
+connexion."""
+
+import httpx
+
+from tests.features.applications.conftest import API, create, created_id
+
+
+async def test_list_is_newest_first_and_filters(client: httpx.AsyncClient) -> None:
+    first = await created_id(client, company="Société Fictive", title="Poste A")
+    second = await created_id(client, company="Autre SA", title="Poste B", status="applied")
+    third = await created_id(client, company="Exemple Tech", title="Poste C")
+    listed = (await client.get(API)).json()
+    assert [a["id"] for a in listed] == [third, second, first]
+    assert set(listed[0]) >= {
+        "id", "posting_id", "company", "title", "url", "channel", "status", "applied_on",
+        "interview_on", "cv_version_id", "cv_version_number", "next_action", "next_action_on",
+        "due_reminders", "created_at", "updated_at",
+    }  # fmt: skip
+    assert "events" not in listed[0] and "posting_text" not in listed[0]
+    applied = (await client.get(API, params={"status": "applied"})).json()
+    assert [a["id"] for a in applied] == [second]
+    r = await client.get(API, params={"status": "inconnu"})
+    assert r.status_code == 422 and r.json()["error"]["details"] == {"fields": ["status"]}
+
+
+async def test_list_by_posting(client: httpx.AsyncClient, posting: str) -> None:
+    await created_id(client, company="Autre SA", title="Poste B")
+    mine = await created_id(client, posting_id=posting)
+    listed = (await client.get(API, params={"posting_id": posting})).json()
+    assert [a["id"] for a in listed] == [mine]
+
+
+async def test_detail_of_unknown_application_is_404(client: httpx.AsyncClient) -> None:
+    r = await client.get(f"{API}/inconnue")
+    assert (r.status_code, r.json()["error"]["code"]) == (404, "application_not_found")
+
+
+async def test_stats_route(client: httpx.AsyncClient) -> None:
+    empty = (await client.get(f"{API}/stats")).json()
+    assert empty["response_rate"] is None and empty["mean_response_days"] is None
+    assert empty["due_reminders"] == 0 and len(empty["by_status"]) == 8
+    assert set(empty["by_status"].values()) == {0}
+    sent = await created_id(client, company="Société Fictive", title="A", status="applied",
+                            applied_on="2026-11-03")  # fmt: skip
+    await created_id(
+        client, company="Autre SA", title="B", status="applied", applied_on="2026-11-05"
+    )
+    await created_id(client, company="Exemple Tech", title="C")
+    await client.post(
+        f"{API}/{sent}/events", json={"kind": "status", "status": "interview", "on": "2026-11-09"}
+    )
+    stats = (await client.get(f"{API}/stats")).json()
+    assert stats["by_status"]["applied"] == 1 and stats["by_status"]["interview"] == 1
+    assert stats["by_status"]["to_apply"] == 1
+    assert stats["response_rate"] == 0.5 and stats["mean_response_days"] == 6.0
+    assert stats["due_reminders"] == 0
+
+
+async def test_due_reminders_are_counted(client: httpx.AsyncClient, app) -> None:  # type: ignore[no-untyped-def]
+    from datetime import date
+
+    from app.db.models.applications import Reminder
+
+    application_id = await created_id(
+        client, company="Société Fictive", title="A", status="applied"
+    )
+    async with app.state.session_factory() as db:
+        for kind, due in (("linkedin_7", date(2026, 11, 15)), ("email_14", date(2026, 11, 29))):
+            db.add(
+                Reminder(
+                    user_id=app.state.local_user_id, application_id=application_id, kind=kind,
+                    anchor_on=date(2026, 11, 8), due_on=due,
+                )
+            )  # fmt: skip
+        await db.commit()
+    assert (await client.get(f"{API}/stats")).json()["due_reminders"] == 1
+    [fiche] = (await client.get(API)).json()
+    assert fiche["due_reminders"] == 1
+    detail = (await client.get(f"{API}/{application_id}")).json()
+    assert [(r["kind"], r["status"]) for r in detail["reminders"]] == [
+        ("linkedin_7", "pending"),
+        ("email_14", "pending"),
+    ]
+
+
+async def test_routes_need_a_user(client_google_mode: httpx.AsyncClient) -> None:
+    for path in ("", "/stats", "/check?url=https://example.org/a", "/x"):
+        assert (await client_google_mode.get(f"{API}{path}")).status_code == 401
+    assert (await create(client_google_mode, company="A", title="B")).status_code == 401

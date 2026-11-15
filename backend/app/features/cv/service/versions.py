@@ -2,6 +2,10 @@
 pages. Le statut suit l'issue de la session de la revue (`reviews.settle`). Le nom du fichier
 porte le nom de January : rendu dans l'en-tête de téléchargement, jamais journalisé."""
 
+from collections.abc import Collection
+
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.errors import AppError
 from app.db.models.career import CvVersion
 from app.features.cv.repository import VersionRepository
@@ -54,3 +58,17 @@ async def version_page(rt: CvRuntime, user_id: str, version_id: str, number: int
     if row.status != "ready" or not 1 <= number <= len(row.page_images):
         raise page_not_found()
     return await rt.storage.read(user_id, str(row.page_images[number - 1]))
+
+
+async def ready_versions_by_posting(db: AsyncSession, user_id: str) -> dict[str, tuple[str, int]]:
+    """Lecture seule, pour les candidatures : la version prête la plus récente de chaque offre,
+    `offre → (identifiant, numéro)`. Rien n'est réglé ni lancé : une version encore en rendu n'y
+    figure pas."""
+    return await VersionRepository(db, user_id).ready_latest()
+
+
+async def version_numbers(
+    db: AsyncSession, user_id: str, version_ids: Collection[str]
+) -> dict[str, int]:
+    """Lecture seule, pour les candidatures : `version → numéro` des versions données."""
+    return await VersionRepository(db, user_id).numbers(version_ids)

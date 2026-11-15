@@ -1,12 +1,13 @@
 """Lectures et suppression des offres (SPEC 14.2, D122) : liste (plus récentes d'abord), détail
 (texte figé, analyse, doublons relus, statut montré), suppression avec l'élément de mémoire
 `offre` (revues et versions en cascade, puis leurs fichiers ; 409 `review_in_progress` si une revue
-de CV tourne ou attend, 409 `analysis_in_progress` si l'analyse de l'offre est ouverte). Journaux :
+de CV tourne ou attend, 409 `analysis_in_progress` si l'analyse de l'offre est ouverte, 409
+`posting_has_application` tant qu'une fiche de candidature la cite). Journaux :
 identifiants seulement."""
 
 import asyncio
 import logging
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -36,6 +37,15 @@ def review_in_progress() -> AppError:
     )
 
 
+def posting_has_application(application_id: str) -> AppError:
+    return AppError(
+        "posting_has_application",
+        "Une candidature cite cette offre : elle ne peut pas être supprimée.",
+        409,
+        {"application_id": application_id},
+    )
+
+
 def analysis_in_progress() -> AppError:
     return AppError(
         "analysis_in_progress",
@@ -50,6 +60,14 @@ async def get_posting(db: AsyncSession, user_id: str, posting_id: str) -> JobPos
     if posting is None:
         raise not_found()
     return posting
+
+
+async def postings_by_ids(
+    db: AsyncSession, user_id: str, posting_ids: Collection[str]
+) -> dict[str, JobPosting]:
+    """Les offres de January parmi `posting_ids` (lecture seule, pour les candidatures) ; une
+    offre absente n'y figure pas."""
+    return await PostingRepository(db, user_id).by_ids(posting_ids)
 
 
 def _score(rows: Sequence[GapRow] | None) -> int | None:
@@ -162,6 +180,9 @@ async def _delete_rows(
     des fichiers des versions à retirer."""
     repo = PostingRepository(db, user_id)
     posting = await get_posting(db, user_id, posting_id)
+    application_id = await repo.application_id(posting_id)
+    if application_id is not None:
+        raise posting_has_application(application_id)
     if await repo.running_reviews(posting_id):
         raise review_in_progress()
     if await open_sessions(db, user_id, posting_id):

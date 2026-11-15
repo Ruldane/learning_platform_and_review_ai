@@ -85,7 +85,8 @@ async def get_posting(posting_id: str, current: CurrentUserDep, db: Db) -> Posti
             "description": (
                 "`review_in_progress` (une revue de CV de l'offre est lancée ou proposée : "
                 "la terminer d'abord), `analysis_in_progress` (l'analyse de l'offre tourne : "
-                "réessayer dans un instant)"
+                "réessayer dans un instant), `posting_has_application` (une fiche de candidature "
+                "cite l'offre : `details.application_id`)"
             )
         },
     },

@@ -4,6 +4,113 @@
  */
 
 export interface paths {
+    "/api/v1/applications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Applications
+         * @description Les fiches, la plus récente d'abord ; adopte d'abord les versions de CV prêtes.
+         */
+        get: operations["get_applications_api_v1_applications_get"];
+        put?: never;
+        /**
+         * Post Application
+         * @description Crée la fiche ; `info` : une autre fiche chez la même entreprise dans les 30 jours.
+         */
+        post: operations["post_application_api_v1_applications_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/applications/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Check
+         * @description Contrôle d'une offre qui entre : par `posting_id` (la fiche de l'offre, les alertes) ou par
+         *     `url` (avant l'analyse : « certain » seulement). Exactement une des deux entrées.
+         */
+        get: operations["get_check_api_v1_applications_check_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/applications/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Stats
+         * @description Fiches par statut, taux et délai moyen de réponse, relances dues.
+         */
+        get: operations["get_stats_api_v1_applications_stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/applications/{application_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get One Application */
+        get: operations["get_one_application_api_v1_applications__application_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Application
+         * @description Retouche les champs envoyés ; `contacts` remplace la liste. Le statut ne se change que par
+         *     `POST /applications/{id}/events` : l'envoyer ici est une 422.
+         */
+        patch: operations["patch_application_api_v1_applications__application_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/applications/{application_id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Event
+         * @description Un changement de statut ou une note, daté (aujourd'hui par défaut).
+         */
+        post: operations["post_event_api_v1_applications__application_id__events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/me": {
         parameters: {
             query?: never;
@@ -1753,6 +1860,38 @@ export interface components {
             /** Text */
             text: string;
         };
+        /**
+         * AlertOut
+         * @description Une fiche existante qui ressemble à l'offre entrante : niveau, fiche, message en français
+         *     (date et statut). `info` : simple information, ne bloque rien.
+         */
+        AlertOut: {
+            /** Application Id */
+            application_id: string;
+            /** Applied On */
+            applied_on: string | null;
+            /** Company */
+            company: string;
+            /**
+             * Created On
+             * Format: date
+             */
+            created_on: string;
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "certain" | "probable" | "possible" | "info";
+            /** Message */
+            message: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "to_apply" | "applied" | "followed_up" | "interview" | "offer" | "rejected" | "no_answer" | "withdrawn";
+            /** Title */
+            title: string;
+        };
         /** AnswerIn */
         AnswerIn: {
             /** Choice */
@@ -1794,6 +1933,203 @@ export interface components {
             readable: boolean;
             /** Source */
             source: ("ui" | "env") | null;
+        };
+        /** ApplicationDetail */
+        ApplicationDetail: {
+            /** Applied On */
+            applied_on: string | null;
+            /** Channel */
+            channel: ("company_site" | "job_board" | "linkedin" | "email" | "referral" | "other") | null;
+            /** Company */
+            company: string;
+            /** Contacts */
+            contacts: components["schemas"]["ContactOut"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Cv Version Id */
+            cv_version_id: string | null;
+            /** Cv Version Number */
+            cv_version_number: number | null;
+            /** Due Reminders */
+            due_reminders: number;
+            /** Events */
+            events: components["schemas"]["EventOut"][];
+            /** Id */
+            id: string;
+            /** Interview On */
+            interview_on: string | null;
+            /** Letter */
+            letter: string | null;
+            /** Next Action */
+            next_action: string | null;
+            /** Next Action On */
+            next_action_on: string | null;
+            /** Notes */
+            notes: string | null;
+            /** Posting Id */
+            posting_id: string | null;
+            /** Posting Text */
+            posting_text: string | null;
+            /** Reminders */
+            reminders: components["schemas"]["ReminderOut"][];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "to_apply" | "applied" | "followed_up" | "interview" | "offer" | "rejected" | "no_answer" | "withdrawn";
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Url */
+            url: string | null;
+        };
+        /**
+         * ApplicationIn
+         * @description Création manuelle ou depuis une offre. Avec `posting_id`, l'entreprise, l'intitulé, le
+         *     lien et le texte figé viennent de l'offre (les champs donnés ne servent que si l'offre ne les
+         *     dit pas encore) ; sans `posting_id`, `company` et `title` sont obligatoires (422 `fields`).
+         *     `distinct_from` : les fiches de l'alerte que January a confirmées « autre poste ».
+         */
+        ApplicationIn: {
+            /** Applied On */
+            applied_on?: string | null;
+            /** Channel */
+            channel?: ("company_site" | "job_board" | "linkedin" | "email" | "referral" | "other") | null;
+            /** Company */
+            company?: string | null;
+            /** Contacts */
+            contacts?: components["schemas"]["ContactIn"][];
+            /** Distinct From */
+            distinct_from?: string[];
+            /** Notes */
+            notes?: string | null;
+            /** Posting Id */
+            posting_id?: string | null;
+            /** Posting Text */
+            posting_text?: string | null;
+            /**
+             * Status
+             * @default to_apply
+             * @enum {string}
+             */
+            status: "to_apply" | "applied" | "followed_up" | "interview" | "offer" | "rejected" | "no_answer" | "withdrawn";
+            /** Title */
+            title?: string | null;
+            /** Url */
+            url?: string | null;
+        };
+        /** ApplicationOut */
+        ApplicationOut: {
+            /** Applied On */
+            applied_on: string | null;
+            /** Channel */
+            channel: ("company_site" | "job_board" | "linkedin" | "email" | "referral" | "other") | null;
+            /** Company */
+            company: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Cv Version Id */
+            cv_version_id: string | null;
+            /** Cv Version Number */
+            cv_version_number: number | null;
+            /** Due Reminders */
+            due_reminders: number;
+            /** Id */
+            id: string;
+            /** Interview On */
+            interview_on: string | null;
+            /** Next Action */
+            next_action: string | null;
+            /** Next Action On */
+            next_action_on: string | null;
+            /** Posting Id */
+            posting_id: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "to_apply" | "applied" | "followed_up" | "interview" | "offer" | "rejected" | "no_answer" | "withdrawn";
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Url */
+            url: string | null;
+        };
+        /**
+         * ApplicationPatch
+         * @description Les champs à changer (ceux qui sont envoyés, `null` efface un champ facultatif) ; `contacts`
+         *     remplace la liste. Le statut ne se change que par `POST /applications/{id}/events` : l'envoyer
+         *     ici est une 422 (`fields: ["status"]`), comme tout champ inconnu.
+         */
+        ApplicationPatch: {
+            /** Applied On */
+            applied_on?: string | null;
+            /** Channel */
+            channel?: ("company_site" | "job_board" | "linkedin" | "email" | "referral" | "other") | null;
+            /** Company */
+            company?: string | null;
+            /** Contacts */
+            contacts?: components["schemas"]["ContactIn"][] | null;
+            /** Interview On */
+            interview_on?: string | null;
+            /** Letter */
+            letter?: string | null;
+            /** Next Action */
+            next_action?: string | null;
+            /** Next Action On */
+            next_action_on?: string | null;
+            /** Notes */
+            notes?: string | null;
+            /** Title */
+            title?: string | null;
+            /** Url */
+            url?: string | null;
+        };
+        /** ApplicationRef */
+        ApplicationRef: {
+            /** Applied On */
+            applied_on: string | null;
+            /** Company */
+            company: string;
+            /** Id */
+            id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "to_apply" | "applied" | "followed_up" | "interview" | "offer" | "rejected" | "no_answer" | "withdrawn";
+            /** Title */
+            title: string;
+        };
+        /**
+         * ApplicationStatsOut
+         * @description Les indicateurs (SPEC 6.4) ; `StatsOut` est déjà le nom des statistiques de la mémoire.
+         */
+        ApplicationStatsOut: {
+            /** By Status */
+            by_status: {
+                [key: string]: number;
+            };
+            /** Due Reminders */
+            due_reminders: number;
+            /** Mean Response Days */
+            mean_response_days: number | null;
+            /** Response Rate */
+            response_rate: number | null;
         };
         /** ArtifactReadyEvent */
         ArtifactReadyEvent: {
@@ -1964,7 +2300,7 @@ export interface components {
         /**
          * BoardEdit
          * @description Scène Excalidraw retouchée par January (`serializeAsJSON`) et sa note, renvoyée aux agents
-         *     comme un message. Corps plafonné à 2 Mio (`main.BOARD_BODY_MAX`).
+         *     comme un message. Corps plafonné à 2 Mio (`core.body_limits.BOARD_BODY_MAX`).
          */
         BoardEdit: {
             /** Note */
@@ -2140,6 +2476,18 @@ export interface components {
             session_id: string;
         };
         /**
+         * CheckOut
+         * @description `own` : la fiche de cette offre, si elle existe ; `alerts` : certain, probable, possible ;
+         *     `info` : même entreprise dans les 30 jours.
+         */
+        CheckOut: {
+            /** Alerts */
+            alerts: components["schemas"]["AlertOut"][];
+            /** Info */
+            info: components["schemas"]["AlertOut"][];
+            own: components["schemas"]["ApplicationRef"] | null;
+        };
+        /**
          * ChooseOut
          * @description `already_chosen` : ce même choix était déjà fait (double clic, reprise générique) ; la
          *     requête n'a rien changé, `start_date` comprise (D87). Faux aussi quand ce même choix relance
@@ -2226,6 +2574,26 @@ export interface components {
              */
             target: "declare" | "en_cours" | "valide" | "prouve";
         };
+        /** ContactIn */
+        ContactIn: {
+            /** Name */
+            name: string;
+            /** Role */
+            role?: string | null;
+            /** Url */
+            url?: string | null;
+        };
+        /** ContactOut */
+        ContactOut: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Role */
+            role: string | null;
+            /** Url */
+            url: string | null;
+        };
         /** CostUpdatedEvent */
         CostUpdatedEvent: {
             /**
@@ -2261,6 +2629,12 @@ export interface components {
             tokens_in: number;
             /** Tokens Out */
             tokens_out: number;
+        };
+        /** CreatedOut */
+        CreatedOut: {
+            application: components["schemas"]["ApplicationDetail"];
+            /** Info */
+            info: components["schemas"]["AlertOut"][];
         };
         /**
          * CvReviewOut
@@ -2440,6 +2814,50 @@ export interface components {
          */
         ErrorOut: {
             error: components["schemas"]["ErrorDetailOut"];
+        };
+        /**
+         * EventIn
+         * @description Un événement du fil : un changement de statut (`status` obligatoire) ou une note (`text`
+         *     obligatoire). `on` : le jour de l'événement (défaut : aujourd'hui, fuseau de January) ;
+         *     `interview_on` : le jour de l'entretien, pour le statut « Entretien » (défaut : `on`).
+         */
+        EventIn: {
+            /** Interview On */
+            interview_on?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "status" | "note";
+            /** On */
+            on?: string | null;
+            /** Status */
+            status?: ("to_apply" | "applied" | "followed_up" | "interview" | "offer" | "rejected" | "no_answer" | "withdrawn") | null;
+            /** Text */
+            text?: string | null;
+        };
+        /** EventOut */
+        EventOut: {
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "created" | "status" | "note" | "reminder" | "kit" | "interview" | "committee" | "version";
+            /** Ref Id */
+            ref_id: string | null;
+            /** Status From */
+            status_from: ("to_apply" | "applied" | "followed_up" | "interview" | "offer" | "rejected" | "no_answer" | "withdrawn") | null;
+            /** Status To */
+            status_to: ("to_apply" | "applied" | "followed_up" | "interview" | "offer" | "rejected" | "no_answer" | "withdrawn") | null;
+            /** Text */
+            text: string | null;
         };
         /** EvidenceOut */
         EvidenceOut: {
@@ -3967,6 +4385,31 @@ export interface components {
             /** Total */
             total: number;
         };
+        /**
+         * ReminderOut
+         * @description Une relance de la fiche (7.3 y ajoute le brouillon et le contact).
+         */
+        ReminderOut: {
+            /** Application Id */
+            application_id: string;
+            /**
+             * Due On
+             * Format: date
+             */
+            due_on: string;
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "linkedin_7" | "email_14" | "close_21" | "thanks" | "news_7";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "done" | "ignored";
+        };
         /** ReplanRequest */
         ReplanRequest: {
             /** Available Minutes */
@@ -5232,6 +5675,266 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    get_applications_api_v1_applications_get: {
+        parameters: {
+            query?: {
+                status?: ("to_apply" | "applied" | "followed_up" | "interview" | "offer" | "rejected" | "no_answer" | "withdrawn") | null;
+                posting_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_application_api_v1_applications_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplicationIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedOut"];
+                };
+            };
+            /** @description `posting_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `application_duplicate` (`details.alerts` : les fiches existantes qui ressemblent à l'offre), `application_exists` (`details.application_id` : une fiche existe déjà pour cette offre) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_check_api_v1_applications_check_get: {
+        parameters: {
+            query?: {
+                posting_id?: string | null;
+                url?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CheckOut"];
+                };
+            };
+            /** @description `application_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_stats_api_v1_applications_stats_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationStatsOut"];
+                };
+            };
+        };
+    };
+    get_one_application_api_v1_applications__application_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationDetail"];
+                };
+            };
+            /** @description `application_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_application_api_v1_applications__application_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplicationPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationDetail"];
+                };
+            };
+            /** @description `application_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_event_api_v1_applications__application_id__events_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationDetail"];
+                };
+            };
+            /** @description `application_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     me_api_v1_auth_me_get: {
         parameters: {
             query?: never;
@@ -6920,7 +7623,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `review_in_progress` (une revue de CV de l'offre est lancée ou proposée : la terminer d'abord), `analysis_in_progress` (l'analyse de l'offre tourne : réessayer dans un instant) */
+            /** @description `review_in_progress` (une revue de CV de l'offre est lancée ou proposée : la terminer d'abord), `analysis_in_progress` (l'analyse de l'offre tourne : réessayer dans un instant), `posting_has_application` (une fiche de candidature cite l'offre : `details.application_id`) */
             409: {
                 headers: {
                     [name: string]: unknown;
