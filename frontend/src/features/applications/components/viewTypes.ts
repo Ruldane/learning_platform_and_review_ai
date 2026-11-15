@@ -118,3 +118,46 @@ export interface ConfirmationView {
   /** Pourquoi la question est reposée (la réponse précédente n'a pas pu être prise), s'il y a lieu. */
   reason?: string | null;
 }
+
+/** Les sept pièces du kit, dans l'ordre où le serveur les rend. */
+export const KIT_KINDS = [
+  "cv",
+  "letter",
+  "linkedin",
+  "followups",
+  "form_answers",
+  "company_brief",
+  "pitch",
+] as const;
+export type KitKindView = (typeof KIT_KINDS)[number];
+
+/** `pending` : pas encore rangée ; `to_check` : à relire avant usage ; `failed` : non produite. */
+export type KitStatusView = "pending" | "ready" | "to_check" | "failed";
+
+/** Une page lue pour le dossier de l'entreprise ; `rank` est son numéro `[n]` dans le texte. */
+export interface KitSourceView {
+  rank: number;
+  url: string;
+  title: string | null;
+}
+
+/** Une pièce du kit telle que la page la montre. */
+export interface KitPieceView {
+  kind: KitKindView;
+  status: KitStatusView;
+  content: string;
+  /** Les termes que le profil ne dit pas (pièce « à vérifier »). */
+  flags: string[];
+  /** Les réponses salariales laissées à January. */
+  salaryFields: number;
+  words: number | null;
+  sources: KitSourceView[];
+  /** January l'a modifiée : un nouveau lancement du kit la garde telle quelle. */
+  edited: boolean;
+  /** Le motif lisible d'une pièce en échec. */
+  error: string | null;
+  updatedAt: string | null;
+}
+
+/** Ce que l'enregistrement d'une modification rend à la pièce : le nouveau statut, ou le refus. */
+export type KitSaveResult = { ok: true; status: KitStatusView } | { ok: false; message: string };

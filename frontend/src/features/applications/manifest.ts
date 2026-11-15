@@ -3,14 +3,15 @@ import type { FeatureManifest } from "@/shared/lib/feature";
 import { useDueCount } from "./hooks/useDueCount";
 import { ApplicationDrawer } from "./pages/ApplicationDrawer";
 import { BoardPage } from "./pages/BoardPage";
+import { KitPage } from "./pages/KitPage";
 import { NewApplicationPage } from "./pages/NewApplication";
 import { RemindersPage } from "./pages/RemindersPage";
 
 /**
  * Les candidatures (SPEC 6, section « Candidatures » de la navigation) : le suivi (tableau de suivi
  * ou tableau) avec la fiche en tiroir par-dessus, les relances (pastille = relances dues), la
- * nouvelle fiche (à la main ou en une phrase). Les pages du kit, de l'entretien et du comité
- * (7.14 à 7.16) s'ajoutent sous `/candidatures/:applicationId/…`.
+ * nouvelle fiche (à la main ou en une phrase), le kit d'une candidature (7.14). Les pages de
+ * l'entretien et du comité (7.15 et 7.16) s'ajoutent sous `/candidatures/:applicationId/…`.
  */
 export const applicationsManifest: FeatureManifest = {
   id: "applications",
@@ -24,6 +25,7 @@ export const applicationsManifest: FeatureManifest = {
     },
     { path: "candidatures/relances", Component: RemindersPage },
     { path: "candidatures/nouvelle", Component: NewApplicationPage },
+    { path: "candidatures/:applicationId/kit", Component: KitPage },
   ],
   nav: [
     {

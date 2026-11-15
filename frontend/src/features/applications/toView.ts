@@ -13,6 +13,10 @@ import type {
   ContactView,
   EventOut,
   EventView,
+  KitItemOut,
+  KitOut,
+  KitPieceView,
+  KitView,
   ReminderOut,
   ReminderView,
   StatsView,
@@ -111,4 +115,25 @@ export function toConfirmationView(payload: InterruptPayload): ConfirmationView 
     })),
     options: (payload.options ?? []).map(({ value, label }) => ({ value, label })),
   };
+}
+
+/** Une pièce du kit du serveur → la pièce que la page montre. */
+export function toKitPieceView(out: KitItemOut): KitPieceView {
+  return {
+    kind: out.kind,
+    status: out.status,
+    content: out.content,
+    flags: out.flags,
+    salaryFields: out.salary_fields,
+    words: out.words,
+    sources: out.sources.map(({ rank, url, title }) => ({ rank, url, title })),
+    edited: out.edited,
+    error: out.error,
+    updatedAt: out.updated_at,
+  };
+}
+
+/** Le kit du serveur → la vue de la page. */
+export function toKitView(out: KitOut): KitView {
+  return { sessionId: out.session_id, running: out.running, pieces: out.items.map(toKitPieceView) };
 }

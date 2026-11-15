@@ -4,7 +4,9 @@ import {
   applicationsErrorMessage,
   duplicateAlerts,
   existingApplicationId,
+  kitSaveErrorMessage,
   openIntakeSessionId,
+  openKitSessionId,
 } from "./errors";
 import { openedInfo } from "./navState";
 
@@ -44,6 +46,20 @@ describe("errors", () => {
     ).toBeNull();
     expect(openIntakeSessionId(refused("intake_in_progress", { session_id: "s9" }))).toBe("s9");
     expect(openIntakeSessionId(refused("intake_in_progress", {}))).toBeNull();
+  });
+
+  it("reads the kit session a 409 kit_in_progress names, and only that", () => {
+    expect(openKitSessionId(refused("kit_in_progress", { session_id: "k7" }))).toBe("k7");
+    expect(openKitSessionId(refused("kit_in_progress", {}))).toBeNull();
+    expect(openKitSessionId(refused("posting_required", { session_id: "k7" }))).toBeNull();
+  });
+
+  it("speaks of the kit on a refused start, and of the edit with the server's words on a refused save", () => {
+    expect(applicationsErrorMessage(refused("posting_required"))).toMatch(/ni offre liée/);
+    expect(kitSaveErrorMessage(refused("profile_required"))).toBe(
+      "Message du serveur (profile_required).",
+    );
+    expect(kitSaveErrorMessage(refused("kit_item_not_found"))).toMatch(/pas encore arrivée/);
   });
 
   it("reads the info passed to an opened fiche, ignoring anything else", () => {

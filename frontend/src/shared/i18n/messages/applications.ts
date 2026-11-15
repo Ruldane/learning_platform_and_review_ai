@@ -1,8 +1,10 @@
+import { applicationsKit } from "./applicationsKit";
 import { applicationsPages } from "./applicationsPages";
 
 /** Textes des candidatures : tableau, tableau de suivi, relances, alerte de doublon, fil, indicateurs. */
 export const applications = {
   ...applicationsPages,
+  ...applicationsKit,
   status: {
     to_apply: "À postuler",
     applied: "Postulée",

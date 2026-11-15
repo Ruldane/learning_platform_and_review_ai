@@ -8,4 +8,5 @@ export const applicationsKeys = {
   stats: ["applications", "stats"],
   one: (applicationId: string) => ["applications", "one", applicationId] as const,
   reminders: ["applications", "reminders"],
+  kit: (applicationId: string) => ["applications", "kit", applicationId] as const,
 } as const;

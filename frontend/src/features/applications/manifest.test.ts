@@ -2,12 +2,13 @@ import { describe, expect, it } from "vitest";
 import { applicationsManifest } from "./manifest";
 
 describe("applicationsManifest", () => {
-  it("declares the board with the drawer as its child, the reminders and the new application", () => {
+  it("declares the board with the drawer as its child, the reminders, the new application and the kit", () => {
     expect(applicationsManifest.id).toBe("applications");
     expect(applicationsManifest.routes.map((route) => route.path)).toEqual([
       "candidatures",
       "candidatures/relances",
       "candidatures/nouvelle",
+      "candidatures/:applicationId/kit",
     ]);
     expect(applicationsManifest.routes[0]?.children?.map((route) => route.path)).toEqual([
       ":applicationId",

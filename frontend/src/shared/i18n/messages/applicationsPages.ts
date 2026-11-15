@@ -11,6 +11,14 @@ export const applicationsPages = {
     reminder_not_found: "Cette relance n'existe plus.",
     reminder_closed: "Cette relance est déjà traitée.",
     intake_in_progress: "Une saisie en une phrase est déjà en cours.",
+    kit_in_progress: "Un kit est déjà en cours pour cette candidature.",
+    posting_required:
+      "Cette candidature n'a ni offre liée ni texte d'offre : le kit ne peut pas être préparé sans l'offre.",
+    profile_required:
+      "Aucun profil maître validé : valide ton profil dans la partie CV, puis lance le kit.",
+    kit_item_not_found: "Cette pièce n'est pas encore arrivée : attends qu'elle soit prête.",
+    engine_unavailable:
+      "Les agents ne sont pas disponibles pour le moment : réessaie dans un instant.",
   },
   fields: {
     company: "Entreprise",

@@ -37,6 +37,16 @@ export const existingApplicationId = (error: unknown): string | null =>
 export const openIntakeSessionId = (error: unknown): string | null =>
   errorCode(error) === "intake_in_progress" ? detail(error, "session_id") : null;
 
+/** La session du kit déjà ouverte (409 `kit_in_progress`). */
+export const openKitSessionId = (error: unknown): string | null =>
+  errorCode(error) === "kit_in_progress" ? detail(error, "session_id") : null;
+
+/** Le refus d'une modification : le texte du serveur (il parle de la modification), sauf pièce absente. */
+export const kitSaveErrorMessage = (error: unknown): string =>
+  errorCode(error) === "kit_item_not_found" || errorCode(error) === "application_not_found"
+    ? applicationsErrorMessage(error)
+    : errorMessage(error);
+
 const isAlert = (value: unknown): value is AlertOut =>
   isRecord(value) &&
   typeof value.application_id === "string" &&

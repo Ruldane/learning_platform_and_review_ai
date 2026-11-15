@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { kitItem, pendingItem } from "@/test/kitApi";
 import { alertOut, applicationOut, detailOut, eventOut, reminderOut } from "@/test/applicationsApi";
 import {
   toAlertView,
@@ -6,6 +7,8 @@ import {
   toConfirmationView,
   toContactsIn,
   toEventView,
+  toKitPieceView,
+  toKitView,
   toReminderView,
   toStatsView,
 } from "./toView";
@@ -111,5 +114,44 @@ describe("toView", () => {
         { id: "notes", label: "Notes", required: false, maxLength: 500, value: "" },
       ],
     });
+  });
+
+  it("reads a kit piece with its sources and its reasons to check", () => {
+    const view = toKitPieceView(
+      kitItem("company_brief", {
+        status: "to_check",
+        flags: ["Go"],
+        salary_fields: 2,
+        words: 40,
+        edited: true,
+        sources: [{ rank: 1, url: "https://example.org/a", title: "A" }],
+      }) as never,
+    );
+    expect(view).toEqual({
+      kind: "company_brief",
+      status: "to_check",
+      content: "Texte de la pièce company_brief.",
+      flags: ["Go"],
+      salaryFields: 2,
+      words: 40,
+      sources: [{ rank: 1, url: "https://example.org/a", title: "A" }],
+      edited: true,
+      error: null,
+      updatedAt: "2026-11-15T10:00:00Z",
+    });
+  });
+
+  it("reads the kit: the session, whether it runs, the seven pieces in order", () => {
+    const kit = toKitView({
+      session_id: "k1",
+      running: true,
+      items: [pendingItem("cv"), kitItem("letter")],
+    } as never);
+    expect(kit.sessionId).toBe("k1");
+    expect(kit.running).toBe(true);
+    expect(kit.pieces.map((piece) => [piece.kind, piece.status])).toEqual([
+      ["cv", "pending"],
+      ["letter", "ready"],
+    ]);
   });
 });

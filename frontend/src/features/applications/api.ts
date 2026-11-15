@@ -1,6 +1,6 @@
 import { api } from "@/shared/api/client";
 import { unwrap } from "@/shared/api/errors";
-import type { ApplicationIn, ApplicationPatch, EventIn } from "./types";
+import type { ApplicationIn, ApplicationPatch, EventIn, KitKindView } from "./types";
 
 const applicationPath = (applicationId: string) => ({
   params: { path: { application_id: applicationId } },
@@ -66,6 +66,36 @@ export async function patchReminder(reminderId: string, action: ReminderAction) 
     await api.PATCH("/reminders/{reminder_id}", {
       params: { path: { reminder_id: reminderId } },
       body: { action },
+    }),
+  );
+}
+
+/** `GET /applications/{id}/kit` : toujours les sept pièces, `pending` pour celles pas encore rangées. */
+export async function fetchKit(applicationId: string, signal?: AbortSignal) {
+  return unwrap(
+    await api.GET("/applications/{application_id}/kit", {
+      ...applicationPath(applicationId),
+      signal,
+    }),
+  );
+}
+
+/**
+ * `POST /applications/{id}/kit` (202) : lance le kit. 409 `kit_in_progress` (`details.session_id`),
+ * `posting_required`, `profile_required` ; 503 `engine_unavailable`.
+ */
+export async function startKit(applicationId: string) {
+  return unwrap(
+    await api.POST("/applications/{application_id}/kit", applicationPath(applicationId)),
+  );
+}
+
+/** `PATCH /applications/{id}/kit/{kind}` : le texte de January ; le serveur relit une pièce à vérifier. */
+export async function patchKitItem(applicationId: string, kind: KitKindView, content: string) {
+  return unwrap(
+    await api.PATCH("/applications/{application_id}/kit/{kind}", {
+      params: { path: { application_id: applicationId, kind } },
+      body: { content },
     }),
   );
 }
