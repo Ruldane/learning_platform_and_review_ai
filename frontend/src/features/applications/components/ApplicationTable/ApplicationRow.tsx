@@ -1,5 +1,7 @@
 import { t } from "@/shared/i18n/t";
 import { formatDay } from "../format";
+import { describeNextAction } from "../nextAction";
+import { OpenApplicationButton } from "../OpenApplicationButton";
 import { StatusBadge } from "../StatusBadge";
 import type { ApplicationView } from "../viewTypes";
 
@@ -8,26 +10,15 @@ interface ApplicationRowProps {
   onOpen: (id: string) => void;
 }
 
-function nextAction({ nextAction: action, nextActionOn: day }: ApplicationView): string {
-  if (action && day) return `${action} (${formatDay(day)})`;
-  if (action) return action;
-  return day ? formatDay(day) : t("applications.table.none");
-}
-
 /** Une ligne du tableau : l'entreprise ouvre la fiche. */
 export function ApplicationRow({ application, onOpen }: ApplicationRowProps) {
-  const { id, company, title, appliedOn, dueReminders } = application;
+  const { title, company, appliedOn, dueReminders } = application;
   return (
     <tr className="border-t">
       <td className="px-3 py-2 font-medium">
-        <button
-          type="button"
-          aria-label={t("applications.card.open", { company, title })}
-          onClick={() => onOpen(id)}
-          className="rounded text-left outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring"
-        >
+        <OpenApplicationButton application={application} onOpen={onOpen}>
           {company}
-        </button>
+        </OpenApplicationButton>
       </td>
       <td className="px-3 py-2">{title}</td>
       <td className="px-3 py-2">
@@ -36,7 +27,9 @@ export function ApplicationRow({ application, onOpen }: ApplicationRowProps) {
       <td className="px-3 py-2 tabular-nums">
         {appliedOn ? formatDay(appliedOn) : t("applications.table.none")}
       </td>
-      <td className="px-3 py-2">{nextAction(application)}</td>
+      <td className="px-3 py-2">
+        {describeNextAction(application) ?? t("applications.table.none")}
+      </td>
       <td className="px-3 py-2 tabular-nums">{dueReminders}</td>
     </tr>
   );

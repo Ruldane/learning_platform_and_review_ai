@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { makeApplications } from "../fixtures";
+import { makeApplication, makeApplications } from "../fixtures";
 import { ApplicationTable } from "./ApplicationTable";
 
 function companies(): string[] {
@@ -78,10 +78,12 @@ describe("ApplicationTable", () => {
 
   it("sorts the due reminders as numbers", async () => {
     const user = userEvent.setup();
-    render(<ApplicationTable applications={makeApplications()} onOpen={vi.fn()} />);
+    const busy = makeApplication({ id: "busy", company: "Busy", dueReminders: 10 });
+    render(<ApplicationTable applications={[...makeApplications(), busy]} onOpen={vi.fn()} />);
     await user.click(screen.getByRole("button", { name: "Trier par Relances dues" }));
     await user.click(screen.getByRole("button", { name: "Trier par Relances dues" }));
-    expect(companies()[0]).toBe("Acme");
+    // En texte, « 2 » passerait avant « 10 » : seul un tri numérique met Busy en tête.
+    expect(companies().slice(0, 2)).toEqual(["Busy", "Acme"]);
   });
 
   it("opens an application from its company", async () => {

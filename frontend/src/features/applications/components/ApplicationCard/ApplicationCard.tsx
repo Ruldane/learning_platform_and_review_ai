@@ -1,5 +1,7 @@
 import { t } from "@/shared/i18n/t";
 import { formatDay } from "../format";
+import { describeNextAction } from "../nextAction";
+import { OpenApplicationButton } from "../OpenApplicationButton";
 import { StatusBadge } from "../StatusBadge";
 import type { ApplicationView } from "../viewTypes";
 
@@ -10,18 +12,10 @@ interface ApplicationCardProps {
   onOpen?: (id: string) => void;
 }
 
-function nextAction(application: ApplicationView): string | null {
-  const { nextAction: action, nextActionOn: day } = application;
-  if (!action) return null;
-  return day
-    ? t("applications.card.nextActionOn", { action, date: formatDay(day) })
-    : t("applications.card.nextActionOnly", { action });
-}
-
 /** Le contenu d'une fiche sur une carte : entreprise, poste, date, prochaine action, relances dues. */
 export function ApplicationCard({ application, showStatus = false, onOpen }: ApplicationCardProps) {
-  const { id, company, title, appliedOn, dueReminders } = application;
-  const action = nextAction(application);
+  const { company, title, appliedOn, dueReminders } = application;
+  const action = application.nextAction ? describeNextAction(application) : null;
   const name = (
     <>
       <span className="block font-medium break-words">{company}</span>
@@ -31,14 +25,9 @@ export function ApplicationCard({ application, showStatus = false, onOpen }: App
   return (
     <div className="flex min-w-0 flex-col gap-1 text-sm">
       {onOpen ? (
-        <button
-          type="button"
-          aria-label={t("applications.card.open", { company, title })}
-          onClick={() => onOpen(id)}
-          className="rounded text-left outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring"
-        >
+        <OpenApplicationButton application={application} onOpen={onOpen}>
           {name}
-        </button>
+        </OpenApplicationButton>
       ) : (
         <div>{name}</div>
       )}
@@ -48,7 +37,9 @@ export function ApplicationCard({ application, showStatus = false, onOpen }: App
           ? t("applications.card.appliedOn", { date: formatDay(appliedOn) })
           : t("applications.card.notApplied")}
       </p>
-      {action && <p className="text-xs break-words">{action}</p>}
+      {action && (
+        <p className="text-xs break-words">{t("applications.card.nextAction", { action })}</p>
+      )}
       {dueReminders > 0 && (
         <p className="text-xs font-medium text-destructive">
           {dueReminders === 1

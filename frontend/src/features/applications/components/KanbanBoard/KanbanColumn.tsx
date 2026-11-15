@@ -20,6 +20,7 @@ export function KanbanColumn({ status, applications, onMove, onOpen }: KanbanCol
     <div
       ref={setNodeRef}
       role="group"
+      data-status={status}
       aria-label={t("applications.board.columnLabel", { status: label, count })}
       className={cn(
         "flex min-w-0 flex-col gap-2 rounded-xl border bg-card p-1.5",

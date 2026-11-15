@@ -16,6 +16,12 @@ interface ReminderCardProps {
 
 type CopyState = "idle" | "copied" | "failed";
 
+/** L'état de la copie est celui d'une relance : une autre relance repart de zéro. */
+interface CopyOf {
+  reminderId: string;
+  state: CopyState;
+}
+
 /**
  * Une relance à traiter : qui contacter, l'échéance, le brouillon et quatre boutons. Pour
  * `close_21` le bouton « Fait » devient « Classer en Sans réponse » (c'est la fiche qui change de
@@ -28,15 +34,16 @@ export function ReminderCard({
   onPostpone,
   onIgnore,
 }: ReminderCardProps) {
-  const [copy, setCopy] = useState<CopyState>("idle");
+  const [last, setLast] = useState<CopyOf | null>(null);
   const { id, draft } = reminder;
+  const copy: CopyState = last?.reminderId === id ? last.state : "idle";
 
   async function copyDraft() {
     try {
       await onCopy(draft);
-      setCopy("copied");
+      setLast({ reminderId: id, state: "copied" });
     } catch {
-      setCopy("failed");
+      setLast({ reminderId: id, state: "failed" });
     }
   }
 

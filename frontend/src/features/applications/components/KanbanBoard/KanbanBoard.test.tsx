@@ -1,10 +1,10 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { makeApplications } from "../fixtures";
+import { makeApplication, makeApplications } from "../fixtures";
 import { KanbanBoard } from "./KanbanBoard";
 
-const MOVE_ACME = "Déplacer « Data engineer »";
+const MOVE_ACME = "Déplacer « Data engineer » (Acme)";
 const COLUMN = /^(À postuler|Postulée|Relancée|Entretien|Offre|Refus|Sans réponse|Retirée), \d+$/;
 
 describe("KanbanBoard", () => {
@@ -90,7 +90,22 @@ describe("KanbanBoard", () => {
 
   it("offers a drag handle on each card, named after the position", () => {
     render(<KanbanBoard applications={makeApplications()} onMove={vi.fn()} />);
-    expect(screen.getByRole("button", { name: "Glisser « Data engineer »" })).toBeInTheDocument();
+    const handle = screen.getByRole("button", { name: "Glisser « Data engineer » (Acme)" });
+    expect(handle).toBeInTheDocument();
+    // Au doigt, le navigateur ne doit pas prendre le geste pour un défilement.
+    expect(handle).toHaveClass("touch-none");
+  });
+
+  it("names the handle and the move button after the company too, for two cards with one title", () => {
+    const twins = [
+      makeApplication({ id: "x1", company: "Alpha", title: "Développeuse" }),
+      makeApplication({ id: "x2", company: "Omega", title: "Développeuse" }),
+    ];
+    render(<KanbanBoard applications={twins} onMove={vi.fn()} />);
+    expect(screen.getByRole("button", { name: "Glisser « Développeuse » (Alpha)" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Glisser « Développeuse » (Omega)" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Déplacer « Développeuse » (Alpha)" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Déplacer « Développeuse » (Omega)" })).toBeVisible();
   });
 
   it("opens an application from its card", async () => {

@@ -90,6 +90,21 @@ describe("ReminderCard", () => {
     );
   });
 
+  it("forgets the copy message when the same card receives another reminder", async () => {
+    const user = userEvent.setup();
+    const handlers = {
+      onCopy: vi.fn().mockResolvedValue(undefined),
+      onDone: vi.fn(),
+      onPostpone: vi.fn(),
+      onIgnore: vi.fn(),
+    };
+    const { rerender } = render(<ReminderCard reminder={makeReminder()} {...handlers} />);
+    await user.click(screen.getByRole("button", { name: "Copier" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("Brouillon copié.");
+    rerender(<ReminderCard reminder={makeReminder({ id: "r2" })} {...handlers} />);
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
+  });
+
   it("offers to file the application as Sans réponse instead of Fait for close_21", async () => {
     const user = userEvent.setup();
     const handlers = setup(makeReminder({ kind: "close_21", draft: "Acme ne t'a pas répondu." }));

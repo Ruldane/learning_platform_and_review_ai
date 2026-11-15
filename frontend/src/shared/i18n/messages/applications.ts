@@ -13,8 +13,7 @@ export const applications = {
   card: {
     appliedOn: "Postulée le {date}",
     notApplied: "Pas encore postulée",
-    nextActionOn: "Prochaine action : {action} ({date})",
-    nextActionOnly: "Prochaine action : {action}",
+    nextAction: "Prochaine action : {action}",
     open: "Ouvrir la fiche de {company}, poste {title}",
     due: { one: "1 relance due", many: "{count} relances dues" },
   },
@@ -23,10 +22,10 @@ export const applications = {
     columnLabel: "{status}, {count}",
     empty: "Aucune candidature ici.",
     count: { one: "1 candidature", many: "{count} candidatures" },
-    moveButton: "Déplacer « {title} »",
+    moveButton: "Déplacer « {title} » ({company})",
     moveTo: "Déplacer vers…",
     moveItem: "{status}",
-    dragHandle: "Glisser « {title} »",
+    dragHandle: "Glisser « {title} » ({company})",
     dragRole: "carte déplaçable",
     dragInstructions:
       "Pour déplacer une candidature, appuie sur espace, puis sur les flèches gauche et droite pour changer de colonne, et sur espace pour la poser. Échap annule. Tu peux aussi utiliser le bouton Déplacer vers…",

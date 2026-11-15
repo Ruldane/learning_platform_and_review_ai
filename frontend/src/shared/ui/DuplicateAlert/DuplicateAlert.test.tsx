@@ -48,26 +48,14 @@ describe("DuplicateAlert", () => {
     expect(screen.getByText("Doublon certain")).toBeInTheDocument();
   });
 
-  it("says the level in words for each level", () => {
-    const { unmount } = render(
-      <DuplicateAlert
-        alerts={[{ ...PROBABLE }]}
-        onOpen={vi.fn()}
-        onDistinct={vi.fn()}
-        onCancel={vi.fn()}
-      />,
-    );
-    expect(screen.getByText("Doublon probable")).toBeInTheDocument();
-    unmount();
-    render(
-      <DuplicateAlert
-        alerts={[{ ...PROBABLE, level: "possible" }]}
-        onOpen={vi.fn()}
-        onDistinct={vi.fn()}
-        onCancel={vi.fn()}
-      />,
-    );
-    expect(screen.getByText("Doublon possible")).toBeInTheDocument();
+  it.each([
+    ["certain", "Doublon certain"],
+    ["probable", "Doublon probable"],
+    ["possible", "Doublon possible"],
+    ["info", "Pour info"],
+  ] as const)("says the level in words for %s", (level, words) => {
+    setup([{ ...PROBABLE, level }]);
+    expect(screen.getByText(words)).toBeInTheDocument();
   });
 
   it("lists the other alerts with their level in words", () => {

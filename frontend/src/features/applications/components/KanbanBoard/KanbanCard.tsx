@@ -37,15 +37,24 @@ export function KanbanCard({ application, onMove, onOpen }: KanbanCardProps) {
         type="button"
         {...attributes}
         {...listeners}
-        aria-label={t("applications.board.dragHandle", { title: application.title })}
-        className="mt-0.5 shrink-0 cursor-grab rounded text-muted-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring active:cursor-grabbing"
+        aria-label={t("applications.board.dragHandle", {
+          title: application.title,
+          company: application.company,
+        })}
+        data-drag-handle=""
+        className="mt-0.5 shrink-0 cursor-grab touch-none rounded text-muted-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring active:cursor-grabbing"
       >
         <GripVertical aria-hidden="true" className="size-3.5" />
       </button>
       <div className="min-w-0 flex-1">
         <ApplicationCard application={application} onOpen={onOpen} />
       </div>
-      <StatusMoveMenu title={application.title} current={application.status} onSelect={onMove} />
+      <StatusMoveMenu
+        title={application.title}
+        company={application.company}
+        current={application.status}
+        onSelect={onMove}
+      />
     </li>
   );
 }

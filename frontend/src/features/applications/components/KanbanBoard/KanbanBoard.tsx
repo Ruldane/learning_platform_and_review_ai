@@ -36,8 +36,9 @@ export function KanbanBoard({ applications, onMove, onOpen }: KanbanBoardProps) 
   const announcements = useMemo(() => makeAnnouncements(applications), [applications]);
   const { announcement, boardRef, move } = useBoardMoves(applications, onMove);
 
-  function onDragEnd({ active, over }: DragEndEvent) {
-    if (over) move(String(active.id), String(over.id) as StatusView, false);
+  function onDragEnd({ active, over, activatorEvent }: DragEndEvent) {
+    const source = activatorEvent instanceof KeyboardEvent ? "keyboard" : "pointer";
+    if (over) move(String(active.id), String(over.id) as StatusView, source);
   }
 
   return (
@@ -61,7 +62,7 @@ export function KanbanBoard({ applications, onMove, onOpen }: KanbanBoardProps) 
             key={status}
             status={status}
             applications={applications.filter((item) => item.status === status)}
-            onMove={(id, next) => move(id, next, true)}
+            onMove={(id, next) => move(id, next, "menu")}
             onOpen={onOpen}
           />
         ))}

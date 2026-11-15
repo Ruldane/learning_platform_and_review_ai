@@ -7,12 +7,13 @@ import { StatusMoveMenuList } from "./StatusMoveMenuList";
 
 interface StatusMoveMenuProps {
   title: string;
+  company: string;
   current: StatusView;
   onSelect: (status: StatusView) => void;
 }
 
 /** Menu « Déplacer vers… » : l'équivalent au clavier du glisser-déposer, un statut par entrée. */
-export function StatusMoveMenu({ title, current, onSelect }: StatusMoveMenuProps) {
+export function StatusMoveMenu({ title, company, current, onSelect }: StatusMoveMenuProps) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -41,7 +42,7 @@ export function StatusMoveMenu({ title, current, onSelect }: StatusMoveMenuProps
         size="icon-xs"
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label={t("applications.board.moveButton", { title })}
+        aria-label={t("applications.board.moveButton", { title, company })}
         title={t("applications.board.moveTo")}
         onClick={() => setOpen((value) => !value)}
       >
