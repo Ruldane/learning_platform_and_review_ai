@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.agents.runtime.launcher import SessionLauncher
 from app.agents.tools.applications_port import ApplicationStore
+from app.agents.tools.committee_port import CommitteeStore
 from app.agents.tools.cv_review_port import CvReviewStore
 from app.agents.tools.cv_template_port import CvTemplateStore
 from app.agents.tools.gap_port import GapStore
@@ -17,6 +18,7 @@ from app.agents.tools.kit_port import KitStore
 from app.agents.tools.profile_port import ProfileStore
 from app.core.providers import PublishingProviders
 from app.features.applications.service.agent_store import AgentApplicationStore
+from app.features.applications.service.committee_store import AgentCommitteeStore
 from app.features.applications.service.interview_store import AgentInterviewStore
 from app.features.applications.service.kit_store import AgentKitStore
 from app.features.applications.service.runtime import ApplicationsRuntime
@@ -45,6 +47,7 @@ class CareerRuntimes:
     application_store: ApplicationStore  # port de l'Assistant de suivi (D141)
     kit_store: KitStore  # port du parcours `application_kit` (D142, D143)
     interview_store: InterviewStore  # port du parcours `interview` (D145, D146)
+    committee_store: CommitteeStore  # port du parcours `hiring_committee` (D147)
 
 
 def career_runtimes(
@@ -85,4 +88,5 @@ def career_runtimes(
         application_store=AgentApplicationStore(applications),
         kit_store=AgentKitStore(applications),
         interview_store=AgentInterviewStore(applications),
+        committee_store=AgentCommitteeStore(applications),
     )

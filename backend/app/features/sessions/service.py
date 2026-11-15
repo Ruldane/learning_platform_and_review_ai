@@ -52,6 +52,7 @@ ROUTE_ONLY: dict[str, str] = {
     "application_intake": "POST /applications/intake",  # une seule session ouverte (D141)
     "application_kit": "POST /applications/{id}/kit",  # fiche vérifiée, pièces gardées (D142)
     "interview": "POST /applications/{id}/interviews",  # entretien et réglages vérifiés (D145)
+    "hiring_committee": "POST /committee",  # version de CV prête, un seul comité par offre (D147)
     "cv_review": "POST /cv/reviews",  # profil, gabarit et offre vérifiés puis figés (D130)
 }
 

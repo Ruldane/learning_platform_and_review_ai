@@ -35,6 +35,8 @@ AGENTS: dict[str, AgentSpec] = {
         AgentSpec(name="recruiter", tier="standard"),  # Recruteur : revue du CV (impact)
         AgentSpec(name="tracker", tier="rapide"),  # Assistant de suivi : fiche en une phrase
         AgentSpec(name="interviewer", tier="fort"),  # Intervieweur : entretien blanc, débrief
+        AgentSpec(name="manager", tier="standard"),  # Manager du poste : comité de recrutement
+        AgentSpec(name="colleague", tier="standard"),  # Futur collègue : comité de recrutement
     )
 }
 

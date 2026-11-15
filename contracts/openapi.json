@@ -2090,6 +2090,52 @@
         "title": "CaptureStarted",
         "type": "object"
       },
+      "ChangeOut": {
+        "description": "Un des trois changements qui feraient basculer un vote : la persona visée, les faits du\nprofil à mettre en avant. `needs_skill` : il demande un terme que le profil ne dit pas\n(`terms`), une compétence « à acquérir », jamais à écrire dans le CV telle quelle.",
+        "properties": {
+          "fact_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Fact Ids",
+            "type": "array"
+          },
+          "needs_skill": {
+            "title": "Needs Skill",
+            "type": "boolean"
+          },
+          "persona": {
+            "enum": [
+              "ats_reader",
+              "recruiter",
+              "manager",
+              "colleague"
+            ],
+            "title": "Persona",
+            "type": "string"
+          },
+          "terms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Terms",
+            "type": "array"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "persona",
+          "fact_ids",
+          "needs_skill",
+          "terms"
+        ],
+        "title": "ChangeOut",
+        "type": "object"
+      },
       "CheckOut": {
         "description": "`own` : la fiche de cette offre, si elle existe ; `alerts` : certain, probable, possible ;\n`info` : même entreprise dans les 30 jours.",
         "properties": {
@@ -2258,6 +2304,188 @@
           "title"
         ],
         "title": "Citation",
+        "type": "object"
+      },
+      "CommitteeDiff": {
+        "description": "L'avant et l'après (F19) : les votes, les objections disparues (`objections_resolved`) et les\nnouvelles (`objections_new`) par rapport à l'exécution `previous_id`.",
+        "properties": {
+          "objections_new": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Objections New",
+            "type": "array"
+          },
+          "objections_resolved": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Objections Resolved",
+            "type": "array"
+          },
+          "previous_id": {
+            "title": "Previous Id",
+            "type": "string"
+          },
+          "votes": {
+            "items": {
+              "$ref": "#/components/schemas/VoteChange"
+            },
+            "title": "Votes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "previous_id",
+          "votes",
+          "objections_resolved",
+          "objections_new"
+        ],
+        "title": "CommitteeDiff",
+        "type": "object"
+      },
+      "CommitteeIn": {
+        "description": "La version de CV à faire juger : elle doit être prête (PDF rendu).",
+        "properties": {
+          "cv_version_id": {
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Cv Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cv_version_id"
+        ],
+        "title": "CommitteeIn",
+        "type": "object"
+      },
+      "CommitteeRunOut": {
+        "description": "Une exécution du comité. `votes`, `objections` et `changes` sont vides tant qu'elle n'est\npas terminée ; `verdict` est la majorité des quatre votes (égalité : peut-être).",
+        "properties": {
+          "application_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Application Id"
+          },
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/ChangeOut"
+            },
+            "title": "Changes",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "cv_version_id": {
+            "title": "Cv Version Id",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "objections": {
+            "items": {
+              "$ref": "#/components/schemas/ObjectionOut"
+            },
+            "title": "Objections",
+            "type": "array"
+          },
+          "posting_id": {
+            "title": "Posting Id",
+            "type": "string"
+          },
+          "previous": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CommitteeDiff"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "running",
+              "done",
+              "failed",
+              "stopped"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "verdict": {
+            "anyOf": [
+              {
+                "enum": [
+                  "oui",
+                  "non",
+                  "peut_etre"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verdict"
+          },
+          "votes": {
+            "items": {
+              "$ref": "#/components/schemas/VoteOut"
+            },
+            "title": "Votes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "cv_version_id",
+          "posting_id",
+          "application_id",
+          "session_id",
+          "status",
+          "votes",
+          "verdict",
+          "objections",
+          "changes",
+          "previous",
+          "created_at"
+        ],
+        "title": "CommitteeRunOut",
+        "type": "object"
+      },
+      "CommitteeStartOut": {
+        "properties": {
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "session_id"
+        ],
+        "title": "CommitteeStartOut",
         "type": "object"
       },
       "CompareOut": {
@@ -6581,6 +6809,34 @@
           "url"
         ],
         "title": "NextActionOut",
+        "type": "object"
+      },
+      "ObjectionOut": {
+        "description": "Une objection du comité (la plus lourde d'abord) et les personas qui la portent.",
+        "properties": {
+          "personas": {
+            "items": {
+              "enum": [
+                "ats_reader",
+                "recruiter",
+                "manager",
+                "colleague"
+              ],
+              "type": "string"
+            },
+            "title": "Personas",
+            "type": "array"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "personas"
+        ],
+        "title": "ObjectionOut",
         "type": "object"
       },
       "PasteCreate": {
@@ -11370,6 +11626,86 @@
         "title": "VersionOut",
         "type": "object"
       },
+      "VoteChange": {
+        "description": "Le vote d'une persona avant (exécution précédente) et après (celle-ci).",
+        "properties": {
+          "after": {
+            "enum": [
+              "oui",
+              "non",
+              "peut_etre"
+            ],
+            "title": "After",
+            "type": "string"
+          },
+          "before": {
+            "enum": [
+              "oui",
+              "non",
+              "peut_etre"
+            ],
+            "title": "Before",
+            "type": "string"
+          },
+          "persona": {
+            "enum": [
+              "ats_reader",
+              "recruiter",
+              "manager",
+              "colleague"
+            ],
+            "title": "Persona",
+            "type": "string"
+          }
+        },
+        "required": [
+          "persona",
+          "before",
+          "after"
+        ],
+        "title": "VoteChange",
+        "type": "object"
+      },
+      "VoteOut": {
+        "description": "Le vote d'une persona : oui, non ou peut-être, son objection principale, sa raison.",
+        "properties": {
+          "objection": {
+            "title": "Objection",
+            "type": "string"
+          },
+          "persona": {
+            "enum": [
+              "ats_reader",
+              "recruiter",
+              "manager",
+              "colleague"
+            ],
+            "title": "Persona",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "vote": {
+            "enum": [
+              "oui",
+              "non",
+              "peut_etre"
+            ],
+            "title": "Vote",
+            "type": "string"
+          }
+        },
+        "required": [
+          "persona",
+          "vote",
+          "objection",
+          "reason"
+        ],
+        "title": "VoteOut",
+        "type": "object"
+      },
       "WeekLoadOut": {
         "description": "Charge d'une semaine touchée, avant et après la proposition, et son plafond.",
         "properties": {
@@ -12349,6 +12685,158 @@
         "summary": "Start Capture",
         "tags": [
           "capture"
+        ]
+      }
+    },
+    "/api/v1/committee": {
+      "get": {
+        "description": "Les exécutions (d'une offre), la plus récente d'abord, chacune avec son avant et après ;\nune exécution dont la session s'est terminée sans résultat passe en `failed`.",
+        "operationId": "get_committees_api_v1_committee_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "posting_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 36,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Posting Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CommitteeRunOut"
+                  },
+                  "title": "Response Get Committees Api V1 Committee Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Committees",
+        "tags": [
+          "committee"
+        ]
+      },
+      "post": {
+        "description": "Réunit le comité sur la version de CV : impressions, deux tours de débat, votes et\nsynthèse arrivent par les événements de la session ; le résultat est rangé à la fin.",
+        "operationId": "post_committee_api_v1_committee_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommitteeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommitteeStartOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`version_not_found`, `posting_not_found`"
+          },
+          "409": {
+            "description": "`version_not_ready` (le PDF de la version n'est pas rendu), `committee_in_progress` (`details.run_id` : l'exécution ouverte de l'offre), `profile_required` (aucun profil maître validé)"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "description": "`engine_unavailable`"
+          }
+        },
+        "summary": "Post Committee",
+        "tags": [
+          "committee"
+        ]
+      }
+    },
+    "/api/v1/committee/{run_id}": {
+      "get": {
+        "operationId": "get_committee_api_v1_committee__run_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommitteeRunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`committee_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Committee",
+        "tags": [
+          "committee"
         ]
       }
     },

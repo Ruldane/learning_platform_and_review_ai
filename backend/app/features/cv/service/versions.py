@@ -83,6 +83,13 @@ async def validated_profile(db: AsyncSession, user_id: str) -> MasterProfileData
     return MasterProfileData.model_validate(row.data) if row is not None else None
 
 
+async def version_ref(db: AsyncSession, user_id: str, version_id: str) -> tuple[str, str] | None:
+    """Lecture seule, pour le comité de recrutement : `(offre, statut)` de la version donnée (celle
+    de l'utilisatrice), `None` si elle n'existe pas."""
+    row = await VersionRepository(db, user_id).get(version_id)
+    return None if row is None else (row.posting_id, row.status)
+
+
 async def version_content(db: AsyncSession, user_id: str, version_id: str) -> CvContent | None:
     """Lecture seule, pour les candidatures : le contenu du CV de la version donnée (celle de
     l'utilisatrice), `None` si elle n'existe pas ou n'est pas lisible."""

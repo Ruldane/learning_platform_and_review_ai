@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 from app.agents.tools.applications_port import NO_APPLICATIONS, ApplicationStore
 from app.agents.tools.capture_port import NO_CAPTURE, CaptureStore
+from app.agents.tools.committee_port import NO_COMMITTEE, CommitteeStore
 from app.agents.tools.council_port import NO_COUNCIL, CouncilStore
 from app.agents.tools.cv_review_port import NO_CV_REVIEW, CvReviewStore
 from app.agents.tools.cv_template_port import NO_CV_TEMPLATES, CvTemplateStore
@@ -41,6 +42,7 @@ class AgentPorts:
     applications: ApplicationStore = NO_APPLICATIONS  # fiche créée en une phrase (D141)
     kit: KitStore = NO_KIT  # kit de candidature (D142)
     interviews: InterviewStore = NO_INTERVIEWS  # entretien blanc de l'Intervieweur (D145)
+    committee: CommitteeStore = NO_COMMITTEE  # comité de recrutement simulé (D147)
 
 
 NO_PORTS = AgentPorts()

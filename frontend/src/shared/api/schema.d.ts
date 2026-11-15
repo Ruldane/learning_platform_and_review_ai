@@ -275,6 +275,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/committee": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Committees
+         * @description Les exécutions (d'une offre), la plus récente d'abord, chacune avec son avant et après ;
+         *     une exécution dont la session s'est terminée sans résultat passe en `failed`.
+         */
+        get: operations["get_committees_api_v1_committee_get"];
+        put?: never;
+        /**
+         * Post Committee
+         * @description Réunit le comité sur la version de CV : impressions, deux tours de débat, votes et
+         *     synthèse arrivent par les événements de la session ; le résultat est rangé à la fin.
+         */
+        post: operations["post_committee_api_v1_committee_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/committee/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Committee */
+        get: operations["get_committee_api_v1_committee__run_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cv/modifications/{modification_id}": {
         parameters: {
             query?: never;
@@ -2670,6 +2713,27 @@ export interface components {
             session_id: string;
         };
         /**
+         * ChangeOut
+         * @description Un des trois changements qui feraient basculer un vote : la persona visée, les faits du
+         *     profil à mettre en avant. `needs_skill` : il demande un terme que le profil ne dit pas
+         *     (`terms`), une compétence « à acquérir », jamais à écrire dans le CV telle quelle.
+         */
+        ChangeOut: {
+            /** Fact Ids */
+            fact_ids: string[];
+            /** Needs Skill */
+            needs_skill: boolean;
+            /**
+             * Persona
+             * @enum {string}
+             */
+            persona: "ats_reader" | "recruiter" | "manager" | "colleague";
+            /** Terms */
+            terms: string[];
+            /** Text */
+            text: string;
+        };
+        /**
          * CheckOut
          * @description `own` : la fiche de cette offre, si elle existe ; `alerts` : certain, probable, possible ;
          *     `info` : même entreprise dans les 30 jours.
@@ -2740,6 +2804,72 @@ export interface components {
              * @default null
              */
             url: string | null;
+        };
+        /**
+         * CommitteeDiff
+         * @description L'avant et l'après (F19) : les votes, les objections disparues (`objections_resolved`) et les
+         *     nouvelles (`objections_new`) par rapport à l'exécution `previous_id`.
+         */
+        CommitteeDiff: {
+            /** Objections New */
+            objections_new: string[];
+            /** Objections Resolved */
+            objections_resolved: string[];
+            /** Previous Id */
+            previous_id: string;
+            /** Votes */
+            votes: components["schemas"]["VoteChange"][];
+        };
+        /**
+         * CommitteeIn
+         * @description La version de CV à faire juger : elle doit être prête (PDF rendu).
+         */
+        CommitteeIn: {
+            /** Cv Version Id */
+            cv_version_id: string;
+        };
+        /**
+         * CommitteeRunOut
+         * @description Une exécution du comité. `votes`, `objections` et `changes` sont vides tant qu'elle n'est
+         *     pas terminée ; `verdict` est la majorité des quatre votes (égalité : peut-être).
+         */
+        CommitteeRunOut: {
+            /** Application Id */
+            application_id: string | null;
+            /** Changes */
+            changes: components["schemas"]["ChangeOut"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Cv Version Id */
+            cv_version_id: string;
+            /** Id */
+            id: string;
+            /** Objections */
+            objections: components["schemas"]["ObjectionOut"][];
+            /** Posting Id */
+            posting_id: string;
+            previous: components["schemas"]["CommitteeDiff"] | null;
+            /** Session Id */
+            session_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "running" | "done" | "failed" | "stopped";
+            /** Verdict */
+            verdict: ("oui" | "non" | "peut_etre") | null;
+            /** Votes */
+            votes: components["schemas"]["VoteOut"][];
+        };
+        /** CommitteeStartOut */
+        CommitteeStartOut: {
+            /** Run Id */
+            run_id: string;
+            /** Session Id */
+            session_id: string;
         };
         /** CompareOut */
         CompareOut: {
@@ -4293,6 +4423,16 @@ export interface components {
             label: string;
             /** Url */
             url: string | null;
+        };
+        /**
+         * ObjectionOut
+         * @description Une objection du comité (la plus lourde d'abord) et les personas qui la portent.
+         */
+        ObjectionOut: {
+            /** Personas */
+            personas: ("ats_reader" | "recruiter" | "manager" | "colleague")[];
+            /** Text */
+            text: string;
         };
         /**
          * PasteCreate
@@ -6076,6 +6216,47 @@ export interface components {
             status: "rendering" | "ready" | "pages_exceeded" | "failed";
         };
         /**
+         * VoteChange
+         * @description Le vote d'une persona avant (exécution précédente) et après (celle-ci).
+         */
+        VoteChange: {
+            /**
+             * After
+             * @enum {string}
+             */
+            after: "oui" | "non" | "peut_etre";
+            /**
+             * Before
+             * @enum {string}
+             */
+            before: "oui" | "non" | "peut_etre";
+            /**
+             * Persona
+             * @enum {string}
+             */
+            persona: "ats_reader" | "recruiter" | "manager" | "colleague";
+        };
+        /**
+         * VoteOut
+         * @description Le vote d'une persona : oui, non ou peut-être, son objection principale, sa raison.
+         */
+        VoteOut: {
+            /** Objection */
+            objection: string;
+            /**
+             * Persona
+             * @enum {string}
+             */
+            persona: "ats_reader" | "recruiter" | "manager" | "colleague";
+            /** Reason */
+            reason: string;
+            /**
+             * Vote
+             * @enum {string}
+             */
+            vote: "oui" | "non" | "peut_etre";
+        };
+        /**
          * WeekLoadOut
          * @description Charge d'une semaine touchée, avant et après la proposition, et son plafond.
          */
@@ -6771,6 +6952,129 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CaptureStarted"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_committees_api_v1_committee_get: {
+        parameters: {
+            query?: {
+                posting_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommitteeRunOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_committee_api_v1_committee_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommitteeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommitteeStartOut"];
+                };
+            };
+            /** @description `version_not_found`, `posting_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `version_not_ready` (le PDF de la version n'est pas rendu), `committee_in_progress` (`details.run_id` : l'exécution ouverte de l'offre), `profile_required` (aucun profil maître validé) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description `engine_unavailable` */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_committee_api_v1_committee__run_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommitteeRunOut"];
+                };
+            };
+            /** @description `committee_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

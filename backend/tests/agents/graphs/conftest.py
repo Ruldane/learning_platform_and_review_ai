@@ -22,6 +22,7 @@ from app.features.research.service.gateway import AgentWebGateway
 from app.providers.llm.fake import FakeLlmProvider
 from app.providers.search.fake import FakeSearch
 from tests.agents.graphs.capture_support import make_capture_runner  # noqa: F401
+from tests.agents.graphs.committee_support import committee_runner, committee_store  # noqa: F401
 from tests.agents.graphs.council_support import make_council_runner  # noqa: F401
 from tests.agents.graphs.design_support import design_runner, design_store  # noqa: F401
 from tests.agents.graphs.gap_support import gap_runner, gap_store  # noqa: F401

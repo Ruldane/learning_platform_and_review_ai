@@ -16,6 +16,7 @@ from app.agents.graphs import (
     cv_review,
     demo_debate,
     gap_analysis,
+    hiring_committee,
     interview,
     learned_document,
     learning_council,
@@ -66,6 +67,9 @@ GRAPHS: dict[str, GraphSpec] = {
         ),
         GraphSpec("application_kit", application_kit.ApplicationKitInput, application_kit.build),
         GraphSpec("interview", interview.InterviewInput, interview.build),
+        GraphSpec(
+            "hiring_committee", hiring_committee.HiringCommitteeInput, hiring_committee.build
+        ),
     )
 }
 

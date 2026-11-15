@@ -25,7 +25,7 @@ def posting_block(ctx: InterviewContext) -> str:
     return NO_POSTING
 
 
-def _dossier_lines(dossier: CompanyDossier) -> list[str]:
+def dossier_lines(dossier: CompanyDossier) -> list[str]:
     lines = [
         f"Activité : {dossier.activity}",
         f"Produit : {dossier.product}",
@@ -42,7 +42,7 @@ def _dossier_lines(dossier: CompanyDossier) -> list[str]:
 def dossier_block(ctx: InterviewContext) -> str:
     if ctx.dossier is None:
         return NO_DOSSIER
-    return untrusted("\n".join(_dossier_lines(ctx.dossier)), "dossier de l'entreprise")
+    return untrusted("\n".join(dossier_lines(ctx.dossier)), "dossier de l'entreprise")
 
 
 def _cv_lines(cv: CvContent) -> list[str]:
