@@ -2264,9 +2264,10 @@ export interface components {
         };
         /**
          * CvReviewOut
-         * @description `before` : indicateurs du CV d'origine ; `gap_terms` : mots clés de l'offre absents du
-         *     profil, partis vers l'écart ; `waiting_output` : la session attend « Que veux-tu
-         *     maintenant ? » (seul moment où « Générer le PDF » est possible).
+         * @description `before` : indicateurs du CV d'origine ; `gap_terms` : mots clés de l'offre que les faits
+         *     cités ne portent pas, à appuyer par un fait ou à acquérir (ils n'entrent pas dans le CV) ;
+         *     `waiting_output` : la session attend « Que veux-tu maintenant ? » (seul moment où
+         *     « Générer le PDF » est possible).
          */
         CvReviewOut: {
             before: components["schemas"]["IndicatorsOut"] | null;

@@ -12,7 +12,6 @@ jamais pris par aucune version passée (`taken`), même si le fait qui le portai
 - version de January : `keep_known` garde les ids déjà attribués (un fait modifié garde son id),
   efface les autres, puis numérote le reste ; un fait sans source vient d'elle (`january`)."""
 
-import re
 from collections.abc import Callable, Collection, Iterable, Sequence
 from typing import Any, Protocol, Self
 
@@ -23,17 +22,14 @@ from app.agents.tools.cv_schema import (
     Line,
     MasterProfileData,
     SkillFact,
-    assign_fact_ids,
     facts_of,
 )
 from app.agents.tools.cv_validator_facts import significant_words
 from app.agents.tools.profile_check import plain
+from app.features.cv.service.profile_numbering import HasId, children, number_new
+from app.features.cv.service.profile_numbering import keep_known as keep_known  # noqa: PLC0414
 
 _MAX_SOURCES = 4
-
-
-class _HasId(Protocol):
-    id: str
 
 
 class _Fact(Protocol):
@@ -53,7 +49,7 @@ def all_ids(profiles: Iterable[MasterProfileData]) -> set[str]:
     return taken
 
 
-def _reuse[T: _HasId](
+def _reuse[T: HasId](
     items: Sequence[T], before: Sequence[T], key: Callable[[T], str]
 ) -> list[tuple[T, T]]:
     """Pose sur chaque élément l'id de l'ancien élément de même clé (chacun servi une fois), ""
@@ -83,15 +79,8 @@ def _reuse_lines(pairs: Iterable[tuple[object, object]], field: str) -> None:
         _reuse(getattr(item, field), getattr(old, field), _line_key)
 
 
-def _children(profile: MasterProfileData) -> list[Line]:
-    """Les réalisations et détails du profil."""
-    lines = [line for x in profile.experiences for line in x.achievements]
-    lines += [line for x in profile.education for line in x.details]
-    return lines + [line for x in profile.projects for line in x.achievements]
-
-
 def _clear_children(profile: MasterProfileData) -> None:
-    for line in _children(profile):
+    for line in children(profile):
         line.id = ""
 
 
@@ -113,12 +102,15 @@ def _carried[T: _Copyable](
     loose: Callable[[T], str],
     text: Callable[[T], str],
     field: str | None = None,
+    plain_fields: tuple[str, ...] = (),
 ) -> None:
     """Les faits de January de `old` que le brouillon n'a pas repris (aucun apparié). Un fait dont
     le brouillon n'a qu'un équivalent (même clé lâche, non apparié, tous ses mots dans le texte de
     January : « Python » / « Python (expert) ») le remplace, avec les lignes du brouillon qu'il n'a
-    pas et ses sources ; sinon les deux sont gardés (un doublon que January efface vaut mieux
-    qu'un fait du nouveau CV perdu). Les ids de `old` sont gardés."""
+    pas, ses sources et ceux de ses champs non textuels (`plain_fields` : dates, lieu, URL) qu'il
+    renseigne (I-D : le nouveau CV dit où l'expérience finit) ; un champ que le brouillon ne dit
+    pas garde la valeur de January. Sinon les deux sont gardés (un doublon que January efface vaut
+    mieux qu'un fait du nouveau CV perdu). Les ids de `old` sont gardés."""
     used = {id(previous) for _, previous in pairs}
     for fact in old:
         if id(fact) in used or "january" not in fact.sources:
@@ -137,6 +129,9 @@ def _carried[T: _Copyable](
             lines: list[Line] = getattr(kept, field)
             have = {_line_key(line) for line in lines}
             lines.extend(x for x in getattr(draft, field) if _line_key(x) not in have)
+        for name in plain_fields:
+            if (value := getattr(draft, name)) is not None:
+                setattr(kept, name, value)
         kept.sources = list(dict.fromkeys([*kept.sources, *draft.sources]))[:_MAX_SOURCES]
         out[twins[0]] = kept
 
@@ -144,7 +139,8 @@ def _carried[T: _Copyable](
 def _carry_lines(pairs: Iterable[tuple[Any, Any]], field: str) -> None:
     """Sous un parent apparié de January, les lignes de l'ancienne version absentes du brouillon
     (un fait confirmé en revue est une ligne dont le parent porte `january`) ; le parent du
-    brouillon le devient aussi."""
+    brouillon le devient aussi. Elle ramène aussi une ligne que January avait retirée de son CV
+    (le brouillon ne la porte plus, la version validée la portait encore : D124)."""
     for item, previous in pairs:
         if "january" not in previous.sources:
             continue
@@ -191,6 +187,7 @@ def _carry_facts(out: MasterProfileData, old: MasterProfileData, pairs: tuple[An
         lambda x: plain(x.company),
         lambda x: x.role,
         "achievements",
+        ("start", "end", "location"),
     )
     _carried(
         out.education,
@@ -199,8 +196,9 @@ def _carry_facts(out: MasterProfileData, old: MasterProfileData, pairs: tuple[An
         lambda x: plain(x.school),
         lambda x: x.degree,
         "details",
+        ("start", "end"),
     )
-    _carried(out.skills, old.skills, skills, _first_word, name)
+    _carried(out.skills, old.skills, skills, _first_word, name, None, ("category",))
     _carried(out.projects, old.projects, projects, lambda x: plain(x.name), name, "achievements")
     _carried(out.languages, old.languages, languages, lambda x: plain(x.name), name)
     _carried(out.links, old.links, links, lambda x: plain(x.label), lambda x: x.label)
@@ -232,68 +230,3 @@ def merge_draft(
     _carry_heads(out, old)
     _carry_facts(out, old, (jobs, schools, skills, projects, languages, links))
     return number_new(out, taken)
-
-
-def _keep(items: Iterable[_HasId], taken: Collection[str]) -> None:
-    for item in items:
-        if item.id not in taken:
-            item.id = ""
-
-
-def keep_known(profile: MasterProfileData, taken: Collection[str]) -> MasterProfileData:
-    """La version de January numérotée : un id déjà attribué reste (le fait a pu changer de
-    texte), un id inconnu est effacé ; un fait sans source reçoit `january`."""
-    out = profile.model_copy(deep=True)
-    heads = [line for line in (out.title, out.summary) if line is not None]
-    facts: list[_Fact] = [
-        *heads,
-        *out.experiences,
-        *out.education,
-        *out.skills,
-        *out.projects,
-        *out.languages,
-        *out.links,
-    ]
-    _keep([*facts, *_children(out)], taken)
-    for fact in facts:
-        if not fact.sources:
-            fact.sources = ["january"]
-    return number_new(out, taken)
-
-
-def _number(items: Sequence[_HasId], prefix: str, taken: Collection[str]) -> None:
-    """Garde les ids `<prefix><n>` bien formés et uniques ; numérote les autres au-dessus du plus
-    grand numéro pris par `taken` ou par ces éléments."""
-    pattern = re.compile(rf"^{re.escape(prefix)}([1-9]\d*)$")
-    numbers = [m.group(1) for i in [*taken, *(x.id for x in items)] if (m := pattern.match(i))]
-    top = max(map(int, numbers), default=0)
-    seen: set[str] = set()
-    fresh: list[_HasId] = []
-    for item in items:
-        if pattern.match(item.id) is None or item.id in seen:
-            fresh.append(item)
-        else:
-            seen.add(item.id)
-    for item in fresh:
-        top += 1
-        item.id = f"{prefix}{top}"
-
-
-def number_new(profile: MasterProfileData, taken: Collection[str]) -> MasterProfileData:
-    """Ids neufs au-dessus de tout numéro déjà pris (parents d'abord, puis leurs enfants)."""
-    out = profile.model_copy(deep=True)
-    _number([x for x in (out.title,) if x], "t", taken)
-    _number([x for x in (out.summary,) if x], "s", taken)
-    _number(out.experiences, "x", taken)
-    for experience in out.experiences:
-        _number(experience.achievements, f"{experience.id}a", taken)
-    _number(out.education, "f", taken)
-    for education in out.education:
-        _number(education.details, f"{education.id}d", taken)
-    _number(out.skills, "c", taken)
-    _number(out.projects, "p", taken)
-    for project in out.projects:
-        _number(project.achievements, f"{project.id}a", taken)
-    _number(out.languages, "l", taken)
-    _number(out.links, "k", taken)
-    return assign_fact_ids(out)  # filet : tout id est déjà bien formé et unique

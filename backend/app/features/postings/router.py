@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, Response, status
 from starlette.requests import HTTPConnection
 
 from app.core.deps import CurrentUserDep, Db
+from app.features.cv.service.runtime import CvRuntime
 from app.features.postings.schemas import (
     DistinctIn,
     GapStarted,
@@ -33,6 +34,16 @@ def get_postings_runtime(conn: HTTPConnection) -> PostingsRuntime:
 
 
 PostingsDep = Annotated[PostingsRuntime, Depends(get_postings_runtime)]
+
+
+def get_cv_runtime(conn: HTTPConnection) -> CvRuntime:
+    """Le CV ouvert par le lifespan (`app.state.career.cv`) : son verrou des revues sert à la
+    suppression d'une offre (D137 n° 7). Import d'un service d'une autre feature : permis."""
+    runtime: CvRuntime = conn.app.state.career.cv
+    return runtime
+
+
+CvDep = Annotated[CvRuntime, Depends(get_cv_runtime)]
 
 
 @router.post(
@@ -80,11 +91,11 @@ async def get_posting(posting_id: str, current: CurrentUserDep, db: Db) -> Posti
     },
 )
 async def remove_posting(
-    posting_id: str, current: CurrentUserDep, db: Db, rt: PostingsDep
+    posting_id: str, current: CurrentUserDep, db: Db, rt: PostingsDep, cv: CvDep
 ) -> Response:
     """Retire l'offre, son élément de mémoire `offre`, ses revues et versions (PDF et images
     compris) ; 409 `review_in_progress` ou `analysis_in_progress` si l'une tourne."""
-    await delete_posting(db, rt.memory, current.id, posting_id)
+    await delete_posting(db, rt.memory, cv.review_lock(current.id), current.id, posting_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

@@ -192,7 +192,10 @@ def _names(after: str, profile: MasterProfileData, *, skip_first: bool) -> set[s
 
 def validate(p: Proposal, profile: MasterProfileData, analysis: PostingAnalysis) -> Verdict:
     """Le verdict sur une proposition : voir l'en-tête du module. `blocks` : des raisons fixes en
-    français, jamais le texte du CV ; `gap_terms` : les termes de l'offre, comme elle les écrit."""
+    français, jamais le texte du CV ; `gap_terms` : les mots clés de l'offre que les faits cités
+    ne portent pas, comme l'offre les écrit : à appuyer par un fait ou à acquérir (ils peuvent
+    figurer ailleurs dans le profil : un terme est « à l'écart » quand le fait cité ne le dit pas,
+    pas quand le profil entier l'ignore)."""
     if p.action in ("remove", "move"):
         return Verdict("ok", [], [])
     cited = _cited(p, facts_of(profile))

@@ -4,6 +4,7 @@
 de CV tourne ou attend, 409 `analysis_in_progress` si l'analyse de l'offre est ouverte). Journaux :
 identifiants seulement."""
 
+import asyncio
 import logging
 from collections.abc import Sequence
 from datetime import datetime
@@ -136,12 +137,29 @@ async def _erase_files(memory: MemoryRuntime, user_id: str, keys: list[str]) -> 
 
 
 async def delete_posting(
-    db: AsyncSession, memory: MemoryRuntime, user_id: str, posting_id: str
+    db: AsyncSession,
+    memory: MemoryRuntime,
+    review_lock: asyncio.Lock,
+    user_id: str,
+    posting_id: str,
 ) -> None:
     """Supprime l'offre (revues et versions en cascade), l'élément de mémoire `offre` (sauf s'il
     sert encore à une autre offre) puis, la transaction validée, les fichiers des versions.
     409 `review_in_progress` (revue lancée ou proposée) ou `analysis_in_progress` (session
-    d'analyse ouverte). **Valide la transaction.**"""
+    d'analyse ouverte). `review_lock` : le verrou des revues de l'utilisatrice (`CvRuntime`), pris
+    avant la vérification et gardé jusqu'au commit : une revue créée entre les deux ne part pas en
+    cascade (D137 n° 7). **Valide la transaction.**"""
+    async with review_lock:
+        files = await _delete_rows(db, memory, user_id, posting_id)
+    await _erase_files(memory, user_id, files)
+    logger.info("Offre supprimée : utilisateur %s, offre %s", user_id, posting_id)
+
+
+async def _delete_rows(
+    db: AsyncSession, memory: MemoryRuntime, user_id: str, posting_id: str
+) -> list[str]:
+    """Les vérifications, puis les lignes et l'élément de mémoire, jusqu'au commit ; rend les clés
+    des fichiers des versions à retirer."""
     repo = PostingRepository(db, user_id)
     posting = await get_posting(db, user_id, posting_id)
     if await repo.running_reviews(posting_id):
@@ -162,5 +180,4 @@ async def delete_posting(
             await db.commit()  # élément déjà retiré par January
     else:
         await db.commit()
-    await _erase_files(memory, user_id, files)
-    logger.info("Offre supprimée : utilisateur %s, offre %s", user_id, posting_id)
+    return files

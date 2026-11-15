@@ -25,7 +25,8 @@ class CvReviewState(TypedDict, total=False):
     contested: dict[str, dict[str, str]]
     removed: list[str]  # réf. retirées au tour 2 : l'auteur a dit `drop`
     items: list[dict[str, Any]]  # {proposal, status, blocks} après le validateur
-    gap_terms: list[str]  # mots clés de l'offre absents du profil : vers l'écart
+    # mots clés de l'offre que les faits cités ne portent pas : à appuyer par un fait ou à acquérir
+    gap_terms: list[str]
     saved: int  # modifications rangées
     output: dict[str, Any] | None  # réponse analysée de la question `cv_output`
     summary: str

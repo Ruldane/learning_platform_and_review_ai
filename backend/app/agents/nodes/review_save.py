@@ -3,8 +3,8 @@
 `validate` passe chaque proposition restée après la confrontation au validateur du code
 (`cv_validator.validate`, contre le profil maître figé dans la revue) : `ok` et `to_confirm`
 deviennent des modifications, `to_gap` est retirée et ses termes partent vers l'écart (un mot clé
-de l'offre absent du profil n'entre jamais dans le CV). `save` range le tout avec le rapport
-(`save_proposals`, idempotent par `(revue, référence)`) puis l'annonce.
+de l'offre que les faits cités ne portent pas n'entre jamais dans le CV). `save` range le tout
+avec le rapport (`save_proposals`, idempotent par `(revue, référence)`) puis l'annonce.
 
 Journaux : identifiants et nombres, jamais un texte du CV ni un terme de l'offre (17.2)."""
 

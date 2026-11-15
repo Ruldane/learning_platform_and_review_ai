@@ -129,3 +129,69 @@ def test_a_confirmed_education_writes_the_degree_and_the_school() -> None:
     out = with_fact(jobs(), "f1", "Master — École B")
     assert (out.education[0].degree, out.education[0].school) == ("Master", "École B")
     assert facts_of(out)["f1"] == "Master — École B"
+
+
+@pytest.mark.parametrize("dash", ["—", "–", "-"])
+def test_experience_split_on_any_dash(dash: str) -> None:
+    out = with_fact(jobs(), "x1", f"Développeuse {dash} Autre SA")
+    assert (out.experiences[0].role, out.experiences[0].company) == ("Développeuse", "Autre SA")
+    assert facts_of(out)["x1"] == "Développeuse — Autre SA"
+
+
+@pytest.mark.parametrize("dash", ["—", "–", "-"])
+def test_education_split_on_any_dash(dash: str) -> None:
+    out = with_fact(jobs(), "f1", f"Master {dash} École B")
+    assert (out.education[0].degree, out.education[0].school) == ("Master", "École B")
+
+
+def test_experience_without_separator_keeps_role_only_rule_documented() -> None:
+    """D137 n° 2 : un texte sans séparateur ne change que le rôle, l'entreprise reste."""
+    out = with_fact(jobs(), "x1", "Lead Développeuse Autre SA")
+    assert (out.experiences[0].role, out.experiences[0].company) == (
+        "Lead Développeuse Autre SA",
+        "Société Fictive",
+    )
+
+
+def test_hyphenated_role_is_not_split() -> None:
+    out = with_fact(jobs(), "x1", "Data-scientist — Autre SA")
+    assert (out.experiences[0].role, out.experiences[0].company) == ("Data-scientist", "Autre SA")
+    alone = with_fact(jobs(), "x1", "Data-scientist")  # trait d'union collé : pas un séparateur
+    assert (alone.experiences[0].role, alone.experiences[0].company) == (
+        "Data-scientist",
+        "Société Fictive",
+    )
+
+
+def test_the_last_em_dash_wins_over_a_spaced_hyphen() -> None:
+    out = with_fact(jobs(), "x1", "Développeuse - IA — Autre SA")
+    assert (out.experiences[0].role, out.experiences[0].company) == (
+        "Développeuse - IA",
+        "Autre SA",
+    )
+
+
+def test_link_label_split_on_a_spaced_hyphen_or_en_dash() -> None:
+    for dash in ("–", "-"):
+        out = with_fact(data(), "k1", f"Mon-GitHub {dash} https://github.com/autre")
+        assert (out.links[0].label, out.links[0].url) == ("Mon-GitHub", "https://github.com/autre")
+
+
+def test_language_parenthesis_before_colon() -> None:
+    out = with_fact(data(), "l1", "Anglais (TOEIC: 950)")
+    assert (out.languages[0].name, out.languages[0].level) == ("Anglais", "TOEIC: 950")
+
+
+def test_language_colon_before_a_parenthesis_still_splits_on_the_colon() -> None:
+    out = with_fact(data(), "l1", "Anglais : C1 (courant)")
+    assert (out.languages[0].name, out.languages[0].level) == ("Anglais", "C1 (courant)")
+
+
+@pytest.mark.parametrize("bad", ["<", ">", '"'])
+@pytest.mark.parametrize("where", ["path", "query"])
+def test_url_with_angle_brackets_or_quote_is_invalid(bad: str, where: str) -> None:
+    url = f"https://example.org/a{bad}b" if where == "path" else f"https://example.org/?q={bad}"
+    with pytest.raises(AppError) as err:
+        with_fact(data(), "k1", f"GitHub — {url}")
+    assert err.value.status_code == 422
+    assert bad not in str(err.value.message)

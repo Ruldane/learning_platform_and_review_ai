@@ -3,6 +3,8 @@ proposée, ou que l'analyse de l'offre est ouverte ; sinon les lignes (revues, m
 versions) partent, la transaction est validée, PUIS les PDF et les images des versions sont
 effacés du stockage."""
 
+import asyncio
+
 import httpx
 import pytest
 from fastapi import FastAPI
@@ -126,3 +128,23 @@ async def test_files_stay_when_the_delete_is_refused(
         await db.commit()
     assert (await client.delete(f"{API}/postings/{created['id']}")).status_code == 409
     assert await storage.read(user, pdf) == b"%PDF-1.4 cv"
+
+
+async def test_delete_races_with_review_creation(
+    client: httpx.AsyncClient, app: FastAPI, launcher_spy: RecordingLauncher
+) -> None:
+    """Course m-6 : la suppression prend le verrou des revues de l'utilisatrice avant de vérifier.
+    Une revue créée sous ce verrou pendant que la suppression attend est donc vue : 409, et rien
+    n'est parti en cascade."""
+    created = await _create(client)
+    await _ready(app, launcher_spy, created)
+    lock = app.state.career.cv.review_lock(app.state.local_user_id)
+    async with lock:  # un lancement de revue est en cours
+        deleting = asyncio.create_task(client.delete(f"{API}/postings/{created['id']}"))
+        await asyncio.sleep(0.1)
+        assert not deleting.done()  # la suppression attend le verrou
+        await _review(app, created["id"], "running")  # la revue est créée avant son commit
+    r = await deleting
+    assert (r.status_code, r.json()["error"]["code"]) == (409, "review_in_progress")
+    assert (await client.get(f"{API}/postings/{created['id']}")).status_code == 200
+    assert await _count(app, CvReview) == 1

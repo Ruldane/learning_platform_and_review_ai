@@ -7,7 +7,8 @@ compétence) est un fait que le profil ne dit pas, et une URL n'est jamais réé
 Règle : chaque mot significatif de `after` figure dans le fait visé lui-même ou dans les rôles
 et titres du profil (jamais dans un fait voisin cité, qui lèverait « C1 » ou « Master » ; mots
 entiers, sans casse ni accent, pluriel simple près ; le féminin n'est pas le masculin) ; chaque
-lien ou nom de domaine écrit dans `after` est celui du fait visé, à l'identique. Sinon le bloc
+lien ou nom de domaine écrit dans `after` est celui du fait visé, à l'identique (schéma ajouté
+quand il manque, hôte sans casse, fin d'URL avec sa casse). Sinon le bloc
 fixe `FOREIGN` (« à confirmer »)."""
 
 import re
@@ -72,8 +73,20 @@ def significant_words(text: str) -> set[str]:
     return {w for w in words if w not in _STOP_WORDS and not w.isdigit()}
 
 
+def _link_form(raw: str) -> str:
+    """Un lien sous une forme comparable (D137 n° 6) : le schéma (`https` s'il manque) et l'hôte
+    sans casse, le reste de l'URL tel qu'écrit (« /Camille » n'est pas « /camille »), sans
+    ponctuation ni barre finale."""
+    link = raw.rstrip(_LINK_END)
+    scheme, found, rest = link.partition("://")
+    if not found:
+        scheme, rest = "https", link
+    host, slash, path = rest.partition("/")
+    return f"{scheme.casefold()}://{host.casefold()}{slash}{path}"
+
+
 def _links_of(text: str) -> set[str]:
-    return {m.group().rstrip(_LINK_END).casefold() for m in _LINK.finditer(text)}
+    return {_link_form(m.group()) for m in _LINK.finditer(text)}
 
 
 def unbacked(after: str, reference: str, titles: str) -> bool:

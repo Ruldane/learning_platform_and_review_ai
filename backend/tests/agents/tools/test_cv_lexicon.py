@@ -150,3 +150,12 @@ def test_ambiguous_terms_are_only_common_words() -> None:
 )
 def test_thousands_separators_are_not_decimals(text: str, expected: set[str]) -> None:
     assert numbers_in(text) == expected
+
+
+def test_french_decimal_comma_is_one_number() -> None:
+    """Revue finale : « 1,500 M€ » est un million et demi (virgule décimale française), pas
+    1 500 M ; « 1,000 » sans unité reste mille (D136)."""
+    assert numbers_in("1,500 M€") == numbers_in("1,5 M€") == {"1500000"}
+    assert numbers_in("1,500 k€") == numbers_in("1,5 k€") == {"1500"}
+    assert numbers_in("1,000 stagiaires") == {"1000"}
+    assert numbers_in("1,500 clients") == {"1500"}

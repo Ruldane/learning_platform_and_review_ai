@@ -165,3 +165,29 @@ def test_the_roles_of_the_profile_only_lift_a_title_target(target: str, after: s
 
 def test_a_title_target_may_use_a_role_of_the_profile() -> None:
     assert validate(rewrite("t1", "Lead Développeuse"), with_senior_role(), OFFER).status == "ok"
+
+
+@pytest.mark.parametrize(
+    "after",
+    [
+        "GitHub — github.com/camille-exemple",  # sans schéma
+        "GitHub — https://GitHub.com/camille-exemple",  # l'hôte n'a pas de casse
+        "github.com/camille-exemple/",
+    ],
+)
+def test_a_link_without_a_scheme_matches_the_profile_link(after: str) -> None:
+    assert validate(rewrite("k1", after), structured(), OFFER).status == "ok"
+
+
+@pytest.mark.parametrize(
+    "after",
+    [
+        "GitHub — https://github.com/Camille-Exemple",  # la fin d'URL respecte la casse
+        "GitHub — github.com/CAMILLE-EXEMPLE",
+        "GitHub — http://github.com/camille-exemple",  # un autre schéma n'est pas le même lien
+    ],
+)
+def test_a_link_differing_by_path_case_or_scheme_needs_confirmation(after: str) -> None:
+    v = validate(rewrite("k1", after), structured(), OFFER)
+    assert v.status == "to_confirm"
+    assert FOREIGN in v.blocks

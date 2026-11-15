@@ -15,22 +15,31 @@ from app.agents.tools.posting_schema import normalize_term
 # Un nombre : groupes de milliers séparés par une espace (normale, insécable, fine insécable), par
 # un point ou une virgule (« 1,000 » et « 1.000 » : trois chiffres exactement, premier groupe sans
 # zéro de tête : « 0,125 » reste décimal) ou chiffres collés ; partie décimale à la virgule ou au
-# point ; multiplicateur « k » ou « M » (pas « Mo », « km ») ; signe « % » éventuel. Jamais au
-# milieu d'un mot ni d'un autre nombre.
+# point ; multiplicateur « k » ou « M » (pas « Mo », « km ») ; devise ; signe « % » éventuel. Jamais
+# au milieu d'un mot ni d'un autre nombre. Un seul groupe « 1,500 » suivi d'un multiplicateur ou
+# d'une devise (« 1,500 M€ ») est un décimal français (1,5), voir `_FRENCH_DECIMAL`.
 _NUMBER = re.compile(
     r"(?<![\w.,])"
     r"(?P<int>\d{1,3}(?:[   ]\d{3})+(?!\d)|[1-9]\d{0,2}(?:[.,]\d{3})+(?!\d)|\d+)"
     r"(?:[.,](?P<dec>\d+))?"
     r"(?:[   ]?(?P<mult>[kKM])(?![A-Za-zÀ-ÿ]))?"
+    r"(?P<cur>[   ]?[€$£])?"
     r"(?P<pct>[   ]?%)?"
 )
 _SEPARATORS = re.compile(r"[   .,]")  # espaces et points ou virgules de milliers
+# « 1,500 » : un seul groupe de milliers, à la virgule
+_FRENCH_DECIMAL = re.compile(r"[1-9]\d{0,2},\d{3}")
 _MULTIPLIERS = {"k": Decimal(1000), "K": Decimal(1000), "M": Decimal(1_000_000)}
 
 
 def _canonical(match: re.Match[str]) -> str | None:
-    digits = _SEPARATORS.sub("", match.group("int"))
-    decimals = match.group("dec")
+    whole, decimals = match.group("int"), match.group("dec")
+    unit = match.group("mult") or match.group("cur")
+    if unit and not decimals and _FRENCH_DECIMAL.fullmatch(whole):
+        whole = whole.replace(",", ".")  # « 1,500 M€ » : un million et demi, pas 1 500 M
+        digits, decimals = whole.split(".")
+    else:
+        digits = _SEPARATORS.sub("", whole)
     try:
         value = Decimal(f"{digits}.{decimals}" if decimals else digits)
     except InvalidOperation:
