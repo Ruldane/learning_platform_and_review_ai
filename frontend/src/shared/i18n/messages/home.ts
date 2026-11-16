@@ -1,0 +1,101 @@
+/** Textes de l'accueil : brief du jour, actions rapides, fil d'activité, notifications de fond. */
+export const home = {
+  title: "Bienvenue sur Tremplin",
+  intro: "Ta plateforme locale d'apprentissage et de carrière.",
+  empty: {
+    title: "Ton brief du jour arrivera bientôt",
+    description:
+      "Les premières fonctions de Tremplin apparaîtront ici dès qu'elles seront branchées.",
+  },
+  brief: {
+    title: "Ton brief du jour",
+    preparedAt: "Préparé à {time}",
+  },
+  block: {
+    title: "Ton bloc du jour",
+    empty: "Rien de prévu aujourd'hui.",
+    module: "Module : {title}",
+    lesson: "Leçon : {title}",
+    total: "{time} d'étude",
+    tasks: "Tâches du bloc",
+    task: "{title}, {time}",
+    start: "Commencer mon bloc",
+  },
+  reviews: {
+    title: "Révisions",
+    none: "Aucune révision à faire aujourd'hui.",
+    queue: { one: "1 fiche à réviser aujourd'hui.", many: "{count} fiches à réviser aujourd'hui." },
+    remaining: {
+      one: "1 autre fiche est due au-delà de la file du jour.",
+      many: "{count} autres fiches sont dues au-delà de la file du jour.",
+    },
+    start: "Réviser",
+  },
+  reminders: {
+    title: "Relances",
+    none: "Aucune relance due.",
+    due: { one: "1 relance due.", many: "{count} relances dues." },
+    listLabel: "Relances à faire",
+    item: "{company}, poste {title}",
+    dueOn: "à faire le {date}",
+    more: { one: "1 autre relance due.", many: "{count} autres relances dues." },
+  },
+  offers: {
+    title: "Nouvelles offres",
+    none: "Aucune nouvelle offre depuis ton dernier brief.",
+    listLabel: "Nouvelles offres du radar",
+    untitled: "Offre sans titre",
+    score: "score {score} sur 100",
+  },
+  week: {
+    title: "Ta semaine",
+    none: "Aucune semaine de programme en cours.",
+    nothingPlanned: "Rien n'est prévu cette semaine.",
+    progressLabel: "Avancement de la semaine",
+    time: "{done} sur {planned} prévues",
+    tasks: { one: "1 tâche sur {total} faite", many: "{done} tâches sur {total} faites" },
+    streak: {
+      none: "Pas de série en cours.",
+      one: "Série : 1 jour",
+      many: "Série : {count} jours",
+    },
+  },
+  resource: {
+    title: "Une ressource pour toi",
+    none: "Pas de ressource ce matin.",
+    from: "{domain}, {date}",
+    fromNoDate: "{domain}",
+    why: "Pourquoi : {reason}",
+  },
+  advice: {
+    title: "Le conseil",
+    pending: "Le conseil se réunit…",
+    unavailable: "Le conseil n'a rien pu dire ce matin.",
+  },
+  quick: {
+    label: "Actions rapides",
+    start: "Commencer mon bloc",
+    review: "Réviser",
+    addPosting: "Ajouter une offre",
+    capture: "Capturer",
+  },
+  activity: {
+    title: "Activité récente",
+    empty: "Rien de nouveau pour l'instant.",
+    listLabel: "Activité récente",
+    more: "Voir plus",
+    kind: {
+      lesson: "Leçon",
+      radar: "Radar",
+      brief: "Brief",
+      memory: "Mémoire",
+      project: "Projet",
+      job_failed: "Tâche en échec",
+    },
+  },
+  notices: {
+    label: "Notifications",
+    dismiss: "Fermer",
+    dismissNamed: "Fermer la notification : {title}",
+  },
+} as const;

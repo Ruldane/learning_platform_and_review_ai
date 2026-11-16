@@ -5,11 +5,14 @@ import { capture } from "./messages/capture";
 import { cv } from "./messages/cv";
 import { demo } from "./messages/demo";
 import { gap } from "./messages/gap";
+import { home } from "./messages/home";
 import { learning } from "./messages/learning";
 import { lessons } from "./messages/lessons";
 import { memory } from "./messages/memory";
 import { program } from "./messages/program";
+import { projects } from "./messages/projects";
 import { quiz } from "./messages/quiz";
+import { radar } from "./messages/radar";
 import { replan } from "./messages/replan";
 import { research } from "./messages/research";
 import { session } from "./messages/session";
@@ -41,4 +44,7 @@ export const fr = {
   gap,
   cv,
   applications,
+  home,
+  radar,
+  projects,
 } as const;

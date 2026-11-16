@@ -4,6 +4,7 @@ export const appMessages = {
     name: "Tremplin",
     skipToContent: "Aller au contenu",
     loading: "Chargement…",
+    newTab: "(s'ouvre dans un nouvel onglet)",
     notFound: {
       title: "Page introuvable",
       back: "Retour à l'accueil",
@@ -20,15 +21,6 @@ export const appMessages = {
     memory: "Mémoire",
     settings: "Réglages",
   },
-  home: {
-    title: "Bienvenue sur Tremplin",
-    intro: "Ta plateforme locale d'apprentissage et de carrière.",
-    empty: {
-      title: "Ton brief du jour arrivera bientôt",
-      description:
-        "Les premières fonctions de Tremplin apparaîtront ici dès qu'elles seront branchées.",
-    },
-  },
   health: {
     label: "État des services",
     loading: "Vérification des services…",
@@ -37,6 +29,12 @@ export const appMessages = {
     down: "Base de données indisponible",
     unreachable: "Serveur injoignable",
     failing: "{service} : {detail}",
+  },
+  time: {
+    now: "à l'instant",
+    minutes: "il y a {count} min",
+    hours: "il y a {count} h",
+    days: "il y a {count} j",
   },
   errors: {
     generic: "Une erreur est survenue. Réessaie dans un instant.",

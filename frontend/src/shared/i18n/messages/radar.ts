@@ -1,0 +1,60 @@
+/** Textes du radar du marché : relevé, classement, alertes, offres, lancement. */
+export const radar = {
+  summary: {
+    title: "Ce relevé",
+    scope: "Poste : {role}, zone : {zone}",
+    read: { one: "1 offre lue", many: "{count} offres lues" },
+    blocked: { one: "1 bloquée", many: "{count} bloquées" },
+    analyzed: { one: "1 analysée", many: "{count} analysées" },
+    notPostings: {
+      one: "1 page lue n'était pas une offre.",
+      many: "{count} pages lues n'étaient pas des offres.",
+    },
+    blockedDomains: "Domaines bloqués ({count})",
+    blockedDomain: { one: "{domain} : 1 page", many: "{domain} : {count} pages" },
+    lowSample:
+      "Échantillon réduit : moins de 30 offres lisibles. Le classement est indicatif, pas représentatif.",
+  },
+  ranking: {
+    title: "Compétences les plus demandées",
+    empty: "Aucune compétence à classer pour ce relevé.",
+    label: "Classement des compétences",
+    rank: "{rank}.",
+    share: "{share} % des offres",
+    barLabel: "{skill} : {share} % des offres",
+    gain: "+{points} pts",
+    loss: "−{points} pts",
+    same: "stable",
+    new: "nouvelle",
+    first: "premier relevé",
+  },
+  alerts: {
+    title: "Alertes",
+    none: "Aucune alerte pour ce relevé.",
+    label: "Alertes du relevé",
+  },
+  offers: {
+    title: "Offres lues",
+    none: "Aucune offre à afficher pour ce relevé.",
+    label: "Offres du relevé",
+    untitled: "Offre sans titre",
+    score: "score {score} sur 100",
+    goodMatch: "Bon match",
+    salary: "Salaire indiqué : {salary}",
+    level: {
+      junior: "Junior",
+      confirme: "Confirmé",
+      senior: "Senior",
+      lead: "Lead",
+    },
+  },
+  form: {
+    label: "Lancer un relevé du marché",
+    role: "Poste visé",
+    zone: "Zone",
+    roleRequired: "Indique le poste visé.",
+    run: "Lancer un relevé",
+    running: "Relevé en cours…",
+    hint: "Un relevé lit des offres publiques : cela peut prendre plusieurs minutes.",
+  },
+} as const;
