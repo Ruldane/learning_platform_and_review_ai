@@ -14,7 +14,7 @@ QuestionType = Literal["qcm", "short", "code", "explain"]
 AttemptStatus = Literal["grading", "graded", "failed"]
 StudyMode = Literal["socratic", "feynman", "direct"]
 StudyStatus = Literal["open", "finished", "cancelled"]
-JournalKind = Literal["capture", "study_session", "quiz", "weekly_review"]
+JournalKind = Literal["capture", "study_session", "quiz", "weekly_review", "project"]
 CardSource = Literal["lesson", "quiz", "study", "capture", "interview"]
 
 

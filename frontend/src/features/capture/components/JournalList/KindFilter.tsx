@@ -3,7 +3,13 @@ import { t } from "@/shared/i18n/t";
 import { fieldClass } from "@/shared/ui/fieldClass";
 import type { JournalKindView } from "../viewTypes";
 
-const KINDS: readonly JournalKindView[] = ["capture", "study_session", "quiz", "weekly_review"];
+const KINDS: readonly JournalKindView[] = [
+  "capture",
+  "study_session",
+  "quiz",
+  "weekly_review",
+  "project",
+];
 
 interface KindFilterProps {
   /** `null` : tous les types. */

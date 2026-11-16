@@ -7,7 +7,7 @@ import type { DebateFeed, InterruptCard } from "@/shared/session-ui";
 export type FeedItems = ComponentProps<typeof DebateFeed>["items"];
 export type QuestionView = ComponentProps<typeof InterruptCard>["interrupt"];
 
-export type JournalKindView = "capture" | "study_session" | "quiz" | "weekly_review";
+export type JournalKindView = "capture" | "study_session" | "quiz" | "weekly_review" | "project";
 
 /** Ce que la capture reçoit : un lien ou une note (le fichier passe par son propre chemin). */
 export type CaptureSource = { kind: "url"; url: string } | { kind: "text"; text: string };

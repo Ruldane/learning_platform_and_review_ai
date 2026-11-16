@@ -3742,7 +3742,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "capture" | "study_session" | "quiz" | "weekly_review";
+            kind: "capture" | "study_session" | "quiz" | "weekly_review" | "project";
             links: components["schemas"]["JournalLinksOut"];
             /**
              * Occurred On
@@ -8277,7 +8277,7 @@ export interface operations {
     read_journal_api_v1_journal_get: {
         parameters: {
             query?: {
-                kind?: ("capture" | "study_session" | "quiz" | "weekly_review") | null;
+                kind?: ("capture" | "study_session" | "quiz" | "weekly_review" | "project") | null;
                 before?: string | null;
                 limit?: number;
             };

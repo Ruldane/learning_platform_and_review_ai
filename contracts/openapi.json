@@ -4899,7 +4899,8 @@
               "capture",
               "study_session",
               "quiz",
-              "weekly_review"
+              "weekly_review",
+              "project"
             ],
             "title": "Kind",
             "type": "string"
@@ -14482,7 +14483,8 @@
                     "capture",
                     "study_session",
                     "quiz",
-                    "weekly_review"
+                    "weekly_review",
+                    "project"
                   ],
                   "type": "string"
                 },
