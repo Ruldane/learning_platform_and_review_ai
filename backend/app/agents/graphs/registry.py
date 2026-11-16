@@ -14,6 +14,7 @@ from app.agents.graphs import (
     capture,
     cv_capture,
     cv_review,
+    daily_brief,
     demo_debate,
     gap_analysis,
     hiring_committee,
@@ -80,6 +81,7 @@ GRAPHS: dict[str, GraphSpec] = {
             market_radar.build,
             recursion_limit=market_radar.RECURSION_LIMIT,
         ),
+        GraphSpec("daily_brief", daily_brief.DailyBriefInput, daily_brief.build),
     )
 }
 

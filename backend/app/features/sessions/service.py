@@ -53,6 +53,7 @@ ROUTE_ONLY: dict[str, str] = {
     "application_kit": "POST /applications/{id}/kit",  # fiche vérifiée, pièces gardées (D142)
     "interview": "POST /applications/{id}/interviews",  # entretien et réglages vérifiés (D145)
     "hiring_committee": "POST /committee",  # version de CV prête, un seul comité par offre (D147)
+    "daily_brief": "GET /brief/today",  # brief créé et ouvert par sa route (D161)
     "market_radar": "POST /radar/runs",  # relevé créé, poste et zone fixés par sa route (D159)
     "cv_review": "POST /cv/reviews",  # profil, gabarit et offre vérifiés puis figés (D130)
 }

@@ -6,6 +6,7 @@ contrat 6). Un port de plus = un champ ici, avec sa valeur « non branché », e
 from dataclasses import dataclass
 
 from app.agents.tools.applications_port import NO_APPLICATIONS, ApplicationStore
+from app.agents.tools.brief_port import NO_BRIEF, BriefStore
 from app.agents.tools.capture_port import NO_CAPTURE, CaptureStore
 from app.agents.tools.committee_port import NO_COMMITTEE, CommitteeStore
 from app.agents.tools.council_port import NO_COUNCIL, CouncilStore
@@ -45,6 +46,7 @@ class AgentPorts:
     interviews: InterviewStore = NO_INTERVIEWS  # entretien blanc de l'Intervieweur (D145)
     committee: CommitteeStore = NO_COMMITTEE  # comité de recrutement simulé (D147)
     radar: RadarStore = NO_RADAR  # radar du marché : relevé, lecture, extraction (D159)
+    brief: BriefStore = NO_BRIEF  # brief du jour : ressource et conseil (D161)
 
 
 NO_PORTS = AgentPorts()
