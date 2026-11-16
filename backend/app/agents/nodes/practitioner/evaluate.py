@@ -26,7 +26,12 @@ from app.agents.runtime.invoke import node_timeout
 from app.agents.runtime.structured import structured_call
 from app.agents.state.project_review import Node, ProjectReviewState
 from app.agents.tools.project_port import ReviewInputs, ReviewOutcome
-from app.agents.tools.project_schema import ProjectEvaluation, settled_results, verdict
+from app.agents.tools.project_schema import (
+    ProjectBrief,
+    ProjectEvaluation,
+    settled_results,
+    verdict,
+)
 
 __all__ = [
     "ASK",
@@ -61,6 +66,23 @@ def _lines(items: list[str], *, numbered: bool = False) -> str:
     )
 
 
+def statement_text(brief: ProjectBrief) -> str:
+    """L'énoncé (écrit par un modèle d'après une leçon) encadré comme contenu non fiable ; les
+    critères restent numérotés, un par ligne."""
+    text = "\n".join(
+        [
+            f"Énoncé : {brief.title}",
+            f"Contexte : {brief.context}",
+            f"Objectif : {brief.objective}",
+            "Contraintes :",
+            _lines(brief.constraints),
+            "Critères :",
+            _lines(brief.criteria, numbered=True),
+        ]
+    )
+    return untrusted(text, "énoncé du projet")
+
+
 def prompt_of(
     inputs: ReviewInputs, repo_text: str | None, repo_status: Literal["read", "unreadable", "none"]
 ) -> str:
@@ -74,11 +96,7 @@ def prompt_of(
     return render_prompt(
         AGENT,
         mode="project_review",
-        title=brief.title,
-        context=brief.context,
-        objective=brief.objective,
-        constraints=_lines(brief.constraints),
-        criteria=_lines(brief.criteria, numbered=True),
+        statement=statement_text(brief),
         count=len(brief.criteria),
         description=untrusted(inputs.description or NONE, "description de January"),
         readme=untrusted(repo_text, "README du dépôt") if repo_text else "README : non lu.",

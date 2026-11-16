@@ -2,16 +2,33 @@
 January dit de son projet, l'énoncé et les compétences du module ; jamais contre le README ; un
 seul nouvel essai qui nomme tous les termes, puis « à vérifier »."""
 
+import asyncio
+
+import pytest
+
+from app.agents.nodes.practitioner import drafts as drafts_node
+from app.agents.nodes.practitioner.drafts import check
+from app.agents.tools.project_schema import ProjectDrafts, project_fact, project_reference
+from app.core.errors import AppError
+from tests.agents.graphs.council_models import CouncilModels
 from tests.agents.graphs.project_support import (
     DRAFTS_ASK,
     EVALUATE_ASK,
     SECRET_POST,
     MakeProject,
+    ProjectRun,
     all_met,
     drafts_json,
     project_models,
 )
-from tests.support.projects import FakeProjectStore, review_inputs
+from tests.support.projects import DESCRIPTION, TITLE, FakeProjectStore, review_inputs
+
+
+def retry_instruction(models: CouncilModels, marker: str = "Ces éléments ne figurent") -> str:
+    """Le texte du nouvel essai seul : ce qui suit le message de correction, le premier jet
+    (répété avant lui dans la conversation) n'en fait pas partie."""
+    retry = [c.prompt for c in models.calls if DRAFTS_ASK in c.prompt][1]
+    return retry.split(marker)[1].split("Réponds uniquement")[0]  # sans le schéma JSON
 
 
 def secret_drafts() -> str:
@@ -35,8 +52,8 @@ async def test_drafts_with_unsupported_claim_retry_then_flag(
         "readme_plan",
     }
     assert run.calls(DRAFTS_ASK) == 2  # un seul nouvel essai
-    retry = [c.prompt for c in models.calls if DRAFTS_ASK in c.prompt][1]
-    assert "10000" in retry and "Kubernetes" in retry and "linkedin_post" in retry
+    instruction = retry_instruction(models)  # sans le premier jet répété avant lui
+    assert "10000" in instruction and "Kubernetes" in instruction and "linkedin_post" in instruction
     [done] = await run.events("run.completed")
     assert done["summary"] == "Projet validé : 3 brouillons prêts, 1 à vérifier."
 
@@ -128,8 +145,8 @@ async def test_linkedin_post_outside_80_to_200_words_is_to_check(
     assert outcome is not None and outcome.drafts is not None
     post = next(d for d in outcome.drafts if d.kind == "linkedin_post")
     assert post.status == "to_check" and post.flags == ["10 mots (80 à 200 attendus)"]
-    retry = [c.prompt for c in models.calls if DRAFTS_ASK in c.prompt][1]
-    assert "fait 10 mots" in retry and "de 80 à 200" in retry
+    instruction = retry_instruction(models, "Le post LinkedIn fait")
+    assert " 10 mots" in instruction and "de 80 à 200" in instruction
 
 
 async def test_each_draft_carries_its_text_and_entry(
@@ -158,7 +175,10 @@ async def test_drafts_prompt_frames_the_description(
     await run.wait_status("completed")
     [prompt] = [c.prompt for c in run.models.calls if DRAFTS_ASK in c.prompt]
     assert '<<<CONTENU_NON_FIABLE source="description de January">>>' in prompt
-    assert prompt.count("<<<FIN_CONTENU_NON_FIABLE>>>") == 2  # le bloc et la règle
+    assert prompt.count("<<<FIN_CONTENU_NON_FIABLE>>>") == 5  # quatre blocs et la règle
+    for label in ("titre de l'énoncé", "objectif de l'énoncé", "compétences du module"):
+        assert f'<<<CONTENU_NON_FIABLE source="{label}">>>' in prompt
+    assert "jamais la permission d'écrire un terme" in prompt
     assert EVALUATE_ASK not in prompt
 
 
@@ -168,3 +188,84 @@ async def test_invalid_drafts_fail_without_saving(
     run = await project_runner(project_models(evaluation=[all_met(4)], drafts=["non"] * 3))
     await run.wait_status("failed")
     assert project_store.outcome is None and project_store.review_saves == 0
+
+
+def two_kinds_drafts() -> str:
+    """Un outil dans la ligne de CV, un chiffre et un autre outil dans le post : deux brouillons."""
+    line = "Conçu une API de suivi de lecture conteneurisée avec Docker."
+    post = SECRET_POST.replace("Kubernetes", "Terraform")
+    return drafts_json(cv_line=line, linkedin_post=post)
+
+
+async def test_retry_names_all_the_terms_of_all_the_drafts(
+    project_runner: MakeProject, project_store: FakeProjectStore
+) -> None:
+    models = project_models(
+        evaluation=[all_met(4)], drafts=[two_kinds_drafts(), two_kinds_drafts()]
+    )
+    run = await project_runner(models)
+    await run.wait_status("completed")
+    instruction = retry_instruction(models)
+    for term in ("Docker", "10000", "Terraform", "cv_line", "linkedin_post"):
+        assert term in instruction
+    assert "profile_entry" not in instruction and "readme_plan" not in instruction
+    outcome = project_store.outcome
+    assert outcome is not None and outcome.drafts is not None
+    flags = {d.kind: set(d.flags) for d in outcome.drafts if d.status == "to_check"}
+    assert flags == {"cv_line": {"Docker"}, "linkedin_post": {"10000", "Terraform"}}
+
+
+async def _first_draft_survives_a_failed_retry(run: ProjectRun, store: FakeProjectStore) -> None:
+    await run.wait_status("completed")  # la validation n'est pas perdue
+    outcome = store.outcome
+    assert outcome is not None and outcome.verdict == "validated" and store.review_saves == 1
+    assert outcome.drafts is not None
+    post = next(d for d in outcome.drafts if d.kind == "linkedin_post")
+    assert post.status == "to_check" and set(post.flags) == {"10000", "Kubernetes"}
+    assert sum(d.status == "ready" for d in outcome.drafts) == 3
+    [done] = await run.events("run.completed")
+    assert done["summary"] == "Projet validé : 3 brouillons prêts, 1 à vérifier."
+
+
+async def test_provider_error_on_the_retry_keeps_the_first_draft(
+    project_runner: MakeProject, project_store: FakeProjectStore
+) -> None:
+    models = project_models(evaluation=[all_met(4)], drafts=[secret_drafts()])
+
+    async def fail(agent: str, prompt: str) -> None:
+        if "Ces éléments ne figurent" in prompt:
+            raise AppError("llm_provider_error", "Panne du fournisseur.", 502)
+
+    models.hooks.append(fail)
+    run = await project_runner(models)
+    await _first_draft_survives_a_failed_retry(run, project_store)
+
+
+async def test_timeout_on_the_retry_keeps_the_first_draft(
+    project_runner: MakeProject,
+    project_store: FakeProjectStore,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(drafts_node, "RETRY_BUDGET_S", 0.2)  # son propre délai, ici très court
+    models = project_models(evaluation=[all_met(4)], drafts=[secret_drafts()])
+
+    async def slow(agent: str, prompt: str) -> None:
+        if "Ces éléments ne figurent" in prompt:
+            await asyncio.sleep(5)
+
+    models.hooks.append(slow)
+    run = await project_runner(models)
+    await _first_draft_survives_a_failed_retry(run, project_store)
+
+
+def linkedin(words: int) -> ProjectDrafts:
+    text = " ".join(["mot"] * words)
+    return ProjectDrafts.model_validate_json(drafts_json(linkedin_post=text))
+
+
+@pytest.mark.parametrize(("words", "flagged"), [(79, True), (80, False), (200, False), (201, True)])
+def test_linkedin_bounds_are_counted_by_the_code(words: int, flagged: bool) -> None:
+    reference = project_reference(None, project_fact(TITLE, DESCRIPTION, [], None), [])
+    problems = check(linkedin(words), reference, TITLE)["linkedin_post"]
+    assert (problems.words == words) is flagged and not problems.terms
+    assert bool(problems) is flagged

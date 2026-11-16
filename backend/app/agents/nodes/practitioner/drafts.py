@@ -1,5 +1,5 @@
 """Le Praticien écrit les quatre brouillons d'un projet validé (P3, P4, D165) : une ligne de CV,
-l'entrée de projet du profil, un post LinkedIn et le plan du README. Un seul appel standard, au nom
+l'entrée de projet du profil, un post LinkedIn et le plan du README. Un appel standard, au nom
 de January : le code contrôle chaque texte, jamais le modèle.
 
 - `text_claims(draft_text(kind), project_reference(...), allowed=[titre de l'énoncé])` : les
@@ -10,11 +10,13 @@ de January : le code contrôle chaque texte, jamais le modèle.
 
 Un brouillon fautif repart au modèle **une seule fois**, avec tous les termes nommés (et la
 longueur) ; les brouillons déjà propres sont gardés. Ce qui reste après l'essai est rangé « à
-vérifier » avec ses termes (`flags`). Si le nouvel essai échoue (format invalide), le premier jet
-est gardé « à vérifier » : l'évaluation validée n'est pas perdue.
+vérifier » avec ses termes (`flags`). Le nouvel essai est un nœud à part (`redo`, son propre
+délai) : toute panne, quelle qu'elle soit, garde le premier jet « à vérifier ». L'évaluation
+validée n'est pas perdue.
 
 Journaux : identifiants et nombres, jamais un brouillon ni un terme (17.2)."""
 
+import asyncio
 import logging
 from dataclasses import dataclass, replace
 from typing import Any
@@ -44,16 +46,27 @@ from app.agents.tools.project_schema import (
 from app.agents.tools.text_claims import text_claims
 from app.core.errors import AppError
 
-__all__ = ["ASK", "Problems", "check", "make_drafts", "results_of", "retry_message"]
+__all__ = [
+    "ASK",
+    "Problems",
+    "check",
+    "make_drafts",
+    "make_redo",
+    "results_of",
+    "retry_message",
+    "route_drafts",
+]
 
 AGENT = "practitioner"
 ASK = "Écris les brouillons du projet."
 NONE = "(aucun)"
+RETRY_BUDGET_S = 90.0  # son propre délai, plus court que `node_timeout` (120 s)
 LANGUAGES = {"fr": "français", "en": "anglais"}
 RETRY = (
-    "Ces éléments ne figurent ni dans ce que January dit de son projet, ni dans l'énoncé, ni dans "
-    "les compétences du module : {terms}. Réécris sans eux les brouillons concernés ({kinds}), "
-    "avec ce que January a dit seulement."
+    "Ces éléments ne figurent ni dans la description de January, ni dans les compétences du "
+    "module, ni dans le titre de l'énoncé : {terms}. Réécris sans eux les brouillons concernés "
+    "({kinds}), avec ce que January a dit seulement (l'objectif de l'énoncé n'autorise "
+    "aucun terme)."
 )
 LENGTH_RETRY = "Le post LinkedIn fait {words} mots : il doit en faire de {low} à {high}."
 
@@ -118,80 +131,122 @@ def results_of(drafts: ProjectDrafts, found: dict[DraftKind, Problems]) -> list[
 
 
 def prompt_of(inputs: ReviewInputs) -> str:
+    """Seuls la description, les compétences du module et le titre permettent un terme ; le titre,
+    l'objectif (écrits par un modèle) et les compétences sont encadrés comme données."""
     return render_prompt(
         AGENT,
         mode="project_drafts",
-        title=inputs.brief.title,
-        objective=inputs.brief.objective,
-        skills=", ".join(inputs.skills) or NONE,
+        title=untrusted(" ".join(inputs.brief.title.split()), "titre de l'énoncé"),
+        objective=untrusted(" ".join(inputs.brief.objective.split()), "objectif de l'énoncé"),
+        skills=untrusted(", ".join(inputs.skills) or NONE, "compétences du module"),
         description=untrusted(inputs.description or NONE, "description de January"),
         language=LANGUAGES[inputs.language],
     )
 
 
-async def _retry(
-    deps: GraphDeps,
-    model: BaseChatModel,
-    messages: list[BaseMessage],
-    first: ProjectDrafts,
-    found: dict[DraftKind, Problems],
-) -> ProjectDrafts | None:
-    """Le second jet, ou `None` si le modèle ne rend plus de format valable."""
-    conversation = [
-        *messages,
-        AIMessage(first.model_dump_json()),
-        HumanMessage(retry_message(found)),
-    ]
-    try:
-        return await structured_call(
-            model,
-            ProjectDrafts,
-            conversation,
-            agent=AGENT,
-            step="brouillons-2",
-            intent="je corrige les brouillons du projet",
-        )
-    except AppError as exc:
-        if exc.code != "structured_output_invalid":
-            raise
-        logger.info("Nouvel essai des brouillons refusé : cause %s", exc.code)
-        return None
+def _reference(inputs: ReviewInputs) -> MasterProfileData:
+    fact = project_fact(inputs.brief.title, inputs.description, inputs.skills, inputs.repo_url)
+    return project_reference(inputs.profile, fact, inputs.skills)
+
+
+async def _model(deps: GraphDeps) -> BaseChatModel:
+    return await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
+
+
+def _stored(
+    state: ProjectReviewState, drafts: ProjectDrafts, found: dict[DraftKind, Problems]
+) -> dict[str, Any]:
+    outcome = from_state(state["outcome"])
+    return to_state(replace(outcome, drafts=results_of(drafts, found)))
 
 
 def make_drafts(deps: GraphDeps) -> Node:
+    """Le premier jet, contrôlé et rangé dans l'état (`to_check` avec ses termes) ; le nouvel
+    essai est un nœud à part (`redo`), avec son propre délai (D165)."""
+
     @node_timeout()
     async def drafts(state: ProjectReviewState) -> ProjectReviewState:
         project_id = state["project_id"]
         inputs = await deps.ports.projects.review_inputs(deps.user_id, project_id)
-        title = inputs.brief.title
-        fact = project_fact(title, inputs.description, inputs.skills, inputs.repo_url)
-        reference = project_reference(inputs.profile, fact, inputs.skills)
-        model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
         messages: list[BaseMessage] = [SystemMessage(prompt_of(inputs)), HumanMessage(ASK)]
         first = await structured_call(
-            model,
+            await _model(deps),
             ProjectDrafts,
             messages,
             agent=AGENT,
             step="brouillons",
             intent="j'écris les brouillons du projet",
         )
-        final, found = first, check(first, reference, title)
-        if any(found.values()):
-            second = await _retry(deps, model, messages, first, found)
-            if second is not None:
-                fixed: dict[str, Any] = {k: getattr(second, k) for k in found if found[k]}
-                final = first.model_copy(update=fixed)
-                found = check(final, reference, title)
-        results = results_of(final, found)
-        outcome = from_state(state["outcome"])
+        found = check(first, _reference(inputs), inputs.brief.title)
         logger.info(
-            "Brouillons écrits : session %s, projet %s, %d prêt(s), %d à vérifier",
+            "Brouillons écrits : session %s, projet %s, %d à vérifier avant le nouvel essai",
             deps.session_id,
             project_id,
-            sum(r.status == "ready" for r in results),
-            sum(r.status == "to_check" for r in results),
+            sum(bool(problems) for problems in found.values()),
         )
-        return {"outcome": to_state(replace(outcome, drafts=results))}
+        return {
+            "outcome": _stored(state, first, found),
+            "first_drafts": first.model_dump(),
+            "retry_needed": any(found.values()),
+        }
 
     return drafts
+
+
+def route_drafts(state: ProjectReviewState) -> str:
+    return "redo" if state.get("retry_needed") else "save"
+
+
+def _code(exc: Exception) -> str:
+    if isinstance(exc, TimeoutError):
+        return "node_timeout"
+    return exc.code if isinstance(exc, AppError) else type(exc).__name__
+
+
+def make_redo(deps: GraphDeps) -> Node:
+    """Le nouvel essai, facultatif : toute panne (fournisseur, plafond de jetons, délai, format)
+    garde le premier jet `to_check` ; l'évaluation validée n'est jamais perdue."""
+
+    @node_timeout()
+    async def redo(state: ProjectReviewState) -> ProjectReviewState:
+        project_id = state["project_id"]
+        inputs = await deps.ports.projects.review_inputs(deps.user_id, project_id)
+        reference, title = _reference(inputs), inputs.brief.title
+        first = ProjectDrafts.model_validate(state["first_drafts"])
+        found = check(first, reference, title)
+        conversation: list[BaseMessage] = [
+            SystemMessage(prompt_of(inputs)),
+            HumanMessage(ASK),
+            AIMessage(first.model_dump_json()),
+            HumanMessage(retry_message(found)),
+        ]
+        try:
+            async with asyncio.timeout(RETRY_BUDGET_S):
+                second = await structured_call(
+                    await _model(deps),
+                    ProjectDrafts,
+                    conversation,
+                    agent=AGENT,
+                    step="brouillons-2",
+                    intent="je corrige les brouillons du projet",
+                )
+        except Exception as exc:  # le premier jet reste rangé, `to_check`
+            logger.info(
+                "Nouvel essai des brouillons impossible : session %s, projet %s, cause %s",
+                deps.session_id,
+                project_id,
+                _code(exc),
+            )
+            return {}
+        fixed: dict[str, Any] = {k: getattr(second, k) for k in found if found[k]}
+        final = first.model_copy(update=fixed)
+        again = check(final, reference, title)
+        logger.info(
+            "Brouillons corrigés : session %s, projet %s, %d à vérifier",
+            deps.session_id,
+            project_id,
+            sum(bool(problems) for problems in again.values()),
+        )
+        return {"outcome": _stored(state, final, again)}
+
+    return redo

@@ -7,6 +7,7 @@ from typing import Any
 from pydantic import TypeAdapter
 
 from app.agents.tools.project_port import ReviewOutcome
+from app.agents.tools.project_schema import NOT_ASSESSED, unmet_count
 
 _ADAPTER = TypeAdapter(ReviewOutcome)
 
@@ -31,10 +32,12 @@ def summary_text(outcome: ReviewOutcome) -> str:
         ready = sum(draft.status == "ready" for draft in drafts)
         text = f"Projet validé : {_plural(ready, 'brouillon prêt', 'brouillons prêts')}"
         return f"{text}, {len(drafts) - ready} à vérifier." if len(drafts) > ready else f"{text}."
-    unmet = sum(not result.met for result in outcome.results)
+    total = len(outcome.results)
+    if all(result.comment == NOT_ASSESSED for result in outcome.results):  # rien n'a été jugé
+        return "Projet à reprendre : rien n'a pu être évalué."
+    unmet = unmet_count(total, outcome.results)
     if unmet == 0:  # un résultat hors de l'énoncé a empêché la validation (`verdict`)
         return "Projet à reprendre : l'évaluation ne correspond pas à l'énoncé."
-    total = len(outcome.results)
     many = unmet > 1
     return (
         f"Projet à reprendre : {unmet} {'critères' if many else 'critère'} sur {total} "

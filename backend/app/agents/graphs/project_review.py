@@ -3,12 +3,14 @@ les critères de l'énoncé ; le code décide du verdict ; validé, il écrit le
 January, que le code contrôle (`text_claims`).
 
 START -> load -> read_repo -> (rien à lire ? skip : evaluate)
-skip -> save ; evaluate -> (validé ? drafts : save) ; drafts -> save -> announce -> END
+skip -> save ; evaluate -> (validé ? drafts : save) ; drafts -> (à corriger ? redo : save)
+redo -> save -> announce -> END
 
 Sans description ni dépôt lisible, aucun appel au modèle : « à reprendre », jamais « validé » sur
 rien. Aucune interruption, aucune boucle ; chaque nœud relit les entrées par le port et l'écriture
 du port est idempotente par session (SPEC 9.4). Trois appels standard au plus (évaluation,
-brouillons, un nouvel essai des brouillons). Lancé seulement par la feature `projects` (8.10,
+brouillons, un nouvel essai des brouillons dans son propre nœud et son propre délai : sa panne
+garde le premier jet « à vérifier »). Lancé seulement par la feature `projects` (8.10,
 `ROUTE_ONLY`)."""
 
 from typing import Any
@@ -16,7 +18,7 @@ from typing import Any
 from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel, Field
 
-from app.agents.nodes.practitioner.drafts import make_drafts
+from app.agents.nodes.practitioner.drafts import make_drafts, make_redo, route_drafts
 from app.agents.nodes.practitioner.evaluate import (
     NO_REPO_FEEDBACK,
     make_evaluate,
@@ -44,17 +46,19 @@ def build(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
     graph.add_node("skip", make_skip(deps))
     graph.add_node("evaluate", make_evaluate(deps))
     graph.add_node("drafts", make_drafts(deps))
+    graph.add_node("redo", make_redo(deps))
     graph.add_node("save", make_save(deps))
     graph.add_node("announce", announce)
     for source, target in [
         (START, "load"),
         ("load", "read_repo"),
         ("skip", "save"),
-        ("drafts", "save"),
+        ("redo", "save"),
         ("save", "announce"),
         ("announce", END),
     ]:
         graph.add_edge(source, target)
     graph.add_conditional_edges("read_repo", route_read, ["skip", "evaluate"])
     graph.add_conditional_edges("evaluate", route_evaluate, ["drafts", "save"])
+    graph.add_conditional_edges("drafts", route_drafts, ["redo", "save"])
     return graph
