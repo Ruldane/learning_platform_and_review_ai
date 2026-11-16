@@ -5,10 +5,11 @@ import { useSessionStore } from "@/shared/realtime/sessionStore";
 import { councilEvents } from "@/test/councilEvents";
 import { activityItem, type HomeApiOptions } from "@/test/homeApi";
 import { openStream, renderHome } from "@/test/homeHarness";
+import { BackgroundNotices } from "../../BackgroundNotices";
 import { HomePage } from "./HomePage";
 
-const setup = (api: HomeApiOptions = {}) =>
-  renderHome((createSocket) => <HomePage createSocket={createSocket} />, api);
+const setup = (api: HomeApiOptions = {}, rereadMs?: number) =>
+  renderHome((createSocket) => <HomePage createSocket={createSocket} rereadMs={rereadMs} />, api);
 
 /** `n` événements, du plus récent (`e01`) au plus ancien, une minute d'écart. */
 const events = (n: number) =>
@@ -139,6 +140,48 @@ describe("HomePage", () => {
     expect(await screen.findByText("Phrase du conseil un.")).toBeVisible();
     expect(screen.queryByText("Le conseil se réunit…")).toBeNull();
     expect(state.briefReads).toBe(reads + 1);
+  });
+
+  it("reads a brief that is still pending once more, then stops", async () => {
+    const { sockets, state } = setup(
+      { brief: { advice_status: "pending", advice: null, session_id: "s9" } },
+      40,
+    );
+    expect(await screen.findByText("Le conseil se réunit…")).toBeVisible();
+    const stream = await openStream(sockets, "s9");
+    const reads = state.briefReads;
+    stream.push(councilEvents("s9").completed());
+    await waitFor(() => expect(state.briefReads).toBe(reads + 2));
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(state.briefReads).toBe(reads + 2);
+    expect(screen.getByText("Le conseil se réunit…")).toBeVisible();
+  });
+
+  it("keeps the feed continuous when a new event arrives after « Voir plus »", async () => {
+    const { user, state } = renderHome(
+      (createSocket) => (
+        <>
+          <HomePage createSocket={createSocket} />
+          <BackgroundNotices pollMs={40} />
+        </>
+      ),
+      { events: events(40) },
+    );
+    await user.click(await screen.findByRole("button", { name: "Voir plus" }));
+    const ids = () =>
+      within(screen.getByRole("list", { name: "Activité récente" }))
+        .getAllByRole("listitem")
+        .map((item) => /Événement (e\d\d|n1)/.exec(item.textContent ?? "")?.[1]);
+    await waitFor(() => expect(ids()).toHaveLength(40));
+    const expected = Array.from({ length: 40 }, (_, i) => `e${String(i + 1).padStart(2, "0")}`);
+    expect(ids()).toEqual(expected);
+    state.events.push(
+      activityItem("n1", new Date(Date.UTC(2026, 10, 16, 11, 30)).toISOString(), {
+        kind: "memory",
+      }),
+    );
+    await waitFor(() => expect(ids()).toHaveLength(41));
+    expect(ids()).toEqual(["n1", ...expected]);
   });
 
   it.each(["failed", "unavailable"])(

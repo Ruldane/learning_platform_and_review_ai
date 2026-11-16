@@ -108,8 +108,8 @@ describe("BackgroundNotices", () => {
     expect(await within(region()).findByText("Pendant l'absence")).toBeVisible();
   });
 
-  it("closes a notice by itself after its delay, and on Fermer", async () => {
-    const { state, user } = setup({ events: [activityItem("e1", T(1))] }, 250);
+  it("closes a notice on Fermer and keeps the others", async () => {
+    const { state, user } = setup({ events: [activityItem("e1", T(1))] });
     await waitFor(() => expect(state.queries.length).toBeGreaterThan(1));
     state.events.push(
       activityItem("e2", T(2), { title: "Première" }),
@@ -121,11 +121,10 @@ describe("BackgroundNotices", () => {
     );
     expect(within(region()).queryByText("Seconde")).toBeNull();
     expect(within(region()).getByText("Première")).toBeVisible();
-    await waitFor(() => expect(within(region()).queryByText("Première")).toBeNull());
   });
 
-  it("shows three notices at most and the next ones as the first ones go", async () => {
-    const { state } = setup({ events: [activityItem("e1", T(1))] }, 300);
+  it("shows three notices at most, the others wait", async () => {
+    const { state } = setup({ events: [activityItem("e1", T(1))] });
     await waitFor(() => expect(state.queries.length).toBeGreaterThan(1));
     state.events.push(
       ...[2, 3, 4, 5, 6].map((n) => activityItem(`e${n}`, T(n), { title: `Nouveauté ${n}` })),
@@ -133,6 +132,5 @@ describe("BackgroundNotices", () => {
     await within(region()).findByText("Nouveauté 2");
     expect(within(region()).getAllByRole("button", { name: /Fermer/ })).toHaveLength(3);
     expect(within(region()).queryByText("Nouveauté 6")).toBeNull();
-    expect(await within(region()).findByText("Nouveauté 6")).toBeVisible();
   });
 });

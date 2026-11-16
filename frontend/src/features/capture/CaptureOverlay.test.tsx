@@ -25,6 +25,7 @@ const setup = () =>
 const reset = () => {
   useCaptureDialog.setState({ open: false, sessionId: null, draft: "", textDraft: "" });
   useSessionStore.getState().reset("s5");
+  useCaptureRequest.setState({ count: 0 });
 };
 
 const resumedSession = {

@@ -13,7 +13,7 @@ interface RemindersCardProps {
 
 /** Les relances dues : entreprise, poste et échéance, chacune menant à sa fiche. */
 export function RemindersCard({ due, items, onOpen }: RemindersCardProps) {
-  const hidden = due - items.length;
+  const hidden = items.length === 0 ? 0 : due - items.length;
   return (
     <section
       aria-labelledby="home-reminders"
@@ -22,8 +22,14 @@ export function RemindersCard({ due, items, onOpen }: RemindersCardProps) {
       <h2 id="home-reminders" className="text-lg font-medium">
         {t("home.reminders.title")}
       </h2>
-      {due === 0 && items.length === 0 ? (
-        <p className="text-muted-foreground">{t("home.reminders.none")}</p>
+      {items.length === 0 ? (
+        <p className={due > 0 ? undefined : "text-muted-foreground"}>
+          {due === 0
+            ? t("home.reminders.none")
+            : due === 1
+              ? t("home.reminders.due.one")
+              : t("home.reminders.due.many", { count: due })}
+        </p>
       ) : (
         <ul aria-label={t("home.reminders.listLabel")} className="flex flex-col gap-2 text-sm">
           {items.map((item) => (

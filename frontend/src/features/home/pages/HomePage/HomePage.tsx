@@ -10,10 +10,16 @@ import { BriefSections } from "./BriefSections";
 /**
  * L'accueil (`/`) : le brief du matin (sept rubriques), les actions rapides et, à côté, le fil
  * d'activité. Le conseil `pending` est suivi par sa session ; « Réessayer » ne sert qu'à relire un
- * brief qui n'a pas pu être lu. `createSocket` ne sert qu'aux tests.
+ * brief qui n'a pas pu être lu. `createSocket` et `rereadMs` ne servent qu'aux tests.
  */
-export function HomePage({ createSocket }: { createSocket?: SocketFactory }) {
-  const { query, brief } = useBrief(createSocket);
+export function HomePage({
+  createSocket,
+  rereadMs,
+}: {
+  createSocket?: SocketFactory;
+  rereadMs?: number;
+}) {
+  const { query, brief } = useBrief(createSocket, rereadMs);
   if (query.isPending || (query.isError && !brief)) {
     return (
       <div className="flex flex-col gap-4">

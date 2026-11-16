@@ -37,6 +37,13 @@ describe("RemindersCard", () => {
     expect(screen.getByText("5 autres relances dues.")).toBeInTheDocument();
   });
 
+  it("gives the count, without an empty list, when reminders are due but none is listed", () => {
+    render(<RemindersCard due={3} items={[]} onOpen={vi.fn()} />);
+    expect(screen.getByText("3 relances dues.")).toBeInTheDocument();
+    expect(screen.queryByRole("list")).toBeNull();
+    expect(screen.queryByText(/autres relances/)).toBeNull();
+  });
+
   it("says there is nothing due", () => {
     render(<RemindersCard due={0} items={[]} onOpen={vi.fn()} />);
     expect(screen.getByText("Aucune relance due.")).toBeInTheDocument();
