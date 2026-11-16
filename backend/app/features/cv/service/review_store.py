@@ -19,7 +19,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.agents.tools.cv_compose import base_content
 from app.agents.tools.cv_indicators import Coverage, Indicators
 from app.agents.tools.cv_review_port import (
+    ATS_UPDATES_MAX,
+    ATS_UPDATES_MAX_AGE_DAYS,
     BRIEF_MAX_AGE_DAYS,
+    AtsUpdate,
     ReviewContext,
     ReviewReport,
     VersionOutcome,
@@ -31,6 +34,7 @@ from app.agents.tools.review_schema import CompanyBrief, Proposal
 from app.db.models.career import CvReview
 from app.db.models.postings import Company
 from app.features.cv.repository import (
+    AtsSourceRepository,
     CompanyRepository,
     ModificationRepository,
     ProfileRepository,
@@ -83,6 +87,24 @@ def _fresh_brief(rt: CvRuntime, company: Company | None) -> CompanyBrief | None:
     return CompanyBrief.model_validate(company.brief)
 
 
+async def ats_updates(db: AsyncSession, rt: CvRuntime, user_id: str) -> list[AtsUpdate]:
+    """Les sources retenues de la dernière session `ats_refresh` terminée il y a moins de
+    `ATS_UPDATES_MAX_AGE_DAYS` jours (P14), 3 au plus ; rien sans rafraîchissement récent."""
+    repo = AtsSourceRepository(db, user_id)
+    session_id = await repo.latest_session(rt.now() - timedelta(days=ATS_UPDATES_MAX_AGE_DAYS))
+    if session_id is None:
+        return []
+    return [
+        AtsUpdate(
+            title=(source.title or source.url)[:300],
+            url=source.url,
+            summary=source.summary or "",
+            published=source.published,
+        )
+        for source in await repo.kept(session_id, ATS_UPDATES_MAX)
+    ]
+
+
 class AgentCvReviewStore:
     """`CvReviewStore` de la composition (`app.bootstrap_career`)."""
 
@@ -101,6 +123,7 @@ class AgentCvReviewStore:
             company = (
                 await CompanyRepository(db, user_id).by_key(company_key(name)) if name else None
             )
+            updates = await ats_updates(db, self._rt, user_id)
         return ReviewContext(
             review_id=review.id,
             posting_id=posting.id,
@@ -113,6 +136,7 @@ class AgentCvReviewStore:
             company=name,
             company_brief=_fresh_brief(self._rt, company),
             company_ats=company.ats if company is not None else None,
+            ats_updates=updates,
         )
 
     async def save_company(

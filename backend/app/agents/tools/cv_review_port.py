@@ -14,7 +14,7 @@ plus :
 """
 
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Annotated, Literal, Protocol
 
 from pydantic import BaseModel, Field
@@ -29,10 +29,23 @@ from app.core.errors import AppError
 from app.db.models.career import VersionStatus
 
 BRIEF_MAX_AGE_DAYS = 30  # une fiche entreprise plus vieille est refaite par l'Éclaireur
+ATS_UPDATES_MAX_AGE_DAYS = 60  # au-delà, le dernier rafraîchissement ATS n'est plus montré
+ATS_UPDATES_MAX = 3
 
 OutputChoice = Literal["report", "pdf", "finish"]
 # Texte libre lu par January (raccourci, jamais refusé, D97).
 Note = Annotated[str, Field(max_length=300), ShortenToMax()]
+
+
+@dataclass(frozen=True)
+class AtsUpdate:
+    """Une source « kept » du dernier rafraîchissement du web sur les ATS (P14) : texte venu du
+    web, donc non fiable (17.4) ; `published` : sa date si la page la donne."""
+
+    title: str
+    url: str
+    summary: str
+    published: str | None
 
 
 @dataclass(frozen=True)
@@ -41,7 +54,8 @@ class ReviewContext:
     revue, le CV d'origine composé (`base_content`, ordre des sections du gabarit), les
     indicateurs avant, l'entreprise et sa fiche de moins de `BRIEF_MAX_AGE_DAYS` jours (sinon
     `None`) avec l'ATS déjà repéré pour elle (`company_ats`, écart au plan : sans lui, une fiche
-    réutilisée perdrait l'ATS lu sur ses pages)."""
+    réutilisée perdrait l'ATS lu sur ses pages). `ats_updates` : les sources retenues de la dernière
+    session `ats_refresh` terminée il y a moins de `ATS_UPDATES_MAX_AGE_DAYS` jours, 3 au plus."""
 
     review_id: str
     posting_id: str
@@ -54,6 +68,7 @@ class ReviewContext:
     company: str | None
     company_brief: CompanyBrief | None
     company_ats: str | None = None
+    ats_updates: list[AtsUpdate] = field(default_factory=list)
 
 
 @dataclass(frozen=True)

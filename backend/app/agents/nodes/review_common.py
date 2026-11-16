@@ -19,7 +19,7 @@ from app.agents.runtime.deps import GraphDeps
 from app.agents.runtime.structured import structured_call
 from app.agents.state.cv_review import CvReviewState
 from app.agents.tools.cv_indicators import Indicators
-from app.agents.tools.cv_review_port import ReviewContext
+from app.agents.tools.cv_review_port import AtsUpdate, ReviewContext
 from app.agents.tools.cv_schema import CvContent, MasterProfileData, facts_of, in_cv
 from app.agents.tools.posting_schema import PostingAnalysis
 from app.agents.tools.review_schema import CompanyBrief, Proposal, ProposalList, proposal_problems
@@ -28,6 +28,7 @@ PROPOSE_REQUEST = "Propose tes modifications du CV."
 MAX_PROPOSE_ASKS = 3  # une demande, puis deux re-demandes avec les défauts
 PROPOSE_TIMEOUT_S = 600  # sorties structurées longues (GLM) et leurs re-demandes
 MAX_POSTING_CHARS = 30_000  # comme l'Analyste
+MAX_UPDATE_CHARS = 500  # résumé d'une mise à jour ATS rendu au modèle
 PREFIX = {"ats_reader": "a", "recruiter": "r"}
 AGENT_OF = {prefix: agent for agent, prefix in PREFIX.items()}
 LABEL = {"ats_reader": "Lecteur ATS", "recruiter": "Recruteur"}
@@ -103,6 +104,21 @@ def indicators_text(before: Indicators) -> str:
     return "\n".join(lines)
 
 
+def ats_updates_text(updates: list[AtsUpdate]) -> str:
+    """Les mises à jour du web sur les ATS (P14) : titre, date, résumé, adresse, le tout encadré
+    (17.4). Vide sans mise à jour : le prompt n'ajoute alors rien."""
+    if not updates:
+        return ""
+    lines = []
+    for update in updates:
+        title = " ".join(update.title.split())
+        summary = " ".join(update.summary.split())[:MAX_UPDATE_CHARS]
+        lines.append(
+            f"- {title} ({update.published or 'date inconnue'}) : {summary}\n  {update.url}"
+        )
+    return untrusted("\n".join(lines), "base ATS : mises à jour du web")
+
+
 def context_vars(
     ctx: ReviewContext, analysis: PostingAnalysis, brief: CompanyBrief | None, ats: str | None
 ) -> dict[str, Any]:
@@ -116,6 +132,7 @@ def context_vars(
         "indicators": indicators_text(ctx.before),
         "profile": untrusted(facts_text(ctx.profile), "profil"),
         "cv": untrusted(cv_text(ctx.base, ctx.profile), "cv"),
+        "ats_updates": ats_updates_text(ctx.ats_updates),
     }
 
 

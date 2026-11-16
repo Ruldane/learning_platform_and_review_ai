@@ -41,12 +41,20 @@ def _failed(agent: str, call_id: str, tool: str, exc: AppError) -> None:
 
 
 async def web_search(
-    deps: GraphDeps, query: str, *, lang: str | None = None, agent: str
+    deps: GraphDeps,
+    query: str,
+    *,
+    lang: str | None = None,
+    time_range: str | None = None,
+    agent: str,
 ) -> WebSearchResult:
-    """Cherche sur le web (SearXNG, Brave en secours). Lève `AppError` : plafond atteint (429),
-    aucun moteur disponible (503), requête vide une fois nettoyée (422)."""
+    """Cherche sur le web (SearXNG, Brave en secours) ; `time_range` (« month »…) est transmis à
+    la passerelle. Lève `AppError` : plafond atteint (429), aucun moteur disponible (503),
+    requête vide une fois nettoyée (422)."""
     try:
-        found = await deps.web.search(deps.user_id, deps.session_id, query, lang=lang)
+        found = await deps.web.search(
+            deps.user_id, deps.session_id, query, lang=lang, time_range=time_range
+        )
     except AppError as exc:
         call_id = _call(agent, "web_search", {"lang": lang})  # la requête brute n'est jamais émise
         _failed(agent, call_id, "web_search", exc)

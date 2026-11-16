@@ -45,6 +45,7 @@ class FakeWeb:
     page: PageRead = field(default_factory=_page)
     error: AppError | None = None
     searches: list[tuple[str, str | None]] = field(default_factory=list)
+    time_ranges: list[str | None] = field(default_factory=list)
 
     async def search(
         self,
@@ -57,6 +58,7 @@ class FakeWeb:
         categories: Sequence[str] = (),
     ) -> WebSearchResult:
         self.searches.append((query, lang))
+        self.time_ranges.append(time_range)
         if self.error:
             raise self.error
         hit = WebHit("Un titre", "https://exemple.fr/a", "Un extrait", "fake", None, True)
@@ -116,6 +118,15 @@ async def test_web_search_tool_emits_scrubbed_query_in_tool_called(
     assert "Jane" not in str(emitted)  # la requête brute n'est jamais émise
     assert result_payload["summary"] == "1 résultat(s) via searxng" and result_payload["ok"]
     assert called_payload["call_id"] == result_payload["call_id"]
+
+
+async def test_web_search_passes_time_range_to_the_gateway(
+    emitted: list[dict[str, object]],
+) -> None:
+    web = FakeWeb()
+    await web_search(_deps(web), "ats", time_range="month", agent="scout")
+    await web_search(_deps(web), "ats", agent="scout")
+    assert web.time_ranges == ["month", None]
 
 
 async def test_web_search_failure_emits_no_query_and_reraises(

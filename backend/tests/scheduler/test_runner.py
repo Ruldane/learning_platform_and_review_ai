@@ -26,6 +26,7 @@ def test_jobs_run_on_schedule_and_at_startup() -> None:
         ("weekly_review", timedelta(minutes=15), True),
         ("skill_snapshots", timedelta(minutes=15), True),
         ("reminders_due", timedelta(hours=1), True),
+        ("ats_refresh", timedelta(hours=6), True),
     ]
 
 

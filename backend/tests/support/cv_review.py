@@ -9,7 +9,12 @@ from typing import Any
 
 from app.agents.tools.cv_compose import base_content
 from app.agents.tools.cv_indicators import AtsCheck, Coverage, Indicators
-from app.agents.tools.cv_review_port import ReviewContext, ReviewReport, VersionOutcome
+from app.agents.tools.cv_review_port import (
+    AtsUpdate,
+    ReviewContext,
+    ReviewReport,
+    VersionOutcome,
+)
 from app.agents.tools.cv_schema import (
     CvContent,
     Education,
@@ -185,6 +190,7 @@ class FakeCvReviewStore:
     company_brief: CompanyBrief | None = None
     company_ats: str | None = None
     base: CvContent | None = None  # par défaut : `base_content(profile, ORDER)`
+    ats_updates: list[AtsUpdate] = field(default_factory=list)  # 8.2 : mises à jour du web
     companies: dict[tuple[str, str], tuple[str, list[str], str | None]] = field(
         default_factory=dict
     )
@@ -215,6 +221,7 @@ class FakeCvReviewStore:
             company=self.company,
             company_brief=self.company_brief,
             company_ats=self.company_ats,
+            ats_updates=list(self.ats_updates),
         )
 
     async def save_company(

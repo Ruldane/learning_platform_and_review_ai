@@ -3,9 +3,11 @@ versions de CV (D130). Chaque requête filtre par `user_id`."""
 
 import builtins
 from collections.abc import Collection
+from datetime import datetime
 
 from sqlalchemy import func, literal_column, select
 
+from app.db.models.agents import AgentSession
 from app.db.models.career import (
     OPEN_REVIEW_STATUSES,
     CvModification,
@@ -16,6 +18,7 @@ from app.db.models.career import (
     ProfileStatus,
 )
 from app.db.models.postings import Company
+from app.db.models.research import Source
 from app.db.repository import UserScopedRepository
 
 OPEN_REVIEW = OPEN_REVIEW_STATUSES
@@ -241,3 +244,40 @@ class CompanyRepository(UserScopedRepository[Company]):
             Company.user_id == self.user_id, Company.name_norm == name_norm
         )
         return (await self.session.execute(stmt.limit(1))).scalar_one_or_none()
+
+
+class AtsSourceRepository(UserScopedRepository[Source]):
+    """Les sources retenues du rafraîchissement ATS (P14) : session `web_research` de sujet
+    `ats_refresh`, terminée (`updated_at` : la fin d'une session)."""
+
+    model = Source
+
+    async def latest_session(self, since: datetime) -> str | None:
+        """La dernière session de rafraîchissement terminée depuis `since`."""
+        stmt = (
+            select(AgentSession.id)
+            .where(
+                AgentSession.user_id == self.user_id,
+                AgentSession.graph == "web_research",
+                AgentSession.subject_type == "ats_refresh",
+                AgentSession.status == "completed",
+                AgentSession.updated_at >= since,
+            )
+            .order_by(AgentSession.updated_at.desc())
+            .limit(1)
+        )
+        return (await self.session.execute(stmt)).scalar_one_or_none()
+
+    async def kept(self, session_id: str, limit: int) -> list[Source]:
+        """Ses sources « kept », les mieux notées d'abord."""
+        stmt = (
+            select(Source)
+            .where(
+                Source.user_id == self.user_id,
+                Source.session_id == session_id,
+                Source.verdict == "kept",
+            )
+            .order_by(Source.score.desc(), Source.created_at, Source.id)
+            .limit(limit)
+        )
+        return list((await self.session.execute(stmt)).scalars())
