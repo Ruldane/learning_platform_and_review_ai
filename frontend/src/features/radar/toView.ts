@@ -33,6 +33,8 @@ export interface HistoryItemView {
   createdAt: string;
   errorCode: string | null;
   readCount: number;
+  /** Pages lues qui n'étaient pas des offres : « offres lues » = `readCount - notPostings`. */
+  notPostings: number;
   blockedCount: number;
   analyzed: number;
   lowSample: boolean;
@@ -102,6 +104,7 @@ export function toHistoryItem(run: RadarRunSummary): HistoryItemView {
     createdAt: run.created_at,
     errorCode: run.error_code,
     readCount: run.read_count,
+    notPostings: run.not_postings,
     blockedCount: run.blocked_count,
     analyzed: run.analyzed,
     lowSample: run.low_sample,

@@ -17,7 +17,13 @@ export function DraftActions({ canSave, saving, copy, onSave, onCopy }: DraftAct
   return (
     <>
       <div className="flex flex-wrap gap-2">
-        <Button disabled={saving || !canSave} onClick={onSave}>
+        {/* `aria-disabled` et non `disabled` : le bouton garde le focus pendant et après l'envoi. */}
+        <Button
+          aria-disabled={saving || !canSave}
+          onClick={() => {
+            if (!saving && canSave) onSave();
+          }}
+        >
           {saving ? t("projects.draft.saving") : t("projects.draft.save")}
         </Button>
         <Button variant="outline" onClick={onCopy}>

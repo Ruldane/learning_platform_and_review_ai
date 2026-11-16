@@ -134,7 +134,10 @@ describe("SubmissionForm", () => {
     expect(repo()).toBeDisabled();
     expect(description()).toBeDisabled();
     expect(pickerInput()).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Envoi en cours…" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Envoi en cours…" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
     expect(screen.getByRole("form", { name: "Rendre ton projet" })).toHaveAttribute(
       "aria-busy",
       "true",

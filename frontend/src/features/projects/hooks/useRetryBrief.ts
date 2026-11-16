@@ -10,7 +10,7 @@ import type { ProjectOut } from "../types";
  * la page relit le projet pour suivre la nouvelle session. 409 `brief_not_failed` : l'énoncé a déjà
  * été relancé, la page se relit pour montrer l'état réel.
  */
-export function useRetryBrief(projectId: string) {
+export function useRetryBrief(projectId: string, onRetried?: () => void) {
   const client = useQueryClient();
   const sending = useRef(false);
   const mutation = useMutation({
@@ -24,6 +24,7 @@ export function useRetryBrief(projectId: string) {
       if (sending.current || (status !== undefined && status !== "brief_failed")) return;
       sending.current = true;
       void mutateAsync()
+        .then(() => onRetried?.())
         .catch(() => null)
         .finally(() => {
           sending.current = false;

@@ -24,6 +24,9 @@ export function ProjectPage({ createSocket }: { createSocket?: SocketFactory }) 
   return (
     <div className="flex flex-col gap-4">
       <BackLink />
+      {missing ? null : (
+        <h1 className="text-2xl font-semibold">{t("projects.page.genericTitle")}</h1>
+      )}
       {query.isPending ? <LoadingState label={t("projects.page.loading")} /> : null}
       {missing ? (
         <EmptyState

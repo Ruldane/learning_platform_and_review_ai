@@ -13,13 +13,15 @@ interface RunAreaProps {
   byAddress: boolean;
   view: RunView | null | undefined;
   detail: ReturnType<typeof useRadarRun>;
+  /** Un lancement vient de mener ici : le suivi du relevé reprend le focus du bouton. */
+  focusRun?: boolean;
 }
 
 /** Le relevé montré, ou ce qui en tient lieu : chargement, relevé introuvable, erreur, rien encore. */
-export function RunArea({ byAddress, view, detail }: RunAreaProps) {
+export function RunArea({ byAddress, view, detail, focusRun = false }: RunAreaProps) {
   const navigate = useNavigate();
   const { query } = detail;
-  if (view) return <RunSection view={view} follow={detail} />;
+  if (view) return <RunSection view={view} follow={detail} focusOnMount={focusRun} />;
   if (!byAddress) {
     return (
       <EmptyState title={t("radar.page.emptyTitle")} description={t("radar.page.emptyText")} />

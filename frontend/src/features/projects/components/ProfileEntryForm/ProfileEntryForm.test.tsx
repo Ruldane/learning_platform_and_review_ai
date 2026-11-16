@@ -35,6 +35,12 @@ describe("ProfileEntryForm", () => {
     expect(onAdd).toHaveBeenCalledWith(ENTRY);
   });
 
+  it("does not add the entry when Enter is pressed in the name field", async () => {
+    const { onAdd, user } = setup();
+    await user.type(screen.getByLabelText("Nom du projet"), " bis{Enter}");
+    expect(onAdd).not.toHaveBeenCalled();
+  });
+
   it("drops empty and blank achievement lines and trims the name and the description", async () => {
     const { onAdd, user } = setup({ name: "", description: "", achievements: [] });
     await user.type(screen.getByLabelText("Nom du projet"), "  Pipeline  ");
@@ -105,7 +111,10 @@ describe("ProfileEntryForm", () => {
 
   it("disables the button while the entry is being added", () => {
     render(<ProfileEntryForm entry={ENTRY} added={false} busy onAdd={vi.fn()} />);
-    expect(screen.getByRole("button", { name: "Ajout en cours…" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Ajout en cours…" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
   });
 
   it("reads its entry once: a new entry comes with a new key", () => {

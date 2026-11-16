@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { t } from "@/shared/i18n/t";
 import type { SocketFactory } from "@/shared/realtime/socket";
 import { ProjectBriefView } from "../../components/ProjectBriefView";
@@ -27,6 +28,7 @@ export function ProjectView({ project, createSocket }: ProjectViewProps) {
   const sessionId = FOLLOWED.includes(project.status) ? project.sessionId : null;
   const run = useProjectRun(project.id, sessionId, createSocket);
   const submitter = useSubmitProject(project.id);
+  const [retried, setRetried] = useState(false);
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-2">
@@ -41,11 +43,14 @@ export function ProjectView({ project, createSocket }: ProjectViewProps) {
         <RunPanel
           title={t("projects.page.briefTitle")}
           text={t("projects.page.briefPending")}
+          focusOnMount={retried}
           run={run}
           sessionId={sessionId}
         />
       ) : null}
-      {project.status === "brief_failed" ? <BriefFailed projectId={project.id} /> : null}
+      {project.status === "brief_failed" ? (
+        <BriefFailed projectId={project.id} onRetried={() => setRetried(true)} />
+      ) : null}
       <StatusSections project={project} run={run} submitter={submitter} />
       <SubmissionHistory submissions={project.submissions} />
     </div>

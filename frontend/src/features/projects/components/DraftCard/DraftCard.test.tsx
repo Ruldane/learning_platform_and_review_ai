@@ -44,9 +44,9 @@ describe("DraftCard", () => {
   it("saves the edited text, and only once it differs from the saved one", async () => {
     const { onSave, user } = setup();
     const save = screen.getByRole("button", { name: "Enregistrer" });
-    expect(save).toBeDisabled();
+    expect(save).toHaveAttribute("aria-disabled", "true");
     await user.type(screen.getByLabelText("Post LinkedIn"), " Merci !");
-    expect(save).toBeEnabled();
+    expect(save).toHaveAttribute("aria-disabled", "false");
     await user.click(save);
     expect(onSave).toHaveBeenCalledWith("J'ai construit un pipeline SQL. Merci !");
   });
@@ -62,7 +62,10 @@ describe("DraftCard", () => {
     );
     expect(screen.getByLabelText("Post LinkedIn")).toHaveValue("Texte enregistré.");
     expect(screen.getByText("Retouché par toi")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Enregistrer" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Enregistrer" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
   });
 
   it("copies the text on screen, including edits, and confirms in a status region", async () => {
@@ -78,6 +81,41 @@ describe("DraftCard", () => {
     const { user } = setup(DRAFT, vi.fn().mockRejectedValue(new Error("denied")));
     await user.click(screen.getByRole("button", { name: "Copier" }));
     expect(await screen.findByText(/Copie impossible/)).toBeInTheDocument();
+  });
+
+  it("keeps the focus on « Enregistrer » while it is busy (aria-disabled, never disabled)", async () => {
+    const { user, onSave } = setup();
+    await user.type(screen.getByLabelText("Post LinkedIn"), "!");
+    const save = screen.getByRole("button", { name: "Enregistrer" });
+    await user.click(save);
+    expect(onSave).toHaveBeenCalledTimes(1);
+    expect(save).toHaveFocus();
+    expect(save).not.toBeDisabled();
+  });
+
+  it("says on the card that a blank text cannot be saved, and sends nothing", async () => {
+    const { user, onSave } = setup();
+    await user.clear(screen.getByLabelText("Post LinkedIn"));
+    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+    expect(onSave).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert")).toHaveTextContent("Le brouillon est vide");
+    expect(screen.getByLabelText("Post LinkedIn")).toHaveAttribute("aria-invalid", "true");
+  });
+
+  it("says on the card that a text of more than 3 000 characters cannot be saved", async () => {
+    const { user, onSave } = setup();
+    const area = screen.getByLabelText("Post LinkedIn");
+    await user.clear(area);
+    await user.click(area);
+    await user.paste("a".repeat(3001));
+    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+    expect(onSave).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert")).toHaveTextContent("3000 caractères au plus");
+  });
+
+  it("shows the server's refusal on its own card", () => {
+    render(<DraftCard draft={DRAFT} onSave={vi.fn()} onCopy={vi.fn()} error="Requête invalide." />);
+    expect(screen.getByRole("alert")).toHaveTextContent("Requête invalide.");
   });
 
   it("reminds that nothing is published by the application", () => {

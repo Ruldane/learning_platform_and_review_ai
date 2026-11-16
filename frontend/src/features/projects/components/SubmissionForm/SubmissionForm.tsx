@@ -61,7 +61,7 @@ export function SubmissionForm({ onSubmit, busy, refusal = null }: SubmissionFor
         onDescription={setDescription}
         onScreenshots={setScreenshots}
       />
-      <Button type="submit" className="self-start" disabled={busy}>
+      <Button type="submit" className="self-start" aria-disabled={busy}>
         {busy ? t("projects.submission.busy") : t("projects.submission.submit")}
       </Button>
     </form>

@@ -31,17 +31,19 @@ export function ProfileEntryForm(props: ProfileEntryFormProps) {
   const [errors, setErrors] = useState<EntryErrors>({});
   const locked = added || busy;
 
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
+  // Le formulaire ne se soumet jamais : Entrée dans « Nom du projet » n'ajoute rien au profil
+  // maître (une écriture qui ne s'annule pas) ; seul le bouton « Ajouter » appelle `add`.
+  const add = () => {
     if (locked) return;
     const cleaned = cleanEntry(name, description, lines);
     setErrors(cleaned.errors);
     if (Object.keys(cleaned.errors).length === 0) onAdd(cleaned.entry);
   };
+  const ignoreEnter = (event: FormEvent) => event.preventDefault();
 
   return (
     <form
-      onSubmit={submit}
+      onSubmit={ignoreEnter}
       noValidate
       aria-label={t("projects.entry.label")}
       aria-busy={busy}
@@ -71,7 +73,7 @@ export function ProfileEntryForm(props: ProfileEntryFormProps) {
         rows={4}
         onChange={setLines}
       />
-      <EntryFooter added={added} version={version} busy={busy} />
+      <EntryFooter added={added} version={version} busy={busy} onAdd={add} />
     </form>
   );
 }

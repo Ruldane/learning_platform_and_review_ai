@@ -22,6 +22,8 @@ export function useSaveDraft(projectId: string) {
   return {
     save: (kind: DraftKind, content: string) => mutate({ kind, content }),
     savingKind: mutation.isPending ? mutation.variables.kind : null,
+    /** Le refus ou la panne du dernier enregistrement, et le brouillon qu'il concerne. */
     error: mutation.isError ? readableMessage(mutation.error) : null,
+    errorKind: mutation.isError ? mutation.variables.kind : null,
   };
 }

@@ -22,15 +22,16 @@ export function AdviceCard({ sentences, status }: AdviceCardProps) {
       <h2 id="home-advice" className="text-lg font-medium">
         {t("home.advice.title")}
       </h2>
-      {ready ? (
-        sentences.map((sentence, index) => <p key={`${index}-${sentence}`}>{sentence}</p>)
-      ) : status === "pending" ? (
-        <p role="status" className="text-muted-foreground">
-          {t("home.advice.pending")}
-        </p>
-      ) : (
-        <p className="text-muted-foreground">{t("home.advice.unavailable")}</p>
-      )}
+      {/* Région vocale polie, toujours là : l'arrivée du conseil (ou son échec) est annoncée. */}
+      <div aria-live="polite" className="flex flex-col gap-2">
+        {ready ? (
+          sentences.map((sentence, index) => <p key={`${index}-${sentence}`}>{sentence}</p>)
+        ) : status === "pending" ? (
+          <p className="text-muted-foreground">{t("home.advice.pending")}</p>
+        ) : (
+          <p className="text-muted-foreground">{t("home.advice.unavailable")}</p>
+        )}
+      </div>
     </section>
   );
 }

@@ -17,7 +17,7 @@ function details(offer: RadarOfferView): string[] {
   const known = LEVELS[offer.level];
   return [
     known ? t(`radar.offers.level.${known}`) : null,
-    offer.remote,
+    offer.remote ? t("radar.offers.remote", { remote: offer.remote }) : null,
     offer.salary ? t("radar.offers.salary", { salary: offer.salary }) : null,
   ].filter((part): part is string => Boolean(part));
 }

@@ -46,6 +46,7 @@ export const radar = {
     score: "score {score} sur 100",
     goodMatch: "Bon match",
     salary: "Salaire indiqué : {salary}",
+    remote: "Télétravail : {remote}",
     level: {
       junior: "Junior",
       confirme: "Confirmé",
@@ -109,6 +110,7 @@ export const radar = {
       not_finalized: "les agents ont fini sans que le relevé soit mis en forme.",
       session_ended: "la session des agents s'est arrêtée avant la fin du relevé.",
       run_failed: "le relevé planifié n'a pas pu aller au bout.",
+      llm_unavailable: "aucun modèle n'est utilisable (clé absente ?) : rien n'a été lu.",
       node_timeout: "une étape du relevé a pris trop de temps.",
       structured_output_invalid: "l'analyse des offres n'a pas donné de réponse exploitable.",
       web_quota_reached: "le plafond de lectures du web a été atteint.",

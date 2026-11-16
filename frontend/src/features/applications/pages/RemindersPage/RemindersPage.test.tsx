@@ -68,14 +68,30 @@ describe("RemindersPage", () => {
       expect(screen.getAllByRole("article")[0]).toHaveAttribute("aria-busy", "true"),
     );
     for (const name of ["Fait", "Classer en Sans réponse", "Reporter de 3 jours", "Ignorer"]) {
-      for (const button of screen.getAllByRole("button", { name })) expect(button).toBeDisabled();
+      for (const button of screen.getAllByRole("button", { name }))
+        expect(button).toHaveAttribute("aria-disabled", "true");
     }
     expect(card.getByRole("button", { name: "Copier" })).toBeEnabled();
     release();
     await waitFor(() =>
-      expect(screen.getAllByRole("button", { name: "Ignorer" })[0]).toBeEnabled(),
+      expect(screen.getAllByRole("button", { name: "Ignorer" })[0]).toHaveAttribute(
+        "aria-disabled",
+        "false",
+      ),
     );
     expect(screen.getAllByRole("article")[0]).toHaveAttribute("aria-busy", "false");
+  });
+
+  it("keeps the focus on the action button when the action fails", async () => {
+    const { user } = setup({
+      reminderAction: () =>
+        HttpResponse.json(apiError("internal_error", "Panne."), { status: 500 }),
+    });
+    const card = await cardOf("Relance LinkedIn à 7 jours");
+    const postpone = card.getByRole("button", { name: "Reporter de 3 jours" });
+    await user.click(postpone);
+    expect(await screen.findByRole("alert")).toBeVisible();
+    expect(postpone).toHaveFocus();
   });
 
   it("lists the due reminders with who to contact and the draft", async () => {

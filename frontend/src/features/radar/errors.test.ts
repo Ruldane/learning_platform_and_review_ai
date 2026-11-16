@@ -39,6 +39,9 @@ describe("launchErrors", () => {
 describe("failureReason", () => {
   it("explains every known code and falls back for the others", () => {
     expect(failureReason("session_cancelled")).toBe("le relevé a été arrêté avant la fin.");
+    expect(failureReason("llm_unavailable")).toBe(
+      "aucun modèle n'est utilisable (clé absente ?) : rien n'a été lu.",
+    );
     expect(failureReason("RuntimeError")).toBe("une panne inattendue a interrompu le relevé.");
     expect(failureReason(null)).toBe("une panne inattendue a interrompu le relevé.");
   });

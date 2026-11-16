@@ -55,6 +55,6 @@ describe("ProjectPage : finitions", () => {
   it("says no draft was written for a validated project that has none", async () => {
     setup({ projects: [validated({ drafts: [] })] });
     expect(await screen.findByText("Aucun brouillon n'a été écrit pour ce projet.")).toBeVisible();
-    expect(await addButton()).toBeEnabled();
+    expect(await addButton()).toHaveAttribute("aria-disabled", "false");
   });
 });

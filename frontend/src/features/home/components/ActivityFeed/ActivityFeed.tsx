@@ -7,15 +7,24 @@ interface ActivityFeedProps {
   items: ActivityItemView[];
   hasMore: boolean;
   onMore: () => void;
+  /** La page suivante est en cours de lecture : « Voir plus » le dit et n'envoie rien de plus. */
+  loadingMore?: boolean;
   /** « Maintenant » pour les dates relatives ; l'heure du poste par défaut. */
   now?: Date;
 }
 
 /** Le fil d'activité : événements datés (« il y a 5 min », date complète au survol) et « Voir plus ». */
-export function ActivityFeed({ items, hasMore, onMore, now = new Date() }: ActivityFeedProps) {
+export function ActivityFeed({
+  items,
+  hasMore,
+  onMore,
+  loadingMore = false,
+  now = new Date(),
+}: ActivityFeedProps) {
   return (
     <section
       aria-labelledby="home-activity"
+      aria-busy={loadingMore}
       className="flex flex-col gap-3 rounded-xl border bg-card p-4"
     >
       <h2 id="home-activity" className="text-lg font-medium">
@@ -31,8 +40,14 @@ export function ActivityFeed({ items, hasMore, onMore, now = new Date() }: Activ
         </ul>
       )}
       {hasMore ? (
-        <Button variant="outline" className="self-start" onClick={onMore}>
-          {t("home.activity.more")}
+        <Button
+          variant="outline"
+          className="self-start"
+          aria-busy={loadingMore}
+          aria-disabled={loadingMore}
+          onClick={() => !loadingMore && onMore()}
+        >
+          {loadingMore ? t("home.activity.loadingMore") : t("home.activity.more")}
         </Button>
       ) : null}
     </section>

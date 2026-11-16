@@ -17,7 +17,15 @@ describe("AdviceCard", () => {
 
   it("says the council is meeting while the advice is pending", () => {
     render(<AdviceCard status="pending" sentences={null} />);
-    expect(screen.getByRole("status")).toHaveTextContent("Le conseil se réunit…");
+    expect(screen.getByText("Le conseil se réunit…")).toBeInTheDocument();
+  });
+
+  it("announces the advice when it arrives, in a polite live region that is always there", () => {
+    const { rerender } = render(<AdviceCard status="pending" sentences={null} />);
+    const region = screen.getByText("Le conseil se réunit…").parentElement;
+    expect(region).toHaveAttribute("aria-live", "polite");
+    rerender(<AdviceCard status="ready" sentences={["Révise tes fiches avant de lire."]} />);
+    expect(screen.getByText("Révise tes fiches avant de lire.").parentElement).toBe(region);
   });
 
   it.each(["failed", "unavailable"] as const)(

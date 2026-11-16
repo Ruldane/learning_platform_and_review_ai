@@ -88,7 +88,8 @@ describe("RadarPage : résultat et historique", () => {
         }),
         radarRun("r2", {
           created_at: "2026-11-09T09:00:00Z",
-          read_count: 25,
+          read_count: 30,
+          not_postings: 5,
           analyzed: 20,
           low_sample: true,
           role: "Analyste",

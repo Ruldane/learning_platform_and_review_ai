@@ -150,7 +150,7 @@ describe("ReminderCard", () => {
     render(<ReminderCard reminder={makeReminder()} pending {...handlers} />);
     expect(screen.getByRole("article")).toHaveAttribute("aria-busy", "true");
     for (const name of ["Fait", "Reporter de 3 jours", "Ignorer"]) {
-      expect(screen.getByRole("button", { name })).toBeDisabled();
+      expect(screen.getByRole("button", { name })).toHaveAttribute("aria-disabled", "true");
     }
     expect(screen.getByRole("button", { name: "Copier" })).toBeEnabled();
     await user.click(screen.getByRole("button", { name: "Fait" }));

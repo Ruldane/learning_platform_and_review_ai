@@ -26,6 +26,12 @@ describe("RadarSummary", () => {
     expect(screen.getByText("Poste : Data engineer, zone : France")).toBeInTheDocument();
   });
 
+  it("counts only the postings as offers read, the other pages are said apart", () => {
+    render(<RadarSummary run={{ ...RUN, readCount: 35, notPostings: 7, analyzed: 28 }} />);
+    expect(screen.getByText("28 offres lues · 6 bloquées · 28 analysées")).toBeInTheDocument();
+    expect(screen.getByText("7 pages lues n'étaient pas des offres.")).toBeInTheDocument();
+  });
+
   it("uses the singular", () => {
     render(<RadarSummary run={{ ...RUN, readCount: 1, blockedCount: 1, analyzed: 1 }} />);
     expect(screen.getByText("1 offre lue · 1 bloquée · 1 analysée")).toBeInTheDocument();

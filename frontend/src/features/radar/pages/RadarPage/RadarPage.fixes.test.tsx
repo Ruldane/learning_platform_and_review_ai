@@ -64,7 +64,10 @@ describe("RadarPage : relevé fini sans que le flux le dise", () => {
       sessions: [sessionOut("sess-r9", "running", radarSession("r9"))],
     });
     await openStream(sockets, "sess-r9");
-    expect(await screen.findByRole("button", { name: "Relevé en cours…" })).toBeDisabled();
+    expect(await screen.findByRole("button", { name: "Relevé en cours…" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
     expect(
       within(screen.getByRole("list", { name: "Relevés précédents" })).getByText("En cours"),
     ).toBeVisible();
@@ -72,7 +75,10 @@ describe("RadarPage : relevé fini sans que le flux le dise", () => {
     // Le flux reste muet : seul le repli de 10 s peut voir la fin.
     finish("r9");
     await act(() => vi.advanceTimersByTimeAsync(10_500));
-    expect(await screen.findByRole("button", { name: "Lancer un relevé" })).toBeEnabled();
+    expect(await screen.findByRole("button", { name: "Lancer un relevé" })).toHaveAttribute(
+      "aria-disabled",
+      "false",
+    );
     const history = screen.getByRole("list", { name: "Relevés précédents" });
     expect(within(history).getByText("Terminé")).toBeVisible();
     expect(within(history).queryByText("En cours")).toBeNull();

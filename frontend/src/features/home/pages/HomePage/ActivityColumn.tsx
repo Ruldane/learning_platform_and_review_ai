@@ -16,7 +16,12 @@ export function ActivityColumn() {
   }
   return (
     <div className="flex flex-col gap-3">
-      <ActivityFeed items={activity.items} hasMore={activity.hasMore} onMore={activity.loadMore} />
+      <ActivityFeed
+        items={activity.items}
+        hasMore={activity.hasMore}
+        loadingMore={activity.loadingMore}
+        onMore={activity.loadMore}
+      />
       {activity.moreError ? (
         <InlineError message={errorMessage(activity.moreError)} onRetry={activity.loadMore} />
       ) : null}

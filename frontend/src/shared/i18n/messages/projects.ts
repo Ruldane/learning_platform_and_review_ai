@@ -19,6 +19,7 @@ export const projects = {
   },
   page: {
     back: "Retour au Portfolio",
+    genericTitle: "Projet",
     loading: "Chargement du projet…",
     notFoundTitle: "Projet introuvable",
     notFoundText: "Ce projet n'existe pas.",
@@ -152,6 +153,8 @@ export const projects = {
     copy: "Copier",
     copied: "Brouillon copié.",
     copyFailed: "Copie impossible : sélectionne le texte du brouillon.",
+    errorEmpty: "Le brouillon est vide : écris un texte avant d'enregistrer.",
+    errorTooLong: "Ce brouillon est trop long : {max} caractères au plus.",
     toCheck: "À vérifier : absent de ton profil et de ton rendu : {flags}",
     toCheckNoFlag: "À vérifier avant de l'utiliser.",
     notSent: "Rien n'est publié par l'application : copie et publie toi-même.",

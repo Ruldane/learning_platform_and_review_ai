@@ -39,8 +39,8 @@ describe("RadarForm", () => {
     const onRun = vi.fn();
     render(<RadarForm role="Data engineer" zone="France" onRun={onRun} running />);
     const button = screen.getByRole("button", { name: "Relevé en cours…" });
-    expect(button).toBeDisabled();
-    expect(screen.getByLabelText("Poste visé")).toBeDisabled();
+    expect(button).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByLabelText("Poste visé")).toHaveAttribute("readonly");
     expect(screen.getByRole("form", { name: "Lancer un relevé du marché" })).toHaveAttribute(
       "aria-busy",
       "true",

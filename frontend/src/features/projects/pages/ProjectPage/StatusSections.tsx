@@ -39,6 +39,7 @@ export function StatusSections({ project, run, submitter }: StatusSectionsProps)
           title={t("projects.page.reviewing")}
           text={t("projects.page.reviewingText")}
           note={submitter.resumed ? t("projects.page.resumed") : null}
+          focusOnMount={submitter.submitted}
           run={run}
           sessionId={project.sessionId}
         />

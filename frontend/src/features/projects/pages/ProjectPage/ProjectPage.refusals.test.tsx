@@ -81,7 +81,7 @@ describe("ProjectPage : refus du serveur", () => {
     await user.type(await screen.findByLabelText("Description"), "Une requête SQL.");
     await user.click(await submitButton());
     expect(await screen.findByRole("alert")).toHaveTextContent(message);
-    expect(await submitButton()).toBeEnabled();
+    expect(await submitButton()).toHaveAttribute("aria-disabled", "false");
   });
 
   it("follows the review already in progress (409 review_in_progress) instead of failing", async () => {

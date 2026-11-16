@@ -48,13 +48,13 @@ describe("RadarOffers", () => {
     render(
       <RadarOffers
         offers={[
-          offer({ remote: "télétravail partiel", salary: "45 000 à 55 000 €", level: "senior" }),
+          offer({ remote: "partiel", salary: "45 000 à 55 000 €", level: "senior" }),
           offer({ title: "Sans détail", url: "https://example.org/jobs/9", level: "inconnu" }),
         ]}
       />,
     );
     expect(rowOf("Data engineer")).toHaveTextContent(
-      "Senior · télétravail partiel · Salaire indiqué : 45 000 à 55 000 €",
+      "Senior · Télétravail : partiel · Salaire indiqué : 45 000 à 55 000 €",
     );
     expect(rowOf("Sans détail")).not.toHaveTextContent("Salaire");
     expect(rowOf("Sans détail")).not.toHaveTextContent("Inconnu");

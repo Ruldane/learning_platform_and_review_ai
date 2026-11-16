@@ -12,7 +12,8 @@ function plural(count: number, key: "read" | "blocked" | "analyzed"): string {
 }
 
 /**
- * Ce que le relevé a réellement lu : « 47 offres lues · 6 bloquées · 41 analysées », les domaines
+ * Ce que le relevé a réellement lu : « 47 offres lues · 6 bloquées · 41 analysées » (les offres
+ * sont les pages lisibles moins celles qui n'étaient pas des offres, dites à part), les domaines
  * bloqués à part (dépliables), et le bandeau d'échantillon réduit quand il y a moins de 30 offres.
  */
 export function RadarSummary({ run }: RadarSummaryProps) {
@@ -29,7 +30,7 @@ export function RadarSummary({ run }: RadarSummaryProps) {
       </p>
       <p className="font-medium tabular-nums">
         {[
-          plural(run.readCount, "read"),
+          plural(Math.max(0, run.readCount - run.notPostings), "read"),
           plural(run.blockedCount, "blocked"),
           plural(run.analyzed, "analyzed"),
         ].join(" · ")}

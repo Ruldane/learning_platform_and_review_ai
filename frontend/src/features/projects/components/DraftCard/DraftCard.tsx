@@ -1,9 +1,10 @@
 import { useId, useState } from "react";
 import { t } from "@/shared/i18n/t";
-import { fieldClass } from "@/shared/ui/fieldClass";
 import type { DraftView } from "../viewTypes";
 import { DraftActions, type CopyState } from "./DraftActions";
+import { DraftField } from "./DraftField";
 import { DraftNotice } from "./DraftNotice";
+import { useDraftText } from "./useDraftText";
 
 interface DraftCardProps {
   draft: DraftView;
@@ -13,18 +14,15 @@ interface DraftCardProps {
   onCopy: (content: string) => void | Promise<void>;
   /** L'enregistrement est en cours. */
   saving?: boolean;
+  /** Le refus ou la panne du dernier enregistrement de CE brouillon, dit sur sa carte. */
+  error?: string | null;
 }
 
 /** Un brouillon au nom de January : texte modifiable, « Enregistrer », « Copier » et l'avertissement « À vérifier ». */
-export function DraftCard({ draft, onSave, onCopy, saving = false }: DraftCardProps) {
+export function DraftCard({ draft, onSave, onCopy, saving = false, error = null }: DraftCardProps) {
   const id = useId();
-  const [value, setValue] = useState(draft.content);
-  const [seen, setSeen] = useState(draft.content);
+  const { value, setValue, message, tryOk } = useDraftText(draft.content, error);
   const [copy, setCopy] = useState<CopyState>("idle");
-  if (seen !== draft.content) {
-    setSeen(draft.content);
-    setValue(draft.content);
-  }
 
   const copyText = async () => {
     try {
@@ -46,21 +44,22 @@ export function DraftCard({ draft, onSave, onCopy, saving = false }: DraftCardPr
         ) : null}
       </header>
       <DraftNotice draft={draft} />
-      <textarea
+      <DraftField
         id={id}
-        rows={6}
         value={value}
-        onChange={(event) => {
-          setValue(event.target.value);
+        message={message}
+        onChange={(next) => {
+          setValue(next);
           setCopy("idle");
         }}
-        className={`${fieldClass} h-auto py-2`}
       />
       <DraftActions
         canSave={value !== draft.content}
         saving={saving}
         copy={copy}
-        onSave={() => onSave(value)}
+        onSave={() => {
+          if (tryOk()) onSave(value);
+        }}
         onCopy={() => void copyText()}
       />
       <p className="text-xs text-muted-foreground">{t("projects.draft.notSent")}</p>

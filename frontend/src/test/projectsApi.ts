@@ -16,6 +16,8 @@ export interface ProjectsApiOptions {
   recheckFlags?: string[];
   /** Remplace la réponse de `POST /projects/{id}/submit`. */
   submitReply?: () => Response;
+  /** Remplace la réponse de `PATCH /projects/{id}/drafts/{kind}`. */
+  draftReply?: () => Response;
   /** Remplace la réponse de `POST /projects/{id}/profile-entry`. */
   entryReply?: () => Response;
   /** Remplace la réponse de `POST /projects/{id}/brief`. */
@@ -138,6 +140,7 @@ function submitHandler(state: ProjectsState) {
 
 function draftHandler(state: ProjectsState) {
   return http.patch(`${API}/projects/:id/drafts/:kind`, async ({ request, params }) => {
+    if (state.options.draftReply) return state.options.draftReply();
     const body = (await request.json()) as Over;
     const kind = String(params.kind);
     state.patches.push({ id: String(params.id), kind, body });

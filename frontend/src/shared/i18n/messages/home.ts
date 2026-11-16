@@ -84,6 +84,7 @@ export const home = {
     empty: "Rien de nouveau pour l'instant.",
     listLabel: "Activité récente",
     more: "Voir plus",
+    loadingMore: "Chargement…",
     loading: "Chargement de l'activité…",
     kind: {
       lesson: "Leçon",

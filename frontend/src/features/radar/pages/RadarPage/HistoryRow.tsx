@@ -30,7 +30,7 @@ export function HistoryRow({ item, current }: { item: HistoryItemView; current: 
       ) : (
         <span className="tabular-nums">
           {t("radar.history.counts", {
-            read: item.readCount,
+            read: Math.max(0, item.readCount - item.notPostings),
             blocked: item.blockedCount,
             analyzed: item.analyzed,
           })}

@@ -64,5 +64,7 @@ export function useSubmitProject(projectId: string) {
     refusal: failure?.refusal ?? null,
     message: failure?.general ?? null,
     resumed: mutation.data?.resumed ?? false,
+    /** Un rendu est parti depuis cette page : le formulaire s'efface, le suivi reprend le focus. */
+    submitted: mutation.isSuccess,
   };
 }

@@ -4,6 +4,7 @@ import { fieldClass } from "@/shared/ui/fieldClass";
 interface TextFieldProps {
   label: string;
   value: string;
+  /** Un relevé tourne : le champ reste lisible et garde le focus (`readOnly`, jamais `disabled`). */
   disabled: boolean;
   /** Le message d'erreur du champ ; `undefined` quand il est correct. */
   error?: string;
@@ -22,7 +23,8 @@ export function TextField({ label, value, disabled, error, onChange }: TextField
         id={id}
         value={value}
         maxLength={120}
-        disabled={disabled}
+        readOnly={disabled}
+        aria-disabled={disabled}
         aria-invalid={error !== undefined}
         aria-describedby={error ? `${id}-error` : undefined}
         onChange={(event) => onChange(event.target.value)}

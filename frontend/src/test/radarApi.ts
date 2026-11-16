@@ -62,6 +62,7 @@ const SUMMARY_KEYS = [
   "finished_at",
   "error_code",
   "read_count",
+  "not_postings",
   "blocked_count",
   "analyzed",
   "low_sample",

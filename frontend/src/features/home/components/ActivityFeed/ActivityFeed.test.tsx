@@ -92,4 +92,23 @@ describe("ActivityFeed", () => {
     expect(screen.getByText("Rien de nouveau pour l'instant.")).toBeInTheDocument();
     expect(screen.queryByRole("list")).toBeNull();
   });
+
+  it("says it is loading while the next page is read, and sends nothing more", async () => {
+    const onMore = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <ActivityFeed items={ITEMS} hasMore loadingMore onMore={onMore} now={NOW} />
+      </MemoryRouter>,
+    );
+    const more = screen.getByRole("button", { name: "Chargement…" });
+    expect(more).toHaveAttribute("aria-busy", "true");
+    expect(more).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("region", { name: "Activité récente" })).toHaveAttribute(
+      "aria-busy",
+      "true",
+    );
+    await user.click(more);
+    expect(onMore).not.toHaveBeenCalled();
+  });
 });

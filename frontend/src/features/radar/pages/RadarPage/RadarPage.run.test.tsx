@@ -34,8 +34,13 @@ describe("RadarPage : lancer et suivre un relevé", () => {
 
     expect(state.bodies).toEqual([{ role: "Analyste données", zone: "France" }]);
     await waitFor(() => expect(router.state.location.pathname).toBe("/carriere/radar/new1"));
-    expect(await screen.findByRole("heading", { name: "Relevé en cours" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Relevé en cours…" })).toBeDisabled();
+    const title = await screen.findByRole("heading", { name: "Relevé en cours" });
+    expect(title).toBeVisible();
+    expect(title).toHaveFocus(); // le formulaire a été remplacé par la page du relevé : pas de body
+    expect(screen.getByRole("button", { name: "Relevé en cours…" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
 
     const stream = await openStream(sockets, "sess-new1");
     // La session suivie est celle du 202 : le serveur ne la donne dans aucune liste.
@@ -56,7 +61,10 @@ describe("RadarPage : lancer et suivre un relevé", () => {
     stream.push(events.completed());
     expect(await screen.findByText("47 offres lues · 6 bloquées · 41 analysées")).toBeVisible();
     expect(screen.getByRole("heading", { name: "Compétences les plus demandées" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Lancer un relevé" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Lancer un relevé" })).toHaveAttribute(
+      "aria-disabled",
+      "false",
+    );
   });
 
   it("follows a run that is already in progress: found by its subject, then its result", async () => {
@@ -66,7 +74,10 @@ describe("RadarPage : lancer et suivre un relevé", () => {
     });
     await waitFor(() => expect(router.state.location.pathname).toBe("/carriere/radar/r9"));
     expect(await screen.findByRole("heading", { name: "Relevé en cours" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Relevé en cours…" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Relevé en cours…" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
 
     const stream = await openStream(sockets, "sess-r9");
     finish("r9", { ranking: [trendOut("Python", 1, 0.5)], analyzed: 41 });

@@ -82,7 +82,7 @@ describe("ProjectPage : l'énoncé", () => {
     expect(
       await screen.findByText("Agréger les ventes de « Société Fictive » par mois."),
     ).toBeVisible();
-    expect(await submitButton()).toBeEnabled();
+    expect(await submitButton()).toHaveAttribute("aria-disabled", "false");
   });
 
   it("offers « Réessayer l'énoncé » when the brief failed, and follows the new session", async () => {
@@ -239,6 +239,6 @@ describe("ProjectPage : rendre le projet et suivre l'évaluation", () => {
     expect(
       screen.getByText("À reprendre : corrige ce qui manque, puis rends à nouveau ton projet."),
     ).toBeVisible();
-    expect(await submitButton()).toBeEnabled();
+    expect(await submitButton()).toHaveAttribute("aria-disabled", "false");
   });
 });

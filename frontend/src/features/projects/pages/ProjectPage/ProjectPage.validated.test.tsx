@@ -258,7 +258,10 @@ describe("ProjectPage : l'ajout au profil maître", () => {
     expect(alert).toBeVisible();
     const link = screen.queryByRole("link", { name: "Ouvrir ton profil maître" });
     expect(link !== null).toBe(withLink);
-    expect(screen.getByRole("button", { name: "Ajouter au profil maître" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Ajouter au profil maître" })).toHaveAttribute(
+      "aria-disabled",
+      "false",
+    );
   });
 
   it("leads to the master profile from « profile_draft_pending »", async () => {

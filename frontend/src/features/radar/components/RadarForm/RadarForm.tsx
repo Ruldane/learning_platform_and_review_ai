@@ -89,7 +89,7 @@ export function RadarForm({ role, zone, onRun, running, roleError, zoneError }: 
         }}
       />
       <p className="text-xs text-muted-foreground">{t("radar.form.hint")}</p>
-      <Button type="submit" className="self-start" disabled={running}>
+      <Button type="submit" className="self-start" aria-disabled={running}>
         {running ? t("radar.form.running") : t("radar.form.run")}
       </Button>
     </form>
