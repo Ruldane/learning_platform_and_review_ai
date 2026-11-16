@@ -1,7 +1,9 @@
 """Serveur du parcours de bout en bout (SPEC 18.2) : l'application réelle (lifespan, moteur,
 features, migrations Alembic) sur des fournisseurs factices et les modèles scriptés du Conseil.
 Aucun réseau ni LLM réel : mémoire en local (`HashingEmbedder`, Qdrant en mémoire), web factice
-de 10 pages, de la fiche d'une entreprise fictive et de la page d'une offre, rendu PDF textuel
+de 10 pages, de la fiche d'une entreprise fictive, de la page d'une offre, des ressources du
+brief et
+de onze liens d'offres du radar, rendu PDF textuel
 (`TextHtmlRenderer` : le texte du HTML écrit en un vrai PDF, relisible), polices factices, mise en
 page des PDF locale, modèles scriptés par agent (Conseil, CV et Assistant de suivi), santé sans
 sonde (tous les services annoncés disponibles). Le modèle de vision est celui du niveau par défaut
@@ -37,6 +39,7 @@ from app.providers.search.fake import FakeSearch
 from tests.e2e.applications_script import applications_scripts, script_posting_web
 from tests.e2e.council_script import DEBATERS, council_scripts, script_web
 from tests.e2e.cv_script import cv_scripts, script_company_web
+from tests.e2e.daily_script import daily_scripts, script_daily_web
 from tests.e2e.scripted_models import Reply, ScriptedModels, merge_scripts
 from tests.support.memory import FakeWebReader, fake_memory_providers, fake_publishing_providers
 from tests.support.research import fake_research_providers
@@ -76,20 +79,24 @@ def build_app(
     scripts: Mapping[str, Sequence[Reply]] | None = None,
 ) -> FastAPI:
     """L'application sur les fournisseurs factices ; le schéma doit déjà exister. `scripts` : les
-    réponses des agents (par défaut celles des parcours n° 1, n° 2 et n° 3)."""
+    réponses des agents (par défaut celles des parcours n° 1 à n° 4)."""
     memory = fake_memory_providers(settings.data_dir)
     assert isinstance(memory.web, FakeWebReader)
     search = FakeSearch("searxng")
     script_web(memory.web, search)
     script_company_web(memory.web, search)
     script_posting_web(memory.web)
+    script_daily_web(memory.web, search)
     app = create_app(
         settings,
         memory_providers=memory,
         research_providers=fake_research_providers(memory.web, searxng=search),
         publishing_providers=fake_publishing_providers(TextHtmlRenderer()),
         chat_models=ScriptedModels(
-            scripts or merge_scripts(applications_scripts(), council_scripts(), cv_scripts()),
+            scripts
+            or merge_scripts(
+                daily_scripts(), applications_scripts(), council_scripts(), cv_scripts()
+            ),
             delays=delays,
         ),
     )
@@ -140,7 +147,7 @@ def e2e_settings(data_dir: Path, *, origin: str) -> Settings:
 
 def _parse(argv: Sequence[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Serveur des parcours de bout en bout (n° 1 à n° 3)."
+        description="Serveur des parcours de bout en bout (n° 1 à n° 4)."
     )
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--host", default="127.0.0.1")

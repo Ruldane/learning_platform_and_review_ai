@@ -147,7 +147,7 @@ async function sayItAndCancel(page: Page): Promise<void> {
 
 /** 6. La pastille de la navigation, puis la page Relances : la relance de 7 jours et son brouillon. */
 async function reminderIsDue(page: Page): Promise<Locator> {
-  const nav = page.getByRole("link", { name: /^Relances\s*, 1 relance due$/ });
+  const nav = page.getByRole("link", { name: "Relances, 1 relance due", exact: true });
   await expect(nav).toBeVisible();
   await nav.click();
   await expect(page).toHaveURL(/\/candidatures\/relances$/);
