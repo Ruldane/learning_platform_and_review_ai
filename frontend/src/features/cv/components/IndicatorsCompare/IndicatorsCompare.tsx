@@ -24,7 +24,7 @@ export function IndicatorsCompare({ before, after }: IndicatorsCompareProps) {
           <h4 className="text-sm font-medium">{t("cv.indicators.missing")}</h4>
           <ul className="flex flex-wrap gap-1.5">
             {missing.map((term, index) => (
-              <li key={`${index}-${term}`} className="rounded-md bg-muted px-2 py-0.5 text-sm">
+              <li key={index} className="rounded-md bg-muted px-2 py-0.5 text-sm">
                 {term}
               </li>
             ))}

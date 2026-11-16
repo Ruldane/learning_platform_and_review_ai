@@ -21,7 +21,7 @@ export function BoardPage() {
   const stats = useStats();
   const mover = useMoveApplication();
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex min-w-0 flex-col gap-4">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">{t("applications.boardPage.title")}</h1>
         <div className="flex flex-wrap items-center gap-2">

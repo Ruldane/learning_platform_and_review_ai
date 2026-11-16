@@ -29,7 +29,7 @@ export function ReviewReportView({ report, gapTerms, gapHref }: ReviewReportView
         {report.atsNotes.length > 0 ? (
           <ul className="list-disc pl-5 text-sm">
             {report.atsNotes.map((note, index) => (
-              <li key={`${index}-${note}`}>{note}</li>
+              <li key={index}>{note}</li>
             ))}
           </ul>
         ) : null}

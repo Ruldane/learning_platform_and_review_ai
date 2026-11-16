@@ -109,6 +109,25 @@ export default tseslint.config(
     rules: { "max-lines-per-function": "off" },
   },
   {
+    // Une aide de test (`*Testkit`) n'est importée que par des fichiers de test ou par une autre aide
+    // de test : le code livré n'en dépend jamais (voir la catégorie `test` des `boundaries/files`).
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["**/*.test.{ts,tsx}", "**/*Testkit.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["**/*Testkit", "**/*Testkit.*"],
+              message: "Une aide de test (*Testkit) ne s'importe que depuis un fichier de test.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // Les composants de session sont présentationnels : pas d'API, de store ni de hook de données
     // (seuls `realtime/types` et le registre `realtime/eventRenderers` sont importables).
     files: ["src/shared/session-ui/**/*.{ts,tsx}"],
@@ -163,9 +182,14 @@ export default tseslint.config(
       ],
       // Point d'entrée : monte `app`, hors périmètre des règles.
       "boundaries/ignore": ["src/main.tsx"],
-      // Les aides de test d'une page (`*Testkit.tsx`) sont des fichiers de test : elles montent les routes en mémoire de `src/test`.
+      // Les aides de test d'une feature (`*Testkit.tsx`) sont des fichiers de test : elles montent les
+      // routes en mémoire de `src/test`. L'exception ne couvre que celles qui sont dans une feature ;
+      // le bloc `no-restricted-imports` plus haut les garde hors du code livré.
       "boundaries/files": [
-        { pattern: ["**/*.test.{ts,tsx}", "**/*Testkit.{ts,tsx}"], category: "test" },
+        {
+          pattern: ["**/*.test.{ts,tsx}", "src/features/**/*Testkit.{ts,tsx}"],
+          category: "test",
+        },
       ],
     },
     rules: {

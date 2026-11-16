@@ -32,6 +32,18 @@ describe("navigation des candidatures", () => {
     expect(await screen.findByRole("link", { name: "Relances, 1 relance due" })).toBeVisible();
   });
 
+  it("reads its name in one piece, with no space before the comma, whatever the layout", async () => {
+    renderNav(1);
+    const link = await screen.findByRole("link", { name: "Relances, 1 relance due" });
+    const counted = Array.from(link.childNodes).filter(
+      (node) => !(node instanceof HTMLElement && node.getAttribute("aria-hidden") === "true"),
+    );
+    // Un seul contributeur au nom : aucun texte voisin dont un espace pourrait s'insérer.
+    expect(counted).toHaveLength(1);
+    expect(counted[0]?.textContent).toBe("Relances, 1 relance due");
+    expect(link).toHaveAccessibleName("Relances, 1 relance due");
+  });
+
   it("shows no badge when nothing is due", async () => {
     renderNav(0);
     await screen.findByRole("link", { name: "Suivi" });

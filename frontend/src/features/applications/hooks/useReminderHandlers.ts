@@ -32,6 +32,7 @@ export function useReminderHandlers(reminders: ReminderView[], onHandled?: () =>
       onDone: (id: string) => void run(id, "done"),
       onPostpone: (id: string) => void run(id, "postpone"),
       onIgnore: (id: string) => void run(id, "ignore"),
+      pending: actions.pending,
     },
     message,
     error: actions.error,

@@ -22,7 +22,7 @@ function fieldPaths(error: unknown): string[] {
   if (!(error instanceof ApiError)) return [];
   const details = error.details;
   if (typeof details !== "object" || details === null) return [];
-  const fields = (details as { fields?: unknown }).fields;
+  const fields = "fields" in details ? details.fields : null;
   return Array.isArray(fields) ? fields.filter((f): f is string => typeof f === "string") : [];
 }
 

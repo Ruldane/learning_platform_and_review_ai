@@ -1,7 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useSessionStore } from "@/shared/realtime/sessionStore";
 import { applicationOut, applicationsApi } from "@/test/applicationsApi";
 import { openStream } from "@/test/applicationsHarness";
@@ -24,21 +24,22 @@ function Landing() {
   );
 }
 
-async function setup() {
+async function setup(stayMounted = false) {
   server.use(...applicationsApi().handlers);
   const sockets = createFakeSocketServer();
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   client.setQueryData(["applications", "list"], [applicationOut()]);
+  const intake = (
+    <IntakeRun sessionId="i1" createSocket={sockets.factory} onLeave={() => undefined} />
+  );
   const router = createMemoryRouter(
-    [
-      {
-        path: "/",
-        element: (
-          <IntakeRun sessionId="i1" createSocket={sockets.factory} onLeave={() => undefined} />
-        ),
-      },
-      { path: "/candidatures/:applicationId", element: <Landing /> },
-    ],
+    // `stayMounted` : la saisie reste montée après l'ouverture de la fiche, pour voir ses effets se répéter.
+    stayMounted
+      ? [{ path: "*", element: intake }]
+      : [
+          { path: "/", element: intake },
+          { path: "/candidatures/:applicationId", element: <Landing /> },
+        ],
     { initialEntries: ["/"] },
   );
   render(<RouterProvider router={router} />, { wrapper: createQueryWrapper(client) });
@@ -80,5 +81,18 @@ describe("IntakeRun", () => {
     expect(
       await screen.findByText(/Pour info : tu as postulé chez Acme il y a 3 jours/),
     ).toBeVisible();
+  });
+
+  it("reads the applications once per announcing event, however many events follow", async () => {
+    const { client, router, stream, e } = await setup(true);
+    const invalidate = vi.spyOn(client, "invalidateQueries");
+    stream.push(e.artifactReady("application", "a1", "/candidatures/a1"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/candidatures/a1"));
+    expect(invalidate).toHaveBeenCalledTimes(1);
+    // D'autres événements arrivent (le coût, la fin) : la fiche annoncée est la même.
+    stream.push(e.cost());
+    stream.push(e.completed());
+    await waitFor(() => expect(useSessionStore.getState().events["i1"]).toHaveLength(3));
+    expect(invalidate).toHaveBeenCalledTimes(1);
   });
 });

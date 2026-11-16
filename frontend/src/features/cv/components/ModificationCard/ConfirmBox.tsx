@@ -25,7 +25,7 @@ export function ConfirmBox({ blocks, confirmed, onChange, disabled }: ConfirmBox
       {blocks.length > 0 ? (
         <ul className="list-disc pl-5">
           {blocks.map((block, index) => (
-            <li key={`${index}-${block}`}>{block}</li>
+            <li key={index}>{block}</li>
           ))}
         </ul>
       ) : null}

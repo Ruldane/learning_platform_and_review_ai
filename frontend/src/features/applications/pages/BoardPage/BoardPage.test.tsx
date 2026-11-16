@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { applicationOut } from "@/test/applicationsApi";
 import { renderApplications } from "@/test/applicationsHarness";
 import { apiError } from "@/test/councilHarness";
+import { expectCoherentOutline } from "@/test/headingOutline";
 import { applicationsManifest } from "../../manifest";
 
 const routes = applicationsManifest.routes;
@@ -28,6 +29,25 @@ function setup(api: Parameters<typeof renderApplications>[2] = {}) {
 }
 
 describe("BoardPage", () => {
+  it("has one h1 per page, then the eight columns as h2 (one h1 per applications page)", async () => {
+    setup();
+    await screen.findByRole("group", { name: "Postulée, 1" });
+    expectCoherentOutline();
+    expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(8);
+    expect(screen.queryByRole("heading", { level: 3 })).toBeNull();
+  });
+
+  it("keeps the horizontal scroll inside the board: the page never scrolls sideways (kanban fits 1024 px)", async () => {
+    setup();
+    const board = await screen.findByRole("group", { name: "Tableau de suivi des candidatures" });
+    expect(board).toHaveClass("overflow-x-auto", "max-w-full", "min-w-0");
+    // La page ne porte aucune règle de défilement horizontal : tout passe par le tableau.
+    const page = board.parentElement as HTMLElement;
+    expect(page.className).not.toMatch(/overflow-x-(auto|scroll)/);
+    expect(page).toHaveClass("min-w-0");
+    expect(page.closest("main")?.className ?? "").not.toMatch(/overflow-x/);
+  });
+
   it("shows the indicators and the cards in the column of their status", async () => {
     setup();
     expect(await screen.findByRole("heading", { level: 1, name: "Candidatures" })).toBeVisible();

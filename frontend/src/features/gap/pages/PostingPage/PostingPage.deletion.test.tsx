@@ -63,6 +63,18 @@ describe("PostingPage deletion", () => {
     expect(screen.queryByRole("link", { name: "Ouvrir la revue de CV" })).toBeNull();
   });
 
+  it("says a committee or interview is running, with no review link (409 posting_has_running_work)", async () => {
+    const { user } = setup({
+      remove: () => refusal(409, "posting_has_running_work", "Message du serveur."),
+    });
+    await user.click(await screen.findByRole("button", { name: "Supprimer l'offre" }));
+    await user.click(screen.getByRole("button", { name: "Oui, supprimer" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Un comité ou un entretien est en cours sur cette offre : réessaie quand il sera fini.",
+    );
+    expect(screen.queryByRole("link", { name: "Ouvrir la revue de CV" })).toBeNull();
+  });
+
   it("starts clean on the duplicate opened from the page (no leftover deletion prompt)", async () => {
     const duplicate = {
       level: "probable",

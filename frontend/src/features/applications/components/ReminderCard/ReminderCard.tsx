@@ -1,9 +1,9 @@
-import { useState } from "react";
 import { t } from "@/shared/i18n/t";
 import { formatDay } from "../format";
 import type { ReminderView } from "../viewTypes";
 import { ReminderActions } from "./ReminderActions";
 import { ReminderContact } from "./ReminderContact";
+import { useCopyState } from "./useCopyState";
 
 interface ReminderCardProps {
   reminder: ReminderView;
@@ -12,14 +12,10 @@ interface ReminderCardProps {
   onDone: (id: string) => void;
   onPostpone: (id: string) => void;
   onIgnore: (id: string) => void;
-}
-
-type CopyState = "idle" | "copied" | "failed";
-
-/** L'état de la copie est celui d'une relance : une autre relance repart de zéro. */
-interface CopyOf {
-  reminderId: string;
-  state: CopyState;
+  /** Une action sur une relance est en cours : Fait, Reporter et Ignorer attendent sa fin. */
+  pending?: boolean;
+  /** Niveau du titre : 2 sous le titre d'une page, 4 sous le titre d'une section du tiroir. */
+  headingLevel?: 2 | 4;
 }
 
 /**
@@ -33,24 +29,22 @@ export function ReminderCard({
   onDone,
   onPostpone,
   onIgnore,
+  pending = false,
+  headingLevel = 2,
 }: ReminderCardProps) {
-  const [last, setLast] = useState<CopyOf | null>(null);
+  const Heading = headingLevel === 4 ? "h4" : "h2";
   const { id, draft } = reminder;
-  const copy: CopyState = last?.reminderId === id ? last.state : "idle";
-
-  async function copyDraft() {
-    try {
-      await onCopy(draft);
-      setLast({ reminderId: id, state: "copied" });
-    } catch {
-      setLast({ reminderId: id, state: "failed" });
-    }
-  }
+  const { state: copy, copy: copyDraft } = useCopyState(id, draft, onCopy);
 
   return (
-    <article className="flex flex-col gap-3 rounded-xl border bg-card p-4 text-sm">
+    <article
+      aria-busy={pending}
+      className="flex flex-col gap-3 rounded-xl border bg-card p-4 text-sm"
+    >
       <header className="flex flex-col gap-0.5">
-        <h3 className="font-medium">{t(`applications.reminder.kind.${reminder.kind}`)}</h3>
+        <Heading className="font-medium">
+          {t(`applications.reminder.kind.${reminder.kind}`)}
+        </Heading>
         <p className="text-muted-foreground">
           {t("applications.reminder.for", { company: reminder.company, title: reminder.title })}
         </p>
@@ -70,6 +64,7 @@ export function ReminderCard({
       </p>
       <ReminderActions
         closing={reminder.kind === "close_21"}
+        pending={pending}
         onCopy={() => void copyDraft()}
         onDone={() => onDone(id)}
         onPostpone={() => onPostpone(id)}

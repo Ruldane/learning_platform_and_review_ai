@@ -3,7 +3,7 @@ import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 import { DraftField, statusChoices, type FieldSpec } from "../../components/DraftField";
 import { todayString } from "../../dates";
-import type { EventIn, StatusView } from "../../types";
+import { isStatus, type EventIn, type StatusView } from "../../types";
 
 const STATUS: FieldSpec = {
   key: "status",
@@ -39,8 +39,8 @@ export function StatusChange({ current, pending, onRecord }: StatusChangeProps) 
   function submit(event: FormEvent) {
     event.preventDefault();
     setRefused(true);
-    if (pending || day === "" || future) return;
-    const body: EventIn = { kind: "status", status: status as StatusView, on: day };
+    if (pending || day === "" || future || !isStatus(status)) return;
+    const body: EventIn = { kind: "status", status, on: day };
     if (status === "interview" && interviewOn !== "") body.interview_on = interviewOn;
     void onRecord(body);
   }

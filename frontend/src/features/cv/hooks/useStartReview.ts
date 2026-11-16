@@ -10,9 +10,12 @@ export interface StartRefusal {
 
 export function refusalOf(error: unknown): StartRefusal {
   if (!(error instanceof ApiError)) return { code: "unknown", reviewId: null };
-  const details = error.details as { review_id?: unknown } | null;
-  const reviewId = typeof details?.review_id === "string" ? details.review_id : null;
-  return { code: error.code, reviewId };
+  const { details } = error;
+  const reviewId =
+    typeof details === "object" && details !== null && "review_id" in details
+      ? details.review_id
+      : null;
+  return { code: error.code, reviewId: typeof reviewId === "string" ? reviewId : null };
 }
 
 /** `POST /cv/reviews` : lance la revue d'une offre ; `onStarted` reçoit l'identifiant de la revue. */

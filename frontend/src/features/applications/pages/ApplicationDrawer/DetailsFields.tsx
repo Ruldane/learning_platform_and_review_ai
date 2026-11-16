@@ -1,11 +1,23 @@
 import { t } from "@/shared/i18n/t";
 import { ContactList } from "../../components/ContactList";
-import { DraftField, type FieldSpec } from "../../components/DraftField";
+import { DraftField, NAME_MAX_LENGTH, type FieldSpec } from "../../components/DraftField";
 import type { DetailsDraft, TextKey } from "./detailsDraft";
 
 const FIELDS: FieldSpec[] = [
-  { key: "company", label: t("applications.fields.company"), kind: "text", required: true },
-  { key: "title", label: t("applications.fields.title"), kind: "text", required: true },
+  {
+    key: "company",
+    label: t("applications.fields.company"),
+    kind: "text",
+    required: true,
+    maxLength: NAME_MAX_LENGTH,
+  },
+  {
+    key: "title",
+    label: t("applications.fields.title"),
+    kind: "text",
+    required: true,
+    maxLength: NAME_MAX_LENGTH,
+  },
   { key: "url", label: t("applications.fields.url"), kind: "url" },
   { key: "channel", label: t("applications.fields.channel"), kind: "channel" },
   { key: "appliedOn", label: t("applications.fields.appliedOn"), kind: "date" },

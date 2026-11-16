@@ -27,10 +27,10 @@ export function KanbanColumn({ status, applications, onMove, onOpen }: KanbanCol
         isOver && "bg-muted ring-2 ring-ring",
       )}
     >
-      <h3 className="flex items-baseline justify-between gap-2 px-1 text-sm font-semibold">
+      <h2 className="flex items-baseline justify-between gap-2 px-1 text-sm font-semibold">
         <span>{label}</span>
         <span className="text-xs font-normal text-muted-foreground tabular-nums">{count}</span>
-      </h3>
+      </h2>
       {count === 0 ? (
         <p className="px-1 text-xs text-muted-foreground">{t("applications.board.empty")}</p>
       ) : (

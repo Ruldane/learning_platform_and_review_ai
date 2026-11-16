@@ -1,4 +1,4 @@
-import { STATUS_ORDER } from "./components/viewTypes";
+import { isStatus } from "./components/guards";
 import { todayString } from "./dates";
 import type { AlertOut } from "./types";
 
@@ -7,16 +7,16 @@ export interface OpenedState {
   info: AlertOut[];
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
 const isAlert = (value: unknown): value is AlertOut =>
-  typeof value === "object" &&
-  value !== null &&
-  typeof (value as AlertOut).application_id === "string" &&
-  typeof (value as AlertOut).message === "string";
+  isRecord(value) && typeof value.application_id === "string" && typeof value.message === "string";
 
 /** Les informations « même entreprise » reçues à l'ouverture de la fiche (rien si l'état n'en porte pas). */
 export function openedInfo(state: unknown): AlertOut[] {
-  if (typeof state !== "object" || state === null) return [];
-  const info = (state as { info?: unknown }).info;
+  if (!isRecord(state)) return [];
+  const info = state.info;
   return Array.isArray(info) ? info.filter(isAlert) : [];
 }
 
@@ -31,17 +31,9 @@ export interface ArtifactInfoItem {
 
 /** Les informations d'un `artifact.ready` en alertes `info` (une fiche d'un statut inconnu est ignorée). */
 export function infoFromArtifact(items: ArtifactInfoItem[] | undefined): AlertOut[] {
-  return (items ?? []).flatMap((item) =>
-    (STATUS_ORDER as readonly string[]).includes(item.status)
-      ? [
-          {
-            ...item,
-            status: item.status as AlertOut["status"],
-            level: "info" as const,
-            applied_on: null,
-            created_on: todayString(),
-          },
-        ]
+  return (items ?? []).flatMap(({ status, ...item }) =>
+    isStatus(status)
+      ? [{ ...item, status, level: "info" as const, applied_on: null, created_on: todayString() }]
       : [],
   );
 }

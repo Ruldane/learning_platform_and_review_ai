@@ -5,8 +5,9 @@ import { deletePosting } from "../api";
 import { gapKeys } from "../queryKeys";
 
 /**
- * Supprime l'offre. Les 409 `review_in_progress` (une revue de CV tourne ou attend) et
- * `analysis_in_progress` (une analyse est ouverte) ont leur texte ; `code` permet à la page de
+ * Supprime l'offre. Les 409 `review_in_progress` (une revue de CV tourne ou attend),
+ * `analysis_in_progress` (une analyse est ouverte) et `posting_has_running_work` (un comité ou un
+ * entretien en cours cite l'offre) ont leur texte ; `code` permet à la page de
  * proposer le lien vers la revue.
  */
 export function useDeletePosting(postingId: string, onDeleted: () => void) {
@@ -32,7 +33,11 @@ export function useDeletePosting(postingId: string, onDeleted: () => void) {
   };
 }
 
-const REFUSALS = ["review_in_progress", "analysis_in_progress"] as const;
+const REFUSALS = [
+  "review_in_progress",
+  "analysis_in_progress",
+  "posting_has_running_work",
+] as const;
 
 function deleteMessage(code: string | null, failure: unknown): string {
   const known = REFUSALS.find((refused) => refused === code);

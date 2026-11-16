@@ -101,8 +101,11 @@ export interface ApplicationsApiOptions {
   event?: (id: string, body: Over) => Response;
   /** Remplace la lecture des relances dues (une panne, par exemple). */
   reminderList?: () => Response;
-  /** Remplace l'action sur une relance. */
-  reminderAction?: (id: string, action: string) => Response;
+  /** Remplace l'action sur une relance (asynchrone : elle peut attendre, pour voir l'état « en cours »). */
+  reminderAction?: (
+    id: string,
+    action: string,
+  ) => Response | undefined | Promise<Response | undefined>;
   /** Remplace le démarrage de la saisie en une phrase. */
   intake?: (body: Over) => Response;
   /** Réponse de `GET /applications/check` (sans `own` ni alerte par défaut). */
@@ -238,7 +241,7 @@ function reminderRoutes(ctx: Context) {
       const id = String(params.id);
       const { action } = (await request.json()) as { action: string };
       ctx.state.reminderActions.push({ id, action });
-      const custom = ctx.options.reminderAction?.(id, action);
+      const custom = await ctx.options.reminderAction?.(id, action);
       if (custom) return custom;
       const reminder = ctx.reminders.find((item) => item.id === id);
       if (!reminder) {

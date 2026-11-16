@@ -27,6 +27,7 @@ export function KitContent({ applicationId, createSocket }: KitContentProps) {
   if (isMissing(application.error) || isMissing(kit.error)) {
     return (
       <EmptyState
+        as="h1"
         title={t("applications.drawer.notFoundTitle")}
         description={t("applications.errors.application_not_found")}
         action={{

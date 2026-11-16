@@ -18,14 +18,23 @@ import { asReasked } from "./reasked";
 
 const CONFIRM_KIND = "application_confirm";
 
+/** La fiche annoncée : son identifiant, ses informations et le rang (`seq`) de l'événement qui l'annonce. */
+export interface AnnouncedApplication {
+  id: string;
+  info: AlertOut[];
+  seq: number;
+}
+
 /** La fiche que la session annonce (`artifact.ready` de genre `application`), la plus récente, et ses informations. */
-export function announcedApplication(
-  events: SessionEvent[],
-): { id: string; info: AlertOut[] } | null {
+export function announcedApplication(events: SessionEvent[]): AnnouncedApplication | null {
   for (let i = events.length - 1; i >= 0; i -= 1) {
     const event = events[i];
     if (event?.type === "artifact.ready" && event.payload.kind === "application") {
-      return { id: event.payload.artifact_id, info: infoFromArtifact(event.payload.info) };
+      return {
+        id: event.payload.artifact_id,
+        info: infoFromArtifact(event.payload.info),
+        seq: event.seq,
+      };
     }
   }
   return null;
@@ -73,9 +82,13 @@ export function IntakeRun({ sessionId, createSocket, onLeave }: IntakeRunProps) 
   const navigate = useNavigate();
   const client = useQueryClient();
   const run = useRun(sessionId, () => undefined, createSocket);
-  const announced = useMemo(() => announcedApplication(run.stream.events), [run.stream.events]);
-  const opened = announced?.id ?? null;
+  const latest = useMemo(() => announcedApplication(run.stream.events), [run.stream.events]);
   const [sent, setSent] = useState<Record<string, string> | null>(null);
+  // La fiche annoncée ne change que si un autre événement l'annonce (son `seq`) : chaque événement
+  // du fil refait un objet `latest`, pas une nouvelle annonce.
+  const [announced, setAnnounced] = useState<AnnouncedApplication | null>(null);
+  if (latest && latest.seq !== announced?.seq) setAnnounced(latest);
+  const opened = announced?.id ?? null;
 
   useEffect(() => {
     if (!announced) return;

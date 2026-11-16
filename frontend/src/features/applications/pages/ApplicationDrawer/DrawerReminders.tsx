@@ -27,7 +27,7 @@ export function DrawerReminders({ reminders }: { reminders: ReminderView[] }) {
         <ul className="flex flex-col gap-3">
           {reminders.map((reminder) => (
             <li key={reminder.id}>
-              <ReminderCard reminder={reminder} {...handlers.cardProps} />
+              <ReminderCard reminder={reminder} headingLevel={4} {...handlers.cardProps} />
             </li>
           ))}
         </ul>

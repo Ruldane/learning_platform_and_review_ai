@@ -26,7 +26,8 @@ interface KanbanBoardProps {
 /**
  * Le tableau de suivi : une colonne par statut, dans l'ordre des statuts. Une carte se déplace à la
  * souris, au clavier (espace, flèches) ou par le menu « Déplacer vers… » ; le déplacement par le
- * menu est annoncé dans une zone vocale, celui du glisser-déposer par dnd-kit.
+ * menu est annoncé dans une zone vocale, celui du glisser-déposer par dnd-kit. Huit colonnes ne
+ * tiennent pas dans 1 024 px : le défilement horizontal est celui du tableau (jamais celui de la page).
  */
 export function KanbanBoard({ applications, onMove, onOpen }: KanbanBoardProps) {
   const sensors = useSensors(
@@ -55,7 +56,7 @@ export function KanbanBoard({ applications, onMove, onOpen }: KanbanBoardProps) 
         ref={boardRef}
         role="group"
         aria-label={t("applications.board.label")}
-        className="grid grid-cols-[repeat(8,minmax(11rem,1fr))] items-start gap-1.5 overflow-x-auto pb-2"
+        className="grid w-full max-w-full min-w-0 grid-cols-[repeat(8,minmax(11rem,1fr))] items-start gap-1.5 overflow-x-auto overscroll-x-contain pb-2"
       >
         {STATUS_ORDER.map((status) => (
           <KanbanColumn

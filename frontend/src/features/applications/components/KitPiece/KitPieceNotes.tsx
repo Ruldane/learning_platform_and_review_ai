@@ -44,8 +44,8 @@ export function KitPieceNotes({ piece, parts, running }: KitPieceNotesProps) {
         role="note"
         className="flex flex-col gap-1 rounded-lg border-2 border-foreground/40 bg-muted/60 p-3 text-sm"
       >
-        {reasons(piece, parts).map((reason) => (
-          <p key={reason}>{reason}</p>
+        {reasons(piece, parts).map((reason, index) => (
+          <p key={index}>{reason}</p>
         ))}
       </div>
     );

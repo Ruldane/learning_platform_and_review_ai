@@ -22,6 +22,7 @@ export function InterviewPage({ createSocket }: { createSocket?: SocketFactory }
   if (isMissing(application.error)) {
     return (
       <EmptyState
+        as="h1"
         title={t("applications.drawer.notFoundTitle")}
         description={t("applications.errors.application_not_found")}
         action={{

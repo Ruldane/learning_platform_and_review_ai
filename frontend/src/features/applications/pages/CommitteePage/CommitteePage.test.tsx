@@ -33,6 +33,7 @@ describe("CommitteePage", () => {
   it("says a missing application in words, with a way back to the board", async () => {
     setup({}, {}, "/candidatures/zz/comite");
     expect(await screen.findByText("Cette candidature n'existe plus.")).toBeVisible();
+    expect(screen.getByRole("heading", { level: 1, name: "Fiche introuvable" })).toBeVisible();
   });
 
   it("asks for an analysed offer when the application has none", async () => {

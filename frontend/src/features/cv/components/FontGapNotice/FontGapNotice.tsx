@@ -16,7 +16,7 @@ export function FontGapNotice({ gaps }: FontGapNoticeProps) {
       <h3 className="font-medium">{t("cv.fontGap.title")}</h3>
       <ul className="list-disc pl-5">
         {gaps.map((gap, index) => (
-          <li key={`${index}-${gap}`}>{gap}</li>
+          <li key={index}>{gap}</li>
         ))}
       </ul>
       <p className="text-xs text-muted-foreground">{t("cv.fontGap.hint")}</p>

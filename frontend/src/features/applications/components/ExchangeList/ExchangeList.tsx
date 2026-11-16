@@ -49,8 +49,8 @@ export function ExchangeList({
               <div className="text-sm">
                 <p className="text-muted-foreground">{t("applications.debrief.expected")}</p>
                 <ul className="list-disc pl-5">
-                  {points.map((point) => (
-                    <li key={point}>{point}</li>
+                  {points.map((point, index) => (
+                    <li key={index}>{point}</li>
                   ))}
                 </ul>
               </div>

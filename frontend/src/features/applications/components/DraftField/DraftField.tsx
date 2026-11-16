@@ -4,6 +4,9 @@ import { ChoiceSelect, type ChoiceView } from "./ChoiceSelect";
 import { TextControl } from "./TextControl";
 import { CHANNEL_ORDER, STATUS_ORDER } from "../viewTypes";
 
+/** Longueur maximale de l'entreprise et de l'intitulé du poste (borne du serveur). */
+export const NAME_MAX_LENGTH = 200;
+
 export type FieldKind = "text" | "url" | "date" | "textarea" | "channel" | "status";
 
 /** Un champ de formulaire de fiche : sa clé, son texte d'étiquette (déjà en français) et sa nature. */

@@ -16,7 +16,7 @@ export function TextList({
       ) : (
         <ul className="list-disc pl-6">
           {items.map((item, index) => (
-            <li key={`${index}-${item}`}>{item}</li>
+            <li key={index}>{item}</li>
           ))}
         </ul>
       )}

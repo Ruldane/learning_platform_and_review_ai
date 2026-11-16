@@ -10,8 +10,12 @@ export const MAX_INSTRUCTION = 500;
 /** Une consigne d'ajustement ne dépasse jamais 500 caractères. */
 function capped(value: unknown): unknown {
   if (typeof value !== "object" || value === null || !("answers" in value)) return value;
-  const answers = (value as { answers: Record<string, string> }).answers;
-  const instruction = (answers.instruction ?? "").slice(0, MAX_INSTRUCTION);
+  const { answers } = value;
+  const text =
+    typeof answers === "object" && answers !== null && "instruction" in answers
+      ? answers.instruction
+      : "";
+  const instruction = (typeof text === "string" ? text : "").slice(0, MAX_INSTRUCTION);
   return { answers: { instruction } };
 }
 

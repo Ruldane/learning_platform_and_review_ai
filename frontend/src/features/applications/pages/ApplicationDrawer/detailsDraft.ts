@@ -1,5 +1,10 @@
 import { toContactsIn, toContactView } from "../../toView";
-import type { ApplicationDetail, ApplicationPatch, ContactView } from "../../types";
+import {
+  isChannel,
+  type ApplicationDetail,
+  type ApplicationPatch,
+  type ContactView,
+} from "../../types";
 
 /** Les champs modifiables d'une fiche, tels que le formulaire les tient (un vide : champ effacé). */
 export interface DetailsDraft {
@@ -40,18 +45,32 @@ export function problemOf(draft: DetailsDraft): "name" | "contact" | null {
 
 const orNull = (value: string) => (value.trim() === "" ? null : value.trim());
 
+/** Les champs de texte de `ApplicationPatch` (le canal, énuméré, est traité à part). */
+type TextPatchKey =
+  | "company"
+  | "title"
+  | "url"
+  | "notes"
+  | "next_action"
+  | "next_action_on"
+  | "applied_on"
+  | "interview_on";
+
 /** Seulement ce qui a changé depuis la fiche lue : un champ laissé tel quel n'est pas renvoyé. */
 export function changesOf(draft: DetailsDraft, detail: ApplicationDetail): ApplicationPatch {
   const before = toDraft(detail);
-  const patch: Record<string, unknown> = {};
-  const set = (key: string, field: TextKey, optional: boolean) => {
+  const patch: ApplicationPatch = {};
+  const set = (key: TextPatchKey, field: TextKey, optional: boolean) => {
     if (draft[field].trim() === before[field].trim()) return;
     patch[key] = optional ? orNull(draft[field]) : draft[field].trim();
   };
   set("company", "company", false);
   set("title", "title", false);
   set("url", "url", true);
-  set("channel", "channel", true);
+  if (draft.channel.trim() !== before.channel.trim()) {
+    const channel = orNull(draft.channel);
+    patch.channel = channel !== null && isChannel(channel) ? channel : null;
+  }
   set("notes", "notes", true);
   set("next_action", "nextAction", true);
   set("next_action_on", "nextActionOn", true);
@@ -61,7 +80,7 @@ export function changesOf(draft: DetailsDraft, detail: ApplicationDetail): Appli
   if (JSON.stringify(contacts) !== JSON.stringify(toContactsIn(before.contacts))) {
     patch.contacts = contacts;
   }
-  return patch as ApplicationPatch;
+  return patch;
 }
 
 const TEXT_KEYS: TextKey[] = [

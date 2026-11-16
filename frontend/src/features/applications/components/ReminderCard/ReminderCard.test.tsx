@@ -122,4 +122,38 @@ describe("ReminderCard", () => {
       "Acme ne t'a pas répondu.",
     );
   });
+
+  it("is a level 2 heading by default, and level 4 under a drawer section", () => {
+    const { unmount } = render(
+      <ReminderCard
+        reminder={makeReminder()}
+        {...{ onCopy: vi.fn(), onDone: vi.fn(), onPostpone: vi.fn(), onIgnore: vi.fn() }}
+      />,
+    );
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Relance LinkedIn à 7 jours" }),
+    ).toBeVisible();
+    unmount();
+    render(
+      <ReminderCard
+        reminder={makeReminder()}
+        headingLevel={4}
+        {...{ onCopy: vi.fn(), onDone: vi.fn(), onPostpone: vi.fn(), onIgnore: vi.fn() }}
+      />,
+    );
+    expect(screen.getByRole("heading", { level: 4 })).toBeVisible();
+  });
+
+  it("disables Fait, Reporter and Ignorer and says it is busy while an action is pending", async () => {
+    const user = userEvent.setup();
+    const handlers = { onCopy: vi.fn(), onDone: vi.fn(), onPostpone: vi.fn(), onIgnore: vi.fn() };
+    render(<ReminderCard reminder={makeReminder()} pending {...handlers} />);
+    expect(screen.getByRole("article")).toHaveAttribute("aria-busy", "true");
+    for (const name of ["Fait", "Reporter de 3 jours", "Ignorer"]) {
+      expect(screen.getByRole("button", { name })).toBeDisabled();
+    }
+    expect(screen.getByRole("button", { name: "Copier" })).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: "Fait" }));
+    expect(handlers.onDone).not.toHaveBeenCalled();
+  });
 });

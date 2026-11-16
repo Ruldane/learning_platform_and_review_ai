@@ -98,6 +98,8 @@ export const gap = {
       "Une de ces compétences n'est plus à ajouter. Le tableau a été relu : choisis à nouveau.",
     review_in_progress: "Termine d'abord la revue de CV de cette offre.",
     analysis_in_progress: "Une analyse de cette offre est en cours : réessaie dans un instant.",
+    posting_has_running_work:
+      "Un comité ou un entretien est en cours sur cette offre : réessaie quand il sera fini.",
     notFound: "Cette offre n'existe pas ou a été supprimée.",
   },
   postings: {

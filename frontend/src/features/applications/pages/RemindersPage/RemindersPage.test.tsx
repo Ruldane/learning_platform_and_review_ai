@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { applicationOut, reminderOut } from "@/test/applicationsApi";
 import { renderApplications } from "@/test/applicationsHarness";
 import { apiError } from "@/test/councilHarness";
+import { expectCoherentOutline } from "@/test/headingOutline";
 import { applicationsManifest } from "../../manifest";
 
 const routes = applicationsManifest.routes;
@@ -39,6 +40,44 @@ const cardOf = async (title: string) => {
 };
 
 describe("RemindersPage", () => {
+  it("has one h1, then one h2 per reminder (one h1 per applications page)", async () => {
+    setup();
+    await cardOf("Relance LinkedIn à 7 jours");
+    expectCoherentOutline();
+    expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(2);
+    expect(screen.queryByRole("heading", { level: 3 })).toBeNull();
+  });
+
+  it("disables Fait, Reporter and Ignorer on every card while an action runs (reminder buttons disabled while pending)", async () => {
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const { user } = setup({
+      reminderAction: async () => {
+        await gate;
+        return undefined;
+      },
+    });
+    const card = await cardOf("Relance LinkedIn à 7 jours");
+    expect(
+      screen.getAllByRole("article").every((a) => a.getAttribute("aria-busy") === "false"),
+    ).toBe(true);
+    await user.click(card.getByRole("button", { name: "Reporter de 3 jours" }));
+    await waitFor(() =>
+      expect(screen.getAllByRole("article")[0]).toHaveAttribute("aria-busy", "true"),
+    );
+    for (const name of ["Fait", "Classer en Sans réponse", "Reporter de 3 jours", "Ignorer"]) {
+      for (const button of screen.getAllByRole("button", { name })) expect(button).toBeDisabled();
+    }
+    expect(card.getByRole("button", { name: "Copier" })).toBeEnabled();
+    release();
+    await waitFor(() =>
+      expect(screen.getAllByRole("button", { name: "Ignorer" })[0]).toBeEnabled(),
+    );
+    expect(screen.getAllByRole("article")[0]).toHaveAttribute("aria-busy", "false");
+  });
+
   it("lists the due reminders with who to contact and the draft", async () => {
     setup();
     expect(await screen.findByRole("heading", { level: 1, name: "Relances" })).toBeVisible();

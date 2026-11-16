@@ -46,9 +46,9 @@ export function InterviewQuestionCard(props: InterviewQuestionCardProps) {
       aria-labelledby={titleId}
       className="rounded-xl border-2 border-primary bg-card px-4 py-3 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200"
     >
-      <h3 id={titleId} className="font-medium">
+      <h2 id={titleId} className="font-medium">
         {heading(number, total, followUp)}
-      </h3>
+      </h2>
       {answered ? (
         <div className="mt-2 flex flex-col gap-1 text-sm">
           <p className="text-muted-foreground">{t("applications.interviewRun.sent")}</p>

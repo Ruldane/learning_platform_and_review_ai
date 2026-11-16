@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { ApiError } from "@/shared/api/errors";
 import { fetchTemplate, fetchTemplates } from "../api";
 import { cvKeys } from "../queryKeys";
 import { POLL_MS } from "./useProfile";
@@ -22,6 +23,6 @@ export function useTemplate(templateId: string, pollMs = POLL_MS) {
     queryFn: ({ signal }) => fetchTemplate(templateId, signal),
     refetchInterval: (state) =>
       state.state.data && isOpen(state.state.data.status) ? pollMs : false,
-    retry: (count, error) => (error as { status?: number }).status !== 404 && count < 1,
+    retry: (count, error) => !(error instanceof ApiError && error.status === 404) && count < 1,
   });
 }

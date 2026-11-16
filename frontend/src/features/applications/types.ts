@@ -49,6 +49,7 @@ export {
   SCORE_KEYS,
   STATUS_ORDER,
 } from "./components/viewTypes";
+export { isChannel, isStatus } from "./components/guards";
 export type {
   ApplicationView,
   ChangeView,

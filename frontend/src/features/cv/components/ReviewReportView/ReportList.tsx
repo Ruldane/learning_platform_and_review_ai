@@ -15,7 +15,7 @@ export function ReportList({ title, items }: ReportListProps) {
       ) : (
         <ul className="list-disc pl-5 text-sm">
           {items.map((item, index) => (
-            <li key={`${index}-${item}`}>{item}</li>
+            <li key={index}>{item}</li>
           ))}
         </ul>
       )}

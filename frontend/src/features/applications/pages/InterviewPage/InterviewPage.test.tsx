@@ -5,6 +5,7 @@ import { useSessionStore } from "@/shared/realtime/sessionStore";
 import { openStream } from "@/test/applicationsHarness";
 import { sessionOut } from "@/test/councilApi";
 import { councilEvents } from "@/test/councilEvents";
+import { expectCoherentOutline } from "@/test/headingOutline";
 import { apiError, recordPosts } from "@/test/councilHarness";
 import { interviewOut } from "@/test/interviewApi";
 import { ask, SESSION, setup, startInterview } from "./interviewTestkit";
@@ -140,6 +141,7 @@ describe("InterviewPage, réglages", () => {
   it("says when the application does not exist", async () => {
     setup({}, "/candidatures/zz/entretien");
     expect(await screen.findByText("Cette candidature n'existe plus.")).toBeVisible();
+    expect(screen.getByRole("heading", { level: 1, name: "Fiche introuvable" })).toBeVisible();
   });
 });
 
@@ -160,6 +162,15 @@ describe("InterviewPage, échange écrit", () => {
           .some((zone) => zone.textContent === "Question 1 sur 7. Parle-moi d'un projet récent."),
       ).toBe(true),
     );
+  });
+
+  it("nests the question title under the page title (one h1, then h2)", async () => {
+    const view = setup();
+    const { stream, e } = await startInterview(view);
+    stream.push(...ask(e, 1, "q1", "Parle-moi d'un projet récent."));
+    await screen.findByRole("region", { name: "Question 1 sur 7" });
+    expectCoherentOutline();
+    expect(screen.getByRole("heading", { level: 2, name: "Question 1 sur 7" })).toBeVisible();
   });
 
   it("sends the answer as {answers: {answer}}, folds the card and shows the next question", async () => {

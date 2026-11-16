@@ -6,6 +6,7 @@ import { renderApplications } from "@/test/applicationsHarness";
 import { apiError } from "@/test/councilHarness";
 import { createFakeSocketServer } from "@/test/fakeSocket";
 import { todayString } from "../../dates";
+import { expectCoherentOutline } from "@/test/headingOutline";
 import { applicationsManifest } from "../../manifest";
 import { NewApplicationPage } from "./NewApplicationPage";
 
@@ -24,6 +25,17 @@ function setup(api: Parameters<typeof renderApplications>[2] = {}) {
 }
 
 describe("NewApplicationPage, à la main", () => {
+  it("has one h1, then h2 sections (one h1 per applications page)", () => {
+    setup();
+    expectCoherentOutline();
+  });
+
+  it("caps the company and the title at 200 characters (company and title capped at 200)", () => {
+    setup();
+    expect(screen.getByLabelText("Entreprise")).toHaveAttribute("maxLength", "200");
+    expect(screen.getByLabelText("Poste")).toHaveAttribute("maxLength", "200");
+  });
+
   it("creates the application with what was typed and opens it", async () => {
     const { user, state, router } = setup();
     await user.type(screen.getByLabelText("Entreprise"), "Delta");

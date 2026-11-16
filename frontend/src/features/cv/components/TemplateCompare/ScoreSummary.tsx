@@ -33,8 +33,8 @@ export function ScoreSummary({ score, zones, passes }: ScoreSummaryProps) {
             <p className="text-sm text-muted-foreground">{t("cv.template.zonesNone")}</p>
           ) : (
             <ul className="list-disc pl-5 text-sm">
-              {sentences.map((sentence) => (
-                <li key={sentence}>{sentence}</li>
+              {sentences.map((sentence, index) => (
+                <li key={index}>{sentence}</li>
               ))}
             </ul>
           )}

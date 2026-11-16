@@ -239,6 +239,8 @@ describe("KitPage", () => {
     setup({}, { applications: [] });
     expect(await screen.findByText("Cette candidature n'existe plus.")).toBeVisible();
     expect(screen.getByRole("button", { name: "Retour au suivi" })).toBeVisible();
+    // La page n'a plus que cet état : son titre est le seul h1.
+    expect(screen.getByRole("heading", { level: 1, name: "Fiche introuvable" })).toBeVisible();
   });
 
   it("offers to retry when the kit cannot be read", async () => {

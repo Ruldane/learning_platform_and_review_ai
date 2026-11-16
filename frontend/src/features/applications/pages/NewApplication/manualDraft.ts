@@ -1,8 +1,8 @@
 import { t } from "@/shared/i18n/t";
 import { todayString } from "../../dates";
 import { toContactsIn } from "../../toView";
-import type { ApplicationIn, ContactView, StatusView } from "../../types";
-import type { FieldSpec } from "../../components/DraftField";
+import { isChannel, type ApplicationIn, type ContactView, type StatusView } from "../../types";
+import { NAME_MAX_LENGTH, type FieldSpec } from "../../components/DraftField";
 
 /** Les champs de la création à la main. */
 export interface ManualDraft {
@@ -30,8 +30,20 @@ export const EMPTY_DRAFT: ManualDraft = {
 export type ManualKey = Exclude<keyof ManualDraft, "contacts">;
 
 export const MANUAL_FIELDS: FieldSpec[] = [
-  { key: "company", label: t("applications.fields.company"), kind: "text", required: true },
-  { key: "title", label: t("applications.fields.title"), kind: "text", required: true },
+  {
+    key: "company",
+    label: t("applications.fields.company"),
+    kind: "text",
+    required: true,
+    maxLength: NAME_MAX_LENGTH,
+  },
+  {
+    key: "title",
+    label: t("applications.fields.title"),
+    kind: "text",
+    required: true,
+    maxLength: NAME_MAX_LENGTH,
+  },
   { key: "url", label: t("applications.fields.url"), kind: "url" },
   { key: "status", label: t("applications.fields.status"), kind: "status" },
   {
@@ -58,6 +70,12 @@ export function manualProblem(draft: ManualDraft): ManualProblem | null {
 
 const orNull = (value: string) => (value.trim() === "" ? null : value.trim());
 
+/** Le canal choisi, ou `null` (« Non précisé »). Le menu n'en propose que de connus. */
+const channelOf = (value: string): ApplicationIn["channel"] => {
+  const channel = value.trim();
+  return isChannel(channel) ? channel : null;
+};
+
 /**
  * Le corps de `POST /applications`. `distinctFrom` : les fiches proches que January a confirmées
  * « autre poste ». Une date de candidature n'a de sens que pour une fiche déjà postulée.
@@ -69,7 +87,7 @@ export function toBody(draft: ManualDraft, distinctFrom: string[] = []): Applica
     url: orNull(draft.url),
     status: draft.status,
     applied_on: draft.status === "to_apply" ? null : orNull(draft.appliedOn),
-    channel: (orNull(draft.channel) as ApplicationIn["channel"]) ?? null,
+    channel: channelOf(draft.channel),
     notes: orNull(draft.notes),
     contacts: toContactsIn(draft.contacts),
   };
