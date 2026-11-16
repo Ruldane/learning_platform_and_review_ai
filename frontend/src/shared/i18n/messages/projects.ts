@@ -42,6 +42,7 @@ export const projects = {
     skillsMapText: "Les compétences de ce module sont prouvées sur ta carte des compétences.",
     skillsMap: "Voir la carte des compétences",
     draftsTitle: "Tes brouillons",
+    draftsEmpty: "Aucun brouillon n'a été écrit pour ce projet.",
     draftsText:
       "Écrits d'après ton rendu et ton profil : relis-les, vérifie-les, puis publie-les toi-même.",
     entryTitle: "Ajouter ce projet à ton profil maître",
@@ -55,7 +56,7 @@ export const projects = {
   errors: {
     project_not_ready:
       "L'énoncé de ce projet n'est pas encore écrit : attends-le avant de rendre ton travail.",
-    review_in_progress: "Ton rendu est déjà en cours d'évaluation : on la suit.",
+    review_in_progress: "Ton rendu est déjà en cours d'évaluation : on le suit.",
     project_validated: "Ce projet est déjà validé : il ne se rend pas une seconde fois.",
     brief_not_failed: "L'énoncé de ce projet n'est pas en échec : il est peut-être déjà relancé.",
     project_not_validated: "Seul un projet validé peut entrer dans ton profil.",
@@ -98,7 +99,7 @@ export const projects = {
     },
   },
   criteria: {
-    label: "Critères de réussite",
+    label: "Résultat de chaque critère",
     met: "Atteint",
     notMet: "Non atteint",
     pending: "Pas encore évalué",

@@ -7,7 +7,7 @@ import type { SubmissionItemView } from "../../toView";
 export function SubmissionItem({ submission }: { submission: SubmissionItemView }) {
   const when = formatInstant(submission.at);
   return (
-    <li className="flex flex-col gap-2 rounded-xl border bg-card p-4 text-sm">
+    <li className="flex min-w-0 flex-col gap-2 rounded-xl border bg-card p-4 text-sm [overflow-wrap:anywhere]">
       <h3 className="font-medium">{t("projects.page.submittedOn", { when })}</h3>
       {submission.repoUrl ? (
         <p>

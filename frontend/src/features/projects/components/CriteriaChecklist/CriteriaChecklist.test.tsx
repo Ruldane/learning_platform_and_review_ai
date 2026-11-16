@@ -16,9 +16,9 @@ describe("CriteriaChecklist", () => {
         ]}
       />,
     );
-    const items = within(screen.getByRole("list", { name: "Critères de réussite" })).getAllByRole(
-      "listitem",
-    );
+    const items = within(
+      screen.getByRole("list", { name: "Résultat de chaque critère" }),
+    ).getAllByRole("listitem");
     expect(items[0]).toHaveTextContent("Ventes agrégées par mois");
     expect(items[0]).toHaveTextContent("Atteint");
     expect(items[0]).toHaveTextContent("La requête groupe bien par mois.");
@@ -57,9 +57,9 @@ describe("CriteriaChecklist", () => {
         ]}
       />,
     );
-    const items = within(screen.getByRole("list", { name: "Critères de réussite" })).getAllByRole(
-      "listitem",
-    );
+    const items = within(
+      screen.getByRole("list", { name: "Résultat de chaque critère" }),
+    ).getAllByRole("listitem");
     expect(items).toHaveLength(3);
     expect(items[0]).toHaveTextContent("Ventes agrégées par mois");
     expect(items[0]).toHaveTextContent("Requête correcte.");

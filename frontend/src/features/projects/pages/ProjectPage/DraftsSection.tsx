@@ -17,13 +17,15 @@ interface DraftsSectionProps {
  */
 export function DraftsSection({ projectId, drafts }: DraftsSectionProps) {
   const { save, savingKind, error } = useSaveDraft(projectId);
-  if (drafts.length === 0) return null;
+  const empty = drafts.length === 0;
   return (
     <section aria-labelledby="project-drafts" className="flex flex-col gap-3">
       <h2 id="project-drafts" className="text-lg font-medium">
         {t("projects.page.draftsTitle")}
       </h2>
-      <p className="text-sm text-muted-foreground">{t("projects.page.draftsText")}</p>
+      <p className="text-sm text-muted-foreground">
+        {t(empty ? "projects.page.draftsEmpty" : "projects.page.draftsText")}
+      </p>
       {error ? <InlineError message={error} /> : null}
       <div className="grid gap-4 lg:grid-cols-2">
         {drafts.map((draft) => (

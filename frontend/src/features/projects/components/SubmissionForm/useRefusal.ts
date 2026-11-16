@@ -18,6 +18,10 @@ export function useRefusal(refusal: SubmissionRefusalView | null) {
     refused: (field: RefusedField): string | undefined =>
       cleared.fields.includes(field) ? undefined : refusal?.[field],
     clear: (...fields: RefusedField[]) =>
-      setCleared((current) => ({ ...current, fields: [...current.fields, ...fields] })),
+      setCleared((current) => {
+        const added = fields.filter((field) => !current.fields.includes(field));
+        // Rien de neuf : le même état, donc ni nouveau tableau ni nouveau rendu à chaque frappe.
+        return added.length === 0 ? current : { ...current, fields: [...current.fields, ...added] };
+      }),
   };
 }

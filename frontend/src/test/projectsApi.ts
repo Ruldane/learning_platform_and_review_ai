@@ -38,6 +38,8 @@ interface ProjectsState {
   entries: { id: string; body: Over }[];
   briefs: string[];
   listReads: number;
+  /** Les lectures de `GET /projects/{id}`. */
+  reads: number;
   sessions: number;
 }
 
@@ -92,6 +94,7 @@ function readHandlers(state: ProjectsState) {
       HttpResponse.json(sessionOut(String(params.id), "running", { graph: "project_review" })),
     ),
     http.get(`${API}/projects/:id`, ({ params }) => {
+      state.reads += 1;
       const project = find(state, params.id);
       return project ? HttpResponse.json(project) : notFound();
     }),
@@ -205,6 +208,7 @@ export function projectsApi(options: ProjectsApiOptions = {}) {
     entries: [],
     briefs: [],
     listReads: 0,
+    reads: 0,
     sessions: 0,
   };
   const settle = (id: string, over: Over) => update(state, id, over);

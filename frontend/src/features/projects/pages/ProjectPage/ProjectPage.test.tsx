@@ -97,6 +97,24 @@ describe("ProjectPage : l'énoncé", () => {
     expect(screen.queryByRole("button", { name: "Réessayer l'énoncé" })).toBeNull();
   });
 
+  it("sends one brief retry on a double click", async () => {
+    const failed = projectOut("p1", { status: "brief_failed", brief: null });
+    const { user, state } = setup({ projects: [failed] });
+    await user.dblClick(await screen.findByRole("button", { name: "Réessayer l'énoncé" }));
+    await screen.findByRole("heading", { name: "Énoncé en cours d'écriture" });
+    expect(state.briefs).toEqual(["p1"]);
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("starts from a clean page when another project is opened", async () => {
+    const other = projectOut("p2", { title: "Autre projet" });
+    const { user, router } = setup({ projects: [TODO, other] });
+    await user.type(await screen.findByLabelText("Description"), "Une requête SQL.");
+    await router.navigate("/competences/portfolio/p2");
+    expect(await screen.findByRole("heading", { level: 1, name: "Autre projet" })).toBeVisible();
+    expect(screen.getByLabelText("Description")).toHaveValue("");
+  });
+
   it("reads « brief_not_failed » in clear when the brief was already relaunched", async () => {
     const failed = projectOut("p1", { status: "brief_failed", brief: null });
     const { user } = setup({
@@ -153,9 +171,7 @@ describe("ProjectPage : rendre le projet et suivre l'évaluation", () => {
     });
     stream.push(events.completed());
     expect(await screen.findByText("Projet à refaire")).toBeVisible();
-    const checklist = screen
-      .getAllByRole("list", { name: "Critères de réussite" })
-      .find((list) => /Atteint|Pas encore/.test(list.textContent ?? ""))!;
+    const checklist = screen.getByRole("list", { name: "Résultat de chaque critère" });
     const items = within(checklist).getAllByRole("listitem");
     expect(items[0]).toHaveTextContent("Ventes agrégées par mois");
     expect(items[0]).toHaveTextContent("La requête groupe par mois.");
@@ -170,7 +186,9 @@ describe("ProjectPage : rendre le projet et suivre l'évaluation", () => {
     await screen.findByRole("heading", { name: "Évaluation en cours" });
     expect(state.submits).toHaveLength(1);
     expect(submitSpy).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText("Ton rendu est déjà en cours d'évaluation : on la suit.")).toBeNull();
+    // Un second envoi aurait reçu un 409 `review_in_progress` et la page l'aurait dit.
+    expect(screen.queryByText("Une évaluation était déjà en cours : on la suit.")).toBeNull();
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 
   it("shows the screenshots of every submission as thumbnails, the latest first", async () => {

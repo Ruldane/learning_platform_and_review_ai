@@ -19,7 +19,8 @@ export function ProjectPage({ createSocket }: { createSocket?: SocketFactory }) 
   const { projectId = "" } = useParams();
   const navigate = useNavigate();
   const { query, missing } = useProject(projectId);
-  if (query.data) return <ProjectView project={query.data} createSocket={createSocket} />;
+  if (query.data)
+    return <ProjectView key={query.data.id} project={query.data} createSocket={createSocket} />;
   return (
     <div className="flex flex-col gap-4">
       <BackLink />

@@ -21,7 +21,7 @@ const renderView = (evaluation: EvaluationDataView = EVALUATION) =>
   render(<EvaluationView evaluation={evaluation} criteria={CRITERIA} />);
 
 const items = () =>
-  within(screen.getByRole("list", { name: "Critères de réussite" })).getAllByRole("listitem");
+  within(screen.getByRole("list", { name: "Résultat de chaque critère" })).getAllByRole("listitem");
 
 describe("EvaluationView", () => {
   it("writes the verdict, the feedback and every criterion", () => {

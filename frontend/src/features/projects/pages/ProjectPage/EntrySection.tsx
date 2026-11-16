@@ -9,7 +9,7 @@ import type { ProjectDetailView } from "../../toView";
 /**
  * L'ajout du projet au profil maître : l'entrée proposée (modifiable), son avertissement « à
  * vérifier », puis « Ajouter au profil maître » ; une fois ajoutée, « Ajouté au profil (version N) »
- * remplace le bouton. Rien n'entre dans le profil sans ce clic. Le formulaire ne lit son entrée
+ * remplace le bouton (et l'avertissement, devenu sans objet, disparaît). Rien n'entre dans le profil sans ce clic. Le formulaire ne lit son entrée
  * qu'une fois : sa `key` la suit.
  */
 export function EntrySection({ project }: { project: ProjectDetailView }) {
@@ -19,7 +19,9 @@ export function EntrySection({ project }: { project: ProjectDetailView }) {
       <h2 id="project-entry" className="text-lg font-medium">
         {t("projects.page.entryTitle")}
       </h2>
-      {project.entryDraft ? <DraftNotice draft={project.entryDraft} /> : null}
+      {project.entryDraft && project.profileVersion === null ? (
+        <DraftNotice draft={project.entryDraft} />
+      ) : null}
       <ProfileEntryForm
         key={JSON.stringify(project.entry)}
         entry={project.entry}
