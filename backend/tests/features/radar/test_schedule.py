@@ -230,3 +230,20 @@ async def test_weekly_pass_whose_run_finished_is_left_alone(
     await _end_run(radar)
     assert await run_weekly_radar(radar.rt, MONDAY_9H + timedelta(hours=1)) == 0
     assert (await _jobs(radar))[0].attempts == 1 and len(launcher.started) == 1
+
+
+async def test_weekly_pass_is_not_reopened_when_january_cancelled_the_run(
+    radar: Radar, launcher: RecordingLauncher
+) -> None:
+    """Une session annulée par January elle-même (`session_cancelled`) n'est jamais relancée,
+    contrairement à une session en échec."""
+    await _settings(radar, radar_role=ROLE)
+    assert await run_weekly_radar(radar.rt, MONDAY_9H) == 1
+    [job] = await _jobs(radar)
+    await _kill_session(radar, job.ref_id or "", "cancelled")
+    for minutes in (15, 30, 45):
+        assert await run_weekly_radar(radar.rt, MONDAY_9H + timedelta(minutes=minutes)) == 0
+    [job] = await _jobs(radar)
+    assert (job.status, job.attempts) == ("done", 1) and len(launcher.started) == 1
+    [run] = await _runs(radar)
+    assert (run.status, run.error_code) == ("failed", "session_cancelled")

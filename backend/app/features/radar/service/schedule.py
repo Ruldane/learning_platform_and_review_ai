@@ -30,7 +30,7 @@ from app.features.ledger.service.ledger import (
 from app.features.ledger.service.periods import RADAR_TIME, RADAR_WEEKDAY, week_period
 from app.features.radar.repository import RadarRunRepository
 from app.features.radar.schemas import RadarRunIn
-from app.features.radar.service.runs import defaults, settle, start_run
+from app.features.radar.service.runs import SESSION_CANCELLED, defaults, settle, start_run
 from app.features.radar.service.runtime import RadarRuntime
 from app.features.settings.service import SettingsService
 
@@ -86,7 +86,9 @@ async def _reopen_if_run_failed(
         if last is None or last.period != period or last.ref_id is None:
             return
         run = await RadarRunRepository(db, user_id).get_fresh(last.ref_id)
-        if run is not None and run.status == "failed":
+        # Annulé par January lui-même : jamais relancé (comme `ats_refresh`, qui ne rouvre que sur
+        # une session `failed`).
+        if run is not None and run.status == "failed" and run.error_code != SESSION_CANCELLED:
             await reopen(db, user_id, last, code=run.error_code or RUN_FAILED, now=now)
             await db.commit()
 

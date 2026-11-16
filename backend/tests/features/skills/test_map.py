@@ -217,6 +217,7 @@ async def test_graph_demand_comes_from_the_latest_done_radar_run(
             trigger="manual",
             status=status,
             ranking=ranking,
+            analyzed=10 if ranking else 0,
             created_at=NOW - timedelta(days=days),
         )
 

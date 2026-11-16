@@ -8,9 +8,10 @@ from app.features.radar.repository import RadarRunRepository
 
 
 async def latest_demand(db: AsyncSession, user_id: str) -> dict[str, float]:
-    """`nom normalisé → part (0 à 1)` des offres analysées du dernier relevé `done` ; vide sans
-    relevé fini ou sans offre analysée (la carte dit alors « pas de relevé »)."""
-    run = await RadarRunRepository(db, user_id).latest_done()
+    """`nom normalisé → part (0 à 1)` des offres analysées du dernier relevé `done` **qui en a
+    analysé au moins une** (un relevé aveugle ne remplace pas un relevé exploitable) ; vide sans
+    tel relevé (la carte dit alors « pas de relevé »)."""
+    run = await RadarRunRepository(db, user_id).latest_done(min_analyzed=1)
     if run is None:
         return {}
     return {str(item["norm"]): float(item["share"]) for item in run.ranking}

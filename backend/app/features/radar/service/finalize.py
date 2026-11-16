@@ -124,7 +124,10 @@ async def finalize_run(rt: RadarRuntime, user_id: str, run_id: str) -> RadarSumm
         counted = count(entries)
         ranking = rank_skills(entries)
         previous = await repo.latest_done(
-            role_norm=row.role_norm, zone_norm=row.zone_norm, before=row.created_at
+            role_norm=row.role_norm,
+            zone_norm=row.zone_norm,
+            before=row.created_at,
+            min_analyzed=1,  # un relevé aveugle n'est pas une référence
         )
         in_program, levels = await _program_view(db, user_id)
         alerts = program_alerts(ranking, counted.analyzed, in_program, levels)

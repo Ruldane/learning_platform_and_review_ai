@@ -10,7 +10,8 @@ from app.db.models.skills import Skill, UserSkill
 from app.features.radar.schemas import RadarRunOut
 from app.features.radar.service.demand import latest_demand
 from app.features.radar.service.views import run_out
-from tests.features.radar.support import ME, NOW, OTHER, Radar, finding, link
+from app.features.skills.map import skill_graph
+from tests.features.radar.support import ME, NOW, OTHER, ROLE, Radar, finding, link
 from tests.features.skills.support import add_goal, add_program, add_skill
 
 
@@ -180,3 +181,39 @@ async def test_latest_demand_is_the_share_of_the_latest_done_run(radar: Radar) -
     async with radar.factory() as db:
         assert await latest_demand(db, ME) == {"linux": 1.0, "python": 0.6}
         assert await latest_demand(db, OTHER) == {}
+
+
+async def _blind_run(radar: Radar, *, role: str = ROLE) -> str:
+    """Un relevé fini dont toutes les pages sont bloquées : aucune offre analysée."""
+    run_id = await radar.new_run(role=role)
+    for number in range(3):
+        await radar.store.read_posting(ME, "s", run_id, link(number, "ferme.example.org"))
+    summary = await radar.store.finalize(ME, "s", run_id)
+    assert (summary.read_ok, summary.blocked, summary.analyzed) == (0, 3, 0)
+    return run_id
+
+
+async def test_blind_run_is_never_the_baseline_of_the_evolution(radar: Radar) -> None:
+    valid = await radar.analyzed_run(_postings(10, python=4))
+    radar.rt.now = lambda: NOW + timedelta(days=7)
+    blind = await _blind_run(radar)
+    assert (await _out(radar, blind)).ranking == []
+    radar.rt.now = lambda: NOW + timedelta(days=14)
+    latest = await radar.analyzed_run(_postings(10, python=6))
+    out = await _out(radar, latest)
+    assert out.previous is not None and out.previous.id == valid  # pas le relevé aveugle
+    python = next(t for t in out.ranking if t.skill == "Python")
+    assert python.delta_share == 20 and not python.new  # comparée, pas « nouvelle »
+
+
+async def test_blind_run_does_not_erase_the_market_demand(radar: Radar) -> None:
+    async with radar.factory() as db:
+        assert await latest_demand(db, ME) == {}
+    await radar.analyzed_run(_postings(10, python=6))
+    radar.rt.now = lambda: NOW + timedelta(days=7)
+    await _blind_run(radar, role="Autre poste")
+    async with radar.factory() as db:
+        assert await latest_demand(db, ME) == {"linux": 1.0, "python": 0.6}
+    async with radar.factory() as db:
+        nodes = (await skill_graph(db, ME)).nodes
+    assert {n.name: n.demand for n in nodes} == {"Linux": 1.0, "Python": 0.6}

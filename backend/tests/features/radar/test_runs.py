@@ -2,6 +2,8 @@
 `market_radar` sujet `radar_run`, relevé dont la session est morte corrigé à la lecture (code
 lisible), lancement refusé, 422 sans écho, relevés d'une autre utilisatrice invisibles."""
 
+import asyncio
+
 import httpx
 import pytest
 from fastapi import FastAPI
@@ -234,3 +236,17 @@ async def test_other_user_run_404(
     assert (await client.get(f"{API}/latest")).json()["latest"] is None
     # Le relevé d'une autre ne bloque pas non plus un lancement.
     assert (await _start(client, role=ROLE)).status_code == 202
+
+
+async def test_two_simultaneous_starts_give_one_202_and_one_409(
+    client: httpx.AsyncClient, launcher_spy: RecordingLauncher, app: FastAPI
+) -> None:
+    first, second = await asyncio.gather(
+        _start(client, role=ROLE, zone=ZONE), _start(client, role=ROLE, zone=ZONE)
+    )
+    assert sorted([first.status_code, second.status_code]) == [202, 409]
+    refused = first if first.status_code == 409 else second
+    accepted = second if refused is first else first
+    assert refused.json()["error"]["code"] == "radar_in_progress"
+    assert refused.json()["error"]["details"] == {"run_id": accepted.json()["run_id"]}
+    assert len(launcher_spy.started) == 1 and len(await _runs(app)) == 1

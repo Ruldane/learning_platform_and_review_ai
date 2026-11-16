@@ -60,9 +60,11 @@ class RadarRunRepository(UserScopedRepository[RadarRun]):
         zone_norm: str | None = None,
         before: datetime | None = None,
         exclude_id: str | None = None,
+        min_analyzed: int = 0,
     ) -> RadarRun | None:
         """Le dernier relevé `done`, de ce poste et de cette zone (normalisés) si donnés, créé
-        avant `before` si donné."""
+        avant `before` si donné, avec au moins `min_analyzed` offres analysées : un relevé
+        « aveugle » (aucune offre analysée) n'est jamais une référence."""
         stmt = select(RadarRun).where(RadarRun.user_id == self.user_id, RadarRun.status == "done")
         if role_norm is not None:
             stmt = stmt.where(RadarRun.role_norm == role_norm)
@@ -72,6 +74,8 @@ class RadarRunRepository(UserScopedRepository[RadarRun]):
             stmt = stmt.where(RadarRun.created_at < before)
         if exclude_id is not None:
             stmt = stmt.where(RadarRun.id != exclude_id)
+        if min_analyzed > 0:
+            stmt = stmt.where(RadarRun.analyzed >= min_analyzed)
         stmt = stmt.order_by(RadarRun.created_at.desc(), RadarRun.id.desc()).limit(1)
         return (
             await self.session.execute(stmt.execution_options(populate_existing=True))

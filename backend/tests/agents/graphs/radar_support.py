@@ -2,6 +2,7 @@
 agent (`CouncilModels`, qui gardent chaque prompt), faux port du radar (`FakeRadarStore`) et
 fausse recherche web. Aucun réseau ni LLM réel."""
 
+import asyncio
 import json
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AsyncExitStack
@@ -24,7 +25,7 @@ from app.core.errors import AppError
 from app.db.models.agents import AgentSession
 from tests.agents.graphs.council_models import CouncilModels
 from tests.agents.graphs.web_support import add_users
-from tests.agents.runtime.runner_helpers import all_events, wait_status
+from tests.agents.runtime.runner_helpers import all_events, get_session, wait_status
 from tests.support.radar import RUN_ID, FakeRadarStore, Source
 
 TEXT = (
@@ -136,8 +137,14 @@ class RadarRun:
     user_id: str
     sid: str = ""
 
-    async def wait_status(self, status: str) -> AgentSession:
-        return await wait_status(self.factory, self.user_id, self.sid, status)
+    async def wait_status(self, status: str, timeout: float | None = None) -> AgentSession:
+        """`timeout` : garde contre un blocage (par défaut celui des autres tests du moteur)."""
+        if timeout is None:
+            return await wait_status(self.factory, self.user_id, self.sid, status)
+        async with asyncio.timeout(timeout):
+            while (row := await get_session(self.factory, self.user_id, self.sid)).status != status:
+                await asyncio.sleep(0.01)
+        return row
 
     async def events(self, type_: str) -> list[dict[str, Any]]:
         events = await all_events(self.factory, self.user_id, self.sid)

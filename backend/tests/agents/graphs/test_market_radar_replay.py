@@ -1,6 +1,7 @@
 """Parcours `market_radar` : rejeu après un arrêt (pas de relecture ni de réextraction),
 journaux sans lien ni texte, et branchement du parcours (registre, route, port non branché)."""
 
+import asyncio
 import logging
 
 import pytest
@@ -22,18 +23,25 @@ from tests.agents.graphs.radar_support import (
 from tests.agents.runtime.runner_helpers import wait_until
 from tests.support.radar import ROLE, RUN_ID, ZONE, FakeRadarStore
 
+GUARD = 120.0  # garde contre un blocage, jamais un délai à tenir
+
 
 async def test_replay_mid_read_never_rereads(
     radar_runner: MakeRadar, radar_store: FakeRadarStore
 ) -> None:
+    """Aucune course d'horloge : on attend le signal « la lecture est figée » (posé par le faux
+    port à la 21e lecture, quand 20 sont faites), puis la fin de la session ; `GUARD` n'est qu'une
+    garde contre un blocage, pas un délai que la charge de la machine peut faire expirer."""
     radar_store.block_reads_after = 20
     first = await radar_runner(sources=postings(70))
-    await wait_until(lambda: len(radar_store.read) == 20)
+    async with asyncio.timeout(GUARD):
+        await radar_store.read_blocked.wait()
+    assert len(radar_store.read) == 20
     await first.runner.shutdown()
     radar_store.block_reads_after = None
     second = await radar_runner(first.models, sid=first.sid)
     assert await second.runner.recover_on_startup() == [first.sid]
-    await second.wait_status("completed")
+    await second.wait_status("completed", timeout=GUARD)
     assert radar_store.fresh_reads == 50 and radar_store.repeat_reads == 0
     assert radar_store.queries == 6 and len(first.web.searches) == 6  # recherche pas refaite
 

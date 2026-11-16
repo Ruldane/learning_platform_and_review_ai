@@ -40,6 +40,7 @@ class FakeRadarStore:
     extraction_calls: int = 0
     finalize_calls: int = 0
     block_reads_after: int | None = None  # la lecture se fige (arrêt du back) après n pages lues
+    read_blocked: asyncio.Event = field(default_factory=asyncio.Event)  # posé quand elle se fige
     summary: RadarSummary | None = None
 
     def serve(self, *sources: Source) -> None:
@@ -68,6 +69,7 @@ class FakeRadarStore:
                 self.repeat_reads += 1
                 return page
         if self.block_reads_after is not None and len(self.read) >= self.block_reads_after:
+            self.read_blocked.set()
             await asyncio.Event().wait()
         source = self.sources.get(key or "")
         status, text = (source.status, source.text) if source else ("unreadable", "")

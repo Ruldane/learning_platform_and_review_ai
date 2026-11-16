@@ -24,9 +24,10 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_ZONE = "France"
 LAUNCH_FAILED = "launch_failed"
+SESSION_CANCELLED = "session_cancelled"
 _DEAD_CODES = {
     "failed": "session_failed",
-    "cancelled": "session_cancelled",
+    "cancelled": SESSION_CANCELLED,
     "completed": "not_finalized",
 }
 
