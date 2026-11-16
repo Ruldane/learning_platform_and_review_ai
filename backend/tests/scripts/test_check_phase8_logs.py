@@ -1,0 +1,115 @@
+"""Contrôle de la phase 8 : l'étape `journaux` (rien de personnel dans les journaux du back), la
+partie inconnue et la ligne de commande (codes de sortie, journaux lus sur l'entrée standard)."""
+
+import io
+from typing import Any
+
+import httpx
+import pytest
+
+import scripts.check_phase8 as check
+from scripts.check_phase8 import BRIEF_STEPS, CheckFailed, run_check
+from tests.scripts.phase8_support import NOON, SENTENCES, FakeApi, fails, play
+
+
+@pytest.fixture(autouse=True)
+def fast(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("scripts.phase8_common.POLL_S", 0.0)
+    monkeypatch.setattr("scripts.phase8_plan.local_now", lambda zone: NOON)
+
+
+# -- journaux ---------------------------------------------------------------------------------
+
+
+async def test_logs_step_fails_without_logs() -> None:
+    await fails(FakeApi(), "brief", "journaux", "non fournis", logs=None)
+
+
+@pytest.mark.parametrize(
+    ("part", "leak", "secret"),
+    [
+        ("radar", "relevé du poste Développeur Python lancé", "Développeur"),
+        ("radar", "zone Lyon", "Lyon"),
+        ("radar", "lien https://jobs.example/offre-b lu", "offre-b"),
+        ("radar", "entreprise Maison C", "Maison"),
+        ("brief", "ressource https://docs.example/guide", "docs.example"),
+        ("brief", "titre Un guide", "guide"),
+        ("brief", SENTENCES[0], "rythme"),
+    ],
+)
+async def test_logs_step_fails_on_forbidden_data_without_copying_it(
+    part: str, leak: str, secret: str
+) -> None:
+    with pytest.raises(CheckFailed) as failed:
+        await play(FakeApi(), part, logs=f"INFO ligne\nINFO {leak}\n")
+
+    assert failed.value.step == "journaux" and "Donnée personnelle" in str(failed.value)
+    assert secret not in str(failed.value)
+
+
+async def test_logs_step_counts_clean_lines(capsys: pytest.CaptureFixture[str]) -> None:
+    await play(FakeApi(), "brief", logs="INFO brief b1 créé\nINFO conseil 2 phrases\n")
+
+    assert "2 ligne(s) relue(s), sans donnée" in capsys.readouterr().out
+
+
+async def test_unknown_part_is_refused() -> None:
+    async with httpx.AsyncClient(base_url="http://api") as client:
+        with pytest.raises(CheckFailed) as refused:
+            await run_check(client, part="autre", timeout_s=10)  # type: ignore[arg-type]
+    assert refused.value.step == "partie"
+
+
+# -- ligne de commande ------------------------------------------------------------------------
+
+
+def _fake_run(monkeypatch: pytest.MonkeyPatch, outcome: Exception | None) -> list[dict[str, Any]]:
+    calls: list[dict[str, Any]] = []
+
+    async def fake(client: httpx.AsyncClient, **kwargs: Any) -> list[str]:
+        calls.append(kwargs)
+        if outcome is not None:
+            raise outcome
+        return list(BRIEF_STEPS)
+
+    monkeypatch.setattr(check, "run_check", fake)
+    return calls
+
+
+def test_main_exits_with_one_on_a_failed_step(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _fake_run(monkeypatch, CheckFailed("conseil", "Conseil « failed »."))
+
+    with pytest.raises(SystemExit) as exited:
+        check.main(["--api", "http://localhost:1", "--part", "brief"])
+
+    assert exited.value.code == 1
+    assert "[échec] conseil : Conseil « failed »." in capsys.readouterr().err
+
+
+def test_main_exits_with_zero_and_reads_the_logs_from_the_standard_input(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    calls = _fake_run(monkeypatch, None)
+    monkeypatch.setattr("sys.stdin", io.StringIO("depuis l'entrée standard"))
+
+    with pytest.raises(SystemExit) as exited:
+        check.main(["--api", "http://localhost:1", "--part", "radar", "--logs-file", "-"])
+
+    assert exited.value.code == 0
+    assert calls[0]["part"] == "radar" and calls[0]["logs"] == "depuis l'entrée standard"
+    assert "réussi : 5 étapes (radar)" in capsys.readouterr().out
+
+
+def test_main_defaults_to_planifie_without_logs_and_refuses_an_unknown_part(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls = _fake_run(monkeypatch, None)
+    with pytest.raises(SystemExit):
+        check.main(["--api", "http://localhost:1"])
+    assert calls[0]["logs"] is None and calls[0]["part"] == "planifie"
+
+    with pytest.raises(SystemExit) as refused:
+        check.main(["--part", "tout"])
+    assert refused.value.code == 2
