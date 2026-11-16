@@ -205,8 +205,25 @@ def outcome(
 Files = list[tuple[str, tuple[str, bytes, str]]]
 
 
-def shots(*items: tuple[str, bytes]) -> Files:
-    return [("screenshots", (name, data, "application/octet-stream")) for name, data in items]
+def _announced(data: bytes) -> str:
+    """Le type qu'annonce un navigateur pour ces octets (celui de l'image, sinon binaire)."""
+    for signature, media in (
+        (PNG[:8], "image/png"),
+        (JPEG[:4], "image/jpeg"),
+        (WEBP[:4], "image/webp"),
+    ):
+        if data.startswith(signature):
+            return media
+    return "application/octet-stream"
+
+
+def shots(*items: tuple[str, bytes] | tuple[str, bytes, str]) -> Files:
+    """Des captures à envoyer : `(nom, octets)` avec le type que le navigateur annoncerait, ou
+    `(nom, octets, type annoncé)`."""
+    return [
+        ("screenshots", (item[0], item[1], item[2] if len(item) == 3 else _announced(item[1])))
+        for item in items
+    ]
 
 
 async def submit(

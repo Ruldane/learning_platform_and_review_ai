@@ -11,6 +11,9 @@ l'enterrerait), `profile_projects_full` (20 projets). Sinon une nouvelle version
 source `january`) ; `profile_version` est posé. Journaux : identifiants et numéros de version."""
 
 import logging
+from collections.abc import Awaitable, Callable
+
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.tools.cv_schema import Line, Project, assign_fact_ids
 from app.features.cv.service.profile import profile_state, save_profile_data
@@ -30,6 +33,19 @@ logger = logging.getLogger(__name__)
 
 LINK_MAX = 300  # `Project.link`
 PROJECTS_MAX = 20  # `MasterProfileData.projects`
+
+
+def _recorder(user_id: str, project_id: str) -> Callable[[AsyncSession, int], Awaitable[None]]:
+    """Pose `profile_version` sur le projet **dans la transaction** de la nouvelle version du
+    profil : les deux ensemble ou aucun, un arrêt entre les deux ne laisse jamais le projet dans le
+    profil sans que le projet le sache (un nouveau clic ne l'ajouterait pas deux fois)."""
+
+    async def record(db: AsyncSession, version: int) -> None:
+        row = await owned(db, user_id, project_id)
+        row.profile_version = version
+        await db.flush()
+
+    return record
 
 
 async def add_profile_entry(
@@ -52,17 +68,21 @@ async def add_profile_entry(
         if len(profile.projects) >= PROJECTS_MAX:
             raise profile_projects_full()
         entry = Project(
-            name=body.name.strip(),
-            description=body.description.strip(),
+            name=body.name,
+            description=body.description,
             link=link if isinstance(link, str) and len(link) <= LINK_MAX else None,
-            achievements=[Line(text=text.strip()) for text in body.achievements if text.strip()],
+            achievements=[Line(text=text) for text in body.achievements],
             sources=["january"],
         )
         data = assign_fact_ids(profile.model_copy(update={"projects": [*profile.projects, entry]}))
-        version = await save_profile_data(rt.cv, user_id, data, state.validated.version)
+        version = await save_profile_data(
+            rt.cv,
+            user_id,
+            data,
+            state.validated.version,
+            in_transaction=_recorder(user_id, project_id),
+        )
         async with rt.session_factory() as db:
             row = await owned(db, user_id, project_id)
-            row.profile_version = version
-            await db.commit()
             logger.info("Projet ajouté au profil : projet %s, version %d", project_id, version)
             return project_out(row)

@@ -232,3 +232,8 @@ async def test_other_users_project_is_unknown_to_the_port(
 
 def test_webp_signature_is_recognised() -> None:
     assert detect_image(WEBP) == "image/webp" and detect_image(b"RIFF....WAVE....") is None
+
+
+def test_a_jpeg_needs_more_than_its_three_byte_signature() -> None:
+    assert detect_image(b"\xff\xd8\xff") is None and detect_image(b"\xff\xd8\xff\x00") is None
+    assert detect_image(b"\xff\xd8\xff\xe0\x00\x10JFIF") == "image/jpeg"

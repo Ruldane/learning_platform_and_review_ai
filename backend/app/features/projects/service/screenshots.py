@@ -21,11 +21,17 @@ _JPEG = b"\xff\xd8\xff"
 _SUFFIX_TYPES = {suffix: media for media, suffix in IMAGE_TYPES.items()}
 
 
+def _is_jpeg(data: bytes) -> bool:
+    """`FF D8 FF` suivi d'un octet de marqueur (`C0` à `FE` : APPn, DQT, DHT, SOFn, COM…) : un
+    fichier réduit à la seule signature n'est pas une image."""
+    return len(data) >= 4 and data.startswith(_JPEG) and 0xC0 <= data[3] <= 0xFE
+
+
 def detect_image(data: bytes) -> str | None:
     """Le type d'image selon les octets de tête, `None` si ce n'est ni PNG, ni JPEG, ni WebP."""
     if data.startswith(_PNG):
         return "image/png"
-    if data.startswith(_JPEG):
+    if _is_jpeg(data):
         return "image/jpeg"
     if len(data) >= 12 and data[:4] == b"RIFF" and data[8:12] == b"WEBP":
         return "image/webp"

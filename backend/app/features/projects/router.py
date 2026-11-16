@@ -3,9 +3,22 @@ l'évaluation tourne en tâche de fond), captures, brouillons retouchés, entré
 nouvel essai de l'énoncé. Toutes au nom de l'utilisatrice courante (404 sur le projet d'une autre) ;
 une 422 nomme les champs, sans jamais recopier le rendu."""
 
+from collections.abc import Callable, Coroutine
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, File, Form, Path, Query, Response, UploadFile, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    Path,
+    Query,
+    Request,
+    Response,
+    UploadFile,
+    status,
+)
+from starlette.exceptions import HTTPException
 from starlette.requests import HTTPConnection
 
 from app.core.deps import CurrentUserDep, Db
@@ -21,13 +34,36 @@ from app.features.projects.schemas import (
 )
 from app.features.projects.service.briefs import retry_brief
 from app.features.projects.service.drafts import patch_draft
+from app.features.projects.service.errors import invalid_submission
 from app.features.projects.service.profile_entry import add_profile_entry
 from app.features.projects.service.runtime import ProjectsRuntime
 from app.features.projects.service.screenshots import screenshot_file
 from app.features.projects.service.submit import submit_project
 from app.features.projects.service.views import get_project, list_projects
 
-router = APIRouter(prefix="/projects", tags=["projects"], route_class=FieldPathsRoute)
+
+class FormRoute(FieldPathsRoute):
+    """Comme `FieldPathsRoute`, et un champ texte du rendu de plus de 1 Mo (limite de Starlette,
+    jamais une capture) est une 422 `fields: ["description"]` : la description est le seul champ
+    qui peut raisonnablement l'atteindre. Un corps mal formé reste une 400."""
+
+    def get_route_handler(self) -> Callable[[Request], Coroutine[Any, Any, Response]]:
+        handler = super().get_route_handler()
+
+        async def route(request: Request) -> Response:
+            try:
+                return await handler(request)
+            except HTTPException as exc:
+                # Starlette refuse un champ de formulaire de plus de 1 Mo par une 400 (« Part
+                # exceeded maximum size ») : c'est une `HTTPException` de Starlette, pas de FastAPI.
+                if exc.status_code == 400 and "maximum size" in str(exc.detail):
+                    raise invalid_submission(["description"]) from None
+                raise
+
+        return route
+
+
+router = APIRouter(prefix="/projects", tags=["projects"], route_class=FormRoute)
 
 ProjectId = Annotated[str, Path(min_length=1, max_length=36)]
 _NOT_FOUND: dict[int | str, dict[str, Any]] = {404: {"description": "`project_not_found`"}}

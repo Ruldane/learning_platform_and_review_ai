@@ -7,6 +7,7 @@ gardés (`keep_known`), les compétences du profil montées à `declare` au moin
 Journaux : identifiants et nombres seulement (17.2)."""
 
 import logging
+from collections.abc import Awaitable, Callable
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -150,11 +151,20 @@ async def _reflect(rt: CvRuntime, user_id: str, levels: list[tuple[str, SkillLev
         )
 
 
-async def save_profile(rt: CvRuntime, user_id: str, body: ProfilePutIn) -> ProfileOut:
+async def save_profile(
+    rt: CvRuntime,
+    user_id: str,
+    body: ProfilePutIn,
+    *,
+    in_transaction: Callable[[AsyncSession, int], Awaitable[None]] | None = None,
+) -> ProfileOut:
     """Nouvelle version validée ; 409 `profile_conflict` si `base_version` n'est pas la dernière
-    (ou si une autre version a été écrite pendant ce temps)."""
+    (ou si une autre version a été écrite pendant ce temps). `in_transaction(db, version)` : une
+    écriture d'une autre feature dans la **même transaction** que la version (tout ou rien)."""
     async with rt.version_lock(user_id), rt.session_factory() as db:
         row, levels = await _write(rt, db, user_id, body)
+        if in_transaction is not None:
+            await in_transaction(db, row.version)
         try:
             await db.commit()
         except IntegrityError:
@@ -166,10 +176,16 @@ async def save_profile(rt: CvRuntime, user_id: str, body: ProfilePutIn) -> Profi
 
 
 async def save_profile_data(
-    rt: CvRuntime, user_id: str, data: MasterProfileData, base_version: int | None
+    rt: CvRuntime,
+    user_id: str,
+    data: MasterProfileData,
+    base_version: int | None,
+    *,
+    in_transaction: Callable[[AsyncSession, int], Awaitable[None]] | None = None,
 ) -> int:
     """Nouvelle version validée de `data` ; rend son numéro. Pour les autres features (l'entrée
     d'un projet validé, D166), qui n'importent jamais les schémas du CV (contrat 2). Mêmes 409
     que `save_profile`."""
-    saved = await save_profile(rt, user_id, ProfilePutIn(data=data, base_version=base_version))
+    body = ProfilePutIn(data=data, base_version=base_version)
+    saved = await save_profile(rt, user_id, body, in_transaction=in_transaction)
     return saved.version

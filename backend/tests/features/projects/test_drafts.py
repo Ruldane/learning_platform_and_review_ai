@@ -147,3 +147,16 @@ async def test_patch_never_touches_the_master_profile(
     after = await env.profile_versions()
     assert [v.version for v in after] == [v.version for v in before] == [1, 2]
     assert all(not v.data["projects"] for v in after)
+
+
+async def test_a_blank_entry_name_is_422_on_the_draft_too(
+    pid: str, client: httpx.AsyncClient
+) -> None:
+    for entry, field in [
+        ({"name": "   "}, "entry.name"),
+        ({"name": "Un nom", "achievements": [" "]}, "entry.achievements.0"),
+    ]:
+        r = await patch(client, pid, "profile_entry", entry=entry)
+        assert r.status_code == 422 and r.json()["error"]["details"] == {"fields": [field]}
+    ok = await patch(client, pid, "profile_entry", entry={"name": "  Mon projet  "})
+    assert draft(ok.json(), "profile_entry")["entry"]["name"] == "Mon projet"

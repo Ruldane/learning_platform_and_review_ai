@@ -6,9 +6,11 @@ import asyncio
 from typing import Any
 
 import httpx
+import pytest
 
 from app.agents.tools.cv_schema import Project
 from app.db.models.career import MasterProfile
+from app.features.projects.service import profile_entry
 from app.features.projects.service.store import AgentProjectStore
 from tests.features.projects.support import API, Env, outcome
 from tests.support.projects import REPO_URL
@@ -161,3 +163,56 @@ async def test_the_validation_by_the_port_never_writes_the_profile(env: Env) -> 
     await env.add_profile(2)
     await validated(env)
     assert [v.version for v in await env.profile_versions()] == [1, 2]
+
+
+async def test_a_blank_name_or_line_is_422_not_a_500(env: Env, client: httpx.AsyncClient) -> None:
+    await env.add_profile(1)
+    pid = await validated(env)
+    for body, field in [
+        ({"name": "   "}, "name"),
+        ({"name": "\t\n "}, "name"),
+        ({"achievements": ["Une réalisation", "  "]}, "achievements.1"),
+    ]:
+        r = await enter(client, pid, **body)
+        assert r.status_code == 422, r.text
+        assert r.json()["error"]["details"] == {"fields": [field]}
+    assert len(await env.profile_versions()) == 1 and (await env.row(pid)).profile_version is None
+    blank_description = await enter(client, pid, description="   ", name="  Nom rogné  ")
+    assert blank_description.status_code == 200  # une description blanche est une description vide
+    [project] = (await env.profile_versions())[-1].data["projects"]
+    assert (project["name"], project["description"]) == ("Nom rogné", "")
+
+
+async def test_the_project_and_the_profile_version_are_written_together(
+    env: Env, client: httpx.AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Une panne entre l'écriture de la version et la pose de `profile_version` ne laisse rien :
+    ni version, ni `profile_version` ; le nouveau clic ajoute le projet une seule fois."""
+    await env.add_profile(1)
+    pid = await validated(env)
+    real = profile_entry._recorder
+    calls = {"count": 0}
+
+    def failing(user_id: str, project_id: str) -> Any:
+        record = real(user_id, project_id)
+
+        async def once(db: Any, version: int) -> None:
+            await record(db, version)
+            calls["count"] += 1
+            if calls["count"] == 1:
+                raise RuntimeError("panne simulée après l'écriture de la version")
+
+        return once
+
+    monkeypatch.setattr(profile_entry, "_recorder", failing)
+    broken = await enter(client, pid)
+    assert broken.status_code == 500
+    assert [v.version for v in await env.profile_versions()] == [1]  # rien d'écrit
+    assert (await env.row(pid)).profile_version is None
+    retried = await enter(client, pid)
+    assert retried.status_code == 200 and retried.json()["profile_version"] == 2
+    versions = await env.profile_versions()
+    assert [len(v.data["projects"]) for v in versions] == [0, 1]
+    again = await enter(client, pid)
+    assert again.status_code == 409 and error(again) == "entry_already_added"
+    assert len(await env.profile_versions()) == 2

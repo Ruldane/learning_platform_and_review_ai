@@ -205,7 +205,7 @@ class RecentProject:
     id: str
     title: str
     verdict: str  # `validated` ou `to_redo`
-    attempt: int  # nombre de rendus : distingue deux « à reprendre » d'un même projet
+    ref: str  # la session de l'évaluation : change avec chaque nouvelle évaluation, jamais sans
     at: datetime
 
 
@@ -227,6 +227,7 @@ async def recent_projects(
             continue
         if (after is not None and at < after) or (before is not None and at > before):
             continue
-        found.append(RecentProject(row.id, row.title, row.status, len(row.submissions), at))
+        ref = str(data.get("session_id") or data.get("at") or "")
+        found.append(RecentProject(row.id, row.title, row.status, ref, at))
     found.sort(key=lambda item: (item.at, item.id), reverse=True)
     return found[:limit]

@@ -4,7 +4,7 @@ valeur (description, lien de dépôt, texte d'un brouillon : des données person
 from datetime import datetime
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StringConstraints
 
 from app.db.models.daily import DraftKind, DraftStatus, ProjectStatus
 
@@ -25,6 +25,12 @@ __all__ = [
 ]
 
 CONTENT_MAX = 3_000
+# Les textes de l'entrée de projet sont rognés avant d'être mesurés : un nom ou une réalisation
+# blancs sont une 422, jamais une erreur du profil (D166).
+_STRIP = {"strip_whitespace": True}
+EntryName = Annotated[str, StringConstraints(**_STRIP, min_length=1, max_length=120)]
+EntryLine = Annotated[str, StringConstraints(**_STRIP, min_length=1, max_length=200)]
+EntryText = Annotated[str, StringConstraints(**_STRIP, max_length=600)]
 
 
 class ProjectBriefOut(BaseModel):
@@ -69,11 +75,9 @@ class EvaluationOut(BaseModel):
 class ProfileEntryIn(BaseModel):
     """L'entrée de projet du profil maître : le texte de January, éventuellement modifié."""
 
-    name: str = Field(min_length=1, max_length=120)
-    description: str = Field(default="", max_length=600)
-    achievements: list[Annotated[str, Field(min_length=1, max_length=200)]] = Field(
-        default_factory=list, max_length=4
-    )
+    name: EntryName
+    description: EntryText = ""
+    achievements: list[EntryLine] = Field(default_factory=list, max_length=4)
 
 
 class DraftOut(BaseModel):

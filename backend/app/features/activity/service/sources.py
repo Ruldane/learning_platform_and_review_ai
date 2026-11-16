@@ -123,7 +123,7 @@ async def project_source(
                 id=(
                     f"project:{project.id}:validated"
                     if validated
-                    else f"project:{project.id}:to_redo:{project.attempt}"
+                    else f"project:{project.id}:to_redo:{project.ref}"
                 ),
                 kind="project",
                 at=project.at,
