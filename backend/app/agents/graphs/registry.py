@@ -21,6 +21,7 @@ from app.agents.graphs import (
     learned_document,
     learning_council,
     lesson_factory,
+    market_radar,
     program_builder,
     quiz,
     replan,
@@ -70,6 +71,7 @@ GRAPHS: dict[str, GraphSpec] = {
         GraphSpec(
             "hiring_committee", hiring_committee.HiringCommitteeInput, hiring_committee.build
         ),
+        GraphSpec("market_radar", market_radar.MarketRadarInput, market_radar.build),
     )
 }
 

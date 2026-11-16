@@ -19,6 +19,7 @@ from app.agents.tools.interview_port import NO_INTERVIEWS, InterviewStore
 from app.agents.tools.kit_port import NO_KIT, KitStore
 from app.agents.tools.memory_port import MemoryGateway
 from app.agents.tools.profile_port import NO_PROFILE, ProfileStore
+from app.agents.tools.radar_port import NO_RADAR, RadarStore
 from app.agents.tools.web_port import WebGateway
 from app.core.providers import MemoryProviders, PublishingProviders
 from app.features.applications.service.runtime import ApplicationsRuntime
@@ -107,6 +108,7 @@ def agent_ports(
     kit: KitStore = NO_KIT,
     interviews: InterviewStore = NO_INTERVIEWS,
     committee: CommitteeStore = NO_COMMITTEE,
+    radar: RadarStore = NO_RADAR,
 ) -> AgentPorts:
     """Tous les ports du moteur (D82) : un port de plus = un champ d'`AgentPorts` et une ligne ici.
     Conseil (D84), programme (D86), leçons (D90), quiz (D100), sessions d'étude (D102),
@@ -116,7 +118,8 @@ def agent_ports(
     de CV (D126) et revue de CV (D130) de la feature `cv`, fiche créée en une phrase (D141) de la
     feature `applications` ; kit de candidature (D142) et entretien blanc (D145) de la même
     feature (ports réels : tâches 7.6 et 7.9) ; comité de recrutement (D147) de la même feature ;
-    composés par `app.bootstrap_career`."""
+    radar du marché (D159) de la feature `radar` (port réel : tâche 8.4) ; composés par
+    `app.bootstrap_career`."""
     council = AgentCouncilStore(learning.session_factory, learning.launcher, learning)
     program_store = AgentProgramStore(program)
     return AgentPorts(
@@ -137,6 +140,7 @@ def agent_ports(
         kit,
         interviews,
         committee,
+        radar,
     )
 
 
