@@ -4,13 +4,16 @@ import { CriteriaChecklist } from "../CriteriaChecklist";
 
 interface EvaluationViewProps {
   evaluation: EvaluationDataView;
+  /** Les critères de l'énoncé : chacun est montré, avec le résultat qui porte son numéro. */
+  criteria: string[];
 }
 
 /**
  * L'évaluation du Praticien : le verdict (calculé par le code), son commentaire, l'état de la
- * lecture du dépôt, chaque critère, et la mention que les captures n'ont pas été lues.
+ * lecture du dépôt, chaque critère de l'énoncé (rattaché à son résultat par l'`index` de celui-ci,
+ * jamais par sa place) et la mention que les captures n'ont pas été lues.
  */
-export function EvaluationView({ evaluation }: EvaluationViewProps) {
+export function EvaluationView({ evaluation, criteria }: EvaluationViewProps) {
   const validated = evaluation.verdict === "validated";
   return (
     <section
@@ -27,10 +30,7 @@ export function EvaluationView({ evaluation }: EvaluationViewProps) {
         {t(`projects.evaluation.verdict.${evaluation.verdict}`)}
       </p>
       <p>{evaluation.feedback}</p>
-      <CriteriaChecklist
-        criteria={evaluation.results.map((result) => result.criterion)}
-        results={evaluation.results}
-      />
+      <CriteriaChecklist criteria={criteria} results={evaluation.results} />
       <p className="text-muted-foreground">
         {t(`projects.evaluation.repo.${evaluation.repoStatus}`)}
       </p>

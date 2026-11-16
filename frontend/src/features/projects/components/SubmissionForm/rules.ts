@@ -8,6 +8,9 @@ export const SCREENSHOTS_MAX = 5;
 export const SCREENSHOT_BYTES_MAX = 5 * 1024 * 1024;
 export const SCREENSHOT_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
+/** Les caractères d'un texte comme le serveur les compte : des points de code, pas des unités UTF-16. */
+export const characterCount = (text: string): number => [...text].length;
+
 export interface SubmissionErrors {
   missing?: string;
   repoUrl?: string;
@@ -28,7 +31,7 @@ export function submissionErrors(repoUrl: string, description: string): Submissi
   if (repoUrl.trim() !== "" && !repoUrlIsValid(repoUrl.trim())) {
     errors.repoUrl = t("projects.submission.errors.repoUrl");
   }
-  if (description.length > DESCRIPTION_MAX) {
+  if (characterCount(description) > DESCRIPTION_MAX) {
     errors.description = t("projects.submission.errors.description");
   }
   return errors;

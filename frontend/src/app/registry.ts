@@ -9,6 +9,7 @@ import { learningManifest } from "@/features/learning/manifest";
 import { lessonsManifest } from "@/features/lessons/manifest";
 import { memoryManifest } from "@/features/memory/manifest";
 import { programManifest } from "@/features/program/manifest";
+import { projectsManifest } from "@/features/projects/manifest";
 import { quizManifest } from "@/features/quiz/manifest";
 import { radarManifest } from "@/features/radar/manifest";
 import { replanManifest } from "@/features/replan/manifest";
@@ -29,6 +30,7 @@ export const FEATURES: FeatureManifest[] = [
   quizManifest,
   captureManifest,
   skillsManifest,
+  projectsManifest,
   gapManifest,
   radarManifest,
   cvManifest,

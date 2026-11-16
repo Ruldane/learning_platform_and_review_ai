@@ -88,12 +88,47 @@ describe("ProfileEntryForm", () => {
     expect(alerts).toContain("Chaque réalisation fait 200 caractères au plus.");
   });
 
-  it("says the entry is in the profile and locks the form once added", async () => {
-    const { onAdd, user } = setup(ENTRY, true);
-    expect(screen.getByRole("status")).toHaveTextContent("Ajouté au profil maître.");
-    expect(add()).toBeDisabled();
+  it("replaces the button by « Ajouté au profil (version N) » once added, and locks the form", async () => {
+    const onAdd = vi.fn();
+    render(<ProfileEntryForm entry={ENTRY} added version={4} onAdd={onAdd} />);
+    expect(screen.getByRole("status")).toHaveTextContent("Ajouté au profil (version 4)");
+    expect(screen.queryByRole("button", { name: "Ajouter au profil maître" })).toBeNull();
     expect(screen.getByLabelText("Nom du projet")).toBeDisabled();
-    await user.click(add());
     expect(onAdd).not.toHaveBeenCalled();
+  });
+
+  it("says the entry is in the profile when the version is unknown", () => {
+    setup(ENTRY, true);
+    expect(screen.getByRole("status")).toHaveTextContent("Ajouté au profil maître.");
+    expect(screen.queryByRole("button", { name: "Ajouter au profil maître" })).toBeNull();
+  });
+
+  it("disables the button while the entry is being added", () => {
+    render(<ProfileEntryForm entry={ENTRY} added={false} busy onAdd={vi.fn()} />);
+    expect(screen.getByRole("button", { name: "Ajout en cours…" })).toBeDisabled();
+  });
+
+  it("reads its entry once: a new entry comes with a new key", () => {
+    const { rerender } = render(
+      <ProfileEntryForm key="a" entry={ENTRY} added={false} onAdd={vi.fn()} />,
+    );
+    rerender(
+      <ProfileEntryForm
+        key="a"
+        entry={{ ...ENTRY, name: "Autre" }}
+        added={false}
+        onAdd={vi.fn()}
+      />,
+    );
+    expect(screen.getByLabelText("Nom du projet")).toHaveValue("Pipeline de ventes");
+    rerender(
+      <ProfileEntryForm
+        key="b"
+        entry={{ ...ENTRY, name: "Autre" }}
+        added={false}
+        onAdd={vi.fn()}
+      />,
+    );
+    expect(screen.getByLabelText("Nom du projet")).toHaveValue("Autre");
   });
 });

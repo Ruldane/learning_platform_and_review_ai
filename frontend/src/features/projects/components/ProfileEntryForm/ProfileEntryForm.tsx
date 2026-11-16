@@ -10,6 +10,8 @@ interface ProfileEntryFormProps {
   entry: ProfileEntryView;
   /** L'entrée est déjà dans le profil maître. */
   added: boolean;
+  /** La version du profil maître qui a reçu l'entrée (dite une fois ajoutée). */
+  version?: number | null;
   /** Reçoit l'entrée nettoyée : nom et description coupés, lignes de réalisation vides retirées. */
   onAdd: (entry: ProfileEntryView) => void;
   /** L'ajout est en cours. */
@@ -19,8 +21,10 @@ interface ProfileEntryFormProps {
 /**
  * L'ajout d'un projet au profil maître. Rien n'y entre sans le clic de January : le rappel est
  * écrit, et l'entrée envoyée est nettoyée (le serveur refuse une ligne de réalisation vide).
+ * Le formulaire ne lit `entry` qu'une fois : la page lui donne une `key` qui suit l'entrée.
  */
-export function ProfileEntryForm({ entry, added, onAdd, busy = false }: ProfileEntryFormProps) {
+export function ProfileEntryForm(props: ProfileEntryFormProps) {
+  const { entry, added, version = null, onAdd, busy = false } = props;
   const [name, setName] = useState(entry.name);
   const [description, setDescription] = useState(entry.description);
   const [lines, setLines] = useState(entry.achievements.join("\n"));
@@ -67,7 +71,7 @@ export function ProfileEntryForm({ entry, added, onAdd, busy = false }: ProfileE
         rows={4}
         onChange={setLines}
       />
-      <EntryFooter added={added} busy={busy} locked={locked} />
+      <EntryFooter added={added} version={version} busy={busy} />
     </form>
   );
 }

@@ -54,9 +54,9 @@ export interface EvaluationDataView {
   verdict: "validated" | "to_redo";
   feedback: string;
   repoStatus: RepoStatusView;
-  /** Les critères avec leur résultat (le texte du critère accompagne chaque résultat). */
-  results: (CriterionResultView & { criterion: string })[];
-  /** Le rendu évalué comportait des captures (jamais lues par le Praticien). */
+  /** Les résultats du Praticien : chacun se rattache à un critère de l'énoncé par son `index` (à partir de 1), jamais par sa place. */
+  results: CriterionResultView[];
+  /** Le dernier rendu comportait des captures (jamais lues par le Praticien) : le contrat n'a pas ce champ, la page le tire du rendu. */
   hasScreenshots: boolean;
 }
 
@@ -83,4 +83,12 @@ export interface ProfileEntryView {
   name: string;
   description: string;
   achievements: string[];
+}
+
+/** Les champs du rendu que le serveur refuse (422), chacun avec son message ; jamais une valeur. */
+export interface SubmissionRefusalView {
+  missing?: string;
+  repoUrl?: string;
+  description?: string;
+  screenshots?: string;
 }

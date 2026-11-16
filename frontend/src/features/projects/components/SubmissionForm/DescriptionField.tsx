@@ -1,7 +1,7 @@
 import { useId } from "react";
 import { t } from "@/shared/i18n/t";
 import { fieldClass } from "@/shared/ui/fieldClass";
-import { DESCRIPTION_MAX } from "./rules";
+import { characterCount, DESCRIPTION_MAX } from "./rules";
 
 interface DescriptionFieldProps {
   value: string;
@@ -30,7 +30,7 @@ export function DescriptionField({ value, disabled, error, onChange }: Descripti
       />
       <p id={`${id}-count`} className="text-xs text-muted-foreground tabular-nums">
         {t("projects.submission.counter", {
-          count: value.length.toLocaleString("fr-FR"),
+          count: characterCount(value).toLocaleString("fr-FR"),
           max: DESCRIPTION_MAX.toLocaleString("fr-FR"),
         })}
       </p>

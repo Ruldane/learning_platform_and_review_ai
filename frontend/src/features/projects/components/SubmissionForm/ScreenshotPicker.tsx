@@ -7,11 +7,13 @@ import { ScreenshotList } from "./ScreenshotList";
 interface ScreenshotPickerProps {
   files: File[];
   disabled: boolean;
+  /** Le refus du serveur pour les captures (format que ses octets ne confirment pas, trop de captures). */
+  error?: string;
   onChange: (files: File[]) => void;
 }
 
 /** Choisir jusqu'à 5 captures (PNG, JPEG, WebP, 5 Mo) : une capture refusée n'est jamais gardée. */
-export function ScreenshotPicker({ files, disabled, onChange }: ScreenshotPickerProps) {
+export function ScreenshotPicker({ files, disabled, error, onChange }: ScreenshotPickerProps) {
   const id = useId();
   const [problems, setProblems] = useState<string[]>([]);
 
@@ -36,7 +38,7 @@ export function ScreenshotPicker({ files, disabled, onChange }: ScreenshotPicker
         disabled={disabled}
         onChange={pick}
         aria-describedby={`${id}-hint`}
-        aria-invalid={problems.length > 0}
+        aria-invalid={problems.length > 0 || error !== undefined}
         className={`${fieldClass} h-auto py-1.5`}
       />
       <p id={`${id}-hint`} className="text-xs text-muted-foreground">
@@ -47,6 +49,11 @@ export function ScreenshotPicker({ files, disabled, onChange }: ScreenshotPicker
           {problem}
         </p>
       ))}
+      {error ? (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      ) : null}
       <ScreenshotList
         files={files}
         disabled={disabled}

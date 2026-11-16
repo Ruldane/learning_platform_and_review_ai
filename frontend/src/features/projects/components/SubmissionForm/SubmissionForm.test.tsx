@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import type { SubmissionRefusalView } from "../viewTypes";
 import { SubmissionForm } from "./SubmissionForm";
 
 const png = (name: string, bytes = 100) =>
@@ -138,5 +139,69 @@ describe("SubmissionForm", () => {
       "aria-busy",
       "true",
     );
+  });
+
+  it("counts the description in code points, like the server", () => {
+    setup();
+    // 4 000 émojis = 8 000 unités UTF-16 : le serveur en compte 4 000, c'est accepté.
+    fireEvent.change(description(), { target: { value: "😀".repeat(4000) } });
+    expect(screen.getByText("4 000 / 4 000 caractères")).toBeInTheDocument();
+    expect(description()).toBeValid();
+    fireEvent.change(description(), { target: { value: "😀".repeat(4001) } });
+    expect(screen.getByText(/4 001 \/ 4 000 caractères/)).toBeInTheDocument();
+    expect(description()).toBeInvalid();
+  });
+
+  it("does not remount the other previews when one is removed", async () => {
+    const { user } = setup();
+    await user.upload(pickerInput(), [png("a.png"), png("b.png"), png("c.png")]);
+    const second = await screen.findByRole("img", { name: "Aperçu de b.png" });
+    const third = await screen.findByRole("img", { name: "Aperçu de c.png" });
+    await user.click(screen.getByRole("button", { name: "Retirer la capture a.png" }));
+    expect(screen.queryByRole("img", { name: "Aperçu de a.png" })).toBeNull();
+    expect(screen.getByRole("img", { name: "Aperçu de b.png" })).toBe(second);
+    expect(screen.getByRole("img", { name: "Aperçu de c.png" })).toBe(third);
+  });
+
+  it("keeps two identical files apart and removes only the one asked", async () => {
+    const { user } = setup();
+    await user.upload(pickerInput(), png("a.png"));
+    await user.upload(pickerInput(), png("a.png"));
+    expect(await screen.findAllByRole("button", { name: "Retirer la capture a.png" })).toHaveLength(
+      2,
+    );
+    await user.click(screen.getAllByRole("button", { name: "Retirer la capture a.png" })[0]!);
+    expect(screen.getAllByRole("button", { name: "Retirer la capture a.png" })).toHaveLength(1);
+  });
+
+  describe("server refusal", () => {
+    function withRefusal(refusal: SubmissionRefusalView) {
+      const onSubmit = vi.fn();
+      const view = render(<SubmissionForm onSubmit={onSubmit} busy={false} refusal={refusal} />);
+      return { ...view, user: userEvent.setup(), onSubmit };
+    }
+
+    it("puts each refused field's message on that field and clears it when the field changes", async () => {
+      const { user } = withRefusal({
+        repoUrl: "Le serveur refuse ce lien.",
+        screenshots: "Une capture n'est pas acceptée.",
+      });
+      expect(repo()).toBeInvalid();
+      expect(repo()).toHaveAccessibleDescription(/Le serveur refuse ce lien./);
+      expect(screen.getByText("Une capture n'est pas acceptée.")).toBeVisible();
+      expect(description()).toBeValid();
+      await user.type(repo(), "x");
+      expect(repo()).toBeValid();
+      expect(screen.getByText("Une capture n'est pas acceptée.")).toBeVisible();
+      await user.upload(pickerInput(), png("a.png"));
+      expect(screen.queryByText("Une capture n'est pas acceptée.")).toBeNull();
+    });
+
+    it("shows a refusal for « neither a link nor a description » and clears it on typing", async () => {
+      const { user } = withRefusal({ missing: "Ajoute un lien de dépôt ou une description." });
+      expect(screen.getByRole("alert")).toHaveTextContent("Ajoute un lien");
+      await user.type(description(), "a");
+      expect(screen.queryByRole("alert")).toBeNull();
+    });
   });
 });

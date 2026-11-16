@@ -45,4 +45,28 @@ describe("CriteriaChecklist", () => {
     expect(screen.getAllByText("Pas encore évalué")).toHaveLength(2);
     expect(screen.getAllByText("Atteint")).toHaveLength(1);
   });
+
+  it("matches results by their index, whatever their order, and ignores an index outside the criteria", () => {
+    render(
+      <CriteriaChecklist
+        criteria={CRITERIA}
+        results={[
+          { index: 3, met: false, comment: "README absent." },
+          { index: 9, met: true, comment: "Hors critères." },
+          { index: 1, met: true, comment: "Requête correcte." },
+        ]}
+      />,
+    );
+    const items = within(screen.getByRole("list", { name: "Critères de réussite" })).getAllByRole(
+      "listitem",
+    );
+    expect(items).toHaveLength(3);
+    expect(items[0]).toHaveTextContent("Ventes agrégées par mois");
+    expect(items[0]).toHaveTextContent("Requête correcte.");
+    expect(items[1]).toHaveTextContent("Pas encore évalué");
+    expect(items[2]).toHaveTextContent("README clair");
+    expect(items[2]).toHaveTextContent("Non atteint");
+    expect(items[2]).toHaveTextContent("README absent.");
+    expect(screen.queryByText("Hors critères.")).toBeNull();
+  });
 });

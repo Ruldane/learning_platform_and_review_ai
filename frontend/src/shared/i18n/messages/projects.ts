@@ -1,5 +1,76 @@
 /** Textes des mini projets : énoncé, rendu, évaluation, brouillons et entrée du profil maître. */
 export const projects = {
+  nav: { portfolio: "Portfolio" },
+  portfolio: {
+    title: "Portfolio",
+    intro:
+      "Un mini projet par module de ton programme : rends-le, le Praticien l'évalue, et il devient une preuve sur ta carte des compétences.",
+    loading: "Chargement du Portfolio…",
+    emptyTitle: "Aucun projet pour l'instant",
+    emptyText: "Tes projets arrivent avec les semaines de ton programme.",
+    groups: {
+      to_redo: "À reprendre",
+      todo: "À faire",
+      reviewing: "En cours d'évaluation",
+      brief_pending: "Énoncé en préparation",
+      brief_failed: "Énoncé à relancer",
+      validated: "Validés",
+    },
+  },
+  page: {
+    back: "Retour au Portfolio",
+    loading: "Chargement du projet…",
+    notFoundTitle: "Projet introuvable",
+    notFoundText: "Ce projet n'existe pas.",
+    notFoundAction: "Voir le Portfolio",
+    briefTitle: "Énoncé en cours d'écriture",
+    briefPending:
+      "Le Praticien écrit l'énoncé de ce projet. Il s'affichera ici dès qu'il sera prêt.",
+    briefFailed: "Le Praticien n'a pas réussi à écrire l'énoncé de ce projet.",
+    retryBrief: "Réessayer l'énoncé",
+    retryingBrief: "Relance de l'énoncé…",
+    reviewing: "Évaluation en cours",
+    reviewingText:
+      "Le Praticien lit ton rendu. Le résultat s'affiche ici dès que l'évaluation est terminée.",
+    feed: "Le suivi du Praticien",
+    waitingSession: "Connexion au suivi en cours…",
+    resumed: "Une évaluation était déjà en cours : on la suit.",
+    toRedo: "À reprendre : corrige ce qui manque, puis rends à nouveau ton projet.",
+    submitTitle: "Rendre ton projet",
+    validatedTitle: "Projet validé",
+    validatedOn: "Validé le {date}.",
+    skillsMapText: "Les compétences de ce module sont prouvées sur ta carte des compétences.",
+    skillsMap: "Voir la carte des compétences",
+    draftsTitle: "Tes brouillons",
+    draftsText:
+      "Écrits d'après ton rendu et ton profil : relis-les, vérifie-les, puis publie-les toi-même.",
+    entryTitle: "Ajouter ce projet à ton profil maître",
+    history: "Tes rendus",
+    historyEmpty: "Aucun rendu pour l'instant.",
+    submittedOn: "Rendu du {when}",
+    repo: "Dépôt",
+    shot: "Capture {number} du rendu du {when}",
+    shots: "Captures du rendu du {when}",
+  },
+  errors: {
+    project_not_ready:
+      "L'énoncé de ce projet n'est pas encore écrit : attends-le avant de rendre ton travail.",
+    review_in_progress: "Ton rendu est déjà en cours d'évaluation : on la suit.",
+    project_validated: "Ce projet est déjà validé : il ne se rend pas une seconde fois.",
+    brief_not_failed: "L'énoncé de ce projet n'est pas en échec : il est peut-être déjà relancé.",
+    project_not_validated: "Seul un projet validé peut entrer dans ton profil.",
+    entry_already_added: "Ce projet est déjà dans ton profil maître.",
+    profile_required:
+      "Valide d'abord ton profil maître : le projet s'y ajoute comme une nouvelle version.",
+    profile_draft_pending:
+      "Un brouillon de profil attend ta validation : valide-le ou écarte-le, puis reviens ajouter ce projet.",
+    profile_projects_full:
+      "Ton profil maître a déjà 20 projets : retires-en un avant d'en ajouter un.",
+    profileLink: "Ouvrir ton profil maître",
+    screenshots: "Une capture n'est pas acceptée : PNG, JPEG ou WebP (vérifiés), 5 au plus.",
+    tooLarge: "Une capture est trop volumineuse : 5 Mo au plus chacune.",
+    clipboard: "Le presse-papiers n'est pas disponible.",
+  },
   card: {
     hours: "{hours} h estimées",
     skills: "Compétences : {skills}",
@@ -94,6 +165,7 @@ export const projects = {
     add: "Ajouter au profil maître",
     adding: "Ajout en cours…",
     added: "Ajouté au profil maître.",
+    addedVersion: "Ajouté au profil (version {version})",
     errors: {
       name: "Donne un nom au projet (120 caractères au plus).",
       description: "La description fait 600 caractères au plus.",
