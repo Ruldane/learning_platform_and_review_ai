@@ -3,7 +3,8 @@ feature, une ligne dans `ACTIVITY_SOURCES`. Chaque source rend au plus `limit` �
 `[after, before]` (bornes incluses : le fil écarte lui-même les ex æquo du curseur), sans ordre
 imposé ; la fusion est dans `feed`. Les textes sont écrits ici, par
 le code : un titre de leçon ou d'élément est une donnée de l'utilisatrice, jamais un texte de
-modèle. Un passage en échec ne porte jamais son code d'erreur. La source `project` arrive avec 8.10.
+modèle. Un passage en échec ne porte jamais son code d'erreur. Un projet validé ou à reprendre
+(`project`, 8.10) ne cite que son titre, jamais le rendu.
 """
 
 from collections.abc import Awaitable, Callable
@@ -16,6 +17,7 @@ from app.features.brief.service.views import recent_briefs
 from app.features.ledger.service.ledger import recent_failures
 from app.features.lessons.service.lessons import recent_lessons
 from app.features.memory.service.recent import recent_agent_writes
+from app.features.projects.service.views import recent_projects
 from app.features.radar.service.views import recent_runs
 
 # (db, user_id, after, before, limit)
@@ -109,6 +111,29 @@ async def brief_source(
     ]
 
 
+async def project_source(
+    db: AsyncSession, user_id: str, after: datetime | None, before: datetime | None, limit: int
+) -> list[ActivityItem]:
+    items: list[ActivityItem] = []
+    for project in await recent_projects(db, user_id, after, before, limit):
+        validated = project.verdict == "validated"
+        label = "Projet validé" if validated else "Projet à reprendre"
+        items.append(
+            ActivityItem(
+                id=(
+                    f"project:{project.id}:validated"
+                    if validated
+                    else f"project:{project.id}:to_redo:{project.attempt}"
+                ),
+                kind="project",
+                at=project.at,
+                title=f"{label} : {project.title}",
+                link=f"/competences/portfolio/{project.id}",
+            )
+        )
+    return items
+
+
 async def memory_source(
     db: AsyncSession, user_id: str, after: datetime | None, before: datetime | None, limit: int
 ) -> list[ActivityItem]:
@@ -150,6 +175,7 @@ ACTIVITY_SOURCES: tuple[ActivitySource, ...] = (
     lessons_source,
     radar_source,
     brief_source,
+    project_source,
     memory_source,
     job_failures_source,
 )

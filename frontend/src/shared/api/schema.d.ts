@@ -1473,6 +1473,147 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Projects
+         * @description Le Portfolio : programme, semaine et rang de chaque projet ; `status` filtre.
+         */
+        get: operations["get_projects_api_v1_projects_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get One Project */
+        get: operations["get_one_project_api_v1_projects__project_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/brief": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Brief
+         * @description Relance l'énoncé d'un projet dont les trois essais ont échoué.
+         */
+        post: operations["post_brief_api_v1_projects__project_id__brief_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/drafts/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch One Draft
+         * @description Retouche un brouillon : `entry` pour `profile_entry`, `content` (3 000 caractères au plus)
+         *     pour les autres. Un brouillon « à vérifier » modifié est recontrôlé.
+         */
+        patch: operations["patch_one_draft_api_v1_projects__project_id__drafts__kind__patch"];
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/profile-entry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Profile Entry
+         * @description Ajoute le projet validé au profil maître (nouvelle version validée) : le seul chemin.
+         */
+        post: operations["post_profile_entry_api_v1_projects__project_id__profile_entry_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/screenshots/{number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Screenshot
+         * @description La capture `number` (de 1 à 5) du rendu `submission` (1 : le dernier, 2 : celui d'avant…),
+         *     dans son type d'origine, jamais mise en cache.
+         */
+        get: operations["get_screenshot_api_v1_projects__project_id__screenshots__number__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Submit
+         * @description Rend le projet : un lien http(s) et/ou une description (4 000 caractères au plus), jusqu'à
+         *     cinq captures PNG, JPEG ou WebP de 5 Mo (vérifiées par leurs octets, jamais par leur nom).
+         *     Les captures ne sont pas envoyées au modèle : elles sont montrées dans le Portfolio.
+         */
+        post: operations["post_submit_api_v1_projects__project_id__submit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/proposals/{proposal_id}/choose": {
         parameters: {
             query?: never;
@@ -2832,6 +2973,15 @@ export interface components {
             /** Note */
             note?: string | null;
         };
+        /** Body_post_submit_api_v1_projects__project_id__submit_post */
+        Body_post_submit_api_v1_projects__project_id__submit_post: {
+            /** Description */
+            description?: string | null;
+            /** Repo Url */
+            repo_url?: string | null;
+            /** Screenshots */
+            screenshots?: string[] | null;
+        };
         /** Body_post_template_api_v1_cv_templates_post */
         Body_post_template_api_v1_cv_templates_post: {
             /** Document Id */
@@ -3208,6 +3358,17 @@ export interface components {
             /** Info */
             info: components["schemas"]["AlertOut"][];
         };
+        /** CriterionOut */
+        CriterionOut: {
+            /** Comment */
+            comment: string;
+            /** Criterion */
+            criterion: string;
+            /** Index */
+            index: number;
+            /** Met */
+            met: boolean;
+        };
         /**
          * CvReviewOut
          * @description `before` : indicateurs du CV d'origine ; `gap_terms` : mots clés de l'offre que les faits
@@ -3343,6 +3504,40 @@ export interface components {
             /** Score */
             score: number;
         };
+        /**
+         * DraftOut
+         * @description Un brouillon au nom de January. `to_check` : `flags` nomme ce que son profil et son projet
+         *     ne disent pas (ou la longueur). `edited` : January l'a retouché.
+         */
+        DraftOut: {
+            /** Content */
+            content: string;
+            /** Edited */
+            edited: boolean;
+            entry: components["schemas"]["ProfileEntryIn"] | null;
+            /** Flags */
+            flags: string[];
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "cv_line" | "profile_entry" | "linkedin_post" | "readme_plan";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ready" | "to_check";
+        };
+        /**
+         * DraftPatchIn
+         * @description Un brouillon retouché : `entry` pour l'entrée de projet, `content` pour les trois autres.
+         *     Un seul des deux, selon le type.
+         */
+        DraftPatchIn: {
+            /** Content */
+            content?: string | null;
+            entry?: components["schemas"]["ProfileEntryIn"] | null;
+        };
         /** DueQueue */
         DueQueue: {
             /** Cards */
@@ -3420,6 +3615,29 @@ export interface components {
          */
         ErrorOut: {
             error: components["schemas"]["ErrorDetailOut"];
+        };
+        /**
+         * EvaluationOut
+         * @description La dernière évaluation : le verdict est celui du code. `repo_status` : le dépôt a-t-il pu
+         *     être lu ? (`none` : aucun lien donné).
+         */
+        EvaluationOut: {
+            /** At */
+            at: string | null;
+            /** Feedback */
+            feedback: string;
+            /**
+             * Repo Status
+             * @enum {string}
+             */
+            repo_status: "read" | "unreadable" | "none";
+            /** Results */
+            results: components["schemas"]["CriterionOut"][];
+            /**
+             * Verdict
+             * @enum {string}
+             */
+            verdict: "validated" | "to_redo";
         };
         /**
          * EventIn
@@ -4943,6 +5161,21 @@ export interface components {
             title: string | null;
         };
         /**
+         * ProfileEntryIn
+         * @description L'entrée de projet du profil maître : le texte de January, éventuellement modifié.
+         */
+        ProfileEntryIn: {
+            /** Achievements */
+            achievements?: string[];
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Name */
+            name: string;
+        };
+        /**
          * ProfileImportStarted
          * @description Capture du profil lancée : la session `cv_capture` et les documents rangés dans la mémoire
          *     (CV d'abord, puis LinkedIn).
@@ -5127,6 +5360,93 @@ export interface components {
             name: string;
             /** Sources */
             sources?: ("cv" | "linkedin" | "note" | "january")[];
+        };
+        /**
+         * ProjectBriefOut
+         * @description L'énoncé écrit par le Praticien.
+         */
+        ProjectBriefOut: {
+            /** Constraints */
+            constraints: string[];
+            /** Context */
+            context: string;
+            /** Criteria */
+            criteria: string[];
+            /**
+             * Deliverable
+             * @enum {string}
+             */
+            deliverable: "repo" | "description" | "either";
+            /** Hours */
+            hours: number;
+            /** Objective */
+            objective: string;
+            /** Title */
+            title: string;
+        };
+        /** ProjectOut */
+        ProjectOut: {
+            brief: components["schemas"]["ProjectBriefOut"] | null;
+            /** Drafts */
+            drafts: components["schemas"]["DraftOut"][];
+            evaluation: components["schemas"]["EvaluationOut"] | null;
+            /** Id */
+            id: string;
+            /** Module Id */
+            module_id: string;
+            /** Profile Version */
+            profile_version: number | null;
+            /** Program Id */
+            program_id: string;
+            /** Session Id */
+            session_id: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "brief_pending" | "brief_failed" | "todo" | "reviewing" | "to_redo" | "validated";
+            /** Submissions */
+            submissions: components["schemas"]["SubmissionOut"][];
+            /** Title */
+            title: string;
+            /** Validated At */
+            validated_at: string | null;
+        };
+        /**
+         * ProjectSummary
+         * @description Une ligne du Portfolio. `week` (à partir de 1) et `rank` (dans la semaine, comme `GET
+         *     /programs`) : la place du module dans son programme (`None` si le module n'existe plus).
+         */
+        ProjectSummary: {
+            /** Hours */
+            hours: number | null;
+            /** Id */
+            id: string;
+            /** Module Id */
+            module_id: string;
+            /** Profile Version */
+            profile_version: number | null;
+            /** Program Id */
+            program_id: string;
+            /** Program Title */
+            program_title: string | null;
+            /** Rank */
+            rank: number | null;
+            /** Session Id */
+            session_id: string | null;
+            /** Skills */
+            skills: string[];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "brief_pending" | "brief_failed" | "todo" | "reviewing" | "to_redo" | "validated";
+            /** Title */
+            title: string;
+            /** Validated At */
+            validated_at: string | null;
+            /** Week */
+            week: number | null;
         };
         /** ProposalOut */
         ProposalOut: {
@@ -5788,6 +6108,11 @@ export interface components {
             brave: components["schemas"]["BraveUsageOut"];
         };
         SessionEvent: components["schemas"]["AgentStartedEvent"] | components["schemas"]["AgentTokenEvent"] | components["schemas"]["AgentMessageEvent"] | components["schemas"]["ToolCalledEvent"] | components["schemas"]["ToolResultEvent"] | components["schemas"]["SourceFoundEvent"] | components["schemas"]["BoardUpdateEvent"] | components["schemas"]["MemoryWrittenEvent"] | components["schemas"]["InterruptRequestedEvent"] | components["schemas"]["ProposalReadyEvent"] | components["schemas"]["ArtifactReadyEvent"] | components["schemas"]["CostUpdatedEvent"] | components["schemas"]["RunCompletedEvent"] | components["schemas"]["RunFailedEvent"] | components["schemas"]["UserMessageEvent"];
+        /** SessionStarted */
+        SessionStarted: {
+            /** Session Id */
+            session_id: string;
+        };
         /**
          * SessionView
          * @description État d'une session pour le front ; `last_seq` : dernier événement écrit (le WebSocket
@@ -6254,6 +6579,23 @@ export interface components {
             action: "finish" | "cancel";
             /** Worked Minutes */
             worked_minutes?: number | null;
+        };
+        /**
+         * SubmissionOut
+         * @description Un rendu. `screenshots` : le nombre de captures (`GET /projects/{id}/screenshots/{n}`).
+         */
+        SubmissionOut: {
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Description */
+            description: string | null;
+            /** Repo Url */
+            repo_url: string | null;
+            /** Screenshots */
+            screenshots: number;
         };
         /** TaskCreate */
         TaskCreate: {
@@ -9970,6 +10312,323 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    get_projects_api_v1_projects_get: {
+        parameters: {
+            query?: {
+                status?: ("brief_pending" | "brief_failed" | "todo" | "reviewing" | "to_redo" | "validated") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectSummary"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_one_project_api_v1_projects__project_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectOut"];
+                };
+            };
+            /** @description `project_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_brief_api_v1_projects__project_id__brief_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionStarted"];
+                };
+            };
+            /** @description `project_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `brief_not_failed` */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description `brief_unavailable` */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    patch_one_draft_api_v1_projects__project_id__drafts__kind__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                kind: "cv_line" | "profile_entry" | "linkedin_post" | "readme_plan";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftPatchIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectOut"];
+                };
+            };
+            /** @description `project_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_profile_entry_api_v1_projects__project_id__profile_entry_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileEntryIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectOut"];
+                };
+            };
+            /** @description `project_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `project_not_validated`, `entry_already_added`, `profile_required`, `profile_draft_pending` ou `profile_projects_full` */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_screenshot_api_v1_projects__project_id__screenshots__number__get: {
+        parameters: {
+            query?: {
+                submission?: number;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                    "image/png": string;
+                    "image/webp": string;
+                };
+            };
+            /** @description `project_not_found` ou `screenshot_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_submit_api_v1_projects__project_id__submit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_post_submit_api_v1_projects__project_id__submit_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionStarted"];
+                };
+            };
+            /** @description `project_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `project_not_ready` (énoncé absent), `review_in_progress` (`details.session_id`) ou `project_validated` */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `file_too_large` : une capture dépasse 5 Mo, ou le corps 26 Mo */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `details.fields` : `repo_url`, `description`, `screenshots` */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `review_unavailable` : le rendu n'est pas gardé */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

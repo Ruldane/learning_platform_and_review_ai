@@ -2095,6 +2095,49 @@
         "title": "Body_import_profile_api_v1_profile_import_post",
         "type": "object"
       },
+      "Body_post_submit_api_v1_projects__project_id__submit_post": {
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "repo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Repo Url"
+          },
+          "screenshots": {
+            "anyOf": [
+              {
+                "items": {
+                  "contentMediaType": "application/octet-stream",
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Screenshots"
+          }
+        },
+        "title": "Body_post_submit_api_v1_projects__project_id__submit_post",
+        "type": "object"
+      },
       "Body_post_template_api_v1_cv_templates_post": {
         "properties": {
           "document_id": {
@@ -3109,6 +3152,34 @@
         "title": "CreatedOut",
         "type": "object"
       },
+      "CriterionOut": {
+        "properties": {
+          "comment": {
+            "title": "Comment",
+            "type": "string"
+          },
+          "criterion": {
+            "title": "Criterion",
+            "type": "string"
+          },
+          "index": {
+            "title": "Index",
+            "type": "integer"
+          },
+          "met": {
+            "title": "Met",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "index",
+          "criterion",
+          "met",
+          "comment"
+        ],
+        "title": "CriterionOut",
+        "type": "object"
+      },
       "CvReviewOut": {
         "description": "`before` : indicateurs du CV d'origine ; `gap_terms` : mots clés de l'offre que les faits\ncités ne portent pas, à appuyer par un fait ou à acquérir (ils n'entrent pas dans le CV) ;\n`waiting_output` : la session attend « Que veux-tu maintenant ? » (seul moment où\n« Générer le PDF » est possible).",
         "properties": {
@@ -3489,6 +3560,94 @@
         "title": "DomainScoreOut",
         "type": "object"
       },
+      "DraftOut": {
+        "description": "Un brouillon au nom de January. `to_check` : `flags` nomme ce que son profil et son projet\nne disent pas (ou la longueur). `edited` : January l'a retouché.",
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "edited": {
+            "title": "Edited",
+            "type": "boolean"
+          },
+          "entry": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProfileEntryIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "flags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Flags",
+            "type": "array"
+          },
+          "kind": {
+            "enum": [
+              "cv_line",
+              "profile_entry",
+              "linkedin_post",
+              "readme_plan"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ready",
+              "to_check"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "status",
+          "content",
+          "entry",
+          "flags",
+          "edited"
+        ],
+        "title": "DraftOut",
+        "type": "object"
+      },
+      "DraftPatchIn": {
+        "description": "Un brouillon retouché : `entry` pour l'entrée de projet, `content` pour les trois autres.\nUn seul des deux, selon le type.",
+        "properties": {
+          "content": {
+            "anyOf": [
+              {
+                "maxLength": 3000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "entry": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProfileEntryIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "DraftPatchIn",
+        "type": "object"
+      },
       "DueQueue": {
         "properties": {
           "cards": {
@@ -3713,6 +3872,60 @@
           "error"
         ],
         "title": "ErrorOut",
+        "type": "object"
+      },
+      "EvaluationOut": {
+        "description": "La dernière évaluation : le verdict est celui du code. `repo_status` : le dépôt a-t-il pu\nêtre lu ? (`none` : aucun lien donné).",
+        "properties": {
+          "at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "At"
+          },
+          "feedback": {
+            "title": "Feedback",
+            "type": "string"
+          },
+          "repo_status": {
+            "enum": [
+              "read",
+              "unreadable",
+              "none"
+            ],
+            "title": "Repo Status",
+            "type": "string"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/CriterionOut"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "verdict": {
+            "enum": [
+              "validated",
+              "to_redo"
+            ],
+            "title": "Verdict",
+            "type": "string"
+          }
+        },
+        "required": [
+          "at",
+          "verdict",
+          "results",
+          "feedback",
+          "repo_status"
+        ],
+        "title": "EvaluationOut",
         "type": "object"
       },
       "EventIn": {
@@ -7995,6 +8208,38 @@
         "title": "PostingSummaryOut",
         "type": "object"
       },
+      "ProfileEntryIn": {
+        "description": "L'entrée de projet du profil maître : le texte de January, éventuellement modifié.",
+        "properties": {
+          "achievements": {
+            "items": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 4,
+            "title": "Achievements",
+            "type": "array"
+          },
+          "description": {
+            "default": "",
+            "maxLength": 600,
+            "title": "Description",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "ProfileEntryIn",
+        "type": "object"
+      },
       "ProfileImportStarted": {
         "description": "Capture du profil lancée : la session `cv_capture` et les documents rangés dans la mémoire\n(CV d'abord, puis LinkedIn).",
         "properties": {
@@ -8452,6 +8697,312 @@
           "name"
         ],
         "title": "Project",
+        "type": "object"
+      },
+      "ProjectBriefOut": {
+        "description": "L'énoncé écrit par le Praticien.",
+        "properties": {
+          "constraints": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Constraints",
+            "type": "array"
+          },
+          "context": {
+            "title": "Context",
+            "type": "string"
+          },
+          "criteria": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Criteria",
+            "type": "array"
+          },
+          "deliverable": {
+            "enum": [
+              "repo",
+              "description",
+              "either"
+            ],
+            "title": "Deliverable",
+            "type": "string"
+          },
+          "hours": {
+            "title": "Hours",
+            "type": "integer"
+          },
+          "objective": {
+            "title": "Objective",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "context",
+          "objective",
+          "constraints",
+          "criteria",
+          "hours",
+          "deliverable"
+        ],
+        "title": "ProjectBriefOut",
+        "type": "object"
+      },
+      "ProjectOut": {
+        "properties": {
+          "brief": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProjectBriefOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "drafts": {
+            "items": {
+              "$ref": "#/components/schemas/DraftOut"
+            },
+            "title": "Drafts",
+            "type": "array"
+          },
+          "evaluation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvaluationOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "module_id": {
+            "title": "Module Id",
+            "type": "string"
+          },
+          "profile_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Version"
+          },
+          "program_id": {
+            "title": "Program Id",
+            "type": "string"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
+          "status": {
+            "enum": [
+              "brief_pending",
+              "brief_failed",
+              "todo",
+              "reviewing",
+              "to_redo",
+              "validated"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "submissions": {
+            "items": {
+              "$ref": "#/components/schemas/SubmissionOut"
+            },
+            "title": "Submissions",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "validated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validated At"
+          }
+        },
+        "required": [
+          "id",
+          "module_id",
+          "program_id",
+          "title",
+          "status",
+          "brief",
+          "submissions",
+          "evaluation",
+          "drafts",
+          "validated_at",
+          "profile_version",
+          "session_id"
+        ],
+        "title": "ProjectOut",
+        "type": "object"
+      },
+      "ProjectSummary": {
+        "description": "Une ligne du Portfolio. `week` (à partir de 1) et `rank` (dans la semaine, comme `GET\n/programs`) : la place du module dans son programme (`None` si le module n'existe plus).",
+        "properties": {
+          "hours": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hours"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "module_id": {
+            "title": "Module Id",
+            "type": "string"
+          },
+          "profile_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Version"
+          },
+          "program_id": {
+            "title": "Program Id",
+            "type": "string"
+          },
+          "program_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Program Title"
+          },
+          "rank": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rank"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
+          "skills": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Skills",
+            "type": "array"
+          },
+          "status": {
+            "enum": [
+              "brief_pending",
+              "brief_failed",
+              "todo",
+              "reviewing",
+              "to_redo",
+              "validated"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "validated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validated At"
+          },
+          "week": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Week"
+          }
+        },
+        "required": [
+          "id",
+          "module_id",
+          "program_id",
+          "program_title",
+          "title",
+          "status",
+          "week",
+          "rank",
+          "hours",
+          "skills",
+          "validated_at",
+          "profile_version",
+          "session_id"
+        ],
+        "title": "ProjectSummary",
         "type": "object"
       },
       "ProposalOut": {
@@ -10294,6 +10845,19 @@
           }
         ]
       },
+      "SessionStarted": {
+        "properties": {
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id"
+        ],
+        "title": "SessionStarted",
+        "type": "object"
+      },
       "SessionView": {
         "description": "État d'une session pour le front ; `last_seq` : dernier événement écrit (le WebSocket\nreprend avec `after_seq`) ; `subject_type`/`subject_id` : l'objet suivi (un document pour\nl'Archiviste), pour reprendre son suivi après un rechargement (D71).",
         "properties": {
@@ -11598,6 +12162,50 @@
           "action"
         ],
         "title": "StudyUpdate",
+        "type": "object"
+      },
+      "SubmissionOut": {
+        "description": "Un rendu. `screenshots` : le nombre de captures (`GET /projects/{id}/screenshots/{n}`).",
+        "properties": {
+          "at": {
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "repo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Repo Url"
+          },
+          "screenshots": {
+            "title": "Screenshots",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "at",
+          "repo_url",
+          "description",
+          "screenshots"
+        ],
+        "title": "SubmissionOut",
         "type": "object"
       },
       "TaskCreate": {
@@ -17303,6 +17911,446 @@
         "summary": "List Versions",
         "tags": [
           "replan"
+        ]
+      }
+    },
+    "/api/v1/projects": {
+      "get": {
+        "description": "Le Portfolio : programme, semaine et rang de chaque projet ; `status` filtre.",
+        "operationId": "get_projects_api_v1_projects_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "brief_pending",
+                    "brief_failed",
+                    "todo",
+                    "reviewing",
+                    "to_redo",
+                    "validated"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectSummary"
+                  },
+                  "title": "Response Get Projects Api V1 Projects Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Projects",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}": {
+      "get": {
+        "operationId": "get_one_project_api_v1_projects__project_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`project_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get One Project",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/brief": {
+      "post": {
+        "description": "Relance l'énoncé d'un projet dont les trois essais ont échoué.",
+        "operationId": "post_brief_api_v1_projects__project_id__brief_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`project_not_found`"
+          },
+          "409": {
+            "description": "`brief_not_failed`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "description": "`brief_unavailable`"
+          }
+        },
+        "summary": "Post Brief",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/drafts/{kind}": {
+      "patch": {
+        "description": "Retouche un brouillon : `entry` pour `profile_entry`, `content` (3 000 caractères au plus)\npour les autres. Un brouillon « à vérifier » modifié est recontrôlé.",
+        "operationId": "patch_one_draft_api_v1_projects__project_id__drafts__kind__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "enum": [
+                "cv_line",
+                "profile_entry",
+                "linkedin_post",
+                "readme_plan"
+              ],
+              "title": "Kind",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftPatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`project_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Patch One Draft",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/profile-entry": {
+      "post": {
+        "description": "Ajoute le projet validé au profil maître (nouvelle version validée) : le seul chemin.",
+        "operationId": "post_profile_entry_api_v1_projects__project_id__profile_entry_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileEntryIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`project_not_found`"
+          },
+          "409": {
+            "description": "`project_not_validated`, `entry_already_added`, `profile_required`, `profile_draft_pending` ou `profile_projects_full`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Post Profile Entry",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/screenshots/{number}": {
+      "get": {
+        "description": "La capture `number` (de 1 à 5) du rendu `submission` (1 : le dernier, 2 : celui d'avant…),\ndans son type d'origine, jamais mise en cache.",
+        "operationId": "get_screenshot_api_v1_projects__project_id__screenshots__number__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "number",
+            "required": true,
+            "schema": {
+              "maximum": 5,
+              "minimum": 1,
+              "title": "Number",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "submission",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 10,
+              "minimum": 1,
+              "title": "Submission",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`project_not_found` ou `screenshot_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Screenshot",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/submit": {
+      "post": {
+        "description": "Rend le projet : un lien http(s) et/ou une description (4 000 caractères au plus), jusqu'à\ncinq captures PNG, JPEG ou WebP de 5 Mo (vérifiées par leurs octets, jamais par leur nom).\nLes captures ne sont pas envoyées au modèle : elles sont montrées dans le Portfolio.",
+        "operationId": "post_submit_api_v1_projects__project_id__submit_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_post_submit_api_v1_projects__project_id__submit_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`project_not_found`"
+          },
+          "409": {
+            "description": "`project_not_ready` (énoncé absent), `review_in_progress` (`details.session_id`) ou `project_validated`"
+          },
+          "413": {
+            "description": "`file_too_large` : une capture dépasse 5 Mo, ou le corps 26 Mo"
+          },
+          "422": {
+            "description": "`details.fields` : `repo_url`, `description`, `screenshots`"
+          },
+          "503": {
+            "description": "`review_unavailable` : le rendu n'est pas gardé"
+          }
+        },
+        "summary": "Post Submit",
+        "tags": [
+          "projects"
         ]
       }
     },

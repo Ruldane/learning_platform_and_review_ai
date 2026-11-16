@@ -13,6 +13,7 @@ EXPECTED = {
     "ats_refresh",
     "market_radar",
     "daily_brief",
+    "project_briefs",
 }
 
 

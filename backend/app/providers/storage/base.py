@@ -5,8 +5,9 @@ from typing import Protocol
 
 from app.core.errors import AppError
 
-# Documents importés ; images des pages et polices d'un gabarit de CV (D119).
-ALLOWED_SUFFIXES = (".pdf", ".docx", ".md", ".txt", ".png", ".woff2", ".ttf")
+# Documents importés ; images des pages et polices d'un gabarit de CV (D119) ; captures d'un projet
+# (PNG, JPEG, WebP : D166).
+ALLOWED_SUFFIXES = (".pdf", ".docx", ".md", ".txt", ".png", ".jpg", ".webp", ".woff2", ".ttf")
 
 
 class StorageKeyInvalid(AppError):

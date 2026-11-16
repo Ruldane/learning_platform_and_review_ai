@@ -15,6 +15,8 @@ BOARD_BODY_MAX = 2 * 1024 * 1024
 # Import du profil maître : CV et LinkedIn (10 Mo chacun), la note et l'enveloppe (D124).
 PROFILE_IMPORT_BODY_MAX = 2 * MAX_PROFILE_FILE_BYTES + 1024 * 1024
 TEMPLATE_BODY_MAX = MAX_PROFILE_FILE_BYTES + 1024 * 1024  # gabarit : le CV et son nom
+# Rendu d'un projet : cinq captures de 5 Mo, la description, le lien et l'enveloppe (D166).
+PROJECT_BODY_MAX = 5 * 5 * 1024 * 1024 + 1024 * 1024
 
 
 def add_body_limits(app: FastAPI, prefix: str) -> None:
@@ -39,4 +41,10 @@ def add_body_limits(app: FastAPI, prefix: str) -> None:
         max_bytes=BOARD_BODY_MAX,
         code="board_too_large",
         message="Tableau trop volumineux : 2 Mio au maximum.",
+    )
+    app.add_middleware(  # captures d'un rendu de projet : 5 × 5 Mo (D166)
+        BodySizeLimit,
+        path=f"{prefix}/projects",
+        max_bytes=PROJECT_BODY_MAX,
+        message="Rendu trop volumineux : 5 captures de 5 Mo au maximum.",
     )

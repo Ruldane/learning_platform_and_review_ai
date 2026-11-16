@@ -84,3 +84,9 @@ def test_week_started() -> None:
     assert not week_started(monday, date(2026, 11, 15))
     assert week_started(monday, monday)
     assert week_started(monday, date(2026, 12, 1))
+
+
+def test_submission_link_is_capped_at_2048_characters() -> None:
+    long_link = "https://exemple.fr/" + "a" * 2029  # 2 048 caractères : accepté
+    assert len(long_link) == 2048 and submission_problems(long_link, None, 0) == []
+    assert submission_problems(long_link + "a", None, 0) == ["repo_url"]

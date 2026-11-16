@@ -8,6 +8,7 @@ from app.scheduler.jobs import (
     daily_brief,
     lessons_due,
     market_radar,
+    project_briefs,
     reminders_due,
     skill_snapshots,
     weekly_review,
@@ -21,4 +22,5 @@ JOBS: list[JobSpec] = [
     JobSpec("ats_refresh", timedelta(hours=6), ats_refresh.run),
     JobSpec("market_radar", timedelta(minutes=15), market_radar.run),
     JobSpec("daily_brief", timedelta(minutes=10), daily_brief.run),
+    JobSpec("project_briefs", timedelta(minutes=15), project_briefs.run),
 ]

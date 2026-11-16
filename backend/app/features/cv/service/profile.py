@@ -163,3 +163,13 @@ async def save_profile(rt: CvRuntime, user_id: str, body: ProfilePutIn) -> Profi
         out = to_profile_out(row)
     await _reflect(rt, user_id, levels)
     return out
+
+
+async def save_profile_data(
+    rt: CvRuntime, user_id: str, data: MasterProfileData, base_version: int | None
+) -> int:
+    """Nouvelle version validée de `data` ; rend son numéro. Pour les autres features (l'entrée
+    d'un projet validé, D166), qui n'importent jamais les schémas du CV (contrat 2). Mêmes 409
+    que `save_profile`."""
+    saved = await save_profile(rt, user_id, ProfilePutIn(data=data, base_version=base_version))
+    return saved.version
