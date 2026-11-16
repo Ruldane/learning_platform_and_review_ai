@@ -24,6 +24,8 @@ from app.agents.graphs import (
     lesson_factory,
     market_radar,
     program_builder,
+    project_brief,
+    project_review,
     quiz,
     replan,
     study_session,
@@ -82,6 +84,8 @@ GRAPHS: dict[str, GraphSpec] = {
             recursion_limit=market_radar.RECURSION_LIMIT,
         ),
         GraphSpec("daily_brief", daily_brief.DailyBriefInput, daily_brief.build),
+        GraphSpec("project_brief", project_brief.ProjectBriefInput, project_brief.build),
+        GraphSpec("project_review", project_review.ProjectReviewInput, project_review.build),
     )
 }
 

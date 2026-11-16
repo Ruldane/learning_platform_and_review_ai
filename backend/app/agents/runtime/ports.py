@@ -19,6 +19,7 @@ from app.agents.tools.lesson_port import NO_LESSONS, LessonStore
 from app.agents.tools.memory_port import NO_MEMORY, MemoryGateway
 from app.agents.tools.profile_port import NO_PROFILE, ProfileStore
 from app.agents.tools.program_port import NO_PROGRAM, ProgramStore
+from app.agents.tools.project_port import NO_PROJECTS, ProjectStore
 from app.agents.tools.quiz_port import NO_QUIZ, QuizStore
 from app.agents.tools.radar_port import NO_RADAR, RadarStore
 from app.agents.tools.replan_port import NO_REPLAN, ReplanStore
@@ -47,6 +48,7 @@ class AgentPorts:
     committee: CommitteeStore = NO_COMMITTEE  # comité de recrutement simulé (D147)
     radar: RadarStore = NO_RADAR  # radar du marché : relevé, lecture, extraction (D159)
     brief: BriefStore = NO_BRIEF  # brief du jour : ressource et conseil (D161)
+    projects: ProjectStore = NO_PROJECTS  # énoncé et évaluation des projets preuves (D165)
 
 
 NO_PORTS = AgentPorts()

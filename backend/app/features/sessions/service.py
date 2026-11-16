@@ -55,6 +55,8 @@ ROUTE_ONLY: dict[str, str] = {
     "hiring_committee": "POST /committee",  # version de CV prête, un seul comité par offre (D147)
     "daily_brief": "GET /brief/today",  # brief créé et ouvert par sa route (D161)
     "market_radar": "POST /radar/runs",  # relevé créé, poste et zone fixés par sa route (D159)
+    "project_brief": "planificateur ou POST /projects/{id}/brief",  # énoncé d'un module (D165)
+    "project_review": "POST /projects/{id}/submit",  # rendu vérifié, évaluation (D165)
     "cv_review": "POST /cv/reviews",  # profil, gabarit et offre vérifiés puis figés (D130)
 }
 

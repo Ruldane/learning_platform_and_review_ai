@@ -27,6 +27,13 @@ from app.agents.tools.cv_review_port import ReviewReport
 from app.agents.tools.lesson_port import ResourcePick
 from app.agents.tools.plan_schema import SkillDraft, TaskDraft, WeekDraft
 from app.agents.tools.posting_schema import Eliminatory, Requirement
+from app.agents.tools.project_schema import (
+    CriterionResult,
+    ProfileEntryDraft,
+    ProjectBrief,
+    ProjectDrafts,
+    ProjectEvaluation,
+)
 from app.agents.tools.quiz_port import GradeDraft, QuestionDraft, QuizDraft
 from app.agents.tools.replan_port import ReplanDraft, ReplanTaskDraft
 from app.agents.tools.review_schema import AtsReading, RecruiterReading
@@ -79,6 +86,17 @@ def _shortens(model: type[BaseModel], name: str) -> bool:
         (ReviewReport, "ats_notes"),
         (ReviewReport, "strengths"),
         (ReviewReport, "risks"),
+        (ProjectBrief, "context"),
+        (ProjectBrief, "objective"),
+        (ProjectBrief, "constraints"),
+        (ProjectBrief, "criteria"),
+        (CriterionResult, "comment"),
+        (ProjectEvaluation, "feedback"),
+        (ProfileEntryDraft, "description"),
+        (ProfileEntryDraft, "achievements"),
+        (ProjectDrafts, "cv_line"),
+        (ProjectDrafts, "linkedin_post"),
+        (ProjectDrafts, "readme_plan"),
     ],
 )
 def test_free_text_fields_are_shortened(model: type[BaseModel], name: str) -> None:
@@ -110,6 +128,8 @@ def test_free_text_fields_are_shortened(model: type[BaseModel], name: str) -> No
         (CaptureDigest, "title"),
         (CaptureDigest, "concepts"),
         (CaptureDigest, "modules"),
+        (ProjectBrief, "title"),
+        (ProfileEntryDraft, "name"),
     ],
 )
 def test_identifiers_names_and_code_stay_strict(model: type[BaseModel], name: str) -> None:
