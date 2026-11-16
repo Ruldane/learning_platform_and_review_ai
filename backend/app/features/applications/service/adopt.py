@@ -4,8 +4,13 @@ prête et aucune fiche reçoit sa fiche « À postuler » ; tant que la fiche n'
 « À postuler » vers tout statut sauf « Retirée », elle fige la version envoyée (événement
 `version`) : une nouvelle version ne la remplace plus, même si la fiche revient à « À postuler »
 puis repasse à « Postulée ». Idempotent : une offre qui a déjà une
-fiche, quel que soit son statut (« Retirée » comprise), n'en reçoit pas une seconde. Le CV
-(`cv`) n'importe jamais ce module : c'est la candidature qui lit les versions."""
+fiche, quel que soit son statut (« Retirée » comprise), n'en reçoit pas une seconde.
+
+Une fiche sans offre (saisie à la main ou en une phrase) qui ressemble à l'offre (`adopt_link`,
+D155) est **reliée** au lieu de recevoir une seconde fiche : « À postuler », elle suit la version
+prête ; déjà postulée, elle la fige (événement « liée à la fiche »). Une offre qui ressemble à une
+fiche déjà liée, ou « possible », ne reçoit aucune fiche : l'alerte de sa page reste le chemin.
+Le CV (`cv`) n'importe jamais ce module : c'est la candidature qui lit les versions."""
 
 import logging
 from datetime import datetime
@@ -35,10 +40,14 @@ def follows_version(row: Application) -> bool:
     return row.status == "to_apply" and row.applied_on is None
 
 
-async def freeze_version(db: AsyncSession, user_id: str, row: Application, at: datetime) -> None:
+async def freeze_version(
+    db: AsyncSession, user_id: str, row: Application, at: datetime, *, linked: bool = False
+) -> None:
     """À la première sortie de « À postuler » (voir `events`) : la fiche garde la version prête la
     plus récente de son offre (événement `version`) ; sans version prête, celle qu'elle suivait.
-    Une version déjà figée (événement `version`) n'est jamais remplacée."""
+    Une version déjà figée (événement `version`) n'est jamais remplacée. `linked` : la fiche déjà
+    postulée vient d'être reliée à son offre, la version peut être postérieure à la candidature :
+    l'événement dit « liée à la fiche », pas « envoyée »."""
     if row.posting_id is None or row.id in await EventRepository(db, user_id).version_frozen():
         return
     ready = (await ready_versions_by_posting(db, user_id)).get(row.posting_id)
@@ -49,7 +58,7 @@ async def freeze_version(db: AsyncSession, user_id: str, row: Application, at: d
         application_id=row.id,
         kind="version",
         at=at,
-        text=f"Version {ready[1]} du CV envoyée.",
+        text=f"Version {ready[1]} du CV {'liée à la fiche' if linked else 'envoyée'}.",
         ref_id=ready[0],
     )
 
@@ -61,7 +70,7 @@ async def _link(
     fiche « À postuler » suit la version prête, une fiche déjà postulée la fige."""
     link_posting(row, posting)
     if row.status not in ("to_apply", "withdrawn"):
-        await freeze_version(db, user_id, row, utc_now())
+        await freeze_version(db, user_id, row, utc_now(), linked=True)
     elif follows_version(row):
         row.cv_version_id = ready[0]
     logger.info("Fiche reliée à une offre : utilisateur %s, fiche %s", user_id, row.id)

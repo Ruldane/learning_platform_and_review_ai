@@ -8,7 +8,7 @@ from typing import Any
 
 from sqlalchemy import func, literal_column, select, update
 
-from app.db.models.applications import Application
+from app.db.models.applications import Application, CommitteeRun, Interview
 from app.db.models.career import OPEN_REVIEW_STATUSES, CvReview, CvVersion
 from app.db.models.postings import JobPosting
 from app.db.repository import UserScopedRepository
@@ -134,6 +134,23 @@ class PostingRepository(UserScopedRepository[JobPosting]):
             CvReview.user_id == self.user_id, CvReview.posting_id.in_(builtins.list(posting_ids))
         )
         return {row[0] for row in (await self.session.execute(stmt)).all()}
+
+    async def running_work(self, posting_id: str) -> str | None:
+        """`committee` ou `interview` si un comité ou un entretien en cours cite l'offre (modèles
+        seuls : aucune importation de feature), sinon `None`."""
+        for kind, model in (("committee", CommitteeRun), ("interview", Interview)):
+            stmt = (
+                select(model.id)
+                .where(
+                    model.user_id == self.user_id,
+                    model.posting_id == posting_id,
+                    model.status == "running",
+                )
+                .limit(1)
+            )
+            if (await self.session.execute(stmt)).scalar_one_or_none() is not None:
+                return kind
+        return None
 
     async def application_id(self, posting_id: str) -> str | None:
         """La fiche de candidature qui cite l'offre, si elle existe (modèle seul : aucune

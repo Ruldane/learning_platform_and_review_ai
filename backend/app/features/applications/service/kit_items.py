@@ -14,9 +14,10 @@ from app.agents.nodes.tracker.honesty import allowed_phrases
 from app.agents.tools.kit_schema import (
     NO_QUESTION,
     SALARY_BLANK,
-    SEPARATOR,
     TO_COMPLETE,
     KitContext,
+    split_followups,
+    split_parts,
 )
 from app.agents.tools.salary import is_salary_question
 from app.agents.tools.text_claims import text_claims
@@ -43,17 +44,6 @@ def pending_item(kind: KitKind) -> KitItemOut:
         edited=False,
         updated_at=None,
     )
-
-
-def split_parts(content: str) -> list[str]:
-    """Les textes séparés par une ligne `---` (invitation et message, relances)."""
-    parts: list[list[str]] = [[]]
-    for line in content.splitlines():
-        if line.strip() == SEPARATOR:
-            parts.append([])
-        else:
-            parts[-1].append(line)
-    return ["\n".join(lines).strip() for lines in parts]
 
 
 def form_items(content: str) -> list[tuple[str, str]]:
@@ -87,8 +77,8 @@ def words_of(kind: str, content: str) -> int | dict[str, int] | None:
     if kind == "linkedin":
         return len(split_parts(content)[-1].split())
     if kind == "followups":
-        days = split_parts(content)
-        return {"day_7": len(days[0].split()), "day_14": len(days[-1].split())}
+        day_7, day_14 = split_followups(content)
+        return {"day_7": len(day_7.split()), "day_14": len(day_14.split())}
     return None
 
 

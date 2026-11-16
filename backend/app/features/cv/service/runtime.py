@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.core.errors import AppError
 from app.features.lessons.service.runtime import Launcher
 from app.features.memory.service.runtime import MemoryRuntime
+from app.features.postings.service.runtime import KeyLocks
 from app.providers.fonts.base import FontSource
 from app.providers.pdf.base import HtmlPdfRenderer, PdfLayoutExtractor
 from app.providers.storage.base import FileStorage
@@ -61,6 +62,8 @@ class CvRuntime:
     _imports: dict[str, asyncio.Lock] = field(default_factory=dict, repr=False, compare=False)
     _templates: dict[str, asyncio.Lock] = field(default_factory=dict, repr=False, compare=False)
     _reviews: dict[str, asyncio.Lock] = field(default_factory=dict, repr=False, compare=False)
+    # Création de la fiche entreprise : le même `KeyLocks` que celui des candidatures (M7).
+    company_locks: KeyLocks = field(default_factory=KeyLocks, repr=False, compare=False)
 
     @property
     def storage(self) -> FileStorage:

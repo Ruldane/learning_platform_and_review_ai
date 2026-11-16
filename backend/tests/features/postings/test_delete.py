@@ -10,7 +10,7 @@ import pytest
 from fastapi import FastAPI
 from sqlalchemy import func, select
 
-from app.db.models.applications import Application
+from app.db.models.applications import Application, CommitteeRun, Interview
 from app.db.models.career import CvModification, CvReview, CvVersion
 from tests.features.lessons.conftest import RecordingLauncher
 from tests.features.postings.conftest import API
@@ -178,5 +178,59 @@ async def test_posting_delete_refused_with_application(
     assert (await client.get(f"{API}/postings/{created['id']}")).status_code == 200
     async with app.state.session_factory() as db:
         await db.delete(await db.get(Application, application_id))
+        await db.commit()
+    assert (await client.delete(f"{API}/postings/{created['id']}")).status_code == 204
+
+
+async def _running_committee(app: FastAPI, posting_id: str, status: str) -> None:
+    async with app.state.session_factory() as db:
+        db.add(
+            CommitteeRun(
+                user_id=app.state.local_user_id, cv_version_id="v", posting_id=posting_id,
+                session_id="s", status=status,
+            )
+        )  # fmt: skip
+        await db.commit()
+
+
+async def test_posting_delete_refused_with_running_committee(
+    client: httpx.AsyncClient, app: FastAPI, launcher_spy: RecordingLauncher
+) -> None:
+    """M6 : un comité en cours cite l'offre : 409 `posting_has_running_work`, rien ne part ; le
+    comité fini, la suppression passe."""
+    created = await _create(client)
+    await _ready(app, launcher_spy, created)
+    await _running_committee(app, created["id"], "running")
+    r = await client.delete(f"{API}/postings/{created['id']}")
+    assert (r.status_code, r.json()["error"]["code"]) == (409, "posting_has_running_work")
+    assert r.json()["error"]["details"] == {"kind": "committee"}
+    assert (await client.get(f"{API}/postings/{created['id']}")).status_code == 200
+    async with app.state.session_factory() as db:
+        row = (await db.execute(select(CommitteeRun))).scalar_one()
+        row.status = "done"
+        await db.commit()
+    assert (await client.delete(f"{API}/postings/{created['id']}")).status_code == 204
+
+
+async def test_posting_delete_refused_with_running_free_interview(
+    client: httpx.AsyncClient, app: FastAPI, launcher_spy: RecordingLauncher
+) -> None:
+    """M6 : un entretien libre (sans fiche) en cours sur l'offre : 409, `details.kind` interview."""
+    created = await _create(client)
+    await _ready(app, launcher_spy, created)
+    async with app.state.session_factory() as db:
+        db.add(
+            Interview(
+                user_id=app.state.local_user_id, posting_id=created["id"], mode="mixed",
+                duration_min=15, language="fr", session_id="s", status="running",
+            )
+        )  # fmt: skip
+        await db.commit()
+    r = await client.delete(f"{API}/postings/{created['id']}")
+    assert (r.status_code, r.json()["error"]["code"]) == (409, "posting_has_running_work")
+    assert r.json()["error"]["details"] == {"kind": "interview"}
+    async with app.state.session_factory() as db:
+        row = (await db.execute(select(Interview))).scalar_one()
+        row.status = "done"
         await db.commit()
     assert (await client.delete(f"{API}/postings/{created['id']}")).status_code == 204

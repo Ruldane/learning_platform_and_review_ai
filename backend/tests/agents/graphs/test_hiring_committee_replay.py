@@ -3,6 +3,7 @@ range pas deux fois, un refus du port fait échouer la session lisiblement, les 
 ni CV, ni offre, ni parole, ni entreprise."""
 
 import logging
+import re
 
 import pytest
 
@@ -116,3 +117,21 @@ async def test_one_unreadable_vote_fails_the_committee_without_saving(
     assert await run.failed_code() == "structured_output_invalid"
     assert prompts(models, "moderator", SYNTHESIS_REQUEST) == []
     assert committee_store.save_calls == 0
+
+
+async def test_vote_values_never_logged(
+    caplog: pytest.LogCaptureFixture, committee_runner: MakeCommittee
+) -> None:
+    """M5 : le journal des votes dit la session et le nombre de votes, jamais ce que chaque persona
+    a voté (oui, non, peut_etre) ; le verdict, résultat du comité, reste journalisé à part."""
+    caplog.set_level(logging.INFO, logger="app")
+    votes = {"ats_reader": "non", "recruiter": "peut_etre", "manager": "oui", "colleague": "non"}
+    run = await committee_runner(committee(votes=votes))
+    await run.wait_status("completed")
+    [record] = [r for r in caplog.records if r.name == "app.agents.nodes.committee.votes"]
+    text = record.getMessage()
+    assert run.sid in text and "4 vote(s)" in text
+    for persona in votes:
+        assert persona not in text
+    assert not re.search(r"\b(oui|non|peut_etre|peut-être)\b", text)
+    assert not re.search(r"=(oui|non|peut_etre)\b", caplog.text)

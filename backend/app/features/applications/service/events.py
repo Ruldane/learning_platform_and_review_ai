@@ -72,7 +72,7 @@ async def add_event(
     rt: ApplicationsRuntime, user_id: str, application_id: str, body: EventIn
 ) -> ApplicationDetail:
     """Ajoute l'événement au fil. 404 `application_not_found` ; 422 `status` (changement sans
-    statut) ou `text` (note vide), sans écho."""
+    statut), `text` (note vide) ou `on` (jour futur, celui de January), sans écho."""
     if body.kind == "status" and body.status is None:
         raise invalid("status")
     if body.kind == "note" and not body.text:
@@ -82,6 +82,8 @@ async def add_event(
         zone = await zone_of(db, user_id)
         now = rt.now()
         today = local_today(zone, now)
+        if body.on is not None and body.on > today:
+            raise invalid("on")  # un événement n'a pas lieu dans le futur (jour de January)
         day = body.on or today
         at = event_moment(day, today, now, zone)
         if body.kind == "status":

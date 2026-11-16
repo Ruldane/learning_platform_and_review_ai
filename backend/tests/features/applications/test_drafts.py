@@ -5,12 +5,14 @@ from datetime import date
 
 import pytest
 
+from app.agents.tools.kit_schema import split_followups
 from app.db.models.applications import ReminderKind
 from app.features.applications.service.drafts import (
     draft_for,
     kit_followup,
     linkedin_search_url,
 )
+from app.features.applications.service.kit_items import words_of
 
 APPLIED = date(2026, 11, 8)
 INTERVIEW = date(2026, 11, 14)
@@ -86,3 +88,28 @@ def test_linkedin_search_url_is_encoded() -> None:
     assert url.startswith("https://www.linkedin.com/search/results/people/?keywords=")
     assert " " not in url and "&Data" not in url and "%26" in url
     assert "Soci%C3%A9t%C3%A9%20Fictive" in url
+
+
+@pytest.mark.parametrize(
+    "content",
+    [
+        "Premier mail.\n---\nSecond mail.",
+        "Premier mail.\n\n---\n\nSecond mail.",
+        "Premier mail.\n  ---  \nSecond mail.",
+        "Premier mail.\n-----\nSecond mail.",
+        "Premier mail.\r\n---\r\nSecond mail.",
+    ],
+)
+def test_followups_split_same_rule_graph_and_route(content: str) -> None:
+    """M3 : une seule découpe, celle du graphe (comptes de mots), du fil et des brouillons de
+    relance ; une ligne de tirets seule sépare, des tirets collés à du texte non."""
+    assert split_followups(content) == ("Premier mail.", "Second mail.")
+    assert kit_followup(content, "linkedin_7") == "Premier mail."
+    assert kit_followup(content, "email_14") == "Second mail."
+    assert words_of("followups", content) == {"day_7": 2, "day_14": 2}
+
+
+def test_followups_split_keeps_dashes_glued_to_text() -> None:
+    glued = "Premier --- mail.\n---\nSecond mail."
+    assert split_followups(glued) == ("Premier --- mail.", "Second mail.")
+    assert split_followups("Un seul.") == ("Un seul.", "")

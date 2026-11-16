@@ -200,3 +200,28 @@ async def test_intake_data_never_logged(
     for value in ("Ultra Secr", "ultra secr"):
         assert value not in caplog.text
     assert "Fiche créée" in caplog.text
+
+
+async def test_intake_info_failure_still_creates(
+    client: httpx.AsyncClient,
+    store: AgentApplicationStore,
+    me: str,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Une lecture de l'information en panne n'empêche pas la fiche : l'information est vide, le
+    journal ne dit que le type de l'erreur."""
+
+    async def broken(*_: object, **__: object) -> list[Application]:
+        raise RuntimeError("secret de la base : Société Fictive")
+
+    caplog.set_level(logging.INFO, logger="app")
+    monkeypatch.setattr(
+        "app.features.applications.service.agent_store.ApplicationRepository.recent", broken
+    )
+    assert await store.intake_info(me, DRAFT) == []
+    assert "RuntimeError" in caplog.text and "secret" not in caplog.text
+    monkeypatch.undo()
+    application_id = await store.save_intake(me, SESSION, DRAFT, [])
+    r = await client.get(f"{API}/{application_id}")
+    assert r.status_code == 200

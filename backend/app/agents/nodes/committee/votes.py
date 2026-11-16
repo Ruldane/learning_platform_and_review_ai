@@ -58,11 +58,7 @@ def make_votes(deps: GraphDeps) -> Node:
         ctx = context_of(state)
         spoken = list(state["spoken"])
         cast = await together(*(_vote(deps, ctx, spoken, p) for p in PERSONAS))
-        logger.info(
-            "Votes rendus : session %s, %s",
-            deps.session_id,
-            ", ".join(f"{vote.persona}={vote.vote}" for vote in cast),
-        )
+        logger.info("Votes rendus : session %s, %d vote(s)", deps.session_id, len(cast))
         return {"votes": [vote.model_dump(mode="json") for vote in cast]}
 
     return votes

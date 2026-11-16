@@ -2,7 +2,8 @@
 (texte figé, analyse, doublons relus, statut montré), suppression avec l'élément de mémoire
 `offre` (revues et versions en cascade, puis leurs fichiers ; 409 `review_in_progress` si une revue
 de CV tourne ou attend, 409 `analysis_in_progress` si l'analyse de l'offre est ouverte, 409
-`posting_has_application` tant qu'une fiche de candidature la cite). Journaux :
+`posting_has_application` tant qu'une fiche de candidature la cite, 409 `posting_has_running_work`
+tant qu'un comité ou un entretien en cours la cite). Journaux :
 identifiants seulement."""
 
 import asyncio
@@ -43,6 +44,15 @@ def posting_has_application(application_id: str) -> AppError:
         "Une candidature cite cette offre : elle ne peut pas être supprimée.",
         409,
         {"application_id": application_id},
+    )
+
+
+def posting_has_running_work(kind: str) -> AppError:
+    return AppError(
+        "posting_has_running_work",
+        "Un comité ou un entretien en cours cite cette offre : attends sa fin.",
+        409,
+        {"kind": kind},
     )
 
 
@@ -163,10 +173,11 @@ async def delete_posting(
 ) -> None:
     """Supprime l'offre (revues et versions en cascade), l'élément de mémoire `offre` (sauf s'il
     sert encore à une autre offre) puis, la transaction validée, les fichiers des versions.
-    409 `review_in_progress` (revue lancée ou proposée) ou `analysis_in_progress` (session
-    d'analyse ouverte). `review_lock` : le verrou des revues de l'utilisatrice (`CvRuntime`), pris
-    avant la vérification et gardé jusqu'au commit : une revue créée entre les deux ne part pas en
-    cascade (D137 n° 7). **Valide la transaction.**"""
+    409 `review_in_progress` (revue lancée ou proposée), `analysis_in_progress` (session
+    d'analyse ouverte) ou `posting_has_running_work` (comité ou entretien en cours, `details.kind`).
+    `review_lock` : le verrou des revues de l'utilisatrice
+    (`CvRuntime`), pris avant les vérifications et gardé jusqu'au commit : une revue créée entre les
+    deux ne part pas en cascade (D137 n° 7). **Valide la transaction.**"""
     async with review_lock:
         files = await _delete_rows(db, memory, user_id, posting_id)
     await _erase_files(memory, user_id, files)
@@ -185,6 +196,8 @@ async def _delete_rows(
         raise posting_has_application(application_id)
     if await repo.running_reviews(posting_id):
         raise review_in_progress()
+    if (running := await repo.running_work(posting_id)) is not None:
+        raise posting_has_running_work(running)
     if await open_sessions(db, user_id, posting_id):
         raise analysis_in_progress()
     item_id = posting.memory_item_id

@@ -28,7 +28,7 @@ from app.features.cv.service.runtime import CvRuntime
 from app.features.cv.service.templates_store import AgentCvTemplateStore
 from app.features.memory.service.runtime import MemoryRuntime
 from app.features.postings.service.agent_store import AgentGapStore
-from app.features.postings.service.runtime import PostingsRuntime
+from app.features.postings.service.runtime import KeyLocks, PostingsRuntime
 from app.features.research.service.runtime import ResearchRuntime
 
 
@@ -67,6 +67,7 @@ def career_runtimes(
     lanceur, verrous), port de l'Assistant de suivi (création en une phrase), port du kit de
     candidature et port de l'entretien blanc."""
     postings = PostingsRuntime(session_factory, research, memory, launcher)
+    company_locks = KeyLocks()  # une seule fiche entreprise par clé, revues et kit ensemble
     cv = CvRuntime(
         session_factory,
         memory,
@@ -75,8 +76,9 @@ def career_runtimes(
         publishing.html_pdf,
         publishing.fonts,
         resumer=launcher,  # « Générer le PDF » reprend la question de sortie (D130)
+        company_locks=company_locks,
     )
-    applications = ApplicationsRuntime(session_factory, launcher)
+    applications = ApplicationsRuntime(session_factory, launcher, company_locks=company_locks)
     return CareerRuntimes(
         postings=postings,
         gap=AgentGapStore(session_factory, memory),

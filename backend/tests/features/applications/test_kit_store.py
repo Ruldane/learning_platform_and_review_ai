@@ -254,3 +254,30 @@ async def test_company_brief_keeps_the_pages_it_cites_in_rank_order(
 
 async def test_the_port_is_wired_into_the_career_runtimes(app: FastAPI) -> None:
     assert isinstance(app.state.career.kit_store, AgentKitStore)
+
+
+async def test_kit_cv_piece_uses_sent_version(
+    client: httpx.AsyncClient, app: FastAPI, me: str
+) -> None:
+    """M1 : une fiche postulée a figé la version n° 2 ; la version n° 3, prête ensuite, n'est pas
+    celle qui a été envoyée : la pièce `cv` relancée lit la version figée."""
+    posting = await add_posting(app, text=POSTING)
+    v1 = await add_version(app, posting, number=1)
+    v2 = await add_version(app, posting, number=2)
+    await add_profile(app)
+    body = {"posting_id": posting, "company": COMPANY, "title": TITLE, "status": "applied"}
+    application_id = (await client.post(API, json=body)).json()["application"]["id"]
+    v3 = await add_version(app, posting, number=3)
+    ctx = await kit_store(app).context(me, application_id)
+    assert ctx.cv_version is not None
+    assert (ctx.cv_version.version_id, ctx.cv_version.number) == (v2, 2)
+    assert v1 != v2 != v3
+    # « À postuler » : la version prête la plus récente, comme avant.
+    other = await add_posting(app, company="Autre SA", title="Poste", text=POSTING)
+    await add_version(app, other, number=1)
+    draft = (
+        await client.post(API, json={"posting_id": other, "company": "Autre SA", "title": "Poste"})
+    ).json()["application"]["id"]
+    latest = await add_version(app, other, number=2)
+    ctx = await kit_store(app).context(me, draft)
+    assert ctx.cv_version is not None and ctx.cv_version.version_id == latest

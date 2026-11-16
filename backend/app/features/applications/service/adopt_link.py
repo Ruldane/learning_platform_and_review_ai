@@ -23,18 +23,24 @@ def target_of(
     posting: JobPosting, rows: Sequence[Application], zone: ZoneInfo, today: date
 ) -> tuple[Application | None, bool]:
     """`(fiche à relier, ressemble à une autre fiche)` : la fiche sans offre la plus ressemblante
-    de l'offre (niveau certain ou probable) ; sinon `(None, True)` si une autre fiche ressemble
-    (déjà liée, ou « possible »), `(None, False)` si rien ne ressemble."""
+    de l'offre. Les hits certains (même lien) passent avant les probables : si seuls des fiches déjà
+    liées à une autre offre sont certaines, rien n'est relié, même si une fiche sans offre est
+    probable. Sinon `(None, True)` si une autre fiche ressemble (déjà liée, ou « possible »),
+    `(None, False)` si rien ne ressemble."""
     hits = [
         hit
         for hit in match(incoming_from_posting(posting), [view_of(r, zone) for r in rows], today)
         if hit.level != "info"
     ]
     by_id = {row.id: row for row in rows}
-    for hit in hits:
-        row = by_id[hit.application_id]
-        if hit.level in LINKABLE and row.posting_id is None:
-            return row, True
+    for level in LINKABLE:  # un hit certain décide seul : jamais un probable à sa place
+        group = [hit for hit in hits if hit.level == level]
+        for hit in group:
+            row = by_id[hit.application_id]
+            if row.posting_id is None:
+                return row, True
+        if group:
+            return None, True  # la même offre est déjà suivie par une fiche liée ailleurs
     return None, bool(hits)
 
 

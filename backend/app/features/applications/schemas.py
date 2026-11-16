@@ -119,7 +119,8 @@ class ApplicationPatch(BaseModel):
 
 class EventIn(BaseModel):
     """Un événement du fil : un changement de statut (`status` obligatoire) ou une note (`text`
-    obligatoire). `on` : le jour de l'événement (défaut : aujourd'hui, fuseau de January) ;
+    obligatoire). `on` : le jour de l'événement (défaut : aujourd'hui, fuseau de January ; jamais
+    plus tard : 422 `on`) ;
     `interview_on` : le jour de l'entretien, pour le statut « Entretien » (défaut : `on`)."""
 
     kind: Literal["status", "note"]

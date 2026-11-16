@@ -67,8 +67,8 @@ def _is_distinct(incoming: Incoming, app: ApplicationView) -> bool:
 def _level(incoming: Incoming, app: ApplicationView, today: date) -> HitLevel | None:
     if incoming.url_norm is not None and incoming.url_norm == app.url_norm:
         return "certain"
-    if app.company_norm != incoming.company_norm:
-        return None
+    if not incoming.company_norm or app.company_norm != incoming.company_norm:
+        return None  # une clé vide (nom sans lettre latine) ne désigne aucune entreprise
     if title_similarity(incoming.title, app.title) >= PROBABLE_TITLE:
         return "probable"
     if app.posting_id is not None and app.posting_id in incoming.possible_posting_ids:
@@ -78,10 +78,10 @@ def _level(incoming: Incoming, app: ApplicationView, today: date) -> HitLevel | 
 
 def match(incoming: Incoming, apps: Sequence[ApplicationView], today: date) -> list[Hit]:
     """Les fiches qui ressemblent à l'offre entrante, un seul niveau par fiche (le plus fort) :
-    même lien : certain ; même entreprise et intitulé à 85 % : probable ; même entreprise et offre
-    « possible » : possible ; même entreprise dans les 30 derniers jours : info. La fiche de la
-    même offre (même `posting_id`) n'est jamais un doublon, ni une fiche confirmée « autre
-    poste ». Tri : niveau, puis date de candidature (ou de création) décroissante."""
+    même lien : certain ; même entreprise (clé non vide) et intitulé à 85 % : probable ; même
+    entreprise et offre « possible » : possible ; même entreprise dans les 30 derniers jours : info.
+    La fiche de la même offre (même `posting_id`) n'est jamais un doublon, ni une fiche confirmée
+    « autre poste ». Tri : niveau, puis date de candidature (ou de création) décroissante."""
     found: list[tuple[HitLevel, ApplicationView]] = []
     for app in apps:
         if incoming.posting_id is not None and incoming.posting_id == app.posting_id:

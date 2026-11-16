@@ -3192,7 +3192,8 @@ export interface components {
         /**
          * EventIn
          * @description Un événement du fil : un changement de statut (`status` obligatoire) ou une note (`text`
-         *     obligatoire). `on` : le jour de l'événement (défaut : aujourd'hui, fuseau de January) ;
+         *     obligatoire). `on` : le jour de l'événement (défaut : aujourd'hui, fuseau de January ; jamais
+         *     plus tard : 422 `on`) ;
          *     `interview_on` : le jour de l'entretien, pour le statut « Entretien » (défaut : `on`).
          */
         EventIn: {
@@ -8840,7 +8841,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `review_in_progress` (une revue de CV de l'offre est lancée ou proposée : la terminer d'abord), `analysis_in_progress` (l'analyse de l'offre tourne : réessayer dans un instant), `posting_has_application` (une fiche de candidature cite l'offre : `details.application_id`) */
+            /** @description `review_in_progress` (une revue de CV de l'offre est lancée ou proposée : la terminer d'abord), `analysis_in_progress` (l'analyse de l'offre tourne : réessayer dans un instant), `posting_has_application` (une fiche de candidature cite l'offre : `details.application_id`), `posting_has_running_work` (un comité ou un entretien en cours cite l'offre : `details.kind`, `committee` ou `interview`) */
             409: {
                 headers: {
                     [name: string]: unknown;

@@ -47,6 +47,7 @@ from app.features.cv.service.review_data import (
 from app.features.cv.service.runtime import CvRuntime
 from app.features.postings.service.queries import get_posting
 from app.features.postings.service.rules import company_key
+from app.features.postings.service.runtime import company_lock
 
 logger = logging.getLogger(__name__)
 
@@ -124,7 +125,8 @@ class AgentCvReviewStore:
         ats: str | None,
     ) -> None:
         key = company_key(name) or name.strip().casefold()
-        async with self._rt.session_factory() as db:
+        lock = company_lock(self._rt.company_locks, user_id, key)
+        async with lock, self._rt.session_factory() as db:
             repo = CompanyRepository(db, user_id)
             row = await repo.by_key(key) or await repo.add(name=name[:200], name_norm=key[:200])
             row.brief = brief.model_dump(mode="json")

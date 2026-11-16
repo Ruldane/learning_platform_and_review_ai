@@ -23,6 +23,8 @@ class ApplicationsRuntime:
     # Création, événements et adoption des versions : un verrou par utilisatrice (le contrôle des
     # doublons et l'écriture de la fiche ne se croisent pas).
     locks: KeyLocks = field(default_factory=KeyLocks, repr=False, compare=False)
+    # Création de la fiche entreprise : le même `KeyLocks` que celui des revues de CV (M7).
+    company_locks: KeyLocks = field(default_factory=KeyLocks, repr=False, compare=False)
 
     def lock(self, user_id: str) -> asyncio.Lock:
         """Le verrou des candidatures de l'utilisatrice."""

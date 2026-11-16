@@ -4,7 +4,8 @@ d'un CV (« Compétences », « Formation »…) ne sont pas des noms."""
 
 import pytest
 
-from app.agents.tools.committee_schema import ChangeDraft, committee_changes
+from app.agents.tools.committee_schema import SECTION_WORDS, ChangeDraft, committee_changes
+from app.agents.tools.posting_schema import normalize_term
 from tests.support.text_claims import COMPANY, P
 
 
@@ -53,3 +54,18 @@ def test_skill_terms_keep_the_acquire_template() -> None:
     change = one("Ajoute Kubernetes chez Capgemini dans la section Compétences.")
     assert change.text.startswith("À acquérir : Kubernetes.")
     assert change.needs_skill and change.terms == ["Kubernetes"]
+
+
+@pytest.mark.parametrize(
+    "word",
+    [
+        "Certifications", "Intérêts", "Loisirs", "Bénévolat", "Publications",
+        "Certification", "Interests", "Hobbies", "Volunteering", "Volunteer",
+    ],
+)  # fmt: skip
+def test_section_words_include_certifications_interests(word: str) -> None:
+    """Les sections d'un CV que le comité cite (Certifications, Intérêts, Loisirs, Bénévolat,
+    Publications, et leurs formes anglaises) ne sont pas des noms propres à vérifier."""
+    assert normalize_term(word, plural=True) in SECTION_WORDS
+    change = one(f"Place la section {word} après la section Formation.")
+    assert not change.needs_skill and change.terms == []

@@ -64,7 +64,9 @@ CHECK = "À vérifier : ton profil ne dit pas {terms}. Ne l'écris pas dans ton 
 # Les mots d'une section de CV : une consigne sur le CV (« la section Compétences »), pas un nom.
 _SECTION_NAMES = (
     "Compétences Expériences Expérience Formation Formations Projets Langues Résumé Profil "
-    "Skills Experience Education Projects Summary Languages"
+    "Certifications Intérêts Loisirs Bénévolat Publications "
+    "Skills Experience Education Projects Summary Languages Certifications Interests Hobbies "
+    "Volunteering Volunteer Publications"
 )
 SECTION_WORDS = frozenset(normalize_term(word, plural=True) for word in _SECTION_NAMES.split())
 

@@ -6,13 +6,15 @@ Chaque appel ouvre ses propres sessions de base, courtes.
 - `intake_alerts` : les mêmes règles que la création à la main (`match`, 7.1) sur les fiches de
   January, sans les simples informations (« même entreprise dans les 30 jours ») ; la fiche en
   préparation n'a ni lien ni offre, seuls l'entreprise et l'intitulé comptent.
-- `intake_info` : les simples informations seules, que la session annonce à la création (M4).
+- `intake_info` : les simples informations seules, que la session annonce à la création (M4) ;
+  une lecture en panne les rend vides (journal : le type de l'erreur).
 - `save_intake` : `create_application` (le service de `POST /applications` : même contrôle des
   doublons, même verrou, même fil), idempotent par session (`ref_id` de l'événement `created`) ;
   `distinct_from` : les fiches de l'alerte que January a confirmées « autre poste ».
 
 Journaux : identifiants seulement, jamais la phrase, l'entreprise, l'intitulé ni un contact."""
 
+import logging
 from typing import cast
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -33,6 +35,8 @@ from app.features.applications.service.runtime import ApplicationsRuntime
 from app.features.applications.service.views import alerts_out, view_of
 from app.features.postings.service.duplicates import zone_of
 from app.features.postings.service.rules import company_key
+
+logger = logging.getLogger(__name__)
 
 
 def application_in(draft: IntakeDraft, distinct_from: list[str]) -> ApplicationIn:
@@ -91,10 +95,18 @@ class AgentApplicationStore:
         ]
 
     async def intake_info(self, user_id: str, draft: IntakeDraft) -> list[InfoView]:
-        return [
-            InfoView(a.application_id, a.company, a.title, a.status, a.message)
-            for a in await self._alerts(user_id, draft, info=True)
-        ]
+        """Les simples informations ; une lecture en panne les rend vides (la fiche se crée quand
+        même), le journal ne dit que le type de l'erreur."""
+        try:
+            alerts = await self._alerts(user_id, draft, info=True)
+        except Exception as exc:  # noqa: BLE001 - une information de moins ne retient pas la fiche
+            logger.warning(
+                "Informations de l'intake non lues : utilisateur %s, %s",
+                user_id,
+                type(exc).__name__,
+            )
+            return []
+        return [InfoView(a.application_id, a.company, a.title, a.status, a.message) for a in alerts]
 
     async def save_intake(
         self, user_id: str, session_id: str, draft: IntakeDraft, distinct_from: list[str]

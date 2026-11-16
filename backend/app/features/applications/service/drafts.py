@@ -5,11 +5,11 @@ adressée à January, donc toujours en français. Quand la pièce « relances »
 « à vérifier »), son texte remplace le gabarit de 7 jours (`linkedin_7`) et de 14 jours
 (`email_14`). Journaux : un brouillon n'est jamais journalisé."""
 
-import re
 from datetime import date
 from typing import Literal
 from urllib.parse import quote
 
+from app.agents.tools.kit_schema import split_followups
 from app.db.models.applications import ReminderKind
 
 Language = Literal["fr", "en"]
@@ -43,7 +43,6 @@ _EN_MONTHS = (
     "November",
     "December",
 )
-_KIT_SPLIT = re.compile(r"^[ \t]*-{3,}[ \t]*$", re.MULTILINE)
 _KIT_INDEX: dict[ReminderKind, int] = {"linkedin_7": 0, "email_14": 1}
 
 _FR: dict[ReminderKind, str] = {
@@ -126,12 +125,12 @@ def _hello(contact_name: str | None, language: Language) -> str:
 
 def kit_followup(content: str, kind: ReminderKind) -> str | None:
     """Le texte de la pièce « relances » du kit pour cette relance : le courriel de 7 jours est
-    avant la première ligne `---`, celui de 14 jours après ; `None` s'il manque."""
+    avant la première ligne `---`, celui de 14 jours après (`split_followups`, la règle du graphe) ;
+    `None` s'il manque."""
     index = _KIT_INDEX.get(kind)
     if index is None:
         return None
-    parts = [part.strip() for part in _KIT_SPLIT.split(content)]
-    return parts[index] if index < len(parts) and parts[index] else None
+    return split_followups(content)[index] or None
 
 
 def linkedin_search_url(company: str, title: str) -> str:

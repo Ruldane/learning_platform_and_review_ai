@@ -40,6 +40,12 @@ class KeyLocks:
         return lock
 
 
+def company_lock(locks: KeyLocks, user_id: str, key: str) -> asyncio.Lock:
+    """Le verrou de la fiche entreprise `key` (`company_key`) : la revue de CV et le dossier du kit
+    la créent toutes deux ; `locks` est le même `KeyLocks` des deux côtés (`bootstrap_career`)."""
+    return locks.get(user_id, f"company:{key}")
+
+
 @dataclass
 class PostingsRuntime:
     session_factory: async_sessionmaker[AsyncSession]

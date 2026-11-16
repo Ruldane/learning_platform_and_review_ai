@@ -37,7 +37,10 @@ __all__ = [
     "NewsItem",
     "Pitch",
     "SourceRef",
+    "is_separator",
     "join_parts",
+    "split_followups",
+    "split_parts",
 ]
 
 KIT_KINDS: tuple[KitKind, ...] = (
@@ -55,10 +58,36 @@ TO_COMPLETE = "À compléter"
 NO_QUESTION = "Aucune question éliminatoire repérée dans l'offre."
 
 
+def is_separator(line: str) -> bool:
+    """Une ligne de trois tirets ou plus, seule (espaces autour permis) : le séparateur des deux
+    textes d'une pièce (`followups`, `linkedin`). Des tirets collés à du texte n'en sont pas."""
+    stripped = line.strip()
+    return len(stripped) >= len(SEPARATOR) and set(stripped) == {"-"}
+
+
+def split_parts(content: str) -> list[str]:
+    """Les textes d'une pièce, séparés par une ligne `---` (`is_separator`) ; une seule règle pour
+    le graphe, la route et les brouillons de relance."""
+    parts: list[list[str]] = [[]]
+    for line in content.splitlines():
+        if is_separator(line):
+            parts.append([])
+        else:
+            parts[-1].append(line)
+    return ["\n".join(lines).strip() for lines in parts]
+
+
+def split_followups(content: str) -> tuple[str, str]:
+    """`(courriel de 7 jours, courriel de 14 jours)` du contenu rangé de `followups` : avant la
+    première ligne `---`, et après la dernière ; `("texte", "")` sans séparateur."""
+    parts = split_parts(content)
+    return parts[0], parts[-1] if len(parts) > 1 else ""
+
+
 def join_parts(first: str, second: str) -> str:
-    """Deux textes séparés par une ligne `---` (une ligne `---` d'un texte est retirée)."""
+    """Deux textes séparés par une ligne `---` (une ligne de séparation d'un texte est retirée)."""
     clean = [
-        "\n".join(line for line in text.splitlines() if line.strip() != SEPARATOR).strip()
+        "\n".join(line for line in text.splitlines() if not is_separator(line)).strip()
         for text in (first, second)
     ]
     return f"{clean[0]}\n\n{SEPARATOR}\n\n{clean[1]}"

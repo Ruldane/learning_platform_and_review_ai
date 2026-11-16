@@ -16,20 +16,22 @@ async def _event(client: httpx.AsyncClient, application_id: str, **body: object)
 
 async def test_status_event_sets_dates_and_thread(client: httpx.AsyncClient) -> None:
     application_id = await created_id(client, **SOCIETE)
-    r = await _event(client, application_id, kind="status", status="applied", text="Envoyée")
+    r = await _event(
+        client, application_id, kind="status", status="applied", text="Envoyée", on="2026-11-10"
+    )
     assert r.status_code == 200, r.text
     detail = r.json()
-    assert (detail["status"], detail["applied_on"]) == ("applied", "2026-11-15")
-    last = detail["events"][-1]
+    assert (detail["status"], detail["applied_on"]) == ("applied", "2026-11-10")
+    [last] = [e for e in detail["events"] if e["kind"] == "status"]
     assert (last["kind"], last["status_from"], last["status_to"]) == (
         "status",
         "to_apply",
         "applied",
     )
     assert last["text"] == "Envoyée"
-    r = await _event(client, application_id, kind="status", status="rejected", on="2026-11-20")
+    r = await _event(client, application_id, kind="status", status="rejected", on="2026-11-15")
     detail = r.json()
-    assert detail["status"] == "rejected" and detail["applied_on"] == "2026-11-15"
+    assert detail["status"] == "rejected" and detail["applied_on"] == "2026-11-10"
     stats = (await client.get(f"{API}/stats")).json()
     assert stats["by_status"]["rejected"] == 1 and stats["mean_response_days"] == 5.0
     assert stats["response_rate"] == 1.0
@@ -186,3 +188,20 @@ async def test_version_not_refrozen_after_back_to_to_apply(
     later = await add_version(app, other)
     detail = (await _event(client, ref, kind="status", status="applied")).json()
     assert detail["cv_version_id"] == later
+
+
+async def test_event_in_future_is_422(client: httpx.AsyncClient) -> None:
+    """M8 : un événement ne se date pas dans le futur (le jour de January, comme le formulaire) ;
+    422 qui nomme `on`, sans écho ; aujourd'hui et hier passent."""
+    application_id = await created_id(client, **SOCIETE)
+    r = await _event(client, application_id, kind="note", text="x", on="2099-01-01")
+    assert r.status_code == 422 and r.json()["error"]["details"]["fields"] == ["on"]
+    assert "2099" not in r.text
+    r = await _event(client, application_id, kind="status", status="applied", on="2026-11-16")
+    assert r.status_code == 422 and r.json()["error"]["details"]["fields"] == ["on"]
+    assert (
+        await _event(client, application_id, kind="note", text="x", on="2026-11-15")
+    ).status_code == 200
+    assert (
+        await _event(client, application_id, kind="note", text="y", on="2026-11-14")
+    ).status_code == 200

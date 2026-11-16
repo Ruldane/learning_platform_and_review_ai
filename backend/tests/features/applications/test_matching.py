@@ -156,3 +156,16 @@ def test_info_message_wording() -> None:
     assert "il y a 1 jour," in one
     draft = alert_message("info", "Autre SA", "Data", "to_apply", TODAY - timedelta(days=4), TODAY)
     assert draft == "Pour info : tu as une fiche chez Autre SA il y a 4 jours, pour le poste Data."
+
+
+def test_empty_company_key_never_probable() -> None:
+    """Un nom d'entreprise sans lettre latine donne une clé vide : deux entreprises différentes
+    ne se ressemblent pas pour autant (ni « probable », ni « possible », ni information)."""
+    assert company_key("日本電機") == "" == company_key("東京工業")
+    existing = app("a1", company="東京工業", posting_id="p1")
+    assert match(incoming(company="日本電機"), [existing], TODAY) == []
+    assert match(incoming(company="日本電機", possible=frozenset({"p1"})), [existing], TODAY) == []
+    url = "https://exemple.org/jobs/7"  # le même lien reste certain
+    assert match(
+        incoming(company="日本電機", url=url), [app("a2", url=url, company="x")], TODAY
+    ) == [Hit("certain", "a2")]

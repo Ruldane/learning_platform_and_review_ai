@@ -5,9 +5,10 @@ ses propres sessions de base, courtes.
 - `context` : lecture seule. La fiche (entreprise, intitulé exact, contact), son offre (l'analyse de
   l'offre liée, sinon une analyse minimale de la copie figée de la fiche), le profil maître validé,
   le dossier de `companies` s'il a moins de 30 jours (ses pages **dans l'ordre des citations** :
-  `[n]` = rang + 1), la version de CV prête la plus récente de l'offre, les pièces modifiées par
-  January (`keep`) et son jour (fuseau de ses réglages). 409 `posting_required` (ni offre ni texte
-  figé), 409 `profile_required` (aucun profil validé).
+  `[n]` = rang + 1), la version de CV envoyée quand la fiche l'a figée (événement `version`), sinon
+  la version prête la plus récente de l'offre, les pièces modifiées par January (`keep`) et son
+  jour (fuseau de ses réglages). 409 `posting_required` (ni offre ni texte figé), 409
+  `profile_required` (aucun profil validé).
 - `save_piece` : **idempotent par `(fiche, pièce, session)`** et sûr sous écritures parallèles (les
   sept branches du parcours rangent en même temps) : un verrou par fiche, puis la ligne unique
   `(fiche, pièce)` ; la ligne de la même session, ou une pièce que January a modifiée entre-temps,
@@ -51,10 +52,15 @@ from app.features.applications.service.kit_language import posting_analysis
 from app.features.applications.service.reminders_out import pick_contact
 from app.features.applications.service.runtime import ApplicationsRuntime
 from app.features.applications.service.views import get_application
-from app.features.cv.service.versions import ready_versions_by_posting, validated_profile
+from app.features.cv.service.versions import (
+    ready_versions_by_posting,
+    validated_profile,
+    version_numbers,
+)
 from app.features.postings.service.duplicates import zone_of
 from app.features.postings.service.queries import postings_by_ids
 from app.features.postings.service.rules import company_key
+from app.features.postings.service.runtime import company_lock
 
 logger = logging.getLogger(__name__)
 
@@ -158,6 +164,14 @@ class AgentKitStore:
     async def _version(
         self, db: AsyncSession, user_id: str, row: Application
     ) -> CvVersionRef | None:
+        """La version de CV du kit : la version envoyée quand la fiche l'a figée (événement
+        `version`), sinon la version prête la plus récente de l'offre."""
+        if row.cv_version_id and row.id in await EventRepository(db, user_id).version_frozen():
+            number = (await version_numbers(db, user_id, [row.cv_version_id])).get(
+                row.cv_version_id
+            )
+            if number is not None:
+                return CvVersionRef(version_id=row.cv_version_id, number=number)
         if row.posting_id is None:
             return None
         ready = (await ready_versions_by_posting(db, user_id)).get(row.posting_id)
@@ -255,7 +269,10 @@ class AgentKitStore:
     ) -> None:
         rt = self._rt
         key = company_name_key(company)
-        async with rt.locks.get(user_id, "kit-dossier"), rt.session_factory() as db:
+        async with (
+            company_lock(rt.company_locks, user_id, key),
+            rt.session_factory() as db,
+        ):
             repo = CompanyRepository(db, user_id)
             row = await repo.by_key(key) or await repo.add(name=company[:200], name_norm=key[:200])
             if row.dossier and row.dossier.get("session_id") == session_id:
