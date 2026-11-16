@@ -254,6 +254,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/brief/today": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Today
+         * @description Le brief du jour local, créé s'il manque (`origin` « opening »).
+         */
+        get: operations["get_today_api_v1_brief_today_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/capture": {
         parameters: {
             query?: never;
@@ -2606,6 +2626,22 @@ export interface components {
             /** Tasks */
             tasks: components["schemas"]["BlockTaskOut"][];
         };
+        /**
+         * BlockRubric
+         * @description Le bloc d'étude du jour : la leçon et ses tâches dues (`minutes` : leur total).
+         */
+        BlockRubric: {
+            /** Lesson Id */
+            lesson_id: string;
+            /** Lesson Title */
+            lesson_title: string;
+            /** Minutes */
+            minutes: number;
+            /** Module Title */
+            module_title: string;
+            /** Tasks */
+            tasks: components["schemas"]["BriefBlockTask"][];
+        };
         /** BlockTaskOut */
         BlockTaskOut: {
             /** Id */
@@ -2758,6 +2794,72 @@ export interface components {
             month: string;
             /** Used */
             used: number;
+        };
+        /** BriefBlockTask */
+        BriefBlockTask: {
+            /** Minutes */
+            minutes: number;
+            /** Title */
+            title: string;
+        };
+        /**
+         * BriefOut
+         * @description Le brief d'un jour local. `advice_status` : `pending` tant que la session du conseil vit
+         *     (le seul état qui change encore) ; `ready` (`advice` rangé) ; `failed` (conseil impossible ou
+         *     session morte) et `unavailable` (aucun modèle) sont **définitifs pour la journée** : le
+         *     conseil n'est jamais relancé, aucun « Réessayer » à offrir.
+         */
+        BriefOut: {
+            /** Advice */
+            advice: string[] | null;
+            /**
+             * Advice Status
+             * @description `pending` change encore ; `ready`, `failed` et `unavailable` sont définitifs.
+             * @enum {string}
+             */
+            advice_status: "pending" | "ready" | "failed" | "unavailable";
+            block: components["schemas"]["BlockRubric"] | null;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            /** Id */
+            id: string;
+            offers: components["schemas"]["OffersRubric"];
+            /**
+             * Origin
+             * @enum {string}
+             */
+            origin: "schedule" | "opening";
+            reminders: components["schemas"]["RemindersRubric"];
+            resource: components["schemas"]["BriefResourceOut"] | null;
+            reviews: components["schemas"]["ReviewsRubric"];
+            /** Session Id */
+            session_id: string | null;
+            week: components["schemas"]["WeekRubric"] | null;
+        };
+        /**
+         * BriefResourceOut
+         * @description La ressource du jour : un résultat réel du web dont la page a été lue. `published` : sa date
+         *     si le web la donne, jamais devinée.
+         */
+        BriefResourceOut: {
+            /** Domain */
+            domain: string;
+            /** Published */
+            published: string | null;
+            /** Title */
+            title: string;
+            /** Url */
+            url: string;
+            /** Why */
+            why: string;
         };
         /** BulkDecision */
         BulkDecision: {
@@ -4528,6 +4630,17 @@ export interface components {
             /** Text */
             text: string;
         };
+        /** OfferItem */
+        OfferItem: {
+            /** Company */
+            company: string | null;
+            /** Score */
+            score: number;
+            /** Title */
+            title: string | null;
+            /** Url */
+            url: string;
+        };
         /** OfferOut */
         OfferOut: {
             /** Company */
@@ -4544,6 +4657,17 @@ export interface components {
             title: string | null;
             /** Url */
             url: string;
+        };
+        /**
+         * OffersRubric
+         * @description Les nouvelles offres du radar (score au moins 70), 5 au plus ; `run_id` : le relevé de la
+         *     meilleure (`None` sans offre).
+         */
+        OffersRubric: {
+            /** Items */
+            items: components["schemas"]["OfferItem"][];
+            /** Run Id */
+            run_id: string | null;
         };
         /**
          * PasteCreate
@@ -5225,6 +5349,27 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** ReminderItem */
+        ReminderItem: {
+            /** Application Id */
+            application_id: string;
+            /** Company */
+            company: string;
+            /**
+             * Due On
+             * Format: date
+             */
+            due_on: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "linkedin_7" | "email_14" | "close_21" | "thanks" | "news_7";
+            /** Reminder Id */
+            reminder_id: string;
+            /** Title */
+            title: string;
+        };
         /**
          * ReminderOut
          * @description Une relance : qui contacter, un brouillon prêt à copier (gabarit fixe, aucun LLM), le canal.
@@ -5276,6 +5421,16 @@ export interface components {
              * @enum {string}
              */
             action: "done" | "postpone" | "ignore";
+        };
+        /**
+         * RemindersRubric
+         * @description `due` : toutes les relances dues ; `items` : les 5 premières.
+         */
+        RemindersRubric: {
+            /** Due */
+            due: number;
+            /** Items */
+            items: components["schemas"]["ReminderItem"][];
         };
         /** ReplanRequest */
         ReplanRequest: {
@@ -5436,6 +5591,16 @@ export interface components {
             review_id: string;
             /** Session Id */
             session_id: string;
+        };
+        /**
+         * ReviewsRubric
+         * @description `queue` : les fiches de la file du jour ; `remaining` : celles dues au-delà de la file.
+         */
+        ReviewsRubric: {
+            /** Queue */
+            queue: number;
+            /** Remaining */
+            remaining: number;
         };
         /** RunCompletedEvent */
         RunCompletedEvent: {
@@ -6605,6 +6770,24 @@ export interface components {
             /** Theme */
             theme: string;
         };
+        /**
+         * WeekRubric
+         * @description L'avancement de la semaine locale du programme validé le plus récent.
+         */
+        WeekRubric: {
+            /** Done Minutes */
+            done_minutes: number;
+            /** Planned Minutes */
+            planned_minutes: number;
+            /** Streak Days */
+            streak_days: number;
+            /** Study Minutes */
+            study_minutes: number;
+            /** Tasks Done */
+            tasks_done: number;
+            /** Tasks Total */
+            tasks_total: number;
+        };
         /** WeeklyReview */
         WeeklyReview: {
             /**
@@ -7219,6 +7402,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_today_api_v1_brief_today_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BriefOut"];
                 };
             };
         };

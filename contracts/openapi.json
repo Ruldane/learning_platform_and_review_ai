@@ -1635,6 +1635,43 @@
         "title": "BlockOut",
         "type": "object"
       },
+      "BlockRubric": {
+        "description": "Le bloc d'étude du jour : la leçon et ses tâches dues (`minutes` : leur total).",
+        "properties": {
+          "lesson_id": {
+            "title": "Lesson Id",
+            "type": "string"
+          },
+          "lesson_title": {
+            "title": "Lesson Title",
+            "type": "string"
+          },
+          "minutes": {
+            "title": "Minutes",
+            "type": "integer"
+          },
+          "module_title": {
+            "title": "Module Title",
+            "type": "string"
+          },
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/BriefBlockTask"
+            },
+            "title": "Tasks",
+            "type": "array"
+          }
+        },
+        "required": [
+          "module_title",
+          "lesson_id",
+          "lesson_title",
+          "minutes",
+          "tasks"
+        ],
+        "title": "BlockRubric",
+        "type": "object"
+      },
       "BlockTaskOut": {
         "properties": {
           "id": {
@@ -2036,6 +2073,184 @@
           "month"
         ],
         "title": "BraveUsageOut",
+        "type": "object"
+      },
+      "BriefBlockTask": {
+        "properties": {
+          "minutes": {
+            "title": "Minutes",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "minutes"
+        ],
+        "title": "BriefBlockTask",
+        "type": "object"
+      },
+      "BriefOut": {
+        "description": "Le brief d'un jour local. `advice_status` : `pending` tant que la session du conseil vit\n(le seul état qui change encore) ; `ready` (`advice` rangé) ; `failed` (conseil impossible ou\nsession morte) et `unavailable` (aucun modèle) sont **définitifs pour la journée** : le\nconseil n'est jamais relancé, aucun « Réessayer » à offrir.",
+        "properties": {
+          "advice": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Advice"
+          },
+          "advice_status": {
+            "description": "`pending` change encore ; `ready`, `failed` et `unavailable` sont définitifs.",
+            "enum": [
+              "pending",
+              "ready",
+              "failed",
+              "unavailable"
+            ],
+            "title": "Advice Status",
+            "type": "string"
+          },
+          "block": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BlockRubric"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "offers": {
+            "$ref": "#/components/schemas/OffersRubric"
+          },
+          "origin": {
+            "enum": [
+              "schedule",
+              "opening"
+            ],
+            "title": "Origin",
+            "type": "string"
+          },
+          "reminders": {
+            "$ref": "#/components/schemas/RemindersRubric"
+          },
+          "resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BriefResourceOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reviews": {
+            "$ref": "#/components/schemas/ReviewsRubric"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
+          "week": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WeekRubric"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "day",
+          "origin",
+          "generated_at",
+          "block",
+          "reviews",
+          "reminders",
+          "offers",
+          "week",
+          "resource",
+          "advice",
+          "advice_status",
+          "session_id"
+        ],
+        "title": "BriefOut",
+        "type": "object"
+      },
+      "BriefResourceOut": {
+        "description": "La ressource du jour : un résultat réel du web dont la page a été lue. `published` : sa date\nsi le web la donne, jamais devinée.",
+        "properties": {
+          "domain": {
+            "title": "Domain",
+            "type": "string"
+          },
+          "published": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          },
+          "why": {
+            "title": "Why",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "url",
+          "domain",
+          "published",
+          "why"
+        ],
+        "title": "BriefResourceOut",
         "type": "object"
       },
       "BulkDecision": {
@@ -6911,6 +7126,48 @@
         "title": "ObjectionOut",
         "type": "object"
       },
+      "OfferItem": {
+        "properties": {
+          "company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url",
+          "title",
+          "company",
+          "score"
+        ],
+        "title": "OfferItem",
+        "type": "object"
+      },
       "OfferOut": {
         "properties": {
           "company": {
@@ -6980,6 +7237,35 @@
           "score"
         ],
         "title": "OfferOut",
+        "type": "object"
+      },
+      "OffersRubric": {
+        "description": "Les nouvelles offres du radar (score au moins 70), 5 au plus ; `run_id` : le relevé de la\nmeilleure (`None` sans offre).",
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OfferItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          }
+        },
+        "required": [
+          "run_id",
+          "items"
+        ],
+        "title": "OffersRubric",
         "type": "object"
       },
       "PasteCreate": {
@@ -8901,6 +9187,52 @@
         "title": "ReindexState",
         "type": "object"
       },
+      "ReminderItem": {
+        "properties": {
+          "application_id": {
+            "title": "Application Id",
+            "type": "string"
+          },
+          "company": {
+            "title": "Company",
+            "type": "string"
+          },
+          "due_on": {
+            "format": "date",
+            "title": "Due On",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "linkedin_7",
+              "email_14",
+              "close_21",
+              "thanks",
+              "news_7"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "reminder_id": {
+            "title": "Reminder Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reminder_id",
+          "application_id",
+          "company",
+          "title",
+          "kind",
+          "due_on"
+        ],
+        "title": "ReminderItem",
+        "type": "object"
+      },
       "ReminderOut": {
         "description": "Une relance : qui contacter, un brouillon prêt à copier (gabarit fixe, aucun LLM), le canal.\nSans contact : `linkedin_search_url`, la recherche LinkedIn pré remplie (entreprise et poste\nvisé). `close_21` : `channel` « none », `draft` est la proposition de classer la fiche.",
         "properties": {
@@ -9013,6 +9345,28 @@
           "action"
         ],
         "title": "ReminderPatch",
+        "type": "object"
+      },
+      "RemindersRubric": {
+        "description": "`due` : toutes les relances dues ; `items` : les 5 premières.",
+        "properties": {
+          "due": {
+            "title": "Due",
+            "type": "integer"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReminderItem"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "due",
+          "items"
+        ],
+        "title": "RemindersRubric",
         "type": "object"
       },
       "ReplanRequest": {
@@ -9464,6 +9818,25 @@
           "session_id"
         ],
         "title": "ReviewStarted",
+        "type": "object"
+      },
+      "ReviewsRubric": {
+        "description": "`queue` : les fiches de la file du jour ; `remaining` : celles dues au-delà de la file.",
+        "properties": {
+          "queue": {
+            "title": "Queue",
+            "type": "integer"
+          },
+          "remaining": {
+            "title": "Remaining",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "queue",
+          "remaining"
+        ],
+        "title": "ReviewsRubric",
         "type": "object"
       },
       "RunCompletedEvent": {
@@ -12412,6 +12785,45 @@
         "title": "WeekOut",
         "type": "object"
       },
+      "WeekRubric": {
+        "description": "L'avancement de la semaine locale du programme validé le plus récent.",
+        "properties": {
+          "done_minutes": {
+            "title": "Done Minutes",
+            "type": "integer"
+          },
+          "planned_minutes": {
+            "title": "Planned Minutes",
+            "type": "integer"
+          },
+          "streak_days": {
+            "title": "Streak Days",
+            "type": "integer"
+          },
+          "study_minutes": {
+            "title": "Study Minutes",
+            "type": "integer"
+          },
+          "tasks_done": {
+            "title": "Tasks Done",
+            "type": "integer"
+          },
+          "tasks_total": {
+            "title": "Tasks Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "planned_minutes",
+          "done_minutes",
+          "tasks_done",
+          "tasks_total",
+          "study_minutes",
+          "streak_days"
+        ],
+        "title": "WeekRubric",
+        "type": "object"
+      },
       "WeeklyReview": {
         "properties": {
           "day": {
@@ -13253,6 +13665,28 @@
         "summary": "Edit Board",
         "tags": [
           "learning"
+        ]
+      }
+    },
+    "/api/v1/brief/today": {
+      "get": {
+        "description": "Le brief du jour local, créé s'il manque (`origin` « opening »).",
+        "operationId": "get_today_api_v1_brief_today_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BriefOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Today",
+        "tags": [
+          "brief"
         ]
       }
     },

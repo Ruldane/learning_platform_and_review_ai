@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.agents.runtime.launcher import SessionLauncher
 from app.features.applications.service.runtime import ApplicationsRuntime
+from app.features.brief.service.runtime import BriefRuntime
 from app.features.lessons.service.production import ProductionContext
 from app.features.radar.service.runtime import RadarRuntime
 from app.features.replan.service.runtime import ReplanRuntime
@@ -21,12 +22,15 @@ class DailyJobs(Protocol):
     @property
     def radar(self) -> RadarRuntime: ...
 
+    @property
+    def brief(self) -> BriefRuntime: ...
+
 
 @dataclass(frozen=True)
 class JobContext:
     """Composé par `app.bootstrap.scheduler_context` : la base, le lanceur de sessions (lié au
     moteur), la production des leçons, la replanification (bilan hebdomadaire, D106) et les
-    candidatures (relances, D140) et le quotidien (relevé du radar, D160)."""
+    candidatures (relances, D140) et le quotidien (relevé du radar, D160 ; brief du matin, D162)."""
 
     session_factory: async_sessionmaker[AsyncSession]
     launcher: SessionLauncher

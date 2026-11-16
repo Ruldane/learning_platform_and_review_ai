@@ -11,6 +11,8 @@ EXPECTED = {
     "skill_snapshots",
     "reminders_due",
     "ats_refresh",
+    "market_radar",
+    "daily_brief",
 }
 
 

@@ -94,3 +94,17 @@ class RadarRunRepository(UserScopedRepository[RadarRun]):
             .limit(1)
         )
         return (await self.session.execute(stmt)).first() is not None
+
+    async def done_since(self, since: datetime) -> builtins.list[RadarRun]:
+        """Les relevés `done` finis après `since`, le plus récent d'abord."""
+        stmt = (
+            select(RadarRun)
+            .where(
+                RadarRun.user_id == self.user_id,
+                RadarRun.status == "done",
+                RadarRun.finished_at > since,
+            )
+            .order_by(RadarRun.finished_at.desc(), RadarRun.id.desc())
+            .execution_options(populate_existing=True)
+        )
+        return builtins.list((await self.session.execute(stmt)).scalars())

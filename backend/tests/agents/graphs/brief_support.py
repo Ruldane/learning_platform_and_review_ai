@@ -19,7 +19,9 @@ from app.agents.runtime.ports import AgentPorts
 from app.agents.runtime.run_settings import RunSettings
 from app.agents.runtime.runner import SessionRunner
 from app.agents.tools.web_port import PageRead, WebHit, WebSearchResult
+from app.core.errors import AppError
 from app.db.models.agents import AgentSession
+from app.providers.llm.base import Tier
 from tests.agents.graphs.council_models import CouncilModels
 from tests.agents.graphs.web_support import add_users
 from tests.agents.runtime.runner_helpers import all_events, wait_status
@@ -71,6 +73,18 @@ def brief_models(
     return models
 
 
+@dataclass
+class NoKeyModels(CouncilModels):
+    """Une source de modèles sans clé : comme la fabrique réelle, `get_chat_model` lève
+    `llm_key_missing`. Aucun appel n'arrive jusqu'à un modèle (`asked` : qui l'a demandé)."""
+
+    asked: list[str] = field(default_factory=list)
+
+    async def get_chat_model(self, user_id: str, tier: Tier, agent: str | None = None) -> Any:
+        self.asked.append(agent or "")
+        raise AppError("llm_key_missing", "Aucune clé n'est configurée.", 400, {"tier": tier})
+
+
 def prompts(models: CouncilModels, agent: str) -> list[str]:
     return [c.prompt for c in models.calls if c.agent == agent]
 
@@ -84,6 +98,7 @@ class FakeBriefWeb:
     unreadable: set[str] = field(default_factory=set)
     empty: set[str] = field(default_factory=set)
     search_error: Exception | None = None
+    read_errors: dict[str, Exception] = field(default_factory=dict)  # lien → panne brute
     searches: list[tuple[str, str | None, str | None]] = field(default_factory=list)
     reads: list[str] = field(default_factory=list)
 
@@ -104,6 +119,8 @@ class FakeBriefWeb:
 
     async def read(self, user_id: str, session_id: str, url: str) -> PageRead:
         self.reads.append(url)
+        if url in self.read_errors:
+            raise self.read_errors[url]
         bad = url in self.unreadable
         text = "" if bad or url in self.empty else "Le texte de la page."
         return PageRead(

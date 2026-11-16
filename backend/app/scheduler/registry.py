@@ -5,6 +5,7 @@ from datetime import timedelta
 from app.scheduler.base import JobSpec
 from app.scheduler.jobs import (
     ats_refresh,
+    daily_brief,
     lessons_due,
     market_radar,
     reminders_due,
@@ -19,4 +20,5 @@ JOBS: list[JobSpec] = [
     JobSpec("reminders_due", timedelta(hours=1), reminders_due.run),
     JobSpec("ats_refresh", timedelta(hours=6), ats_refresh.run),
     JobSpec("market_radar", timedelta(minutes=15), market_radar.run),
+    JobSpec("daily_brief", timedelta(minutes=10), daily_brief.run),
 ]

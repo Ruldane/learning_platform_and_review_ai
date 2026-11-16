@@ -12,7 +12,9 @@ les textes rangés sont des données de l'utilisatrice ou du web (17.2, 17.4) : 
 - `save_resource` : la ressource du jour, `None` = rubrique vide (aucun sujet, aucune page lisible,
   recherche en panne). Idempotent : la première écriture gagne, un nœud rejoué ne change rien.
 - `save_advice` : les deux phrases du conseil, `None` = conseil `failed` (un nombre inventé, ou
-  aucune réponse valable). Idempotent de même."""
+  aucune réponse valable), ou `unavailable` (`unavailable=True` : aucun modèle, faute de clé).
+  Idempotent de même ; un conseil rangé `None` le reste toute la journée (jamais de nouvel
+  essai)."""
 
 from dataclasses import dataclass
 from datetime import date
@@ -20,6 +22,12 @@ from typing import Literal, Protocol
 
 from app.agents.tools.brief_schema import ResourceView
 from app.core.errors import AppError
+
+# Les codes d'erreur de la fabrique de modèles quand aucun modèle ne peut être construit (aucune
+# clé, clé illisible, fournisseur inconnu) : le conseil est alors « indisponible », pas « échoué ».
+MODEL_UNAVAILABLE_CODES = frozenset(
+    {"llm_key_missing", "llm_key_unreadable", "llm_provider_unknown"}
+)
 
 
 @dataclass(frozen=True)
@@ -57,7 +65,13 @@ class BriefStore(Protocol):
     ) -> None: ...
 
     async def save_advice(
-        self, user_id: str, session_id: str, brief_id: str, sentences: list[str] | None
+        self,
+        user_id: str,
+        session_id: str,
+        brief_id: str,
+        sentences: list[str] | None,
+        *,
+        unavailable: bool = False,
     ) -> None: ...
 
 
@@ -77,7 +91,13 @@ class _NoBrief:
         raise brief_unavailable()
 
     async def save_advice(
-        self, user_id: str, session_id: str, brief_id: str, sentences: list[str] | None
+        self,
+        user_id: str,
+        session_id: str,
+        brief_id: str,
+        sentences: list[str] | None,
+        *,
+        unavailable: bool = False,
     ) -> None:
         raise brief_unavailable()
 

@@ -2,6 +2,7 @@
 d'abord un relevé `running` dont la session n'est plus ouverte (`settled`) : le statut suit la
 session. Un relevé en échec porte son code (`error_code`), jamais un message."""
 
+from datetime import datetime
 from typing import Any, cast
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -118,3 +119,31 @@ async def get_run(rt: RadarRuntime, db: AsyncSession, user_id: str, run_id: str)
     if row is None:
         raise radar_run_not_found()
     return await run_out(db, user_id, row)
+
+
+async def offers_since(
+    db: AsyncSession, user_id: str, since: datetime | None
+) -> list[dict[str, Any]]:
+    """Les offres analysées et notées des relevés finis (`done`) après `since` ; sans `since`
+    (aucun brief avant), celles du dernier relevé fini seulement. Pour le brief du jour (P9) : une
+    entrée par offre, `{run_id, url_key, url, title, company, score}`, relevé le plus récent
+    d'abord, lien jamais lu ni journalisé ici."""
+    repo = RadarRunRepository(db, user_id)
+    if since is None:
+        latest = await repo.latest_done()
+        runs = [latest] if latest is not None else []
+    else:
+        runs = await repo.done_since(since)
+    return [
+        {
+            "run_id": run.id,
+            "url_key": str(entry["key"]),
+            "url": str(entry["url"]),
+            "title": entry.get("title"),
+            "company": entry.get("company"),
+            "score": entry["score"],
+        }
+        for run in runs
+        for entry in run.postings
+        if is_analyzed(entry) and entry.get("key") and isinstance(entry.get("score"), int)
+    ]

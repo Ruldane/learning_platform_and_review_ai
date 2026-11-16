@@ -6,6 +6,7 @@ from app.features.applications.router_interviews import router as interviews_rou
 from app.features.applications.router_kit import router as kit_router
 from app.features.applications.router_reminders import router as reminders_router
 from app.features.auth.router import router as auth_router
+from app.features.brief.router import router as brief_router
 from app.features.capture.router import router as capture_router
 from app.features.cv.router import router as cv_router
 from app.features.gap.router import router as gap_router
@@ -51,4 +52,5 @@ FEATURE_ROUTERS: list[APIRouter] = [
     committee_router,
     reminders_router,
     radar_router,
+    brief_router,
 ]

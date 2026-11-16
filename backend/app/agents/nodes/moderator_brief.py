@@ -23,7 +23,7 @@ from app.agents.runtime.deps import GraphDeps
 from app.agents.runtime.invoke import node_timeout
 from app.agents.runtime.structured import structured_call
 from app.agents.state.daily_brief import DailyBriefState, Node
-from app.agents.tools.brief_port import AdviceFacts, BriefContext
+from app.agents.tools.brief_port import MODEL_UNAVAILABLE_CODES, AdviceFacts, BriefContext
 from app.agents.tools.brief_schema import CouncilAdvice, numbers_in_advice
 from app.core.errors import AppError
 
@@ -143,13 +143,17 @@ def make_advice(deps: GraphDeps) -> Node:
         if ctx.advice_done:
             return {}
         sentences: list[str] | None = None
+        unavailable = False
         try:
             async with asyncio.timeout(BUDGET_S):
                 sentences = await advise(deps, ctx)
         except Exception as exc:  # une rubrique en panne n'arrête pas l'autre
             code = exc.code if isinstance(exc, AppError) else type(exc).__name__
+            unavailable = code in MODEL_UNAVAILABLE_CODES  # aucun modèle : « indisponible »
             logger.info("Conseil du brief impossible : session %s, cause %s", deps.session_id, code)
-        await deps.ports.brief.save_advice(deps.user_id, deps.session_id, brief_id, sentences)
+        await deps.ports.brief.save_advice(
+            deps.user_id, deps.session_id, brief_id, sentences, unavailable=unavailable
+        )
         logger.info(
             "Conseil du brief rangé : session %s, brief %s, écrit %s",
             deps.session_id,

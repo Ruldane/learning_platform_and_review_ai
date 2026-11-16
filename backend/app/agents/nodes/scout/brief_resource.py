@@ -17,6 +17,7 @@ import logging
 from typing import Literal
 from urllib.parse import urlsplit
 
+from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from app.agents.nodes.scout.models import one_line
@@ -79,7 +80,7 @@ def results_text(hits: list[WebHit]) -> str:
 
 
 async def _choose(
-    deps: GraphDeps, ctx: BriefContext, topic: str, hits: list[WebHit]
+    deps: GraphDeps, model: BaseChatModel, ctx: BriefContext, topic: str, hits: list[WebHit]
 ) -> ResourcePick:
     prompt = render_prompt(
         AGENT,
@@ -89,7 +90,6 @@ async def _choose(
         results=results_text(hits),
         language=LANGUAGES[ctx.language],
     )
-    model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
     return await structured_call(
         model,
         ResourcePick,
@@ -127,11 +127,14 @@ def _view(hit: WebHit, why: str, page_date: str | None) -> ResourceView:
 
 
 async def _read_one(deps: GraphDeps, hit: WebHit) -> tuple[bool, str | None, bool]:
-    """`(lue, date de la page, plafond atteint)`. Une page refusée ou en erreur n'est pas lue."""
+    """`(lue, date de la page, plafond atteint)`. Une page refusée ou en erreur, même brute (une
+    panne du lecteur), n'est pas lue : le repli passe au résultat suivant."""
     try:
         page = await web_read(deps, hit.url, agent=AGENT)
-    except AppError as exc:
-        return False, None, exc.code == QUOTA_CODE
+    except Exception as exc:
+        code = exc.code if isinstance(exc, AppError) else type(exc).__name__
+        logger.info("Page du brief non lue : session %s, cause %s", deps.session_id, code)
+        return False, None, code == QUOTA_CODE
     return page.status == "ok" and bool(page.text.strip()), page.date, False
 
 
@@ -159,11 +162,13 @@ async def find_resource(deps: GraphDeps, ctx: BriefContext) -> ResourceView | No
     topic = (ctx.topic or "").strip()
     if not topic:
         return None
+    # Le modèle d'abord : sans clé, la recherche web (un quota, un débit) n'est pas dépensée.
+    model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
     found = await web_search(deps, topic, time_range=TIME_RANGE, agent=AGENT)
     hits = usable_hits(found.hits)
     if not hits:
         return None
-    pick = await _choose(deps, ctx, topic, hits)
+    pick = await _choose(deps, model, ctx, topic, hits)
     return await read_resource(deps, hits, pick, ctx.language)
 
 

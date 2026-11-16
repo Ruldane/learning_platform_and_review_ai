@@ -56,6 +56,7 @@ class FakeBriefStore:
     advice_saved: bool = False
     resource_saves: int = 0  # appels à `save_resource` (la première écriture gagne)
     advice_saves: int = 0
+    advice_unavailable: bool = False  # le port a su que le modèle manquait (aucune clé)
     extra_allowed: frozenset[str] = field(default_factory=frozenset)
 
     async def context(self, user_id: str, brief_id: str) -> BriefContext:
@@ -78,8 +79,15 @@ class FakeBriefStore:
             self.resource, self.resource_saved = resource, True
 
     async def save_advice(
-        self, user_id: str, session_id: str, brief_id: str, sentences: list[str] | None
+        self,
+        user_id: str,
+        session_id: str,
+        brief_id: str,
+        sentences: list[str] | None,
+        *,
+        unavailable: bool = False,
     ) -> None:
         self.advice_saves += 1
         if not self.advice_saved:
             self.advice, self.advice_saved = sentences, True
+            self.advice_unavailable = unavailable
