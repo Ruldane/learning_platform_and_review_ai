@@ -49,6 +49,12 @@ describe("toBriefView", () => {
     expect(view).toMatchObject({ block: null, week: null, resource: null, sessionId: "s1" });
     expect(view.advice).toEqual({ sentences: null, status: "pending" });
   });
+
+  it("passes the unavailable rubrics through, none by default", () => {
+    expect(toBriefView(briefOut() as unknown as BriefOut).unavailable).toEqual([]);
+    const view = toBriefView(briefOut({ unavailable: ["reminders", "week"] }) as unknown as BriefOut);
+    expect(view.unavailable).toEqual(["reminders", "week"]);
+  });
 });
 
 describe("toActivityView", () => {

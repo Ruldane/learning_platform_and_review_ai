@@ -25,6 +25,8 @@ export interface BriefView {
   advice: { sentences: string[] | null; status: AdviceStatus };
   /** La session du conseil, suivie tant qu'il est `pending`. */
   sessionId: string | null;
+  /** Les rubriques dont la source était en panne ce matin (`block`, `reviews`, `reminders`, `offers`, `week`) : leur valeur vide n'est pas un vrai zéro. */
+  unavailable: readonly string[];
 }
 
 export function toBriefView(brief: BriefOut): BriefView {
@@ -71,6 +73,7 @@ export function toBriefView(brief: BriefOut): BriefView {
     },
     advice: { sentences: brief.advice, status: brief.advice_status },
     sessionId: brief.session_id,
+    unavailable: brief.unavailable ?? [],
   };
 }
 

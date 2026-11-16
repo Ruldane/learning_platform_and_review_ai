@@ -203,4 +203,23 @@ describe("HomePage", () => {
     await user.click(screen.getByRole("button", { name: "Réessayer" }));
     expect(await screen.findByRole("heading", { name: "Ton bloc du jour" })).toBeVisible();
   });
+
+  it("names the rubrics whose source failed instead of showing a false zero", async () => {
+    setup({
+      brief: {
+        reminders: { due: 0, items: [] },
+        reviews: { queue: 0, remaining: 0 },
+        week: null,
+        unavailable: ["reminders", "reviews", "week"],
+      },
+      events: [],
+    });
+    expect(await screen.findByRole("heading", { name: "Relances" })).toBeVisible();
+    expect(screen.getAllByText("Rubrique indisponible ce matin.")).toHaveLength(3);
+    expect(screen.queryByText("Aucune relance due.")).toBeNull();
+    expect(screen.queryByText("Aucune révision à faire aujourd'hui.")).toBeNull();
+    // Une semaine indisponible n'est pas « aucun programme » : le bloc reste montré.
+    expect(screen.queryByText("Pas encore de programme")).toBeNull();
+    expect(screen.getByRole("heading", { name: "Ton bloc du jour" })).toBeVisible();
+  });
 });

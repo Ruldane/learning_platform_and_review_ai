@@ -106,6 +106,23 @@ async def test_weekly_failed_monday_run_is_retried_within_the_week(
     assert [run.status for run in await _runs(radar)] == ["failed", "running"]
 
 
+async def test_weekly_run_ended_without_any_analysis_is_retried_within_the_week(
+    radar: Radar, launcher: RecordingLauncher
+) -> None:
+    """Un relevé qui finit `failed` (`analysis_failed`) rouvre le passage de la semaine."""
+    await _settings(radar, radar_role=ROLE)
+    assert await run_weekly_radar(radar.rt, MONDAY_9H) == 1
+    [job] = await _jobs(radar)
+    run_id = job.ref_id or ""
+    await radar.read(run_id, 2)
+    await radar.store.save_extraction(ME, "s", run_id, [], ["p1", "p2"])
+    assert (await radar.store.finalize(ME, "s", run_id)).error_code == "analysis_failed"
+    await _kill_session(radar, run_id)  # la session échoue avec le parcours
+    assert await run_weekly_radar(radar.rt, MONDAY_9H + timedelta(days=1)) == 1
+    assert [run.status for run in await _runs(radar)] == ["failed", "running"]
+    assert (await _runs(radar))[0].error_code == "analysis_failed"
+
+
 async def test_weekly_skipped_after_manual_run(radar: Radar, launcher: RecordingLauncher) -> None:
     await _settings(radar, radar_role=ROLE)
     await radar.new_run(status="done", created_at=MONDAY_9H - timedelta(hours=40))  # samedi : 46

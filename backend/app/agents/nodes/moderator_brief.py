@@ -14,6 +14,7 @@ Journaux : identifiants, nombres et codes seulement, jamais un fait, un titre ni
 
 import asyncio
 import logging
+from collections.abc import Callable
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 
@@ -39,47 +40,86 @@ def _plural(number: int, one: str, many: str) -> str:
     return f"{number} {one if number < 2 else many}"
 
 
+def _line(number: int | None, make: Callable[[int], str]) -> list[str]:
+    """La ligne d'un fait, ou rien si sa rubrique était en panne (jamais un zéro inventé)."""
+    return [] if number is None else [make(number)]
+
+
 def _facts_fr(facts: AdviceFacts) -> list[str]:
-    block = (
-        f"Bloc d'étude du jour : « {' '.join(facts.block_title.split())} », "
-        f"{_plural(facts.block_minutes, 'minute', 'minutes')}."
-        if facts.block_title
-        else "Aucun bloc d'étude prévu aujourd'hui."
-    )
+    if facts.block_minutes is None:
+        block: list[str] = []
+    elif facts.block_title:
+        title = " ".join(facts.block_title.split())
+        block = [
+            f"Bloc d'étude du jour : « {title} », "
+            f"{_plural(facts.block_minutes, 'minute', 'minutes')}."
+        ]
+    else:
+        block = ["Aucun bloc d'étude prévu aujourd'hui."]
     score = (
         [f"Meilleur score de quiz récent : {facts.best_score}."]
         if facts.best_score is not None
         else []
     )
+    week = (
+        []
+        if facts.week_done is None or facts.week_planned is None
+        else [
+            f"Cette semaine : {_plural(facts.week_done, 'tâche faite', 'tâches faites')}, "
+            f"{_plural(facts.week_planned, 'prévue', 'prévues')}."
+        ]
+    )
     return [
-        block,
-        f"À réviser : {_plural(facts.cards_due, 'fiche', 'fiches')}.",
-        f"À relancer : {_plural(facts.reminders_due, 'candidature', 'candidatures')}.",
-        f"À regarder : {_plural(facts.offers, 'offre', 'offres')}.",
+        *block,
+        *_line(facts.cards_due, lambda n: f"À réviser : {_plural(n, 'fiche', 'fiches')}."),
+        *_line(
+            facts.reminders_due,
+            lambda n: f"À relancer : {_plural(n, 'candidature', 'candidatures')}.",
+        ),
+        *_line(facts.offers, lambda n: f"À regarder : {_plural(n, 'offre', 'offres')}."),
         *score,
-        f"Cette semaine : {_plural(facts.week_done, 'tâche faite', 'tâches faites')}, "
-        f"{_plural(facts.week_planned, 'prévue', 'prévues')}.",
-        f"Série en cours : {_plural(facts.streak_days, 'jour', 'jours')} de suite.",
+        *week,
+        *_line(
+            facts.streak_days,
+            lambda n: f"Série en cours : {_plural(n, 'jour', 'jours')} de suite.",
+        ),
     ]
 
 
 def _facts_en(facts: AdviceFacts) -> list[str]:
-    block = (
-        f'Study block of the day: "{" ".join(facts.block_title.split())}", '
-        f"{_plural(facts.block_minutes, 'minute', 'minutes')}."
-        if facts.block_title
-        else "No study block planned today."
-    )
+    if facts.block_minutes is None:
+        block: list[str] = []
+    elif facts.block_title:
+        title = " ".join(facts.block_title.split())
+        block = [
+            f'Study block of the day: "{title}", '
+            f"{_plural(facts.block_minutes, 'minute', 'minutes')}."
+        ]
+    else:
+        block = ["No study block planned today."]
     score = [f"Best recent quiz score: {facts.best_score}."] if facts.best_score is not None else []
+    week = (
+        []
+        if facts.week_done is None or facts.week_planned is None
+        else [
+            f"This week: {_plural(facts.week_done, 'task', 'tasks')} done out of "
+            f"{facts.week_planned} planned."
+        ]
+    )
     return [
-        block,
-        f"To review: {_plural(facts.cards_due, 'card', 'cards')}.",
-        f"To follow up: {_plural(facts.reminders_due, 'application', 'applications')}.",
-        f"To look at: {_plural(facts.offers, 'posting', 'postings')}.",
+        *block,
+        *_line(facts.cards_due, lambda n: f"To review: {_plural(n, 'card', 'cards')}."),
+        *_line(
+            facts.reminders_due,
+            lambda n: f"To follow up: {_plural(n, 'application', 'applications')}.",
+        ),
+        *_line(facts.offers, lambda n: f"To look at: {_plural(n, 'posting', 'postings')}."),
         *score,
-        f"This week: {_plural(facts.week_done, 'task', 'tasks')} done out of "
-        f"{facts.week_planned} planned.",
-        f"Current streak: {_plural(facts.streak_days, 'day', 'days')} in a row.",
+        *week,
+        *_line(
+            facts.streak_days,
+            lambda n: f"Current streak: {_plural(n, 'day', 'days')} in a row.",
+        ),
     ]
 
 

@@ -10,7 +10,9 @@ passage, lit les dix prochains liens non lus (cinq en parallèle) et s'arrête �
 idempotent, et les liens déjà lus ne sont plus demandés). `finish` : le rapport du port, dit avec
 les nombres réels (lues, bloquées, pas des offres, analysées). `load` vérifie d'abord que le modèle
 de l'Analyste existe : sans clé, le relevé échoue tout de suite (`llm_unavailable`), avant la
-moindre recherche ou lecture de page (D173).
+moindre recherche ou lecture de page (D173). Si aucune offre lue n'a pu être analysée (l'extraction
+a échoué), le port rend `error_code` : le relevé est `failed` (`analysis_failed`), pas « terminé » à
+vide.
 
 Journaux : identifiants et nombres seulement, jamais un lien, un site, un poste ni une zone
 (17.2)."""
@@ -21,6 +23,7 @@ from itertools import zip_longest
 from typing import Protocol
 
 from app.agents.nodes.scout.radar_text import (
+    NO_ANALYSIS_TEXT,
     NO_MODEL_TEXT,
     UNAVAILABLE_TEXT,
     counting_text,
@@ -232,6 +235,15 @@ def make_finish(deps: GraphDeps) -> Node:
     async def finish(state: MarketRadarState) -> MarketRadarState:
         run_id = state["run_id"]
         report = await deps.ports.radar.finalize(deps.user_id, deps.session_id, run_id)
+        if report.error_code is not None:  # aucune offre analysée : le relevé est déjà `failed`
+            logger.info(
+                "Relevé sans analyse : session %s, relevé %s, %d lisible(s), code %s",
+                deps.session_id,
+                run_id,
+                report.read_ok,
+                report.error_code,
+            )
+            raise AppError(report.error_code, NO_ANALYSIS_TEXT, 503)
         artifact = {
             "artifact_id": run_id,
             "kind": "radar",

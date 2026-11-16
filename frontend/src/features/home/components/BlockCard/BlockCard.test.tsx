@@ -41,4 +41,10 @@ describe("BlockCard", () => {
     expect(screen.getByText("Rien de prévu aujourd'hui.")).toBeInTheDocument();
     expect(screen.queryByRole("button")).toBeNull();
   });
+
+  it("says the rubric is unavailable instead of « nothing planned » when its source failed", () => {
+    render(<BlockCard block={null} unavailable onStart={vi.fn()} />);
+    expect(screen.getByText("Rubrique indisponible ce matin.")).toBeInTheDocument();
+    expect(screen.queryByRole("button")).toBeNull();
+  });
 });

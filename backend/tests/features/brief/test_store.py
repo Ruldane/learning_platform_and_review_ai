@@ -8,16 +8,26 @@ import httpx
 import pytest
 from sqlalchemy import select, update
 
+from app.agents.nodes.moderator_brief import facts_text
+from app.agents.tools.brief_port import AdviceFacts, BriefContext
 from app.agents.tools.brief_schema import ResourceView
 from app.core.errors import AppError
 from app.db.models.learning import Goal
 from app.db.models.program import Program
 from app.features.brief.service.ensure import ensure_today
-from app.features.brief.service.store import AgentBriefStore
+from app.features.brief.service.store import AgentBriefStore, allowed_numbers, facts_of
 from app.features.brief.service.topic import MAX_TOPIC, goal_topic
 from app.features.settings.service import SettingsService
 from tests.features.brief.conftest import NOW, OTHER, TODAY, Env
-from tests.features.brief.support import add_cards, add_run, add_user, applied, briefs, posting
+from tests.features.brief.support import (
+    add_cards,
+    add_run,
+    add_user,
+    applied,
+    briefs,
+    posting,
+    sections_for,
+)
 from tests.features.study.conftest import seed
 
 VIEW = ResourceView(
@@ -211,3 +221,38 @@ async def test_unknown_brief_is_not_found(env: Env) -> None:
     with pytest.raises(AppError) as caught:
         await AgentBriefStore(env.rt).context(env.user_id, "inconnu")
     assert caught.value.code == "brief_not_found"
+
+
+async def test_facts_of_leaves_out_the_fact_of_an_unavailable_rubric(env: Env) -> None:
+    """Une rubrique en panne n'est jamais un zéro pour le conseil : le fait est absent (`None`)."""
+    sections = await sections_for(env)
+    sections["unavailable"] = ["reminders", "reviews"]
+    facts = facts_of(sections)
+    assert facts.reminders_due is None and facts.cards_due is None
+    assert facts.offers == 0 and facts.streak_days == 0  # les rubriques voisines restent
+    assert allowed_numbers(facts) == frozenset({"0"})  # le zéro du bloc, jamais celui des relances
+    text = facts_text(_ctx_of(facts))
+    assert "relancer" not in text and "réviser" not in text and "regarder" in text
+    sections["unavailable"] = ["block", "week", "offers"]
+    down = facts_of(sections)
+    assert (down.block_minutes, down.week_planned, down.week_done, down.streak_days) == (
+        None,
+        None,
+        None,
+        None,
+    )
+    text = facts_text(_ctx_of(down))
+    assert "bloc" not in text.lower() and "Cette semaine" not in text and "Série" not in text
+
+
+def _ctx_of(facts: AdviceFacts) -> BriefContext:
+    return BriefContext(
+        brief_id="b",
+        day=TODAY,
+        language="fr",
+        topic=None,
+        facts=facts,
+        resource_done=False,
+        advice_done=False,
+        allowed_numbers=allowed_numbers(facts),
+    )

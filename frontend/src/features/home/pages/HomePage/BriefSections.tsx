@@ -28,7 +28,9 @@ const applicationPath = (applicationId: string) => `/candidatures/${applicationI
 export function BriefSections({ brief }: { brief: BriefView }) {
   const navigate = useNavigate();
   const requestCapture = useCaptureRequest((state) => state.request);
-  const noProgram = brief.week === null;
+  const down = (name: string) => brief.unavailable.includes(name);
+  // Une semaine indisponible n'est pas « aucun programme » : le bloc reste montré.
+  const noProgram = brief.week === null && !down("week");
   return (
     <div className="flex flex-col gap-4">
       <BriefHeader day={brief.day} generatedAt={brief.generatedAt} />
@@ -45,20 +47,26 @@ export function BriefSections({ brief }: { brief: BriefView }) {
           action={{ label: t("home.noProgram.action"), onClick: () => void navigate(GOALS) }}
         />
       ) : (
-        <BlockCard block={brief.block} onStart={() => void navigate(STUDY_SESSION)} />
+        <BlockCard
+          block={brief.block}
+          unavailable={down("block")}
+          onStart={() => void navigate(STUDY_SESSION)}
+        />
       )}
       <ReviewsCard
         queue={brief.reviews.queue}
         remaining={brief.reviews.remaining}
+        unavailable={down("reviews")}
         onReview={() => void navigate(REVIEWS)}
       />
       <RemindersCard
         due={brief.reminders.due}
         items={brief.reminders.items}
+        unavailable={down("reminders")}
         onOpen={(applicationId) => void navigate(applicationPath(applicationId))}
       />
-      <OffersCard items={brief.offers} />
-      {noProgram ? null : <WeekCard week={brief.week} />}
+      <OffersCard items={brief.offers} unavailable={down("offers")} />
+      {noProgram ? null : <WeekCard week={brief.week} unavailable={down("week")} />}
       <ResourceCard resource={brief.resource} />
       <AdviceCard sentences={brief.advice.sentences} status={brief.advice.status} />
     </div>

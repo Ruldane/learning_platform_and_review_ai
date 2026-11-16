@@ -7,10 +7,12 @@ interface BlockCardProps {
   /** Le bloc d'étude du jour ; `null` quand rien n'est prévu. */
   block: BlockView | null;
   onStart: () => void;
+  /** La source du bloc était en panne ce matin : pas de « rien de prévu ». */
+  unavailable?: boolean;
 }
 
 /** Le bloc du jour : module, leçon, durée totale, tâches, et le bouton qui ouvre la session d'étude. */
-export function BlockCard({ block, onStart }: BlockCardProps) {
+export function BlockCard({ block, onStart, unavailable = false }: BlockCardProps) {
   return (
     <section
       aria-labelledby="home-block"
@@ -19,7 +21,9 @@ export function BlockCard({ block, onStart }: BlockCardProps) {
       <h2 id="home-block" className="text-lg font-medium">
         {t("home.block.title")}
       </h2>
-      {block === null ? (
+      {unavailable ? (
+        <p className="text-muted-foreground">{t("home.unavailable")}</p>
+      ) : block === null ? (
         <p className="text-muted-foreground">{t("home.block.empty")}</p>
       ) : (
         <>

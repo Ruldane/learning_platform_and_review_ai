@@ -31,6 +31,7 @@ export const home = {
     },
     start: "Réviser",
   },
+  unavailable: "Rubrique indisponible ce matin.",
   reminders: {
     title: "Relances",
     none: "Aucune relance due.",

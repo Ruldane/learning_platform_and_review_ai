@@ -217,3 +217,49 @@ async def test_blind_run_does_not_erase_the_market_demand(radar: Radar) -> None:
     async with radar.factory() as db:
         nodes = (await skill_graph(db, ME)).nodes
     assert {n.name: n.demand for n in nodes} == {"Linux": 1.0, "Python": 0.6}
+
+
+async def test_finalize_without_any_analysed_offer_after_failed_extraction_is_failed(
+    radar: Radar,
+) -> None:
+    """Des offres lues, aucune analysée parce que l'extraction a échoué : `failed` (reprise
+    possible), jamais `done` à vide ; les nombres réels restent rangés (D173)."""
+    run_id = await radar.new_run()
+    await radar.read(run_id, 3)
+    await radar.store.save_extraction(ME, "s", run_id, [], ["p1", "p2", "p3"])
+    summary = await radar.store.finalize(ME, "s", run_id)
+    assert summary.error_code == "analysis_failed" and summary.analyzed == 0
+    row = await radar.row(run_id)
+    assert (row.status, row.error_code, row.read_count, row.analyzed) == (
+        "failed",
+        "analysis_failed",
+        3,
+        0,
+    )
+    assert row.finished_at is not None and row.ranking == []
+    assert (await radar.store.finalize(ME, "s", run_id)).error_code == "analysis_failed"  # rejeu
+
+
+async def test_finalize_with_one_analysed_offer_stays_done_despite_failed_pages(
+    radar: Radar,
+) -> None:
+    run_id = await radar.new_run()
+    await radar.read(run_id, 3)
+    await radar.store.save_extraction(ME, "s", run_id, [finding("p1", "Python")], ["p2", "p3"])
+    summary = await radar.store.finalize(ME, "s", run_id)
+    assert summary.error_code is None and summary.analyzed == 1
+    assert (await radar.row(run_id)).status == "done"
+
+
+async def test_finalize_with_only_non_postings_stays_done(radar: Radar) -> None:
+    run_id = await radar.new_run()
+    await radar.read(run_id, 2)
+    await radar.store.save_extraction(
+        ME,
+        "s",
+        run_id,
+        [finding("p1", is_job_posting=False), finding("p2", is_job_posting=False)],
+        [],
+    )
+    assert (await radar.store.finalize(ME, "s", run_id)).error_code is None
+    assert (await radar.row(run_id)).status == "done"

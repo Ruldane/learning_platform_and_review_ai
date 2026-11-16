@@ -7,10 +7,12 @@ interface ReviewsCardProps {
   /** Les fiches dues au-delà de la file du jour. */
   remaining: number;
   onReview: () => void;
+  /** La source des révisions était en panne ce matin : ni zéro ni bouton. */
+  unavailable?: boolean;
 }
 
 /** Les révisions du jour : combien de fiches, combien au-delà de la file, et le bouton « Réviser ». */
-export function ReviewsCard({ queue, remaining, onReview }: ReviewsCardProps) {
+export function ReviewsCard({ queue, remaining, onReview, unavailable = false }: ReviewsCardProps) {
   return (
     <section
       aria-labelledby="home-reviews"
@@ -19,7 +21,9 @@ export function ReviewsCard({ queue, remaining, onReview }: ReviewsCardProps) {
       <h2 id="home-reviews" className="text-lg font-medium">
         {t("home.reviews.title")}
       </h2>
-      {queue === 0 ? (
+      {unavailable ? (
+        <p className="text-muted-foreground">{t("home.unavailable")}</p>
+      ) : queue === 0 ? (
         <p className="text-muted-foreground">{t("home.reviews.none")}</p>
       ) : (
         <p>
@@ -28,14 +32,14 @@ export function ReviewsCard({ queue, remaining, onReview }: ReviewsCardProps) {
             : t("home.reviews.queue.many", { count: queue })}
         </p>
       )}
-      {remaining > 0 ? (
+      {!unavailable && remaining > 0 ? (
         <p className="text-sm text-muted-foreground">
           {remaining === 1
             ? t("home.reviews.remaining.one")
             : t("home.reviews.remaining.many", { count: remaining })}
         </p>
       ) : null}
-      {queue > 0 ? (
+      {!unavailable && queue > 0 ? (
         <Button className="self-start" onClick={onReview}>
           {t("home.reviews.start")}
         </Button>

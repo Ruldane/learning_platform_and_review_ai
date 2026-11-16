@@ -18,7 +18,13 @@ from app.db.models.daily import RadarRun
 from app.db.models.skills import LEVEL_ORDER, SkillLevel
 from app.features.program.service.skill_modules import skill_weeks
 from app.features.radar.repository import RadarRunRepository
-from app.features.radar.service.entries import Entry, blocked_domains, count, is_analyzed
+from app.features.radar.service.entries import (
+    Entry,
+    analysis_failed,
+    blocked_domains,
+    count,
+    is_analyzed,
+)
 from app.features.radar.service.rules import (
     SkillFreq,
     SkillTrend,
@@ -35,6 +41,7 @@ from app.features.skills.service import SkillsService
 
 logger = logging.getLogger(__name__)
 
+ANALYSIS_FAILED = "analysis_failed"
 DEFAULT_DOMAIN = "Autres"  # celui que la carte montre pour une compétence sans domaine
 
 
@@ -47,6 +54,7 @@ def summary_of(row: RadarRun) -> RadarSummary:
         not_postings=row.not_postings,
         analyzed=row.analyzed,
         low_sample=low_sample(row.read_count - row.not_postings),
+        error_code=row.error_code if row.status == "failed" else None,
     )
 
 
@@ -122,6 +130,14 @@ async def finalize_run(rt: RadarRuntime, user_id: str, run_id: str) -> RadarSumm
             return summary_of(row)
         entries: list[Entry] = list(row.postings)
         counted = count(entries)
+        if analysis_failed(entries):  # aucune offre analysée : en échec, reprise possible (D173)
+            row.read_count, row.blocked_count = counted.read, counted.blocked
+            row.not_postings, row.analyzed = counted.not_postings, 0
+            row.blocked_domains = blocked_domains(entries)
+            row.status, row.error_code, row.finished_at = "failed", ANALYSIS_FAILED, rt.now()
+            await db.commit()
+            logger.info("Relevé sans analyse : relevé %s, %d lisible(s)", run_id, counted.read)
+            return summary_of(row)
         ranking = rank_skills(entries)
         previous = await repo.latest_done(
             role_norm=row.role_norm,

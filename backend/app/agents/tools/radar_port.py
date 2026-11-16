@@ -62,13 +62,15 @@ class RadarContext:
 class RadarSummary:
     """Le rapport du relevé : `read_ok` pages lisibles (dont `not_postings` qui ne sont pas des
     offres), `blocked` pages illisibles, `analyzed` offres analysées, `low_sample` : moins de 30
-    offres lisibles."""
+    offres lisibles. `error_code` : `analysis_failed` si aucune offre n'a pu être analysée faute
+    d'extraction (le relevé est alors `failed`, jamais « terminé » à vide) ; sinon `None`."""
 
     read_ok: int
     blocked: int
     not_postings: int
     analyzed: int
     low_sample: bool
+    error_code: str | None = None
 
 
 class RadarStore(Protocol):

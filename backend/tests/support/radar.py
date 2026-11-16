@@ -102,8 +102,9 @@ class FakeRadarStore:
         ok = sum(page.status == "ok" for page in self.read)
         not_postings = sum(not item.is_job_posting for item in self.saved.values())
         analyzed = sum(item.is_job_posting for item in self.saved.values())
+        code = "analysis_failed" if analyzed == 0 and self.failed else None  # comme le vrai port
         self.summary = RadarSummary(
-            ok, len(self.read) - ok, not_postings, analyzed, ok < LOW_SAMPLE
+            ok, len(self.read) - ok, not_postings, analyzed, ok < LOW_SAMPLE, code
         )
         return self.summary
 

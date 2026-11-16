@@ -9,10 +9,12 @@ interface RemindersCardProps {
   items: ReminderItemView[];
   /** Ouvre la fiche de candidature de la relance. */
   onOpen: (applicationId: string) => void;
+  /** La source des relances était en panne ce matin : ni zéro ni liste, une phrase honnête. */
+  unavailable?: boolean;
 }
 
 /** Les relances dues : entreprise, poste et échéance, chacune menant à sa fiche. */
-export function RemindersCard({ due, items, onOpen }: RemindersCardProps) {
+export function RemindersCard({ due, items, onOpen, unavailable = false }: RemindersCardProps) {
   const hidden = items.length === 0 ? 0 : due - items.length;
   return (
     <section
@@ -22,7 +24,9 @@ export function RemindersCard({ due, items, onOpen }: RemindersCardProps) {
       <h2 id="home-reminders" className="text-lg font-medium">
         {t("home.reminders.title")}
       </h2>
-      {items.length === 0 ? (
+      {unavailable ? (
+        <p className="text-muted-foreground">{t("home.unavailable")}</p>
+      ) : items.length === 0 ? (
         <p className={due > 0 ? undefined : "text-muted-foreground"}>
           {due === 0
             ? t("home.reminders.none")

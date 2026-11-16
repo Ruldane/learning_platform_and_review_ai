@@ -37,4 +37,11 @@ describe("ReviewsCard", () => {
     expect(screen.getByText("Aucune révision à faire aujourd'hui.")).toBeInTheDocument();
     expect(screen.queryByRole("button")).toBeNull();
   });
+
+  it("says the rubric is unavailable instead of a false zero, without a review button", () => {
+    render(<ReviewsCard queue={0} remaining={0} unavailable onReview={vi.fn()} />);
+    expect(screen.getByText("Rubrique indisponible ce matin.")).toBeInTheDocument();
+    expect(screen.queryByText("Aucune révision à faire aujourd'hui.")).toBeNull();
+    expect(screen.queryByRole("button")).toBeNull();
+  });
 });

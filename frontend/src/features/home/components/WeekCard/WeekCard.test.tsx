@@ -49,4 +49,10 @@ describe("WeekCard", () => {
     expect(screen.getByText("Rien n'est prévu cette semaine.")).toBeInTheDocument();
     expect(screen.queryByRole("progressbar")).toBeNull();
   });
+
+  it("says the rubric is unavailable instead of « no week » when its source failed", () => {
+    render(<WeekCard week={null} unavailable />);
+    expect(screen.getByText("Rubrique indisponible ce matin.")).toBeInTheDocument();
+    expect(screen.queryByText("Aucune semaine de programme en cours.")).toBeNull();
+  });
 });

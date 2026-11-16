@@ -4,10 +4,12 @@ import type { OfferItemView } from "../viewTypes";
 
 interface OffersCardProps {
   items: OfferItemView[];
+  /** La source des offres était en panne ce matin : ni liste vide ni « aucune nouvelle offre ». */
+  unavailable?: boolean;
 }
 
 /** Les nouvelles offres du radar : titre (lien extérieur), entreprise et score écrit « score 78 sur 100 ». */
-export function OffersCard({ items }: OffersCardProps) {
+export function OffersCard({ items, unavailable = false }: OffersCardProps) {
   return (
     <section
       aria-labelledby="home-offers"
@@ -16,7 +18,9 @@ export function OffersCard({ items }: OffersCardProps) {
       <h2 id="home-offers" className="text-lg font-medium">
         {t("home.offers.title")}
       </h2>
-      {items.length === 0 ? (
+      {unavailable ? (
+        <p className="text-muted-foreground">{t("home.unavailable")}</p>
+      ) : items.length === 0 ? (
         <p className="text-muted-foreground">{t("home.offers.none")}</p>
       ) : (
         <ul aria-label={t("home.offers.listLabel")} className="flex flex-col gap-2 text-sm">

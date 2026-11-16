@@ -34,15 +34,17 @@ MODEL_UNAVAILABLE_CODES = frozenset(
 class AdviceFacts:
     """Les faits du jour, tels que le code les a comptés. Le conseil ne dit rien d'autre."""
 
+    # Un fait `None` : sa rubrique était en panne ce matin (`unavailable`) ; le conseil ne le reçoit
+    # pas, jamais un zéro de remplacement. `block_minutes` `None` : le bloc est indisponible.
     block_title: str | None  # le bloc d'étude du jour (`None` : aucun bloc prévu)
-    block_minutes: int
-    cards_due: int  # fiches à réviser
-    reminders_due: int  # relances de candidature à faire
-    offers: int  # offres à regarder
+    block_minutes: int | None
+    cards_due: int | None  # fiches à réviser
+    reminders_due: int | None  # relances de candidature à faire
+    offers: int | None  # offres à regarder
     best_score: int | None  # meilleur score de quiz récent
-    week_planned: int  # tâches prévues cette semaine
-    week_done: int  # tâches faites cette semaine
-    streak_days: int  # jours d'étude de suite
+    week_planned: int | None  # tâches prévues cette semaine
+    week_done: int | None  # tâches faites cette semaine
+    streak_days: int | None  # jours d'étude de suite
 
 
 @dataclass(frozen=True)

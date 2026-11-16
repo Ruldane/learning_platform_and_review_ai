@@ -31,19 +31,25 @@ logger = logging.getLogger(__name__)
 
 def facts_of(sections: dict[str, Any]) -> AdviceFacts:
     """Les faits du jour tels que les rubriques du brief les disent : le bloc, les fiches de la
-    file, les relances dues, les offres montrées, la semaine (sans programme : zéros)."""
+    file, les relances dues, les offres montrées, la semaine (sans programme : zéros). Le fait d'une
+    rubrique en panne (`unavailable`) est `None` : jamais un zéro inventé pour le conseil."""
+    down = frozenset(sections.get("unavailable", ()))
     block: dict[str, Any] | None = sections.get("block")
     week: dict[str, Any] = sections.get("week") or {}
+
+    def known(name: str, value: int) -> int | None:
+        return None if name in down else value
+
     return AdviceFacts(
         block_title=block["lesson_title"] if block else None,
-        block_minutes=block["minutes"] if block else 0,
-        cards_due=sections["reviews"]["queue"],
-        reminders_due=sections["reminders"]["due"],
-        offers=len(sections["offers"]["items"]),
+        block_minutes=known("block", block["minutes"] if block else 0),
+        cards_due=known("reviews", sections["reviews"]["queue"]),
+        reminders_due=known("reminders", sections["reminders"]["due"]),
+        offers=known("offers", len(sections["offers"]["items"])),
         best_score=week.get("best_quiz"),
-        week_planned=week.get("tasks_total", 0),
-        week_done=week.get("tasks_done", 0),
-        streak_days=week.get("streak_days", 0),
+        week_planned=known("week", week.get("tasks_total", 0)),
+        week_done=known("week", week.get("tasks_done", 0)),
+        streak_days=known("week", week.get("streak_days", 0)),
     )
 
 

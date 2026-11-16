@@ -5,6 +5,8 @@ import type { WeekView } from "../viewTypes";
 interface WeekCardProps {
   /** L'avancement de la semaine du programme ; `null` sans programme validé. */
   week: WeekView | null;
+  /** La source de la semaine était en panne ce matin : ni « aucune semaine » ni chiffres. */
+  unavailable?: boolean;
 }
 
 function streakText(days: number): string {
@@ -19,7 +21,7 @@ function tasksText(done: number, total: number): string {
 }
 
 /** L'avancement de la semaine : barre et texte « 3 h 10 sur 5 h prévues », tâches faites et série. */
-export function WeekCard({ week }: WeekCardProps) {
+export function WeekCard({ week, unavailable = false }: WeekCardProps) {
   const planned = week?.plannedMinutes ?? 0;
   const share = week && planned > 0 ? Math.min(1, week.doneMinutes / planned) : 0;
   return (
@@ -30,7 +32,9 @@ export function WeekCard({ week }: WeekCardProps) {
       <h2 id="home-week" className="text-lg font-medium">
         {t("home.week.title")}
       </h2>
-      {week === null ? (
+      {unavailable ? (
+        <p className="text-muted-foreground">{t("home.unavailable")}</p>
+      ) : week === null ? (
         <p className="text-muted-foreground">{t("home.week.none")}</p>
       ) : planned === 0 ? (
         <p className="text-muted-foreground">{t("home.week.nothingPlanned")}</p>
@@ -58,7 +62,7 @@ export function WeekCard({ week }: WeekCardProps) {
           </p>
         </>
       )}
-      {week ? (
+      {week && !unavailable ? (
         <ul className="flex flex-col gap-1 text-sm text-muted-foreground">
           <li>{tasksText(week.tasksDone, week.tasksTotal)}</li>
           <li>{streakText(week.streakDays)}</li>

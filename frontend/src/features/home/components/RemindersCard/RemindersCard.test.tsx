@@ -49,4 +49,10 @@ describe("RemindersCard", () => {
     expect(screen.getByText("Aucune relance due.")).toBeInTheDocument();
     expect(screen.queryByRole("list")).toBeNull();
   });
+
+  it("says the rubric is unavailable instead of a false zero when its source failed", () => {
+    render(<RemindersCard due={0} items={[]} unavailable onOpen={vi.fn()} />);
+    expect(screen.getByText("Rubrique indisponible ce matin.")).toBeInTheDocument();
+    expect(screen.queryByText("Aucune relance due.")).toBeNull();
+  });
 });

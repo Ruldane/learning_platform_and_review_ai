@@ -2,7 +2,10 @@
 nouvelles depuis le brief précédent, avancement de la semaine du programme validé. Horloge figée
 au mardi 17 novembre 2026, 11 h à Paris."""
 
+import gc
+import warnings
 from datetime import timedelta
+from typing import Any, cast
 
 import httpx
 from sqlalchemy import update
@@ -11,6 +14,7 @@ from app.db.models.daily import Brief
 from app.db.models.postings import JobPosting
 from app.db.models.program import Task
 from app.db.models.study import StudySession
+from app.features.brief.service.sections import _isolated
 from app.features.radar.service.views import offers_since
 from tests.features.brief.conftest import NOW, TODAY, Env
 from tests.features.brief.support import (
@@ -237,3 +241,33 @@ async def test_offers_since_reads_only_scored_analyzed_entries_of_done_runs(env:
     assert [entry["score"] for entry in found] == [80]
     assert set(found[0]) == {"run_id", "url_key", "url", "title", "company", "score"}
     assert none_after == []
+
+
+class _BrokenDb:
+    """Une session dont le savepoint ne s'ouvre pas : la fabrique ne doit jamais être appelée."""
+
+    def begin_nested(self) -> Any:
+        raise RuntimeError("savepoint impossible")
+
+
+async def test_a_failing_source_leaves_no_unawaited_coroutine_and_a_fresh_empty(
+    env: Env,
+) -> None:
+    built: list[str] = []
+
+    async def source() -> Any:
+        built.append("called")
+        raise RuntimeError("source en panne")
+
+    failed: list[str] = []
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        broken = await _isolated(cast(Any, _BrokenDb()), "reminders", source, failed)
+        async with env.rt.session_factory() as db:
+            first = await _isolated(db, "reminders", source, failed)
+        gc.collect()
+    assert built == ["called"]  # jamais appelée quand le savepoint ne s'ouvre pas
+    assert failed == ["reminders", "reminders"]
+    assert broken == first == {"due": 0, "items": []}
+    first["items"].append("x")  # une valeur neuve : rien ne fuit vers l'appel suivant
+    assert (await _isolated(cast(Any, _BrokenDb()), "reminders", source, failed))["items"] == []

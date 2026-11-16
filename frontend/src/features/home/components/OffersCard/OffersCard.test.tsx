@@ -58,4 +58,10 @@ describe("OffersCard", () => {
     expect(error).not.toHaveBeenCalled();
     error.mockRestore();
   });
+
+  it("says the rubric is unavailable instead of « no new offer » when its source failed", () => {
+    render(<OffersCard items={[]} unavailable />);
+    expect(screen.getByText("Rubrique indisponible ce matin.")).toBeInTheDocument();
+    expect(screen.queryByText("Aucune nouvelle offre depuis ton dernier brief.")).toBeNull();
+  });
 });

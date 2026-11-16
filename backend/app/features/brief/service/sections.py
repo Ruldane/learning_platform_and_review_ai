@@ -10,7 +10,7 @@ source en panne rend la rubrique vide et la nomme dans `unavailable`, jamais une
 tout l'écran du matin (D173). Journaux : le nom de la rubrique et la classe de l'exception."""
 
 import logging
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Callable
 from datetime import date
 from typing import Any
 
@@ -123,26 +123,33 @@ async def _week(
 
 logger = logging.getLogger(__name__)
 
-# Ce que vaut une rubrique dont la source est en panne : vide, jamais inventée.
-_EMPTY: dict[str, Any] = {
-    "block": None,
-    "reviews": {"queue": 0, "remaining": 0},
-    "reminders": {"due": 0, "items": []},
-    "offers": {"run_id": None, "items": []},
-    "week": None,
-}
+
+def _empty(name: str) -> Any:
+    """Ce que vaut une rubrique dont la source est en panne : vide, jamais inventée. Une valeur
+    neuve à chaque appel (jamais un objet partagé) ; le front et le conseil lisent `unavailable`."""
+    empty: dict[str, Any] = {
+        "block": None,
+        "reviews": {"queue": 0, "remaining": 0},
+        "reminders": {"due": 0, "items": []},
+        "offers": {"run_id": None, "items": []},
+        "week": None,
+    }
+    return empty[name]
 
 
-async def _isolated(db: AsyncSession, name: str, build: Awaitable[Any], failed: list[str]) -> Any:
+async def _isolated(
+    db: AsyncSession, name: str, build: Callable[[], Awaitable[Any]], failed: list[str]
+) -> Any:
     """La rubrique `name`, dans son propre savepoint : en cas de panne, sa valeur vide et son nom
-    dans `failed` (la transaction reste valide pour les rubriques suivantes)."""
+    dans `failed` (la transaction reste valide pour les rubriques suivantes). `build` est une
+    fabrique : la coroutine n'existe qu'une fois le savepoint ouvert, jamais abandonnée."""
     try:
         async with db.begin_nested():
-            return await build
+            return await build()
     except Exception as exc:
         logger.warning("Brief : rubrique %s indisponible (%s)", name, type(exc).__name__)
         failed.append(name)
-        return _EMPTY[name]
+        return _empty(name)
 
 
 async def build_sections(
@@ -152,11 +159,11 @@ async def build_sections(
     rubriques en panne) seulement s'il y en a."""
     failed: list[str] = []
     sections: dict[str, Any] = {
-        "block": await _isolated(db, "block", _block(db, user_id, today), failed),
-        "reviews": await _isolated(db, "reviews", _reviews(rt, db, user_id), failed),
-        "reminders": await _isolated(db, "reminders", _reminders(rt, user_id), failed),
-        "offers": await _isolated(db, "offers", _offers(db, user_id, today), failed),
-        "week": await _isolated(db, "week", _week(rt, db, user_id, today), failed),
+        "block": await _isolated(db, "block", lambda: _block(db, user_id, today), failed),
+        "reviews": await _isolated(db, "reviews", lambda: _reviews(rt, db, user_id), failed),
+        "reminders": await _isolated(db, "reminders", lambda: _reminders(rt, user_id), failed),
+        "offers": await _isolated(db, "offers", lambda: _offers(db, user_id, today), failed),
+        "week": await _isolated(db, "week", lambda: _week(rt, db, user_id, today), failed),
     }
     if failed:
         sections["unavailable"] = failed

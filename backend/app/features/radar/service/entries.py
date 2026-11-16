@@ -69,6 +69,14 @@ def count(entries: Sequence[Entry]) -> Counts:
     )
 
 
+def analysis_failed(entries: Sequence[Entry]) -> bool:
+    """Aucune offre analysée alors que l'extraction a échoué sur au moins une : le relevé est en
+    échec (reprise possible), jamais « terminé » avec zéro offre analysée."""
+    return not any(is_analyzed(entry) for entry in entries) and any(
+        entry.get("read") == "extract_failed" for entry in entries
+    )
+
+
 def blocked_domains(entries: Sequence[Entry]) -> dict[str, int]:
     """`site → nombre de pages bloquées`, dans l'ordre de la première rencontre."""
     found: dict[str, int] = {}

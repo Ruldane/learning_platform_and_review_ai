@@ -68,6 +68,17 @@ describe("RadarPage : résultat et historique", () => {
     expect(screen.queryByText(/search_unavailable/)).toBeNull();
   });
 
+  it("says that the offers read could not be analysed when the run failed on analysis", async () => {
+    setup({
+      runs: [radarRun("r3", { status: "failed", error_code: "analysis_failed", ranking: [] })],
+    });
+    const failure = (
+      await screen.findByRole("heading", { name: "Ce relevé n'a pas abouti." })
+    ).closest("section") as HTMLElement;
+    expect(failure).toHaveTextContent("n'ont pas pu être analysées");
+    expect(screen.queryByText(/analysis_failed/)).toBeNull();
+  });
+
   it("falls back to a general reason for an unknown error code", async () => {
     setup({ runs: [radarRun("r3", { status: "failed", error_code: "RuntimeError" })] });
     const failure = (

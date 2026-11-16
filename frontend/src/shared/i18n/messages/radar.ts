@@ -112,6 +112,8 @@ export const radar = {
       run_failed: "le relevé planifié n'a pas pu aller au bout.",
       llm_unavailable: "aucun modèle n'est utilisable (clé absente ?) : rien n'a été lu.",
       node_timeout: "une étape du relevé a pris trop de temps.",
+      analysis_failed:
+        "les offres lues n'ont pas pu être analysées (le modèle n'a pas répondu) : le relevé n'est pas terminé.",
       structured_output_invalid: "l'analyse des offres n'a pas donné de réponse exploitable.",
       web_quota_reached: "le plafond de lectures du web a été atteint.",
       internal_error: "une panne inattendue a interrompu le relevé.",

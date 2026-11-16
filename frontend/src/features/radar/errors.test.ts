@@ -42,6 +42,9 @@ describe("failureReason", () => {
     expect(failureReason("llm_unavailable")).toBe(
       "aucun modèle n'est utilisable (clé absente ?) : rien n'a été lu.",
     );
+    expect(failureReason("analysis_failed")).toBe(
+      "les offres lues n'ont pas pu être analysées (le modèle n'a pas répondu) : le relevé n'est pas terminé.",
+    );
     expect(failureReason("RuntimeError")).toBe("une panne inattendue a interrompu le relevé.");
     expect(failureReason(null)).toBe("une panne inattendue a interrompu le relevé.");
   });
