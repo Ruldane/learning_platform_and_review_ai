@@ -24,11 +24,19 @@ POLL_S = 3.0  # un relevé dure des minutes : inutile d'interroger plus vite (le
 @dataclass
 class Track:
     """Ce que les étapes se passent : le relevé fini, le brief du jour, l'identifiant de l'élément
-    « Brief du jour prêt » du fil d'activité (partie `planifie`)."""
+    « Brief du jour prêt » du fil d'activité (partie `planifie`), le projet rendu (dernière lecture,
+    ses compétences, la session de son évaluation, la description envoyée, le profil d'avant :
+    version et noms des projets, les phrases du README) de la partie `projets`."""
 
     radar: dict[str, Any] = field(default_factory=dict)
     brief: dict[str, Any] = field(default_factory=dict)
     activity_id: str = ""
+    project: dict[str, Any] = field(default_factory=dict)
+    project_skills: list[str] = field(default_factory=list)
+    project_session: str = ""
+    description: str = ""
+    profile_before: tuple[int, list[str]] = (0, [])
+    readme: list[str] = field(default_factory=list)
 
 
 type Step = Callable[[Run, Track], Awaitable[None]]

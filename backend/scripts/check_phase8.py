@@ -10,7 +10,11 @@ crée rien, 10 minutes au plus après l'heure), `origine` (le brief est d'origin
 409), `relevé` (fini en 15 minutes au plus ; durée, appels du modèle, coût), `rapport` (lectures,
 plafonds, classement, `low_sample`, salaires relus dans les pages), `journaux`. Partie `brief` (5
 étapes) : `rubriques`, `conseil` (prêt en 3 minutes au plus, deux phrases, nombres des rubriques),
-`ressource`, `relecture` (même `id`), `journaux`.
+`ressource`, `relecture` (même `id`), `journaux`. Partie `projets` (5 étapes, voir
+`phase8_projects`) : `énoncé` (3 à 6 critères, 3 à 6 h), `rendu` (description et lien d'un dépôt
+public, multipart), `évaluation` (verdict, critères, dépôt lu, appels, coût), `suites` (validé :
+brouillons, compétences à `prouve`, profil inchangé puis version + 1 ; à reprendre : critères non
+atteints nommés), `journaux`.
 
 Le script tourne hors du conteneur du back (les scripts n'y sont pas, `.dockerignore`) : dans un
 conteneur jetable de la même image, sur le réseau de la pile, scripts montés ; les journaux du back
@@ -22,7 +26,9 @@ passent par l'entrée standard (`--logs-file -`), lus au lancement. Sans journau
       learning_career_platform-backend:latest -m scripts.check_phase8 \\
       --api http://backend:8000 --part planifie --logs-file -
 
-(`--part radar` pour le radar, `--part brief` pour le brief.) Les journaux sont lus au lancement :
+(`--part radar` pour le radar, `--part brief` pour le brief, `--part projets` pour un projet,
+`--part tout` pour les trois dans cet ordre ; `planifie` reste à part : il refuse de tourner si le
+brief du jour existe déjà.) Les journaux sont lus au lancement :
 un second passage couvre le premier. Rien de ce qui est envoyé ou reçu n'est affiché : seulement
 des étapes, des nombres, des codes et des identifiants."""
 
@@ -44,18 +50,25 @@ from scripts.phase8_brief import (
 )
 from scripts.phase8_common import Step, Track
 from scripts.phase8_plan import check_origin, check_planned, check_prerequisite
+from scripts.phase8_projects import check_outcome, check_review, check_statement, check_submit
+from scripts.phase8_projects_rules import project_extras
 from scripts.phase8_radar import check_launch, check_report_step, check_run
 from scripts.phase8_rules import check_logs_8, log_extras
 
-type Part = Literal["planifie", "radar", "brief"]
+type Part = Literal["planifie", "radar", "brief", "projets", "tout"]
 
 PLANIFIE_STEPS = ("préalable", "planification", "origine", "journaux")
 RADAR_STEPS = ("lancement", "relevé", "rapport", "journaux")
 BRIEF_STEPS = ("rubriques", "conseil", "ressource", "relecture", "journaux")
+PROJETS_STEPS = ("énoncé", "rendu", "évaluation", "suites", "journaux")
+# `tout` : le radar, le brief puis les projets, leurs journaux relus une seule fois à la fin.
+TOUT_STEPS = (*RADAR_STEPS[:-1], *BRIEF_STEPS[:-1], *PROJETS_STEPS)
 STEPS_BY_PART: dict[str, tuple[str, ...]] = {
     "planifie": PLANIFIE_STEPS,
     "radar": RADAR_STEPS,
     "brief": BRIEF_STEPS,
+    "projets": PROJETS_STEPS,
+    "tout": TOUT_STEPS,
 }
 HTTP_TIMEOUT_S = 60.0
 DEFAULT_TIMEOUT_S = 3600.0
@@ -63,8 +76,10 @@ DEFAULT_TIMEOUT_S = 3600.0
 __all__ = [
     "BRIEF_STEPS",
     "PLANIFIE_STEPS",
+    "PROJETS_STEPS",
     "RADAR_STEPS",
     "STEPS_BY_PART",
+    "TOUT_STEPS",
     "CheckFailed",
     "main",
     "run_check",
@@ -76,6 +91,8 @@ def _logs_step(logs: str | None) -> Step:
         if logs is None:
             raise CheckFailed("journaux", "Journaux du back non fournis (--logs-file).")
         extra = log_extras(st.radar or None, st.brief or None)
+        if st.project:
+            extra = sorted({*extra, *project_extras(st.project, st.description, st.readme)})
         print(
             f"    {check_logs_8('journaux', logs, extra)} ligne(s) relue(s), sans donnée",
             flush=True,
@@ -109,6 +126,10 @@ async def run_check(
         "conseil": check_advice_step,
         "ressource": check_resource_step,
         "relecture": check_reread,
+        "énoncé": check_statement,
+        "rendu": check_submit,
+        "évaluation": check_review,
+        "suites": check_outcome,
         "journaux": _logs_step(logs),
     }
     done: list[str] = []

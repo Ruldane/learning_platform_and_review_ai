@@ -111,5 +111,5 @@ def test_main_defaults_to_planifie_without_logs_and_refuses_an_unknown_part(
     assert calls[0]["logs"] is None and calls[0]["part"] == "planifie"
 
     with pytest.raises(SystemExit) as refused:
-        check.main(["--part", "tout"])
+        check.main(["--part", "autre"])
     assert refused.value.code == 2
