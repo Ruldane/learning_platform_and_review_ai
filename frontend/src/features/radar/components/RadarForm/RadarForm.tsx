@@ -45,6 +45,9 @@ export function RadarForm({ role, zone, onRun, running, roleError, zoneError }: 
   const [roleValue, setRoleValue] = useState(role);
   const [zoneValue, setZoneValue] = useState(zone);
   const [attempted, setAttempted] = useState(false);
+  // Un refus du serveur sur un champ s'efface dès que ce champ est modifié ; un nouvel envoi le
+  // remontre s'il revient.
+  const [dismissed, setDismissed] = useState<FieldErrors>({});
   const local = attempted ? validate(roleValue.trim(), zoneValue.trim()) : {};
 
   const submit = (event: FormEvent) => {
@@ -52,6 +55,7 @@ export function RadarForm({ role, zone, onRun, running, roleError, zoneError }: 
     if (running) return;
     const [trimmedRole, trimmedZone] = [roleValue.trim(), zoneValue.trim()];
     setAttempted(true);
+    setDismissed({});
     if (Object.keys(validate(trimmedRole, trimmedZone)).length > 0) return;
     onRun({ role: trimmedRole, zone: trimmedZone || null });
   };
@@ -68,15 +72,21 @@ export function RadarForm({ role, zone, onRun, running, roleError, zoneError }: 
         label={t("radar.form.role")}
         value={roleValue}
         disabled={running}
-        error={local.role ?? roleError}
-        onChange={setRoleValue}
+        error={local.role ?? (roleError === dismissed.role ? undefined : roleError)}
+        onChange={(value) => {
+          setRoleValue(value);
+          setDismissed((previous) => ({ ...previous, role: roleError }));
+        }}
       />
       <TextField
         label={t("radar.form.zone")}
         value={zoneValue}
         disabled={running}
-        error={local.zone ?? zoneError}
-        onChange={setZoneValue}
+        error={local.zone ?? (zoneError === dismissed.zone ? undefined : zoneError)}
+        onChange={(value) => {
+          setZoneValue(value);
+          setDismissed((previous) => ({ ...previous, zone: zoneError }));
+        }}
       />
       <p className="text-xs text-muted-foreground">{t("radar.form.hint")}</p>
       <Button type="submit" className="self-start" disabled={running}>

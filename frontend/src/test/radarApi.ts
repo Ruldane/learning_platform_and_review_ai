@@ -1,5 +1,5 @@
 import { http, HttpResponse } from "msw";
-import { API, sessionOut } from "./councilApi";
+import { API } from "./councilApi";
 import { apiError } from "./councilHarness";
 
 type Over = Record<string, unknown>;
@@ -88,6 +88,7 @@ interface RadarState {
   bodies: Over[];
   startReply?: () => Response;
   latestReads: number;
+  sessionReads: number;
   created: number;
 }
 
@@ -114,13 +115,17 @@ function readHandlers(state: RadarState) {
           });
     }),
     http.get(`${API}/sessions`, ({ request }) => {
+      state.sessionReads += 1;
       const graph = new URL(request.url).searchParams.get("graph");
       return HttpResponse.json(state.sessions.filter((s) => !graph || s.graph === graph));
     }),
   ];
 }
 
-/** Un relevé `running` tout neuf, avec sa session (`sess-<id>`). */
+/**
+ * Un relevé `running` tout neuf et sa session `sess-<id>`, donnée par le 202 seulement : elle
+ * n'est pas dans `GET /sessions` (un test qui la lit autrement la retrouverait par hasard).
+ */
 function openRun(state: RadarState, body: Over): Response {
   state.created += 1;
   const id = `new${state.created}`;
@@ -138,7 +143,6 @@ function openRun(state: RadarState, body: Over): Response {
       blocked_domains: [],
     }),
   );
-  state.sessions.push(sessionOut(`sess-${id}`, "running", radarSession(id)));
   return HttpResponse.json({ run_id: id, session_id: `sess-${id}` }, { status: 202 });
 }
 
@@ -179,6 +183,7 @@ export function radarApi(options: RadarApiOptions = {}) {
     bodies: [],
     startReply: options.startReply,
     latestReads: 0,
+    sessionReads: 0,
     created: 0,
   };
   const finish = (id: string, over: Over = {}) => {

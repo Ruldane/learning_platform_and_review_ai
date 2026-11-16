@@ -59,20 +59,23 @@ describe("RadarPage : résultat et historique", () => {
     setup({
       runs: [radarRun("r3", { status: "failed", error_code: "search_unavailable", ranking: [] })],
     });
-    expect(await screen.findByRole("heading", { name: "Ce relevé n'a pas abouti." })).toBeVisible();
-    expect(
-      screen.getAllByText(
-        "Raison : la recherche d'offres n'a répondu à aucune requête, donc aucune offre n'a pu être lue.",
-      ).length,
-    ).toBeGreaterThan(0);
+    const failure = (
+      await screen.findByRole("heading", { name: "Ce relevé n'a pas abouti." })
+    ).closest("section") as HTMLElement;
+    expect(failure).toHaveTextContent(
+      "Raison : la recherche d'offres n'a répondu à aucune requête, donc aucune offre n'a pu être lue.",
+    );
     expect(screen.queryByText(/search_unavailable/)).toBeNull();
   });
 
   it("falls back to a general reason for an unknown error code", async () => {
     setup({ runs: [radarRun("r3", { status: "failed", error_code: "RuntimeError" })] });
-    expect((await screen.findAllByText(/une panne inattendue a interrompu le relevé/)).length).toBe(
-      2,
-    );
+    const failure = (
+      await screen.findByRole("heading", { name: "Ce relevé n'a pas abouti." })
+    ).closest("section") as HTMLElement;
+    expect(failure).toHaveTextContent("Raison : une panne inattendue a interrompu le relevé.");
+    const history = within(screen.getByRole("list", { name: "Relevés précédents" }));
+    expect(history.getByText(/Raison : une panne inattendue/)).toBeVisible();
   });
 
   it("lists the history and opens an older run in place", async () => {

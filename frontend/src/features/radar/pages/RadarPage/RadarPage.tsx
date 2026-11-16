@@ -22,8 +22,10 @@ export function RadarPage({ createSocket }: { createSocket?: SocketFactory }) {
   const starter = useStartRadar();
   if (latest.data) {
     // Sans relevé choisi, l'adresse du radar suit celui qui tourne, sauf si un lancement vient de
-    // désigner le relevé à suivre : sa navigation porte la session du 202.
-    if (runId === null && latest.data.runningId && !starter.started) {
+    // désigner ce même relevé : sa navigation porte la session du 202. Un autre relevé (celui du
+    // lundi) est suivi.
+    const justStarted = starter.started?.runId === latest.data.runningId;
+    if (runId === null && latest.data.runningId && !justStarted) {
       return <Navigate to={`${RADAR_PATH}/${latest.data.runningId}`} replace />;
     }
     return (

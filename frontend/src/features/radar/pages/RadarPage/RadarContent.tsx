@@ -1,4 +1,5 @@
 import type { UseQueryResult } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { t } from "@/shared/i18n/t";
 import type { SocketFactory } from "@/shared/realtime/socket";
@@ -35,10 +36,26 @@ export function RadarContent({ runId, latest, history, starter, createSocket }: 
   const launched = launchState(useLocation().state);
   const detail = useRadarRun(runId, launched.sessionId, createSocket);
   const view = runId ? detail.query.data : latest.latest;
+  // Un lancement tient du clic jusqu'à ce que le relevé à suivre soit lu : un second clic (double
+  // clic, Entrée répétée) n'envoie rien, il ne peut donc pas produire un 409 qui écraserait la
+  // session du 202.
+  const launching = useRef(false);
+  const viewedId = view?.id;
+  useEffect(() => {
+    if (runId !== null && viewedId === runId) launching.current = false;
+  }, [runId, viewedId]);
+  const waiting = runId !== null && detail.query.isPending;
+  const running =
+    starter.pending || waiting || latest.runningId !== null || view?.status === "running";
 
   const onRun = (request: RadarRunRequestView) => {
+    if (launching.current) return;
+    launching.current = true;
     void starter.start(request).then((started) => {
-      if (!started) return;
+      if (!started) {
+        launching.current = false;
+        return;
+      }
       void navigate(`/carriere/radar/${started.runId}`, {
         state: { sessionId: started.sessionId, resumed: started.resumed },
       });
@@ -53,11 +70,11 @@ export function RadarContent({ runId, latest, history, starter, createSocket }: 
       </header>
       <RadarLaunch
         defaults={latest.defaults}
-        running={latest.runningId !== null || view?.status === "running"}
+        running={running}
         errors={starter.errors}
         onRun={onRun}
       />
-      {launched.resumed ? (
+      {launched.resumed && view?.status === "running" ? (
         <p role="status" className="text-sm text-muted-foreground">
           {t("radar.page.resumed")}
         </p>

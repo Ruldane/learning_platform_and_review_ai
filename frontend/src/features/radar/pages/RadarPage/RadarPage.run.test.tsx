@@ -38,6 +38,8 @@ describe("RadarPage : lancer et suivre un relevé", () => {
     expect(screen.getByRole("button", { name: "Relevé en cours…" })).toBeDisabled();
 
     const stream = await openStream(sockets, "sess-new1");
+    // La session suivie est celle du 202 : le serveur ne la donne dans aucune liste.
+    expect(state.sessionReads).toBe(0);
     const events = councilEvents("sess-new1");
     stream.push(events.message("m1", "J'ai trouvé 52 pages d'offres à lire.", "scout"));
     stream.push(events.message("m2", "Je classe les compétences demandées.", "analyst"));

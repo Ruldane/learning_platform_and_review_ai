@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { ApiError } from "@/shared/api/errors";
 import type { SocketFactory } from "@/shared/realtime/socket";
 import { useRun } from "@/shared/realtime/useRun";
@@ -47,6 +47,17 @@ export function useRadarRun(
   const sync = useCallback(() => {
     void client.invalidateQueries({ queryKey: radarKeys.all });
   }, [client]);
+  // Le relevé quitte `running` (par le flux ou par la relecture de repli de 10 s) : le formulaire et
+  // l'historique se relisent, même si le flux est resté muet.
+  const status = query.data?.status;
+  const previous = useRef(status);
+  useEffect(() => {
+    if (previous.current === "running" && status && status !== "running") {
+      void client.invalidateQueries({ queryKey: radarKeys.latest });
+      void client.invalidateQueries({ queryKey: radarKeys.history });
+    }
+    previous.current = status;
+  }, [status, client]);
   const run = useRun(sessionId, sync, createSocket);
   return { query, run, running, sessionId, missing: isMissing(query.error) };
 }
