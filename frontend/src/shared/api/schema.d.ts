@@ -4,6 +4,27 @@
  */
 
 export interface paths {
+    "/api/v1/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Activity
+         * @description Les événements des agents et des tâches de fond, le plus récent d'abord : `after` ne rend
+         *     que les plus récents, `before` pagine vers les plus anciens.
+         */
+        get: operations["get_activity_api_v1_activity_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/applications": {
         parameters: {
             query?: never;
@@ -2082,6 +2103,42 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * ActivityItem
+         * @description Un événement. `id` est stable (`{kind}:{ref}:{état}`) : le front ne montre pas deux fois le
+         *     même ; `link` est une route du front.
+         */
+        ActivityItem: {
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Detail */
+            detail?: string | null;
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "lesson" | "radar" | "brief" | "memory" | "project" | "job_failed";
+            /** Link */
+            link?: string | null;
+            /** Title */
+            title: string;
+        };
+        /**
+         * ActivityPage
+         * @description Les événements, le plus récent d'abord. `latest_at` : l'instant du plus récent d'entre eux
+         *     (`None` sans événement), à rendre en `after` au prochain passage.
+         */
+        ActivityPage: {
+            /** Items */
+            items: components["schemas"]["ActivityItem"][];
+            /** Latest At */
+            latest_at: string | null;
+        };
         /** AgentMessageEvent */
         AgentMessageEvent: {
             /**
@@ -6824,6 +6881,40 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    get_activity_api_v1_activity_get: {
+        parameters: {
+            query?: {
+                after?: string | null;
+                before?: string | null;
+                /** @description Plafonné à 50. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_applications_api_v1_applications_get: {
         parameters: {
             query?: {

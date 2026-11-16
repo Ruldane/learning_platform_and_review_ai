@@ -5,7 +5,8 @@ du radar. `failed` et `unavailable` sont définitifs pour la journée (le port i
 ultérieure) : le front n'a aucun « Réessayer » à offrir. Journaux : identifiants seulement."""
 
 import logging
-from datetime import timedelta
+from dataclasses import dataclass
+from datetime import datetime, timedelta
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -79,3 +80,17 @@ async def brief_out(rt: BriefRuntime, db: AsyncSession, user_id: str, brief_id: 
         await settle(rt, db, user_id, row)
         row = await repo.get_fresh(brief_id) or row
     return out_of(row)
+
+
+@dataclass(frozen=True)
+class RecentBrief:
+    id: str
+    at: datetime
+
+
+async def recent_briefs(
+    db: AsyncSession, user_id: str, after: datetime | None, before: datetime | None, limit: int
+) -> list[RecentBrief]:
+    """Les briefs créés dans `]after, before[`, le plus récent d'abord (fil d'activité, 8.7)."""
+    rows = await BriefRepository(db, user_id).created_between(after, before, limit)
+    return [RecentBrief(id=row.id, at=row.created_at) for row in rows]

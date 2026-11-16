@@ -108,3 +108,19 @@ class RadarRunRepository(UserScopedRepository[RadarRun]):
             .execution_options(populate_existing=True)
         )
         return builtins.list((await self.session.execute(stmt)).scalars())
+
+    async def done_between(
+        self, after: datetime | None, before: datetime | None, limit: int
+    ) -> builtins.list[RadarRun]:
+        """Les relevés `done` finis dans `]after, before[`, le plus récent d'abord (fil)."""
+        stmt = select(RadarRun).where(
+            RadarRun.user_id == self.user_id,
+            RadarRun.status == "done",
+            RadarRun.finished_at.is_not(None),
+        )
+        if after is not None:
+            stmt = stmt.where(RadarRun.finished_at > after)
+        if before is not None:
+            stmt = stmt.where(RadarRun.finished_at < before)
+        stmt = stmt.order_by(RadarRun.finished_at.desc(), RadarRun.id.desc()).limit(limit)
+        return builtins.list((await self.session.execute(stmt)).scalars())

@@ -133,9 +133,14 @@ class JobRunRepository(UserScopedRepository[JobRun]):
         )
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
-    async def failures(self, since: datetime | None, limit: int) -> list[JobRun]:
+    async def failures(
+        self, after: datetime | None, before: datetime | None, limit: int
+    ) -> list[JobRun]:
+        """Les passages en échec finis dans `]after, before[`, le plus récent d'abord."""
         stmt = select(JobRun).where(JobRun.user_id == self.user_id, JobRun.status == "failed")
-        if since is not None:
-            stmt = stmt.where(JobRun.finished_at >= since)
+        if after is not None:
+            stmt = stmt.where(JobRun.finished_at > after)
+        if before is not None:
+            stmt = stmt.where(JobRun.finished_at < before)
         stmt = stmt.order_by(JobRun.finished_at.desc(), JobRun.created_at.desc()).limit(limit)
         return list((await self.session.execute(stmt)).scalars())

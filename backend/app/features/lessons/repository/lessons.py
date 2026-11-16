@@ -1,4 +1,5 @@
 import builtins
+from datetime import datetime
 
 from sqlalchemy import select
 
@@ -35,3 +36,18 @@ class LessonRepository(UserScopedRepository[Lesson]):
             .execution_options(populate_existing=True)
         )
         return builtins.list((await self.session.execute(stmt)).scalars().all())
+
+    async def recent_settled(
+        self, after: datetime | None, before: datetime | None, limit: int
+    ) -> builtins.list[Lesson]:
+        """Les leçons prêtes ou en échec dont le dernier changement est dans `]after, before[`,
+        plus récentes d'abord (fil d'activité)."""
+        stmt = select(Lesson).where(
+            Lesson.user_id == self.user_id, Lesson.status.in_(("ready", "failed"))
+        )
+        if after is not None:
+            stmt = stmt.where(Lesson.updated_at > after)
+        if before is not None:
+            stmt = stmt.where(Lesson.updated_at < before)
+        stmt = stmt.order_by(Lesson.updated_at.desc(), Lesson.id.desc()).limit(limit)
+        return builtins.list((await self.session.execute(stmt)).scalars())

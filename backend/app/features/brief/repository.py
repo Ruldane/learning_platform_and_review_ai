@@ -116,3 +116,15 @@ class BriefRepository(UserScopedRepository[Brief]):
             )
             keys.update(str(key) for key in (await self.session.execute(stmt)).scalars())
         return keys
+
+    async def created_between(
+        self, after: datetime | None, before: datetime | None, limit: int
+    ) -> builtins.list[Brief]:
+        """Les briefs créés dans `]after, before[`, le plus récent d'abord (fil d'activité)."""
+        stmt = select(Brief).where(Brief.user_id == self.user_id)
+        if after is not None:
+            stmt = stmt.where(Brief.created_at > after)
+        if before is not None:
+            stmt = stmt.where(Brief.created_at < before)
+        stmt = stmt.order_by(Brief.created_at.desc(), Brief.id.desc()).limit(limit)
+        return builtins.list((await self.session.execute(stmt)).scalars())

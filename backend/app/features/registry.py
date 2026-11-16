@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from app.features.activity.router import router as activity_router
 from app.features.applications.router import router as applications_router
 from app.features.applications.router_committee import router as committee_router
 from app.features.applications.router_interviews import router as interviews_router
@@ -53,4 +54,5 @@ FEATURE_ROUTERS: list[APIRouter] = [
     reminders_router,
     radar_router,
     brief_router,
+    activity_router,
 ]

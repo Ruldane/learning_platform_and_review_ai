@@ -1,6 +1,96 @@
 {
   "components": {
     "schemas": {
+      "ActivityItem": {
+        "description": "Un événement. `id` est stable (`{kind}:{ref}:{état}`) : le front ne montre pas deux fois le\nmême ; `link` est une route du front.",
+        "properties": {
+          "at": {
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "lesson",
+              "radar",
+              "brief",
+              "memory",
+              "project",
+              "job_failed"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "link": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "at",
+          "title"
+        ],
+        "title": "ActivityItem",
+        "type": "object"
+      },
+      "ActivityPage": {
+        "description": "Les événements, le plus récent d'abord. `latest_at` : l'instant du plus récent d'entre eux\n(`None` sans événement), à rendre en `after` au prochain passage.",
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ActivityItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "latest_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest At"
+          }
+        },
+        "required": [
+          "items",
+          "latest_at"
+        ],
+        "title": "ActivityPage",
+        "type": "object"
+      },
       "AgentMessageEvent": {
         "properties": {
           "agent": {
@@ -12882,6 +12972,87 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/activity": {
+      "get": {
+        "description": "Les événements des agents et des tâches de fond, le plus récent d'abord : `after` ne rend\nque les plus récents, `before` pagine vers les plus anciens.",
+        "operationId": "get_activity_api_v1_activity_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "After"
+            }
+          },
+          {
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Before"
+            }
+          },
+          {
+            "description": "Plafonné à 50.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "description": "Plafonné à 50.",
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Activity",
+        "tags": [
+          "activity"
+        ]
+      }
+    },
     "/api/v1/applications": {
       "get": {
         "description": "Les fiches, la plus récente d'abord ; adopte d'abord les versions de CV prêtes.",

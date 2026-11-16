@@ -14,6 +14,7 @@ from app.db.models.accounts import User
 from app.db.models.daily import JobRun
 from app.features.ledger.service.ledger import (
     Claim,
+    JobRunView,
     claim,
     fail,
     finish,
@@ -111,7 +112,7 @@ async def test_stale_running_out_of_attempts_is_abandoned(db_session_factory: Fa
     row = await _row(db_session_factory)
     assert row.status == "failed" and row.error_code == "abandoned" and row.attempts == 3
     async with db_session_factory() as db:
-        [view] = await recent_failures(db, ME, None, 10)
+        [view] = await recent_failures(db, ME, None, None, 10)
     assert view.error_code == "abandoned"
 
 
@@ -179,12 +180,18 @@ async def test_recent_failures_for_the_feed(db_session_factory: Factory) -> None
     async with db_session_factory() as db:
         await fail(db, OTHER, other.run_id, attempt=1, code="autre", now=NOW)
         await db.commit()
-        everything = await recent_failures(db, ME, None, 10)
-        since = await recent_failures(db, ME, NOW + timedelta(hours=1), 10)
-        limited = await recent_failures(db, ME, None, 1)
+        everything = await recent_failures(db, ME, None, None, 10)
+        since = await recent_failures(db, ME, NOW, None, 10)
+        limited = await recent_failures(db, ME, None, None, 1)
     assert [v.error_code for v in everything] == ["c2", "c1", "c0"]
     assert [v.error_code for v in since] == ["c2", "c1"]
     assert [v.error_code for v in limited] == ["c2"]
+    assert [v.error_code for v in await _between(db_session_factory)] == ["c1"]
+
+
+async def _between(factory: Factory) -> list[JobRunView]:
+    async with factory() as db:
+        return await recent_failures(db, ME, NOW, NOW + timedelta(hours=2), 10)
 
 
 async def test_user_ids_lists_every_account(db_session: AsyncSession) -> None:

@@ -1,6 +1,10 @@
 """Lecture des leçons (SPEC 3.5, D91) : liste d'un programme (ordre des semaines puis des
 modules), leçon complète avec ses ressources, PDF servi à son seul propriétaire."""
 
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Literal
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
@@ -121,3 +125,29 @@ async def ready_lesson_id(db: AsyncSession, user_id: str, module_id: str) -> str
     pour les autres features (contrat 2)."""
     lesson = await LessonRepository(db, user_id).by_module(module_id)
     return lesson.id if lesson is not None and lesson.status == "ready" else None
+
+
+@dataclass(frozen=True)
+class RecentLesson:
+    id: str
+    title: str
+    status: Literal["ready", "failed"]
+    at: datetime
+
+
+async def recent_lessons(
+    db: AsyncSession, user_id: str, after: datetime | None, before: datetime | None, limit: int
+) -> list[RecentLesson]:
+    """Les leçons devenues prêtes ou en échec dans `]after, before[`, plus récentes d'abord (fil
+    d'activité, 8.7). Lecture pour les autres features (contrat 2) : l'état enregistré, sans
+    relire les sessions."""
+    rows = await LessonRepository(db, user_id).recent_settled(after, before, limit)
+    return [
+        RecentLesson(
+            id=row.id,
+            title=row.title,
+            status="ready" if row.status == "ready" else "failed",
+            at=row.updated_at,
+        )
+        for row in rows
+    ]

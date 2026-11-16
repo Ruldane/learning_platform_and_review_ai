@@ -2,6 +2,7 @@
 d'abord un relevé `running` dont la session n'est plus ouverte (`settled`) : le statut suit la
 session. Un relevé en échec porte son code (`error_code`), jamais un message."""
 
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, cast
 
@@ -146,4 +147,29 @@ async def offers_since(
         for run in runs
         for entry in run.postings
         if is_analyzed(entry) and entry.get("key") and isinstance(entry.get("score"), int)
+    ]
+
+
+@dataclass(frozen=True)
+class RecentRun:
+    id: str
+    at: datetime
+    read_count: int
+    blocked_count: int
+
+
+async def recent_runs(
+    db: AsyncSession, user_id: str, after: datetime | None, before: datetime | None, limit: int
+) -> list[RecentRun]:
+    """Les relevés finis (`done`) dans `]after, before[`, le plus récent d'abord (fil d'activité,
+    8.7). Les nombres réels, jamais un intitulé d'offre ni un poste."""
+    rows = await RadarRunRepository(db, user_id).done_between(after, before, limit)
+    return [
+        RecentRun(
+            id=row.id,
+            at=row.finished_at or row.created_at,
+            read_count=row.read_count,
+            blocked_count=row.blocked_count,
+        )
+        for row in rows
     ]

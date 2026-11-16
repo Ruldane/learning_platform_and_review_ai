@@ -1,8 +1,9 @@
 import builtins
+from datetime import datetime
 
 from sqlalchemy import Select, select
 
-from app.db.models.memory import MemoryItem, MemoryWrite, WriteAction
+from app.db.models.memory import USER_AUTHOR, MemoryItem, MemoryWrite, WriteAction
 from app.db.repository import UserScopedRepository
 
 REASON_MAX = 300
@@ -50,3 +51,17 @@ class WriteRepository(UserScopedRepository[MemoryWrite]):
 
     async def all(self) -> builtins.list[MemoryWrite]:
         return builtins.list((await self.session.execute(self._ordered())).scalars().all())
+
+    async def by_agents_between(
+        self, after: datetime | None, before: datetime | None, limit: int
+    ) -> builtins.list[MemoryWrite]:
+        """Les écritures des agents (auteur autre que l'utilisatrice, hors suppressions) dans
+        `]after, before[`, la plus récente d'abord (fil d'activité)."""
+        stmt = self._ordered().where(
+            MemoryWrite.author != USER_AUTHOR, MemoryWrite.action != "delete"
+        )
+        if after is not None:
+            stmt = stmt.where(MemoryWrite.created_at > after)
+        if before is not None:
+            stmt = stmt.where(MemoryWrite.created_at < before)
+        return builtins.list((await self.session.execute(stmt.limit(limit))).scalars())
