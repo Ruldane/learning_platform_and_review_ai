@@ -11,7 +11,7 @@ from app.scheduler.base import JobContext, JobSpec
 from app.scheduler.registry import JOBS
 from app.scheduler.runner import open_scheduler
 
-CTX = JobContext(None, None, None, None, None)  # type: ignore[arg-type]  # les tâches de test ne le lisent pas
+CTX = JobContext(None, None, None, None, None, None)  # type: ignore[arg-type]  # non lu par les tâches de test
 
 
 async def wait_for(predicate: object, timeout: float = 3.0) -> None:
@@ -27,6 +27,7 @@ def test_jobs_run_on_schedule_and_at_startup() -> None:
         ("skill_snapshots", timedelta(minutes=15), True),
         ("reminders_due", timedelta(hours=1), True),
         ("ats_refresh", timedelta(hours=6), True),
+        ("market_radar", timedelta(minutes=15), True),
     ]
 
 

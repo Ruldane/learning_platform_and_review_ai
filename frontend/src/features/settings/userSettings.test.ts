@@ -45,6 +45,8 @@ describe("buildUserSettings", () => {
       "excluded_domains",
       "lesson_language",
       "preferred_domains",
+      "radar_role",
+      "radar_zone",
       "reminder_delays_days",
       "search_languages",
       "search_max_pages",
@@ -58,6 +60,12 @@ describe("buildUserSettings", () => {
       "timezone",
       "weekly_review",
     ]);
+  });
+
+  it("garde le poste et la zone du radar tels quels (un PUT complet ne les efface pas)", () => {
+    const current = { ...settingsFixture, radar_role: "Ingénieur IA", radar_zone: "Lyon" };
+    const body = buildUserSettings(current, newTiers);
+    expect([body.radar_role, body.radar_zone]).toEqual(["Ingénieur IA", "Lyon"]);
   });
 
   it("garde le rythme d'étude et le fuseau tels quels", () => {

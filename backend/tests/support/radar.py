@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from urllib.parse import urlsplit
 
 from app.agents.tools.radar_port import PostingPage, RadarContext, RadarSummary
-from app.agents.tools.radar_schema import RadarItem, link_key
+from app.agents.tools.radar_schema import RadarFinding, link_key
 
 RUN_ID = "00000000-0000-4000-8000-0000000000a1"
 ROLE, ZONE = "Ingénieur IA", "Lyon"
@@ -30,7 +30,7 @@ class FakeRadarStore:
     zone: str = ZONE
     languages: tuple[str, ...] = ("fr",)
     read: list[PostingPage] = field(default_factory=list)
-    saved: dict[str, RadarItem] = field(default_factory=dict)  # offres rangées, par repère
+    saved: dict[str, RadarFinding] = field(default_factory=dict)  # offres rangées, par repère
     failed: list[str] = field(default_factory=list)
     candidates: list[str] | None = None
     queries: int | None = None
@@ -87,7 +87,7 @@ class FakeRadarStore:
         user_id: str,
         session_id: str,
         run_id: str,
-        items: list[RadarItem],
+        items: list[RadarFinding],
         failed_refs: list[str],
     ) -> None:
         self.extraction_calls += 1

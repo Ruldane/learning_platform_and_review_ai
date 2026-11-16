@@ -39,6 +39,9 @@ class GraphSpec:
     build: Callable[
         [GraphDeps], StateGraph[Any, Any, Any, Any]
     ]  # non compilé : le runner s'en charge
+    # Limite de pas de LangGraph fixée au lancement (`None` : celle de la bibliothèque) : un
+    # parcours à boucles la fixe pour qu'une boucle sans fin échoue vite (D159, D160).
+    recursion_limit: int | None = None
 
 
 GRAPHS: dict[str, GraphSpec] = {
@@ -71,7 +74,12 @@ GRAPHS: dict[str, GraphSpec] = {
         GraphSpec(
             "hiring_committee", hiring_committee.HiringCommitteeInput, hiring_committee.build
         ),
-        GraphSpec("market_radar", market_radar.MarketRadarInput, market_radar.build),
+        GraphSpec(
+            "market_radar",
+            market_radar.MarketRadarInput,
+            market_radar.build,
+            recursion_limit=market_radar.RECURSION_LIMIT,
+        ),
     )
 }
 

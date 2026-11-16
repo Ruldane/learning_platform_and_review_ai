@@ -183,6 +183,7 @@ async def radar_runner(
             *,
             sources: list[Source] | None = None,
             sid: str | None = None,
+            store: Any = None,
         ) -> RadarRun:
             models = models or analyst()
             if sources is not None:
@@ -197,11 +198,13 @@ async def radar_runner(
                 checkpointer=saver,
                 prices={"modele-test": ModelPrice(1.0, 2.0)},
                 run_settings=_Settings(),
-                ports=AgentPorts(web=radar_web, radar=radar_store),
+                ports=AgentPorts(web=radar_web, radar=store if store is not None else radar_store),
             )
             stack.push_async_callback(bus.aclose)
             stack.push_async_callback(runner.shutdown)
-            run = RadarRun(runner, db_session_factory, radar_store, radar_web, models, user_id)
+            run = RadarRun(
+                runner, db_session_factory, store or radar_store, radar_web, models, user_id
+            )
             run.sid = sid or await runner.start(user_id, "market_radar", {"run_id": RUN_ID})
             return run
 

@@ -95,25 +95,48 @@ async def finish(
     user_id: str,
     run_id: str,
     *,
+    attempt: int,
     status: Literal["done", "skipped"],
     now: datetime,
     ref_id: str | None = None,
     next_due_at: datetime | None = None,
 ) -> None:
+    """Termine l'essai `attempt` (celui du `Claim`) : un ouvrier périmé, dont le passage a été
+    repris depuis (essai suivant), ne ferme rien."""
     done = await JobRunRepository(db, user_id).close_running(
-        run_id, now, status=status, ref_id=ref_id, next_due_at=next_due_at, error_code=None
+        run_id, attempt, now, status=status, ref_id=ref_id, next_due_at=next_due_at, error_code=None
     )
     if done:
         logger.debug("Registre : passage %s terminé (%s)", run_id, status)
+    else:
+        logger.info("Registre : passage %s, essai %d déjà clos ou repris", run_id, attempt)
 
 
-async def fail(db: AsyncSession, user_id: str, run_id: str, *, code: str, now: datetime) -> None:
+async def fail(
+    db: AsyncSession, user_id: str, run_id: str, *, attempt: int, code: str, now: datetime
+) -> None:
+    """Met en échec l'essai `attempt` (voir `finish`)."""
     code = safe_code(code)
     failed = await JobRunRepository(db, user_id).close_running(
-        run_id, now, status="failed", error_code=code
+        run_id, attempt, now, status="failed", error_code=code
     )
     if failed:
         logger.warning("Registre : passage %s en échec (%s)", run_id, code)
+    else:
+        logger.info("Registre : passage %s, essai %d déjà clos ou repris", run_id, attempt)
+
+
+async def reopen(
+    db: AsyncSession, user_id: str, view: JobRunView, *, code: str, now: datetime
+) -> bool:
+    """Un passage `done` dont le travail lancé a échoué repasse en `failed` : il compte comme non
+    fait, `claim` le reprend (3 essais au plus, comme tout passage en échec)."""
+    reopened = await JobRunRepository(db, user_id).reopen_done(
+        view.run_id, view.attempts, now, safe_code(code)
+    )
+    if reopened:
+        logger.warning("Registre : passage %s rouvert (%s)", view.run_id, safe_code(code))
+    return reopened
 
 
 async def last_done(db: AsyncSession, user_id: str, name: str) -> JobRunView | None:

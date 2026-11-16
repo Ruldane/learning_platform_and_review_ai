@@ -107,6 +107,10 @@ class UserSettings(BaseModel):
     study_break_minutes: int = Field(default=10, ge=0, le=60)
     # Fuseau IANA de January (D98) : jours, semaines et bilan du dimanche se comptent en local.
     timezone: TimeZoneName = DEFAULT_ZONE
+    # Radar du marché (P10, D160) : poste et zone du dernier relevé demandé ; sans poste, celui du
+    # dernier objectif. Données personnelles : jamais journalisées.
+    radar_role: str = Field(default="", max_length=120)
+    radar_zone: str = Field(default="France", max_length=120)
 
     @field_validator("reminder_delays_days")
     @classmethod

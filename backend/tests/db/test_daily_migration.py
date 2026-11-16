@@ -142,3 +142,15 @@ def test_unique_constraints_are_per_user(tmp_path: Path) -> None:
                 conn.execute(text(statement), params)
     finally:
         engine.dispose()
+
+
+def test_migration_0014_adds_the_radar_error_code(tmp_path: Path) -> None:
+    db_file = tmp_path / "app.db"
+    cfg = _config(db_file)
+    command.upgrade(cfg, "0013")
+    assert "error_code" not in _columns(db_file, "radar_runs")
+    command.upgrade(cfg, "head")
+    assert "error_code" in _columns(db_file, "radar_runs")
+    command.downgrade(cfg, "0013")
+    assert "error_code" not in _columns(db_file, "radar_runs")
+    assert "radar_runs" in _tables(db_file)

@@ -28,6 +28,7 @@ from app.bootstrap import memory_providers as open_memory_providers
 from app.bootstrap import publishing_providers as open_publishing_providers
 from app.bootstrap import research_providers as open_research_providers
 from app.bootstrap_career import career_runtimes
+from app.bootstrap_daily import daily_runtimes
 from app.config import Settings, get_settings
 from app.core.body_limits import add_body_limits
 from app.core.errors import register_error_handlers
@@ -176,6 +177,13 @@ def _compose_features(app: FastAPI) -> StudyRuntimes:
         memory=app.state.memory,
         publishing=app.state.publishing_providers,
     )
+    app.state.daily = daily_runtimes(
+        app.state.session_factory,
+        app.state.launcher,
+        research=app.state.research,
+        career=app.state.career,
+        study=study,
+    )
     return study
 
 
@@ -209,6 +217,7 @@ async def _open_agents(app: FastAPI, stack: AsyncExitStack) -> None:
                 kit=app.state.career.kit_store,
                 interviews=app.state.career.interview_store,
                 committee=app.state.career.committee_store,
+                radar=app.state.daily.radar_store,
             ),
         )
     )
@@ -224,6 +233,7 @@ async def _open_agents(app: FastAPI, stack: AsyncExitStack) -> None:
             app.state.lessons,
             app.state.replan,
             app.state.career.applications,
+            app.state.daily,
         )
         await stack.enter_async_context(open_scheduler(JOBS, context))
 

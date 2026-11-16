@@ -42,7 +42,7 @@ from app.features.research.service.runtime import ResearchRuntime
 from app.features.settings.service import SettingsRunReader
 from app.features.study.service.runtime import StudyRuntime
 from app.features.study.service.store import AgentStudyStore
-from app.scheduler.base import JobContext
+from app.scheduler.base import DailyJobs, JobContext
 
 
 def run_settings_source(session_factory: async_sessionmaker[AsyncSession]) -> RunSettingsSource:
@@ -118,7 +118,7 @@ def agent_ports(
     de CV (D126) et revue de CV (D130) de la feature `cv`, fiche créée en une phrase (D141) de la
     feature `applications` ; kit de candidature (D142) et entretien blanc (D145) de la même
     feature (ports réels : tâches 7.6 et 7.9) ; comité de recrutement (D147) de la même feature ;
-    radar du marché (D159) de la feature `radar` (port réel : tâche 8.4) ; composés par
+    radar du marché (D159, D160) de la feature `radar` ; composés par
     `app.bootstrap_career`."""
     council = AgentCouncilStore(learning.session_factory, learning.launcher, learning)
     program_store = AgentProgramStore(program)
@@ -164,7 +164,9 @@ def scheduler_context(
     lessons: LessonsRuntime,
     replan: ReplanRuntime,
     applications: ApplicationsRuntime,
+    daily: DailyJobs,
 ) -> JobContext:
     """Ce que reçoivent les tâches planifiées (D91) : base, lanceur, production des leçons,
-    replanification (bilan hebdomadaire, D106), candidatures (relances, D140)."""
-    return JobContext(session_factory, launcher, lessons, replan, applications)
+    replanification (bilan hebdomadaire, D106), candidatures (relances, D140), quotidien (relevé
+    du radar, D160)."""
+    return JobContext(session_factory, launcher, lessons, replan, applications, daily)

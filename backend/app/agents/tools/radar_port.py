@@ -12,7 +12,8 @@ un nœud rejoué après un arrêt n'écrit, ne relit et ne recompte rien de plus
   propre de `MAX_READS`) et la range ; idempotent par (relevé, lien normalisé par
   `posting_url_key`) : une page déjà lue est rendue sans relecture ni recompte. Une page qui ne se
   lit pas (site bloqué, lien refusé) n'est pas une erreur : `status = "unreadable"`.
-- `save_extraction` : les offres extraites, `ref` = `PostingPage.ref` ; `failed_refs` : les pages
+- `save_extraction` : les offres extraites (`RadarFinding`), `ref` = `PostingPage.ref` ;
+  `failed_refs` : les pages
   dont l'extraction a échoué (comptées comme extraites pour ne pas être reprises). Idempotent par
   `ref`.
 - `finalize` : calcule le rapport (nombres réels : lues, bloquées, pas des offres, analysées).
@@ -21,7 +22,7 @@ un nœud rejoué après un arrêt n'écrit, ne relit et ne recompte rien de plus
 from dataclasses import dataclass, field
 from typing import Literal, Protocol
 
-from app.agents.tools.radar_schema import RadarItem
+from app.agents.tools.radar_schema import RadarFinding
 from app.core.errors import AppError
 
 # Bornes de P5, recopiées de `radar.service.rules` (le moteur n'importe pas la feature) : un test
@@ -86,7 +87,7 @@ class RadarStore(Protocol):
         user_id: str,
         session_id: str,
         run_id: str,
-        items: list[RadarItem],
+        items: list[RadarFinding],
         failed_refs: list[str],
     ) -> None: ...
 
@@ -120,7 +121,7 @@ class _NoRadar:
         user_id: str,
         session_id: str,
         run_id: str,
-        items: list[RadarItem],
+        items: list[RadarFinding],
         failed_refs: list[str],
     ) -> None:
         raise radar_unavailable()

@@ -42,7 +42,7 @@ async def _done(factory: Factory, user: str, at: datetime) -> None:
     async with factory() as db:
         got = await claim(db, user, "ats_refresh", day_period(at.date()), at)
         assert got is not None
-        await finish(db, user, got.run_id, status="done", now=at, ref_id="s-old")
+        await finish(db, user, got.run_id, attempt=1, status="done", now=at, ref_id="s-old")
         await db.commit()
 
 
@@ -221,3 +221,56 @@ async def test_review_context_has_recent_ats_updates(cv_runtime: CvRuntime) -> N
         published="2026-10-30",
     )
     assert all(u.url.split("/")[3] == newer[:4] for u in updates)  # la plus récente seulement
+
+
+async def test_latest_refresh_without_kept_sources_does_not_hide_an_older_one(
+    cv_runtime: CvRuntime,
+) -> None:
+    review_id = await _review(cv_runtime)
+    store = AgentCvReviewStore(cv_runtime)
+    now = cv_runtime.now()
+    older = await _refresh_session(cv_runtime, ME, ended=now - timedelta(days=30), kept=3)
+    await _refresh_session(cv_runtime, ME, ended=now - timedelta(days=2), kept=0)  # rien retenu
+    updates = (await store.context(ME, review_id)).ats_updates
+    assert [u.title for u in updates] == ["Titre 0", "Titre 1", "Titre 2"]
+    assert all(u.url.split("/")[3] == older[:4] for u in updates)
+
+
+# --- Une session échouée compte comme un rafraîchissement non fait ---------------------------
+
+
+async def _end_session(factory: Factory, session_id: str, status: str) -> None:
+    async with factory() as db:
+        row = (await db.execute(select(AgentSession).where(AgentSession.id == session_id))).one()[0]
+        row.status = status
+        await db.commit()
+
+
+async def test_done_pass_with_a_failed_session_is_retried_within_the_attempts_cap(
+    db_session_factory: Factory, launcher: RecordingLauncher
+) -> None:
+    await _users(db_session_factory, ME)
+    for attempt in (1, 2, 3):
+        assert await run_ats_refresh(db_session_factory, launcher, NOW) == 1
+        [row] = await _rows(db_session_factory, ME)
+        assert row.status == "done" and row.attempts == attempt
+        await _end_session(db_session_factory, row.ref_id or "", "failed")
+    # Trois essais, trois sessions échouées : le plafond tient, rien de plus ce jour-là.
+    assert await run_ats_refresh(db_session_factory, launcher, NOW) == 0
+    [row] = await _rows(db_session_factory, ME)
+    assert row.status == "failed" and row.attempts == 3 and row.error_code == "session_failed"
+    assert len(launcher.started) == 3
+    # Le lendemain, une nouvelle période : un nouveau passage.
+    assert await run_ats_refresh(db_session_factory, launcher, NOW + timedelta(days=1)) == 1
+
+
+async def test_done_pass_with_a_running_or_completed_session_is_not_retried(
+    db_session_factory: Factory, launcher: RecordingLauncher
+) -> None:
+    await _users(db_session_factory, ME)
+    assert await run_ats_refresh(db_session_factory, launcher, NOW) == 1
+    [row] = await _rows(db_session_factory, ME)
+    assert await run_ats_refresh(db_session_factory, launcher, NOW + timedelta(hours=6)) == 0
+    await _end_session(db_session_factory, row.ref_id or "", "completed")
+    assert await run_ats_refresh(db_session_factory, launcher, NOW + timedelta(hours=12)) == 0
+    assert len(launcher.started) == 1

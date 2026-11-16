@@ -152,3 +152,12 @@ class RadarItem(BaseModel):
 
 class RadarBatch(BaseModel):
     items: list[RadarItem] = Field(max_length=BATCH)
+
+
+class RadarFinding(RadarItem):
+    """L'extraction d'une offre rangée sous le repère de sa **page** (`PostingPage.ref` : `p1`,
+    `p12`, `r1`…), pas sous le repère du lot de cinq (`RadarItem.ref`, `p1` à `p5`). C'est ce que
+    le port reçoit : `ref` y est libre (1 à 16 caractères), si bien qu'une relecture de
+    validation, ici ou dans l'adaptateur, n'échoue jamais sur un repère de page."""
+
+    ref: str = Field(min_length=1, max_length=16)

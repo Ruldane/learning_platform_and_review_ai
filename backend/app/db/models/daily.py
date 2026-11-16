@@ -74,6 +74,8 @@ class RadarRun(UserScopedMixin, Base):
     alerts: Mapped[list[Any]] = mapped_column(default=list)
     previous_id: Mapped[str | None] = mapped_column(String(36), default=None)
     finished_at: Mapped[datetime | None] = mapped_column(UTCDateTime, default=None)
+    # Code d'un relevé en échec (`search_unavailable`, `session_failed`…) : jamais un message.
+    error_code: Mapped[str | None] = mapped_column(String(64), default=None)
 
 
 class Brief(UserScopedMixin, Base):

@@ -18,7 +18,7 @@ class SkillNodeOut(BaseModel):
     name: str
     domain: str  # « Autres » sans domaine
     level: SkillLevel | None  # `None` : aucune ligne `user_skills` (absente)
-    demand: float | None  # de 0 à 1 ; `None` jusqu'au Radar (phase 8)
+    demand: float | None  # part du dernier relevé du radar (0 à 1) ; `None` sans relevé fini
     evidence_count: int
 
 

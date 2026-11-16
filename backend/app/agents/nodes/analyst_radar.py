@@ -25,7 +25,14 @@ from app.agents.runtime.structured import structured_call
 from app.agents.state.market_radar import MarketRadarState
 from app.agents.tools.posting_schema import contains_term, normalize_term
 from app.agents.tools.radar_port import MAX_READABLE, PostingPage
-from app.agents.tools.radar_schema import BATCH, TEXT_MAX, RadarBatch, RadarItem, salary_in_text
+from app.agents.tools.radar_schema import (
+    BATCH,
+    TEXT_MAX,
+    RadarBatch,
+    RadarFinding,
+    RadarItem,
+    salary_in_text,
+)
 from app.core.errors import AppError
 
 AGENT = "analyst"
@@ -66,26 +73,29 @@ def _tools_in_text(tools: list[str], text: str) -> list[str]:
     return kept
 
 
-def clean_item(item: RadarItem, page: PostingPage) -> RadarItem:
+def clean_item(item: RadarItem, page: PostingPage) -> RadarFinding:
     """L'extraction de `page`, contrôlée par le code et rangée sous le repère de la page. Pas une
     offre : rien d'autre n'est gardé. Une offre : les outils absents du texte lu et un salaire
     dont un chiffre n'y figure pas sont retirés (SPEC 1, 18.3)."""
     if not item.is_job_posting:
-        return RadarItem(ref="p1", is_job_posting=False).model_copy(update={"ref": page.ref})
+        return RadarFinding(ref=page.ref, is_job_posting=False)
     shown = page.text[:TEXT_MAX]
     tools = _tools_in_text(item.tools, shown)
-    return item.model_copy(
-        update={"ref": page.ref, "tools": tools, "salary": salary_in_text(item.salary, shown)}
-    )
+    data = item.model_dump() | {
+        "ref": page.ref,
+        "tools": tools,
+        "salary": salary_in_text(item.salary, shown),
+    }
+    return RadarFinding.model_validate(data)
 
 
 def clean_batch(
     found: RadarBatch, batch: list[PostingPage]
-) -> tuple[list[RadarItem], list[str], int]:
+) -> tuple[list[RadarFinding], list[str], int]:
     """`(offres rangées, repères en échec, réponses ignorées)`. Une référence inconnue du lot ou
     déjà donnée est ignorée ; une page que la réponse oublie est en échec d'extraction."""
     by_local = {local_ref(number): page for number, page in enumerate(batch, start=1)}
-    kept: dict[str, RadarItem] = {}
+    kept: dict[str, RadarFinding] = {}
     ignored = 0
     for item in found.items:
         page = by_local.get(item.ref)
@@ -136,7 +146,7 @@ def make_extract(deps: GraphDeps) -> Node:
             return {"extract_done": True}
         batch = pending[:BATCH]
         found = await _ask(deps, batch)
-        items: list[RadarItem] = []
+        items: list[RadarFinding] = []
         failed, ignored = [page.ref for page in batch], 0
         if found is not None:
             items, failed, ignored = clean_batch(found, batch)

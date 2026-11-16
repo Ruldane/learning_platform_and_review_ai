@@ -134,6 +134,15 @@ class SkillsService:
             for skill in await self._skills.list_all()
         ]
 
+    async def alias_groups(self) -> list[frozenset[str]]:
+        """Les groupes de noms normalisés qui désignent une même compétence du référentiel : son
+        nom et ses synonymes (radar du marché, P8)."""
+        groups: list[frozenset[str]] = []
+        for skill in await self._skills.list_all():
+            names = {skill.norm_name, *(normalize_skill_name(str(s)) for s in skill.synonyms)}
+            groups.append(frozenset(name for name in names if name))
+        return groups
+
     async def known_levels(self) -> dict[str, SkillLevel]:
         """`nom normalisé → niveau` de chaque compétence connue de January."""
         return {norm: _as_level(level) for norm, level in await self._levels.levels()}

@@ -27,6 +27,8 @@ export function buildUserSettings(current: SettingsOut, tiers: TierChoices): Use
     excluded_domains: current.excluded_domains,
     lesson_language: current.lesson_language,
     preferred_domains: current.preferred_domains,
+    radar_role: current.radar_role,
+    radar_zone: current.radar_zone,
     reminder_delays_days: current.reminder_delays_days,
     search_languages: current.search_languages,
     search_max_pages: current.search_max_pages,

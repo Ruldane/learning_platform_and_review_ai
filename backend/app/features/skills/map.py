@@ -14,13 +14,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.clock import local_today, user_zone
 from app.core.errors import AppError
-from app.core.skills import Evidence, EvidenceKind, read_evidence
+from app.core.skills import Evidence, EvidenceKind, normalize_skill_name, read_evidence
 from app.db.models.skills import Skill, SkillLevel
 from app.features.gap.service.links import postings_citing
 from app.features.lessons.service.lessons import ready_lesson_id
 from app.features.program.service.skill_modules import module_teaching
 from app.features.quiz.service.cards import due_skill_names
 from app.features.quiz.service.quizzes import ready_quiz_of_module
+from app.features.radar.service.demand import latest_demand
 from app.features.settings.service import SettingsService
 from app.features.skills.radar import as_level, domain_name, domain_scores
 from app.features.skills.repository import (
@@ -57,18 +58,28 @@ def skill_not_found() -> AppError:
     return AppError("skill_not_found", "Compétence introuvable.", 404)
 
 
+def _demand(demand: dict[str, float], skill: Skill) -> float | None:
+    """La part des offres du dernier relevé qui citent la compétence (son nom ou un synonyme, la
+    plus forte), 0 si le relevé ne la cite pas ; `None` sans relevé fini."""
+    if not demand:
+        return None
+    names = [skill.norm_name, *(normalize_skill_name(str(s)) for s in skill.synonyms)]
+    return max((demand.get(name, 0.0) for name in names), default=0.0)
+
+
 async def skill_graph(db: AsyncSession, user_id: str) -> SkillGraphOut:
     """Toutes les compétences de January (triées par nom), leurs prérequis et le radar."""
     skills = await SkillRepository(db, user_id).list_all()
     rows = await UserSkillRepository(db, user_id).rows()
     levels = {skill_id: as_level(row.level) for skill_id, row in rows.items()}
+    demand = await latest_demand(db, user_id)
     nodes = [
         SkillNodeOut(
             id=skill.id,
             name=skill.name,
             domain=domain_name(skill.domain),
             level=levels.get(skill.id),
-            demand=None,  # Radar du marché (F12) en phase 8
+            demand=_demand(demand, skill),
             evidence_count=len(read_evidence(rows[skill.id].evidence)) if skill.id in rows else 0,
         )
         for skill in skills

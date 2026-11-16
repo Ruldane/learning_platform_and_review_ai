@@ -3148,6 +3148,24 @@
         "title": "DocumentOut",
         "type": "object"
       },
+      "DomainCount": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "domain": {
+            "title": "Domain",
+            "type": "string"
+          }
+        },
+        "required": [
+          "domain",
+          "count"
+        ],
+        "title": "DomainCount",
+        "type": "object"
+      },
       "DomainScoreOut": {
         "properties": {
           "domain": {
@@ -6893,6 +6911,77 @@
         "title": "ObjectionOut",
         "type": "object"
       },
+      "OfferOut": {
+        "properties": {
+          "company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "level": {
+            "title": "Level",
+            "type": "string"
+          },
+          "remote": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remote"
+          },
+          "salary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salary"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url",
+          "title",
+          "company",
+          "level",
+          "remote",
+          "salary",
+          "score"
+        ],
+        "title": "OfferOut",
+        "type": "object"
+      },
       "PasteCreate": {
         "description": "Texte collé (`POST /documents/text`, corps JSON). La longueur du texte (500 000\ncaractères au plus) est contrôlée par le service, qui répond `paste_too_long` ; le corps est\nborné à 21 Mo par le middleware.",
         "properties": {
@@ -8421,6 +8510,354 @@
         "title": "QuizSummaryOut",
         "type": "object"
       },
+      "RadarAlertOut": {
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "share": {
+            "title": "Share",
+            "type": "number"
+          },
+          "skill": {
+            "title": "Skill",
+            "type": "string"
+          }
+        },
+        "required": [
+          "skill",
+          "share",
+          "message"
+        ],
+        "title": "RadarAlertOut",
+        "type": "object"
+      },
+      "RadarDefaults": {
+        "properties": {
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "zone": {
+            "title": "Zone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "zone"
+        ],
+        "title": "RadarDefaults",
+        "type": "object"
+      },
+      "RadarLatestOut": {
+        "properties": {
+          "defaults": {
+            "$ref": "#/components/schemas/RadarDefaults"
+          },
+          "latest": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RadarRunOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "running": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RunRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "defaults",
+          "running",
+          "latest"
+        ],
+        "title": "RadarLatestOut",
+        "type": "object"
+      },
+      "RadarRunIn": {
+        "description": "Poste et zone du relevé ; absents : ceux des réglages, puis du dernier objectif.",
+        "properties": {
+          "role": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 2,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "zone": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 2,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zone"
+          }
+        },
+        "title": "RadarRunIn",
+        "type": "object"
+      },
+      "RadarRunOut": {
+        "description": "Un relevé, avec les nombres réels. `read_count` : pages lisibles ; `not_postings` : celles\nqui n'étaient pas des offres ; `analyzed` : offres analysées ; `not_analyzed` : offres lues\nmais pas analysées (extraction en échec, ou au-delà des 50 lues d'un relevé) : l'écart ne se\ncache jamais (« 55 lues, 50 analysées »).",
+        "properties": {
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/RadarAlertOut"
+            },
+            "title": "Alerts",
+            "type": "array"
+          },
+          "analyzed": {
+            "title": "Analyzed",
+            "type": "integer"
+          },
+          "blocked_count": {
+            "title": "Blocked Count",
+            "type": "integer"
+          },
+          "blocked_domains": {
+            "items": {
+              "$ref": "#/components/schemas/DomainCount"
+            },
+            "title": "Blocked Domains",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "low_sample": {
+            "title": "Low Sample",
+            "type": "boolean"
+          },
+          "not_analyzed": {
+            "title": "Not Analyzed",
+            "type": "integer"
+          },
+          "not_postings": {
+            "title": "Not Postings",
+            "type": "integer"
+          },
+          "offers": {
+            "items": {
+              "$ref": "#/components/schemas/OfferOut"
+            },
+            "title": "Offers",
+            "type": "array"
+          },
+          "previous": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RunRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ranking": {
+            "items": {
+              "$ref": "#/components/schemas/TrendOut"
+            },
+            "title": "Ranking",
+            "type": "array"
+          },
+          "read_count": {
+            "title": "Read Count",
+            "type": "integer"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "running",
+              "done",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "trigger": {
+            "enum": [
+              "schedule",
+              "manual"
+            ],
+            "title": "Trigger",
+            "type": "string"
+          },
+          "zone": {
+            "title": "Zone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "role",
+          "zone",
+          "status",
+          "trigger",
+          "created_at",
+          "finished_at",
+          "error_code",
+          "read_count",
+          "blocked_count",
+          "analyzed",
+          "low_sample",
+          "not_postings",
+          "not_analyzed",
+          "blocked_domains",
+          "ranking",
+          "alerts",
+          "offers",
+          "previous"
+        ],
+        "title": "RadarRunOut",
+        "type": "object"
+      },
+      "RadarRunSummary": {
+        "properties": {
+          "analyzed": {
+            "title": "Analyzed",
+            "type": "integer"
+          },
+          "blocked_count": {
+            "title": "Blocked Count",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "low_sample": {
+            "title": "Low Sample",
+            "type": "boolean"
+          },
+          "read_count": {
+            "title": "Read Count",
+            "type": "integer"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "running",
+              "done",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "trigger": {
+            "enum": [
+              "schedule",
+              "manual"
+            ],
+            "title": "Trigger",
+            "type": "string"
+          },
+          "zone": {
+            "title": "Zone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "role",
+          "zone",
+          "status",
+          "trigger",
+          "created_at",
+          "finished_at",
+          "error_code",
+          "read_count",
+          "blocked_count",
+          "analyzed",
+          "low_sample"
+        ],
+        "title": "RadarRunSummary",
+        "type": "object"
+      },
       "ReindexState": {
         "description": "État de la réindexation de l'utilisateur, tenu en mémoire (perdu au redémarrage).",
         "properties": {
@@ -9160,6 +9597,43 @@
         "title": "RunFailedPayload",
         "type": "object"
       },
+      "RunRef": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "created_at"
+        ],
+        "title": "RunRef",
+        "type": "object"
+      },
+      "RunStarted": {
+        "properties": {
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "session_id"
+        ],
+        "title": "RunStarted",
+        "type": "object"
+      },
       "SearchHitOut": {
         "properties": {
           "chunk_id": {
@@ -9513,6 +9987,18 @@
             "maxItems": 50,
             "title": "Preferred Domains",
             "type": "array"
+          },
+          "radar_role": {
+            "default": "",
+            "maxLength": 120,
+            "title": "Radar Role",
+            "type": "string"
+          },
+          "radar_zone": {
+            "default": "France",
+            "maxLength": 120,
+            "title": "Radar Zone",
+            "type": "string"
           },
           "reminder_delays_days": {
             "items": {
@@ -11209,6 +11695,64 @@
         "title": "TopMissingOut",
         "type": "object"
       },
+      "TrendOut": {
+        "description": "Une compétence du classement. `delta_share` : points de pourcentage depuis le relevé\nprécédent ; `delta_rank` : rangs gagnés (positif) ou perdus ; `None` sans relevé précédent.",
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "delta_rank": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta Rank"
+          },
+          "delta_share": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta Share"
+          },
+          "new": {
+            "title": "New",
+            "type": "boolean"
+          },
+          "rank": {
+            "title": "Rank",
+            "type": "integer"
+          },
+          "share": {
+            "title": "Share",
+            "type": "number"
+          },
+          "skill": {
+            "title": "Skill",
+            "type": "string"
+          }
+        },
+        "required": [
+          "skill",
+          "count",
+          "share",
+          "rank",
+          "delta_share",
+          "delta_rank",
+          "new"
+        ],
+        "title": "TrendOut",
+        "type": "object"
+      },
       "UserMessageEvent": {
         "properties": {
           "agent": {
@@ -11335,6 +11879,18 @@
             "maxItems": 50,
             "title": "Preferred Domains",
             "type": "array"
+          },
+          "radar_role": {
+            "default": "",
+            "maxLength": 120,
+            "title": "Radar Role",
+            "type": "string"
+          },
+          "radar_zone": {
+            "default": "France",
+            "maxLength": 120,
+            "title": "Radar Zone",
+            "type": "string"
           },
           "reminder_delays_days": {
             "items": {
@@ -16298,6 +16854,151 @@
         "summary": "Get Attempt",
         "tags": [
           "quiz"
+        ]
+      }
+    },
+    "/api/v1/radar/latest": {
+      "get": {
+        "description": "Le dernier relevé fini (réussi ou en échec), le relevé en cours s'il y en a un, et le poste\net la zone proposés par défaut.",
+        "operationId": "get_latest_api_v1_radar_latest_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RadarLatestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Latest",
+        "tags": [
+          "radar"
+        ]
+      }
+    },
+    "/api/v1/radar/runs": {
+      "get": {
+        "description": "Les 20 derniers relevés, le plus récent d'abord.",
+        "operationId": "get_runs_api_v1_radar_runs_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RadarRunSummary"
+                  },
+                  "title": "Response Get Runs Api V1 Radar Runs Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Runs",
+        "tags": [
+          "radar"
+        ]
+      },
+      "post": {
+        "description": "Lance un relevé. `role` et `zone` donnés sont mémorisés dans les réglages ; absents, ceux\ndes réglages (poste : sinon celui du dernier objectif ; zone : « France »).",
+        "operationId": "post_run_api_v1_radar_runs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/RadarRunIn"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "description": "`radar_in_progress` (`details.run_id`) ou `radar_role_required` : aucun poste ni dans la requête, ni dans les réglages, ni dans le dernier objectif"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Post Run",
+        "tags": [
+          "radar"
+        ]
+      }
+    },
+    "/api/v1/radar/runs/{run_id}": {
+      "get": {
+        "operationId": "get_one_run_api_v1_radar_runs__run_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RadarRunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`radar_run_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get One Run",
+        "tags": [
+          "radar"
         ]
       }
     },

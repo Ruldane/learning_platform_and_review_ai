@@ -253,7 +253,18 @@ class AtsSourceRepository(UserScopedRepository[Source]):
     model = Source
 
     async def latest_session(self, since: datetime) -> str | None:
-        """La dernière session de rafraîchissement terminée depuis `since`."""
+        """La dernière session de rafraîchissement terminée depuis `since` qui a gardé au moins
+        une source : un rafraîchissement récent sans aucune source retenue ne cache pas le
+        précédent."""
+        kept = (
+            select(Source.id)
+            .where(
+                Source.user_id == self.user_id,
+                Source.session_id == AgentSession.id,
+                Source.verdict == "kept",
+            )
+            .exists()
+        )
         stmt = (
             select(AgentSession.id)
             .where(
@@ -262,6 +273,7 @@ class AtsSourceRepository(UserScopedRepository[Source]):
                 AgentSession.subject_type == "ats_refresh",
                 AgentSession.status == "completed",
                 AgentSession.updated_at >= since,
+                kept,
             )
             .order_by(AgentSession.updated_at.desc())
             .limit(1)

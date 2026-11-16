@@ -1502,6 +1502,69 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/radar/latest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Latest
+         * @description Le dernier relevé fini (réussi ou en échec), le relevé en cours s'il y en a un, et le poste
+         *     et la zone proposés par défaut.
+         */
+        get: operations["get_latest_api_v1_radar_latest_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/radar/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Runs
+         * @description Les 20 derniers relevés, le plus récent d'abord.
+         */
+        get: operations["get_runs_api_v1_radar_runs_get"];
+        put?: never;
+        /**
+         * Post Run
+         * @description Lance un relevé. `role` et `zone` donnés sont mémorisés dans les réglages ; absents, ceux
+         *     des réglages (poste : sinon celui du dernier objectif ; zone : « France »).
+         */
+        post: operations["post_run_api_v1_radar_runs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/radar/runs/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get One Run */
+        get: operations["get_one_run_api_v1_radar_runs__run_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reminders": {
         parameters: {
             query?: never;
@@ -3104,6 +3167,13 @@ export interface components {
             /** Url */
             url: string | null;
         };
+        /** DomainCount */
+        DomainCount: {
+            /** Count */
+            count: number;
+            /** Domain */
+            domain: string;
+        };
         /** DomainScoreOut */
         DomainScoreOut: {
             /** Domain */
@@ -4458,6 +4528,23 @@ export interface components {
             /** Text */
             text: string;
         };
+        /** OfferOut */
+        OfferOut: {
+            /** Company */
+            company: string | null;
+            /** Level */
+            level: string;
+            /** Remote */
+            remote: string | null;
+            /** Salary */
+            salary: string | null;
+            /** Score */
+            score: number;
+            /** Title */
+            title: string | null;
+            /** Url */
+            url: string;
+        };
         /**
          * PasteCreate
          * @description Texte collé (`POST /documents/text`, corps JSON). La longueur du texte (500 000
@@ -4998,6 +5085,129 @@ export interface components {
             /** Week Rank */
             week_rank: number;
         };
+        /** RadarAlertOut */
+        RadarAlertOut: {
+            /** Message */
+            message: string;
+            /** Share */
+            share: number;
+            /** Skill */
+            skill: string;
+        };
+        /** RadarDefaults */
+        RadarDefaults: {
+            /** Role */
+            role: string;
+            /** Zone */
+            zone: string;
+        };
+        /** RadarLatestOut */
+        RadarLatestOut: {
+            defaults: components["schemas"]["RadarDefaults"];
+            latest: components["schemas"]["RadarRunOut"] | null;
+            running: components["schemas"]["RunRef"] | null;
+        };
+        /**
+         * RadarRunIn
+         * @description Poste et zone du relevé ; absents : ceux des réglages, puis du dernier objectif.
+         */
+        RadarRunIn: {
+            /** Role */
+            role?: string | null;
+            /** Zone */
+            zone?: string | null;
+        };
+        /**
+         * RadarRunOut
+         * @description Un relevé, avec les nombres réels. `read_count` : pages lisibles ; `not_postings` : celles
+         *     qui n'étaient pas des offres ; `analyzed` : offres analysées ; `not_analyzed` : offres lues
+         *     mais pas analysées (extraction en échec, ou au-delà des 50 lues d'un relevé) : l'écart ne se
+         *     cache jamais (« 55 lues, 50 analysées »).
+         */
+        RadarRunOut: {
+            /** Alerts */
+            alerts: components["schemas"]["RadarAlertOut"][];
+            /** Analyzed */
+            analyzed: number;
+            /** Blocked Count */
+            blocked_count: number;
+            /** Blocked Domains */
+            blocked_domains: components["schemas"]["DomainCount"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Error Code */
+            error_code: string | null;
+            /** Finished At */
+            finished_at: string | null;
+            /** Id */
+            id: string;
+            /** Low Sample */
+            low_sample: boolean;
+            /** Not Analyzed */
+            not_analyzed: number;
+            /** Not Postings */
+            not_postings: number;
+            /** Offers */
+            offers: components["schemas"]["OfferOut"][];
+            previous: components["schemas"]["RunRef"] | null;
+            /** Ranking */
+            ranking: components["schemas"]["TrendOut"][];
+            /** Read Count */
+            read_count: number;
+            /** Role */
+            role: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "running" | "done" | "failed";
+            /**
+             * Trigger
+             * @enum {string}
+             */
+            trigger: "schedule" | "manual";
+            /** Zone */
+            zone: string;
+        };
+        /** RadarRunSummary */
+        RadarRunSummary: {
+            /** Analyzed */
+            analyzed: number;
+            /** Blocked Count */
+            blocked_count: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Error Code */
+            error_code: string | null;
+            /** Finished At */
+            finished_at: string | null;
+            /** Id */
+            id: string;
+            /** Low Sample */
+            low_sample: boolean;
+            /** Read Count */
+            read_count: number;
+            /** Role */
+            role: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "running" | "done" | "failed";
+            /**
+             * Trigger
+             * @enum {string}
+             */
+            trigger: "schedule" | "manual";
+            /** Zone */
+            zone: string;
+        };
         /**
          * ReindexState
          * @description État de la réindexation de l'utilisateur, tenu en mémoire (perdu au redémarrage).
@@ -5292,6 +5502,23 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** RunRef */
+        RunRef: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Id */
+            id: string;
+        };
+        /** RunStarted */
+        RunStarted: {
+            /** Run Id */
+            run_id: string;
+            /** Session Id */
+            session_id: string;
+        };
         /** SearchHitOut */
         SearchHitOut: {
             /** Chunk Id */
@@ -5406,6 +5633,16 @@ export interface components {
             lesson_language: string;
             /** Preferred Domains */
             preferred_domains?: string[];
+            /**
+             * Radar Role
+             * @default
+             */
+            radar_role: string;
+            /**
+             * Radar Zone
+             * @default France
+             */
+            radar_zone: string;
             /** Reminder Delays Days */
             reminder_delays_days?: number[];
             /** Search Languages */
@@ -6024,6 +6261,27 @@ export interface components {
             /** Skill */
             skill: string;
         };
+        /**
+         * TrendOut
+         * @description Une compétence du classement. `delta_share` : points de pourcentage depuis le relevé
+         *     précédent ; `delta_rank` : rangs gagnés (positif) ou perdus ; `None` sans relevé précédent.
+         */
+        TrendOut: {
+            /** Count */
+            count: number;
+            /** Delta Rank */
+            delta_rank: number | null;
+            /** Delta Share */
+            delta_share: number | null;
+            /** New */
+            new: boolean;
+            /** Rank */
+            rank: number;
+            /** Share */
+            share: number;
+            /** Skill */
+            skill: string;
+        };
         /** UserMessageEvent */
         UserMessageEvent: {
             /**
@@ -6091,6 +6349,16 @@ export interface components {
             lesson_language: string;
             /** Preferred Domains */
             preferred_domains?: string[];
+            /**
+             * Radar Role
+             * @default
+             */
+            radar_role: string;
+            /**
+             * Radar Zone
+             * @default France
+             */
+            radar_zone: string;
             /** Reminder Delays Days */
             reminder_delays_days?: number[];
             /** Search Languages */
@@ -9523,6 +9791,124 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AttemptOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_latest_api_v1_radar_latest_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RadarLatestOut"];
+                };
+            };
+        };
+    };
+    get_runs_api_v1_radar_runs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RadarRunSummary"][];
+                };
+            };
+        };
+    };
+    post_run_api_v1_radar_runs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RadarRunIn"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunStarted"];
+                };
+            };
+            /** @description `radar_in_progress` (`details.run_id`) ou `radar_role_required` : aucun poste ni dans la requête, ni dans les réglages, ni dans le dernier objectif */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_one_run_api_v1_radar_runs__run_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RadarRunOut"];
+                };
+            };
+            /** @description `radar_run_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

@@ -16,6 +16,7 @@ from app.features.memory.router import router as memory_router
 from app.features.postings.router import router as postings_router
 from app.features.program.router import router as program_router
 from app.features.quiz.router import router as quiz_router
+from app.features.radar.router import router as radar_router
 from app.features.replan.router import router as replan_router
 from app.features.research.router import router as research_router
 from app.features.sessions.router import router as sessions_router
@@ -49,4 +50,5 @@ FEATURE_ROUTERS: list[APIRouter] = [
     interviews_router,
     committee_router,
     reminders_router,
+    radar_router,
 ]

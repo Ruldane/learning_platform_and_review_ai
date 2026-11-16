@@ -4,6 +4,7 @@ un programme validé par le vrai port du programme. Aucun réseau ni LLM."""
 
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -23,6 +24,7 @@ from app.features.memory.service.runtime import memory_runtime
 from app.features.program.service.programs import load
 from app.features.program.service.runtime import ProgramRuntime
 from app.features.program.service.store import AgentProgramStore
+from app.features.radar.service.runtime import RadarRuntime
 from app.features.replan.service.runtime import ReplanRuntime
 from app.features.research.service.runtime import ResearchRuntime
 from app.features.settings.keys_service import DbKeyReader
@@ -149,6 +151,9 @@ def job_ctx(lessons_rt: LessonsRuntime, replan_rt: ReplanRuntime) -> JobContext:
         lessons_rt,
         replan_rt,
         applications,  # type: ignore[arg-type]
+        SimpleNamespace(  # type: ignore[arg-type]  # `DailyJobs` : le radar seulement
+            radar=RadarRuntime(lessons_rt.session_factory, lessons_rt.launcher, lessons_rt.research)
+        ),
     )
 
 

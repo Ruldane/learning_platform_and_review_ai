@@ -73,12 +73,34 @@ class JobRunRepository(UserScopedRepository[JobRun]):
         )
         return _changed(await self.session.execute(stmt))
 
-    async def close_running(self, run_id: str, now: datetime, **values: Any) -> bool:
-        """Termine un passage encore `running` (jamais un passage déjà fini ni d'un autre)."""
+    async def close_running(self, run_id: str, attempt: int, now: datetime, **values: Any) -> bool:
+        """Termine l'essai `attempt` d'un passage encore `running` (jamais un passage déjà fini,
+        ni d'un autre, ni un essai repris depuis : un ouvrier périmé ne ferme pas l'essai
+        suivant)."""
         stmt = (
             update(JobRun)
-            .where(JobRun.id == run_id, JobRun.user_id == self.user_id, JobRun.status == "running")
+            .where(
+                JobRun.id == run_id,
+                JobRun.user_id == self.user_id,
+                JobRun.status == "running",
+                JobRun.attempts == attempt,
+            )
             .values(finished_at=now, updated_at=now, **values)
+        )
+        return _changed(await self.session.execute(stmt))
+
+    async def reopen_done(self, run_id: str, attempt: int, now: datetime, code: str) -> bool:
+        """Un passage `done` dont le travail lancé a échoué repasse en `failed` (essai
+        `attempt` seulement) : `claim` peut le reprendre, dans la limite des essais."""
+        stmt = (
+            update(JobRun)
+            .where(
+                JobRun.id == run_id,
+                JobRun.user_id == self.user_id,
+                JobRun.status == "done",
+                JobRun.attempts == attempt,
+            )
+            .values(status="failed", error_code=code, updated_at=now)
         )
         return _changed(await self.session.execute(stmt))
 

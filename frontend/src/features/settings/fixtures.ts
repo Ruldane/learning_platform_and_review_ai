@@ -19,6 +19,8 @@ export const settingsFixture: SettingsOut = {
   excluded_domains: [],
   lesson_language: "fr",
   preferred_domains: [],
+  radar_role: "",
+  radar_zone: "France",
   reminder_delays_days: [7, 14, 21],
   search_languages: ["fr", "en"],
   search_max_pages: 30,

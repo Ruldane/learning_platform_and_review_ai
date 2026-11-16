@@ -168,6 +168,8 @@ class _Run:
             cap_tokens=settings.session_token_cap,
         )
         config: RunnableConfig = {**thread_config(self.session_id), "callbacks": [tracker]}
+        if spec.recursion_limit is not None:
+            config["recursion_limit"] = spec.recursion_limit
         graph_input: Any = command
         if command is None and await ctx.checkpointer.aget_tuple(config) is None:
             graph_input = row.input  # aucun checkpoint : (re)départ depuis l'entrée

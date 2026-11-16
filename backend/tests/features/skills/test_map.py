@@ -7,6 +7,7 @@ import pytest
 
 from app.core.errors import AppError
 from app.core.skills import Evidence
+from app.db.models.daily import RadarRun
 from app.db.models.skills import SkillLevel
 from app.features.skills.map import (
     ActionFacts,
@@ -189,3 +190,50 @@ async def test_study_action_without_ready_lesson_opens_study_home(
         "/etudier/session",
     )
     assert quiz is not None and quiz.url == "/etudier/quiz"
+
+
+async def test_graph_demand_comes_from_the_latest_done_radar_run(
+    db_session_factory: Factory,
+) -> None:
+    """`demand` = part du dernier relevé fini (nom ou synonyme), 0 si le relevé ne cite pas la
+    compétence, `None` sans relevé fini (un relevé en cours ou en échec ne compte pas)."""
+    await add_skill(db_session_factory, ME, "Python", "Langages")
+    await add_skill(db_session_factory, ME, "Linux", "Système", synonyms=["GNU/Linux"])
+    await add_skill(db_session_factory, ME, "Rust", "Langages")
+    async with db_session_factory() as db:
+        assert {n.name: n.demand for n in (await skill_graph(db, ME)).nodes} == {
+            "Linux": None,
+            "Python": None,
+            "Rust": None,
+        }
+
+    def run(status: str, ranking: list[dict[str, object]], days: int) -> RadarRun:
+        return RadarRun(
+            user_id=ME,
+            role="r",
+            zone="z",
+            role_norm="r",
+            zone_norm="z",
+            trigger="manual",
+            status=status,
+            ranking=ranking,
+            created_at=NOW - timedelta(days=days),
+        )
+
+    def item(norm: str, share: float) -> dict[str, object]:
+        return {"skill": norm, "norm": norm, "count": 1, "share": share, "rank": 1}
+
+    async with db_session_factory() as db:
+        db.add_all(
+            [
+                run("done", [item("python", 0.2)], 10),
+                run("done", [item("python", 0.6), item("gnu/linux", 0.4)], 5),
+                run("failed", [item("python", 0.9)], 1),
+                run("running", [], 0),
+            ]
+        )
+        await db.commit()
+        demand = {n.name: n.demand for n in (await skill_graph(db, ME)).nodes}
+        other = {n.demand for n in (await skill_graph(db, OTHER)).nodes}
+    assert demand == {"Linux": 0.4, "Python": 0.6, "Rust": 0.0}
+    assert other == set()

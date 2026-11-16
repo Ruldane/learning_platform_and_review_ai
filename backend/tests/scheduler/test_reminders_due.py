@@ -42,7 +42,12 @@ async def _seed(factory: Factory) -> None:
 def _context(job_ctx: JobContext) -> JobContext:
     rt = ApplicationsRuntime(job_ctx.session_factory, job_ctx.launcher, now=lambda: NOW)
     return JobContext(
-        job_ctx.session_factory, job_ctx.launcher, job_ctx.production, job_ctx.replan, rt
+        job_ctx.session_factory,
+        job_ctx.launcher,
+        job_ctx.production,
+        job_ctx.replan,
+        rt,
+        job_ctx.daily,
     )
 
 

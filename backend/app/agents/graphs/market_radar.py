@@ -29,7 +29,10 @@ from app.agents.nodes.scout.radar import (
 from app.agents.runtime.deps import GraphDeps
 from app.agents.state.market_radar import MarketRadarState
 
-__all__ = ["MarketRadarInput", "build"]
+__all__ = ["RECURSION_LIMIT", "MarketRadarInput", "build"]
+
+# 6 pas fixes (chargement, recherche, fin, marge) + 2 × (60 lectures / 10 + 50 offres / 5), D159.
+RECURSION_LIMIT = 6 + 2 * (60 // 10 + 50 // 5)
 
 
 class MarketRadarInput(BaseModel):
