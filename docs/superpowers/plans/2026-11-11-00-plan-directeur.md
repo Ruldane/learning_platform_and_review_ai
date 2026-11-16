@@ -335,8 +335,13 @@ Le professeur doit rester peu coûteux en appels API. Ces règles sont fixées d
 Un serveur MCP donne à Claude Code ou à Codex l'accès aux features de Tremplin (lire et modifier un cours, ajouter une offre, ajouter un contact à une candidature, cocher une tâche, lancer un graphe…). L'agent externe pense, l'application garde les données et les règles. **Il n'a jamais les pleins pouvoirs.** Règles fixées dès la conception :
 
 - **Liste blanche explicite :** chaque feature déclare ses outils MCP dans son manifeste (registre, comme `FEATURE_ROUTERS`). Aucune route n'est exposée automatiquement à partir du contrat OpenAPI.
-- **Trois niveaux d'outils :** lecture ; écriture réversible (ajout, modification, avec historique et annulation) ; actions irréversibles ou sensibles. Le dernier niveau n'est **jamais exposé** au MCP : suppression, export, réglages, clés d'API, connexion et `ALLOWED_EMAILS`, validation du profil maître, envoi d'un message.
-- **Ce qui exige la validation de January :** un outil MCP ne crée que des brouillons ou des propositions pour le profil maître et les pièces envoyées. Ces brouillons attendent dans l'application (« À confirmer ») ; rien n'est validé par l'agent externe.
+- **Deux sortes d'outils, toutes deux voulues (réponse du 2026-11-16) :** des outils simples (lecture, ajout, modification) où Claude fait le travail lui-même ; des outils qui lancent les graphes de l'application (revue de CV, kit, comité…), où les agents internes travaillent et Claude suit la session jusqu'au résultat.
+- **Quatre niveaux d'outils :**
+  1. lecture ;
+  2. écriture réversible (ajout, modification, avec historique et annulation) ;
+  3. actions qui ne s'annulent pas : suppression, envoi d'un message, écriture au profil maître. Elles sont exposées, mais chaque appel crée seulement une **demande « À confirmer »** dans l'application. Rien ne se fait avant que January la confirme ; elle peut la refuser, et la demande expire sans réponse ;
+  4. jamais exposé au MCP : clés d'API et secrets, connexion et `ALLOWED_EMAILS`, réglages des modèles, jeton MCP lui-même.
+- **Profil maître :** un outil MCP crée un brouillon, jamais une entrée validée. Le brouillon est contrôlé **dans l'application par ses agents internes** (validateur d'honnêteté contre le profil, comme pour les brouillons des projets), puis January le confirme (niveau 3).
 - **Jeton propre au MCP :** créé, limité à certaines features (lecture seule par défaut), avec une date d'expiration, et révocable par January dans les réglages. Il est stocké haché et n'est jamais journalisé. Il est distinct du cookie de session. Un bouton coupe tout l'accès MCP.
 - **Mêmes règles que l'interface :** chaque outil appelle le service de la feature (validation, contrôle d'honnêteté, isolation par utilisateur). Aucun SQL brut, aucun accès aux fichiers ni au shell, aucune clé ni secret dans une réponse.
 - **Limites :** nombre d'appels et d'écritures par minute et par jour, avec une 429 lisible au-delà.
