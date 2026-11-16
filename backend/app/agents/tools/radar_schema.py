@@ -6,6 +6,7 @@ d'offres publics ; l'extraction est contrôlée par le code (`analyst_radar`) av
 
 import re
 from collections.abc import Sequence
+from itertools import zip_longest
 from typing import Literal, NamedTuple
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
@@ -18,7 +19,8 @@ SITE_HINTS = (
     "welcometothejungle.com",
     "jobs.ashbyhq.com",
 )
-MAX_QUERIES = 6  # plafond de session : 12 requêtes
+MAX_QUERIES = 12  # le plafond de requêtes d'une session : le radar en est le seul chercheur
+SITE_RESERVE = 2  # requêtes ciblées gardées même quand les langues remplissent le plafond
 BATCH = 5  # offres par appel de l'Analyste (10 appels au plus pour 50 offres)
 TEXT_MAX = 4000  # caractères d'une offre montrés à l'Analyste
 READ_BATCH = 10  # liens lus par passage de la boucle de lecture
@@ -95,31 +97,56 @@ def _clean(text: str) -> str:
     return " ".join(text.split())
 
 
+# Requêtes générales par langue, de la plus courante à la plus rare (`{r}` poste, `{w}` zone).
+# Chaque variante ramène d'autres offres que les précédentes : un moteur ne rend que dix résultats
+# par requête et SearXNG n'a pas de seconde page ici (D164).
+_GENERIC = {
+    "fr": (
+        "offre d'emploi {r}{w}",
+        "{r}{w} recrutement CDI",
+        "{r} H/F{w}",
+        "{r}{w} emploi",
+        "{r} offre{w}",
+        "{r}{w} poste à pourvoir",
+        "{r}{w} on recrute",
+        "{r}{w} postuler",
+    ),
+    "other": ("{r} job{w}", "{r}{w} hiring", "{r}{w} careers", "{r}{w} apply"),
+}
+
+
 def radar_searches(role: str, zone: str, languages: Sequence[str]) -> list[RadarSearch]:
-    """Les requêtes du relevé : en français « offre d'emploi {poste} {zone} » et « {poste} {zone}
-    recrutement CDI », pour toute autre langue « {poste} job {zone} », puis « {poste} {zone}
-    site:{site} » pour chaque site d'offres. Sans doublon, `MAX_QUERIES` au plus (les dernières
-    requêtes ciblées sont laissées si les langues en prennent la place). Sans poste : aucune."""
+    """Les requêtes du relevé, `MAX_QUERIES` au plus, sans doublon. D'abord les requêtes générales
+    (en français « offre d'emploi {poste} {zone} », « {poste} H/F {zone} »… ; pour toute autre
+    langue « {poste} job {zone} », « {poste} {zone} hiring »…), les langues alternant pour que le
+    plafond n'en prive aucune ; puis « {poste} {zone} site:{site} » pour chaque site d'offres,
+    qu'un moteur sert mal et qui passent donc en dernier (`SITE_RESERVE` au moins en restent).
+    Sans poste : aucune."""
     role, zone = _clean(role), _clean(zone)
     if not role:
         return []
     where = f" {zone}" if zone else ""
     langs = [lang for lang in dict.fromkeys(languages) if lang] or ["fr"]
-    found: list[RadarSearch] = []
-    for lang in langs:
-        if lang == "fr":
-            found.append(RadarSearch(f"offre d'emploi {role}{where}", lang))
-            found.append(RadarSearch(f"{role}{where} recrutement CDI", lang))
-        else:
-            found.append(RadarSearch(f"{role} job{where}", lang))
+    lists = [
+        [(lang, t.format(r=role, w=where)) for t in _GENERIC["fr" if lang == "fr" else "other"]]
+        for lang in langs
+    ]
+    generic = [
+        RadarSearch(q, lang) for rank in zip_longest(*lists) for lang, q in filter(None, rank)
+    ]
+    found = _unique(generic)[: MAX_QUERIES - SITE_RESERVE]
     found += [RadarSearch(f"{role}{where} site:{hint}", langs[0]) for hint in SITE_HINTS]
+    return _unique(found)[:MAX_QUERIES]
+
+
+def _unique(searches: Sequence[RadarSearch]) -> list[RadarSearch]:
     seen: set[str] = set()
     unique: list[RadarSearch] = []
-    for search in found:
+    for search in searches:
         if search.query not in seen:
             seen.add(search.query)
             unique.append(search)
-    return unique[:MAX_QUERIES]
+    return unique
 
 
 def radar_queries(role: str, zone: str, languages: Sequence[str]) -> list[str]:

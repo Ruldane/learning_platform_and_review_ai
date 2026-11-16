@@ -6,11 +6,15 @@ from datetime import timedelta
 
 import httpx
 import pytest
+from sqlalchemy import select, update
 
 from app.agents.tools.brief_schema import ResourceView
 from app.core.errors import AppError
+from app.db.models.learning import Goal
+from app.db.models.program import Program
 from app.features.brief.service.ensure import ensure_today
 from app.features.brief.service.store import AgentBriefStore
+from app.features.brief.service.topic import MAX_TOPIC, goal_topic
 from app.features.settings.service import SettingsService
 from tests.features.brief.conftest import NOW, OTHER, TODAY, Env
 from tests.features.brief.support import add_cards, add_run, add_user, applied, briefs, posting
@@ -69,12 +73,71 @@ async def test_empty_brief_has_zero_facts_and_no_block(env: Env) -> None:
     assert ctx.allowed_numbers == frozenset({"0"})
 
 
-async def test_topic_is_the_target_role_news_or_none(env: Env) -> None:
-    store = AgentBriefStore(env.rt)
+async def _goal(env: Env, text: str, role: str | None = None) -> None:
+    async with env.rt.session_factory() as db:
+        db.add(Goal(user_id=env.user_id, text=text, target_role=role, framing={}, status="chosen"))
+        await db.commit()
+
+
+async def _topic(env: Env, brief_id: str) -> str | None:
+    return (await AgentBriefStore(env.rt).context(env.user_id, brief_id)).topic
+
+
+async def test_topic_is_none_without_role_goal_or_program(env: Env) -> None:
+    assert await _topic(env, await _brief(env)) is None
+
+
+async def test_topic_prefers_the_radar_role_then_the_goal_role(env: Env) -> None:
     brief_id = await _brief(env)
-    assert (await store.context(env.user_id, brief_id)).topic is None  # aucun poste visé
+    await _goal(env, "Devenir data engineer", "Ingénieur données")
+    assert await _topic(env, brief_id) == "Ingénieur données actualités"
     await _settings(env, radar_role="Ingénieur IA")
-    assert (await store.context(env.user_id, brief_id)).topic == "Ingénieur IA actualités"
+    assert await _topic(env, brief_id) == "Ingénieur IA actualités"
+
+
+async def test_topic_falls_back_to_the_goal_text_without_a_role(env: Env) -> None:
+    brief_id = await _brief(env)
+    await _goal(env, "Devenir data engineer", None)
+    assert await _topic(env, brief_id) == "data engineer actualités"
+    await _goal(env, "Become  a\nplatform engineer. Je veux surtout du cloud.")
+    assert await _topic(env, brief_id) == "platform engineer actualités"
+
+
+async def test_topic_falls_back_to_the_validated_program_title(env: Env) -> None:
+    await seed(env.app)  # objectif sans poste ; programme validé
+    brief_id = await _brief(env)
+    async with env.rt.session_factory() as db:
+        await db.execute(update(Goal).values(text="Devenir", target_role=None))
+        title = (await db.execute(select(Program.title))).scalar_one()
+        await db.commit()
+    assert await _topic(env, brief_id) == f"{title} actualités"
+    async with env.rt.session_factory() as db:
+        await db.execute(update(Program).values(status="draft"))
+        await db.commit()
+    assert await _topic(env, brief_id) is None  # un brouillon n'est pas un programme validé
+
+
+@pytest.mark.parametrize(
+    ("text", "topic"),
+    [
+        ("Devenir ingénieur IA", "ingénieur IA"),
+        ("  devenir  un ingénieur\tIA  ", "ingénieur IA"),
+        ("Devenir l'ingénieur IA de mon équipe", "ingénieur IA de mon équipe"),
+        ("Become an AI engineer; then lead a team", "AI engineer"),
+        ("Passer en data science", "Passer en data science"),
+        ("Devenir", None),
+        ("Become a", None),
+        ("   ", None),
+    ],
+)
+def test_goal_topic_strips_the_verb_and_keeps_one_short_line(text: str, topic: str | None) -> None:
+    assert goal_topic(text) == topic
+
+
+def test_goal_topic_is_capped_on_a_word() -> None:
+    topic = goal_topic("Devenir " + "développeur " * 20)
+    assert topic is not None and len(topic) <= MAX_TOPIC and "\n" not in topic
+    assert not topic.endswith(" ") and topic.split(" ")[-1] == "développeur"
 
 
 async def test_language_follows_the_lesson_language(env: Env) -> None:

@@ -43,7 +43,7 @@ async def test_replay_mid_read_never_rereads(
     assert await second.runner.recover_on_startup() == [first.sid]
     await second.wait_status("completed", timeout=GUARD)
     assert radar_store.fresh_reads == 50 and radar_store.repeat_reads == 0
-    assert radar_store.queries == 6 and len(first.web.searches) == 6  # recherche pas refaite
+    assert radar_store.queries == 12 and len(first.web.searches) == 12  # recherche pas refaite
 
 
 async def test_replay_mid_extract_never_reextracts(

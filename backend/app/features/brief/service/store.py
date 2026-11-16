@@ -3,7 +3,8 @@ branchée par `bootstrap_agents.agent_ports(..., brief=...)`. Chaque appel ouvre
 base, courte.
 
 `context` relit le brief : les faits du conseil sont tirés des rubriques du code (jamais recomptés
-ici), le sujet de la ressource est « {poste visé} actualités » (sans poste : `None`, aucune
+ici), le sujet de la ressource est « {domaine visé} actualités » (`service.topic` : poste du radar,
+poste de l'objectif, sujet tiré de son texte, titre du programme validé ; rien : `None`, aucune
 recherche), les nombres permis dans le conseil sont ceux des faits (`advice_numbers`, en chiffres).
 Les écritures sont **conditionnelles et idempotentes** (SPEC 9.4) : la ressource ne s'écrit que si
 elle est encore absente (`WHERE resource IS NULL`), le conseil que s'il est encore `pending` ; la
@@ -21,13 +22,11 @@ from app.agents.tools.brief_schema import ResourceView
 from app.features.brief.repository import BriefRepository
 from app.features.brief.service.rules import advice_numbers
 from app.features.brief.service.runtime import BriefRuntime
+from app.features.brief.service.topic import resource_topic
 from app.features.brief.service.views import brief_not_found
-from app.features.radar.service.runs import defaults
 from app.features.settings.service import SettingsService
 
 logger = logging.getLogger(__name__)
-
-TOPIC_SUFFIX = "actualités"
 
 
 def facts_of(sections: dict[str, Any]) -> AdviceFacts:
@@ -76,14 +75,14 @@ class AgentBriefStore:
             if row is None:
                 raise brief_not_found()
             settings = await SettingsService(db, user_id).get()
-            role, _zone = await defaults(db, user_id)
+            topic = await resource_topic(db, user_id)
         facts = facts_of(row.sections)
         language: Literal["fr", "en"] = "en" if settings.lesson_language == "en" else "fr"
         return BriefContext(
             brief_id=row.id,
             day=row.day,
             language=language,
-            topic=f"{role} {TOPIC_SUFFIX}" if role else None,
+            topic=topic,
             facts=facts,
             resource_done=row.resource is not None,
             advice_done=row.advice_status != "pending",

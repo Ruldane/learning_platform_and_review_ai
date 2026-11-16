@@ -70,7 +70,7 @@ async def test_graph_runs_on_the_real_store_with_page_refs_past_p5(
         row = (await db.execute(select(RadarRun).where(RadarRun.id == RUN_ID))).scalar_one()
     assert row.status == "done" and row.finished_at is not None
     assert (row.read_count, row.blocked_count, row.not_postings, row.analyzed) == (12, 3, 0, 12)
-    assert (row.queries, row.candidates) == (6, 15)
+    assert (row.queries, row.candidates) == (12, 15)
     refs = [entry["ref"] for entry in row.postings]
     assert sorted(refs, key=lambda ref: int(ref[1:])) == [f"p{n}" for n in range(1, 16)]
     analysed = [entry for entry in row.postings if entry.get("skills")]

@@ -53,7 +53,7 @@ async def test_radar_reads_extracts_and_finalizes(
         "12 offres lues, 3 bloquées, 12 analysées. "
         "Seulement 12 offres lisibles : classement indicatif."
     )
-    assert radar_store.queries == 6 and radar_store.finalize_calls == 1
+    assert radar_store.queries == 12 and radar_store.finalize_calls == 1
 
 
 async def test_search_uses_code_queries_and_the_month_window(
@@ -164,8 +164,22 @@ async def test_a_failing_query_does_not_stop_the_others(
     radar_web.fail_queries = set(queries[:2])
     run = await radar_runner(sources=postings(4))
     await run.wait_status("completed")
-    assert radar_store.queries == 4 and radar_store.candidates is not None
-    assert len(radar_store.candidates) == 4 and len(radar_web.searches) == 6
+    assert radar_store.queries == 10 and radar_store.candidates is not None
+    assert len(radar_store.candidates) == 4 and len(radar_web.searches) == 12
+
+
+async def test_a_normal_run_reaches_sixty_candidates_within_the_session_cap(
+    radar_runner: MakeRadar, radar_store: FakeRadarStore, radar_web: FakeRadarWeb
+) -> None:
+    """Dix résultats par requête, les requêtes `site:` en panne (SearXNG y répond mal) : les
+    requêtes générales seules fournissent au moins 60 candidats, sans passer les 12 requêtes."""
+    queries = radar_queries(ROLE, ZONE, ("fr",))
+    radar_web.per_query = {q: [link(10 * i + n) for n in range(10)] for i, q in enumerate(queries)}
+    radar_web.fail_queries = {q for q in queries if "site:" in q}
+    run = await radar_runner(analyst(), sources=postings(80))
+    await run.wait_status("completed")
+    assert len(radar_web.searches) <= 12 and radar_store.queries == 8
+    assert radar_store.candidates is not None and len(radar_store.candidates) >= 60
 
 
 async def test_not_a_posting_counted_apart(

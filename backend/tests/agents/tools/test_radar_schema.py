@@ -19,27 +19,46 @@ from app.core.errors import AppError
 from app.features.postings.service.rules import posting_url_key
 from app.features.radar.service import rules
 
+FR_GENERIC = [
+    "offre d'emploi {r}{w}",
+    "{r}{w} recrutement CDI",
+    "{r} H/F{w}",
+    "{r}{w} emploi",
+    "{r} offre{w}",
+    "{r}{w} poste à pourvoir",
+    "{r}{w} on recrute",
+    "{r}{w} postuler",
+]
+EN_GENERIC = ["{r} job{w}", "{r}{w} hiring", "{r}{w} careers", "{r}{w} apply"]
+
+
+def _expected(templates: list[str], role: str, zone: str) -> list[str]:
+    return [t.format(r=role, w=f" {zone}") for t in templates]
+
 
 def test_queries_built_by_code() -> None:
     queries = radar_queries("Ingénieur IA", "Lyon", ("fr",))
     assert queries == [
-        "offre d'emploi Ingénieur IA Lyon",
-        "Ingénieur IA Lyon recrutement CDI",
+        *_expected(FR_GENERIC, "Ingénieur IA", "Lyon"),
         *[f"Ingénieur IA Lyon site:{hint}" for hint in SITE_HINTS],
     ]
-    assert len(queries) <= 6 and all("site:" in q for q in queries[2:])
+    # Les requêtes générales d'abord (SearXNG répond mal aux `site:`), les ciblées en dernier.
+    assert len(queries) == radar_schema.MAX_QUERIES == 12
+    assert all("site:" in q for q in queries[8:]) and not any("site:" in q for q in queries[:8])
 
 
 def test_queries_by_language_capped_and_without_duplicates() -> None:
     both = radar_queries("Data Engineer", "Paris", ("fr", "en"))
-    assert both[:3] == [
-        "offre d'emploi Data Engineer Paris",
-        "Data Engineer Paris recrutement CDI",
-        "Data Engineer job Paris",
+    fr = _expected(FR_GENERIC, "Data Engineer", "Paris")
+    en = _expected(EN_GENERIC, "Data Engineer", "Paris")
+    # Les langues alternent (le plafond n'en prive aucune), puis deux requêtes ciblées au moins.
+    assert both[:8] == [q for pair in zip(fr[:4], en, strict=True) for q in pair]
+    assert both[8:10] == fr[4:6]
+    assert len(both) == 12 and both[10:] == [
+        f"Data Engineer Paris site:{h}" for h in SITE_HINTS[:2]
     ]
-    assert len(both) == 6 and both[3:] == [f"Data Engineer Paris site:{h}" for h in SITE_HINTS[:3]]
     assert radar_queries("Data Engineer", "Paris", ("en", "en")) == [
-        "Data Engineer job Paris",
+        *en,
         *[f"Data Engineer Paris site:{hint}" for hint in SITE_HINTS],
     ]
     assert len(set(both)) == len(both)
@@ -48,7 +67,9 @@ def test_queries_by_language_capped_and_without_duplicates() -> None:
 def test_queries_carry_only_role_and_zone() -> None:
     """Aucune donnée inventée : les mots des requêtes sont le poste, la zone, des mots fixes et
     des sites publics."""
-    fixed = {"offre", "d'emploi", "recrutement", "CDI", "job", "Data", "Engineer", "Paris"}
+    fixed = {"offre", "d'emploi", "recrutement", "CDI", "job", "Data", "Engineer", "Paris", "H/F"}
+    fixed |= {"emploi", "poste", "à", "pourvoir", "on", "recrute", "postuler", "hiring"}
+    fixed |= {"careers", "apply"}
     for query in radar_queries("Data Engineer", "Paris", ("fr", "en")):
         words = [w for w in query.split() if not w.startswith("site:")]
         assert set(words) <= fixed
@@ -139,6 +160,6 @@ def test_bounds_are_the_feature_bounds() -> None:
     assert radar_port.MAX_READS == rules.MAX_READS
     assert radar_port.MAX_CANDIDATES == rules.MAX_CANDIDATES
     assert radar_port.MAX_READABLE == rules.MAX_RUN
-    assert radar_schema.MAX_QUERIES * 2 <= 12  # le plafond de requêtes d'une session
+    assert radar_schema.MAX_QUERIES <= 12  # le plafond de requêtes d'une session
     assert radar_schema.READ_BATCH * 6 == rules.MAX_READS
     assert radar_schema.BATCH * 10 == rules.MAX_RUN
