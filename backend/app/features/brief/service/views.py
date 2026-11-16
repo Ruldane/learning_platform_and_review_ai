@@ -91,6 +91,6 @@ class RecentBrief:
 async def recent_briefs(
     db: AsyncSession, user_id: str, after: datetime | None, before: datetime | None, limit: int
 ) -> list[RecentBrief]:
-    """Les briefs créés dans `]after, before[`, le plus récent d'abord (fil d'activité, 8.7)."""
+    """Les briefs créés dans `[after, before]`, le plus récent d'abord (fil d'activité, 8.7)."""
     rows = await BriefRepository(db, user_id).created_between(after, before, limit)
     return [RecentBrief(id=row.id, at=row.created_at) for row in rows]

@@ -62,7 +62,7 @@
         "type": "object"
       },
       "ActivityPage": {
-        "description": "Les événements, le plus récent d'abord. `latest_at` : l'instant du plus récent d'entre eux\n(`None` sans événement), à rendre en `after` au prochain passage.",
+        "description": "Les événements, le plus récent d'abord. `latest_at` : l'instant du plus récent d'entre eux\n(`None` sans événement). Curseur de relecture : `after` = `latest_at`, `after_id` = `id` du\npremier élément de `items` ; curseur de page ancienne : `at` et `id` du dernier élément.",
         "properties": {
           "items": {
             "items": {
@@ -12974,10 +12974,11 @@
   "paths": {
     "/api/v1/activity": {
       "get": {
-        "description": "Les événements des agents et des tâches de fond, le plus récent d'abord : `after` ne rend\nque les plus récents, `before` pagine vers les plus anciens.",
+        "description": "Les événements des agents et des tâches de fond, triés par `(at, id)` décroissant.\nRelecture : `after` = `latest_at` et `after_id` = `id` du premier événement de la page\nprécédente. Page plus ancienne : `before` et `before_id` = `at` et `id` du dernier. Un `id`\nest stable (`{kind}:{ref}:{état}`) : le front ne montre jamais deux fois le même.",
         "operationId": "get_activity_api_v1_activity_get",
         "parameters": [
           {
+            "description": "Ne rendre que les événements plus récents que cet instant.",
             "in": "query",
             "name": "after",
             "required": false,
@@ -12991,10 +12992,31 @@
                   "type": "null"
                 }
               ],
+              "description": "Ne rendre que les événements plus récents que cet instant.",
               "title": "After"
             }
           },
           {
+            "description": "Avec `after` : l'`id` du plus récent événement déjà vu. Le curseur est le couple `(at, id)` : les événements au même instant que lui ne sont pas perdus.",
+            "in": "query",
+            "name": "after_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Avec `after` : l'`id` du plus récent événement déjà vu. Le curseur est le couple `(at, id)` : les événements au même instant que lui ne sont pas perdus.",
+              "title": "After Id"
+            }
+          },
+          {
+            "description": "Ne rendre que les événements plus anciens que cet instant.",
             "in": "query",
             "name": "before",
             "required": false,
@@ -13008,7 +13030,27 @@
                   "type": "null"
                 }
               ],
+              "description": "Ne rendre que les événements plus anciens que cet instant.",
               "title": "Before"
+            }
+          },
+          {
+            "description": "Avec `before` : l'`id` du plus ancien événement déjà vu (page suivante sans perte ni doublon, même à instant égal).",
+            "in": "query",
+            "name": "before_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Avec `before` : l'`id` du plus ancien événement déjà vu (page suivante sans perte ni doublon, même à instant égal).",
+              "title": "Before Id"
             }
           },
           {

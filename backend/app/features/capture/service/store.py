@@ -33,6 +33,7 @@ from app.features.memory.service.captured import (
     CAPTURE_AUTHOR,
     document_state,
     index_capture,
+    reflect_reason,
     write_capture,
 )
 from app.features.memory.service.gateway import AgentMemoryGateway
@@ -197,7 +198,7 @@ class AgentCaptureStore:
                 levels,
                 author=CAPTURE_AUTHOR,
                 session_id=session_id,
-                reason=f"Capture « {title} » : January dit l'avoir appris.",
+                reason=reflect_reason(title),
             )
         except Exception as exc:
             logger.warning(

@@ -147,8 +147,8 @@ async def last_done(db: AsyncSession, user_id: str, name: str) -> JobRunView | N
 async def recent_failures(
     db: AsyncSession, user_id: str, after: datetime | None, before: datetime | None, limit: int
 ) -> list[JobRunView]:
-    """Les passages en échec finis dans `]after, before[` (plus récents d'abord), pour le fil
-    d'activité."""
+    """Les passages en échec finis dans `[after, before]` (bornes incluses, plus récents
+    d'abord), pour le fil d'activité."""
     rows = await JobRunRepository(db, user_id).failures(after, before, limit)
     return [_view(row) for row in rows]
 

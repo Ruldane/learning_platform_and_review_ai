@@ -21,10 +21,46 @@ def _utc(moment: datetime | None) -> datetime | None:
 async def get_activity(
     current: CurrentUserDep,
     db: Db,
-    after: Annotated[datetime | None, Query()] = None,
-    before: Annotated[datetime | None, Query()] = None,
+    after: Annotated[
+        datetime | None,
+        Query(description="Ne rendre que les événements plus récents que cet instant."),
+    ] = None,
+    after_id: Annotated[
+        str | None,
+        Query(
+            max_length=200,
+            description=(
+                "Avec `after` : l'`id` du plus récent événement déjà vu. Le curseur est le couple "
+                "`(at, id)` : les événements au même instant que lui ne sont pas perdus."
+            ),
+        ),
+    ] = None,
+    before: Annotated[
+        datetime | None,
+        Query(description="Ne rendre que les événements plus anciens que cet instant."),
+    ] = None,
+    before_id: Annotated[
+        str | None,
+        Query(
+            max_length=200,
+            description=(
+                "Avec `before` : l'`id` du plus ancien événement déjà vu (page suivante sans "
+                "perte ni doublon, même à instant égal)."
+            ),
+        ),
+    ] = None,
     limit: Annotated[int, Query(ge=1, description="Plafonné à 50.")] = DEFAULT_LIMIT,
 ) -> ActivityPage:
-    """Les événements des agents et des tâches de fond, le plus récent d'abord : `after` ne rend
-    que les plus récents, `before` pagine vers les plus anciens."""
-    return await activity_page(db, current.id, after=_utc(after), before=_utc(before), limit=limit)
+    """Les événements des agents et des tâches de fond, triés par `(at, id)` décroissant.
+    Relecture : `after` = `latest_at` et `after_id` = `id` du premier événement de la page
+    précédente. Page plus ancienne : `before` et `before_id` = `at` et `id` du dernier. Un `id`
+    est stable (`{kind}:{ref}:{état}`) : le front ne montre jamais deux fois le même."""
+    return await activity_page(
+        db,
+        current.id,
+        after=_utc(after),
+        before=_utc(before),
+        after_id=after_id,
+        before_id=before_id,
+        limit=limit,
+    )

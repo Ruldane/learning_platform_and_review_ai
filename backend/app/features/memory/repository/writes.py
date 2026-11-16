@@ -1,7 +1,7 @@
 import builtins
 from datetime import datetime
 
-from sqlalchemy import Select, select
+from sqlalchemy import Select, and_, func, not_, or_, select
 
 from app.db.models.memory import USER_AUTHOR, MemoryItem, MemoryWrite, WriteAction
 from app.db.repository import UserScopedRepository
@@ -53,15 +53,26 @@ class WriteRepository(UserScopedRepository[MemoryWrite]):
         return builtins.list((await self.session.execute(self._ordered())).scalars().all())
 
     async def by_agents_between(
-        self, after: datetime | None, before: datetime | None, limit: int
+        self,
+        after: datetime | None,
+        before: datetime | None,
+        limit: int,
+        *,
+        skip: tuple[str, str, str],
     ) -> builtins.list[MemoryWrite]:
         """Les écritures des agents (auteur autre que l'utilisatrice, hors suppressions) dans
-        `]after, before[`, la plus récente d'abord (fil d'activité)."""
+        `[after, before]` (bornes incluses), la plus récente d'abord (fil d'activité). `skip` =
+        (auteur, raison exacte, début de raison) : les écritures de cet auteur qui portent l'une
+        de ces raisons sont celles d'une action de l'utilisatrice (sa capture), écartées."""
+        author, reason, prefix = skip
+        why = func.coalesce(MemoryWrite.reason, "")
         stmt = self._ordered().where(
-            MemoryWrite.author != USER_AUTHOR, MemoryWrite.action != "delete"
+            MemoryWrite.author != USER_AUTHOR,
+            MemoryWrite.action != "delete",
+            not_(and_(MemoryWrite.author == author, or_(why == reason, why.startswith(prefix)))),
         )
         if after is not None:
-            stmt = stmt.where(MemoryWrite.created_at > after)
+            stmt = stmt.where(MemoryWrite.created_at >= after)
         if before is not None:
-            stmt = stmt.where(MemoryWrite.created_at < before)
+            stmt = stmt.where(MemoryWrite.created_at <= before)
         return builtins.list((await self.session.execute(stmt.limit(limit))).scalars())

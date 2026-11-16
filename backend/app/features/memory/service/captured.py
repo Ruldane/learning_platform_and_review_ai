@@ -16,6 +16,12 @@ from app.features.memory.service.runtime import MemoryRuntime
 
 CAPTURE_AUTHOR = "archivist"
 CAPTURE_REASON = "Capture rapide de January."
+CAPTURE_REFLECT_PREFIX = "Capture « "  # début de la raison des acquis reflétés par une capture
+
+
+def reflect_reason(title: str) -> str:
+    """La raison des acquis qu'une capture « j'ai appris » reflète en mémoire."""
+    return f"{CAPTURE_REFLECT_PREFIX}{title} » : January dit l'avoir appris."
 
 
 @dataclass(frozen=True)

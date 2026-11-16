@@ -181,17 +181,17 @@ async def test_recent_failures_for_the_feed(db_session_factory: Factory) -> None
         await fail(db, OTHER, other.run_id, attempt=1, code="autre", now=NOW)
         await db.commit()
         everything = await recent_failures(db, ME, None, None, 10)
-        since = await recent_failures(db, ME, NOW, None, 10)
+        since = await recent_failures(db, ME, NOW + timedelta(hours=1), None, 10)
         limited = await recent_failures(db, ME, None, None, 1)
     assert [v.error_code for v in everything] == ["c2", "c1", "c0"]
     assert [v.error_code for v in since] == ["c2", "c1"]
     assert [v.error_code for v in limited] == ["c2"]
-    assert [v.error_code for v in await _between(db_session_factory)] == ["c1"]
+    assert [v.error_code for v in await _between(db_session_factory)] == ["c1", "c0"]
 
 
 async def _between(factory: Factory) -> list[JobRunView]:
     async with factory() as db:
-        return await recent_failures(db, ME, NOW, NOW + timedelta(hours=2), 10)
+        return await recent_failures(db, ME, NOW - timedelta(hours=1), NOW + timedelta(hours=1), 10)
 
 
 async def test_user_ids_lists_every_account(db_session: AsyncSession) -> None:

@@ -59,3 +59,21 @@ async def test_job_failures_in_the_feed(client: httpx.AsyncClient, env: Env) -> 
     body = (await client.get(API)).json()
     assert [item["kind"] for item in body["items"]] == ["job_failed"]
     assert "secret_error_code" not in str(body)
+
+
+async def test_cursor_params_page_through_ties(client: httpx.AsyncClient, env: Env) -> None:
+    for number in range(4):
+        await add_write(env, hours(2), title=f"Ex æquo {number}")
+    seen: list[str] = []
+    params: dict[str, object] = {"limit": 3}
+    while True:
+        body = (await client.get(API, params=params)).json()
+        if not body["items"]:
+            break
+        seen += [item["id"] for item in body["items"]]
+        last = body["items"][-1]
+        params = {"limit": 3, "before": last["at"], "before_id": last["id"]}
+    assert len(seen) == 4 and len(set(seen)) == 4
+    first = (await client.get(API, params={"limit": 2})).json()["items"][0]
+    nothing = await client.get(API, params={"after": first["at"], "after_id": first["id"]})
+    assert nothing.json()["items"] == []

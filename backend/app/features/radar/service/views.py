@@ -161,7 +161,7 @@ class RecentRun:
 async def recent_runs(
     db: AsyncSession, user_id: str, after: datetime | None, before: datetime | None, limit: int
 ) -> list[RecentRun]:
-    """Les relevés finis (`done`) dans `]after, before[`, le plus récent d'abord (fil d'activité,
+    """Les relevés finis (`done`) dans `[after, before]`, le plus récent d'abord (fil d'activité,
     8.7). Les nombres réels, jamais un intitulé d'offre ni un poste."""
     rows = await RadarRunRepository(db, user_id).done_between(after, before, limit)
     return [

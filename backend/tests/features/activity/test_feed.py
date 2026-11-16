@@ -6,8 +6,6 @@ import logging
 
 import pytest
 
-from app.features.activity.schemas import ActivityPage
-from app.features.activity.service.feed import activity_page
 from app.features.activity.service.sources import ACTIVITY_SOURCES
 from tests.features.activity.support import (
     OTHER,
@@ -21,15 +19,8 @@ from tests.features.activity.support import (
     minutes,
     set_lesson,
 )
+from tests.features.activity.support import page as _page
 from tests.features.study.conftest import seed
-
-
-async def _page(env: Env, user: str | None = None, **kwargs: object) -> ActivityPage:
-    kwargs.setdefault("after", None)
-    kwargs.setdefault("before", None)
-    kwargs.setdefault("limit", 30)
-    async with env.factory() as db:
-        return await activity_page(db, user or env.user_id, **kwargs)  # type: ignore[arg-type]
 
 
 async def _everything(env: Env) -> tuple[str, str]:
@@ -94,9 +85,11 @@ async def test_before_pages_older(env: Env) -> None:
     await _everything(env)
     first = await _page(env, limit=2)
     assert [item.at for item in first.items] == [hours(6), hours(5)]
-    second = await _page(env, before=first.items[-1].at, limit=2)
+    last = first.items[-1]
+    second = await _page(env, before=last.at, before_id=last.id, limit=2)
     assert [item.at for item in second.items] == [hours(4), hours(3)]
-    third = await _page(env, before=second.items[-1].at, limit=2)
+    last = second.items[-1]
+    third = await _page(env, before=last.at, before_id=last.id, limit=2)
     assert [item.at for item in third.items] == [hours(2), hours(1)]
     ids = [item.id for page in (first, second, third) for item in page.items]
     assert len(set(ids)) == 6

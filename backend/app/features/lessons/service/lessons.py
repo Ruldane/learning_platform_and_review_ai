@@ -138,7 +138,7 @@ class RecentLesson:
 async def recent_lessons(
     db: AsyncSession, user_id: str, after: datetime | None, before: datetime | None, limit: int
 ) -> list[RecentLesson]:
-    """Les leçons devenues prêtes ou en échec dans `]after, before[`, plus récentes d'abord (fil
+    """Les leçons devenues prêtes ou en échec dans `[after, before]`, plus récentes d'abord (fil
     d'activité, 8.7). Lecture pour les autres features (contrat 2) : l'état enregistré, sans
     relire les sessions."""
     rows = await LessonRepository(db, user_id).recent_settled(after, before, limit)

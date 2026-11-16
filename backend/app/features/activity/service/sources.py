@@ -1,6 +1,7 @@
 """Les sources du fil d'activité (P15, D163) : une source = une fonction qui lit le service d'une
 feature, une ligne dans `ACTIVITY_SOURCES`. Chaque source rend au plus `limit` événements dans
-`]after, before[`, sans ordre imposé ; la fusion est dans `feed`. Les textes sont écrits ici, par
+`[after, before]` (bornes incluses : le fil écarte lui-même les ex æquo du curseur), sans ordre
+imposé ; la fusion est dans `feed`. Les textes sont écrits ici, par
 le code : un titre de leçon ou d'élément est une donnée de l'utilisatrice, jamais un texte de
 modèle. Un passage en échec ne porte jamais son code d'erreur. La source `project` arrive avec 8.10.
 """
@@ -43,6 +44,8 @@ AGENT_NAMES: dict[str, str] = {
     "tracker": "L'Assistant de suivi",
     "manager": "Le Manager",
     "colleague": "Le Futur collègue",
+    "demo_proponent": "L'Avocat",
+    "demo_critic": "Le Critique",
 }
 DEFAULT_AGENT = "Un agent"
 JOB_NAMES: dict[str, str] = {

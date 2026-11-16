@@ -7,6 +7,11 @@ from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.features.memory.repository import WriteRepository
+from app.features.memory.service.captured import (
+    CAPTURE_AUTHOR,
+    CAPTURE_REASON,
+    CAPTURE_REFLECT_PREFIX,
+)
 
 
 @dataclass(frozen=True)
@@ -23,9 +28,12 @@ class AgentWrite:
 async def recent_agent_writes(
     db: AsyncSession, user_id: str, after: datetime | None, before: datetime | None, limit: int
 ) -> list[AgentWrite]:
-    """Les écritures des agents dans `]after, before[` (hors suppressions), la plus récente
-    d'abord. Les écritures de l'utilisatrice n'y sont jamais."""
-    rows = await WriteRepository(db, user_id).by_agents_between(after, before, limit)
+    """Les écritures des agents dans `[after, before]` (bornes incluses, hors suppressions), la
+    plus récente d'abord. N'y sont jamais : les écritures de l'utilisatrice, ni celles de sa propre
+    capture rapide (l'Archiviste les écrit sur sa demande : raison `CAPTURE_REASON`, ou acquis
+    reflétés par la capture), reconnues à leur auteur et à leur raison."""
+    skip = (CAPTURE_AUTHOR, CAPTURE_REASON, CAPTURE_REFLECT_PREFIX)
+    rows = await WriteRepository(db, user_id).by_agents_between(after, before, limit, skip=skip)
     return [
         AgentWrite(
             id=row.id,

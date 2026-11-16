@@ -136,11 +136,12 @@ class JobRunRepository(UserScopedRepository[JobRun]):
     async def failures(
         self, after: datetime | None, before: datetime | None, limit: int
     ) -> list[JobRun]:
-        """Les passages en échec finis dans `]after, before[`, le plus récent d'abord."""
+        """Les passages en échec finis dans `[after, before]` (bornes incluses : le fil rend les
+        ex æquo, il en écarte lui-même), le plus récent d'abord."""
         stmt = select(JobRun).where(JobRun.user_id == self.user_id, JobRun.status == "failed")
         if after is not None:
-            stmt = stmt.where(JobRun.finished_at > after)
+            stmt = stmt.where(JobRun.finished_at >= after)
         if before is not None:
-            stmt = stmt.where(JobRun.finished_at < before)
+            stmt = stmt.where(JobRun.finished_at <= before)
         stmt = stmt.order_by(JobRun.finished_at.desc(), JobRun.created_at.desc()).limit(limit)
         return list((await self.session.execute(stmt)).scalars())

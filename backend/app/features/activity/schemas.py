@@ -23,7 +23,8 @@ class ActivityItem(BaseModel):
 
 class ActivityPage(BaseModel):
     """Les événements, le plus récent d'abord. `latest_at` : l'instant du plus récent d'entre eux
-    (`None` sans événement), à rendre en `after` au prochain passage."""
+    (`None` sans événement). Curseur de relecture : `after` = `latest_at`, `after_id` = `id` du
+    premier élément de `items` ; curseur de page ancienne : `at` et `id` du dernier élément."""
 
     items: list[ActivityItem]
     latest_at: datetime | None

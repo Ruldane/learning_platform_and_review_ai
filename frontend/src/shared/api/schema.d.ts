@@ -13,8 +13,10 @@ export interface paths {
         };
         /**
          * Get Activity
-         * @description Les événements des agents et des tâches de fond, le plus récent d'abord : `after` ne rend
-         *     que les plus récents, `before` pagine vers les plus anciens.
+         * @description Les événements des agents et des tâches de fond, triés par `(at, id)` décroissant.
+         *     Relecture : `after` = `latest_at` et `after_id` = `id` du premier événement de la page
+         *     précédente. Page plus ancienne : `before` et `before_id` = `at` et `id` du dernier. Un `id`
+         *     est stable (`{kind}:{ref}:{état}`) : le front ne montre jamais deux fois le même.
          */
         get: operations["get_activity_api_v1_activity_get"];
         put?: never;
@@ -2131,7 +2133,8 @@ export interface components {
         /**
          * ActivityPage
          * @description Les événements, le plus récent d'abord. `latest_at` : l'instant du plus récent d'entre eux
-         *     (`None` sans événement), à rendre en `after` au prochain passage.
+         *     (`None` sans événement). Curseur de relecture : `after` = `latest_at`, `after_id` = `id` du
+         *     premier élément de `items` ; curseur de page ancienne : `at` et `id` du dernier élément.
          */
         ActivityPage: {
             /** Items */
@@ -6884,8 +6887,14 @@ export interface operations {
     get_activity_api_v1_activity_get: {
         parameters: {
             query?: {
+                /** @description Ne rendre que les événements plus récents que cet instant. */
                 after?: string | null;
+                /** @description Avec `after` : l'`id` du plus récent événement déjà vu. Le curseur est le couple `(at, id)` : les événements au même instant que lui ne sont pas perdus. */
+                after_id?: string | null;
+                /** @description Ne rendre que les événements plus anciens que cet instant. */
                 before?: string | null;
+                /** @description Avec `before` : l'`id` du plus ancien événement déjà vu (page suivante sans perte ni doublon, même à instant égal). */
+                before_id?: string | null;
                 /** @description Plafonné à 50. */
                 limit?: number;
             };

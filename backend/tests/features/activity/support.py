@@ -12,6 +12,8 @@ from app.db.models.accounts import User
 from app.db.models.daily import Brief, JobRun, RadarRun
 from app.db.models.lessons import Lesson
 from app.db.models.memory import MemoryWrite
+from app.features.activity.schemas import ActivityPage
+from app.features.activity.service.feed import activity_page
 
 API = "/api/v1/activity"
 T0 = datetime(2026, 11, 17, 6, 0, tzinfo=UTC)
@@ -137,3 +139,25 @@ async def add_job(
         db.add(row)
         await db.commit()
         return row.id
+
+
+async def page(
+    env: Env,
+    user: str | None = None,
+    *,
+    after: datetime | None = None,
+    before: datetime | None = None,
+    after_id: str | None = None,
+    before_id: str | None = None,
+    limit: int = 30,
+) -> ActivityPage:
+    async with env.factory() as db:
+        return await activity_page(
+            db,
+            user or env.user_id,
+            after=after,
+            before=before,
+            after_id=after_id,
+            before_id=before_id,
+            limit=limit,
+        )
