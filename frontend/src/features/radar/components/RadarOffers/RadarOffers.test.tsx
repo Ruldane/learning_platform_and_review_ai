@@ -1,5 +1,5 @@
 import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { RadarOfferView } from "../viewTypes";
 import { RadarOffers } from "./RadarOffers";
 
@@ -64,5 +64,21 @@ describe("RadarOffers", () => {
     render(<RadarOffers offers={[]} />);
     expect(screen.getByText("Aucune offre à afficher pour ce relevé.")).toBeInTheDocument();
     expect(screen.queryByRole("list")).toBeNull();
+  });
+
+  it("lists two offers that share a link without a duplicate React key", () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    render(
+      <RadarOffers
+        offers={[
+          offer({ title: "Data engineer (Paris)" }),
+          offer({ title: "Data engineer (Lyon)", score: 60 }),
+        ]}
+      />,
+    );
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+    expect(screen.getByText("Data engineer (Lyon)")).toBeInTheDocument();
+    expect(error).not.toHaveBeenCalled();
+    error.mockRestore();
   });
 });

@@ -20,8 +20,9 @@ export function OffersCard({ items }: OffersCardProps) {
         <p className="text-muted-foreground">{t("home.offers.none")}</p>
       ) : (
         <ul aria-label={t("home.offers.listLabel")} className="flex flex-col gap-2 text-sm">
-          {items.map((offer) => (
-            <li key={offer.url} className="flex flex-col">
+          {items.map((offer, index) => (
+            // Deux offres peuvent partager un lien : la position départage.
+            <li key={`${offer.url}#${index}`} className="flex flex-col">
               <ExternalLink href={offer.url}>
                 {offer.title ?? t("home.offers.untitled")}
               </ExternalLink>

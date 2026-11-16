@@ -1,5 +1,6 @@
-/** Textes du radar du marché : relevé, classement, alertes, offres, lancement. */
+/** Textes du radar du marché : relevé, classement, alertes, offres, lancement, page et historique. */
 export const radar = {
+  nav: { radar: "Radar" },
   summary: {
     title: "Ce relevé",
     scope: "Poste : {role}, zone : {zone}",
@@ -9,6 +10,10 @@ export const radar = {
     notPostings: {
       one: "1 page lue n'était pas une offre.",
       many: "{count} pages lues n'étaient pas des offres.",
+    },
+    notAnalyzed: {
+      one: "1 offre lue n'a pas été analysée.",
+      many: "{count} offres lues n'ont pas été analysées.",
     },
     blockedDomains: "Domaines bloqués ({count})",
     blockedDomain: { one: "{domain} : 1 page", many: "{domain} : {count} pages" },
@@ -53,8 +58,67 @@ export const radar = {
     role: "Poste visé",
     zone: "Zone",
     roleRequired: "Indique le poste visé.",
+    roleTooShort: "Le poste doit faire au moins 2 caractères.",
+    zoneTooShort:
+      "La zone doit faire au moins 2 caractères (ou reste vide pour la zone par défaut).",
     run: "Lancer un relevé",
     running: "Relevé en cours…",
     hint: "Un relevé lit des offres publiques : cela peut prendre plusieurs minutes.",
+  },
+  page: {
+    title: "Radar du marché",
+    intro:
+      "Un relevé lit des offres publiques du mois pour dire quelles compétences le marché demande pour ton poste.",
+    loading: "Chargement du radar…",
+    loadingRun: "Chargement du relevé…",
+    feed: "Le relevé en cours",
+    resumed: "Un relevé était déjà en cours : on le suit.",
+    runningTitle: "Relevé en cours",
+    runningText: "Le résultat s'affiche ici dès que le relevé est terminé.",
+    waitingSession: "Connexion au relevé en cours…",
+    emptyTitle: "Aucun relevé pour l'instant",
+    emptyText: "Lance un premier relevé : il dira ce que le marché demande pour ton poste.",
+    notFoundTitle: "Relevé introuvable",
+    notFoundText: "Ce relevé n'existe pas.",
+    notFoundAction: "Voir le radar",
+    runOf: "Relevé du {when}",
+  },
+  history: {
+    title: "Historique des relevés",
+    label: "Relevés précédents",
+    empty: "Aucun relevé pour l'instant.",
+    loading: "Chargement de l'historique…",
+    counts: "{read} lues · {blocked} bloquées · {analyzed} analysées",
+    scope: "{role}, {zone}",
+    current: "affiché",
+    lowSample: "échantillon réduit",
+    trigger: { manual: "lancé à la main", schedule: "lancé le lundi" },
+    status: { running: "En cours", done: "Terminé", failed: "En échec" },
+  },
+  failure: {
+    title: "Ce relevé n'a pas abouti.",
+    reason: "Raison : {reason}",
+    retry: "Tu peux lancer un nouveau relevé avec le formulaire.",
+    codes: {
+      search_unavailable:
+        "la recherche d'offres n'a répondu à aucune requête, donc aucune offre n'a pu être lue.",
+      launch_failed: "le relevé n'a pas pu démarrer.",
+      engine_unavailable: "le moteur des agents n'était pas disponible au lancement.",
+      session_failed: "les agents ont rencontré une panne en cours de relevé.",
+      session_cancelled: "le relevé a été arrêté avant la fin.",
+      not_finalized: "les agents ont fini sans que le relevé soit mis en forme.",
+      session_ended: "la session des agents s'est arrêtée avant la fin du relevé.",
+      run_failed: "le relevé planifié n'a pas pu aller au bout.",
+      node_timeout: "une étape du relevé a pris trop de temps.",
+      structured_output_invalid: "l'analyse des offres n'a pas donné de réponse exploitable.",
+      web_quota_reached: "le plafond de lectures du web a été atteint.",
+      internal_error: "une panne inattendue a interrompu le relevé.",
+    },
+    other: "une panne inattendue a interrompu le relevé.",
+  },
+  errors: {
+    radar_role_required: "Indique le poste visé pour lancer un relevé.",
+    role: "Ce poste n'est pas accepté : il faut entre 2 et 120 caractères.",
+    zone: "Cette zone n'est pas acceptée : il faut entre 2 et 120 caractères.",
   },
 } as const;

@@ -41,6 +41,13 @@ export function RadarSummary({ run }: RadarSummaryProps) {
             : t("radar.summary.notPostings.many", { count: run.notPostings })}
         </p>
       ) : null}
+      {run.notAnalyzed > 0 ? (
+        <p className="text-sm text-muted-foreground">
+          {run.notAnalyzed === 1
+            ? t("radar.summary.notAnalyzed.one")
+            : t("radar.summary.notAnalyzed.many", { count: run.notAnalyzed })}
+        </p>
+      ) : null}
       <BlockedDomains domains={run.blockedDomains} />
       {run.lowSample ? (
         <p

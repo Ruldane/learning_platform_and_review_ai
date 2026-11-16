@@ -11,6 +11,7 @@ const RUN: RunSummaryView = {
   blockedCount: 6,
   analyzed: 41,
   notPostings: 0,
+  notAnalyzed: 0,
   blockedDomains: [
     { domain: "example.org", count: 4 },
     { domain: "example.invalid", count: 1 },
@@ -59,5 +60,14 @@ describe("RadarSummary", () => {
   it("counts the pages that were not postings apart", () => {
     render(<RadarSummary run={{ ...RUN, notPostings: 3 }} />);
     expect(screen.getByText("3 pages lues n'étaient pas des offres.")).toBeInTheDocument();
+  });
+
+  it("never hides the gap between the offers read and the offers analyzed", () => {
+    const { rerender } = render(<RadarSummary run={{ ...RUN, notAnalyzed: 5 }} />);
+    expect(screen.getByText("5 offres lues n'ont pas été analysées.")).toBeInTheDocument();
+    rerender(<RadarSummary run={{ ...RUN, notAnalyzed: 1 }} />);
+    expect(screen.getByText("1 offre lue n'a pas été analysée.")).toBeInTheDocument();
+    rerender(<RadarSummary run={RUN} />);
+    expect(screen.queryByText(/n'a pas été analysée|n'ont pas été analysées/)).toBeNull();
   });
 });

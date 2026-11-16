@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { OfferItemView } from "../viewTypes";
 import { OffersCard } from "./OffersCard";
 
@@ -41,5 +41,21 @@ describe("OffersCard", () => {
     render(<OffersCard items={[]} />);
     expect(screen.getByText("Aucune nouvelle offre depuis ton dernier brief.")).toBeInTheDocument();
     expect(screen.queryByRole("list")).toBeNull();
+  });
+
+  it("lists two offers that share a link without a duplicate React key", () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const same = "https://example.org/jobs/1";
+    render(
+      <OffersCard
+        items={[
+          { title: "Data engineer (Paris)", company: null, score: 78, url: same },
+          { title: "Data engineer (Lyon)", company: null, score: 75, url: same },
+        ]}
+      />,
+    );
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+    expect(error).not.toHaveBeenCalled();
+    error.mockRestore();
   });
 });

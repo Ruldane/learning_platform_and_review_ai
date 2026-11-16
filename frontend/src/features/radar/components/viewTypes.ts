@@ -30,6 +30,8 @@ export interface RunSummaryView {
   analyzed: number;
   /** Pages lues qui n'étaient pas des offres. */
   notPostings: number;
+  /** Offres lues mais pas analysées (extraction en échec, ou au-delà des 50 d'un relevé). */
+  notAnalyzed: number;
   blockedDomains: BlockedDomainView[];
   /** Moins de 30 offres lisibles : le classement est indicatif. */
   lowSample: boolean;

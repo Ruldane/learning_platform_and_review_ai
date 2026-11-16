@@ -17,8 +17,9 @@ export function RadarOffers({ offers }: RadarOffersProps) {
         <p className="text-muted-foreground">{t("radar.offers.none")}</p>
       ) : (
         <ul aria-label={t("radar.offers.label")} className="flex flex-col gap-2">
-          {offers.map((offer) => (
-            <OfferRow key={offer.url} offer={offer} />
+          {offers.map((offer, index) => (
+            // Deux offres peuvent partager un lien : la position départage.
+            <OfferRow key={`${offer.url}#${index}`} offer={offer} />
           ))}
         </ul>
       )}
