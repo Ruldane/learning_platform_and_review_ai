@@ -1,11 +1,11 @@
 /** Textes de l'accueil : brief du jour, actions rapides, fil d'activité, notifications de fond. */
 export const home = {
-  title: "Bienvenue sur Tremplin",
-  intro: "Ta plateforme locale d'apprentissage et de carrière.",
-  empty: {
-    title: "Ton brief du jour arrivera bientôt",
+  loading: "Ton brief se prépare…",
+  noProgram: {
+    title: "Pas encore de programme",
     description:
-      "Les premières fonctions de Tremplin apparaîtront ici dès qu'elles seront branchées.",
+      "Ton bloc du jour et ta semaine apparaîtront ici dès que tu auras validé un programme.",
+    action: "Commence par un objectif",
   },
   brief: {
     title: "Ton brief du jour",
@@ -84,6 +84,7 @@ export const home = {
     empty: "Rien de nouveau pour l'instant.",
     listLabel: "Activité récente",
     more: "Voir plus",
+    loading: "Chargement de l'activité…",
     kind: {
       lesson: "Leçon",
       radar: "Radar",

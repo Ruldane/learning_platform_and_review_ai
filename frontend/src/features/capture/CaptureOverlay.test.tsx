@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -10,6 +10,7 @@ import { apiError, recordPosts } from "@/test/councilHarness";
 import { server } from "@/test/server";
 import { CaptureOverlay } from "./CaptureOverlay";
 import { CaptureTopbarButton } from "./CaptureTopbarButton";
+import { useCaptureRequest } from "@/shared/lib/captureRequest";
 import { useCaptureDialog } from "./captureDialog";
 
 const setup = () =>
@@ -63,6 +64,14 @@ describe("capture dialog", () => {
     expect(field).toHaveFocus();
     await user.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  });
+
+  it("opens when another feature asks for it, not because of an old request", async () => {
+    useCaptureRequest.setState({ count: 3 });
+    setup();
+    expect(screen.queryByRole("dialog")).toBeNull();
+    act(() => useCaptureRequest.getState().request());
+    expect(await screen.findByRole("dialog", { name: "Capture rapide" })).toBeInTheDocument();
   });
 
   it("keeps the focus inside the dialog", async () => {
