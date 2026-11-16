@@ -103,10 +103,9 @@ async def lesson_pdf(rt: LessonsRuntime, p: Published) -> bool:
         logger.warning("PDF de la leçon %s non produit (%s)", p.lesson_id, type(exc).__name__)
         return False
     async with rt.session_factory() as db:
-        lesson = await LessonRepository(db, p.user_id).get_fresh(p.lesson_id)
-        kept = lesson is not None and lesson.pdf_key is None
-        if lesson is not None and kept:
-            lesson.pdf_key = key
+        repo = LessonRepository(db, p.user_id)
+        kept = await repo.set_pdf_key(p.lesson_id, key)
+        lesson = await repo.get_fresh(p.lesson_id)
         await db.commit()
     if not kept:  # rangé entre-temps par un autre appel (ou leçon disparue) : le nôtre est en trop
         await rt.storage.delete(p.user_id, key)

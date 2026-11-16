@@ -5,6 +5,7 @@ sortie ici."""
 from app.agents.tools.radar_port import RadarSummary
 
 UNAVAILABLE_TEXT = "La recherche web ne répond pas : relevé impossible pour l'instant."
+NO_MODEL_TEXT = "Aucun modèle n'est utilisable (clé absente ?) : relevé impossible pour l'instant."
 
 
 def _count(number: int, one: str, many: str) -> str:

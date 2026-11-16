@@ -12,4 +12,5 @@ class MarketRadarState(TypedDict, total=False):
     urls: list[str]  # liens candidats, sans doublon, 80 au plus, dans l'ordre de lecture
     reading_done: bool  # la boucle de lecture n'a plus rien à lire
     extract_done: bool  # la boucle d'extraction n'a plus rien à extraire
+    failed_batches: int  # lots d'extraction en panne du fournisseur (l'extraction s'arrête à 2)
     summary: str  # résumé de `run.completed`

@@ -1,7 +1,7 @@
 import builtins
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import CursorResult, select, update
 
 from app.db.models.lessons import Lesson
 from app.db.repository import UserScopedRepository
@@ -20,6 +20,18 @@ class LessonRepository(UserScopedRepository[Lesson]):
             .execution_options(populate_existing=True)
         )
         return (await self.session.execute(stmt)).scalar_one_or_none()
+
+    async def set_pdf_key(self, lesson_id: str, key: str) -> bool:
+        """Range le PDF si la leçon n'en a pas encore ; `False` sinon (déjà rangé, ou leçon
+        disparue). Une écriture technique : `updated_at` garde l'instant où la leçon est devenue
+        prête, que le fil d'activité date (D173)."""
+        stmt = (
+            update(Lesson)
+            .where(Lesson.id == lesson_id, Lesson.user_id == self.user_id, Lesson.pdf_key.is_(None))
+            .values(pdf_key=key, updated_at=Lesson.updated_at)
+        )
+        result = await self.session.execute(stmt)
+        return isinstance(result, CursorResult) and result.rowcount == 1
 
     async def by_module(self, module_id: str) -> Lesson | None:
         stmt = (

@@ -2,7 +2,6 @@
 déjà notées ne repassent pas par le modèle, leur verdict est réémis à l'identique et la mémoire
 n'est écrite qu'une fois."""
 
-import asyncio
 from typing import Any
 
 from app.features.memory.repository import ItemFilter, MemoryItemRepository
@@ -18,7 +17,7 @@ from tests.agents.graphs.web_support import (
     Web,
     script_web,
 )
-from tests.agents.runtime.runner_helpers import all_events, wait_status, wait_until
+from tests.agents.runtime.runner_helpers import all_events, wait_status, wait_true, wait_until
 
 
 async def _verdict(web: Web, user_id: str, sid: str, url: str) -> str | None:
@@ -44,9 +43,11 @@ async def test_judge_stopped_midway_does_not_rescore_judged_pages(
     first = await make_web_runner([], models=GatedModels([PLAN, SCORE_82], block_from=2))
     script_web(first)
     sid = await first.runner.start(user_id, "web_research", {"query": "attention multi-têtes"})
-    async with asyncio.timeout(5):
-        while await _verdict(first, user_id, sid, URL_A) != "kept":
-            await asyncio.sleep(0.01)
+
+    async def judged() -> bool:
+        return await _verdict(first, user_id, sid, URL_A) == "kept"
+
+    await wait_true(judged)
     await wait_until(lambda: first.runner.is_active(sid))
     await first.runner.shutdown()
     assert await _verdict(first, user_id, sid, URL_B) == "pending"

@@ -8,7 +8,9 @@ lisiblement (`fail("search_unavailable")`), jamais en silence. `read` : relit `c
 passage, lit les dix prochains liens non lus (cinq en parallèle) et s'arrête à 50 offres lisibles,
 à 60 lectures ou sans lien restant ; un nœud rejoué après un arrêt ne relit rien (le port est
 idempotent, et les liens déjà lus ne sont plus demandés). `finish` : le rapport du port, dit avec
-les nombres réels (lues, bloquées, pas des offres, analysées).
+les nombres réels (lues, bloquées, pas des offres, analysées). `load` vérifie d'abord que le modèle
+de l'Analyste existe : sans clé, le relevé échoue tout de suite (`llm_unavailable`), avant la
+moindre recherche ou lecture de page (D173).
 
 Journaux : identifiants et nombres seulement, jamais un lien, un site, un poste ni une zone
 (17.2)."""
@@ -19,15 +21,18 @@ from itertools import zip_longest
 from typing import Protocol
 
 from app.agents.nodes.scout.radar_text import (
+    NO_MODEL_TEXT,
     UNAVAILABLE_TEXT,
     counting_text,
     sample_text,
     summary_text,
 )
+from app.agents.registry import get_agent
 from app.agents.runtime.deps import GraphDeps
 from app.agents.runtime.emit import emit
 from app.agents.runtime.invoke import node_timeout
 from app.agents.state.market_radar import MarketRadarState
+from app.agents.tools.brief_port import MODEL_UNAVAILABLE_CODES
 from app.agents.tools.radar_port import (
     MAX_CANDIDATES,
     MAX_READABLE,
@@ -75,10 +80,26 @@ def candidates(found: list[list[str]]) -> list[str]:
     return urls
 
 
+async def _require_model(deps: GraphDeps, run_id: str) -> None:
+    """Le modèle de l'Analyste doit exister avant toute recherche ou lecture : sinon le relevé
+    échoue lisiblement tout de suite (`llm_unavailable`), au lieu de lire 60 pages pour rien."""
+    try:
+        await deps.models.get_chat_model(deps.user_id, get_agent("analyst").tier, agent="analyst")
+    except AppError as exc:
+        if exc.code not in MODEL_UNAVAILABLE_CODES:
+            raise
+        await deps.ports.radar.fail(deps.user_id, deps.session_id, run_id, "llm_unavailable")
+        logger.info(
+            "Aucun modèle : session %s, relevé %s, cause %s", deps.session_id, run_id, exc.code
+        )
+        raise AppError("llm_unavailable", NO_MODEL_TEXT, 503) from None
+
+
 def make_load(deps: GraphDeps) -> Node:
     @node_timeout()
     async def load(state: MarketRadarState) -> MarketRadarState:
         ctx = await deps.ports.radar.context(deps.user_id, state["run_id"])
+        await _require_model(deps, state["run_id"])
         logger.info(
             "Relevé lu : session %s, relevé %s, %d page(s) déjà lue(s), %d offre(s) extraite(s)",
             deps.session_id,

@@ -101,6 +101,10 @@ class BriefOut(BaseModel):
     offers: OffersRubric
     week: WeekRubric | None
     resource: BriefResourceOut | None
+    unavailable: list[str] = Field(
+        default_factory=list,
+        description="Les rubriques dont la source était en panne à la création (vides ce jour).",
+    )
     advice: list[str] | None
     advice_status: AdviceStatus = Field(
         description="`pending` change encore ; `ready`, `failed` et `unavailable` sont définitifs."

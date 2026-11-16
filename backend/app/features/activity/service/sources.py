@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.features.activity.schemas import ActivityItem
 from app.features.brief.service.views import recent_briefs
 from app.features.ledger.service.ledger import recent_failures
+from app.features.ledger.service.periods import MAX_ATTEMPTS
 from app.features.lessons.service.lessons import recent_lessons
 from app.features.memory.service.recent import recent_agent_writes
 from app.features.projects.service.views import recent_projects
@@ -89,7 +90,7 @@ async def radar_source(
             id=f"radar:{run.id}:done",
             kind="radar",
             at=run.at,
-            title=f"Relevé du radar : {run.read_count} offres lues, {run.blocked_count} bloquées",
+            title=f"Relevé du radar : {run.offers_read} offres lues, {run.blocked_count} bloquées",
             link=f"/carriere/radar/{run.id}",
         )
         for run in await recent_runs(db, user_id, after, before, limit)
@@ -163,7 +164,11 @@ async def job_failures_source(
             at=job.finished_at or job.started_at,
             title=(
                 f"Un passage planifié a échoué ({JOB_NAMES.get(job.name, DEFAULT_JOB)}) : "
-                "nouvel essai au prochain passage."
+                + (
+                    "abandonné, aucun nouvel essai."
+                    if job.attempts >= MAX_ATTEMPTS or job.error_code == "abandoned"
+                    else "nouvel essai au prochain passage."
+                )
             ),
         )
         for job in await recent_failures(db, user_id, after, before, limit)

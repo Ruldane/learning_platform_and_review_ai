@@ -1,9 +1,11 @@
 """Relevé hebdomadaire du radar (P10, P13, D160) : appelé par la tâche planifiée `market_radar`
 (`app.scheduler`, jamais importé ici : contrat 8), toutes les 15 minutes et au démarrage.
 
-Par compte, le lundi à partir de 06:00 **locales** : le passage de la semaine ISO locale se gagne
-dans le registre (`claim`, période = `week_period(local_today(zone, now))`, jamais `now.date()` :
-dimanche 23 h 30 à New York est déjà lundi UTC). Un relevé créé cette semaine (manuel compris,
+Par compte, un jour quelconque de la semaine ISO locale à partir du lundi 06:00 **locales** (le
+rattrapage : un lundi manqué ou en échec est repris le mardi, 3 essais au plus) : le passage de la
+semaine se gagne dans le registre (`claim`, période = `week_period(local_today(zone, now))`,
+jamais `now.date()` : dimanche 23 h 30 à New York est déjà lundi UTC) et reste unique par
+semaine. Un relevé créé cette semaine (manuel compris,
 sauf un relevé en échec) ou aucun poste : passage `skipped`. Sinon le relevé part
 (`trigger="schedule"`) et le passage est `done` avec l'id du relevé et le lundi suivant ; si ce
 relevé échoue ensuite, le passage est rouvert et repris (3 essais au plus). Une panne
@@ -16,7 +18,7 @@ from typing import Literal
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.clock import WEEKDAYS, local_moment, local_today, user_zone, week_start
+from app.core.clock import local_moment, local_today, user_zone, week_start
 from app.core.errors import AppError
 from app.features.ledger.service.ledger import (
     Claim,
@@ -27,7 +29,7 @@ from app.features.ledger.service.ledger import (
     reopen,
     user_ids,
 )
-from app.features.ledger.service.periods import RADAR_TIME, RADAR_WEEKDAY, week_period
+from app.features.ledger.service.periods import RADAR_TIME, week_period
 from app.features.radar.repository import RadarRunRepository
 from app.features.radar.schemas import RadarRunIn
 from app.features.radar.service.runs import SESSION_CANCELLED, defaults, settle, start_run
@@ -56,14 +58,12 @@ class Due:
 
 
 async def _claim_due(rt: RadarRuntime, user_id: str, now: datetime) -> Due | None:
-    """Le passage gagné si ce compte est dû : lundi, 06:00 locales passées, période de la
-    semaine pas encore prise."""
+    """Le passage gagné si ce compte est dû : le lundi 06:00 locales de la semaine en cours est
+    passé (n'importe quel jour de la semaine), période de la semaine pas encore prise."""
     async with rt.session_factory() as db:
         zone = user_zone((await SettingsService(db, user_id).get()).timezone)
         today = local_today(zone, now)
-        if today.weekday() != WEEKDAYS[RADAR_WEEKDAY] or now < local_moment(
-            today, RADAR_TIME, zone
-        ):
+        if now < local_moment(week_start(today), RADAR_TIME, zone):
             return None
         period = week_period(today)
         await _reopen_if_run_failed(rt, db, user_id, period, now)

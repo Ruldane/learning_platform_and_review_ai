@@ -1,6 +1,7 @@
-"""Relevé hebdomadaire (P10, P13, D160) : le lundi à partir de 06:00 locales, une fois par semaine
-ISO **locale**, sauté si un relevé a déjà été créé cette semaine ou sans poste, repris après une
-panne de lancement, une panne pour un compte n'arrête pas les autres."""
+"""Relevé hebdomadaire (P10, P13, D160, D173) : du lundi 06:00 locales de la semaine en cours (un
+lundi manqué est rattrapé les jours suivants), une fois par semaine ISO **locale**, sauté si un
+relevé a déjà été créé cette semaine ou sans poste, repris après une panne de lancement, une panne
+pour un compte n'arrête pas les autres."""
 
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
@@ -58,16 +59,51 @@ async def test_weekly_once_per_local_week(radar: Radar, launcher: RecordingLaunc
     assert job.next_due_at == datetime(2026, 11, 23, 5, 0, tzinfo=UTC)  # lundi suivant 06:00 Paris
 
 
-async def test_weekly_runs_only_on_monday_from_six_local(
-    radar: Radar, launcher: RecordingLauncher
-) -> None:
+async def test_weekly_waits_for_monday_six_local(radar: Radar, launcher: RecordingLauncher) -> None:
     await _settings(radar, radar_role=ROLE)
-    sunday = datetime(2026, 11, 15, 12, 0, tzinfo=UTC)
     before_six = datetime(2026, 11, 16, 4, 59, tzinfo=UTC)  # 05:59 à Paris
-    assert await run_weekly_radar(radar.rt, sunday) == 0
     assert await run_weekly_radar(radar.rt, before_six) == 0
     assert await _jobs(radar) == [] and launcher.started == []  # rien n'a même été gagné
     assert await run_weekly_radar(radar.rt, before_six + timedelta(minutes=1)) == 1  # 06:00
+
+
+async def test_weekly_catches_up_on_tuesday_when_monday_was_missed(
+    radar: Radar, launcher: RecordingLauncher
+) -> None:
+    """La pile éteinte le lundi : le mardi (comme tout jour de la semaine) rattrape, une fois."""
+    await _settings(radar, radar_role=ROLE)
+    tuesday = MONDAY_9H + timedelta(days=1)
+    assert await run_weekly_radar(radar.rt, tuesday) == 1
+    [run] = await _runs(radar)
+    [job] = await _jobs(radar)
+    assert (run.period, job.period, job.status) == ("2026-W47", "2026-W47", "done")
+    assert (
+        await run_weekly_radar(radar.rt, tuesday + timedelta(days=4)) == 0
+    )  # dimanche : déjà pris
+    assert len(launcher.started) == 1
+
+
+async def test_weekly_no_second_run_on_tuesday_after_a_monday_success(
+    radar: Radar, launcher: RecordingLauncher
+) -> None:
+    await _settings(radar, radar_role=ROLE)
+    assert await run_weekly_radar(radar.rt, MONDAY_9H) == 1
+    await _end_run(radar)
+    assert await run_weekly_radar(radar.rt, MONDAY_9H + timedelta(days=1)) == 0
+    assert len(launcher.started) == 1 and len(await _runs(radar)) == 1
+
+
+async def test_weekly_failed_monday_run_is_retried_within_the_week(
+    radar: Radar, launcher: RecordingLauncher
+) -> None:
+    await _settings(radar, radar_role=ROLE)
+    assert await run_weekly_radar(radar.rt, MONDAY_9H) == 1
+    [job] = await _jobs(radar)
+    await _kill_session(radar, job.ref_id or "")
+    assert await run_weekly_radar(radar.rt, MONDAY_9H + timedelta(days=1)) == 1  # mardi : repris
+    [job] = await _jobs(radar)
+    assert (job.status, job.attempts) == ("done", 2)
+    assert [run.status for run in await _runs(radar)] == ["failed", "running"]
 
 
 async def test_weekly_skipped_after_manual_run(radar: Radar, launcher: RecordingLauncher) -> None:
@@ -124,25 +160,21 @@ async def test_weekly_period_is_the_local_week_not_the_utc_day(
     radar: Radar, launcher: RecordingLauncher
 ) -> None:
     """Lundi 06:30 à Auckland est encore dimanche en UTC (semaine ISO 46) : le relevé et le
-    passage portent la semaine locale 47. Dimanche 23 h 30 à New York est déjà lundi UTC : aucun
-    relevé, ce n'est pas lundi chez elle."""
+    passage portent la semaine locale 47. Au même instant, dimanche 12:30 à New York : semaine
+    locale 46 (rattrapage de la semaine en cours), jamais la semaine du jour UTC."""
     await _settings(radar, ME, radar_role=ROLE, timezone="Pacific/Auckland")
     await _settings(radar, OTHER, radar_role=ROLE, timezone="America/New_York")
-    auckland_monday = datetime(2026, 11, 15, 17, 30, tzinfo=UTC)
-    assert auckland_monday.isocalendar().week == 46
-    assert await run_weekly_radar(radar.rt, auckland_monday) == 1
-    [run] = await _runs(radar)
-    [job] = await _jobs(radar)
-    assert (run.period, job.period) == ("2026-W47", "2026-W47")
-    assert await _runs(radar, OTHER) == [] and await _jobs(radar, OTHER) == []
-    new_york_sunday = datetime(2026, 11, 16, 4, 30, tzinfo=UTC)  # dimanche 23:30 à New York
-    assert new_york_sunday.isocalendar().week == 47  # lundi UTC
-    assert await run_weekly_radar(radar.rt, new_york_sunday) == 0
-    assert await _runs(radar, OTHER) == [] and await _jobs(radar, OTHER) == []
-    new_york_monday = datetime(2026, 11, 16, 11, 30, tzinfo=UTC)  # lundi 06:30 à New York
-    assert await run_weekly_radar(radar.rt, new_york_monday) == 1
-    [york] = await _runs(radar, OTHER)
-    assert york.period == "2026-W47"
+    instant = datetime(2026, 11, 15, 17, 30, tzinfo=UTC)
+    assert instant.isocalendar().week == 46
+    assert await run_weekly_radar(radar.rt, instant) == 2
+    [run], [job] = await _runs(radar), await _jobs(radar)
+    assert (run.period, job.period) == ("2026-W47", "2026-W47")  # lundi 06:30 à Auckland
+    [york], [york_job] = await _runs(radar, OTHER), await _jobs(radar, OTHER)
+    assert (york.period, york_job.period) == ("2026-W46", "2026-W46")  # dimanche à New York
+    # Dimanche 23:30 à New York est déjà lundi en UTC (semaine 47) : le passage de New York reste
+    # celui de sa semaine locale, il n'en gagne pas un second.
+    assert await run_weekly_radar(radar.rt, datetime(2026, 11, 16, 4, 30, tzinfo=UTC)) == 0
+    assert len(await _jobs(radar, OTHER)) == 1
 
 
 async def test_weekly_launch_failure_is_recorded_then_retried(

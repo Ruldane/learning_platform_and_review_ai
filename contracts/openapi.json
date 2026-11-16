@@ -2316,6 +2316,14 @@
             ],
             "title": "Session Id"
           },
+          "unavailable": {
+            "description": "Les rubriques dont la source était en panne à la création (vides ce jour).",
+            "items": {
+              "type": "string"
+            },
+            "title": "Unavailable",
+            "type": "array"
+          },
           "week": {
             "anyOf": [
               {
@@ -9678,10 +9686,10 @@
           "finished_at",
           "error_code",
           "read_count",
+          "not_postings",
           "blocked_count",
           "analyzed",
           "low_sample",
-          "not_postings",
           "not_analyzed",
           "blocked_domains",
           "ranking",
@@ -9738,6 +9746,10 @@
             "title": "Low Sample",
             "type": "boolean"
           },
+          "not_postings": {
+            "title": "Not Postings",
+            "type": "integer"
+          },
           "read_count": {
             "title": "Read Count",
             "type": "integer"
@@ -9778,6 +9790,7 @@
           "finished_at",
           "error_code",
           "read_count",
+          "not_postings",
           "blocked_count",
           "analyzed",
           "low_sample"

@@ -6,10 +6,12 @@ import asyncio
 from datetime import UTC, datetime, timedelta
 
 import httpx
+import pytest
 from fastapi import FastAPI
 from sqlalchemy import update
 
 from app.db.models.program import Module
+from app.features.projects.service import briefs
 from app.features.projects.service.briefs import ensure_project_briefs
 from tests.features.projects.support import API, WEEK_1, WEEK_2, Env
 from tests.features.study.conftest import seed
@@ -35,6 +37,23 @@ async def test_week_start_creates_project_and_brief_session(env: Env) -> None:
     env.at(WEEK_2)  # la semaine suivante : le second module a son projet
     assert await ensure_project_briefs(env.rt, WEEK_2) == 1
     assert len(await env.projects()) == 2 and len(_briefs(env)) == 2
+
+
+async def test_a_pass_launches_at_most_three_briefs_oldest_weeks_first(
+    env: Env, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(briefs, "MAX_NEW_PER_PASS", 1)  # deux modules : un par passage
+    env.at(WEEK_2)
+    assert await ensure_project_briefs(env.rt, WEEK_2) == 1
+    [row] = await env.projects()
+    assert row.module_id == env.modules[0] and len(_briefs(env)) == 1  # la semaine 1 d'abord
+    assert await ensure_project_briefs(env.rt, WEEK_2) == 1  # le passage suivant : le reste
+    assert len(await env.projects()) == 2 and len(_briefs(env)) == 2
+    assert await ensure_project_briefs(env.rt, WEEK_2) == 0
+
+
+def test_the_cap_is_three_per_pass() -> None:
+    assert briefs.MAX_NEW_PER_PASS == 3
 
 
 async def test_concurrent_passes_create_one_project_and_one_session(env: Env) -> None:

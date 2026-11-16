@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.daily import Brief
 from app.features.brief.repository import BriefRepository
-from app.features.brief.service import ensure
+from app.features.brief.service import ensure, sections
 from app.features.brief.service.ensure import ensure_today
 from app.features.brief.service.runtime import BriefRuntime
 from app.features.brief.service.sections import build_sections
@@ -157,3 +157,21 @@ async def test_launch_failure_of_any_kind_makes_the_advice_unavailable(
     monkeypatch.setattr(env.launcher, "start", broken)
     body = await get_today(client)
     assert body["advice_status"] == "unavailable" and body["block"] is None
+
+
+async def test_one_failing_rubric_is_unavailable_not_a_500(
+    client: httpx.AsyncClient, env: Env, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Une source en panne vide sa rubrique et la nomme ; les autres rubriques restent (D173)."""
+    await add_cards(env, 3)
+
+    async def boom(*args: Any, **kwargs: Any) -> Any:
+        raise RuntimeError("source en panne")
+
+    monkeypatch.setattr(sections, "_reminders", boom)
+    body = await get_today(client)
+    assert body["reminders"] == {"due": 0, "items": []}
+    assert body["unavailable"] == ["reminders"]
+    assert body["reviews"]["queue"] == 3  # la rubrique voisine est intacte
+    [row] = await briefs(env)
+    assert row.sections["unavailable"] == ["reminders"]

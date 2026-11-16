@@ -25,10 +25,13 @@ def _plural(number: int, one: str, many: str) -> str:
 
 
 def summary_text(outcome: ReviewOutcome) -> str:
-    """« Projet validé : 4 brouillons prêts, 1 à vérifier. » ou « Projet à reprendre : 2 critères
-    sur 5 non atteints. » : des nombres comptés par le code, aucun texte du projet."""
+    """« Projet validé : 4 brouillons prêts, 1 à vérifier. » (ou « brouillons indisponibles. ») ou
+    « Projet à reprendre : 2 critères sur 5 non atteints. » : des nombres comptés par le code,
+    aucun texte du projet."""
     if outcome.verdict == "validated":
         drafts = outcome.drafts or []
+        if not drafts:  # le premier appel des brouillons a échoué : l'évaluation reste
+            return "Projet validé : brouillons indisponibles."
         ready = sum(draft.status == "ready" for draft in drafts)
         text = f"Projet validé : {_plural(ready, 'brouillon prêt', 'brouillons prêts')}"
         return f"{text}, {len(drafts) - ready} à vérifier." if len(drafts) > ready else f"{text}."

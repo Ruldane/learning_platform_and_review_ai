@@ -91,7 +91,9 @@ class JobRunRepository(UserScopedRepository[JobRun]):
 
     async def reopen_done(self, run_id: str, attempt: int, now: datetime, code: str) -> bool:
         """Un passage `done` dont le travail lancé a échoué repasse en `failed` (essai
-        `attempt` seulement) : `claim` peut le reprendre, dans la limite des essais."""
+        `attempt` seulement) : `claim` peut le reprendre, dans la limite des essais.
+        `finished_at` passe à `now` : le fil d'activité date l'échec de sa réouverture, pas du
+        lancement."""
         stmt = (
             update(JobRun)
             .where(
@@ -100,7 +102,7 @@ class JobRunRepository(UserScopedRepository[JobRun]):
                 JobRun.status == "done",
                 JobRun.attempts == attempt,
             )
-            .values(status="failed", error_code=code, updated_at=now)
+            .values(status="failed", error_code=code, finished_at=now, updated_at=now)
         )
         return _changed(await self.session.execute(stmt))
 

@@ -2,7 +2,7 @@
 (jamais sur une durée : chaque attente sonde un état, avec un délai maximal), lectures."""
 
 import asyncio
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 from langgraph.checkpoint.base import BaseCheckpointSaver
@@ -19,7 +19,7 @@ from app.providers.llm.fake import FakeLlmProvider
 
 type Factory = async_sessionmaker[AsyncSession]
 
-TIMEOUT = 5.0
+TIMEOUT = 30.0  # l'attente commune : sous la charge de toute la suite, 5 s ne suffisaient pas
 
 
 class _FakeChoice:
@@ -51,6 +51,14 @@ def fake_llm(replies: list[str], *, key: str | None = "fake-key") -> LlmFactory:
 async def wait_until(predicate: Callable[[], bool]) -> None:
     async with asyncio.timeout(TIMEOUT):
         while not predicate():
+            await asyncio.sleep(0.01)
+
+
+async def wait_true(check: Callable[[], Awaitable[bool]]) -> None:
+    """Attend qu'une vérification asynchrone devienne vraie, avec la même attente que
+    `wait_status` (`TIMEOUT`)."""
+    async with asyncio.timeout(TIMEOUT):
+        while not await check():
             await asyncio.sleep(0.01)
 
 

@@ -2,7 +2,6 @@
 sur 100 et garde les sources retenues en mémoire (faux LLM, faux moteurs, vraie base, aucun
 réseau)."""
 
-import asyncio
 from typing import Any
 
 from app.agents.nodes.scout.assess import UNSCORED_REASON
@@ -27,7 +26,7 @@ from tests.agents.graphs.web_support import (
     score,
     script_web,
 )
-from tests.agents.runtime.runner_helpers import all_events, wait_status, wait_until
+from tests.agents.runtime.runner_helpers import all_events, wait_status, wait_true, wait_until
 from tests.features.research.conftest import set_settings
 
 MARKER = "<<<CONTENU_NON_FIABLE"
@@ -273,9 +272,10 @@ async def test_web_research_replay_does_not_duplicate_sources(
 
 
 async def _wait_sources(web: Web, user_id: str, sid: str, count: int) -> None:
-    async with asyncio.timeout(5):
-        while len(await _sources(web, user_id, sid)) < count:
-            await asyncio.sleep(0.01)
+    async def enough() -> bool:
+        return len(await _sources(web, user_id, sid)) >= count
+
+    await wait_true(enough)
 
 
 async def test_gateway_pages_of_another_user_are_not_visible(

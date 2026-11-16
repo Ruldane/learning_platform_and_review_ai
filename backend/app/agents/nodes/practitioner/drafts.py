@@ -12,7 +12,9 @@ Un brouillon fautif repart au modèle **une seule fois**, avec tous les termes n
 longueur) ; les brouillons déjà propres sont gardés. Ce qui reste après l'essai est rangé « à
 vérifier » avec ses termes (`flags`). Le nouvel essai est un nœud à part (`redo`, son propre
 délai) : toute panne, quelle qu'elle soit, garde le premier jet « à vérifier ». L'évaluation
-validée n'est pas perdue.
+validée n'est pas perdue. Le premier appel a lui aussi son propre délai (`DRAFTS_BUDGET_S`) : s'il
+échoue (fournisseur, format, plafond de jetons, délai), l'évaluation validée est rangée **sans
+brouillons** (« brouillons indisponibles »), jamais perdue (D173, D165 n° 5).
 
 Journaux : identifiants et nombres, jamais un brouillon ni un terme (17.2)."""
 
@@ -61,6 +63,7 @@ AGENT = "practitioner"
 ASK = "Écris les brouillons du projet."
 NONE = "(aucun)"
 RETRY_BUDGET_S = 90.0  # son propre délai, plus court que `node_timeout` (120 s)
+DRAFTS_BUDGET_S = 100.0  # le premier appel : son propre délai, sous `node_timeout`
 LANGUAGES = {"fr": "français", "en": "anglais"}
 RETRY = (
     "Ces éléments ne figurent ni dans la description de January, ni dans les compétences du "
@@ -169,14 +172,25 @@ def make_drafts(deps: GraphDeps) -> Node:
         project_id = state["project_id"]
         inputs = await deps.ports.projects.review_inputs(deps.user_id, project_id)
         messages: list[BaseMessage] = [SystemMessage(prompt_of(inputs)), HumanMessage(ASK)]
-        first = await structured_call(
-            await _model(deps),
-            ProjectDrafts,
-            messages,
-            agent=AGENT,
-            step="brouillons",
-            intent="j'écris les brouillons du projet",
-        )
+        try:
+            async with asyncio.timeout(DRAFTS_BUDGET_S):
+                first = await structured_call(
+                    await _model(deps),
+                    ProjectDrafts,
+                    messages,
+                    agent=AGENT,
+                    step="brouillons",
+                    intent="j'écris les brouillons du projet",
+                )
+        except Exception as exc:  # les brouillons sont facultatifs : l'évaluation validée reste
+            logger.info(
+                "Brouillons impossibles : session %s, projet %s, cause %s",
+                deps.session_id,
+                project_id,
+                _code(exc),
+            )
+            outcome = from_state(state["outcome"])
+            return {"outcome": to_state(replace(outcome, drafts=[])), "retry_needed": False}
         found = check(first, _reference(inputs), inputs.brief.title)
         logger.info(
             "Brouillons écrits : session %s, projet %s, %d à vérifier avant le nouvel essai",

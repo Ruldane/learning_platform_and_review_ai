@@ -221,6 +221,32 @@ async def test_the_verdict_is_the_codes_not_the_outcomes(
     assert row.status == "to_redo" and row.drafts == {} and not await env.levels(*SKILLS)
 
 
+async def test_a_validated_outcome_without_drafts_is_kept_validated(
+    env: Env, store: AgentProjectStore
+) -> None:
+    """Les brouillons indisponibles (premier appel en échec) ne coûtent pas la validation (D173)."""
+    pid = await env.add_project(status="reviewing", submissions=[env.last_submission()])
+    await store.save_review(env.user_id, "s1", pid, outcome(drafts=[]))
+    row = await env.row(pid)
+    assert row.status == "validated" and row.drafts == {} and row.validated_at == NOW
+    assert await env.levels(*SKILLS)
+
+
+async def test_a_stray_result_index_never_validates_what_the_graph_judged_to_redo(
+    env: Env, store: AgentProjectStore
+) -> None:
+    """Le parcours juge « à reprendre » (un résultat hors énoncé) : le port reçoit les 4 résultats
+    rangés, tous atteints, mais ne valide pas (D173) : ni brouillons, ni compétence prouvée."""
+    pid = await env.add_project(status="reviewing", submissions=[env.last_submission()])
+    good = outcome()
+    judged = type(good)("to_redo", good.results, good.feedback, good.repo_status, None)
+    await store.save_review(env.user_id, "s1", pid, judged)
+    row = await env.row(pid)
+    assert row.status == "to_redo" and row.drafts == {} and row.validated_at is None
+    assert row.evaluation is not None and row.evaluation["verdict"] == "to_redo"
+    assert not await env.levels(*SKILLS)
+
+
 async def test_other_users_project_is_unknown_to_the_port(
     env: Env, store: AgentProjectStore
 ) -> None:

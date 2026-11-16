@@ -46,6 +46,7 @@ def out_of(row: Brief) -> BriefOut:
             "offers": sections["offers"],
             "week": sections.get("week"),
             "resource": row.resource or None,
+            "unavailable": sections.get("unavailable", []),
             "advice": advice,
             "advice_status": row.advice_status,
             "session_id": row.session_id,

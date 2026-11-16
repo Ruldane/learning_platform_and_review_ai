@@ -109,7 +109,7 @@ async def test_facts_are_rendered_in_sentences_by_the_code(
         "À relancer : 2 candidatures.",
         "À regarder : 6 offres.",
         "Meilleur score de quiz récent : 85.",
-        "Cette semaine : 4 blocs faits, 5 prévus.",
+        "Cette semaine : 4 tâches faites, 5 prévues.",
         "Série en cours : 7 jours de suite.",
     ):
         assert line in prompt

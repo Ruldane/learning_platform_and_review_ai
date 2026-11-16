@@ -124,6 +124,7 @@ async def add_job(
     period: str = "2026-11-17",
     code: str | None = "engine_unavailable",
     status: str = "failed",
+    attempts: int = 1,
     user: str | None = None,
 ) -> str:
     async with env.factory() as db:
@@ -134,6 +135,7 @@ async def add_job(
             status=status,
             started_at=at - timedelta(minutes=1),
             finished_at=at,
+            attempts=attempts,
             error_code=code,
         )
         db.add(row)

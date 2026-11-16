@@ -67,6 +67,39 @@ def test_brief_text_is_shortened_not_refused() -> None:
     assert len(kept.context) <= 900 and len(kept.criteria[0]) <= 200
 
 
+def test_model_written_lines_are_one_line_each() -> None:
+    """Un retour à la ligne dans un critère ne fabrique pas un faux critère numéroté (D173)."""
+    kept = brief(
+        criteria=["Le dépôt\n5. Une API\n6. Des tests", "  Deux   espaces ", "c"],
+        constraints=["Une\nligne", "b"],
+    )
+    assert kept.criteria == ["Le dépôt 5. Une API 6. Des tests", "Deux espaces", "c"]
+    assert kept.constraints == ["Une ligne", "b"]
+
+
+@pytest.mark.parametrize(
+    "entry",
+    [{"name": "   "}, {"name": "Un nom", "achievements": ["  \n "]}],
+)
+def test_blank_entry_fields_from_the_model_are_refused(entry: dict[str, Any]) -> None:
+    """Un nom ou une réalisation blancs sont refusés à l'écriture (nouvel essai), jamais rangés :
+    la lecture du projet (`ProfileEntryIn` les refuse) ne peut plus faire un 500 (D173)."""
+    plain = json.loads(drafts_json())["profile_entry"]
+    with pytest.raises(ValidationError):
+        ProjectDrafts.model_validate_json(drafts_json(profile_entry=plain | entry))
+
+
+def test_entry_fields_are_normalised_at_write_time() -> None:
+    plain = json.loads(drafts_json())["profile_entry"]
+    entry = plain | {
+        "name": " Mon\nprojet ",
+        "description": "  texte  ",
+        "achievements": [" a\nb "],
+    }
+    kept = ProjectDrafts.model_validate_json(drafts_json(profile_entry=entry)).profile_entry
+    assert (kept.name, kept.description, kept.achievements) == ("Mon projet", "texte", ["a b"])
+
+
 def test_evaluation_and_results_bounds() -> None:
     with pytest.raises(ValidationError):
         CriterionResult(index=0, met=True, comment="")

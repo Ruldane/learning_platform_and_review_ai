@@ -6,7 +6,7 @@ from datetime import timedelta
 import httpx
 from fastapi import FastAPI
 
-from tests.features.radar.support import NOW, Radar, link
+from tests.features.radar.support import NOW, Radar, finding, link
 from tests.features.skills.support import add_skill
 
 API = "/api/v1/radar"
@@ -84,10 +84,25 @@ async def test_list_is_recent_first_and_capped_at_twenty(
         "finished_at",
         "error_code",
         "read_count",
+        "not_postings",
         "blocked_count",
         "analyzed",
         "low_sample",
     }
+
+
+async def test_list_carries_the_not_postings_count(
+    client: httpx.AsyncClient, app: FastAPI, radar: Radar
+) -> None:
+    """L'historique dit le même nombre d'offres que le relevé : lues moins pas des offres (D173)."""
+    me = app.state.local_user_id
+    run_id = await radar.new_run(me)
+    await radar.read(run_id, 5, user=me)
+    items = [finding(f"p{n}", "Python", is_job_posting=n > 2) for n in range(1, 6)]
+    await radar.store.save_extraction(me, "s", run_id, items, [])
+    await radar.store.finalize(me, "s", run_id)
+    [listed] = (await client.get(f"{API}/runs")).json()
+    assert (listed["read_count"], listed["not_postings"]) == (5, 2)
 
 
 async def test_unknown_run_is_a_404(client: httpx.AsyncClient) -> None:

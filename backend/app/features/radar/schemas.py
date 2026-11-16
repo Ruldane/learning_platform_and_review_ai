@@ -72,6 +72,7 @@ class RadarRunSummary(BaseModel):
     finished_at: datetime | None
     error_code: str | None
     read_count: int
+    not_postings: int
     blocked_count: int
     analyzed: int
     low_sample: bool
@@ -83,7 +84,6 @@ class RadarRunOut(RadarRunSummary):
     mais pas analysées (extraction en échec, ou au-delà des 50 lues d'un relevé) : l'écart ne se
     cache jamais (« 55 lues, 50 analysées »)."""
 
-    not_postings: int
     not_analyzed: int
     blocked_domains: list[DomainCount]
     ranking: list[TrendOut]

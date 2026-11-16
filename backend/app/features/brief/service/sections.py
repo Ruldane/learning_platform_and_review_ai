@@ -5,8 +5,12 @@ lu dans une autre feature (leur service), figé en JSON dans le brief du jour.
 Une rubrique sans objet vaut `None` (aucun bloc prévu, aucun programme validé) ; les nombres
 (`reviews`, `reminders`) valent 0. `offers.items[*].key` (le lien normalisé) et `week.best_quiz`
 sont des détails internes du brief, jamais rendus par l'API : l'un nourrit « déjà montré » des 7
-jours suivants, l'autre les faits du conseil. Journaux : rien (les faits sont des données)."""
+jours suivants, l'autre les faits du conseil. Chaque rubrique est calculée à part (savepoint) : une
+source en panne rend la rubrique vide et la nomme dans `unavailable`, jamais une erreur 500 pour
+tout l'écran du matin (D173). Journaux : le nom de la rubrique et la classe de l'exception."""
 
+import logging
+from collections.abc import Awaitable
 from datetime import date
 from typing import Any
 
@@ -117,14 +121,43 @@ async def _week(
     return rubric
 
 
+logger = logging.getLogger(__name__)
+
+# Ce que vaut une rubrique dont la source est en panne : vide, jamais inventée.
+_EMPTY: dict[str, Any] = {
+    "block": None,
+    "reviews": {"queue": 0, "remaining": 0},
+    "reminders": {"due": 0, "items": []},
+    "offers": {"run_id": None, "items": []},
+    "week": None,
+}
+
+
+async def _isolated(db: AsyncSession, name: str, build: Awaitable[Any], failed: list[str]) -> Any:
+    """La rubrique `name`, dans son propre savepoint : en cas de panne, sa valeur vide et son nom
+    dans `failed` (la transaction reste valide pour les rubriques suivantes)."""
+    try:
+        async with db.begin_nested():
+            return await build
+    except Exception as exc:
+        logger.warning("Brief : rubrique %s indisponible (%s)", name, type(exc).__name__)
+        failed.append(name)
+        return _EMPTY[name]
+
+
 async def build_sections(
     rt: BriefRuntime, db: AsyncSession, user_id: str, today: date
 ) -> dict[str, Any]:
-    """Les rubriques du code (`BRIEF_KEYS`) du jour local `today`."""
-    return {
-        "block": await _block(db, user_id, today),
-        "reviews": await _reviews(rt, db, user_id),
-        "reminders": await _reminders(rt, user_id),
-        "offers": await _offers(db, user_id, today),
-        "week": await _week(rt, db, user_id, today),
+    """Les rubriques du code (`BRIEF_KEYS`) du jour local `today`, plus `unavailable` (les
+    rubriques en panne) seulement s'il y en a."""
+    failed: list[str] = []
+    sections: dict[str, Any] = {
+        "block": await _isolated(db, "block", _block(db, user_id, today), failed),
+        "reviews": await _isolated(db, "reviews", _reviews(rt, db, user_id), failed),
+        "reminders": await _isolated(db, "reminders", _reminders(rt, user_id), failed),
+        "offers": await _isolated(db, "offers", _offers(db, user_id, today), failed),
+        "week": await _isolated(db, "week", _week(rt, db, user_id, today), failed),
     }
+    if failed:
+        sections["unavailable"] = failed
+    return sections

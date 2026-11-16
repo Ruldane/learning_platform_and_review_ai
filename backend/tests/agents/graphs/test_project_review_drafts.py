@@ -182,14 +182,6 @@ async def test_drafts_prompt_frames_the_description(
     assert EVALUATE_ASK not in prompt
 
 
-async def test_invalid_drafts_fail_without_saving(
-    project_runner: MakeProject, project_store: FakeProjectStore
-) -> None:
-    run = await project_runner(project_models(evaluation=[all_met(4)], drafts=["non"] * 3))
-    await run.wait_status("failed")
-    assert project_store.outcome is None and project_store.review_saves == 0
-
-
 def two_kinds_drafts() -> str:
     """Un outil dans la ligne de CV, un chiffre et un autre outil dans le post : deux brouillons."""
     line = "Conçu une API de suivi de lecture conteneurisée avec Docker."

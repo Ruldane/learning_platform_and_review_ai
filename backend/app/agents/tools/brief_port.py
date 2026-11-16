@@ -40,8 +40,8 @@ class AdviceFacts:
     reminders_due: int  # relances de candidature à faire
     offers: int  # offres à regarder
     best_score: int | None  # meilleur score de quiz récent
-    week_planned: int  # blocs prévus cette semaine
-    week_done: int  # blocs faits cette semaine
+    week_planned: int  # tâches prévues cette semaine
+    week_done: int  # tâches faites cette semaine
     streak_days: int  # jours d'étude de suite
 
 

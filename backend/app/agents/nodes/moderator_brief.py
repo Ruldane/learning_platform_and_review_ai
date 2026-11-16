@@ -57,8 +57,8 @@ def _facts_fr(facts: AdviceFacts) -> list[str]:
         f"À relancer : {_plural(facts.reminders_due, 'candidature', 'candidatures')}.",
         f"À regarder : {_plural(facts.offers, 'offre', 'offres')}.",
         *score,
-        f"Cette semaine : {_plural(facts.week_done, 'bloc fait', 'blocs faits')}, "
-        f"{_plural(facts.week_planned, 'prévu', 'prévus')}.",
+        f"Cette semaine : {_plural(facts.week_done, 'tâche faite', 'tâches faites')}, "
+        f"{_plural(facts.week_planned, 'prévue', 'prévues')}.",
         f"Série en cours : {_plural(facts.streak_days, 'jour', 'jours')} de suite.",
     ]
 
@@ -77,7 +77,8 @@ def _facts_en(facts: AdviceFacts) -> list[str]:
         f"To follow up: {_plural(facts.reminders_due, 'application', 'applications')}.",
         f"To look at: {_plural(facts.offers, 'posting', 'postings')}.",
         *score,
-        f"This week: {facts.week_done} done out of {facts.week_planned} planned.",
+        f"This week: {_plural(facts.week_done, 'task', 'tasks')} done out of "
+        f"{facts.week_planned} planned.",
         f"Current streak: {_plural(facts.streak_days, 'day', 'days')} in a row.",
     ]
 

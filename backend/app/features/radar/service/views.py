@@ -44,6 +44,7 @@ def summary_out(row: RadarRun) -> RadarRunSummary:
         finished_at=row.finished_at,
         error_code=row.error_code,
         read_count=row.read_count,
+        not_postings=row.not_postings,
         blocked_count=row.blocked_count,
         analyzed=row.analyzed,
         low_sample=summary_of(row).low_sample,
@@ -81,7 +82,6 @@ async def run_out(db: AsyncSession, user_id: str, row: RadarRun) -> RadarRunOut:
     items: list[dict[str, Any]] = list(row.ranking)
     return RadarRunOut(
         **summary_out(row).model_dump(),
-        not_postings=row.not_postings,
         not_analyzed=_not_analyzed(row),
         blocked_domains=[
             DomainCount(domain=domain, count=int(number))
@@ -155,7 +155,13 @@ class RecentRun:
     id: str
     at: datetime
     read_count: int
+    not_postings: int
     blocked_count: int
+
+    @property
+    def offers_read(self) -> int:
+        """Les offres lues : les pages lisibles moins celles qui n'étaient pas des offres."""
+        return max(0, self.read_count - self.not_postings)
 
 
 async def recent_runs(
@@ -169,6 +175,7 @@ async def recent_runs(
             id=row.id,
             at=row.finished_at or row.created_at,
             read_count=row.read_count,
+            not_postings=row.not_postings,
             blocked_count=row.blocked_count,
         )
         for row in rows

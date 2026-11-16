@@ -13,14 +13,18 @@ et la référence d'honnêteté sont du code.
   profil : `text_claims` la lit en entier.
 - `draft_text` : le texte que `text_claims` contrôle, pour chaque brouillon.
 
-Les textes lus par January sont raccourcis (`Prose`, `ShortenToMax`) plutôt que refusés (D97) ; les
-plafonds en mots du plan sont posés en caractères (7,5 par mot) dans le schéma envoyé au modèle ;
-seul le post LinkedIn est compté en mots, par le code (`linkedin_words`)."""
+Les lignes écrites par le modèle (critères, contraintes, nom et réalisations de l'entrée de profil)
+sont ramenées à **une seule ligne** (`one_line`) avant toute vérification : un retour à la ligne ne
+fabrique jamais un faux critère numéroté, et une valeur blanche est refusée (nouvel essai) au lieu
+d'être rangée puis refusée à la lecture. Les textes lus par January sont raccourcis (`Prose`,
+`ShortenToMax`) plutôt que refusés (D97) ; les plafonds en mots du plan sont posés en caractères
+(7,5 par mot) dans le schéma envoyé au modèle ; seul le post LinkedIn est compté en mots, par le
+code (`linkedin_words`)."""
 
 from collections.abc import Sequence
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, BeforeValidator, Field
 
 from app.agents.runtime.prose import Prose, ShortenToMax
 from app.agents.tools.cv_schema import (
@@ -60,9 +64,25 @@ _LINE = 600  # taille d'une ligne de fait du profil (`Line.text`)
 _DESCRIPTION = 4_800  # 8 lignes de 600 : la description de 4 000 caractères tient en entier
 _MAX_LINES = 8  # `Project.achievements`
 
-Short = Annotated[str, Field(min_length=1, max_length=160), ShortenToMax()]
-Criterion = Annotated[str, Field(min_length=1, max_length=200), ShortenToMax()]
-Achievement = Annotated[str, Field(min_length=1, max_length=200), ShortenToMax()]
+
+def one_line(value: object) -> object:
+    """Le texte sur une seule ligne : blancs et retours à la ligne ramenés à une espace."""
+    return " ".join(value.split()) if isinstance(value, str) else value
+
+
+def _stripped(value: object) -> object:
+    return value.strip() if isinstance(value, str) else value
+
+
+Short = Annotated[
+    str, Field(min_length=1, max_length=160), ShortenToMax(), BeforeValidator(one_line)
+]
+Criterion = Annotated[
+    str, Field(min_length=1, max_length=200), ShortenToMax(), BeforeValidator(one_line)
+]
+Achievement = Annotated[
+    str, Field(min_length=1, max_length=200), ShortenToMax(), BeforeValidator(one_line)
+]
 PlanStep = Annotated[str, Field(min_length=1, max_length=120), ShortenToMax()]
 
 
@@ -92,8 +112,10 @@ class ProjectEvaluation(BaseModel):
 class ProfileEntryDraft(BaseModel):
     """L'entrée de projet que January peut ajouter à son profil (jamais sans son clic)."""
 
-    name: str = Field(min_length=1, max_length=120)
-    description: Annotated[str, Field(max_length=600), ShortenToMax()] = ""
+    name: Annotated[str, Field(min_length=1, max_length=120), BeforeValidator(one_line)]
+    description: Annotated[
+        str, Field(max_length=600), ShortenToMax(), BeforeValidator(_stripped)
+    ] = ""
     achievements: list[Achievement] = Field(default_factory=list, max_length=4)
 
 

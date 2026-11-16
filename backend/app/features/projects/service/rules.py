@@ -1,9 +1,8 @@
-"""Règles pures des mini projets (P1 à P3) : forme du rendu, verdict calculé par le code, début de
-la semaine d'un module. Rien ici n'importe la base ni une autre feature."""
+"""Règles pures des mini projets (P1 à P3) : forme du rendu, début de la semaine d'un module (le
+verdict est celui du moteur : `app.agents.tools.project_schema.verdict`). Rien ici n'importe la
+base ni une autre feature."""
 
-from collections.abc import Mapping, Sequence
 from datetime import date
-from typing import Any, Literal
 from urllib.parse import urlsplit
 
 DESCRIPTION_MAX = 4000
@@ -45,23 +44,6 @@ def submission_problems(
     if screenshots > SCREENSHOTS_MAX:
         problems.append("screenshots")
     return problems
-
-
-def verdict(criteria: int, results: Sequence[Mapping[str, Any]]) -> Literal["validated", "to_redo"]:
-    """`validated` si le relecteur a rendu exactement un résultat par critère (index 1 à
-    `criteria`) et que tous sont atteints (`met` vaut `True`) ; sinon `to_redo` : résultat
-    manquant, en double, hors bornes, sans index, ou aucun critère."""
-    if criteria < 1 or len(results) != criteria:
-        return "to_redo"
-    seen: set[int] = set()
-    for result in results:
-        index = result.get("index")
-        if isinstance(index, bool) or not isinstance(index, int):
-            return "to_redo"
-        if not 1 <= index <= criteria or index in seen or result.get("met") is not True:
-            return "to_redo"
-        seen.add(index)
-    return "validated"
 
 
 def week_started(week_start: date, today: date) -> bool:

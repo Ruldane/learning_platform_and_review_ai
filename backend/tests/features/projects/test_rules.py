@@ -1,7 +1,6 @@
-"""Règles pures des projets : forme du rendu, verdict, début de semaine (8.1, P1 à P3)."""
+"""Règles pures des projets : forme du rendu, début de semaine (8.1, P1 à P3)."""
 
 from datetime import date
-from typing import Any
 
 from app.features.projects.service.rules import (
     DESCRIPTION_MAX,
@@ -9,7 +8,6 @@ from app.features.projects.service.rules import (
     SCREENSHOT_BYTES,
     SCREENSHOTS_MAX,
     submission_problems,
-    verdict,
     week_started,
 )
 
@@ -49,34 +47,6 @@ def test_submission_screenshot_and_description_limits() -> None:
         "description",
         "screenshots",
     ]
-
-
-def res(index: int, met: bool = True) -> dict[str, Any]:
-    return {"index": index, "met": met, "comment": "ok"}
-
-
-def test_verdict_all_met() -> None:
-    assert verdict(3, [res(1), res(2), res(3)]) == "validated"
-    assert verdict(3, [res(3), res(1), res(2)]) == "validated"  # l'ordre importe peu
-
-
-def test_verdict_one_unmet_criterion() -> None:
-    assert verdict(3, [res(1), res(2, False), res(3)]) == "to_redo"
-
-
-def test_verdict_needs_every_criterion() -> None:
-    assert verdict(4, [res(1), res(2), res(3)]) == "to_redo"  # un critère manque
-    assert verdict(3, [res(1), res(2), res(2)]) == "to_redo"  # un index en double
-    assert verdict(3, [res(1), res(2), res(3), res(3)]) == "to_redo"
-    assert verdict(2, [res(1), res(2), res(3)]) == "to_redo"  # hors bornes
-    assert verdict(2, [res(0), res(1)]) == "to_redo"
-    assert verdict(2, [res(1), {"met": True}]) == "to_redo"  # sans index
-
-
-def test_verdict_never_validates_nothing() -> None:
-    assert verdict(0, []) == "to_redo"
-    assert verdict(3, []) == "to_redo"
-    assert verdict(1, [{"index": 1, "met": "yes"}]) == "to_redo"  # « atteint » est un booléen
 
 
 def test_week_started() -> None:

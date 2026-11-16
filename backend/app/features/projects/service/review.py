@@ -4,7 +4,9 @@ pas réécrite, et une évaluation qui n'attend plus (le projet n'est plus `revi
 session : statut corrigé, autre rendu) est ignorée.
 
 Le verdict est recalculé par le code (`verdict`) sur les résultats reçus : « validé » seulement si
-chaque critère a un seul résultat atteint. Validé : `validated_at`, les compétences du module
+chaque critère a un seul résultat atteint **et** que le parcours l'avait jugé validé (un résultat
+hors énoncé, écarté du port, ne peut pas faire valider ce que le parcours a jugé à reprendre,
+D173). Validé : `validated_at`, les compétences du module
 montées à `prouve` avec la preuve `project` (jamais plus bas), une ligne `project` au journal
 (`ref_key = project:{id}`) dans la même transaction ; puis, **hors transaction**, le reflet dans les
 acquis de la mémoire (auteur `practitioner`), refait au rejeu pour rattraper un arrêt. Les
@@ -51,7 +53,12 @@ def _evaluation(
     return {
         "session_id": session_id,
         "at": now_iso,
-        "verdict": code_verdict(criteria, outcome.results),
+        "verdict": (
+            "validated"
+            if outcome.verdict == "validated"
+            and code_verdict(criteria, outcome.results) == "validated"
+            else "to_redo"
+        ),
         "results": [result.model_dump(mode="json") for result in outcome.results],
         "feedback": outcome.feedback,
         "repo_status": outcome.repo_status,

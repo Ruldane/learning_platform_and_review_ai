@@ -3,8 +3,10 @@ chacune, encadrées comme non fiables) et en tire compétences, outils, niveau e
 contrôle ce qu'il rend avant de le ranger : une référence inconnue est ignorée, un outil absent du
 texte est retiré, un salaire dont les chiffres ne sont pas dans le texte est retiré. Un lot que le
 modèle ne sait pas rendre valide (après les nouveaux essais de `structured_call`) marque ses pages
-en échec d'extraction et la boucle continue. Une page absente de la réponse l'est de même : jamais
-une page laissée sans issue, jamais une boucle sans fin.
+en échec d'extraction et la boucle continue ; une autre panne du fournisseur (délai, limite) sur un
+lot le marque de même sans perdre les lots déjà rangés, et l'extraction s'arrête après
+`MAX_FAILED_BATCHES` lots en panne (le reste est dit « lu, pas analysé », D173). Une page absente
+de la réponse l'est de même : jamais une page laissée sans issue, jamais une boucle sans fin.
 
 La boucle relit `context` du port à chaque passage : une extraction déjà rangée n'est jamais
 refaite après un redémarrage (SPEC 9.4). Au plus `MAX_READABLE` pages sont extraites (10 appels).
@@ -23,6 +25,7 @@ from app.agents.runtime.deps import GraphDeps
 from app.agents.runtime.invoke import node_timeout
 from app.agents.runtime.structured import structured_call
 from app.agents.state.market_radar import MarketRadarState
+from app.agents.tools.brief_port import MODEL_UNAVAILABLE_CODES
 from app.agents.tools.posting_schema import contains_term, normalize_term
 from app.agents.tools.radar_port import MAX_READABLE, PostingPage
 from app.agents.tools.radar_schema import (
@@ -38,6 +41,7 @@ from app.core.errors import AppError
 AGENT = "analyst"
 RADAR_REQUEST = "Extrais ces offres du relevé du marché."  # les modèles scriptés s'y reconnaissent
 INVALID_CODE = "structured_output_invalid"
+MAX_FAILED_BATCHES = 2  # lots en panne du fournisseur après lesquels l'extraction s'arrête
 
 logger = logging.getLogger(__name__)
 
@@ -114,13 +118,14 @@ def pending_pages(read: list[PostingPage], extracted: frozenset[str]) -> list[Po
     return [page for page in readable if page.ref not in extracted]
 
 
-async def _ask(deps: GraphDeps, batch: list[PostingPage]) -> RadarBatch | None:
-    """Le lot demandé à l'Analyste ; `None` si sa réponse reste invalide après les nouveaux essais
-    (les autres pannes remontent)."""
+async def _ask(deps: GraphDeps, batch: list[PostingPage]) -> tuple[RadarBatch | None, bool]:
+    """`(le lot demandé à l'Analyste, panne du fournisseur ?)`. `None` si sa réponse reste invalide
+    après les nouveaux essais, ou si le fournisseur est en panne (délai, limite : second
+    élément vrai). Un modèle absent (clé disparue) remonte : le relevé échoue."""
     model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
     prompt = render_prompt(AGENT, **radar_vars(batch))
     try:
-        return await structured_call(
+        found = await structured_call(
             model,
             RadarBatch,
             [SystemMessage(prompt), HumanMessage(RADAR_REQUEST)],
@@ -129,9 +134,10 @@ async def _ask(deps: GraphDeps, batch: list[PostingPage]) -> RadarBatch | None:
             intent="je lis les offres du relevé",
         )
     except AppError as exc:
-        if exc.code != INVALID_CODE:
+        if exc.code in MODEL_UNAVAILABLE_CODES:
             raise
-        return None
+        return None, exc.code != INVALID_CODE
+    return found, False
 
 
 def make_extract(deps: GraphDeps) -> Node:
@@ -145,7 +151,7 @@ def make_extract(deps: GraphDeps) -> Node:
         if not pending:
             return {"extract_done": True}
         batch = pending[:BATCH]
-        found = await _ask(deps, batch)
+        found, provider_down = await _ask(deps, batch)
         items: list[RadarFinding] = []
         failed, ignored = [page.ref for page in batch], 0
         if found is not None:
@@ -159,7 +165,11 @@ def make_extract(deps: GraphDeps) -> Node:
             len(failed),
             ignored,
         )
-        return {"extract_done": len(pending) <= len(batch)}
+        down = state.get("failed_batches", 0) + provider_down
+        return {
+            "extract_done": len(pending) <= len(batch) or down >= MAX_FAILED_BATCHES,
+            "failed_batches": down,
+        }
 
     return extract
 

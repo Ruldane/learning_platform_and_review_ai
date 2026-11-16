@@ -3052,6 +3052,11 @@ export interface components {
             reviews: components["schemas"]["ReviewsRubric"];
             /** Session Id */
             session_id: string | null;
+            /**
+             * Unavailable
+             * @description Les rubriques dont la source était en panne à la création (vides ce jour).
+             */
+            unavailable?: string[];
             week: components["schemas"]["WeekRubric"] | null;
         };
         /**
@@ -5695,6 +5700,8 @@ export interface components {
             id: string;
             /** Low Sample */
             low_sample: boolean;
+            /** Not Postings */
+            not_postings: number;
             /** Read Count */
             read_count: number;
             /** Role */
