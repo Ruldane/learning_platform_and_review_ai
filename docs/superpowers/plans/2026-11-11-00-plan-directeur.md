@@ -306,7 +306,7 @@ Hors de la spec d'origine : une fonctionnalité par phase, dans l'ordre d'import
 
 | Phase | Fonctionnalité | Idée | S'appuie sur |
 | --- | --- | --- | --- |
-| 10 | IDE avec professeur en temps réel | Éditeur (Monaco) et terminal (xterm) dans le navigateur ; Python et JS dans un conteneur isolé par utilisateur (`uv`, `npm`, réseau limité aux dépôts de paquets, limites CPU / mémoire / temps) ; agent « professeur » en mode guide (explique les erreurs, indices gradués, ne touche pas au code) ou binôme (annotations en marge, corrections proposées à accepter) ; intervient à l'exécution, à l'erreur ou sur demande | Phases 0 à 5 (Tuteur, carte, fiches, journal) |
+| 10 | IDE avec professeur en temps réel | Éditeur (Monaco) et terminal (xterm) dans le navigateur ; Python et JS dans un conteneur isolé par utilisateur (`uv`, `npm`, réseau limité aux dépôts de paquets, limites CPU / mémoire / temps) ; agent « professeur » en mode guide (explique les erreurs, indices gradués, ne touche pas au code) ou binôme (annotations en marge, corrections proposées à accepter) ; intervient à l'exécution, à l'erreur ou sur demande. **Plus un serveur MCP** (demande du 2026-11-16) : Claude Code ou Codex pilotent les features de Tremplin (cours, offres, contacts, candidatures…) à la place des agents internes, avec des pouvoirs limités (voir plus bas) | Phases 0 à 5 (Tuteur, carte, fiches, journal) ; phase 9 (connexion, isolation) pour le MCP |
 | 11 | Extension navigateur « Capturer l'offre » | Un clic sur une page d'offre (LinkedIn, Indeed, Welcome to the Jungle…) envoie son texte à Tremplin | Phase 6 (offres) |
 | 12 | Mode « Explique-moi » (Feynman) | January enseigne un concept à un agent élève naïf qui repère les trous ; bilan de maîtrise | Phase 5 (Tuteur, carte) |
 | 13 | Alertes d'offres compatibles | Le radar hebdomadaire cherche des offres, calcule le score de match et l'écart, envoie les 5 meilleures | Phases 6 et 8 |
@@ -329,6 +329,21 @@ Le professeur doit rester peu coûteux en appels API. Ces règles sont fixées d
 - **Plafond par séance :** un plafond de tokens par séance et un autre par jour, réglables, avec la consommation affichée à l'utilisateur. Une fois le plafond atteint, le professeur passe en mode « sur demande ».
 - **Anti-répétition :** une même erreur au même endroit ne déclenche pas une nouvelle explication. Le professeur renvoie à la précédente.
 - **Mesure :** chaque appel journalise uniquement son identifiant de séance, le modèle et les tokens. La phase se termine par une séance réelle mesurée, comparée à la cible d'environ 150 000 tokens en entrée et 15 000 en sortie par heure.
+
+#### Phase 10 — serveur MCP, sécurité maximale (exigence du 2026-11-16)
+
+Un serveur MCP donne à Claude Code ou à Codex l'accès aux features de Tremplin (lire et modifier un cours, ajouter une offre, ajouter un contact à une candidature, cocher une tâche, lancer un graphe…). L'agent externe pense, l'application garde les données et les règles. **Il n'a jamais les pleins pouvoirs.** Règles fixées dès la conception :
+
+- **Liste blanche explicite :** chaque feature déclare ses outils MCP dans son manifeste (registre, comme `FEATURE_ROUTERS`). Aucune route n'est exposée automatiquement à partir du contrat OpenAPI.
+- **Trois niveaux d'outils :** lecture ; écriture réversible (ajout, modification, avec historique et annulation) ; actions irréversibles ou sensibles. Le dernier niveau n'est **jamais exposé** au MCP : suppression, export, réglages, clés d'API, connexion et `ALLOWED_EMAILS`, validation du profil maître, envoi d'un message.
+- **Ce qui exige la validation de January :** un outil MCP ne crée que des brouillons ou des propositions pour le profil maître et les pièces envoyées. Ces brouillons attendent dans l'application (« À confirmer ») ; rien n'est validé par l'agent externe.
+- **Jeton propre au MCP :** créé, limité à certaines features (lecture seule par défaut), avec une date d'expiration, et révocable par January dans les réglages. Il est stocké haché et n'est jamais journalisé. Il est distinct du cookie de session. Un bouton coupe tout l'accès MCP.
+- **Mêmes règles que l'interface :** chaque outil appelle le service de la feature (validation, contrôle d'honnêteté, isolation par utilisateur). Aucun SQL brut, aucun accès aux fichiers ni au shell, aucune clé ni secret dans une réponse.
+- **Limites :** nombre d'appels et d'écritures par minute et par jour, avec une 429 lisible au-delà.
+- **Journal :** chaque appel MCP est journalisé (outil, identifiants, code de résultat, durée, jamais le contenu) et visible dans l'écran « journal des agents ».
+- **Données non fiables :** les textes venus du web (offres, pages lues) sont renvoyés marqués comme données, jamais comme consignes (injection de prompt).
+- **Réseau :** d'abord en local seulement (127.0.0.1). L'accès à distance viendra plus tard, avec OAuth.
+- **Fin de phase :** des tests d'abus (outil hors liste, jeton expiré ou révoqué, feature non autorisée, tentative de validation du profil, injection dans une offre) et un essai réel avec Claude Code sur une pile jetable.
 
 #### Liens entre les phases
 
