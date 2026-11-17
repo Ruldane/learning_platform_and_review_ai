@@ -1,6 +1,7 @@
 import { agents } from "./messages/agents";
 import { applications } from "./messages/applications";
 import { appMessages } from "./messages/app";
+import { auth } from "./messages/auth";
 import { capture } from "./messages/capture";
 import { cv } from "./messages/cv";
 import { demo } from "./messages/demo";
@@ -27,6 +28,7 @@ import { study } from "./messages/study";
  */
 export const fr = {
   ...appMessages,
+  auth,
   session,
   agents,
   demo,

@@ -1,8 +1,9 @@
 import { render, screen, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { createMemoryRouter, RouterProvider } from "react-router";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { apiBaseUrl } from "@/shared/api/client";
+import { authApi, camille } from "@/test/authApi";
 import { createQueryWrapper } from "@/test/queryWrapper";
 import { server } from "@/test/server";
 import { AppLayout } from "./AppLayout";
@@ -26,6 +27,9 @@ vi.mock("../../registry", async (importOriginal) => {
 });
 
 describe("AppLayout", () => {
+  // La porte de connexion (première feature) lit `me` avant de montrer la mise en page.
+  beforeEach(() => server.use(...authApi({ me: camille }).handlers));
+
   it("rend le lien d'évitement, la navigation, le voyant et le contenu", async () => {
     server.use(
       http.get(`${apiBaseUrl}/api/v1/health`, () =>
@@ -37,7 +41,7 @@ describe("AppLayout", () => {
     ]);
     render(<RouterProvider router={router} />, { wrapper: createQueryWrapper() });
 
-    expect(screen.getByRole("link", { name: "Aller au contenu" })).toHaveAttribute(
+    expect(await screen.findByRole("link", { name: "Aller au contenu" })).toHaveAttribute(
       "href",
       "#contenu",
     );
@@ -49,7 +53,7 @@ describe("AppLayout", () => {
     expect(await screen.findByText("Tous les services répondent")).toBeInTheDocument();
   });
 
-  it("donne plus de largeur à une page qui le demande (handle wide), pas aux autres", () => {
+  it("donne plus de largeur à une page qui le demande (handle wide), pas aux autres", async () => {
     server.use(
       http.get(`${apiBaseUrl}/api/v1/health`, () =>
         HttpResponse.json({ status: "ok", checks: {} }),
@@ -69,11 +73,12 @@ describe("AppLayout", () => {
       { initialEntries: ["/large"] },
     );
     render(<RouterProvider router={router} />, { wrapper: createQueryWrapper() });
+    await screen.findByText("Large");
     expect(screen.getByRole("main").className).toContain("max-w-7xl");
     expect(screen.getByRole("main").className).not.toContain("max-w-4xl");
   });
 
-  it("garde la colonne étroite par défaut", () => {
+  it("garde la colonne étroite par défaut", async () => {
     server.use(
       http.get(`${apiBaseUrl}/api/v1/health`, () =>
         HttpResponse.json({ status: "ok", checks: {} }),
@@ -83,10 +88,11 @@ describe("AppLayout", () => {
       { path: "/", Component: AppLayout, children: [{ index: true, element: <p>Étroite</p> }] },
     ]);
     render(<RouterProvider router={router} />, { wrapper: createQueryWrapper() });
+    await screen.findByText("Étroite");
     expect(screen.getByRole("main").className).toContain("max-w-4xl");
   });
 
-  it("renders shell slots of features", () => {
+  it("renders shell slots of features", async () => {
     server.use(
       http.get(`${apiBaseUrl}/api/v1/health`, () =>
         HttpResponse.json({ status: "ok", checks: {} }),
@@ -96,7 +102,9 @@ describe("AppLayout", () => {
       { path: "/", Component: AppLayout, children: [{ index: true, element: <p>Contenu</p> }] },
     ]);
     render(<RouterProvider router={router} />, { wrapper: createQueryWrapper() });
-    expect(within(screen.getByRole("banner")).getByText("Emplacement du haut")).toBeInTheDocument();
+    expect(
+      within(await screen.findByRole("banner")).getByText("Emplacement du haut"),
+    ).toBeInTheDocument();
     expect(screen.getByRole("dialog", { name: "Surcouche" })).toBeInTheDocument();
     expect(within(screen.getByRole("banner")).queryByRole("dialog")).toBeNull();
   });

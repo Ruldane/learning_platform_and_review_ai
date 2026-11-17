@@ -1,4 +1,5 @@
 import { applicationsManifest } from "@/features/applications/manifest";
+import { authManifest } from "@/features/auth/manifest";
 import { captureManifest } from "@/features/capture/manifest";
 import { cvManifest } from "@/features/cv/manifest";
 import { demoManifest } from "@/features/demo/manifest";
@@ -21,6 +22,7 @@ import type { FeatureManifest } from "@/shared/lib/feature";
 
 /** Liste des features : ajouter une feature = un dossier + une ligne ici. */
 export const FEATURES: FeatureManifest[] = [
+  authManifest,
   homeManifest,
   healthManifest,
   learningManifest,

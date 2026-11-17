@@ -3,6 +3,7 @@ import { http, HttpResponse } from "msw";
 import { createMemoryRouter } from "react-router";
 import { describe, expect, it } from "vitest";
 import { apiBaseUrl } from "@/shared/api/client";
+import { authApi, camille } from "@/test/authApi";
 import { homeApi } from "@/test/homeApi";
 import { server } from "@/test/server";
 import { FEATURES } from "../registry";
@@ -11,6 +12,7 @@ import { App } from "./App";
 
 function renderAt(path: string) {
   server.use(
+    ...authApi({ me: camille }).handlers,
     ...homeApi().handlers,
     http.get(`${apiBaseUrl}/api/v1/health`, () => HttpResponse.json({ status: "ok", checks: {} })),
   );
@@ -28,9 +30,9 @@ describe("App", () => {
     expect(await screen.findByText("Tous les services répondent")).toBeInTheDocument();
   });
 
-  it("affiche la page introuvable pour une route inconnue", () => {
+  it("affiche la page introuvable pour une route inconnue", async () => {
     renderAt("/nimporte-quoi");
-    expect(screen.getByRole("heading", { name: "Page introuvable" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Page introuvable" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Retour à l'accueil" })).toBeInTheDocument();
   });
 });

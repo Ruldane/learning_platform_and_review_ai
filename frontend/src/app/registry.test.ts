@@ -3,6 +3,11 @@ import { buildNav } from "./buildNav";
 import { FEATURES } from "./registry";
 
 describe("registre des features", () => {
+  it("met la connexion en premier : sa porte est la plus extérieure", () => {
+    expect(FEATURES[0]?.id).toBe("auth");
+    expect(FEATURES[0]?.shell?.gate).toBeDefined();
+  });
+
   it("a des identifiants uniques", () => {
     const ids = FEATURES.map((f) => f.id);
     expect(new Set(ids).size).toBe(ids.length);

@@ -1,4 +1,5 @@
 import createClient, { type Middleware } from "openapi-fetch";
+import { emitAuthRequired } from "./authEvents";
 import { errorFromResponse, networkError } from "./errors";
 import type { paths } from "./schema";
 
@@ -11,10 +12,17 @@ type WithoutPrefix<P> = {
   [K in keyof P as K extends `${typeof API_PREFIX}${infer Rest}` ? Rest : K]: P[K];
 };
 
-/** Toute réponse en échec devient une `ApiError` ; une panne réseau aussi. */
+/**
+ * Toute réponse en échec devient une `ApiError` ; une panne réseau aussi. Un 401 `auth_required`
+ * prévient en plus la porte de connexion (`authEvents`), qui mène à `/connexion`.
+ */
 const errorMiddleware: Middleware = {
   async onResponse({ response }) {
-    if (!response.ok) throw await errorFromResponse(response);
+    if (!response.ok) {
+      const error = await errorFromResponse(response);
+      if (response.status === 401 && error.code === "auth_required") emitAuthRequired();
+      throw error;
+    }
     return undefined;
   },
   onError({ error }) {
@@ -26,6 +34,8 @@ const errorMiddleware: Middleware = {
 
 export const api = createClient<WithoutPrefix<paths>>({
   baseUrl: `${apiBaseUrl}${API_PREFIX}`,
+  // Le cookie de session (`tremplin_session`) part avec chaque appel, même vers un autre port.
+  credentials: "include",
   // Résolu à chaque appel (et non à la création) : MSW peut remplacer `fetch` après coup.
   fetch: (request) => globalThis.fetch(request),
 });

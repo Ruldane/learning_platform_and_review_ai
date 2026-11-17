@@ -1,4 +1,4 @@
-import type { ComponentType } from "react";
+import type { ComponentType, ReactNode } from "react";
 import type { RouteObject } from "react-router";
 import type { MessageKey } from "@/shared/i18n/t";
 
@@ -23,21 +23,27 @@ export interface NavEntry {
 
 /**
  * Emplacements de la coquille qu'une feature peut occuper sans toucher à la mise en page :
- * `topbar` est rendu dans la barre du haut, `overlay` dans la mise en page (par-dessus les pages).
+ * `topbar` est rendu dans la barre du haut, `overlay` dans la mise en page (par-dessus les pages) ;
+ * `gate` enveloppe toute la mise en page (connexion, premier lancement) : la porte de la première
+ * feature de `FEATURES` est la plus extérieure, et la mise en page ne se monte qu'une fois les
+ * portes ouvertes.
  */
 export interface FeatureShell {
   topbar?: ComponentType;
   overlay?: ComponentType;
+  gate?: ComponentType<{ children: ReactNode }>;
 }
 
 /**
  * Ce qu'une feature déclare pour s'intégrer à l'application : ses routes, ses entrées de
  * navigation (plusieurs possibles, éventuellement dans la même section : SPEC 15.1) et, au besoin,
- * ses emplacements de coquille.
+ * ses emplacements de coquille. `publicRoutes` sont des routes hors de la mise en page et sans
+ * porte (la connexion) : jamais d'entrée de navigation.
  */
 export interface FeatureManifest {
   id: string;
   routes: RouteObject[];
+  publicRoutes?: RouteObject[];
   nav?: NavEntry[];
   shell?: FeatureShell;
 }

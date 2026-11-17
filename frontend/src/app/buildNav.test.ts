@@ -23,6 +23,19 @@ describe("buildNav", () => {
     expect(buildNav([{ id: "health", routes: [] }])).toEqual([]);
   });
 
+  it("buildNav ignores publicRoutes", () => {
+    expect(
+      buildNav([
+        { id: "auth", routes: [], publicRoutes: [{ path: "/connexion", element: null }] },
+        {
+          id: "home",
+          routes: [],
+          nav: [{ section: "home", labelKey: "nav.home", path: "/", order: 1 }],
+        },
+      ]).flatMap((group) => group.items.map((item) => item.path)),
+    ).toEqual(["/"]);
+  });
+
   it("trie les entrées d'une section selon order", () => {
     const features: FeatureManifest[] = [
       {

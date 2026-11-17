@@ -1,6 +1,7 @@
 import { delay, http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { server } from "@/test/server";
+import { onAuthRequired } from "./authEvents";
 import { api, apiBaseUrl } from "./client";
 import { ApiError, unwrap } from "./errors";
 
@@ -83,5 +84,41 @@ describe("unwrap", () => {
       response: new Response(null, { status: 400 }),
     };
     expect(() => unwrap(result)).toThrowError(expect.objectContaining({ code: "x", status: 400 }));
+  });
+});
+
+describe("auth integration", () => {
+  it("client sends credentials include", async () => {
+    server.use(http.get(`${apiBaseUrl}/api/v1/health`, () => HttpResponse.json({ status: "ok" })));
+    // MSW ne relaie pas `credentials` au gestionnaire : on lit la requête remise à `fetch`.
+    const spy = vi.spyOn(globalThis, "fetch");
+    unwrap(await api.GET("/health"));
+    const sent = spy.mock.calls[0]?.[0] as Request;
+    expect(sent.credentials).toBe("include");
+    spy.mockRestore();
+  });
+
+  it("emits auth required on a 401 auth_required, not on other failures", async () => {
+    const seen = vi.fn();
+    const stop = onAuthRequired(seen);
+    server.use(
+      http.get(ME_URL, () =>
+        HttpResponse.json(
+          { error: { code: "auth_required", message: "Connexion requise.", details: null } },
+          { status: 401 },
+        ),
+      ),
+      http.get(`${apiBaseUrl}/api/v1/health`, () =>
+        HttpResponse.json(
+          { error: { code: "forbidden", message: "Non.", details: null } },
+          { status: 403 },
+        ),
+      ),
+    );
+    await api.GET("/health").catch(() => undefined);
+    expect(seen).not.toHaveBeenCalled();
+    await api.GET("/auth/me").catch(() => undefined);
+    expect(seen).toHaveBeenCalledTimes(1);
+    stop();
   });
 });
