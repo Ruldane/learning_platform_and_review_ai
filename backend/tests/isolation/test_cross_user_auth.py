@@ -29,8 +29,15 @@ async def test_a_cookie_never_gives_another_identity(google_client_factory: Brow
     dominique = await google_client_factory(DOMINIQUE)
     token = camille.cookies.get("tremplin_session")
     assert token and token != dominique.cookies.get("tremplin_session")
-    # Un jeton inventé à partir de celui de Camille n'ouvre aucun compte.
+    dominique.cookies.clear()
+    # Contrôle positif : un témoin posé à la main (sans domaine, donc envoyé) est bien lu. Le
+    # vrai témoin de Camille ouvre son compte à elle, jamais celui de Dominique.
+    dominique.cookies.set("tremplin_session", token)
+    sent = await dominique.get(ME)
+    assert sent.status_code == 200 and sent.json()["email"] == CAMILLE
+    # Un jeton inventé à partir du sien n'ouvre aucun compte.
     forged = token[:-1] + ("A" if token[-1] != "A" else "B")
     dominique.cookies.clear()
-    dominique.cookies.set("tremplin_session", forged, domain="test")
-    assert (await dominique.get(ME)).status_code == 401
+    dominique.cookies.set("tremplin_session", forged)
+    refused = await dominique.get(ME)
+    assert refused.status_code == 401 and refused.json()["error"]["code"] == "auth_required"

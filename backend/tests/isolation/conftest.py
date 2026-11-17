@@ -7,44 +7,21 @@ from contextlib import AsyncExitStack
 
 import httpx
 import pytest
-from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
-from sqlalchemy.ext.asyncio import AsyncEngine
 
-from app.config import Settings
-from app.core.providers import MemoryProviders, PublishingProviders, ResearchProviders
-from app.main import create_app
+# `google` (le faux point `token`) et `google_app` (l'application en mode Google) sont ceux de la
+# connexion : réimportés ici plutôt que recopiés.
+from tests.features.auth.conftest import google, google_app  # noqa: F401
 from tests.features.auth.support import FakeGoogle, sign_in
 
 Browser = Callable[[str], Awaitable[httpx.AsyncClient]]
 
 
 @pytest.fixture
-def google(google_settings: Settings) -> FakeGoogle:
-    return FakeGoogle(google_settings)
-
-
-@pytest.fixture
-async def google_app(
-    google_settings: Settings,
-    google: FakeGoogle,
-    db_engine: AsyncEngine,
-    memory_providers: MemoryProviders,
-    research_providers: ResearchProviders,
-    publishing_providers: PublishingProviders,
-) -> AsyncIterator[FastAPI]:
-    app = create_app(
-        google_settings,
-        memory_providers=memory_providers,
-        research_providers=research_providers,
-        publishing_providers=publishing_providers,
-    )
-    async with LifespanManager(app), google.plug_into(app):
-        yield app
-
-
-@pytest.fixture
-async def google_client_factory(google_app: FastAPI, google: FakeGoogle) -> AsyncIterator[Browser]:
+async def google_client_factory(
+    google_app: FastAPI,  # noqa: F811  (fixtures de la connexion, réimportées ci-dessus)
+    google: FakeGoogle,  # noqa: F811
+) -> AsyncIterator[Browser]:
     """`await browser(email)` : un nouveau navigateur (cookies à lui) connecté par le faux
     fournisseur sous cette adresse. Fermés à la fin du test."""
     async with AsyncExitStack() as stack:

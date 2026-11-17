@@ -140,7 +140,8 @@ configuration au delà des clés d'API.
    ce compte aussitôt.
 6. `docker compose up -d`, puis **ouvre l'application par `http://localhost:5173`**, pas par
    `127.0.0.1` : le cookie de session est posé sur `localhost`, et le WebSocket des sessions
-   d'agents exige ce cookie et un en-tête `Origin` de l'interface.
+   d'agents exige ce cookie et un en-tête `Origin` de l'interface (un script hors navigateur doit
+   donc l'envoyer).
 
 La connexion est un code d'autorisation avec PKCE ; la session tient dans un cookie `HttpOnly`
 `SameSite=Lax` de 30 jours (`Secure` quand l'adresse de retour est en `https`). Chaque ligne

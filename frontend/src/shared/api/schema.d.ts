@@ -8326,7 +8326,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `claim_expired` (le témoin `tremplin_claim` manque ou a plus de 10 minutes) ou `local_already_claimed` (l'espace local a déjà un propriétaire) */
+            /** @description `claim_expired` (le témoin `tremplin_claim` manque ou a plus de 10 minutes, ou « espace vide » a déjà été choisi : le compte existe, il suffit de se reconnecter) ou `local_already_claimed` (l'espace local a déjà un propriétaire) */
             409: {
                 headers: {
                     [name: string]: unknown;

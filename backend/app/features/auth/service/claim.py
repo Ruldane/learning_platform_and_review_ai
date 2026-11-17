@@ -8,7 +8,9 @@ en mode local ou repartir d'un espace vide.
 - « Reprendre » (`take_local`) **attache l'identité à la ligne `local`** : même `id`, donc aucune
   donnée déplacée (base, index, fichiers, points de reprise). Un seul UPDATE conditionnel décide
   qui est propriétaire : le perdant d'une course reçoit 409 `local_already_claimed`.
-- « Espace vide » (`fresh`) crée un utilisateur neuf ; l'espace local reste intact.
+- « Espace vide » (`fresh`) crée un utilisateur neuf ; l'espace local reste intact. Un `fresh`
+  rejoué (double clic) ou perdu dans une course trouve le compte déjà créé : 409 `claim_expired`
+  (se reconnecter règle tout), jamais un second compte ni `local_already_claimed`.
 - Le choix se fait avec le témoin `tremplin_claim` (`{sub, email, name}` chiffré, 10 minutes,
   posé par le callback) : absent, trafiqué ou trop vieux = 409 `claim_expired`.
 
