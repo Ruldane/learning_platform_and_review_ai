@@ -21,6 +21,13 @@ describe("CostBadge", () => {
     expect(screen.getByText("Coût : pas encore mesuré")).toBeInTheDocument();
   });
 
+  it("never writes a non-zero cost as zero", () => {
+    render(<CostBadge cost={{ ...cost, cost_usd: 0.0002 }} />);
+    expect(screen.getByText(/· < 0,001 \$/)).toBeInTheDocument();
+    expect(screen.queryByText(/0,000/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/≈ </)).not.toBeInTheDocument();
+  });
+
   it("keeps sub-cent costs visible", () => {
     render(<CostBadge cost={{ ...cost, cost_usd: 0.004 }} />);
     expect(screen.getByText(/≈ 0,004 \$/)).toBeInTheDocument();

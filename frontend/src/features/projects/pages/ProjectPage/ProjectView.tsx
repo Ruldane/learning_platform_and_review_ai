@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { t } from "@/shared/i18n/t";
 import type { SocketFactory } from "@/shared/realtime/socket";
 import { ProjectBriefView } from "../../components/ProjectBriefView";
 import { useProjectRun } from "../../hooks/useProjectRun";
+import { useRegenerateDrafts } from "../../hooks/useRegenerateDrafts";
 import { useSubmitProject } from "../../hooks/useSubmitProject";
 import type { ProjectDetailView } from "../../toView";
 import { BackLink } from "./BackLink";
@@ -25,10 +26,25 @@ const FOLLOWED = ["brief_pending", "reviewing"];
  * l'historique des rendus.
  */
 export function ProjectView({ project, createSocket }: ProjectViewProps) {
-  const sessionId = FOLLOWED.includes(project.status) ? project.sessionId : null;
+  const regeneration = useRegenerateDrafts(project.id);
+  // Un énoncé ou une évaluation en cours se suit par la session du projet ; un projet validé suit
+  // la session des brouillons qu'il vient de relancer.
+  const sessionId = FOLLOWED.includes(project.status)
+    ? project.sessionId
+    : project.status === "validated"
+      ? regeneration.sessionId
+      : null;
   const run = useProjectRun(project.id, sessionId, createSocket);
   const submitter = useSubmitProject(project.id);
   const [retried, setRetried] = useState(false);
+  // Le focus que « Réessayer l'énoncé » demande ne sert qu'une fois : l'écriture finie (réussie ou
+  // non), il est rendu, et un énoncé relancé ailleurs plus tard ne reprend pas le focus.
+  const writing = useRef(false);
+  useEffect(() => {
+    const pending = project.status === "brief_pending";
+    if (writing.current && !pending) setRetried(false);
+    writing.current = pending;
+  }, [project.status]);
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-2">
@@ -51,7 +67,12 @@ export function ProjectView({ project, createSocket }: ProjectViewProps) {
       {project.status === "brief_failed" ? (
         <BriefFailed projectId={project.id} onRetried={() => setRetried(true)} />
       ) : null}
-      <StatusSections project={project} run={run} submitter={submitter} />
+      <StatusSections
+        project={project}
+        run={run}
+        submitter={submitter}
+        regeneration={regeneration}
+      />
       <SubmissionHistory submissions={project.submissions} />
     </div>
   );

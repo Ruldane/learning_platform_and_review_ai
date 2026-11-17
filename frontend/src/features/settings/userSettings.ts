@@ -2,11 +2,18 @@ import { readTiers } from "./tierChoices";
 import type {
   BraveUsageOut,
   BraveUsageView,
+  ModelChoice,
   SearchSettingsView,
   SettingsOut,
   TierChoices,
   UserSettings,
 } from "./types";
+
+/**
+ * Chaque champ de `T` est écrit (même ceux que le contrat laisse facultatifs), valeur ou
+ * `undefined`.
+ */
+type EveryField<T> = { [K in keyof Required<T>]: T[K] };
 
 /**
  * Corps du `PUT /settings` : remplacement complet. On choisit un à un les champs de `UserSettings`
@@ -42,10 +49,14 @@ export function buildUserSettings(current: SettingsOut, tiers: TierChoices): Use
     tiers,
     timezone: current.timezone,
     weekly_review: current.weekly_review,
-  };
+    // Un champ ajouté au contrat et oublié ici ne compile plus (focus n° 5).
+  } satisfies EveryField<UserSettings>;
 }
 
-/** Les réglages de recherche tels que les éditent les composants (valeurs par défaut du back si absents). */
+/**
+ * Les réglages de recherche tels que les éditent les composants (valeurs par défaut du back si
+ * absents).
+ */
 export function toSearchSettingsView(settings: SettingsOut): SearchSettingsView {
   return {
     languages: settings.search_languages ?? ["fr", "en"],
@@ -76,4 +87,41 @@ export function withSearchSettings(current: SettingsOut, search: SearchSettingsV
 /** `GET /research/usage` vers la jauge Brave (`month` : « AAAA-MM », en UTC, comme le contrat). */
 export function toBraveUsageView({ brave }: { brave: BraveUsageOut }): BraveUsageView {
   return { hasKey: brave.has_key, used: brave.used, cap: brave.cap, month: brave.month };
+}
+
+/**
+ * Corps du `PUT /settings` après une modification du guide de style : tous les autres réglages
+ * sont repris tels quels de `current`.
+ */
+export function withStyleGuide(current: SettingsOut, styleGuide: string): UserSettings {
+  return { ...buildUserSettings(current, readTiers(current.tiers)), style_guide: styleGuide };
+}
+
+/**
+ * Corps du `PUT /settings` après plusieurs choix de modèle d'agents d'un coup (`changes` : l'agent
+ * vers son modèle, ou `null` pour le rendre à son niveau) : les autres surcharges et tous les
+ * autres réglages sont repris.
+ */
+export function withAgentOverrides(
+  current: SettingsOut,
+  changes: Record<string, ModelChoice | null>,
+): UserSettings {
+  const overrides = { ...current.agent_overrides };
+  for (const [agent, choice] of Object.entries(changes)) {
+    if (choice) overrides[agent] = choice;
+    else delete overrides[agent];
+  }
+  return { ...buildUserSettings(current, readTiers(current.tiers)), agent_overrides: overrides };
+}
+
+/**
+ * Corps du `PUT /settings` après le choix d'un modèle pour un agent (`choice`), ou son retour au
+ * niveau (`null`).
+ */
+export function withAgentOverride(
+  current: SettingsOut,
+  agent: string,
+  choice: ModelChoice | null,
+): UserSettings {
+  return withAgentOverrides(current, { [agent]: choice });
 }

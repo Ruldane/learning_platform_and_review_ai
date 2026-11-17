@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-/** Un bloc titré de l'écran des réglages de recherche. */
+/** Un bloc titré d'un écran de réglages. */
 export function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-4">

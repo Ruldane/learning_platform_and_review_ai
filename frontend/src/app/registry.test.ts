@@ -1,8 +1,14 @@
 import { describe, expect, it } from "vitest";
+import { GRAPH_SCREENS } from "@/features/costs/components/graphs";
 import { buildNav } from "./buildNav";
 import { FEATURES } from "./registry";
 
 describe("registre des features", () => {
+  it("met la connexion en premier : sa porte est la plus extérieure", () => {
+    expect(FEATURES[0]?.id).toBe("auth");
+    expect(FEATURES[0]?.shell?.gate).toBeDefined();
+  });
+
   it("a des identifiants uniques", () => {
     const ids = FEATURES.map((f) => f.id);
     expect(new Set(ids).size).toBe(ids.length);
@@ -60,7 +66,22 @@ describe("registre des features", () => {
       { labelKey: "settings.models.navLabel", path: "/reglages/modeles" },
       { labelKey: "settings.search.navLabel", path: "/reglages/recherche" },
       { labelKey: "research.nav.bench", path: "/reglages/recherche/essai" },
+      { labelKey: "settings.availability.navLabel", path: "/reglages/disponibilite" },
       { labelKey: "settings.study.navLabel", path: "/reglages/etude" },
+      { labelKey: "settings.style.navLabel", path: "/reglages/style" },
+      { labelKey: "costs.nav.costs", path: "/reglages/couts" },
+      { labelKey: "costs.nav.log", path: "/reglages/journal" },
+      { labelKey: "account.nav.data", path: "/reglages/donnees" },
     ]);
+  });
+
+  it("le journal des agents ne mène qu'à des écrans qui existent", () => {
+    const known = new Set([
+      ...FEATURES.flatMap((f) => f.nav?.map((entry) => entry.path) ?? []),
+      ...FEATURES.flatMap((f) =>
+        f.routes.map((route) => `/${(route.path ?? "").replace(/^\//, "")}`),
+      ),
+    ]);
+    for (const path of Object.values(GRAPH_SCREENS)) expect(known).toContain(path);
   });
 });

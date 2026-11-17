@@ -7,7 +7,10 @@ export async function fetchProjects(signal?: AbortSignal) {
   return unwrap(await api.GET("/projects", { signal }));
 }
 
-/** `GET /projects/{id}` : l'énoncé, les rendus, la dernière évaluation et les brouillons. 404 `project_not_found`. */
+/**
+ * `GET /projects/{id}` : l'énoncé, les rendus, la dernière évaluation et les brouillons. 404
+ * `project_not_found`.
+ */
 export async function fetchProject(projectId: string, signal?: AbortSignal) {
   return unwrap(
     await api.GET("/projects/{project_id}", {
@@ -17,7 +20,10 @@ export async function fetchProject(projectId: string, signal?: AbortSignal) {
   );
 }
 
-/** Le corps multipart d'un rendu : le lien et la description s'ils existent, une partie `screenshots` par capture. */
+/**
+ * Le corps multipart d'un rendu : le lien et la description s'ils existent, une partie
+ * `screenshots` par capture.
+ */
 export function submissionForm(submission: SubmissionView): FormData {
   const form = new FormData();
   if (submission.repoUrl) form.append("repo_url", submission.repoUrl);
@@ -43,7 +49,10 @@ export async function submitProject(projectId: string, submission: SubmissionVie
   );
 }
 
-/** `PATCH /projects/{id}/drafts/{kind}` : le texte retouché ; rend le projet avec ses brouillons relus. */
+/**
+ * `PATCH /projects/{id}/drafts/{kind}` : le texte retouché ; rend le projet avec ses brouillons
+ * relus.
+ */
 export async function saveDraft(projectId: string, kind: DraftKind, content: string) {
   return unwrap(
     await api.PATCH("/projects/{project_id}/drafts/{kind}", {
@@ -53,7 +62,10 @@ export async function saveDraft(projectId: string, kind: DraftKind, content: str
   );
 }
 
-/** `POST /projects/{id}/profile-entry` : l'entrée entre au profil maître (nouvelle version). 409 selon le cas. */
+/**
+ * `POST /projects/{id}/profile-entry` : l'entrée entre au profil maître (nouvelle version). 409
+ * selon le cas.
+ */
 export async function addToProfile(projectId: string, entry: ProfileEntryIn) {
   return unwrap(
     await api.POST("/projects/{project_id}/profile-entry", {
@@ -63,10 +75,26 @@ export async function addToProfile(projectId: string, entry: ProfileEntryIn) {
   );
 }
 
-/** `POST /projects/{id}/brief` (202 `{session_id}`) : réécrire un énoncé en échec. 409 `brief_not_failed`. */
+/**
+ * `POST /projects/{id}/brief` (202 `{session_id}`) : réécrire un énoncé en échec. 409
+ * `brief_not_failed`.
+ */
 export async function retryBrief(projectId: string) {
   return unwrap(
     await api.POST("/projects/{project_id}/brief", {
+      params: { path: { project_id: projectId } },
+    }),
+  );
+}
+
+/**
+ * `POST /projects/{id}/drafts` (202 `{session_id}`) : réécrire les brouillons d'un projet validé
+ * qui n'en a pas. 409 `project_not_validated`, `drafts_present` ou `review_in_progress`
+ * (`details.session_id`).
+ */
+export async function regenerateDrafts(projectId: string) {
+  return unwrap(
+    await api.POST("/projects/{project_id}/drafts", {
       params: { path: { project_id: projectId } },
     }),
   );

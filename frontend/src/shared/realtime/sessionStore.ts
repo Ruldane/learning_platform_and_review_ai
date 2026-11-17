@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { onLocalReset } from "../lib/localReset";
 import { applyEvent, applyLocal, initialSessionState } from "./sessionReducer";
 import type { LocalAction, SessionEvent, SessionViewState } from "./types";
 
@@ -75,3 +76,6 @@ export const selectEvents =
   (sessionId: string) =>
   (store: Pick<SessionStoreState, "events">): SessionEvent[] =>
     store.events[sessionId] ?? NO_EVENTS;
+
+// « Tout supprimer » : aucun événement d'une session de l'espace effacé ne reste en mémoire.
+onLocalReset(() => useSessionStore.setState({ sessions: {}, events: {} }));

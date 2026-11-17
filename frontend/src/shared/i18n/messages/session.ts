@@ -26,7 +26,7 @@ export const session = {
   },
   round: "Tour {round}",
   cost: {
-    summary: "{tokens} tokens · ≈ {cost} $",
+    summary: "{tokens} tokens · {cost} $",
     title: "{tokens} tokens utilisés sur un plafond de {cap}",
     none: "Coût : pas encore mesuré",
   },

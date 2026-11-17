@@ -1,5 +1,6 @@
 import { t } from "@/shared/i18n/t";
 import { EvaluationView } from "../../components/EvaluationView";
+import type { DraftsRegeneration } from "../../hooks/useRegenerateDrafts";
 import type { useProjectRun } from "../../hooks/useProjectRun";
 import type { useSubmitProject } from "../../hooks/useSubmitProject";
 import type { ProjectDetailView } from "../../toView";
@@ -11,6 +12,7 @@ interface StatusSectionsProps {
   project: ProjectDetailView;
   run: ReturnType<typeof useProjectRun>;
   submitter: ReturnType<typeof useSubmitProject>;
+  regeneration: DraftsRegeneration;
 }
 
 /**
@@ -18,7 +20,7 @@ interface StatusSectionsProps {
  * l'évaluation (`to_redo`), attendre et suivre l'évaluation (`reviewing`), ou la suite d'un projet
  * validé. Un énoncé en préparation ou en échec n'a rien de plus à montrer ici.
  */
-export function StatusSections({ project, run, submitter }: StatusSectionsProps) {
+export function StatusSections({ project, run, submitter, regeneration }: StatusSectionsProps) {
   const criteria = project.brief?.criteria ?? [];
   switch (project.status) {
     case "todo":
@@ -30,7 +32,7 @@ export function StatusSections({ project, run, submitter }: StatusSectionsProps)
             <EvaluationView evaluation={project.evaluation} criteria={criteria} />
           ) : null}
           <p className="text-sm font-medium">{t("projects.page.toRedo")}</p>
-          <SubmitSection submitter={submitter} />
+          <SubmitSection submitter={submitter} previous={project.submissions[0] ?? null} />
         </>
       );
     case "reviewing":
@@ -45,7 +47,14 @@ export function StatusSections({ project, run, submitter }: StatusSectionsProps)
         />
       );
     case "validated":
-      return <ValidatedSections project={project} criteria={criteria} />;
+      return (
+        <ValidatedSections
+          project={project}
+          criteria={criteria}
+          regeneration={regeneration}
+          run={run}
+        />
+      );
     default:
       return null;
   }

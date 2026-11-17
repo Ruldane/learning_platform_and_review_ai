@@ -66,3 +66,51 @@ export interface BraveUsageView {
   cap: number;
   month: string;
 }
+
+/**
+ * Les durées de la disponibilité telles que les édite `AvailabilityFields` (du texte pendant la
+ * saisie).
+ */
+export interface AvailabilityValues {
+  weekday: string;
+  weekendMin: string;
+  weekendMax: string;
+}
+
+export type AvailabilityKey = keyof AvailabilityValues;
+
+/**
+ * Quelles durées sont hors bornes ; `weekendOrder` : le minimum du week-end dépasse son maximum.
+ */
+export interface AvailabilityFlags {
+  weekday: boolean;
+  weekendMin: boolean;
+  weekendMax: boolean;
+  weekendOrder: boolean;
+}
+
+/**
+ * Un agent de `GET /settings/agents` ; `tier` nul : une surcharge reste pour un agent que le
+ * serveur ne connaît plus.
+ */
+export interface AgentRow {
+  name: string;
+  tier: Tier | null;
+}
+
+/** Les surcharges de modèle par agent (nom de l'agent vers son modèle). */
+export type AgentOverrides = Record<string, ModelChoice | undefined>;
+
+/** Ce qu'un champ de fichier PDF a retenu : le fichier, ou la raison de son refus. */
+export interface PdfChoice {
+  file: File | null;
+  problem: string | null;
+}
+
+/** Les deux PDF de l'étape CV, gardés par la page (voir `useCvDocuments`). */
+export interface CvDocuments {
+  cv: PdfChoice;
+  linkedin: PdfChoice;
+  setCv: (choice: PdfChoice) => void;
+  setLinkedin: (choice: PdfChoice) => void;
+}

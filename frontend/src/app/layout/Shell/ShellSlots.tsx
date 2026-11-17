@@ -2,7 +2,7 @@ import { FEATURES } from "../../registry";
 import type { FeatureManifest, FeatureShell } from "@/shared/lib/feature";
 
 interface ShellSlotsProps {
-  slot: keyof FeatureShell;
+  slot: Exclude<keyof FeatureShell, "gate">;
   /** Les features à interroger : toutes celles de l'application par défaut. */
   features?: FeatureManifest[];
 }

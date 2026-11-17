@@ -22,6 +22,7 @@ export type {
 
 type Schemas = components["schemas"];
 
+export type AgentOut = Schemas["AgentOut"];
 export type ApiKeyOut = Schemas["ApiKeyOut"];
 export type BraveUsageOut = Schemas["BraveUsageOut"];
 export type SearchUsageOut = Schemas["SearchUsageOut"];

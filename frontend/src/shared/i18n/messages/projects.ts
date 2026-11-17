@@ -44,6 +44,17 @@ export const projects = {
     skillsMap: "Voir la carte des compétences",
     draftsTitle: "Tes brouillons",
     draftsEmpty: "Aucun brouillon n'a été écrit pour ce projet.",
+    draftsRegenerate: "Régénérer les brouillons",
+    draftsRegenerating: "Lancement…",
+    draftsWriting: "Brouillons en cours d'écriture",
+    draftsWritingText:
+      "Le Praticien écrit tes brouillons. Ils s'affichent ici dès qu'ils sont prêts.",
+    draftsFailed:
+      "Les brouillons n'ont pas pu être écrits cette fois. Tu peux relancer leur écriture.",
+    draftsInProgress:
+      "Leur écriture est déjà en cours, mais on ne retrouve pas son suivi : recharge la page dans un instant.",
+    draftsNotValidated: "Ce projet n'est plus validé : la page se relit.",
+    screenshotsNotCarried: "Les captures du dernier rendu ne sont pas reprises : ajoute-les.",
     draftsText:
       "Écrits d'après ton rendu et ton profil : relis-les, vérifie-les, puis publie-les toi-même.",
     entryTitle: "Ajouter ce projet à ton profil maître",
@@ -61,6 +72,7 @@ export const projects = {
     project_validated: "Ce projet est déjà validé : il ne se rend pas une seconde fois.",
     brief_not_failed: "L'énoncé de ce projet n'est pas en échec : il est peut-être déjà relancé.",
     project_not_validated: "Seul un projet validé peut entrer dans ton profil.",
+    drafts_present: "Ce projet a déjà ses brouillons : la page se relit.",
     entry_already_added: "Ce projet est déjà dans ton profil maître.",
     profile_required:
       "Valide d'abord ton profil maître : le projet s'y ajoute comme une nouvelle version.",

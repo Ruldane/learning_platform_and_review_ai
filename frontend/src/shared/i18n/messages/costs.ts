@@ -1,0 +1,112 @@
+/** Textes des écrans Coûts et Journal des agents (SPEC 11.5, 15.1). */
+export const costs = {
+  nav: { costs: "Coûts", log: "Journal des agents" },
+  noSession: "Hors session",
+  noAgent: "Sans agent",
+  estimatedTag: "estimé",
+  /**
+   * Le libellé de chaque parcours (`GRAPHS` côté back) ; un parcours inconnu garde son nom brut.
+   */
+  graphs: {
+    demo_debate: "Débat de démonstration",
+    learned_document: "Document appris",
+    web_research: "Recherche web",
+    learning_council: "Conseil d'apprentissage",
+    program_builder: "Construction du programme",
+    lesson_factory: "Rédaction de leçon",
+    quiz: "Quiz",
+    study_session: "Session d'étude",
+    replan: "Replanification",
+    capture: "Capture",
+    gap_analysis: "Analyse des écarts",
+    cv_capture: "Lecture du CV",
+    cv_review: "Revue de CV",
+    application_intake: "Prise de candidature",
+    application_kit: "Kit de candidature",
+    interview: "Entretien",
+    hiring_committee: "Comité de recrutement",
+    market_radar: "Radar du marché",
+    daily_brief: "Brief du matin",
+    project_brief: "Énoncé de projet",
+    project_review: "Relecture de projet",
+  },
+  columns: {
+    calls: "Appels",
+    tokensIn: "Jetons entrants",
+    tokensOut: "Jetons sortants",
+    cost: "Coût",
+    estimated: "Estimés",
+  },
+  report: {
+    title: "Coûts",
+    intro:
+      "Ce que coûtent les appels aux modèles : jetons et coût estimé, jour par jour, par " +
+      "feature, par agent et par modèle. Les prix sont ceux de l'appel.",
+    loading: "Chargement des coûts…",
+    window: { label: "Période", option: "{days} jours" },
+    empty: {
+      title: "Aucun appel sur les {days} derniers jours",
+      description: "Les coûts apparaissent dès qu'un agent a travaillé.",
+    },
+    totals: {
+      title: "Total sur {days} jours",
+      calls: "Appels",
+      tokensIn: "Jetons entrants",
+      tokensOut: "Jetons sortants",
+      cost: "Coût estimé",
+      estimated: "dont {count} estimés",
+      estimatedOne: "dont 1 estimé",
+    },
+    chart: {
+      title: "Coût par jour",
+      label: "Coût par jour, du {since} au {until} : {total} au total",
+      series: "Coût",
+      tableCaption: "Appels, jetons et coût par jour",
+      day: "Jour",
+    },
+    byFeature: { title: "Par feature", first: "Feature" },
+    byAgent: { title: "Par agent", first: "Agent" },
+    byModel: { title: "Par modèle", first: "Modèle" },
+  },
+  log: {
+    title: "Journal des agents",
+    intro:
+      "Chaque appel à un modèle, du plus récent au plus ancien : qui l'a fait, pour quel " +
+      "parcours, avec quel modèle et pour quel coût. Le contenu des échanges n'est pas gardé.",
+    loading: "Chargement du journal…",
+    filters: {
+      label: "Filtres du journal",
+      agent: "Agent",
+      graph: "Parcours",
+      all: "Tous",
+    },
+    tableCaption: "Appels aux modèles, du plus récent au plus ancien",
+    noSession: "Aucune session",
+    count: "{count} appels affichés",
+    countOne: "1 appel affiché",
+    columns: {
+      at: "Date",
+      agent: "Agent",
+      graph: "Parcours",
+      model: "Modèle",
+      tokensIn: "Entrants",
+      tokensOut: "Sortants",
+      latency: "Durée",
+      cost: "Coût",
+      session: "Session",
+    },
+    open: "Voir l'écran",
+    openLabel: "Voir l'écran : {graph}",
+    more: "Voir plus",
+    loadingMore: "Chargement…",
+    end: "C'est tout : le journal est affiché en entier.",
+    empty: {
+      title: "Aucun appel pour l'instant",
+      description: "Les appels aux modèles apparaissent ici dès qu'un agent a travaillé.",
+    },
+    emptyFiltered: {
+      title: "Aucun appel pour ces filtres",
+      description: "Change ou retire un filtre pour voir d'autres appels.",
+    },
+  },
+} as const;

@@ -7,9 +7,9 @@ import { SubmissionForm } from "./SubmissionForm";
 const png = (name: string, bytes = 100) =>
   new File([new Uint8Array(bytes)], name, { type: "image/png" });
 
-function setup(busy = false) {
+function setup(busy = false, initial?: { repoUrl: string | null; description: string | null }) {
   const onSubmit = vi.fn();
-  render(<SubmissionForm onSubmit={onSubmit} busy={busy} />);
+  render(<SubmissionForm onSubmit={onSubmit} busy={busy} initial={initial} />);
   return { onSubmit, user: userEvent.setup() };
 }
 
@@ -18,6 +18,30 @@ const description = () => screen.getByLabelText("Description");
 const pickerInput = () => screen.getByLabelText("Captures d'écran");
 
 describe("SubmissionForm", () => {
+  it("starts from initial: both fields are prefilled, editable and sent as they are", async () => {
+    const { onSubmit, user } = setup(false, {
+      repoUrl: "https://example.org/camille/ventes",
+      description: "Un pipeline SQL.",
+    });
+    expect(repo()).toHaveValue("https://example.org/camille/ventes");
+    expect(description()).toHaveValue("Un pipeline SQL.");
+    await user.click(screen.getByRole("button", { name: "Rendre le projet" }));
+    expect(onSubmit).toHaveBeenCalledWith({
+      repoUrl: "https://example.org/camille/ventes",
+      description: "Un pipeline SQL.",
+      screenshots: [],
+    });
+    await user.clear(description());
+    await user.type(description(), "Corrigé.");
+    expect(description()).toHaveValue("Corrigé.");
+  });
+
+  it("leaves a null initial field empty, and the other one prefilled", () => {
+    setup(false, { repoUrl: null, description: "Une requête." });
+    expect(repo()).toHaveValue("");
+    expect(description()).toHaveValue("Une requête.");
+  });
+
   it("sends the trimmed link, description and screenshots", async () => {
     const { onSubmit, user } = setup();
     const shot = png("a.png");

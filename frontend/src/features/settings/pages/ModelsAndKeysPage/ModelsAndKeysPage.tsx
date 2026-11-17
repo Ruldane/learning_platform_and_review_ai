@@ -13,6 +13,7 @@ import { useModels } from "../../hooks/useModels";
 import { useSettings } from "../../hooks/useSettings";
 import { useTierActions } from "../../hooks/useTierActions";
 import { readPresets, readTiers } from "../../tierChoices";
+import { AdvancedMode } from "./AdvancedMode";
 
 /** Réglages > Modèles et clés : clés API par fournisseur, préréglages et modèle par niveau. */
 export function ModelsAndKeysPage() {
@@ -56,6 +57,7 @@ export function ModelsAndKeysPage() {
         onApplyPreset={(name) => tierActions.applyPreset(presets, name)}
         onChangeTier={tierActions.changeTier}
       />
+      <AdvancedMode settings={settings.data} providers={models.data.providers} />
     </div>
   );
 }

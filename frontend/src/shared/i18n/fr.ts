@@ -1,7 +1,10 @@
+import { account } from "./messages/account";
 import { agents } from "./messages/agents";
 import { applications } from "./messages/applications";
 import { appMessages } from "./messages/app";
+import { auth } from "./messages/auth";
 import { capture } from "./messages/capture";
+import { costs } from "./messages/costs";
 import { cv } from "./messages/cv";
 import { demo } from "./messages/demo";
 import { gap } from "./messages/gap";
@@ -9,6 +12,7 @@ import { home } from "./messages/home";
 import { learning } from "./messages/learning";
 import { lessons } from "./messages/lessons";
 import { memory } from "./messages/memory";
+import { onboarding } from "./messages/onboarding";
 import { program } from "./messages/program";
 import { projects } from "./messages/projects";
 import { quiz } from "./messages/quiz";
@@ -27,10 +31,13 @@ import { study } from "./messages/study";
  */
 export const fr = {
   ...appMessages,
+  auth,
+  account,
   session,
   agents,
   demo,
   settings,
+  onboarding,
   memory,
   research,
   program,
@@ -42,6 +49,7 @@ export const fr = {
   replan,
   capture,
   gap,
+  costs,
   cv,
   applications,
   home,
