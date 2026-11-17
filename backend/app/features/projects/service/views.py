@@ -4,6 +4,7 @@ ligne du Portfolio (programme, semaine, rang). Les statuts sont corrigés avant 
 (`settle`) : le statut suit la session. Les colonnes JSON sont lues défensivement : une ligne
 abîmée se rend sans cette partie, jamais en erreur."""
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
@@ -27,10 +28,23 @@ from app.features.projects.schemas import (
     SubmissionOut,
 )
 from app.features.projects.service.errors import project_not_found
-from app.features.projects.service.runtime import ProjectsRuntime
+from app.features.projects.service.runtime import REVIEW_GRAPH, SUBJECT, ProjectsRuntime
 from app.features.projects.service.settle import settle_all
+from app.features.sessions.service import list_open_sessions_by_subject
 
 _LIVE = ("brief_pending", "reviewing")  # statuts qui ont une session à suivre
+OpenSessions = Mapping[str, Sequence[str]]  # sessions `project_review` ouvertes, par projet
+
+
+def _session_id(row: Project, open_sessions: OpenSessions | None) -> str | None:
+    """La session à suivre : celle d'un énoncé ou d'une évaluation en cours ; pour un projet
+    validé, celle de ses brouillons tant qu'elle est ouverte (le statut ne bouge pas : sans elle,
+    un rechargement de la page ne la retrouverait pas)."""
+    if row.status in _LIVE:
+        return row.session_id
+    if row.status == "validated" and row.session_id and open_sessions:
+        return row.session_id if row.session_id in open_sessions.get(row.id, ()) else None
+    return None
 
 
 def parse_moment(value: object) -> datetime | None:
@@ -111,7 +125,7 @@ def drafts_out(row: Project) -> list[DraftOut]:
     return out
 
 
-def project_out(row: Project) -> ProjectOut:
+def project_out(row: Project, open_sessions: OpenSessions | None = None) -> ProjectOut:
     return ProjectOut(
         id=row.id,
         module_id=row.module_id,
@@ -124,7 +138,7 @@ def project_out(row: Project) -> ProjectOut:
         drafts=drafts_out(row),
         validated_at=row.validated_at,
         profile_version=row.profile_version,
-        session_id=row.session_id if row.status in _LIVE else None,
+        session_id=_session_id(row, open_sessions),
     )
 
 
@@ -141,7 +155,10 @@ async def get_project(
     row = await ProjectRepository(db, user_id).get_fresh(project_id)
     if row is None:
         raise project_not_found()
-    return project_out(row)
+    open_sessions = await list_open_sessions_by_subject(
+        db, user_id, graph=REVIEW_GRAPH, subject_type=SUBJECT
+    )
+    return project_out(row, open_sessions)
 
 
 async def _loaded(db: AsyncSession, user_id: str, program_id: str) -> Loaded | None:
@@ -151,7 +168,9 @@ async def _loaded(db: AsyncSession, user_id: str, program_id: str) -> Loaded | N
         return None
 
 
-def _summary(row: Project, loaded: Loaded | None) -> ProjectSummary:
+def _summary(
+    row: Project, loaded: Loaded | None, open_sessions: OpenSessions | None = None
+) -> ProjectSummary:
     module = next((m for m in loaded.modules if m.id == row.module_id), None) if loaded else None
     week = (
         next((w for w in loaded.weeks if module and w.id == module.week_id), None)
@@ -172,7 +191,7 @@ def _summary(row: Project, loaded: Loaded | None) -> ProjectSummary:
         skills=[str(skill) for skill in module.skills] if module else [],
         validated_at=row.validated_at,
         profile_version=row.profile_version,
-        session_id=row.session_id if row.status in _LIVE else None,
+        session_id=_session_id(row, open_sessions),
     )
 
 
@@ -187,7 +206,10 @@ async def list_projects(
     for row in rows:
         if row.program_id not in programs:
             programs[row.program_id] = await _loaded(db, user_id, row.program_id)
-    summaries = [_summary(row, programs[row.program_id]) for row in rows]
+    open_sessions = await list_open_sessions_by_subject(
+        db, user_id, graph=REVIEW_GRAPH, subject_type=SUBJECT
+    )
+    summaries = [_summary(row, programs[row.program_id], open_sessions) for row in rows]
     order = {program_id: number for number, program_id in enumerate(programs)}
     big = 10**6
     summaries.sort(

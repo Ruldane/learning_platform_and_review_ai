@@ -22,7 +22,7 @@ passage connaît.
 Le script tourne hors du conteneur du back (les scripts n'y sont pas, `.dockerignore`) : dans un
 conteneur jetable de la même image, sur le réseau de la pile, scripts montés ; les journaux du back
 passent par l'entrée standard (`--logs-file -`), lus au lancement : ceux d'avant l'essai. Sans
-journaux, l'étape échoue.
+journaux, ou sur des journaux vides, l'étape échoue.
 
     docker compose logs --no-color backend | docker run --rm -i \\
       --name learning_career_platform-check8 --network learning_career_platform_default \\
@@ -104,17 +104,21 @@ __all__ = [
 ]
 
 
-def _logs_step(logs: str | None) -> Step:
+def _logs_step(logs: str | None, *, alone: bool = False) -> Step:
+    """L'étape `journaux`. `alone` : la partie `journaux` seule, qui ne connaît pas les textes
+    propres à l'essai (titre, énoncé, liens, intitulés) : elle le dit en sortie."""
+
     async def check(run: Run, st: Track) -> None:
         if logs is None:
             raise CheckFailed("journaux", "Journaux du back non fournis (--logs-file).")
+        if not logs.strip():  # début mal formé, tube cassé, mauvais service : jamais un succès
+            raise CheckFailed("journaux", "Journaux du back vides (--logs-file).")
         extra = log_extras(st.radar or None, st.brief or None)
         if st.project:
             extra = sorted({*extra, *project_extras(st.project, st.description, st.readme)})
-        print(
-            f"    {check_logs_8('journaux', logs, extra)} ligne(s) relue(s), sans donnée",
-            flush=True,
-        )
+        lines = check_logs_8("journaux", logs, extra)
+        scope = "motifs génériques seulement" if alone else "sans donnée"
+        print(f"    {lines} ligne(s) relue(s), {scope}", flush=True)
 
     return check
 
@@ -148,7 +152,7 @@ async def run_check(
         "rendu": check_submit,
         "évaluation": check_review,
         "suites": check_outcome,
-        "journaux": _logs_step(logs),
+        "journaux": _logs_step(logs, alone=part == "journaux"),
     }
     done: list[str] = []
     for step in STEPS_BY_PART[part]:

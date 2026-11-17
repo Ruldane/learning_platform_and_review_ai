@@ -4,6 +4,7 @@ du cas (`project_not_validated`, `drafts_present`, `review_in_progress`), 404 su
 autre, 503 si le lancement est refusé ; le port écrit les brouillons une seule fois, sur un projet
 validé qui n'en a pas. Les textes du projet ne sont jamais journalisés."""
 
+import asyncio
 import logging
 
 import httpx
@@ -79,6 +80,7 @@ async def test_regenerate_drafts_refused_while_reviewing(
     r = await post(client, pid)
     assert (r.status_code, code_of(r)) == (409, "review_in_progress")
     assert r.json()["error"]["details"] == {"session_id": session_id}
+    assert "évaluation" in r.json()["error"]["message"]  # le rendu en cours garde son message
     assert len(env.launcher.started) == 1  # seul le rendu a lancé un parcours
 
 
@@ -90,9 +92,39 @@ async def test_regenerate_drafts_twice_is_review_in_progress(
     again = await post(client, pid)
     assert (again.status_code, code_of(again)) == (409, "review_in_progress")
     assert again.json()["error"]["details"] == {"session_id": session_id}
+    assert again.json()["error"]["message"] == "Les brouillons s'écrivent déjà."
     assert len(env.launcher.started) == 1
     await env.launcher.end(env.user_id, session_id, "failed")  # la session est close : on relance
     assert (await post(client, pid)).status_code == 202
+
+
+async def test_two_simultaneous_regenerations_start_one_session(
+    env: Env, client: httpx.AsyncClient
+) -> None:
+    pid = await validated(env)
+    first, second = await asyncio.gather(post(client, pid), post(client, pid))
+    assert sorted((first.status_code, second.status_code)) == [202, 409]
+    refused = first if first.status_code == 409 else second
+    started = first if first.status_code == 202 else second
+    assert code_of(refused) == "review_in_progress"
+    assert refused.json()["error"]["details"] == {"session_id": started.json()["session_id"]}
+    assert len(env.launcher.started) == 1
+
+
+async def test_validated_project_shows_the_session_of_its_drafts_while_it_runs(
+    env: Env, client: httpx.AsyncClient
+) -> None:
+    """Après un rechargement, le front retrouve la session des brouillons (schéma inchangé)."""
+    pid = await validated(env)
+    assert (await client.get(f"{API}/{pid}")).json()["session_id"] is None
+    session_id = (await post(client, pid)).json()["session_id"]
+    assert (await client.get(f"{API}/{pid}")).json()["session_id"] == session_id
+    [listed] = [p for p in (await client.get(API)).json() if p["id"] == pid]
+    assert listed["session_id"] == session_id
+    await env.launcher.end(env.user_id, session_id)  # la session est close : plus rien à suivre
+    assert (await client.get(f"{API}/{pid}")).json()["session_id"] is None
+    [listed] = [p for p in (await client.get(API)).json() if p["id"] == pid]
+    assert listed["session_id"] is None
 
 
 async def test_regenerate_drafts_of_another_users_project_is_404(
@@ -129,12 +161,14 @@ async def test_regenerate_drafts_unavailable_engine_is_503(
 async def test_save_drafts_first_write_wins(env: Env) -> None:
     pid = await validated(env)
     store = AgentProjectStore(env.rt)
-    await store.save_drafts(env.user_id, "s1", pid, draft_results())
+    assert await store.save_drafts(env.user_id, "s1", pid, draft_results()) is True
     first = (await env.row(pid)).drafts
     assert set(first) == {"cv_line", "profile_entry", "linkedin_post", "readme_plan"}
     assert all(item["edited"] is False and item["status"] == "ready" for item in first.values())
-    await store.save_drafts(env.user_id, "s2", pid, draft_results(to_check=["cv_line"]))
-    assert (await env.row(pid)).drafts == first  # rejeu ou autre session : rien de plus
+    ignored = await store.save_drafts(env.user_id, "s2", pid, draft_results(to_check=["cv_line"]))
+    assert (
+        ignored is False and (await env.row(pid)).drafts == first
+    )  # rejeu ou autre session : rien de plus
 
 
 async def test_save_drafts_does_nothing_without_drafts_or_off_a_validated_project(
@@ -142,10 +176,11 @@ async def test_save_drafts_does_nothing_without_drafts_or_off_a_validated_projec
 ) -> None:
     store = AgentProjectStore(env.rt)
     pid = await validated(env)
-    await store.save_drafts(env.user_id, "s1", pid, [])  # « brouillons indisponibles » de nouveau
+    # « brouillons indisponibles » de nouveau
+    assert await store.save_drafts(env.user_id, "s1", pid, []) is False
     assert (await env.row(pid)).drafts == {}
     todo = await env.add_project(1, status="to_redo")
-    await store.save_drafts(env.user_id, "s1", todo, draft_results())
+    assert await store.save_drafts(env.user_id, "s1", todo, draft_results()) is False
     row = await env.row(todo)
     assert row.drafts == {} and row.status == "to_redo"
 

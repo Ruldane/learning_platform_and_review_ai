@@ -111,7 +111,7 @@ class ProjectStore(Protocol):
 
     async def save_drafts(
         self, user_id: str, session_id: str, project_id: str, drafts: list[DraftResult]
-    ) -> None: ...
+    ) -> bool: ...
 
 
 def projects_unavailable() -> AppError:
@@ -145,7 +145,7 @@ class _NoProjects:
 
     async def save_drafts(
         self, user_id: str, session_id: str, project_id: str, drafts: list[DraftResult]
-    ) -> None:
+    ) -> bool:
         raise projects_unavailable()
 
 

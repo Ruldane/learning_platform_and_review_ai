@@ -25,6 +25,13 @@ async def test_logs_step_fails_without_logs() -> None:
     await fails(FakeApi(), "brief", "journaux", "non fournis", logs=None)
 
 
+@pytest.mark.parametrize("part", ["brief", "journaux"])
+@pytest.mark.parametrize("empty", ["", "\n", "  \n \t\n"])
+async def test_logs_step_fails_on_empty_logs(part: str, empty: str) -> None:
+    """Une entrée vide (début mal formé, tube cassé, mauvais service) n'est jamais un succès."""
+    await fails(FakeApi(), part, "journaux", "vides", logs=empty)
+
+
 @pytest.mark.parametrize(
     ("part", "leak", "secret"),
     [
@@ -61,7 +68,9 @@ async def test_journaux_part_alone_plays_only_the_logs_step(
     steps = await play(fake, "journaux", logs="INFO relevé 3 fini\nINFO brief b1 créé\n")
 
     assert steps == ["journaux"] and not fake.seen and not fake.puts
-    assert "2 ligne(s) relue(s), sans donnée" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "2 ligne(s) relue(s), motifs génériques seulement" in out
+    assert "sans donnée" not in out
     await fails(FakeApi(), "journaux", "journaux", "non fournis", logs=None)
     await fails(FakeApi(), "journaux", "journaux", "Donnée personnelle", logs="INFO zone Lyon\n")
 
@@ -125,7 +134,12 @@ def test_journaux_part_alone_reads_stdin(
         check.main(["--api", "http://localhost:1", "--part", "journaux", "--logs-file", "-"])
     assert exited.value.code == 0
     out = capsys.readouterr().out
-    assert "2 ligne(s) relue(s), sans donnée" in out and "réussi : 1 étapes (journaux)" in out
+    assert "motifs génériques seulement" in out and "réussi : 1 étapes (journaux)" in out
+
+    monkeypatch.setattr("sys.stdin", io.StringIO(""))
+    with pytest.raises(SystemExit) as empty:
+        check.main(["--api", "http://localhost:1", "--part", "journaux", "--logs-file", "-"])
+    assert empty.value.code == 1 and "vides" in capsys.readouterr().err
 
     monkeypatch.setattr("sys.stdin", io.StringIO("INFO zone Lyon\n"))
     with pytest.raises(SystemExit) as leaked:

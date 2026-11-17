@@ -35,8 +35,10 @@ async def _check(rt: ProjectsRuntime, user_id: str, project_id: str) -> None:
             db, user_id, graph=REVIEW_GRAPH, subject_type=SUBJECT
         )
         running = open_ids.get(project_id, [])
-        if running or row.status == "reviewing":
+        if row.status == "reviewing":
             raise review_in_progress(running[0] if running else row.session_id)
+        if running:  # le projet est validé : c'est la session des brouillons qui tourne
+            raise review_in_progress(running[0], "Les brouillons s'écrivent déjà.")
         if row.status != "validated":
             raise project_not_validated("Seul un projet validé a des brouillons.")
         if row.drafts:

@@ -15,10 +15,10 @@ def project_not_ready() -> AppError:
     )
 
 
-def review_in_progress(session_id: str | None) -> AppError:
+def review_in_progress(session_id: str | None, message: str | None = None) -> AppError:
     return AppError(
         "review_in_progress",
-        "Ton rendu est en cours d'évaluation : attends son résultat.",
+        message or "Ton rendu est en cours d'évaluation : attends son résultat.",
         409,
         {"session_id": session_id},
     )

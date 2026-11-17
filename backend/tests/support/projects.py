@@ -76,6 +76,9 @@ class FakeProjectStore:
     repo_calls: list[str] = field(default_factory=list)
     drafts: list[DraftResult] | None = None  # `save_drafts` : la première écriture gagne
     drafts_saves: int = 0
+    ignore_drafts: bool = (
+        False  # le port ignore l'écriture (déjà des brouillons, projet non validé)
+    )
 
     async def brief_inputs(self, user_id: str, project_id: str) -> BriefInputs:
         return self.brief
@@ -108,7 +111,9 @@ class FakeProjectStore:
 
     async def save_drafts(
         self, user_id: str, session_id: str, project_id: str, drafts: list[DraftResult]
-    ) -> None:
+    ) -> bool:
         self.drafts_saves += 1
-        if self.drafts is None:
+        first = self.drafts is None and not self.ignore_drafts
+        if first:
             self.drafts = drafts
+        return first and bool(drafts)

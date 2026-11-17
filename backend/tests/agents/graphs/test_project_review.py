@@ -2,9 +2,12 @@
 verdict ; sans description ni dépôt lisible, aucun appel au modèle ; les quatre brouillons ne
 viennent qu'à la validation."""
 
+import logging
+
 import pytest
 
 from app.agents.graphs.project_review import ProjectReviewInput
+from app.agents.nodes.practitioner.finish import NOT_SAVED
 from tests.agents.graphs.project_support import (
     DRAFTS_ASK,
     EVALUATE_ASK,
@@ -262,6 +265,24 @@ async def test_drafts_mode_that_fails_again_saves_nothing_and_stays_validated(
     assert project_store.drafts == [] and project_store.review_saves == 0
     [done] = await run.events("run.completed")
     assert done["summary"] == "Projet validé : brouillons indisponibles."
+
+
+async def test_drafts_mode_ignored_write_is_not_announced_as_saved(
+    project_runner: MakeProject,
+    project_store: FakeProjectStore,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Le port n'a rien rangé (le projet a déjà ses brouillons) : ni le journal ni la phrase de fin
+    ne disent « rangés » ou « prêts »."""
+    caplog.set_level(logging.INFO, logger="app")
+    project_store.ignore_drafts = True
+    run = await project_runner(project_models(drafts=[drafts_json()]), mode="drafts")
+    await run.wait_status("completed")
+    assert project_store.drafts_saves == 1 and project_store.drafts is None
+    [done] = await run.events("run.completed")
+    assert done["summary"] == NOT_SAVED
+    logged = "\n".join(r.getMessage() for r in caplog.records)
+    assert "Brouillons non rangés" in logged and "Brouillons rangés" not in logged
 
 
 def test_review_input_mode_defaults_to_review() -> None:

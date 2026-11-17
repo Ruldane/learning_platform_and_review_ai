@@ -93,5 +93,5 @@ class AgentProjectStore:
 
     async def save_drafts(
         self, user_id: str, session_id: str, project_id: str, drafts: list[DraftResult]
-    ) -> None:
-        await save_drafts(self._rt, user_id, session_id, project_id, drafts)
+    ) -> bool:
+        return await save_drafts(self._rt, user_id, session_id, project_id, drafts)
