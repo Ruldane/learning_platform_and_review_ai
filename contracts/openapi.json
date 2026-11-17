@@ -5458,6 +5458,73 @@
         "title": "HistoryPointOut",
         "type": "object"
       },
+      "IdeSessionOut": {
+        "properties": {
+          "entry": {
+            "title": "Entry",
+            "type": "string"
+          },
+          "exercise_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exercise Id"
+          },
+          "files": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Files",
+            "type": "object"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          },
+          "passed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed At"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "exercise_id",
+          "updated_at",
+          "passed",
+          "passed_at",
+          "files",
+          "entry"
+        ],
+        "title": "IdeSessionOut",
+        "type": "object"
+      },
       "IdeSessionStarted": {
         "description": "Le graphe tourne : `session_id` désigne la session d'agents à suivre (en moins de 2 s).",
         "properties": {
@@ -6849,7 +6916,7 @@
         "type": "object"
       },
       "McpCallOut": {
-        "description": "Une ligne du journal : l'outil, le niveau, le code de résultat, la durée, les identifiants.\nJamais le contenu.",
+        "description": "Une ligne du journal : l'outil, le niveau, le code de résultat, la durée, les identifiants.\nJamais le contenu. Niveau 0 : appel refusé avant la résolution de l'outil ; `token_id` vide :\njeton non reconnu.",
         "properties": {
           "action": {
             "title": "Action",
@@ -6879,6 +6946,7 @@
           },
           "level": {
             "enum": [
+              0,
               1,
               2,
               3
@@ -6887,8 +6955,15 @@
             "type": "integer"
           },
           "token_id": {
-            "title": "Token Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Token Id"
           }
         },
         "required": [
@@ -8469,7 +8544,7 @@
         "type": "object"
       },
       "NoteIn": {
-        "description": "Une note ajoutée à la main ou par Claude : l'auteur vient de l'appelant, jamais du corps.\nUne proposition porte `replacement`, la plage de lignes et `base_hash`.",
+        "description": "Une note ajoutée à la main ou par Claude : l'auteur vient de l'appelant, jamais du corps.\nUne proposition porte `replacement`, la plage de lignes et `base_hash` : le sha256 hexadécimal\n(minuscules, 64 signes) du contenu du fichier encodé en UTF-8.",
         "properties": {
           "base_hash": {
             "anyOf": [
@@ -11988,7 +12063,7 @@
         "type": "object"
       },
       "RunIn": {
-        "description": "`run` exécute, `check` vérifie seulement la syntaxe ; `entry` : le fichier d'entrée (celui\nde la séance par défaut).",
+        "description": "`run` exécute `entry` ; `check` lance les tests de l'exercice par pytest dans le bac (code de\nsortie 0 = réussi). `entry` : le fichier d'entrée (celui de la séance par défaut).",
         "properties": {
           "entry": {
             "anyOf": [
@@ -12397,12 +12472,22 @@
           }
         ]
       },
-      "SessionOut": {
+      "SessionStarted": {
         "properties": {
-          "entry": {
-            "title": "Entry",
+          "session_id": {
+            "title": "Session Id",
             "type": "string"
-          },
+          }
+        },
+        "required": [
+          "session_id"
+        ],
+        "title": "SessionStarted",
+        "type": "object"
+      },
+      "SessionSummary": {
+        "description": "`passed` : la séance a eu une vérification (`check`) réussie (`passed_at` : la première).",
+        "properties": {
           "exercise_id": {
             "anyOf": [
               {
@@ -12414,16 +12499,25 @@
             ],
             "title": "Exercise Id"
           },
-          "files": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "title": "Files",
-            "type": "object"
-          },
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          },
+          "passed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed At"
           },
           "title": {
             "title": "Title",
@@ -12440,57 +12534,8 @@
           "title",
           "exercise_id",
           "updated_at",
-          "files",
-          "entry"
-        ],
-        "title": "SessionOut",
-        "type": "object"
-      },
-      "SessionStarted": {
-        "properties": {
-          "session_id": {
-            "title": "Session Id",
-            "type": "string"
-          }
-        },
-        "required": [
-          "session_id"
-        ],
-        "title": "SessionStarted",
-        "type": "object"
-      },
-      "SessionSummary": {
-        "properties": {
-          "exercise_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Exercise Id"
-          },
-          "id": {
-            "title": "Id",
-            "type": "string"
-          },
-          "title": {
-            "title": "Title",
-            "type": "string"
-          },
-          "updated_at": {
-            "format": "date-time",
-            "title": "Updated At",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "title",
-          "exercise_id",
-          "updated_at"
+          "passed",
+          "passed_at"
         ],
         "title": "SessionSummary",
         "type": "object"
@@ -14032,7 +14077,7 @@
         "type": "object"
       },
       "TeachIn": {
-        "description": "Ce qui déclenche le professeur : une exécution, une erreur, une question ou, en option,\n30 s d'arrêt sur une ligne. Jamais à la frappe.",
+        "description": "Ce qui déclenche le professeur : une exécution en erreur (`run_error`) ou réussie\n(`run_ok`), une question (`question`, non vide : 422 sinon), une demande d'indice (`hint`) ou,\nen option, 30 s d'arrêt sur une ligne (`idle`). Jamais à la frappe.",
         "properties": {
           "file_path": {
             "anyOf": [
@@ -14083,9 +14128,10 @@
           },
           "trigger": {
             "enum": [
-              "run",
-              "error",
+              "run_error",
+              "run_ok",
               "question",
+              "hint",
               "idle"
             ],
             "title": "Trigger",
@@ -14129,8 +14175,7 @@
                 "enum": [
                   "cap_reached",
                   "on_demand",
-                  "busy",
-                  "empty_question"
+                  "busy"
                 ],
                 "type": "string"
               },
@@ -18487,7 +18532,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SessionOut"
+                  "$ref": "#/components/schemas/IdeSessionOut"
                 }
               }
             },
@@ -18716,7 +18761,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SessionOut"
+                  "$ref": "#/components/schemas/IdeSessionOut"
                 }
               }
             },
@@ -18761,7 +18806,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SessionOut"
+                  "$ref": "#/components/schemas/IdeSessionOut"
                 }
               }
             },
@@ -18816,7 +18861,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SessionOut"
+                  "$ref": "#/components/schemas/IdeSessionOut"
                 }
               }
             },

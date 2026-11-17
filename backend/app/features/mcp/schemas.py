@@ -112,14 +112,15 @@ class McpConfirmationOut(BaseModel):
 
 class McpCallOut(BaseModel):
     """Une ligne du journal : l'outil, le niveau, le code de résultat, la durée, les identifiants.
-    Jamais le contenu."""
+    Jamais le contenu. Niveau 0 : appel refusé avant la résolution de l'outil ; `token_id` vide :
+    jeton non reconnu."""
 
     model_config = ConfigDict(from_attributes=True)
 
     id: str
-    token_id: str
+    token_id: str | None
     action: str
-    level: Literal[1, 2, 3]
+    level: Literal[0, 1, 2, 3]
     code: int
     duration_ms: int
     ids: dict[str, Any]

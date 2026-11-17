@@ -6,6 +6,7 @@ import pytest
 from alembic.config import Config
 from sqlalchemy import create_engine as create_sync_engine
 from sqlalchemy import inspect, text
+from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.exc import IntegrityError
 
 from alembic import command
@@ -42,6 +43,21 @@ def _config(db_file: Path) -> Config:
     return cfg
 
 
+def _check_columns(inspector: Inspector) -> None:
+    """Durable : séance réussie, signature d'erreur, refus sans jeton, entrées de 200 signes."""
+    columns = {
+        table: {str(c["name"]): c for c in inspector.get_columns(table)}
+        for table in ("ide_sessions", "ide_runs", "ide_exercises", "mcp_calls")
+    }
+    assert columns["ide_sessions"]["passed_at"]["nullable"] is True
+    assert columns["ide_runs"]["error_signature"]["nullable"] is True
+    assert columns["ide_runs"]["error_signature"]["type"].length == 40
+    assert columns["mcp_calls"]["token_id"]["nullable"] is True
+    assert columns["mcp_calls"]["level"]["nullable"] is False
+    for table in ("ide_sessions", "ide_runs", "ide_exercises"):
+        assert columns[table]["entry"]["type"].length == 200, table
+
+
 def test_migration_creates_and_drops_the_phase10_tables(tmp_path: Path) -> None:
     db_file = tmp_path / "app.db"
     cfg = _config(db_file)
@@ -56,6 +72,7 @@ def test_migration_creates_and_drops_the_phase10_tables(tmp_path: Path) -> None:
             indexes = {str(i["name"]) for i in inspector.get_indexes(table)}
             assert f"ix_{table}_user_id" in indexes, table
 
+        _check_columns(inspector)
         with engine.begin() as conn:
             conn.execute(text(TOKEN), {"id": "t1", "user": "u1", "hash": "a" * 64})
         with pytest.raises(IntegrityError), engine.begin() as conn:

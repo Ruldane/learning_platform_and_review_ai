@@ -16,6 +16,7 @@ from app.features.ide.schemas import (
     ExerciseIn,
     ExerciseOut,
     FilesPutIn,
+    IdeSessionOut,
     IdeSessionStarted,
     NoteIn,
     NoteOut,
@@ -25,7 +26,6 @@ from app.features.ide.schemas import (
     RunOut,
     RunProgress,
     SessionCreateIn,
-    SessionOut,
     SessionSummary,
     TeachIn,
     TeachOut,
@@ -72,20 +72,20 @@ async def list_sessions() -> list[SessionSummary]:
     not_implemented()
 
 
-@router.post("/sessions", response_model=SessionOut, status_code=201)
-async def create_session(body: SessionCreateIn) -> SessionOut:
+@router.post("/sessions", response_model=IdeSessionOut, status_code=201)
+async def create_session(body: SessionCreateIn) -> IdeSessionOut:
     """Ouvre une séance sur un exercice, ou une séance libre."""
     not_implemented()
 
 
-@router.get("/sessions/{session_id}", response_model=SessionOut)
-async def get_session(session_id: Id) -> SessionOut:
+@router.get("/sessions/{session_id}", response_model=IdeSessionOut)
+async def get_session(session_id: Id) -> IdeSessionOut:
     """Une séance avec ses fichiers."""
     not_implemented()
 
 
-@router.put("/sessions/{session_id}/files", response_model=SessionOut)
-async def put_files(session_id: Id, body: FilesPutIn) -> SessionOut:
+@router.put("/sessions/{session_id}/files", response_model=IdeSessionOut)
+async def put_files(session_id: Id, body: FilesPutIn) -> IdeSessionOut:
     """Remplace les fichiers de la séance (20 au plus, 200 Ko). Geste de l'interface."""
     not_implemented()
 
@@ -121,8 +121,8 @@ async def add_note(session_id: Id, body: NoteIn) -> NoteOut:
     not_implemented()
 
 
-@router.post("/notes/{note_id}/accept", response_model=SessionOut)
-async def accept_note(note_id: Id) -> SessionOut:
+@router.post("/notes/{note_id}/accept", response_model=IdeSessionOut)
+async def accept_note(note_id: Id) -> IdeSessionOut:
     """Applique une proposition au fichier si celui-ci n'a pas changé (sinon 409 `note_stale`).
     Geste de l'interface, jamais du MCP."""
     not_implemented()

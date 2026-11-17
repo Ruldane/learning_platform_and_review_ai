@@ -81,7 +81,7 @@ def _create_ide_content() -> None:
         _s("title", 120),
         _t("statement"),
         _j("files"),
-        _s("entry", 120),
+        _s("entry", 200),
         _s("origin", 16),
         _s("topic", 300, True),
         _s("session_id", 36, True),
@@ -91,8 +91,9 @@ def _create_ide_content() -> None:
         _s("exercise_id", 36, True),
         _s("title", 120),
         _j("files"),
-        _s("entry", 120),
+        _s("entry", 200),
         _i("teacher_tokens"),
+        _dt("passed_at", True),
         indexes={"ix_ide_sessions_user_updated": ["user_id", "updated_at"]},
     )
     _create(
@@ -110,13 +111,14 @@ def _create_ide_runs_and_notes() -> None:
         "ide_runs",
         _s("session_id", 36),
         _s("kind", 8),
-        _s("entry", 120),
+        _s("entry", 200),
         _s("status", 16),
         _i("exit_code", True),
         _i("duration_ms", True),
         _b("truncated"),
         _t("output"),
         _s("requested_by", 60),
+        _s("error_signature", 40, True),
         indexes={"ix_ide_runs_session": ["session_id", "created_at"]},
     )
     _create(
@@ -160,7 +162,7 @@ def _create_mcp_access() -> None:
 def _create_mcp_journal() -> None:
     _create(
         "mcp_calls",
-        _s("token_id", 36),
+        _s("token_id", 36, True),
         _s("action", 80),
         _i("level"),
         _i("code"),
