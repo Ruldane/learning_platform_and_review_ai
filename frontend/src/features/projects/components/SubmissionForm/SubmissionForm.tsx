@@ -12,7 +12,10 @@ interface SubmissionFormProps {
   busy: boolean;
   /** Ce que le serveur a refusé, rangé par champ ; un message s'efface dès que son champ change. */
   refusal?: SubmissionRefusalView | null;
-  /** Le point de départ des champs (le dernier rendu d'un projet à reprendre) ; les captures ne se reprennent pas. */
+  /**
+   * Le point de départ des champs (le dernier rendu d'un projet à reprendre) ; les captures ne se
+   * reprennent pas.
+   */
   initial?: { repoUrl: string | null; description: string | null };
 }
 

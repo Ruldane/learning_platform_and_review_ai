@@ -51,6 +51,9 @@ export const projects = {
       "Le Praticien écrit tes brouillons. Ils s'affichent ici dès qu'ils sont prêts.",
     draftsFailed:
       "Les brouillons n'ont pas pu être écrits cette fois. Tu peux relancer leur écriture.",
+    draftsInProgress:
+      "Leur écriture est déjà en cours, mais on ne retrouve pas son suivi : recharge la page dans un instant.",
+    draftsNotValidated: "Ce projet n'est plus validé : la page se relit.",
     screenshotsNotCarried: "Les captures du dernier rendu ne sont pas reprises : ajoute-les.",
     draftsText:
       "Écrits d'après ton rendu et ton profil : relis-les, vérifie-les, puis publie-les toi-même.",

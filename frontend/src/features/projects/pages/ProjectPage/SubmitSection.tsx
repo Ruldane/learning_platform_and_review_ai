@@ -6,11 +6,17 @@ import type { SubmissionItemView } from "../../toView";
 
 interface SubmitSectionProps {
   submitter: ReturnType<typeof useSubmitProject>;
-  /** Le dernier rendu d'un projet à reprendre : le formulaire repart de son lien et de sa description. */
+  /**
+   * Le dernier rendu d'un projet à reprendre : le formulaire repart de son lien et de sa
+   * description.
+   */
   previous?: SubmissionItemView | null;
 }
 
-/** Le rendu du projet : le formulaire, verrouillé pendant l'envoi, et le refus qui n'est pas d'un champ. */
+/**
+ * Le rendu du projet : le formulaire, verrouillé pendant l'envoi, et le refus qui n'est pas d'un
+ * champ.
+ */
 export function SubmitSection({ submitter, previous = null }: SubmitSectionProps) {
   return (
     <section aria-labelledby="project-submit" className="flex flex-col gap-3">

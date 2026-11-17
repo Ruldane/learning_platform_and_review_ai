@@ -10,7 +10,9 @@ import { RegenerateDrafts } from "./RegenerateDrafts";
 interface DraftsSectionProps {
   projectId: string;
   drafts: ProjectDetailView["drafts"];
-  /** Sans aucun brouillon (le texte comme l'entrée du profil), la section propose de les réécrire. */
+  /**
+   * Sans aucun brouillon (le texte comme l'entrée du profil), la section propose de les réécrire.
+   */
   regenerable: boolean;
   regeneration: DraftsRegeneration;
   run: ReturnType<typeof useProjectRun>;
@@ -19,8 +21,9 @@ interface DraftsSectionProps {
 /**
  * Les brouillons au nom de January (ligne de CV, post LinkedIn, plan de README) : modifiables,
  * « Enregistrer » (le serveur recontrôle un brouillon à vérifier), « Copier » (rejeté si le
- * presse-papiers échoue, la carte le dit). Rien n'est publié par l'application. Un projet validé qui
- * n'en a pas (leur écriture a échoué) propose « Régénérer les brouillons », puis suit leur écriture.
+ * presse-papiers échoue, la carte le dit). Rien n'est publié par l'application. Un projet validé
+ * qui n'en a pas (leur écriture a échoué) propose « Régénérer les brouillons », puis suit leur
+ * écriture.
  */
 export function DraftsSection(props: DraftsSectionProps) {
   const { projectId, drafts, regenerable, regeneration, run } = props;

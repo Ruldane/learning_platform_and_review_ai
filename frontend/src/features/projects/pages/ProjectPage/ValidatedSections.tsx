@@ -11,7 +11,8 @@ import { EntrySection } from "./EntrySection";
 
 /**
  * Un projet validé : le constat (et le lien vers la carte des compétences, où les compétences du
- * module sont prouvées), l'évaluation, les brouillons au nom de January, puis l'ajout au profil (sans brouillon, ils se régénèrent).
+ * module sont prouvées), l'évaluation, les brouillons au nom de January, puis l'ajout au profil
+ * (sans brouillon, ils se régénèrent).
  */
 export function ValidatedSections({
   project,

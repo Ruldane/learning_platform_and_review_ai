@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { activityItem, type HomeApiOptions } from "@/test/homeApi";
 import { renderHome } from "@/test/homeHarness";
@@ -30,7 +30,13 @@ const region = () => screen.getByRole("region", { name: "Notifications" });
 const T = (minute: number) => new Date(Date.UTC(2026, 10, 16, 10, minute)).toISOString();
 const activityReads = (queries: URLSearchParams[]) => queries.length;
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+});
+
+/** Le temps des délais de disparition est simulé : le test n'attend pas, il l'avance. */
+const advance = (ms: number) => act(() => vi.advanceTimersByTimeAsync(ms));
 
 describe("BackgroundNotices", () => {
   it("announces nothing that was already there, then what arrives, from the (at, id) cursor", async () => {
@@ -160,33 +166,43 @@ describe("BackgroundNotices", () => {
     ]);
   });
 
-  it("notice pauses on hover and focus, then goes on with the time it had left", async () => {
-    const { state, user } = setup({ events: [activityItem("e1", T(1))] }, 400);
-    await waitFor(() => expect(state.queries.length).toBeGreaterThan(1));
-    state.events.push(
-      activityItem("e2", T(2), { title: "Survolée" }),
-      activityItem("e3", T(3), { title: "Laissée" }),
-    );
-    const hovered = (await within(region()).findByText("Survolée")).closest("[data-notice]")!;
-    await user.hover(hovered);
-    // « Laissée » disparaît à ses 400 ms, « Survolée » attend qu'on la quitte.
-    await waitFor(() => expect(within(region()).queryByText("Laissée")).toBeNull());
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    expect(within(region()).getByText("Survolée")).toBeVisible();
-    await user.unhover(hovered);
-    await waitFor(() => expect(within(region()).queryByText("Survolée")).toBeNull());
-  });
+  it(
+    "notice pauses on hover and focus, then goes on with the time it had left",
+    { timeout: 20_000 },
+    async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      const { state, user } = setup({ events: [activityItem("e1", T(1))] }, 2_000);
+      await waitFor(() => expect(state.queries.length).toBeGreaterThan(1));
+      state.events.push(
+        activityItem("e2", T(2), { title: "Survolée" }),
+        activityItem("e3", T(3), { title: "Laissée" }),
+      );
+      const hovered = (await within(region()).findByText("Survolée")).closest("[data-notice]")!;
+      await user.hover(hovered);
+      // « Laissée » disparaît à ses 2 s, « Survolée » attend qu'on la quitte, quelle que soit la
+      // durée.
+      await advance(2_200);
+      expect(within(region()).queryByText("Laissée")).toBeNull();
+      await advance(8_000);
+      expect(within(region()).getByText("Survolée")).toBeVisible();
+      await user.unhover(hovered);
+      await advance(2_200);
+      expect(within(region()).queryByText("Survolée")).toBeNull();
+    },
+  );
 
-  it("holds a notice while the focus is on its Fermer button", async () => {
-    const { state, user } = setup({ events: [activityItem("e1", T(1))] }, 300);
+  it("holds a notice while the focus is on its Fermer button", { timeout: 20_000 }, async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const { state, user } = setup({ events: [activityItem("e1", T(1))] }, 2_000);
     await waitFor(() => expect(state.queries.length).toBeGreaterThan(1));
     state.events.push(activityItem("e2", T(2), { title: "Au clavier" }));
     await within(region()).findByText("Au clavier");
     await user.tab();
     expect(within(region()).getByRole("button", { name: /Fermer/ })).toHaveFocus();
-    await new Promise((resolve) => setTimeout(resolve, 700));
+    await advance(8_000);
     expect(within(region()).getByText("Au clavier")).toBeVisible();
     await user.tab();
-    await waitFor(() => expect(within(region()).queryByText("Au clavier")).toBeNull());
+    await advance(2_200);
+    expect(within(region()).queryByText("Au clavier")).toBeNull();
   });
 });

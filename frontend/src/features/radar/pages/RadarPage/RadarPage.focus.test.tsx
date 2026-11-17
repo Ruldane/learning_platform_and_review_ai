@@ -17,7 +17,7 @@ const RUNNING = radarRun("r9", {
 });
 
 describe("RadarPage : le focus ne dépend pas de l'historique du navigateur", () => {
-  it("moves the focus to the run title after a launch, with no location state", async () => {
+  it("radar focus without location state: the title takes the focus after a launch", async () => {
     const { user, state, router, sockets } = setup();
     await user.click(await screen.findByRole("button", { name: "Lancer un relevé" }));
     await waitFor(() => expect(router.state.location.pathname).toBe("/carriere/radar/new1"));
@@ -45,5 +45,20 @@ describe("RadarPage : le focus ne dépend pas de l'historique du navigateur", ()
     expect(screen.queryByText("Un relevé était déjà en cours : on le suit.")).toBeNull();
     expect(sockets.sockets.some((s) => s.url.includes("sess-forged"))).toBe(false);
     expect(state.sessionReads).toBeGreaterThan(0);
+  });
+
+  it("spends the launch focus once: coming back to the running run does not take it again", async () => {
+    const { user, router } = setup({ runs: [radarRun("r1")] });
+    await user.click(await screen.findByRole("button", { name: "Lancer un relevé" }));
+    expect(await screen.findByRole("heading", { name: "Relevé en cours" })).toHaveFocus();
+
+    // Un détour par un relevé fini de l'historique, puis retour sur le relevé encore en cours.
+    await router.navigate("/carriere/radar/r1");
+    await waitFor(() =>
+      expect(screen.queryByRole("heading", { name: "Relevé en cours" })).toBeNull(),
+    );
+    await router.navigate("/carriere/radar/new1");
+    const title = await screen.findByRole("heading", { name: "Relevé en cours" });
+    expect(title).not.toHaveFocus();
   });
 });

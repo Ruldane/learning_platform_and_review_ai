@@ -1,5 +1,5 @@
 import { focusManager } from "@tanstack/react-query";
-import { act, screen } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import { HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { councilEvents } from "@/test/councilEvents";
@@ -111,9 +111,10 @@ describe("ProjectPage : régénérer les brouillons", () => {
   it("starts the writing once, follows it, then shows the drafts", async () => {
     const { user, state, settle, sockets } = setup({ projects: [validated()] });
     await user.dblClick(await regenerate());
-    expect(
-      await screen.findByRole("heading", { name: "Brouillons en cours d'écriture" }),
-    ).toBeVisible();
+    const writing = await screen.findByRole("heading", { name: "Brouillons en cours d'écriture" });
+    expect(writing).toBeVisible();
+    // Le bouton cliqué a disparu : le titre du suivi prend le focus, jamais `body`.
+    await waitFor(() => expect(writing).toHaveFocus());
     expect(state.regenerations).toEqual(["p1"]);
     expect(screen.queryByRole("button", { name: "Régénérer les brouillons" })).toBeNull();
 
@@ -137,7 +138,47 @@ describe("ProjectPage : régénérer les brouillons", () => {
     const stream = await openStream(sockets, "sess-drafts-bad");
     stream.push(councilEvents("sess-drafts-bad").failed());
     expect(await screen.findByText(/n'ont pas pu être écrits/)).toBeVisible();
+    // Le suivi a disparu : le bouton reprend le focus.
+    await waitFor(async () => expect(await regenerate()).toHaveFocus());
+  });
+
+  it("says so when the writing ends without drafts although it did not fail", async () => {
+    const { user, sockets } = setup({
+      projects: [validated()],
+      draftsSessionId: "sess-drafts-empty",
+    });
+    await user.click(await regenerate());
+    const stream = await openStream(sockets, "sess-drafts-empty");
+    stream.push(councilEvents("sess-drafts-empty").completed());
+    expect(await screen.findByText(/n'ont pas pu être écrits/)).toBeVisible();
     expect(await regenerate()).toBeVisible();
+  });
+
+  it("explains a 409 review_in_progress that does not name the running session", async () => {
+    const { user } = setup({
+      projects: [validated()],
+      draftsReply: () =>
+        HttpResponse.json(apiError("review_in_progress", "Déjà en cours."), { status: 409 }),
+    });
+    await user.click(await regenerate());
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Leur écriture est déjà en cours, mais on ne retrouve pas son suivi",
+    );
+    expect(screen.queryByText(/évaluation/)).toBeNull();
+    expect(await regenerate()).toBeVisible();
+  });
+
+  it("has its own text for a 409 project_not_validated", async () => {
+    const { user } = setup({
+      projects: [validated()],
+      draftsReply: () =>
+        HttpResponse.json(apiError("project_not_validated", "Pas validé."), { status: 409 }),
+    });
+    await user.click(await regenerate());
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Ce projet n'est plus validé : la page se relit.",
+    );
+    expect(screen.queryByText("Seul un projet validé peut entrer dans ton profil.")).toBeNull();
   });
 
   it("reads the project again when the server says the drafts already exist (409)", async () => {
@@ -178,7 +219,8 @@ describe("ProjectPage : le focus de « Réessayer l'énoncé » ne sert qu'une f
     await act(() => vi.advanceTimersByTimeAsync(5_500));
     expect(await screen.findByText("Durée estimée : 6 h")).toBeVisible();
 
-    // Un autre onglet relance l'énoncé : la page se relit au retour de l'onglet, sans reprendre le focus.
+    // Un autre onglet relance l'énoncé : la page se relit au retour de l'onglet, sans reprendre le
+    // focus.
     settle("p1", { status: "brief_pending", brief: null, session_id: "sess-b2" });
     await act(async () => {
       focusManager.setFocused(false);

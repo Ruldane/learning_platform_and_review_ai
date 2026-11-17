@@ -8,8 +8,12 @@ import { RadarHistory } from "./RadarHistory";
 import { RadarLaunch } from "./RadarLaunch";
 import { RunArea } from "./RunArea";
 import { useLaunch } from "./useLaunch";
+import { useLaunchFocus } from "./useLaunchFocus";
 
-/** Le lancement de la page, s'il porte sur le relevé montré ; sinon rien : celui-ci n'a pas été lancé ici. */
+/**
+ * Le lancement de la page, s'il porte sur le relevé montré ; sinon rien : celui-ci n'a pas été
+ * lancé ici.
+ */
 function launchOf(started: StartedRun | null, runId: string | null) {
   const mine = started !== null && started.runId === runId ? started : null;
   return { sessionId: mine?.sessionId ?? null, resumed: mine?.resumed ?? false };
@@ -35,6 +39,7 @@ export function RadarContent({ runId, latest, history, starter, createSocket }: 
   const waiting = runId !== null && detail.query.isPending;
   const running =
     starter.pending || waiting || latest.runningId !== null || view?.status === "running";
+  const focusRun = useLaunchFocus(starter.started, runId, view?.status === "running");
 
   return (
     <div className="flex flex-col gap-6">
@@ -53,12 +58,7 @@ export function RadarContent({ runId, latest, history, starter, createSocket }: 
           {t("radar.page.resumed")}
         </p>
       ) : null}
-      <RunArea
-        byAddress={runId !== null}
-        view={view}
-        detail={detail}
-        focusRun={launched.sessionId !== null || launched.resumed}
-      />
+      <RunArea byAddress={runId !== null} view={view} detail={detail} focusRun={focusRun} />
       <RadarHistory history={history} currentId={view?.id ?? null} />
     </div>
   );

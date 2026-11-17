@@ -24,7 +24,9 @@ interface Cursor {
 }
 
 export interface NoticeOptions {
-  /** Délai de relecture et de disparition ; les valeurs par défaut sont celles de la spec (tests). */
+  /**
+   * Délai de relecture et de disparition ; les valeurs par défaut sont celles de la spec (tests).
+   */
   pollMs?: number;
   dismissMs?: number;
 }
@@ -35,7 +37,8 @@ export interface NoticeOptions {
  * couple `after` + `after_id` toutes les `pollMs`, onglet visible seulement. Un nouvel événement
  * d'un genre gardé devient une notification (3 à l'écran, `dismissMs` chacune) et le brief comme le
  * fil sont relus. Après une longue absence, une rafale n'annonce que les 3 plus récents, le plus
- * récent d'abord : les autres sont dans le fil. Tout reste en mémoire : un rechargement repart du plus récent.
+ * récent d'abord : les autres sont dans le fil. Tout reste en mémoire : un rechargement repart du
+ * plus récent.
  */
 export function useBackgroundNotices({
   pollMs = NOTICE_POLL_MS,

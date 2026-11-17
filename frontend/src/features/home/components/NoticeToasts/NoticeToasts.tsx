@@ -10,7 +10,10 @@ const noHold = () => undefined;
 interface NoticeToastsProps {
   notices: NoticeView[];
   onDismiss: (id: string) => void;
-  /** Une notification est survolée ou a le focus (`true`), ou ne l'est plus (`false`) : son délai attend. */
+  /**
+   * Une notification est survolée ou a le focus (`true`), ou ne l'est plus (`false`) : son délai
+   * attend.
+   */
   onHold?: (id: string, held: boolean) => void;
 }
 
