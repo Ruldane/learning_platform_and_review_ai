@@ -9,6 +9,8 @@ interface ProviderSelectProps {
   value: string;
   options: ProviderOption[];
   disabled?: boolean;
+  /** Texte d'un premier choix « aucun » (valeur vide) : pour une option facultative. */
+  emptyLabel?: string;
   onPick: (provider: string) => void;
 }
 
@@ -22,9 +24,12 @@ export function ProviderSelect({
   value,
   options,
   disabled = false,
+  emptyLabel,
   onPick,
 }: ProviderSelectProps) {
   const id = useId();
+  const known =
+    options.some((option) => option.name === value) || (value === "" && emptyLabel !== undefined);
   return (
     <>
       <label htmlFor={id} className="sr-only">
@@ -37,9 +42,8 @@ export function ProviderSelect({
         disabled={disabled}
         onChange={(event) => onPick(event.target.value)}
       >
-        {options.some((option) => option.name === value) ? null : (
-          <option value={value}>{value}</option>
-        )}
+        {emptyLabel === undefined ? null : <option value="">{emptyLabel}</option>}
+        {known ? null : <option value={value}>{value}</option>}
         {options.map((option) => (
           <option key={option.name} value={option.name}>
             {optionLabel(option)}

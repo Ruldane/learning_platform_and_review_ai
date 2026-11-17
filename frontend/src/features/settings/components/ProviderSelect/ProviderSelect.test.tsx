@@ -47,4 +47,23 @@ describe("ProviderSelect", () => {
     );
     expect(screen.getByRole("combobox")).toBeDisabled();
   });
+
+  it("propose un premier choix « aucun » quand on lui donne son texte", async () => {
+    const onPick = vi.fn();
+    render(
+      <ProviderSelect
+        label="Fournisseur"
+        value=""
+        options={options}
+        emptyLabel="Niveau par défaut"
+        onPick={onPick}
+      />,
+    );
+    const select = screen.getByRole("combobox");
+    expect(select).toHaveValue("");
+    expect(screen.getAllByRole("option")[0]).toHaveTextContent("Niveau par défaut");
+    expect(screen.getAllByRole("option")).toHaveLength(options.length + 1); // aucune option parasite
+    await userEvent.setup().selectOptions(select, options[0]!.name);
+    expect(onPick).toHaveBeenCalledWith(options[0]!.name);
+  });
 });

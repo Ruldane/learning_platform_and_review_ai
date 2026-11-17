@@ -2,6 +2,7 @@ import { readTiers } from "./tierChoices";
 import type {
   BraveUsageOut,
   BraveUsageView,
+  ModelChoice,
   SearchSettingsView,
   SettingsOut,
   TierChoices,
@@ -76,4 +77,29 @@ export function withSearchSettings(current: SettingsOut, search: SearchSettingsV
 /** `GET /research/usage` vers la jauge Brave (`month` : « AAAA-MM », en UTC, comme le contrat). */
 export function toBraveUsageView({ brave }: { brave: BraveUsageOut }): BraveUsageView {
   return { hasKey: brave.has_key, used: brave.used, cap: brave.cap, month: brave.month };
+}
+
+/**
+ * Corps du `PUT /settings` après une modification du guide de style : tous les autres réglages
+ * sont repris tels quels de `current`.
+ */
+export function withStyleGuide(current: SettingsOut, styleGuide: string): UserSettings {
+  return { ...buildUserSettings(current, readTiers(current.tiers)), style_guide: styleGuide };
+}
+
+/**
+ * Corps du `PUT /settings` après le choix d'un modèle pour un agent (`choice`), ou son retour au
+ * niveau par défaut (`null`) : les autres surcharges et tous les autres réglages sont repris.
+ */
+export function withAgentOverride(
+  current: SettingsOut,
+  agent: string,
+  choice: ModelChoice | null,
+): UserSettings {
+  const kept = Object.entries(current.agent_overrides ?? {}).filter(([name]) => name !== agent);
+  const overrides = choice ? [...kept, [agent, choice] as const] : kept;
+  return {
+    ...buildUserSettings(current, readTiers(current.tiers)),
+    agent_overrides: Object.fromEntries(overrides),
+  };
 }

@@ -66,3 +66,29 @@ export interface BraveUsageView {
   cap: number;
   month: string;
 }
+
+/** Les durées de la disponibilité telles que les édite `AvailabilityFields` (du texte pendant la saisie). */
+export interface AvailabilityValues {
+  weekday: string;
+  weekendMin: string;
+  weekendMax: string;
+}
+
+export type AvailabilityKey = keyof AvailabilityValues;
+
+/** Quelles durées sont hors bornes ; `weekendOrder` : le minimum du week-end dépasse son maximum. */
+export interface AvailabilityFlags {
+  weekday: boolean;
+  weekendMin: boolean;
+  weekendMax: boolean;
+  weekendOrder: boolean;
+}
+
+/** Un agent de `GET /settings/agents` ; `tier` nul : une surcharge reste pour un agent que le serveur ne connaît plus. */
+export interface AgentRow {
+  name: string;
+  tier: Tier | null;
+}
+
+/** Les surcharges de modèle par agent (nom de l'agent vers son modèle). */
+export type AgentOverrides = Record<string, ModelChoice | undefined>;

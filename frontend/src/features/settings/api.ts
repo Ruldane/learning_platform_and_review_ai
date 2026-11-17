@@ -34,6 +34,11 @@ export async function testApiKey(provider: string) {
   );
 }
 
+/** `GET /settings/agents` : les agents dont le modèle se surcharge, dans l'ordre du registre. */
+export async function fetchAgents(signal?: AbortSignal) {
+  return unwrap(await api.GET("/settings/agents", { signal }));
+}
+
 /** `GET /settings/models` : fournisseurs, modèles proposés et préréglages. */
 export async function fetchModels(signal?: AbortSignal) {
   return unwrap(await api.GET("/settings/models", { signal }));

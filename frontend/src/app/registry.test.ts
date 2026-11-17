@@ -65,8 +65,10 @@ describe("registre des features", () => {
     expect(groups[7]?.items).toEqual([
       { labelKey: "settings.models.navLabel", path: "/reglages/modeles" },
       { labelKey: "settings.search.navLabel", path: "/reglages/recherche" },
+      { labelKey: "settings.availability.navLabel", path: "/reglages/disponibilite" },
       { labelKey: "research.nav.bench", path: "/reglages/recherche/essai" },
       { labelKey: "settings.study.navLabel", path: "/reglages/etude" },
+      { labelKey: "settings.style.navLabel", path: "/reglages/style" },
       { labelKey: "costs.nav.costs", path: "/reglages/couts" },
       { labelKey: "costs.nav.log", path: "/reglages/journal" },
     ]);

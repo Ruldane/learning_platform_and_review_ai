@@ -1,4 +1,11 @@
-import type { ApiKeyOut, ModelChoice, ModelsOut, SearchUsageOut, SettingsOut } from "./types";
+import type {
+  AgentOut,
+  ApiKeyOut,
+  ModelChoice,
+  ModelsOut,
+  SearchUsageOut,
+  SettingsOut,
+} from "./types";
 
 /** Données de test de la feature (réponses typiques du back) ; jamais importées par le code de l'application. */
 function allTiers(provider: string, model: string) {
@@ -92,3 +99,11 @@ export const modelsFixture: ModelsOut = {
 export const searchUsageFixture: SearchUsageOut = {
   brave: { has_key: true, used: 120, cap: 900, month: "2026-11" },
 };
+
+/** Quelques agents de `GET /settings/agents`, dans l'ordre du registre (sans `demo_*`). */
+export const agentsFixture: AgentOut[] = [
+  { name: "scout", tier: "rapide" },
+  { name: "strategist", tier: "fort" },
+  { name: "tutor", tier: "standard" },
+  { name: "designer", tier: "vision" },
+];

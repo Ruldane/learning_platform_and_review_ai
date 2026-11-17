@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { settingsManifest } from "./manifest";
 
 describe("settingsManifest", () => {
-  it("déclare la section Réglages, l'écran Modèles et clés, l'écran Recherche web et l'écran Étude et bilan", () => {
+  it("déclare la section Réglages et ses cinq écrans, dans l'ordre de la navigation", () => {
     expect(settingsManifest.id).toBe("settings");
     expect(settingsManifest.nav).toEqual([
       {
@@ -19,15 +19,29 @@ describe("settingsManifest", () => {
       },
       {
         section: "settings",
+        labelKey: "settings.availability.navLabel",
+        path: "/reglages/disponibilite",
+        order: 3,
+      },
+      {
+        section: "settings",
         labelKey: "settings.study.navLabel",
         path: "/reglages/etude",
         order: 4,
+      },
+      {
+        section: "settings",
+        labelKey: "settings.style.navLabel",
+        path: "/reglages/style",
+        order: 5,
       },
     ]);
     expect(settingsManifest.routes.map((route) => route.path)).toEqual([
       "reglages/modeles",
       "reglages/recherche",
+      "reglages/disponibilite",
       "reglages/etude",
+      "reglages/style",
     ]);
   });
 });
