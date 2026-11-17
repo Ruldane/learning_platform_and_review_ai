@@ -22,7 +22,7 @@ describe("CostByDayChart", () => {
     );
     expect(
       screen.getByRole("img", {
-        name: "Coût par jour, du sam. 14 nov. au lun. 16 nov. : 0,25 $ au total",
+        name: "Coût par jour, du sam. 14 nov. au lun. 16 nov. : 0,25 $ au total",
       }),
     ).toBeInTheDocument();
     expect(container.querySelector(".recharts-bar")).toBeInTheDocument();

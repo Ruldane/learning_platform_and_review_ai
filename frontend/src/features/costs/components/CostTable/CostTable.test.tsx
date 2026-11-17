@@ -26,6 +26,8 @@ describe("CostTable", () => {
         ]}
       />,
     );
+    const scroller = screen.getByRole("region", { name: "Par agent" });
+    expect(scroller).toHaveAttribute("tabindex", "0"); // défilement au clavier
     const table = screen.getByRole("table", { name: "Par agent" });
     expect(within(table).getByRole("columnheader", { name: "Agent" })).toBeInTheDocument();
     const rows = within(table).getAllByRole("row");

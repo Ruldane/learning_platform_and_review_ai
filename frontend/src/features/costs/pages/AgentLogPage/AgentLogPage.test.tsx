@@ -1,7 +1,11 @@
-import { screen, within } from "@testing-library/react";
+import { QueryClient } from "@tanstack/react-query";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { HttpResponse } from "msw";
+import { createMemoryRouter, RouterProvider } from "react-router";
 import { describe, expect, it } from "vitest";
 import { callOut, callPage, costsApi, FIRST_CURSOR } from "@/test/costsApi";
+import { createQueryWrapper } from "@/test/queryWrapper";
 import { renderRoutes } from "@/test/renderRoutes";
 import { server } from "@/test/server";
 import { AgentLogPage } from "./AgentLogPage";
@@ -71,6 +75,7 @@ describe("AgentLogPage", () => {
     const row = within(bodyRows()[0]!);
     expect(row.getByText("Hors session")).toBeInTheDocument();
     expect(row.getByText("Sans agent")).toBeInTheDocument();
+    expect(row.getByText("Aucune session")).toBeInTheDocument();
     expect(row.queryByRole("link")).not.toBeInTheDocument();
   });
 
@@ -120,6 +125,29 @@ describe("AgentLogPage", () => {
     expect(all.searchParams.get("graph")).toBeNull();
     expect(all.searchParams.get("before")).toBeNull();
     expect(callPage(all).next_before).toBe(FIRST_CURSOR);
+  });
+
+  it("coming back to a filter already seen starts again from the first page", async () => {
+    // `gcTime` par défaut (celui de la production) : le client de test le met à zéro et cacherait le défaut.
+    const api = costsApi();
+    server.use(...api.handlers);
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const router = createMemoryRouter([{ path: "/reglages/journal", element: <AgentLogPage /> }], {
+      initialEntries: ["/reglages/journal"],
+    });
+    render(<RouterProvider router={router} />, { wrapper: createQueryWrapper(client) });
+    const user = userEvent.setup();
+    await screen.findByRole("table", { name: TABLE });
+    await user.click(screen.getByRole("button", { name: "Voir plus" }));
+    await screen.findByText("3 appels affichés");
+
+    await user.selectOptions(screen.getByLabelText("Agent"), "scribe");
+    await screen.findByText("1 appel affiché");
+    await user.selectOptions(screen.getByLabelText("Agent"), "");
+    await screen.findByText("2 appels affichés");
+    expect(bodyRows()).toHaveLength(2);
+    expect(screen.getByRole("button", { name: "Voir plus" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Agent")).toHaveFocus();
   });
 
   it("says when nothing was logged, and when the filters match nothing", async () => {

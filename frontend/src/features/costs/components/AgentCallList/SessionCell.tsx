@@ -6,7 +6,14 @@ const SESSION_REF = 8;
 
 /** La session d'un appel : sa référence courte (l'identifiant en infobulle) et l'écran du parcours. */
 export function SessionCell({ call }: { call: CallView }) {
-  if (!call.sessionId) return <span aria-hidden="true">–</span>;
+  if (!call.sessionId) {
+    return (
+      <>
+        <span aria-hidden="true">–</span>
+        <span className="sr-only">{t("costs.log.noSession")}</span>
+      </>
+    );
+  }
   return (
     <span className="flex flex-wrap items-baseline gap-x-2">
       <code title={call.sessionId} className="text-xs">

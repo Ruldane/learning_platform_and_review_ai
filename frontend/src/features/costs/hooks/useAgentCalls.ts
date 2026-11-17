@@ -20,6 +20,8 @@ export function useAgentCalls(agent: string | null, graph: string | null) {
       fetchAgentCalls({ before: pageParam, limit: CALLS_PAGE, agent, graph }, signal),
     getNextPageParam: (last) => last.next_before ?? undefined,
     staleTime: 0,
+    // Revenir à un filtre déjà vu repart de la première page (D188 n° 6) : aucune page gardée.
+    gcTime: 0,
   });
   const calls = useMemo<CallView[]>(
     () => query.data?.pages.flatMap((page) => page.items.map(toCallView)) ?? [],

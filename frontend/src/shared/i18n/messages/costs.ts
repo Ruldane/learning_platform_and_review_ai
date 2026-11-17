@@ -77,6 +77,7 @@ export const costs = {
       all: "Tous",
     },
     tableCaption: "Appels aux modèles, du plus récent au plus ancien",
+    noSession: "Aucune session",
     count: "{count} appels affichés",
     countOne: "1 appel affiché",
     columns: {

@@ -18,7 +18,12 @@ const NUMERIC = new Set<string>(["tokensIn", "tokensOut", "latency", "cost"]);
 /** Le tableau des appels, défilant sur les écrans étroits. */
 export function CallTable({ calls }: { calls: CallView[] }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-border bg-card">
+    <div
+      role="region"
+      aria-label={t("costs.log.tableCaption")}
+      tabIndex={0}
+      className="overflow-x-auto rounded-xl border border-border bg-card"
+    >
       <table className="w-full text-sm">
         <caption className="sr-only">{t("costs.log.tableCaption")}</caption>
         <thead className="border-b border-border text-left">

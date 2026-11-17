@@ -91,6 +91,8 @@ describe("RegenerateDrafts", () => {
     const zone = container.querySelector("p[role='status']");
     expect(zone).not.toBeNull();
     expect(zone).toBeEmptyDOMElement();
+    // vide, elle reste dans l'arbre d'accessibilité (jamais display:none)
+    expect(zone).not.toHaveClass("empty:hidden");
     rerender(
       <RegenerateDrafts
         regeneration={regeneration({ sessionId: "s1" })}

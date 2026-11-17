@@ -28,7 +28,7 @@ describe("CostsPage", () => {
     expect(within(totals).getByText("1 360")).toBeInTheDocument();
     expect(within(totals).getByText("dont 3 estimés")).toBeInTheDocument();
     expect(
-      screen.getByRole("img", { name: /^Coût par jour, du .* : 0,42 \$ au total$/ }),
+      screen.getByRole("img", { name: /^Coût par jour, du .* : 0,42\s\$ au total$/ }),
     ).toBeVisible();
     for (const name of [
       "Appels, jetons et coût par jour",

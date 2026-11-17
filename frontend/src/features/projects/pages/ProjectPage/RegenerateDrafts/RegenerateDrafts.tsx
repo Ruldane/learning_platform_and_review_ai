@@ -29,7 +29,7 @@ export function RegenerateDrafts({ regeneration, run }: RegenerateDraftsProps) {
   // façon fiable. Elle reste la même pendant le suivi, puis quand le bouton revient.
   return (
     <div className="flex flex-col items-start gap-2">
-      <p role="status" className="empty:hidden">
+      <p role="status" className="empty:sr-only">
         {failed ? t("projects.page.draftsFailed") : null}
       </p>
       {writing ? (

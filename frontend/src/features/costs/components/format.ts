@@ -24,14 +24,25 @@ const CALL_TIME = new Intl.DateTimeFormat("fr-FR", {
   hour: "2-digit",
   minute: "2-digit",
 });
+const CALL_TIME_YEAR = new Intl.DateTimeFormat("fr-FR", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+});
 
 /** « 12 340 » (espace insécable fine entre les milliers). */
 export const formatCount = (value: number): string => INTEGER.format(value);
 
-/** « 0,42 $ » ; trois décimales sous le centime pour qu'un petit coût ne s'affiche pas « 0,00 ». */
+/**
+ * « 0,42 $ » (espace insécable) ; trois décimales sous le centime, et « < 0,001 $ » sous le
+ * millième : un coût non nul ne s'écrit jamais « 0,00 $ » ni « 0,000 $ ».
+ */
 export function formatUsd(usd: number): string {
-  const small = usd > 0 && usd < 0.01;
-  return `${(small ? MILLS : CENTS).format(usd)} $`;
+  if (usd > 0 && usd < 0.001) return "< 0,001\u00a0$";
+  const digits = usd > 0 && usd < 0.01 ? MILLS : CENTS;
+  return `${digits.format(usd)}\u00a0$`;
 }
 
 /** « 340 ms » sous la seconde, « 1,8 s » au-delà. */
@@ -42,5 +53,9 @@ export function formatLatency(ms: number): string {
 /** « 16 nov. » : un jour `AAAA-MM-JJ` pour l'axe du graphique. */
 export const dayMonth = (iso: string): string => DAY_MONTH.format(parseDay(iso));
 
-/** « 16 nov., 10:30 » : l'instant d'un appel, à l'heure du poste. */
-export const formatCallTime = (iso: string): string => CALL_TIME.format(new Date(iso));
+/** « 16 nov., 10:30 » : l'instant d'un appel, à l'heure du poste ; l'année si ce n'est pas l'année en cours. */
+export function formatCallTime(iso: string): string {
+  const at = new Date(iso);
+  const format = at.getFullYear() === new Date().getFullYear() ? CALL_TIME : CALL_TIME_YEAR;
+  return format.format(at);
+}
