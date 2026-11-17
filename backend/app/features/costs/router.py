@@ -8,10 +8,9 @@ from fastapi import APIRouter, Query
 from pydantic import BeforeValidator
 
 from app.core.deps import CurrentUserDep, Db
-from app.core.errors import AppError
 from app.core.field_paths import FieldPathsRoute
 from app.features.costs.schemas import AgentCallPage, CostsReport
-from app.features.costs.service import costs_report
+from app.features.costs.service import costs_report, list_calls
 
 router = APIRouter(prefix="/costs", tags=["costs"], route_class=FieldPathsRoute)
 
@@ -57,4 +56,4 @@ async def get_calls(
     """Le journal des agents : les appels du plus récent au plus ancien, `limit` par page (50 par
     défaut). `before` est le curseur `next_before` de la page précédente ; `agent` et `graph`
     filtrent. Aucun contenu de prompt."""
-    raise AppError("not_implemented", "Pas encore disponible.", 501)
+    return await list_calls(db, current.id, before=before, limit=limit, agent=agent, graph=graph)

@@ -2,6 +2,7 @@ from typing import Annotated, Literal
 
 from pydantic import AfterValidator, BaseModel, Field, computed_field, field_validator
 
+from app.agents.registry import AGENTS
 from app.core.clock import DEFAULT_ZONE, Weekday, is_zone
 from app.core.domains import normalize_domain
 from app.features.settings.delays import validated_delays
@@ -123,6 +124,15 @@ class UserSettings(BaseModel):
         if tuple(delays) != validated_delays(delays):
             raise ValueError("trois délais croissants de 1 à 90 jours attendus")
         return delays
+
+    @field_validator("agent_overrides", mode="before")
+    @classmethod
+    def _known_agents(cls, overrides: object) -> object:
+        """Une surcharge ne vise qu'un agent du registre. Contrôlé avant la lecture des valeurs :
+        le nom reçu n'apparaît ni dans le message ni dans le chemin de l'erreur."""
+        if isinstance(overrides, dict) and any(name not in AGENTS for name in overrides):
+            raise ValueError("agent inconnu")  # message fixe : le nom reçu n'est pas recopié
+        return overrides
 
     @field_validator("tiers")
     @classmethod

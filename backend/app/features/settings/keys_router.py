@@ -3,8 +3,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Response
 
 from app.core.deps import CurrentUserDep, Db, get_providers
-from app.core.errors import AppError
 from app.core.providers import Providers
+from app.features.settings.agents import agent_catalogue
 from app.features.settings.keys_schemas import ApiKeyIn, ApiKeyOut, ModelsOut
 from app.features.settings.keys_service import ApiKeyService
 from app.features.settings.schemas import AgentOut
@@ -64,4 +64,4 @@ async def list_models(current: CurrentUserDep, db: Db, providers: ProvidersDep) 
 async def list_agents(current: CurrentUserDep) -> list[AgentOut]:
     """Les agents dont on peut surcharger le modèle (mode avancé) : nom et niveau, sans les agents
     de démonstration `demo_*`. Dans l'ordre du registre `AGENTS`."""
-    raise AppError("not_implemented", "Pas encore disponible.", 501)
+    return agent_catalogue()
