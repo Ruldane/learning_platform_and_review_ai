@@ -182,3 +182,103 @@ async def test_pull_cut_short_is_a_failure_not_a_crash() -> None:
         await settle()
         data = await watcher.progress()
     assert not data.present and "échoué" in data.detail
+
+
+async def test_stream_closed_without_success_is_a_failure_then_retried() -> None:
+    ollama = FakeOllama([{"status": "pulling manifest"}])  # le flux se ferme sans `success`
+    ollama.hold = False
+    now = [0.0]
+    watcher, http = watcher_for(ollama, clock=lambda: now[0])
+    async with http:
+        await watcher.progress()
+        await settle()
+        data = await watcher.progress()
+        assert data.percent is None and "échoué" in data.detail and len(ollama.pulls) == 1
+        now[0] += 31
+        await watcher.progress()
+        await settle()
+    assert len(ollama.pulls) == 2
+
+
+async def test_finished_model_still_absent_is_pulled_again_later() -> None:
+    ollama = FakeOllama([{"status": "pulling manifest"}, {"status": "success"}])
+    ollama.hold = False
+    now = [0.0]
+    watcher, http = watcher_for(ollama, clock=lambda: now[0])
+    async with http:
+        await watcher.progress()
+        await settle()
+        waiting = await watcher.progress()  # fini, pas encore listé : 99, pas de second tirage
+        assert waiting.percent == 99 and len(ollama.pulls) == 1
+        now[0] += 31  # toujours absent (retiré, ou jamais arrivé) : on relance
+        await watcher.progress()
+        await settle()
+    assert len(ollama.pulls) == 2
+
+
+async def test_retry_delay_grows_then_is_capped_and_helps() -> None:
+    ollama = FakeOllama([{"error": SECRET_LINE}])
+    ollama.hold = False
+    now = [0.0]
+    watcher, http = watcher_for(ollama, clock=lambda: now[0])
+    async with http:
+        await watcher.progress()
+        await settle()
+        for index, delay in enumerate([30, 60, 120, 240, 300, 300], start=1):
+            assert len(ollama.pulls) == index
+            now[0] += delay - 1
+            early = await watcher.progress()
+            assert len(ollama.pulls) == index  # pas avant le délai
+            assert "Ollama" in early.detail and SECRET_LINE not in early.detail
+            now[0] += 1
+            await watcher.progress()
+            await settle()
+    assert len(ollama.pulls) == 7
+
+
+async def test_a_success_resets_the_retry_delay() -> None:
+    ollama = FakeOllama([{"error": "x"}])
+    ollama.hold = False
+    now = [0.0]
+    watcher, http = watcher_for(ollama, clock=lambda: now[0])
+    async with http:
+        for _ in range(3):  # trois échecs : le délai monte à 120 s
+            await watcher.progress()
+            await settle()
+            now[0] += 1000
+        ollama.lines = [{"status": "success"}]  # un tirage va au bout, modèle encore absent
+        await watcher.progress()
+        await settle()
+        now[0] += 31
+        ollama.lines = [{"error": "x"}]
+        await watcher.progress()  # relancé après 31 s : la fin « réussie » n'allonge rien
+        await settle()
+        before = len(ollama.pulls)
+        now[0] += 31  # un seul échec depuis la réussite : 30 s suffisent
+        await watcher.progress()
+        await settle()
+    assert len(ollama.pulls) == before + 1
+
+
+async def test_aclose_cancels_the_pull_without_logging_a_failure(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    caplog.set_level(logging.DEBUG)
+    ollama = FakeOllama([{"status": "pulling manifest"}, {"status": "success"}])  # reste en cours
+    watcher, http = watcher_for(ollama)
+    async with http:
+        before = len(asyncio.all_tasks())
+        await watcher.progress()
+        await settle()
+        assert len(asyncio.all_tasks()) == before + 1
+        await watcher.aclose()
+        assert len(asyncio.all_tasks()) == before  # plus de tâche pendante
+        await watcher.aclose()  # sans effet la seconde fois
+    assert "échec" not in " ".join(r.getMessage() for r in caplog.records)
+    assert all(r.levelno < logging.WARNING for r in caplog.records)
+
+
+async def test_aclose_without_a_pull_is_harmless() -> None:
+    watcher, http = watcher_for(FakeOllama([]))
+    async with http:
+        await watcher.aclose()

@@ -28,7 +28,8 @@ async def embedding_progress(
     providers: Annotated[Providers, Depends(get_providers)],
 ) -> EmbeddingProgress:
     """Progression du modèle d'embeddings (`bge-m3`) : public, comme `/health`. Si le modèle
-    manque, le back le télécharge depuis Ollama, une seule fois par processus."""
+    manque, le back le télécharge depuis Ollama, un téléchargement à la fois (relancé après un
+    échec)."""
     if providers.embedding is None:  # jamais en service : `build_providers` le pose toujours
         raise AppError("not_implemented", "Pas encore disponible.", 501)
     data = await providers.embedding.progress()

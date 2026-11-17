@@ -133,7 +133,8 @@ async def google_callback(
         409: {
             "description": "`claim_expired` (le témoin `tremplin_claim` manque ou a plus de "
             "10 minutes, ou « espace vide » a déjà été choisi : le compte existe, il suffit de "
-            "se reconnecter) ou `local_already_claimed` (l'espace local a déjà un propriétaire)"
+            "se reconnecter, ou l'adresse n'est plus nommée dans `ALLOWED_EMAILS`) ou "
+            "`local_already_claimed` (l'espace local a déjà un propriétaire)"
         },
         **_NO_GOOGLE,
     },

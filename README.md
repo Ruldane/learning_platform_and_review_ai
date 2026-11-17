@@ -130,8 +130,9 @@ configuration au delà des clés d'API.
    # FRONTEND_URL=http://localhost:5173
    ```
 
-   `GOOGLE_REDIRECT_URI` et `FRONTEND_URL` ne sont à écrire que si l'adresse n'est pas celle
-   de `localhost` avec les ports par défaut.
+   `GOOGLE_REDIRECT_URI` et `FRONTEND_URL` ne sont à écrire que si l'adresse n'est pas
+   `http://localhost:<port>` (un autre nom d'hôte, ou `https`) : elles suivent déjà
+   `BACKEND_PORT` et `FRONTEND_PORT`.
 5. **`ALLOWED_EMAILS`** : liste séparée par des virgules, comparée en minuscules et sans tenir
    compte des espaces. **Vide, le back refuse de démarrer** en mode Google (message dans
    `docker compose logs backend`). `*` laisse entrer tous les comptes Google ; sinon seuls les

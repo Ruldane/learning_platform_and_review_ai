@@ -1,8 +1,6 @@
 """`GET /health/embedding` (P13) : progression du modèle d'embeddings, publique comme `/health`
 (aucun cookie, y compris en mode Google). La source est remplacée : aucun appel à Ollama."""
 
-from collections.abc import AsyncIterator
-
 import httpx
 import pytest
 from asgi_lifespan import LifespanManager
@@ -13,6 +11,9 @@ from app.core.providers import MemoryProviders, PublishingProviders, ResearchPro
 from app.main import create_app
 from app.providers.embeddings.base import EmbeddingProgressData
 from app.providers.embeddings.ollama_pull import OllamaPullWatcher
+
+# `google_app` (l'application en mode Google) est celle de la connexion, réimportée.
+from tests.features.auth.conftest import google, google_app  # noqa: F401
 
 URL = "/api/v1/health/embedding"
 
@@ -64,25 +65,9 @@ async def test_the_real_providers_watch_the_configured_model(
     assert isinstance(app.state.providers.embedding, OllamaPullWatcher)
 
 
-@pytest.fixture
-async def google_app(
-    google_settings: Settings,
-    db_engine: object,
-    memory_providers: MemoryProviders,
-    research_providers: ResearchProviders,
-    publishing_providers: PublishingProviders,
-) -> AsyncIterator[FastAPI]:
-    app = create_app(
-        google_settings,
-        memory_providers=memory_providers,
-        research_providers=research_providers,
-        publishing_providers=publishing_providers,
-    )
-    async with LifespanManager(app):
-        yield app
-
-
-async def test_embedding_route_public_in_google_mode(google_app: FastAPI) -> None:
+async def test_embedding_route_public_in_google_mode(
+    google_app: FastAPI,  # noqa: F811  (fixture de la connexion, réimportée ci-dessus)
+) -> None:
     google_app.state.providers.embedding = FakeSource(DOWNLOADING)
     transport = httpx.ASGITransport(app=google_app, raise_app_exceptions=False)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
@@ -90,3 +75,28 @@ async def test_embedding_route_public_in_google_mode(google_app: FastAPI) -> Non
         protected = await client.get("/api/v1/auth/me")
     assert response.status_code == 200 and response.json()["percent"] == 42
     assert protected.status_code == 401  # la porte est bien fermée ailleurs
+
+
+async def test_the_embedding_watcher_is_closed_at_shutdown(
+    settings: Settings,
+    db_engine: object,
+    memory_providers: MemoryProviders,
+    research_providers: ResearchProviders,
+    publishing_providers: PublishingProviders,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    closed: list[bool] = []
+
+    async def spy(self: OllamaPullWatcher) -> None:
+        closed.append(True)
+
+    monkeypatch.setattr(OllamaPullWatcher, "aclose", spy, raising=False)
+    app = create_app(
+        settings,
+        memory_providers=memory_providers,
+        research_providers=research_providers,
+        publishing_providers=publishing_providers,
+    )
+    async with LifespanManager(app):
+        assert closed == []
+    assert closed == [True]

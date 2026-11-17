@@ -41,3 +41,6 @@ class EmbeddingProgressSource(Protocol):
     """Ce que `GET /health/embedding` lit : l'état du modèle, et le téléchargement s'il manque."""
 
     async def progress(self) -> EmbeddingProgressData: ...
+
+    async def aclose(self) -> None:
+        """À l'arrêt du back : arrête le téléchargement en cours, s'il y en a un."""

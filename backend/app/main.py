@@ -90,6 +90,8 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
             key_http=key_http,
             oidc=oidc,
         )
+        if app.state.providers.embedding is not None:  # l'arrêt annule le téléchargement de bge-m3
+            stack.push_async_callback(app.state.providers.embedding.aclose)
         # Avant la mémoire : son worker relit la base au démarrage ; un schéma absent doit donner
         # l'indication `alembic upgrade head` plutôt qu'une erreur SQL brute.
         if app.state.settings.auth_mode == "local":

@@ -92,10 +92,10 @@ async def claim(
     """Applique le choix du tout premier compte Google et rend son utilisateur (la session est
     ouverte par l'appelant, dans la même transaction). 409 `claim_expired` : témoin absent,
     trafiqué ou vieux, ou adresse plus nommée dans `ALLOWED_EMAILS` (retirée, ou liste devenue
-    `*`) ; 409
-    `local_already_claimed` : l'espace local est déjà repris, ou un compte Google existe déjà
-    (autre onglet, autre compte, premier choix « espace vide »). Un témoin rejoué avec `fresh`
-    (compte déjà créé, double clic) : 409 `claim_expired`, jamais « déjà un propriétaire »."""
+    `*`) ; 409 `local_already_claimed` : l'espace local est déjà repris, ou un compte Google
+    existe déjà (autre onglet, autre compte, premier choix « espace vide »). Un témoin rejoué
+    avec `fresh` (compte déjà créé, double clic) : 409 `claim_expired`, jamais « déjà un
+    propriétaire »."""
     identity = open_identity(cipher, claim_cookie)
     if identity is None or not explicitly_allowed(identity.email, allowed_emails):
         raise _expired()
