@@ -6,6 +6,11 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, UserScopedMixin, UTCDateTime
 
+# Clé réservée des réglages de l'utilisateur `local` : la reprise de l'espace local est close
+# (un premier compte Google a existé). Hors des lignes qu'efface « Tout supprimer » d'un compte
+# Google ; jamais exposée par l'API des réglages.
+LOCAL_CLAIM_CLOSED = "local_claim_closed"
+
 
 class User(UserScopedMixin, Base):
     """Compte utilisateur. Par convention `user_id == id` (à fixer à la création)."""
