@@ -45,8 +45,11 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 pythonpath = ["."]
 testpaths = ["tests"]
-addopts = "--import-mode=importlib -m 'not live'"
-markers = ["live: touche un vrai service (désélectionné par défaut)"]
+addopts = "--import-mode=importlib -m 'not live and not sandbox_live'"
+markers = [
+    "live: touche un vrai service (désélectionné par défaut)",
+    "sandbox_live: tests d'évasion contre le vrai conteneur du bac à sable (désélectionnés par défaut)",
+]
 # Le mode local `:memory:` des tests ignore les index de payload et le dit : bruit sans intérêt.
 filterwarnings = ["ignore:Payload indexes have no effect in the local Qdrant:UserWarning"]
 # Un test bloqué (WebSocket, attente sans fin) échoue au lieu de geler la suite ; méthode

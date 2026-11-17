@@ -10,6 +10,7 @@ from app.core.security import Cipher
 from app.features.settings.keys_service import ApiKeyService
 from app.providers.health import HealthStatus, available
 from app.providers.llm.base import LlmProvider
+from app.providers.sandbox.base import CodeSandbox
 
 
 class DatabaseCheck:
@@ -85,3 +86,19 @@ class LlmKeysCheck:
             entries = await service.list()
         usable = any(e.source is not None and e.readable for e in entries)
         return HealthStatus(ok=usable, detail=" ; ".join(_describe(e) for e in entries))
+
+
+class SandboxCheck:
+    """`ok` si le bac à sable bat (le lanceur du conteneur `sandbox` écrit son battement chaque
+    seconde). Aucun code n'est exécuté : le contrôle ne lit qu'un horodatage."""
+
+    name = "sandbox"
+    label = "Bac à sable"
+
+    def __init__(self, sandbox: CodeSandbox) -> None:
+        self._sandbox = sandbox
+
+    async def check(self) -> HealthStatus:
+        if await self._sandbox.healthy():
+            return available()
+        return HealthStatus(ok=False, detail="Bac à sable : le conteneur ne répond pas.")

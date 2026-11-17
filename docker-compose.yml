@@ -1,4 +1,4 @@
-# Tremplin : les 7 services de la spec (16.1). Images figées sur des versions précises (D30).
+# Tremplin : les 7 services de la spec (16.1) plus le bac à sable de la phase 10 (10.A1). Images figées sur des versions précises (D30).
 # `cp .env.example .env` puis `docker compose up -d` ; sans .env le back démarre sans clé LLM.
 # Ports publiés sur 127.0.0.1 seulement, modifiables par FRONTEND_PORT, BACKEND_PORT et
 # QDRANT_PORT (dans .env) ; CORS_ORIGIN (+ jumeau 127.0.0.1, D37) et l'adresse du back dans le
@@ -42,6 +42,12 @@ services:
       GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:${BACKEND_PORT:-8000}/api/v1/auth/google/callback}
     volumes:
       - app_data:/data
+      # Volume d'échange avec le bac à sable (10.A1) : le back y dépose les travaux et en lit la
+      # sortie. Le groupe 12345 est celui du dossier (2770 root:12345) ; le back n'a pas besoin
+      # d'autre droit sur le bac (pas de socket Docker, pas de réseau commun).
+      - sandbox_spool:/spool
+    group_add:
+      - "12345"
     ports:
       - "127.0.0.1:${BACKEND_PORT:-8000}:8000"
     # Pas de dépendance à ollama-init : l'app répond pendant le téléchargement de bge-m3.
@@ -53,6 +59,9 @@ services:
       searxng:
         condition: service_healthy
       gotenberg:
+        condition: service_healthy
+      # Le copy-up du volume d'échange (droits du dossier) a lieu au premier démarrage du bac.
+      sandbox:
         condition: service_healthy
 
   qdrant:
@@ -141,7 +150,57 @@ services:
       retries: 10
       start_period: 10s
 
+  # Bac à sable d'exécution de code (phase 10, 10.A1) : le code de January ou de Claude tourne ici,
+  # jamais dans le back. Rien n'y entre ni n'en sort sauf le volume d'échange `sandbox_spool` :
+  # AUCUN réseau, AUCUN socket Docker, AUCUN dossier de l'hôte, AUCUN secret (pas d'`env_file`, pas
+  # de variable d'environnement), AUCUN port publié. Image construite à la main (`docker build -t
+  # learning_career_platform-sandbox:latest sandbox`) puis `docker compose up -d --no-build`.
+  # Le lanceur est root SANS capacité sauf CHOWN, SETUID, SETGID et KILL (il change d'identité pour
+  # le code, qui tourne en uid 20000 sans aucune capacité). Docker Desktop : le noyau est partagé
+  # avec les autres conteneurs de la machine virtuelle WSL2 (pas de gVisor), voir D201.
+  sandbox:
+    build: ./sandbox
+    image: learning_career_platform-sandbox:latest
+    network_mode: none
+    user: "0:12345"
+    read_only: true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - KILL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 512m
+    memswap_limit: 512m
+    cpus: 1.0
+    pids_limit: 128
+    # `nr_inodes` (en plus des valeurs du plan) : sans lui, une boucle qui crée des millions de
+    # fichiers vides remplit la mémoire du noyau (inodes de tmpfs, hors des 64 Mo) et le noyau
+    # tue tout le conteneur, lanceur compris (constaté, D201). `/dev/shm` : monté par Docker avec
+    # le même défaut, donc redéclaré ici.
+    tmpfs:
+      - /work:size=64m,noexec,nosuid,nodev,nr_inodes=4096
+      - /tmp:size=16m,noexec,nosuid,nodev,nr_inodes=2048
+      - /dev/shm:size=64m,noexec,nosuid,nodev,nr_inodes=2048
+    volumes:
+      - sandbox_spool:/spool
+    healthcheck:
+      # Le lanceur bat le coeur chaque seconde : un battement de plus de 5 s = bac à l'arrêt.
+      test:
+        - CMD
+        - python
+        - -c
+        - "import os, sys, time; sys.exit(0 if time.time() - os.stat('/spool/heartbeat').st_mtime < 5 else 1)"
+      interval: 3s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
 volumes:
   app_data:
   qdrant_data:
   ollama_data:
+  sandbox_spool:

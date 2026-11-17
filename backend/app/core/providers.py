@@ -13,6 +13,7 @@ from app.providers.keys import KeyProvider
 from app.providers.llm.base import LlmProvider
 from app.providers.llm.factory import LlmFactory
 from app.providers.pdf.base import HtmlPdfRenderer, PdfLayoutExtractor, PdfTextExtractor
+from app.providers.sandbox.base import CodeSandbox
 from app.providers.search.base import SearchProvider
 from app.providers.storage.base import FileStorage
 from app.providers.vector.base import MemoryRepository
@@ -23,7 +24,8 @@ from app.providers.web.base import WebFetcher, WebReader, YoutubeTranscripts
 class Providers:
     """Fournisseurs LLM, fabrique, chiffreur, clés `.env`, fournisseurs de l'écran des clés
     (LLM et Brave), contrôles de santé, connexion OpenID Connect (`None` en mode local) et
-    progression du modèle d'embeddings (`GET /health/embedding`, P13)."""
+    progression du modèle d'embeddings (`GET /health/embedding`, P13) et bac à sable d'exécution
+    de code (`CodeSandbox`, posé par `bootstrap_ide` ; `None` avant la composition)."""
 
     llm: Mapping[str, LlmProvider]
     llm_factory: LlmFactory
@@ -33,6 +35,7 @@ class Providers:
     health_checks: list[HealthCheck] = field(default_factory=list)
     oidc: OidcProvider | None = None
     embedding: EmbeddingProgressSource | None = None
+    sandbox: CodeSandbox | None = None
 
 
 @dataclass(frozen=True)
