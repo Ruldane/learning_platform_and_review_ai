@@ -23,6 +23,8 @@ class OidcError(Exception):
     """Échec de la connexion : `access_denied`, `google_unavailable` ou `token_invalid`."""
 
     def __init__(self, code: str) -> None:
+        if code not in OIDC_ERROR_CODES:
+            raise ValueError("code d'erreur OIDC inconnu")
         super().__init__(code)
         self.code = code
 

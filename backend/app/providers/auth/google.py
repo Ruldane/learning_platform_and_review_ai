@@ -22,6 +22,8 @@ from app.providers.auth.base import OidcError, OidcIdentity
 logger = logging.getLogger(__name__)
 
 TOKEN_TIMEOUT_S = 10.0
+# Délai dépassé (408) et limitation de débit (429) : un incident temporaire, pas un code invalide.
+TEMPORARY_REFUSALS = (408, 429)
 SCOPE = "openid email profile"
 
 
@@ -33,7 +35,7 @@ def _claims(id_token: object) -> dict[str, object]:
     try:
         raw = base64.urlsafe_b64decode(parts[1] + "=" * (-len(parts[1]) % 4))
         claims = json.loads(raw)
-    except ValueError as exc:  # base64, UTF-8 ou JSON invalide
+    except (ValueError, RecursionError) as exc:  # base64, UTF-8 ou JSON invalide (ou trop imbriqué)
         raise OidcError("token_invalid") from exc
     if not isinstance(claims, dict):
         raise OidcError("token_invalid")
@@ -41,7 +43,10 @@ def _claims(id_token: object) -> dict[str, object]:
 
 
 def _same(left: object, right: str) -> bool:
-    return isinstance(left, str) and hmac.compare_digest(left.encode(), right.encode())
+    # `surrogatepass` : un substitut isolé (accepté par `json.loads`) ne doit pas lever d'erreur.
+    return isinstance(left, str) and hmac.compare_digest(
+        left.encode("utf-8", "surrogatepass"), right.encode("utf-8", "surrogatepass")
+    )
 
 
 def _audience_ok(aud: object, client_id: str) -> bool:
@@ -52,8 +57,8 @@ def _audience_ok(aud: object, client_id: str) -> bool:
 
 
 def _verified(value: object) -> bool:
-    """Google rend un booléen ; `tokeninfo` et d'anciens jetons, la chaîne « true »."""
-    return value is True or value == "true"
+    """Google rend un booléen dans le jeton d'identité : la chaîne « true » n'est pas acceptée."""
+    return value is True
 
 
 def _filled(value: object) -> bool:
@@ -112,7 +117,7 @@ class GoogleOidc:
         except httpx.HTTPError as exc:
             logger.warning("OIDC : point token injoignable (%s)", type(exc).__name__)
             raise OidcError("google_unavailable") from exc
-        if response.status_code >= 500:
+        if response.status_code >= 500 or response.status_code in TEMPORARY_REFUSALS:
             logger.warning("OIDC : point token en erreur (HTTP %d)", response.status_code)
             raise OidcError("google_unavailable")
         if response.status_code >= 400:
@@ -127,8 +132,11 @@ class GoogleOidc:
             raise OidcError("token_invalid") from exc
         claims = _claims(payload.get("id_token") if isinstance(payload, dict) else None)
         exp = claims.get("exp")
+        iss = claims.get("iss")
         valid = (
-            claims.get("iss") in self._issuers
+            bool(nonce)
+            and isinstance(iss, str)
+            and iss in self._issuers
             and _audience_ok(claims.get("aud"), self._client_id)
             and isinstance(exp, int | float)
             and not isinstance(exp, bool)

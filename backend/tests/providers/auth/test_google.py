@@ -18,6 +18,7 @@ VERIFIER = "verifier-never-logged-0123456789012345678901234567"
 CODE = "code-never-logged"
 ISSUER = "https://accounts.example.invalid"
 REDIRECT = "http://localhost:8000/api/v1/auth/google/callback"
+LONE_SURROGATE = chr(0xD800)  # `json.loads` l'accepte, `str.encode()` non
 
 
 def _jwt(claims: dict[str, object]) -> str:
@@ -133,7 +134,8 @@ async def test_issuer_without_scheme_is_accepted() -> None:
 
 async def test_email_verified_is_returned_as_is() -> None:
     assert (await _exchange(_answering(_claims(email_verified=False)))).email_verified is False
-    assert (await _exchange(_answering(_claims(email_verified="true")))).email_verified is True
+    # Booléen seulement : la chaîne « true » (forme de `tokeninfo`) n'est pas tolérée (M5).
+    assert (await _exchange(_answering(_claims(email_verified="true")))).email_verified is False
     assert (await _exchange(_answering(_claims(email_verified="false")))).email_verified is False
     claims = _claims()
     del claims["email_verified"]
@@ -160,12 +162,51 @@ async def test_missing_name_falls_back_to_email() -> None:
         {"email": ""},
         {"email": 5},
         {"sub": ""},
+        # Types inattendus : jamais autre chose qu'`OidcError` (I1).
+        {"iss": ["https://accounts.example.invalid"]},
+        {"iss": {"a": 1}},
+        {"aud": {"a": 1}},
+        {"aud": LONE_SURROGATE},
+        {"nonce": LONE_SURROGATE},
+        {"nonce": [NONCE]},
     ],
 )
 async def test_bad_claims_are_token_invalid(over: dict[str, object]) -> None:
     with pytest.raises(OidcError) as caught:
         await _exchange(_answering(_claims(**over)))
     assert caught.value.code == "token_invalid"
+
+
+async def test_deeply_nested_claims_are_token_invalid() -> None:
+    def part(raw: bytes) -> str:
+        return base64.urlsafe_b64encode(raw).rstrip(b"=").decode()
+
+    token = f"{part(b'{}')}.{part(b'[' * 100_000 + b']' * 100_000)}."
+    with pytest.raises(OidcError) as caught:
+        await _exchange(lambda request: httpx.Response(200, json={"id_token": token}))
+    assert caught.value.code == "token_invalid"
+
+
+async def test_empty_nonce_is_refused() -> None:
+    provider, http = _provider(_answering(_claims(nonce="")))
+    async with http:
+        with pytest.raises(OidcError) as caught:
+            await provider.exchange(code=CODE, code_verifier=VERIFIER, nonce="")
+    assert caught.value.code == "token_invalid"
+
+
+@pytest.mark.parametrize("status", [408, 429])
+async def test_temporary_refusals_are_google_unavailable(status: int) -> None:
+    with pytest.raises(OidcError) as caught:
+        await _exchange(lambda request: httpx.Response(status, json={"error": "slow_down"}))
+    assert caught.value.code == "google_unavailable"
+
+
+def test_oidc_error_accepts_only_known_codes() -> None:
+    for code in ("access_denied", "google_unavailable", "token_invalid"):
+        assert OidcError(code).code == code
+    with pytest.raises(ValueError, match="inconnu"):
+        OidcError("access_dnied")
 
 
 async def test_wrong_audience_is_token_invalid() -> None:
