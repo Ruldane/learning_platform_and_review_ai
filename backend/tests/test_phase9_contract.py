@@ -35,9 +35,10 @@ def test_onboarding_done_defaults_false() -> None:
     assert UserSettings().onboarding_done is False
 
 
-# Routes déjà faites (9.A2) : en mode local, `/auth/google/*` répond 404 `google_auth_disabled`
-# (voir `tests/features/auth/test_login.py`), ce ne sont plus des bouchons.
-LIVE = {"/auth/google/login", "/auth/google/callback"}
+# Routes déjà faites (9.A2, 9.A3) : en mode local, `/auth/google/*` répond 404
+# `google_auth_disabled` et `/auth/logout` 204 (voir `tests/features/auth/test_login.py`,
+# `test_claim.py` et `test_logout.py`), ce ne sont plus des bouchons.
+LIVE = {"/auth/google/login", "/auth/google/callback", "/auth/google/claim", "/auth/logout"}
 
 
 @pytest.mark.parametrize(

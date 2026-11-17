@@ -15,7 +15,7 @@ from app.config import Settings
 from app.core.deps import CurrentUserDep, Db, get_cipher, get_providers
 from app.core.errors import AppError
 from app.features.auth.schemas import ClaimIn, MeOut
-from app.features.auth.service import AuthService, cookies
+from app.features.auth.service import AuthService, claim, cookies, sessions
 from app.features.auth.service.login import CallbackOutcome, finish_login, start_login
 from app.providers.auth.base import OidcProvider
 
@@ -137,15 +137,37 @@ async def google_callback(
         **_NO_GOOGLE,
     },
 )
-async def google_claim(body: ClaimIn, response: Response) -> MeOut:
+async def google_claim(body: ClaimIn, request: Request, response: Response, db: Db) -> MeOut:
     """Le choix de la toute première connexion : `take_local` attache l'identité Google à
     l'espace local, `fresh` crée un espace vide. Ouvre la session (cookie posé) et rend
     l'utilisateur."""
-    raise AppError("not_implemented", "Pas encore disponible.", 501)
+    _oidc(request)  # mode local : 404 `google_auth_disabled`
+    settings: Settings = request.app.state.settings
+    user = await claim.claim(
+        db,
+        get_cipher(request),
+        request.cookies.get(cookies.CLAIM_COOKIE),
+        body.choice,
+        allowed_emails=settings.allowed_emails,
+    )
+    token = await sessions.open_session(
+        db, user.id, now=datetime.now(UTC), days=settings.session_days
+    )
+    secure = _secure(settings)
+    cookies.set_session_cookie(response, token, days=settings.session_days, secure=secure)
+    cookies.clear_claim_cookie(response, secure=secure)
+    return MeOut(id=user.id, email=user.email, name=user.name, auth_mode=settings.auth_mode)
 
 
 @router.post("/logout", status_code=204, response_class=Response)
-async def logout(response: Response) -> Response:
+async def logout(request: Request, db: Db) -> Response:
     """Supprime la session du cookie et efface le cookie (même chemin que la pose). Sans effet en
     mode local ; sans session, 204 aussi."""
-    raise AppError("not_implemented", "Pas encore disponible.", 501)
+    response = Response(status_code=204)
+    settings: Settings = request.app.state.settings
+    if settings.auth_mode == "google":
+        token = request.cookies.get(cookies.SESSION_COOKIE)
+        if token:
+            await sessions.close_session(db, token)
+        cookies.clear_session_cookie(response, secure=_secure(settings))
+    return response

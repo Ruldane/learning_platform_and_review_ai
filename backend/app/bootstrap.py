@@ -112,7 +112,10 @@ def build_providers(
         {"glm": settings.zai_base_url},
         call_deadline_s=settings.llm_call_deadline_s,
     )
-    llm_keys = LlmKeysCheck(session_factory, cipher, env_keys, llm, local_user_id)
+    google = settings.auth_mode == "google"  # la santé ne dépend alors d'aucun utilisateur local
+    llm_keys = LlmKeysCheck(
+        session_factory, cipher, env_keys, llm, local_user_id, google_mode=google
+    )
     # Écran des clés : les LLM puis Brave, qui n'est ni dans la fabrique ni dans les modèles.
     key_providers: dict[str, KeyProvider] = {**llm, "brave": BraveKeyProvider(key_http)}
     return Providers(

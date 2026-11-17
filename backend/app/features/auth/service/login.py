@@ -21,7 +21,8 @@ from app.core.security import Cipher
 from app.db.models.accounts import User
 from app.features.auth.repository import UserRepository
 from app.features.auth.service import sessions
-from app.features.auth.service.allowlist import allowed
+from app.features.auth.service.allowlist import allowed, explicitly_allowed
+from app.features.auth.service.claim import ClaimIdentity, claim_offered, seal_identity
 from app.features.auth.service.cookies import OAUTH_COOKIE_SECONDS
 from app.providers.auth import pkce
 from app.providers.auth.base import OidcError, OidcIdentity, OidcProvider
@@ -123,7 +124,7 @@ async def finish_login(
     if not code:
         return _failed("token_invalid")
     try:
-        return await _sign_in(db, oidc, settings, code=code, pending=pending, now=now)
+        return await _sign_in(db, oidc, cipher, settings, code=code, pending=pending, now=now)
     except Exception as exc:
         await db.rollback()
         logger.warning("connexion Google : erreur inattendue (%s)", type(exc).__name__)
@@ -133,6 +134,7 @@ async def finish_login(
 async def _sign_in(
     db: AsyncSession,
     oidc: OidcProvider,
+    cipher: Cipher,
     settings: Settings,
     *,
     code: str,
@@ -152,7 +154,20 @@ async def _sign_in(
         return _failed("token_invalid")
     if not allowed(identity.email, settings.allowed_emails):
         return _failed("email_not_allowed")
-    user = await _find_or_create(UserRepository(db), identity)
+    users = UserRepository(db)
+    if (
+        await users.get_by_google_sub(identity.sub) is None
+        and explicitly_allowed(identity.email, settings.allowed_emails)
+        and await claim_offered(db)
+    ):
+        # Tout premier compte Google, nommé dans la liste, espace local présent : rien n'est créé
+        # avant son choix (P9).
+        logger.info("reprise de l'espace local proposée")
+        clean = ClaimIdentity(
+            identity.sub, identity.email.strip().lower(), identity.name[:MAX_NAME]
+        )
+        return CallbackOutcome(kind="claim", claim_cookie=seal_identity(cipher, clean))
+    user = await _find_or_create(users, identity)
     if user is None:
         return _failed("token_invalid")
     token = await sessions.open_session(db, user.id, now=now, days=settings.session_days)
