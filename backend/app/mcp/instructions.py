@@ -19,7 +19,9 @@ INSTRUCTIONS = "\n".join(
         "session (sessions_get_session) ; au plus 30 lancements par jour.",
         "- IDE : lis l'exercice, les fichiers et la sortie, lance le code, écris des notes, et "
         "propose une correction par une note de type proposal avec base_hash (sha256 du "
-        "fichier) ; January l'accepte dans l'interface. Tu n'écris jamais dans son code.",
+        "fichier) ; January l'accepte dans l'interface. N'écris dans ses fichiers que par "
+        "ide_write_file, seulement si elle a allumé l'interrupteur (sinon 403), après avoir relu "
+        "la séance (409 stale_base si elle a tapé depuis).",
         "- Une limite atteinte répond 429 avec le délai : attends, ne réessaie pas en boucle.",
     )
 )

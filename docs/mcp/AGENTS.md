@@ -13,7 +13,7 @@ Serveur MCP local de Tremplin, la plateforme d'apprentissage et de carrière de 
 - Ne confirme, ne refuse et n'annule jamais à la place de January, et n'appelle jamais /api/v1 directement (ni curl) : passe par les outils.
 - Ne demande et ne cherche jamais de clé d'API ni de jeton.
 - Un parcours se lance par son outil graph_<nom> ou par sa route, puis tu suis la session (sessions_get_session) ; au plus 30 lancements par jour.
-- IDE : lis l'exercice, les fichiers et la sortie, lance le code, écris des notes, et propose une correction par une note de type proposal avec base_hash (sha256 du fichier) ; January l'accepte dans l'interface. Tu n'écris jamais dans son code.
+- IDE : lis l'exercice, les fichiers et la sortie, lance le code, écris des notes, et propose une correction par une note de type proposal avec base_hash (sha256 du fichier) ; January l'accepte dans l'interface. N'écris dans ses fichiers que par ide_write_file, seulement si elle a allumé l'interrupteur (sinon 403), après avoir relu la séance (409 stale_base si elle a tapé depuis).
 - Une limite atteinte répond 429 avec le délai : attends, ne réessaie pas en boucle.
 <!-- instructions-serveur:fin -->
 
@@ -94,11 +94,26 @@ dire que la route a pu écrire : lis l'état avant de relancer.
 ## L'IDE Python
 
 Outils `ide_*` : `ide_list_exercises`, `ide_create_exercise`, `ide_create_session`,
-`ide_get_session` (fichiers, exercice, dernière exécution), `ide_start_run` (exécute ou vérifie dans
-un bac à sable sans réseau), `ide_read_run` (la sortie, par décalage `after`), `ide_list_notes`,
-`ide_add_note`.
+`ide_get_session` (fichiers, `file_hashes`, exercice, dernière exécution), `ide_start_run` (exécute
+ou vérifie dans un bac à sable sans réseau), `ide_read_run` (la sortie, par décalage `after`),
+`ide_list_runs`, `ide_list_notes`, `ide_add_note`, `ide_write_file`.
 
-- Tu ne modifies jamais le code de January. Pour corriger, écris une note de type `proposal` :
+Claude dans l'IDE : lis la séance (`ide_get_session` : fichiers, `file_hashes`, dernière exécution),
+lance le code (`ide_start_run`, une exécution à la fois ; `ide_read_run` lit la sortie par décalage ;
+`ide_list_runs` liste les dernières exécutions) et note (`ide_add_note` : indice, explication,
+annotation ou proposition de correction que January accepte ou refuse). January voit tes notes et
+tes exécutions en direct (relues toutes les 3 s) : tes exécutions portent « lancée par Claude » et ne
+comptent jamais pour valider une séance (« Tests réussis (exécution de Claude, non comptée) »).
+
+- Pour écrire dans ses fichiers : `ide_write_file`, niveau 2 (annulable depuis « Accès MCP » tant
+  qu'elle n'a pas écrit depuis), **seulement** si elle a allumé l'interrupteur « Claude peut écrire
+  dans mes fichiers » (réglé dans l'interface, jamais par toi ; sinon 403 `mcp_ide_write_off` :
+  propose alors une correction par une note). Un seul fichier par appel, contenu entier ;
+  `base_hash` obligatoire : le sha256 du contenu actuel du fichier, lu dans `file_hashes` de
+  `ide_get_session` (celui du texte vide pour un nouveau fichier). Si elle a tapé depuis ta lecture :
+  409 `stale_base` ; relis la séance, reprends sa version, puis réécris. Jamais deux écritures de suite
+  sans relire.
+- Sans l'interrupteur, tu ne modifies pas son code. Pour corriger, écris une note de type `proposal` :
   `file_path`, `line_start`, `line_end`, `replacement` et `base_hash`, le sha256 hexadécimal
   (minuscules) du contenu du fichier en UTF-8 tel que tu l'as lu. Si le fichier a changé depuis, la
   proposition est périmée. January l'accepte ou la refuse dans l'interface.
@@ -118,4 +133,4 @@ texte collé `text`, l'analyse se lance), `postings_*` et `projects_*` pour suiv
 - Appeler `/api/v1` directement, avec `curl` ou autrement : le jeton MCP n'ouvre pas cette API.
 - Confirmer, refuser ou annuler une demande à la place de January.
 - Demander, chercher ou recopier une clé d'API ou un jeton.
-- Écrire dans le code de January, ou contourner une limite.
+- Écrire dans le code de January sans l'interrupteur allumé, ou contourner une limite.
