@@ -14,6 +14,7 @@ from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.accounts import UserSettingsRow
+from app.features.account import router as router_module
 from app.features.account.service import export as export_module
 from app.features.account.service.export import (
     CHUNK_BYTES,
@@ -120,8 +121,6 @@ async def test_two_exports_of_one_user_run_one_at_a_time(
 async def test_a_failed_build_releases_the_lock(
     client: httpx.AsyncClient, app: FastAPI, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from app.features.account import router as router_module
-
     async def boom(*args: Any, **kwargs: Any) -> Any:
         raise RuntimeError("secret-ultra-valeur")
 
@@ -147,3 +146,40 @@ def test_export_documents_its_content_disposition_header(app: FastAPI) -> None:
     header = ok["headers"]["Content-Disposition"]
     assert header["schema"]["type"] == "string"
     assert "tremplin-export-AAAAMMJJ.zip" in header["description"]
+
+
+async def test_the_spool_is_closed_when_the_response_cannot_be_built(
+    client: httpx.AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    built: list[Any] = []
+    real = router_module.build_export
+
+    async def spy(*args: Any, **kwargs: Any) -> Any:
+        built.append(await real(*args, **kwargs))
+        return built[-1]
+
+    def broken(spool: Any) -> int:
+        raise RuntimeError("taille illisible")
+
+    monkeypatch.setattr(router_module, "build_export", spy)
+    monkeypatch.setattr(router_module, "archive_size", broken)
+
+    response = await client.get(API)
+
+    assert response.status_code == 500
+    assert len(built) == 1 and built[0].closed
+
+
+async def test_the_spool_is_closed_once_the_response_is_sent(
+    client: httpx.AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    built: list[Any] = []
+    real = router_module.build_export
+
+    async def spy(*args: Any, **kwargs: Any) -> Any:
+        built.append(await real(*args, **kwargs))
+        return built[-1]
+
+    monkeypatch.setattr(router_module, "build_export", spy)
+    assert (await client.get(API)).status_code == 200
+    assert built[0].closed

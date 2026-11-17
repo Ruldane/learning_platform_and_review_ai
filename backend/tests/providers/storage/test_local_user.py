@@ -183,3 +183,14 @@ async def test_delete_user_refuses_a_folder_linked_to_another_users_folder(tmp_p
     with pytest.raises(StorageKeyInvalid):
         await storage.delete_user("u1")
     assert await storage.read("u2", theirs) == b"autre"
+
+
+async def test_list_user_refuses_a_folder_linked_to_another_users_folder(tmp_path: Path) -> None:
+    storage = LocalFileStorage(tmp_path)
+    await storage.save("u2", "documents", b"autre", ".pdf")
+    try:
+        os.symlink(tmp_path / "u2", tmp_path / "u1", target_is_directory=True)
+    except OSError:
+        pytest.skip("liens symboliques indisponibles sur cet hôte")
+    with pytest.raises(StorageKeyInvalid):
+        await storage.list_user("u1")

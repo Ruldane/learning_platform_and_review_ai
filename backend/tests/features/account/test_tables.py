@@ -6,8 +6,6 @@ from datetime import UTC, date, datetime, timedelta, timezone
 import app.db.models  # noqa: F401  (enregistre les modèles sur Base.metadata)
 from app.db.base import Base
 from app.features.account.service.tables import (
-    EXCLUDED_TABLES,
-    REDACTED_COLUMNS,
     exported_columns,
     row_json,
     user_tables,
@@ -18,13 +16,13 @@ def test_user_tables_include_every_scoped_table() -> None:
     names = {table.name for table in user_tables()}
     assert {"users", "user_settings", "api_keys", "llm_calls", "goals", "memory_items"} <= names
     for table in Base.metadata.tables.values():
-        if "user_id" in table.c and table.name not in EXCLUDED_TABLES:
+        if "user_id" in table.c and table.info.get("export", True):
             assert table.name in names
 
 
 def test_user_tables_leave_out_the_login_sessions_and_unscoped_tables() -> None:
     names = {table.name for table in user_tables()}
-    assert "auth_sessions" not in names and set(EXCLUDED_TABLES) == {"auth_sessions"}
+    assert "auth_sessions" not in names
     assert all("user_id" in table.c for table in user_tables())
 
 
@@ -34,7 +32,6 @@ def test_user_tables_follow_the_dependency_order() -> None:
 
 
 def test_api_keys_never_export_the_encrypted_key() -> None:
-    assert dict(REDACTED_COLUMNS) == {"api_keys": {"encrypted_key"}}
     table = Base.metadata.tables["api_keys"]
     names = [column.name for column in exported_columns(table)]
     assert "encrypted_key" not in names and {"provider", "last4", "user_id"} <= set(names)

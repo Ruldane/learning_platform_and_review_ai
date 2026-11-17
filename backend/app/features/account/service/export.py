@@ -2,10 +2,11 @@
 fichier temporaire (en mémoire jusqu'à 32 Mo, puis sur disque), servie ensuite par morceaux de
 64 Kio. Le verrou d'un export par compte est pris par l'appelant (`export_lock`).
 
-Contenu : `manifest.json`, `tables/<table>.json` pour chaque table qui a `user_id` (hors
-`EXCLUDED_TABLES`, `api_keys` sans clé chiffrée), `files/<clé>` pour chaque fichier déposé (la clé
-du stockage, préfixe `<user_id>/` compris, comme dans les tables). Ni vecteurs ni points de reprise
-des agents : recalculables. Les journaux ne disent que des identifiants, des nombres et la durée."""
+Contenu : `manifest.json`, `tables/<table>.json` pour chaque table qui a `user_id` (hors celles que
+leur modèle écarte ; `api_keys` sans clé chiffrée), `files/<clé>` pour chaque fichier déposé (la
+clé du stockage, préfixe `<user_id>/` compris, comme dans les tables). Ni vecteurs ni points de
+reprise des agents : recalculables. Les tables se lisent par lots (`BATCH_ROWS`) et s'écrivent au
+fil dans l'entrée du zip. Les journaux ne disent que des identifiants, des nombres et la durée."""
 
 import asyncio
 import json
@@ -23,7 +24,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.clock import user_zone
 from app.features.account.repository import AccountRepository
-from app.features.account.service.tables import exported_columns, row_json, user_tables
+from app.features.account.service.tables import (
+    exported_columns,
+    json_default,
+    row_json,
+    user_tables,
+)
 from app.features.postings.service.runtime import KeyLocks
 from app.features.settings.service import SettingsService
 from app.providers.storage.base import FileStorage
@@ -33,6 +39,9 @@ logger = logging.getLogger(__name__)
 FORMAT_VERSION = 1
 CHUNK_BYTES = 64 * 1024
 SPOOL_MAX_BYTES = 32 * 1024 * 1024
+BATCH_ROWS = (
+    500  # lignes lues puis écrites à la fois : la mémoire d'une table ne dépend pas de sa taille
+)
 
 
 def export_filename(now: datetime, zone: ZoneInfo) -> str:
@@ -57,14 +66,32 @@ def _entry(name: str, now: datetime) -> zipfile.ZipInfo:
     return info
 
 
-def _write_table(zf: zipfile.ZipFile, name: str, rows: list[dict[str, Any]], now: datetime) -> None:
-    """`tables/<name>.json` : un tableau JSON, une ligne par ligne de table, écrit ligne à ligne."""
-    with zf.open(_entry(f"tables/{name}.json", now), "w") as out:
-        out.write(b"[")
-        for index, row in enumerate(rows):
-            line = json.dumps(row_json(row), ensure_ascii=False)
-            out.write((b",\n" if index else b"\n") + line.encode())
-        out.write(b"\n]\n")
+def _encode(rows: list[dict[str, Any]], *, first: bool) -> bytes:
+    """Un lot de lignes : une ligne JSON par ligne de table, séparées par des virgules."""
+    lines = [json.dumps(row_json(row), ensure_ascii=False, default=json_default) for row in rows]
+    sep = "\n" if first else ",\n"
+    return (sep + ",\n".join(lines)).encode()
+
+
+async def _write_table(
+    zf: zipfile.ZipFile,
+    name: str,
+    batches: AsyncIterator[list[dict[str, Any]]],
+    now: datetime,
+) -> int:
+    """`tables/<name>.json` : un tableau JSON écrit **au fil** des lots dans l'entrée du zip (une
+    seule entrée ouverte, un lot en mémoire) ; rend le nombre de lignes écrites."""
+    out = zf.open(_entry(f"tables/{name}.json", now), "w")
+    count = 0
+    try:
+        await asyncio.to_thread(out.write, b"[")
+        async for batch in batches:
+            await asyncio.to_thread(out.write, _encode(batch, first=count == 0))
+            count += len(batch)
+        await asyncio.to_thread(out.write, b"\n]\n")
+    finally:
+        await asyncio.to_thread(out.close)
+    return count
 
 
 def _write_bytes(zf: zipfile.ZipFile, name: str, data: bytes, now: datetime) -> None:
@@ -101,9 +128,8 @@ async def build_export(
         counts: dict[str, int] = {}
         with zipfile.ZipFile(spool, "w", zipfile.ZIP_DEFLATED) as zf:
             for table in user_tables():
-                rows = await repository.rows(table, exported_columns(table))
-                await asyncio.to_thread(_write_table, zf, table.name, rows, now)
-                counts[table.name] = len(rows)
+                batches = repository.batches(table, exported_columns(table), BATCH_ROWS)
+                counts[table.name] = await _write_table(zf, table.name, batches, now)
             files = await _write_files(zf, storage, user_id, now)
             manifest = {
                 "format_version": FORMAT_VERSION,

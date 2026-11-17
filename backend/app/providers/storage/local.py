@@ -52,10 +52,9 @@ class LocalFileStorage:
         return await asyncio.to_thread(self._delete_user, user_id)
 
     def _delete_user(self, user_id: str) -> int:
-        """Supprime `<racine>/<user_id>/`. Garde plus stricte que `list_user` : un dossier qui est
-        un lien (vers l'extérieur comme vers le dossier d'un autre compte) est refusé, rien n'est
-        supprimé ailleurs que chez `user_id`. Les liens **dans** le dossier sont
-        retirés sans être suivis (`shutil.rmtree` ne suit pas les liens)."""
+        """Supprime `<racine>/<user_id>/`. Un dossier qui est un lien (vers l'extérieur comme vers
+        le dossier d'un autre compte) est refusé : rien n'est supprimé ailleurs que chez
+        `user_id`. Les liens **dans** le dossier sont retirés sans être suivis."""
         root = self._root.resolve()
         folder = (root / user_id).resolve()
         if not folder.exists():
@@ -68,13 +67,14 @@ class LocalFileStorage:
 
     def _list_user(self, user_id: str) -> list[str]:
         """Les fichiers réguliers de `<racine>/<user_id>/` dont la clé a la forme générée par
-        `save` (les `.tmp-*.part` et tout intrus sont ignorés) ; un lien symbolique, vers un
-        fichier comme vers le dossier, qui sortirait de la racine est refusé."""
+        `save` (les `.tmp-*.part` et tout intrus sont ignorés) ; un dossier qui est un lien (vers
+        l'extérieur ou vers le dossier d'un autre compte) est refusé, et un fichier lié hors du
+        dossier de l'utilisateur est ignoré."""
         root = self._root.resolve()
         folder = (root / user_id).resolve()
         if not folder.exists():
             return []
-        if not folder.is_relative_to(root) or folder == root:
+        if folder != root / user_id:  # ni hors de la racine, ni le dossier d'un autre compte
             raise StorageKeyInvalid()
         keys: list[str] = []
         for path in folder.rglob("*"):

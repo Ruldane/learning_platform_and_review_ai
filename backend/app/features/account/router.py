@@ -7,6 +7,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import StreamingResponse
+from starlette.background import BackgroundTask
 from starlette.requests import HTTPConnection
 
 from app.agents.runtime.handle import AgentRuntime
@@ -80,13 +81,24 @@ async def export_account(current: CurrentUserDep, db: Db, rt: AccountDep) -> Res
     filename = export_filename(now, await user_export_zone(db, current.id))
     async with export_lock(rt.locks, current.id):
         archive = await build_export(db, rt.storage, current.id, now)
-    headers = {
-        "Content-Disposition": f'attachment; filename="{filename}"',
-        "Content-Length": str(archive_size(archive)),
-        "Cache-Control": "no-store",
-        "X-Content-Type-Options": "nosniff",
-    }
-    return StreamingResponse(stream_export(archive), media_type="application/zip", headers=headers)
+    try:
+        headers = {
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Content-Length": str(archive_size(archive)),
+            "Cache-Control": "no-store",
+            "X-Content-Type-Options": "nosniff",
+        }
+    except BaseException:
+        archive.close()  # la réponse n'existera pas : le flux ne le fermera jamais
+        raise
+    # Le flux ferme le fichier à sa fin ou si le client part ; la tâche de fin le garantit même
+    # si le flux n'a jamais démarré.
+    return StreamingResponse(
+        stream_export(archive),
+        media_type="application/zip",
+        headers=headers,
+        background=BackgroundTask(archive.close),
+    )
 
 
 @router.post(
