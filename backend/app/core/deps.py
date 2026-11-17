@@ -11,6 +11,7 @@ from app.core.caller import MCP_IDENTITY
 from app.core.errors import AppError
 from app.core.providers import Providers, PublishingProviders
 from app.core.security import Cipher
+from app.mcp.schema import API_PREFIX, never_reachable
 from app.providers.llm.factory import LlmFactory
 
 
@@ -58,6 +59,8 @@ async def get_current_user(conn: HTTPConnection) -> CurrentUser:
     unique)."""
     identity = MCP_IDENTITY.get()
     if identity is not None:
+        if never_reachable(conn.url.path.removeprefix(API_PREFIX)):  # défense en profondeur
+            raise AppError("interface_only", "Cette action est réservée à l'interface.", 403)
         return CurrentUser(id=identity.user_id, email=None)
     authenticator: Authenticator = conn.app.state.authenticator
     return await authenticator.authenticate(conn)

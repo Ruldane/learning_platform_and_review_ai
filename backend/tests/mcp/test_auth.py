@@ -231,6 +231,9 @@ async def test_get_current_user_reads_only_the_identity_posed_by_the_dispatcher(
     )
 
     class Conn:  # un appel qui ne porte aucun cookie
+        class url:  # noqa: N801
+            path = "/api/v1/applications"
+
         class app:  # noqa: N801
             class state:  # noqa: N801
                 authenticator = None

@@ -1,51 +1,35 @@
 """Composition du serveur MCP (phase 10) : la porte (jetons, limites, journal) et le point d'entrée
 `POST /mcp`, monté ici hors de `/api/v1` et hors du contrat. Les outils et l'envoyeur viennent de
-10.B2 (`install_gate`) ; sans eux, la porte répond mais n'expose aucun outil. Comme `app.bootstrap`,
+10.B2 (`install_adapter`) ; sans déclaration, la porte répond mais n'expose aucun outil. Comme
+`app.bootstrap`,
 seul `app.main` l'importe, par `app.bootstrap` (contrat 5)."""
 
-from collections.abc import Callable
-from typing import Any
+from collections.abc import Callable, Mapping, Sequence
 
 from fastapi import FastAPI
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agents.graphs.registry import GRAPHS
 from app.config import Settings
-from app.core.caller import McpIdentity
 from app.features.auth.repository import UserRepository
 from app.features.auth.service.allowlist import allowed
 from app.features.mcp.service import CallJournal, GuardedDispatcher
+from app.features.mcp.service.confirmations import ConfirmationService
 from app.features.registry import MCP_FEATURES
+from app.mcp.base import FeatureMcp
+from app.mcp.dispatch import McpDispatcher
 from app.mcp.endpoint import mcp_endpoint
 from app.mcp.limits import Limits, RateLimiter
+from app.mcp.registry import Registry, build_registry
 from app.mcp.tools import (
     Dispatcher,
     McpGate,
     ToolRegistry,
-    ToolResult,
-    ToolSpec,
     UserCheck,
 )
 
 _MCP_PATH = "/mcp"
-
-
-class NoTools:
-    """Registre vide : tant que B2 n'a pas posé le sien, aucun outil n'existe."""
-
-    def list_for(self, identity: McpIdentity) -> list[ToolSpec]:
-        return []
-
-    def get(self, name: str) -> ToolSpec | None:
-        return None
-
-
-class NoDispatcher:
-    """Envoyeur vide : jamais appelé, puisque `NoTools` ne connaît aucun outil."""
-
-    async def call(
-        self, identity: McpIdentity, tool: ToolSpec, arguments: dict[str, Any]
-    ) -> ToolResult:
-        return ToolResult(data={"error": {"code": "no_tools", "message": "Aucun outil."}}, code=404)
 
 
 def _user_allowed(settings: Settings) -> UserCheck:
@@ -100,8 +84,31 @@ def install_gate(
     return gate
 
 
+def install_adapter(
+    app: FastAPI,
+    features: Sequence[FeatureMcp],
+    graphs: Mapping[str, type[BaseModel]] | None = None,
+    limits: Limits | None = None,
+) -> Registry:
+    """Le registre des outils (vérifié contre l'OpenAPI : une déclaration fausse fait échouer le
+    démarrage), l'envoyeur réel et les demandes « À confirmer », puis la porte. Pose
+    `app.state.mcp_registry` et `app.state.mcp_confirmations` (compte -> service) pour le routeur
+    `mcp`. `graphs` : le modèle d'entrée de chaque graphe (`app.mcp` ignore `app.agents`)."""
+    registry = build_registry(features, app, graphs)
+
+    def confirmations(user_id: str) -> ConfirmationService:
+        return ConfirmationService(app.state.session_factory, user_id, dispatcher.run_stored)
+
+    dispatcher = McpDispatcher(app, app.state.session_factory, registry, confirmations)
+    app.state.mcp_registry = registry
+    app.state.mcp_confirmations = confirmations
+    install_gate(app, registry, dispatcher, limits)
+    return registry
+
+
 def compose_mcp(app: FastAPI) -> None:
-    """Monte `POST /mcp` (`GET` et `DELETE` répondent 405) et pose la porte. Sans outil pour
-    l'instant : B2 appelle `install_gate` avec son registre et son envoyeur."""
-    install_gate(app, NoTools(), NoDispatcher())
+    """Monte `POST /mcp` (`GET` et `DELETE` répondent 405), construit les outils déclarés par les
+    features (`MCP_FEATURES`) et pose la porte."""
+    models = {name: spec.input_model for name, spec in GRAPHS.items()}
+    install_adapter(app, MCP_FEATURES, models)
     app.add_route(_MCP_PATH, mcp_endpoint, methods=["POST", "GET", "DELETE"], name="mcp")

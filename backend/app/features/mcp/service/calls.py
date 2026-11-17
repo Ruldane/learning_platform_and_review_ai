@@ -66,6 +66,7 @@ class CallJournal:
         code: int,
         duration_ms: int,
         ids: Mapping[str, Any],
+        call_id: str | None = None,
     ) -> None:
         """Une panne du journal n'annule pas un appel déjà fait : signalée, sans contenu. Un appel
         refusé par la limite (429) passe par le budget des refus : un client qui insiste n'écrit
@@ -75,7 +76,13 @@ class CallJournal:
         try:
             async with self._session_factory() as db:
                 await CallRepository(db, identity.user_id).record(
-                    identity.token_id, tool.name[:80], tool.level, code, duration_ms, clean_ids(ids)
+                    identity.token_id,
+                    tool.name[:80],
+                    tool.level,
+                    code,
+                    duration_ms,
+                    clean_ids(ids),
+                    call_id,
                 )
                 await db.commit()
         except Exception as exc:
@@ -130,7 +137,9 @@ class GuardedDispatcher:
         except Exception:
             await self._journal.record(identity, tool, 500, _since(started), {})
             raise
-        await self._journal.record(identity, tool, outcome.code, _since(started), outcome.ids)
+        await self._journal.record(
+            identity, tool, outcome.code, _since(started), outcome.ids, outcome.call_id
+        )
         return outcome
 
 

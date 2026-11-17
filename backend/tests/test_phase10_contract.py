@@ -85,6 +85,16 @@ LIVE |= {
     ("DELETE", "/mcp/tokens/x1"),
     ("GET", "/mcp/calls"),
 }
+# 10.B2 : tables d'outils, demandes « À confirmer », changements et annulation.
+LIVE |= {
+    ("GET", "/mcp/features"),
+    ("GET", "/mcp/actions"),
+    ("GET", "/mcp/confirmations"),
+    ("POST", "/mcp/confirmations/x1/confirm"),
+    ("POST", "/mcp/confirmations/x1/refuse"),
+    ("GET", "/mcp/changes"),
+    ("POST", "/mcp/changes/x1/undo"),
+}
 
 
 def test_single_alembic_head() -> None:

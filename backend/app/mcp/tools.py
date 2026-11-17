@@ -4,20 +4,23 @@ par la composition), et `McpGate`, ce que la porte lit sur `app.state.mcp_gate`.
 
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
-from typing import Any, Protocol
+from typing import Any, Literal, Protocol
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.caller import McpIdentity
-from app.mcp.base import Level
+from app.mcp.base import Level, PrecheckInput, Verdict
 from app.mcp.limits import RateLimiter
+from app.mcp.schema import RoutePlan
 
 
 @dataclass(frozen=True)
 class ToolSpec:
     """Un outil exposé (produit par le registre de B2) : `feature` pour le périmètre du jeton,
     `level` (1 lecture, 2 écriture réversible, 3 à confirmer), `untrusted` les champs de la
-    réponse qui viennent du web, `bucket` un compteur de limite à part (`code_run`)."""
+    réponse qui viennent du web, `bucket` un compteur de limite à part (`code_run`). Posés par le
+    registre : `route` (méthode et chemin sans `/api/v1`) ou `graph` (lancement d'un parcours),
+    `side_effects`, `precheck` (niveau 3), `plan` (où va chaque argument), `response_fields`."""
 
     name: str
     feature: str
@@ -26,17 +29,26 @@ class ToolSpec:
     input_schema: Mapping[str, Any]
     untrusted: tuple[str, ...] = ()
     bucket: str | None = None
+    summary: str | None = None
+    route: tuple[str, str] | None = None
+    graph: str | None = None
+    side_effects: Literal["db", "external"] = "db"
+    precheck: Callable[[PrecheckInput], Awaitable[Verdict]] | None = None
+    plan: RoutePlan | None = None
+    response_fields: frozenset[str] | None = None
 
 
 @dataclass(frozen=True)
 class ToolResult:
     """Ce que rend l'envoyeur : le corps de la réponse de la route (`data`), son code HTTP et les
     identifiants touchés (pour le journal : jamais de contenu). Un code de 400 ou plus est une
-    erreur de l'outil."""
+    erreur de l'outil. `call_id` : l'identifiant de l'appel d'un outil de niveau 2 (celui de ses
+    changements annulables), repris par le journal comme identifiant de la ligne."""
 
     data: Any
     code: int = 200
     ids: Mapping[str, Any] = field(default_factory=dict)
+    call_id: str | None = None
 
     @property
     def is_error(self) -> bool:
