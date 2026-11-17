@@ -19,7 +19,7 @@ def normalize_skill_name(name: str) -> str:
     return _SPACES.sub(" ", plain.casefold()).strip(_EDGE)
 
 
-EvidenceKind = Literal["program", "lesson", "study", "quiz", "project", "cv", "capture"]
+EvidenceKind = Literal["program", "lesson", "study", "quiz", "project", "cv", "capture", "ide"]
 _KINDS: frozenset[str] = frozenset(get_args(EvidenceKind))
 
 

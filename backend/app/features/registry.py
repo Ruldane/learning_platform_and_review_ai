@@ -14,8 +14,10 @@ from app.features.costs.router import router as costs_router
 from app.features.cv.router import router as cv_router
 from app.features.gap.router import router as gap_router
 from app.features.health.router import router as health_router
+from app.features.ide.router import router as ide_router
 from app.features.learning.router import router as learning_router
 from app.features.lessons.router import router as lessons_router
+from app.features.mcp.router import router as mcp_router
 from app.features.memory.router import router as memory_router
 from app.features.postings.router import router as postings_router
 from app.features.program.router import router as program_router
@@ -29,6 +31,7 @@ from app.features.settings.keys_router import router as keys_router
 from app.features.settings.router import router as settings_router
 from app.features.skills.router import router as skills_router
 from app.features.study.router import router as study_router
+from app.mcp.base import FeatureMcp
 
 # Chaque feature ajoute ici son routeur ; `create_app` les monte sous `/api/v1`.
 FEATURE_ROUTERS: list[APIRouter] = [
@@ -61,4 +64,11 @@ FEATURE_ROUTERS: list[APIRouter] = [
     projects_router,
     account_router,
     costs_router,
+    ide_router,
+    mcp_router,
 ]
+
+# Chaque feature déclare ici ses outils MCP (`features/<f>/mcp.py`, `MCP: FeatureMcp`), une
+# ligne par feature : liste blanche, aucune route n'est exposée d'elle-même (phase 10, P11).
+# Remplie par 10.D1.
+MCP_FEATURES: list[FeatureMcp] = []

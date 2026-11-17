@@ -13,6 +13,7 @@ from app.features.registry import FEATURE_ROUTERS
 from tests.isolation.guard_support import (
     EXEMPT,
     EXPECTED_FROM_B,
+    EXPECTED_PHASE10,
     case_modules,
     check_function,
     load_cases,
@@ -25,7 +26,7 @@ IDS = {router_id(r) for r in FEATURE_ROUTERS}
 
 def test_every_router_has_isolation_case() -> None:
     missing = IDS - load_cases().keys() - EXEMPT.keys()
-    assert missing - EXPECTED_FROM_B == set()
+    assert missing - EXPECTED_FROM_B - EXPECTED_PHASE10 == set()
 
 
 def test_expected_from_b_is_emptied_once_b_delivers() -> None:
@@ -35,6 +36,12 @@ def test_expected_from_b_is_emptied_once_b_delivers() -> None:
     assert EXPECTED_FROM_B.isdisjoint(load_cases().keys())
     if "tests.isolation.cases_b" in case_modules():
         assert not EXPECTED_FROM_B
+
+
+def test_expected_phase10_routers_are_real_and_not_yet_covered() -> None:
+    """10.I vide `EXPECTED_PHASE10` : à l'intégration, `ide` et `mcp` ont leur cas."""
+    assert EXPECTED_PHASE10 <= IDS
+    assert EXPECTED_PHASE10.isdisjoint(load_cases().keys())
 
 
 def test_every_case_points_to_an_existing_test() -> None:

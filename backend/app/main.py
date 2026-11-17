@@ -13,6 +13,7 @@ from app.bootstrap import (
     StudyRuntimes,
     agent_ports,
     build_providers,
+    compose_phase10,
     key_test_http,
     lessons_runtime,
     model_prices,
@@ -156,6 +157,7 @@ def _compose_features(app: FastAPI) -> StudyRuntimes:
         career=app.state.career,
         study=study,
     )
+    compose_phase10(app)  # IDE et serveur MCP (phase 10) : vides jusqu'à 10.A1 et 10.B1
     return study
 
 

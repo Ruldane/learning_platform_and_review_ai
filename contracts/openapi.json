@@ -4483,7 +4483,8 @@
               "quiz",
               "project",
               "cv",
-              "capture"
+              "capture",
+              "ide"
             ],
             "title": "Kind",
             "type": "string"
@@ -4594,6 +4595,133 @@
         "title": "ExchangeOut",
         "type": "object"
       },
+      "ExerciseGenerateIn": {
+        "description": "`topic` : le sujet de l'exercice à faire générer par les agents.",
+        "properties": {
+          "level": {
+            "default": "beginner",
+            "enum": [
+              "beginner",
+              "intermediate",
+              "advanced"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "topic": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Topic",
+            "type": "string"
+          }
+        },
+        "required": [
+          "topic"
+        ],
+        "title": "ExerciseGenerateIn",
+        "type": "object"
+      },
+      "ExerciseIn": {
+        "description": "Un exercice écrit à la main : l'énoncé et, au choix, des fichiers de départ.",
+        "properties": {
+          "entry": {
+            "default": "main.py",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Entry",
+            "type": "string"
+          },
+          "files": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Files",
+            "type": "object"
+          },
+          "statement": {
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Statement",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "statement"
+        ],
+        "title": "ExerciseIn",
+        "type": "object"
+      },
+      "ExerciseOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "entry": {
+            "title": "Entry",
+            "type": "string"
+          },
+          "files": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Files",
+            "type": "object"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "origin": {
+            "enum": [
+              "user",
+              "generated",
+              "claude"
+            ],
+            "title": "Origin",
+            "type": "string"
+          },
+          "statement": {
+            "title": "Statement",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "topic": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Topic"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "statement",
+          "files",
+          "entry",
+          "origin",
+          "topic",
+          "created_at"
+        ],
+        "title": "ExerciseOut",
+        "type": "object"
+      },
       "ExpectedOut": {
         "description": "Les points qu'une bonne réponse à la question `index` aurait donnés (verso de la fiche).",
         "properties": {
@@ -4699,6 +4827,36 @@
           "company"
         ],
         "title": "Experience",
+        "type": "object"
+      },
+      "FilesPutIn": {
+        "description": "Remplace tous les fichiers de la séance (geste de l'interface, exclu du MCP).",
+        "properties": {
+          "entry": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entry"
+          },
+          "files": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Files",
+            "type": "object"
+          }
+        },
+        "required": [
+          "files"
+        ],
+        "title": "FilesPutIn",
         "type": "object"
       },
       "FlashcardOut": {
@@ -5298,6 +5456,20 @@
           "score"
         ],
         "title": "HistoryPointOut",
+        "type": "object"
+      },
+      "IdeSessionStarted": {
+        "description": "Le graphe tourne : `session_id` désigne la session d'agents à suivre (en moins de 2 s).",
+        "properties": {
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id"
+        ],
+        "title": "IdeSessionStarted",
         "type": "object"
       },
       "Identity": {
@@ -6597,6 +6769,545 @@
         "title": "MasterProfileData",
         "type": "object"
       },
+      "McpActionOut": {
+        "description": "Un outil exposé (table des niveaux). `kind` : une route ou un graphe de l'application.\n`untrusted` : les champs rendus comme données, jamais comme consignes.",
+        "properties": {
+          "feature": {
+            "title": "Feature",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "route",
+              "graph"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "level": {
+            "enum": [
+              1,
+              2,
+              3
+            ],
+            "title": "Level",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "route": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Route"
+          },
+          "side_effects": {
+            "enum": [
+              "db",
+              "external"
+            ],
+            "title": "Side Effects",
+            "type": "string"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "untrusted": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Untrusted",
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "feature",
+          "kind",
+          "route",
+          "level",
+          "summary",
+          "side_effects",
+          "untrusted"
+        ],
+        "title": "McpActionOut",
+        "type": "object"
+      },
+      "McpCallOut": {
+        "description": "Une ligne du journal : l'outil, le niveau, le code de résultat, la durée, les identifiants.\nJamais le contenu.",
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "code": {
+            "title": "Code",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "duration_ms": {
+            "title": "Duration Ms",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "ids": {
+            "additionalProperties": true,
+            "title": "Ids",
+            "type": "object"
+          },
+          "level": {
+            "enum": [
+              1,
+              2,
+              3
+            ],
+            "title": "Level",
+            "type": "integer"
+          },
+          "token_id": {
+            "title": "Token Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "token_id",
+          "action",
+          "level",
+          "code",
+          "duration_ms",
+          "ids",
+          "created_at"
+        ],
+        "title": "McpCallOut",
+        "type": "object"
+      },
+      "McpChangeOut": {
+        "description": "Les changements d'un appel de niveau 2 : de quoi les annuler ensemble (`undone_at` posé\nune fois annulés).",
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "call_id": {
+            "title": "Call Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "rows": {
+            "title": "Rows",
+            "type": "integer"
+          },
+          "tables": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tables",
+            "type": "array"
+          },
+          "undone_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Undone At"
+          }
+        },
+        "required": [
+          "call_id",
+          "action",
+          "rows",
+          "tables",
+          "undone_at",
+          "created_at"
+        ],
+        "title": "McpChangeOut",
+        "type": "object"
+      },
+      "McpConfirmationOut": {
+        "description": "Une demande « À confirmer » (niveau 3) : ce que Claude veut faire, en résumé neutre, et le\nverdict d'un éventuel contrôle préalable. Rien ne s'exécute avant la confirmation.",
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "precheck": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Precheck"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "confirmed",
+              "refused",
+              "expired",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "token_id": {
+            "title": "Token Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "token_id",
+          "action",
+          "summary",
+          "precheck",
+          "status",
+          "expires_at",
+          "decided_at",
+          "created_at"
+        ],
+        "title": "McpConfirmationOut",
+        "type": "object"
+      },
+      "McpFeatureOut": {
+        "description": "Une feature qui déclare des outils MCP : son nom et ses outils par niveau.",
+        "properties": {
+          "confirm_actions": {
+            "title": "Confirm Actions",
+            "type": "integer"
+          },
+          "feature": {
+            "title": "Feature",
+            "type": "string"
+          },
+          "read_actions": {
+            "title": "Read Actions",
+            "type": "integer"
+          },
+          "write_actions": {
+            "title": "Write Actions",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "feature",
+          "read_actions",
+          "write_actions",
+          "confirm_actions"
+        ],
+        "title": "McpFeatureOut",
+        "type": "object"
+      },
+      "McpSettingsIn": {
+        "description": "L'interrupteur général : faux = aucun jeton n'ouvre rien (coupé par défaut).",
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "title": "McpSettingsIn",
+        "type": "object"
+      },
+      "McpSettingsOut": {
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "title": "McpSettingsOut",
+        "type": "object"
+      },
+      "McpTokenCreateIn": {
+        "description": "Crée un jeton : limité à certaines features, lecture seule par défaut, 30 jours par\ndéfaut (1, 7, 30 ou 90).",
+        "properties": {
+          "expires_in_days": {
+            "default": 30,
+            "enum": [
+              1,
+              7,
+              30,
+              90
+            ],
+            "title": "Expires In Days",
+            "type": "integer"
+          },
+          "features": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 40,
+            "minItems": 1,
+            "title": "Features",
+            "type": "array"
+          },
+          "label": {
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "mode": {
+            "default": "read",
+            "enum": [
+              "read",
+              "write"
+            ],
+            "title": "Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "features"
+        ],
+        "title": "McpTokenCreateIn",
+        "type": "object"
+      },
+      "McpTokenCreated": {
+        "description": "La réponse à la création : `token` (`tmcp_…`) n'est montré qu'ici, une seule fois.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "features": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Features",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "last_used_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Used At"
+          },
+          "mode": {
+            "enum": [
+              "read",
+              "write"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          },
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "features",
+          "mode",
+          "expires_at",
+          "revoked_at",
+          "last_used_at",
+          "created_at",
+          "token"
+        ],
+        "title": "McpTokenCreated",
+        "type": "object"
+      },
+      "McpTokenOut": {
+        "description": "Un jeton, sans sa valeur : on ne la revoit jamais.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "features": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Features",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "last_used_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Used At"
+          },
+          "mode": {
+            "enum": [
+              "read",
+              "write"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "features",
+          "mode",
+          "expires_at",
+          "revoked_at",
+          "last_used_at",
+          "created_at"
+        ],
+        "title": "McpTokenOut",
+        "type": "object"
+      },
+      "McpUndoOut": {
+        "description": "`undone` : le nombre de lignes remises dans leur état d'avant.",
+        "properties": {
+          "call_id": {
+            "title": "Call Id",
+            "type": "string"
+          },
+          "undone": {
+            "title": "Undone",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "call_id",
+          "undone"
+        ],
+        "title": "McpUndoOut",
+        "type": "object"
+      },
       "MeOut": {
         "properties": {
           "auth_mode": {
@@ -7757,6 +8468,241 @@
         "title": "NextActionOut",
         "type": "object"
       },
+      "NoteIn": {
+        "description": "Une note ajoutée à la main ou par Claude : l'auteur vient de l'appelant, jamais du corps.\nUne proposition porte `replacement`, la plage de lignes et `base_hash`.",
+        "properties": {
+          "base_hash": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Hash"
+          },
+          "content": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Content",
+            "type": "string"
+          },
+          "file_path": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Path"
+          },
+          "kind": {
+            "enum": [
+              "hint",
+              "explanation",
+              "annotation",
+              "proposal",
+              "reference"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "line_end": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line End"
+          },
+          "line_start": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line Start"
+          },
+          "replacement": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replacement"
+          }
+        },
+        "required": [
+          "kind",
+          "content"
+        ],
+        "title": "NoteIn",
+        "type": "object"
+      },
+      "NoteOut": {
+        "properties": {
+          "author": {
+            "enum": [
+              "professor",
+              "claude",
+              "user"
+            ],
+            "title": "Author",
+            "type": "string"
+          },
+          "author_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Label"
+          },
+          "base_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Hash"
+          },
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "file_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Path"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "hint",
+              "explanation",
+              "annotation",
+              "proposal",
+              "reference"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "line_end": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line End"
+          },
+          "line_start": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line Start"
+          },
+          "reference_note_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Note Id"
+          },
+          "replacement": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replacement"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "open",
+              "accepted",
+              "rejected",
+              "stale"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "kind",
+          "author",
+          "author_label",
+          "status",
+          "file_path",
+          "line_start",
+          "line_end",
+          "content",
+          "replacement",
+          "base_hash",
+          "reference_note_id",
+          "created_at"
+        ],
+        "title": "NoteOut",
+        "type": "object"
+      },
       "ObjectionOut": {
         "description": "Une objection du comité (la plus lourde d'abord) et les personas qui la portent.",
         "properties": {
@@ -8562,6 +9508,75 @@
           "has_review"
         ],
         "title": "PostingSummaryOut",
+        "type": "object"
+      },
+      "PreferencesIn": {
+        "description": "Mode du professeur, minuterie d'inactivité (30 s, en option) et plafonds de jetons.",
+        "properties": {
+          "day_cap": {
+            "default": 300000,
+            "maximum": 10000000.0,
+            "minimum": 1000.0,
+            "title": "Day Cap",
+            "type": "integer"
+          },
+          "idle_trigger": {
+            "default": false,
+            "title": "Idle Trigger",
+            "type": "boolean"
+          },
+          "session_cap": {
+            "default": 100000,
+            "maximum": 2000000.0,
+            "minimum": 1000.0,
+            "title": "Session Cap",
+            "type": "integer"
+          },
+          "teacher_mode": {
+            "default": "auto",
+            "enum": [
+              "auto",
+              "on_demand"
+            ],
+            "title": "Teacher Mode",
+            "type": "string"
+          }
+        },
+        "title": "PreferencesIn",
+        "type": "object"
+      },
+      "PreferencesOut": {
+        "properties": {
+          "day_cap": {
+            "default": 300000,
+            "maximum": 10000000.0,
+            "minimum": 1000.0,
+            "title": "Day Cap",
+            "type": "integer"
+          },
+          "idle_trigger": {
+            "default": false,
+            "title": "Idle Trigger",
+            "type": "boolean"
+          },
+          "session_cap": {
+            "default": 100000,
+            "maximum": 2000000.0,
+            "minimum": 1000.0,
+            "title": "Session Cap",
+            "type": "integer"
+          },
+          "teacher_mode": {
+            "default": "auto",
+            "enum": [
+              "auto",
+              "on_demand"
+            ],
+            "title": "Teacher Mode",
+            "type": "string"
+          }
+        },
+        "title": "PreferencesOut",
         "type": "object"
       },
       "ProfileEntryIn": {
@@ -10972,6 +11987,151 @@
         "title": "RunFailedPayload",
         "type": "object"
       },
+      "RunIn": {
+        "description": "`run` exécute, `check` vérifie seulement la syntaxe ; `entry` : le fichier d'entrée (celui\nde la séance par défaut).",
+        "properties": {
+          "entry": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entry"
+          },
+          "kind": {
+            "default": "run",
+            "enum": [
+              "run",
+              "check"
+            ],
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "title": "RunIn",
+        "type": "object"
+      },
+      "RunOut": {
+        "description": "Une exécution déposée (202) : on lit la sortie par `GET /ide/runs/{id}?after=`.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "entry": {
+            "title": "Entry",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "run",
+              "check"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "running",
+              "done",
+              "timeout",
+              "killed",
+              "error"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "kind",
+          "entry",
+          "status",
+          "created_at"
+        ],
+        "title": "RunOut",
+        "type": "object"
+      },
+      "RunProgress": {
+        "description": "La sortie depuis `after` (octets), le décalage suivant, et la fin quand le bac l'a rendue.",
+        "properties": {
+          "duration_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Ms"
+          },
+          "exit_code": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exit Code"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "next_offset": {
+            "title": "Next Offset",
+            "type": "integer"
+          },
+          "output": {
+            "title": "Output",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "running",
+              "done",
+              "timeout",
+              "killed",
+              "error"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "truncated": {
+            "title": "Truncated",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "output",
+          "next_offset",
+          "exit_code",
+          "duration_ms",
+          "truncated"
+        ],
+        "title": "RunProgress",
+        "type": "object"
+      },
       "RunRef": {
         "properties": {
           "created_at": {
@@ -11137,6 +12297,37 @@
         "title": "SearchUsageOut",
         "type": "object"
       },
+      "SessionCreateIn": {
+        "description": "Ouvre une séance sur un exercice, ou une séance libre (sans `exercise_id`).",
+        "properties": {
+          "exercise_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exercise Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "title": "SessionCreateIn",
+        "type": "object"
+      },
       "SessionEvent": {
         "discriminator": {
           "mapping": {
@@ -11206,6 +12397,55 @@
           }
         ]
       },
+      "SessionOut": {
+        "properties": {
+          "entry": {
+            "title": "Entry",
+            "type": "string"
+          },
+          "exercise_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exercise Id"
+          },
+          "files": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Files",
+            "type": "object"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "exercise_id",
+          "updated_at",
+          "files",
+          "entry"
+        ],
+        "title": "SessionOut",
+        "type": "object"
+      },
       "SessionStarted": {
         "properties": {
           "session_id": {
@@ -11217,6 +12457,42 @@
           "session_id"
         ],
         "title": "SessionStarted",
+        "type": "object"
+      },
+      "SessionSummary": {
+        "properties": {
+          "exercise_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exercise Id"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "exercise_id",
+          "updated_at"
+        ],
+        "title": "SessionSummary",
         "type": "object"
       },
       "SessionView": {
@@ -12755,6 +14031,119 @@
         "title": "TaskPatch",
         "type": "object"
       },
+      "TeachIn": {
+        "description": "Ce qui déclenche le professeur : une exécution, une erreur, une question ou, en option,\n30 s d'arrêt sur une ligne. Jamais à la frappe.",
+        "properties": {
+          "file_path": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Path"
+          },
+          "line": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line"
+          },
+          "question": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "trigger": {
+            "enum": [
+              "run",
+              "error",
+              "question",
+              "idle"
+            ],
+            "title": "Trigger",
+            "type": "string"
+          }
+        },
+        "required": [
+          "trigger"
+        ],
+        "title": "TeachIn",
+        "type": "object"
+      },
+      "TeachOut": {
+        "description": "Un seul des trois : `session_id` (le graphe du professeur travaille), `reference_note_id`\n(même erreur au même endroit : renvoi à la note précédente) ou `skipped` (pourquoi rien n'est\nlancé).",
+        "properties": {
+          "reference_note_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Note Id"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
+          "skipped": {
+            "anyOf": [
+              {
+                "enum": [
+                  "cap_reached",
+                  "on_demand",
+                  "busy",
+                  "empty_question"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skipped"
+          }
+        },
+        "title": "TeachOut",
+        "type": "object"
+      },
       "TemplateCreated": {
         "description": "Capture du design lancée : le gabarit (`capturing`) et sa session `cv_capture`.",
         "properties": {
@@ -13188,6 +14577,40 @@
           "new"
         ],
         "title": "TrendOut",
+        "type": "object"
+      },
+      "UsageOut": {
+        "description": "La consommation du professeur : jetons de la séance et du jour, leurs plafonds, et si le\nprofesseur est passé en mode « sur demande » (plafond atteint ou choix).",
+        "properties": {
+          "day_cap": {
+            "title": "Day Cap",
+            "type": "integer"
+          },
+          "day_tokens": {
+            "title": "Day Tokens",
+            "type": "integer"
+          },
+          "mode_on_demand": {
+            "title": "Mode On Demand",
+            "type": "boolean"
+          },
+          "session_cap": {
+            "title": "Session Cap",
+            "type": "integer"
+          },
+          "session_tokens": {
+            "title": "Session Tokens",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "session_tokens",
+          "day_tokens",
+          "session_cap",
+          "day_cap",
+          "mode_on_demand"
+        ],
+        "title": "UsageOut",
         "type": "object"
       },
       "UserMessageEvent": {
@@ -16896,6 +18319,789 @@
         ]
       }
     },
+    "/api/v1/ide/exercises": {
+      "get": {
+        "description": "Mes exercices, les plus récents d'abord.",
+        "operationId": "list_exercises_api_v1_ide_exercises_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ExerciseOut"
+                  },
+                  "title": "Response List Exercises Api V1 Ide Exercises Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Exercises",
+        "tags": [
+          "ide"
+        ]
+      },
+      "post": {
+        "description": "Ajoute un exercice écrit à la main (ou par Claude : `origin` vient de l'appelant).",
+        "operationId": "create_exercise_api_v1_ide_exercises_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExerciseIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExerciseOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Exercise",
+        "tags": [
+          "ide"
+        ]
+      }
+    },
+    "/api/v1/ide/exercises/generate": {
+      "post": {
+        "description": "Fait générer un exercice par les agents : rend aussitôt la session à suivre.",
+        "operationId": "generate_exercise_api_v1_ide_exercises_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExerciseGenerateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdeSessionStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Generate Exercise",
+        "tags": [
+          "ide"
+        ]
+      }
+    },
+    "/api/v1/ide/exercises/{exercise_id}": {
+      "delete": {
+        "description": "Supprime un exercice (ses séances restent). 404 si ce n'est pas le mien.",
+        "operationId": "delete_exercise_api_v1_ide_exercises__exercise_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "exercise_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Exercise Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Exercise",
+        "tags": [
+          "ide"
+        ]
+      }
+    },
+    "/api/v1/ide/notes/{note_id}/accept": {
+      "post": {
+        "description": "Applique une proposition au fichier si celui-ci n'a pas changé (sinon 409 `note_stale`).\nGeste de l'interface, jamais du MCP.",
+        "operationId": "accept_note_api_v1_ide_notes__note_id__accept_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "note_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Note Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Accept Note",
+        "tags": [
+          "ide"
+        ]
+      }
+    },
+    "/api/v1/ide/notes/{note_id}/reject": {
+      "post": {
+        "description": "Refuse une proposition. Geste de l'interface, jamais du MCP.",
+        "operationId": "reject_note_api_v1_ide_notes__note_id__reject_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "note_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Note Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reject Note",
+        "tags": [
+          "ide"
+        ]
+      }
+    },
+    "/api/v1/ide/preferences": {
+      "get": {
+        "description": "Mode du professeur, minuterie d'inactivité, plafonds de jetons.",
+        "operationId": "get_preferences_api_v1_ide_preferences_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferencesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Preferences",
+        "tags": [
+          "ide"
+        ]
+      },
+      "put": {
+        "description": "Remplace les préférences du professeur.",
+        "operationId": "put_preferences_api_v1_ide_preferences_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreferencesIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferencesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Preferences",
+        "tags": [
+          "ide"
+        ]
+      }
+    },
+    "/api/v1/ide/runs/{run_id}": {
+      "get": {
+        "description": "La sortie de l'exécution à partir de l'octet `after` (interrogation toutes les 300 ms).",
+        "operationId": "read_run_api_v1_ide_runs__run_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "After",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunProgress"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read Run",
+        "tags": [
+          "ide"
+        ]
+      }
+    },
+    "/api/v1/ide/sessions": {
+      "get": {
+        "description": "Mes séances de code, la plus récente d'abord.",
+        "operationId": "list_sessions_api_v1_ide_sessions_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SessionSummary"
+                  },
+                  "title": "Response List Sessions Api V1 Ide Sessions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Sessions",
+        "tags": [
+          "ide"
+        ]
+      },
+      "post": {
+        "description": "Ouvre une séance sur un exercice, ou une séance libre.",
+        "operationId": "create_session_api_v1_ide_sessions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionCreateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Session",
+        "tags": [
+          "ide"
+        ]
+      }
+    },
+    "/api/v1/ide/sessions/{session_id}": {
+      "get": {
+        "description": "Une séance avec ses fichiers.",
+        "operationId": "get_session_api_v1_ide_sessions__session_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Session",
+        "tags": [
+          "ide"
+        ]
+      }
+    },
+    "/api/v1/ide/sessions/{session_id}/files": {
+      "put": {
+        "description": "Remplace les fichiers de la séance (20 au plus, 200 Ko). Geste de l'interface.",
+        "operationId": "put_files_api_v1_ide_sessions__session_id__files_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FilesPutIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Files",
+        "tags": [
+          "ide"
+        ]
+      }
+    },
+    "/api/v1/ide/sessions/{session_id}/notes": {
+      "get": {
+        "description": "Les notes de la séance : indices, explications, annotations, propositions, renvois.",
+        "operationId": "list_notes_api_v1_ide_sessions__session_id__notes_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/NoteOut"
+                  },
+                  "title": "Response List Notes Api V1 Ide Sessions  Session Id  Notes Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Notes",
+        "tags": [
+          "ide"
+        ]
+      },
+      "post": {
+        "description": "Ajoute une note ; l'auteur est celui de l'appelant (moi, le professeur, Claude).",
+        "operationId": "add_note_api_v1_ide_sessions__session_id__notes_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoteIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Note",
+        "tags": [
+          "ide"
+        ]
+      }
+    },
+    "/api/v1/ide/sessions/{session_id}/runs": {
+      "post": {
+        "description": "Dépose une exécution ou une vérification dans le bac à sable (une par utilisatrice).",
+        "operationId": "start_run_api_v1_ide_sessions__session_id__runs_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Run",
+        "tags": [
+          "ide"
+        ]
+      }
+    },
+    "/api/v1/ide/sessions/{session_id}/teach": {
+      "post": {
+        "description": "Réveille le professeur : un graphe (`session_id`), un renvoi à la note précédente\n(`reference_note_id`) ou rien (`skipped`).",
+        "operationId": "teach_api_v1_ide_sessions__session_id__teach_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TeachIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeachOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Teach",
+        "tags": [
+          "ide"
+        ]
+      }
+    },
+    "/api/v1/ide/usage": {
+      "get": {
+        "description": "Les jetons du professeur : séance (si `session_id`), jour, plafonds, mode sur demande.",
+        "operationId": "get_usage_api_v1_ide_usage_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "session_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 36,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Usage",
+        "tags": [
+          "ide"
+        ]
+      }
+    },
     "/api/v1/interviews": {
       "get": {
         "description": "Les entretiens (d'une fiche), le plus récent d'abord ; un entretien dont la session s'est\nterminée sans résultat passe en `failed`.",
@@ -17220,6 +19426,485 @@
         "summary": "Get Lesson Pdf",
         "tags": [
           "lessons"
+        ]
+      }
+    },
+    "/api/v1/mcp/actions": {
+      "get": {
+        "description": "La table des outils exposés et de leur niveau.",
+        "operationId": "list_actions_api_v1_mcp_actions_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/McpActionOut"
+                  },
+                  "title": "Response List Actions Api V1 Mcp Actions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Actions",
+        "tags": [
+          "mcp"
+        ]
+      }
+    },
+    "/api/v1/mcp/calls": {
+      "get": {
+        "description": "Le journal des appels MCP (outil, niveau, code, durée), jamais leur contenu.",
+        "operationId": "list_calls_api_v1_mcp_calls_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/McpCallOut"
+                  },
+                  "title": "Response List Calls Api V1 Mcp Calls Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Calls",
+        "tags": [
+          "mcp"
+        ]
+      }
+    },
+    "/api/v1/mcp/changes": {
+      "get": {
+        "description": "Les changements faits par Claude (niveau 2), annulables un appel à la fois.",
+        "operationId": "list_changes_api_v1_mcp_changes_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/McpChangeOut"
+                  },
+                  "title": "Response List Changes Api V1 Mcp Changes Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Changes",
+        "tags": [
+          "mcp"
+        ]
+      }
+    },
+    "/api/v1/mcp/changes/{call_id}/undo": {
+      "post": {
+        "description": "Remet les lignes d'un appel dans leur état d'avant, si aucune n'a changé depuis (409\nsinon).",
+        "operationId": "undo_changes_api_v1_mcp_changes__call_id__undo_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "call_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Call Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpUndoOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Undo Changes",
+        "tags": [
+          "mcp"
+        ]
+      }
+    },
+    "/api/v1/mcp/confirmations": {
+      "get": {
+        "description": "Les demandes « À confirmer », les plus récentes d'abord.",
+        "operationId": "list_confirmations_api_v1_mcp_confirmations_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/McpConfirmationOut"
+                  },
+                  "title": "Response List Confirmations Api V1 Mcp Confirmations Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Confirmations",
+        "tags": [
+          "mcp"
+        ]
+      }
+    },
+    "/api/v1/mcp/confirmations/{confirmation_id}/confirm": {
+      "post": {
+        "description": "Exécute la demande, une seule fois ; expirée, refusée ou déjà traitée : 409.",
+        "operationId": "confirm_api_v1_mcp_confirmations__confirmation_id__confirm_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "confirmation_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Confirmation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpConfirmationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Confirm",
+        "tags": [
+          "mcp"
+        ]
+      }
+    },
+    "/api/v1/mcp/confirmations/{confirmation_id}/refuse": {
+      "post": {
+        "description": "Refuse la demande : elle ne s'exécutera jamais.",
+        "operationId": "refuse_api_v1_mcp_confirmations__confirmation_id__refuse_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "confirmation_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Confirmation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpConfirmationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Refuse",
+        "tags": [
+          "mcp"
+        ]
+      }
+    },
+    "/api/v1/mcp/features": {
+      "get": {
+        "description": "Les features qui déclarent des outils, avec le nombre d'outils par niveau.",
+        "operationId": "list_features_api_v1_mcp_features_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/McpFeatureOut"
+                  },
+                  "title": "Response List Features Api V1 Mcp Features Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Features",
+        "tags": [
+          "mcp"
+        ]
+      }
+    },
+    "/api/v1/mcp/settings": {
+      "get": {
+        "description": "L'interrupteur général du MCP (coupé par défaut).",
+        "operationId": "get_settings_api_v1_mcp_settings_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpSettingsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Settings",
+        "tags": [
+          "mcp"
+        ]
+      },
+      "put": {
+        "description": "Allume ou coupe tout l'accès MCP d'un geste.",
+        "operationId": "put_settings_api_v1_mcp_settings_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/McpSettingsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpSettingsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Settings",
+        "tags": [
+          "mcp"
+        ]
+      }
+    },
+    "/api/v1/mcp/tokens": {
+      "get": {
+        "description": "Mes jetons (sans leur valeur), révoqués compris.",
+        "operationId": "list_tokens_api_v1_mcp_tokens_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/McpTokenOut"
+                  },
+                  "title": "Response List Tokens Api V1 Mcp Tokens Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Tokens",
+        "tags": [
+          "mcp"
+        ]
+      },
+      "post": {
+        "description": "Crée un jeton ; sa valeur n'est rendue qu'ici, une seule fois.",
+        "operationId": "create_token_api_v1_mcp_tokens_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/McpTokenCreateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpTokenCreated"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Token",
+        "tags": [
+          "mcp"
+        ]
+      }
+    },
+    "/api/v1/mcp/tokens/{token_id}": {
+      "delete": {
+        "description": "Révoque un jeton : il cesse de fonctionner aussitôt.",
+        "operationId": "revoke_token_api_v1_mcp_tokens__token_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Token Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Revoke Token",
+        "tags": [
+          "mcp"
         ]
       }
     },

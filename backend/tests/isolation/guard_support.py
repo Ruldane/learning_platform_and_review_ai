@@ -16,6 +16,10 @@ EXEMPT: dict[str, str] = {"app.features.health.router": "aucune donnée d'utilis
 # (`test_expected_from_b_is_emptied_once_b_delivers` échoue s'il ne l'est pas).
 EXPECTED_FROM_B: frozenset[str] = frozenset()
 
+# Routeurs de la phase 10 posés en bouchons 501 par 10.P : leur cas d'isolation vient avec leur
+# remplissage (10.A2 pour `ide`, 10.B2 pour `mcp`) ; vidé à l'intégration (10.I).
+EXPECTED_PHASE10: frozenset[str] = frozenset({"app.features.ide.router", "app.features.mcp.router"})
+
 _HERE = Path(__file__).parent
 
 

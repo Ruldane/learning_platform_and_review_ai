@@ -1062,6 +1062,304 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ide/exercises": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Exercises
+         * @description Mes exercices, les plus récents d'abord.
+         */
+        get: operations["list_exercises_api_v1_ide_exercises_get"];
+        put?: never;
+        /**
+         * Create Exercise
+         * @description Ajoute un exercice écrit à la main (ou par Claude : `origin` vient de l'appelant).
+         */
+        post: operations["create_exercise_api_v1_ide_exercises_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ide/exercises/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Exercise
+         * @description Fait générer un exercice par les agents : rend aussitôt la session à suivre.
+         */
+        post: operations["generate_exercise_api_v1_ide_exercises_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ide/exercises/{exercise_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Exercise
+         * @description Supprime un exercice (ses séances restent). 404 si ce n'est pas le mien.
+         */
+        delete: operations["delete_exercise_api_v1_ide_exercises__exercise_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ide/notes/{note_id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept Note
+         * @description Applique une proposition au fichier si celui-ci n'a pas changé (sinon 409 `note_stale`).
+         *     Geste de l'interface, jamais du MCP.
+         */
+        post: operations["accept_note_api_v1_ide_notes__note_id__accept_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ide/notes/{note_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reject Note
+         * @description Refuse une proposition. Geste de l'interface, jamais du MCP.
+         */
+        post: operations["reject_note_api_v1_ide_notes__note_id__reject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ide/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Preferences
+         * @description Mode du professeur, minuterie d'inactivité, plafonds de jetons.
+         */
+        get: operations["get_preferences_api_v1_ide_preferences_get"];
+        /**
+         * Put Preferences
+         * @description Remplace les préférences du professeur.
+         */
+        put: operations["put_preferences_api_v1_ide_preferences_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ide/runs/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Run
+         * @description La sortie de l'exécution à partir de l'octet `after` (interrogation toutes les 300 ms).
+         */
+        get: operations["read_run_api_v1_ide_runs__run_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ide/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Sessions
+         * @description Mes séances de code, la plus récente d'abord.
+         */
+        get: operations["list_sessions_api_v1_ide_sessions_get"];
+        put?: never;
+        /**
+         * Create Session
+         * @description Ouvre une séance sur un exercice, ou une séance libre.
+         */
+        post: operations["create_session_api_v1_ide_sessions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ide/sessions/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Session
+         * @description Une séance avec ses fichiers.
+         */
+        get: operations["get_session_api_v1_ide_sessions__session_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ide/sessions/{session_id}/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Put Files
+         * @description Remplace les fichiers de la séance (20 au plus, 200 Ko). Geste de l'interface.
+         */
+        put: operations["put_files_api_v1_ide_sessions__session_id__files_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ide/sessions/{session_id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Notes
+         * @description Les notes de la séance : indices, explications, annotations, propositions, renvois.
+         */
+        get: operations["list_notes_api_v1_ide_sessions__session_id__notes_get"];
+        put?: never;
+        /**
+         * Add Note
+         * @description Ajoute une note ; l'auteur est celui de l'appelant (moi, le professeur, Claude).
+         */
+        post: operations["add_note_api_v1_ide_sessions__session_id__notes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ide/sessions/{session_id}/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Run
+         * @description Dépose une exécution ou une vérification dans le bac à sable (une par utilisatrice).
+         */
+        post: operations["start_run_api_v1_ide_sessions__session_id__runs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ide/sessions/{session_id}/teach": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Teach
+         * @description Réveille le professeur : un graphe (`session_id`), un renvoi à la note précédente
+         *     (`reference_note_id`) ou rien (`skipped`).
+         */
+        post: operations["teach_api_v1_ide_sessions__session_id__teach_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ide/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Usage
+         * @description Les jetons du professeur : séance (si `session_id`), jour, plafonds, mode sur demande.
+         */
+        get: operations["get_usage_api_v1_ide_usage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/interviews": {
         parameters: {
             query?: never;
@@ -1158,6 +1456,235 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/actions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Actions
+         * @description La table des outils exposés et de leur niveau.
+         */
+        get: operations["list_actions_api_v1_mcp_actions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/calls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Calls
+         * @description Le journal des appels MCP (outil, niveau, code, durée), jamais leur contenu.
+         */
+        get: operations["list_calls_api_v1_mcp_calls_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Changes
+         * @description Les changements faits par Claude (niveau 2), annulables un appel à la fois.
+         */
+        get: operations["list_changes_api_v1_mcp_changes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/changes/{call_id}/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Undo Changes
+         * @description Remet les lignes d'un appel dans leur état d'avant, si aucune n'a changé depuis (409
+         *     sinon).
+         */
+        post: operations["undo_changes_api_v1_mcp_changes__call_id__undo_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/confirmations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Confirmations
+         * @description Les demandes « À confirmer », les plus récentes d'abord.
+         */
+        get: operations["list_confirmations_api_v1_mcp_confirmations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/confirmations/{confirmation_id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm
+         * @description Exécute la demande, une seule fois ; expirée, refusée ou déjà traitée : 409.
+         */
+        post: operations["confirm_api_v1_mcp_confirmations__confirmation_id__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/confirmations/{confirmation_id}/refuse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refuse
+         * @description Refuse la demande : elle ne s'exécutera jamais.
+         */
+        post: operations["refuse_api_v1_mcp_confirmations__confirmation_id__refuse_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/features": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Features
+         * @description Les features qui déclarent des outils, avec le nombre d'outils par niveau.
+         */
+        get: operations["list_features_api_v1_mcp_features_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Settings
+         * @description L'interrupteur général du MCP (coupé par défaut).
+         */
+        get: operations["get_settings_api_v1_mcp_settings_get"];
+        /**
+         * Put Settings
+         * @description Allume ou coupe tout l'accès MCP d'un geste.
+         */
+        put: operations["put_settings_api_v1_mcp_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Tokens
+         * @description Mes jetons (sans leur valeur), révoqués compris.
+         */
+        get: operations["list_tokens_api_v1_mcp_tokens_get"];
+        put?: never;
+        /**
+         * Create Token
+         * @description Crée un jeton ; sa valeur n'est rendue qu'ici, une seule fois.
+         */
+        post: operations["create_token_api_v1_mcp_tokens_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/tokens/{token_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revoke Token
+         * @description Révoque un jeton : il cesse de fonctionner aussitôt.
+         */
+        delete: operations["revoke_token_api_v1_mcp_tokens__token_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -4098,7 +4625,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "program" | "lesson" | "study" | "quiz" | "project" | "cv" | "capture";
+            kind: "program" | "lesson" | "study" | "quiz" | "project" | "cv" | "capture" | "ide";
             /** Label */
             label: string;
             /** Url */
@@ -4136,6 +4663,66 @@ export interface components {
             unrated: boolean;
         };
         /**
+         * ExerciseGenerateIn
+         * @description `topic` : le sujet de l'exercice à faire générer par les agents.
+         */
+        ExerciseGenerateIn: {
+            /**
+             * Level
+             * @default beginner
+             * @enum {string}
+             */
+            level: "beginner" | "intermediate" | "advanced";
+            /** Topic */
+            topic: string;
+        };
+        /**
+         * ExerciseIn
+         * @description Un exercice écrit à la main : l'énoncé et, au choix, des fichiers de départ.
+         */
+        ExerciseIn: {
+            /**
+             * Entry
+             * @default main.py
+             */
+            entry: string;
+            /** Files */
+            files?: {
+                [key: string]: string;
+            };
+            /** Statement */
+            statement: string;
+            /** Title */
+            title: string;
+        };
+        /** ExerciseOut */
+        ExerciseOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Entry */
+            entry: string;
+            /** Files */
+            files: {
+                [key: string]: string;
+            };
+            /** Id */
+            id: string;
+            /**
+             * Origin
+             * @enum {string}
+             */
+            origin: "user" | "generated" | "claude";
+            /** Statement */
+            statement: string;
+            /** Title */
+            title: string;
+            /** Topic */
+            topic: string | null;
+        };
+        /**
          * ExpectedOut
          * @description Les points qu'une bonne réponse à la question `index` aurait donnés (verso de la fiche).
          */
@@ -4166,6 +4753,18 @@ export interface components {
             sources?: ("cv" | "linkedin" | "note" | "january")[];
             /** Start */
             start?: string | null;
+        };
+        /**
+         * FilesPutIn
+         * @description Remplace tous les fichiers de la séance (geste de l'interface, exclu du MCP).
+         */
+        FilesPutIn: {
+            /** Entry */
+            entry?: string | null;
+            /** Files */
+            files: {
+                [key: string]: string;
+            };
         };
         /** FlashcardOut */
         FlashcardOut: {
@@ -4385,6 +4984,14 @@ export interface components {
              * Format: date
              */
             week_start: string;
+        };
+        /**
+         * IdeSessionStarted
+         * @description Le graphe tourne : `session_id` désigne la session d'agents à suivre (en moins de 2 s).
+         */
+        IdeSessionStarted: {
+            /** Session Id */
+            session_id: string;
         };
         /** Identity */
         Identity: {
@@ -4891,6 +5498,251 @@ export interface components {
             summary?: components["schemas"]["SourcedLine"] | null;
             title?: components["schemas"]["SourcedLine"] | null;
         };
+        /**
+         * McpActionOut
+         * @description Un outil exposé (table des niveaux). `kind` : une route ou un graphe de l'application.
+         *     `untrusted` : les champs rendus comme données, jamais comme consignes.
+         */
+        McpActionOut: {
+            /** Feature */
+            feature: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "route" | "graph";
+            /**
+             * Level
+             * @enum {integer}
+             */
+            level: 1 | 2 | 3;
+            /** Name */
+            name: string;
+            /** Route */
+            route: string | null;
+            /**
+             * Side Effects
+             * @enum {string}
+             */
+            side_effects: "db" | "external";
+            /** Summary */
+            summary: string | null;
+            /** Untrusted */
+            untrusted: string[];
+        };
+        /**
+         * McpCallOut
+         * @description Une ligne du journal : l'outil, le niveau, le code de résultat, la durée, les identifiants.
+         *     Jamais le contenu.
+         */
+        McpCallOut: {
+            /** Action */
+            action: string;
+            /** Code */
+            code: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Duration Ms */
+            duration_ms: number;
+            /** Id */
+            id: string;
+            /** Ids */
+            ids: {
+                [key: string]: unknown;
+            };
+            /**
+             * Level
+             * @enum {integer}
+             */
+            level: 1 | 2 | 3;
+            /** Token Id */
+            token_id: string;
+        };
+        /**
+         * McpChangeOut
+         * @description Les changements d'un appel de niveau 2 : de quoi les annuler ensemble (`undone_at` posé
+         *     une fois annulés).
+         */
+        McpChangeOut: {
+            /** Action */
+            action: string;
+            /** Call Id */
+            call_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Rows */
+            rows: number;
+            /** Tables */
+            tables: string[];
+            /** Undone At */
+            undone_at: string | null;
+        };
+        /**
+         * McpConfirmationOut
+         * @description Une demande « À confirmer » (niveau 3) : ce que Claude veut faire, en résumé neutre, et le
+         *     verdict d'un éventuel contrôle préalable. Rien ne s'exécute avant la confirmation.
+         */
+        McpConfirmationOut: {
+            /** Action */
+            action: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Decided At */
+            decided_at: string | null;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Id */
+            id: string;
+            /** Precheck */
+            precheck: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "confirmed" | "refused" | "expired" | "failed";
+            /** Summary */
+            summary: string;
+            /** Token Id */
+            token_id: string;
+        };
+        /**
+         * McpFeatureOut
+         * @description Une feature qui déclare des outils MCP : son nom et ses outils par niveau.
+         */
+        McpFeatureOut: {
+            /** Confirm Actions */
+            confirm_actions: number;
+            /** Feature */
+            feature: string;
+            /** Read Actions */
+            read_actions: number;
+            /** Write Actions */
+            write_actions: number;
+        };
+        /**
+         * McpSettingsIn
+         * @description L'interrupteur général : faux = aucun jeton n'ouvre rien (coupé par défaut).
+         */
+        McpSettingsIn: {
+            /** Enabled */
+            enabled: boolean;
+        };
+        /** McpSettingsOut */
+        McpSettingsOut: {
+            /** Enabled */
+            enabled: boolean;
+        };
+        /**
+         * McpTokenCreateIn
+         * @description Crée un jeton : limité à certaines features, lecture seule par défaut, 30 jours par
+         *     défaut (1, 7, 30 ou 90).
+         */
+        McpTokenCreateIn: {
+            /**
+             * Expires In Days
+             * @default 30
+             * @enum {integer}
+             */
+            expires_in_days: 1 | 7 | 30 | 90;
+            /** Features */
+            features: string[];
+            /** Label */
+            label: string;
+            /**
+             * Mode
+             * @default read
+             * @enum {string}
+             */
+            mode: "read" | "write";
+        };
+        /**
+         * McpTokenCreated
+         * @description La réponse à la création : `token` (`tmcp_…`) n'est montré qu'ici, une seule fois.
+         */
+        McpTokenCreated: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Features */
+            features: string[];
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** Last Used At */
+            last_used_at: string | null;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "read" | "write";
+            /** Revoked At */
+            revoked_at: string | null;
+            /** Token */
+            token: string;
+        };
+        /**
+         * McpTokenOut
+         * @description Un jeton, sans sa valeur : on ne la revoit jamais.
+         */
+        McpTokenOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Features */
+            features: string[];
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** Last Used At */
+            last_used_at: string | null;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "read" | "write";
+            /** Revoked At */
+            revoked_at: string | null;
+        };
+        /**
+         * McpUndoOut
+         * @description `undone` : le nombre de lignes remises dans leur état d'avant.
+         */
+        McpUndoOut: {
+            /** Call Id */
+            call_id: string;
+            /** Undone */
+            undone: number;
+        };
         /** MeOut */
         MeOut: {
             /** Auth Mode */
@@ -5305,6 +6157,73 @@ export interface components {
             url: string | null;
         };
         /**
+         * NoteIn
+         * @description Une note ajoutée à la main ou par Claude : l'auteur vient de l'appelant, jamais du corps.
+         *     Une proposition porte `replacement`, la plage de lignes et `base_hash`.
+         */
+        NoteIn: {
+            /** Base Hash */
+            base_hash?: string | null;
+            /** Content */
+            content: string;
+            /** File Path */
+            file_path?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "hint" | "explanation" | "annotation" | "proposal" | "reference";
+            /** Line End */
+            line_end?: number | null;
+            /** Line Start */
+            line_start?: number | null;
+            /** Replacement */
+            replacement?: string | null;
+        };
+        /** NoteOut */
+        NoteOut: {
+            /**
+             * Author
+             * @enum {string}
+             */
+            author: "professor" | "claude" | "user";
+            /** Author Label */
+            author_label: string | null;
+            /** Base Hash */
+            base_hash: string | null;
+            /** Content */
+            content: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** File Path */
+            file_path: string | null;
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "hint" | "explanation" | "annotation" | "proposal" | "reference";
+            /** Line End */
+            line_end: number | null;
+            /** Line Start */
+            line_start: number | null;
+            /** Reference Note Id */
+            reference_note_id: string | null;
+            /** Replacement */
+            replacement: string | null;
+            /** Session Id */
+            session_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "accepted" | "rejected" | "stale";
+        };
+        /**
          * ObjectionOut
          * @description Une objection du comité (la plus lourde d'abord) et les personas qui la portent.
          */
@@ -5565,6 +6484,57 @@ export interface components {
             status: "analyzing" | "ready" | "rejected" | "failed";
             /** Title */
             title: string | null;
+        };
+        /**
+         * PreferencesIn
+         * @description Mode du professeur, minuterie d'inactivité (30 s, en option) et plafonds de jetons.
+         */
+        PreferencesIn: {
+            /**
+             * Day Cap
+             * @default 300000
+             */
+            day_cap: number;
+            /**
+             * Idle Trigger
+             * @default false
+             */
+            idle_trigger: boolean;
+            /**
+             * Session Cap
+             * @default 100000
+             */
+            session_cap: number;
+            /**
+             * Teacher Mode
+             * @default auto
+             * @enum {string}
+             */
+            teacher_mode: "auto" | "on_demand";
+        };
+        /** PreferencesOut */
+        PreferencesOut: {
+            /**
+             * Day Cap
+             * @default 300000
+             */
+            day_cap: number;
+            /**
+             * Idle Trigger
+             * @default false
+             */
+            idle_trigger: boolean;
+            /**
+             * Session Cap
+             * @default 100000
+             */
+            session_cap: number;
+            /**
+             * Teacher Mode
+             * @default auto
+             * @enum {string}
+             */
+            teacher_mode: "auto" | "on_demand";
         };
         /**
          * ProfileEntryIn
@@ -6455,6 +7425,71 @@ export interface components {
             /** Message */
             message: string;
         };
+        /**
+         * RunIn
+         * @description `run` exécute, `check` vérifie seulement la syntaxe ; `entry` : le fichier d'entrée (celui
+         *     de la séance par défaut).
+         */
+        RunIn: {
+            /** Entry */
+            entry?: string | null;
+            /**
+             * Kind
+             * @default run
+             * @enum {string}
+             */
+            kind: "run" | "check";
+        };
+        /**
+         * RunOut
+         * @description Une exécution déposée (202) : on lit la sortie par `GET /ide/runs/{id}?after=`.
+         */
+        RunOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Entry */
+            entry: string;
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "run" | "check";
+            /** Session Id */
+            session_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "running" | "done" | "timeout" | "killed" | "error";
+        };
+        /**
+         * RunProgress
+         * @description La sortie depuis `after` (octets), le décalage suivant, et la fin quand le bac l'a rendue.
+         */
+        RunProgress: {
+            /** Duration Ms */
+            duration_ms: number | null;
+            /** Exit Code */
+            exit_code: number | null;
+            /** Id */
+            id: string;
+            /** Next Offset */
+            next_offset: number;
+            /** Output */
+            output: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "running" | "done" | "timeout" | "killed" | "error";
+            /** Truncated */
+            truncated: boolean;
+        };
         /** RunRef */
         RunRef: {
             /**
@@ -6515,11 +7550,55 @@ export interface components {
         SearchUsageOut: {
             brave: components["schemas"]["BraveUsageOut"];
         };
+        /**
+         * SessionCreateIn
+         * @description Ouvre une séance sur un exercice, ou une séance libre (sans `exercise_id`).
+         */
+        SessionCreateIn: {
+            /** Exercise Id */
+            exercise_id?: string | null;
+            /** Title */
+            title?: string | null;
+        };
         SessionEvent: components["schemas"]["AgentStartedEvent"] | components["schemas"]["AgentTokenEvent"] | components["schemas"]["AgentMessageEvent"] | components["schemas"]["ToolCalledEvent"] | components["schemas"]["ToolResultEvent"] | components["schemas"]["SourceFoundEvent"] | components["schemas"]["BoardUpdateEvent"] | components["schemas"]["MemoryWrittenEvent"] | components["schemas"]["InterruptRequestedEvent"] | components["schemas"]["ProposalReadyEvent"] | components["schemas"]["ArtifactReadyEvent"] | components["schemas"]["CostUpdatedEvent"] | components["schemas"]["RunCompletedEvent"] | components["schemas"]["RunFailedEvent"] | components["schemas"]["UserMessageEvent"];
+        /** SessionOut */
+        SessionOut: {
+            /** Entry */
+            entry: string;
+            /** Exercise Id */
+            exercise_id: string | null;
+            /** Files */
+            files: {
+                [key: string]: string;
+            };
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
         /** SessionStarted */
         SessionStarted: {
             /** Session Id */
             session_id: string;
+        };
+        /** SessionSummary */
+        SessionSummary: {
+            /** Exercise Id */
+            exercise_id: string | null;
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /**
          * SessionView
@@ -7081,6 +8160,40 @@ export interface components {
             title?: string | null;
         };
         /**
+         * TeachIn
+         * @description Ce qui déclenche le professeur : une exécution, une erreur, une question ou, en option,
+         *     30 s d'arrêt sur une ligne. Jamais à la frappe.
+         */
+        TeachIn: {
+            /** File Path */
+            file_path?: string | null;
+            /** Line */
+            line?: number | null;
+            /** Question */
+            question?: string | null;
+            /** Run Id */
+            run_id?: string | null;
+            /**
+             * Trigger
+             * @enum {string}
+             */
+            trigger: "run" | "error" | "question" | "idle";
+        };
+        /**
+         * TeachOut
+         * @description Un seul des trois : `session_id` (le graphe du professeur travaille), `reference_note_id`
+         *     (même erreur au même endroit : renvoi à la note précédente) ou `skipped` (pourquoi rien n'est
+         *     lancé).
+         */
+        TeachOut: {
+            /** Reference Note Id */
+            reference_note_id?: string | null;
+            /** Session Id */
+            session_id?: string | null;
+            /** Skipped */
+            skipped?: ("cap_reached" | "on_demand" | "busy" | "empty_question") | null;
+        };
+        /**
          * TemplateCreated
          * @description Capture du design lancée : le gabarit (`capturing`) et sa session `cv_capture`.
          */
@@ -7261,6 +8374,23 @@ export interface components {
             share: number;
             /** Skill */
             skill: string;
+        };
+        /**
+         * UsageOut
+         * @description La consommation du professeur : jetons de la séance et du jour, leurs plafonds, et si le
+         *     professeur est passé en mode « sur demande » (plafond atteint ou choix).
+         */
+        UsageOut: {
+            /** Day Cap */
+            day_cap: number;
+            /** Day Tokens */
+            day_tokens: number;
+            /** Mode On Demand */
+            mode_on_demand: boolean;
+            /** Session Cap */
+            session_cap: number;
+            /** Session Tokens */
+            session_tokens: number;
         };
         /** UserMessageEvent */
         UserMessageEvent: {
@@ -9760,6 +10890,555 @@ export interface operations {
             };
         };
     };
+    list_exercises_api_v1_ide_exercises_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExerciseOut"][];
+                };
+            };
+        };
+    };
+    create_exercise_api_v1_ide_exercises_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExerciseIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExerciseOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_exercise_api_v1_ide_exercises_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExerciseGenerateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdeSessionStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_exercise_api_v1_ide_exercises__exercise_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                exercise_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_note_api_v1_ide_notes__note_id__accept_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                note_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reject_note_api_v1_ide_notes__note_id__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                note_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_preferences_api_v1_ide_preferences_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreferencesOut"];
+                };
+            };
+        };
+    };
+    put_preferences_api_v1_ide_preferences_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreferencesIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreferencesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_run_api_v1_ide_runs__run_id__get: {
+        parameters: {
+            query?: {
+                after?: number;
+            };
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunProgress"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_sessions_api_v1_ide_sessions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionSummary"][];
+                };
+            };
+        };
+    };
+    create_session_api_v1_ide_sessions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SessionCreateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_session_api_v1_ide_sessions__session_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_files_api_v1_ide_sessions__session_id__files_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FilesPutIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_notes_api_v1_ide_sessions__session_id__notes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_note_api_v1_ide_sessions__session_id__notes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_run_api_v1_ide_sessions__session_id__runs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RunIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    teach_api_v1_ide_sessions__session_id__teach_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TeachIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeachOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_usage_api_v1_ide_usage_get: {
+        parameters: {
+            query?: {
+                session_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_interviews_api_v1_interviews_get: {
         parameters: {
             query?: {
@@ -9973,6 +11652,356 @@ export interface operations {
                 content: {
                     "application/pdf": string;
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_actions_api_v1_mcp_actions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpActionOut"][];
+                };
+            };
+        };
+    };
+    list_calls_api_v1_mcp_calls_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpCallOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_changes_api_v1_mcp_changes_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpChangeOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    undo_changes_api_v1_mcp_changes__call_id__undo_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                call_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpUndoOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_confirmations_api_v1_mcp_confirmations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpConfirmationOut"][];
+                };
+            };
+        };
+    };
+    confirm_api_v1_mcp_confirmations__confirmation_id__confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                confirmation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpConfirmationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refuse_api_v1_mcp_confirmations__confirmation_id__refuse_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                confirmation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpConfirmationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_features_api_v1_mcp_features_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpFeatureOut"][];
+                };
+            };
+        };
+    };
+    get_settings_api_v1_mcp_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpSettingsOut"];
+                };
+            };
+        };
+    };
+    put_settings_api_v1_mcp_settings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["McpSettingsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpSettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_tokens_api_v1_mcp_tokens_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpTokenOut"][];
+                };
+            };
+        };
+    };
+    create_token_api_v1_mcp_tokens_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["McpTokenCreateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpTokenCreated"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_token_api_v1_mcp_tokens__token_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

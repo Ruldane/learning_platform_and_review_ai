@@ -5,6 +5,7 @@ from collections.abc import AsyncIterator, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager, nullcontext
 
 import httpx
+from fastapi import FastAPI
 from qdrant_client import AsyncQdrantClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -20,6 +21,8 @@ from app.bootstrap_agents import scheduler_context as scheduler_context
 from app.bootstrap_agents import study_runtimes as study_runtimes
 from app.bootstrap_agents import web_gateway as web_gateway
 from app.bootstrap_health import embedding_progress, health_checks
+from app.bootstrap_ide import compose_ide
+from app.bootstrap_mcp import compose_mcp
 from app.config import Settings
 from app.core.providers import MemoryProviders, Providers, PublishingProviders, ResearchProviders
 from app.core.security import Cipher
@@ -105,6 +108,13 @@ def build_providers(
         oidc=oidc,
         embedding=embedding_progress(settings, http),
     )
+
+
+def compose_phase10(app: FastAPI) -> None:
+    """Phase 10 : l'IDE (bac à sable, professeur) puis le serveur MCP (`bootstrap_ide`,
+    `bootstrap_mcp`). Appelée par `app.main` une fois les features composées."""
+    compose_ide(app)
+    compose_mcp(app)
 
 
 def model_prices() -> dict[str, ModelPrice]:

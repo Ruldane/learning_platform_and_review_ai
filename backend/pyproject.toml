@@ -184,6 +184,7 @@ forbidden_modules = [
     "app.providers.web.github",
     "app.providers.web.arxiv",
     "app.providers.web.routing",
+    "app.providers.sandbox.spool",
 ]
 
 [[tool.importlinter.contracts]]
@@ -202,7 +203,7 @@ forbidden_modules = ["app.features"]
 
 [[tool.importlinter.contracts]]
 id = "composition-isolee"
-name = "5. Seul app.main importe app.bootstrap (composition, avec app.bootstrap_agents, app.bootstrap_auth, app.bootstrap_career, app.bootstrap_daily et app.bootstrap_health)"
+name = "5. Seul app.main importe app.bootstrap (composition, avec app.bootstrap_agents, app.bootstrap_auth, app.bootstrap_career, app.bootstrap_daily, app.bootstrap_health, app.bootstrap_ide et app.bootstrap_mcp)"
 type = "forbidden"
 source_modules = [
     "app.core",
@@ -220,6 +221,8 @@ forbidden_modules = [
     "app.bootstrap_career",
     "app.bootstrap_daily",
     "app.bootstrap_health",
+    "app.bootstrap_ide",
+    "app.bootstrap_mcp",
 ]
 
 [[tool.importlinter.contracts]]
@@ -228,3 +231,11 @@ name = "8. app.features et app.agents n'importent jamais app.scheduler (tâches 
 type = "forbidden"
 source_modules = ["app.features", "app.agents"]
 forbidden_modules = ["app.scheduler"]
+
+[[tool.importlinter.contracts]]
+id = "moteur-mcp-sans-feature"
+name = "9. app.mcp n'importe aucune feature ni app.agents (il ne connaît que les déclarations)"
+type = "forbidden"
+source_modules = ["app.mcp"]
+forbidden_modules = ["app.features", "app.agents"]
+# Le registre des features importe `app.mcp.base` (les déclarations), jamais l'inverse.

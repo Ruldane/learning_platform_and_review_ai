@@ -59,6 +59,14 @@ REVIEWED_NOT_SECRET = frozenset(
         "sessions.tokens_out",
         "memory_chunks.token_count",
         "cv_reviews.keywords_to_gap",
+        # Phase 10 : sha256 du fichier d'une proposition, empreinte d'une erreur (anti-répétition),
+        # compteur de jetons du professeur et identifiant du jeton MCP (jamais sa valeur ni son
+        # empreinte : `mcp_tokens.hash` est écartée de l'export par son modèle).
+        "ide_notes.base_hash",
+        "ide_notes.error_key",
+        "ide_sessions.teacher_tokens",
+        "mcp_calls.token_id",
+        "mcp_confirmations.token_id",
     }
 )
 

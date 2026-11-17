@@ -66,6 +66,11 @@ class Settings(BaseSettings):
     # Durée fixe d'une session de connexion, en jours, depuis la connexion (P6).
     session_days: int = Field(default=30, ge=1, le=90)
 
+    # Phase 10 : dossier d'échange avec le bac à sable (volume nommé, P5) et taille maximale du
+    # corps d'un appel du serveur MCP, en octets (P10).
+    sandbox_spool_dir: Path = Path("/spool")
+    mcp_body_limit: int = Field(default=1_000_000, ge=1_000)
+
     @model_validator(mode="after")
     def _default_database_url(self) -> "Settings":
         if not self.database_url:
