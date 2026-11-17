@@ -8,6 +8,7 @@ from typing import Any, Literal, Protocol, TypedDict
 
 class ProjectReviewState(TypedDict, total=False):
     project_id: str
+    mode: Literal["review", "drafts"]  # `drafts` : seulement les brouillons d'un projet validé
     title: str  # titre de l'énoncé, pour `artifact.ready`
     repo_text: str | None  # le README lu, coupé à 8 000 caractères
     repo_status: Literal["read", "unreadable", "none"]

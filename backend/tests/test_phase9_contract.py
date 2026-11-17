@@ -29,13 +29,16 @@ NEW_ROUTES: list[tuple[str, str, dict[str, Any] | None]] = [
     ("POST", "/account/delete", {"confirm": "SUPPRIMER"}),
     ("POST", "/projects/p1/drafts", None),
 ]
+# Routes déjà remplies par un flux (9.B1) : ce ne sont plus des bouchons, le contrat les liste.
+FILLED: set[tuple[str, str]] = {("POST", "/projects/p1/drafts")}
+STUBS = [route for route in NEW_ROUTES if route[:2] not in FILLED]
 
 
 def test_onboarding_done_defaults_false() -> None:
     assert UserSettings().onboarding_done is False
 
 
-@pytest.mark.parametrize(("method", "path", "body"), NEW_ROUTES)
+@pytest.mark.parametrize(("method", "path", "body"), STUBS)
 async def test_new_route_is_a_501_stub(
     client: httpx.AsyncClient, method: str, path: str, body: dict[str, Any] | None
 ) -> None:

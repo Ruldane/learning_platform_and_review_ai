@@ -22,9 +22,10 @@ _SUFFIX_TYPES = {suffix: media for media, suffix in IMAGE_TYPES.items()}
 
 
 def _is_jpeg(data: bytes) -> bool:
-    """`FF D8 FF` suivi d'un octet de marqueur (`C0` à `FE` : APPn, DQT, DHT, SOFn, COM…) : un
-    fichier réduit à la seule signature n'est pas une image."""
-    return len(data) >= 4 and data.startswith(_JPEG) and 0xC0 <= data[3] <= 0xFE
+    """`FF D8 FF` suivi d'un octet de marqueur (`C0` à `FE` : APPn, DQT, DHT, SOFn, COM…) et de la
+    longueur du segment sur deux octets : un fichier réduit à la signature, ou à la signature et au
+    marqueur nus (4 octets), n'est pas une image (D181)."""
+    return len(data) >= 6 and data.startswith(_JPEG) and 0xC0 <= data[3] <= 0xFE
 
 
 def detect_image(data: bytes) -> str | None:

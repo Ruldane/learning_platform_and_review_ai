@@ -5,7 +5,7 @@ réseau ni LLM. Identité fictive « Camille Exemple », dépôt `example.org`."
 from dataclasses import dataclass, field
 from typing import Any
 
-from app.agents.tools.project_port import BriefInputs, ReviewInputs, ReviewOutcome
+from app.agents.tools.project_port import BriefInputs, DraftResult, ReviewInputs, ReviewOutcome
 from app.agents.tools.project_schema import ProjectBrief
 from tests.support.cv_review import profile
 
@@ -74,6 +74,8 @@ class FakeProjectStore:
     outcome: ReviewOutcome | None = None
     review_saves: int = 0
     repo_calls: list[str] = field(default_factory=list)
+    drafts: list[DraftResult] | None = None  # `save_drafts` : la première écriture gagne
+    drafts_saves: int = 0
 
     async def brief_inputs(self, user_id: str, project_id: str) -> BriefInputs:
         return self.brief
@@ -103,3 +105,10 @@ class FakeProjectStore:
         self.review_saves += 1
         if self.outcome is None:
             self.outcome = outcome
+
+    async def save_drafts(
+        self, user_id: str, session_id: str, project_id: str, drafts: list[DraftResult]
+    ) -> None:
+        self.drafts_saves += 1
+        if self.drafts is None:
+            self.drafts = drafts

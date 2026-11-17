@@ -14,11 +14,15 @@ plafonds, classement, `low_sample`, salaires relus dans les pages), `journaux`. 
 `phase8_projects`) : `énoncé` (3 à 6 critères, 3 à 6 h), `rendu` (description et lien d'un dépôt
 public, multipart), `évaluation` (verdict, critères, dépôt lu, appels, coût), `suites` (validé :
 brouillons, compétences à `prouve`, profil inchangé puis version + 1 ; à reprendre : critères non
-atteints nommés), `journaux`.
+atteints nommés), `journaux`. Partie `journaux` (1 étape, seule : aucune requête à l'API) : relit
+les journaux du back **après** l'essai, avec les mêmes motifs que l'étape `journaux` des autres
+parties, sans les textes propres à ce passage (poste, offres, ressource, projet), que seul le
+passage connaît.
 
 Le script tourne hors du conteneur du back (les scripts n'y sont pas, `.dockerignore`) : dans un
 conteneur jetable de la même image, sur le réseau de la pile, scripts montés ; les journaux du back
-passent par l'entrée standard (`--logs-file -`), lus au lancement. Sans journaux, l'étape échoue.
+passent par l'entrée standard (`--logs-file -`), lus au lancement : ceux d'avant l'essai. Sans
+journaux, l'étape échoue.
 
     docker compose logs --no-color backend | docker run --rm -i \\
       --name learning_career_platform-check8 --network learning_career_platform_default \\
@@ -28,9 +32,18 @@ passent par l'entrée standard (`--logs-file -`), lus au lancement. Sans journau
 
 (`--part radar` pour le radar, `--part brief` pour le brief, `--part projets` pour un projet,
 `--part tout` pour les trois dans cet ordre ; `planifie` reste à part : il refuse de tourner si le
-brief du jour existe déjà.) Les journaux sont lus au lancement :
-un second passage couvre le premier. Rien de ce qui est envoyé ou reçu n'est affiché : seulement
-des étapes, des nombres, des codes et des identifiants."""
+brief du jour existe déjà.) Les journaux sont lus au lancement : ceux d'une partie jouée n'ont donc
+pas les lignes de l'essai lui-même. **Pour relire les journaux d'après l'essai**, la partie
+`journaux` seule, lancée APRÈS l'essai, avec les journaux depuis son début (`<début>` : l'heure
+juste avant le lancement) :
+
+    docker compose logs --no-color --since <début> backend | docker run --rm -i \\
+      --entrypoint python -v "$PWD/backend/scripts:/app/scripts:ro" \\
+      learning_career_platform-backend:latest -m scripts.check_phase8 \\
+      --part journaux --logs-file -
+
+Rien de ce qui est envoyé ou reçu n'est affiché : seulement des étapes, des nombres, des codes et
+des identifiants."""
 
 import argparse
 import asyncio
@@ -55,12 +68,14 @@ from scripts.phase8_projects_rules import project_extras
 from scripts.phase8_radar import check_launch, check_report_step, check_run
 from scripts.phase8_rules import check_logs_8, log_extras
 
-type Part = Literal["planifie", "radar", "brief", "projets", "tout"]
+type Part = Literal["planifie", "radar", "brief", "projets", "tout", "journaux"]
 
 PLANIFIE_STEPS = ("préalable", "planification", "origine", "journaux")
 RADAR_STEPS = ("lancement", "relevé", "rapport", "journaux")
 BRIEF_STEPS = ("rubriques", "conseil", "ressource", "relecture", "journaux")
 PROJETS_STEPS = ("énoncé", "rendu", "évaluation", "suites", "journaux")
+# `journaux` : les journaux seuls, relus après l'essai (aucune requête à l'API).
+JOURNAUX_STEPS = ("journaux",)
 # `tout` : le radar, le brief puis les projets, leurs journaux relus une seule fois à la fin.
 TOUT_STEPS = (*RADAR_STEPS[:-1], *BRIEF_STEPS[:-1], *PROJETS_STEPS)
 STEPS_BY_PART: dict[str, tuple[str, ...]] = {
@@ -69,18 +84,21 @@ STEPS_BY_PART: dict[str, tuple[str, ...]] = {
     "brief": BRIEF_STEPS,
     "projets": PROJETS_STEPS,
     "tout": TOUT_STEPS,
+    "journaux": JOURNAUX_STEPS,
 }
 HTTP_TIMEOUT_S = 60.0
 DEFAULT_TIMEOUT_S = 3600.0
 
 __all__ = [
     "BRIEF_STEPS",
+    "JOURNAUX_STEPS",
     "PLANIFIE_STEPS",
     "PROJETS_STEPS",
     "RADAR_STEPS",
     "STEPS_BY_PART",
     "TOUT_STEPS",
     "CheckFailed",
+    "build_parser",
     "main",
     "run_check",
 ]
@@ -161,15 +179,29 @@ async def _main(api: str, part: Part, timeout_s: float, logs: str | None) -> int
     return 0
 
 
-def main(argv: Sequence[str] | None = None) -> None:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Contrôle de la phase 8 (quotidien).")
     parser.add_argument("--api", default="http://localhost:8000", help=f"racine de l'API ({API})")
-    parser.add_argument("--part", choices=tuple(STEPS_BY_PART), default="planifie")
+    parser.add_argument(
+        "--part",
+        choices=tuple(STEPS_BY_PART),
+        default="planifie",
+        help="`journaux` : relit seulement les journaux du back, à lancer APRÈS l'essai "
+        "(`docker compose logs --since <début> backend | … --part journaux --logs-file -`)",
+    )
     parser.add_argument(
         "--timeout", type=float, default=DEFAULT_TIMEOUT_S, help="délai total en secondes"
     )
-    parser.add_argument("--logs-file", help="journaux du back (« - » : entrée standard)")
-    args = parser.parse_args(argv)
+    parser.add_argument(
+        "--logs-file",
+        help="journaux du back (« - » : entrée standard), lus au lancement : pour ceux de "
+        "l'essai, la partie `journaux` seule, après lui",
+    )
+    return parser
+
+
+def main(argv: Sequence[str] | None = None) -> None:
+    args = build_parser().parse_args(argv)
     logs = _read_logs(args.logs_file)
     sys.exit(asyncio.run(_main(args.api, args.part, args.timeout, logs)))
 

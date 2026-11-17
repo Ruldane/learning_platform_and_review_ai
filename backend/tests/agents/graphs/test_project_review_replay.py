@@ -7,6 +7,7 @@ import pytest
 
 from app.agents.graphs.project_review import ProjectReviewInput
 from app.agents.graphs.registry import get_graph
+from tests.agents.graphs.council_models import CouncilModels
 from tests.agents.graphs.project_support import (
     DRAFTS_ASK,
     EVALUATE_ASK,
@@ -15,6 +16,7 @@ from tests.agents.graphs.project_support import (
     all_met,
     drafts_json,
     project_models,
+    prompts,
 )
 from tests.agents.runtime.runner_helpers import wait_until
 from tests.support.projects import (
@@ -82,7 +84,71 @@ async def test_failed_review_logs_only_a_code(
 def test_graph_is_registered() -> None:
     spec = get_graph("project_review")
     assert spec.input_model is ProjectReviewInput and spec.recursion_limit is None
-    assert ProjectReviewInput(project_id=PROJECT_ID).model_dump() == {"project_id": PROJECT_ID}
+    assert ProjectReviewInput(project_id=PROJECT_ID).model_dump() == {
+        "project_id": PROJECT_ID,
+        "mode": "review",
+    }
     with pytest.raises(ValueError):
         ProjectReviewInput(project_id="court")
     assert len(sample_brief().criteria) == 4
+
+
+RETRY_MARK = "Ces éléments ne figurent"
+
+
+def _blocked_models(first_jet: str) -> CouncilModels:
+    """Faux modèles dont le nouvel essai des brouillons reste bloqué (l'arrêt du processus)."""
+    models = project_models(evaluation=[all_met(4)], drafts=[first_jet, first_jet])
+    models.block = lambda agent, prompt: RETRY_MARK in prompt
+    return models
+
+
+async def test_redo_resume_after_restart(
+    project_runner: MakeProject, project_store: FakeProjectStore
+) -> None:
+    """Arrêt pendant le nouvel essai des brouillons (`redo`) : au redémarrage, ni l'évaluation ni
+    le premier jet ne sont redemandés ; le nouvel essai reprend sur le premier jet du point de
+    contrôle (les termes qu'il nomme) et l'issue n'est rangée qu'une fois."""
+    first_models = _blocked_models(drafts_json(linkedin_post=SECRET_POST))
+    first = await project_runner(first_models)
+    await wait_until(lambda: first_models.blocked == 1)
+    await first.runner.shutdown()
+    assert project_store.review_saves == 0  # rien n'est rangé avant la fin du nouvel essai
+
+    fixed = project_models(drafts=[drafts_json()])
+    second = await project_runner(fixed, sid=first.sid)
+    assert await second.runner.recover_on_startup() == [first.sid]
+    await second.wait_status("completed")
+    assert second.calls(EVALUATE_ASK) == 0  # l'évaluation n'est pas redemandée
+    [retry] = prompts(fixed, DRAFTS_ASK)  # un seul appel : le nouvel essai, pas le premier jet
+    assert RETRY_MARK in retry and "Kubernetes" in retry  # sur le premier jet du point de contrôle
+    outcome = project_store.outcome
+    assert project_store.review_saves == 1 and outcome is not None and outcome.drafts is not None
+    assert {d.status for d in outcome.drafts} == {"ready"}
+    [done] = await second.events("run.completed")
+    assert done["summary"] == "Projet validé : 4 brouillons prêts."
+
+
+async def test_redo_with_nothing_left_to_fix_makes_no_call(
+    project_runner: MakeProject, project_store: FakeProjectStore
+) -> None:
+    """À la reprise, le premier jet n'a plus rien à corriger (le rendu de January a changé depuis
+    l'arrêt) : aucun message vide au modèle, le premier jet est rangé propre."""
+    first_models = _blocked_models(drafts_json(linkedin_post=SECRET_POST))
+    first = await project_runner(first_models)
+    await wait_until(lambda: first_models.blocked == 1)
+    await first.runner.shutdown()
+
+    said = f"{DESCRIPTION} J'ai eu 10000 utilisateurs et un déploiement sur Kubernetes."
+    project_store.review = review_inputs(description=said)
+    unused = project_models(drafts=[drafts_json()])
+    second = await project_runner(unused, sid=first.sid)
+    assert await second.runner.recover_on_startup() == [first.sid]
+    await second.wait_status("completed")
+    assert second.calls(DRAFTS_ASK) == 0  # aucun nouvel essai
+    outcome = project_store.outcome
+    assert outcome is not None and outcome.drafts is not None
+    assert {d.status for d in outcome.drafts} == {"ready"} and not any(
+        d.flags for d in outcome.drafts
+    )
+    assert "Kubernetes" in {d.kind: d for d in outcome.drafts}["linkedin_post"].content

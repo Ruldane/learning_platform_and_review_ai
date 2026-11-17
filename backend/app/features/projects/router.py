@@ -22,7 +22,6 @@ from starlette.exceptions import HTTPException
 from starlette.requests import HTTPConnection
 
 from app.core.deps import CurrentUserDep, Db
-from app.core.errors import AppError
 from app.core.field_paths import FieldPathsRoute
 from app.features.projects.schemas import (
     DraftKind,
@@ -37,6 +36,7 @@ from app.features.projects.service.briefs import retry_brief
 from app.features.projects.service.drafts import patch_draft
 from app.features.projects.service.errors import invalid_submission
 from app.features.projects.service.profile_entry import add_profile_entry
+from app.features.projects.service.regenerate import regenerate_drafts
 from app.features.projects.service.runtime import ProjectsRuntime
 from app.features.projects.service.screenshots import screenshot_file
 from app.features.projects.service.submit import submit_project
@@ -226,4 +226,4 @@ async def post_drafts(
 ) -> SessionStarted:
     """Relance les brouillons d'un projet validé qui n'en a pas (leur écriture avait échoué,
     D173 n° 4) : une session les écrit sans refaire l'évaluation."""
-    raise AppError("not_implemented", "Pas encore disponible.", 501)
+    return await regenerate_drafts(rt, current.id, project_id)

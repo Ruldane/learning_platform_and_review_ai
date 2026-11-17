@@ -15,7 +15,10 @@ plus (la première écriture de la session gagne).
   d'accroche de la phase 14 (GitHub) ; le parcours ne lit jamais le web autrement.
 - `save_review` : range l'évaluation. Validée, le port monte les compétences du module à `prouve`
   (preuve `project`), range les brouillons et écrit au journal ; l'entrée de projet n'entre au
-  profil maître que par le clic de January (P3)."""
+  profil maître que par le clic de January (P3).
+- `save_drafts` : range les brouillons d'un projet **déjà validé** qui n'en a pas (mode `drafts`
+  de `project_review`, D181) ; sans effet si le projet n'est pas validé, s'il a déjà des
+  brouillons ou si la liste est vide."""
 
 from dataclasses import dataclass
 from typing import Literal, Protocol
@@ -106,6 +109,10 @@ class ProjectStore(Protocol):
         self, user_id: str, session_id: str, project_id: str, outcome: ReviewOutcome
     ) -> None: ...
 
+    async def save_drafts(
+        self, user_id: str, session_id: str, project_id: str, drafts: list[DraftResult]
+    ) -> None: ...
+
 
 def projects_unavailable() -> AppError:
     return AppError("projects_unavailable", "Les projets ne sont pas branchés sur ce moteur.", 503)
@@ -133,6 +140,11 @@ class _NoProjects:
 
     async def save_review(
         self, user_id: str, session_id: str, project_id: str, outcome: ReviewOutcome
+    ) -> None:
+        raise projects_unavailable()
+
+    async def save_drafts(
+        self, user_id: str, session_id: str, project_id: str, drafts: list[DraftResult]
     ) -> None:
         raise projects_unavailable()
 

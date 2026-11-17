@@ -47,7 +47,15 @@ async def test_the_announced_type_is_never_trusted(
 
 @pytest.mark.parametrize(
     "data",
-    [b"\xff\xd8\xff", b"\xff\xd8\xff\x00", b"\xff\xd8\xff\xff", b"\xff\xd8", b"\x89PNG", b"RIFF"],
+    [
+        b"\xff\xd8\xff",
+        b"\xff\xd8\xff\x00",
+        b"\xff\xd8\xff\xff",
+        b"\xff\xd8\xff\xe0",  # le JPEG nu de 4 octets (D181)
+        b"\xff\xd8",
+        b"\x89PNG",
+        b"RIFF",
+    ],
 )
 async def test_a_truncated_signature_is_not_an_image(
     env: Env, client: httpx.AsyncClient, data: bytes

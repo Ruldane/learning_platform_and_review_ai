@@ -260,6 +260,15 @@ def test_webp_signature_is_recognised() -> None:
     assert detect_image(WEBP) == "image/webp" and detect_image(b"RIFF....WAVE....") is None
 
 
+def test_bare_jpeg_header_refused() -> None:
+    """Quatre octets (signature et marqueur) ne font pas une image : le marqueur annonce un
+    segment, dont la longueur sur deux octets manque (8.10, D181)."""
+    assert detect_image(b"\xff\xd8\xff\xe0") is None
+    assert detect_image(b"\xff\xd8\xff\xdb") is None and detect_image(b"\xff\xd8\xff\xfe") is None
+    assert detect_image(b"\xff\xd8\xff\xe0\x00") is None
+    assert detect_image(b"\xff\xd8\xff\xe0\x00\x10") == "image/jpeg"
+
+
 def test_a_jpeg_needs_more_than_its_three_byte_signature() -> None:
     assert detect_image(b"\xff\xd8\xff") is None and detect_image(b"\xff\xd8\xff\x00") is None
     assert detect_image(b"\xff\xd8\xff\xe0\x00\x10JFIF") == "image/jpeg"

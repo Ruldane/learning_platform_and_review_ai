@@ -2,9 +2,13 @@
 verdict ; sans description ni dépôt lisible, aucun appel au modèle ; les quatre brouillons ne
 viennent qu'à la validation."""
 
+import pytest
+
+from app.agents.graphs.project_review import ProjectReviewInput
 from tests.agents.graphs.project_support import (
     DRAFTS_ASK,
     EVALUATE_ASK,
+    SECRET_POST,
     MakeProject,
     all_met,
     drafts_json,
@@ -210,3 +214,58 @@ async def test_statement_is_framed_and_criteria_stay_numbered(
     [prompt] = [c.prompt for c in run.models.calls]
     block = prompt.split(START.format(label="énoncé du projet"))[1].split("<<<FIN_CONTENU")[0]
     assert f"\n1. {trap}" in block and "\n4. d" in block and TITLE in block
+
+
+async def test_drafts_mode_does_not_reevaluate(
+    project_runner: MakeProject, project_store: FakeProjectStore
+) -> None:
+    """`mode: "drafts"` (D173 n° 4, D181) : un projet déjà validé qui n'a pas ses brouillons ; ni
+    lecture du dépôt, ni évaluation, ni rangement de l'évaluation : un appel, quatre brouillons."""
+    run = await project_runner(project_models(drafts=[drafts_json()]), mode="drafts")
+    await run.wait_status("completed")
+    assert run.calls(EVALUATE_ASK) == 0 and run.calls(DRAFTS_ASK) == 1
+    assert project_store.repo_calls == [] and project_store.review_saves == 0
+    assert project_store.outcome is None and project_store.drafts_saves == 1
+    saved = project_store.drafts
+    assert saved is not None and [d.kind for d in saved] == [
+        "cv_line",
+        "profile_entry",
+        "linkedin_post",
+        "readme_plan",
+    ]
+    assert {d.status for d in saved} == {"ready"}
+    [artifact] = await run.events("artifact.ready")
+    assert artifact["artifact_id"] == PROJECT_ID and artifact["title"] == TITLE
+    [done] = await run.events("run.completed")
+    assert done["summary"] == "Projet validé : 4 brouillons prêts."
+
+
+async def test_drafts_mode_flags_then_retries_once_like_a_review(
+    project_runner: MakeProject, project_store: FakeProjectStore
+) -> None:
+    risky = drafts_json(linkedin_post=SECRET_POST)
+    run = await project_runner(project_models(drafts=[risky, risky]), mode="drafts")
+    await run.wait_status("completed")
+    assert run.calls(DRAFTS_ASK) == 2 and run.calls(EVALUATE_ASK) == 0  # un seul nouvel essai
+    saved = project_store.drafts
+    assert saved is not None
+    assert {d.kind: d.status for d in saved}["linkedin_post"] == "to_check"
+    [done] = await run.events("run.completed")
+    assert done["summary"] == "Projet validé : 3 brouillons prêts, 1 à vérifier."
+
+
+async def test_drafts_mode_that_fails_again_saves_nothing_and_stays_validated(
+    project_runner: MakeProject, project_store: FakeProjectStore
+) -> None:
+    run = await project_runner(project_models(drafts=["pas du JSON"] * 3), mode="drafts")
+    await run.wait_status("completed")
+    assert project_store.drafts == [] and project_store.review_saves == 0
+    [done] = await run.events("run.completed")
+    assert done["summary"] == "Projet validé : brouillons indisponibles."
+
+
+def test_review_input_mode_defaults_to_review() -> None:
+    assert ProjectReviewInput(project_id=PROJECT_ID).mode == "review"
+    assert ProjectReviewInput(project_id=PROJECT_ID, mode="drafts").mode == "drafts"
+    with pytest.raises(ValueError):
+        ProjectReviewInput(project_id=PROJECT_ID, mode="autre")  # type: ignore[arg-type]
