@@ -2,6 +2,10 @@ import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 import { InlineError } from "@/shared/ui/states/InlineError";
 
+/**
+ * Les deux choix de l'écran. Un composant ne peut pas importer le contrat généré (frontières
+ * ESLint) : `types.test.ts` vérifie à la compilation que ce type est celui du contrat.
+ */
 export type Choice = "take_local" | "fresh";
 
 interface ClaimChoiceProps {

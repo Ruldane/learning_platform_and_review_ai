@@ -18,5 +18,13 @@ export function onAuthRequired(listener: Listener): () => void {
 
 /** Prévient les écouteurs qu'une réponse a dit « connexion requise ». */
 export function emitAuthRequired(): void {
-  for (const listener of [...listeners]) listener();
+  for (const listener of [...listeners]) {
+    // Un écouteur qui lève ne coupe pas les suivants (le plan prévoit plusieurs portes) ; on ne
+    // journalise que le fait, jamais l'erreur.
+    try {
+      listener();
+    } catch {
+      console.error("auth_listener_failed");
+    }
+  }
 }

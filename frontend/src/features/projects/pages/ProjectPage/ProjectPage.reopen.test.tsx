@@ -127,6 +127,10 @@ describe("ProjectPage : régénérer les brouillons", () => {
     stream.push(events.completed());
     expect(await screen.findByLabelText("Ligne de CV")).toBeVisible();
     expect(screen.queryByRole("button", { name: "Régénérer les brouillons" })).toBeNull();
+    // Ni le bouton ni le suivi n'existent plus : le titre de la section a le focus, pas `body`.
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "Tes brouillons" })).toHaveFocus(),
+    );
   });
 
   it("offers the button again, with a message, when the writing ends without drafts", async () => {

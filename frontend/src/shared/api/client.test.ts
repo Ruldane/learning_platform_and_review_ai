@@ -92,10 +92,13 @@ describe("auth integration", () => {
     server.use(http.get(`${apiBaseUrl}/api/v1/health`, () => HttpResponse.json({ status: "ok" })));
     // MSW ne relaie pas `credentials` au gestionnaire : on lit la requête remise à `fetch`.
     const spy = vi.spyOn(globalThis, "fetch");
-    unwrap(await api.GET("/health"));
-    const sent = spy.mock.calls[0]?.[0] as Request;
-    expect(sent.credentials).toBe("include");
-    spy.mockRestore();
+    try {
+      unwrap(await api.GET("/health"));
+      const sent = spy.mock.calls[0]?.[0] as Request;
+      expect(sent.credentials).toBe("include");
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it("emits auth required on a 401 auth_required, not on other failures", async () => {

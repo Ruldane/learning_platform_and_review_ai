@@ -80,4 +80,24 @@ describe("RegenerateDrafts", () => {
     );
     expect(screen.getByRole("alert")).toHaveTextContent("Panne du serveur.");
   });
+
+  it("keeps the same status zone from the writing to the message, so the message is announced", () => {
+    const { container, rerender } = render(
+      <RegenerateDrafts
+        regeneration={regeneration({ sessionId: "s1" })}
+        run={runOf("running", false)}
+      />,
+    );
+    const zone = container.querySelector("p[role='status']");
+    expect(zone).not.toBeNull();
+    expect(zone).toBeEmptyDOMElement();
+    rerender(
+      <RegenerateDrafts
+        regeneration={regeneration({ sessionId: "s1" })}
+        run={runOf("failed", true)}
+      />,
+    );
+    expect(container.querySelector("p[role='status']")).toBe(zone);
+    expect(zone).toHaveTextContent(FAILED);
+  });
 });

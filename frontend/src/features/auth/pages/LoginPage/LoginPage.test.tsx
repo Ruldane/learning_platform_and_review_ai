@@ -1,6 +1,8 @@
 import { screen, waitFor } from "@testing-library/react";
+import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
-import { authApi, camille, localMe } from "@/test/authApi";
+import { apiBaseUrl } from "@/shared/api/client";
+import { authApi, authRequired, camille, errorBody, localMe } from "@/test/authApi";
 import { server } from "@/test/server";
 import { renderAuth } from "../../authTestkit";
 
@@ -66,5 +68,23 @@ describe("LoginPage", () => {
     server.use(...authApi({ me: camille, meFails: true }).handlers);
     renderAuth("/connexion");
     expect(await screen.findByRole("button", { name: "Réessayer" })).toBeInTheDocument();
+  });
+
+  it("gives the title the focus once a retry succeeds", async () => {
+    let calls = 0;
+    server.use(
+      http.get(`${apiBaseUrl}/api/v1/auth/me`, () => {
+        calls += 1;
+        return calls === 1
+          ? HttpResponse.json(errorBody("boom"), { status: 500 })
+          : HttpResponse.json(authRequired, { status: 401 });
+      }),
+    );
+    const { user } = renderAuth("/connexion");
+    const retry = await screen.findByRole("button", { name: "Réessayer" });
+    await user.click(retry);
+    const title = await screen.findByRole("heading", { name: "Connexion" });
+    await screen.findByRole("link", { name: "Se connecter avec Google" });
+    expect(title).toHaveFocus();
   });
 });

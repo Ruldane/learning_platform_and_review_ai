@@ -28,4 +28,22 @@ describe("authEvents", () => {
     expect(calls).toEqual(["a", "b"]);
     stopB();
   });
+
+  it("un écouteur qui lève n'empêche pas les suivants", () => {
+    const failing = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const later = vi.fn();
+    const stopFirst = onAuthRequired(() => {
+      throw new Error("boom");
+    });
+    const stopLater = onAuthRequired(later);
+    try {
+      expect(() => emitAuthRequired()).not.toThrow();
+      expect(later).toHaveBeenCalledTimes(1);
+      expect(failing).toHaveBeenCalledWith("auth_listener_failed");
+    } finally {
+      stopFirst();
+      stopLater();
+      failing.mockRestore();
+    }
+  });
 });

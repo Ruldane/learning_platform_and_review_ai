@@ -1,4 +1,5 @@
 import { t } from "@/shared/i18n/t";
+import { useFocusOnMount } from "@/shared/lib/useFocusOnMount";
 import { DraftCard } from "../../components/DraftCard";
 import { copyText } from "../../clipboard";
 import { useSaveDraft } from "../../hooks/useSaveDraft";
@@ -23,14 +24,23 @@ interface DraftsSectionProps {
  * « Enregistrer » (le serveur recontrôle un brouillon à vérifier), « Copier » (rejeté si le
  * presse-papiers échoue, la carte le dit). Rien n'est publié par l'application. Un projet validé
  * qui n'en a pas (leur écriture a échoué) propose « Régénérer les brouillons », puis suit leur
- * écriture.
+ * écriture ; quand elle aboutit, le titre de la section prend le focus.
  */
 export function DraftsSection(props: DraftsSectionProps) {
   const { projectId, drafts, regenerable, regeneration, run } = props;
   const { save, savingKind, error, errorKind } = useSaveDraft(projectId);
+  // Une écriture lancée d'ici a abouti quand les brouillons sont là : le bouton et le suivi qui
+  // avaient le focus sont démontés, le titre de la section le reprend (une seule fois).
+  const written = regeneration.sessionId !== null && !regenerable;
+  const title = useFocusOnMount<HTMLHeadingElement>(written);
   return (
     <section aria-labelledby="project-drafts" className="flex flex-col gap-3">
-      <h2 id="project-drafts" className="text-lg font-medium">
+      <h2
+        id="project-drafts"
+        ref={title}
+        tabIndex={-1}
+        className="text-lg font-medium outline-none"
+      >
         {t("projects.page.draftsTitle")}
       </h2>
       <p className="text-sm text-muted-foreground">

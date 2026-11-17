@@ -13,4 +13,19 @@ describe("PublicPage", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Connexion" })).toHaveFocus();
     expect(screen.queryByRole("navigation")).toBeNull();
   });
+
+  it("takes the focus only once the page has settled (a retry error is gone)", () => {
+    const { rerender } = render(
+      <PublicPage title="Connexion" settled={false}>
+        <button type="button">Réessayer</button>
+      </PublicPage>,
+    );
+    expect(screen.getByRole("heading", { name: "Connexion" })).not.toHaveFocus();
+    rerender(
+      <PublicPage title="Connexion" settled>
+        <p>Carte</p>
+      </PublicPage>,
+    );
+    expect(screen.getByRole("heading", { name: "Connexion" })).toHaveFocus();
+  });
 });

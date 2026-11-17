@@ -24,5 +24,9 @@ export function LoginPage() {
   else if (me.isError) {
     body = <ErrorState message={errorMessage(me.error)} onRetry={() => void me.refetch()} />;
   }
-  return <PublicPage title={t("auth.login.title")}>{body}</PublicPage>;
+  return (
+    <PublicPage title={t("auth.login.title")} settled={!me.isError}>
+      {body}
+    </PublicPage>
+  );
 }

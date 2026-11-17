@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import { useState } from "react";
 import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { describe, expect, it, vi } from "vitest";
@@ -54,5 +55,42 @@ describe("AuthGate", () => {
     expect(onRetry).toHaveBeenCalledTimes(1);
     // Le conteneur reprend le focus : le bouton peut disparaître pendant la relecture.
     expect(screen.getByRole("main")).toHaveFocus();
+  });
+
+  it("hands the focus to the page content once a retry succeeds", async () => {
+    const user = userEvent.setup();
+    function Harness() {
+      const [status, setStatus] = useState<GateStatus>("error");
+      return (
+        <AuthGate status={status} onRetry={() => setStatus("ready")}>
+          <main id="contenu" tabIndex={-1}>
+            Contenu protégé
+          </main>
+        </AuthGate>
+      );
+    }
+    render(<RouterProvider router={createMemoryRouter([{ path: "/", element: <Harness /> }])} />);
+    await user.click(screen.getByRole("button", { name: "Réessayer" }));
+    expect(await screen.findByText("Contenu protégé")).toHaveFocus();
+  });
+
+  it("does not take the focus when the gate simply opens", () => {
+    render(
+      <RouterProvider
+        router={createMemoryRouter([
+          {
+            path: "/",
+            element: (
+              <AuthGate status="ready" onRetry={vi.fn()}>
+                <main id="contenu" tabIndex={-1}>
+                  Contenu protégé
+                </main>
+              </AuthGate>
+            ),
+          },
+        ])}
+      />,
+    );
+    expect(screen.getByText("Contenu protégé")).not.toHaveFocus();
   });
 });
