@@ -32,6 +32,7 @@ from app.mcp.results import (
     form_fields,
     read_response,
     result_ids,
+    timed_out,
     translate_validation,
 )
 from app.mcp.routes import RouteIndex
@@ -185,9 +186,10 @@ class McpDispatcher:
         call_id: str | None = None,
         no_history: str | None = None,
     ) -> ToolResult:
-        """`no_history` : un appel de niveau 2 réussi dont rien n'a été gardé (`overflow`, `failed`,
-        `empty`) le dit à Claude (`notice`) et au journal (`history: none`) : il ne s'annule pas."""
+        """`no_history` : un appel de niveau 2 réussi sans historique le dit (`notice`, journal)."""
         data = response.data
+        if response.status == 504 and tool.level >= 2:  # la route a pu écrire (M7)
+            return timed_out(data, arguments, call_id)
         if response.status == 422:
             data = translate_validation(data, tool)
         elif response.status < 400:

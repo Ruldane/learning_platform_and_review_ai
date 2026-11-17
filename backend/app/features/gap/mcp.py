@@ -28,6 +28,7 @@ MCP = FeatureMcp(
     graphs=(
         McpGraph(
             "gap_analysis",
+            follow_only=True,
             summary="Analyse l'écart entre une offre (`posting_id`) et le profil de January.",
         ),
     ),

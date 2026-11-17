@@ -88,4 +88,5 @@ CASES: dict[str, str] = {
     "app.features.ide.router": (
         "tests/features/ide/test_isolation.py::test_ide_isolation_between_users"
     ),
+    "app.features.mcp.router": "tests/mcp/test_isolation.py::test_mcp_user_isolation",
 }

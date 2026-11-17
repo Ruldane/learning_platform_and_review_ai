@@ -120,6 +120,7 @@ MCP = FeatureMcp(
             "cv_start_review",
             "Lance la revue du CV contre une offre (`posting_id`) avec le profil validé et le "
             "gabarit actif.",
+            launches="cv_review",
         ),
         McpAction(
             "GET /cv/reviews",
@@ -167,10 +168,12 @@ MCP = FeatureMcp(
     graphs=(
         McpGraph(
             "cv_review",
+            follow_only=True,
             summary="Revue d'un CV contre une offre (`review_id` d'une revue déjà créée).",
         ),
         McpGraph(
             "cv_capture",
+            follow_only=True,
             summary="L'Archiviste tire un brouillon de profil (`mode` profile, `document_ids`) "
             "ou le design d'un gabarit (`mode` design, `template_id`) ; January valide.",
         ),
@@ -178,8 +181,8 @@ MCP = FeatureMcp(
     excluded={
         "POST /profile/import": (
             "Téléversement du CV en PDF (multipart, `UploadFile`) : le MCP n'envoie pas de "
-            "fichier ; coller le texte du CV par `memory_add_text_document` puis lancer "
-            "le graphe `cv_capture` le remplace."
+            "fichier ; l'import du CV (et le graphe `cv_capture` qui le lit) se fait depuis "
+            "l'interface."
         ),
         "POST /cv/templates": (
             "Téléversement d'un CV en PDF (multipart, `UploadFile`) : le MCP n'envoie pas de "
