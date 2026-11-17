@@ -16,8 +16,8 @@ import { useSaveSettings } from "./useSaveSettings";
 
 /**
  * L'état du formulaire de disponibilité : le brouillon n'existe que pendant l'édition (`null` : on
- * montre les réglages du serveur) ; un champ hors des bornes bloque l'envoi ; un champ que le serveur
- * refuse (422) est signalé sans citer sa valeur ; en cas d'échec le brouillon reste.
+ * montre les réglages du serveur) ; un champ hors des bornes bloque l'envoi ; un champ que le
+ * serveur refuse (422) est signalé sans citer sa valeur ; en cas d'échec le brouillon reste.
  */
 export function useAvailabilityForm(settings: SettingsOut) {
   const stored = toAvailabilityDraft(settings);
@@ -25,7 +25,8 @@ export function useAvailabilityForm(settings: SettingsOut) {
   const saver = useSaveSettings();
   const errors = availabilityErrors(draft ?? stored);
   const dirty = draft !== null && !sameAvailabilityDraft(draft, stored);
-  const blocked = !dirty || hasAvailabilityErrors(errors) || saver.pending;
+  const invalid = hasAvailabilityErrors(errors);
+  const blocked = !dirty || invalid || saver.pending;
   const refusals = refusedFields(saver.error);
 
   return {
@@ -33,6 +34,7 @@ export function useAvailabilityForm(settings: SettingsOut) {
     value: draft ?? stored,
     errors,
     dirty,
+    invalid,
     blocked,
     refused: (field: AvailabilityField) => isRefused(refusals, CONTRACT_FIELDS[field]),
     edit: (next: AvailabilityDraft) => {
@@ -42,8 +44,10 @@ export function useAvailabilityForm(settings: SettingsOut) {
     submit: (event: FormEvent) => {
       event.preventDefault();
       if (blocked || draft === null) return;
+      // Une frappe faite pendant l'envoi reste : le brouillon n'est rendu au serveur que s'il n'a
+      // pas changé.
       saver.save(withAvailabilitySettings(settings, draft)).then(
-        () => setDraft(null),
+        () => setDraft((current) => (current === draft ? null : current)),
         () => undefined, // l'erreur est affichée depuis la mutation ; la saisie est gardée
       );
     },

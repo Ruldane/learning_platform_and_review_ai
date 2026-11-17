@@ -1,8 +1,9 @@
 import { ApiError } from "@/shared/api/errors";
 
 /**
- * Les champs qu'une 422 du back nomme (`details.fields`, des chemins comme « availability.weekday_minutes »
- * ou « agent_overrides »), sans jamais une valeur. Vide pour toute autre erreur.
+ * Les champs qu'une 422 du back nomme (`details.fields`, des chemins comme
+ * « availability.weekday_minutes » ou « agent_overrides »), sans jamais une valeur. Vide pour toute
+ * autre erreur.
  */
 export function refusedFields(error: unknown): string[] {
   if (!(error instanceof ApiError) || error.status !== 422) return [];

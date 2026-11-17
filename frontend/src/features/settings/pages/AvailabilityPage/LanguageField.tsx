@@ -5,7 +5,9 @@ import { SEARCH_LANGUAGES, type SearchLanguage } from "../../components/viewType
 const isListed = (code: string): code is SearchLanguage =>
   (SEARCH_LANGUAGES as readonly string[]).includes(code);
 
-/** La langue des leçons ; la langue enregistrée reste proposée même si la liste ne la connaît pas. */
+/**
+ * La langue des leçons ; la langue enregistrée reste proposée même si la liste ne la connaît pas.
+ */
 export function LanguageField({
   value,
   onChange,

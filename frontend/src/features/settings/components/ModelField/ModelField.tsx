@@ -9,12 +9,23 @@ interface ModelFieldProps {
   /** Modèle en vigueur (saisie libre : vide quand on attend un nouveau modèle). */
   value: string;
   disabled?: boolean;
-  /** Liste : à chaque choix. Saisie libre : à la perte du focus ou à Entrée, une fois par saisie. */
+  /** Identifiant d'une aide qui décrit le champ (ex. « Saisis le modèle, puis Entrée »). */
+  describedBy?: string;
+  /**
+   * Liste : à chaque choix. Saisie libre : à la perte du focus ou à Entrée, une fois par saisie.
+   */
   onCommit: (model: string) => void;
 }
 
 /** Modèle d'un niveau : liste déroulante, ou champ texte quand le fournisseur n'a pas de liste. */
-export function ModelField({ label, models, value, disabled = false, onCommit }: ModelFieldProps) {
+export function ModelField({
+  label,
+  models,
+  value,
+  disabled = false,
+  describedBy,
+  onCommit,
+}: ModelFieldProps) {
   const id = useId();
   return (
     <>
@@ -27,6 +38,7 @@ export function ModelField({ label, models, value, disabled = false, onCommit }:
           className={`${fieldClass} sm:max-w-64`}
           value={value}
           disabled={disabled}
+          aria-describedby={describedBy}
           onChange={(event) => onCommit(event.target.value)}
         >
           {models.includes(value) ? null : <option value={value}>{value}</option>}
@@ -45,6 +57,7 @@ export function ModelField({ label, models, value, disabled = false, onCommit }:
           className={`${fieldClass} sm:max-w-64`}
           defaultValue={value}
           disabled={disabled}
+          aria-describedby={describedBy}
           spellCheck={false}
           onBlur={(event) => onCommit(event.currentTarget.value)}
           onKeyDown={(event) => {

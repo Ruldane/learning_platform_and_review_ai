@@ -9,8 +9,8 @@ interface AdvancedModeProps {
 }
 
 /**
- * « Mode avancé » de Modèles et clés : un modèle par agent à la place de celui de son niveau. Replié
- * par défaut ; les agents ne sont lus qu'à l'ouverture.
+ * « Mode avancé » de Modèles et clés : un modèle par agent à la place de celui de son niveau.
+ * Replié par défaut ; les agents ne sont lus qu'à l'ouverture.
  */
 export function AdvancedMode({ settings, providers }: AdvancedModeProps) {
   const [open, setOpen] = useState(false);

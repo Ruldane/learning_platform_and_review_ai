@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { t } from "@/shared/i18n/t";
 import { ModelField } from "../ModelField";
 import { ProviderSelect } from "../ProviderSelect";
@@ -78,6 +78,7 @@ export function AgentModelChoice({
   disabled = false,
 }: AgentModelChoiceProps) {
   const [pending, setPending] = useState<PendingProvider | null>(null);
+  const hintId = useId();
   const waiting = pending && sameChoice(pending.base, value) ? pending.provider : null;
   const provider = waiting ?? value?.provider ?? "";
   const models = provider ? listedModels(providers, provider) : null;
@@ -105,8 +106,14 @@ export function AgentModelChoice({
           models={models}
           value={waiting ? "" : (value?.model ?? "")}
           disabled={disabled}
+          describedBy={waiting ? hintId : undefined}
           onCommit={commitModel}
         />
+      ) : null}
+      {waiting ? (
+        <p id={hintId} className="w-full text-sm text-muted-foreground">
+          {t("settings.agents.modelHint")}
+        </p>
       ) : null}
     </div>
   );

@@ -3,6 +3,7 @@ import { t } from "@/shared/i18n/t";
 import { fieldClass } from "@/shared/ui/fieldClass";
 import type { AvailabilityDraft } from "../../availabilitySettings";
 import { DelaysField } from "../../components/DelaysField";
+import { errorHint } from "../../components/errorHint";
 
 interface BriefFieldsProps {
   draft: AvailabilityDraft;
@@ -41,9 +42,12 @@ export function BriefFields(props: BriefFieldsProps) {
           id={hintId}
           className={bad ? "text-sm text-destructive" : "text-sm text-muted-foreground"}
         >
-          {timeRefused && !timeInvalid
-            ? t("settings.fields.refused")
-            : t("settings.availability.briefTimeHint")}
+          {errorHint(
+            bad,
+            timeRefused && !timeInvalid
+              ? t("settings.fields.refused")
+              : t("settings.availability.briefTimeHint"),
+          )}
         </p>
       </div>
       <DelaysField

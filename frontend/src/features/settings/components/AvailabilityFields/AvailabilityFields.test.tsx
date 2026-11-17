@@ -41,9 +41,20 @@ describe("AvailabilityFields", () => {
         onChange={onChange}
       />,
     );
+    const order = "Erreur : Le minimum du week-end doit rester inférieur ou égal à son maximum.";
+    expect(screen.getByText(order)).toBeInTheDocument();
+    // le message est relié aux deux champs qu'il concerne, en plus de leur propre aide
+    for (const name of [
+      "Bloc du week-end, minimum (minutes)",
+      "Bloc du week-end, maximum (minutes)",
+    ]) {
+      expect(screen.getByLabelText(name).getAttribute("aria-describedby")).toContain(
+        screen.getByText(order).id,
+      );
+    }
     expect(
-      screen.getByText("Le minimum du week-end ne dépasse pas son maximum."),
-    ).toBeInTheDocument();
+      screen.getByLabelText("Minutes par jour, du lundi au vendredi"),
+    ).toHaveAccessibleDescription("Entre 0 et 1440.");
     await userEvent.setup().type(screen.getByLabelText("Bloc du week-end, maximum (minutes)"), "5");
     expect(onChange).toHaveBeenCalledWith("weekendMax", "2405");
   });

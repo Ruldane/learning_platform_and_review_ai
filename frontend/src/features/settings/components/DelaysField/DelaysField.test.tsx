@@ -18,11 +18,15 @@ describe("DelaysField", () => {
     const { rerender } = render(
       <DelaysField value={["7", "7", "21"]} invalid onChange={vi.fn()} />,
     );
-    expect(screen.getByText(/strictement croissants, de 1 à 90/)).toHaveClass("text-destructive");
+    expect(screen.getByText(/^Erreur : .*strictement croissants, de 1 à 90/)).toHaveClass(
+      "text-destructive",
+    );
     for (const input of screen.getAllByRole("spinbutton")) {
       expect(input).toHaveAttribute("aria-invalid", "true");
     }
     rerender(<DelaysField value={["7", "14", "21"]} invalid={false} refused onChange={vi.fn()} />);
-    expect(screen.getByText("Le serveur a refusé cette valeur : vérifie-la.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Erreur : Le serveur a refusé cette valeur : vérifie-la."),
+    ).toBeInTheDocument();
   });
 });

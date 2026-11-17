@@ -6,7 +6,9 @@ import { Button } from "@/shared/ui/button";
 interface AdvancedSectionProps {
   open: boolean;
   onToggle: () => void;
-  /** Le contenu n'est monté que déployé : rien n'est lu ni dessiné tant que la section est repliée. */
+  /**
+   * Le contenu n'est monté que déployé : rien n'est lu ni dessiné tant que la section est repliée.
+   */
   children: ReactNode;
 }
 

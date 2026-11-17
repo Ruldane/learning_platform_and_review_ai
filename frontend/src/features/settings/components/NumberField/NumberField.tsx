@@ -1,6 +1,7 @@
 import { useId } from "react";
 import { t } from "@/shared/i18n/t";
 import { fieldClass } from "@/shared/ui/fieldClass";
+import { errorHint } from "../errorHint";
 
 interface NumberFieldProps {
   label: string;
@@ -14,6 +15,8 @@ interface NumberFieldProps {
   invalid: boolean;
   /** Refusé par le serveur : la valeur n'est jamais citée, seulement le champ. */
   refused?: boolean;
+  /** Identifiant d'un message de plus qui décrit ce champ (ex. l'ordre des deux bornes). */
+  describedBy?: string;
   onChange: (value: string) => void;
 }
 
@@ -30,11 +33,15 @@ export function NumberField({
   hint,
   invalid,
   refused = false,
+  describedBy,
   onChange,
 }: NumberFieldProps) {
   const hintId = useId();
   const bad = invalid || refused;
-  const text = refused && !invalid ? t("settings.fields.refused") : (hint ?? rangeHint(min, max));
+  const text = errorHint(
+    bad,
+    refused && !invalid ? t("settings.fields.refused") : (hint ?? rangeHint(min, max)),
+  );
   return (
     <div className="flex flex-col gap-1">
       <label className="text-sm font-medium">
@@ -47,7 +54,7 @@ export function NumberField({
           step={1}
           value={value}
           aria-invalid={bad}
-          aria-describedby={hintId}
+          aria-describedby={describedBy ? `${hintId} ${describedBy}` : hintId}
           onChange={(event) => onChange(event.target.value)}
           className={`${fieldClass} mt-1 max-w-40`}
         />

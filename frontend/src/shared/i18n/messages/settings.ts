@@ -15,6 +15,10 @@ export const settings = {
     range: "Entre {min} et {max}.",
     atLeast: "Au moins {min}.",
     refused: "Le serveur a refusé cette valeur : vérifie-la.",
+    /** Devant l'aide d'un champ en erreur : l'état ne tient jamais à la couleur seule. */
+    errorPrefix: "Erreur : ",
+    saveClean: "Rien à enregistrer.",
+    saveInvalid: "Corrige les champs signalés avant d'enregistrer.",
   },
   availability: {
     navLabel: "Disponibilité et rythme",
@@ -31,7 +35,7 @@ export const settings = {
     weekday: "Minutes par jour, du lundi au vendredi",
     weekendMin: "Bloc du week-end, minimum (minutes)",
     weekendMax: "Bloc du week-end, maximum (minutes)",
-    weekendOrder: "Le minimum du week-end ne dépasse pas son maximum.",
+    weekendOrder: "Le minimum du week-end doit rester inférieur ou égal à son maximum.",
     budget: "Budget hebdomadaire : {total}",
     budgetHint: "Cinq jours de semaine plus le bloc de week-end le plus long.",
     budgetInvalid: "Budget hebdomadaire : corrige les durées ci-dessus.",
@@ -88,6 +92,8 @@ export const settings = {
     unknownAgent: "Agent inconnu : rends-le au niveau par défaut.",
     unknownTier: "Inconnu",
     refused: "Un des agents choisis n'existe plus : recharge la page, puis réessaie.",
+    saved: "Modèles enregistrés.",
+    modelHint: "Saisis le modèle, puis Entrée.",
   },
   keys: {
     title: "Clés API",

@@ -7,7 +7,7 @@ import {
   type AvailabilityField,
 } from "../../availabilitySettings";
 import { NumberField } from "../../components/NumberField";
-import { Section } from "../SearchSettingsPage/Section";
+import { Section } from "../../components/Section";
 import { BriefFields } from "./BriefFields";
 import { LanguageField } from "./LanguageField";
 

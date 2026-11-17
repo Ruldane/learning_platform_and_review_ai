@@ -73,7 +73,10 @@ export const callOut = (id: string, over: Record<string, unknown> = {}) => ({
 
 export const FIRST_CURSOR = "cursor-1";
 
-/** Les pages du journal : sans `before`, la première ; avec `FIRST_CURSOR`, la seconde ; un filtre, une page seule. */
+/**
+ * Les pages du journal : sans `before`, la première ; avec `FIRST_CURSOR`, la seconde ; un filtre,
+ * une page seule.
+ */
 export function callPage(url: URL) {
   if (url.searchParams.get("agent") || url.searchParams.get("graph")) {
     return { items: [callOut("c-filtered", { agent: "scribe" })], next_before: null };
@@ -103,7 +106,9 @@ interface CostsApiOptions {
 const reply = (value: object | Response) =>
   value instanceof Response ? value : HttpResponse.json(value);
 
-/** Faux serveur des coûts et du journal ; garde les adresses reçues pour vérifier les paramètres. */
+/**
+ * Faux serveur des coûts et du journal ; garde les adresses reçues pour vérifier les paramètres.
+ */
 export function costsApi(options: CostsApiOptions = {}) {
   const costRequests: URL[] = [];
   const callRequests: URL[] = [];

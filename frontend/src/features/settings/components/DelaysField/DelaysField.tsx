@@ -1,9 +1,9 @@
 import { useId } from "react";
 import { t } from "@/shared/i18n/t";
 import { fieldClass } from "@/shared/ui/fieldClass";
+import { errorHint } from "../errorHint";
+import { DELAY_RANGE } from "../ranges";
 
-/** Bornes du contrat : de 1 à 90 jours. */
-const RANGE = { min: 1, max: 90 } as const;
 const LABELS = [
   "settings.availability.delays.first",
   "settings.availability.delays.second",
@@ -27,10 +27,12 @@ export function DelaysField({ value, invalid, refused = false, onChange }: Delay
   const legendId = useId();
   const hintId = useId();
   const bad = invalid || refused;
-  const hint =
+  const hint = errorHint(
+    bad,
     refused && !invalid
       ? t("settings.fields.refused")
-      : t("settings.availability.delays.hint", RANGE);
+      : t("settings.availability.delays.hint", DELAY_RANGE),
+  );
   return (
     <div role="group" aria-labelledby={legendId} className="flex flex-col gap-1">
       <span id={legendId} className="text-sm font-medium">
@@ -43,8 +45,8 @@ export function DelaysField({ value, invalid, refused = false, onChange }: Delay
             <input
               type="number"
               inputMode="numeric"
-              min={RANGE.min}
-              max={RANGE.max}
+              min={DELAY_RANGE.min}
+              max={DELAY_RANGE.max}
               step={1}
               value={value[index] ?? ""}
               aria-invalid={bad}

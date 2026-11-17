@@ -9,6 +9,10 @@ const MILLS = new Intl.NumberFormat("fr-FR", {
   minimumFractionDigits: 3,
   maximumFractionDigits: 3,
 });
+const TICKS = new Intl.NumberFormat("fr-FR", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 6,
+});
 const SECONDS = new Intl.NumberFormat("fr-FR", {
   minimumFractionDigits: 1,
   maximumFractionDigits: 1,
@@ -45,6 +49,12 @@ export function formatUsd(usd: number): string {
   return `${digits.format(usd)}\u00a0$`;
 }
 
+/**
+ * Une graduation de l'axe des coûts : deux décimales au moins, jusqu'à six pour qu'une fenêtre où
+ * chaque jour coûte moins d'un millième garde des graduations toutes différentes (« 0,0004 $ »).
+ */
+export const formatUsdTick = (usd: number): string => `${TICKS.format(usd)}\u00a0$`;
+
 /** « 340 ms » sous la seconde, « 1,8 s » au-delà. */
 export function formatLatency(ms: number): string {
   return ms < 1000 ? `${Math.round(ms)} ms` : `${SECONDS.format(ms / 1000)} s`;
@@ -53,7 +63,10 @@ export function formatLatency(ms: number): string {
 /** « 16 nov. » : un jour `AAAA-MM-JJ` pour l'axe du graphique. */
 export const dayMonth = (iso: string): string => DAY_MONTH.format(parseDay(iso));
 
-/** « 16 nov., 10:30 » : l'instant d'un appel, à l'heure du poste ; l'année si ce n'est pas l'année en cours. */
+/**
+ * « 16 nov., 10:30 » : l'instant d'un appel, à l'heure du poste ; l'année si ce n'est pas l'année
+ * en cours.
+ */
 export function formatCallTime(iso: string): string {
   const at = new Date(iso);
   const format = at.getFullYear() === new Date().getFullYear() ? CALL_TIME : CALL_TIME_YEAR;

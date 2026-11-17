@@ -5,7 +5,9 @@ import { SessionCell } from "./SessionCell";
 
 const NUMERIC = "px-3 py-2 text-right tabular-nums whitespace-nowrap";
 
-/** Un appel : instant, agent, parcours, modèle, jetons, durée, coût (« estimé » signalé), session. */
+/**
+ * Un appel : instant, agent, parcours, modèle, jetons, durée, coût (« estimé » signalé), session.
+ */
 export function CallRow({ call }: { call: CallView }) {
   return (
     <tr className="border-b border-border last:border-0">

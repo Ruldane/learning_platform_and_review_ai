@@ -7,8 +7,12 @@ interface CostBadgeProps {
 
 const integer = new Intl.NumberFormat("fr-FR");
 
-/** Deux décimales, trois sous le centime pour qu'un petit coût ne s'affiche pas « 0,00 ». */
+/**
+ * Deux décimales, trois sous le centime, « < 0,001 » sous le millième : un coût non nul ne
+ * s'affiche jamais « 0,00 » ni « 0,000 ».
+ */
 function formatCost(usd: number): string {
+  if (usd > 0 && usd < 0.001) return "< 0,001";
   const digits = usd > 0 && usd < 0.01 ? 3 : 2;
   return usd.toLocaleString("fr-FR", {
     minimumFractionDigits: digits,

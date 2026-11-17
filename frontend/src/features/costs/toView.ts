@@ -25,7 +25,9 @@ function byAgent(source: CostRow): CostRowView {
   return row(source, identity.name, identity.color);
 }
 
-/** Le rapport : libellés en français (« Hors session », agents nommés), noms inconnus gardés bruts. */
+/**
+ * Le rapport : libellés en français (« Hors session », agents nommés), noms inconnus gardés bruts.
+ */
 export function toCostsView(report: CostsReport): CostsView {
   return {
     days: report.days,

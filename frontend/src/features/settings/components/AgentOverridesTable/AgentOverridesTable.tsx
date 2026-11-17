@@ -23,7 +23,10 @@ interface AgentOverridesTableProps {
 
 const COLUMNS = ["agent", "tier", "model"] as const;
 
-/** Un agent par ligne : son niveau, le modèle de ce niveau, et le choix d'un autre modèle pour lui seul. */
+/**
+ * Un agent par ligne : son niveau, le modèle de ce niveau, et le choix d'un autre modèle pour lui
+ * seul.
+ */
 export function AgentOverridesTable({
   agents,
   overrides,

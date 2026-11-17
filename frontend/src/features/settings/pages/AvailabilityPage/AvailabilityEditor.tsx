@@ -6,7 +6,7 @@ import { AvailabilityFields } from "../../components/AvailabilityFields";
 import { SaveBar } from "../../components/SaveBar";
 import { useAvailabilityForm } from "../../hooks/useAvailabilityForm";
 import type { SettingsOut } from "../../types";
-import { Section } from "../SearchSettingsPage/Section";
+import { Section } from "../../components/Section";
 import { SessionFields } from "./SessionFields";
 
 const SAVE_LABELS = {
@@ -46,6 +46,7 @@ export function AvailabilityEditor({ settings }: { settings: SettingsOut }) {
         saved={saver.saved}
         dirty={form.dirty}
         blocked={form.blocked}
+        invalid={form.invalid}
         labels={SAVE_LABELS}
       />
     </form>

@@ -3,7 +3,10 @@ import type { CostRowView } from "../viewTypes";
 
 export const NUMBER_CELL = "px-3 py-2 text-right tabular-nums whitespace-nowrap";
 
-/** Une ligne de répartition : son libellé (avec la pastille de couleur de l'agent) puis cinq nombres. */
+/**
+ * Une ligne de répartition : son libellé (avec la pastille de couleur de l'agent) puis cinq
+ * nombres.
+ */
 export function CostRow({ row }: { row: CostRowView }) {
   return (
     <tr className="border-b border-border last:border-0">

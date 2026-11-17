@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatCallTime, formatUsd } from "./format";
+import { formatCallTime, formatUsd, formatUsdTick } from "./format";
 
 describe("formatUsd", () => {
   it("writes a cost between zero and a mill as « < 0,001 $ », never « 0,000 $ »", () => {
@@ -15,6 +15,21 @@ describe("formatUsd", () => {
 
   it("uses a non-breaking space before the dollar sign", () => {
     expect(formatUsd(12.5)).toMatch(/\u00a0\$$/);
+  });
+});
+
+describe("formatUsdTick", () => {
+  it("keeps every tick of a very cheap window different, with enough decimals", () => {
+    const ticks = [0, 0.0001, 0.0002, 0.0003, 0.0004].map(formatUsdTick);
+    expect(new Set(ticks).size).toBe(5);
+    expect(ticks[1]).toBe("0,0001\u00a0$");
+    expect(ticks.join(" ")).not.toContain("<");
+  });
+
+  it("writes ordinary ticks like a cost", () => {
+    expect(formatUsdTick(0)).toBe("0,00\u00a0$");
+    expect(formatUsdTick(0.5)).toBe("0,50\u00a0$");
+    expect(formatUsdTick(12)).toBe("12,00\u00a0$");
   });
 });
 

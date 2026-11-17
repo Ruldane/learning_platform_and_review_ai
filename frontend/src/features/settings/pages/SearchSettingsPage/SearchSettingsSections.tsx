@@ -5,7 +5,7 @@ import { LanguagePicker } from "../../components/LanguagePicker";
 import { ProviderOrderEditor } from "../../components/ProviderOrderEditor";
 import { SearchCapsFields } from "../../components/SearchCapsFields";
 import type { BraveUsageView, SearchSettingsView } from "../../types";
-import { Section } from "./Section";
+import { Section } from "../../components/Section";
 
 interface SearchSettingsSectionsProps {
   value: SearchSettingsView;

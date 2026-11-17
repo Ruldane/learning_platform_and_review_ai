@@ -67,7 +67,10 @@ export interface BraveUsageView {
   month: string;
 }
 
-/** Les durées de la disponibilité telles que les édite `AvailabilityFields` (du texte pendant la saisie). */
+/**
+ * Les durées de la disponibilité telles que les édite `AvailabilityFields` (du texte pendant la
+ * saisie).
+ */
 export interface AvailabilityValues {
   weekday: string;
   weekendMin: string;
@@ -76,7 +79,9 @@ export interface AvailabilityValues {
 
 export type AvailabilityKey = keyof AvailabilityValues;
 
-/** Quelles durées sont hors bornes ; `weekendOrder` : le minimum du week-end dépasse son maximum. */
+/**
+ * Quelles durées sont hors bornes ; `weekendOrder` : le minimum du week-end dépasse son maximum.
+ */
 export interface AvailabilityFlags {
   weekday: boolean;
   weekendMin: boolean;
@@ -84,7 +89,10 @@ export interface AvailabilityFlags {
   weekendOrder: boolean;
 }
 
-/** Un agent de `GET /settings/agents` ; `tier` nul : une surcharge reste pour un agent que le serveur ne connaît plus. */
+/**
+ * Un agent de `GET /settings/agents` ; `tier` nul : une surcharge reste pour un agent que le
+ * serveur ne connaît plus.
+ */
 export interface AgentRow {
   name: string;
   tier: Tier | null;

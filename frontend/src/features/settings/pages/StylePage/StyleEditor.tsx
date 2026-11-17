@@ -28,8 +28,10 @@ export function StyleEditor({ settings }: { settings: SettingsOut }) {
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (blocked || draft === null) return;
+    // Une frappe faite pendant l'envoi reste : le brouillon n'est rendu au serveur que s'il n'a pas
+    // changé.
     saver.save(withStyleGuide(settings, draft)).then(
-      () => setDraft(null),
+      () => setDraft((current) => (current === draft ? null : current)),
       () => undefined, // l'erreur est affichée depuis la mutation ; le texte est gardé
     );
   };

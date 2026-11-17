@@ -15,7 +15,7 @@ import {
 import type { SettingsOut } from "../../types";
 import { ReviewFields } from "./ReviewFields";
 import { RhythmFields } from "./RhythmFields";
-import { Section } from "../SearchSettingsPage/Section";
+import { Section } from "../../components/Section";
 
 /**
  * Le formulaire de l'étude. Le brouillon n'existe que pendant l'édition (`null` : on montre les

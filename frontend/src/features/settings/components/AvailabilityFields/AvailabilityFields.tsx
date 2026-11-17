@@ -1,10 +1,10 @@
+import { useId } from "react";
 import { t } from "@/shared/i18n/t";
 import { formatMinutes } from "@/shared/lib/format";
+import { errorHint } from "../errorHint";
+import { MINUTES_RANGE } from "../ranges";
 import { NumberField } from "../NumberField";
 import type { AvailabilityFlags, AvailabilityKey, AvailabilityValues } from "../viewTypes";
-
-/** Bornes du contrat : de 0 à 1 440 minutes (une journée). */
-const RANGE = { min: 0, max: 1440 } as const;
 
 interface AvailabilityFieldsProps {
   values: AvailabilityValues;
@@ -22,7 +22,10 @@ const FIELDS = [
   { key: "weekendMax", label: "settings.availability.weekendMax" },
 ] as const;
 
-/** Minutes en semaine, bloc du week-end (minimum et maximum) et le budget hebdomadaire qui en découle. */
+/**
+ * Minutes en semaine, bloc du week-end (minimum et maximum) et le budget hebdomadaire qui en
+ * découle.
+ */
 export function AvailabilityFields({
   values,
   flags,
@@ -30,6 +33,7 @@ export function AvailabilityFields({
   budget,
   onChange,
 }: AvailabilityFieldsProps) {
+  const orderId = useId();
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap gap-6">
@@ -38,15 +42,18 @@ export function AvailabilityFields({
             key={key}
             label={t(label)}
             value={values[key]}
-            {...RANGE}
+            {...MINUTES_RANGE}
             invalid={flags[key]}
             refused={refused[key]}
+            describedBy={flags.weekendOrder && key !== "weekday" ? orderId : undefined}
             onChange={(value) => onChange(key, value)}
           />
         ))}
       </div>
       {flags.weekendOrder ? (
-        <p className="text-sm text-destructive">{t("settings.availability.weekendOrder")}</p>
+        <p id={orderId} className="text-sm text-destructive">
+          {errorHint(true, t("settings.availability.weekendOrder"))}
+        </p>
       ) : null}
       <p className="text-sm">
         <strong className="font-medium">

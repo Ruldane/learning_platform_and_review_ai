@@ -2,7 +2,7 @@ import { useId } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { t } from "@/shared/i18n/t";
 import { shortDay } from "@/shared/lib/format";
-import { dayMonth, formatUsd } from "../format";
+import { dayMonth, formatUsd, formatUsdTick } from "../format";
 import type { CostRowView } from "../viewTypes";
 import { DayTable } from "./DayTable";
 
@@ -40,7 +40,7 @@ export function CostByDayChart({ rows, since, until, totalCostUsd }: CostByDayCh
           <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
             <CartesianGrid vertical={false} stroke="var(--border)" strokeDasharray="3 3" />
             <XAxis dataKey="day" tickFormatter={dayMonth} minTickGap={16} />
-            <YAxis tickFormatter={formatUsd} width={72} />
+            <YAxis tickFormatter={formatUsdTick} width={72} />
             <Tooltip
               labelFormatter={(day) => shortDay(String(day))}
               formatter={(value) => formatUsd(Number(value))}

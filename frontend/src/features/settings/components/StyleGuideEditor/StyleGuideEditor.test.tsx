@@ -25,6 +25,8 @@ describe("StyleGuideEditor", () => {
       "aria-invalid",
       "true",
     );
-    expect(screen.getByText("Le serveur a refusé cette valeur : vérifie-la.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Erreur : Le serveur a refusé cette valeur : vérifie-la."),
+    ).toBeInTheDocument();
   });
 });

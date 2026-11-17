@@ -13,7 +13,9 @@ interface AgentLineProps {
   onChange: (choice: ModelChoice | null) => void;
 }
 
-/** Une ligne du tableau : l'agent, son niveau (et le modèle de ce niveau), le choix de son modèle. */
+/**
+ * Une ligne du tableau : l'agent, son niveau (et le modèle de ce niveau), le choix de son modèle.
+ */
 export function AgentLine({
   agent,
   override,

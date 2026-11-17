@@ -44,6 +44,10 @@ describe("AgentModelChoice", () => {
     const user = userEvent.setup();
     await user.selectOptions(screen.getByLabelText("Fournisseur (Tuteur)"), "glm");
     expect(onChange).not.toHaveBeenCalled();
+    // rien n'est envoyé encore : le champ le dit
+    expect(screen.getByLabelText("Modèle (Tuteur)")).toHaveAccessibleDescription(
+      "Saisis le modèle, puis Entrée.",
+    );
     await user.type(screen.getByLabelText("Modèle (Tuteur)"), "  glm-5.3 {Enter}");
     expect(onChange).toHaveBeenCalledExactlyOnceWith({ provider: "glm", model: "glm-5.3" });
   });

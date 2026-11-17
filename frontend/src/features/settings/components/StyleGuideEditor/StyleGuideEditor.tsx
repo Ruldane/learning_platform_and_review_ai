@@ -1,6 +1,7 @@
 import { useId } from "react";
 import { t } from "@/shared/i18n/t";
 import { fieldClass } from "@/shared/ui/fieldClass";
+import { errorHint } from "../errorHint";
 
 interface StyleGuideEditorProps {
   value: string;
@@ -30,10 +31,12 @@ export function StyleGuideEditor({ value, refused = false, onChange }: StyleGuid
       />
       <p id={hintId} className="flex flex-wrap justify-between gap-2 text-sm text-muted-foreground">
         <span className={refused ? "text-destructive" : undefined}>
-          {refused ? t("settings.fields.refused") : t("settings.style.hint")}
+          {errorHint(refused, refused ? t("settings.fields.refused") : t("settings.style.hint"))}
         </span>
         <span>
-          {t(count === 1 ? "settings.style.countOne" : "settings.style.count", { count })}
+          {t(count === 1 ? "settings.style.countOne" : "settings.style.count", {
+            count: count.toLocaleString("fr-FR"),
+          })}
         </span>
       </p>
     </div>

@@ -7,7 +7,9 @@ interface ExportCardProps {
   href: string;
 }
 
-/** « Exporter toutes mes données » : ce que contient l'archive (jamais les clés d'API) et le lien. */
+/**
+ * « Exporter toutes mes données » : ce que contient l'archive (jamais les clés d'API) et le lien.
+ */
 export function ExportCard({ href }: ExportCardProps) {
   const titleId = useId();
   return (

@@ -15,6 +15,20 @@ describe("SaveBar", () => {
     expect(screen.getByRole("status")).toBeEmptyDOMElement();
   });
 
+  it("says why the button is blocked, in text tied to it", () => {
+    const { rerender } = render(<SaveBar {...props} />);
+    const button = () => screen.getByRole("button");
+    expect(button()).toHaveAccessibleDescription("Rien à enregistrer.");
+    rerender(<SaveBar {...props} dirty invalid />);
+    expect(button()).toHaveAccessibleDescription(
+      "Corrige les champs signalés avant d'enregistrer.",
+    );
+    rerender(<SaveBar {...props} dirty blocked={false} />);
+    expect(button()).not.toHaveAccessibleDescription();
+    rerender(<SaveBar {...props} dirty pending />);
+    expect(button()).not.toHaveAccessibleDescription();
+  });
+
   it("announces unsaved changes, then the save", () => {
     const { rerender } = render(<SaveBar {...props} dirty blocked={false} />);
     expect(screen.getByRole("button", { name: "Enregistrer" })).toHaveAttribute(

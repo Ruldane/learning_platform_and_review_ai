@@ -1,8 +1,12 @@
+import { DELAY_RANGE, MINUTES_RANGE } from "./components/ranges";
 import { readTiers } from "./tierChoices";
 import type { SettingsOut, UserSettings } from "./types";
 import { buildUserSettings } from "./userSettings";
 
-/** Les réglages de disponibilité et de rythme tels que les édite la page : des textes pendant la saisie. */
+/**
+ * Les réglages de disponibilité et de rythme tels que les édite la page : des textes pendant la
+ * saisie.
+ */
 export interface AvailabilityDraft {
   weekday: string;
   weekendMin: string;
@@ -21,8 +25,7 @@ export type AvailabilityField = keyof AvailabilityDraft;
 export type AvailabilityErrors = Record<AvailabilityField | "weekendOrder", boolean>;
 
 /** Bornes du contrat. */
-export const MINUTES_RANGE = { min: 0, max: 1440 } as const;
-export const DELAY_RANGE = { min: 1, max: 90 } as const;
+export { DELAY_RANGE, MINUTES_RANGE };
 export const ROUNDS_RANGE = { min: 1, max: 5 } as const;
 export const TOKEN_CAP_MIN = 10_000;
 
@@ -88,7 +91,10 @@ export const hasAvailabilityErrors = (errors: AvailabilityErrors): boolean =>
 export const sameAvailabilityDraft = (a: AvailabilityDraft, b: AvailabilityDraft): boolean =>
   JSON.stringify(a) === JSON.stringify(b);
 
-/** Budget hebdomadaire (minutes) : cinq jours de semaine plus le bloc de week-end le plus long ; `null` si une durée est invalide. */
+/**
+ * Budget hebdomadaire (minutes) : cinq jours de semaine plus le bloc de week-end le plus long ;
+ * `null` si une durée est invalide.
+ */
 export function weeklyBudget(draft: AvailabilityDraft): number | null {
   const weekday = within(draft.weekday, MINUTES_RANGE) ? whole(draft.weekday) : null;
   const weekend = within(draft.weekendMax, MINUTES_RANGE) ? whole(draft.weekendMax) : null;

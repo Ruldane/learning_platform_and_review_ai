@@ -21,7 +21,9 @@ describe("NumberField", () => {
       <NumberField label="Tours" value="9" min={1} max={5} invalid onChange={vi.fn()} />,
     );
     expect(screen.getByLabelText("Tours")).toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByText("Entre 1 et 5.")).toHaveClass("text-destructive");
+    expect(screen.getByText("Erreur : Entre 1 et 5.")).toHaveClass("text-destructive");
+    // l'état ne tient pas à la couleur seule : un mot, et le cadre du champ (variante aria-invalid)
+    expect(screen.getByLabelText("Tours")).toHaveAccessibleDescription("Erreur : Entre 1 et 5.");
     rerender(
       <NumberField
         label="Tours"
@@ -34,7 +36,27 @@ describe("NumberField", () => {
       />,
     );
     expect(screen.getByLabelText("Tours")).toHaveAccessibleDescription(
-      "Le serveur a refusé cette valeur : vérifie-la.",
+      "Erreur : Le serveur a refusé cette valeur : vérifie-la.",
+    );
+  });
+
+  it("is also described by the extra message it is told about", () => {
+    render(
+      <>
+        <p id="extra">Message commun.</p>
+        <NumberField
+          label="Tours"
+          value="9"
+          min={1}
+          max={5}
+          invalid
+          describedBy="extra"
+          onChange={vi.fn()}
+        />
+      </>,
+    );
+    expect(screen.getByLabelText("Tours")).toHaveAccessibleDescription(
+      "Erreur : Entre 1 et 5. Message commun.",
     );
   });
 
@@ -42,6 +64,8 @@ describe("NumberField", () => {
     render(
       <NumberField label="Plafond" value="1" hint="Au moins 10 000." invalid onChange={vi.fn()} />,
     );
-    expect(screen.getByLabelText("Plafond")).toHaveAccessibleDescription("Au moins 10 000.");
+    expect(screen.getByLabelText("Plafond")).toHaveAccessibleDescription(
+      "Erreur : Au moins 10 000.",
+    );
   });
 });

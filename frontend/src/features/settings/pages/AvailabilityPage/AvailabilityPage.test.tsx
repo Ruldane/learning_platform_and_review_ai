@@ -1,8 +1,8 @@
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { renderRoutes } from "@/test/renderRoutes";
-import { refusedFieldsResponse, settingsApi } from "@/test/settingsApi";
+import { closedGate, refusedFieldsResponse, settingsApi } from "@/test/settingsApi";
 import { server } from "@/test/server";
 import { settingsFixture } from "../../fixtures";
 import { AvailabilityPage } from "./AvailabilityPage";
@@ -14,8 +14,8 @@ const stored = {
   excluded_domains: ["pinterest.com"],
 };
 
-function setup(put?: Parameters<typeof settingsApi>[0]["put"]) {
-  const api = settingsApi({ settings: stored, put });
+function setup(put?: Parameters<typeof settingsApi>[0]["put"], gate?: Promise<void>) {
+  const api = settingsApi({ settings: stored, put, gate });
   server.use(...api.handlers);
   const view = renderRoutes(
     [{ path: "/reglages/disponibilite", element: <AvailabilityPage /> }],
@@ -79,7 +79,7 @@ describe("AvailabilityPage", () => {
     await user.clear(delay("Deuxième relance"));
     await user.type(delay("Deuxième relance"), "7");
     expect(delay("Deuxième relance")).toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByText(/strictement croissants/)).toHaveClass("text-destructive");
+    expect(screen.getByText(/^Erreur : .*strictement croissants/)).toHaveClass("text-destructive");
     expect(save()).toHaveAttribute("aria-disabled", "true");
 
     await user.clear(delay("Deuxième relance"));
@@ -98,7 +98,7 @@ describe("AvailabilityPage", () => {
     await screen.findByRole("heading", { level: 1, name: "Disponibilité et rythme" });
     await user.clear(screen.getByLabelText("Bloc du week-end, minimum (minutes)"));
     await user.type(screen.getByLabelText("Bloc du week-end, minimum (minutes)"), "500");
-    expect(screen.getByText("Le minimum du week-end ne dépasse pas son maximum.")).toBeVisible();
+    expect(screen.getByText(/doit rester inférieur ou égal à son maximum/)).toBeVisible();
     expect(save()).toHaveAttribute("aria-disabled", "true");
     await user.clear(weekday());
     await user.type(weekday(), "1500");
@@ -116,8 +116,11 @@ describe("AvailabilityPage", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Requête invalide");
     expect(weekday()).toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByText("Le serveur a refusé cette valeur : vérifie-la.")).toBeInTheDocument();
-    // la valeur refusée n'est écrite nulle part dans la page (seulement dans le champ qu'on a saisi)
+    expect(
+      screen.getByText("Erreur : Le serveur a refusé cette valeur : vérifie-la."),
+    ).toBeInTheDocument();
+    // la valeur refusée n'est écrite nulle part dans la page (seulement dans le champ qu'on a
+    // saisi)
     expect(document.body).not.toHaveTextContent("777");
     expect(weekday()).toHaveValue(777);
     expect(screen.getByLabelText("Tours de débat")).toHaveAttribute("aria-invalid", "false");
@@ -142,6 +145,39 @@ describe("AvailabilityPage", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Panne du serveur.");
     expect(weekday()).toHaveValue(45);
     expect(weekday()).toHaveAttribute("aria-invalid", "false");
+  });
+
+  it("keeps the focus on the save button after saving, after a refusal and when blocked", async () => {
+    const { user } = setup();
+    await screen.findByRole("heading", { level: 1, name: "Disponibilité et rythme" });
+    await user.click(save()); // rien à enregistrer : bloqué, le focus reste sur le bouton
+    expect(save()).toHaveFocus();
+    expect(save()).toHaveAccessibleDescription("Rien à enregistrer.");
+    await user.clear(weekday());
+    await user.type(weekday(), "99");
+    await user.click(save());
+    await screen.findByText("Réglages enregistrés.");
+    expect(save()).toHaveFocus();
+    await user.clear(weekday());
+    await user.type(weekday(), "1500");
+    await user.click(save());
+    expect(save()).toHaveFocus();
+    expect(save()).toHaveAccessibleDescription("Corrige les champs signalés avant d'enregistrer.");
+  });
+
+  it("keeps what is typed while the save is running", async () => {
+    const held = closedGate();
+    const { user, puts } = setup(undefined, held.promise);
+    await screen.findByRole("heading", { level: 1, name: "Disponibilité et rythme" });
+    await user.clear(weekday());
+    await user.type(weekday(), "90");
+    await user.click(save());
+    await waitFor(() => expect(puts).toHaveLength(1)); // l'envoi est en cours, tenu par la porte
+    await user.type(weekday(), "5"); // pendant l'envoi : 905
+    held.open();
+    await screen.findByText("Modifications non enregistrées.");
+    expect(puts[0]).toMatchObject({ availability: { weekday_minutes: 90 } });
+    expect(weekday()).toHaveValue(905);
   });
 
   it("keeps a lesson language the list does not know", async () => {

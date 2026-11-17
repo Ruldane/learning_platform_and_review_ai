@@ -128,7 +128,8 @@ describe("AgentLogPage", () => {
   });
 
   it("coming back to a filter already seen starts again from the first page", async () => {
-    // `gcTime` par défaut (celui de la production) : le client de test le met à zéro et cacherait le défaut.
+    // `gcTime` par défaut (celui de la production) : le client de test le met à zéro et cacherait
+    // le défaut.
     const api = costsApi();
     server.use(...api.handlers);
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });

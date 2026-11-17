@@ -28,9 +28,10 @@ export function AgentOverridesPanel({ settings, providers }: AgentOverridesPanel
   }
   if (!agents.data) return <LoadingState label={t("settings.agents.loading")} />;
 
-  const overrides = settings.agent_overrides ?? {};
+  const overrides = actions.overrides();
   const known = new Set(agents.data.map((agent) => agent.name));
-  // Une surcharge d'un agent que le serveur ne connaît plus reste visible, pour qu'on puisse la retirer.
+  // Une surcharge d'un agent que le serveur ne connaît plus reste visible, pour qu'on puisse la
+  // retirer.
   const rows: AgentRow[] = [
     ...agents.data,
     ...Object.keys(overrides)
@@ -51,6 +52,9 @@ export function AgentOverridesPanel({ settings, providers }: AgentOverridesPanel
     <div className="flex flex-col gap-3">
       <p className="text-muted-foreground">{t("settings.agents.intro")}</p>
       {message ? <InlineError message={message} /> : null}
+      <p role="status" className="text-sm text-muted-foreground empty:sr-only">
+        {actions.saved ? t("settings.agents.saved") : null}
+      </p>
       <AgentOverridesTable
         agents={rows}
         overrides={overrides}

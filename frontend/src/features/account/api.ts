@@ -4,7 +4,8 @@ import type { Me } from "./types";
 
 /**
  * L'adresse de l'archive : un lien plein, jamais un appel `fetch` (le navigateur télécharge le
- * zip et prend son nom dans l'en-tête `Content-Disposition` du back, `tremplin-export-AAAAMMJJ.zip`).
+ * zip et prend son nom dans l'en-tête `Content-Disposition` du back : `tremplin-export-
+ * AAAAMMJJ.zip`).
  */
 export const exportUrl = `${apiBaseUrl}/api/v1/account/export`;
 

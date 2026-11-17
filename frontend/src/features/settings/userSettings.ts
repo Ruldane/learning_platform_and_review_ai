@@ -10,6 +10,12 @@ import type {
 } from "./types";
 
 /**
+ * Chaque champ de `T` est écrit (même ceux que le contrat laisse facultatifs), valeur ou
+ * `undefined`.
+ */
+type EveryField<T> = { [K in keyof Required<T>]: T[K] };
+
+/**
  * Corps du `PUT /settings` : remplacement complet. On choisit un à un les champs de `UserSettings`
  * (jamais de `...settings`) : `vision_enabled` et `weekly_budget_minutes` sont calculés par le
  * back et ne font pas partie du contrat d'écriture.
@@ -43,10 +49,14 @@ export function buildUserSettings(current: SettingsOut, tiers: TierChoices): Use
     tiers,
     timezone: current.timezone,
     weekly_review: current.weekly_review,
-  };
+    // Un champ ajouté au contrat et oublié ici ne compile plus (focus n° 5).
+  } satisfies EveryField<UserSettings>;
 }
 
-/** Les réglages de recherche tels que les éditent les composants (valeurs par défaut du back si absents). */
+/**
+ * Les réglages de recherche tels que les éditent les composants (valeurs par défaut du back si
+ * absents).
+ */
 export function toSearchSettingsView(settings: SettingsOut): SearchSettingsView {
   return {
     languages: settings.search_languages ?? ["fr", "en"],
@@ -88,18 +98,30 @@ export function withStyleGuide(current: SettingsOut, styleGuide: string): UserSe
 }
 
 /**
+ * Corps du `PUT /settings` après plusieurs choix de modèle d'agents d'un coup (`changes` : l'agent
+ * vers son modèle, ou `null` pour le rendre à son niveau) : les autres surcharges et tous les
+ * autres réglages sont repris.
+ */
+export function withAgentOverrides(
+  current: SettingsOut,
+  changes: Record<string, ModelChoice | null>,
+): UserSettings {
+  const overrides = { ...current.agent_overrides };
+  for (const [agent, choice] of Object.entries(changes)) {
+    if (choice) overrides[agent] = choice;
+    else delete overrides[agent];
+  }
+  return { ...buildUserSettings(current, readTiers(current.tiers)), agent_overrides: overrides };
+}
+
+/**
  * Corps du `PUT /settings` après le choix d'un modèle pour un agent (`choice`), ou son retour au
- * niveau par défaut (`null`) : les autres surcharges et tous les autres réglages sont repris.
+ * niveau (`null`).
  */
 export function withAgentOverride(
   current: SettingsOut,
   agent: string,
   choice: ModelChoice | null,
 ): UserSettings {
-  const kept = Object.entries(current.agent_overrides ?? {}).filter(([name]) => name !== agent);
-  const overrides = choice ? [...kept, [agent, choice] as const] : kept;
-  return {
-    ...buildUserSettings(current, readTiers(current.tiers)),
-    agent_overrides: Object.fromEntries(overrides),
-  };
+  return withAgentOverrides(current, { [agent]: choice });
 }

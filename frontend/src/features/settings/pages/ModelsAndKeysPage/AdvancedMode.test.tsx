@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { http, HttpResponse } from "msw";
 import { API } from "@/test/councilApi";
 import { renderRoutes } from "@/test/renderRoutes";
-import { refusedFieldsResponse, settingsApi } from "@/test/settingsApi";
+import { closedGate, refusedFieldsResponse, settingsApi } from "@/test/settingsApi";
 import { server } from "@/test/server";
 import { agentsFixture, apiKeysFixture, modelsFixture, settingsFixture } from "../../fixtures";
 import { ModelsAndKeysPage } from "./ModelsAndKeysPage";
@@ -14,6 +14,7 @@ function setup(
   over: Record<string, unknown> = {},
   put?: Parameters<typeof settingsApi>[0]["put"],
   agents: object[] = agentsFixture,
+  gate?: Promise<void>,
 ) {
   const api = settingsApi({
     settings: { ...settingsFixture, ...over },
@@ -21,6 +22,7 @@ function setup(
     keys: apiKeysFixture,
     agents,
     put,
+    gate,
   });
   server.use(...api.handlers);
   const view = renderRoutes(
@@ -90,6 +92,49 @@ describe("advanced mode of the models page", () => {
     expect(puts[1]).toMatchObject({
       agent_overrides: { tutor: { provider: "openai", model: "gpt-6.1-sol" } },
     });
+  });
+
+  it("replays a change made while saving, shows it at once, and says it is saved", async () => {
+    const held = closedGate();
+    const { puts, user } = setup({}, undefined, agentsFixture, held.promise);
+    await showAdvanced(user);
+    await user.selectOptions(provider("Tuteur"), "openai");
+    // sans attendre la réponse : le modèle suivant, puis un autre agent
+    expect(provider("Tuteur")).toHaveValue("openai"); // pas de retour arrière pendant l'envoi
+    await user.selectOptions(model("Tuteur"), "gpt-6.1-sol");
+    await user.selectOptions(provider("Stratège"), "openai");
+    expect(model("Tuteur")).toHaveValue("gpt-6.1-sol");
+    expect(screen.queryByText("Modèles enregistrés.")).not.toBeInTheDocument();
+    expect(puts).toHaveLength(1); // un seul envoi à la fois : les deux autres choix attendent
+
+    held.open();
+    await screen.findByText("Modèles enregistrés.");
+    expect(puts).toHaveLength(2); // le premier choix, puis les deux suivants d'un coup
+    expect(puts[0]!.agent_overrides).toEqual({ tutor: openai });
+    expect(puts[1]!.agent_overrides).toEqual({
+      tutor: { provider: "openai", model: "gpt-6.1-sol" },
+      strategist: openai,
+    });
+    expect(provider("Tuteur")).toHaveValue("openai");
+    expect(model("Tuteur")).toHaveValue("gpt-6.1-sol");
+  });
+
+  it("falls back to what the server holds when a replayed change is refused", async () => {
+    let calls = 0;
+    const held = closedGate();
+    const { user } = setup(
+      {},
+      () => (++calls === 2 ? refusedFieldsResponse("agent_overrides") : undefined),
+      agentsFixture,
+      held.promise,
+    );
+    await showAdvanced(user);
+    await user.selectOptions(provider("Tuteur"), "openai");
+    await user.selectOptions(model("Tuteur"), "gpt-6.1-sol");
+    held.open();
+    expect(await screen.findByRole("alert")).toHaveTextContent("n'existe plus");
+    await waitFor(() => expect(model("Tuteur")).toHaveValue("gpt-6-luna"));
+    expect(screen.queryByText("Modèles enregistrés.")).not.toBeInTheDocument();
   });
 
   it("removing an override returns to tier", async () => {
