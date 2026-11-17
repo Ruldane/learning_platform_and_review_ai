@@ -24,7 +24,8 @@ export const settings = {
     navLabel: "Disponibilité et rythme",
     title: "Disponibilité et rythme",
     intro:
-      "Dis combien de temps tu peux consacrer à l'apprentissage, quand tu veux ton brief et à quel rythme relancer tes candidatures.",
+      "Dis combien de temps tu peux consacrer à l'apprentissage, quand tu veux ton brief et à " +
+      "quel rythme relancer tes candidatures.",
     loading: "Chargement des réglages de disponibilité…",
     sections: {
       time: "Temps disponible",
@@ -60,7 +61,8 @@ export const settings = {
     navLabel: "Style",
     title: "Style",
     intro:
-      "Décris ta façon d'écrire : les agents s'en servent pour rédiger tes leçons, tes lettres et tes messages.",
+      "Décris ta façon d'écrire : les agents s'en servent pour rédiger tes leçons, tes lettres " +
+      "et tes messages.",
     loading: "Chargement du guide de style…",
     label: "Guide de style personnel",
     hint: "Ton, formules à garder ou à éviter, longueur des phrases… Vide : aucun style imposé.",
@@ -80,7 +82,8 @@ export const settings = {
   agents: {
     title: "Modèle par agent",
     intro:
-      "Un agent sans choix suit le modèle de son niveau. Un modèle choisi ici l'emporte, quel que soit le niveau demandé.",
+      "Un agent sans choix suit le modèle de son niveau. Un modèle choisi ici l'emporte, quel " +
+      "que soit le niveau demandé.",
     loading: "Chargement des agents…",
     empty: "Aucun agent n'est proposé pour le moment.",
     columns: { agent: "Agent", tier: "Niveau", model: "Modèle" },

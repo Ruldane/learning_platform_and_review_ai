@@ -165,7 +165,7 @@ describe("advanced mode of the models page", () => {
     expect(puts[0]!.agent_overrides).toEqual({ strategist: { provider: "glm", model: "glm-5.3" } });
   });
 
-  it("says an agent no longer exists when the server refuses the override, without echo", async () => {
+  it("says an agent no longer exists when the server refuses its override, no echo", async () => {
     const { user } = setup({}, () => refusedFieldsResponse("agent_overrides"));
     await showAdvanced(user);
     await user.selectOptions(provider("Tuteur"), "openai");

@@ -38,5 +38,5 @@ export const useCaptureDialog = create<CaptureDialogState>((set) => ({
   setTextDraft: (textDraft) => set({ textDraft }),
 }));
 
-// « Tout supprimer » : ni capture en cours ni brouillon de l'espace effacé ne reste dans le dialogue.
+// « Tout supprimer » : ni capture en cours ni brouillon de l'espace effacé ne reste au dialogue.
 onLocalReset(() => useCaptureDialog.getState().restart());

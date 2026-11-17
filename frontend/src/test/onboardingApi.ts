@@ -21,7 +21,7 @@ export const embeddingOut = (percent: number | null, present = false, detail = "
 });
 
 interface OnboardingApiOptions {
-  /** Les réglages lus : le premier état du faux serveur (`onboarding_done: false` pour un compte neuf). */
+  /** Les réglages lus : le premier état du faux serveur (`onboarding_done: false`, compte neuf). */
   settings: Body;
   /** Les clés lues : le premier état, qu'un enregistrement fait évoluer. */
   keys?: Body[];

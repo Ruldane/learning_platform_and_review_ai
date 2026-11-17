@@ -29,7 +29,7 @@ vi.mock("../../registry", async (importOriginal) => {
 });
 
 describe("AppLayout", () => {
-  // Les portes lisent `me` (connexion), puis les réglages (premier lancement) avant la mise en page.
+  // Les portes lisent `me` (connexion), puis les réglages (premier lancement), avant la page.
   beforeEach(() =>
     server.use(
       ...authApi({ me: camille }).handlers,

@@ -1,7 +1,8 @@
+import { useEffect, useRef, useState } from "react";
 import type { MessageKey } from "@/shared/i18n/t";
 import { t } from "@/shared/i18n/t";
 
-/** Forme du rapport de `GET /health` (types générés ; non importés, la règle de découpage l'interdit). */
+/** Forme du rapport de `GET /health` (types générés ; non importés : la règle de découpage). */
 interface HealthReportView {
   status: "ok" | "degraded" | "down";
   checks: Record<string, { ok: boolean; detail: string }>;
@@ -29,12 +30,40 @@ function stateText(service: string, ok: boolean): string {
   return service === "llm" ? t("onboarding.health.keyLater") : t("onboarding.health.down");
 }
 
+/** Les services qui répondent de nouveau depuis la lecture d'avant, dits d'un seul texte. */
+function useRecovered(report?: HealthReportView): string {
+  const previous = useRef<Record<string, boolean>>({});
+  const [text, setText] = useState("");
+  useEffect(() => {
+    const checks = Object.entries(report?.checks ?? {});
+    const back = checks.filter(([name, { ok }]) => ok && previous.current[name] === false);
+    previous.current = Object.fromEntries(checks.map(([name, { ok }]) => [name, ok]));
+    if (back.length > 0) {
+      setText(
+        t("onboarding.health.recovered", {
+          services: back.map(([name]) => label(name)).join(", "),
+        }),
+      );
+    }
+  }, [report]);
+  return text;
+}
+
 /**
  * Un état écrit par service (jamais la couleur seule). Les services inconnus du front gardent
- * leur nom brut ; le détail du back (français, sans secret) suit pour un service en panne.
+ * leur nom brut ; le détail du back (français, sans secret) suit pour un service en panne. Une
+ * seule zone `status`, toujours dans la page : son texte ne change qu'aux moments utiles (lecture
+ * impossible, vérification en cours, service revenu), pas à chaque relecture.
  */
 export function ServiceChecklist({ report, isLoading, isError }: ServiceChecklistProps) {
   const checks = Object.entries(report?.checks ?? {});
+  const recovered = useRecovered(report);
+  const tone = isError ? "text-destructive" : "text-muted-foreground";
+  const checking = isLoading && checks.length === 0 && !isError;
+  const announcement = (() => {
+    if (isError) return t("onboarding.health.unreachable");
+    return checking ? t("onboarding.health.checking") : recovered;
+  })();
   return (
     <div className="flex flex-col gap-2">
       {checks.length > 0 ? (
@@ -49,16 +78,9 @@ export function ServiceChecklist({ report, isLoading, isError }: ServiceChecklis
           ))}
         </ul>
       ) : null}
-      {isError ? (
-        <p role="status" className="text-sm text-destructive">
-          {t("onboarding.health.unreachable")}
-        </p>
-      ) : null}
-      {isLoading && checks.length === 0 && !isError ? (
-        <p role="status" className="text-sm text-muted-foreground">
-          {t("onboarding.health.checking")}
-        </p>
-      ) : null}
+      <p role="status" className={`text-sm empty:sr-only ${tone}`}>
+        {announcement}
+      </p>
     </div>
   );
 }

@@ -1,7 +1,8 @@
-import { screen } from "@testing-library/react";
-import { Outlet } from "react-router";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { createMemoryRouter, Outlet, RouterProvider } from "react-router";
 import { onboardingApi } from "@/test/onboardingApi";
-import { renderRoutes } from "@/test/renderRoutes";
+import { createQueryWrapper, createTestQueryClient } from "@/test/queryWrapper";
 import { server } from "@/test/server";
 import { apiKeysFixture, settingsFixture } from "../../fixtures";
 import { OnboardingGate } from "../../OnboardingGate";
@@ -25,10 +26,11 @@ export const TITLES = [
 export const WEEKDAY = "Minutes par jour, du lundi au vendredi";
 
 /** La page derrière la porte du premier lancement, avec un accueil et une page de réglages. */
-export function setup(over: Partial<Parameters<typeof onboardingApi>[0]> = {}) {
+export function setup(over: Partial<Parameters<typeof onboardingApi>[0]> = {}, state?: unknown) {
   const api = onboardingApi({ settings: fresh, keys: noKey, ...over });
   server.use(...api.handlers);
-  const view = renderRoutes(
+  const client = createTestQueryClient();
+  const router = createMemoryRouter(
     [
       {
         path: "/",
@@ -44,9 +46,15 @@ export function setup(over: Partial<Parameters<typeof onboardingApi>[0]> = {}) {
         ],
       },
     ],
-    "/bienvenue",
+    { initialEntries: [{ pathname: "/bienvenue", state }] },
   );
-  return { ...api, ...view };
+  const Wrapper = createQueryWrapper(client);
+  render(
+    <Wrapper>
+      <RouterProvider router={router} />
+    </Wrapper>,
+  );
+  return { ...api, client, router, user: userEvent.setup() };
 }
 
 type User = ReturnType<typeof setup>["user"];

@@ -31,6 +31,32 @@ describe("ServiceChecklist", () => {
     expect(screen.queryByRole("list")).toBeNull();
   });
 
+  it("keeps one status zone from the start, empty until something is worth saying", () => {
+    const { rerender } = render(<ServiceChecklist isLoading={false} isError={false} />);
+    const zone = screen.getByRole("status");
+    expect(zone).toBeEmptyDOMElement();
+    rerender(<ServiceChecklist isLoading isError={false} />);
+    expect(screen.getByRole("status")).toBe(zone);
+    expect(zone).toHaveTextContent("Vérification des services…");
+    rerender(<ServiceChecklist report={report} isLoading={false} isError />);
+    expect(screen.getByRole("status")).toBe(zone);
+    expect(zone).toHaveTextContent("Impossible de lire l'état des services");
+    expect(screen.getAllByRole("status")).toHaveLength(1);
+  });
+
+  it("announces a service that comes back, in the same zone", () => {
+    const down = { status: "degraded" as const, checks: { qdrant: report.checks.qdrant } };
+    const up = { status: "ok" as const, checks: { qdrant: { ok: true, detail: "Disponible." } } };
+    const { rerender } = render(
+      <ServiceChecklist report={down} isLoading={false} isError={false} />,
+    );
+    const zone = screen.getByRole("status");
+    expect(zone).toBeEmptyDOMElement();
+    rerender(<ServiceChecklist report={up} isLoading={false} isError={false} />);
+    expect(screen.getByRole("status")).toBe(zone);
+    expect(zone).toHaveTextContent("Mémoire vectorielle (Qdrant) : répond de nouveau.");
+  });
+
   it("says the server cannot be read, and keeps the last report it had", () => {
     const { rerender } = render(<ServiceChecklist isLoading={false} isError />);
     expect(screen.getByRole("status")).toHaveTextContent("Impossible de lire l'état des services");

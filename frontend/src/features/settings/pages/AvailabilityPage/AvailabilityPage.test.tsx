@@ -147,7 +147,7 @@ describe("AvailabilityPage", () => {
     expect(weekday()).toHaveAttribute("aria-invalid", "false");
   });
 
-  it("keeps the focus on the save button after saving, after a refusal and when blocked", async () => {
+  it("keeps the focus on the save button after saving, a refusal and when blocked", async () => {
     const { user } = setup();
     await screen.findByRole("heading", { level: 1, name: "Disponibilité et rythme" });
     await user.click(save()); // rien à enregistrer : bloqué, le focus reste sur le bouton

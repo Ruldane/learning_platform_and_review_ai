@@ -40,7 +40,8 @@ export const costs = {
   report: {
     title: "Coûts",
     intro:
-      "Ce que coûtent les appels aux modèles : jetons et coût estimé, jour par jour, par feature, par agent et par modèle. Les prix sont ceux de l'appel.",
+      "Ce que coûtent les appels aux modèles : jetons et coût estimé, jour par jour, par " +
+      "feature, par agent et par modèle. Les prix sont ceux de l'appel.",
     loading: "Chargement des coûts…",
     window: { label: "Période", option: "{days} jours" },
     empty: {
@@ -70,7 +71,8 @@ export const costs = {
   log: {
     title: "Journal des agents",
     intro:
-      "Chaque appel à un modèle, du plus récent au plus ancien : qui l'a fait, pour quel parcours, avec quel modèle et pour quel coût. Le contenu des échanges n'est pas gardé.",
+      "Chaque appel à un modèle, du plus récent au plus ancien : qui l'a fait, pour quel " +
+      "parcours, avec quel modèle et pour quel coût. Le contenu des échanges n'est pas gardé.",
     loading: "Chargement du journal…",
     filters: {
       label: "Filtres du journal",

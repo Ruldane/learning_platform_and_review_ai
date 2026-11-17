@@ -40,7 +40,7 @@ describe("DataPage", () => {
   it("422 shows field error", async () => {
     const { user, router } = setup("local", { delete: "refused" });
     await confirmAndDelete(user);
-    const message = await screen.findByRole("alert");
+    const message = await screen.findByTestId("delete-failure");
     expect(message).toHaveTextContent("Le mot de confirmation n'est pas bon : tape SUPPRIMER");
     expect(screen.getByLabelText("Tape SUPPRIMER pour confirmer")).toHaveAttribute(
       "aria-invalid",
@@ -52,14 +52,14 @@ describe("DataPage", () => {
   it("shows its own wording for a refused confirmation, never the server text", async () => {
     const { user } = setup("local", { delete: "refused" });
     await confirmAndDelete(user);
-    const message = await screen.findByRole("alert");
+    const message = await screen.findByTestId("delete-failure");
     expect(message.textContent).not.toContain("La confirmation n'est pas exacte.");
   });
 
   it("focus moves to result message", async () => {
     const { user } = setup("local", { delete: "down" });
     await confirmAndDelete(user);
-    const message = await screen.findByRole("alert");
+    const message = await screen.findByTestId("delete-failure");
     expect(message).toHaveTextContent("La mémoire ne répond pas.");
     expect(message).toHaveTextContent("Tu peux réessayer");
     await waitFor(() => expect(message).toHaveFocus());
@@ -72,7 +72,7 @@ describe("DataPage", () => {
   it("another 422 code is a plain error, not a field error", async () => {
     const { user } = setup("local", { delete: "wrong-code" });
     await confirmAndDelete(user);
-    const message = await screen.findByRole("alert");
+    const message = await screen.findByTestId("delete-failure");
     expect(message).toHaveTextContent("Requête refusée.");
     expect(screen.getByLabelText("Tape SUPPRIMER pour confirmer")).not.toHaveAttribute(
       "aria-invalid",

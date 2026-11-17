@@ -1,6 +1,6 @@
 import { t } from "@/shared/i18n/t";
 
-/** Forme de `GET /health/embedding` (types générés ; non importés, la règle de découpage l'interdit). */
+/** Forme de `GET /health/embedding` (types générés ; non importés : la règle de découpage). */
 interface EmbeddingProgressView {
   model: string;
   present: boolean;
@@ -24,14 +24,27 @@ function summary({ model, present, percent }: EmbeddingProgressView): string {
 
 /**
  * La progression du modèle d'embeddings : la phrase (« bge-m3 : 42 % ») dit l'état, la barre le
- * montre. Une taille encore inconnue donne une barre sans valeur et le détail du serveur.
+ * montre. Une taille encore inconnue donne une barre sans valeur et le détail du serveur. La zone
+ * `status` est toujours dans la page : elle ne dit que ce qui vaut une annonce (« prêt », ou la
+ * lecture impossible), pas chaque pourcentage relu toutes les 3 s.
  */
 export function EmbeddingProgressBar({ progress, isError }: EmbeddingProgressBarProps) {
+  const ready = progress?.present === true;
+  const announcement = (() => {
+    if (isError) return t("onboarding.embedding.unreadable");
+    return progress && ready ? summary(progress) : "";
+  })();
   return (
     <div className="flex flex-col gap-2">
+      <p
+        role="status"
+        className={`text-sm empty:sr-only ${isError ? "text-destructive" : "font-medium"}`}
+      >
+        {announcement}
+      </p>
       {progress ? (
         <>
-          <p className="text-sm font-medium">{summary(progress)}</p>
+          {ready ? null : <p className="text-sm font-medium">{summary(progress)}</p>}
           <progress
             aria-label={t("onboarding.embedding.label")}
             max={100}
@@ -45,11 +58,6 @@ export function EmbeddingProgressBar({ progress, isError }: EmbeddingProgressBar
             <p className="text-sm text-muted-foreground">{t("onboarding.embedding.hint")}</p>
           ) : null}
         </>
-      ) : null}
-      {isError ? (
-        <p role="status" className="text-sm text-destructive">
-          {t("onboarding.embedding.unreadable")}
-        </p>
       ) : null}
     </div>
   );

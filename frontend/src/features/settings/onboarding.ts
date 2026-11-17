@@ -12,7 +12,7 @@ export type OnboardingAvailability = Pick<
 /** Les cinq étapes du premier lancement (SPEC 15.5, P20). */
 export const STEP_COUNT = 5;
 
-/** L'adresse du premier lancement : la porte n'y renvoie pas, la page n'est pas dans la navigation. */
+/** L'adresse du premier lancement : la porte n'y renvoie pas, la page est hors de la navigation. */
 export const WELCOME_PATH = "/bienvenue";
 
 /**

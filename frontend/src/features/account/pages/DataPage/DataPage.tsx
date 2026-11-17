@@ -23,7 +23,7 @@ function refusesConfirmation(error: ApiError): boolean {
  * Le texte d'un échec de suppression. Un refus de la confirmation a son propre texte (jamais la
  * saisie, même renvoyée par le serveur) ; toute autre erreur garde le message du back, puis dit ce
  * qui est sûr : « rien n'a été supprimé » quand la suppression n'est pas partie (mode illisible)
- * ou s'est arrêtée avant d'effacer quoi que ce soit, sinon qu'elle reprend là où elle s'est arrêtée.
+ * ou s'est arrêtée avant d'effacer quoi que ce soit, sinon qu'elle reprend où elle s'est arrêtée.
  */
 function describeFailure(error: unknown, sent: boolean): DeleteFailure {
   if (error instanceof ApiError && refusesConfirmation(error)) {

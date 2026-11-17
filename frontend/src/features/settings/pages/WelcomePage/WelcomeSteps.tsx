@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { t } from "@/shared/i18n/t";
 import { OnboardingSteps } from "../../components/OnboardingSteps";
+import { useApiKeys } from "../../hooks/useApiKeys";
+import { useCvDocuments } from "../../hooks/useCvDocuments";
 import { useFinishOnboarding } from "../../hooks/useFinishOnboarding";
 import { useImportProfile } from "../../hooks/useImportProfile";
 import { useOnboardingAvailability } from "../../hooks/useOnboardingAvailability";
@@ -24,14 +26,24 @@ function nextLabel(step: number, hasKey: boolean, imported: boolean): string {
   return t("onboarding.steps.next");
 }
 
-/** Les cinq étapes du premier lancement ; l'étape et les durées saisies vivent ici. */
+/**
+ * Les cinq étapes du premier lancement ; l'étape, les durées saisies et les PDF choisis vivent
+ * ici, donc survivent au changement d'étape. Une clé existe dès qu'un fournisseur en a une (la
+ * liste est lue dès l'ouverture de la page, l'étape 3 la partage).
+ */
 export function WelcomeSteps({ settings }: { settings: SettingsOut }) {
   const [step, setStep] = useState(1);
-  const [hasKey, setHasKey] = useState(false);
+  const hasKey = useApiKeys().data?.some((entry) => entry.source !== null) ?? false;
+  const documents = useCvDocuments();
   const importer = useImportProfile();
   const finisher = useFinishOnboarding();
   const availability = useOnboardingAvailability(settings, finisher.failure);
   const last = step === STEP_COUNT;
+  // Un échec d'enregistrement ne suit pas à l'étape suivante : il parlait de celle d'avant.
+  const goTo = (target: number | ((current: number) => number)) => {
+    finisher.reset();
+    setStep(target);
+  };
   return (
     <OnboardingSteps
       step={step}
@@ -41,15 +53,17 @@ export function WelcomeSteps({ settings }: { settings: SettingsOut }) {
       nextBlockedReason={last && availability.invalid ? t("onboarding.steps.blocked") : undefined}
       busy={finisher.pending}
       error={finisher.error}
-      onPrevious={() => setStep((current) => current - 1)}
+      onPrevious={() => goTo((current) => current - 1)}
       onNext={() =>
-        last ? void finisher.finish(settings, availability.values) : setStep((c) => c + 1)
+        last ? void finisher.finish(settings, availability.values) : goTo((current) => current + 1)
       }
       onSkipAll={() => void finisher.finish(settings)}
     >
       <StepBody
         step={step}
-        onKeyConfigured={setHasKey}
+        hasKey={hasKey}
+        documents={documents}
+        onGoToKey={() => goTo(3)}
         importer={importer}
         availability={{
           ...availability,

@@ -81,7 +81,7 @@ describe("RegenerateDrafts", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Panne du serveur.");
   });
 
-  it("keeps the same status zone from the writing to the message, so the message is announced", () => {
+  it("keeps the same status zone from the writing to the message (so it is announced)", () => {
     const { container, rerender } = render(
       <RegenerateDrafts
         regeneration={regeneration({ sessionId: "s1" })}

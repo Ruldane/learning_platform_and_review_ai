@@ -7,7 +7,7 @@ import { fresh, TITLES } from "./welcomeTestkit";
 import { WelcomePage } from "./WelcomePage";
 
 describe("WelcomePage without its gate", () => {
-  it("says the settings cannot be read, and after Réessayer the title takes the focus", async () => {
+  it("says the settings cannot be read, and after Réessayer the title has the focus", async () => {
     const api = onboardingApi({ settings: fresh, settingsFailures: 1 });
     server.use(...api.handlers);
     const { user } = renderRoutes([{ path: "/bienvenue", element: <WelcomePage /> }], "/bienvenue");

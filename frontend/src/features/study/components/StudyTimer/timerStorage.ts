@@ -55,7 +55,7 @@ export function clearTimer(studyId: string): void {
   }
 }
 
-/** « Tout supprimer » : aucun minuteur d'une session de l'espace effacé ne reste dans le navigateur. */
+/** « Tout supprimer » : aucun minuteur d'une session de l'espace effacé ne reste au navigateur. */
 function clearAllTimers(): void {
   try {
     const keys = Array.from({ length: window.sessionStorage.length }, (_, index) =>

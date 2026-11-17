@@ -29,7 +29,8 @@ export const onboarding = {
   },
   health: {
     intro:
-      "Tremplin s'appuie sur quelques services locaux. Leur état se met à jour tout seul, tu n'as rien à faire ici.",
+      "Tremplin s'appuie sur quelques services locaux. Leur état se met à jour tout seul, tu " +
+      "n'as rien à faire ici.",
     list: "État des services",
     checking: "Vérification des services…",
     unreachable: "Impossible de lire l'état des services : nouvel essai automatique.",
@@ -43,6 +44,7 @@ export const onboarding = {
       searxng: "Recherche web (SearXNG)",
     },
     keyLater: "à configurer à l'étape 3",
+    recovered: "{services} : répond de nouveau.",
   },
   embedding: {
     label: "Modèle d'embeddings",
@@ -80,7 +82,8 @@ export const onboarding = {
   },
   key: {
     intro:
-      "La clé d'un fournisseur envoie tes prompts chez lui (étape précédente). Une seule clé suffit pour faire tourner toute l'application.",
+      "La clé d'un fournisseur envoie tes prompts chez lui (étape précédente). Une seule clé " +
+      "suffit pour faire tourner toute l'application.",
     provider: "Fournisseur",
     fromEnv:
       "Une clé est déjà fournie par le fichier .env ({providers}) : tu peux passer à la suite.",
@@ -90,19 +93,30 @@ export const onboarding = {
   },
   cv: {
     intro:
-      "Ton CV et ton profil LinkedIn (en PDF) servent à écrire ton profil maître. Tu peux passer cette étape et le faire plus tard dans Carrière.",
+      "Ton CV et ton profil LinkedIn (en PDF) servent à écrire ton profil maître. Tu peux " +
+      "passer cette étape et le faire plus tard dans Carrière.",
     privacy: "Leur texte part chez le fournisseur de modèle pour être lu.",
     cvLabel: "Ton CV (PDF, 10 Mo au plus)",
     linkedinLabel: "Ton profil LinkedIn (PDF, facultatif)",
     submit: "Importer mes documents",
     pending: "Envoi en cours…",
-    done: "Tes documents sont envoyés : Tremplin les lit en arrière-plan, tu retrouveras ton profil dans Carrière.",
+    done:
+      "Tes documents sont envoyés : Tremplin les lit en arrière-plan, " +
+      "tu retrouveras ton profil dans Carrière.",
     notPdf: "Ce fichier n'est pas un PDF : choisis un fichier .pdf.",
     tooBig: "Ce fichier dépasse 10 Mo : choisis un PDF plus léger.",
     needCv: "Choisis d'abord ton CV.",
+    needKey:
+      "Sans clé d'API, Tremplin ne peut pas lire tes documents : " +
+      "ajoute d'abord une clé à l'étape 3.",
+    goToKey: "Aller à l'étape de la clé",
+    chosen: "Fichier retenu : {name}",
+    notSent: "Rien n'est envoyé tant que tu n'as pas cliqué sur « Importer mes documents ».",
+    linkedinLeftOut: "Ton profil LinkedIn n'a pas été retenu : seul ton CV sera envoyé.",
   },
   availability: {
     intro:
-      "Dis combien de temps tu peux consacrer à l'apprentissage. Tu pourras l'ajuster à tout moment dans Réglages > Disponibilité et rythme.",
+      "Dis combien de temps tu peux consacrer à l'apprentissage. Tu pourras l'ajuster à tout " +
+      "moment dans Réglages > Disponibilité et rythme.",
   },
 } as const;

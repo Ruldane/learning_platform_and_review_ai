@@ -66,7 +66,7 @@ describe("StylePage", () => {
     expect(guide()).toHaveValue("Version A et B");
   });
 
-  it("keeps the focus on the save button, says why it is blocked, counts with separators", async () => {
+  it("keeps the focus on the save button, says why it is blocked, counts thousands", async () => {
     const { user } = setup();
     const button = () => screen.getByRole("button", { name: "Enregistrer" });
     await screen.findByRole("heading", { level: 1, name: "Style" });

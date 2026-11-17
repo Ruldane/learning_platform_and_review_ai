@@ -1,4 +1,4 @@
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createQueryWrapper } from "@/test/queryWrapper";
@@ -7,10 +7,11 @@ import { embeddingOut, onboardingApi } from "@/test/onboardingApi";
 import { server } from "@/test/server";
 import { useEmbeddingProgress } from "./useEmbeddingProgress";
 
+/** Seul le temps simulé avance, à la main : aucune horloge réelle ne s'y mêle. */
 const advance = (ms: number) => act(() => vi.advanceTimersByTimeAsync(ms));
 
 describe("useEmbeddingProgress", () => {
-  beforeEach(() => vi.useFakeTimers({ shouldAdvanceTime: true }));
+  beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 
   it("embedding progress polls until present, then stops reading", async () => {
@@ -20,14 +21,15 @@ describe("useEmbeddingProgress", () => {
     });
     server.use(...api.handlers);
     const { result } = renderHook(() => useEmbeddingProgress(), { wrapper: createQueryWrapper() });
-    await waitFor(() => expect(result.current.data?.percent).toBe(10));
+    await advance(0);
+    expect(result.current.data?.percent).toBe(10);
 
     await advance(3_100);
-    await waitFor(() => expect(result.current.data?.percent).toBe(42));
+    expect(result.current.data?.percent).toBe(42);
     expect(api.reads.embedding).toBe(2);
 
     await advance(3_100);
-    await waitFor(() => expect(result.current.data?.present).toBe(true));
+    expect(result.current.data?.present).toBe(true);
     expect(result.current.data?.percent).toBe(100);
 
     const settled = api.reads.embedding;
@@ -39,11 +41,12 @@ describe("useEmbeddingProgress", () => {
     const api = onboardingApi({ settings: {}, embedding: [embeddingOut(10)] });
     server.use(...api.handlers);
     renderHook(() => useEmbeddingProgress(), { wrapper: createQueryWrapper() });
-    await waitFor(() => expect(api.reads.embedding).toBe(1));
-    await advance(2_500);
+    await advance(0);
     expect(api.reads.embedding).toBe(1);
-    await advance(1_000);
-    await waitFor(() => expect(api.reads.embedding).toBe(2));
+    await advance(2_800);
+    expect(api.reads.embedding).toBe(1);
+    await advance(300);
+    expect(api.reads.embedding).toBe(2);
   });
 
   it("keeps reading after a failed read", async () => {
@@ -55,8 +58,9 @@ describe("useEmbeddingProgress", () => {
       }),
     );
     const { result } = renderHook(() => useEmbeddingProgress(), { wrapper: createQueryWrapper() });
-    await waitFor(() => expect(result.current.isError).toBe(true));
+    await advance(100);
+    expect(result.current.isError).toBe(true);
     await advance(3_100);
-    await waitFor(() => expect(result.current.data?.present).toBe(true));
+    expect(result.current.data?.present).toBe(true);
   });
 });

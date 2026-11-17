@@ -21,8 +21,8 @@ interface AuthGateProps {
  * La porte de connexion, présentationnelle : ouverte (`ready`), elle montre la mise en page ;
  * sans session elle mène à `/connexion` (un remplacement, jamais un empilement) ; en erreur ou en
  * chargement elle montre un état seul, sans la mise en page. Le conteneur reste le même élément :
- * « Réessayer » lui garde le focus ; si la relecture réussit, le focus passe au contenu de la mise en
- * page (`#contenu`, la cible du lien d'évitement) : le conteneur est démonté avec le bouton.
+ * « Réessayer » lui garde le focus ; si la relecture réussit, le focus passe au contenu de la
+ * mise en page (`#contenu`, cible du lien d'évitement) : le conteneur est démonté avec le bouton.
  */
 export function AuthGate({ status, message, onRetry, children }: AuthGateProps) {
   const holder = useRef<HTMLElement>(null);

@@ -11,8 +11,8 @@ import { WELCOME_PATH } from "./onboarding";
 const CONTENT_ID = "contenu";
 
 /**
- * La porte du premier lancement de la coquille (`shell.gate`) : tant que `onboarding_done` est faux,
- * toute page autre que `/bienvenue` mène à `/bienvenue` (un remplacement, jamais un empilement).
+ * La porte du premier lancement de la coquille (`shell.gate`) : tant que `onboarding_done` est
+ * faux, toute page autre que `/bienvenue` mène à `/bienvenue` (un remplacement, pas un empilement).
  * Les réglages sont lus avant la mise en page : en chargement ou en erreur, un état seul. Une
  * relecture ratée alors que les réglages sont déjà là ne ferme jamais l'application.
  *

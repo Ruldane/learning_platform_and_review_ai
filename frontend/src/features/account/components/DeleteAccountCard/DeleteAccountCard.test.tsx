@@ -88,7 +88,9 @@ describe("DeleteAccountCard", () => {
         onEdit={vi.fn()}
       />,
     );
-    expect(screen.getByRole("alert")).toHaveFocus();
+    expect(screen.getByTestId("delete-failure")).toHaveFocus();
+    // Lu une fois : le focus le porte, il n'est pas aussi une alerte.
+    expect(screen.queryByRole("alert")).toBeNull();
     expect(word()).not.toHaveAttribute("aria-invalid", "true");
   });
 });

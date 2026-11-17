@@ -62,7 +62,8 @@ describe("ProviderSelect", () => {
     const select = screen.getByRole("combobox");
     expect(select).toHaveValue("");
     expect(screen.getAllByRole("option")[0]).toHaveTextContent("Niveau par défaut");
-    expect(screen.getAllByRole("option")).toHaveLength(options.length + 1); // aucune option parasite
+    // aucune option parasite
+    expect(screen.getAllByRole("option")).toHaveLength(options.length + 1);
     await userEvent.setup().selectOptions(select, options[0]!.name);
     expect(onPick).toHaveBeenCalledWith(options[0]!.name);
   });

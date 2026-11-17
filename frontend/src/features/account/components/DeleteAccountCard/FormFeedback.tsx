@@ -17,7 +17,8 @@ interface FormFeedbackProps {
 
 /**
  * L'attente (annoncée : la zone `status` est toujours dans la page, seul son texte change) et
- * l'échec de la suppression.
+ * l'échec de la suppression : un paragraphe qui prend le focus, sans `role="alert"` (le lecteur
+ * d'écran le lit une fois, au focus, et non deux : par l'alerte puis par le focus).
  */
 export function FormFeedback({ pending, failure, messageId, messageRef }: FormFeedbackProps) {
   return (
@@ -26,7 +27,13 @@ export function FormFeedback({ pending, failure, messageId, messageRef }: FormFe
         {pending ? t("account.delete.waiting") : null}
       </p>
       {failure ? (
-        <p id={messageId} ref={messageRef} role="alert" tabIndex={-1} className={ALERT_CLASS}>
+        <p
+          id={messageId}
+          ref={messageRef}
+          data-testid="delete-failure"
+          tabIndex={-1}
+          className={ALERT_CLASS}
+        >
           {failure.message}
         </p>
       ) : null}

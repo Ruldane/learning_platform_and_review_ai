@@ -31,7 +31,7 @@ describe("AvailabilityFields", () => {
     );
   });
 
-  it("reports which duration changed, and says when the weekend block is out of order", async () => {
+  it("reports which duration changed, and says when the weekend block is inverted", async () => {
     const onChange = vi.fn();
     render(
       <AvailabilityFields

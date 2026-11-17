@@ -100,3 +100,17 @@ export interface AgentRow {
 
 /** Les surcharges de modèle par agent (nom de l'agent vers son modèle). */
 export type AgentOverrides = Record<string, ModelChoice | undefined>;
+
+/** Ce qu'un champ de fichier PDF a retenu : le fichier, ou la raison de son refus. */
+export interface PdfChoice {
+  file: File | null;
+  problem: string | null;
+}
+
+/** Les deux PDF de l'étape CV, gardés par la page (voir `useCvDocuments`). */
+export interface CvDocuments {
+  cv: PdfChoice;
+  linkedin: PdfChoice;
+  setCv: (choice: PdfChoice) => void;
+  setLinkedin: (choice: PdfChoice) => void;
+}

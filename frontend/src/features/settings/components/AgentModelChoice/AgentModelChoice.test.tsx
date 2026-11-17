@@ -26,7 +26,7 @@ describe("AgentModelChoice", () => {
     expect(onChange).toHaveBeenCalledWith(choice);
   });
 
-  it("goes back to the tier with null, but says nothing when it already follows the tier", async () => {
+  it("goes back to the tier with null, but says nothing when it already follows it", async () => {
     const onChange = vi.fn();
     const { rerender } = render(<AgentModelChoice {...base} value={choice} onChange={onChange} />);
     const user = userEvent.setup();

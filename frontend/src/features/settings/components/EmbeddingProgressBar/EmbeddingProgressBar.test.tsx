@@ -44,6 +44,25 @@ describe("EmbeddingProgressBar", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Impossible de lire la progression");
   });
 
+  it("announces that the model is ready, in a zone that was there before", () => {
+    const { rerender } = render(
+      <EmbeddingProgressBar progress={progress({ percent: 42 })} isError={false} />,
+    );
+    const zone = screen.getByRole("status");
+    expect(zone).toBeEmptyDOMElement();
+    rerender(
+      <EmbeddingProgressBar progress={progress({ present: true, percent: 100 })} isError={false} />,
+    );
+    expect(screen.getByRole("status")).toBe(zone);
+    expect(zone).toHaveTextContent("bge-m3 : prêt");
+    expect(screen.getAllByText("bge-m3 : prêt")).toHaveLength(1);
+  });
+
+  it("keeps its zone, empty, before the first answer", () => {
+    render(<EmbeddingProgressBar isError={false} />);
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
+  });
+
   it("is quiet before the first answer", () => {
     render(<EmbeddingProgressBar isError={false} />);
     expect(screen.queryByRole("progressbar")).toBeNull();

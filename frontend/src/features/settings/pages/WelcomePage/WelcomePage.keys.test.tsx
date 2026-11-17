@@ -42,7 +42,8 @@ describe("WelcomePage, key and CV steps", () => {
   });
 
   it("key step: after a failed read and Réessayer, the focus goes to the first field", async () => {
-    const { user } = setup({ keysFailures: 1 });
+    // Deux lectures ratées : à l'ouverture de la page, puis à l'étape (relue au montage).
+    const { user } = setup({ keysFailures: 2 });
     await goTo(user, 3);
     expect(await screen.findByRole("alert")).toHaveTextContent("Le serveur a échoué.");
     // L'erreur ne retire ni le titre ni la navigation de l'étape.
@@ -61,7 +62,7 @@ describe("WelcomePage, key and CV steps", () => {
   });
 
   it("cv step sends the documents as a multipart form and goes on", async () => {
-    const { user, imports } = setup();
+    const { user, imports } = setup({ keys: withEnvKey });
     await goTo(user, 4);
     await user.upload(field("Ton CV (PDF, 10 Mo au plus)"), pdf());
     await user.upload(field("Ton profil LinkedIn (PDF, facultatif)"), pdf("linkedin.pdf"));
@@ -75,6 +76,7 @@ describe("WelcomePage, key and CV steps", () => {
 
   it("cv step shows a refusal of the server and lets the person skip anyway", async () => {
     const { user } = setup({
+      keys: withEnvKey,
       importProfile: () =>
         HttpResponse.json(
           {

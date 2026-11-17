@@ -49,7 +49,7 @@ export async function fetchSearchUsage(signal?: AbortSignal) {
   return unwrap(await api.GET("/research/usage", { signal }));
 }
 
-/** `GET /health` : l'état de chaque service, toujours 200 (le champ `status` dit si tout va bien). */
+/** `GET /health` : l'état de chaque service, toujours 200 (`status` dit si tout va bien). */
 export async function fetchHealth(signal?: AbortSignal) {
   return unwrap(await api.GET("/health", { signal }));
 }

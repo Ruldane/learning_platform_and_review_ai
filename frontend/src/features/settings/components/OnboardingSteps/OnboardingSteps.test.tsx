@@ -41,6 +41,14 @@ describe("OnboardingSteps", () => {
     expect(screen.getByText(BODY)).toBeInTheDocument();
   });
 
+  it("reads the step counter with the title, which has the focus", () => {
+    const { again } = setup();
+    const title = () => screen.getByRole("heading", { level: 1 });
+    expect(title()).toHaveAccessibleDescription("Étape 2 sur 5");
+    again({ step: 4, title: "Ton CV" });
+    expect(title()).toHaveAccessibleDescription("Étape 4 sur 5");
+  });
+
   it("moves the focus to the new title when the step changes", () => {
     const { again } = setup();
     again({ step: 3, title: "Ta clé d'API" });

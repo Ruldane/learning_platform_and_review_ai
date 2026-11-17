@@ -54,7 +54,7 @@ export function useDeleteAccount() {
     },
   });
   const { mutate, reset, isPending, error } = mutation;
-  // Stable : `DataPage` en fait la dépendance de l'objet d'échec, et un objet neuf reprendrait le focus.
+  // Stable : `DataPage` en fait la dépendance de l'objet d'échec (un neuf prendrait le focus).
   const started = useCallback(() => sent.current, []);
   return {
     isPending,

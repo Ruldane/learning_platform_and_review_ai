@@ -62,6 +62,28 @@ describe("WelcomePage", () => {
     ).toBeVisible();
   });
 
+  it("puts the arrival message into a zone that was already in the page", async () => {
+    const records: MutationRecord[] = [];
+    const observer = new MutationObserver((batch) => records.push(...batch));
+    observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+    setup({}, { deleted: true });
+    const notice = await screen.findByTestId("welcome-notice");
+    await screen.findByText("Tes données ont été supprimées : Tremplin repart de zéro.");
+    records.push(...observer.takeRecords());
+    observer.disconnect();
+    expect(notice).toHaveAttribute("role", "status");
+    // le texte est venu dans la zone déjà montée, pas avec elle
+    expect(records.some((record) => record.target === notice && record.addedNodes.length > 0)).toBe(
+      true,
+    );
+  });
+
+  it("keeps that zone empty when nothing was deleted", async () => {
+    setup();
+    await title(TITLES[0]!);
+    expect(screen.getByTestId("welcome-notice")).toBeEmptyDOMElement();
+  });
+
   it("step 2 explains what leaves the machine, before any key is asked", async () => {
     const { user } = setup();
     await goTo(user, 2);

@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 import { t } from "@/shared/i18n/t";
 import { InlineError } from "@/shared/ui/states/InlineError";
 import { StepButtons } from "./StepButtons";
@@ -26,7 +26,8 @@ interface OnboardingStepsProps {
 /**
  * Le cadre d'une étape du premier lancement : « Étape 2 sur 5 », le titre, le contenu, puis les
  * boutons (`StepButtons`). Le titre prend le focus à chaque étape : le bouton cliqué change de
- * rôle ou disparaît, et sans cela la personne au clavier repartirait du haut de la page.
+ * rôle ou disparaît, et sans cela la personne au clavier repartirait du haut de la page. Le
+ * compteur est relié au titre (`aria-describedby`) : le lecteur d'écran le dit avec lui.
  */
 export function OnboardingSteps({
   step,
@@ -37,14 +38,20 @@ export function OnboardingSteps({
   ...buttons
 }: OnboardingStepsProps) {
   const heading = useRef<HTMLHeadingElement>(null);
+  const counterId = useId();
   useEffect(() => heading.current?.focus(), [step]);
   return (
     <section aria-label={t("onboarding.page.label")} className="flex flex-col gap-6">
       <header className="flex flex-col gap-1">
-        <p className="text-sm text-muted-foreground">
+        <p id={counterId} className="text-sm text-muted-foreground">
           {t("onboarding.steps.counter", { step, total })}
         </p>
-        <h1 ref={heading} tabIndex={-1} className="text-2xl font-semibold focus:outline-none">
+        <h1
+          ref={heading}
+          tabIndex={-1}
+          aria-describedby={counterId}
+          className="text-2xl font-semibold focus:outline-none"
+        >
           {title}
         </h1>
       </header>

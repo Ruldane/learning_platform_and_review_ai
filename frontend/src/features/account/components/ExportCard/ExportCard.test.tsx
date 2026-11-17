@@ -26,7 +26,8 @@ describe("ExportCard", () => {
     expect(link.getAttribute("rel")).toContain("noopener");
     expect(link).toHaveAttribute("download");
     expect(link).toHaveAccessibleDescription(
-      "Le téléchargement s'ouvre dans un nouvel onglet ; si la session a expiré, reconnecte-toi puis réessaie.",
+      "Le téléchargement s'ouvre dans un nouvel onglet ; " +
+        "si la session a expiré, reconnecte-toi puis réessaie.",
     );
   });
 });

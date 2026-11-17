@@ -12,7 +12,7 @@ interface KeyChoiceProps {
   selectRef: Ref<HTMLSelectElement>;
 }
 
-/** Le fournisseur (celui qui a déjà une clé d'abord) et sa carte : saisie, « Tester », suppression. */
+/** Le fournisseur (celui qui a une clé d'abord) et sa carte : saisie, « Tester », suppression. */
 export function KeyChoice({ entries, actions, selectRef }: KeyChoiceProps) {
   const [chosen, setChosen] = useState<string | null>(null);
   const selectId = useId();

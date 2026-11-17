@@ -2,6 +2,7 @@ import { t } from "@/shared/i18n/t";
 import { AvailabilityFields } from "../../components/AvailabilityFields";
 import { CvImportStep } from "../../components/CvImportStep";
 import { PrivacyNotice } from "../../components/PrivacyNotice";
+import type { CvDocuments } from "../../components/viewTypes";
 import type { AvailabilityFlags, AvailabilityKey } from "../../components/viewTypes";
 import type { ProfileImport } from "../../api";
 import type { OnboardingAvailability } from "../../onboarding";
@@ -10,7 +11,10 @@ import { KeyStep } from "./KeyStep";
 
 export interface StepBodyProps {
   step: number;
-  onKeyConfigured: (configured: boolean) => void;
+  /** Une clé d'API existe (`.env` ou saisie) : l'import du CV en a besoin. */
+  hasKey: boolean;
+  documents: CvDocuments;
+  onGoToKey: () => void;
   importer: {
     pending: boolean;
     error: string | null;
@@ -27,17 +31,21 @@ export interface StepBodyProps {
 }
 
 /** Le contenu de l'étape `step` ; chaque étape est un composant, la page ne fait que choisir. */
-export function StepBody({ step, onKeyConfigured, importer, availability }: StepBodyProps) {
+export function StepBody(props: StepBodyProps) {
+  const { step, hasKey, documents, onGoToKey, importer, availability } = props;
   switch (step) {
     case 1:
       return <HealthStep />;
     case 2:
       return <PrivacyNotice />;
     case 3:
-      return <KeyStep onConfiguredChange={onKeyConfigured} />;
+      return <KeyStep />;
     case 4:
       return (
         <CvImportStep
+          documents={documents}
+          hasKey={hasKey}
+          onGoToKey={onGoToKey}
           pending={importer.pending}
           error={importer.error}
           imported={importer.imported}

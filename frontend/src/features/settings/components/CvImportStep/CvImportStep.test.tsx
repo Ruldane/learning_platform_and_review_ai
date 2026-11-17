@@ -1,6 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { useState } from "react";
+import type { PdfChoice } from "../viewTypes";
 import { CvImportStep } from "./CvImportStep";
 
 // `accept` ne retient rien quand on choisit « tous les fichiers » : le composant refuse lui-même.
@@ -11,18 +13,40 @@ const pdf = (name = "cv.pdf", size = 1000) => {
   return file;
 };
 
-function setup(props: { pending?: boolean; error?: string | null; imported?: boolean } = {}) {
+interface Props {
+  pending: boolean;
+  error: string | null;
+  imported: boolean;
+  hasKey: boolean;
+}
+
+function setup(props: Partial<Props> = {}) {
   const onImport = vi.fn();
-  const ui = (over: { pending?: boolean } = {}) => (
-    <CvImportStep
-      pending={over.pending ?? props.pending ?? false}
-      error={props.error ?? null}
-      imported={props.imported ?? false}
-      onImport={onImport}
-    />
-  );
-  const view = render(ui());
-  return { onImport, user: user(), pendingNow: () => view.rerender(ui({ pending: true })) };
+  const onGoToKey = vi.fn();
+  function Step(over: Partial<Props>) {
+    // La page garde les deux PDF (voir `useCvDocuments`) : la même forme, ici avec `useState`.
+    const [cv, setCv] = useState<PdfChoice>({ file: null, problem: null });
+    const [linkedin, setLinkedin] = useState<PdfChoice>({ file: null, problem: null });
+    const documents = { cv, linkedin, setCv, setLinkedin };
+    return (
+      <CvImportStep
+        documents={documents}
+        hasKey={over.hasKey ?? props.hasKey ?? true}
+        pending={over.pending ?? props.pending ?? false}
+        error={props.error ?? null}
+        imported={props.imported ?? false}
+        onImport={onImport}
+        onGoToKey={onGoToKey}
+      />
+    );
+  }
+  const view = render(<Step />);
+  return {
+    onImport,
+    onGoToKey,
+    user: user(),
+    pendingNow: () => view.rerender(<Step pending />),
+  };
 }
 
 const cvInput = () => screen.getByLabelText("Ton CV (PDF, 10 Mo au plus)");
@@ -30,11 +54,15 @@ const linkedinInput = () => screen.getByLabelText("Ton profil LinkedIn (PDF, fac
 const send = () => screen.getByRole("button", { name: "Importer mes documents" });
 
 describe("CvImportStep", () => {
-  it("cannot send without a CV", async () => {
+  it("cannot send without a CV, and says why", async () => {
     const { onImport, user: u } = setup();
     expect(send()).toHaveAttribute("aria-disabled", "true");
+    expect(send()).toHaveAccessibleDescription("Choisis d'abord ton CV.");
     await u.click(send());
     expect(onImport).not.toHaveBeenCalled();
+    await u.upload(cvInput(), pdf());
+    expect(send()).toHaveAttribute("aria-disabled", "false");
+    expect(send()).not.toHaveAccessibleDescription("Choisis d'abord ton CV.");
   });
 
   it("sends the CV alone, then the CV and the LinkedIn PDF", async () => {
@@ -65,6 +93,41 @@ describe("CvImportStep", () => {
     expect(cvInput()).toHaveAttribute("aria-invalid", "false");
   });
 
+  it("says a refused LinkedIn file is left out, and still sends the CV", async () => {
+    const { onImport, user: u } = setup();
+    const cv = pdf();
+    await u.upload(cvInput(), cv);
+    expect(screen.queryByText(/Ton profil LinkedIn n'a pas été retenu/)).toBeNull();
+    await u.upload(linkedinInput(), new File(["x"], "profil.docx", { type: "application/msword" }));
+    expect(screen.getByText(/Ton profil LinkedIn n'a pas été retenu/)).toBeInTheDocument();
+    expect(send()).toHaveAccessibleDescription(/Ton profil LinkedIn n'a pas été retenu/);
+    await u.click(send());
+    expect(onImport).toHaveBeenLastCalledWith({ cv });
+  });
+
+  it("without a key, sends nothing and says a key comes first", async () => {
+    const { onImport, onGoToKey, user: u } = setup({ hasKey: false });
+    await u.upload(cvInput(), pdf());
+    expect(send()).toHaveAttribute("aria-disabled", "true");
+    expect(send()).toHaveAccessibleDescription(/Sans clé d'API, Tremplin ne peut pas lire/);
+    await u.click(send());
+    expect(onImport).not.toHaveBeenCalled();
+    await u.click(screen.getByRole("button", { name: "Aller à l'étape de la clé" }));
+    expect(onGoToKey).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not offer the way to the key when there is one", () => {
+    setup();
+    expect(screen.queryByRole("button", { name: "Aller à l'étape de la clé" })).toBeNull();
+  });
+
+  it("reminds that nothing leaves until « Importer » is clicked, once a CV is chosen", async () => {
+    const { user: u } = setup();
+    expect(screen.queryByText(/Rien n'est envoyé/)).toBeNull();
+    await u.upload(cvInput(), pdf());
+    expect(screen.getByText(/Rien n'est envoyé tant que/)).toBeInTheDocument();
+  });
+
   it("ignores a second click while the import goes on", async () => {
     const { onImport, user: u, pendingNow } = setup();
     await u.upload(cvInput(), pdf());
@@ -82,8 +145,9 @@ describe("CvImportStep", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Une lecture est déjà en cours.");
   });
 
-  it("says the documents are sent", () => {
+  it("says the documents are sent, and drops the reminder", () => {
     setup({ imported: true });
     expect(screen.getByRole("status")).toHaveTextContent("Tes documents sont envoyés");
+    expect(screen.queryByText(/Rien n'est envoyé/)).toBeNull();
   });
 });
