@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.features.activity.schemas import ActivityItem
 from app.features.brief.service.views import recent_briefs
+from app.features.ide.service.sessions import recent_passes
 from app.features.ledger.service.ledger import recent_failures
 from app.features.ledger.service.periods import MAX_ATTEMPTS
 from app.features.lessons.service.lessons import recent_lessons
@@ -135,6 +136,24 @@ async def project_source(
     return items
 
 
+async def ide_source(
+    db: AsyncSession, user_id: str, after: datetime | None, before: datetime | None, limit: int
+) -> list[ActivityItem]:
+    """Une séance de code réussie (première vérification) ; genre `project` : l'icône d'une preuve
+    (un genre propre à l'IDE changerait le contrat et l'accueil, 10.I). Titre : celui de la séance
+    (donnée de l'utilisatrice, jamais un texte de modèle)."""
+    return [
+        ActivityItem(
+            id=f"ide:{item.id}:passed",
+            kind="project",
+            at=item.at,
+            title=f"Exercice de code réussi : {item.title}",
+            link=f"/code/{item.id}",
+        )
+        for item in await recent_passes(db, user_id, after, before, limit)
+    ]
+
+
 async def memory_source(
     db: AsyncSession, user_id: str, after: datetime | None, before: datetime | None, limit: int
 ) -> list[ActivityItem]:
@@ -181,6 +200,7 @@ ACTIVITY_SOURCES: tuple[ActivitySource, ...] = (
     radar_source,
     brief_source,
     project_source,
+    ide_source,
     memory_source,
     job_failures_source,
 )

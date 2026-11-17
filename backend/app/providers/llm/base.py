@@ -21,6 +21,10 @@ LLM_CALL_TIMEOUT_S = 45
 # propre échéance, plus courte (`TUTOR_CALL_TIMEOUT_S`, D115 n° 17).
 LLM_CALL_DEADLINE_S = 600.0
 CALL_DEADLINE_KEY = "tremplin_call_deadline_s"
+# Marque (`additional_kwargs` d'un `SystemMessage`) du début de prompt fixe d'une séance : les
+# fournisseurs qui savent le mettre en cache le font (Anthropic, `cache_control`), les autres
+# l'ignorent. Le texte marqué doit rester identique d'un appel à l'autre (octet pour octet).
+CACHE_PREFIX_KEY = "tremplin_cache_prefix"
 
 Tier = Literal["rapide", "standard", "fort", "vision"]
 TIERS: tuple[Tier, ...] = ("rapide", "standard", "fort", "vision")

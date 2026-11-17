@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from pathlib import Path
 
 import httpx
 import pytest
@@ -187,8 +188,13 @@ async def test_health_route_needs_no_session_in_google_mode(
 # --- câblage réel (bootstrap + lifespan) -------------------------------------------------------
 
 
-async def test_real_wiring_reports_the_six_checks(settings: Settings, db_engine: object) -> None:
-    configured = settings.model_copy(update={"anthropic_api_key": "env-key-for-health-0001"})
+async def test_real_wiring_reports_the_seven_checks(
+    settings: Settings, db_engine: object, tmp_path: Path
+) -> None:
+    (tmp_path / "heartbeat").write_text("x")  # le lanceur du bac à sable bat (10.A1)
+    configured = settings.model_copy(
+        update={"anthropic_api_key": "env-key-for-health-0001", "sandbox_spool_dir": tmp_path}
+    )
     app = create_app(configured)
     with respx.mock(assert_all_called=True) as mock:
         tags = {"models": [{"name": "bge-m3:latest"}]}
@@ -201,7 +207,15 @@ async def test_real_wiring_reports_the_six_checks(settings: Settings, db_engine:
             transport = httpx.ASGITransport(app=app)
             async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
                 body = (await client.get(HEALTH)).json()
-    assert set(body["checks"]) == {"db", "qdrant", "ollama", "searxng", "gotenberg", "llm"}
+    assert set(body["checks"]) == {
+        "db",
+        "qdrant",
+        "ollama",
+        "searxng",
+        "gotenberg",
+        "llm",
+        "sandbox",
+    }
     assert body["status"] == "ok", body
     assert "env-key-for-health-0001" not in str(body)
 

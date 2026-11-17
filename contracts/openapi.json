@@ -8700,6 +8700,17 @@
             "title": "Kind",
             "type": "string"
           },
+          "level": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level"
+          },
           "line_end": {
             "anyOf": [
               {
@@ -8773,6 +8784,7 @@
           "replacement",
           "base_hash",
           "reference_note_id",
+          "level",
           "created_at"
         ],
         "title": "NoteOut",
@@ -9586,7 +9598,7 @@
         "type": "object"
       },
       "PreferencesIn": {
-        "description": "Mode du professeur, minuterie d'inactivité (30 s, en option) et plafonds de jetons.",
+        "description": "Mode du professeur (`auto` ou sur demande), style (`guide` : indices gradués ; `pair` :\nbinôme, annotations en marge et propositions à accepter), minuterie d'inactivité (30 s, en\noption) et plafonds de jetons.",
         "properties": {
           "day_cap": {
             "default": 300000,
@@ -9614,6 +9626,15 @@
               "on_demand"
             ],
             "title": "Teacher Mode",
+            "type": "string"
+          },
+          "teacher_style": {
+            "default": "guide",
+            "enum": [
+              "guide",
+              "pair"
+            ],
+            "title": "Teacher Style",
             "type": "string"
           }
         },
@@ -9648,6 +9669,15 @@
               "on_demand"
             ],
             "title": "Teacher Mode",
+            "type": "string"
+          },
+          "teacher_style": {
+            "default": "guide",
+            "enum": [
+              "guide",
+              "pair"
+            ],
+            "title": "Teacher Style",
             "type": "string"
           }
         },
@@ -18432,7 +18462,7 @@
     },
     "/api/v1/ide/exercises/generate": {
       "post": {
-        "description": "Fait générer un exercice par les agents : rend aussitôt la session à suivre.",
+        "description": "Fait générer un exercice par les agents : rend aussitôt la session à suivre. L'exercice\nn'est rangé qu'une fois sa solution vérifiée dans le bac à sable.",
         "operationId": "generate_exercise_api_v1_ide_exercises_generate_post",
         "requestBody": {
           "content": {
@@ -18493,6 +18523,9 @@
           "204": {
             "description": "Successful Response"
           },
+          "404": {
+            "description": "Introuvable (ou pas à moi)."
+          },
           "422": {
             "content": {
               "application/json": {
@@ -18537,6 +18570,12 @@
               }
             },
             "description": "Successful Response"
+          },
+          "404": {
+            "description": "`note_not_found`"
+          },
+          "409": {
+            "description": "`note_stale` (la note passe à `stale`), `note_closed`, `not_a_proposal`"
           },
           "422": {
             "content": {
@@ -18583,6 +18622,12 @@
             },
             "description": "Successful Response"
           },
+          "404": {
+            "description": "`note_not_found`"
+          },
+          "409": {
+            "description": "`note_stale` (la note passe à `stale`), `note_closed`, `not_a_proposal`"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -18602,7 +18647,7 @@
     },
     "/api/v1/ide/preferences": {
       "get": {
-        "description": "Mode du professeur, minuterie d'inactivité, plafonds de jetons.",
+        "description": "Mode et style du professeur, minuterie d'inactivité, plafonds de jetons.",
         "operationId": "get_preferences_api_v1_ide_preferences_get",
         "responses": {
           "200": {
@@ -18701,6 +18746,9 @@
             },
             "description": "Successful Response"
           },
+          "404": {
+            "description": "`run_not_found`"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -18710,6 +18758,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "description": "`sandbox_unavailable`"
           }
         },
         "summary": "Read Run",
@@ -18767,6 +18818,9 @@
             },
             "description": "Successful Response"
           },
+          "404": {
+            "description": "Introuvable (ou pas à moi)."
+          },
           "422": {
             "content": {
               "application/json": {
@@ -18811,6 +18865,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "404": {
+            "description": "Introuvable (ou pas à moi)."
           },
           "422": {
             "content": {
@@ -18867,15 +18924,11 @@
             },
             "description": "Successful Response"
           },
+          "404": {
+            "description": "`session_not_found`"
+          },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "description": "`entry_missing`, `entry_invalid`, `files_too_large`"
           }
         },
         "summary": "Put Files",
@@ -18915,6 +18968,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "404": {
+            "description": "Introuvable (ou pas à moi)."
           },
           "422": {
             "content": {
@@ -18969,15 +19025,14 @@
             },
             "description": "Successful Response"
           },
+          "404": {
+            "description": "`session_not_found`"
+          },
+          "409": {
+            "description": "`note_stale` : le fichier a changé depuis la lecture"
+          },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "description": "`note_invalid` : plage, fichier ou empreinte (`details.file_hash`)"
           }
         },
         "summary": "Add Note",
@@ -19024,15 +19079,17 @@
             },
             "description": "Successful Response"
           },
+          "404": {
+            "description": "`session_not_found`"
+          },
+          "409": {
+            "description": "`run_in_progress` : une exécution est déjà en cours"
+          },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "description": "`entry_missing`, `run_refused`"
+          },
+          "503": {
+            "description": "`sandbox_unavailable` : le bac à sable est arrêté"
           }
         },
         "summary": "Start Run",
@@ -19043,7 +19100,7 @@
     },
     "/api/v1/ide/sessions/{session_id}/teach": {
       "post": {
-        "description": "Réveille le professeur : un graphe (`session_id`), un renvoi à la note précédente\n(`reference_note_id`) ou rien (`skipped`).",
+        "description": "Réveille le professeur : un graphe (`session_id`), un renvoi à la note précédente\n(`reference_note_id`) ou rien (`skipped`). Seule route qui lance le professeur : ni la\nsauvegarde des fichiers ni la frappe ne l'appellent.",
         "operationId": "teach_api_v1_ide_sessions__session_id__teach_post",
         "parameters": [
           {
@@ -19079,15 +19136,11 @@
             },
             "description": "Successful Response"
           },
+          "404": {
+            "description": "`session_not_found`, `run_not_found`"
+          },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "description": "Déclencheur inconnu, ou question vide"
           }
         },
         "summary": "Teach",
@@ -19129,6 +19182,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "404": {
+            "description": "Introuvable (ou pas à moi)."
           },
           "422": {
             "content": {

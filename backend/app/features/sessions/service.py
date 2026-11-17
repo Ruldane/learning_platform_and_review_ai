@@ -58,6 +58,10 @@ ROUTE_ONLY: dict[str, str] = {
     "project_brief": "planificateur ou POST /projects/{id}/brief",  # énoncé d'un module (D165)
     # rendu vérifié puis évaluation (D165) ; brouillons d'un projet validé (D181)
     "project_review": "POST /projects/{id}/submit ou POST /projects/{id}/drafts",
+    # barrière de coût du professeur (déclencheurs, plafonds, anti-répétition), puis exercices
+    # vérifiés dans le bac (D203)
+    "ide_teacher": "POST /ide/sessions/{id}/teach",
+    "ide_exercise": "POST /ide/exercises/generate",
     "cv_review": "POST /cv/reviews",  # profil, gabarit et offre vérifiés puis figés (D130)
 }
 

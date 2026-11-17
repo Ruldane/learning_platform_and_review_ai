@@ -69,7 +69,7 @@ async def test_feed_merges_sources_by_time(env: Env) -> None:
         "Un passage planifié a échoué (radar du marché) : nouvel essai au prochain passage."
     )
     assert len({item.id for item in page.items}) == 6
-    assert len(ACTIVITY_SOURCES) == 6  # leçons, radar, brief, projets, mémoire, passages
+    assert len(ACTIVITY_SOURCES) == 7  # leçons, radar, brief, projets, code, mémoire, passages
 
 
 async def test_after_returns_only_newer(env: Env) -> None:
