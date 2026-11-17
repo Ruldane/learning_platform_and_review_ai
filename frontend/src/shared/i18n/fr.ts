@@ -11,6 +11,7 @@ import { gap } from "./messages/gap";
 import { home } from "./messages/home";
 import { learning } from "./messages/learning";
 import { lessons } from "./messages/lessons";
+import { mcp } from "./messages/mcp";
 import { memory } from "./messages/memory";
 import { onboarding } from "./messages/onboarding";
 import { program } from "./messages/program";
@@ -55,4 +56,5 @@ export const fr = {
   home,
   radar,
   projects,
+  mcp,
 } as const;

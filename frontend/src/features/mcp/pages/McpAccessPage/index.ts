@@ -1,0 +1,1 @@
+export { McpAccessPage } from "./McpAccessPage";

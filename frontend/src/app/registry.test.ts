@@ -72,6 +72,7 @@ describe("registre des features", () => {
       { labelKey: "costs.nav.costs", path: "/reglages/couts" },
       { labelKey: "costs.nav.log", path: "/reglages/journal" },
       { labelKey: "account.nav.data", path: "/reglages/donnees" },
+      { labelKey: "mcp.nav.access", path: "/reglages/mcp" },
     ]);
   });
 
