@@ -11,6 +11,13 @@ export const camille = {
   auth_mode: "google",
 };
 
+export const dominique = {
+  id: "u-dominique",
+  email: "dominique.exemple@example.org",
+  name: "Dominique Exemple",
+  auth_mode: "google",
+};
+
 export const localMe = { id: "local", email: null, name: null, auth_mode: "local" };
 
 export const authRequired = {
@@ -34,7 +41,7 @@ export interface AuthApi {
 
 interface AuthApiOptions {
   /** Réponse de `GET /auth/me` : une identité (200) ou `null` (401 `auth_required`). */
-  me?: typeof camille | typeof localMe | null;
+  me?: typeof camille | typeof dominique | typeof localMe | null;
   /** `GET /auth/me` répond 500. */
   meFails?: boolean;
   /** Réponse de `POST /auth/google/claim` : l'identité (200) ou une erreur 409. */

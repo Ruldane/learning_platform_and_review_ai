@@ -19,8 +19,8 @@ export const settingsManifest: FeatureManifest = {
     { path: "reglages/disponibilite", Component: AvailabilityPage },
     { path: "reglages/etude", Component: StudySettingsPage },
     { path: "reglages/style", Component: StylePage },
-    // Le premier lancement : une route, jamais une entrée de navigation (la porte y mène).
-    { path: "bienvenue", Component: WelcomePage },
+    // Le premier lancement : une route, jamais une entrée de navigation (la porte y mène), et sans navigation latérale (`bare`).
+    { path: "bienvenue", Component: WelcomePage, handle: { bare: true } },
   ],
   shell: { gate: OnboardingGate },
   nav: [

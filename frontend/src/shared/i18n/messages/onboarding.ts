@@ -82,12 +82,19 @@ export const onboarding = {
   },
   key: {
     intro:
-      "La clé d'un fournisseur envoie tes prompts chez lui (étape précédente). Une seule clé " +
-      "suffit pour faire tourner toute l'application.",
+      "La clé d'un fournisseur envoie tes prompts chez lui (étape précédente). Une clé suffit, " +
+      "mais elle doit être celle du fournisseur de tes modèles : si tu en donnes une autre, " +
+      "Tremplin règle tes modèles sur ce fournisseur.",
     provider: "Fournisseur",
     fromEnv:
       "Une clé est déjà fournie par le fichier .env ({providers}) : tu peux passer à la suite.",
     fromUi: "Une clé est déjà enregistrée ({providers}) : tu peux passer à la suite.",
+    moveTo:
+      "Tes modèles passeront sur {provider}, le fournisseur de cette clé, en passant à l'étape " +
+      "suivante. Tu pourras les changer dans Réglages > Modèles et clés.",
+    noPreset:
+      "La clé {provider} n'a pas de préréglage de modèles : une fois l'accueil fini, choisis ses " +
+      "modèles dans Réglages > Modèles et clés. D'ici là, l'import du CV reste fermé.",
     none: "Aucune clé pour le moment : tu peux en saisir une, ou le faire plus tard dans Réglages.",
     loading: "Chargement des fournisseurs…",
   },

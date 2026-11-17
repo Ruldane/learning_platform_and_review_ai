@@ -99,6 +99,33 @@ describe("AppLayout", () => {
     expect(screen.getByRole("main").className).toContain("max-w-4xl");
   });
 
+  it("hides the navigation and the health light on a bare page (handle bare)", async () => {
+    let healthReads = 0;
+    server.use(
+      http.get(`${apiBaseUrl}/api/v1/health`, () => {
+        healthReads += 1;
+        return HttpResponse.json({ status: "ok", checks: {} });
+      }),
+    );
+    const router = createMemoryRouter(
+      [
+        {
+          path: "/",
+          Component: AppLayout,
+          children: [{ path: "nue", handle: { bare: true }, element: <p>Nue</p> }],
+        },
+      ],
+      { initialEntries: ["/nue"] },
+    );
+    render(<RouterProvider router={router} />, { wrapper: createQueryWrapper() });
+    await screen.findByText("Nue");
+    expect(screen.queryByRole("navigation", { name: "Navigation principale" })).toBeNull();
+    expect(screen.queryByText("Tous les services répondent")).toBeNull();
+    // La barre du haut reste (compte, déconnexion) ; seul le voyant, qui lit `/health`, s'en va.
+    expect(within(screen.getByRole("banner")).getByText("Emplacement du haut")).toBeInTheDocument();
+    expect(healthReads).toBe(0);
+  });
+
   it("renders shell slots of features", async () => {
     server.use(
       http.get(`${apiBaseUrl}/api/v1/health`, () =>

@@ -40,7 +40,10 @@ export function AgentLogPage() {
           {query.isError ? (
             <InlineError
               message={errorMessage(query.error)}
-              onRetry={() => void query.fetchNextPage()}
+              // Relire ce qui a échoué : la page suivante, ou (relecture ratée) les pages affichées.
+              onRetry={() =>
+                void (query.isFetchNextPageError ? query.fetchNextPage() : query.refetch())
+              }
             />
           ) : null}
         </>

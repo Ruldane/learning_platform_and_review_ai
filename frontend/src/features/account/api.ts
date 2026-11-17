@@ -26,3 +26,11 @@ export async function fetchMe(signal?: AbortSignal): Promise<Me | null> {
     throw error;
   }
 }
+
+/** Le compte connecté n'est plus celui qui était affiché : rien n'a été envoyé. */
+export class AccountChangedError extends Error {
+  constructor() {
+    super("account_changed");
+    this.name = "AccountChangedError";
+  }
+}

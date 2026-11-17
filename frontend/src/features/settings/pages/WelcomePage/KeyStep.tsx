@@ -4,11 +4,13 @@ import { ErrorState } from "@/shared/ui/states/ErrorState";
 import { InlineError } from "@/shared/ui/states/InlineError";
 import { LoadingState } from "@/shared/ui/states/LoadingState";
 import type { ApiKeyEntry } from "../../components/viewTypes";
+import type { SettingsOut } from "../../types";
 import { useActionError } from "../../hooks/useActionError";
-import { useApiKeys } from "../../hooks/useApiKeys";
+import { useKeyPlan } from "../../hooks/useKeyPlan";
 import { useFocusAfterRecovery } from "../../hooks/useFocusAfterRecovery";
 import { useKeyActions } from "../../hooks/useKeyActions";
 import { KeyChoice } from "./KeyChoice";
+import { KeyPlanNotice } from "./KeyPlanNotice";
 
 /** D'où vient la clé déjà là (le fichier `.env` d'abord), ou le fait qu'il n'y en a pas. */
 function keyStatus(entries: ApiKeyEntry[]): string {
@@ -28,19 +30,26 @@ function keyStatus(entries: ApiKeyEntry[]): string {
 
 /**
  * Étape 3 : une clé d'API, saisie (`ApiKeyForm`) puis testée, ou déjà fournie par `.env` (dit en
- * toutes lettres). Une seule clé suffit : on choisit le fournisseur, la carte fait le reste. Si la
- * lecture des clés échoue, « Réessayer » rend le focus au choix du fournisseur.
+ * toutes lettres). Seuls les fournisseurs de modèles sont proposés (pas Brave) et une clé suffit :
+ * celle du fournisseur des modèles, ou d'un autre dont les modèles prennent alors la place. Si la
+ * lecture des clés ou des modèles échoue, « Réessayer » rend le focus au choix du fournisseur.
  */
-export function KeyStep() {
-  const keys = useApiKeys();
+export function KeyStep({ settings }: { settings: SettingsOut }) {
+  const { keys, models, plan, entries } = useKeyPlan(settings);
   const { error, track } = useActionError();
   const actions = useKeyActions(track);
-  const first = useFocusAfterRecovery<HTMLSelectElement>(keys.isError);
-  const entries = keys.data;
+  const first = useFocusAfterRecovery<HTMLSelectElement>(keys.isError || models.isError);
 
-  if (!entries) {
-    return keys.isError ? (
-      <ErrorState message={errorMessage(keys.error)} onRetry={() => void keys.refetch()} />
+  if (!entries || !plan) {
+    const failed = keys.isError ? keys : models.isError ? models : null;
+    return failed ? (
+      <ErrorState
+        message={errorMessage(failed.error)}
+        onRetry={() => {
+          if (keys.isError) void keys.refetch();
+          if (models.isError) void models.refetch();
+        }}
+      />
     ) : (
       <LoadingState label={t("onboarding.key.loading")} />
     );
@@ -49,6 +58,7 @@ export function KeyStep() {
     <div className="flex flex-col gap-4">
       <p className="text-muted-foreground">{t("onboarding.key.intro")}</p>
       <p className="text-sm font-medium">{keyStatus(entries)}</p>
+      <KeyPlanNotice plan={plan} />
       {error ? <InlineError message={error} /> : null}
       <KeyChoice entries={entries} actions={actions} selectRef={first} />
     </div>

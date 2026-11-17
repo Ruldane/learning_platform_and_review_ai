@@ -11,9 +11,17 @@ import { Topbar } from "../Topbar";
 
 const NAV_GROUPS = buildNav(FEATURES);
 
-/** Une route peut demander la pleine largeur (`handle: { wide: true }`) : le Conseil a deux zones. */
-function useWidePage(): boolean {
-  return useMatches().some((match) => (match.handle as { wide?: boolean } | undefined)?.wide);
+type PageFlag = "wide" | "bare";
+
+/**
+ * Une route peut demander la pleine largeur (`handle: { wide: true }` : le Conseil a deux zones) ou
+ * une page nue (`handle: { bare: true }` : ni navigation latérale ni voyant de santé, comme le
+ * premier lancement, dont un clic de navigation ferait perdre la saisie).
+ */
+function usePageFlag(flag: PageFlag): boolean {
+  return useMatches().some(
+    (match) => (match.handle as Partial<Record<PageFlag, boolean>> | undefined)?.[flag],
+  );
 }
 
 /**
@@ -22,7 +30,8 @@ function useWidePage(): boolean {
  * (`shell.gate` : connexion, premier lancement).
  */
 export function AppLayout() {
-  const wide = useWidePage();
+  const wide = usePageFlag("wide");
+  const bare = usePageFlag("bare");
   return (
     <ShellGates>
       <div className="flex min-h-screen">
@@ -32,9 +41,9 @@ export function AppLayout() {
         >
           {t("app.skipToContent")}
         </a>
-        <Sidebar groups={NAV_GROUPS} />
+        {bare ? null : <Sidebar groups={NAV_GROUPS} />}
         <div className="flex min-w-0 flex-1 flex-col">
-          <Topbar right={<HealthStatus />} />
+          <Topbar right={bare ? null : <HealthStatus />} />
           <main
             id="contenu"
             tabIndex={-1}

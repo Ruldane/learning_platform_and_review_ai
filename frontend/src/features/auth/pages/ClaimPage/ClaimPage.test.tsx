@@ -47,6 +47,17 @@ describe("ClaimPage", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("déjà reprises par un compte");
   });
 
+  it("claim replayed by the person who just took the space lets them in", async () => {
+    // Deuxième envoi (double clic, deuxième onglet) : la session est déjà ouverte.
+    const api = authApi({ me: camille, claim: { conflict: "local_already_claimed" } });
+    server.use(...api.handlers);
+    const { user, visited } = renderAuth("/connexion/reprise");
+    await user.click(screen.getByRole("button", { name: TAKE }));
+    expect(await screen.findByText("Chemin : /")).toBeInTheDocument();
+    expect(visited).toEqual(["/connexion/reprise", "/"]);
+    expect(api.meCalls).toBe(1);
+  });
+
   it("claim keeps the page and says why on another error", async () => {
     server.use(...authApi({ me: null, claim: { conflict: "other_conflict" } }).handlers);
     const { user, router } = renderAuth("/connexion/reprise");

@@ -4,13 +4,24 @@ import { createMemoryRouter, Outlet, RouterProvider } from "react-router";
 import { onboardingApi } from "@/test/onboardingApi";
 import { createQueryWrapper, createTestQueryClient } from "@/test/queryWrapper";
 import { server } from "@/test/server";
-import { apiKeysFixture, settingsFixture } from "../../fixtures";
+import { apiKeysFixture, modelsFixture, settingsFixture } from "../../fixtures";
 import { OnboardingGate } from "../../OnboardingGate";
 import { WelcomePage } from "./WelcomePage";
 
 /** Un compte neuf : le premier lancement n'est pas fait. */
 export const fresh = { ...settingsFixture, onboarding_done: false };
 export const noKey = apiKeysFixture.map((key) => ({ ...key, source: null, last4: null }));
+/** Brave est dans la liste des clés du back, mais ce n'est pas un fournisseur de modèles. */
+const braveEnv = {
+  provider: "brave",
+  label: "Brave Search",
+  source: "env",
+  last4: "abcd",
+  readable: true,
+  last_test_ok: null,
+  last_tested_at: null,
+};
+export const withBraveOnly = [...noKey, braveEnv];
 export const withEnvKey = apiKeysFixture.map((key) => ({
   ...key,
   source: key.provider === "openai" ? "env" : null,
@@ -27,7 +38,7 @@ export const WEEKDAY = "Minutes par jour, du lundi au vendredi";
 
 /** La page derrière la porte du premier lancement, avec un accueil et une page de réglages. */
 export function setup(over: Partial<Parameters<typeof onboardingApi>[0]> = {}, state?: unknown) {
-  const api = onboardingApi({ settings: fresh, keys: noKey, ...over });
+  const api = onboardingApi({ settings: fresh, keys: noKey, models: modelsFixture, ...over });
   server.use(...api.handlers);
   const client = createTestQueryClient();
   const router = createMemoryRouter(

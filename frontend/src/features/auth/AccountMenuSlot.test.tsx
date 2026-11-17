@@ -1,7 +1,8 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { apiBaseUrl } from "@/shared/api/client";
+import { onLocalReset } from "@/shared/lib/localReset";
 import { authApi, camille, localMe } from "@/test/authApi";
 import { createQueryWrapper } from "@/test/queryWrapper";
 import { server } from "@/test/server";
@@ -46,6 +47,16 @@ describe("AccountMenuSlot", () => {
     await screen.findByRole("heading", { name: "Connexion" });
     expect(client.getQueryData(["settings"])).toBeUndefined();
     expect(client.getQueryData(["auth", "me"])).toBeNull();
+  });
+
+  it("logout also empties what the features keep outside the query cache", async () => {
+    const reset = vi.fn();
+    onLocalReset(reset);
+    server.use(...authApi({ me: camille }).handlers);
+    const { user } = renderAuth("/", <AccountMenuSlot />);
+    await user.click(await screen.findByRole("button", { name: "Se déconnecter" }));
+    await screen.findByRole("heading", { name: "Connexion" });
+    expect(reset).toHaveBeenCalledTimes(1);
   });
 
   it("stays signed in and says so when logout fails", async () => {
