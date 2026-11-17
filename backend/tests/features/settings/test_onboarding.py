@@ -4,6 +4,7 @@ d'avant la phase 9 sans ligne de réglages mais avec des données n'y est pas re
 import asyncio
 
 import httpx
+import pytest
 from fastapi import FastAPI
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -11,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.db.models.accounts import ApiKey, UserSettingsRow
 from app.db.models.learning import Goal
 from app.features.settings.repository import UserSettingsRepository
+from app.features.settings.schemas import UserSettings
 from app.features.settings.service import SettingsModelReader, SettingsService
 
 API = "/api/v1/settings"
@@ -178,3 +180,54 @@ async def test_get_settings_route_creates_only_the_callers_row(
     await client.get(API)
     assert await rows(db_session, app.state.local_user_id) == 1
     assert await rows(db_session, "autre-compte") == 0
+
+
+async def test_onboarding_done_is_monotone_in_the_database_write(
+    db_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    """Deux écritures qui se croisent : la seconde a lu `false` avant que la première commite
+    `true`. L'écriture elle-même ne peut pas défaire `true` (pas de lecture puis écriture)."""
+    async with db_session_factory() as first, db_session_factory() as second:
+        stale = await SettingsService(second, "u1").get(initialize=True)
+        assert stale.onboarding_done is False  # `second` a lu `false` ; `first` va le passer à vrai
+        await second.commit()  # la lecture a créé la ligne ; plus de verrou d'écriture
+        done = stale.model_copy(update={"onboarding_done": True})
+        await SettingsService(first, "u1").replace(done)
+        await first.commit()
+        # `second` écrit à partir de sa lecture périmée.
+        repo = UserSettingsRepository(second, "u1")
+        await repo.save_data({"onboarding_done": False, "debate_rounds": 4})
+        await second.commit()
+    async with db_session_factory() as check:
+        data = await UserSettingsRepository(check, "u1").get_data()
+    assert data is not None
+    assert data["onboarding_done"] is True and data["debate_rounds"] == 4
+
+
+async def test_replace_answers_with_what_is_stored_after_a_crossing_write(
+    db_session_factory: async_sessionmaker[AsyncSession], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async with db_session_factory() as first:
+        await SettingsService(first, "u1").replace(UserSettings(onboarding_done=True))
+        await first.commit()
+
+    async def stale_get(self: SettingsService, *, initialize: bool = False) -> UserSettings:
+        return UserSettings(onboarding_done=False)  # ce que lisait la requête avant l'autre
+
+    async with db_session_factory() as second:
+        monkeypatch.setattr(SettingsService, "get", stale_get)
+        kept = await SettingsService(second, "u1").replace(UserSettings(onboarding_done=False))
+        await second.commit()
+        monkeypatch.undo()
+    assert kept.onboarding_done is True
+    async with db_session_factory() as check:
+        assert (await SettingsService(check, "u1").get()).onboarding_done is True
+
+
+async def test_save_data_without_the_key_is_a_plain_replace(
+    db_session: AsyncSession,
+) -> None:
+    repo = UserSettingsRepository(db_session, "u1")
+    await repo.save_data({"onboarding_done": True})
+    await repo.save_data({"debate_rounds": 5})  # un test, un outil : la clé n'y est pas
+    assert await repo.get_data() == {"debate_rounds": 5}

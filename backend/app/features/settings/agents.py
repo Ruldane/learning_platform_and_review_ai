@@ -2,9 +2,7 @@
 sans les agents de démonstration, dans l'ordre du registre."""
 
 from app.agents.registry import AGENTS
-from app.features.settings.schemas import AgentOut
-
-DEMO_PREFIX = "demo_"
+from app.features.settings.schemas import AgentOut, is_overridable
 
 
 def agent_catalogue() -> list[AgentOut]:
@@ -13,5 +11,5 @@ def agent_catalogue() -> list[AgentOut]:
     return [
         AgentOut(name=spec.name, tier=spec.tier)
         for spec in AGENTS.values()
-        if not spec.name.startswith(DEMO_PREFIX)
+        if is_overridable(spec.name)
     ]

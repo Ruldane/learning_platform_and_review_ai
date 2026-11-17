@@ -94,8 +94,26 @@ async def test_stored_override_of_removed_agent_dropped(
     assert list(settings.agent_overrides) == ["strategist"]
     assert settings.agent_overrides["strategist"].provider == "glm"
     assert settings.debate_rounds == 5  # le reste des réglages n'est pas perdu
-    logged = "\n".join(record.getMessage() for record in caplog.records)
-    assert "agent_overrides" in logged and "agent-disparu-secret" not in logged
+    # Une lecture n'écrit rien dans le journal (le moteur en lit une par appel de modèle).
+    assert "agent_overrides" not in "\n".join(record.getMessage() for record in caplog.records)
+
+
+async def test_removed_agent_is_logged_once_at_save_never_at_read(
+    db_session: AsyncSession, caplog: pytest.LogCaptureFixture
+) -> None:
+    caplog.set_level(logging.DEBUG, logger="app")
+    await UserSettingsRepository(db_session, "u1").save_data(
+        {"agent_overrides": {"strategist": GLM, "agent-disparu-secret": GLM}}
+    )
+    service = SettingsService(db_session, "u1")
+    for _ in range(3):
+        await service.get()
+    assert not [r for r in caplog.records if "agent_overrides" in r.getMessage()]
+    await service.replace(await service.get())
+    logged = [r.getMessage() for r in caplog.records if "agent_overrides" in r.getMessage()]
+    assert len(logged) == 1 and "agent-disparu-secret" not in logged[0]
+    await service.replace(await service.get())  # plus rien à retirer : plus rien à dire
+    assert len([r for r in caplog.records if "agent_overrides" in r.getMessage()]) == 1
 
 
 async def test_stored_overrides_all_removed_gives_empty(db_session: AsyncSession) -> None:
@@ -123,6 +141,40 @@ async def test_get_settings_survives_a_removed_agent(
     assert r.status_code == 200 and list(r.json()["agent_overrides"]) == ["tutor"]
     # Le réglage ainsi lu se renvoie tel quel, sans 422.
     assert (await client.put(API, json=r.json())).status_code == 200
+
+
+@pytest.mark.parametrize("agent", ["demo_proponent", "demo_critic"])
+async def test_demo_agent_override_is_422_without_echo(
+    client: httpx.AsyncClient, agent: str
+) -> None:
+    """Le catalogue cache les agents de démonstration : le `PUT` ne les accepte pas non plus."""
+    r = await put(client, agent_overrides={agent: GLM})
+    assert r.status_code == 422
+    assert r.json()["error"]["details"] == {"fields": ["agent_overrides"]}
+    assert agent not in r.text
+
+
+async def test_stored_override_of_a_demo_agent_is_dropped(db_session: AsyncSession) -> None:
+    await UserSettingsRepository(db_session, "u1").save_data(
+        {"agent_overrides": {"demo_critic": GLM, "tutor": GLM}}
+    )
+    settings = await SettingsService(db_session, "u1").get()
+    assert list(settings.agent_overrides) == ["tutor"]
+
+
+async def test_unknown_tier_is_422_without_echoing_the_key(client: httpx.AsyncClient) -> None:
+    r = await put(client, tiers={"NOM-DE-NIVEAU-SECRET": GLM})
+    assert r.status_code == 422
+    assert r.json()["error"]["details"] == {"fields": ["tiers"]}
+    assert "NOM-DE-NIVEAU-SECRET" not in r.text
+
+
+async def test_known_tier_with_a_bad_value_still_names_its_path(
+    client: httpx.AsyncClient,
+) -> None:
+    r = await put(client, tiers={"rapide": {"provider": "", "model": "m"}})
+    assert r.status_code == 422
+    assert r.json()["error"]["details"] == {"fields": ["tiers.rapide.provider"]}
 
 
 async def test_override_never_logged(

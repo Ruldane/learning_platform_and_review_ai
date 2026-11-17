@@ -2,7 +2,8 @@ from collections.abc import Sequence
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Row, and_, or_, select
+from sqlalchemy import ColumnElement, Row, and_, or_, select
+from sqlalchemy.orm import InstrumentedAttribute
 
 from app.db.models.agents import LlmCall
 from app.db.repository import UserScopedRepository
@@ -26,6 +27,12 @@ _PAGE_COLUMNS = (
     LlmCall.session_id,
     LlmCall.latency_ms,
 )
+
+
+def _matches(column: InstrumentedAttribute[str | None], value: str) -> ColumnElement[bool]:
+    """Égalité ; la valeur vide désigne « sans » : le rapport des coûts range sous la clé `""` les
+    appels dont l'agent ou le graphe est NULL, et le journal les retrouve avec cette même clé."""
+    return or_(column.is_(None), column == "") if value == "" else column == value
 
 
 class LlmCallRepository(UserScopedRepository[LlmCall]):
@@ -62,8 +69,8 @@ class LlmCallRepository(UserScopedRepository[LlmCall]):
                 )
             )
         if agent is not None:
-            stmt = stmt.where(LlmCall.agent == agent)
+            stmt = stmt.where(_matches(LlmCall.agent, agent))
         if graph is not None:
-            stmt = stmt.where(LlmCall.graph == graph)
+            stmt = stmt.where(_matches(LlmCall.graph, graph))
         stmt = stmt.order_by(LlmCall.created_at.desc(), LlmCall.id.desc()).limit(limit)
         return (await self.session.execute(stmt)).all()

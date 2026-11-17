@@ -42,11 +42,12 @@ def decode_cursor(raw: str) -> tuple[datetime, str]:
         text = base64.b64decode(padded, altchars=b"-_", validate=True).decode("utf-8")
         stamp, separator, call_id = text.partition("|")
         at = datetime.fromisoformat(stamp)
-    except (binascii.Error, ValueError):  # `UnicodeDecodeError` est une `ValueError`
+        if not separator or at.tzinfo is None or not 0 < len(call_id) <= _MAX_ID_LENGTH:
+            raise _bad_cursor()
+        # Une date qui décode mais sort de la plage une fois en UTC lève `OverflowError`.
+        return at.astimezone(UTC), call_id
+    except (binascii.Error, ValueError, OverflowError):  # `UnicodeDecodeError` : `ValueError`
         raise _bad_cursor() from None
-    if not separator or at.tzinfo is None or not 0 < len(call_id) <= _MAX_ID_LENGTH:
-        raise _bad_cursor()
-    return at.astimezone(UTC), call_id
 
 
 def _out(row: Row[*tuple[Any, ...]]) -> AgentCallOut:

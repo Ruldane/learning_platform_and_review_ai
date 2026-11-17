@@ -138,6 +138,42 @@ async def test_calls_filter_agent_and_graph(
     assert none == {"items": [], "next_before": None}
 
 
+async def test_calls_empty_filter_finds_calls_without_agent_or_graph(
+    client: httpx.AsyncClient, app: FastAPI, db_session: AsyncSession
+) -> None:
+    """Le rapport range ces appels sous la clé `""` : le journal les retrouve avec elle."""
+    user = app.state.local_user_id
+    await seed_many(db_session, user, 2)
+    rows = [
+        ("no-agent", None, "capture"),
+        ("no-graph", "analyst", None),
+        ("no-both", None, None),
+        ("blank-both", "", ""),
+    ]
+    for index, (call_id, agent, graph) in enumerate(rows):
+        db_session.add(
+            LlmCall(
+                id=call_id,
+                user_id=user,
+                created_at=T0 + timedelta(minutes=1, seconds=index),
+                graph=graph,
+                agent=agent,
+                provider="glm",
+                model="m",
+            )
+        )
+    await db_session.commit()
+    no_agent = (await client.get(API, params={"agent": ""})).json()["items"]
+    assert [i["id"] for i in no_agent] == ["blank-both", "no-both", "no-agent"]
+    no_graph = (await client.get(API, params={"graph": ""})).json()["items"]
+    assert [i["id"] for i in no_graph] == ["blank-both", "no-both", "no-graph"]
+    both = (await client.get(API, params={"agent": "", "graph": ""})).json()["items"]
+    assert [i["id"] for i in both] == ["blank-both", "no-both"]
+    # Un nom d'agent ne retrouve jamais ces lignes.
+    named = (await client.get(API, params={"agent": "analyst"})).json()["items"]
+    assert "no-agent" not in [i["id"] for i in named] and "no-both" not in [i["id"] for i in named]
+
+
 async def test_calls_filter_keeps_cursor(
     client: httpx.AsyncClient, app: FastAPI, db_session: AsyncSession
 ) -> None:
@@ -190,6 +226,8 @@ def _cursor(raw: str) -> str:
         _cursor("2026-11-10T12:00:00|call-1"),  # sans fuseau
         _cursor("2026-11-10T12:00:00+00:00|"),  # sans identifiant
         _cursor("2026-11-10T12:00:00+00:00|ECHO-XYZ" + "x" * 80),  # identifiant trop long
+        _cursor("0001-01-01T00:00:00+05:00|x"),  # hors de la plage des dates une fois en UTC
+        _cursor("9999-12-31T23:59:59-05:00|x"),
         base64.urlsafe_b64encode(b"\xff\xfe\xfd|x").decode(),  # pas de l'UTF-8
     ],
 )

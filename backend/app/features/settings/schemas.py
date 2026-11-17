@@ -79,6 +79,15 @@ class WeeklyReview(BaseModel):
     time: HourMinute = "18:00"
 
 
+DEMO_PREFIX = "demo_"
+
+
+def is_overridable(name: str) -> bool:
+    """Vrai si `name` est un agent du catalogue (P17) : au registre, hors agents de démonstration.
+    Le `PUT`, la lecture d'un réglage stocké et `GET /settings/agents` s'accordent sur lui."""
+    return name in AGENTS and not name.startswith(DEMO_PREFIX)
+
+
 class UserSettings(BaseModel):
     availability: Availability = Field(default_factory=lambda: Availability())
     lesson_language: str = "fr"
@@ -128,11 +137,21 @@ class UserSettings(BaseModel):
     @field_validator("agent_overrides", mode="before")
     @classmethod
     def _known_agents(cls, overrides: object) -> object:
-        """Une surcharge ne vise qu'un agent du registre. Contrôlé avant la lecture des valeurs :
-        le nom reçu n'apparaît ni dans le message ni dans le chemin de l'erreur."""
-        if isinstance(overrides, dict) and any(name not in AGENTS for name in overrides):
+        """Une surcharge ne vise qu'un agent du catalogue (le registre sans `demo_*`). Contrôlé
+        avant la lecture des valeurs : le nom reçu n'apparaît ni dans le message ni dans le chemin
+        de l'erreur."""
+        if isinstance(overrides, dict) and not all(is_overridable(name) for name in overrides):
             raise ValueError("agent inconnu")  # message fixe : le nom reçu n'est pas recopié
         return overrides
+
+    @field_validator("tiers", mode="before")
+    @classmethod
+    def _known_tiers(cls, tiers: object) -> object:
+        """Un niveau inconnu est refusé avant la lecture des valeurs : pydantic mettrait sa clé
+        dans le chemin de l'erreur (`tiers.<clé>`), donc la saisie dans la réponse."""
+        if isinstance(tiers, dict) and any(name not in TIERS for name in tiers):
+            raise ValueError("niveau inconnu")  # message fixe : la clé reçue n'est pas recopiée
+        return tiers
 
     @field_validator("tiers")
     @classmethod
