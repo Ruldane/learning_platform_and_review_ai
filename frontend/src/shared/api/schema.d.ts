@@ -5610,8 +5610,9 @@ export interface components {
         };
         /**
          * McpConfirmationOut
-         * @description Une demande « À confirmer » (niveau 3) : ce que Claude veut faire, en résumé neutre, et le
-         *     verdict d'un éventuel contrôle préalable. Rien ne s'exécute avant la confirmation.
+         * @description Une demande « À confirmer » (niveau 3) : ce que Claude veut faire (un résumé neutre et la
+         *     requête complète en `request`) et le verdict d'un éventuel contrôle préalable. Rien ne
+         *     s'exécute avant la confirmation.
          */
         McpConfirmationOut: {
             /** Action */
@@ -5634,6 +5635,7 @@ export interface components {
             precheck: {
                 [key: string]: unknown;
             } | null;
+            request: components["schemas"]["McpRequestPreview"];
             /**
              * Status
              * @enum {string}
@@ -5657,6 +5659,37 @@ export interface components {
             read_actions: number;
             /** Write Actions */
             write_actions: number;
+        };
+        /**
+         * McpRequestField
+         * @description Un champ de la requête à confirmer : son nom et sa valeur en texte (objets et listes en JSON
+         *     compact), tronquée à 500 caractères ; les clés d'API sont masquées.
+         */
+        McpRequestField: {
+            /** Name */
+            name: string;
+            /** Value Preview */
+            value_preview: string;
+        };
+        /**
+         * McpRequestPreview
+         * @description La requête qui partira à la confirmation, de quoi la lire en entier : méthode, route (le
+         *     gabarit, sans identifiant), libellé lisible de la cible quand la route en a une (titre, nom ;
+         *     lu par la route de lecture de la même ressource ; un texte venu du web est entouré de
+         *     `<donnee_non_fiable>`), **tous** les champs du corps et des paramètres, et `truncated` si une
+         *     valeur ou le total (4 000 caractères) a été coupé.
+         */
+        McpRequestPreview: {
+            /** Fields */
+            fields: components["schemas"]["McpRequestField"][];
+            /** Method */
+            method: string;
+            /** Route */
+            route: string;
+            /** Target Label */
+            target_label: string | null;
+            /** Truncated */
+            truncated: boolean;
         };
         /**
          * McpSettingsIn

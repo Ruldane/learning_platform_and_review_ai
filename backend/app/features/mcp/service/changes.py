@@ -2,13 +2,29 @@
 annulable d'un geste (`ChangeRecorder.undo`, dans `app/mcp/recorder.py`). Annuler remet les lignes
 de l'appel dans leur état d'avant, ou refuse (409) si l'une d'elles a changé depuis."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.db.models.mcp import McpChange
 from app.features.mcp.repository import ChangeRepository
 from app.features.mcp.schemas import McpChangeOut, McpUndoOut
+from app.features.mcp.service.calls import RETENTION_DAYS
 from app.mcp.recorder import ChangeRecorder
+
+
+async def purge_old_changes(
+    session_factory: async_sessionmaker[AsyncSession], now: datetime
+) -> int:
+    """Retire les changements de plus de `RETENTION_DAYS` jours (ils gardent l'avant et l'après de
+    chaque ligne, texte complet ; passé ce délai l'appel ne s'annule plus). Tâche planifiée, tous
+    comptes : une rétention. Rend le nombre de lignes retirées."""
+    cutoff = now - timedelta(days=RETENTION_DAYS)
+    async with session_factory() as db:
+        result = await db.execute(delete(McpChange).where(McpChange.created_at < cutoff))
+        await db.commit()
+    return int(getattr(result, "rowcount", 0) or 0)
 
 
 class ChangesService:

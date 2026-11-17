@@ -56,6 +56,13 @@ class Registry:
     def all(self) -> list[ToolSpec]:
         return list(self._tools.values())
 
+    def reader_of(self, template: str) -> ToolSpec | None:
+        """L'outil de lecture (niveau 1) de la route `GET <template>`, s'il est déclaré."""
+        for tool in self._tools.values():
+            if tool.level == 1 and tool.route == ("GET", template):
+                return tool
+        return None
+
 
 def _check_action(feature: str, action: McpAction) -> tuple[str, str]:
     method, path = split_route(action.route)
@@ -63,7 +70,18 @@ def _check_action(feature: str, action: McpAction) -> tuple[str, str]:
         raise McpConfigError(f"nom d'outil invalide : « {action.name} » ([a-z0-9_], 64 au plus)")
     if never_reachable(path):
         raise McpConfigError(f"{action.route} : route de niveau 4, jamais exposée au MCP")
-    if path == SETTINGS_PATH:
+    if method == "DELETE" and action.level < 3:
+        raise McpConfigError(
+            f"{action.route} : une suppression est de niveau 3 (elle ne s'annule pas)"
+        )
+    if method == "POST" and path == "/sessions":
+        raise McpConfigError(
+            "POST /sessions ne se déclare pas comme action : un parcours se déclare par McpGraph "
+            "(sessions lancées sans liste blanche sinon)"
+        )
+    if action.precheck is not None and action.level != 3:
+        raise McpConfigError(f"{action.name} : un contrôle préalable ne va qu'avec le niveau 3")
+    if path == SETTINGS_PATH or path.startswith(SETTINGS_PATH + "/"):
         if method == "GET" and action.response_fields is None:
             raise McpConfigError(f"{action.route} : les réglages exigent response_fields")
         if method != "GET" and action.body_fields is None:

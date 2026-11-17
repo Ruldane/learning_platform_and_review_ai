@@ -43,12 +43,15 @@ class ToolResult:
     """Ce que rend l'envoyeur : le corps de la réponse de la route (`data`), son code HTTP et les
     identifiants touchés (pour le journal : jamais de contenu). Un code de 400 ou plus est une
     erreur de l'outil. `call_id` : l'identifiant de l'appel d'un outil de niveau 2 (celui de ses
-    changements annulables), repris par le journal comme identifiant de la ligne."""
+    changements annulables), repris par le journal comme identifiant de la ligne. `notice` : une
+    phrase de plus pour Claude, ajoutée à la note de l'enveloppe (ex. un appel de niveau 2 sans
+    historique : il ne pourra pas être annulé)."""
 
     data: Any
     code: int = 200
     ids: Mapping[str, Any] = field(default_factory=dict)
     call_id: str | None = None
+    notice: str | None = None
 
     @property
     def is_error(self) -> bool:

@@ -141,6 +141,18 @@ class ConfirmationRepository(UserScopedRepository[McpConfirmation]):
         )
         return int(getattr(result, "rowcount", 0) or 0) == 1
 
+    async def set_precheck(self, confirmation_id: str, precheck: dict[str, Any] | None) -> None:
+        """Remplace le verdict d'une demande encore en attente (contrôle rejoué au clic)."""
+        await self.session.execute(
+            update(McpConfirmation)
+            .where(
+                McpConfirmation.id == confirmation_id,
+                McpConfirmation.user_id == self.user_id,
+                McpConfirmation.status == "pending",
+            )
+            .values(precheck=precheck)
+        )
+
 
 async def expire_pending(session: AsyncSession, now: datetime) -> int:
     """Toute demande en attente dont l'heure est passée devient « expirée » (tâche planifiée, tous

@@ -3,6 +3,7 @@
 (formulaire, identité, résultat de session) et la lecture d'un résultat d'outil."""
 
 import json
+from collections.abc import Awaitable, Callable
 from typing import Annotated, Any
 
 import httpx
@@ -25,7 +26,12 @@ async def honesty_check(asked: PrecheckInput) -> Verdict:
     return Verdict(ok=False, reasons=("Une ligne n'est pas dans le profil.",), summary="1 écart")
 
 
-def _applications(event_level: Level) -> FeatureMcp:
+Precheck = Callable[[PrecheckInput], Awaitable[Verdict]]
+
+
+def _applications(
+    event_level: Level, precheck: Precheck, get_untrusted: tuple[str, ...]
+) -> FeatureMcp:
     return FeatureMcp(
         "applications",
         actions=(
@@ -34,7 +40,7 @@ def _applications(event_level: Level) -> FeatureMcp:
                 "GET /applications/{application_id}",
                 1,
                 "applications_get",
-                untrusted=("notes", "contacts[].name"),
+                untrusted=get_untrusted,
             ),
             McpAction("POST /applications", 2, "applications_add"),
             McpAction("PATCH /applications/{application_id}", 2, "applications_update"),
@@ -42,7 +48,7 @@ def _applications(event_level: Level) -> FeatureMcp:
                 "POST /applications/{application_id}/events",
                 event_level,
                 "applications_event",
-                precheck=honesty_check,
+                precheck=precheck,
             ),
         ),
     )
@@ -61,11 +67,16 @@ def _settings() -> FeatureMcp:
 
 
 def declarations(
-    *, graph_untrusted: tuple[str, ...] = ("result",), event_level: Level = 3
+    *,
+    graph_untrusted: tuple[str, ...] = ("result",),
+    event_level: Level = 3,
+    precheck: Precheck = honesty_check,
+    get_untrusted: tuple[str, ...] = ("notes", "contacts[].name"),
 ) -> list[FeatureMcp]:
     probes = (
         McpAction("POST /_probe/form", 2, "probe_form", encoding="form"),
         McpAction("POST /_probe/who", 3, "probe_who"),
+        McpAction("POST /_probe/leak", 3, "probe_leak"),
         McpAction("GET /_probe/session/{session_id}", 1, "probe_session"),
         McpAction("GET /_probe/page/{slug}", 1, "probe_page"),
     )
@@ -73,7 +84,7 @@ def declarations(
     follow = McpAction("GET /sessions/{session_id}", 1, "sessions_get")
     graph = McpGraph("with_topic", untrusted=graph_untrusted)
     return [
-        _applications(event_level),
+        _applications(event_level, precheck, get_untrusted),
         _settings(),
         FeatureMcp("sessions", actions=(follow,), graphs=(graph,)),
         FeatureMcp("cv", actions=(profile,)),
@@ -103,6 +114,10 @@ def probe_router() -> APIRouter:
     @router.post("/who")
     async def who(current: CurrentUserDep, caller: CallerDep) -> dict[str, str]:
         return {"user": current.id, "caller": caller.kind, "label": caller.label}
+
+    @router.post("/leak")
+    async def leak(current: CurrentUserDep) -> dict[str, str]:
+        return {"thread_id": "du texte libre, avec des espaces et des mots", "note_id": "n_1"}
 
     @router.get("/session/{session_id}")
     async def session(session_id: str) -> dict[str, Any]:

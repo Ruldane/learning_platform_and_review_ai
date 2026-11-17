@@ -157,6 +157,8 @@ def _authorize(tool: ToolSpec, identity: McpIdentity) -> None:
 
 def _tool_result(tool: ToolSpec, outcome: ToolResult) -> dict[str, Any]:
     body = envelope(outcome.data, tool.untrusted, ok=not outcome.is_error)
+    if outcome.notice:
+        body["notice"] = f"{body['notice']} {outcome.notice}"
     text = json.dumps(body, ensure_ascii=False, default=str)
     if len(text) > MAX_RESULT_CHARS:
         too_big = {

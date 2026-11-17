@@ -97,7 +97,9 @@ def install_adapter(
     registry = build_registry(features, app, graphs)
 
     def confirmations(user_id: str) -> ConfirmationService:
-        return ConfirmationService(app.state.session_factory, user_id, dispatcher.run_stored)
+        return ConfirmationService(
+            app.state.session_factory, user_id, dispatcher.run_stored, dispatcher.recheck
+        )
 
     dispatcher = McpDispatcher(app, app.state.session_factory, registry, confirmations)
     app.state.mcp_registry = registry

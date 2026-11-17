@@ -1,7 +1,9 @@
 """Les demandes « À confirmer » vues de l'adaptateur (phase 10, P15) : la requête gardée telle
-qu'elle partirait, son résumé neutre et le port que l'envoyeur utilise pour la ranger. La vie de la
-demande (état, expiration, confirmation, refus) est dans `features/mcp/service/confirmations.py`."""
+qu'elle partirait, son résumé neutre, l'aperçu complet que January lit avant de confirmer
+(`preview_fields`) et le port que l'envoyeur utilise pour la ranger. La vie de la demande (état,
+expiration, confirmation, refus) est dans `features/mcp/service/confirmations.py`."""
 
+import json
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any, Literal, Protocol
@@ -15,6 +17,8 @@ CONFIRMATION_TTL = timedelta(hours=24)
 MAX_PENDING_PER_TOKEN = 20
 _PREVIEW = 60
 _PREVIEW_FIELDS = 6
+FIELD_PREVIEW_MAX = 500  # caractères montrés par champ
+TOTAL_PREVIEW_MAX = 4_000  # caractères montrés pour toute la requête
 
 
 @dataclass(frozen=True)
@@ -28,6 +32,8 @@ class StoredRequest:
     label: str
     features: tuple[str, ...]
     mode: str
+    route: str | None = None  # le gabarit de la route (`/applications/{application_id}`)
+    target_label: str | None = None  # le libellé lisible de la cible, lu à la création
 
     def to_json(self) -> dict[str, Any]:
         request = self.request
@@ -40,6 +46,8 @@ class StoredRequest:
             "form": request.form,
             "merge_path": request.merge_path,
             "merge_fields": list(request.merge_fields) if request.merge_fields else None,
+            "route": self.route,
+            "target_label": self.target_label,
             "identity": {"label": self.label, "features": list(self.features), "mode": self.mode},
         }
 
@@ -56,7 +64,15 @@ class StoredRequest:
             merge_path=data.get("merge_path"),
             merge_fields=tuple(fields) if fields else None,
         )
-        return cls(data["tool"], request, who["label"], tuple(who["features"]), who["mode"])
+        return cls(
+            data["tool"],
+            request,
+            who["label"],
+            tuple(who["features"]),
+            who["mode"],
+            data.get("route"),
+            data.get("target_label"),
+        )
 
     def identity(self, user_id: str, token_id: str) -> McpIdentity:
         """L'identité sous laquelle la demande s'exécute : celle enregistrée à la création."""
@@ -84,6 +100,11 @@ class ConfirmationPort(Protocol):
     """Le rangement d'une demande (fourni par la feature `mcp`, pour un compte donné). Lève
     `AppError` 429 `too_many_pending` à 20 demandes en attente pour le jeton."""
 
+    async def ensure_room(self, identity: McpIdentity) -> None:
+        """Lève `AppError` 429 `too_many_pending` si le jeton a déjà 20 demandes en attente (à
+        tester avant le contrôle préalable, qui peut coûter un appel au modèle)."""
+        ...
+
     async def create(
         self,
         identity: McpIdentity,
@@ -91,6 +112,39 @@ class ConfirmationPort(Protocol):
         summary: str,
         precheck: dict[str, Any] | None,
     ) -> Pending: ...
+
+
+def _render(value: Any) -> str:
+    """Une valeur en texte : tel quel pour un texte, JSON compact sinon (objets, listes…)."""
+    if isinstance(value, str):
+        return value
+    return json.dumps(value, ensure_ascii=False, separators=(",", ":"), default=str)
+
+
+def preview_fields(request: ToolRequest) -> tuple[list[tuple[str, str]], bool]:
+    """**Tous** les champs de la requête (paramètres puis corps), chacun rendu en texte, les clés
+    masquées avant la coupe (une clé coupée en deux ne reste jamais lisible), 500 caractères par
+    champ et 4 000 en tout. Rend `(champs, tronqué)` ; un champ coupé finit par « … », un champ
+    au-delà du total est nommé avec un aperçu vide."""
+    items: list[tuple[str, Any]] = list(request.params.items())
+    if isinstance(request.body, dict):
+        items += list(request.body.items())
+    elif request.body is not None:
+        items.append(("body", request.body))
+    fields: list[tuple[str, str]] = []
+    remaining = TOTAL_PREVIEW_MAX
+    truncated = False
+    for name, value in items:
+        text = scrub_text(_render(value))
+        room = min(FIELD_PREVIEW_MAX, remaining)
+        if len(text) > room:
+            truncated = True
+            text = text[:room] + ("…" if room else "")
+            remaining -= room
+        else:
+            remaining -= len(text)
+        fields.append((clip(name, 60), text))
+    return fields, truncated
 
 
 def summarize(tool: ToolSpec, request: ToolRequest) -> str:

@@ -1,12 +1,19 @@
 """L'annulation des changements d'un appel de niveau 2 (phase 10, P14) : dans une transaction, **si
 chaque ligne est restée dans l'état « après »**, les ajouts sont supprimés, les modifications
 restaurées et les suppressions ré-insérées ; sinon 409 sans rien écrire. Seules les lignes de
-cette utilisatrice sont vues (404 pour l'appel d'une autre)."""
+cette utilisatrice sont vues (404 pour l'appel d'une autre).
+
+Garde-fous : (1) les lignes de l'appel sont prises d'abord par un `UPDATE … WHERE undone_at IS
+NULL` (deux clics en même temps : un seul passe) ; (2) un ajout qui a des lignes **liées** (clé
+étrangère, cascade comprise) ne venant pas du même appel n'est pas supprimé : la suppression les
+emporterait en silence (`undo_has_dependents`) ; (3) une contrainte de la base est un 409, jamais
+une 500."""
 
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import Table, delete, insert, select, update
+from sqlalchemy import Column, Table, delete, insert, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.errors import AppError
@@ -19,7 +26,8 @@ async def undo_call(
     factory: async_sessionmaker[AsyncSession], user_id: str, call_id: str
 ) -> UndoResult:
     """Annule tous les changements de `call_id` ou rien : 404 si l'appel n'a rien changé chez
-    cette utilisatrice, 409 s'il est déjà annulé ou si une ligne a changé depuis."""
+    cette utilisatrice, 409 s'il est déjà annulé, si une ligne a changé depuis, si un ajout a des
+    lignes liées d'un autre appel, ou si la base refuse."""
     async with factory() as db:
         stmt = (
             select(McpChange)
@@ -31,15 +39,82 @@ async def undo_call(
             raise AppError("call_not_found", "Aucun changement à annuler pour cet appel.", 404)
         pending = [row for row in rows if row.undone_at is None]
         if not pending:
-            raise AppError("already_undone", "Cet appel est déjà annulé.", 409)
-        for row in pending:
-            await _check(db, row)
-        now = datetime.now(UTC)
-        for row in pending:
-            await _apply(db, row, user_id)
-            row.undone_at = now
-        await db.commit()
+            raise _already_undone()
+        try:
+            await _claim(db, user_id, call_id, pending)
+            added = {(row.table_name, row.row_id) for row in pending if row.op == "insert"}
+            for row in pending:
+                if row.op == "insert":
+                    await _check_dependents(db, row, added)
+            for row in pending:
+                await _check(db, row)
+            for row in pending:
+                await _apply(db, row, user_id)
+            await db.commit()
+        except IntegrityError as exc:
+            await db.rollback()
+            raise AppError(
+                "undo_refused",
+                "Annulation refusée : la base refuse de défaire ce changement (une contrainte "
+                "serait violée).",
+                409,
+            ) from exc
+        except AppError:
+            await db.rollback()  # le « pris » de `_claim` ne reste pas
+            raise
     return UndoResult(call_id=call_id, undone=len(pending))
+
+
+def _already_undone() -> AppError:
+    return AppError("already_undone", "Cet appel est déjà annulé.", 409)
+
+
+async def _claim(db: AsyncSession, user_id: str, call_id: str, pending: list[McpChange]) -> None:
+    """Prend les lignes de l'historique (`undone_at`) avant tout : un second clic, qui les trouve
+    prises, reçoit 409 sans rien appliquer."""
+    taken = await db.execute(
+        update(McpChange)
+        .where(
+            McpChange.user_id == user_id,
+            McpChange.call_id == call_id,
+            McpChange.id.in_([row.id for row in pending]),
+            McpChange.undone_at.is_(None),
+        )
+        .values(undone_at=datetime.now(UTC))
+    )
+    if int(getattr(taken, "rowcount", 0) or 0) != len(pending):
+        raise _already_undone()
+
+
+async def _check_dependents(db: AsyncSession, row: McpChange, added: set[tuple[str, str]]) -> None:
+    """Un ajout n'est supprimé que si aucune ligne ne s'y rattache (clé étrangère, cascade ou non)
+    en dehors de celles que cet appel a ajoutées lui-même : sinon 409, sans contenu."""
+    table = _table(row)
+    for child, column, parent in _referrers(table):
+        value = row.row_id if parent.primary_key else (row.after or {}).get(parent.name)
+        keys = list(child.primary_key.columns)
+        found = (await db.execute(select(*keys).where(column == value))).all()
+        for dependent in found:
+            same_call = recordable(child) and (child.name, str(dependent[0])) in added
+            if not same_call:
+                raise AppError(
+                    "undo_has_dependents",
+                    f"Annulation refusée : des lignes de « {child.name} » ont été ajoutées "
+                    "depuis et dépendent de cet ajout ; le défaire les supprimerait avec lui.",
+                    409,
+                    {"table": child.name},
+                )
+
+
+def _referrers(table: Table) -> list[tuple[Table, Column[Any], Column[Any]]]:
+    """Les colonnes d'autres tables (ou de la même) qui visent cette table par une clé étrangère :
+    `(table liée, colonne liée, colonne visée)`."""
+    found: list[tuple[Table, Column[Any], Column[Any]]] = []
+    for other in Base.metadata.tables.values():
+        for key in other.foreign_keys:
+            if key.column.table is table:
+                found.append((other, key.parent, key.column))
+    return found
 
 
 def _table(row: McpChange) -> Table:

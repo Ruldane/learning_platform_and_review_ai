@@ -9,7 +9,7 @@ from typing import Any
 
 from sqlalchemy import Table
 
-_NEVER_RECORDED = frozenset({"api_keys"})
+_NEVER_RECORDED = frozenset({"api_keys", "auth_sessions"})
 
 
 @dataclass(frozen=True)
@@ -21,8 +21,11 @@ class UndoResult:
 
 
 def recordable(table: Table) -> bool:
-    """Une table dont l'historique est permis : clé primaire simple, aucun secret, pas `mcp_*`."""
+    """Une table dont l'historique est permis : clé primaire simple, aucun secret (ni colonne ni
+    table marquée `info={"export": False}`), pas `mcp_*`."""
     if table.name in _NEVER_RECORDED or table.name.startswith("mcp_"):
+        return False
+    if table.info.get("export", True) is False:
         return False
     if len(table.primary_key.columns) != 1:
         return False

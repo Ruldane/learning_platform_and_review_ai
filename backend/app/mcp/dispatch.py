@@ -34,7 +34,9 @@ from app.mcp.results import (
     result_ids,
     translate_validation,
 )
+from app.mcp.routes import RouteIndex
 from app.mcp.schema import API_PREFIX, never_reachable
+from app.mcp.target import label_of, reader_of_target
 from app.mcp.tools import ToolResult, ToolSpec
 
 logger = logging.getLogger(__name__)
@@ -42,6 +44,11 @@ logger = logging.getLogger(__name__)
 REQUEST_TIMEOUT_S = 90.0
 PRECHECK_TIMEOUT_S = 60.0
 _BAD_PATH_CHARS = ("..", "?", "#", "%", "\\", "\x00")
+_NO_HISTORY = {
+    "overflow": "Trop de lignes touchées pour garder l'historique",
+    "failed": "L'historique de cet appel n'a pas pu être écrit",
+    "empty": "Aucune ligne de la base n'a été enregistrée pour cet appel",
+}
 
 
 @dataclass(frozen=True)
@@ -103,6 +110,7 @@ class McpDispatcher:
         confirmations: Callable[[str], ConfirmationPort],
     ) -> None:
         self._app = app
+        self._routes = RouteIndex(app.openapi())
         self._factory = session_factory
         self._registry = registry
         self._confirmations = confirmations
@@ -114,6 +122,7 @@ class McpDispatcher:
         try:
             check_arguments(tool.input_schema, arguments)
             request = self._request(tool, arguments)
+            self._routes.ensure_declared(tool, request)
         except ArgumentError as exc:
             data = {"error": {"code": "invalid_arguments", "message": exc.message}}
             return ToolResult(data=data, code=422, ids={})
@@ -158,12 +167,15 @@ class McpDispatcher:
         recorder = ChangeRecorder(self._factory, call_id, identity.user_id)
         async with recorder:
             response = await self._send(identity, request)
+        why: str | None = None
         if response.status < 400:
             try:
-                await recorder.persist()
+                kept = await recorder.persist()
+                why = None if kept else ("overflow" if recorder.overflow else "empty")
             except Exception as exc:  # une panne d'historique ne défait pas l'appel déjà fait
                 logger.error("MCP : historique de l'appel impossible (%s)", type(exc).__name__)
-        return self._result(tool, arguments, response, call_id)
+                why = "failed"
+        return self._result(tool, arguments, response, call_id, why)
 
     def _result(
         self,
@@ -171,17 +183,29 @@ class McpDispatcher:
         arguments: Mapping[str, Any],
         response: InternalResponse,
         call_id: str | None = None,
+        no_history: str | None = None,
     ) -> ToolResult:
+        """`no_history` : un appel de niveau 2 réussi dont rien n'a été gardé (`overflow`, `failed`,
+        `empty`) le dit à Claude (`notice`) et au journal (`history: none`) : il ne s'annule pas."""
         data = response.data
         if response.status == 422:
             data = translate_validation(data, tool)
         elif response.status < 400:
             data = self._fence_sessions(filter_fields(data, tool.response_fields))
+        ids = result_ids(arguments, data)
+        notice = None
+        if no_history is not None:
+            ids["history"] = "none"
+            notice = (
+                f"{_NO_HISTORY[no_history]} : cet appel ne pourra pas être annulé depuis "
+                "l'application."
+            )
         return ToolResult(
             data={} if data is None else data,
             code=response.status,
-            ids=result_ids(arguments, data),
+            ids=ids,
             call_id=call_id,
+            notice=notice,
         )
 
     def _fence_sessions(self, data: Any) -> Any:
@@ -199,19 +223,42 @@ class McpDispatcher:
     ) -> ToolResult:
         """Niveau 3 : rien n'est envoyé. Le contrôle préalable (s'il y en a un) et la requête sont
         rangés dans une demande « À confirmer »."""
+        port = self._confirmations(identity.user_id)
+        await port.ensure_room(identity)  # le plafond d'abord : le contrôle peut coûter un modèle
         verdict = await self._precheck(identity, tool, request)
         stored = StoredRequest(
-            tool.name, request, identity.label, tuple(sorted(identity.features)), identity.mode
+            tool.name,
+            request,
+            identity.label,
+            tuple(sorted(identity.features)),
+            identity.mode,
+            tool.route[1] if tool.route else None,
+            await self._target_label(identity, tool, request),
         )
-        pending = await self._confirmations(identity.user_id).create(
-            identity, stored, summarize(tool, request), verdict
-        )
+        pending = await port.create(identity, stored, summarize(tool, request), verdict)
         data = {
             "status": "pending_confirmation",
             "confirmation_id": pending.id,
             "expires_at": pending.expires_at.isoformat(),
         }
         return ToolResult(data=data, code=202, ids={"confirmation_id": pending.id})
+
+    async def _target_label(
+        self, identity: McpIdentity, tool: ToolSpec, request: ToolRequest
+    ) -> str | None:
+        """Le libellé lisible de la cible (« Société — Titre »), lu par la route GET de la même
+        ressource quand elle est déclarée (voir `app/mcp/target.py`) ; `None` sinon. Lu sous
+        l'identité du jeton, montré à January seulement."""
+        found = reader_of_target(self._registry, tool, request.path)
+        if found is None:
+            return None
+        reader, path = found
+        try:
+            read = await internal_request(self._app, identity, "GET", path, {}, None)
+        except Exception as exc:  # le libellé n'est qu'un confort : jamais un blocage
+            logger.error("MCP : libellé de la cible impossible (%s)", type(exc).__name__)
+            return None
+        return label_of(read.data, reader) if read.status == 200 else None
 
     @staticmethod
     async def _precheck(
@@ -232,6 +279,13 @@ class McpDispatcher:
             logger.error("MCP : contrôle préalable impossible (%s)", type(exc).__name__)
             verdict = Verdict(ok=False, reasons=("Le contrôle préalable n'a pas pu se faire.",))
         return {"ok": verdict.ok, "reasons": list(verdict.reasons), "summary": verdict.summary}
+
+    async def recheck(self, identity: McpIdentity, stored: StoredRequest) -> dict[str, Any] | None:
+        """Rejoue le contrôle préalable d'une demande en attente (`None` : l'outil n'en a plus)."""
+        tool = self._registry.get(stored.tool)
+        if tool is None:
+            return None
+        return await self._precheck(identity, tool, stored.request)
 
     async def run_stored(self, identity: McpIdentity, stored: StoredRequest) -> ToolResult:
         """Exécute une demande confirmée, sous l'identité enregistrée (jamais d'historique : une

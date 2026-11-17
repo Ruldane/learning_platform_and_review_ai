@@ -7031,7 +7031,7 @@
         "type": "object"
       },
       "McpConfirmationOut": {
-        "description": "Une demande « À confirmer » (niveau 3) : ce que Claude veut faire, en résumé neutre, et le\nverdict d'un éventuel contrôle préalable. Rien ne s'exécute avant la confirmation.",
+        "description": "Une demande « À confirmer » (niveau 3) : ce que Claude veut faire (un résumé neutre et la\nrequête complète en `request`) et le verdict d'un éventuel contrôle préalable. Rien ne\ns'exécute avant la confirmation.",
         "properties": {
           "action": {
             "title": "Action",
@@ -7075,6 +7075,9 @@
             ],
             "title": "Precheck"
           },
+          "request": {
+            "$ref": "#/components/schemas/McpRequestPreview"
+          },
           "status": {
             "enum": [
               "pending",
@@ -7100,6 +7103,7 @@
           "token_id",
           "action",
           "summary",
+          "request",
           "precheck",
           "status",
           "expires_at",
@@ -7136,6 +7140,69 @@
           "confirm_actions"
         ],
         "title": "McpFeatureOut",
+        "type": "object"
+      },
+      "McpRequestField": {
+        "description": "Un champ de la requête à confirmer : son nom et sa valeur en texte (objets et listes en JSON\ncompact), tronquée à 500 caractères ; les clés d'API sont masquées.",
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "value_preview": {
+            "title": "Value Preview",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "value_preview"
+        ],
+        "title": "McpRequestField",
+        "type": "object"
+      },
+      "McpRequestPreview": {
+        "description": "La requête qui partira à la confirmation, de quoi la lire en entier : méthode, route (le\ngabarit, sans identifiant), libellé lisible de la cible quand la route en a une (titre, nom ;\nlu par la route de lecture de la même ressource ; un texte venu du web est entouré de\n`<donnee_non_fiable>`), **tous** les champs du corps et des paramètres, et `truncated` si une\nvaleur ou le total (4 000 caractères) a été coupé.",
+        "properties": {
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/McpRequestField"
+            },
+            "title": "Fields",
+            "type": "array"
+          },
+          "method": {
+            "title": "Method",
+            "type": "string"
+          },
+          "route": {
+            "title": "Route",
+            "type": "string"
+          },
+          "target_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Label"
+          },
+          "truncated": {
+            "title": "Truncated",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "method",
+          "route",
+          "target_label",
+          "fields",
+          "truncated"
+        ],
+        "title": "McpRequestPreview",
         "type": "object"
       },
       "McpSettingsIn": {

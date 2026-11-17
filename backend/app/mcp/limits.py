@@ -55,7 +55,9 @@ class RateLimiter:
 
     def __init__(self, limits: Limits | None = None) -> None:
         self._limits = limits or Limits()
-        self._events: dict[tuple[str, str], deque[datetime]] = {}
+        # Un compteur par jeton, par sorte et par fenêtre : chacun ne garde que les instants de sa
+        # propre fenêtre (au plus `limit`, un appel refusé n'est pas compté).
+        self._events: dict[tuple[str, str, timedelta], deque[datetime]] = {}
 
     def _rules(self, level: Level, bucket: str | None) -> list[_Rule]:
         lim = self._limits
@@ -76,20 +78,19 @@ class RateLimiter:
             )
         return rules
 
-    def _events_of(self, token_id: str, kind: str, now: datetime) -> deque[datetime]:
-        """Les instants du compteur, sans ceux de plus d'un jour (la plus longue fenêtre)."""
-        events = self._events.setdefault((token_id, kind), deque())
-        while events and events[0] <= now - DAY:
+    def _events_of(self, token_id: str, rule: _Rule, now: datetime) -> deque[datetime]:
+        """Les instants du compteur de la règle, sans ceux qui sont sortis de sa fenêtre."""
+        events = self._events.setdefault((token_id, rule.kind, rule.window), deque())
+        while events and events[0] <= now - rule.window:
             events.popleft()
         return events
 
-    def _wait_seconds(self, events: deque[datetime], rule: _Rule, now: datetime) -> int | None:
-        """Secondes à attendre si la règle est atteinte, sinon `None`."""
-        cutoff = now - rule.window
-        inside = [moment for moment in events if moment > cutoff]
-        if len(inside) < rule.limit:
+    @staticmethod
+    def _wait_seconds(events: deque[datetime], rule: _Rule, now: datetime) -> int | None:
+        """Secondes à attendre si la règle est atteinte, sinon `None` (`events` : déjà élagué)."""
+        if len(events) < rule.limit:
             return None
-        frees_at = inside[len(inside) - rule.limit] + rule.window
+        frees_at = events[len(events) - rule.limit] + rule.window
         return max(1, ceil((frees_at - now).total_seconds()))
 
     async def check(
@@ -100,21 +101,21 @@ class RateLimiter:
         rules = self._rules(level, bucket)
         worst: tuple[int, _Rule] | None = None
         for rule in rules:
-            events = self._events_of(identity.token_id, rule.kind, now)
+            events = self._events_of(identity.token_id, rule, now)
             wait = self._wait_seconds(events, rule, now)
             if wait is not None and (worst is None or wait > worst[0]):
                 worst = (wait, rule)
         if worst is not None:
             self._forget_empty(identity.token_id)
             raise _too_many(*worst)
-        for kind in dict.fromkeys(rule.kind for rule in rules):
-            self._events_of(identity.token_id, kind, now).append(now)
+        for rule in rules:
+            self._events_of(identity.token_id, rule, now).append(now)
 
     async def check_request(self, token_id: str, now: datetime) -> None:
         """Plafond grossier de toute requête authentifiée (`ping`, `tools/list`, JSON invalide…),
         avant la moindre écriture en base. Même 429 lisible que `check`."""
         rule = _Rule("requests", MINUTE, self._limits.requests_per_minute, "requêtes")
-        events = self._events_of(token_id, rule.kind, now)
+        events = self._events_of(token_id, rule, now)
         wait = self._wait_seconds(events, rule, now)
         if wait is not None:
             raise _too_many(wait, rule)
