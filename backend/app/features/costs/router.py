@@ -5,23 +5,40 @@ jamais recopier la valeur reçue."""
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Query
+from pydantic import BeforeValidator
 
 from app.core.deps import CurrentUserDep, Db
 from app.core.errors import AppError
 from app.core.field_paths import FieldPathsRoute
 from app.features.costs.schemas import AgentCallPage, CostsReport
+from app.features.costs.service import costs_report
 
 router = APIRouter(prefix="/costs", tags=["costs"], route_class=FieldPathsRoute)
 
 
-@router.get("", response_model=CostsReport)
+def _days_from_query(value: object) -> object:
+    """Un paramètre de requête arrive en texte : pydantic ne lit pas « 7 » comme l'entier 7 pour
+    un `Literal`. Seuls les chiffres ASCII sont convertis ; le reste reste tel quel, donc refusé."""
+    if isinstance(value, str) and value.isascii() and value.isdigit():
+        return int(value)
+    return value
+
+
+Days = Annotated[Literal[7, 30, 90], BeforeValidator(_days_from_query)]
+
+
+@router.get(
+    "",
+    response_model=CostsReport,
+    responses={422: {"description": "`details.fields` : `days` (ni 7, ni 30, ni 90)"}},
+)
 async def get_costs(
-    current: CurrentUserDep, db: Db, days: Annotated[Literal[7, 30, 90], Query()] = 30
+    current: CurrentUserDep, db: Db, days: Annotated[Days, Query()] = 30
 ) -> CostsReport:
     """Les coûts des 7, 30 ou 90 derniers jours (jours du fuseau de l'utilisatrice, aujourd'hui
     compris), agrégés depuis les appels journalisés, aux prix de l'appel. Toute autre durée : 422
     (`details.fields` : `days`)."""
-    raise AppError("not_implemented", "Pas encore disponible.", 501)
+    return await costs_report(db, current.id, days)
 
 
 @router.get(

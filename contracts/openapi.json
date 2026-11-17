@@ -15351,14 +15351,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "description": "`details.fields` : `days` (ni 7, ni 30, ni 90)"
           }
         },
         "summary": "Get Costs",
@@ -18894,6 +18887,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "description": "`drafts_unavailable` : le lancement est refusé, rien n'est changé"
           }
         },
         "summary": "Post Drafts",

@@ -219,6 +219,7 @@ async def post_brief(
             "description": "`project_not_validated`, `drafts_present` (le projet a déjà ses "
             "brouillons) ou `review_in_progress` (`details.session_id`)"
         },
+        503: {"description": "`drafts_unavailable` : le lancement est refusé, rien n'est changé"},
     },
 )
 async def post_drafts(

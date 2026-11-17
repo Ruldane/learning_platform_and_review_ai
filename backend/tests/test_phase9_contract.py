@@ -29,8 +29,8 @@ NEW_ROUTES: list[tuple[str, str, dict[str, Any] | None]] = [
     ("POST", "/account/delete", {"confirm": "SUPPRIMER"}),
     ("POST", "/projects/p1/drafts", None),
 ]
-# Routes déjà remplies par un flux (9.B1) : ce ne sont plus des bouchons, le contrat les liste.
-FILLED: set[tuple[str, str]] = {("POST", "/projects/p1/drafts")}
+# Routes déjà remplies par un flux (9.B1, 9.B2) : plus des bouchons, le contrat les liste.
+FILLED: set[tuple[str, str]] = {("POST", "/projects/p1/drafts"), ("GET", "/costs")}
 STUBS = [route for route in NEW_ROUTES if route[:2] not in FILLED]
 
 
