@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { ApiError, errorMessage } from "@/shared/api/errors";
 import { t } from "@/shared/i18n/t";
-import { exportUrl } from "../../api";
+import { AccountChangedError, exportUrl } from "../../api";
 import { DeleteAccountCard, type DeleteFailure } from "../../components/DeleteAccountCard";
 import { ExportCard } from "../../components/ExportCard";
 import { useDeleteAccount } from "../../hooks/useDeleteAccount";
@@ -26,6 +26,9 @@ function refusesConfirmation(error: ApiError): boolean {
  * ou s'est arrêtée avant d'effacer quoi que ce soit, sinon qu'elle reprend où elle s'est arrêtée.
  */
 function describeFailure(error: unknown, sent: boolean): DeleteFailure {
+  if (error instanceof AccountChangedError) {
+    return { message: t("account.delete.accountChanged"), field: false };
+  }
   if (error instanceof ApiError && refusesConfirmation(error)) {
     return { message: t("account.delete.confirmationRequired"), field: true };
   }

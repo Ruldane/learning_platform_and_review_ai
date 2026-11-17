@@ -6,11 +6,13 @@ import type { CvDocuments } from "../../components/viewTypes";
 import type { AvailabilityFlags, AvailabilityKey } from "../../components/viewTypes";
 import type { ProfileImport } from "../../api";
 import type { OnboardingAvailability } from "../../onboarding";
+import type { SettingsOut } from "../../types";
 import { HealthStep } from "./HealthStep";
 import { KeyStep } from "./KeyStep";
 
 export interface StepBodyProps {
   step: number;
+  settings: SettingsOut;
   /** Une clé d'API existe (`.env` ou saisie) : l'import du CV en a besoin. */
   hasKey: boolean;
   documents: CvDocuments;
@@ -32,14 +34,14 @@ export interface StepBodyProps {
 
 /** Le contenu de l'étape `step` ; chaque étape est un composant, la page ne fait que choisir. */
 export function StepBody(props: StepBodyProps) {
-  const { step, hasKey, documents, onGoToKey, importer, availability } = props;
+  const { step, settings, hasKey, documents, onGoToKey, importer, availability } = props;
   switch (step) {
     case 1:
       return <HealthStep />;
     case 2:
       return <PrivacyNotice />;
     case 3:
-      return <KeyStep />;
+      return <KeyStep settings={settings} />;
     case 4:
       return (
         <CvImportStep

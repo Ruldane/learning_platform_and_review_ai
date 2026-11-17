@@ -3,6 +3,11 @@ import { settingsManifest } from "./manifest";
 import { OnboardingGate } from "./OnboardingGate";
 
 describe("settingsManifest", () => {
+  it("le premier lancement est une page nue : sans navigation latérale (handle bare)", () => {
+    const welcome = settingsManifest.routes.find((route) => route.path === "bienvenue");
+    expect(welcome?.handle).toEqual({ bare: true });
+  });
+
   it("déclare la section Réglages et ses cinq écrans, dans l'ordre de la navigation", () => {
     expect(settingsManifest.id).toBe("settings");
     expect(settingsManifest.nav).toEqual([

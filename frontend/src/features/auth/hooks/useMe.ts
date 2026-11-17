@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { ApiError } from "@/shared/api/errors";
-import { fetchMe } from "../api";
+import { readMe } from "../api";
 import { authKeys } from "../queryKeys";
 import type { Me } from "../types";
 
@@ -12,14 +11,7 @@ import type { Me } from "../types";
 export function useMe() {
   return useQuery<Me | null>({
     queryKey: authKeys.me,
-    queryFn: async ({ signal }) => {
-      try {
-        return await fetchMe(signal);
-      } catch (error) {
-        if (error instanceof ApiError && error.code === "auth_required") return null;
-        throw error;
-      }
-    },
+    queryFn: ({ signal }) => readMe(signal),
     retry: false,
   });
 }

@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { api, apiBaseUrl } from "@/shared/api/client";
 import { unwrap } from "@/shared/api/errors";
-import { authApi, authRequired, camille, errorBody } from "@/test/authApi";
+import { onLocalReset } from "@/shared/lib/localReset";
+import { authApi, authRequired, camille, dominique, errorBody } from "@/test/authApi";
 import { server } from "@/test/server";
 import { renderAuth } from "./authTestkit";
 
@@ -98,5 +99,67 @@ describe("SessionGate", () => {
     const { visited } = renderAuth("/", <Probes />);
     expect(await screen.findByText("Lecture refusée")).toBeInTheDocument();
     await waitFor(() => expect(visited).toEqual(["/"]));
+  });
+  it("a 401 mid-session also empties what the features keep outside the query cache", async () => {
+    const reset = vi.fn();
+    onLocalReset(reset);
+    server.use(
+      ...authApi({ me: camille }).handlers,
+      http.get(`${apiBaseUrl}/api/v1/health`, () =>
+        HttpResponse.json(authRequired, { status: 401 }),
+      ),
+    );
+    renderAuth("/", <Probes />);
+    await screen.findByRole("heading", { name: "Connexion" });
+    expect(reset).toHaveBeenCalled();
+  });
+
+  describe("when the tab comes back to the front", () => {
+    const show = () => {
+      Object.defineProperty(document, "visibilityState", { value: "visible", configurable: true });
+      act(() => {
+        document.dispatchEvent(new Event("visibilitychange"));
+      });
+    };
+
+    it("reads me again, and drops everything the other account had read", async () => {
+      server.use(...authApi({ me: camille }).handlers);
+      const { client } = renderAuth("/");
+      await screen.findByText("Chemin : /");
+      client.setQueryData(["settings"], { of: "camille" });
+      const reset = vi.fn();
+      onLocalReset(reset);
+      // Dans un autre onglet : déconnexion de Camille, puis connexion de Dominique.
+      server.use(...authApi({ me: dominique }).handlers);
+      show();
+      await waitFor(() => expect(client.getQueryData(["auth", "me"])).toEqual(dominique));
+      expect(client.getQueryData(["settings"])).toBeUndefined();
+      expect(reset).toHaveBeenCalledTimes(1);
+      expect(screen.getByText("Chemin : /")).toBeInTheDocument();
+    });
+
+    it("keeps everything when it is still the same account", async () => {
+      const session = authApi({ me: camille });
+      server.use(...session.handlers);
+      const { client } = renderAuth("/");
+      await screen.findByText("Chemin : /");
+      client.setQueryData(["settings"], { of: "camille" });
+      show();
+      await waitFor(() => expect(session.meCalls).toBe(2));
+      await settle();
+      expect(client.getQueryData(["settings"])).toEqual({ of: "camille" });
+    });
+
+    it("leads to /connexion when the session ended in the other tab", async () => {
+      server.use(...authApi({ me: camille }).handlers);
+      const { client, visited } = renderAuth("/");
+      await screen.findByText("Chemin : /");
+      client.setQueryData(["settings"], { of: "camille" });
+      server.use(...authApi({ me: null }).handlers);
+      show();
+      await screen.findByRole("heading", { name: "Connexion" });
+      expect(client.getQueryData(["settings"])).toBeUndefined();
+      expect(visited).toEqual(["/", "/connexion"]);
+    });
   });
 });

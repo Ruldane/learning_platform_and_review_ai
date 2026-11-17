@@ -33,6 +33,9 @@ export const account = {
     pending: "Suppression en cours…",
     confirmationRequired: "Le mot de confirmation n'est pas bon : tape SUPPRIMER, en majuscules.",
     retry: "Tu peux réessayer : la suppression reprend là où elle s'est arrêtée.",
+    accountChanged:
+      "Le compte connecté a changé dans un autre onglet : cette page montre maintenant le compte " +
+      "actuel. Rien n'a été supprimé ; vérifie le compte, puis recommence si c'est bien lui.",
     notStarted: "Rien n'a été supprimé : tu peux réessayer sans risque.",
     waiting: "Suppression en cours… ne ferme pas cette page.",
   },

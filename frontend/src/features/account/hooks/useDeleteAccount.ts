@@ -1,17 +1,38 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { useCallback, useRef } from "react";
 import { useNavigate } from "react-router";
-import { resetLocalState } from "@/shared/lib/localReset";
-import { fetchMe, postDeleteAccount } from "../api";
-import { accountKeys, AUTH_SCOPE } from "../queryKeys";
-import { GOOGLE_MODE } from "../types";
+import { forgetAccount } from "@/shared/lib/forgetAccount";
+import { AccountChangedError, fetchMe, postDeleteAccount } from "../api";
+import { accountKeys } from "../queryKeys";
+import { GOOGLE_MODE, type Me } from "../types";
 
 /** Où mène « Tout supprimer » en mode local : le premier lancement (réglages vides). */
 const WELCOME_PATH = "/bienvenue";
 
 /**
+ * L'identité lue à neuf, jamais dans le cache : le cookie est partagé par tous les onglets, le
+ * compte a pu changer. Si ce n'est plus celui qui est affiché, rien n'est envoyé : `me` relu est
+ * déjà celui du compte actuel, il ne reste plus rien de l'ancien à l'écran.
+ */
+async function readCurrentMe(queryClient: QueryClient): Promise<Me | null> {
+  const shown = queryClient.getQueryData<Me | null>(accountKeys.me);
+  const me = await queryClient.fetchQuery({
+    queryKey: accountKeys.me,
+    queryFn: ({ signal }) => fetchMe(signal),
+    staleTime: 0,
+  });
+  if (shown && me?.id !== shown.id) {
+    forgetAccount(queryClient);
+    throw new AccountChangedError();
+  }
+  return me;
+}
+
+/**
  * « Tout supprimer ». Le mode est lu **avant** l'appel (en mode Google la session est close
- * ensuite : relire `me` donnerait 401). Une fois la suppression faite, rien de ce que l'espace
+ * ensuite : relire `me` donnerait 401), et sans cache : si le compte n'est plus celui qui est
+ * affiché (autre onglet), rien n'est envoyé, la mémoire est vidée et `me` est celui du compte
+ * actuel (`AccountChangedError`). Une fois la suppression faite, rien de ce que l'espace
  * contenait ne reste en mémoire (requêtes, mais aussi ce que les features gardent hors du cache :
  * `resetLocalState`) ; puis :
  * - mode Google : `me` passe à « pas de session », la porte de la coquille mène à `/connexion`
@@ -32,10 +53,7 @@ export function useDeleteAccount() {
     mutationFn: async (confirm: string) => {
       sent.current = false;
       try {
-        const me = await queryClient.ensureQueryData({
-          queryKey: accountKeys.me,
-          queryFn: ({ signal }) => fetchMe(signal),
-        });
+        const me = await readCurrentMe(queryClient);
         sent.current = true;
         await postDeleteAccount(confirm);
         return me?.auth_mode === GOOGLE_MODE;
@@ -44,8 +62,7 @@ export function useDeleteAccount() {
       }
     },
     onSuccess: (closedSession) => {
-      queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== AUTH_SCOPE });
-      resetLocalState();
+      forgetAccount(queryClient);
       if (closedSession) {
         queryClient.setQueryData(accountKeys.me, null);
       } else {
