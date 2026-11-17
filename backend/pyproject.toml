@@ -152,6 +152,7 @@ forbidden_modules = [
     "app.providers.llm.fake",
     "app.providers.llm.registry",
     "app.providers.embeddings.ollama_probe",
+    "app.providers.embeddings.ollama_pull",
     "app.providers.vector.qdrant_probe",
     "app.providers.embeddings.ollama",
     "app.providers.embeddings.fake",

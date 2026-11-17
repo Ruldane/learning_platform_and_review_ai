@@ -9,7 +9,9 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.config import Settings
 from app.core.security import Cipher
 from app.features.health.checks import DatabaseCheck, LlmKeysCheck
+from app.providers.embeddings.base import EmbeddingProgressSource
 from app.providers.embeddings.ollama_probe import OllamaProbe
+from app.providers.embeddings.ollama_pull import OllamaPullWatcher
 from app.providers.health import HealthCheck
 from app.providers.llm.base import LlmProvider
 from app.providers.pdf.gotenberg_probe import GotenbergProbe
@@ -44,3 +46,9 @@ def health_checks(
         GotenbergProbe(settings.gotenberg_url, http),
         llm_keys,
     ]
+
+
+def embedding_progress(settings: Settings, http: httpx.AsyncClient) -> EmbeddingProgressSource:
+    """Progression (et téléchargement, s'il manque) du modèle d'embeddings, pour
+    `GET /health/embedding` (P13)."""
+    return OllamaPullWatcher(settings.ollama_base_url, settings.embedding_model, http)

@@ -13,8 +13,11 @@ import uvicorn
 from tests.e2e.server import (
     MARKER,
     UnsafeDataDir,
+    UnsafeHost,
     build_app,
+    check_host,
     e2e_settings,
+    main,
     migrate,
     prepare_data_dir,
 )
@@ -131,3 +134,26 @@ async def test_e2e_server_google_mode_round_trip(tmp_path: Path) -> None:
         server.should_exit = True
         await task
         sock.close()
+
+
+@pytest.mark.parametrize("host", ["127.0.0.1", "::1", "localhost"])
+def test_google_mode_accepts_loopback_hosts(host: str) -> None:
+    check_host(host, "google")
+
+
+@pytest.mark.parametrize("host", ["0.0.0.0", "192.168.1.20", "example.org", "::", ""])
+def test_google_mode_refuses_a_host_that_is_not_loopback(host: str) -> None:
+    with pytest.raises(UnsafeHost, match="127.0.0.1"):
+        check_host(host, "google")
+
+
+def test_local_mode_keeps_any_host() -> None:
+    check_host("0.0.0.0", "local")
+
+
+def test_main_refuses_google_on_a_public_host_before_touching_anything(tmp_path: Path) -> None:
+    data_dir = tmp_path / "e2e-refused"
+    with pytest.raises(SystemExit) as exit_info:
+        main(["--auth", "google", "--host", "0.0.0.0", "--data-dir", str(data_dir)])
+    assert "127.0.0.1" in str(exit_info.value)
+    assert not data_dir.exists()  # aucun dossier créé, aucune base

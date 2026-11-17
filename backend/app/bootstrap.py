@@ -19,7 +19,7 @@ from app.bootstrap_agents import run_settings_source as run_settings_source
 from app.bootstrap_agents import scheduler_context as scheduler_context
 from app.bootstrap_agents import study_runtimes as study_runtimes
 from app.bootstrap_agents import web_gateway as web_gateway
-from app.bootstrap_health import health_checks
+from app.bootstrap_health import embedding_progress, health_checks
 from app.config import Settings
 from app.core.providers import MemoryProviders, Providers, PublishingProviders, ResearchProviders
 from app.core.security import Cipher
@@ -103,6 +103,7 @@ def build_providers(
             settings, session_factory, http, cipher, env_keys, llm, local_user_id
         ),
         oidc=oidc,
+        embedding=embedding_progress(settings, http),
     )
 
 

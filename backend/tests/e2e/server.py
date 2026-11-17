@@ -13,6 +13,9 @@ ni LLM réel.
     uv run python -m tests.e2e.server --port 8765 --data-dir <dossier> [--host 0.0.0.0]
     uv run python -m tests.e2e.server --port 8765 --data-dir <dossier> --auth google
 
+`--auth google` refuse un `--host` qui n'est pas de bouclage (127.0.0.1, ::1, localhost) : le faux
+fournisseur connecte n'importe quelle adresse sans mot de passe.
+
 `--auth local` (défaut) : l'utilisateur unique, sans connexion. `--auth google` (parcours de
 connexion) : le mode Google, avec le faux fournisseur `scripts/fake_oidc.py` monté sous
 `/fake-oidc` du même serveur ; `GOOGLE_AUTH_URL`, `GOOGLE_TOKEN_URL`, l'émetteur et l'adresse de
@@ -66,8 +69,25 @@ MARKER = ".tremplin-e2e"
 DATABASE = "app.db"
 
 
+LOOPBACK_HOSTS = ("127.0.0.1", "::1", "localhost")
+
+
 class UnsafeDataDir(Exception):
     """Dossier de données refusé : il pourrait contenir des données réelles."""
+
+
+class UnsafeHost(Exception):
+    """Hôte d'écoute refusé : le mode Google factice accepte n'importe quelle identité."""
+
+
+def check_host(host: str, auth: str) -> None:
+    """`--auth google` n'écoute que sur la boucle locale : le faux fournisseur connecte n'importe
+    quelle adresse sans mot de passe, il ne doit jamais être joignable depuis le réseau."""
+    if auth == "google" and host not in LOOPBACK_HOSTS:
+        raise UnsafeHost(
+            "Hôte refusé : --auth google n'écoute que sur 127.0.0.1, ::1 ou localhost "
+            "(le faux fournisseur connecte n'importe qui sans mot de passe)."
+        )
 
 
 class _Faked:
@@ -206,8 +226,9 @@ def _parse(argv: Sequence[str] | None) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> None:
     args = _parse(argv)
     try:
+        check_host(args.host, args.auth)
         data_dir = prepare_data_dir(args.data_dir)
-    except UnsafeDataDir as refused:
+    except (UnsafeHost, UnsafeDataDir) as refused:
         sys.exit(str(refused))
     settings = e2e_settings(data_dir, origin=args.origin, auth=args.auth, port=args.port)
     migrate(settings)

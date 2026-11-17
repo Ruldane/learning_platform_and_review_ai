@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 
 from app.core.security import Cipher
 from app.providers.auth.base import OidcProvider
-from app.providers.embeddings.base import Embedder
+from app.providers.embeddings.base import Embedder, EmbeddingProgressSource
 from app.providers.fonts.base import FontSource
 from app.providers.health import HealthCheck
 from app.providers.keys import KeyProvider
@@ -22,7 +22,8 @@ from app.providers.web.base import WebFetcher, WebReader, YoutubeTranscripts
 @dataclass
 class Providers:
     """Fournisseurs LLM, fabrique, chiffreur, clés `.env`, fournisseurs de l'écran des clés
-    (LLM et Brave), contrôles de santé et connexion OpenID Connect (`None` en mode local)."""
+    (LLM et Brave), contrôles de santé, connexion OpenID Connect (`None` en mode local) et
+    progression du modèle d'embeddings (`GET /health/embedding`, P13)."""
 
     llm: Mapping[str, LlmProvider]
     llm_factory: LlmFactory
@@ -31,6 +32,7 @@ class Providers:
     key_providers: Mapping[str, KeyProvider]
     health_checks: list[HealthCheck] = field(default_factory=list)
     oidc: OidcProvider | None = None
+    embedding: EmbeddingProgressSource | None = None
 
 
 @dataclass(frozen=True)
