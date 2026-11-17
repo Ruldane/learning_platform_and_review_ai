@@ -87,6 +87,15 @@ NEW_ROUTES: list[tuple[str, str, dict[str, Any] | None]] = [
 ]
 # Routes déjà remplies par un flux (vidé à l'intégration, 10.I : plus aucun bouchon).
 LIVE: set[tuple[str, str]] = set()
+# 10.B1 : interrupteur, jetons et journal du MCP.
+LIVE |= {
+    ("GET", "/mcp/settings"),
+    ("PUT", "/mcp/settings"),
+    ("POST", "/mcp/tokens"),
+    ("GET", "/mcp/tokens"),
+    ("DELETE", "/mcp/tokens/x1"),
+    ("GET", "/mcp/calls"),
+}
 
 
 def test_single_alembic_head() -> None:

@@ -7,6 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import HTTPConnection
 
 from app.agents.runtime.handle import AgentRuntime
+from app.core.caller import MCP_IDENTITY
+from app.core.errors import AppError
 from app.core.providers import Providers, PublishingProviders
 from app.core.security import Cipher
 from app.providers.llm.factory import LlmFactory
@@ -49,12 +51,30 @@ class Authenticator(Protocol):
 
 
 async def get_current_user(conn: HTTPConnection) -> CurrentUser:
-    """Utilisateur de la requête ou du WebSocket, rendu par l'authentificateur de l'application."""
+    """Utilisateur de la requête ou du WebSocket. Si l'envoyeur du MCP a posé `MCP_IDENTITY` (un
+    appel d'outil par un jeton, phase 10), c'est le propriétaire du jeton : même mécanisme quel que
+    soit le mode de connexion. Cette variable n'est écrite que par l'envoyeur, jamais lue d'un
+    en-tête ni d'un cookie. Sinon, l'authentificateur de l'application (cookie ou utilisateur
+    unique)."""
+    identity = MCP_IDENTITY.get()
+    if identity is not None:
+        return CurrentUser(id=identity.user_id, email=None)
+    authenticator: Authenticator = conn.app.state.authenticator
+    return await authenticator.authenticate(conn)
+
+
+async def get_interface_user(conn: HTTPConnection) -> CurrentUser:
+    """Comme `get_current_user`, mais **réservé à l'interface** : un appel porté par un jeton MCP
+    est refusé (403). Pour les routes de gestion de l'accès MCP (jetons, interrupteur,
+    confirmations) : un jeton ne se gère jamais lui-même."""
+    if MCP_IDENTITY.get() is not None:
+        raise AppError("interface_only", "Cette action est réservée à l'interface.", 403)
     authenticator: Authenticator = conn.app.state.authenticator
     return await authenticator.authenticate(conn)
 
 
 CurrentUserDep = Annotated[CurrentUser, Depends(get_current_user)]
+InterfaceUserDep = Annotated[CurrentUser, Depends(get_interface_user)]
 
 
 def get_providers(conn: HTTPConnection) -> Providers:
