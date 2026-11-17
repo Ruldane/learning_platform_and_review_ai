@@ -4,7 +4,8 @@
   qui doit être l'une des origines autorisées (`Settings.cors_origins`), sinon la poignée de
   main est refusée (fermeture 1008 avant `accept` : le navigateur, lui, ne voit qu'un 1006,
   comme pour un `after_seq` invalide ou un 401). Sans en-tête `Origin` (client hors
-  navigateur, tests), accepté.
+  navigateur, tests) : accepté en mode local, **refusé en mode Google** (1008, après la 401 d'une
+  connexion sans cookie valide) : le cookie de session y est la clé d'un compte.
 - **Propriété** : session inconnue ou d'un autre utilisateur → accepté puis fermé en `4404`
   (un refus avant `accept` n'arriverait au navigateur que comme un 1006 anonyme).
 - **Base** : jamais de session ouverte pour la durée de la connexion (D38) ; chaque lecture
@@ -25,10 +26,14 @@ from app.realtime import replay
 CLOSE_NOT_FOUND = 4404
 
 
-def check_origin(conn: HTTPConnection) -> None:
-    """Dépendance de la route WebSocket : refuse une origine hors de `cors_origins`."""
+async def check_origin(conn: HTTPConnection) -> None:
+    """Dépendance de la route WebSocket : refuse une origine hors de `cors_origins`, et en mode
+    Google une poignée de main sans `Origin` (la 401 d'une connexion sans cookie passe d'abord)."""
     origin = conn.headers.get("origin")
     if origin is None:
+        if conn.app.state.settings.auth_mode == "google":
+            await conn.app.state.authenticator.authenticate(conn)  # 401 `auth_required` d'abord
+            raise WebSocketException(status.WS_1008_POLICY_VIOLATION, "Origine requise.")
         return
     if origin.rstrip("/") not in conn.app.state.settings.cors_origins:
         raise WebSocketException(status.WS_1008_POLICY_VIOLATION, "Origine non autorisée.")

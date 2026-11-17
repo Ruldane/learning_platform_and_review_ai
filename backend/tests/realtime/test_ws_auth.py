@@ -109,6 +109,29 @@ def test_websocket_refuses_a_foreign_origin_even_with_a_valid_cookie(
         assert closed.value.code == 1008, origin
 
 
+def test_websocket_without_origin_is_refused_in_google_mode(google_client: TestClient) -> None:
+    """Un navigateur envoie toujours `Origin` : sans lui (client hors navigateur), même avec un
+    cookie valide, la poignée de main est refusée (1008). Sans cookie, le refus reste la 401."""
+    token = sign_in(google_client, google_of(google_client), CAMILLE)
+    sid = google_client.post(API, json={"graph": "one_llm_call"}).json()["session_id"]
+    wait_status_sync(google_client, sid, "completed")
+    with (
+        pytest.raises(WebSocketDisconnect) as closed,
+        google_client.websocket_connect(
+            stream(sid), headers={"cookie": f"tremplin_session={token}"}
+        ),
+    ):
+        pass
+    assert closed.value.code == 1008
+    google_client.cookies.clear()
+    with (
+        pytest.raises(WebSocketDenialResponse) as denied,
+        google_client.websocket_connect(stream(sid)),
+    ):
+        pass
+    assert denied.value.status_code == 401  # l'authentification passe avant l'origine
+
+
 def test_websocket_of_another_account_session_is_closed_4404(google_client: TestClient) -> None:
     google = google_of(google_client)
     sign_in(google_client, google, CAMILLE)
