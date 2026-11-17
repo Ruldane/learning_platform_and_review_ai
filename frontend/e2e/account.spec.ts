@@ -154,11 +154,9 @@ test("Camille reprend l'espace local, Dominique repart de zéro et supprime tout
   await expectCamilleData(page);
 });
 
-// À RÉACTIVER (remplacer `test.fixme` par `test`) une fois le correctif du front fusionné (revue
-// finale de la phase 9). Aujourd'hui l'onglet A, qui montre Dominique, envoie `POST /account/delete`
-// avec le cookie de l'onglet B (Camille) : le back supprime le compte de Camille, sa session est
-// close et `GET /auth/me` rend 401 (vérifié sur Edge, 9.E). Le test ne tombe que sur ce défaut.
-test.fixme("« Tout supprimer » n'efface pas le compte d'un autre onglet", async ({
+// Revue finale de la phase 9 (C-I2) : avant le correctif, l'onglet A (Dominique) envoyait
+// `POST /account/delete` avec le cookie de l'onglet B (Camille) et supprimait Camille (vu sur Edge).
+test("« Tout supprimer » n'efface pas le compte d'un autre onglet", async ({
   context,
   page,
 }) => {
