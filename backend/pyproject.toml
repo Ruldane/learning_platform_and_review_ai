@@ -201,7 +201,7 @@ forbidden_modules = ["app.features"]
 
 [[tool.importlinter.contracts]]
 id = "composition-isolee"
-name = "5. Seul app.main importe app.bootstrap (composition, avec app.bootstrap_agents, app.bootstrap_auth, app.bootstrap_career et app.bootstrap_daily)"
+name = "5. Seul app.main importe app.bootstrap (composition, avec app.bootstrap_agents, app.bootstrap_auth, app.bootstrap_career, app.bootstrap_daily et app.bootstrap_health)"
 type = "forbidden"
 source_modules = [
     "app.core",
@@ -218,6 +218,7 @@ forbidden_modules = [
     "app.bootstrap_auth",
     "app.bootstrap_career",
     "app.bootstrap_daily",
+    "app.bootstrap_health",
 ]
 
 [[tool.importlinter.contracts]]

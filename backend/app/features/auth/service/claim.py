@@ -92,13 +92,16 @@ async def claim(
     trafiqué ou vieux, ou adresse plus nommée dans `ALLOWED_EMAILS` (retirée, ou liste devenue
     `*`) ; 409
     `local_already_claimed` : l'espace local est déjà repris, ou un compte Google existe déjà
-    (autre onglet, autre compte, premier choix « espace vide »)."""
+    (autre onglet, autre compte, premier choix « espace vide »). Un témoin rejoué avec `fresh`
+    (compte déjà créé, double clic) : 409 `claim_expired`, jamais « déjà un propriétaire »."""
     identity = open_identity(cipher, claim_cookie)
     if identity is None or not explicitly_allowed(identity.email, allowed_emails):
         raise _expired()
     users = UserRepository(db)
     if await users.get_by_google_sub(identity.sub) is not None:
-        raise _taken()  # témoin rejoué : ce compte existe déjà, la connexion normale suffit
+        # Témoin rejoué : ce compte existe déjà, la connexion normale suffit. `fresh` (double clic
+        # sur « Espace vide ») : le choix est fait, pas de propriétaire de l'espace local en jeu.
+        raise _expired() if choice == "fresh" else _taken()
     if choice == "take_local":
         user = await _take_local(users, identity)
         logger.info("espace local repris par l'utilisateur %s", user.id)
@@ -130,7 +133,6 @@ async def _fresh(db: AsyncSession, users: UserRepository, identity: ClaimIdentit
                 sub=identity.sub, email=identity.email, name=identity.name
             )
     except IntegrityError as exc:
-        # Même `sub` créé entre-temps par l'autre onglet : le choix est déjà fait.
-        if await users.get_by_google_sub(identity.sub) is not None:
-            raise _taken() from exc
-        raise _expired() from exc  # adresse prise par un autre compte
+        # Même `sub` créé entre-temps par l'autre onglet (le choix est déjà fait) ou adresse prise
+        # par un autre compte : dans les deux cas, reconnexion.
+        raise _expired() from exc

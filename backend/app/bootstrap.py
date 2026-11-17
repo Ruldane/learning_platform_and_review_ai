@@ -19,19 +19,17 @@ from app.bootstrap_agents import run_settings_source as run_settings_source
 from app.bootstrap_agents import scheduler_context as scheduler_context
 from app.bootstrap_agents import study_runtimes as study_runtimes
 from app.bootstrap_agents import web_gateway as web_gateway
+from app.bootstrap_health import health_checks
 from app.config import Settings
 from app.core.providers import MemoryProviders, Providers, PublishingProviders, ResearchProviders
 from app.core.security import Cipher
-from app.features.health.checks import DatabaseCheck, LlmKeysCheck
 from app.features.memory.service.runtime import MemoryRuntime, memory_runtime
 from app.features.research.service.runtime import ResearchRuntime
 from app.features.settings.keys_service import DbKeyReader
 from app.features.settings.service import SettingsModelReader
 from app.providers.auth.base import OidcProvider
 from app.providers.embeddings.ollama import OllamaEmbedder
-from app.providers.embeddings.ollama_probe import OllamaProbe
 from app.providers.fonts.google import GoogleFontsSource, fonts_http
-from app.providers.health import HealthCheck
 from app.providers.keys import KeyProvider
 from app.providers.llm.base import LlmProvider
 from app.providers.llm.factory import LlmFactory
@@ -39,17 +37,14 @@ from app.providers.llm.glm import GlmProvider
 from app.providers.llm.registry import LLM_PROVIDERS, PRICES_PATH
 from app.providers.pdf.base import HTML_RENDER_TIMEOUT_S, PageRenderer
 from app.providers.pdf.gotenberg import GotenbergRenderer
-from app.providers.pdf.gotenberg_probe import GotenbergProbe
 from app.providers.pdf.html import GotenbergHtmlRenderer
 from app.providers.pdf.layout import SubprocessPdfLayoutExtractor
 from app.providers.pdf.subprocess import SubprocessPdfExtractor
 from app.providers.search.base import SEARCH_TIMEOUT_S, SearchProvider
 from app.providers.search.brave import BraveKeyProvider, BraveSearch
 from app.providers.search.searxng import SearxngSearch
-from app.providers.search.searxng_probe import SearxngProbe
 from app.providers.storage.local import LocalFileStorage
 from app.providers.vector.qdrant import QdrantMemoryRepository
-from app.providers.vector.qdrant_probe import QdrantProbe
 from app.providers.web.arxiv import ArxivReader
 from app.providers.web.base import FETCH_TIMEOUT_S, WebReader
 from app.providers.web.fetch import SafeHttpFetcher, refuse_all_cookies
@@ -62,22 +57,6 @@ from app.providers.web.youtube import TranscriptApiYoutube
 
 _OLLAMA_TIMEOUT_SECONDS = 60.0
 _QDRANT_TIMEOUT_SECONDS = 10
-
-
-def _health_checks(
-    settings: Settings,
-    session_factory: async_sessionmaker[AsyncSession],
-    http: httpx.AsyncClient,
-    llm_keys: LlmKeysCheck,
-) -> list[HealthCheck]:
-    return [
-        DatabaseCheck(session_factory),
-        QdrantProbe(settings.qdrant_url, http),
-        OllamaProbe(settings.ollama_base_url, settings.embedding_model, http),
-        SearxngProbe(settings.searxng_url, http),
-        GotenbergProbe(settings.gotenberg_url, http),
-        llm_keys,
-    ]
 
 
 def build_providers(
@@ -112,10 +91,6 @@ def build_providers(
         {"glm": settings.zai_base_url},
         call_deadline_s=settings.llm_call_deadline_s,
     )
-    google = settings.auth_mode == "google"  # la santé ne dépend alors d'aucun utilisateur local
-    llm_keys = LlmKeysCheck(
-        session_factory, cipher, env_keys, llm, local_user_id, google_mode=google
-    )
     # Écran des clés : les LLM puis Brave, qui n'est ni dans la fabrique ni dans les modèles.
     key_providers: dict[str, KeyProvider] = {**llm, "brave": BraveKeyProvider(key_http)}
     return Providers(
@@ -124,7 +99,9 @@ def build_providers(
         cipher=cipher,
         env_keys=env_keys,
         key_providers=key_providers,
-        health_checks=_health_checks(settings, session_factory, http, llm_keys),
+        health_checks=health_checks(
+            settings, session_factory, http, cipher, env_keys, llm, local_user_id
+        ),
         oidc=oidc,
     )
 

@@ -122,12 +122,14 @@ async def test_claim_replayed_after_success_is_refused(
     first = await offered(google_client, google, CAMILLE)
     claim = cookie_value(first, "tremplin_claim")
     assert (await choose(google_client, "take_local")).status_code == 200
-    for choice in ("take_local", "fresh"):
+    # `take_local` : l'espace local a un propriétaire ; `fresh` (double clic sur « Espace vide »,
+    # le compte existe déjà) : « reconnecte-toi », jamais « déjà un propriétaire » (revue 9.A3, M5).
+    for choice, code in (("take_local", "local_already_claimed"), ("fresh", "claim_expired")):
         google_client.cookies.clear()
         again = await google_client.post(
             CLAIM, json={"choice": choice}, headers={"cookie": f"tremplin_claim={claim}"}
         )
-        assert error_code(again) == "local_already_claimed"
+        assert error_code(again) == code
     assert len(await users(db_session_factory)) == 1
 
 
@@ -141,7 +143,7 @@ async def test_concurrent_fresh_claims_create_one_account(
     await offered(google_client, google, CAMILLE)
     results = await asyncio.gather(*(choose(google_client, "fresh") for _ in range(3)))
     assert sorted(r.status_code for r in results) == [200, 409, 409]
-    assert {error_code(r) for r in results if r.status_code == 409} == {"local_already_claimed"}
+    assert {error_code(r) for r in results if r.status_code == 409} == {"claim_expired"}
     assert await count_users() == 2  # l'espace local et un seul compte
 
 
