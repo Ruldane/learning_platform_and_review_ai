@@ -144,7 +144,7 @@ ignore_imports = [
 id = "features-sans-fournisseur-concret"
 name = "3. app.features, app.agents, app.realtime et app.scheduler n'importent jamais une implémentation concrète de app.providers"
 type = "forbidden"
-source_modules = ["app.features", "app.agents", "app.realtime", "app.scheduler"]
+source_modules = ["app.features", "app.agents", "app.realtime", "app.scheduler", "app.mcp"]
 forbidden_modules = [
     "app.providers.llm.anthropic",
     "app.providers.llm.openai",
@@ -185,6 +185,7 @@ forbidden_modules = [
     "app.providers.web.arxiv",
     "app.providers.web.routing",
     "app.providers.sandbox.spool",
+    "app.providers.sandbox.fake",
 ]
 
 [[tool.importlinter.contracts]]
@@ -213,6 +214,7 @@ source_modules = [
     "app.realtime",
     "app.providers",
     "app.scheduler",
+    "app.mcp",
 ]
 forbidden_modules = [
     "app.bootstrap",

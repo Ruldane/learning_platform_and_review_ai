@@ -4,7 +4,7 @@ surface (s'il le faut, il régénère `contracts/openapi.json` et `schema.d.ts` 
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.db.models.ide import (
     ExerciseOrigin,
@@ -15,7 +15,12 @@ from app.db.models.ide import (
     RunStatus,
     TeacherMode,
 )
-from app.providers.sandbox.base import MAX_FILES, MAX_TOTAL_BYTES
+from app.providers.sandbox.base import (
+    MAX_FILES,
+    MAX_PATH_CHARS,
+    MAX_TOTAL_BYTES,
+    check_file_name,
+)
 
 __all__ = [
     "ExerciseGenerateIn",
@@ -36,7 +41,7 @@ __all__ = [
     "RunProgress",
     "RunStatus",
     "SessionCreateIn",
-    "SessionOut",
+    "IdeSessionOut",
     "IdeSessionStarted",
     "SessionSummary",
     "TeachIn",
@@ -49,25 +54,21 @@ TITLE_MAX = 120
 STATEMENT_MAX = 8_000
 NOTE_MAX = 4_000
 QUESTION_MAX = 2_000
-PATH_MAX = 200
+PATH_MAX = MAX_PATH_CHARS
 
 Level = Literal["beginner", "intermediate", "advanced"]
-TeachTrigger = Literal["run", "error", "question", "idle"]
-SkipReason = Literal["cap_reached", "on_demand", "busy", "empty_question"]
+TeachTrigger = Literal["run_error", "run_ok", "question", "hint", "idle"]
+SkipReason = Literal["cap_reached", "on_demand", "busy"]
 
 
 def _check_files(files: dict[str, str]) -> dict[str, str]:
-    """Au plus 20 fichiers et 200 000 octets ; chemins relatifs, sans `..` ni barre inverse."""
+    """Au plus 20 fichiers et 200 000 octets ; chemins relatifs (`check_file_name`)."""
     if len(files) > MAX_FILES:
         raise ValueError("trop de fichiers")
     if sum(len(text.encode()) for text in files.values()) > MAX_TOTAL_BYTES:
         raise ValueError("fichiers trop volumineux")
     for name in files:
-        parts = name.split("/")
-        if not name or len(name) > PATH_MAX or name.startswith("/") or ".." in parts:
-            raise ValueError("chemin refusé")
-        if "\\" in name:
-            raise ValueError("chemin refusé")
+        check_file_name(name)
     return files
 
 
@@ -116,15 +117,19 @@ class SessionCreateIn(BaseModel):
 
 
 class SessionSummary(BaseModel):
+    """`passed` : la séance a eu une vérification (`check`) réussie (`passed_at` : la première)."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: str
     title: str
     exercise_id: str | None
     updated_at: datetime
+    passed: bool
+    passed_at: datetime | None
 
 
-class SessionOut(SessionSummary):
+class IdeSessionOut(SessionSummary):
     files: dict[str, str]
     entry: str
 
@@ -139,8 +144,8 @@ class FilesPutIn(BaseModel):
 
 
 class RunIn(BaseModel):
-    """`run` exécute, `check` vérifie seulement la syntaxe ; `entry` : le fichier d'entrée (celui
-    de la séance par défaut)."""
+    """`run` exécute `entry` ; `check` lance les tests de l'exercice par pytest dans le bac (code de
+    sortie 0 = réussi). `entry` : le fichier d'entrée (celui de la séance par défaut)."""
 
     kind: RunKind = "run"
     entry: str | None = Field(default=None, min_length=1, max_length=PATH_MAX)
@@ -172,14 +177,21 @@ class RunProgress(BaseModel):
 
 
 class TeachIn(BaseModel):
-    """Ce qui déclenche le professeur : une exécution, une erreur, une question ou, en option,
-    30 s d'arrêt sur une ligne. Jamais à la frappe."""
+    """Ce qui déclenche le professeur : une exécution en erreur (`run_error`) ou réussie
+    (`run_ok`), une question (`question`, non vide : 422 sinon), une demande d'indice (`hint`) ou,
+    en option, 30 s d'arrêt sur une ligne (`idle`). Jamais à la frappe."""
 
     trigger: TeachTrigger
     question: str | None = Field(default=None, max_length=QUESTION_MAX)
     file_path: str | None = Field(default=None, max_length=PATH_MAX)
     line: int | None = Field(default=None, ge=1)
     run_id: str | None = None
+
+    @model_validator(mode="after")
+    def _question_needed(self) -> "TeachIn":
+        if self.trigger == "question" and not (self.question or "").strip():
+            raise ValueError("la question est vide")
+        return self
 
 
 class TeachOut(BaseModel):
@@ -194,7 +206,8 @@ class TeachOut(BaseModel):
 
 class NoteIn(BaseModel):
     """Une note ajoutée à la main ou par Claude : l'auteur vient de l'appelant, jamais du corps.
-    Une proposition porte `replacement`, la plage de lignes et `base_hash`."""
+    Une proposition porte `replacement`, la plage de lignes et `base_hash` : le sha256 hexadécimal
+    (minuscules, 64 signes) du contenu du fichier encodé en UTF-8."""
 
     kind: NoteKind
     content: str = Field(min_length=1, max_length=NOTE_MAX)

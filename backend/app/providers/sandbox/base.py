@@ -6,17 +6,26 @@ Les plafonds ci-dessous sont **ceux du port** : un travail qui en demande plus e
 (`check_job_limits`), et le lanceur du bac les rapplique de son côté sans croire la demande (P6).
 Les décalages de `poll` sont des **octets** du journal de sortie encodé en UTF-8."""
 
+import re
 from dataclasses import dataclass
 from typing import Literal, Protocol
 
 # Plafonds d'un travail : fichiers, octets au total, durée réelle (s) et sortie (octets).
 MAX_FILES, MAX_TOTAL_BYTES, MAX_TIMEOUT_S, MAX_OUTPUT_BYTES = 20, 200_000, 15, 65_536
+# Longueur d'un chemin de fichier (et du fichier d'entrée), en base comme dans les schémas.
+MAX_PATH_CHARS = 200
+
+# Un identifiant de travail devient un nom de fichier du bac : uuid en 32 hexadécimaux ou uuid4
+# en texte (avec tirets), rien d'autre.
+_RUN_ID = re.compile(r"[0-9a-f]{32}|[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}")
+_DRIVE = re.compile(r"[A-Za-z]:")
 
 
 @dataclass(frozen=True)
 class SandboxJob:
-    """Un travail : les fichiers (chemin relatif -> contenu), le fichier d'entrée, `run` (exécuter)
-    ou `check` (seulement vérifier la syntaxe), la durée réelle permise en secondes."""
+    """Un travail : les fichiers (chemin relatif -> contenu), le fichier d'entrée, `run` (exécute
+    `entry`) ou `check` (lance les tests de l'exercice par `python -m pytest -q` sur les fichiers de
+    test du travail ; code de sortie 0 = réussi), la durée réelle permise en secondes."""
 
     run_id: str
     files: dict[str, str]
@@ -68,9 +77,29 @@ class CodeSandbox(Protocol):
         ...
 
 
+def check_run_id(run_id: str) -> None:
+    """Refuse (`ValueError`) un identifiant qui n'est pas un uuid (32 hexadécimaux, ou uuid4 en
+    texte) : il sert de nom de fichier au bac, jamais un chemin."""
+    if not _RUN_ID.fullmatch(run_id):
+        raise ValueError("identifiant de travail refusé")
+
+
+def check_file_name(name: str) -> None:
+    """Refuse (`ValueError`) un chemin de fichier vide, trop long, absolu (barre, lecteur),
+    remontant (`..`), à segment vide ou `.` (`a//b`, `a/./b`, `a/`), avec barre inverse ou nul."""
+    if not name or len(name) > MAX_PATH_CHARS or "\\" in name or "\x00" in name:
+        raise ValueError("chemin de fichier refusé")
+    if name.startswith("/") or _DRIVE.match(name):
+        raise ValueError("chemin de fichier refusé")
+    if any(part in ("", ".", "..") for part in name.split("/")):
+        raise ValueError("chemin de fichier refusé")
+
+
 def check_job_limits(job: SandboxJob) -> None:
-    """Refuse (`ValueError`) un travail hors des plafonds : trop de fichiers ou d'octets, durée
-    absente ou trop longue, fichier d'entrée absent, chemin absolu ou remontant."""
+    """Refuse (`ValueError`) un travail hors des plafonds : identifiant qui n'est pas un uuid,
+    trop de fichiers ou d'octets, durée absente ou trop longue, chemin refusé (`check_file_name`),
+    fichier d'entrée absent."""
+    check_run_id(job.run_id)
     if not 1 <= len(job.files) <= MAX_FILES:
         raise ValueError(f"entre 1 et {MAX_FILES} fichiers attendus")
     if sum(len(text.encode()) for text in job.files.values()) > MAX_TOTAL_BYTES:
@@ -78,8 +107,7 @@ def check_job_limits(job: SandboxJob) -> None:
     if not 1 <= job.timeout_s <= MAX_TIMEOUT_S:
         raise ValueError(f"durée entre 1 et {MAX_TIMEOUT_S} secondes")
     for name in job.files:
-        parts = name.split("/")
-        if not name or name.startswith(("/", "\\")) or ".." in parts or "\\" in name:
-            raise ValueError("chemin de fichier refusé")
+        check_file_name(name)
+    check_file_name(job.entry)
     if job.entry not in job.files:
         raise ValueError("le fichier d'entrée est absent des fichiers")
