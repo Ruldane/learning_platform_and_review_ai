@@ -33,6 +33,8 @@ const backendCommand =
 
 export default defineConfig({
   testDir: "./e2e",
+  // Le parcours n° 5 (connexion) a son serveur et sa configuration : `playwright.auth.config.ts`.
+  testIgnore: "**/account.spec.ts",
   globalTeardown: "./e2e/support/teardown.ts",
   timeout: 240_000,
   expect: { timeout: 15_000 },

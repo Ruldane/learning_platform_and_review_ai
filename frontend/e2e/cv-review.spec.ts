@@ -1,6 +1,7 @@
 import { expect, test, type APIRequestContext, type Locator, type Page } from "@playwright/test";
 import { SAMPLE_CV_SHA256, sampleCvPdf, sampleCvSha256 } from "./support/sampleCv.ts";
 import { POSTING_TEXT } from "./support/samplePosting.ts";
+import { finishFirstLaunch } from "./support/firstLaunch.ts";
 
 /**
  * Parcours de bout en bout n° 2, « revue complète d'un CV » (SPEC 18.2), contre le serveur de bout
@@ -134,6 +135,9 @@ async function finish(page: Page): Promise<void> {
   await expect(group.getByText("Version 1").first()).toBeVisible();
   await expect(group.getByText("Prête").first()).toBeVisible();
 }
+
+// Le premier lancement est fait avant la première page (la porte mène sinon à /bienvenue).
+test.beforeEach(({ request }) => finishFirstLaunch(request));
 
 test("un CV est revu face à une offre jusqu'à son PDF", async ({ page, request }) => {
   expect(sampleCvSha256()).toBe(SAMPLE_CV_SHA256); // le même CV fictif que celui de Python

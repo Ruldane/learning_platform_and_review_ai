@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { POSTING_TEXT } from "./support/samplePosting.ts";
+import { finishFirstLaunch } from "./support/firstLaunch.ts";
 
 /**
  * Parcours de bout en bout n° 3, « une candidature suit son cycle, du doublon à la relance »
@@ -248,6 +249,9 @@ async function keyboardDrag(page: Page): Promise<void> {
   await expect(followedUpColumn.getByRole("listitem")).toHaveCount(1);
   await expect(interviewColumn.getByRole("listitem")).toHaveCount(0);
 }
+
+// Le premier lancement est fait avant la première page (la porte mène sinon à /bienvenue).
+test.beforeEach(({ request }) => finishFirstLaunch(request));
 
 test("une candidature suit son cycle, du doublon à la relance", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);

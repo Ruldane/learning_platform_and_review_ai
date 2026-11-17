@@ -10,6 +10,10 @@ import httpx
 import pytest
 import uvicorn
 
+from app.db.engine import create_engine, create_session_factory
+from app.features.auth.repository import UserRepository
+from app.features.capture.repository import JournalRepository
+from tests.e2e.seed import LOCAL_CAPTURE_TEXT, seed_local_space
 from tests.e2e.server import (
     MARKER,
     UnsafeDataDir,
@@ -157,3 +161,33 @@ def test_main_refuses_google_on_a_public_host_before_touching_anything(tmp_path:
         main(["--auth", "google", "--host", "0.0.0.0", "--data-dir", str(data_dir)])
     assert "127.0.0.1" in str(exit_info.value)
     assert not data_dir.exists()  # aucun dossier créé, aucune base
+
+
+def test_in_container_google_mode_accepts_all_interfaces() -> None:
+    """Docker ne publie le port que si le serveur écoute sur 0.0.0.0 dans le conteneur."""
+    check_host("0.0.0.0", "google", in_container=True)
+
+
+def test_google_settings_take_the_allowed_emails_of_the_caller(tmp_path: Path) -> None:
+    settings = e2e_settings(
+        tmp_path, origin="http://localhost:5181", auth="google", allowed_emails=f"{ALICE}, b@x.org"
+    )
+
+    assert settings.allowed_emails == f"{ALICE}, b@x.org"
+
+
+async def test_seed_local_space_gives_the_claim_something_to_take(tmp_path: Path) -> None:
+    settings = e2e_settings(prepare_data_dir(tmp_path / "e2e-seed"), origin="http://x.org")
+    await asyncio.to_thread(migrate, settings)
+
+    await seed_local_space(settings)
+
+    engine = create_engine(settings.database_url)
+    try:
+        async with create_session_factory(engine)() as session:
+            local = await UserRepository(session).get_local()
+            assert local is not None
+            page = await JournalRepository(session, local.id).page(None, None, 10)
+            assert page is not None and [entry.text for entry in page] == [LOCAL_CAPTURE_TEXT]
+    finally:
+        await engine.dispose()

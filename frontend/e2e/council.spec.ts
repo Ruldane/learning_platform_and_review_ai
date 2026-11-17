@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type Locator, type Page } from "@playwright/test";
+import { finishFirstLaunch } from "./support/firstLaunch.ts";
 
 /**
  * Parcours de bout en bout n° 1, « conseil complet » (SPEC 18.2), contre le serveur de bout en
@@ -135,6 +136,9 @@ async function checkLessons(page: Page, request: APIRequestContext): Promise<voi
     expect((await response.body()).subarray(0, 4).toString()).toBe("%PDF");
   }
 }
+
+// Le premier lancement est fait avant la première page (la porte mène sinon à /bienvenue).
+test.beforeEach(({ request }) => finishFirstLaunch(request));
 
 test("un objectif mène à un programme validé avec ses leçons", async ({ page, request }) => {
   await openCouncil(page);

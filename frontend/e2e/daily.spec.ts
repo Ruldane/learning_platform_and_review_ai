@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { finishFirstLaunch } from "./support/firstLaunch.ts";
 
 /**
  * Parcours de bout en bout n° 4, « le brief du jour à l'ouverture et un relevé du radar » (SPEC
@@ -72,6 +73,9 @@ async function expectAdvice(page: Page): Promise<void> {
   }
   await expect(page.getByText("Le conseil se réunit…")).toHaveCount(0);
 }
+
+// Le premier lancement est fait avant la première page (la porte mène sinon à /bienvenue).
+test.beforeEach(({ request }) => finishFirstLaunch(request));
 
 test("le brief du jour existe à l'ouverture, sept rubriques et un seul conseil", async ({
   page,

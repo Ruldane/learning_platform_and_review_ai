@@ -14,14 +14,23 @@ ni LLM réel.
     uv run python -m tests.e2e.server --port 8765 --data-dir <dossier> --auth google
 
 `--auth google` refuse un `--host` qui n'est pas de bouclage (127.0.0.1, ::1, localhost) : le faux
-fournisseur connecte n'importe quelle adresse sans mot de passe.
+fournisseur connecte n'importe quelle adresse sans mot de passe. Seule exception : `--in-container`,
+pour un serveur lancé dans Docker (le port ne se publie que si le serveur écoute sur 0.0.0.0 dans
+le conteneur) ; l'appelant s'engage alors à ne publier le port que sur la boucle locale de l'hôte
+(`-p 127.0.0.1:<port>:<port>`).
+
+`--allowed-emails` fixe `ALLOWED_EMAILS` du mode Google (défaut `*`) : la reprise de l'espace local
+n'est proposée qu'à une adresse nommée dans une liste explicite. `--seed-local` crée l'espace
+`local` (l'utilisateur sans identité) avec une ligne au journal, comme un poste qui a tourné en
+mode local avant de passer en mode Google : la reprise a ainsi quelque chose à reprendre.
 
 `--auth local` (défaut) : l'utilisateur unique, sans connexion. `--auth google` (parcours de
 connexion) : le mode Google, avec le faux fournisseur `scripts/fake_oidc.py` monté sous
 `/fake-oidc` du même serveur ; `GOOGLE_AUTH_URL`, `GOOGLE_TOKEN_URL`, l'émetteur et l'adresse de
 retour pointent dessus (`http://localhost:<port>`, l'application s'ouvre par `localhost`),
-`ALLOWED_EMAILS=*`, retour vers l'origine du front (`--origin`). Ouvrir `/api/v1/auth/google/login`
-(`?login_hint=<adresse>` choisit le compte) fait un tour de connexion complet, sans mot de passe.
+`ALLOWED_EMAILS=*` par défaut (`--allowed-emails`), retour vers l'origine du front (`--origin`).
+Ouvrir `/api/v1/auth/google/login` (`?login_hint=<adresse>` choisit le compte) fait un tour de
+connexion complet, sans mot de passe.
 
 Le dossier de données doit être temporaire (sous le dossier temporaire du système) ou dédié
 (marqueur `.tremplin-e2e`), sans base existante : le serveur y crée sa base et la peuple, il ne
@@ -32,6 +41,7 @@ Le planificateur est coupé : la validation du programme lance déjà la chaîne
 semaines 1 et 2, et un passage planifié pourrait relancer une leçon hors du script."""
 
 import argparse
+import asyncio
 import sys
 import tempfile
 from collections.abc import Mapping, Sequence
@@ -55,6 +65,7 @@ from tests.e2e.council_script import DEBATERS, council_scripts, script_web
 from tests.e2e.cv_script import cv_scripts, script_company_web
 from tests.e2e.daily_script import daily_scripts, script_daily_web
 from tests.e2e.scripted_models import Reply, ScriptedModels, merge_scripts
+from tests.e2e.seed import seed_local_space
 from tests.support.memory import FakeWebReader, fake_memory_providers, fake_publishing_providers
 from tests.support.research import fake_research_providers
 from tests.support.text_renderer import TextHtmlRenderer
@@ -80,10 +91,13 @@ class UnsafeHost(Exception):
     """Hôte d'écoute refusé : le mode Google factice accepte n'importe quelle identité."""
 
 
-def check_host(host: str, auth: str) -> None:
+def check_host(host: str, auth: str, *, in_container: bool = False) -> None:
     """`--auth google` n'écoute que sur la boucle locale : le faux fournisseur connecte n'importe
-    quelle adresse sans mot de passe, il ne doit jamais être joignable depuis le réseau."""
-    if auth == "google" and host not in LOOPBACK_HOSTS:
+    quelle adresse sans mot de passe, il ne doit jamais être joignable depuis le réseau. Dans un
+    conteneur (`in_container`), le serveur doit écouter sur toutes les interfaces du conteneur pour
+    que Docker publie son port : c'est à l'appelant de ne le publier que sur la boucle locale de
+    l'hôte (`-p 127.0.0.1:<port>:<port>`)."""
+    if auth == "google" and not in_container and host not in LOOPBACK_HOSTS:
         raise UnsafeHost(
             "Hôte refusé : --auth google n'écoute que sur 127.0.0.1, ::1 ou localhost "
             "(le faux fournisseur connecte n'importe qui sans mot de passe)."
@@ -175,10 +189,12 @@ def e2e_settings(
     origin: str,
     auth: Literal["local", "google"] = "local",
     port: int = 8765,
+    allowed_emails: str = "*",
 ) -> Settings:
     """Réglages du serveur : base dans `data_dir` même si `DATABASE_URL` est dans
     l'environnement, sans `.env` ni planificateur. `auth="google"` : le mode Google sur le faux
-    fournisseur monté sous `/fake-oidc` du serveur (adresses en `http://localhost:<port>`)."""
+    fournisseur monté sous `/fake-oidc` du serveur (adresses en `http://localhost:<port>`),
+    `ALLOWED_EMAILS` valant `allowed_emails` (`*` : tous les comptes)."""
     common = {
         "data_dir": data_dir,
         "database_url": f"sqlite+aiosqlite:///{(data_dir / DATABASE).as_posix()}",
@@ -193,7 +209,7 @@ def e2e_settings(
         auth_mode="google",
         google_client_id=FAKE_CLIENT_ID,
         google_client_secret="fake-secret-for-e2e-only",
-        allowed_emails="*",
+        allowed_emails=allowed_emails,
         google_auth_url=f"{base}{FAKE_OIDC_PATH}/authorize",
         google_token_url=f"{base}{FAKE_OIDC_PATH}/token",
         google_issuer=f"{base}{FAKE_OIDC_PATH}",
@@ -218,6 +234,22 @@ def _parse(argv: Sequence[str] | None) -> argparse.Namespace:
         help="local : sans connexion ; google : connexion par le faux fournisseur (/fake-oidc)",
     )
     parser.add_argument(
+        "--allowed-emails",
+        default="*",
+        help="ALLOWED_EMAILS du mode Google : adresses séparées par des virgules, ou * (tous)",
+    )
+    parser.add_argument(
+        "--seed-local",
+        action="store_true",
+        help="crée l'espace `local` avec une ligne au journal (de quoi reprendre à la connexion)",
+    )
+    parser.add_argument(
+        "--in-container",
+        action="store_true",
+        help="serveur dans Docker : autorise --host 0.0.0.0 en mode google ; le port ne doit être "
+        "publié que sur la boucle locale de l'hôte",
+    )
+    parser.add_argument(
         "--turn-delay", type=float, default=1.5, help="secondes avant chaque prise de parole"
     )
     return parser.parse_args(argv)
@@ -226,12 +258,20 @@ def _parse(argv: Sequence[str] | None) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> None:
     args = _parse(argv)
     try:
-        check_host(args.host, args.auth)
+        check_host(args.host, args.auth, in_container=args.in_container)
         data_dir = prepare_data_dir(args.data_dir)
     except (UnsafeHost, UnsafeDataDir) as refused:
         sys.exit(str(refused))
-    settings = e2e_settings(data_dir, origin=args.origin, auth=args.auth, port=args.port)
+    settings = e2e_settings(
+        data_dir,
+        origin=args.origin,
+        auth=args.auth,
+        port=args.port,
+        allowed_emails=args.allowed_emails,
+    )
     migrate(settings)
+    if args.seed_local:
+        asyncio.run(seed_local_space(settings))
     app = build_app(settings, delays=dict.fromkeys(DEBATERS, args.turn_delay))
     uvicorn.run(app, host=args.host, port=args.port, log_level="warning")
 
