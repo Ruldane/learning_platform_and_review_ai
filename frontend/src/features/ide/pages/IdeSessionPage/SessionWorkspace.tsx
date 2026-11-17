@@ -1,0 +1,40 @@
+import { Link } from "react-router";
+import { t } from "@/shared/i18n/t";
+import type { SocketFactory } from "@/shared/realtime/socket";
+import { useExercises } from "../../hooks/useExercises";
+import { useWorkspace } from "../../hooks/useWorkspace";
+import type { IdeSession } from "../../types";
+import { EditorColumn } from "./EditorColumn";
+import { TeacherColumn } from "./TeacherColumn";
+
+interface SessionWorkspaceProps {
+  session: IdeSession;
+  createSocket?: SocketFactory;
+}
+
+/** Une séance ouverte : l'en-tête (titre, énoncé), l'éditeur à gauche, le professeur à droite. */
+export function SessionWorkspace({ session, createSocket }: SessionWorkspaceProps) {
+  const ws = useWorkspace(session);
+  const exercise = useExercises().data?.find((item) => item.id === session.exercise_id);
+  return (
+    <div className="flex flex-col gap-4">
+      <header className="flex flex-col gap-2">
+        <Link to="/code" className="text-sm underline underline-offset-4">
+          {t("ide.session.back")}
+        </Link>
+        <h1 className="text-2xl font-semibold">{exercise?.title ?? session.title}</h1>
+        {session.passed ? <p className="text-sm font-medium">{t("ide.session.passed")}</p> : null}
+        {exercise ? (
+          <details>
+            <summary className="cursor-pointer text-sm">{t("ide.session.statement")}</summary>
+            <p className="mt-1 max-w-prose text-sm whitespace-pre-wrap">{exercise.statement}</p>
+          </details>
+        ) : null}
+      </header>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+        <EditorColumn ws={ws} />
+        <TeacherColumn ws={ws} createSocket={createSocket} />
+      </div>
+    </div>
+  );
+}
