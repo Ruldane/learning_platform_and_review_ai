@@ -42,9 +42,16 @@ def _describe(entry: _KeyEntry) -> str:
     return f"{entry.label} : {'clé présente' if entry.readable else 'clé illisible'}"
 
 
+GOOGLE_MODE_DETAIL = "Mode Google : les clés de chaque compte se vérifient dans ses réglages."
+
+
 class LlmKeysCheck:
     """`ok` si l'utilisateur local a au moins une clé LLM lisible (interface ou `.env`).
-    Aucun appel réseau : le test réel d'une clé reste l'action « Tester » des réglages."""
+    Aucun appel réseau : le test réel d'une clé reste l'action « Tester » des réglages.
+
+    Mode Google (P12) : `/health` est public et il n'y a plus « un » utilisateur ; les clés sont
+    celles de chaque compte (ou du `.env`), vérifiées dans ses réglages : le contrôle est `ok`
+    avec une indication, jamais un état dégradé permanent (D28 n° 3)."""
 
     name = "llm"
 
@@ -55,14 +62,19 @@ class LlmKeysCheck:
         env_keys: Mapping[str, str | None],
         providers: Mapping[str, LlmProvider],
         local_user_id: Callable[[], str | None],
+        *,
+        google_mode: bool = False,
     ) -> None:
         self._session_factory = session_factory
         self._cipher = cipher
         self._env_keys = env_keys
         self._providers = providers
         self._local_user_id = local_user_id
+        self._google_mode = google_mode
 
     async def check(self) -> HealthStatus:
+        if self._google_mode:
+            return HealthStatus(ok=True, detail=GOOGLE_MODE_DETAIL)
         user_id = self._local_user_id()
         if user_id is None:
             return HealthStatus(ok=False, detail="Aucun utilisateur local.")

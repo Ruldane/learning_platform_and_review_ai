@@ -1,5 +1,8 @@
-from sqlalchemy import select
+from typing import Any, cast
+
+from sqlalchemy import CursorResult, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased
 
 from app.db.base import new_id
 from app.db.models.accounts import User
@@ -33,3 +36,50 @@ class UserRepository:
         self._session.add(user)
         await self._session.flush()
         return user
+
+    async def get_by_google_sub(self, sub: str) -> User | None:
+        stmt = select(User).where(User.google_sub == sub)
+        return (await self._session.execute(stmt)).scalar_one_or_none()
+
+    async def get_by_email(self, email: str) -> User | None:
+        stmt = select(User).where(User.email == email)
+        return (await self._session.execute(stmt)).scalar_one_or_none()
+
+    async def add_google(self, *, sub: str, email: str, name: str) -> User:
+        user_id = new_id()
+        user = User(id=user_id, user_id=user_id, google_sub=sub, email=email, name=name)
+        self._session.add(user)
+        await self._session.flush()
+        return user
+
+    async def update_identity(self, user: User, *, email: str, name: str) -> None:
+        user.email = email
+        user.name = name
+        await self._session.flush()
+
+    async def any_google_user(self) -> bool:
+        """Vrai dès qu'un compte Google existe (plus de reprise de l'espace local)."""
+        stmt = select(User.id).where(User.google_sub.is_not(None)).limit(1)
+        return (await self._session.execute(stmt)).first() is not None
+
+    async def attach_identity(self, user_id: str, sub: str, email: str, name: str) -> bool:
+        """Attache l'identité Google à la ligne `user_id` (la reprise de l'espace local : même
+        `id`, donc aucune donnée déplacée). Un seul UPDATE conditionnel, donc atomique : il ne
+        touche la ligne que si elle n'a pas encore d'identité ET qu'aucun compte Google n'existe
+        (deux reprises simultanées, ou une reprise après un premier choix « espace vide » :
+        0 ligne, `False`). Jamais deux propriétaires."""
+        other = aliased(User)
+        taken = select(other.id).where(other.google_sub.is_not(None)).exists()
+        stmt = (
+            update(User)
+            .where(User.id == user_id, User.google_sub.is_(None), ~taken)
+            .values(google_sub=sub, email=email, name=name)
+            .execution_options(synchronize_session=False)
+        )
+        result = cast("CursorResult[Any]", await self._session.execute(stmt))
+        if result.rowcount != 1:
+            return False
+        row = await self._session.get(User, user_id)
+        if row is not None:  # l'objet déjà chargé reflète la ligne écrite
+            await self._session.refresh(row)
+        return True

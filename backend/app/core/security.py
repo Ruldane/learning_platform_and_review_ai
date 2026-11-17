@@ -49,9 +49,11 @@ class Cipher:
     def encrypt(self, plain: str) -> str:
         return self._fernet.encrypt(plain.encode()).decode()
 
-    def decrypt(self, token: str) -> str:
+    def decrypt(self, token: str, *, ttl: int | None = None) -> str:
+        """Déchiffre `token` ; avec `ttl` (secondes), un jeton plus vieux est refusé comme un
+        jeton illisible (témoins de la connexion, qui valent 10 minutes)."""
         try:
-            return self._fernet.decrypt(token.encode()).decode()
+            return self._fernet.decrypt(token.encode(), ttl=ttl).decode()
         except InvalidToken as exc:
             raise SecretUnreadable() from exc
 

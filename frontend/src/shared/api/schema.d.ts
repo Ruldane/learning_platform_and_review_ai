@@ -1050,7 +1050,8 @@ export interface paths {
         /**
          * Embedding Progress
          * @description Progression du modèle d'embeddings (`bge-m3`) : public, comme `/health`. Si le modèle
-         *     manque, le back le télécharge depuis Ollama, une seule fois par processus.
+         *     manque, le back le télécharge depuis Ollama, un téléchargement à la fois (relancé après un
+         *     échec).
          */
         get: operations["embedding_progress_api_v1_health_embedding_get"];
         put?: never;
@@ -8326,7 +8327,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `claim_expired` (le témoin `tremplin_claim` manque ou a plus de 10 minutes) ou `local_already_claimed` (l'espace local a déjà un propriétaire) */
+            /** @description `claim_expired` (le témoin `tremplin_claim` manque ou a plus de 10 minutes, ou « espace vide » a déjà été choisi : le compte existe, il suffit de se reconnecter, ou l'adresse n'est plus nommée dans `ALLOWED_EMAILS`) ou `local_already_claimed` (l'espace local a déjà un propriétaire) */
             409: {
                 headers: {
                     [name: string]: unknown;

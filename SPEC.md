@@ -1045,7 +1045,7 @@ En local, l'application démarre sans page de connexion, avec un utilisateur uni
 - Session par cookie `HttpOnly` et `SameSite=Lax`, valable 30 jours.
 - Adresse de retour : `http://localhost:8000/api/v1/auth/google/callback`.
 - Au premier passage en mode Google, le compte qui se connecte peut reprendre les données de l'utilisateur `local`.
-- Une variable optionnelle `ALLOWED_EMAILS` limite les comptes autorisés.
+- La variable `ALLOWED_EMAILS` limite les comptes autorisés : liste d'adresses séparées par des virgules (minuscules, espaces ignorés) ; `*` laisse entrer tous les comptes ; en mode Google, vide, le back refuse de démarrer. La reprise des données de l'utilisateur `local` n'est proposée qu'à une adresse nommée dans une liste explicite, jamais avec `*`.
 - Ce mode demande de créer un client OAuth dans la console Google. C'est la seule configuration au delà des clés API, d'où sa désactivation par défaut. Le README décrit les étapes.
 
 ### 17.2 Isolation et secrets

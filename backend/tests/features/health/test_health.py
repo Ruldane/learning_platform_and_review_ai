@@ -172,10 +172,10 @@ async def test_health_route_never_leaks_exception_messages(
 
 
 async def test_health_route_needs_no_session_in_google_mode(
-    settings: Settings, db_engine: object
+    google_settings: Settings, db_engine: object
 ) -> None:
     # Mode `google` sans connexion : les routes protégées répondent 401, pas la santé.
-    app = create_app(settings.model_copy(update={"auth_mode": "google"}))
+    app = create_app(google_settings)
     async with LifespanManager(app):
         override_health_checks(app, [ok("db")])
         transport = httpx.ASGITransport(app=app)

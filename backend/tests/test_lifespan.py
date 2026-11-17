@@ -110,7 +110,8 @@ async def test_http_client_is_closed_when_composition_fails(
     with pytest.raises(ValueError, match="composition cassée"):
         async with LifespanManager(create_app(settings)):
             pass
-    # Sondes de santé et test de la clé Brave (D74) : tous deux fermés.
+    # Sondes de santé et test de la clé Brave (D74) : tous deux fermés ; le point `token` de
+    # Google n'est ouvert qu'en mode Google (voir `test_google_mode_closes_the_token_client`).
     assert len(created) == 2 and all(c.is_closed for c in created)
 
 

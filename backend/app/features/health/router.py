@@ -24,7 +24,15 @@ async def health(
 
 
 @router.get("/health/embedding", response_model=EmbeddingProgress)
-async def embedding_progress() -> EmbeddingProgress:
+async def embedding_progress(
+    providers: Annotated[Providers, Depends(get_providers)],
+) -> EmbeddingProgress:
     """Progression du modèle d'embeddings (`bge-m3`) : public, comme `/health`. Si le modèle
-    manque, le back le télécharge depuis Ollama, une seule fois par processus."""
-    raise AppError("not_implemented", "Pas encore disponible.", 501)
+    manque, le back le télécharge depuis Ollama, un téléchargement à la fois (relancé après un
+    échec)."""
+    if providers.embedding is None:  # jamais en service : `build_providers` le pose toujours
+        raise AppError("not_implemented", "Pas encore disponible.", 501)
+    data = await providers.embedding.progress()
+    return EmbeddingProgress(
+        model=data.model, present=data.present, percent=data.percent, detail=data.detail
+    )

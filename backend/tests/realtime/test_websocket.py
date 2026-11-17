@@ -101,6 +101,15 @@ def test_ws_accepts_allowed_origins(sync_client: TestClient):
             assert [ws.receive_json()["seq"] for _ in range(n)] == list(range(1, n + 1))
 
 
+def test_ws_without_origin_is_accepted_in_local_mode(sync_client: TestClient):
+    """Mode local : un client hors navigateur (sans `Origin`) reste accepté ; seul le mode Google
+    l'exige (`test_ws_auth.py`)."""
+    sid = start(sync_client, "two_steps")
+    n = wait_status_sync(sync_client, sid, "completed")["last_seq"]
+    with sync_client.websocket_connect(stream_url(sid)) as ws:  # aucun en-tête `Origin`
+        assert [ws.receive_json()["seq"] for _ in range(n)] == list(range(1, n + 1))
+
+
 def test_ws_rejects_negative_after_seq(sync_client: TestClient):
     sid = start(sync_client, "two_steps")
     with (
@@ -127,10 +136,10 @@ def test_client_disconnect_releases_the_subscription(sync_client: TestClient, ap
         assert ws.receive_json()["seq"] == r.json()["seq"]
 
 
-def test_ws_requires_a_user(settings: Settings, app: FastAPI):
+def test_ws_requires_a_user(google_settings: Settings, app: FastAPI):
     # `app` : schéma de la base créé (le lifespan relit les sessions à reprendre).
     """Mode `google` (phase 9) : la poignée de main est refusée en 401, enveloppe d'erreur."""
-    google = create_app(settings.model_copy(update={"auth_mode": "google"}))
+    google = create_app(google_settings)
     with (
         TestClient(google) as client,
         pytest.raises(WebSocketDenialResponse) as denied,

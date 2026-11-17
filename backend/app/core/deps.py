@@ -1,13 +1,12 @@
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
-from typing import Annotated
+from typing import Annotated, Protocol
 
 from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import HTTPConnection
 
 from app.agents.runtime.handle import AgentRuntime
-from app.core.errors import AppError
 from app.core.providers import Providers, PublishingProviders
 from app.core.security import Cipher
 from app.providers.llm.factory import LlmFactory
@@ -40,14 +39,19 @@ class CurrentUser:
     email: str | None
 
 
-def get_current_user(conn: HTTPConnection) -> CurrentUser:
-    """Utilisateur de la requête. Mode `local` : l'utilisateur unique créé au démarrage.
+class Authenticator(Protocol):
+    """Qui est l'utilisateur de la requête ? Composé au démarrage (`app.state.authenticator`) :
+    l'utilisateur unique en mode `local`, le cookie de session en mode `google`."""
 
-    Mode `google` : la vraie connexion arrive en phase 9, d'ici là toute route protégée est en 401.
-    """
-    if conn.app.state.settings.auth_mode == "local":
-        return CurrentUser(id=conn.app.state.local_user_id, email=None)
-    raise AppError("auth_required", "Connexion requise.", 401)
+    async def authenticate(self, conn: HTTPConnection) -> CurrentUser:
+        """Lève `AppError` 401 `auth_required` si personne n'est connecté."""
+        ...
+
+
+async def get_current_user(conn: HTTPConnection) -> CurrentUser:
+    """Utilisateur de la requête ou du WebSocket, rendu par l'authentificateur de l'application."""
+    authenticator: Authenticator = conn.app.state.authenticator
+    return await authenticator.authenticate(conn)
 
 
 CurrentUserDep = Annotated[CurrentUser, Depends(get_current_user)]
