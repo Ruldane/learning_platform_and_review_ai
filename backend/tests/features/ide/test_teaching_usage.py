@@ -53,6 +53,7 @@ async def test_preferences_round_trip_and_style(client: httpx.AsyncClient) -> No
         "teacher_mode": "on_demand",
         "teacher_style": "pair",
         "idle_trigger": True,
+        "mcp_can_write_files": True,
         "session_cap": 5_000,
         "day_cap": 20_000,
     }
