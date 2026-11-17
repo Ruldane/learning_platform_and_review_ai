@@ -1,21 +1,26 @@
 import { t } from "@/shared/i18n/t";
-import { Button } from "@/shared/ui/button";
+import { NoticeToast } from "../NoticeToast";
 import type { NoticeView } from "../viewTypes";
 
 /** Nombre maximal de notifications montrées en même temps. */
 const MAX_NOTICES = 3;
 
+const noHold = () => undefined;
+
 interface NoticeToastsProps {
   notices: NoticeView[];
   onDismiss: (id: string) => void;
+  /** Une notification est survolée ou a le focus (`true`), ou ne l'est plus (`false`) : son délai attend. */
+  onHold?: (id: string, held: boolean) => void;
 }
 
 /**
  * Les notifications de fond : une région `aria-live="polite"` toujours présente (un lecteur d'écran
  * n'annonce que ce qui s'ajoute à une région déjà là), trois notifications au plus, chacune avec
- * son bouton « Fermer ». Le délai de disparition (8 s) est celui de l'appelant.
+ * son bouton « Fermer ». Le délai de disparition (8 s) est celui de l'appelant, en pause au survol
+ * et au focus.
  */
-export function NoticeToasts({ notices, onDismiss }: NoticeToastsProps) {
+export function NoticeToasts({ notices, onDismiss, onHold = noHold }: NoticeToastsProps) {
   return (
     <div
       role="region"
@@ -24,22 +29,7 @@ export function NoticeToasts({ notices, onDismiss }: NoticeToastsProps) {
       className="pointer-events-none fixed right-4 bottom-4 z-40 flex w-80 max-w-[calc(100vw-2rem)] flex-col gap-2"
     >
       {notices.slice(0, MAX_NOTICES).map((notice) => (
-        <div
-          key={notice.id}
-          className="pointer-events-auto flex flex-col gap-1 rounded-xl border bg-card p-3 text-sm shadow-lg motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200"
-        >
-          <p className="font-medium">{notice.title}</p>
-          {notice.detail ? <p className="text-muted-foreground">{notice.detail}</p> : null}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="self-end"
-            aria-label={t("home.notices.dismissNamed", { title: notice.title })}
-            onClick={() => onDismiss(notice.id)}
-          >
-            {t("home.notices.dismiss")}
-          </Button>
-        </div>
+        <NoticeToast key={notice.id} notice={notice} onDismiss={onDismiss} onHold={onHold} />
       ))}
     </div>
   );

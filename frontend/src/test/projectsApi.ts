@@ -22,6 +22,10 @@ export interface ProjectsApiOptions {
   entryReply?: () => Response;
   /** Remplace la réponse de `POST /projects/{id}/brief`. */
   briefReply?: () => Response;
+  /** Remplace la réponse de `POST /projects/{id}/drafts`. */
+  draftsReply?: () => Response;
+  /** La session que `POST /projects/{id}/drafts` donne (défaut `sess-drafts-<id>`). */
+  draftsSessionId?: string;
   /** Remplace la réponse de `GET /projects`. */
   listReply?: () => Response;
 }
@@ -39,6 +43,8 @@ interface ProjectsState {
   patches: { id: string; kind: string; body: Over }[];
   entries: { id: string; body: Over }[];
   briefs: string[];
+  /** Les demandes de régénération des brouillons (`POST /projects/{id}/drafts`). */
+  regenerations: string[];
   listReads: number;
   /** Les lectures de `GET /projects/{id}`. */
   reads: number;
@@ -197,6 +203,23 @@ function briefHandler(state: ProjectsState) {
   });
 }
 
+function regenerateHandler(state: ProjectsState) {
+  return http.post(`${API}/projects/:id/drafts`, ({ params }) => {
+    state.regenerations.push(String(params.id));
+    if (state.options.draftsReply) return state.options.draftsReply();
+    const project = find(state, params.id);
+    if (!project) return notFound();
+    if (project.status !== "validated") {
+      return conflict("project_not_validated", "Seul un projet validé a des brouillons.");
+    }
+    if ((project.drafts as Over[]).length > 0) {
+      return conflict("drafts_present", "Ce projet a déjà ses brouillons.");
+    }
+    const session = state.options.draftsSessionId ?? `sess-drafts-${String(params.id)}`;
+    return HttpResponse.json({ session_id: session }, { status: 202 });
+  });
+}
+
 /**
  * Les projets en mémoire : `projects` est à la main du test (`settle` change un projet, comme le
  * serveur quand sa session se termine) ; `submits`, `patches`, `entries` et `briefs` gardent ce que
@@ -210,6 +233,7 @@ export function projectsApi(options: ProjectsApiOptions = {}) {
     patches: [],
     entries: [],
     briefs: [],
+    regenerations: [],
     listReads: 0,
     reads: 0,
     sessions: 0,
@@ -221,6 +245,7 @@ export function projectsApi(options: ProjectsApiOptions = {}) {
     draftHandler(state),
     entryHandler(state),
     briefHandler(state),
+    regenerateHandler(state),
   ];
   return { handlers, state, settle };
 }

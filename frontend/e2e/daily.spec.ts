@@ -11,7 +11,9 @@ import { expect, test, type APIRequestContext, type Page } from "@playwright/tes
  * Le sujet de la ressource vient du poste des réglages du radar : le parcours le pose avant d'ouvrir
  * l'accueil (sans poste, objectif ni programme, le brief n'a aucune ressource à chercher). Il se joue
  * seul ou après les parcours n° 1 à n° 3 (même serveur, même base) : aucune de ses vérifications ne
- * suppose l'accueil vide, et l'accueil n'est ouvert par aucun autre parcours avant lui.
+ * suppose l'accueil vide, ni que personne ne l'a ouvert avant lui : si un parcours précédent a déjà
+ * posé le brief du jour, le premier test le constate (une seule session, jamais deux) sans exiger
+ * ce que seule une première ouverture montre (le conseil qui se réunit, la ressource du poste).
  */
 const API = `${process.env.E2E_API_URL ?? "http://localhost:8765"}/api/v1`;
 const ROLE = "Ingénieure données";
@@ -76,21 +78,29 @@ test("le brief du jour existe à l'ouverture, sept rubriques et un seul conseil"
   request,
 }) => {
   await setRadarRole(request);
+  // Un parcours précédent a pu ouvrir l'accueil : alors le brief existe déjà, sa session aussi.
+  const before = await briefSessions(request);
+  const first = before === 0;
 
   await page.goto("/");
   await expectSevenRubrics(page);
-  // Le brief est rendu tout de suite : le conseil, lui, se réunit (l'Éclaireur puis le Modérateur).
-  await expect(page.getByText("Le conseil se réunit…")).toBeVisible();
-  await expectAdvice(page);
-  await expectResource(page);
-  expect(await briefSessions(request)).toBe(1);
+  if (first) {
+    // Le brief est rendu tout de suite : le conseil, lui, se réunit (l'Éclaireur puis le Modérateur).
+    await expect(page.getByText("Le conseil se réunit…")).toBeVisible();
+    await expectAdvice(page);
+    await expectResource(page);
+  }
+  // Une seule session pour le jour, quel que soit le nombre d'ouvertures.
+  expect(await briefSessions(request)).toBe(Math.max(before, 1));
 
-  // Recharger rend le même brief, déjà complet, sans lancer une seconde session.
+  // Recharger rend le même brief sans lancer une seconde session.
   await page.reload();
   await expectSevenRubrics(page);
-  await expectAdvice(page);
-  await expectResource(page);
-  expect(await briefSessions(request)).toBe(1);
+  if (first) {
+    await expectAdvice(page);
+    await expectResource(page);
+  }
+  expect(await briefSessions(request)).toBe(Math.max(before, 1));
 
   // Les actions rapides mènent où elles disent.
   const quick = page.getByRole("group", { name: "Actions rapides" });

@@ -123,14 +123,70 @@ describe("BackgroundNotices", () => {
     expect(within(region()).getByText("Première")).toBeVisible();
   });
 
-  it("shows three notices at most, the others wait", async () => {
+  it("catch-up notices capped at three: a burst keeps the three latest, the latest first", async () => {
     const { state } = setup({ events: [activityItem("e1", T(1))] });
     await waitFor(() => expect(state.queries.length).toBeGreaterThan(1));
     state.events.push(
       ...[2, 3, 4, 5, 6].map((n) => activityItem(`e${n}`, T(n), { title: `Nouveauté ${n}` })),
     );
-    await within(region()).findByText("Nouveauté 2");
-    expect(within(region()).getAllByRole("button", { name: /Fermer/ })).toHaveLength(3);
-    expect(within(region()).queryByText("Nouveauté 6")).toBeNull();
+    await within(region()).findByText("Nouveauté 6");
+    const titles = within(region())
+      .getAllByRole("button", { name: /Fermer/ })
+      .map((button) => button.getAttribute("aria-label"));
+    expect(titles).toEqual([
+      "Fermer la notification : Nouveauté 6",
+      "Fermer la notification : Nouveauté 5",
+      "Fermer la notification : Nouveauté 4",
+    ]);
+    // Les plus anciennes de la rafale ne sont ni montrées plus tard, ni annoncées une seconde fois.
+    await new Promise((resolve) => setTimeout(resolve, POLL * 5));
+    expect(within(region()).queryByText("Nouveauté 2")).toBeNull();
+    expect(within(region()).queryByText("Nouveauté 3")).toBeNull();
+  });
+
+  it("keeps the notices of an earlier read in front of the next ones", async () => {
+    const { state } = setup({ events: [activityItem("e1", T(1))] });
+    await waitFor(() => expect(state.queries.length).toBeGreaterThan(1));
+    state.events.push(activityItem("e2", T(2), { title: "Première" }));
+    await within(region()).findByText("Première");
+    state.events.push(activityItem("e3", T(3), { title: "Seconde" }));
+    await within(region()).findByText("Seconde");
+    const titles = within(region())
+      .getAllByRole("button", { name: /Fermer/ })
+      .map((button) => button.getAttribute("aria-label"));
+    expect(titles).toEqual([
+      "Fermer la notification : Première",
+      "Fermer la notification : Seconde",
+    ]);
+  });
+
+  it("notice pauses on hover and focus, then goes on with the time it had left", async () => {
+    const { state, user } = setup({ events: [activityItem("e1", T(1))] }, 400);
+    await waitFor(() => expect(state.queries.length).toBeGreaterThan(1));
+    state.events.push(
+      activityItem("e2", T(2), { title: "Survolée" }),
+      activityItem("e3", T(3), { title: "Laissée" }),
+    );
+    const hovered = (await within(region()).findByText("Survolée")).closest("[data-notice]")!;
+    await user.hover(hovered);
+    // « Laissée » disparaît à ses 400 ms, « Survolée » attend qu'on la quitte.
+    await waitFor(() => expect(within(region()).queryByText("Laissée")).toBeNull());
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    expect(within(region()).getByText("Survolée")).toBeVisible();
+    await user.unhover(hovered);
+    await waitFor(() => expect(within(region()).queryByText("Survolée")).toBeNull());
+  });
+
+  it("holds a notice while the focus is on its Fermer button", async () => {
+    const { state, user } = setup({ events: [activityItem("e1", T(1))] }, 300);
+    await waitFor(() => expect(state.queries.length).toBeGreaterThan(1));
+    state.events.push(activityItem("e2", T(2), { title: "Au clavier" }));
+    await within(region()).findByText("Au clavier");
+    await user.tab();
+    expect(within(region()).getByRole("button", { name: /Fermer/ })).toHaveFocus();
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    expect(within(region()).getByText("Au clavier")).toBeVisible();
+    await user.tab();
+    await waitFor(() => expect(within(region()).queryByText("Au clavier")).toBeNull());
   });
 });

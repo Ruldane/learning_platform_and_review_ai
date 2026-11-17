@@ -16,6 +16,7 @@ const CONFLICTS = [
   "project_validated",
   "brief_not_failed",
   "project_not_validated",
+  "drafts_present",
   "entry_already_added",
   "profile_required",
   "profile_draft_pending",

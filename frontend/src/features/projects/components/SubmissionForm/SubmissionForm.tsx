@@ -12,15 +12,17 @@ interface SubmissionFormProps {
   busy: boolean;
   /** Ce que le serveur a refusé, rangé par champ ; un message s'efface dès que son champ change. */
   refusal?: SubmissionRefusalView | null;
+  /** Le point de départ des champs (le dernier rendu d'un projet à reprendre) ; les captures ne se reprennent pas. */
+  initial?: { repoUrl: string | null; description: string | null };
 }
 
 /**
  * Rendre un projet : un lien de dépôt et/ou une description (4 000 caractères au plus, compteur),
  * jusqu'à 5 captures. Chaque champ à corriger a son message ; le serveur reste l'autorité.
  */
-export function SubmissionForm({ onSubmit, busy, refusal = null }: SubmissionFormProps) {
-  const [repoUrl, setRepoUrl] = useState("");
-  const [description, setDescription] = useState("");
+export function SubmissionForm({ onSubmit, busy, refusal = null, initial }: SubmissionFormProps) {
+  const [repoUrl, setRepoUrl] = useState(initial?.repoUrl ?? "");
+  const [description, setDescription] = useState(initial?.description ?? "");
   const [screenshots, setScreenshots] = useState<File[]>([]);
   const [attempted, setAttempted] = useState(false);
   const { refused, clear } = useRefusal(refusal);

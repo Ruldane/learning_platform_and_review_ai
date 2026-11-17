@@ -71,3 +71,16 @@ export async function retryBrief(projectId: string) {
     }),
   );
 }
+
+/**
+ * `POST /projects/{id}/drafts` (202 `{session_id}`) : réécrire les brouillons d'un projet validé qui
+ * n'en a pas. 409 `project_not_validated`, `drafts_present` ou `review_in_progress`
+ * (`details.session_id`).
+ */
+export async function regenerateDrafts(projectId: string) {
+  return unwrap(
+    await api.POST("/projects/{project_id}/drafts", {
+      params: { path: { project_id: projectId } },
+    }),
+  );
+}

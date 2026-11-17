@@ -6,10 +6,14 @@ import { homeKeys } from "../queryKeys";
 import { toActivityView } from "../toView";
 import { useNoticeQueue } from "./useNoticeQueue";
 
-/** Relecture toutes les 60 s, 8 s par notification, 10 événements relus au plus à chaque fois. */
+/**
+ * Relecture toutes les 60 s, 8 s par notification (en pause au survol et au focus), 10 événements
+ * relus au plus à chaque fois, dont 3 au plus annoncés.
+ */
 export const NOTICE_POLL_MS = 60_000;
 export const NOTICE_DISMISS_MS = 8_000;
 const BATCH = 10;
+const ANNOUNCED = 3;
 
 /** Les genres qui méritent une notification : la mémoire des agents n'en fait pas. */
 const NOTICE_KINDS: readonly ActivityKind[] = ["lesson", "radar", "brief", "project", "job_failed"];
@@ -30,7 +34,8 @@ export interface NoticeOptions {
  * fil (rien n'est annoncé de ce qui existait déjà) ; ensuite `GET /activity` est relu avec le
  * couple `after` + `after_id` toutes les `pollMs`, onglet visible seulement. Un nouvel événement
  * d'un genre gardé devient une notification (3 à l'écran, `dismissMs` chacune) et le brief comme le
- * fil sont relus. Tout reste en mémoire : un rechargement repart du plus récent.
+ * fil sont relus. Après une longue absence, une rafale n'annonce que les 3 plus récents, le plus
+ * récent d'abord : les autres sont dans le fil. Tout reste en mémoire : un rechargement repart du plus récent.
  */
 export function useBackgroundNotices({
   pollMs = NOTICE_POLL_MS,
@@ -57,12 +62,13 @@ export function useBackgroundNotices({
         return 0;
       }
       if (items.length === 0) return 0;
-      const fresh = items
-        .filter((item) => NOTICE_KINDS.includes(item.kind) && !shown.current.has(item.id))
-        .reverse();
+      const fresh = items.filter(
+        (item) => NOTICE_KINDS.includes(item.kind) && !shown.current.has(item.id),
+      );
       for (const item of fresh) shown.current.add(item.id);
       if (fresh.length > 0) {
-        push(fresh.map((item) => ({ id: item.id, title: item.title, detail: item.detail })));
+        const latest = fresh.slice(0, ANNOUNCED);
+        push(latest.map((item) => ({ id: item.id, title: item.title, detail: item.detail })));
         void client.invalidateQueries({ queryKey: homeKeys.brief });
       }
       void client.invalidateQueries({ queryKey: homeKeys.activity });
@@ -74,5 +80,5 @@ export function useBackgroundNotices({
     retry: false,
   });
 
-  return { notices: queue.notices, dismiss: queue.dismiss };
+  return { notices: queue.notices, dismiss: queue.dismiss, hold: queue.hold };
 }

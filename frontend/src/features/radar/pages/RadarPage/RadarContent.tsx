@@ -1,23 +1,18 @@
 import type { UseQueryResult } from "@tanstack/react-query";
-import { useLocation } from "react-router";
 import { t } from "@/shared/i18n/t";
 import type { SocketFactory } from "@/shared/realtime/socket";
 import { useRadarRun } from "../../hooks/useRadarRun";
-import type { useStartRadar } from "../../hooks/useStartRadar";
+import type { StartedRun, useStartRadar } from "../../hooks/useStartRadar";
 import type { HistoryItemView, LatestView } from "../../toView";
 import { RadarHistory } from "./RadarHistory";
 import { RadarLaunch } from "./RadarLaunch";
 import { RunArea } from "./RunArea";
 import { useLaunch } from "./useLaunch";
 
-/** Ce que le lancement a laissé dans l'état de navigation : la session du 202, ou un relevé repris. */
-function launchState(state: unknown): { sessionId: string | null; resumed: boolean } {
-  const value =
-    typeof state === "object" && state !== null ? (state as Record<string, unknown>) : {};
-  return {
-    sessionId: typeof value.sessionId === "string" ? value.sessionId : null,
-    resumed: value.resumed === true,
-  };
+/** Le lancement de la page, s'il porte sur le relevé montré ; sinon rien : celui-ci n'a pas été lancé ici. */
+function launchOf(started: StartedRun | null, runId: string | null) {
+  const mine = started !== null && started.runId === runId ? started : null;
+  return { sessionId: mine?.sessionId ?? null, resumed: mine?.resumed ?? false };
 }
 
 interface RadarContentProps {
@@ -31,7 +26,9 @@ interface RadarContentProps {
 
 /** La page une fois `GET /radar/latest` lu : lancement, relevé montré, historique. */
 export function RadarContent({ runId, latest, history, starter, createSocket }: RadarContentProps) {
-  const launched = launchState(useLocation().state);
+  // Ce que le lancement de cette page a donné à suivre (la session du 202, ou un relevé repris) :
+  // il vient du magasin de la page, jamais de l'historique du navigateur (rechargement, retour).
+  const launched = launchOf(starter.started, runId);
   const detail = useRadarRun(runId, launched.sessionId, createSocket);
   const view = runId ? detail.query.data : latest.latest;
   const onRun = useLaunch(starter, runId, view?.id);

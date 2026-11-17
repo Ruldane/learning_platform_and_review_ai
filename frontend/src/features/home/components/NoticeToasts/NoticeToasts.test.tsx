@@ -46,3 +46,58 @@ describe("NoticeToasts", () => {
     expect(screen.getAllByText("Fermer")).toHaveLength(2);
   });
 });
+
+describe("NoticeToasts : la pause d'une notification", () => {
+  const setup = () => {
+    const onHold = vi.fn();
+    render(
+      <NoticeToasts
+        notices={[notice("a", "Leçon prête"), notice("b", "Relevé fini")]}
+        onDismiss={vi.fn()}
+        onHold={onHold}
+      />,
+    );
+    return { onHold, user: userEvent.setup() };
+  };
+  const toast = (title: string) => screen.getByText(title).closest("[data-notice]") as HTMLElement;
+
+  it("notice pauses on hover and focus: a pointer over a notice holds it, leaving releases it", async () => {
+    const { onHold, user } = setup();
+    await user.hover(toast("Relevé fini"));
+    expect(onHold).toHaveBeenLastCalledWith("b", true);
+    await user.unhover(toast("Relevé fini"));
+    expect(onHold).toHaveBeenLastCalledWith("b", false);
+    expect(onHold).not.toHaveBeenCalledWith("a", expect.anything());
+  });
+
+  it("holds a notice while the focus is inside it, and releases it when the focus leaves", async () => {
+    const { onHold, user } = setup();
+    await user.tab();
+    expect(onHold).toHaveBeenLastCalledWith("a", true);
+    await user.tab();
+    expect(onHold).toHaveBeenCalledWith("a", false);
+    expect(onHold).toHaveBeenLastCalledWith("b", true);
+  });
+
+  it("keeps the hold while either the pointer or the focus is still on the notice", async () => {
+    const { onHold, user } = setup();
+    await user.hover(toast("Leçon prête"));
+    await user.tab();
+    onHold.mockClear();
+    await user.unhover(toast("Leçon prête"));
+    // Le focus est toujours dans la notification : elle reste en pause.
+    expect(onHold).not.toHaveBeenCalledWith("a", false);
+    await user.tab();
+    expect(onHold).toHaveBeenCalledWith("a", false);
+  });
+
+  it("releases a notice that disappears while held, with no error", async () => {
+    const onHold = vi.fn();
+    const { rerender } = render(
+      <NoticeToasts notices={[notice("a", "Leçon prête")]} onDismiss={vi.fn()} onHold={onHold} />,
+    );
+    await userEvent.setup().hover(toast("Leçon prête"));
+    rerender(<NoticeToasts notices={[]} onDismiss={vi.fn()} onHold={onHold} />);
+    expect(screen.getByRole("region", { name: "Notifications" })).toBeEmptyDOMElement();
+  });
+});
