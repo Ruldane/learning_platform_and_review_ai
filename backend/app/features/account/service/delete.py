@@ -6,7 +6,9 @@ sessions, enfin les lignes de **toutes** les tables à `user_id` (`all_user_tabl
 transaction, enfants d'abord. L'annulation est reprise juste avant la lecture des fils : aucune
 session ne survit au compte. Chaque étape est idempotente et la base ne change qu'à la fin : un
 appel interrompu (Qdrant en panne, disque verrouillé) se refait entier, et rien n'est supprimé en
-base tant que les vecteurs, les fichiers et les points de reprise ne le sont pas.
+base tant que les vecteurs, les fichiers et les points de reprise ne le sont pas. Les vecteurs
+sont rappelés **après** les lignes : un `indexer.push` en vol ne laisse rien dans l'index.
+Après `ROUNDS` tours d'annulation sans y arriver : 503 `account_busy`, avant toute écriture.
 
 Même verrou par compte que l'export : les deux ne se croisent pas. Les journaux ne portent que
 l'identifiant, des nombres et la durée.
@@ -49,7 +51,7 @@ async def _cancel_open_sessions(rt: AccountRuntime, user_id: str) -> int:
     for _ in range(ROUNDS):
         open_ids = await rt.runtime.open_sessions(user_id)
         if not open_ids:
-            break
+            return cancelled
         for session_id in open_ids:
             try:
                 await rt.runtime.cancel(user_id, session_id)
@@ -57,7 +59,11 @@ async def _cancel_open_sessions(rt: AccountRuntime, user_id: str) -> int:
             except AppError as exc:
                 if exc.code != NOT_CANCELLABLE:
                     raise
-    return cancelled
+    raise AppError(
+        "account_busy",
+        "Des sessions du compte ne s'arrêtent pas : rien n'est supprimé en base, réessaie.",
+        503,
+    )
 
 
 async def _delete_vectors(rt: AccountRuntime, user_id: str) -> None:
@@ -67,6 +73,19 @@ async def _delete_vectors(rt: AccountRuntime, user_id: str) -> None:
         raise AppError(
             "vector_store_unavailable",
             "La base vectorielle est indisponible : rien n'est supprimé en base, réessaie.",
+            503,
+        ) from None
+
+
+async def _delete_files(rt: AccountRuntime, user_id: str) -> int:
+    try:
+        return await rt.storage.delete_user(user_id)
+    except (
+        OSError
+    ):  # fichier ouvert ailleurs (Windows), disque verrouillé : le rejeu est sans danger
+        raise AppError(
+            "storage_unavailable",
+            "Des fichiers sont verrouillés : rien n'est supprimé en base, réessaie.",
             503,
         ) from None
 
@@ -95,11 +114,14 @@ async def delete_account(
     async with export_lock(rt.locks, user_id), rt.runtime.refusing_starts(user_id):
         cancelled = await _cancel_open_sessions(rt, user_id)
         await _delete_vectors(rt, user_id)
-        files = await rt.storage.delete_user(user_id)
+        files = await _delete_files(rt, user_id)
         cancelled += await _cancel_open_sessions(rt, user_id)  # juste avant de lire les fils
         threads = await _session_ids(rt, user_id)
         await rt.runtime.delete_threads(threads)
         tables, rows = await _delete_rows(rt, user_id, keep_user=auth_mode == "local")
+        # Un `indexer.push` en vol a pu insérer des vecteurs entre le premier effacement et les
+        # lignes : l'élément a disparu, un second passage les retire (idempotent, 503 rejouable).
+        await _delete_vectors(rt, user_id)
     logger.info(
         "Tout supprimer : user=%s sessions_cancelled=%d threads=%d files=%d tables=%d rows=%d"
         " duration_ms=%d",

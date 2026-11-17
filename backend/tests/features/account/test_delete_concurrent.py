@@ -137,7 +137,8 @@ async def test_a_session_started_while_vectors_or_files_go_is_refused(
 
     assert (await delete_account(client)).status_code == 204
 
-    assert attempts == [ACCOUNT_DELETING_CODE]
+    # Le rappel des vecteurs après les lignes est lui aussi sous la garde (index : deux passages).
+    assert attempts == [ACCOUNT_DELETING_CODE] * (2 if step == "index" else 1)
     assert {n: c for n, c in (await row_counts(db_session, me)).items() if c} == {"users": 1}
 
 

@@ -117,7 +117,7 @@ async def test_delete_vector_down_then_retry_completes(
     assert await app.state.memory_providers.storage.list_user(me) == mine.files
 
     assert (await delete_account(client)).status_code == 204  # un nouvel appel reprend
-    assert calls == [me, me]
+    assert calls == [me, me, me]  # l'échec, puis le premier passage et le rappel après les lignes
     assert {n: c for n, c in (await row_counts(db_session, me)).items() if c} == {"users": 1}
     assert await vector_count(app, me) == 0
     assert not await has_checkpoint(saver_of(app), mine.threads[0])

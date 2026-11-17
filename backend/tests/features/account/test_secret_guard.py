@@ -114,6 +114,13 @@ def test_a_table_marked_with_a_text_is_still_exported() -> None:
         "bearer",
         "passphrase",
         "signature",
+        "authorization_header",
+        "totp_seed",
+        "mfa_backup",
+        "mfa",
+        "pin",
+        "user_pin",
+        "pin_code",
     ],
 )
 def test_the_guard_recognises_a_secret_looking_name(name: str) -> None:
@@ -122,7 +129,10 @@ def test_the_guard_recognises_a_secret_looking_name(name: str) -> None:
     assert unreviewed_secret_columns(metadata) == [f"users.{name}"]
 
 
-@pytest.mark.parametrize("name", ["author", "footprint", "label", "authority", "created_at"])
+@pytest.mark.parametrize(
+    "name",
+    ["author", "footprint", "label", "authority", "created_at", "pinned", "spinner", "typing"],
+)
 def test_the_guard_ignores_a_harmless_name(name: str) -> None:
     metadata = MetaData()
     _table(metadata, "notes", Column(name, Text))

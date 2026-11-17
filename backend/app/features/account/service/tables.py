@@ -28,7 +28,8 @@ EXPORT = "export"  # clé de `info` : `False` écarte la colonne ou la table de 
 # l'écrire ici avec la raison de n'être pas un secret.
 SECRET_NAME = re.compile(
     r"key|token|secret|hash|password|passwd|cookie|credential|cipher|encrypted|salt|nonce"
-    r"|private|fingerprint|bearer|passphrase|signature|(?:^|_)(?:otp|auth|jwt|pwd)(?:_|$)",
+    r"|private|fingerprint|bearer|passphrase|signature|authoriz|totp|mfa"
+    r"|(?:^|_)(?:otp|auth|jwt|pwd|pin)(?:_|$)",
     re.I,
 )
 REVIEWED_NOT_SECRET = frozenset(
