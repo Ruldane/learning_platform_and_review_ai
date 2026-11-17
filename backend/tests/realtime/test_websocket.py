@@ -127,10 +127,10 @@ def test_client_disconnect_releases_the_subscription(sync_client: TestClient, ap
         assert ws.receive_json()["seq"] == r.json()["seq"]
 
 
-def test_ws_requires_a_user(settings: Settings, app: FastAPI):
+def test_ws_requires_a_user(google_settings: Settings, app: FastAPI):
     # `app` : schéma de la base créé (le lifespan relit les sessions à reprendre).
     """Mode `google` (phase 9) : la poignée de main est refusée en 401, enveloppe d'erreur."""
-    google = create_app(settings.model_copy(update={"auth_mode": "google"}))
+    google = create_app(google_settings)
     with (
         TestClient(google) as client,
         pytest.raises(WebSocketDenialResponse) as denied,

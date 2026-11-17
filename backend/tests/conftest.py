@@ -82,6 +82,20 @@ def publishing_providers(fake_html_renderer: FakeHtmlRenderer) -> PublishingProv
 
 
 @pytest.fixture
+def google_settings(settings: Settings) -> Settings:
+    """Mode `google` : identifiants fictifs (sans eux le back refuse de démarrer, P11) et tous les
+    comptes admis (`ALLOWED_EMAILS=*`) ; les tests d'autorisation en changent la valeur."""
+    return settings.model_copy(
+        update={
+            "auth_mode": "google",
+            "google_client_id": "test-client.apps.example.invalid",
+            "google_client_secret": "test-secret-never-logged",
+            "allowed_emails": "*",
+        }
+    )
+
+
+@pytest.fixture
 def app(
     settings: Settings,
     db_engine: AsyncEngine,
@@ -110,15 +124,15 @@ async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
 
 @pytest.fixture
 async def client_google_mode(
-    settings: Settings,
+    google_settings: Settings,
     db_engine: AsyncEngine,
     memory_providers: MemoryProviders,
     research_providers: ResearchProviders,
     publishing_providers: PublishingProviders,
 ) -> AsyncIterator[httpx.AsyncClient]:
-    # Mode `google` : aucune session n'existe encore (phase 9), les routes protégées répondent 401.
+    # Mode `google` sans cookie de session : les routes protégées répondent 401.
     google_app = create_app(
-        settings.model_copy(update={"auth_mode": "google"}),
+        google_settings,
         memory_providers=memory_providers,
         research_providers=research_providers,
         publishing_providers=publishing_providers,

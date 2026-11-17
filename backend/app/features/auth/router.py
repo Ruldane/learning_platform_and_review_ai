@@ -5,19 +5,46 @@ Le cookie de session (`tremplin_session`) est opaque, `HttpOnly` et `SameSite=La
 SHA-256 est gardé. Ni e-mail, ni nom, ni `sub`, ni code, ni `state`, ni jeton, ni `login_hint` ne
 sont journalisés. Aucune redirection ne vise une adresse reçue en paramètre."""
 
-from typing import Annotated, Any
+from datetime import UTC, datetime
+from typing import Any
 
-from fastapi import APIRouter, Query, Request, Response
+from fastapi import APIRouter, Request, Response
 from fastapi.responses import RedirectResponse
 
-from app.core.deps import CurrentUserDep, Db
+from app.config import Settings
+from app.core.deps import CurrentUserDep, Db, get_cipher, get_providers
 from app.core.errors import AppError
 from app.features.auth.schemas import ClaimIn, MeOut
-from app.features.auth.service import AuthService
+from app.features.auth.service import AuthService, cookies
+from app.features.auth.service.login import CallbackOutcome, finish_login, start_login
+from app.providers.auth.base import OidcProvider
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 _NO_GOOGLE: dict[int | str, dict[str, Any]] = {404: {"description": "`google_auth_disabled`"}}
+
+
+def _oidc(request: Request) -> OidcProvider:
+    """La connexion Google de l'application ; mode local : 404 `google_auth_disabled`."""
+    oidc = get_providers(request).oidc
+    if oidc is None:
+        raise AppError("google_auth_disabled", "La connexion Google n'est pas activée.", 404)
+    return oidc
+
+
+def _secure(settings: Settings) -> bool:
+    """`Secure` quand l'adresse de retour (où les cookies sont posés) est en https."""
+    return settings.google_redirect_uri.startswith("https://")
+
+
+def _destination(settings: Settings, outcome: CallbackOutcome) -> str:
+    """Toujours une adresse du front fixée par la configuration, jamais reçue en paramètre (P10)."""
+    front = settings.frontend_url.rstrip("/")
+    if outcome.kind == "signed_in":
+        return f"{front}/"
+    if outcome.kind == "claim":
+        return f"{front}/connexion/reprise"
+    return f"{front}/connexion?erreur={outcome.error}"
 
 
 @router.get(
@@ -42,13 +69,15 @@ async def me(request: Request, current: CurrentUserDep, db: Db) -> MeOut:
     status_code=302,
     responses={302: {"description": "Redirection vers Google"}, **_NO_GOOGLE},
 )
-async def google_login(
-    login_hint: Annotated[str | None, Query(max_length=320)] = None,
-) -> RedirectResponse:
+async def google_login(request: Request, login_hint: str | None = None) -> RedirectResponse:
     """Commence la connexion : pose le témoin `tremplin_oauth` (`state`, vérificateur PKCE,
     `nonce`, chiffrés, 10 minutes) et renvoie vers Google. `login_hint` (facultatif) préremplit
     l'adresse. Mode local : 404 `google_auth_disabled`."""
-    raise AppError("not_implemented", "Pas encore disponible.", 501)
+    settings: Settings = request.app.state.settings
+    url, pending = start_login(_oidc(request), get_cipher(request), login_hint)
+    response = RedirectResponse(url, status_code=302)
+    cookies.set_oauth_cookie(response, pending, secure=_secure(settings))
+    return response
 
 
 @router.get(
@@ -64,15 +93,37 @@ async def google_login(
     },
 )
 async def google_callback(
-    code: Annotated[str | None, Query(max_length=2048)] = None,
-    state: Annotated[str | None, Query(max_length=2048)] = None,
-    error: Annotated[str | None, Query(max_length=256)] = None,
+    request: Request,
+    db: Db,
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
 ) -> RedirectResponse:
     """Retour de Google : contrôle le `state`, échange le code, vérifie le jeton d'identité
     (émetteur, audience, `nonce`, adresse vérifiée, `ALLOWED_EMAILS`) puis ouvre la session ou
     propose la reprise de l'espace local. Toujours une redirection vers le front, jamais une
     erreur affichée par l'API."""
-    raise AppError("not_implemented", "Pas encore disponible.", 501)
+    settings: Settings = request.app.state.settings
+    outcome = await finish_login(
+        db,
+        _oidc(request),
+        get_cipher(request),
+        settings,
+        code=code,
+        state=state,
+        error=error,
+        oauth_cookie=request.cookies.get(cookies.OAUTH_COOKIE),
+        now=datetime.now(UTC),
+    )
+    response = RedirectResponse(_destination(settings, outcome), status_code=302)
+    secure = _secure(settings)
+    cookies.clear_oauth_cookie(response, secure=secure)
+    if outcome.kind == "signed_in" and outcome.token:
+        days = settings.session_days
+        cookies.set_session_cookie(response, outcome.token, days=days, secure=secure)
+    elif outcome.kind == "claim" and outcome.claim_cookie:
+        cookies.set_claim_cookie(response, outcome.claim_cookie, secure=secure)
+    return response
 
 
 @router.post(

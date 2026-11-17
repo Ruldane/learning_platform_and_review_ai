@@ -35,7 +35,14 @@ def test_onboarding_done_defaults_false() -> None:
     assert UserSettings().onboarding_done is False
 
 
-@pytest.mark.parametrize(("method", "path", "body"), NEW_ROUTES)
+# Routes déjà faites (9.A2) : en mode local, `/auth/google/*` répond 404 `google_auth_disabled`
+# (voir `tests/features/auth/test_login.py`), ce ne sont plus des bouchons.
+LIVE = {"/auth/google/login", "/auth/google/callback"}
+
+
+@pytest.mark.parametrize(
+    ("method", "path", "body"), [route for route in NEW_ROUTES if route[1] not in LIVE]
+)
 async def test_new_route_is_a_501_stub(
     client: httpx.AsyncClient, method: str, path: str, body: dict[str, Any] | None
 ) -> None:

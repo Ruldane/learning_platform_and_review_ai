@@ -33,3 +33,23 @@ class UserRepository:
         self._session.add(user)
         await self._session.flush()
         return user
+
+    async def get_by_google_sub(self, sub: str) -> User | None:
+        stmt = select(User).where(User.google_sub == sub)
+        return (await self._session.execute(stmt)).scalar_one_or_none()
+
+    async def get_by_email(self, email: str) -> User | None:
+        stmt = select(User).where(User.email == email)
+        return (await self._session.execute(stmt)).scalar_one_or_none()
+
+    async def add_google(self, *, sub: str, email: str, name: str) -> User:
+        user_id = new_id()
+        user = User(id=user_id, user_id=user_id, google_sub=sub, email=email, name=name)
+        self._session.add(user)
+        await self._session.flush()
+        return user
+
+    async def update_identity(self, user: User, *, email: str, name: str) -> None:
+        user.email = email
+        user.name = name
+        await self._session.flush()

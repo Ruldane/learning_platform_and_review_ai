@@ -1,7 +1,9 @@
 import os
+import time
 from pathlib import Path
 
 import pytest
+from cryptography.fernet import Fernet
 
 from app.core.security import Cipher, KnownSecrets, SecretUnreadable, load_or_create_secret
 
@@ -46,3 +48,13 @@ def test_known_secrets_registry_ignores_empty_and_short_values() -> None:
     values = KnownSecrets.values()
     assert "" not in values and "court" not in values
     assert "une-valeur-assez-longue" in values
+
+
+def test_decrypt_with_ttl_refuses_old_tokens() -> None:
+    secret = Fernet.generate_key()
+    cipher = Cipher(secret)
+    assert cipher.decrypt(cipher.encrypt("x"), ttl=600) == "x"
+    old = Fernet(secret).encrypt_at_time(b"x", int(time.time()) - 700).decode()
+    assert cipher.decrypt(old) == "x"  # sans `ttl` : toujours lisible (clés d'API)
+    with pytest.raises(SecretUnreadable):
+        cipher.decrypt(old, ttl=600)

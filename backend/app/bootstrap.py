@@ -27,6 +27,7 @@ from app.features.memory.service.runtime import MemoryRuntime, memory_runtime
 from app.features.research.service.runtime import ResearchRuntime
 from app.features.settings.keys_service import DbKeyReader
 from app.features.settings.service import SettingsModelReader
+from app.providers.auth.base import OidcProvider
 from app.providers.embeddings.ollama import OllamaEmbedder
 from app.providers.embeddings.ollama_probe import OllamaProbe
 from app.providers.fonts.google import GoogleFontsSource, fonts_http
@@ -87,9 +88,11 @@ def build_providers(
     local_user_id: Callable[[], str | None],
     *,
     key_http: httpx.AsyncClient,
+    oidc: OidcProvider | None = None,
 ) -> Providers:
     """`http` sert aux sondes de santé, `key_http` (`key_test_http`) au test de la clé Brave ;
-    tous deux créés et fermés par le lifespan. `local_user_id` est lu à chaque contrôle car
+    tous deux créés et fermés par le lifespan ; `oidc` : la connexion Google (`bootstrap_auth`).
+    `local_user_id` est lu à chaque contrôle car
     l'utilisateur local n'existe qu'après la construction."""
     # GLM : l'adresse Z.ai configurée sert aussi au test de clé et à la liste des modèles.
     llm: dict[str, LlmProvider] = {
@@ -119,6 +122,7 @@ def build_providers(
         env_keys=env_keys,
         key_providers=key_providers,
         health_checks=_health_checks(settings, session_factory, http, llm_keys),
+        oidc=oidc,
     )
 
 

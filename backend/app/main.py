@@ -27,6 +27,7 @@ from app.bootstrap import (
 from app.bootstrap import memory_providers as open_memory_providers
 from app.bootstrap import publishing_providers as open_publishing_providers
 from app.bootstrap import research_providers as open_research_providers
+from app.bootstrap_auth import build_oidc, oidc_http
 from app.bootstrap_career import career_runtimes
 from app.bootstrap_daily import daily_runtimes
 from app.config import Settings, get_settings
@@ -37,6 +38,8 @@ from app.core.providers import MemoryProviders, PublishingProviders, ResearchPro
 from app.core.security import Cipher, KnownSecrets, load_or_create_secret
 from app.db.engine import create_engine, create_session_factory
 from app.features.auth.service import AuthService
+from app.features.auth.service.authenticator import build_authenticator
+from app.features.auth.service.startup import check_google_config
 from app.features.learning.service.runtime import LearningRuntime
 from app.features.program.service.runtime import ProgramRuntime
 from app.features.registry import FEATURE_ROUTERS
@@ -104,6 +107,7 @@ async def _open_external_providers(app: FastAPI, stack: AsyncExitStack) -> Memor
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
+    check_google_config(app.state.settings)  # mode Google mal configuré : refus de démarrer (P11)
     _setup_security(app)
     # Le schéma n'est jamais créé ici : en Docker, l'entrypoint lance `alembic upgrade head`.
     # La pile ferme le moteur et le client HTTP même si la composition ou le démarrage échoue.
@@ -115,6 +119,7 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         # Client partagé par les sondes de santé ; le test de la clé Brave a le sien (D74).
         http = await stack.enter_async_context(httpx.AsyncClient(timeout=_PROBE_TIMEOUT_SECONDS))
         key_http = await stack.enter_async_context(key_test_http())
+        oidc = build_oidc(app.state.settings, await stack.enter_async_context(oidc_http()))
         app.state.providers = build_providers(
             app.state.settings,
             app.state.session_factory,
@@ -122,11 +127,15 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
             http,
             lambda: getattr(app.state, "local_user_id", None),
             key_http=key_http,
+            oidc=oidc,
         )
         # Avant la mémoire : son worker relit la base au démarrage ; un schéma absent doit donner
         # l'indication `alembic upgrade head` plutôt qu'une erreur SQL brute.
         if app.state.settings.auth_mode == "local":
             await _ensure_local_user(app)
+        app.state.authenticator = build_authenticator(
+            app.state.settings, app.state.session_factory, getattr(app.state, "local_user_id", None)
+        )
         injected = await _open_external_providers(app, stack)
         # Mémoire : entrée avant le moteur d'agents (qui s'en servira), donc fermée après lui.
         app.state.memory = await stack.enter_async_context(
