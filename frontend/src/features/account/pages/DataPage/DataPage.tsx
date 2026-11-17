@@ -7,6 +7,8 @@ import { ExportCard } from "../../components/ExportCard";
 import { useDeleteAccount } from "../../hooks/useDeleteAccount";
 
 const CONFIRMATION_REQUIRED = "confirmation_required";
+/** Le 503 de la mémoire vectorielle tombe avant toute suppression (P19). */
+const VECTOR_UNAVAILABLE = "vector_store_unavailable";
 
 /** Un refus qui vise le champ de confirmation : son code, ou un 422 qui nomme `confirm`. */
 function refusesConfirmation(error: ApiError): boolean {
@@ -19,22 +21,27 @@ function refusesConfirmation(error: ApiError): boolean {
 
 /**
  * Le texte d'un échec de suppression. Un refus de la confirmation a son propre texte (jamais la
- * saisie, même renvoyée par le serveur) ; toute autre erreur garde le message du back, avec la
- * promesse que rejouer l'appel reprend où il s'est arrêté.
+ * saisie, même renvoyée par le serveur) ; toute autre erreur garde le message du back, puis dit ce
+ * qui est sûr : « rien n'a été supprimé » quand la suppression n'est pas partie (mode illisible)
+ * ou s'est arrêtée avant d'effacer quoi que ce soit, sinon qu'elle reprend là où elle s'est arrêtée.
  */
-function describeFailure(error: unknown): DeleteFailure {
+function describeFailure(error: unknown, sent: boolean): DeleteFailure {
   if (error instanceof ApiError && refusesConfirmation(error)) {
     return { message: t("account.delete.confirmationRequired"), field: true };
   }
-  return { message: `${errorMessage(error)} ${t("account.delete.retry")}`, field: false };
+  const untouched = !sent || (error instanceof ApiError && error.code === VECTOR_UNAVAILABLE);
+  const hint = t(untouched ? "account.delete.notStarted" : "account.delete.retry");
+  return { message: `${errorMessage(error)} ${hint}`, field: false };
 }
 
 /** Réglages > Mes données (SPEC 17.3) : exporter toutes ses données, ou tout supprimer. */
 export function DataPage() {
   const remove = useDeleteAccount();
+  const { error, started } = remove;
+  // `started` lit une ref posée avant l'erreur : l'objet d'échec reste neuf à chaque erreur.
   const failure = useMemo(
-    () => (remove.error ? describeFailure(remove.error) : null),
-    [remove.error],
+    () => (error ? describeFailure(error, started()) : null),
+    [error, started],
   );
   return (
     <div className="flex flex-col gap-6">
@@ -46,7 +53,8 @@ export function DataPage() {
       <DeleteAccountCard
         pending={remove.isPending}
         failure={failure}
-        onDelete={(confirm) => remove.mutate(confirm)}
+        onDelete={remove.submit}
+        onEdit={remove.reset}
       />
     </div>
   );

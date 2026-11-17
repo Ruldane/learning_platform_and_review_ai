@@ -10,7 +10,9 @@ describe("DeleteAccountCard", () => {
   it("delete disabled until exact word", async () => {
     const user = userEvent.setup();
     const onDelete = vi.fn();
-    render(<DeleteAccountCard pending={false} failure={null} onDelete={onDelete} />);
+    render(
+      <DeleteAccountCard pending={false} failure={null} onDelete={onDelete} onEdit={vi.fn()} />,
+    );
     expect(button()).toBeDisabled();
     for (const typed of ["supprimer", "SUPPRIME", "SUPPRIMER ", " SUPPRIMER"]) {
       await user.clear(word());
@@ -25,16 +27,34 @@ describe("DeleteAccountCard", () => {
   });
 
   it("explains what goes and what stays", () => {
-    render(<DeleteAccountCard pending={false} failure={null} onDelete={vi.fn()} />);
+    render(
+      <DeleteAccountCard pending={false} failure={null} onDelete={vi.fn()} onEdit={vi.fn()} />,
+    );
     const card = screen.getByRole("region", { name: "Tout supprimer" });
     expect(card).toHaveTextContent("irréversible");
     expect(card).toHaveTextContent("fichier .env ne sont pas touchées");
   });
 
+  it("links the warnings to the field, with the failure when there is one", () => {
+    const { rerender } = render(
+      <DeleteAccountCard pending={false} failure={null} onDelete={vi.fn()} onEdit={vi.fn()} />,
+    );
+    expect(word()).toHaveAccessibleDescription(/irréversible.*fichier .env ne sont pas touchées/);
+    rerender(
+      <DeleteAccountCard
+        pending={false}
+        failure={{ message: "La mémoire ne répond pas.", field: false }}
+        onDelete={vi.fn()}
+        onEdit={vi.fn()}
+      />,
+    );
+    expect(word()).toHaveAccessibleDescription(/irréversible.*La mémoire ne répond pas./);
+  });
+
   it("is busy and refuses a second click while the call runs", async () => {
     const user = userEvent.setup();
     const onDelete = vi.fn();
-    render(<DeleteAccountCard pending failure={null} onDelete={onDelete} />);
+    render(<DeleteAccountCard pending failure={null} onDelete={onDelete} onEdit={vi.fn()} />);
     await user.type(word(), "SUPPRIMER");
     const busy = screen.getByRole("button", { name: "Suppression en cours…" });
     expect(busy).toHaveAttribute("aria-busy", "true");
@@ -49,21 +69,23 @@ describe("DeleteAccountCard", () => {
         pending={false}
         failure={{ message: "Le mot de confirmation n'est pas bon.", field: true }}
         onDelete={vi.fn()}
+        onEdit={vi.fn()}
       />,
     );
     expect(word()).toHaveAttribute("aria-invalid", "true");
-    expect(word()).toHaveAccessibleDescription("Le mot de confirmation n'est pas bon.");
+    expect(word()).toHaveAccessibleDescription(/Le mot de confirmation n'est pas bon.$/);
   });
 
   it("focus moves to result message", () => {
     const { rerender } = render(
-      <DeleteAccountCard pending={false} failure={null} onDelete={vi.fn()} />,
+      <DeleteAccountCard pending={false} failure={null} onDelete={vi.fn()} onEdit={vi.fn()} />,
     );
     rerender(
       <DeleteAccountCard
         pending={false}
         failure={{ message: "La mémoire ne répond pas.", field: false }}
         onDelete={vi.fn()}
+        onEdit={vi.fn()}
       />,
     );
     expect(screen.getByRole("alert")).toHaveFocus();

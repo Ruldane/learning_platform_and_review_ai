@@ -99,6 +99,7 @@ describe("advanced mode of the models page", () => {
     const { puts, user } = setup({}, undefined, agentsFixture, held.promise);
     await showAdvanced(user);
     await user.selectOptions(provider("Tuteur"), "openai");
+    await waitFor(() => expect(puts).toHaveLength(1)); // le premier envoi est parti, porte fermée
     // sans attendre la réponse : le modèle suivant, puis un autre agent
     expect(provider("Tuteur")).toHaveValue("openai"); // pas de retour arrière pendant l'envoi
     await user.selectOptions(model("Tuteur"), "gpt-6.1-sol");

@@ -52,6 +52,16 @@ describe("WelcomePage", () => {
     await title(TITLES[1]!);
   });
 
+  it("says the data are gone when it comes after « Tout supprimer »", async () => {
+    const { router } = setup();
+    await title(TITLES[0]!);
+    expect(screen.queryByText(/Tes données ont été supprimées/)).toBeNull();
+    await router.navigate("/bienvenue", { state: { deleted: true }, replace: true });
+    expect(
+      await screen.findByText("Tes données ont été supprimées : Tremplin repart de zéro."),
+    ).toBeVisible();
+  });
+
   it("step 2 explains what leaves the machine, before any key is asked", async () => {
     const { user } = setup();
     await goTo(user, 2);

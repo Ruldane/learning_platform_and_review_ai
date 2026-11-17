@@ -18,4 +18,15 @@ describe("ExportCard", () => {
     expect(text).toHaveTextContent("archive zip");
     expect(text).toHaveTextContent("Elle ne contient jamais tes clés d'API");
   });
+
+  it("opens the download in a new tab, so an error page never replaces the application", () => {
+    render(<ExportCard href={EXPORT_URL} />);
+    const link = screen.getByRole("link", { name: "Exporter toutes mes données" });
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link.getAttribute("rel")).toContain("noopener");
+    expect(link).toHaveAttribute("download");
+    expect(link).toHaveAccessibleDescription(
+      "Le téléchargement s'ouvre dans un nouvel onglet ; si la session a expiré, reconnecte-toi puis réessaie.",
+    );
+  });
 });

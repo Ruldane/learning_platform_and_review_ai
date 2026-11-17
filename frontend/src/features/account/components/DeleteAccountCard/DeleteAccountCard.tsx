@@ -8,11 +8,14 @@ interface DeleteAccountCardProps {
   /** Un nouvel objet à chaque échec : le focus passe au message même pour un échec répété. */
   failure: DeleteFailure | null;
   onDelete: (confirm: string) => void;
+  /** La saisie a changé : un échec déjà affiché n'a plus lieu d'être. */
+  onEdit: () => void;
 }
 
 /** « Tout supprimer » : ce qui part et ce qui reste, puis le mot à retaper pour confirmer. */
-export function DeleteAccountCard({ pending, failure, onDelete }: DeleteAccountCardProps) {
+export function DeleteAccountCard({ pending, failure, onDelete, onEdit }: DeleteAccountCardProps) {
   const titleId = useId();
+  const explanationId = useId();
   return (
     <section
       aria-labelledby={titleId}
@@ -21,8 +24,14 @@ export function DeleteAccountCard({ pending, failure, onDelete }: DeleteAccountC
       <h2 id={titleId} className="text-lg font-semibold">
         {t("account.delete.title")}
       </h2>
-      <DeleteExplanation />
-      <ConfirmForm pending={pending} failure={failure} onDelete={onDelete} />
+      <DeleteExplanation id={explanationId} />
+      <ConfirmForm
+        pending={pending}
+        failure={failure}
+        explanationId={explanationId}
+        onDelete={onDelete}
+        onEdit={onEdit}
+      />
     </section>
   );
 }

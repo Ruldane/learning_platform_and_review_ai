@@ -58,4 +58,37 @@ describe("AvailabilityFields", () => {
     await userEvent.setup().type(screen.getByLabelText("Bloc du week-end, maximum (minutes)"), "5");
     expect(onChange).toHaveBeenCalledWith("weekendMax", "2405");
   });
+
+  it("does not call a value in bounds an error: only the order message does", () => {
+    render(
+      <AvailabilityFields
+        values={{ ...values, weekendMin: "500", weekendMax: "240" }}
+        flags={{ ...ok, weekendMin: true, weekendMax: true, weekendOrder: true }}
+        budget={840}
+        onChange={vi.fn()}
+      />,
+    );
+    const order = "Erreur : Le minimum du week-end doit rester inférieur ou égal à son maximum.";
+    for (const name of [
+      "Bloc du week-end, minimum (minutes)",
+      "Bloc du week-end, maximum (minutes)",
+    ]) {
+      expect(screen.getByLabelText(name)).toHaveAttribute("aria-invalid", "true");
+      expect(screen.getByLabelText(name)).toHaveAccessibleDescription(`Entre 0 et 1440. ${order}`);
+    }
+  });
+
+  it("still says « Erreur » on a value that is out of bounds", () => {
+    render(
+      <AvailabilityFields
+        values={{ ...values, weekday: "2000" }}
+        flags={{ ...ok, weekday: true }}
+        budget={null}
+        onChange={vi.fn()}
+      />,
+    );
+    expect(
+      screen.getByLabelText("Minutes par jour, du lundi au vendredi"),
+    ).toHaveAccessibleDescription("Erreur : Entre 0 et 1440.");
+  });
 });

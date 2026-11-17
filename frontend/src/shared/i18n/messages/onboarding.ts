@@ -7,6 +7,7 @@ export const onboarding = {
   page: {
     label: "Premier lancement",
     loading: "Chargement de ton espace…",
+    deleted: "Tes données ont été supprimées : Tremplin repart de zéro.",
   },
   steps: {
     counter: "Étape {step} sur {total}",

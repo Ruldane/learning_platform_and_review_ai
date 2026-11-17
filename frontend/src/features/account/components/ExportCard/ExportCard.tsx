@@ -3,7 +3,11 @@ import { t } from "@/shared/i18n/t";
 import { buttonVariants } from "@/shared/ui/button";
 
 interface ExportCardProps {
-  /** L'adresse de l'archive : un lien plein, le navigateur télécharge le zip. */
+  /**
+   * L'adresse de l'archive : un lien plein, le navigateur télécharge le zip (jamais un `fetch` :
+   * l'archive peut être grosse). Ouvert dans un nouvel onglet : une erreur du back (session
+   * expirée) ne remplace jamais l'application.
+   */
   href: string;
 }
 
@@ -12,6 +16,7 @@ interface ExportCardProps {
  */
 export function ExportCard({ href }: ExportCardProps) {
   const titleId = useId();
+  const helpId = useId();
   return (
     <section
       aria-labelledby={titleId}
@@ -21,9 +26,19 @@ export function ExportCard({ href }: ExportCardProps) {
         {t("account.export.title")}
       </h2>
       <p className="text-sm text-muted-foreground">{t("account.export.description")}</p>
-      <a href={href} className={buttonVariants({ variant: "default" })}>
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        download
+        aria-describedby={helpId}
+        className={buttonVariants({ variant: "default" })}
+      >
         {t("account.export.link")}
       </a>
+      <p id={helpId} className="text-sm text-muted-foreground">
+        {t("account.export.help")}
+      </p>
     </section>
   );
 }

@@ -8,6 +8,7 @@ export const account = {
     description:
       "Une archive zip avec tout ce que ton espace contient : tes réglages, ton profil et ton CV, tes objectifs et ton programme, tes leçons et tes révisions, ta mémoire, tes candidatures et le journal des appels aux modèles, plus les fichiers que tu as importés. Elle ne contient jamais tes clés d'API, ni les vecteurs de la mémoire, que Tremplin recalcule.",
     link: "Exporter toutes mes données",
+    help: "Le téléchargement s'ouvre dans un nouvel onglet ; si la session a expiré, reconnecte-toi puis réessaie.",
   },
   delete: {
     title: "Tout supprimer",
@@ -23,5 +24,7 @@ export const account = {
     pending: "Suppression en cours…",
     confirmationRequired: "Le mot de confirmation n'est pas bon : tape SUPPRIMER, en majuscules.",
     retry: "Tu peux réessayer : la suppression reprend là où elle s'est arrêtée.",
+    notStarted: "Rien n'a été supprimé : tu peux réessayer sans risque.",
+    waiting: "Suppression en cours… ne ferme pas cette page.",
   },
 } as const;

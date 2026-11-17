@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { onLocalReset } from "@/shared/lib/localReset";
 
 interface CaptureDialogState {
   /** Le dialogue de capture est ouvert. */
@@ -36,3 +37,6 @@ export const useCaptureDialog = create<CaptureDialogState>((set) => ({
   setDraft: (draft) => set({ draft }),
   setTextDraft: (textDraft) => set({ textDraft }),
 }));
+
+// « Tout supprimer » : ni capture en cours ni brouillon de l'espace effacé ne reste dans le dialogue.
+onLocalReset(() => useCaptureDialog.getState().restart());

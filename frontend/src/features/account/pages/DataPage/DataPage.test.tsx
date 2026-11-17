@@ -1,45 +1,8 @@
-import { QueryClient } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { createMemoryRouter, RouterProvider } from "react-router";
+import { screen, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { apiBaseUrl } from "@/shared/api/client";
-import { accountApi } from "@/test/accountApi";
-import { authApi, camille, localMe } from "@/test/authApi";
-import { createQueryWrapper } from "@/test/queryWrapper";
-import { server } from "@/test/server";
-import { DataPage } from "./DataPage";
-
-function setup(mode: "local" | "google", deleteOutcome: Parameters<typeof accountApi>[0] = {}) {
-  const account = accountApi(deleteOutcome);
-  const auth = authApi({ me: mode === "local" ? localMe : camille });
-  server.use(...account.handlers, ...auth.handlers);
-  const client = new QueryClient({
-    defaultOptions: { queries: { retry: false, staleTime: 15_000 } },
-  });
-  client.setQueryData(["settings"], { onboarding_done: true });
-  client.setQueryData(["goals"], [{ id: "g1" }]);
-  const router = createMemoryRouter(
-    [
-      { path: "/reglages/donnees", element: <DataPage /> },
-      { path: "/bienvenue", element: <p>Premier lancement</p> },
-      { path: "/connexion", element: <p>Connexion</p> },
-    ],
-    { initialEntries: ["/reglages/donnees"] },
-  );
-  const Wrapper = createQueryWrapper(client);
-  render(
-    <Wrapper>
-      <RouterProvider router={router} />
-    </Wrapper>,
-  );
-  return { ...account, client, router, user: userEvent.setup() };
-}
-
-async function confirmAndDelete(user: ReturnType<typeof userEvent.setup>) {
-  await user.type(screen.getByLabelText("Tape SUPPRIMER pour confirmer"), "SUPPRIMER");
-  await user.click(screen.getByRole("button", { name: "Tout supprimer" }));
-}
+import { localMe } from "@/test/authApi";
+import { confirmAndDelete, setup } from "./dataPageTestkit";
 
 describe("DataPage", () => {
   it("shows the export link and the delete card under one heading", () => {

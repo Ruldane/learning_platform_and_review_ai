@@ -13,6 +13,12 @@ interface NumberFieldProps {
   hint?: string;
   /** Hors bornes (rouge, `aria-invalid`). */
   invalid: boolean;
+  /**
+   * L'aide propre du champ est-elle en erreur ? Par défaut : quand le champ l'est. Faux quand le
+   * champ est marqué pour une autre raison (l'ordre de deux bornes) et que sa valeur, elle, est
+   * dans les bornes : l'aide n'a pas à dire « Erreur ».
+   */
+  hintError?: boolean;
   /** Refusé par le serveur : la valeur n'est jamais citée, seulement le champ. */
   refused?: boolean;
   /** Identifiant d'un message de plus qui décrit ce champ (ex. l'ordre des deux bornes). */
@@ -32,14 +38,16 @@ export function NumberField({
   max,
   hint,
   invalid,
+  hintError,
   refused = false,
   describedBy,
   onChange,
 }: NumberFieldProps) {
   const hintId = useId();
   const bad = invalid || refused;
+  const hintBad = hintError ?? bad;
   const text = errorHint(
-    bad,
+    hintBad,
     refused && !invalid ? t("settings.fields.refused") : (hint ?? rangeHint(min, max)),
   );
   return (
@@ -59,7 +67,10 @@ export function NumberField({
           className={`${fieldClass} mt-1 max-w-40`}
         />
       </label>
-      <p id={hintId} className={bad ? "text-sm text-destructive" : "text-sm text-muted-foreground"}>
+      <p
+        id={hintId}
+        className={hintBad ? "text-sm text-destructive" : "text-sm text-muted-foreground"}
+      >
         {text}
       </p>
     </div>

@@ -22,6 +22,17 @@ const FIELDS = [
   { key: "weekendMax", label: "settings.availability.weekendMax" },
 ] as const;
 
+/** La valeur saisie sort-elle des bornes (vide ou non entière comprises) ? */
+function outOfBounds(text: string): boolean {
+  const value = Number(text);
+  return (
+    text.trim() === "" ||
+    !Number.isInteger(value) ||
+    value < MINUTES_RANGE.min ||
+    value > MINUTES_RANGE.max
+  );
+}
+
 /**
  * Minutes en semaine, bloc du week-end (minimum et maximum) et le budget hebdomadaire qui en
  * découle.
@@ -44,6 +55,9 @@ export function AvailabilityFields({
             value={values[key]}
             {...MINUTES_RANGE}
             invalid={flags[key]}
+            // Un champ marqué seulement pour l'ordre des bornes a une valeur dans les bornes : son
+            // aide ne dit pas « Erreur » (le message de l'ordre, lui, le dit).
+            hintError={refused[key] || (flags[key] && outOfBounds(values[key]))}
             refused={refused[key]}
             describedBy={flags.weekendOrder && key !== "weekday" ? orderId : undefined}
             onChange={(value) => onChange(key, value)}

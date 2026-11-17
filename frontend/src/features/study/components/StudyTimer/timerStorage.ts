@@ -1,3 +1,4 @@
+import { onLocalReset } from "@/shared/lib/localReset";
 import type { TimerState } from "../viewTypes";
 
 /**
@@ -6,7 +7,8 @@ import type { TimerState } from "../viewTypes";
  * l'absence (le back borne de toute façon par la durée réelle). Le stockage peut être refusé
  * (navigation privée, quota) : chaque accès est sous `try/catch`, avec repli sur un minuteur neuf.
  */
-export const timerKey = (studyId: string) => `study-timer:${studyId}`;
+const TIMER_PREFIX = "study-timer:";
+export const timerKey = (studyId: string) => `${TIMER_PREFIX}${studyId}`;
 
 function isTimer(value: unknown): value is TimerState {
   const v = value as Partial<TimerState> | null;
@@ -52,3 +54,19 @@ export function clearTimer(studyId: string): void {
     // rien à faire
   }
 }
+
+/** « Tout supprimer » : aucun minuteur d'une session de l'espace effacé ne reste dans le navigateur. */
+function clearAllTimers(): void {
+  try {
+    const keys = Array.from({ length: window.sessionStorage.length }, (_, index) =>
+      window.sessionStorage.key(index),
+    );
+    for (const key of keys) {
+      if (key?.startsWith(TIMER_PREFIX)) window.sessionStorage.removeItem(key);
+    }
+  } catch {
+    // stockage refusé : rien n'a été gardé
+  }
+}
+
+onLocalReset(clearAllTimers);

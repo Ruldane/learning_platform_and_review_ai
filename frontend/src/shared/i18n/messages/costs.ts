@@ -4,7 +4,9 @@ export const costs = {
   noSession: "Hors session",
   noAgent: "Sans agent",
   estimatedTag: "estimé",
-  /** Le libellé de chaque parcours (`GRAPHS` côté back) ; un parcours inconnu garde son nom brut. */
+  /**
+   * Le libellé de chaque parcours (`GRAPHS` côté back) ; un parcours inconnu garde son nom brut.
+   */
   graphs: {
     demo_debate: "Débat de démonstration",
     learned_document: "Document appris",

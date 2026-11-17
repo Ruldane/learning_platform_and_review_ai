@@ -8,16 +8,17 @@ interface CostBadgeProps {
 const integer = new Intl.NumberFormat("fr-FR");
 
 /**
- * Deux décimales, trois sous le centime, « < 0,001 » sous le millième : un coût non nul ne
- * s'affiche jamais « 0,00 » ni « 0,000 ».
+ * « ≈ 0,04 » : deux décimales, trois sous le centime ; « < 0,001 » sous le millième, sans « ≈ »
+ * devant (« ≈ < » ne se lit pas). Un coût non nul ne s'affiche jamais « 0,00 » ni « 0,000 ».
  */
 function formatCost(usd: number): string {
   if (usd > 0 && usd < 0.001) return "< 0,001";
   const digits = usd > 0 && usd < 0.01 ? 3 : 2;
-  return usd.toLocaleString("fr-FR", {
+  const amount = usd.toLocaleString("fr-FR", {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   });
+  return `≈ ${amount}`;
 }
 
 /** Pastille « 12 340 tokens · ≈ 0,04 $ » ; les tokens et le plafond sont dans l'infobulle. */
