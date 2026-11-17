@@ -93,6 +93,7 @@ def _create_ide_content() -> None:
         _j("files"),
         _s("entry", 200),
         _i("teacher_tokens"),
+        _i("files_version"),
         _dt("passed_at", True),
         indexes={"ix_ide_sessions_user_updated": ["user_id", "updated_at"]},
     )

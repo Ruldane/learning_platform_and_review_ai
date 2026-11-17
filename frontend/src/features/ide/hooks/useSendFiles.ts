@@ -31,6 +31,8 @@ export function useSendFiles(
       setSaving(true);
       setError(null);
       try {
+        // Une relecture partie avant l.envoi ne doit pas arriver après et remettre l'ancien texte.
+        await queryClient.cancelQueries({ queryKey: ideKeys.session(id) });
         const saved = await putFiles(id, sent, entry, pick(hashesOf(), Object.keys(sent)));
         queryClient.setQueryData(ideKeys.session(id), saved);
         markMine(mine);

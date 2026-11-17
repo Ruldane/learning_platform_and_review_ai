@@ -11550,7 +11550,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `note_invalid` : plage, fichier ou empreinte (`details.file_hash`) */
+            /** @description `note_invalid` : plage, fichier ou empreinte (relire `file_hashes`) */
             422: {
                 headers: {
                     [name: string]: unknown;

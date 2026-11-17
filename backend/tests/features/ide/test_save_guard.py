@@ -4,8 +4,13 @@ sur le serveur depuis donne 409 `stale_base` (noms seulement) et rien n'est écr
 
 import httpx
 import pytest
+from fastapi import FastAPI
 
-from app.features.ide.service import file_hash
+from app.core.caller import Caller
+from app.core.errors import AppError
+from app.features.ide.service import file_hash, sessions
+from app.features.ide.service.context import IdeContext
+from tests.features.ide.conftest import USER
 from tests.features.ide.mcp_support import acting_as_claude, set_switch, write
 from tests.features.ide.support import API, code, new_session
 
@@ -96,3 +101,73 @@ async def test_malformed_hashes_are_422(client: httpx.AsyncClient) -> None:
     session = await new_session(client, FILES)
     bad = await put(client, session["id"], FILES, {"main.py": "abc"})
     assert bad.status_code == 422
+
+
+async def test_a_file_claude_created_is_never_deleted_by_an_old_snapshot(
+    client: httpx.AsyncClient,
+) -> None:
+    session = await new_session(client, FILES)
+    await set_switch(client, True)
+    with acting_as_claude():
+        made = await write(client, session["id"], {"neuf.py": "y = 1\n"}, base_hash=file_hash(""))
+    assert made.status_code == 200
+    # l'enregistrement automatique repart de l'instantané d'avant : sans `neuf.py`
+    refused = await put(client, session["id"], FILES | {"main.py": "a = 2\n"}, hashes(FILES))
+    assert (refused.status_code, code(refused)) == (409, "stale_base")
+    assert refused.json()["error"]["details"] == {"files": ["neuf.py"]}
+    assert (await server_files(client, session["id"]))["neuf.py"] == "y = 1\n"
+
+
+async def test_two_concurrent_writes_only_one_passes(
+    app: FastAPI, client: httpx.AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    session = await new_session(client, FILES)
+    sid = session["id"]
+    factory = app.state.session_factory
+    async with factory() as db_b:
+        ctx_b = IdeContext(db_b, USER, None, Caller("app", "app"))
+        stale = await sessions.get(ctx_b, sid)  # B lit la séance...
+
+        async with factory() as db_a:  # ...A écrit et valide entre-temps
+            ctx_a = IdeContext(db_a, USER, None, Caller("app", "app"))
+            await sessions.save_files(ctx_a, sid, {**FILES, "main.py": "a = 'A'\n"}, None)
+            await db_a.commit()
+
+        async def read_before_a(ctx: IdeContext, session_id: str) -> object:
+            return stale
+
+        monkeypatch.setattr(sessions, "get", read_before_a)
+        with pytest.raises(AppError) as refused:  # ...B écrit sur sa lecture périmée
+            await sessions.save_files(ctx_b, sid, {**FILES, "main.py": "a = 'B'\n"}, None)
+        assert refused.value.code == "stale_base" and refused.value.status_code == 409
+    monkeypatch.undo()
+    assert (await server_files(client, sid))["main.py"] == "a = 'A'\n"  # rien de perdu
+
+
+async def test_two_concurrent_claude_writes_only_one_passes(
+    app: FastAPI, client: httpx.AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    session = await new_session(client, FILES)
+    sid = session["id"]
+    await set_switch(client, True)
+    factory = app.state.session_factory
+    claude = Caller("mcp", "Claude Code")
+    async with factory() as db_b:
+        ctx_b = IdeContext(db_b, USER, None, claude)
+        stale = await sessions.get(ctx_b, sid)
+        async with factory() as db_a:
+            ctx_a = IdeContext(db_a, USER, None, Caller("app", "app"))
+            await sessions.save_files(ctx_a, sid, {**FILES, "main.py": "a = 'A'\n"}, None)
+            await db_a.commit()
+
+        async def read_before_a(ctx: IdeContext, session_id: str) -> object:
+            return stale
+
+        monkeypatch.setattr(sessions, "get", read_before_a)
+        with pytest.raises(AppError) as refused:
+            await sessions.write_file_as_claude(
+                ctx_b, sid, {"main.py": "a = 'B'\n"}, file_hash(FILES["main.py"])
+            )
+        assert refused.value.code == "stale_base"
+    monkeypatch.undo()
+    assert (await server_files(client, sid))["main.py"] == "a = 'A'\n"

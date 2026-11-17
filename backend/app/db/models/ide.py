@@ -54,6 +54,8 @@ class IdeSession(UserScopedMixin, Base):
     entry: Mapped[str] = mapped_column(String(200), default="main.py")
     # Jetons du professeur (entrée + sortie) consommés dans cette séance : plafond de séance.
     teacher_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    # Compteur d'écritures de fichiers : la base compare « lu = actuel » (10.X).
+    files_version: Mapped[int] = mapped_column(Integer, default=0)
     passed_at: Mapped[datetime | None] = mapped_column(UTCDateTime, default=None)
 
     @property

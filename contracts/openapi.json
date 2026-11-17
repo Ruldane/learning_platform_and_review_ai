@@ -19173,7 +19173,7 @@
             "description": "`note_stale` : le fichier a changé depuis la lecture"
           },
           "422": {
-            "description": "`note_invalid` : plage, fichier ou empreinte (`details.file_hash`)"
+            "description": "`note_invalid` : plage, fichier ou empreinte (relire `file_hashes`)"
           }
         },
         "summary": "Add Note",

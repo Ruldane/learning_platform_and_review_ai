@@ -8,12 +8,14 @@ interface OutputPanelProps {
 
 /** La ligne d'état en toutes lettres : jamais portée par la seule couleur. */
 export function statusLine(view: OutputView): string {
-  const { status, exitCode, durationMs, kind } = view;
+  const { status, exitCode, durationMs, kind, origin } = view;
   if (status === "idle") return t("ide.output.idle");
   if (status === "running") return t("ide.output.status.running");
   if (status !== "done") return t(`ide.output.status.${status}`);
   if (kind === "check") {
-    return exitCode === 0 ? t("ide.output.checkPassed") : t("ide.output.checkFailed");
+    if (exitCode !== 0) return t("ide.output.checkFailed");
+    // Seule ta vérification valide l'exercice : celle de Claude est lue, pas comptée.
+    return t(origin === "mcp" ? "ide.output.checkPassedByClaude" : "ide.output.checkPassed");
   }
   return durationMs === null
     ? t("ide.output.status.doneNoTime", { code: exitCode ?? 0 })

@@ -91,7 +91,8 @@ async def _freeze(ctx: IdeContext, run: IdeRun, progress: SandboxProgress | None
         run.error_signature = error_signature(run.output, set(session.files))
     await ctx.db.flush()
     logger.info("Exécution %s terminée : %s", run.id, run.status)
-    if run.kind == "check" and run.status == "done" and run.exit_code == 0:
+    # Seule une vérification de January valide l'exercice : celle de Claude ne compte pas.
+    if run.kind == "check" and run.status == "done" and run.exit_code == 0 and run.origin == "app":
         await _record_pass(ctx, session)
         await ctx.db.flush()
 

@@ -1,7 +1,5 @@
 """Les erreurs de la feature `ide` (messages en français, jamais une sortie ni un fichier)."""
 
-from typing import Any
-
 from app.core.errors import AppError
 
 
@@ -54,17 +52,17 @@ def files_too_large() -> AppError:
     return AppError("files_too_large", "Les fichiers dépassent la taille permise.", 422)
 
 
-def note_invalid(message: str, details: dict[str, Any] | None = None) -> AppError:
-    return AppError("note_invalid", message, 422, details)
+def note_invalid(message: str) -> AppError:
+    return AppError("note_invalid", message, 422)
 
 
-def note_stale(file_hash: str | None) -> AppError:
-    """`details.file_hash` : l'empreinte actuelle du fichier (sha256), pour recommencer."""
+def note_stale() -> AppError:
+    """Le fichier a changé : on ne rend pas l'empreinte, il relit la séance (`file_hashes`)."""
     return AppError(
         "note_stale",
-        "Le code a changé depuis cette proposition : elle ne s'applique plus.",
+        "Le code a changé depuis cette proposition : relis la séance (file_hashes) avant d'en "
+        "proposer une autre.",
         409,
-        {"file_hash": file_hash},
     )
 
 
@@ -128,5 +126,14 @@ def mcp_prefs_forbidden() -> AppError:
     return AppError(
         "mcp_prefs_forbidden",
         "Les préférences de l'IDE se règlent dans l'interface, jamais par le MCP.",
+        403,
+    )
+
+
+def mcp_gesture_forbidden() -> AppError:
+    """Accepter ou refuser une proposition est un geste de January (il écrit dans ses fichiers)."""
+    return AppError(
+        "mcp_gesture_forbidden",
+        "Ce geste est réservé à January dans l'interface : propose une correction dans une note.",
         403,
     )

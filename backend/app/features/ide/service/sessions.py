@@ -5,7 +5,9 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime
 
+from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.attributes import set_committed_value
 
 from app.db.base import utcnow
 from app.db.models.ide import IdeSession
@@ -82,6 +84,27 @@ def check_files(files: dict[str, str], entry: str) -> None:
         raise files_too_large()
 
 
+async def claim_files(ctx: IdeContext, session: IdeSession) -> bool:
+    """Réserve l'écriture des fichiers de la séance lue : la base ne l'accorde que si personne n'a
+    écrit depuis la lecture (`files_version` inchangée). Atomique : deux écritures qui partent de la
+    même lecture, une seule passe. Faux : relis la séance."""
+    read = session.files_version
+    taken = await ctx.db.execute(
+        update(IdeSession)
+        .where(
+            IdeSession.id == session.id,
+            IdeSession.user_id == ctx.user_id,
+            IdeSession.files_version == read,
+        )
+        .values(files_version=read + 1)
+        .execution_options(synchronize_session=False)
+    )
+    if taken.rowcount == 0:  # type: ignore[attr-defined]
+        return False
+    set_committed_value(session, "files_version", read + 1)
+    return True
+
+
 def _clashes(session: IdeSession, files: dict[str, str], base_hashes: dict[str, str]) -> list[str]:
     """Les fichiers dont la version du serveur n'est plus celle de `base_hashes` et que `files`
     changerait (envoyer le texte actuel n'efface rien)."""
@@ -90,7 +113,9 @@ def _clashes(session: IdeSession, files: dict[str, str], base_hashes: dict[str, 
         current = str(session.files.get(name, ""))
         if file_hash(current) != base and files.get(name, "") != current:
             clash.append(name)
-    return clash
+    # Un fichier que Claude a créé depuis : absent de l'instantané, l'envoi l'effacerait.
+    known = base_hashes.keys() | files.keys()
+    return sorted({*clash, *(name for name in session.files if name not in known)})
 
 
 async def save_files(
@@ -112,6 +137,9 @@ async def save_files(
             raise files_changed(clash)
     wanted = entry or session.entry
     check_files(files, wanted)
+    if not await claim_files(ctx, session):  # quelqu'un a écrit entre la lecture et ici
+        await ctx.db.refresh(session)
+        raise files_changed(sorted(files))
     session.files = dict(files)
     session.entry = wanted
     session.updated_at = utcnow()
@@ -142,6 +170,9 @@ async def write_file_as_claude(
         raise stale_base()
     merged = {**session.files, name: text}
     check_files(merged, session.entry)
+    if not await claim_files(ctx, session):
+        logger.info("stale_base : écriture concurrente refusée dans la séance %s", session.id)
+        raise stale_base()
     session.files = merged
     session.updated_at = utcnow()
     await ctx.db.flush()

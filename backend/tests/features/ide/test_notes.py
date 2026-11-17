@@ -116,13 +116,13 @@ async def test_proposal_needs_valid_range_and_base_hash(
         assert (response.status_code, code(response)) == (422, "note_invalid"), bad
     missing = await post(client, session["id"], proposal(base_hash=None))
     assert (missing.status_code, code(missing)) == (422, "note_invalid")
-    assert missing.json()["error"]["details"] == {"file_hash": file_hash(SOURCE)}  # pour réessayer
+    assert file_hash(SOURCE) not in missing.text  # il relit `file_hashes`, pas l'erreur
     for malformed in ("A" * 64, "g" * 64, "ab" * 32 + "0"):
         response = await post(client, session["id"], proposal(base_hash=malformed))
         assert response.status_code == 422, malformed
     stale = await post(client, session["id"], proposal(base_hash="0" * 64))
     assert (stale.status_code, code(stale)) == (409, "note_stale")
-    assert stale.json()["error"]["details"] == {"file_hash": file_hash(SOURCE)}
+    assert file_hash(SOURCE) not in stale.text
 
 
 async def test_accept_applies_replacement_and_marks_other_open_proposals_stale(
@@ -191,7 +191,7 @@ async def test_accept_stale_proposal_refused(
         await db.commit()
     refused = await client.post(f"{API}/notes/{note['id']}/accept")
     assert (refused.status_code, code(refused)) == (409, "note_stale")
-    assert refused.json()["error"]["details"] == {"file_hash": file_hash(SOURCE + "# changé\n")}
+    assert file_hash(SOURCE + "# changé\n") not in refused.text
     notes = (await client.get(f"{API}/sessions/{session['id']}/notes")).json()
     assert notes[0]["status"] == "stale"  # enregistré malgré l'erreur
     got = (await client.get(f"{API}/sessions/{session['id']}")).json()
@@ -274,3 +274,26 @@ async def test_unknown_session_or_note_is_404(client: httpx.AsyncClient) -> None
     for verb in ("accept", "reject"):
         response = await client.post(f"{API}/notes/inconnue/{verb}")
         assert (response.status_code, code(response)) == (404, "note_not_found")
+
+
+async def test_claude_cannot_accept_or_reject_a_proposal(
+    client: httpx.AsyncClient, session: dict[str, Any]
+) -> None:
+    note = (await post(client, session["id"], proposal())).json()
+    with acting_as_claude():
+        accepted = await client.post(f"{API}/notes/{note['id']}/accept")
+        rejected = await client.post(f"{API}/notes/{note['id']}/reject")
+    assert (accepted.status_code, code(accepted)) == (403, "mcp_gesture_forbidden")
+    assert (rejected.status_code, code(rejected)) == (403, "mcp_gesture_forbidden")
+    got = (await client.get(f"{API}/sessions/{session['id']}")).json()
+    notes = (await client.get(f"{API}/sessions/{session['id']}/notes")).json()
+    assert (got["files"]["main.py"], notes[0]["status"]) == (SOURCE, "open")
+
+
+async def test_note_errors_do_not_hand_claude_the_hash_of_the_file(
+    client: httpx.AsyncClient, session: dict[str, Any]
+) -> None:
+    with acting_as_claude():
+        missing = await post(client, session["id"], proposal(base_hash=None))
+        stale = await post(client, session["id"], proposal(base_hash="0" * 64))
+    assert all(file_hash(SOURCE) not in r.text for r in (missing, stale))

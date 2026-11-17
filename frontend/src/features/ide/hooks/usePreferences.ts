@@ -12,13 +12,15 @@ export function usePreferences() {
 }
 
 /**
- * Enregistre les préférences : le contrat remplace tout, on renvoie donc les plafonds lus avec le
- * réglage changé. La page suit la réponse du serveur, pas son idée de la valeur.
+ * Enregistre un réglage : le contrat remplace tout, donc on relit les préférences du serveur juste
+ * avant et on n'y change que ce qui a été touché (un second onglet resté sur une ancienne valeur ne
+ * rallume rien ailleurs). La page suit la réponse du serveur, pas son idée de la valeur.
  */
 export function useSavePreferences() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: Preferences) => putPreferences(body),
+    mutationFn: async (patch: Partial<Preferences>) =>
+      putPreferences({ ...(await fetchPreferences()), ...patch }),
     onSuccess: (saved) => {
       queryClient.setQueryData(ideKeys.preferences, saved);
       return queryClient.invalidateQueries({ queryKey: ["ide", "usage"] });

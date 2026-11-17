@@ -90,6 +90,10 @@ export const ide = {
     keepMine: "Garder la mienne",
     takeTheirs: "Prendre celle de Claude",
     keepMineHint: "Ta version remplacera celle de Claude à l'enregistrement.",
+    discardWarning:
+      "Tes retouches de {file} seront perdues : le fichier reprendra la version de Claude.",
+    discardMine: "Jeter mes retouches",
+    cancel: "Annuler",
   },
   output: {
     title: "Sortie",
@@ -109,6 +113,7 @@ export const ide = {
       error: "Le bac à sable n'a pas pu exécuter le code.",
     },
     checkPassed: "Vérification réussie : les tests passent.",
+    checkPassedByClaude: "Tests réussis (exécution de Claude, non comptée)",
     checkFailed: "Vérification échouée.",
     pollFailed: "La sortie n'a pas pu être relue.",
   },

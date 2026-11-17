@@ -120,6 +120,7 @@ describe("IdeSessionPage, files changed by Claude", () => {
       const { user, calls, card, editor } = await conflict();
       await user.click(within(card).getByRole("button", { name: "Voir la version de Claude" }));
       await user.click(within(card).getByRole("button", { name: "Prendre celle de Claude" }));
+      await user.click(within(card).getByRole("button", { name: "Jeter mes retouches" }));
       await waitFor(() => expect(editor).toHaveValue("a = 2\n"));
       expect(await screen.findByText("Claude a modifié ce fichier.")).toBeInTheDocument();
       expect(screen.queryByRole("alert", { name: /pendant que tu écrivais/ })).toBeNull();

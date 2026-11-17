@@ -77,7 +77,7 @@ _RUN_ERRORS: dict[int | str, dict[str, Any]] = {
 _NOTE_ERRORS: dict[int | str, dict[str, Any]] = {
     404: {"description": "`session_not_found`"},
     409: {"description": "`note_stale` : le fichier a changé depuis la lecture"},
-    422: {"description": "`note_invalid` : plage, fichier ou empreinte (`details.file_hash`)"},
+    422: {"description": "`note_invalid` : plage, fichier ou empreinte (relire `file_hashes`)"},
 }
 _ACCEPT_ERRORS: dict[int | str, dict[str, Any]] = {
     404: {"description": "`note_not_found`"},

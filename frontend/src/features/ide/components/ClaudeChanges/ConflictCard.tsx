@@ -1,6 +1,7 @@
 import { useId, useState } from "react";
 import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
+import { TakeTheirs } from "./TakeTheirs";
 
 interface ConflictCardProps {
   file: string;
@@ -48,9 +49,7 @@ export function ConflictCard({ file, theirs, onKeepMine, onTakeTheirs }: Conflic
             >
               {theirs}
             </pre>
-            <Button variant="outline" className="w-fit" onClick={onTakeTheirs}>
-              {t("ide.claude.takeTheirs")}
-            </Button>
+            <TakeTheirs file={file} onConfirm={onTakeTheirs} />
           </>
         ) : null}
       </div>

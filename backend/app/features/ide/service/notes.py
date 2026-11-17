@@ -13,6 +13,7 @@ from app.features.ide.service import sessions
 from app.features.ide.service.context import IdeContext, file_hash
 from app.features.ide.service.errors import (
     files_too_large,
+    mcp_gesture_forbidden,
     not_a_proposal,
     note_closed,
     note_invalid,
@@ -72,13 +73,12 @@ def _check_proposal(data: NoteIn, text: str | None) -> None:
     """Une proposition : fichier, plage, remplacement et empreinte valide du fichier lu."""
     if text is None or data.line_start is None or data.replacement is None:
         raise note_invalid("Une proposition demande un fichier, une plage de lignes et un texte.")
-    current = file_hash(text)
     if not is_file_hash(data.base_hash):
         raise note_invalid(
-            "Une proposition demande l'empreinte sha256 du fichier lu.", {"file_hash": current}
+            "Une proposition demande l'empreinte sha256 du fichier lu (file_hashes de la séance)."
         )
-    if data.base_hash != current:
-        raise note_stale(current)
+    if data.base_hash != file_hash(text):
+        raise note_stale()
 
 
 async def add(
@@ -142,9 +142,17 @@ async def sweep_stale(ctx: IdeContext, session: IdeSession) -> None:
     await ctx.db.flush()
 
 
+def _gesture_of_january(ctx: IdeContext) -> None:
+    """Accepter ou refuser écrit dans les fichiers : jamais sous identité MCP (défense en
+    profondeur : la déclaration MCP exclut déjà ces routes)."""
+    if ctx.caller.kind == "mcp":
+        raise mcp_gesture_forbidden()
+
+
 async def accept(ctx: IdeContext, note_id: str) -> IdeSession:
     """Applique la proposition si son fichier n'a pas changé ; sinon elle passe à `stale`
     (enregistré tout de suite : l'erreur 409 défait la transaction de la requête)."""
+    _gesture_of_january(ctx)
     note = await get(ctx, note_id)
     if note.kind != "proposal":
         raise not_a_proposal()
@@ -157,7 +165,7 @@ async def accept(ctx: IdeContext, note_id: str) -> IdeSession:
         if note.status != "stale":
             note.status = "stale"
             await ctx.db.commit()
-        raise note_stale(here)
+        raise note_stale()
     assert current is not None and note.line_start is not None  # garanti par `add`
     changed = apply_replacement(
         str(current), note.line_start, note.line_end or note.line_start, note.replacement or ""
@@ -165,6 +173,8 @@ async def accept(ctx: IdeContext, note_id: str) -> IdeSession:
     files = {**session.files, str(note.file_path): changed}
     if sum(len(text.encode()) for text in map(str, files.values())) > MAX_TOTAL_BYTES:
         raise files_too_large()
+    if not await sessions.claim_files(ctx, session):
+        raise note_stale()
     session.files = files
     note.status = "accepted"
     await ctx.db.flush()
@@ -174,6 +184,7 @@ async def accept(ctx: IdeContext, note_id: str) -> IdeSession:
 
 async def reject(ctx: IdeContext, note_id: str) -> IdeNote:
     """Refuse une proposition ouverte ou périmée (rien n'est écrit dans les fichiers)."""
+    _gesture_of_january(ctx)
     note = await get(ctx, note_id)
     if note.kind != "proposal":
         raise not_a_proposal()
