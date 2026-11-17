@@ -31,6 +31,7 @@ MCP = FeatureMcp(
             "applications_start_intake",
             "Lance l'Assistant de suivi sur une phrase ; January confirme la fiche avant sa "
             "création.",
+            launches="application_intake",
         ),
         McpAction(
             "GET /applications/check",
@@ -49,7 +50,7 @@ MCP = FeatureMcp(
             1,
             "applications_get_application",
             "Une fiche : contacts, événements, relances, texte de l'offre.",
-            untrusted=("posting_text",),
+            untrusted=("company", "title", "posting_text"),
         ),
         McpAction(
             "PATCH /applications/{application_id}",
@@ -72,6 +73,7 @@ MCP = FeatureMcp(
             "applications_start_kit",
             "Lance les sept pièces du kit de candidature ; les pièces modifiées par January "
             "sont gardées.",
+            launches="application_kit",
         ),
         McpAction(
             "GET /applications/{application_id}/kit",
@@ -90,6 +92,7 @@ MCP = FeatureMcp(
             2,
             "applications_start_application_interview",
             "Lance l'entretien blanc d'une fiche ; les questions arrivent par la session.",
+            launches="interview",
         ),
         McpAction(
             "POST /interviews",
@@ -114,6 +117,7 @@ MCP = FeatureMcp(
             2,
             "applications_start_committee",
             "Réunit le comité de recrutement simulé sur une version de CV prête.",
+            launches="hiring_committee",
         ),
         McpAction(
             "GET /committee",
@@ -144,19 +148,23 @@ MCP = FeatureMcp(
     graphs=(
         McpGraph(
             "application_intake",
+            follow_only=True,
             summary="L'Assistant de suivi lit une phrase (`text`) et prépare une fiche ; "
             "January la confirme.",
         ),
         McpGraph(
             "application_kit",
+            follow_only=True,
             summary="Écrit les sept pièces du kit d'une fiche (`application_id`).",
         ),
         McpGraph(
             "interview",
+            follow_only=True,
             summary="Entretien blanc (`interview_id` d'un entretien déjà créé).",
         ),
         McpGraph(
             "hiring_committee",
+            follow_only=True,
             summary="Comité de recrutement simulé (`run_id` d'une exécution déjà créée).",
         ),
     ),

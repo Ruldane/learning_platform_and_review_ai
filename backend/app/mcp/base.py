@@ -23,6 +23,10 @@ Level = Literal[1, 2, 3]
 # Niveau 4 : jamais exposé au MCP (connexion, compte et ses données, le MCP lui-même).
 NEVER_EXPOSED_FEATURES = frozenset({"auth", "account", "mcp"})
 
+# Des POST qui ne font que lire (recherche) : seuls à pouvoir être de niveau 1 sans être un GET,
+# sinon un jeton en lecture seule ne pourrait pas chercher dans la mémoire.
+READ_ONLY_POSTS = frozenset({"POST /memory/search"})
+
 
 # Grammaire des chemins `untrusted` : chemins pointés dans `data` de la réponse JSON (la racine est
 # `data`) ; `[]` = « chaque élément d'une liste » ; une réponse dont la racine est une liste se note
@@ -73,7 +77,9 @@ class McpAction:
     Un effet `external` est de niveau 3 au moins (`ValueError` sinon). `response_fields` (si non
     `None`) : l'adaptateur ne renvoie que ces clés de l'objet racine de la réponse (de chaque objet
     si c'est une liste), ex. les préférences sans les modèles ; `encoding="form"` : les champs
-    texte du corps partent en `multipart/form-data` (aucun fichier), pour un formulaire."""
+    texte du corps partent en `multipart/form-data` (aucun fichier), pour un formulaire.
+    `launches` : le nom du graphe que la route lance (un parcours de `ROUTE_ONLY`) ; l'appel compte
+    dans le plafond de lancements de graphes par jour (M11)."""
 
     route: str
     level: Level
@@ -86,6 +92,7 @@ class McpAction:
     merge_from: str | None = None
     response_fields: frozenset[str] | None = None
     encoding: Literal["json", "form"] = "json"
+    launches: str | None = None
 
     def __post_init__(self) -> None:
         if self.side_effects == "external" and self.level == 2:
@@ -107,6 +114,10 @@ class McpGraph:
     level: Literal[2] = 2
     summary: str | None = None
     untrusted: tuple[str, ...] = ()
+    # Un parcours qui n'a que sa route de lancement (`ROUTE_ONLY`) : pas d'outil `graph_<nom>` (il
+    # serait refusé en 409), la déclaration ne sert qu'à rendre non fiables les champs du résultat
+    # de la session quand Claude la suit.
+    follow_only: bool = False
 
     def __post_init__(self) -> None:
         if not untrusted_paths_valid(self.untrusted):

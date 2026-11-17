@@ -1,8 +1,8 @@
 """Déclaration MCP de `projects` : le Portfolio des mini projets preuves.
 
-Le rendu d'un projet (`POST /projects/{id}/submit`) est en multipart avec des captures facultatives
-et n'a pas de variante JSON : il reste réservé à l'interface. L'entrée au profil maître est de
-niveau 3, avec un contrôle préalable des chiffres."""
+Le rendu d'un projet (`POST /projects/{id}/submit`) est un formulaire multipart : le MCP l'envoie
+avec le lien et la description (`encoding="form"`), jamais de capture. L'entrée au profil maître
+est de niveau 3, avec un contrôle préalable des chiffres."""
 
 from pydantic import ValidationError
 
@@ -70,12 +70,23 @@ MCP = FeatureMcp(
             2,
             "projects_retry_brief",
             "Relance l'énoncé d'un projet dont les trois essais ont échoué.",
+            launches="project_brief",
         ),
         McpAction(
             "POST /projects/{project_id}/drafts",
             2,
             "projects_retry_drafts",
             "Relance les brouillons d'un projet validé qui n'en a pas.",
+            launches="project_review",
+        ),
+        McpAction(
+            "POST /projects/{project_id}/submit",
+            2,
+            "projects_submit_project",
+            "Rend le projet : un lien (`repo_url`) et/ou une description (4 000 caractères au "
+            "plus), sans capture. L'évaluation se lance ; suis la session.",
+            encoding="form",
+            launches="project_review",
         ),
         McpAction(
             "POST /projects",
@@ -94,18 +105,17 @@ MCP = FeatureMcp(
         ),
     ),
     graphs=(
-        McpGraph("project_brief", summary="Écrit l'énoncé d'un projet (`project_id`)."),
+        McpGraph(
+            "project_brief", follow_only=True, summary="Écrit l'énoncé d'un projet (`project_id`)."
+        ),
         McpGraph(
             "project_review",
+            follow_only=True,
             summary="Évalue le rendu d'un projet (`project_id`, `mode` review ou drafts).",
             untrusted=("result",),
         ),
     ),
     excluded={
-        "POST /projects/{project_id}/submit": (
-            "Rendu en multipart avec captures (`UploadFile`) et sans variante JSON : le MCP "
-            "n'envoie pas de fichier ; January rend ses projets depuis l'interface."
-        ),
         "GET /projects/{project_id}/screenshots/{number}": (
             "Image d'une capture (binaire, pas du JSON) : visible dans le Portfolio de l'interface."
         ),

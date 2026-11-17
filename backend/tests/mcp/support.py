@@ -55,6 +55,9 @@ class FakeTools:
     def get(self, name: str) -> ToolSpec | None:
         return self.specs.get(name)
 
+    def launchers(self) -> frozenset[str]:
+        return frozenset(item.name for item in self.specs.values() if item.starts_graph)
+
 
 @dataclass
 class FakeDispatcher:

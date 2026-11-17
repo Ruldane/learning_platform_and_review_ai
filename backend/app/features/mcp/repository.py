@@ -80,6 +80,20 @@ class CallRepository(UserScopedRepository[McpCall]):
             ids=ids,
         )
 
+    async def launches_since(self, actions: frozenset[str], since: datetime) -> int:
+        """Les lancements de parcours réussis depuis `since` (journal, jamais le contenu) : les
+        appels des outils `actions` qui ont abouti (code 2xx), sans refus ni erreur."""
+        if not actions:
+            return 0
+        stmt = select(func.count()).where(
+            McpCall.user_id == self.user_id,
+            McpCall.action.in_(actions),
+            McpCall.created_at >= since,
+            McpCall.code >= 200,
+            McpCall.code < 300,
+        )
+        return int((await self.session.execute(stmt)).scalar_one())
+
     async def recent(self, limit: int) -> list[McpCall]:
         stmt = (
             select(McpCall)

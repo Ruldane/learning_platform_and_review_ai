@@ -13,7 +13,7 @@ from pydantic import BaseModel
 
 from app.core.caller import McpIdentity
 from app.mcp.arguments import graph_schema
-from app.mcp.base import NEVER_EXPOSED_FEATURES, FeatureMcp, McpAction, McpGraph
+from app.mcp.base import NEVER_EXPOSED_FEATURES, READ_ONLY_POSTS, FeatureMcp, McpAction, McpGraph
 from app.mcp.schema import (
     SETTINGS_PATH,
     McpConfigError,
@@ -56,6 +56,9 @@ class Registry:
     def all(self) -> list[ToolSpec]:
         return list(self._tools.values())
 
+    def launchers(self) -> frozenset[str]:
+        return frozenset(tool.name for tool in self._tools.values() if tool.starts_graph)
+
     def reader_of(self, template: str) -> ToolSpec | None:
         """L'outil de lecture (niveau 1) de la route `GET <template>`, s'il est déclaré."""
         for tool in self._tools.values():
@@ -86,7 +89,7 @@ def _check_action(feature: str, action: McpAction) -> tuple[str, str]:
             raise McpConfigError(f"{action.route} : les réglages exigent response_fields")
         if method != "GET" and action.body_fields is None:
             raise McpConfigError(f"{action.route} : les réglages exigent body_fields")
-    if action.level == 1 and method != "GET":
+    if action.level == 1 and method != "GET" and action.route not in READ_ONLY_POSTS:
         raise McpConfigError(f"{action.route} écrit : il ne peut pas être de niveau 1")
     if action.side_effects == "external" and action.level < 3:
         raise McpConfigError(f"{action.name} : un effet externe est de niveau 3 (P14)")
@@ -119,6 +122,7 @@ def _action_tool(feature: str, action: McpAction, openapi: Mapping[str, Any]) ->
         precheck=action.precheck,
         plan=plan,
         response_fields=action.response_fields,
+        launches=action.launches,
     )
 
 
@@ -162,7 +166,14 @@ def build_registry(
         if (declared.actions or declared.graphs) and declared.feature in NEVER_EXPOSED_FEATURES:
             raise McpConfigError(f"la feature « {declared.feature} » n'expose jamais d'outil")
         built = [_action_tool(declared.feature, action, openapi) for action in declared.actions]
-        built += [_graph_tool(declared.feature, graph, graphs) for graph in declared.graphs]
+        for graph in declared.graphs:
+            if graph.follow_only:  # pas d'outil de lancement : la route de la feature le lance
+                if graph.graph not in (graphs or {}):
+                    raise McpConfigError(
+                        f"graphe déclaré mais inconnu de l'application : {graph.graph}"
+                    )
+            else:
+                built.append(_graph_tool(declared.feature, graph, graphs))
         for graph in declared.graphs:
             if graph.untrusted:
                 graph_untrusted[graph.graph] = graph.untrusted

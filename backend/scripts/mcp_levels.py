@@ -102,7 +102,12 @@ def render_table(features: Iterable[FeatureMcp]) -> str:
     """Trois sections (outils, graphes, exclusions), triées par feature puis par route."""
     ordered = sorted(features, key=lambda f: f.feature)
     tools = ["== Outils (feature | niveau | outil | route | effets)"]
-    graphs = ["== Graphes (feature | niveau | graphe)"]
+    graphs = ["== Graphes (feature | niveau | graphe | lancement)"]
+    launched_by: dict[str, list[str]] = {}
+    for feature in ordered:
+        for action in feature.actions:
+            if action.launches is not None:
+                launched_by.setdefault(action.launches, []).append(action.route)
     excluded = ["== Exclus (feature | route | motif)"]
     for feature in ordered:
         for action in sorted(feature.actions, key=lambda a: a.route):
@@ -111,7 +116,13 @@ def render_table(features: Iterable[FeatureMcp]) -> str:
                 f"{feature.feature} | {action.level} | {action.name} | {action.route} | {effects}"
             )
         for graph in sorted(feature.graphs, key=lambda g: g.graph):
-            graphs.append(f"{feature.feature} | {graph.level} | {graph.graph}")
+            routes = " ou ".join(sorted(launched_by.get(graph.graph, []))) or "l'interface"
+            launch = (
+                f"suivi seulement, lancé par {routes}"
+                if graph.follow_only
+                else f"outil graph_{graph.graph}"
+            )
+            graphs.append(f"{feature.feature} | {graph.level} | {graph.graph} | {launch}")
         for key, reason in sorted(feature.excluded.items()):
             excluded.append(f"{feature.feature} | {key} | {reason}")
     return "\n".join([*tools, "", *graphs, "", *excluded])

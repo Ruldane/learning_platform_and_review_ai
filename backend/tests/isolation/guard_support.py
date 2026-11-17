@@ -16,11 +16,6 @@ EXEMPT: dict[str, str] = {"app.features.health.router": "aucune donnée d'utilis
 # (`test_expected_from_b_is_emptied_once_b_delivers` échoue s'il ne l'est pas).
 EXPECTED_FROM_B: frozenset[str] = frozenset()
 
-# Routeurs de la phase 10 posés en bouchons 501 par 10.P dont le cas d'isolation vient avec leur
-# remplissage : `ide` (flux A) a son cas ; `mcp` (flux B) l'aura à sa fusion, et ce frozenset
-# disparaît alors (10.I, deuxième temps).
-EXPECTED_PHASE10: frozenset[str] = frozenset({"app.features.mcp.router"})
-
 _HERE = Path(__file__).parent
 
 
@@ -80,10 +75,13 @@ def _marks(obj: object) -> list[object]:
 
 def check_path(router: str, path: str) -> None:
     """Le test cité vit sous `tests/isolation/` ou sous `tests/features/<zone>/`, `<zone>` étant la
-    feature du routeur (`app.features.<zone>.…`) : un cas ne peut pas nommer un test d'ailleurs."""
+    feature du routeur (`app.features.<zone>.…`) : un cas ne peut pas nommer un test d'ailleurs.
+    Le routeur `mcp` a aussi `tests/mcp/` (le moteur du MCP et sa feature se testent ensemble)."""
     parts = router.split(".")
     zone = parts[2] if parts[:2] == ["app", "features"] and len(parts) > 2 else None
     allowed = ["tests/isolation/"] + ([f"tests/features/{zone}/"] if zone else [])
+    if zone == "mcp":
+        allowed.append("tests/mcp/")
     if not any(path.startswith(prefix) for prefix in allowed):
         raise ValueError(
             f"{path} n'est pas un test de {router} (attendu sous {' ou '.join(allowed)})"

@@ -17,6 +17,7 @@ MCP = FeatureMcp(
             "Ajoute une offre par son lien (`url`) ou son texte collé (`text`) et lance "
             "l'analyse ; la même offre rend l'existante.",
             untrusted=tuple(f"posting.{name}" for name in _TEXT),
+            launches="gap_analysis",
         ),
         McpAction(
             "GET /postings",

@@ -13,6 +13,7 @@ MCP = FeatureMcp(
             2,
             "radar_start_run",
             "Lance un relevé du marché (`role`, `zone` facultatifs, mémorisés dans les réglages).",
+            launches="market_radar",
         ),
         McpAction(
             "GET /radar/latest",
@@ -33,6 +34,7 @@ MCP = FeatureMcp(
     graphs=(
         McpGraph(
             "market_radar",
+            follow_only=True,
             summary="Relevé du marché (`run_id` d'un relevé déjà créé).",
             untrusted=("result",),
         ),

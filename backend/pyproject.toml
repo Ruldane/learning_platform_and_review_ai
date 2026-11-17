@@ -138,7 +138,6 @@ ignore_imports = [
     "app.features.** -> app.features.*.service",
     "app.features.** -> app.features.*.service.**",
     "app.features.** -> app.features.*.keys_service",
-    "app.features.** -> app.features.*.keys_service.**",
     # Le registre monte les routeurs de toutes les features : c'est son rôle.
     "app.features.registry -> app.features.**",
 ]
