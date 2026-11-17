@@ -57,6 +57,7 @@ MCP = FeatureMcp(
             "gardés. Les modèles et les clés ne se changent pas ici.",
             body_fields=PREFERENCE_FIELDS,
             merge_from="GET /settings",
+            response_fields=PREFERENCE_FIELDS,
         ),
     ),
     excluded={

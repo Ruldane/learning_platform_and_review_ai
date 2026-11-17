@@ -10,6 +10,7 @@ MCP = FeatureMcp(
             2,
             "learning_create_goal",
             "Crée un objectif d'apprentissage et lance le Conseil qui propose des parcours.",
+            launches="learning_council",
         ),
         McpAction("GET /goals", 1, "learning_list_goals", "Les objectifs d'apprentissage."),
         McpAction("GET /goals/{goal_id}", 1, "learning_get_goal", "Un objectif et son état."),
@@ -18,6 +19,7 @@ MCP = FeatureMcp(
             2,
             "learning_retry_council",
             "Relance le Conseil d'un objectif dont la dernière session a échoué.",
+            launches="learning_council",
         ),
         McpAction(
             "GET /goals/{goal_id}/proposals",

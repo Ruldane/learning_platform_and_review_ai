@@ -38,12 +38,6 @@ class ToolSpec:
     response_fields: frozenset[str] | None = None
     launches: str | None = None
 
-    @property
-    def starts_graph(self) -> bool:
-        """Lance un parcours (outil `graph_<nom>` ou route de lancement) : compte dans le plafond
-        de lancements par jour (M11)."""
-        return self.graph is not None or self.launches is not None
-
 
 @dataclass(frozen=True)
 class ToolResult:
@@ -72,10 +66,6 @@ class ToolRegistry(Protocol):
     def list_for(self, identity: McpIdentity) -> list[ToolSpec]: ...
 
     def get(self, name: str) -> ToolSpec | None: ...
-
-    def launchers(self) -> frozenset[str]:
-        """Les noms des outils qui lancent un parcours (plafond de lancements par jour)."""
-        ...
 
 
 class Dispatcher(Protocol):

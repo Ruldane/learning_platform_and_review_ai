@@ -35,7 +35,9 @@ from app.agents.runtime.execution import RunContext, run_session, unknown_graph
 from app.agents.runtime.ports import NO_PORTS, AgentPorts
 from app.agents.runtime.repositories import SessionRepository, list_sessions_to_recover
 from app.agents.runtime.run_settings import RunSettingsSource
+from app.core.caller import MCP_IDENTITY
 from app.core.errors import AppError
+from app.core.launch_quota import LaunchQuota
 from app.db.models.agents import AgentSession
 
 logger = logging.getLogger(__name__)
@@ -66,7 +68,9 @@ class SessionRunner:
         run_settings: RunSettingsSource,
         graphs: Mapping[str, GraphSpec] = GRAPHS,
         ports: AgentPorts = NO_PORTS,
+        launch_quota: LaunchQuota | None = None,
     ) -> None:
+        self.launch_quota = launch_quota or LaunchQuota()  # plafond des lancements par le MCP (M11)
         self._db = session_factory
         self._bus = bus
         self._ctx = RunContext(
@@ -100,15 +104,23 @@ class SessionRunner:
             raise AppError(
                 "invalid_input", "L'entrée du parcours est invalide.", 422, {"fields": fields}
             ) from None
-        async with self._db() as db:
-            row = await SessionRepository(db, user_id).add(
-                graph=graph,
-                status="running",
-                input=data,
-                subject_type=subject_type,
-                subject_id=subject_id,
-            )
-            await db.commit()
+        # Sous une identité MCP, le lancement compte dans le plafond du jour (M11), quelle que soit
+        # la route ; une place réservée est rendue si rien n'a démarré.
+        reserved = self.launch_quota.reserve(user_id) if MCP_IDENTITY.get() is not None else None
+        try:
+            async with self._db() as db:
+                row = await SessionRepository(db, user_id).add(
+                    graph=graph,
+                    status="running",
+                    input=data,
+                    subject_type=subject_type,
+                    subject_id=subject_id,
+                )
+                await db.commit()
+        except BaseException:
+            if reserved is not None:
+                self.launch_quota.release(user_id, reserved)
+            raise
         if user_id in self._deleting:  # « Tout supprimer » a commencé pendant l'insertion
             with contextlib.suppress(AppError):  # déjà annulée par la suppression
                 await control.claim_cancel(self._db, user_id, row.id)

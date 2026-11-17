@@ -100,26 +100,6 @@ class CallJournal:
         recent.append(now)
         return True
 
-    async def ensure_launch_room(
-        self, identity: McpIdentity, launchers: frozenset[str], limiter: RateLimiter
-    ) -> None:
-        """M11 : au plus `graph_launches_per_day` lancements de parcours par utilisatrice sur
-        24 h glissantes, comptés sur le journal (les refus et les échecs n'y comptent pas). Lève
-        `mcp_graph_quota` (429, en français, sans contenu) ; le journal garde le refus au niveau de
-        l'outil. Le contrôle précède les limites par minute : un refus n'en consomme aucune."""
-        limit = limiter.limits.graph_launches_per_day
-        since = datetime.now(UTC) - timedelta(days=1)
-        async with self._session_factory() as db:
-            used = await CallRepository(db, identity.user_id).launches_since(launchers, since)
-        if used >= limit:
-            raise AppError(
-                "mcp_graph_quota",
-                f"Limite atteinte : {limit} lancements de parcours par jour (24 h glissantes). "
-                "Réessaie plus tard, ou demande à January de le lancer depuis l'application.",
-                429,
-                {"limit": limit, "window": "day"},
-            )
-
     async def refusal(
         self, user_id: str | None, token_id: str | None, action: str, level: int, code: int
     ) -> None:
@@ -144,20 +124,16 @@ class GuardedDispatcher:
         inner: Dispatcher,
         limiter: RateLimiter,
         journal: CallJournal,
-        launchers: Callable[[], frozenset[str]] = frozenset,
     ) -> None:
         self._inner = inner
         self._limiter = limiter
         self._journal = journal
-        self._launchers = launchers  # les outils qui lancent un parcours (plafond du jour, M11)
 
     async def call(
         self, identity: McpIdentity, tool: ToolSpec, arguments: dict[str, Any]
     ) -> ToolResult:
         started = time.monotonic()
         try:
-            if tool.starts_graph:
-                await self._journal.ensure_launch_room(identity, self._launchers(), self._limiter)
             await self._limiter.check(identity, tool.level, datetime.now(UTC), bucket=tool.bucket)
             outcome = await self._inner.call(identity, tool, arguments)
         except AppError as exc:

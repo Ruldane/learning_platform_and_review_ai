@@ -52,6 +52,7 @@ MCP = FeatureMcp(
             2,
             "postings_relaunch_gap",
             "Relance l'analyse d'écart d'une offre.",
+            launches="gap_analysis",
         ),
     ),
 )

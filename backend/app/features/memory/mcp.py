@@ -102,6 +102,7 @@ MCP = FeatureMcp(
             2,
             "memory_mark_document_learned",
             "« Déjà appris » : l'Archiviste crée des acquis déclarés à partir du document.",
+            launches="learned_document",
         ),
     ),
     graphs=(

@@ -24,6 +24,7 @@ MCP = FeatureMcp(
             2,
             "quiz_submit_attempt",
             "Envoie des réponses à un quiz et lance la notation.",
+            launches="quiz",
         ),
         McpAction(
             "GET /quizzes/{quiz_id}/attempts/{attempt_id}",

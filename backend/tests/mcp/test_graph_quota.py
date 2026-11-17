@@ -1,126 +1,104 @@
-"""M11 : au plus 30 lancements de graphe par utilisatrice et par jour glissant, comptés sur le
-journal des appels. Les lancements sont les outils `graph_<nom>` et les actions dont la route lance
-un graphe (`McpAction.launches`). Au-delà : refus `mcp_graph_quota`, en français, sans contenu,
-journalisé au niveau de l'outil ; rien n'est envoyé."""
+"""M11 : au plus 30 lancements de parcours par utilisatrice et par jour glissant, comptés **à la
+source** : là où l'application démarre réellement une session (`SessionRunner.start`), quand
+l'appel vient du MCP. Toute route qui lance un parcours est donc comptée, déclarée ou non. Au-delà :
+refus `mcp_graph_quota`, en français, sans contenu, et aucune session n'est créée. L'interface de
+January n'est jamais limitée."""
 
 import json
-from datetime import UTC, datetime, timedelta
+from collections.abc import Iterator
 from typing import Any
 
 import httpx
 import pytest
-from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from fastapi import FastAPI
 
-from app.db.models.mcp import McpCall
-from app.mcp.limits import Limits
-from app.mcp.tools import McpGate, ToolSpec
-from tests.mcp.support import FakeDispatcher, FakeTools, Mcp, spec
-
-LAUNCH_LIMIT = 30
-
-
-def _launcher(name: str, **kw: str) -> ToolSpec:
-    base = spec(name, "postings", 2)
-    return ToolSpec(**{**base.__dict__, **kw})
-
-
-@pytest.fixture
-def tools() -> FakeTools:
-    fake = FakeTools()
-    for item in (
-        _launcher("graph_web_research", graph="web_research"),
-        _launcher("postings_analyse", launches="gap_analysis"),
-    ):
-        fake.specs[item.name] = item
-    return fake
+from app.agents.graphs.registry import GRAPHS
+from app.bootstrap_mcp import install_adapter
+from app.mcp.base import FeatureMcp, McpAction, McpGraph
+from tests.agents.graphs_for_tests import TEST_GRAPHS, Probe
+from tests.mcp.adapter_support import call
+from tests.mcp.support import API, Mcp
+from tests.sessions_support import use_test_runtime
 
 
 @pytest.fixture(autouse=True)
-def _roomy_limits(gate: McpGate) -> None:
-    """Les limites par minute ne sont pas l'objet : on teste le plafond du jour."""
-    object.__setattr__(
-        gate.limiter,
-        "_limits",
-        Limits(calls_per_minute=10_000, writes_per_minute=10_000, calls_per_day=10_000,
-               writes_per_day=10_000),
-    )  # fmt: skip
+def probe(monkeypatch: pytest.MonkeyPatch) -> Iterator[Probe]:
+    """Avant l'app : son lifespan construit le moteur avec les parcours de test."""
+    probe = use_test_runtime(monkeypatch)
+    yield probe
+    probe.release_b.set()
 
 
-def _error_of(response: httpx.Response) -> dict[str, Any] | None:
-    """L'erreur d'outil d'une réponse (un refus du plafond arrive comme résultat d'outil en erreur,
-    que Claude lit), `None` si l'appel a réussi."""
-    result = response.json()["result"]
-    if not result["isError"]:
-        return None
-    error: dict[str, Any] = json.loads(result["content"][0]["text"])["data"]["error"]
-    return error
+@pytest.fixture
+async def quota_mcp(client: httpx.AsyncClient, app: FastAPI) -> Mcp:
+    """Deux façons de lancer : l'outil de graphe (`POST /sessions`, service des sessions) et la
+    route d'une feature (`POST /capture`, par le lanceur) ; plafond réduit à 2."""
+    app.state.runtime.runner.launch_quota.limit = 2
+    features = [
+        FeatureMcp("sessions", graphs=(McpGraph("with_topic"),)),
+        # Déclarée **sans** `launches` : le plafond ne dépend pas de la déclaration.
+        FeatureMcp("capture", actions=(McpAction("POST /capture", 2, "capture_start_capture"),)),
+    ]
+    models = {name: spec.input_model for name, spec in {**GRAPHS, **TEST_GRAPHS}.items()}
+    install_adapter(app, features, models)
+    transport = httpx.ASGITransport(app=app, raise_app_exceptions=False)
+    async with httpx.AsyncClient(transport=transport, base_url="http://localhost") as http:
+        yield Mcp(http)
 
 
-async def _count(factory: async_sessionmaker[AsyncSession], code: int) -> int:
-    async with factory() as db:
-        stmt = select(func.count()).select_from(McpCall).where(McpCall.code == code)
-        return int((await db.execute(stmt)).scalar_one())
+def _quota_error(envelope: dict[str, Any]) -> bool:
+    error = envelope["data"].get("error") or {}
+    return bool(error.get("code") == "mcp_graph_quota")
 
 
-async def test_the_31st_launch_of_the_day_is_refused_in_french_without_content(
-    mcp: Mcp, inner: FakeDispatcher, db_session_factory: async_sessionmaker[AsyncSession]
+async def _sessions(mcp: Mcp) -> int:
+    return len((await mcp.http.get(f"{API}/sessions")).json())
+
+
+async def test_graph_tool_is_refused_over_the_limit_and_nothing_starts(quota_mcp: Mcp) -> None:
+    token = await quota_mcp.token(("sessions",), "write")
+    for _ in range(2):
+        envelope, is_error = await call(quota_mcp, token, "graph_with_topic", {"topic": "a"})
+        assert not is_error, envelope
+
+    envelope, is_error = await call(quota_mcp, token, "graph_with_topic", {"topic": "SECRET-42"})
+
+    assert is_error and _quota_error(envelope)
+    assert "2 lancements de parcours par jour" in envelope["data"]["error"]["message"]
+    assert "SECRET-42" not in json.dumps(envelope)
+    assert await _sessions(quota_mcp) == 2  # rien n'a été lancé
+
+
+async def test_a_feature_route_that_launches_a_graph_is_counted_without_a_declaration(
+    quota_mcp: Mcp,
 ) -> None:
-    token = await mcp.token(("postings",), "write")
-    for i in range(LAUNCH_LIMIT):
-        # Les deux sortes de lancement comptent ensemble.
-        name = "graph_web_research" if i % 2 else "postings_analyse"
-        assert (await mcp.call(token, name, {"topic": "secret"})).status_code == 200
+    token = await quota_mcp.token(("sessions", "capture"), "write")
+    assert not (await call(quota_mcp, token, "capture_start_capture", {"text": "un"}))[1]
+    assert not (await call(quota_mcp, token, "graph_with_topic", {"topic": "a"}))[1]  # même compte
 
-    response = await mcp.call(token, "postings_analyse", {"posting_id": "CONTENU-A-NE-PAS-REVOIR"})
+    envelope, is_error = await call(quota_mcp, token, "capture_start_capture", {"text": "deux"})
 
-    error = _error_of(response)
-    assert error is not None and error["code"] == "mcp_graph_quota"
-    assert "30" in error["message"] and "parcours" in error["message"]
-    assert "CONTENU-A-NE-PAS-REVOIR" not in response.text
-    assert len(inner.calls) == LAUNCH_LIMIT  # le refusé n'est jamais parti
-    async with db_session_factory() as db:
-        refused = (await db.execute(select(McpCall).where(McpCall.code == 429))).scalar_one()
-    assert (refused.action, refused.level) == ("postings_analyse", 2)  # niveau de l'outil
-    assert refused.ids == {}
+    assert is_error and _quota_error(envelope)
+    assert await _sessions(quota_mcp) == 2
 
 
-async def test_other_calls_are_not_counted_nor_blocked(mcp: Mcp, inner: FakeDispatcher) -> None:
-    token = await mcp.token(("postings",), "write")
-    for _ in range(LAUNCH_LIMIT + 5):
-        assert (await mcp.call(token, "postings_add", {})).status_code == 200
-        assert (await mcp.call(token, "postings_list")).status_code == 200
-    assert (await mcp.call(token, "postings_analyse")).status_code == 200
+async def test_the_application_itself_is_never_limited(quota_mcp: Mcp) -> None:
+    token = await quota_mcp.token(("sessions",), "write")
+    for _ in range(2):
+        await call(quota_mcp, token, "graph_with_topic", {"topic": "a"})
+    for _ in range(3):  # l'interface de January lance sans plafond
+        response = await quota_mcp.http.post(
+            f"{API}/sessions", json={"graph": "with_topic", "input": {"topic": "à la main"}}
+        )
+        assert response.status_code in (200, 201, 202), response.text
+    assert await _sessions(quota_mcp) == 5
 
 
-async def test_the_day_is_rolling_and_a_refusal_does_not_count(
-    mcp: Mcp, db_session_factory: async_sessionmaker[AsyncSession]
-) -> None:
-    token = await mcp.token(("postings",), "write")
-    assert (await mcp.call(token, "postings_analyse")).status_code == 200
-    async with db_session_factory() as db:
-        owner = (await db.execute(select(McpCall.user_id))).scalar_one()
-        old = datetime.now(UTC) - timedelta(hours=25)
-        for _ in range(LAUNCH_LIMIT):  # hors de la fenêtre : ne comptent plus
-            db.add(McpCall(user_id=owner, token_id=None, action="postings_analyse", level=2,
-                           code=200, duration_ms=1, ids={}, created_at=old))  # fmt: skip
-        await db.commit()
-
-    for _ in range(LAUNCH_LIMIT - 1):
-        assert (await mcp.call(token, "postings_analyse")).status_code == 200
-    assert _error_of(await mcp.call(token, "postings_analyse")) is not None
-    assert (
-        _error_of(await mcp.call(token, "postings_analyse")) is not None
-    )  # un refus ne compte pas
-    assert await _count(db_session_factory, 200) == LAUNCH_LIMIT * 2
-
-
-async def test_failed_launches_do_not_use_the_quota(mcp: Mcp, inner: FakeDispatcher) -> None:
-    from app.mcp.tools import ToolResult
-
-    token = await mcp.token(("postings",), "write")
-    inner.results["postings_analyse"] = ToolResult(data={"error": {}}, code=422)
-    for _ in range(LAUNCH_LIMIT + 3):
-        assert (await mcp.call(token, "postings_analyse")).status_code == 200  # HTTP du MCP
-    inner.results.clear()
-    assert (await mcp.call(token, "postings_analyse")).status_code == 200
+async def test_a_launch_refused_before_starting_gives_its_place_back(quota_mcp: Mcp) -> None:
+    token = await quota_mcp.token(("sessions",), "write")
+    for _ in range(5):  # entrée invalide : refusée avant tout démarrage, rien n'est consommé
+        envelope, is_error = await call(quota_mcp, token, "graph_with_topic", {"topic": 12345})
+        assert is_error and not _quota_error(envelope)
+    assert not (await call(quota_mcp, token, "graph_with_topic", {"topic": "a"}))[1]
+    assert not (await call(quota_mcp, token, "graph_with_topic", {"topic": "b"}))[1]
+    assert _quota_error((await call(quota_mcp, token, "graph_with_topic", {"topic": "c"}))[0])

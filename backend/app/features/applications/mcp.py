@@ -99,6 +99,7 @@ MCP = FeatureMcp(
             2,
             "applications_start_free_interview",
             "Lance un entretien blanc libre, sur une offre (`posting_id`) ou un intitulé (`role`).",
+            launches="interview",
         ),
         McpAction(
             "GET /interviews",

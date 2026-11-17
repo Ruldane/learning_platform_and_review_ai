@@ -56,9 +56,6 @@ class Registry:
     def all(self) -> list[ToolSpec]:
         return list(self._tools.values())
 
-    def launchers(self) -> frozenset[str]:
-        return frozenset(tool.name for tool in self._tools.values() if tool.starts_graph)
-
     def reader_of(self, template: str) -> ToolSpec | None:
         """L'outil de lecture (niveau 1) de la route `GET <template>`, s'il est déclaré."""
         for tool in self._tools.values():

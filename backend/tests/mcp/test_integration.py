@@ -2,6 +2,8 @@
 de l'application, et les dernières retouches de la relecture de l'adaptateur (R1 à R3, M7)."""
 
 import asyncio
+from collections.abc import Iterable, Iterator
+from typing import Any
 
 import httpx
 import pytest
@@ -79,13 +81,14 @@ def test_route_only_graphs_have_no_launch_tool_only_their_route(
 
 
 def test_every_launching_route_is_marked_and_every_route_only_graph_follows() -> None:
-    """M11 : `launches` nomme un parcours de `ROUTE_ONLY` ; chacun a au moins une route déclarée
-    qui le lance, sauf `daily_brief` (une lecture) et `cv_capture` (routes à fichiers)."""
+    """`launches` (affichage des niveaux) nomme un parcours de l'application ; chaque parcours de
+    `ROUTE_ONLY` a au moins une route déclarée qui le lance, sauf `daily_brief` (une lecture) et
+    `cv_capture` (routes à fichiers). Le plafond (M11) ne dépend pas de ces marques."""
     declared: dict[str, list[str]] = {}
     for feature in MCP_FEATURES:
         for action in feature.actions:
             if action.launches is not None:
-                assert action.launches in ROUTE_ONLY, action.route
+                assert action.launches in GRAPHS, action.route
                 assert action.level == 2 and action.route.startswith("POST "), action.route
                 declared.setdefault(action.launches, []).append(action.route)
     excluded_graphs = {
@@ -101,15 +104,58 @@ def test_every_launching_route_is_marked_and_every_route_only_graph_follows() ->
             assert graph.follow_only == (graph.graph in ROUTE_ONLY), graph.graph
 
 
+def test_routes_that_start_a_graph_say_so_for_the_levels_table() -> None:
+    """Affichage seulement (le plafond est compté à la source) : ces routes lancent un parcours."""
+    wanted = {
+        "POST /interviews": "interview",
+        "POST /postings/{posting_id}/gap": "gap_analysis",
+        "POST /goals": "learning_council",
+        "POST /goals/{goal_id}/council": "learning_council",
+        "POST /quizzes/{quiz_id}/attempts": "quiz",
+        "POST /documents/{document_id}/learned": "learned_document",
+    }
+    found = {
+        action.route: action.launches for feature in MCP_FEATURES for action in feature.actions
+    }
+    assert {route: found.get(route) for route in wanted} == wanted
+
+
+def _api_routes(routes: Iterable[Any]) -> Iterator[APIRoute]:
+    """Toutes les `APIRoute`, sous-routeurs (`include_router`) et montages compris."""
+    for route in routes:
+        if isinstance(route, APIRoute):
+            yield route
+        elif (nested := getattr(route, "original_router", None)) is not None:
+            yield from _api_routes(nested.routes)
+        elif (nested_routes := getattr(route, "routes", None)) is not None:
+            yield from _api_routes(nested_routes)
+
+
 def test_no_route_of_the_application_is_hidden_from_the_schema(app: FastAPI) -> None:
-    """R2 : l'index des routes du MCP vient de l'OpenAPI ; une route cachée y échapperait."""
+    """R2 : l'index des routes du MCP vient de l'OpenAPI ; une route cachée y échapperait. Le
+    parcours entre dans les sous-routeurs et les montages (sinon il ne verrait rien)."""
     for application in (_application(), app):
-        hidden = [
-            route.path
-            for route in application.routes
-            if isinstance(route, APIRoute) and not route.include_in_schema
-        ]
+        seen = list(_api_routes(application.routes))
+        assert len(seen) > 150  # le parcours voit bien les routes des features
+        hidden = [route.path for route in seen if not route.include_in_schema]
         assert hidden == []
+
+
+def test_every_settings_action_filters_the_response(real: tuple[FastAPI, Registry]) -> None:
+    """I2 : lecture ou écriture, une action sur `/settings` ne rend que les préférences, jamais les
+    modèles par niveau ni les surcharges par agent."""
+    settings = [
+        tool
+        for tool in real[1].all()
+        if tool.route is not None and tool.route[1].startswith("/settings")
+    ]
+    assert {tool.name for tool in settings} >= {
+        "settings_get_preferences",
+        "settings_update_preferences",
+    }
+    for tool in settings:
+        assert tool.response_fields is not None, tool.name
+        assert not tool.response_fields & PROTECTED_FIELDS, tool.name
 
 
 def _response_keys(app: FastAPI, route: tuple[str, str]) -> list[str]:

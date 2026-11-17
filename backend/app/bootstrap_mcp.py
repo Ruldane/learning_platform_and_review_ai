@@ -72,7 +72,7 @@ def install_gate(
     défaut (`None` tant qu'aucune n'existe)."""
     limiter = RateLimiter(limits)
     journal = CallJournal(app.state.session_factory, _local_user(app))
-    guarded = GuardedDispatcher(dispatcher, limiter, journal, tools.launchers)
+    guarded = GuardedDispatcher(dispatcher, limiter, journal)
     known = frozenset(declared.feature for declared in features) or None
     gate = McpGate(
         tools=tools,
