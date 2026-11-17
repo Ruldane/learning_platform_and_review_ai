@@ -163,6 +163,7 @@ def supervise(
     deadline = time.monotonic() + job.wall_s
     cancel = env.spool / "cancel" / job.run_id
     forced: str | None = None
+    forced_at = 0.0
     eof, exited_at, ticks, next_check = False, None, 0, 0.0
     while True:
         eof = _pump(fd, sink, eof)
@@ -178,7 +179,10 @@ def supervise(
         elif forced is None:
             forced = _verdict(deadline, cancel, ticks, limits, env)
             if forced is not None:
+                forced_at = now
                 stop_run(proc, limits)
+        elif now - forced_at > WAIT_S:  # SIGKILL envoyé et le processus principal ne meurt pas
+            raise Unsafe("un processus du code ne meurt pas")
     stop_run(proc, limits)
     _drain(fd, sink)
     try:
@@ -249,7 +253,7 @@ def run_job(job: dict[str, object], limits: Limits, env: RunEnv | None = None) -
         if sink is not None:
             sink.write(f"{message}\n".encode())
     finally:
-        clean = runner_proc.kill_user_processes(limits.uid)
+        clean = _verified(lambda: runner_proc.kill_user_processes(limits.uid))
         clean = _cleanup(workdir, limits, env) and clean
         truncated = sink.truncated if sink else False
         if sink is not None:
@@ -267,6 +271,15 @@ def _describe(exc: Exception) -> str:
     return f"Le bac n'a pas pu lancer ce travail ({type(exc).__name__})."
 
 
+def _verified(action: Callable[[], bool]) -> bool:
+    """Le retour d'un nettoyage ; une exception (`fork` refusé, mémoire…) vaut « pas propre » : elle
+    mène à `Unsafe`, jamais à un « travail illisible » après lequel le lanceur continuerait."""
+    try:
+        return action()
+    except OSError:
+        return False
+
+
 def _cleanup(workdir: Path | None, limits: Limits, env: RunEnv) -> bool:
     """Efface ce que le code a laissé. Avec changement d'identité, sous l'uid du code (le lanceur
     ne peut pas entrer chez lui) ; le lanceur ne retire que le dossier devenu vide. Sans (tests
@@ -275,9 +288,8 @@ def _cleanup(workdir: Path | None, limits: Limits, env: RunEnv) -> bool:
     clean = True
     if env.drop:
         roots = [str(env.work), *env.clean_roots]
-        clean = runner_proc.purge_user_files(
-            limits.uid, limits.gid, [r for r in roots if os.path.isdir(r)]
-        )
+        present = [r for r in roots if os.path.isdir(r)]
+        clean = _verified(lambda: runner_proc.purge_user_files(limits.uid, limits.gid, present))
     elif workdir is not None:
         shutil.rmtree(workdir, ignore_errors=True)
     if workdir is not None and workdir.is_dir():

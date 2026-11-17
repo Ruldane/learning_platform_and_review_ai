@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from app.providers.sandbox.base import MAX_OUTPUT_BYTES, MAX_TOTAL_BYTES, SandboxJob
+from app.providers.sandbox.base import MAX_OUTPUT_BYTES, MAX_TOTAL_BYTES, SandboxJob, UnknownRun
 from app.providers.sandbox.spool import MAX_JOB_BYTES, MAX_READ_BYTES, SpoolSandbox
 
 R1, R2 = "1" * 32, "2" * 32
@@ -71,3 +71,31 @@ async def test_two_simultaneous_deposits_of_one_id_leave_exactly_one(spool: Path
     assert sum(r is None for r in results) == 1
     assert all(isinstance(r, ValueError) for r in results if r is not None)
     assert sorted(p.name for p in (spool / "jobs").iterdir()) == [f"{R1}.json"]
+
+
+async def test_job_taken_between_the_two_reads_is_not_unknown(
+    spool: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """N1 : le lanceur crée le journal et retire le travail entre la lecture du journal (absent) et
+    celle du travail : `poll` relit le journal au lieu de lever `UnknownRun`."""
+    sandbox = SpoolSandbox(spool)
+    await sandbox.submit(job())
+    real = SpoolSandbox._job
+    taken: list[bool] = []
+
+    def racing(self: SpoolSandbox, run_id: str) -> Path:
+        path = real(self, run_id)
+        if not taken:  # la première lecture du travail : le lanceur vient de le prendre
+            taken.append(True)
+            (spool / "out" / f"{run_id}.log").write_bytes(b"")
+            path.unlink()
+        return path
+
+    monkeypatch.setattr(SpoolSandbox, "_job", racing)
+    progress = await sandbox.poll(R1, 0)
+    assert progress.result is None and progress.output == ""  # en cours, pas inconnu
+
+
+async def test_unknown_job_is_still_unknown_after_the_second_read(spool: Path) -> None:
+    with pytest.raises(UnknownRun):
+        await SpoolSandbox(spool).poll(R2, 0)

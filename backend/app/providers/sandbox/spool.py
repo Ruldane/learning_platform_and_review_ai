@@ -129,7 +129,7 @@ class SpoolSandbox:
             raise UnknownRun(run_id) from None
         return await asyncio.to_thread(self._poll, run_id, max(offset, 0))
 
-    def _poll(self, run_id: str, offset: int) -> SandboxProgress:
+    def _poll(self, run_id: str, offset: int, retry: bool = True) -> SandboxProgress:
         result = _read_result(self._done(run_id))  # avant le journal : fin => journal complet
         try:
             with open(self._log(run_id), "rb") as handle:
@@ -140,7 +140,7 @@ class SpoolSandbox:
         if data is None:
             if result is not None:
                 return SandboxProgress(output="", next_offset=offset, result=result)
-            return self._queued(run_id, offset)
+            return self._queued(run_id, offset, retry)
         if result is None:
             data = _utf8_complete(data)
         return SandboxProgress(
@@ -149,10 +149,12 @@ class SpoolSandbox:
             result=result,
         )
 
-    def _queued(self, run_id: str, offset: int) -> SandboxProgress:
+    def _queued(self, run_id: str, offset: int, retry: bool) -> SandboxProgress:
         try:
             age = time.time() - self._job(run_id).stat().st_mtime
         except FileNotFoundError:
+            if retry:  # le lanceur a pris le travail entre les deux lectures : son journal existe
+                return self._poll(run_id, offset, retry=False)
             raise UnknownRun(run_id) from None
         if age > QUEUE_DEAD_S and not self._beating():
             dead = SandboxResult(status="error", exit_code=None, duration_ms=0, truncated=False)

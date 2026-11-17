@@ -173,9 +173,12 @@ class Runner:
                 run_id, str(exc) if isinstance(exc, JobRefused) else "travail illisible"
             )
         except Unsafe:
-            self.refuse(run_id, "Le bac s'arrête par précaution : réessaie dans un instant.")
+            # Une panne du volume (plein…) ne remplace jamais `Unsafe` : le lanceur s'arrête.
+            with contextlib.suppress(OSError):
+                self.refuse(run_id, "Le bac s'arrête par précaution : réessaie dans un instant.")
             _unlink(cancel)
-            self.write_done(run_id, SandboxResult("error", None, 0, False))
+            with contextlib.suppress(OSError):
+                self.write_done(run_id, SandboxResult("error", None, 0, False))
             raise
         _unlink(cancel)
         self.write_done(run_id, result)
