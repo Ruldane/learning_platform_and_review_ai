@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { settingsManifest } from "./manifest";
+import { OnboardingGate } from "./OnboardingGate";
 
 describe("settingsManifest", () => {
   it("déclare la section Réglages et ses cinq écrans, dans l'ordre de la navigation", () => {
@@ -42,6 +43,14 @@ describe("settingsManifest", () => {
       "reglages/disponibilite",
       "reglages/etude",
       "reglages/style",
+      "bienvenue",
     ]);
+  });
+
+  it("puts the first launch behind a gate, and out of the navigation", () => {
+    expect(settingsManifest.shell?.gate).toBe(OnboardingGate);
+    // /bienvenue est une route, jamais une entrée de navigation.
+    expect(settingsManifest.nav?.map((entry) => entry.path)).not.toContain("/bienvenue");
+    expect(settingsManifest.publicRoutes).toBeUndefined();
   });
 });

@@ -5,6 +5,8 @@ import { describe, expect, it } from "vitest";
 import { apiBaseUrl } from "@/shared/api/client";
 import type { FeatureManifest } from "@/shared/lib/feature";
 import { authApi, camille } from "@/test/authApi";
+import { settingsFixture } from "@/features/settings/fixtures";
+import { settingsApi } from "@/test/settingsApi";
 import { createQueryWrapper } from "@/test/queryWrapper";
 import { server } from "@/test/server";
 import { buildRoutes } from "./router";
@@ -22,6 +24,8 @@ function renderAt(path: string, me: typeof camille | null = camille) {
   const auth = authApi({ me });
   server.use(
     ...auth.handlers,
+    // La porte du premier lancement lit les réglages avant la mise en page.
+    ...settingsApi({ settings: settingsFixture }).handlers,
     http.get(`${apiBaseUrl}/api/v1/health`, () => HttpResponse.json({ status: "ok", checks: {} })),
   );
   const router = createMemoryRouter(buildRoutes(features), { initialEntries: [path] });

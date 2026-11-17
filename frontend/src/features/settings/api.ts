@@ -48,3 +48,33 @@ export async function fetchModels(signal?: AbortSignal) {
 export async function fetchSearchUsage(signal?: AbortSignal) {
   return unwrap(await api.GET("/research/usage", { signal }));
 }
+
+/** `GET /health` : l'état de chaque service, toujours 200 (le champ `status` dit si tout va bien). */
+export async function fetchHealth(signal?: AbortSignal) {
+  return unwrap(await api.GET("/health", { signal }));
+}
+
+/** `GET /health/embedding` : la progression du modèle d'embeddings (public, comme `/health`). */
+export async function fetchEmbeddingProgress(signal?: AbortSignal) {
+  return unwrap(await api.GET("/health/embedding", { signal }));
+}
+
+export interface ProfileImport {
+  cv: File;
+  linkedin?: File;
+}
+
+/**
+ * `POST /profile/import` (202) : le CV en PDF et, au choix, le profil LinkedIn en PDF, en
+ * multipart (le navigateur pose la frontière). 409 `capture_in_progress`, 413 `file_too_large`,
+ * 415 `unsupported_file_type`.
+ */
+export async function importProfile({ cv, linkedin }: ProfileImport) {
+  const form = new FormData();
+  form.append("cv", cv);
+  if (linkedin) form.append("linkedin", linkedin);
+  // Le contrat type un fichier comme une chaîne : le corps réel est le formulaire.
+  return unwrap(
+    await api.POST("/profile/import", { body: { cv: "" }, bodySerializer: () => form }),
+  );
+}

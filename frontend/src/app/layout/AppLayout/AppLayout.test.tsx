@@ -3,7 +3,9 @@ import { http, HttpResponse } from "msw";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { apiBaseUrl } from "@/shared/api/client";
+import { settingsFixture } from "@/features/settings/fixtures";
 import { authApi, camille } from "@/test/authApi";
+import { settingsApi } from "@/test/settingsApi";
 import { createQueryWrapper } from "@/test/queryWrapper";
 import { server } from "@/test/server";
 import { AppLayout } from "./AppLayout";
@@ -27,8 +29,13 @@ vi.mock("../../registry", async (importOriginal) => {
 });
 
 describe("AppLayout", () => {
-  // La porte de connexion (première feature) lit `me` avant de montrer la mise en page.
-  beforeEach(() => server.use(...authApi({ me: camille }).handlers));
+  // Les portes lisent `me` (connexion), puis les réglages (premier lancement) avant la mise en page.
+  beforeEach(() =>
+    server.use(
+      ...authApi({ me: camille }).handlers,
+      ...settingsApi({ settings: settingsFixture }).handlers,
+    ),
+  );
 
   it("rend le lien d'évitement, la navigation, le voyant et le contenu", async () => {
     server.use(
