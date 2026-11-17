@@ -75,10 +75,24 @@ describe("IdeSessionPage", () => {
     expect(calls.prefs[0]).toEqual({
       teacher_mode: "on_demand",
       idle_trigger: false,
+      teacher_style: "guide",
       session_cap: 5000,
       day_cap: 9000,
     });
     await waitFor(() => expect(auto).not.toBeChecked());
+  });
+
+  it("switches the teacher between guide and pair and keeps the other settings", async () => {
+    const { user, calls } = renderSession({ preferences: { session_cap: 5000, day_cap: 9000 } });
+    await user.click(await screen.findByRole("radio", { name: /Binôme/ }));
+    await waitFor(() => expect(calls.prefs).toHaveLength(1));
+    expect(calls.prefs[0]).toEqual({
+      teacher_mode: "auto",
+      idle_trigger: false,
+      teacher_style: "pair",
+      session_cap: 5000,
+      day_cap: 9000,
+    });
   });
 
   it("stops reading the output after repeated failures and says so", async () => {

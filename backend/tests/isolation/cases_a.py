@@ -85,4 +85,7 @@ CASES: dict[str, str] = {
     "app.features.activity.router": (
         "tests/isolation/test_cross_user_activity.py::test_activity_of_another_account_is_invisible"
     ),
+    "app.features.ide.router": (
+        "tests/features/ide/test_isolation.py::test_ide_isolation_between_users"
+    ),
 }

@@ -150,6 +150,13 @@ export const ide = {
     autoOff: "Sur demande",
     idle: "Proposer de l'aide après 30 s sans bouger de ligne",
     idleHint: "Désactivé par défaut : chaque appel coûte des jetons.",
+    style: {
+      title: "Façon d'aider",
+      guide: "Guide",
+      guideHint: "Il oriente par des indices de plus en plus précis et ne donne pas la réponse.",
+      pair: "Binôme",
+      pairHint: "Il réfléchit avec toi, propose des pistes et peut aller droit à la correction.",
+    },
     saveFailed: "Le réglage n'a pas pu être enregistré.",
     loading: "Réglages en cours de lecture…",
   },

@@ -109,8 +109,13 @@ describe("IdeSessionPage, asking the teacher", () => {
   it("lists the notes by kind, with hint levels, and draws annotations in the margin", async () => {
     renderSession({
       notes: [
-        noteOut({ id: "n1", content: "Regarde le signe." }),
-        noteOut({ id: "n2", content: "Le signe est faux.", created_at: "2026-11-17T10:06:00Z" }),
+        noteOut({ id: "n1", level: 2, content: "Regarde le signe." }),
+        noteOut({
+          id: "n2",
+          level: 3,
+          content: "Le signe est faux.",
+          created_at: "2026-11-17T10:06:00Z",
+        }),
         noteOut({
           id: "n3",
           kind: "annotation",
@@ -122,8 +127,9 @@ describe("IdeSessionPage, asking the teacher", () => {
     });
     await findEditor();
     const hints = await screen.findByRole("region", { name: "Indices" });
-    expect(within(hints).getByText(/Indice 1/)).toBeInTheDocument();
     expect(within(hints).getByText(/Indice 2/)).toBeInTheDocument();
+    expect(within(hints).getByText(/Indice 3/)).toBeInTheDocument();
+    expect(within(hints).queryByText(/Indice 1/)).not.toBeInTheDocument();
     expect(
       within(screen.getByRole("region", { name: "Dans la marge" })).getByText("Ici."),
     ).toBeVisible();

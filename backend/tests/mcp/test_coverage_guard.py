@@ -25,9 +25,6 @@ ACTION_BY_ROUTE = {action.route: action for _, action in ACTIONS}
 EXCLUDED = {key: why for feature in MCP_FEATURES for key, why in feature.excluded.items()}
 
 GRAPH_PREFIX = "graph:"
-# Graphes que 10.A3 ajoutera à `GRAPHS` : exclus d'avance, le garde les tolère jusque-là
-# (`test_pending_graphs_are_removed_once_they_exist` échoue à l'intégration pour le rappeler).
-PENDING_GRAPHS = frozenset({"ide_teacher", "ide_exercise"})
 # Des POST qui ne font que lire (recherche) : niveau 1, sinon un jeton en lecture seule ne
 # pourrait pas chercher dans la mémoire.
 READ_ONLY_POSTS = frozenset({"POST /memory/search"})
@@ -128,12 +125,8 @@ def test_no_stale_declaration() -> None:
     declared_graphs = {g.graph for feature in MCP_FEATURES for g in feature.graphs}
     assert declared_graphs <= set(GRAPHS)
     excluded_graphs = {k.removeprefix(GRAPH_PREFIX) for k in EXCLUDED if not _is_route_key(k)}
-    assert excluded_graphs <= set(GRAPHS) | PENDING_GRAPHS
+    assert excluded_graphs <= set(GRAPHS)
     assert not declared_graphs & excluded_graphs
-
-
-def test_pending_graphs_are_removed_once_they_exist() -> None:
-    assert PENDING_GRAPHS.isdisjoint(GRAPHS), "10.A3 est livré : vider PENDING_GRAPHS"
 
 
 def test_every_graph_declared_or_excluded() -> None:

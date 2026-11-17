@@ -92,12 +92,14 @@ MCP = FeatureMcp(
             "January dans l'interface, un agent ne règle pas son propre budget."
         ),
         "graph:ide_teacher": (
-            "Lancé seulement par POST /ide/sessions/{session_id}/teach, route exclue : coût "
-            "d'API, Claude écrit ses notes lui-même."
+            "Lancé seulement par POST /ide/sessions/{session_id}/teach (exclue : coût de l'API de "
+            "January). Claude fait ce travail lui-même par les notes "
+            "(POST /ide/sessions/{session_id}/notes)."
         ),
         "graph:ide_exercise": (
-            "Lancé seulement par POST /ide/exercises/generate, route exclue : coût d'API, "
-            "Claude écrit ses exercices lui-même."
+            "Lancé seulement par POST /ide/exercises/generate (exclue : coût de l'API de "
+            "January). Claude fait ce travail lui-même : il écrit ses exercices "
+            "(POST /ide/exercises) et ses notes (POST /ide/sessions/{session_id}/notes)."
         ),
     },
 )

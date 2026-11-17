@@ -21,7 +21,10 @@ function beforeText(note: Note, files: Record<string, string>): string | null {
   return excerpt(files[note.file_path], note.line_start, note.line_end ?? note.line_start);
 }
 
-/** Les notes dans l'ordre où elles ont été écrites ; chaque indice reçoit son rang. */
+/**
+ * Les notes dans l'ordre où elles ont été écrites. Un indice porte le niveau réel donné par le
+ * back (`level`) ; à défaut (note ancienne), son rang parmi les indices de la séance.
+ */
 export function toNoteViews(notes: Note[], files: Record<string, string>): NoteView[] {
   const ordered = [...notes].sort((a, b) => a.created_at.localeCompare(b.created_at));
   let hints = 0;
@@ -39,7 +42,7 @@ export function toNoteViews(notes: Note[], files: Record<string, string>): NoteV
       content: note.content,
       replacement: note.replacement,
       before: beforeText(note, files),
-      hintLevel: note.kind === "hint" ? hints : null,
+      hintLevel: note.kind === "hint" ? (note.level ?? hints) : null,
     };
   });
 }

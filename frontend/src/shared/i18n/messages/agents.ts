@@ -21,4 +21,6 @@ export const agents = {
   colleague: { name: "Futur collègue", role: "Juge le CV en pair" },
   demo_proponent: { name: "Avocat", role: "Défend l'idée" },
   demo_critic: { name: "Critique", role: "Challenge l'idée" },
+  professor: { name: "Professeur", role: "Guide le code pas à pas" },
+  exercise_writer: { name: "Auteur d'exercices", role: "Écrit des exercices sur mesure" },
 } as const;

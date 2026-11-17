@@ -23,7 +23,7 @@ export interface NoteView {
   replacement: string | null;
   /** Les lignes visées telles qu'elles sont dans le fichier ; `null` si elles n'y sont plus. */
   before: string | null;
-  /** Rang de l'indice parmi les indices de la séance (1, 2, 3…) ; `null` pour une autre note. */
+  /** Niveau de l'indice (donné par le professeur, sinon son rang) ; `null` pour une autre note. */
   hintLevel: number | null;
 }
 
@@ -86,4 +86,6 @@ export interface GenerateDraft {
 export interface PreferencesView {
   auto: boolean;
   idle: boolean;
+  /** `guide` oriente par des indices ; `pair` réfléchit avec toi et peut proposer la correction. */
+  style: "guide" | "pair";
 }

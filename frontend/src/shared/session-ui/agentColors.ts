@@ -31,6 +31,8 @@ export const AGENT_COLORS = {
   colleague: "#a000f0",
   demo_proponent: "#6834b2",
   demo_critic: "#b2345c",
+  professor: "#7a4a1d",
+  exercise_writer: "#2d6a4f",
 } as const;
 
 export type AgentSlug = keyof typeof AGENT_COLORS;

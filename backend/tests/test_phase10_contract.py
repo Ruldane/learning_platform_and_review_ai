@@ -128,6 +128,12 @@ async def test_every_new_route_is_501_until_filled(
     assert error["code"] == "not_implemented"
 
 
+def test_no_ide_route_is_a_stub_any_more() -> None:
+    """10.I : le flux A a rempli toute la feature `ide` ; seuls les bouchons `mcp` restent."""
+    ide = {(method, path) for method, path, _ in NEW_ROUTES if path.startswith("/ide/")}
+    assert ide <= LIVE
+
+
 def test_contract_lists_phase10_paths() -> None:
     paths = json.loads(CONTRACT.read_text(encoding="utf-8"))["paths"]
     patterns = [

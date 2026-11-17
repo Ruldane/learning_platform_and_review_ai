@@ -38,6 +38,22 @@ describe("toNoteViews", () => {
     ]);
   });
 
+  it("shows the real level of a hint when the teacher gave one", () => {
+    const views = toNoteViews(
+      [
+        note({ id: "a", level: 3, created_at: "2026-11-17T10:05:00Z" }),
+        note({ id: "b", level: 1, created_at: "2026-11-17T10:06:00Z" }),
+        note({ id: "c", kind: "explanation", level: 2, created_at: "2026-11-17T10:07:00Z" }),
+      ],
+      {},
+    );
+    expect(views.map((view) => [view.id, view.hintLevel])).toEqual([
+      ["a", 3],
+      ["b", 1],
+      ["c", null],
+    ]);
+  });
+
   it("names the author, with Claude's own label when there is one", () => {
     const views = toNoteViews(
       [note({ id: "a" }), note({ id: "b", author: "claude", author_label: "Claude Code" })],

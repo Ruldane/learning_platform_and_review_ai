@@ -47,6 +47,7 @@ export const noteOut = (over: Over = {}) => ({
   replacement: null,
   base_hash: null,
   reference_note_id: null,
+  level: null,
   created_at: "2026-11-17T10:05:00Z",
   ...over,
 });
@@ -63,6 +64,7 @@ export const usageOut = (over: Over = {}) => ({
 export const preferencesOut = (over: Over = {}) => ({
   teacher_mode: "auto",
   idle_trigger: false,
+  teacher_style: "guide",
   session_cap: 100_000,
   day_cap: 300_000,
   ...over,
