@@ -2,6 +2,7 @@
 évoque un secret force une décision : la marquer `export: False` dans le modèle, ou la déclarer
 relue dans `REVIEWED_NOT_SECRET`."""
 
+import pytest
 from sqlalchemy import Column, MetaData, String, Table, Text
 
 import app.db.models  # noqa: F401  (enregistre les modèles sur Base.metadata)
@@ -64,6 +65,68 @@ def test_the_secrets_of_the_application_are_marked_in_the_models() -> None:
     assert Base.metadata.tables["auth_sessions"].info == {"export": False}
     assert "auth_sessions" not in {table.name for table in user_tables()}
     assert "encrypted_key" not in [c.name for c in exported_columns(api_keys)]
+
+
+def test_the_search_key_fingerprint_is_marked_not_exported() -> None:
+    """Dérivée d'un secret (empreinte de la clé Brave) : aucune valeur pour la portabilité, et
+    elle permettrait de vérifier une clé devinée."""
+    usage = Base.metadata.tables["search_usage"]
+    assert usage.c.key_fingerprint.info == {"export": False}
+    assert "key_fingerprint" not in [c.name for c in exported_columns(usage)]
+    assert "search_usage.key_fingerprint" not in REVIEWED_NOT_SECRET
+
+
+@pytest.mark.parametrize("mark", ["false", "False", 0, None, "no", ""])
+def test_only_the_boolean_false_leaves_a_column_out_of_the_export(mark: object) -> None:
+    metadata = MetaData()
+    table = _table(metadata, "users", Column("refresh_token", Text, info={"export": mark}))
+    assert [c.name for c in exported_columns(table)] == ["id", "user_id", "refresh_token"]
+    assert unreviewed_secret_columns(metadata) == ["users.refresh_token"]  # la garde le voit
+
+
+def test_a_table_marked_with_a_text_is_still_exported() -> None:
+    metadata = MetaData()
+    Table(
+        "mcp_tokens",
+        metadata,
+        Column("id", String(36), primary_key=True),
+        Column("user_id", String(36)),
+        Column("token_hash", String(64)),
+        info={"export": "false"},
+    )
+    assert unreviewed_secret_columns(metadata) == ["mcp_tokens.token_hash"]
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "credential_blob",
+        "private_key_pem",
+        "api_credentials",
+        "device_fingerprint",
+        "password_salt",
+        "otp",
+        "totp_otp_code",
+        "auth_header",
+        "oauth_token",
+        "jwt",
+        "refresh_jwt",
+        "bearer",
+        "passphrase",
+        "signature",
+    ],
+)
+def test_the_guard_recognises_a_secret_looking_name(name: str) -> None:
+    metadata = MetaData()
+    _table(metadata, "users", Column(name, Text))
+    assert unreviewed_secret_columns(metadata) == [f"users.{name}"]
+
+
+@pytest.mark.parametrize("name", ["author", "footprint", "label", "authority", "created_at"])
+def test_the_guard_ignores_a_harmless_name(name: str) -> None:
+    metadata = MetaData()
+    _table(metadata, "notes", Column(name, Text))
+    assert unreviewed_secret_columns(metadata) == []
 
 
 def test_a_marked_column_is_left_out_of_the_export_columns() -> None:

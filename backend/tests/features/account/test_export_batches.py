@@ -1,9 +1,11 @@
 """L'export lit les tables par lots (mémoire bornée) et ne casse jamais sur un type non JSON."""
 
 import base64
+import io
 import uuid
-from collections.abc import AsyncIterator, Sequence
-from datetime import timedelta
+import zipfile
+from collections.abc import AsyncGenerator, AsyncIterator, Sequence
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -144,3 +146,22 @@ async def test_export_survives_a_table_with_binary_and_decimal_columns(
     archive = await export_archive(client)
     [row] = archive.table("odd_things")
     assert row["blob"] == base64.b64encode(b"\x00\x01").decode() and row["price"] == "3.10"
+
+
+async def test_write_table_closes_the_batches_when_the_consumer_fails() -> None:
+    """Un lot que l'export ne sait pas écrire : le flux de lecture est fermé sur-le-champ, pas au
+    ramasse-miettes (il tiendrait la session de la requête ouverte)."""
+    closed: list[bool] = []
+
+    async def batches() -> AsyncGenerator[list[dict[str, Any]], None]:
+        try:
+            yield [{"id": "1", "inconnu": object()}]
+            yield [{"id": "2"}]
+        finally:
+            closed.append(True)
+
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as zf:
+        with pytest.raises(TypeError):
+            await export_module._write_table(zf, "t", batches(), datetime.now(UTC))
+        assert closed == [True]

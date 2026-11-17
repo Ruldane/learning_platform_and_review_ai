@@ -5,7 +5,9 @@ y compris celle qu'une feature ajoutera demain, sans rien changer ici. **Ce qui 
 déclare dans le modèle**, là où la colonne naît : `info={"export": False}` sur la colonne
 (`api_keys.encrypted_key`) ou sur la table (`__table_args__ = {"info": {"export": False}}`,
 `auth_sessions`). Une garde (`unreviewed_secret_columns`) force cette décision pour toute colonne
-dont le nom évoque un secret. « Tout supprimer » n'exclut rien : `all_user_tables`."""
+dont le nom évoque un secret (limite : un secret rangé dans une colonne JSON n'a pas de nom à
+repérer, seule la revue le voit, D185 n° 10 b). « Tout supprimer » n'exclut rien :
+`all_user_tables`."""
 
 import base64
 import re
@@ -25,7 +27,9 @@ EXPORT = "export"  # clé de `info` : `False` écarte la colonne ou la table de 
 # Un nom de colonne qui ressemble à un secret oblige à choisir : `info={"export": False}`, ou
 # l'écrire ici avec la raison de n'être pas un secret.
 SECRET_NAME = re.compile(
-    r"key|token|secret|hash|password|passwd|cookie|credential|cipher|encrypted|salt|nonce", re.I
+    r"key|token|secret|hash|password|passwd|cookie|credential|cipher|encrypted|salt|nonce"
+    r"|private|fingerprint|bearer|passphrase|signature|(?:^|_)(?:otp|auth|jwt|pwd)(?:_|$)",
+    re.I,
 )
 REVIEWED_NOT_SECRET = frozenset(
     {
@@ -38,7 +42,7 @@ REVIEWED_NOT_SECRET = frozenset(
         "resources.url_hash",
         "web_cache.key_hash",
         "web_queries.query_hash",
-        "search_usage.key_fingerprint",  # empreinte d'une clé de recherche : jamais la clé
+        "plan_versions.base_fingerprint",  # empreinte des lignes du plan (détecte un plan changé)
         # Clés de rangement : un nom de fichier du stockage ou un repère de ligne.
         "documents.storage_key",
         "cv_versions.storage_key",
@@ -59,7 +63,9 @@ REVIEWED_NOT_SECRET = frozenset(
 
 
 def _exported(info: Mapping[Any, Any]) -> bool:
-    return bool(info.get(EXPORT, True))
+    """Seul `False` (le booléen) écarte : `"false"`, `0` ou `None` n'écartent rien, et la garde
+    voit alors la colonne."""
+    return info.get(EXPORT, True) is not False
 
 
 def all_user_tables() -> list[Table]:

@@ -4,7 +4,7 @@ Exception documentée à `UserScopedRepository` : l'export parcourt **toutes** l
 `user_id` (une table de plus n'y change rien), donc il n'a pas de modèle fixe ; chaque lecture
 filtre pourtant sur `user_id`, toujours."""
 
-from collections.abc import AsyncIterator, Sequence
+from collections.abc import AsyncGenerator, Sequence
 from typing import Any
 
 from sqlalchemy import Column, Select, Table, select
@@ -28,7 +28,7 @@ class AccountRepository:
 
     async def batches(
         self, table: Table, columns: Sequence[Column[Any]] | None, size: int
-    ) -> AsyncIterator[list[dict[str, Any]]]:
+    ) -> AsyncGenerator[list[dict[str, Any]], None]:
         """Les lignes de `user_id` par lots d'au plus `size` : jamais plus d'un lot en mémoire,
         quel que soit le volume de la table."""
         stream = await self.session.stream(

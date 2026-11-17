@@ -40,7 +40,9 @@ from app.db.models.agents import AgentSession
 logger = logging.getLogger(__name__)
 
 STOPPING_CODE = "server_stopping"  # reconnu par `SessionLauncher`
+ACCOUNT_DELETING_CODE = "account_deleting"
 _STOPPING = "Le serveur s'arrête : réessaie dans un instant."
+_DELETING = "Le compte est en cours de suppression : aucune session ne démarre."
 
 
 @dataclass(eq=False)
@@ -72,6 +74,7 @@ class SessionRunner:
         self._tasks: dict[str, asyncio.Task[None]] = {}
         self._gates: dict[str, _Gate] = {}
         self._stopping = False
+        self._deleting: set[str] = set()  # comptes dont « Tout supprimer » est en cours
 
     # --- Démarrage et reprise ------------------------------------------------------------
 
@@ -85,6 +88,7 @@ class SessionRunner:
     ) -> str:
         """Valide l'entrée, crée la session `running`, lance sa tâche et rend la main aussitôt."""
         self._refuse_if_stopping()  # avant toute écriture : rien à reprendre au démarrage
+        self._refuse_if_deleting(user_id)
         spec = self._ctx.graphs.get(graph)
         if spec is None:
             raise unknown_graph(graph)
@@ -114,6 +118,7 @@ class SessionRunner:
         reprise d'une pause (`interrupt_id=None`) sur le dernier checkpoint."""
         async with self._control(session_id):
             self._refuse_if_stopping()  # avant `claim_resume` : la question reste en attente
+            self._refuse_if_deleting(user_id)
             command = await control.claim_resume(self._db, user_id, session_id, interrupt_id, value)
             await self._settle(session_id)  # la tâche qui a posé la question finit d'en publier
             self._launch(user_id, session_id, command)
@@ -164,6 +169,23 @@ class SessionRunner:
         for session_id in session_ids:
             await self._ctx.checkpointer.adelete_thread(session_id)
 
+    @asynccontextmanager
+    async def refusing_starts(self, user_id: str) -> AsyncIterator[None]:
+        """Pendant « Tout supprimer » : aucune session de ce compte ne démarre ni ne reprend
+        (`start` et `resume` rendent 409 `account_deleting`), qui que la lance (une autre
+        session, le planificateur, un autre onglet). Levé à la sortie, réussie ou non : un
+        compte dont la suppression a échoué travaille de nouveau. Propre au processus."""
+        self._deleting.add(user_id)
+        try:
+            yield
+        finally:
+            self._deleting.discard(user_id)
+
+    async def open_sessions(self, user_id: str) -> list[str]:
+        """Les sessions ouvertes (`running`, `waiting_user`, `paused`) de ce compte."""
+        async with self._db() as db:
+            return await SessionRepository(db, user_id).open_ids(control.OPEN)
+
     # --- Tâches --------------------------------------------------------------------------
 
     def is_active(self, session_id: str) -> bool:
@@ -182,6 +204,10 @@ class SessionRunner:
     def _refuse_if_stopping(self) -> None:
         if self._stopping:
             raise AppError(STOPPING_CODE, _STOPPING, 503)
+
+    def _refuse_if_deleting(self, user_id: str) -> None:
+        if user_id in self._deleting:
+            raise AppError(ACCOUNT_DELETING_CODE, _DELETING, 409)
 
     @asynccontextmanager
     async def _control(self, session_id: str) -> AsyncIterator[None]:

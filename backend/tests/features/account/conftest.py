@@ -8,10 +8,12 @@ import httpx
 import pytest
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
+from sqlalchemy import Column, String, Table
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.config import Settings
 from app.core.providers import MemoryProviders, PublishingProviders, ResearchProviders
+from app.db.base import Base
 from app.main import create_app
 
 
@@ -46,3 +48,21 @@ async def google_app(
         transport = httpx.ASGITransport(app=app, raise_app_exceptions=False)
         async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
             yield GoogleApp(app, client)
+
+
+@pytest.fixture
+async def extra_table(db_engine: AsyncEngine) -> AsyncIterator[Table]:
+    """Une table ajoutée demain : une colonne `user_id`, rien d'autre à déclarer."""
+    table = Table(
+        "future_things",
+        Base.metadata,
+        Column("id", String(36), primary_key=True),
+        Column("user_id", String(36)),
+        Column("label", String(40)),
+    )
+    async with db_engine.begin() as conn:
+        await conn.run_sync(table.create)
+    yield table
+    async with db_engine.begin() as conn:
+        await conn.run_sync(table.drop)
+    Base.metadata.remove(table)

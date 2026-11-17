@@ -15,7 +15,8 @@ import os
 import tempfile
 import time
 import zipfile
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator, AsyncIterator
+from contextlib import aclosing
 from datetime import UTC, datetime
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -76,7 +77,7 @@ def _encode(rows: list[dict[str, Any]], *, first: bool) -> bytes:
 async def _write_table(
     zf: zipfile.ZipFile,
     name: str,
-    batches: AsyncIterator[list[dict[str, Any]]],
+    batches: AsyncGenerator[list[dict[str, Any]], None],
     now: datetime,
 ) -> int:
     """`tables/<name>.json` : un tableau JSON écrit **au fil** des lots dans l'entrée du zip (une
@@ -84,11 +85,12 @@ async def _write_table(
     out = zf.open(_entry(f"tables/{name}.json", now), "w")
     count = 0
     try:
-        await asyncio.to_thread(out.write, b"[")
-        async for batch in batches:
-            await asyncio.to_thread(out.write, _encode(batch, first=count == 0))
-            count += len(batch)
-        await asyncio.to_thread(out.write, b"\n]\n")
+        async with aclosing(batches):  # fermé aussi si l'écriture échoue (la session est rendue)
+            await asyncio.to_thread(out.write, b"[")
+            async for batch in batches:
+                await asyncio.to_thread(out.write, _encode(batch, first=count == 0))
+                count += len(batch)
+            await asyncio.to_thread(out.write, b"\n]\n")
     finally:
         await asyncio.to_thread(out.close)
     return count

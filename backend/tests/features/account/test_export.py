@@ -167,24 +167,6 @@ async def test_export_files_of_other_user_absent(
     assert OTHER not in archive.text()
 
 
-@pytest.fixture
-async def extra_table(db_engine: AsyncEngine) -> AsyncIterator[Table]:
-    """Une table ajoutée demain : une colonne `user_id`, rien d'autre à déclarer."""
-    table = Table(
-        "future_things",
-        Base.metadata,
-        Column("id", String(36), primary_key=True),
-        Column("user_id", String(36)),
-        Column("label", String(40)),
-    )
-    async with db_engine.begin() as conn:
-        await conn.run_sync(table.create)
-    yield table
-    async with db_engine.begin() as conn:
-        await conn.run_sync(table.drop)
-    Base.metadata.remove(table)
-
-
 async def test_export_new_table_needs_no_change(
     client: httpx.AsyncClient, app: FastAPI, db_engine: AsyncEngine, extra_table: Table
 ) -> None:
