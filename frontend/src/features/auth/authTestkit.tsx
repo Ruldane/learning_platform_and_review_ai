@@ -13,8 +13,8 @@ function Where() {
 
 /**
  * Monte la feature `auth` seule : ses routes publiques, et une racine `/` derrière la porte avec
- * `home` en contenu. Le cache de requêtes garde sa durée de vie par défaut et sa fraîcheur de 15 s (comme l’application) :
- * un test de redirection ne doit pas dépendre d'un cache vidé à l'instant.
+ * `home` en contenu. Le cache de requêtes garde sa durée de vie par défaut et sa fraîcheur de 15 s
+ * (comme l’application) : un test de redirection ne doit pas dépendre d'un cache vidé à l'instant.
  */
 export function renderAuth(initial: string, home: ReactNode = <Where />) {
   const client = new QueryClient({

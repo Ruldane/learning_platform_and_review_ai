@@ -9,7 +9,9 @@ interface LoginCardProps {
   errorMessage?: string | null;
 }
 
-/** La carte de connexion : un lien « Se connecter avec Google » et, au besoin, la raison d'un échec. */
+/**
+ * La carte de connexion : un lien « Se connecter avec Google » et, au besoin, la raison d'un échec.
+ */
 export function LoginCard({ href, errorMessage }: LoginCardProps) {
   return (
     <section className="flex flex-col gap-4 rounded-xl border border-border bg-card px-6 py-8">

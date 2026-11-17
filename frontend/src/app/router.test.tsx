@@ -42,7 +42,8 @@ describe("buildRoutes", () => {
   });
 
   it("public routes render without layout or gates", async () => {
-    // Sans session : la porte renverrait vers `/connexion`, mais une route publique ne la traverse pas.
+    // Sans session : la porte renverrait vers `/connexion`, mais une route publique ne la traverse
+    // pas.
     const { auth } = renderAt("/ouverte", null);
     expect(await screen.findByRole("heading", { name: "Page ouverte" })).toBeInTheDocument();
     expect(screen.queryByRole("navigation")).toBeNull();
