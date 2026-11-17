@@ -155,6 +155,13 @@ async def get_project(
     row = await ProjectRepository(db, user_id).get_fresh(project_id)
     if row is None:
         raise project_not_found()
+    return await project_out_live(db, user_id, row)
+
+
+async def project_out_live(db: AsyncSession, user_id: str, row: Project) -> ProjectOut:
+    """Le projet tel que `GET /projects/{id}` le rend, `session_id` compris : un projet validé dont
+    la session des brouillons tourne la donne. Pour les routes qui rendent le projet après une
+    retouche."""
     open_sessions = await list_open_sessions_by_subject(
         db, user_id, graph=REVIEW_GRAPH, subject_type=SUBJECT
     )

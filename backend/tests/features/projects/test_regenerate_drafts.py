@@ -127,6 +127,20 @@ async def test_validated_project_shows_the_session_of_its_drafts_while_it_runs(
     assert listed["session_id"] is None
 
 
+async def test_profile_entry_answer_shows_the_session_of_its_drafts(
+    env: Env, client: httpx.AsyncClient
+) -> None:
+    """La réponse du clic « ajouter au profil » rend le projet comme `GET /projects/{id}` (M4)."""
+    await env.add_profile(3)
+    pid = await validated(env)
+    session_id = (await post(client, pid)).json()["session_id"]
+    entry = {"name": "Suivi de lecture", "description": "Une API de suivi.", "achievements": []}
+    r = await client.post(f"{API}/{pid}/profile-entry", json=entry)
+    assert r.status_code == 200, r.text
+    assert r.json()["session_id"] == session_id
+    assert (await client.get(f"{API}/{pid}")).json()["session_id"] == session_id
+
+
 async def test_regenerate_drafts_of_another_users_project_is_404(
     env: Env, app: FastAPI, client: httpx.AsyncClient
 ) -> None:

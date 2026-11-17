@@ -73,8 +73,14 @@ async def test_costs_window_changes_what_is_counted(
 async def test_costs_days_not_in_windows_is_422(client: httpx.AsyncClient, days: str) -> None:
     r = await client.get(API, params={"days": days})
     assert r.status_code == 422
-    assert r.json()["error"]["details"] == {"fields": ["days"]}
-    assert f"={days}" not in r.text and (not days or days not in r.json()["error"]["message"])
+    # Le corps entier est connu : la moindre valeur recopiée, où que ce soit, le ferait échouer.
+    assert r.json() == {
+        "error": {
+            "code": "validation_error",
+            "message": "Requête invalide : vérifie les champs signalés.",
+            "details": {"fields": ["days"]},
+        }
+    }
 
 
 async def test_costs_needs_a_user(client_google_mode: httpx.AsyncClient) -> None:
