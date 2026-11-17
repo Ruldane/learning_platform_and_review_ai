@@ -35,6 +35,7 @@ from app.features.program.schemas import (
     WeekOut,
 )
 from app.features.program.service.diff import ModuleRow, ProgramRows, TaskRow, WeekRow
+from app.features.settings.service import scheduled_users
 
 DAYS_PER_WEEK = 7
 
@@ -272,6 +273,8 @@ async def program_of_module(db: AsyncSession, user_id: str, module_id: str) -> s
 
 
 async def list_validated_programs(db: AsyncSession) -> builtins.list[tuple[str, str]]:
-    """`(utilisateur, programme)` des programmes validés de tous les utilisateurs : lecture sans
-    `user_id` réservée à la tâche planifiée des leçons (D91), identifiants seulement."""
-    return await validated_programs(db)
+    """`(utilisateur, programme)` des programmes validés des comptes dont le premier lancement est
+    fini (la règle de `GET /settings`, D183, D197) : lecture sans `user_id` réservée aux tâches
+    planifiées (leçons, énoncés, bilan hebdomadaire ; D91), identifiants seulement."""
+    onboarded = set(await scheduled_users(db))
+    return [pair for pair in await validated_programs(db) if pair[0] in onboarded]

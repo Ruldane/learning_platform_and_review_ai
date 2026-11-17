@@ -19,7 +19,7 @@ from app.core.errors import AppError
 from app.features.brief.service.ensure import ensure_today
 from app.features.brief.service.rules import brief_day, brief_due
 from app.features.brief.service.runtime import BriefRuntime
-from app.features.ledger.service.ledger import Claim, claim, fail, finish, user_ids
+from app.features.ledger.service.ledger import Claim, claim, fail, finish, scheduled_user_ids
 from app.features.ledger.service.periods import brief_moment, day_period
 from app.features.settings.service import SettingsService
 
@@ -108,7 +108,7 @@ async def _morning(rt: BriefRuntime, user_id: str, now: datetime) -> bool:
 async def run_daily_briefs(rt: BriefRuntime, now: datetime) -> int:
     """Un passage de la tâche planifiée ; rend le nombre de briefs créés."""
     async with rt.session_factory() as db:
-        users = await user_ids(db)
+        users = await scheduled_user_ids(db)
     created = 0
     for user_id in users:
         try:

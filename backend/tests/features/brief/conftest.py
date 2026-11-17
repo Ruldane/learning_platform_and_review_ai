@@ -12,6 +12,7 @@ from fastapi import FastAPI
 
 from app.features.brief.service.runtime import BriefRuntime
 from tests.features.lessons.conftest import RecordingLauncher
+from tests.support.onboarding import finish_first_launch
 
 NOW = datetime(2026, 11, 17, 10, 0, tzinfo=UTC)  # mardi 11 h à Paris ; brief réglé à 7 h
 TODAY = date(2026, 11, 17)
@@ -36,10 +37,12 @@ class Env:
 
 
 @pytest.fixture
-def env(client: httpx.AsyncClient, app: FastAPI) -> Env:
+async def env(client: httpx.AsyncClient, app: FastAPI) -> Env:
     launcher = RecordingLauncher(app.state.session_factory)
     app.state.daily.brief.launcher = launcher
     found = Env(app, app.state.local_user_id, launcher)
+    # Le planificateur ne traite que les comptes dont le premier lancement est fini (D197).
+    await finish_first_launch(app.state.session_factory, found.user_id)
     found.at(NOW)
     return found
 

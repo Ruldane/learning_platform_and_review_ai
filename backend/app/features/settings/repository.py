@@ -2,14 +2,47 @@ import json
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import String, case, exists, func, literal, or_, select, update
+from sqlalchemy import ColumnElement, String, and_, case, exists, func, literal, or_, select, update
 from sqlalchemy.dialects.sqlite import insert
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import InstrumentedAttribute
 
 from app.db.base import new_id
-from app.db.models.accounts import LOCAL_CLAIM_CLOSED, ApiKey, UserSettingsRow
+from app.db.models.accounts import LOCAL_CLAIM_CLOSED, ApiKey, User, UserSettingsRow
 from app.db.models.agents import LlmCall
 from app.db.models.learning import Goal
 from app.db.repository import UserScopedRepository
+
+
+def _prior_data(user_id: InstrumentedAttribute[str] | str) -> ColumnElement[bool]:
+    """Le compte a déjà une clé d'API, un objectif ou un appel de modèle (D183) : une seule
+    définition, pour un compte (`has_prior_data`) comme pour tous (`onboarded_user_ids`)."""
+    key = select(ApiKey.id).where(ApiKey.user_id == user_id)
+    goal = select(Goal.id).where(Goal.user_id == user_id)
+    call = select(LlmCall.id).where(LlmCall.user_id == user_id)
+    return or_(exists(key), exists(goal), exists(call))
+
+
+async def onboarded_user_ids(session: AsyncSession) -> list[str]:
+    """Les comptes dont le premier lancement est fini, **la même règle que `GET /settings`**
+    (`SettingsService.get`, D183) : avec une ligne de réglages, sa clé `onboarding_done` vaut vrai ;
+    sans ligne, le compte est fait s'il a déjà des données (`_prior_data`). SEULE lecture sans
+    `user_id` des réglages (comme D18, D91), réservée aux tâches planifiées ; ne lit que des
+    identifiants et n'écrit rien."""
+    mine = UserSettingsRow.user_id == User.id
+    done = exists(
+        select(UserSettingsRow.id).where(
+            mine,
+            func.coalesce(func.json_extract(UserSettingsRow.data, "$.onboarding_done"), 0) == 1,
+        )
+    )
+    has_row = exists(select(UserSettingsRow.id).where(mine))
+    stmt = (
+        select(User.id)
+        .where(or_(done, and_(~has_row, _prior_data(User.id))))
+        .order_by(User.created_at, User.id)
+    )
+    return list((await session.execute(stmt)).scalars())
 
 
 class UserSettingsRepository(UserScopedRepository[UserSettingsRow]):
@@ -72,10 +105,7 @@ class UserSettingsRepository(UserScopedRepository[UserSettingsRow]):
         """Vrai si le compte a déjà une clé d'API enregistrée, un objectif ou un appel de modèle
         (clé seulement dans `.env`) : il s'en est déjà servi, il n'a pas de premier lancement à
         faire (P20)."""
-        key = select(ApiKey.id).where(ApiKey.user_id == self.user_id)
-        goal = select(Goal.id).where(Goal.user_id == self.user_id)
-        call = select(LlmCall.id).where(LlmCall.user_id == self.user_id)
-        found = await self.session.execute(select(or_(exists(key), exists(goal), exists(call))))
+        found = await self.session.execute(select(_prior_data(self.user_id)))
         return bool(found.scalar())
 
     async def initialize(self, data: dict[str, Any]) -> dict[str, Any]:

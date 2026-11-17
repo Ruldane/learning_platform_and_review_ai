@@ -27,7 +27,7 @@ from app.features.ledger.service.ledger import (
     finish,
     last_done,
     reopen,
-    user_ids,
+    scheduled_user_ids,
 )
 from app.features.ledger.service.periods import RADAR_TIME, week_period
 from app.features.radar.repository import RadarRunRepository
@@ -169,7 +169,7 @@ async def _fail(rt: RadarRuntime, user_id: str, got: Claim, now: datetime, exc: 
 async def run_weekly_radar(rt: RadarRuntime, now: datetime) -> int:
     """Un passage de la tâche planifiée ; rend le nombre de relevés lancés."""
     async with rt.session_factory() as db:
-        users = await user_ids(db)
+        users = await scheduled_user_ids(db)
     launched = 0
     for user_id in users:
         try:

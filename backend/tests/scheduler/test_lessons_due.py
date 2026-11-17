@@ -16,6 +16,7 @@ from tests.features.lessons.conftest import (
     draft_program,
     validate,
 )
+from tests.support.onboarding import finish_first_launch, hold_first_launch
 
 
 async def test_lessons_due_runs_each_validated_program(
@@ -50,3 +51,20 @@ async def test_lessons_due_runs_each_validated_program(
     monkeypatch.setattr(lessons_due, "ensure_lessons", flaky)
     await lessons_due.run(job_ctx)
     assert "RuntimeError" in caplog.text and "January" not in caplog.text
+
+
+async def test_lessons_due_waits_for_the_first_launch(
+    program_rt: ProgramRuntime, job_ctx: JobContext, launcher: RecordingLauncher
+) -> None:
+    """D197 : le compte au premier lancement non fini (même avec un programme validé) ne lance
+    aucune leçon ; il est traité au passage qui suit la fin du premier lancement."""
+    await hold_first_launch(program_rt.session_factory, ME)
+    launcher.refuse = True
+    program = await draft_program(program_rt, ME)
+    await validate(program_rt, program, ME)
+    launcher.refuse = False
+    await lessons_due.run(job_ctx)
+    assert launcher.started == []
+    await finish_first_launch(program_rt.session_factory, ME)
+    await lessons_due.run(job_ctx)
+    assert [entry[1]["program_id"] for entry in launcher.started] == [program.program_id]

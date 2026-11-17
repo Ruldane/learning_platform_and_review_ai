@@ -27,14 +27,17 @@ from tests.features.cv.reviews_support import ready_posting, ready_template, val
 from tests.features.cv.templates_support import ME
 from tests.features.lessons.conftest import OTHER, RecordingLauncher
 from tests.features.program.support import Factory
+from tests.support.onboarding import finish_first_launch
 
 NOW = datetime(2026, 11, 16, 9, 0, tzinfo=UTC)
 
 
-async def _users(factory: Factory, *ids: str) -> None:
+async def _users(factory: Factory, *ids: str, onboarded: bool = True) -> None:
     async with factory() as db:
         db.add_all([User(id=one, user_id=one) for one in ids])
         await db.commit()
+    if onboarded:  # le planificateur ne traite que les comptes au premier lancement fini (D197)
+        await finish_first_launch(factory, *ids)
 
 
 async def _done(factory: Factory, user: str, at: datetime) -> None:
@@ -78,6 +81,19 @@ async def test_ats_refresh_first_run_and_once_a_day(
     assert await run_ats_refresh(db_session_factory, launcher, NOW) == 2
     assert await run_ats_refresh(db_session_factory, launcher, NOW + timedelta(hours=6)) == 0
     assert len(launcher.started) == 2
+
+
+async def test_ats_refresh_waits_for_the_first_launch(
+    db_session_factory: Factory, launcher: RecordingLauncher
+) -> None:
+    """D197 : un compte neuf ne prend aucun passage ni session web ; il est traité au premier
+    passage qui suit la fin de son premier lancement."""
+    await _users(db_session_factory, ME, onboarded=False)
+    assert await run_ats_refresh(db_session_factory, launcher, NOW) == 0
+    assert launcher.started == [] and await _rows(db_session_factory, ME) == []
+    await finish_first_launch(db_session_factory, ME)
+    assert await run_ats_refresh(db_session_factory, launcher, NOW + timedelta(minutes=5)) == 1
+    assert [row.status for row in await _rows(db_session_factory, ME)] == ["done"]
 
 
 async def test_ats_refresh_launch_failure_recorded(

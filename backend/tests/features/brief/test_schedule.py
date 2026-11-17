@@ -2,12 +2,14 @@
 jour local, sautée si le brief a été créé à l'ouverture, reprise après une panne ; une panne pour
 un compte n'arrête pas les autres. Règle `brief_due` les jours de changement d'heure."""
 
+import logging
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from zoneinfo import ZoneInfo
 
 import pytest
 
+from app.db.models.learning import Goal
 from app.features.brief.service import schedule
 from app.features.brief.service.ensure import ensure_today
 from app.features.brief.service.rules import brief_day, brief_due
@@ -18,6 +20,7 @@ from app.scheduler.jobs import daily_brief
 from app.scheduler.registry import JOBS
 from tests.features.brief.conftest import OTHER, Env
 from tests.features.brief.support import add_user, brief_sessions, briefs, jobs
+from tests.support.onboarding import finish_first_launch
 
 PARIS = ZoneInfo("Europe/Paris")
 OPENING = datetime(2026, 11, 17, 5, 30, tzinfo=UTC)  # 06 h 30 à Paris, avant l'heure du brief
@@ -111,6 +114,50 @@ async def test_one_account_failing_does_not_stop_the_others(
     monkeypatch.setattr(schedule, "ensure_today", selective)
     assert await run_daily_briefs(rt, AFTER) == 1
     assert await briefs(env) == [] and len(await briefs(env, OTHER)) == 1
+
+
+async def test_job_waits_for_the_first_launch_then_works(env: Env, rt: BriefRuntime) -> None:
+    """D197 : un compte dont le premier lancement n'est pas fini ne prend aucun passage, ne lance
+    aucune session ; le premier passage après la fin du premier lancement le traite."""
+    await add_user(env, OTHER, onboarded=False)
+    await finish_first_launch(rt.session_factory, OTHER, done=False)  # la ligne `false` existe
+    env.at(AFTER)
+    assert await run_daily_briefs(rt, AFTER) == 1  # seul le compte au premier lancement fini
+    assert await briefs(env, OTHER) == [] and await jobs(env, OTHER) == []
+    assert env.launcher.started == [("daily_brief", {"brief_id": (await briefs(env))[0].id})]
+    await finish_first_launch(rt.session_factory, OTHER)  # il termine l'accueil
+    later = AFTER + timedelta(minutes=10)
+    env.at(later)
+    assert await run_daily_briefs(rt, later) == 1
+    [brief] = await briefs(env, OTHER)
+    [job] = await jobs(env, OTHER)
+    assert (job.status, job.ref_id, job.attempts) == ("done", brief.id, 1)
+
+
+async def test_job_skips_a_new_account_without_settings_quietly(
+    env: Env, rt: BriefRuntime, caplog: pytest.LogCaptureFixture
+) -> None:
+    caplog.set_level(logging.DEBUG)
+    await add_user(env, OTHER, onboarded=False)  # ni ligne de réglages ni donnée
+    env.at(AFTER)
+    assert await run_daily_briefs(rt, AFTER) == 1
+    assert await briefs(env, OTHER) == [] and await jobs(env, OTHER) == []
+    above_debug = [
+        r for r in caplog.records if r.levelno > logging.INFO and OTHER in r.getMessage()
+    ]
+    assert above_debug == []
+
+
+async def test_job_keeps_an_old_account_with_data_working(env: Env, rt: BriefRuntime) -> None:
+    """Un compte d'avant la phase 9 (réglages anciens que la migration marque faits, ou sans ligne
+    mais avec un objectif) reste traité comme `GET /settings` le juge (D183)."""
+    await add_user(env, OTHER, onboarded=False)
+    async with rt.session_factory() as db:
+        db.add(Goal(user_id=OTHER, text="Devenir ingénieure en apprentissage automatique"))
+        await db.commit()
+    env.at(AFTER)
+    assert await run_daily_briefs(rt, AFTER) == 2
+    assert len(await briefs(env, OTHER)) == 1
 
 
 async def test_job_follows_each_accounts_own_brief_time(env: Env, rt: BriefRuntime) -> None:

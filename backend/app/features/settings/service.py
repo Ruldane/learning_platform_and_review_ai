@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.agents.runtime.run_settings import RunSettings
 from app.features.settings.delays import DEFAULT_DELAYS as DEFAULT_DELAYS
 from app.features.settings.delays import validated_delays as validated_delays
-from app.features.settings.repository import UserSettingsRepository
+from app.features.settings.repository import UserSettingsRepository, onboarded_user_ids
 from app.features.settings.schemas import UserSettings, is_overridable
 from app.providers.llm.base import ModelChoice, Tier
 
@@ -48,6 +48,13 @@ def _parse_stored(stored: dict[str, Any]) -> UserSettings:
             return UserSettings.model_validate(kept)
         except ValidationError:
             return UserSettings()
+
+
+async def scheduled_users(db: AsyncSession) -> list[str]:
+    """Les comptes dont le premier lancement est fini (`onboarding_done` de `GET /settings`,
+    D183), du plus ancien au plus récent : les tâches planifiées qui peuvent appeler un modèle ou
+    le web ne travaillent que pour eux (D197). Lecture sans `user_id`, identifiants seulement."""
+    return await onboarded_user_ids(db)
 
 
 class SettingsService:

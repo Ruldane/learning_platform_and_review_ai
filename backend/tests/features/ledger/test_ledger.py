@@ -10,7 +10,6 @@ import pytest
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.db.models.accounts import User
 from app.db.models.daily import JobRun
 from app.features.ledger.service.ledger import (
     Claim,
@@ -21,7 +20,6 @@ from app.features.ledger.service.ledger import (
     last_done,
     recent_failures,
     reopen,
-    user_ids,
 )
 
 NOW = datetime(2026, 11, 16, 7, 0, tzinfo=UTC)
@@ -192,12 +190,6 @@ async def test_recent_failures_for_the_feed(db_session_factory: Factory) -> None
 async def _between(factory: Factory) -> list[JobRunView]:
     async with factory() as db:
         return await recent_failures(db, ME, NOW - timedelta(hours=1), NOW + timedelta(hours=1), 10)
-
-
-async def test_user_ids_lists_every_account(db_session: AsyncSession) -> None:
-    db_session.add_all([User(id=ME, user_id=ME), User(id=OTHER, user_id=OTHER)])
-    await db_session.commit()
-    assert sorted(await user_ids(db_session)) == sorted([ME, OTHER])
 
 
 async def test_ledger_never_logs_data(

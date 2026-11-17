@@ -20,6 +20,7 @@ from app.scheduler.jobs import weekly_review
 from tests.features.lessons.conftest import ME, OTHER, RecordingLauncher
 from tests.features.program.support import Factory, sample_plan
 from tests.features.replan.conftest import validated
+from tests.support.onboarding import finish_first_launch, hold_first_launch
 
 BEFORE = datetime(2026, 11, 15, 16, 59, tzinfo=UTC)  # dimanche 17:59 à Paris
 AFTER = datetime(2026, 11, 15, 17, 1, tzinfo=UTC)  # dimanche 18:01 à Paris
@@ -155,3 +156,17 @@ async def _replan_session(factory: Factory, program_id: str) -> str:
             AgentSession.graph == "replan", AgentSession.subject_id == program_id
         )
         return str((await db.execute(stmt)).scalar_one())
+
+
+async def test_weekly_review_waits_for_the_first_launch(
+    program_rt: ProgramRuntime, job_ctx: JobContext, launcher: RecordingLauncher
+) -> None:
+    """D197 : pas de bilan ni de replanification tant que le premier lancement n'est pas fini."""
+    await hold_first_launch(job_ctx.session_factory, ME)
+    program_id = await validated(program_rt, ME, start=START)
+    run = weekly.run_weekly_reviews
+    assert await run(job_ctx.session_factory, job_ctx.replan, AFTER) == 0
+    assert await _reviews(job_ctx.session_factory) == [] and _replans(launcher) == []
+    await finish_first_launch(job_ctx.session_factory, ME)
+    assert await run(job_ctx.session_factory, job_ctx.replan, AFTER) == 1
+    assert [p["program_id"] for p in _replans(launcher)] == [program_id]

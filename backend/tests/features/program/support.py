@@ -11,6 +11,7 @@ import httpx
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.agents.tools.plan_schema import EdgeDraft, PlanDraft, SkillDraft
+from app.db.models.accounts import User
 from app.db.models.learning import Goal, Proposal
 from tests.support.program import module, task, week
 
@@ -73,6 +74,9 @@ async def add_goal(
     factory: Factory, user_id: str, *, weekly_minutes: int | None = None
 ) -> GoalRows:
     async with factory() as db:
+        if await db.get(User, user_id) is None:
+            # Un vrai compte : le planificateur part de la table des comptes (D197).
+            db.add(User(id=user_id, user_id=user_id))
         goal = Goal(
             user_id=user_id,
             text="Devenir data engineer",

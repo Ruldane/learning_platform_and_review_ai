@@ -2,29 +2,21 @@
 
 Les écritures disputées sont gardées en SQL, pour que deux processus ou deux tâches ne gagnent
 jamais le même passage : `INSERT … ON CONFLICT DO NOTHING`, puis `UPDATE … WHERE` sur l'état
-attendu (statut, nombre d'essais). Le commit appartient à l'appelant. `all_user_ids` est la seule
-lecture sans `user_id` du registre (D18, D91) : elle sert aux tâches planifiées."""
+attendu (statut, nombre d'essais). Le commit appartient à l'appelant. Aucune lecture
+sans `user_id` ici : les comptes que traitent les tâches planifiées viennent des réglages (D197)."""
 
 from datetime import datetime
 from typing import Any
 
 from sqlalchemy import CursorResult, select, update
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models.accounts import User
 from app.db.models.daily import JobRun
 from app.db.repository import UserScopedRepository
 
 
 def _changed(result: Any) -> bool:
     return isinstance(result, CursorResult) and result.rowcount == 1
-
-
-async def all_user_ids(db: AsyncSession) -> list[str]:
-    """Les identifiants de tous les comptes (tâches planifiées seulement)."""
-    stmt = select(User.id).order_by(User.created_at, User.id)
-    return list((await db.execute(stmt)).scalars())
 
 
 class JobRunRepository(UserScopedRepository[JobRun]):

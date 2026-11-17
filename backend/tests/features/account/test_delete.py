@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.models.accounts import User
 from app.db.models.agents import AgentSession
 from app.db.models.learning import Goal
+from app.features.ledger.service.ledger import scheduled_user_ids
 from app.providers.vector.base import VectorStoreUnavailable
 from tests.features.account.conftest import GoogleApp
 from tests.sessions_support import act_as
@@ -157,11 +158,14 @@ async def test_local_mode_usable_after_delete(
         json={**(await client.get("/api/v1/settings")).json(), "onboarding_done": True},
     )
     assert done.status_code == 200 and done.json()["onboarding_done"] is True
+    assert me in await scheduled_user_ids(db_session)
 
     assert (await delete_account(client)).status_code == 204
 
     settings = await client.get("/api/v1/settings")
     assert settings.status_code == 200 and settings.json()["onboarding_done"] is False
+    # D197 : l'espace remis à zéro ne reçoit rien de planifié avant un nouveau premier lancement.
+    assert me not in await scheduled_user_ids(db_session)
     assert settings.json()["timezone"] == "Europe/Paris"
     who = await client.get("/api/v1/auth/me")
     assert who.status_code == 200 and who.json()["id"] == me

@@ -14,8 +14,9 @@ from typing import Literal, cast
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.daily import JobRun, JobStatus
-from app.features.ledger.repository import JobRunRepository, all_user_ids
+from app.features.ledger.repository import JobRunRepository
 from app.features.ledger.service.periods import MAX_ATTEMPTS, is_stale
+from app.features.settings.service import scheduled_users
 
 logger = logging.getLogger(__name__)
 
@@ -153,7 +154,10 @@ async def recent_failures(
     return [_view(row) for row in rows]
 
 
-async def user_ids(db: AsyncSession) -> list[str]:
-    """SEULE lecture sans `user_id` du registre (comme D18, D91) : les comptes, pour les tâches
-    planifiées."""
-    return await all_user_ids(db)
+async def scheduled_user_ids(db: AsyncSession) -> list[str]:
+    """SEULE lecture sans `user_id` des tâches du registre (comme D18, D91, D197) : les comptes
+    dont le premier lancement est fini, la même règle que `GET /settings` (`onboarding_done`). Un
+    compte qui ne l'a pas fini ne prend aucun passage du registre : il sera traité au premier
+    passage qui suit. Les tâches planifiées qui appellent un modèle ou le web n'en lisent pas
+    d'autre."""
+    return await scheduled_users(db)

@@ -18,6 +18,7 @@ from app.features.radar.service.store import AgentRadarStore
 from app.providers.web.base import WebDocument
 from tests.features.program.support import Factory
 from tests.support.memory import FakeWebReader
+from tests.support.onboarding import finish_first_launch
 
 ME, OTHER = "moi", "autre"
 NOW = datetime(2026, 11, 16, 8, 0, tzinfo=UTC)  # lundi, 9 h à Paris
@@ -130,7 +131,10 @@ class Radar:
         return run_id
 
 
-async def add_users(factory: Factory, *ids: str) -> None:
+async def add_users(factory: Factory, *ids: str, onboarded: bool = True) -> None:
+    """Des comptes ; par défaut leur premier lancement est fini (le planificateur les traite)."""
     async with factory() as db:
         db.add_all([User(id=one, user_id=one) for one in ids])
         await db.commit()
+    if onboarded:
+        await finish_first_launch(factory, *ids)

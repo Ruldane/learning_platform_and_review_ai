@@ -1,6 +1,7 @@
 """Migration 0015 (9.P) : table `auth_sessions` (jeton haché unique, index sur `user_id`) et
 réglages déjà stockés marqués « premier lancement fait » ; retour arrière."""
 
+import asyncio
 import json
 from pathlib import Path
 
@@ -11,6 +12,8 @@ from sqlalchemy import inspect, text
 from sqlalchemy.exc import IntegrityError
 
 from alembic import command
+from app.db.engine import create_engine, create_session_factory
+from app.features.ledger.service.ledger import scheduled_user_ids
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 NOW = "'2026-11-17 08:00:00'"
@@ -95,3 +98,40 @@ def test_migration_marks_existing_settings_onboarded(tmp_path: Path) -> None:
         assert json.loads(data) == {"onboarding_done": True}
     finally:
         engine.dispose()
+
+
+def test_migrated_old_accounts_stay_scheduled(tmp_path: Path) -> None:
+    """Un vrai compte d'avant la phase 9 (réglages anciens, avec ou sans autre clé) reste traité
+    par le planificateur après la migration ; un compte sans réglage ni donnée ne l'est pas
+    (D183, D197)."""
+    db_file = tmp_path / "app.db"
+    cfg = _config(db_file)
+    command.upgrade(cfg, "0014")
+    engine = create_sync_engine(_url(db_file))
+    try:
+        with engine.begin() as conn:
+            for number, user in enumerate(["u1", "u2", "u3"]):
+                conn.execute(
+                    text(
+                        "INSERT INTO users (id, user_id, name, language, created_at, updated_at) "
+                        f"VALUES (:id, :id, :id, 'fr', '2026-11-17 08:0{number}:00', {NOW})"
+                    ),
+                    {"id": user},
+                )
+            conn.execute(
+                text(SETTINGS), {"id": "r1", "user": "u1", "data": '{"brief_time": "06:30"}'}
+            )
+            conn.execute(text(SETTINGS), {"id": "r2", "user": "u2", "data": "{}"})
+        command.upgrade(cfg, "head")
+    finally:
+        engine.dispose()
+
+    async def listed() -> list[str]:
+        async_engine = create_engine(f"sqlite+aiosqlite:///{db_file.as_posix()}")
+        try:
+            async with create_session_factory(async_engine)() as db:
+                return await scheduled_user_ids(db)
+        finally:
+            await async_engine.dispose()
+
+    assert asyncio.run(listed()) == ["u1", "u2"]

@@ -10,11 +10,13 @@ import pytest
 from fastapi import FastAPI
 from sqlalchemy import update
 
+from app.db.models.accounts import UserSettingsRow
 from app.db.models.program import Module
 from app.features.projects.service import briefs
 from app.features.projects.service.briefs import ensure_project_briefs
 from tests.features.projects.support import API, WEEK_1, WEEK_2, Env
 from tests.features.study.conftest import seed
+from tests.support.onboarding import finish_first_launch
 
 
 def _briefs(env: Env) -> list[tuple[str, dict[str, str]]]:
@@ -37,6 +39,20 @@ async def test_week_start_creates_project_and_brief_session(env: Env) -> None:
     env.at(WEEK_2)  # la semaine suivante : le second module a son projet
     assert await ensure_project_briefs(env.rt, WEEK_2) == 1
     assert len(await env.projects()) == 2 and len(_briefs(env)) == 2
+
+
+async def test_a_new_account_gets_no_brief_until_its_first_launch_is_done(env: Env) -> None:
+    """D197 : un compte au premier lancement non fini (réglages posés avant ses données) n'a ni
+    projet ni session ; le passage qui suit la fin du premier lancement les crée."""
+    async with env.rt.session_factory() as db:
+        db.add(UserSettingsRow(user_id=env.user_id, data={"onboarding_done": False}))
+        await db.commit()
+    env.at(WEEK_1)
+    assert await ensure_project_briefs(env.rt, WEEK_1) == 0
+    assert await env.projects() == [] and _briefs(env) == []
+    await finish_first_launch(env.rt.session_factory, env.user_id)
+    assert await ensure_project_briefs(env.rt, WEEK_1) == 1
+    assert len(_briefs(env)) == 1
 
 
 async def test_a_pass_launches_at_most_three_briefs_oldest_weeks_first(

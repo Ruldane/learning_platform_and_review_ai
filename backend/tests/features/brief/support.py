@@ -14,6 +14,7 @@ from app.db.models.daily import Brief, JobRun, RadarRun
 from app.db.models.study import Flashcard
 from app.features.brief.service.sections import build_sections
 from tests.features.brief.conftest import NOW, TODAY, Env
+from tests.support.onboarding import finish_first_launch
 
 API = "/api/v1/brief/today"
 
@@ -54,10 +55,13 @@ async def sections_for(env: Env, user: str | None = None, today: date = TODAY) -
         return await build_sections(env.rt, db, user or env.user_id, today)
 
 
-async def add_user(env: Env, user_id: str) -> None:
+async def add_user(env: Env, user_id: str, *, onboarded: bool = True) -> None:
+    """Un compte de plus ; par défaut son premier lancement est fini (le planificateur le prend)."""
     async with env.rt.session_factory() as db:
         db.add(User(id=user_id, user_id=user_id))
         await db.commit()
+    if onboarded:
+        await finish_first_launch(env.rt.session_factory, user_id)
 
 
 def posting(number: int, score: int | None, **over: Any) -> dict[str, Any]:

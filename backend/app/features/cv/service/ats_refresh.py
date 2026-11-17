@@ -25,7 +25,7 @@ from app.features.ledger.service.ledger import (
     finish,
     last_done,
     reopen,
-    user_ids,
+    scheduled_user_ids,
 )
 from app.features.ledger.service.periods import ATS_EVERY_DAYS, day_period
 from app.features.sessions.service import session_facts
@@ -119,7 +119,7 @@ async def run_ats_refresh(
 ) -> int:
     """Un passage de la tâche planifiée ; rend le nombre de sessions lancées."""
     async with session_factory() as db:
-        users = await user_ids(db)
+        users = await scheduled_user_ids(db)
     launched = 0
     for user_id in users:
         try:
