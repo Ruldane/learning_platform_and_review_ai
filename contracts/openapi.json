@@ -13989,7 +13989,15 @@
             "content": {
               "application/zip": {}
             },
-            "description": "L'archive de toutes les données"
+            "description": "L'archive de toutes les données",
+            "headers": {
+              "Content-Disposition": {
+                "description": "`attachment; filename=\"tremplin-export-AAAAMMJJ.zip\"` : le nom proposé au téléchargement, le jour étant celui de l'utilisatrice.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
         "summary": "Export Account",

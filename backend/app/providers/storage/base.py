@@ -30,3 +30,9 @@ class FileStorage(Protocol):
     async def delete(self, user_id: str, key: str) -> None:
         """Idempotent : une clé déjà supprimée ne lève rien. Même contrôle d'appartenance."""
         ...
+
+    async def list_user(self, user_id: str) -> list[str]:
+        """Les clés de tous les fichiers de `user_id` (la forme que `save` rend, préfixe
+        `<user_id>/` compris), triées. Jamais un fichier d'un autre utilisateur ni un résidu
+        d'écriture ; `StorageKeyInvalid` si `user_id` n'a pas la forme attendue."""
+        ...

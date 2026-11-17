@@ -40,6 +40,28 @@ class LocalFileStorage:
     async def delete(self, user_id: str, key: str) -> None:
         await asyncio.to_thread(self._path(key, user_id).unlink, missing_ok=True)
 
+    async def list_user(self, user_id: str) -> list[str]:
+        if not _USER_ID.fullmatch(user_id):
+            raise StorageKeyInvalid()
+        return await asyncio.to_thread(self._list_user, user_id)
+
+    def _list_user(self, user_id: str) -> list[str]:
+        """Les fichiers réguliers de `<racine>/<user_id>/` dont la clé a la forme générée par
+        `save` (les `.tmp-*.part` et tout intrus sont ignorés) ; un lien symbolique, vers un
+        fichier comme vers le dossier, qui sortirait de la racine est refusé."""
+        root = self._root.resolve()
+        folder = (root / user_id).resolve()
+        if not folder.exists():
+            return []
+        if not folder.is_relative_to(root) or folder == root:
+            raise StorageKeyInvalid()
+        keys: list[str] = []
+        for path in folder.rglob("*"):
+            key = f"{user_id}/{path.relative_to(folder).as_posix()}"
+            if _KEY.fullmatch(key) and path.is_file() and path.resolve().is_relative_to(folder):
+                keys.append(key)
+        return sorted(keys)
+
     def _path(self, key: str, user_id: str) -> Path:
         """La clé doit commencer par `<user_id>/` (défense en profondeur : une clé
         d'un autre utilisateur, même bien formée, est refusée)."""

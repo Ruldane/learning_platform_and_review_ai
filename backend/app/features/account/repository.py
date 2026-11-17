@@ -1,0 +1,30 @@
+"""Lecture des lignes d'une utilisatrice, table par table.
+
+Exception documentée à `UserScopedRepository` : l'export parcourt **toutes** les tables qui ont
+`user_id` (une table de plus n'y change rien), donc il n'a pas de modèle fixe ; chaque lecture
+filtre pourtant sur `user_id`, toujours."""
+
+from collections.abc import Sequence
+from typing import Any
+
+from sqlalchemy import Column, Table, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+
+class AccountRepository:
+    def __init__(self, session: AsyncSession, user_id: str) -> None:
+        self.session = session
+        self.user_id = user_id
+
+    async def rows(
+        self, table: Table, columns: Sequence[Column[Any]] | None = None
+    ) -> list[dict[str, Any]]:
+        """Les lignes de `user_id` dans `table`, dans l'ordre de leur création puis de leur
+        identifiant. Seules les `columns` données sont lues (toutes par défaut) : une colonne
+        écartée n'entre jamais en mémoire."""
+        stmt = select(*(table.c if columns is None else columns)).where(
+            table.c.user_id == self.user_id
+        )
+        order = [table.c[name] for name in ("created_at", "id") if name in table.c]
+        result = await self.session.execute(stmt.order_by(*order))
+        return [dict(row) for row in result.mappings()]

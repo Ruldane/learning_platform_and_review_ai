@@ -2,29 +2,81 @@
 supprimer ». Au nom de l'utilisatrice courante, jamais d'un autre compte ; une 422 nomme les
 champs, sans jamais recopier la confirmation reçue."""
 
-from typing import Any
+from datetime import UTC, datetime
+from typing import Annotated, Any
 
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Depends, Response
+from fastapi.responses import StreamingResponse
+from starlette.requests import HTTPConnection
 
+from app.agents.runtime.handle import AgentRuntime
 from app.core.deps import CurrentUserDep, Db
 from app.core.errors import AppError
 from app.core.field_paths import FieldPathsRoute
+from app.core.providers import MemoryProviders
 from app.features.account.schemas import DELETE_CONFIRMATION, DeleteAccountIn
+from app.features.account.service import (
+    AccountRuntime,
+    archive_size,
+    build_export,
+    export_filename,
+    export_lock,
+    stream_export,
+    user_export_zone,
+)
+from app.features.postings.service.runtime import KeyLocks
 
 router = APIRouter(prefix="/account", tags=["account"], route_class=FieldPathsRoute)
 
 _ZIP: dict[int | str, dict[str, Any]] = {
-    200: {"content": {"application/zip": {}}, "description": "L'archive de toutes les données"}
+    200: {
+        "content": {"application/zip": {}},
+        "description": "L'archive de toutes les données",
+        "headers": {
+            "Content-Disposition": {
+                "description": (
+                    '`attachment; filename="tremplin-export-AAAAMMJJ.zip"` : le nom proposé au'
+                    " téléchargement, le jour étant celui de l'utilisatrice."
+                ),
+                "schema": {"type": "string"},
+            }
+        },
+    }
 }
 
 
+def get_account_runtime(conn: HTTPConnection) -> AccountRuntime:
+    """Stockage, index vectoriel et moteur d'agents du démarrage (`app.state`), plus les verrous
+    par compte, créés à la première demande et gardés pour la vie de l'application."""
+    state = conn.app.state
+    locks: KeyLocks | None = getattr(state, "account_locks", None)
+    if locks is None:
+        locks = state.account_locks = KeyLocks()
+    memory: MemoryProviders = state.memory_providers
+    runtime: AgentRuntime = state.runtime
+    return AccountRuntime(storage=memory.storage, index=memory.index, runtime=runtime, locks=locks)
+
+
+AccountDep = Annotated[AccountRuntime, Depends(get_account_runtime)]
+
+
 @router.get("/export", response_class=Response, responses=_ZIP)
-async def export_account(current: CurrentUserDep, db: Db) -> Response:
+async def export_account(current: CurrentUserDep, db: Db, rt: AccountDep) -> Response:
     """Toutes les données de l'utilisatrice dans une archive zip `tremplin-export-AAAAMMJJ.zip`
     (téléchargement) : `manifest.json`, une table par fichier JSON (`tables/<table>.json`) et les
     fichiers déposés (`files/…`). Les clés d'API n'y sont jamais (seulement leurs quatre derniers
     caractères) ; ni vecteurs ni points de reprise des agents (recalculables)."""
-    raise AppError("not_implemented", "Pas encore disponible.", 501)
+    now = datetime.now(UTC)
+    filename = export_filename(now, await user_export_zone(db, current.id))
+    async with export_lock(rt.locks, current.id):
+        archive = await build_export(db, rt.storage, current.id, now)
+    headers = {
+        "Content-Disposition": f'attachment; filename="{filename}"',
+        "Content-Length": str(archive_size(archive)),
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff",
+    }
+    return StreamingResponse(stream_export(archive), media_type="application/zip", headers=headers)
 
 
 @router.post(

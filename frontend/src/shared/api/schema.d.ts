@@ -7684,6 +7684,8 @@ export interface operations {
             /** @description L'archive de toutes les données */
             200: {
                 headers: {
+                    /** @description `attachment; filename="tremplin-export-AAAAMMJJ.zip"` : le nom proposé au téléchargement, le jour étant celui de l'utilisatrice. */
+                    "Content-Disposition"?: string;
                     [name: string]: unknown;
                 };
                 content: {
