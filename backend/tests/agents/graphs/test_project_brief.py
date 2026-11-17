@@ -96,7 +96,9 @@ async def test_brief_without_a_model_marks_failed_with_its_code(
 
 def test_graphs_are_registered_with_their_routes() -> None:
     assert ROUTE_ONLY["project_brief"] == "planificateur ou POST /projects/{id}/brief"
-    assert ROUTE_ONLY["project_review"] == "POST /projects/{id}/submit"
+    assert ROUTE_ONLY["project_review"] == (
+        "POST /projects/{id}/submit ou POST /projects/{id}/drafts"
+    )
     assert get_graph("project_brief").input_model is ProjectBriefInput
     assert get_graph("project_brief").recursion_limit is None
     assert ProjectBriefInput(project_id=PROJECT_ID).model_dump() == {"project_id": PROJECT_ID}

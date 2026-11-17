@@ -25,6 +25,13 @@ async def test_logs_step_fails_without_logs() -> None:
     await fails(FakeApi(), "brief", "journaux", "non fournis", logs=None)
 
 
+@pytest.mark.parametrize("part", ["brief", "journaux"])
+@pytest.mark.parametrize("empty", ["", "\n", "  \n \t\n"])
+async def test_logs_step_fails_on_empty_logs(part: str, empty: str) -> None:
+    """Une entrée vide (début mal formé, tube cassé, mauvais service) n'est jamais un succès."""
+    await fails(FakeApi(), part, "journaux", "vides", logs=empty)
+
+
 @pytest.mark.parametrize(
     ("part", "leak", "secret"),
     [
@@ -51,6 +58,21 @@ async def test_logs_step_counts_clean_lines(capsys: pytest.CaptureFixture[str]) 
     await play(FakeApi(), "brief", logs="INFO brief b1 créé\nINFO conseil 2 phrases\n")
 
     assert "2 ligne(s) relue(s), sans donnée" in capsys.readouterr().out
+
+
+async def test_journaux_part_alone_plays_only_the_logs_step(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """`--part journaux` : aucune requête à l'API, les journaux d'après l'essai, mêmes motifs."""
+    fake = FakeApi()
+    steps = await play(fake, "journaux", logs="INFO relevé 3 fini\nINFO brief b1 créé\n")
+
+    assert steps == ["journaux"] and not fake.seen and not fake.puts
+    out = capsys.readouterr().out
+    assert "2 ligne(s) relue(s), motifs génériques seulement" in out
+    assert "sans donnée" not in out
+    await fails(FakeApi(), "journaux", "journaux", "non fournis", logs=None)
+    await fails(FakeApi(), "journaux", "journaux", "Donnée personnelle", logs="INFO zone Lyon\n")
 
 
 async def test_unknown_part_is_refused() -> None:
@@ -100,6 +122,33 @@ def test_main_exits_with_zero_and_reads_the_logs_from_the_standard_input(
     assert exited.value.code == 0
     assert calls[0]["part"] == "radar" and calls[0]["logs"] == "depuis l'entrée standard"
     assert "réussi : 5 étapes (radar)" in capsys.readouterr().out
+
+
+def test_journaux_part_alone_reads_stdin(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """La ligne de commande : `--part journaux --logs-file -` lit l'entrée standard (les journaux
+    passés **après** l'essai) sans joindre l'API ; l'aide le dit."""
+    monkeypatch.setattr("sys.stdin", io.StringIO("INFO brief b1 créé\nINFO conseil 2 phrases\n"))
+    with pytest.raises(SystemExit) as exited:
+        check.main(["--api", "http://localhost:1", "--part", "journaux", "--logs-file", "-"])
+    assert exited.value.code == 0
+    out = capsys.readouterr().out
+    assert "motifs génériques seulement" in out and "réussi : 1 étapes (journaux)" in out
+
+    monkeypatch.setattr("sys.stdin", io.StringIO(""))
+    with pytest.raises(SystemExit) as empty:
+        check.main(["--api", "http://localhost:1", "--part", "journaux", "--logs-file", "-"])
+    assert empty.value.code == 1 and "vides" in capsys.readouterr().err
+
+    monkeypatch.setattr("sys.stdin", io.StringIO("INFO zone Lyon\n"))
+    with pytest.raises(SystemExit) as leaked:
+        check.main(["--api", "http://localhost:1", "--part", "journaux", "--logs-file", "-"])
+    assert leaked.value.code == 1
+    assert "Lyon" not in capsys.readouterr().err
+
+    assert "APRÈS l'essai" in (check.__doc__ or "")
+    assert "APRÈS l'essai" in check.build_parser().format_help()
 
 
 def test_main_defaults_to_planifie_without_logs_and_refuses_an_unknown_part(

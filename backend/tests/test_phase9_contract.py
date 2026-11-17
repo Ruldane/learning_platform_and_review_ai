@@ -29,38 +29,46 @@ NEW_ROUTES: list[tuple[str, str, dict[str, Any] | None]] = [
     ("POST", "/account/delete", {"confirm": "SUPPRIMER"}),
     ("POST", "/projects/p1/drafts", None),
 ]
+# Routes déjà remplies par un flux (9.B1 à 9.B5) : plus des bouchons, le contrat les liste.
+FILLED: set[tuple[str, str]] = {
+    ("POST", "/projects/p1/drafts"),
+    ("GET", "/costs"),
+    ("GET", "/costs/calls"),
+    ("GET", "/settings/agents"),
+    ("GET", "/account/export"),
+    ("POST", "/account/delete"),
+}
+STUBS = [route for route in NEW_ROUTES if route[:2] not in FILLED]
 
 
 def test_onboarding_done_defaults_false() -> None:
     assert UserSettings().onboarding_done is False
 
 
-# Routes déjà faites (9.A2, 9.A3, 9.A5) : en mode local, `/auth/google/*` répond 404
-# `google_auth_disabled` et `/auth/logout` 204 (voir `tests/features/auth/test_login.py`,
-# `test_claim.py` et `test_logout.py`) ; `/health/embedding` rend la progression de `bge-m3`
-# (`tests/features/health/test_embedding.py`) : ce ne sont plus des bouchons.
-LIVE = {
-    "/auth/google/login",
-    "/auth/google/callback",
-    "/auth/google/claim",
-    "/auth/logout",
-    "/health/embedding",
+# Routes faites par le flux A (9.A2, 9.A3, 9.A5) : en mode local, `/auth/google/*` répond 404
+# `google_auth_disabled` et `/auth/logout` 204 (voir `tests/features/auth/`) ;
+# `/health/embedding` rend la progression de `bge-m3` (`tests/features/health/`).
+LIVE: set[tuple[str, str]] = {
+    ("GET", "/auth/google/login"),
+    ("GET", "/auth/google/callback"),
+    ("POST", "/auth/google/claim"),
+    ("POST", "/auth/logout"),
+    ("GET", "/health/embedding"),
 }
 
 
-@pytest.mark.parametrize(
-    ("method", "path", "body"), [route for route in NEW_ROUTES if route[1] not in LIVE]
-)
-async def test_new_route_is_a_501_stub(
-    client: httpx.AsyncClient, method: str, path: str, body: dict[str, Any] | None
-) -> None:
-    r = await client.request(method, f"{P}{path}", json=body)
-    assert r.status_code == 501, path
-    assert r.json()["error"]["code"] == "not_implemented"
-    assert r.json()["error"]["message"] == "Pas encore disponible."
+def test_no_phase9_route_is_still_a_501_stub() -> None:
+    """9.I : les flux A et B ont rempli tous les bouchons posés en 9.P."""
+    assert [route for route in STUBS if route[:2] not in LIVE] == []
 
 
-async def test_delete_confirmation_is_checked_before_the_stub(client: httpx.AsyncClient) -> None:
+async def test_live_routes_no_longer_answer_501(client: httpx.AsyncClient) -> None:
+    for method, path, body in NEW_ROUTES:
+        r = await client.request(method, f"{P}{path}", json=body)
+        assert r.status_code != 501, path
+
+
+async def test_delete_confirmation_is_checked_in_the_code(client: httpx.AsyncClient) -> None:
     r = await client.post(f"{P}/account/delete", json={"confirm": "supprimer"})
     error = r.json()["error"]
     assert r.status_code == 422 and error["code"] == "confirmation_required"

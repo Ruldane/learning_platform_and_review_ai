@@ -12,12 +12,12 @@ journalisés (17.2) ; les journaux portent des identifiants, des nombres et des 
 
 import logging
 
-from app.agents.tools.project_port import BriefInputs, ReviewInputs, ReviewOutcome
+from app.agents.tools.project_port import BriefInputs, DraftResult, ReviewInputs, ReviewOutcome
 from app.agents.tools.project_schema import ProjectBrief
 from app.core.errors import AppError
 from app.features.ledger.service.ledger import safe_code
 from app.features.projects.service import inputs
-from app.features.projects.service.review import save_review
+from app.features.projects.service.review import save_drafts, save_review
 from app.features.projects.service.runtime import BRIEF_ATTEMPTS, ProjectsRuntime
 from app.features.research.service.reading import read
 
@@ -90,3 +90,8 @@ class AgentProjectStore:
         self, user_id: str, session_id: str, project_id: str, outcome: ReviewOutcome
     ) -> None:
         await save_review(self._rt, user_id, session_id, project_id, outcome)
+
+    async def save_drafts(
+        self, user_id: str, session_id: str, project_id: str, drafts: list[DraftResult]
+    ) -> bool:
+        return await save_drafts(self._rt, user_id, session_id, project_id, drafts)

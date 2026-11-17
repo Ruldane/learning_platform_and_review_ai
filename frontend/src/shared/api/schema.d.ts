@@ -7671,6 +7671,13 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description `vector_store_unavailable` : Qdrant ne répond pas ; rien n'est supprimé en base, un nouvel appel reprend. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     export_account_api_v1_account_export_get: {
@@ -7685,6 +7692,8 @@ export interface operations {
             /** @description L'archive de toutes les données */
             200: {
                 headers: {
+                    /** @description `attachment; filename="tremplin-export-AAAAMMJJ.zip"` : le nom proposé au téléchargement, le jour étant celui de l'utilisatrice. */
+                    "Content-Disposition"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -8657,14 +8666,12 @@ export interface operations {
                     "application/json": components["schemas"]["CostsReport"];
                 };
             };
-            /** @description Validation Error */
+            /** @description `details.fields` : `days` (ni 7, ni 30, ni 90) */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
+                content?: never;
             };
         };
     };
@@ -11174,6 +11181,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+            /** @description `drafts_unavailable` : le lancement est refusé, rien n'est changé */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

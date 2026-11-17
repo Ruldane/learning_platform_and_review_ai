@@ -15,10 +15,10 @@ def project_not_ready() -> AppError:
     )
 
 
-def review_in_progress(session_id: str | None) -> AppError:
+def review_in_progress(session_id: str | None, message: str | None = None) -> AppError:
     return AppError(
         "review_in_progress",
-        "Ton rendu est en cours d'évaluation : attends son résultat.",
+        message or "Ton rendu est en cours d'évaluation : attends son résultat.",
         409,
         {"session_id": session_id},
     )
@@ -72,10 +72,10 @@ def draft_not_found() -> AppError:
     return AppError("draft_not_found", "Ce brouillon n'existe pas pour ce projet.", 404)
 
 
-def project_not_validated() -> AppError:
-    return AppError(
-        "project_not_validated", "Seul un projet validé peut entrer dans ton profil.", 409
-    )
+def project_not_validated(
+    message: str = "Seul un projet validé peut entrer dans ton profil.",
+) -> AppError:
+    return AppError("project_not_validated", message, 409)
 
 
 def entry_already_added() -> AppError:
@@ -95,4 +95,16 @@ def profile_projects_full() -> AppError:
         "profile_projects_full",
         "Ton profil maître a déjà 20 projets : retires-en un avant d'en ajouter un.",
         409,
+    )
+
+
+def drafts_present() -> AppError:
+    return AppError("drafts_present", "Ce projet a déjà ses brouillons.", 409)
+
+
+def drafts_unavailable() -> AppError:
+    return AppError(
+        "drafts_unavailable",
+        "Les brouillons n'ont pas pu être relancés : réessaie dans un instant.",
+        503,
     )

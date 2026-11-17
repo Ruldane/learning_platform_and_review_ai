@@ -7,6 +7,7 @@ résolu (liens symboliques suivis) doit rester sous la racine résolue."""
 import asyncio
 import os
 import re
+import shutil
 import tempfile
 import uuid
 from pathlib import Path
@@ -39,6 +40,48 @@ class LocalFileStorage:
 
     async def delete(self, user_id: str, key: str) -> None:
         await asyncio.to_thread(self._path(key, user_id).unlink, missing_ok=True)
+
+    async def list_user(self, user_id: str) -> list[str]:
+        if not _USER_ID.fullmatch(user_id):
+            raise StorageKeyInvalid()
+        return await asyncio.to_thread(self._list_user, user_id)
+
+    async def delete_user(self, user_id: str) -> int:
+        if not _USER_ID.fullmatch(user_id):
+            raise StorageKeyInvalid()
+        return await asyncio.to_thread(self._delete_user, user_id)
+
+    def _delete_user(self, user_id: str) -> int:
+        """Supprime `<racine>/<user_id>/`. Un dossier qui est un lien (vers l'extérieur comme vers
+        le dossier d'un autre compte) est refusé : rien n'est supprimé ailleurs que chez
+        `user_id`. Les liens **dans** le dossier sont retirés sans être suivis."""
+        root = self._root.resolve()
+        folder = (root / user_id).resolve()
+        if not folder.exists():
+            return 0
+        if folder != root / user_id:  # ni hors de la racine, ni le dossier d'un autre compte
+            raise StorageKeyInvalid()
+        count = len(self._list_user(user_id))
+        shutil.rmtree(folder, ignore_errors=False)
+        return count
+
+    def _list_user(self, user_id: str) -> list[str]:
+        """Les fichiers réguliers de `<racine>/<user_id>/` dont la clé a la forme générée par
+        `save` (les `.tmp-*.part` et tout intrus sont ignorés) ; un dossier qui est un lien (vers
+        l'extérieur ou vers le dossier d'un autre compte) est refusé, et un fichier lié hors du
+        dossier de l'utilisateur est ignoré."""
+        root = self._root.resolve()
+        folder = (root / user_id).resolve()
+        if not folder.exists():
+            return []
+        if folder != root / user_id:  # ni hors de la racine, ni le dossier d'un autre compte
+            raise StorageKeyInvalid()
+        keys: list[str] = []
+        for path in folder.rglob("*"):
+            key = f"{user_id}/{path.relative_to(folder).as_posix()}"
+            if _KEY.fullmatch(key) and path.is_file() and path.resolve().is_relative_to(folder):
+                keys.append(key)
+        return sorted(keys)
 
     def _path(self, key: str, user_id: str) -> Path:
         """La clé doit commencer par `<user_id>/` (défense en profondeur : une clé

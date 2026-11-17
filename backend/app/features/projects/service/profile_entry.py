@@ -27,7 +27,7 @@ from app.features.projects.service.errors import (
 )
 from app.features.projects.service.inputs import latest_submission, owned
 from app.features.projects.service.runtime import ProjectsRuntime
-from app.features.projects.service.views import project_out
+from app.features.projects.service.views import project_out_live
 
 logger = logging.getLogger(__name__)
 
@@ -85,4 +85,4 @@ async def add_profile_entry(
         async with rt.session_factory() as db:
             row = await owned(db, user_id, project_id)
             logger.info("Projet ajouté au profil : projet %s, version %d", project_id, version)
-            return project_out(row)
+            return await project_out_live(db, user_id, row)

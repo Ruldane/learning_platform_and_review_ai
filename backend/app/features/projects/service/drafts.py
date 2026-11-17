@@ -26,7 +26,7 @@ from app.features.projects.schemas import DraftPatchIn, ProfileEntryIn, ProjectO
 from app.features.projects.service.errors import draft_not_found, invalid_submission
 from app.features.projects.service.inputs import latest_submission, module_skills, owned
 from app.features.projects.service.runtime import ProjectsRuntime
-from app.features.projects.service.views import project_out
+from app.features.projects.service.views import project_out_live
 
 logger = logging.getLogger(__name__)
 
@@ -89,4 +89,4 @@ async def patch_draft(
         logger.info(
             "Brouillon retouché : projet %s, type %s, statut %s", project_id, kind, new["status"]
         )
-        return project_out(row)
+        return await project_out_live(db, user_id, row)

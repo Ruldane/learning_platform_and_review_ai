@@ -142,13 +142,18 @@ async def project_runner(
     other_user_id: str,
     project_store: FakeProjectStore,
 ) -> AsyncIterator[MakeProject]:
-    """`make(models, graph=...)` lance `project_review` (ou `project_brief`) ; `sid=` reprend une
+    """`make(models, graph=...)` lance `project_review` (ou `project_brief`) ; `mode="drafts"` ne
+    relance que les brouillons d'un projet validé ; `sid=` reprend une
     session existante (nouveau « processus » : même base, même `checkpoints.db`, même port)."""
     await add_users(db_session_factory, user_id, other_user_id)
     async with AsyncExitStack() as stack:
 
         async def make(
-            models: CouncilModels, *, graph: str = "project_review", sid: str | None = None
+            models: CouncilModels,
+            *,
+            graph: str = "project_review",
+            sid: str | None = None,
+            mode: str | None = None,
         ) -> ProjectRun:
             saver = await stack.enter_async_context(open_checkpointer(tmp_path / "checkpoints.db"))
             bus = EventBus(db_session_factory)
@@ -164,7 +169,8 @@ async def project_runner(
             stack.push_async_callback(bus.aclose)
             stack.push_async_callback(runner.shutdown)
             run = ProjectRun(runner, db_session_factory, project_store, models, user_id)
-            run.sid = sid or await runner.start(user_id, graph, {"project_id": PROJECT_ID})
+            data = {"project_id": PROJECT_ID, **({"mode": mode} if mode else {})}
+            run.sid = sid or await runner.start(user_id, graph, data)
             return run
 
         yield make

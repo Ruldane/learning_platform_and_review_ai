@@ -15,6 +15,7 @@ from app.agents.state.project_review import Node, ProjectReviewState
 __all__ = ["announce", "make_save"]
 
 AGENT = "practitioner"
+NOT_SAVED = "Projet validé : ses brouillons existent déjà, rien de nouveau n'a été rangé."
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,20 @@ def make_save(deps: GraphDeps) -> Node:
     @node_timeout()
     async def save(state: ProjectReviewState) -> ProjectReviewState:
         outcome = from_state(state["outcome"])
+        if state.get("mode") == "drafts":  # un projet déjà validé : seulement ses brouillons
+            drafts = outcome.drafts or []
+            saved = await deps.ports.projects.save_drafts(
+                deps.user_id, deps.session_id, state["project_id"], drafts
+            )
+            logger.info(
+                "Brouillons %s : session %s, projet %s, %d brouillon(s) dont %d à vérifier",
+                "rangés" if saved else "non rangés",
+                deps.session_id,
+                state["project_id"],
+                len(drafts),
+                sum(draft.status == "to_check" for draft in drafts),
+            )
+            return {"drafts_saved": saved}
         await deps.ports.projects.save_review(
             deps.user_id, deps.session_id, state["project_id"], outcome
         )
@@ -54,4 +69,7 @@ def announce(state: ProjectReviewState) -> ProjectReviewState:
         },
         agent=AGENT,
     )
-    return {"summary": summary_text(from_state(state["outcome"]))}
+    outcome = from_state(state["outcome"])
+    if state.get("mode") == "drafts" and outcome.drafts and state.get("drafts_saved") is False:
+        return {"summary": NOT_SAVED}  # le port a ignoré l'écriture : rien de nouveau n'est prêt
+    return {"summary": summary_text(outcome)}

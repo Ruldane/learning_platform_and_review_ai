@@ -8,6 +8,7 @@ from typing import Any, Literal, Protocol, TypedDict
 
 class ProjectReviewState(TypedDict, total=False):
     project_id: str
+    mode: Literal["review", "drafts"]  # `drafts` : seulement les brouillons d'un projet validé
     title: str  # titre de l'énoncé, pour `artifact.ready`
     repo_text: str | None  # le README lu, coupé à 8 000 caractères
     repo_status: Literal["read", "unreadable", "none"]
@@ -15,6 +16,7 @@ class ProjectReviewState(TypedDict, total=False):
     first_drafts: dict[str, Any]  # `ProjectDrafts` du premier jet, relu par le nouvel essai
     retry_needed: bool  # un brouillon a des termes ou une longueur hors bornes
     outcome: dict[str, Any]  # `ReviewOutcome` en JSON (sans brouillons avant `drafts`)
+    drafts_saved: bool  # mode `drafts` : le port a rangé les brouillons (faux : écriture ignorée)
     summary: str  # résumé de `run.completed`
 
 

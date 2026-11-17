@@ -211,12 +211,17 @@ async def no_events(session_id: str) -> list[dict[str, Any]]:
     return [{"type": "cost.updated"}] * 3
 
 
-async def play(fake: FakeApi, part: str, logs: str | None = "") -> list[str]:
+CLEAN_LOGS = "INFO rien à signaler" + chr(10)  # des journaux sans donnée (jamais vides : échec)
+
+
+async def play(fake: FakeApi, part: str, logs: str | None = CLEAN_LOGS) -> list[str]:
     async with fake.client() as client:
         return await run_check(client, part=part, timeout_s=30, events=no_events, logs=logs)  # type: ignore[arg-type]
 
 
-async def fails(fake: FakeApi, part: str, step: str, message: str, logs: str | None = "") -> None:
+async def fails(
+    fake: FakeApi, part: str, step: str, message: str, logs: str | None = CLEAN_LOGS
+) -> None:
     with pytest.raises(CheckFailed) as failed:
         await play(fake, part, logs)
     assert failed.value.step == step

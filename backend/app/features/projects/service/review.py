@@ -132,3 +132,27 @@ async def save_review(
             names = await module_skills(db, user_id, row)
     if names:
         await _reflect(rt, user_id, session_id, names)
+
+
+async def save_drafts(
+    rt: ProjectsRuntime, user_id: str, session_id: str, project_id: str, drafts: list[DraftResult]
+) -> bool:
+    """Les brouillons d'un projet **déjà validé** qui n'en a pas (D173 n° 4, D181), sous le verrou
+    du projet : la première écriture gagne (un rejeu ou une autre session ne change rien), rien
+    n'est rangé si le projet n'est pas validé ou si la liste est vide (« brouillons indisponibles »
+    de nouveau). Rend `True` si les brouillons sont rangés, `False` si l'écriture est ignorée.
+    L'évaluation, les compétences et le journal ne sont pas touchés."""
+    async with rt.project_lock(user_id, project_id), rt.session_factory() as db:
+        row = await owned(db, user_id, project_id)
+        if row.status != "validated" or row.drafts or not drafts:
+            logger.info("Brouillons ignorés : projet %s, session %s", project_id, session_id)
+            return False
+        row.drafts = {draft.kind: draft_data(draft) for draft in drafts}
+        await db.commit()
+    logger.info(
+        "Brouillons rangés : projet %s, session %s, %d brouillon(s)",
+        project_id,
+        session_id,
+        len(drafts),
+    )
+    return True

@@ -34,7 +34,7 @@ class ApiKey(UserScopedMixin, Base):
     __table_args__ = (UniqueConstraint("user_id", "provider", name="uq_api_keys_user_id_provider"),)
 
     provider: Mapped[str] = mapped_column(String(32))
-    encrypted_key: Mapped[str] = mapped_column(Text)
+    encrypted_key: Mapped[str] = mapped_column(Text, info={"export": False})  # jamais exportée
     last4: Mapped[str] = mapped_column(String(4))
     last_tested_at: Mapped[datetime | None] = mapped_column(UTCDateTime, default=None)
     last_test_ok: Mapped[bool | None] = mapped_column(Boolean, default=None)
@@ -45,6 +45,7 @@ class AuthSession(UserScopedMixin, Base):
     (jamais le jeton), la session vaut jusqu'à `expires_at` (durée fixe depuis la connexion)."""
 
     __tablename__ = "auth_sessions"
+    __table_args__ = ({"info": {"export": False}},)  # jamais exportée : une empreinte de jeton
 
     token_hash: Mapped[str] = mapped_column(String(64), unique=True)
     expires_at: Mapped[datetime] = mapped_column(UTCDateTime)

@@ -54,12 +54,12 @@ async def test_put_accepts_a_get_response_and_ignores_extra_fields(
 async def test_put_rejects_empty_model_or_provider_without_echo(client: httpx.AsyncClient) -> None:
     body = (await client.get("/api/v1/settings")).json()
     body["tiers"]["rapide"] = {"provider": "glm", "model": ""}
-    body["agent_overrides"] = {"coach": {"provider": "", "model": "MODELE-ECHO-XYZ"}}
+    body["agent_overrides"] = {"strategist": {"provider": "", "model": "MODELE-ECHO-XYZ"}}
     r = await client.put("/api/v1/settings", json=body)
     assert r.status_code == 422 and r.json()["error"]["code"] == "validation_error"
-    locs = [err["loc"] for err in r.json()["error"]["details"]["errors"]]
-    assert ["body", "tiers", "rapide", "model"] in locs
-    assert ["body", "agent_overrides", "coach", "provider"] in locs
+    fields = r.json()["error"]["details"]["fields"]
+    assert "tiers.rapide.model" in fields
+    assert "agent_overrides.strategist.provider" in fields
     assert "MODELE-ECHO-XYZ" not in r.text
 
 

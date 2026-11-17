@@ -95,5 +95,6 @@ class SearchUsage(UserScopedMixin, Base):
 
     provider: Mapped[str] = mapped_column(String(16))
     month: Mapped[str] = mapped_column(String(7))
-    key_fingerprint: Mapped[str] = mapped_column(String(16))
+    # Dérivée d'un secret : jamais exportée (`info`, D185 n° 10 b), même si ce n'est pas la clé.
+    key_fingerprint: Mapped[str] = mapped_column(String(16), info={"export": False})
     count: Mapped[int] = mapped_column(Integer, default=0)

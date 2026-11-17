@@ -3665,7 +3665,6 @@
         "description": "La confirmation de « Tout supprimer » : `confirm` doit être exactement `SUPPRIMER`.",
         "properties": {
           "confirm": {
-            "maxLength": 32,
             "title": "Confirm",
             "type": "string"
           }
@@ -13972,6 +13971,9 @@
           },
           "422": {
             "description": "`confirmation_required` : `details.fields` : `confirm`"
+          },
+          "503": {
+            "description": "`vector_store_unavailable` : Qdrant ne répond pas ; rien n'est supprimé en base, un nouvel appel reprend."
           }
         },
         "summary": "Delete Account",
@@ -13989,7 +13991,15 @@
             "content": {
               "application/zip": {}
             },
-            "description": "L'archive de toutes les données"
+            "description": "L'archive de toutes les données",
+            "headers": {
+              "Content-Disposition": {
+                "description": "`attachment; filename=\"tremplin-export-AAAAMMJJ.zip\"` : le nom proposé au téléchargement, le jour étant celui de l'utilisatrice.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
         "summary": "Export Account",
@@ -15347,14 +15357,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "description": "`details.fields` : `days` (ni 7, ni 30, ni 90)"
           }
         },
         "summary": "Get Costs",
@@ -18890,6 +18893,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "description": "`drafts_unavailable` : le lancement est refusé, rien n'est changé"
           }
         },
         "summary": "Post Drafts",

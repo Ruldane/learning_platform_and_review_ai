@@ -228,6 +228,9 @@ def make_redo(deps: GraphDeps) -> Node:
         reference, title = _reference(inputs), inputs.brief.title
         first = ProjectDrafts.model_validate(state["first_drafts"])
         found = check(first, reference, title)
+        if not any(found.values()):  # reprise : plus rien à corriger, aucun message vide au modèle
+            logger.info("Rien à corriger : session %s, projet %s", deps.session_id, project_id)
+            return {"outcome": _stored(state, first, found)}
         conversation: list[BaseMessage] = [
             SystemMessage(prompt_of(inputs)),
             HumanMessage(ASK),

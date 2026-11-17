@@ -12,13 +12,9 @@ from fastapi import APIRouter
 # Routeur → pourquoi il n'a pas de cas d'isolation.
 EXEMPT: dict[str, str] = {"app.features.health.router": "aucune donnée d'utilisatrice"}
 
-# Routeurs dont le cas vient du flux B (`cases_b.py`), absent de l'arbre du flux A. Le test garde
-# les tolère **seulement** tant que `cases_b.py` n'existe pas ; dès que le flux B est fusionné, ce
-# registre doit être vidé (`test_expected_from_b_is_emptied_once_b_delivers` échoue sinon) : un
-# routeur oublié par B ne peut donc pas se cacher ici.
-EXPECTED_FROM_B: frozenset[str] = frozenset(
-    {"app.features.costs.router", "app.features.account.router"}
-)
+# Routeurs dont le cas devait venir du flux B : vidé en 9.I, `cases_b.py` est fusionné
+# (`test_expected_from_b_is_emptied_once_b_delivers` échoue s'il ne l'est pas).
+EXPECTED_FROM_B: frozenset[str] = frozenset()
 
 _HERE = Path(__file__).parent
 

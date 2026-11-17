@@ -33,6 +33,16 @@ class SessionRepository(UserScopedRepository[AgentSession]):
         row = (await self.session.execute(stmt)).first()
         return None if row is None else (row[0], row[1], row[2])
 
+    async def open_ids(self, statuses: Collection[str]) -> list[str]:
+        """Les identifiants des sessions de l'utilisateur dont le statut est dans `statuses`, dans
+        l'ordre de leur création."""
+        stmt = (
+            select(AgentSession.id)
+            .where(AgentSession.user_id == self.user_id, AgentSession.status.in_(list(statuses)))
+            .order_by(AgentSession.created_at, AgentSession.id)
+        )
+        return list((await self.session.execute(stmt)).scalars())
+
     async def transition(
         self, session_id: str, *, from_: Collection[str], to: str, **values: Any
     ) -> bool:
