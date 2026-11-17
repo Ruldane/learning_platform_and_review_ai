@@ -29,13 +29,14 @@ NEW_ROUTES: list[tuple[str, str, dict[str, Any] | None]] = [
     ("POST", "/account/delete", {"confirm": "SUPPRIMER"}),
     ("POST", "/projects/p1/drafts", None),
 ]
-# Routes déjà remplies par un flux (9.B1 à 9.B4) : plus des bouchons, le contrat les liste.
+# Routes déjà remplies par un flux (9.B1 à 9.B5) : plus des bouchons, le contrat les liste.
 FILLED: set[tuple[str, str]] = {
     ("POST", "/projects/p1/drafts"),
     ("GET", "/costs"),
     ("GET", "/costs/calls"),
     ("GET", "/settings/agents"),
     ("GET", "/account/export"),
+    ("POST", "/account/delete"),
 }
 STUBS = [route for route in NEW_ROUTES if route[:2] not in FILLED]
 
@@ -54,7 +55,7 @@ async def test_new_route_is_a_501_stub(
     assert r.json()["error"]["message"] == "Pas encore disponible."
 
 
-async def test_delete_confirmation_is_checked_before_the_stub(client: httpx.AsyncClient) -> None:
+async def test_delete_confirmation_is_checked_in_the_code(client: httpx.AsyncClient) -> None:
     r = await client.post(f"{P}/account/delete", json={"confirm": "supprimer"})
     error = r.json()["error"]
     assert r.status_code == 422 and error["code"] == "confirmation_required"

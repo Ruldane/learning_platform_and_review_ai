@@ -36,3 +36,10 @@ class FileStorage(Protocol):
         `<user_id>/` compris), triées. Jamais un fichier d'un autre utilisateur ni un résidu
         d'écriture ; `StorageKeyInvalid` si `user_id` n'a pas la forme attendue."""
         ...
+
+    async def delete_user(self, user_id: str) -> int:
+        """Efface tout le dossier de `user_id` (résidus d'écriture compris) et rend le nombre de
+        fichiers rangés qu'il contenait. Idempotent : sans dossier, rend 0. Jamais un fichier d'un
+        autre utilisateur ; `StorageKeyInvalid` si `user_id` n'a pas la forme attendue ou si son
+        dossier est un lien qui sort de la racine."""
+        ...

@@ -1,6 +1,8 @@
-"""Service de « Mes données » : l'export de toutes les données (`export`), les tables qu'il
-parcourt (`tables`) et ce que la feature reçoit du démarrage (`runtime`)."""
+"""Service de « Mes données » : l'export de toutes les données (`export`), « Tout supprimer »
+(`delete`), les tables qu'ils parcourent (`tables`) et ce que la feature reçoit du démarrage
+(`runtime`)."""
 
+from app.features.account.service.delete import delete_account
 from app.features.account.service.export import (
     archive_size,
     build_export,
@@ -15,6 +17,7 @@ __all__ = [
     "AccountRuntime",
     "archive_size",
     "build_export",
+    "delete_account",
     "export_filename",
     "export_lock",
     "stream_export",

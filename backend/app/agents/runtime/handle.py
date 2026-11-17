@@ -6,6 +6,7 @@ l'importer sans charger tout le moteur.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -18,3 +19,7 @@ if TYPE_CHECKING:
 class AgentRuntime:
     bus: EventBus
     runner: SessionRunner
+
+    async def delete_threads(self, session_ids: Iterable[str]) -> None:
+        """Efface les points de reprise de ces sessions (`SessionRunner.delete_threads`)."""
+        await self.runner.delete_threads(session_ids)

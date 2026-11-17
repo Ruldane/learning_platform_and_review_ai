@@ -13,7 +13,7 @@ Le corps d'une tâche vit dans `execution.py`, les règles de statut dans `contr
 import asyncio
 import contextvars
 import logging
-from collections.abc import AsyncIterator, Mapping
+from collections.abc import AsyncIterator, Iterable, Mapping
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from functools import partial
@@ -156,6 +156,13 @@ class SessionRunner:
             await self._stop(user_id, session_id)
             await self._bus.close(user_id=user_id, session_id=session_id)
         return await control.get_owned(self._db, user_id, session_id)
+
+    async def delete_threads(self, session_ids: Iterable[str]) -> None:
+        """Efface les points de reprise (fils du checkpointer) de ces sessions, écritures en
+        attente comprises ; un fil absent n'est pas une erreur. L'appelant a annulé les sessions
+        avant (aucune tâche n'écrit plus dans ces fils)."""
+        for session_id in session_ids:
+            await self._ctx.checkpointer.adelete_thread(session_id)
 
     # --- Tâches --------------------------------------------------------------------------
 

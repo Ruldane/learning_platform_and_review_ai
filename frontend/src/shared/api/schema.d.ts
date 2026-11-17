@@ -7670,6 +7670,13 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description `vector_store_unavailable` : Qdrant ne répond pas ; rien n'est supprimé en base, un nouvel appel reprend. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     export_account_api_v1_account_export_get: {

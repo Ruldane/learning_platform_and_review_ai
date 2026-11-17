@@ -7,6 +7,7 @@ résolu (liens symboliques suivis) doit rester sous la racine résolue."""
 import asyncio
 import os
 import re
+import shutil
 import tempfile
 import uuid
 from pathlib import Path
@@ -44,6 +45,26 @@ class LocalFileStorage:
         if not _USER_ID.fullmatch(user_id):
             raise StorageKeyInvalid()
         return await asyncio.to_thread(self._list_user, user_id)
+
+    async def delete_user(self, user_id: str) -> int:
+        if not _USER_ID.fullmatch(user_id):
+            raise StorageKeyInvalid()
+        return await asyncio.to_thread(self._delete_user, user_id)
+
+    def _delete_user(self, user_id: str) -> int:
+        """Supprime `<racine>/<user_id>/`. Garde plus stricte que `list_user` : un dossier qui est
+        un lien (vers l'extérieur comme vers le dossier d'un autre compte) est refusé, rien n'est
+        supprimé ailleurs que chez `user_id`. Les liens **dans** le dossier sont
+        retirés sans être suivis (`shutil.rmtree` ne suit pas les liens)."""
+        root = self._root.resolve()
+        folder = (root / user_id).resolve()
+        if not folder.exists():
+            return 0
+        if folder != root / user_id:  # ni hors de la racine, ni le dossier d'un autre compte
+            raise StorageKeyInvalid()
+        count = len(self._list_user(user_id))
+        shutil.rmtree(folder, ignore_errors=False)
+        return count
 
     def _list_user(self, user_id: str) -> list[str]:
         """Les fichiers réguliers de `<racine>/<user_id>/` dont la clé a la forme générée par

@@ -5,7 +5,7 @@ champs, sans jamais recopier la confirmation reçue."""
 from datetime import UTC, datetime
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import StreamingResponse
 from starlette.requests import HTTPConnection
 
@@ -24,6 +24,10 @@ from app.features.account.service import (
     stream_export,
     user_export_zone,
 )
+from app.features.account.service import (
+    delete_account as erase_account,
+)
+from app.features.auth.service.cookies import clear_session_cookie
 from app.features.postings.service.runtime import KeyLocks
 
 router = APIRouter(prefix="/account", tags=["account"], route_class=FieldPathsRoute)
@@ -54,7 +58,13 @@ def get_account_runtime(conn: HTTPConnection) -> AccountRuntime:
         locks = state.account_locks = KeyLocks()
     memory: MemoryProviders = state.memory_providers
     runtime: AgentRuntime = state.runtime
-    return AccountRuntime(storage=memory.storage, index=memory.index, runtime=runtime, locks=locks)
+    return AccountRuntime(
+        session_factory=state.session_factory,
+        storage=memory.storage,
+        index=memory.index,
+        runtime=runtime,
+        locks=locks,
+    )
 
 
 AccountDep = Annotated[AccountRuntime, Depends(get_account_runtime)]
@@ -83,9 +93,19 @@ async def export_account(current: CurrentUserDep, db: Db, rt: AccountDep) -> Res
     "/delete",
     status_code=204,
     response_class=Response,
-    responses={422: {"description": "`confirmation_required` : `details.fields` : `confirm`"}},
+    responses={
+        422: {"description": "`confirmation_required` : `details.fields` : `confirm`"},
+        503: {
+            "description": (
+                "`vector_store_unavailable` : Qdrant ne répond pas ; rien n'est supprimé en base,"
+                " un nouvel appel reprend."
+            )
+        },
+    },
 )
-async def delete_account(body: DeleteAccountIn, current: CurrentUserDep, db: Db) -> Response:
+async def delete_account(
+    request: Request, body: DeleteAccountIn, current: CurrentUserDep, rt: AccountDep
+) -> Response:
     """Tout supprimer : annule les sessions en cours, puis efface les vecteurs, les fichiers, les
     points de reprise et toutes les lignes du compte. `confirm` doit être `SUPPRIMER`, sinon 422
     `confirmation_required`. Rejouable jusqu'au bout si elle est interrompue. Mode local : l'espace
@@ -97,4 +117,9 @@ async def delete_account(body: DeleteAccountIn, current: CurrentUserDep, db: Db)
             422,
             {"fields": ["confirm"]},
         )
-    raise AppError("not_implemented", "Pas encore disponible.", 501)
+    auth_mode = request.app.state.settings.auth_mode
+    await erase_account(rt, current.id, auth_mode=auth_mode)
+    response = Response(status_code=204)
+    if auth_mode == "google":
+        clear_session_cookie(response)  # la session a disparu avec le compte
+    return response

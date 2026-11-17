@@ -29,6 +29,12 @@ def user_tables() -> list[Table]:
     ]
 
 
+def all_user_tables() -> list[Table]:
+    """Toutes les tables qui ont une colonne `user_id`, **sans exception**, dans l'ordre des
+    dépendances : ce que « Tout supprimer » vide (`auth_sessions` comprise)."""
+    return [table for table in Base.metadata.sorted_tables if "user_id" in table.c]
+
+
 def exported_columns(table: Table) -> list[Column[Any]]:
     """Les colonnes de `table` qui sortent : toutes, sauf `REDACTED_COLUMNS`."""
     hidden = REDACTED_COLUMNS.get(table.name, frozenset())

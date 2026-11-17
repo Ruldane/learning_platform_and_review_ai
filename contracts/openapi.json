@@ -3665,7 +3665,6 @@
         "description": "La confirmation de « Tout supprimer » : `confirm` doit être exactement `SUPPRIMER`.",
         "properties": {
           "confirm": {
-            "maxLength": 32,
             "title": "Confirm",
             "type": "string"
           }
@@ -13972,6 +13971,9 @@
           },
           "422": {
             "description": "`confirmation_required` : `details.fields` : `confirm`"
+          },
+          "503": {
+            "description": "`vector_store_unavailable` : Qdrant ne répond pas ; rien n'est supprimé en base, un nouvel appel reprend."
           }
         },
         "summary": "Delete Account",
