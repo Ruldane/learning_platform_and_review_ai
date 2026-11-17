@@ -46,7 +46,8 @@ MCP = FeatureMcp(
             1,
             "settings_get_preferences",
             "Les préférences de January (disponibilité, rythme, étude, style, recherche, "
-            "fuseau). La réponse nomme aussi les niveaux de modèles, sans aucune clé.",
+            "fuseau). Jamais les modèles par niveau, les surcharges par agent ni les clés.",
+            response_fields=PREFERENCE_FIELDS,
         ),
         McpAction(
             "PUT /settings",

@@ -9,7 +9,7 @@ from typing import Any
 import httpx
 
 from app.mcp.arguments import clip
-from app.mcp.tools import ToolSpec
+from app.mcp.tools import ToolResult, ToolSpec
 
 
 def form_fields(body: Any) -> list[tuple[str, tuple[None, str]]]:
@@ -106,3 +106,20 @@ def result_ids(arguments: Mapping[str, Any], data: Any) -> dict[str, Any]:
             if (key == "id" or key.endswith("_id")) and isinstance(value, str | int):
                 ids.setdefault(key, value)
     return ids
+
+
+def timed_out(data: Any, arguments: Mapping[str, Any], call_id: str | None) -> ToolResult:
+    """Délai dépassé sur une écriture : la route a pu valider ses écritures avant de répondre.
+    Claude le lit (`notice`) avant de relancer, le journal le garde (`outcome: timeout`) ; rien
+    n'a été enregistré pour l'annulation."""
+    notice = (
+        "La route a pu écrire avant le délai : vérifie l'état (lecture) avant de relancer, "
+        "et cet appel ne pourra pas être annulé depuis l'application."
+    )
+    return ToolResult(
+        data=data,
+        code=504,
+        ids={**result_ids(arguments, data), "outcome": "timeout"},
+        call_id=call_id,
+        notice=notice,
+    )

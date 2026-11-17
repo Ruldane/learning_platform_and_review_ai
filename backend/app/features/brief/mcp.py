@@ -16,6 +16,7 @@ MCP = FeatureMcp(
     graphs=(
         McpGraph(
             "daily_brief",
+            follow_only=True,
             summary="Écrit le conseil et la ressource du brief du jour (`brief_id`).",
         ),
     ),

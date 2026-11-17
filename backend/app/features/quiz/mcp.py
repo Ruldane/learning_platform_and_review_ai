@@ -10,6 +10,7 @@ MCP = FeatureMcp(
             2,
             "quiz_start_quiz",
             "Prépare le quiz d'un module (déjà prêt : le rend).",
+            launches="quiz",
         ),
         McpAction(
             "GET /programs/{program_id}/quizzes",
@@ -43,6 +44,7 @@ MCP = FeatureMcp(
     graphs=(
         McpGraph(
             "quiz",
+            follow_only=True,
             summary="Écrit un quiz (`mode` generate, `quiz_id`) ou note une tentative "
             "(`mode` grade, `attempt_id`).",
         ),

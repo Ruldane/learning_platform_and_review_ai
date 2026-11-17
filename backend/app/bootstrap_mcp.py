@@ -65,13 +65,15 @@ def install_gate(
     tools: ToolRegistry,
     dispatcher: Dispatcher,
     limits: Limits | None = None,
+    features: Sequence[FeatureMcp] = MCP_FEATURES,
 ) -> McpGate:
     """Pose la porte sur `app.state.mcp_gate` : l'envoyeur donné, enveloppé des limites et du
-    journal. Les features connues viennent des déclarations (`None` tant qu'aucune n'existe)."""
+    journal. Les features connues viennent des déclarations données, celles de l'application par
+    défaut (`None` tant qu'aucune n'existe)."""
     limiter = RateLimiter(limits)
     journal = CallJournal(app.state.session_factory, _local_user(app))
-    guarded = GuardedDispatcher(dispatcher, limiter, journal)
-    known = frozenset(declared.feature for declared in MCP_FEATURES) or None
+    guarded = GuardedDispatcher(dispatcher, limiter, journal, tools.launchers)
+    known = frozenset(declared.feature for declared in features) or None
     gate = McpGate(
         tools=tools,
         dispatcher=guarded,
@@ -104,7 +106,7 @@ def install_adapter(
     dispatcher = McpDispatcher(app, app.state.session_factory, registry, confirmations)
     app.state.mcp_registry = registry
     app.state.mcp_confirmations = confirmations
-    install_gate(app, registry, dispatcher, limits)
+    install_gate(app, registry, dispatcher, limits, features)
     return registry
 
 

@@ -85,8 +85,14 @@ def _port(node: Any, components: Mapping[str, Any], defs: dict[str, Any]) -> Any
 
 def _is_file(node: Mapping[str, Any], components: Mapping[str, Any]) -> bool:
     node = _resolve(node, components)
+    options = [*node.get("anyOf", ()), *node.get("oneOf", ())]
+    if any(_is_file(option, components) for option in options):
+        return True  # un fichier facultatif : `anyOf: [fichier, null]`
     item = _resolve(node.get("items", {}), components)
-    return "binary" in (node.get("format"), item.get("format")) or "contentMediaType" in node
+    return "binary" in (node.get("format"), item.get("format")) or "contentMediaType" in {
+        **node,
+        **item,
+    }
 
 
 def operation(openapi: Mapping[str, Any], method: str, path: str) -> Mapping[str, Any]:

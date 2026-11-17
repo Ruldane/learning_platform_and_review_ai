@@ -12,6 +12,7 @@ MCP = FeatureMcp(
             "capture_start_capture",
             "Lance la capture rapide d'une seule source : un texte, un lien ou un document déjà "
             "importé ; l'Archiviste range le résultat en mémoire.",
+            launches="capture",
         ),
         McpAction(
             "GET /journal",
@@ -23,6 +24,7 @@ MCP = FeatureMcp(
     graphs=(
         McpGraph(
             "capture",
+            follow_only=True,
             summary="Capture rapide : une seule source parmi `url`, `text` ou `document_id`.",
         ),
     ),

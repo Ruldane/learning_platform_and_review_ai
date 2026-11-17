@@ -31,6 +31,7 @@ class Limits:
     confirmations_per_day: int = 20
     code_runs_per_minute: int = 2
     requests_per_minute: int = 600  # toute requête authentifiée (plafond grossier)
+    graph_launches_per_day: int = 30  # lancements de parcours par utilisatrice, jour glissant (M11)
 
 
 @dataclass(frozen=True)
@@ -92,6 +93,10 @@ class RateLimiter:
             return None
         frees_at = events[len(events) - rule.limit] + rule.window
         return max(1, ceil((frees_at - now).total_seconds()))
+
+    @property
+    def limits(self) -> Limits:
+        return self._limits
 
     async def check(
         self, identity: McpIdentity, level: Level, now: datetime, *, bucket: str | None = None

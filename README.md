@@ -222,6 +222,15 @@ adresse et téléphone sont retirés des requêtes de recherche avant leur envoi
 - Les réglages permettent de choisir un modèle moins cher par niveau, ou agent par agent (mode
   avancé).
 
+## Piloter Tremplin avec Claude Code ou Codex (MCP)
+
+Tremplin expose ses actions par un serveur MCP local (`http://127.0.0.1:8000/mcp`). Tu crées un
+jeton dans **Réglages > Accès MCP** (interrupteur coupé par défaut, portée, lecture ou écriture,
+expiration) ; ce qui ne s'annule pas attend ton clic dans l'application. Le branchement, les
+niveaux, les limites et les règles de conduite d'un agent sont dans `docs/mcp/` (`AGENTS.md`, lu
+par Codex ; `CLAUDE.md`, par Claude Code). La table des niveaux : `python -m scripts.mcp_levels`
+depuis `backend/`.
+
 ## Services
 
 - Les 7 services : `frontend` (5173), `backend` (8000), `qdrant` (6333), `ollama`, `ollama-init`

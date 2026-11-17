@@ -12,7 +12,7 @@ from app.agents.graphs.registry import GRAPHS
 from app.features.registry import FEATURE_ROUTERS, MCP_FEATURES
 from app.features.settings.mcp import PREFERENCE_FIELDS, PROTECTED_FIELDS
 from app.features.settings.schemas import UserSettings
-from app.mcp.base import NEVER_EXPOSED_FEATURES, McpAction, untrusted_paths_valid
+from app.mcp.base import NEVER_EXPOSED_FEATURES, READ_ONLY_POSTS, McpAction, untrusted_paths_valid
 from scripts.mcp_levels import RouteInfo, iter_routes, main, render_table
 
 ROUTES = iter_routes(FEATURE_ROUTERS)
@@ -25,9 +25,6 @@ ACTION_BY_ROUTE = {action.route: action for _, action in ACTIONS}
 EXCLUDED = {key: why for feature in MCP_FEATURES for key, why in feature.excluded.items()}
 
 GRAPH_PREFIX = "graph:"
-# Des POST qui ne font que lire (recherche) : niveau 1, sinon un jeton en lecture seule ne
-# pourrait pas chercher dans la mémoire.
-READ_ONLY_POSTS = frozenset({"POST /memory/search"})
 # Écrivent (ou peuvent écrire) au profil maître : niveau 3 et contrôle préalable.
 PROFILE_WRITES = frozenset(
     {
@@ -221,8 +218,13 @@ def test_upload_and_stream_routes_are_excluded() -> None:
         "WS /sessions/{session_id}/stream",
     }
     for route in risky:
-        assert route.key in EXCLUDED, route.key
-        assert route.key not in ACTION_BY_ROUTE, route.key
+        # Un formulaire sans fichier (`encoding="form"`) peut être déclaré : ses fichiers sont
+        # écartés du schéma de l'outil. Tout autre envoi de fichier ou flux est exclu.
+        action = ACTION_BY_ROUTE.get(route.key)
+        if action is not None:
+            assert action.encoding == "form" and route.key not in EXCLUDED, route.key
+        else:
+            assert route.key in EXCLUDED, route.key
 
 
 def test_text_variants_of_uploads_are_declared() -> None:

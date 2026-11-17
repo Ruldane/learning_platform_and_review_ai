@@ -10,6 +10,7 @@ MCP = FeatureMcp(
             2,
             "study_start_session",
             "Ouvre une session guidée sur une leçon (ou le bloc du jour) et lance le Tuteur.",
+            launches="study_session",
         ),
         McpAction(
             "GET /study-sessions/summary",
@@ -33,6 +34,7 @@ MCP = FeatureMcp(
     graphs=(
         McpGraph(
             "study_session",
+            follow_only=True,
             summary="Le Tuteur conduit une session guidée (`study_session_id`).",
         ),
     ),

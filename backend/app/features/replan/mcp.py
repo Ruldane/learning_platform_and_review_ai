@@ -11,6 +11,7 @@ MCP = FeatureMcp(
             "replan_start_replan",
             "Lance une replanification (« cette semaine je n'ai que 5 heures ») : le Stratège "
             "propose, rien n'est écrit sans la réponse de January.",
+            launches="replan",
         ),
         McpAction(
             "GET /programs/{program_id}/versions",
@@ -22,6 +23,7 @@ MCP = FeatureMcp(
     graphs=(
         McpGraph(
             "replan",
+            follow_only=True,
             summary="Replanifie un programme (`program_id`, `trigger`, message facultatif).",
         ),
     ),

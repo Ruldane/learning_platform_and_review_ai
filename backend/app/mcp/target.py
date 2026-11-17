@@ -33,11 +33,12 @@ def reader_of_target(registry: Registry, tool: ToolSpec, path: str) -> tuple[Too
 
 def label_of(data: Any, reader: ToolSpec) -> str | None:
     """Le nom d'une ressource lue : ses champs `company`, `title`, `name`… (deux au plus), les clés
-    masquées et la coupe faites **avant** d'entourer ceux que la lecture déclare non fiables."""
+    masquées **puis** la coupe (jamais une clé coupée en deux), avant d'entourer ceux que la lecture
+    déclare non fiables."""
     if not isinstance(data, dict):
         return None
     parts = {
-        key: scrub_text(clip(data[key], _PART_MAX))
+        key: clip(scrub_text(str(data[key])), _PART_MAX)
         for key in _KEYS
         if isinstance(data.get(key), str) and data[key].strip()
     }
