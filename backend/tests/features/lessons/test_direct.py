@@ -3,15 +3,18 @@ rangent le Markdown de January ou de Claude comme le port du Rédacteur, sans ag
 modèle."""
 
 import httpx
+import pytest
 from fastapi import FastAPI
 from sqlalchemy import select
 
 from app.db.models.lessons import Lesson
 from app.db.models.memory import MemoryItem
+from app.features.memory.service.direct import drain_indexing
 from tests.sessions_support import act_as
-from tests.support.direct import API, OTHER, Seed, assert_no_agent
+from tests.support.direct import API, OTHER, Seed, assert_no_agent, lesson_text
 
-MARKDOWN = "# Les bases\n\nUne leçon écrite à la main, avec assez de mots pour compter.\n"
+MARKDOWN = lesson_text("Une leçon écrite à la main, avec assez de mots pour compter.")
+pytestmark = pytest.mark.usefixtures("settled_indexing")
 SECRET = "SECRET-DE-LA-LECON"
 
 
@@ -40,7 +43,8 @@ async def test_write_lesson_is_ready_without_any_agent(
     assert [row["id"] for row in listed] == [lesson["id"]]
     [item] = await memory_items(app, "lecon")  # sa copie en mémoire, écrite par January, indexée
     assert (item.title, item.text, item.created_by) == ("Module Bases", MARKDOWN.strip(), "user")
-    assert item.indexed_at is not None
+    await drain_indexing()  # l'indexation suit, hors de l'appel (voir tests/mcp/test_direct_memory)
+    assert (await memory_items(app, "lecon"))[0].indexed_at is not None
     await assert_no_agent(app)
 
 
@@ -65,10 +69,11 @@ async def test_write_lesson_with_own_title_then_patch(
     assert patched.json()["word_count"] == len(patched.json()["markdown"].split())
     renamed = await client.patch(f"{API}/lessons/{lesson_id}", json={"title": "Autre titre"})
     assert renamed.json()["title"] == "Autre titre" and renamed.json()["markdown"].startswith(
-        "# Les"
+        "# Une"
     )
     [item] = await memory_items(app, "lecon")  # mis à jour, pas dupliqué
     assert item.title == "Autre titre" and "Un paragraphe de plus." in item.text
+    await drain_indexing()
     await assert_no_agent(app)
 
 
@@ -169,3 +174,16 @@ async def test_lesson_write_is_isolated_between_users(
     )
     act_as(app, drafted.user_id)
     assert (await client.get(f"{API}/lessons/{lesson_id}")).json()["title"] == "Module Bases"
+
+
+async def test_a_lesson_needs_at_least_300_characters(
+    client: httpx.AsyncClient, drafted: Seed
+) -> None:
+    url = f"{API}/modules/{drafted.modules[0]}/lesson"
+    short = await client.post(url, json={"markdown": "x" * 299})
+    assert short.status_code == 422 and "x" * 20 not in short.text
+    made = await client.post(url, json={"markdown": "x" * 300})
+    assert made.status_code == 201
+    patched = await client.patch(f"{API}/lessons/{made.json()['id']}", json={"markdown": "x" * 299})
+    assert patched.status_code == 422
+    await drain_indexing()

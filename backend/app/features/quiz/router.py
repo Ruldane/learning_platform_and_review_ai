@@ -68,8 +68,10 @@ async def start_quiz(
     },
 )
 async def write_quiz(body: QuizWriteIn, current: CurrentUserDep, rt: QuizDep) -> QuizOut:
-    """Écrit le quiz d'un module en direct (1 à 12 questions, fiches en plus), sans agent ni appel
-    au modèle ; le quiz est prêt, la leçon du module n'a pas à l'être."""
+    """Écrit le quiz d'un module en direct (1 à 12 questions, sans fiches), sans agent ni appel au
+    modèle ; la leçon du module n'a pas à être prête. Il reste « en préparation » (`generating`,
+    sans session) tant qu'il n'a pas 8 questions, 3 types et des énoncés de 10 caractères : toute
+    tentative donne alors 409 `quiz_incomplete`."""
     return await direct.create_quiz(rt, current.id, body)
 
 

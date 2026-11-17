@@ -67,7 +67,7 @@ async def test_patch_changes_the_given_fields_only(
     await assert_no_agent(app)
 
 
-async def test_origin_stays_when_claude_edits_a_user_exercise(client: httpx.AsyncClient) -> None:
+async def test_patch_by_claude_marks_the_exercise_as_claudes(client: httpx.AsyncClient) -> None:
     exercise = await make(client)
     identity = McpIdentity(USER, "t1", "Claude Code", frozenset({"ide"}), "write")
     token = MCP_IDENTITY.set(identity)
@@ -78,7 +78,20 @@ async def test_origin_stays_when_claude_edits_a_user_exercise(client: httpx.Asyn
     finally:
         MCP_IDENTITY.reset(token)
 
-    assert r.status_code == 200 and r.json()["origin"] == "user"
+    assert r.status_code == 200 and r.json()["origin"] == "claude"
+
+
+async def test_files_and_entry_keep_the_exercise_runnable(client: httpx.AsyncClient) -> None:
+    exercise = await make(client)
+    url = f"{API}/exercises/{exercise['id']}"
+
+    for body in ({"files": {"autre.py": "x = 1\n"}}, {"entry": "absent.py"}):
+        r = await client.patch(url, json=body)
+        assert (r.status_code, code(r)) == (422, "entry_invalid"), body
+    created = await client.post(f"{API}/exercises", json={**EXERCISE, "files": {"x.py": "x = 1\n"}})
+    assert (created.status_code, code(created)) == (422, "entry_invalid")
+    ok = await client.patch(url, json={"files": {"autre.py": "x = 1\n"}, "entry": "autre.py"})
+    assert ok.status_code == 200 and ok.json()["entry"] == "autre.py"
 
 
 async def test_patch_is_checked_like_a_creation(client: httpx.AsyncClient) -> None:

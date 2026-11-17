@@ -6,6 +6,13 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
+from app.agents.tools.quiz_port import (
+    MAX_CHOICES,
+    MAX_QUESTIONS,
+    MIN_CHOICES,
+    MIN_PROMPT_CHARS,
+)
+
 QuizStatusOut = Literal["generating", "ready", "failed"]
 AttemptStatusOut = Literal["grading", "graded", "failed"]
 QuestionTypeOut = Literal["qcm", "short", "code", "explain"]
@@ -117,8 +124,6 @@ class ReviewOut(BaseModel):
     demoted_skill: str | None
 
 
-MIN_CHOICES, MAX_CHOICES = 3, 5  # un QCM : 3 à 5 choix (comme celui de l'Examinateur)
-MAX_QUESTIONS = 12
 _Choice = Annotated[str, Field(min_length=1, max_length=200)]
 _Criterion = Annotated[str, Field(min_length=1, max_length=200)]
 
@@ -130,7 +135,7 @@ class QuestionIn(BaseModel):
     l'extrait dans `code`."""
 
     type: Literal["qcm", "short", "code", "explain"]
-    prompt: str = Field(min_length=5, max_length=600)
+    prompt: str = Field(min_length=MIN_PROMPT_CHARS, max_length=600)
     code: str | None = Field(default=None, max_length=3000)
     choices: list[_Choice] = Field(default_factory=list, max_length=MAX_CHOICES)
     correct_index: int | None = None
@@ -166,7 +171,7 @@ class QuestionPatch(BaseModel):
     """Retouche d'une question : les champs donnés remplacent ceux de la question, qui est
     revalidée en entier (`QuestionIn`)."""
 
-    prompt: str | None = Field(default=None, min_length=5, max_length=600)
+    prompt: str | None = Field(default=None, min_length=MIN_PROMPT_CHARS, max_length=600)
     code: str | None = Field(default=None, max_length=3000)
     choices: list[_Choice] | None = Field(default=None, max_length=MAX_CHOICES)
     correct_index: int | None = None

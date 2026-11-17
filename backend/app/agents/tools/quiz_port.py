@@ -22,6 +22,11 @@ from app.core.errors import AppError
 from app.db.models.study import QuestionType
 
 MIN_TYPES = 3  # au moins 3 types sur 4 : un module sans code n'a pas de lecture de code
+# Bornes du quiz, lues aussi par l'écriture directe (`features/quiz`) : un quiz écrit à la main ne
+# s'ouvre aux tentatives (donc aux acquis) qu'à ces bornes.
+MIN_QUESTIONS = 8
+MAX_QUESTIONS = 12
+MIN_PROMPT_CHARS = 10
 MIN_CHOICES = 3
 MAX_CHOICES = 5
 OPEN_SCORES = (0.0, 0.5, 1.0)  # notes d'une réponse ouverte
@@ -32,7 +37,7 @@ Criterion = Annotated[str, Field(min_length=1, max_length=200), ShortenToMax()]
 
 class QuestionDraft(BaseModel):
     type: QuestionType
-    prompt: str = Field(min_length=10, max_length=600)
+    prompt: str = Field(min_length=MIN_PROMPT_CHARS, max_length=600)
     code: str | None = Field(default=None, max_length=3000)
     choices: list[Choice] = Field(default_factory=list, max_length=MAX_CHOICES)
     correct_index: int | None = None
@@ -44,7 +49,7 @@ class QuestionDraft(BaseModel):
 
 class QuizDraft(BaseModel):
     title: str = Field(min_length=3, max_length=200)
-    questions: list[QuestionDraft] = Field(min_length=8, max_length=12)
+    questions: list[QuestionDraft] = Field(min_length=MIN_QUESTIONS, max_length=MAX_QUESTIONS)
     flashcards: list[CardDraft] = Field(min_length=3, max_length=6)
 
 

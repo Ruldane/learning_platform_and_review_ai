@@ -49,6 +49,7 @@ async def test_another_user_cannot_reach_any_route_of_my_project(
             await client.post(f"{API}/{mine}/profile-entry", json=ENTRY),
             await submit(client, mine),
             await client.post(f"{API}/{mine}/brief"),
+            await client.patch(f"{API}/{mine}", json={"hours": 5}),  # écriture directe (10.W)
         ]
         for response in calls:
             assert response.status_code == 404 and code(response) == "project_not_found"

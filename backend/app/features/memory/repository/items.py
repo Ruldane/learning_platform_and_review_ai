@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from sqlalchemy import ColumnElement, Select, exists, func, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import set_committed_value
 
 from app.db.models.memory import ItemStatus, MemoryChunk, MemoryItem, MemoryKind
@@ -198,3 +199,18 @@ class MemoryItemRepository(UserScopedRepository[MemoryItem]):
         )
         await self.session.execute(stmt)
         await self.session.flush()
+
+
+async def users_with_unindexed(session: AsyncSession, limit: int) -> builtins.list[str]:
+    """Les comptes qui ont des éléments actifs à indexer (`limit` au plus), identifiants seulement.
+
+    SEULE lecture sans `user_id` de la mémoire (comme `validated_programs`) : réservée à la tâche
+    d'entretien qui rattrape l'indexation (`index_pending_all`) ; chaque lecture suivante filtre
+    par utilisatrice."""
+    stmt = (
+        select(MemoryItem.user_id)
+        .where(MemoryItem.status == "active", MemoryItem.indexed_at.is_(None))
+        .group_by(MemoryItem.user_id)
+        .limit(limit)
+    )
+    return builtins.list((await session.execute(stmt)).scalars().all())

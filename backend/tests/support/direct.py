@@ -12,6 +12,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.db.models.agents import AgentSession, LlmCall
+from app.features.memory.service.direct import drain_indexing
 from app.features.program.service.programs import load
 from app.features.program.service.store import AgentProgramStore
 from tests.features.program.support import MONDAY, add_goal, sample_plan
@@ -80,3 +81,15 @@ async def claude(client: httpx.AsyncClient, app: FastAPI) -> AsyncIterator[Mcp]:
     transport = httpx.ASGITransport(app=app, raise_app_exceptions=False)
     async with httpx.AsyncClient(transport=transport, base_url="http://localhost") as http:
         yield Mcp(http)
+
+
+def lesson_text(sentence: str) -> str:
+    """Une leçon d'au moins 300 caractères (le plancher de l'écriture directe) de `sentence`."""
+    return "# Une leçon\n\n" + " ".join([sentence] * (300 // len(sentence) + 2)) + "\n"
+
+
+@pytest.fixture
+async def settled_indexing(client: httpx.AsyncClient) -> AsyncIterator[None]:
+    """Attend, avant l'arrêt de l'application, l'indexation de fond lancée par les écritures."""
+    yield
+    await drain_indexing()

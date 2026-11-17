@@ -118,6 +118,13 @@ async def test_lesson_routes_and_isolation(client: httpx.AsyncClient, app: FastA
     assert (await client.get(f"{API}/resources")).json() == []
     r = await client.patch(f"{API}/resources/{s.resources[0]}", json={"status": "read"})
     assert r.status_code == 404
+    # Écriture directe (10.W) : ni écrire la leçon d'un module d'une autre, ni retoucher la sienne.
+    r = await client.post(
+        f"{API}/modules/{lesson['module_id']}/lesson", json={"markdown": "x" * 300}
+    )
+    assert (r.status_code, r.json()["error"]["code"]) == (404, "module_not_found")
+    r = await client.patch(f"{API}/lessons/{s.lesson_id}", json={"title": "Pris"})
+    assert (r.status_code, r.json()["error"]["code"]) == (404, "lesson_not_found")
 
 
 async def test_lesson_pdf_missing_is_404(client: httpx.AsyncClient, app: FastAPI) -> None:

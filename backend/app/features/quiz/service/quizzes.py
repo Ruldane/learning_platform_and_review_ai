@@ -28,6 +28,7 @@ from app.features.quiz.service.runtime import GRAPH, SUBJECT, QuizRuntime
 from app.features.quiz.service.scoring import passed
 from app.features.quiz.service.shuffle import choice_order, question_order
 from app.features.quiz.service.status import (
+    DRAFT_REASON,
     attempt_shown,
     interrupted,
     open_sessions,
@@ -43,6 +44,15 @@ LAUNCH_FAILED = "Le quiz n'a pas pu être lancé : réessaie dans un instant."
 
 def quiz_not_found() -> AppError:
     return AppError("quiz_not_found", "Quiz introuvable.", 404)
+
+
+def quiz_draft() -> AppError:
+    return AppError(
+        "quiz_draft",
+        "Le quiz de ce module est écrit à la main et pas encore complet : ajoute ses questions "
+        "plutôt que de le faire écrire par l'agent.",
+        409,
+    )
 
 
 def lesson_not_ready() -> AppError:
@@ -70,6 +80,8 @@ async def _prepare(db: AsyncSession, user_id: str, module_id: str) -> QuizStarte
             return QuizStarted(quiz_id=found.id, session_id=found.session_id, status="ready")
         if found.status == "generating" and found.session_id in open_ids:
             return QuizStarted(quiz_id=found.id, session_id=found.session_id, status="generating")
+        if found.status == "generating" and found.failure_reason == DRAFT_REASON:
+            raise quiz_draft()
     if await ready_markdown(db, user_id, module_id) is None:
         raise lesson_not_ready()
     if found is None:
@@ -156,9 +168,9 @@ async def list_quizzes(db: AsyncSession, user_id: str, program_id: str) -> list[
         status: str | None = None
         mine: list[QuizAttempt] = []
         if quiz is not None:
-            status = quiz_shown(quiz.status, quiz.session_id, None, open_by_quiz.get(quiz.id, []))[
-                0
-            ]
+            status = quiz_shown(
+                quiz.status, quiz.session_id, quiz.failure_reason, open_by_quiz.get(quiz.id, [])
+            )[0]
             mine = [a for a in attempts if a.quiz_id == quiz.id]
         out.append(
             QuizSummaryOut.model_validate(
@@ -216,7 +228,8 @@ async def get_quiz(db: AsyncSession, user_id: str, quiz_id: str) -> QuizOut:
         lambda r: [(r[0].status, r[0].session_id)] + [(a.status, a.session_id) for a in r[1]],
     )
     status, reason = quiz_shown(quiz.status, quiz.session_id, quiz.failure_reason, open_ids)
-    questions = await QuestionRepository(db, user_id).for_quiz(quiz_id) if status == "ready" else []
+    shown_questions = status == "ready" or reason == DRAFT_REASON  # un brouillon se relit
+    questions = await QuestionRepository(db, user_id).for_quiz(quiz_id) if shown_questions else []
     summaries = [
         AttemptSummaryOut.model_validate(
             {

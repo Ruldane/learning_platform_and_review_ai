@@ -16,6 +16,7 @@ import logging
 
 from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.tools.posting_schema import (
     PostingAnalysis,
@@ -25,7 +26,7 @@ from app.agents.tools.posting_schema import (
 )
 from app.core.errors import AppError
 from app.db.models.postings import JobPosting
-from app.features.memory.service.direct import author_of, write_direct
+from app.features.memory.service.direct import author_of, schedule_indexing, write_direct
 from app.features.memory.service.upload import normalize_url
 from app.features.postings.repository import PostingRepository
 from app.features.postings.schemas import (
@@ -80,12 +81,7 @@ def _analysis(data: dict[str, object], text: str) -> PostingAnalysis:
             422,
             {"fields": fields or ["body"]},
         ) from None
-    fields = []
-    if keyword_problems(analysis, text):
-        fields.append("keywords")
-    if requirement_problems(analysis):
-        fields.append("requirements")
-    if fields:
+    if fields := _problems(analysis, text):
         raise posting_analysis_invalid(fields)
     return analysis
 
@@ -124,76 +120,94 @@ async def _existing(
         return await repo.by_text_hash(text_digest(text))
 
 
-async def _store(
-    rt: PostingsRuntime, user_id: str, source: Source, text: str, analysis: PostingAnalysis
-) -> tuple[str, bool] | None:
-    """`(id, créée)` : la ligne écrite d'un coup avec son analyse (nouvelle, ou reprise d'une offre
-    dont l'analyse avait échoué) ; `None` si l'offre existe déjà et n'a rien à recevoir."""
-    async with rt.session_factory() as db:
-        found = await _existing(rt, user_id, source, text)
-        if found is not None:
-            if found.analysis is not None or found.status not in ("failed", "rejected"):
-                return None
-            row = await PostingRepository(db, user_id).get_fresh(found.id)
-            assert row is not None
-            _apply(row, analysis)
-            await db.commit()
-            return row.id, False
-        row = JobPosting(
-            user_id=user_id,
-            url=source.url,
-            url_norm=source.url_norm,
-            source="url" if source.url_norm else "text",
-            text=text,
-            text_hash=text_digest(text),
-        )
-        _apply(row, analysis)
-        db.add(row)
-        try:
-            await db.commit()
-        except IntegrityError:  # une autre requête vient de l'écrire : on rend la sienne
-            await db.rollback()
-            return None
-        return row.id, True
+def _problems(analysis: PostingAnalysis, text: str) -> list[str]:
+    """Les champs de l'analyse que le texte ou la liste `skills` ne tiennent pas."""
+    fields = []
+    if keyword_problems(analysis, text):
+        fields.append("keywords")
+    if requirement_problems(analysis):
+        fields.append("requirements")
+    return fields
 
 
 async def _memory_and_duplicates(
+    db: AsyncSession,
     rt: PostingsRuntime,
     user_id: str,
-    posting_id: str,
+    posting: JobPosting,
     analysis: PostingAnalysis,
-    text: str,
     *,
     is_mcp: bool,
     replaces_title: str | None = None,
 ) -> None:
-    """L'élément de mémoire `offre` (écrit ou mis à jour, indexé), puis les doublons probables et
-    possibles, rangés des deux côtés. Une panne de la mémoire n'empêche pas l'offre d'exister."""
+    """Dans la transaction de l'offre : son élément de mémoire `offre` (écrit ou mis à jour, pas
+    indexé ici : voir `memory.service.direct`), puis ses doublons probables et possibles (la
+    recherche lit les autres offres déjà indexées), rangés des deux côtés ; ceux qui ne tiennent
+    plus sont retirés de l'autre côté."""
     item_id = await write_direct(
+        db,
         rt.memory,
         user_id,
         kind="offre",
         title=item_title(analysis),
-        text=text,
+        text=posting.text,
         tags=("offre",),
         author=author_of(is_mcp),
         reason=MEMORY_REASON,
-        replaces=None if replaces_title is None else (replaces_title, text),
+        replaces=None if replaces_title is None else (replaces_title, posting.text),
     )
+    if posting.memory_item_id is None:
+        posting.memory_item_id = item_id
+    await db.flush()
+    hits = await find_duplicates(db, rt.memory, user_id, posting)
+    gone = {str(d.get("posting_id")) for d in posting.duplicates if isinstance(d, dict)}
+    gone -= {hit.posting_id for hit in hits}
+    for other in (await PostingRepository(db, user_id).by_ids(gone)).values():
+        other.duplicates = [d for d in other.duplicates if d.get("posting_id") != posting.id]
+    await store_duplicates(db, user_id, posting, hits)
+
+
+async def _store(
+    rt: PostingsRuntime,
+    user_id: str,
+    source: Source,
+    text: str,
+    analysis: PostingAnalysis,
+    *,
+    is_mcp: bool,
+) -> tuple[str, bool] | None:
+    """`(id, créée)` : l'offre écrite d'un coup avec son analyse, sa mémoire et ses doublons, en une
+    transaction (nouvelle, ou reprise d'une offre dont l'analyse avait échoué) ; `None` si l'offre
+    existe déjà et n'a rien à recevoir."""
     async with rt.session_factory() as db:
-        posting = await PostingRepository(db, user_id).get_fresh(posting_id)
-        if posting is None:
-            raise not_found()
-        if item_id is not None and posting.memory_item_id is None:
-            posting.memory_item_id = item_id
-        await db.commit()
-        hits = await find_duplicates(db, rt.memory, user_id, posting)
-    async with rt.session_factory() as db:
-        posting = await PostingRepository(db, user_id).get_fresh(posting_id)
-        if posting is None:
-            raise not_found()
-        await store_duplicates(db, user_id, posting, hits)
-        await db.commit()
+        found = await _existing(rt, user_id, source, text)
+        created = found is None
+        if found is not None:
+            if found.analysis is not None or found.status not in ("failed", "rejected"):
+                return None
+            if fields := _problems(analysis, found.text):  # l'offre garde son texte d'origine
+                raise posting_analysis_invalid(fields)
+            row = await PostingRepository(db, user_id).get_fresh(found.id)
+            assert row is not None
+        else:
+            row = JobPosting(
+                user_id=user_id,
+                url=source.url,
+                url_norm=source.url_norm,
+                source="url" if source.url_norm else "text",
+                text=text,
+                text_hash=text_digest(text),
+            )
+            db.add(row)
+        _apply(row, analysis)
+        try:
+            await db.flush()
+            await _memory_and_duplicates(db, rt, user_id, row, analysis, is_mcp=is_mcp)
+            await db.commit()
+        except IntegrityError:  # une autre requête vient de l'écrire : on rend la sienne
+            await db.rollback()
+            return None
+        return row.id, created
 
 
 async def create_direct(
@@ -207,7 +221,7 @@ async def create_direct(
     analysis = _analysis(body.model_dump(exclude={"text", "url"}), text)
     source = _source(body.url, text)
     async with rt.source_locks.get(user_id, source.key):
-        stored = await _store(rt, user_id, source, text, analysis)
+        stored = await _store(rt, user_id, source, text, analysis, is_mcp=is_mcp)
         if stored is None:
             existing = await _existing(rt, user_id, source, text)
             if existing is None:
@@ -215,7 +229,7 @@ async def create_direct(
             posting_id, created = existing.id, False
         else:
             posting_id, created = stored
-            await _memory_and_duplicates(rt, user_id, posting_id, analysis, text, is_mcp=is_mcp)
+            schedule_indexing(rt.memory, user_id)
     logger.info(
         "Offre écrite en direct : utilisateur %s, offre %s, créée %s", user_id, posting_id, created
     )
@@ -238,14 +252,14 @@ async def patch_direct(
                 raise not_found()
             if posting.analysis is None:
                 raise not_analyzed()
-            text = posting.text
             before = item_title(PostingAnalysis.model_validate(posting.analysis))
-            analysis = _analysis({**posting.analysis, **changes}, text[:TEXT_MAX])
+            analysis = _analysis({**posting.analysis, **changes}, posting.text[:TEXT_MAX])
             _apply(posting, analysis)
+            await _memory_and_duplicates(
+                db, rt, user_id, posting, analysis, is_mcp=is_mcp, replaces_title=before
+            )
             await db.commit()
-        await _memory_and_duplicates(
-            rt, user_id, posting_id, analysis, text, is_mcp=is_mcp, replaces_title=before
-        )
+        schedule_indexing(rt.memory, user_id)
     logger.info("Offre retouchée en direct : utilisateur %s, offre %s", user_id, posting_id)
     async with rt.session_factory() as db:
         return await read_posting(db, user_id, posting_id)

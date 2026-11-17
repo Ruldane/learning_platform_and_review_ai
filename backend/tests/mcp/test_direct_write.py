@@ -6,6 +6,7 @@ refusé."""
 from typing import Any
 
 import httpx
+import pytest
 from fastapi import FastAPI
 from sqlalchemy import select
 
@@ -20,9 +21,12 @@ from app.db.models.study import Quiz, QuizQuestion
 from scripts.sample_posting import POSTING_TEXT
 from tests.mcp.adapter_support import call
 from tests.mcp.support import API, Mcp
-from tests.support.direct import Seed, assert_no_agent
+from tests.support.direct import Seed, assert_no_agent, lesson_text
 from tests.support.gap import analysis_data
 
+BEFORE = lesson_text("Le texte d'avant la retouche.")
+AFTER = lesson_text("Le texte d'après la retouche.")
+pytestmark = pytest.mark.usefixtures("settled_indexing")
 FEATURES = ("lessons", "program", "projects", "postings", "quiz", "ide")
 TOOLS = {
     "lessons_write_lesson",
@@ -118,7 +122,7 @@ async def test_lesson_write_is_journaled_and_undone_with_its_memory_item(
         claude,
         token,
         "lessons_write_lesson",
-        {"module_id": drafted.modules[0], "markdown": "# Leçon\n\nUn texte écrit par Claude.\n"},
+        {"module_id": drafted.modules[0], "markdown": lesson_text("Un texte écrit par Claude.")},
     )
 
     assert not is_error, envelope
@@ -128,7 +132,7 @@ async def test_lesson_write_is_journaled_and_undone_with_its_memory_item(
         [item] = (await db.execute(select(MemoryItem).where(MemoryItem.kind == "lecon"))).scalars()
         journal = (await db.execute(select(McpCall))).scalars().all()
         recorded = {c.table_name for c in (await db.execute(select(McpChange))).scalars()}
-    assert item.created_by == "claude" and item.indexed_at is not None
+    assert item.created_by == "claude"
     assert [(c.action, c.level, c.code) for c in journal if c.action == "lessons_write_lesson"] == [
         ("lessons_write_lesson", 2, 201)
     ]
@@ -153,20 +157,20 @@ async def test_lesson_patch_is_undone_to_the_previous_text(
         claude,
         token,
         "lessons_write_lesson",
-        {"module_id": drafted.modules[0], "markdown": "Avant."},
+        {"module_id": drafted.modules[0], "markdown": BEFORE},
     )
     lesson_id = made["data"]["id"]
 
     patched, is_error = await call(
-        claude, token, "lessons_update_lesson", {"lesson_id": lesson_id, "markdown": "Après."}
+        claude, token, "lessons_update_lesson", {"lesson_id": lesson_id, "markdown": AFTER}
     )
-    assert not is_error and patched["data"]["markdown"] == "Après."
+    assert not is_error and patched["data"]["markdown"] == AFTER
     assert (await undo_last(claude)).status_code == 200
 
-    assert (await client.get(f"{API}/lessons/{lesson_id}")).json()["markdown"] == "Avant."
+    assert (await client.get(f"{API}/lessons/{lesson_id}")).json()["markdown"] == BEFORE
     async with app.state.session_factory() as db:
         [item] = (await db.execute(select(MemoryItem).where(MemoryItem.kind == "lecon"))).scalars()
-    assert item.text == "Avant."  # l'élément de mémoire est celui d'avant la retouche
+    assert item.text == BEFORE.strip()  # l'élément de mémoire est celui d'avant la retouche
 
 
 async def write_chain(claude: Mcp, token: str, drafted: Seed) -> list[dict[str, Any]]:

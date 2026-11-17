@@ -25,6 +25,7 @@ __all__ = [
 ]
 
 TITLE_MAX = 200
+MARKDOWN_MIN = 300  # une leçon des agents passe le Vérificateur (1 200 mots) ; ici un plancher
 MARKDOWN_MAX = 60_000
 
 
@@ -86,14 +87,14 @@ class LessonWriteIn(BaseModel):
     `title` vaut par défaut le titre du module."""
 
     title: str | None = Field(default=None, min_length=1, max_length=TITLE_MAX)
-    markdown: str = Field(min_length=1, max_length=MARKDOWN_MAX)
+    markdown: str = Field(min_length=MARKDOWN_MIN, max_length=MARKDOWN_MAX)
 
 
 class LessonPatch(BaseModel):
     """Retouche d'une leçon prête : son titre, son Markdown, ou les deux."""
 
     title: str | None = Field(default=None, min_length=1, max_length=TITLE_MAX)
-    markdown: str | None = Field(default=None, min_length=1, max_length=MARKDOWN_MAX)
+    markdown: str | None = Field(default=None, min_length=MARKDOWN_MIN, max_length=MARKDOWN_MAX)
 
     @model_validator(mode="after")
     def _something(self) -> "LessonPatch":

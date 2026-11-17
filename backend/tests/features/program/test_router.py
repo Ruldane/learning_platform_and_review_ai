@@ -76,6 +76,22 @@ async def test_programs_isolated_between_users(
         patched = await client.patch(f"{API}/programs/{pid}", json={"delete_task_ids": [tid]})
         assert patched.status_code == 404
         assert (await client.post(f"{API}/programs/{pid}/validate")).status_code == 404
+        # Écriture directe (10.W) : semaines et modules d'une autre, jamais touchés.
+        week, module = program["weeks"][0], program["weeks"][0]["modules"][0]
+        text = {"theme": "Pris", "objective": "Pris", "deliverable": "Pris"}
+        calls = [
+            ("POST", f"/programs/{pid}/weeks", text),
+            ("PATCH", f"/weeks/{week['id']}", {"theme": "Pris"}),
+            (
+                "POST",
+                f"/programs/{pid}/modules",
+                {"week_id": week["id"], "title": "Titre pris", "skills": ["xx"]},
+            ),
+            ("PATCH", f"/modules/{module['id']}", {"title": "Pris"}),
+        ]
+        for method, path, payload in calls:
+            r = await client.request(method, f"{API}{path}", json=payload)
+            assert r.status_code == 404, path
     finally:
         app.dependency_overrides.clear()
     after = await view(client, pid)

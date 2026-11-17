@@ -150,6 +150,8 @@ async def test_other_user_posting_is_404(
         r = await client.request(method, f"{API}{path}")
         assert (r.status_code, r.json()["error"]["code"]) == (404, "posting_not_found"), path
     assert (await client.get(f"{API}/postings")).json() == []
+    patched = await client.patch(f"{API}/postings/{created['id']}", json={"title": "Pris"})  # 10.W
+    assert (patched.status_code, patched.json()["error"]["code"]) == (404, "posting_not_found")
     # Le même texte chez une autre : une offre à elle.
     r = await client.post(f"{API}/postings", json={"text": POSTING_TEXT})
     assert r.status_code == 201 and r.json()["posting"]["id"] != created["id"]

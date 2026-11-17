@@ -20,6 +20,7 @@ from app.providers.web.base import WebDocument
 from scripts.sample_posting import POSTING_TEXT
 from tests.features.lessons.conftest import RecordingLauncher
 from tests.features.program.support import Factory
+from tests.support.direct import settled_indexing  # noqa: F401
 from tests.support.gap import MATCHES, analysis_data
 from tests.support.memory import FakeWebReader
 

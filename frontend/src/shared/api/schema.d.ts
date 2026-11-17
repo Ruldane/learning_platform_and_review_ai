@@ -1543,7 +1543,7 @@ export interface paths {
         /**
          * Undo Changes
          * @description Remet les lignes d'un appel dans leur état d'avant, si aucune n'a changé depuis (409
-         *     sinon).
+         *     sinon). Une mémoire restaurée ou retirée se réindexe ensuite, hors de l'appel.
          */
         post: operations["undo_changes_api_v1_mcp_changes__call_id__undo_post"];
         delete?: never;
@@ -2522,8 +2522,10 @@ export interface paths {
         put?: never;
         /**
          * Write Quiz
-         * @description Écrit le quiz d'un module en direct (1 à 12 questions, fiches en plus), sans agent ni appel
-         *     au modèle ; le quiz est prêt, la leçon du module n'a pas à l'être.
+         * @description Écrit le quiz d'un module en direct (1 à 12 questions, sans fiches), sans agent ni appel au
+         *     modèle ; la leçon du module n'a pas à être prête. Il reste « en préparation » (`generating`,
+         *     sans session) tant qu'il n'a pas 8 questions, 3 types et des énoncés de 10 caractères : toute
+         *     tentative donne alors 409 `quiz_incomplete`.
          */
         post: operations["write_quiz_api_v1_quizzes_post"];
         delete?: never;

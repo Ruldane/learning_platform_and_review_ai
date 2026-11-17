@@ -32,6 +32,19 @@ def recordable(table: Table) -> bool:
     return all(column.info.get("export", True) is not False for column in table.columns)
 
 
+def volatile_columns(table: Table) -> frozenset[str]:
+    """Les colonnes que l'annulation ne compare pas et remet à vide (`info={"undo_volatile":
+    True}`) : posées hors de l'appel par un traitement de fond (l'indexation de la mémoire)."""
+    return frozenset(c.name for c in table.columns if c.info.get("undo_volatile"))
+
+
+def derived(table: Table) -> bool:
+    """Table dont les lignes se déduisent de la ligne qu'elles visent (`info={"undo_derived":
+    True}`) : retirer l'ajout les retire avec lui (clé étrangère en cascade), elles ne le
+    « retiennent » pas."""
+    return bool(table.info.get("undo_derived"))
+
+
 def jsonable(value: Any) -> Any:
     if value is None or isinstance(value, bool | int | float | str | dict | list):
         return value

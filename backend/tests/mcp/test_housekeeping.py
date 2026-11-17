@@ -40,7 +40,16 @@ async def test_housekeeping_job_expires_requests_and_purges_old_calls(
                 )
             )
         await db.commit()
-    context = cast(JobContext, SimpleNamespace(session_factory=db_session_factory))
+    memory = SimpleNamespace(
+        session_factory=db_session_factory, indexer=None
+    )  # aucun élément à indexer ici
+    context = cast(
+        JobContext,
+        SimpleNamespace(
+            session_factory=db_session_factory,
+            daily=SimpleNamespace(projects=SimpleNamespace(memory=memory)),
+        ),
+    )
 
     await mcp_housekeeping.run(context)
 

@@ -5,6 +5,7 @@ modèle."""
 from typing import Any
 
 import httpx
+import pytest
 from fastapi import FastAPI
 from sqlalchemy import select
 
@@ -17,6 +18,7 @@ from tests.sessions_support import act_as
 from tests.support.direct import OTHER, assert_no_agent
 from tests.support.gap import analysis_data
 
+pytestmark = pytest.mark.usefixtures("settled_indexing")
 SECRET = "SECRET-DE-L-OFFRE"
 
 
@@ -55,7 +57,7 @@ async def test_write_posting_is_ready_with_memory_and_no_agent(
     assert posting["gap_session_id"] is None and posting["score"] is None
     assert (await client.get(f"{API}/postings/{posting['id']}")).json()["title"] == posting["title"]
     [item] = await items(app)  # l'élément `offre`, écrit par January et indexé
-    assert item.title == "AI Product Engineer — Société Fictive" and item.indexed_at is not None
+    assert item.title == "AI Product Engineer — Société Fictive" and item.indexed_at is None
     assert item.created_by == "user"
     async with app.state.session_factory() as db:
         row = (await db.execute(select(JobPosting))).scalar_one()

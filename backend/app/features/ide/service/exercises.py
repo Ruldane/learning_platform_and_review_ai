@@ -15,6 +15,17 @@ def origin_of(caller: Caller) -> ExerciseOrigin:
     return "claude" if caller.kind == "mcp" else "user"
 
 
+def _check_entry(files: dict[str, str], entry: str) -> None:
+    """Le fichier d'entrée est un chemin permis et, quand l'exercice a des fichiers, l'un d'eux
+    (sinon la séance ne s'exécuterait pas : `check_job_limits`)."""
+    try:
+        check_file_name(entry)
+    except ValueError:
+        raise entry_invalid() from None
+    if files and entry not in files:
+        raise entry_invalid()
+
+
 async def create(
     ctx: IdeContext,
     data: ExerciseIn,
@@ -23,10 +34,7 @@ async def create(
     topic: str | None = None,
     agent_session_id: str | None = None,
 ) -> IdeExercise:
-    try:
-        check_file_name(data.entry)
-    except ValueError:
-        raise entry_invalid() from None
+    _check_entry(dict(data.files), data.entry)
     return await ExerciseRepository(ctx.db, ctx.user_id).add(
         title=data.title,
         statement=data.statement,
@@ -56,17 +64,17 @@ async def delete(ctx: IdeContext, exercise_id: str) -> None:
 
 
 async def update(ctx: IdeContext, exercise_id: str, patch: ExercisePatch) -> IdeExercise:
-    """Retouche l'exercice (titre, énoncé, fichiers, fichier d'entrée) ; l'origine et le sujet ne
-    changent pas, les séances déjà ouvertes gardent leurs fichiers. Écriture directe : aucun agent,
-    aucune exécution."""
+    """Retouche l'exercice (titre, énoncé, fichiers, fichier d'entrée) ; le sujet ne change pas,
+    les séances déjà ouvertes gardent leurs fichiers. L'origine devient celle de l'appelant quand
+    c'est Claude (le texte n'est plus celui d'avant, ni vérifié dans le bac si l'exercice était
+    généré). Écriture directe : aucun agent, aucune exécution."""
     row = await get(ctx, exercise_id)
-    if patch.entry is not None:
-        try:
-            check_file_name(patch.entry)
-        except ValueError:
-            raise entry_invalid() from None
     changes = patch.model_dump(exclude_none=True)
+    files = dict(changes.get("files", row.files))
+    _check_entry(files, changes.get("entry", row.entry))
     for name, value in changes.items():
         setattr(row, name, dict(value) if name == "files" else value)
+    if ctx.caller.kind == "mcp":
+        row.origin = "claude"
     await ctx.db.flush()
     return row

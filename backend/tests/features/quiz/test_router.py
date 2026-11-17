@@ -224,8 +224,35 @@ async def test_quiz_routes_isolate_users(
 ) -> None:
     quiz_id = await ready_quiz(seeded)
     attempt_id = await started_attempt(client, quiz_id)
+    question_id = (await client.get(f"{API}/quizzes/{quiz_id}")).json()["questions"][0]["id"]
     act_as(app, "un-autre-utilisateur")
     body = {"answers": []}
+    question = {
+        "type": "qcm",
+        "prompt": "Que vaut un plus un ?",
+        "choices": ["1", "2", "3"],
+        "correct_index": 1,
+        "skill": "xx",
+    }
+    direct = [  # écriture directe (10.W)
+        (
+            "post",
+            "/quizzes",
+            {"module_id": seeded.modules[0], "title": "Titre pris", "questions": [question]},
+            "module_not_found",
+        ),
+        ("patch", f"/quizzes/{quiz_id}", {"title": "Titre pris"}, "quiz_not_found"),
+        ("post", f"/quizzes/{quiz_id}/questions", question, "quiz_not_found"),
+        (
+            "patch",
+            f"/quizzes/{quiz_id}/questions/{question_id}",
+            {"prompt": "Une autre question ?"},
+            "quiz_not_found",
+        ),
+    ]
+    for method, path, payload, code in direct:
+        r = await client.request(method.upper(), f"{API}{path}", json=payload)
+        assert (r.status_code, r.json()["error"]["code"]) == (404, code), path
     for method, path, code in [
         ("post", f"/modules/{seeded.modules[0]}/quiz", "module_not_found"),
         ("get", f"/programs/{seeded.program_id}/quizzes", "program_not_found"),

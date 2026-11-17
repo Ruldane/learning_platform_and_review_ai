@@ -6,7 +6,8 @@ travaille sur la même.
 
 Pas de PDF ni de copies de ressources : ce sont des fichiers hors base (rendu Gotenberg, stockage),
 que l'annulation de l'historique ne reprendrait pas ; la leçon se lit dans l'application. Son texte
-entre dans la mémoire (`lecon`, indexé) comme celui d'une leçon des agents."""
+entre dans la mémoire (`lecon`) comme celui d'une leçon des agents, dans la même
+transaction ; son indexation suit hors de l'appel (`memory.service.direct`)."""
 
 import logging
 
@@ -19,7 +20,7 @@ from app.features.lessons.schemas import LessonOut, LessonPatch, LessonWriteIn
 from app.features.lessons.service.lessons import get_lesson, lesson_not_found
 from app.features.lessons.service.runtime import LessonsRuntime
 from app.features.lessons.service.status import open_lesson_sessions
-from app.features.memory.service.direct import author_of, write_direct
+from app.features.memory.service.direct import author_of, schedule_indexing, write_direct
 from app.features.program.service.programs import load, program_of_module
 
 logger = logging.getLogger(__name__)
@@ -60,6 +61,7 @@ def _lesson_fields(lesson: Lesson, title: str, markdown: str) -> None:
 
 
 async def _remember(
+    db: AsyncSession,
     rt: LessonsRuntime,
     user_id: str,
     lesson: Lesson,
@@ -68,7 +70,10 @@ async def _remember(
     is_mcp: bool,
     replaces: tuple[str, str] | None = None,
 ) -> None:
+    """La leçon dans la mémoire (`lecon`), dans la transaction de la leçon : tout ou rien. Pas
+    indexée ici (voir `memory.service.direct`)."""
     await write_direct(
+        db,
         rt.memory,
         user_id,
         kind="lecon",
@@ -113,12 +118,10 @@ async def write_lesson(
             lesson = await repo.add(module_id=module_id, program_id=program_id, title=title)
         _lesson_fields(lesson, title, body.markdown)
         lesson.status, lesson.failure_reason, lesson.session_id = "ready", None, None
+        await _remember(db, rt, user_id, lesson, loaded.program.title, is_mcp=is_mcp)
         await db.commit()
-        lesson_id, program_title = lesson.id, loaded.program.title
-    async with rt.session_factory() as db:
-        done = await LessonRepository(db, user_id).get_fresh(lesson_id)
-        assert done is not None
-        await _remember(rt, user_id, done, program_title, is_mcp=is_mcp)
+        lesson_id = lesson.id
+    schedule_indexing(rt.memory, user_id)
     logger.info(
         "Leçon écrite en direct : programme %s, module %s, leçon %s",
         program_id,
@@ -153,12 +156,11 @@ async def patch_lesson(
         if markdown != before[1]:
             lesson.pdf_key = None
         loaded = await load(db, user_id, program_id)
+        if (title, markdown) != before:
+            await _remember(
+                db, rt, user_id, lesson, loaded.program.title, is_mcp=is_mcp, replaces=before
+            )
         await db.commit()
-        program_title = loaded.program.title
-    if (title, markdown) != before:
-        async with rt.session_factory() as db:
-            done = await LessonRepository(db, user_id).get_fresh(lesson_id)
-            assert done is not None
-            await _remember(rt, user_id, done, program_title, is_mcp=is_mcp, replaces=before)
+    schedule_indexing(rt.memory, user_id)
     async with rt.session_factory() as db:
         return await get_lesson(db, user_id, lesson_id)
