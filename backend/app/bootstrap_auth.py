@@ -1,6 +1,8 @@
 """Composition de la connexion Google : le client HTTP du point `token` et `GoogleOidc` (mode
 Google seulement). Le lifespan l'appelle au démarrage, `app.bootstrap` en reçoit le résultat."""
 
+from contextlib import AsyncExitStack
+
 import httpx
 
 from app.config import Settings
@@ -20,6 +22,14 @@ def oidc_http() -> httpx.AsyncClient:
         timeout=httpx.Timeout(_TOKEN_TIMEOUT_SECONDS),
         cookies=refuse_all_cookies(),
     )
+
+
+async def open_oidc(settings: Settings, stack: AsyncExitStack) -> OidcProvider | None:
+    """La connexion Google, avec son client HTTP fermé par `stack` ; en mode local rien n'est
+    ouvert (aucun client inutile) et le résultat est `None`."""
+    if settings.auth_mode != "google":
+        return None
+    return build_oidc(settings, await stack.enter_async_context(oidc_http()))
 
 
 def build_oidc(settings: Settings, http: httpx.AsyncClient) -> OidcProvider | None:

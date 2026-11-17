@@ -27,7 +27,7 @@ from app.bootstrap import (
 from app.bootstrap import memory_providers as open_memory_providers
 from app.bootstrap import publishing_providers as open_publishing_providers
 from app.bootstrap import research_providers as open_research_providers
-from app.bootstrap_auth import build_oidc, oidc_http
+from app.bootstrap_auth import open_oidc
 from app.bootstrap_career import career_runtimes
 from app.bootstrap_daily import daily_runtimes
 from app.config import Settings, get_settings
@@ -78,6 +78,7 @@ def _setup_security(app: FastAPI) -> None:
         settings.openai_api_key,
         settings.zai_api_key,
         settings.brave_api_key,
+        settings.google_client_secret,
     ):
         if key:
             KnownSecrets.add(key)
@@ -119,7 +120,7 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         # Client partagé par les sondes de santé ; le test de la clé Brave a le sien (D74).
         http = await stack.enter_async_context(httpx.AsyncClient(timeout=_PROBE_TIMEOUT_SECONDS))
         key_http = await stack.enter_async_context(key_test_http())
-        oidc = build_oidc(app.state.settings, await stack.enter_async_context(oidc_http()))
+        oidc = await open_oidc(app.state.settings, stack)
         app.state.providers = build_providers(
             app.state.settings,
             app.state.session_factory,

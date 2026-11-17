@@ -108,7 +108,9 @@ async def finish_login(
     now: datetime,
 ) -> CallbackOutcome:
     """Le retour de Google. Rien n'est écrit tant que le `state`, le jeton d'identité, l'adresse
-    vérifiée et `ALLOWED_EMAILS` ne sont pas tous passés."""
+    vérifiée et `ALLOWED_EMAILS` ne sont pas tous passés. Une exception inattendue (course sur
+    une contrainte d'unicité, oubli futur) ne devient jamais une 500 : elle est journalisée par
+    sa classe, la transaction est défaite et la personne revient à `/connexion`."""
     if _too_long(code, state, error):
         return _failed("state_invalid")
     if error:
@@ -121,6 +123,24 @@ async def finish_login(
     if not code:
         return _failed("token_invalid")
     try:
+        return await _sign_in(db, oidc, settings, code=code, pending=pending, now=now)
+    except Exception as exc:
+        await db.rollback()
+        logger.warning("connexion Google : erreur inattendue (%s)", type(exc).__name__)
+        return _failed("token_invalid")
+
+
+async def _sign_in(
+    db: AsyncSession,
+    oidc: OidcProvider,
+    settings: Settings,
+    *,
+    code: str,
+    pending: dict[str, str],
+    now: datetime,
+) -> CallbackOutcome:
+    """L'échange du code, les contrôles de l'identité, puis l'utilisateur et sa session."""
+    try:
         identity = await oidc.exchange(
             code=code, code_verifier=pending["verifier"], nonce=pending["nonce"]
         )
@@ -128,6 +148,8 @@ async def finish_login(
         return _failed(exc.code)
     if not identity.email_verified:
         return _failed("email_unverified")
+    if len(identity.email.strip()) > MAX_EMAIL:  # jamais tronquée en silence
+        return _failed("token_invalid")
     if not allowed(identity.email, settings.allowed_emails):
         return _failed("email_not_allowed")
     user = await _find_or_create(UserRepository(db), identity)
@@ -140,14 +162,16 @@ async def finish_login(
 
 async def _find_or_create(users: UserRepository, identity: OidcIdentity) -> User | None:
     """L'utilisateur de cette identité Google (retrouvé par `sub` : e-mail et nom sont remis à
-    jour), sinon un nouveau. `None` si l'adresse appartient déjà à un autre compte (jamais deux
-    comptes fusionnés ni une erreur de base)."""
-    email = identity.email.strip().lower()[:MAX_EMAIL]
+    jour), sinon un nouveau. `None`, rien d'écrit, si l'adresse appartient déjà à un autre compte
+    (jamais deux comptes fusionnés, ni une erreur de base, ni une adresse contrôlée qui n'est pas
+    celle que l'on garde)."""
+    email = identity.email.strip().lower()
     name = identity.name[:MAX_NAME]
     holder = await users.get_by_email(email)
     user = await users.get_by_google_sub(identity.sub)
+    if holder is not None and (user is None or holder.id != user.id):
+        return None
     if user is None:
-        return None if holder else await users.add_google(sub=identity.sub, email=email, name=name)
-    if holder is None or holder.id == user.id:
-        await users.update_identity(user, email=email, name=name)
+        return await users.add_google(sub=identity.sub, email=email, name=name)
+    await users.update_identity(user, email=email, name=name)
     return user

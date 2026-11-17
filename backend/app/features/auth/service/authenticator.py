@@ -53,7 +53,9 @@ class CookieAuthenticator:
         async with self._session_factory() as db:
             session = await AuthSessionRepository(db).get_valid(hash_token(token), self._now())
             user = await UserRepository(db).get(session.user_id) if session else None
-        # La lecture de `allowed_emails` est faite ici, à chaque requête (pas à la construction).
+        # `allowed_emails` est relue ici à chaque requête, dans la liste chargée au démarrage :
+        # retirer une adresse du `.env` prend effet au redémarrage du back, qui recontrôle alors
+        # toutes les sessions encore valides (pas de relecture à chaud du fichier).
         if user is None or not user.email or not allowed(user.email, self._settings.allowed_emails):
             raise _auth_required()
         return CurrentUser(id=user.id, email=user.email)

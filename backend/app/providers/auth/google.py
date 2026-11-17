@@ -128,7 +128,7 @@ class GoogleOidc:
     def _identity(self, response: httpx.Response, nonce: str) -> OidcIdentity:
         try:
             payload = response.json()
-        except ValueError as exc:
+        except (ValueError, RecursionError) as exc:  # corps illisible ou imbriqué sans fin
             raise OidcError("token_invalid") from exc
         claims = _claims(payload.get("id_token") if isinstance(payload, dict) else None)
         exp = claims.get("exp")

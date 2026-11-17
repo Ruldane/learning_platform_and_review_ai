@@ -41,12 +41,18 @@ class FakeGoogle:
         self.verified = True
         self.claims: dict[str, object] = {}
         self.down = False
+        self.status: int | None = None  # réponse forcée du point `token` (ex. 400 `invalid_grant`)
+        self.body: bytes | None = None  # corps forcé de la réponse 200
         self.forms: list[dict[str, str]] = []
 
     def handler(self, request: httpx.Request) -> httpx.Response:
         if self.down:
             return httpx.Response(503, text="en panne")
         self.forms.append({k: v[0] for k, v in parse_qs(request.content.decode()).items()})
+        if self.status is not None:
+            return httpx.Response(self.status, json={"error": "invalid_grant"})
+        if self.body is not None:
+            return httpx.Response(200, content=self.body)
         claims: dict[str, object] = {
             "iss": self._settings.google_issuer,
             "aud": self._settings.google_client_id,
