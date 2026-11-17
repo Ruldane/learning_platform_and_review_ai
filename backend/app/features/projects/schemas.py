@@ -4,7 +4,7 @@ valeur (description, lien de dépôt, texte d'un brouillon : des données person
 from datetime import datetime
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, StringConstraints
+from pydantic import BaseModel, Field, StringConstraints, model_validator
 
 from app.db.models.daily import DraftKind, DraftStatus, ProjectStatus
 
@@ -136,3 +136,50 @@ class DraftPatchIn(BaseModel):
 
     content: str | None = Field(default=None, min_length=1, max_length=CONTENT_MAX)
     entry: ProfileEntryIn | None = None
+
+
+class ProjectBriefIn(BaseModel):
+    """L'énoncé d'un mini projet écrit à la main ou par Claude (aucun agent) : mêmes bornes que
+    celui du Praticien (`ProjectBrief`) : 2 à 5 contraintes, 3 à 6 critères vérifiables, 3 à 6
+    heures."""
+
+    title: str = Field(min_length=3, max_length=120)
+    context: str = Field(min_length=1, max_length=900)
+    objective: str = Field(min_length=1, max_length=450)
+    constraints: list[Annotated[str, Field(min_length=1, max_length=160)]] = Field(
+        min_length=2, max_length=5
+    )
+    criteria: list[Annotated[str, Field(min_length=1, max_length=200)]] = Field(
+        min_length=3, max_length=6
+    )
+    hours: int = Field(ge=3, le=6)
+    deliverable: Literal["repo", "description", "either"]
+
+
+class ProjectCreateIn(BaseModel):
+    """Le mini projet d'un module (un seul par module) : son énoncé, prêt à rendre."""
+
+    module_id: str = Field(min_length=1, max_length=36)
+    brief: ProjectBriefIn
+
+
+class ProjectBriefPatch(BaseModel):
+    """Retouche de l'énoncé : les champs donnés remplacent ceux de l'énoncé, les autres restent."""
+
+    title: str | None = Field(default=None, min_length=3, max_length=120)
+    context: str | None = Field(default=None, min_length=1, max_length=900)
+    objective: str | None = Field(default=None, min_length=1, max_length=450)
+    constraints: list[Annotated[str, Field(min_length=1, max_length=160)]] | None = Field(
+        default=None, min_length=2, max_length=5
+    )
+    criteria: list[Annotated[str, Field(min_length=1, max_length=200)]] | None = Field(
+        default=None, min_length=3, max_length=6
+    )
+    hours: int | None = Field(default=None, ge=3, le=6)
+    deliverable: Literal["repo", "description", "either"] | None = None
+
+    @model_validator(mode="after")
+    def _something(self) -> "ProjectBriefPatch":
+        if not self.model_dump(exclude_none=True):
+            raise ValueError("rien à changer")
+        return self

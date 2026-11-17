@@ -28,6 +28,19 @@ MCP = FeatureMcp(
             "Change le statut de lecture d'une ressource.",
             untrusted=_RESOURCE_TEXT,
         ),
+        McpAction(
+            "POST /modules/{module_id}/lesson",
+            2,
+            "lessons_write_lesson",
+            "Écriture directe, aucun agent : écrit la leçon d'un module (`title` facultatif, "
+            "`markdown`) ; la leçon est prête aussitôt, sans PDF.",
+        ),
+        McpAction(
+            "PATCH /lessons/{lesson_id}",
+            2,
+            "lessons_update_lesson",
+            "Écriture directe, aucun agent : retouche le titre ou le Markdown d'une leçon prête.",
+        ),
     ),
     graphs=(
         McpGraph(

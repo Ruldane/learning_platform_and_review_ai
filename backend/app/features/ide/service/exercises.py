@@ -4,7 +4,7 @@ d'exercice n'est jamais exécuté ici : seul le bac à sable (`runs`) exécute d
 from app.core.caller import Caller
 from app.db.models.ide import ExerciseOrigin, IdeExercise
 from app.features.ide.repository import ExerciseRepository
-from app.features.ide.schemas import ExerciseIn
+from app.features.ide.schemas import ExerciseIn, ExercisePatch
 from app.features.ide.service.context import IdeContext
 from app.features.ide.service.errors import entry_invalid, exercise_not_found
 from app.providers.sandbox.base import check_file_name
@@ -53,3 +53,20 @@ async def delete(ctx: IdeContext, exercise_id: str) -> None:
     """Supprime l'exercice ; ses séances restent (aucune clé étrangère)."""
     if not await ExerciseRepository(ctx.db, ctx.user_id).delete(exercise_id):
         raise exercise_not_found()
+
+
+async def update(ctx: IdeContext, exercise_id: str, patch: ExercisePatch) -> IdeExercise:
+    """Retouche l'exercice (titre, énoncé, fichiers, fichier d'entrée) ; l'origine et le sujet ne
+    changent pas, les séances déjà ouvertes gardent leurs fichiers. Écriture directe : aucun agent,
+    aucune exécution."""
+    row = await get(ctx, exercise_id)
+    if patch.entry is not None:
+        try:
+            check_file_name(patch.entry)
+        except ValueError:
+            raise entry_invalid() from None
+    changes = patch.model_dump(exclude_none=True)
+    for name, value in changes.items():
+        setattr(row, name, dict(value) if name == "files" else value)
+    await ctx.db.flush()
+    return row

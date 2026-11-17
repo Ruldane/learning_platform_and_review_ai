@@ -18,6 +18,7 @@ from tests.features.auth.conftest import google, google_app  # noqa: F401, F811
 from tests.isolation.conftest import google_client_factory  # noqa: F401
 from tests.mcp.adapter_support import FEATURES, add_probe, declarations
 from tests.mcp.support import FakeDispatcher, FakeTools, Mcp
+from tests.support.direct import claude, drafted  # noqa: F401
 
 
 @pytest.fixture

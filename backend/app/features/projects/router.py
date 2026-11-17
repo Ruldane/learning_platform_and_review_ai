@@ -27,12 +27,15 @@ from app.features.projects.schemas import (
     DraftKind,
     DraftPatchIn,
     ProfileEntryIn,
+    ProjectBriefPatch,
+    ProjectCreateIn,
     ProjectOut,
     ProjectStatus,
     ProjectSummary,
     SessionStarted,
 )
 from app.features.projects.service.briefs import retry_brief
+from app.features.projects.service.direct import create_project, patch_project
 from app.features.projects.service.drafts import patch_draft
 from app.features.projects.service.errors import invalid_submission
 from app.features.projects.service.profile_entry import add_profile_entry
@@ -111,6 +114,38 @@ async def get_projects(
 ) -> list[ProjectSummary]:
     """Le Portfolio : programme, semaine et rang de chaque projet ; `status` filtre."""
     return await list_projects(rt, db, current.id, status)
+
+
+@router.post(
+    "",
+    response_model=ProjectOut,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        404: {"description": "`module_not_found`"},
+        409: {"description": "`project_exists` ou `module_skipped`"},
+    },
+)
+async def post_project(
+    body: ProjectCreateIn, current: CurrentUserDep, rt: ProjectsDep
+) -> ProjectOut:
+    """Écrit le mini projet d'un module en direct : l'énoncé est celui de January ou de Claude,
+    sans agent ni appel au modèle ; le projet est « à faire »."""
+    return await create_project(rt, current.id, body)
+
+
+@router.patch(
+    "/{project_id}",
+    response_model=ProjectOut,
+    responses={
+        404: {"description": "`project_not_found`"},
+        409: {"description": "`project_not_editable` : le projet est rendu, évalué ou validé"},
+    },
+)
+async def patch_one_project(
+    project_id: ProjectId, body: ProjectBriefPatch, current: CurrentUserDep, rt: ProjectsDep
+) -> ProjectOut:
+    """Retouche l'énoncé d'un projet sans rendu, sans agent."""
+    return await patch_project(rt, current.id, project_id, body)
 
 
 @router.get("/{project_id}", response_model=ProjectOut, responses=_NOT_FOUND)

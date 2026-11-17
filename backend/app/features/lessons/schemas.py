@@ -1,6 +1,6 @@
 """Schémas de l'API des leçons et des ressources (SPEC 3.5, 3.6, 14.2 ; D91)."""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from app.db.models.lessons import (
     MAX_LESSON_ATTEMPTS,
@@ -13,6 +13,7 @@ from app.db.models.lessons import (
 # Les types littéraux sont réexportés : un router n'importe pas `app.db` (contrat 1b).
 __all__ = [
     "LessonOut",
+    "LessonPatch",
     "LessonStatus",
     "LessonSummaryOut",
     "ResourceLevel",
@@ -20,7 +21,11 @@ __all__ = [
     "ResourcePatch",
     "ResourceStatus",
     "ResourceType",
+    "LessonWriteIn",
 ]
+
+TITLE_MAX = 200
+MARKDOWN_MAX = 60_000
 
 
 class ResourceOut(BaseModel):
@@ -74,3 +79,24 @@ class LessonOut(LessonSummaryOut):
 
 class ResourcePatch(BaseModel):
     status: ResourceStatus
+
+
+class LessonWriteIn(BaseModel):
+    """La leçon d'un module écrite à la main ou par Claude (aucun agent, aucun appel au modèle) :
+    `title` vaut par défaut le titre du module."""
+
+    title: str | None = Field(default=None, min_length=1, max_length=TITLE_MAX)
+    markdown: str = Field(min_length=1, max_length=MARKDOWN_MAX)
+
+
+class LessonPatch(BaseModel):
+    """Retouche d'une leçon prête : son titre, son Markdown, ou les deux."""
+
+    title: str | None = Field(default=None, min_length=1, max_length=TITLE_MAX)
+    markdown: str | None = Field(default=None, min_length=1, max_length=MARKDOWN_MAX)
+
+    @model_validator(mode="after")
+    def _something(self) -> "LessonPatch":
+        if self.title is None and self.markdown is None:
+            raise ValueError("rien à changer")
+        return self

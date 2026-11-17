@@ -8,17 +8,21 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Response, status
 from starlette.requests import HTTPConnection
 
+from app.core.caller import CallerDep
 from app.core.deps import CurrentUserDep, Db
 from app.features.cv.service.runtime import CvRuntime
 from app.features.postings.schemas import (
     DistinctIn,
     GapStarted,
     PostingCreatedOut,
+    PostingDirectIn,
     PostingIn,
     PostingOut,
+    PostingPatch,
     PostingSummaryOut,
 )
 from app.features.postings.service.create import create_posting
+from app.features.postings.service.direct import create_direct, patch_direct
 from app.features.postings.service.duplicates import mark_distinct
 from app.features.postings.service.launch import relaunch
 from app.features.postings.service.queries import delete_posting, list_postings, read_posting
@@ -63,6 +67,51 @@ async def add_posting(
     if not created.created:
         response.status_code = status.HTTP_200_OK
     return created
+
+
+@router.post(
+    "/postings/direct",
+    response_model=PostingCreatedOut,
+    status_code=status.HTTP_201_CREATED,
+    responses={200: {"model": PostingCreatedOut, "description": "Offre déjà ajoutée"}},
+)
+async def write_posting(
+    body: PostingDirectIn,
+    current: CurrentUserDep,
+    rt: PostingsDep,
+    caller: CallerDep,
+    response: Response,
+) -> PostingCreatedOut:
+    """Écrit une offre en direct : son texte et son analyse sont ceux de January ou de Claude,
+    sans agent ni appel au modèle (l'écart se lance ensuite par `POST /postings/{id}/gap`). 201 :
+    offre créée, prête. 200 : même lien (ou, sans lien, même texte), l'offre existante. 422
+    `posting_too_short`, `posting_analysis_invalid`, `invalid_url`, `url_forbidden` : jamais
+    l'entrée dans la réponse."""
+    created = await create_direct(rt, current.id, body, is_mcp=caller.kind == "mcp")
+    if not created.created:
+        response.status_code = status.HTTP_200_OK
+    return created
+
+
+@router.patch(
+    "/postings/{posting_id}",
+    response_model=PostingOut,
+    responses={
+        404: {"description": "`posting_not_found`"},
+        409: {"description": "`posting_not_analyzed`"},
+        422: {"description": "`posting_analysis_invalid`"},
+    },
+)
+async def patch_posting(
+    posting_id: str,
+    body: PostingPatch,
+    current: CurrentUserDep,
+    rt: PostingsDep,
+    caller: CallerDep,
+) -> PostingOut:
+    """Retouche l'analyse d'une offre analysée (titre, entreprise, exigences, mots clés…), sans
+    agent : sa mémoire et ses doublons sont recalculés."""
+    return await patch_direct(rt, current.id, posting_id, body, is_mcp=caller.kind == "mcp")
 
 
 @router.get("/postings", response_model=list[PostingSummaryOut])

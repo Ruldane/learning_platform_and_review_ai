@@ -4,7 +4,7 @@ tâches, avancement, dernière différence), modifications de January, validatio
 from datetime import date
 from typing import Annotated
 
-from pydantic import BaseModel, Field, StringConstraints
+from pydantic import BaseModel, Field, StringConstraints, model_validator
 
 from app.db.models.lessons import LessonStatus
 from app.db.models.program import ProgramStatus, TaskStatus, TaskType
@@ -12,7 +12,9 @@ from app.db.models.program import ProgramStatus, TaskStatus, TaskType
 # Les types littéraux sont réexportés : un router n'importe pas `app.db` (contrat 1b).
 __all__ = [
     "LessonStatus",
+    "ModuleCreate",
     "ModuleOut",
+    "ModulePatch",
     "MovedTaskOut",
     "PlanDiffOut",
     "ProgramOut",
@@ -26,13 +28,18 @@ __all__ = [
     "TaskStatus",
     "TaskType",
     "ValidateOut",
+    "WeekCreate",
     "WeekOut",
+    "WeekPatch",
 ]
 
 _Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=120)]
 _Criterion = Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=200)]
 _Id = Annotated[str, Field(min_length=1, max_length=36)]
 _Minutes = Annotated[int, Field(ge=15, le=120)]
+_Theme = Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=120)]
+_Text = Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=300)]
+_Skill = Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=120)]
 
 
 class TaskOut(BaseModel):
@@ -171,3 +178,46 @@ class ValidateOut(BaseModel):
     program_id: str
     status: ProgramStatus
     session_id: str | None
+
+
+class WeekCreate(BaseModel):
+    """Une semaine de plus à la fin du programme (52 au plus), écrite à la main ou par Claude :
+    elle n'a ni module ni tâche, ils s'ajoutent ensuite."""
+
+    theme: _Theme
+    objective: _Text
+    deliverable: _Text
+
+
+class WeekPatch(BaseModel):
+    theme: _Theme | None = None
+    objective: _Text | None = None
+    deliverable: _Text | None = None
+
+    @model_validator(mode="after")
+    def _something(self) -> "WeekPatch":
+        if self.theme is None and self.objective is None and self.deliverable is None:
+            raise ValueError("rien à changer")
+        return self
+
+
+class ModuleCreate(BaseModel):
+    """Un module de plus dans une semaine (4 au plus par semaine), sans tâche : elles s'ajoutent
+    par `PATCH /programs/{id}` (`add_tasks`)."""
+
+    week_id: _Id
+    title: _Title
+    skills: list[_Skill] = Field(min_length=1, max_length=8)
+    prerequisites: list[_Skill] = Field(default_factory=list, max_length=8)
+
+
+class ModulePatch(BaseModel):
+    title: _Title | None = None
+    skills: list[_Skill] | None = Field(default=None, min_length=1, max_length=8)
+    prerequisites: list[_Skill] | None = Field(default=None, max_length=8)
+
+    @model_validator(mode="after")
+    def _something(self) -> "ModulePatch":
+        if self.title is None and self.skills is None and self.prerequisites is None:
+            raise ValueError("rien à changer")
+        return self

@@ -25,6 +25,13 @@ MCP = FeatureMcp(
             "Crée un exercice (titre, énoncé, fichiers de départ et tests).",
         ),
         McpAction(
+            "PATCH /ide/exercises/{exercise_id}",
+            2,
+            "ide_update_exercise",
+            "Écriture directe, aucun agent ni exécution : retouche un exercice (titre, énoncé, "
+            "fichiers de départ et de test pytest, fichier d'entrée).",
+        ),
+        McpAction(
             "DELETE /ide/exercises/{exercise_id}",
             3,
             "ide_delete_exercise",

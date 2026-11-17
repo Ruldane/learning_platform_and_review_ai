@@ -10,6 +10,7 @@ from app.features.projects.service.runtime import ProjectsRuntime
 from tests.features.lessons.conftest import RecordingLauncher
 from tests.features.projects.support import NOW, Env
 from tests.features.study.conftest import seed
+from tests.support.direct import drafted  # noqa: F401
 
 
 @pytest.fixture

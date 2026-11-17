@@ -28,6 +28,7 @@ __all__ = [
     "ExerciseIn",
     "ExerciseOrigin",
     "ExerciseOut",
+    "ExercisePatch",
     "FilesPutIn",
     "NoteAuthor",
     "NoteIn",
@@ -83,6 +84,27 @@ class ExerciseIn(BaseModel):
     entry: str = Field(default="main.py", min_length=1, max_length=PATH_MAX)
 
     _files = field_validator("files")(_check_files)
+
+
+class ExercisePatch(BaseModel):
+    """Retouche d'un exercice : les champs donnés remplacent ceux de l'exercice (`files` remplace
+    tous ses fichiers, énoncé de départ et tests pytest compris) ; l'origine ne change pas."""
+
+    title: str | None = Field(default=None, min_length=1, max_length=TITLE_MAX)
+    statement: str | None = Field(default=None, min_length=1, max_length=STATEMENT_MAX)
+    files: dict[str, str] | None = None
+    entry: str | None = Field(default=None, min_length=1, max_length=PATH_MAX)
+
+    @field_validator("files")
+    @classmethod
+    def _files(cls, files: dict[str, str] | None) -> dict[str, str] | None:
+        return None if files is None else _check_files(files)
+
+    @model_validator(mode="after")
+    def _something(self) -> "ExercisePatch":
+        if (self.title, self.statement, self.files, self.entry) == (None, None, None, None):
+            raise ValueError("rien à changer")
+        return self
 
 
 class ExerciseOut(BaseModel):

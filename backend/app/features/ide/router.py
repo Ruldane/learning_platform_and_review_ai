@@ -16,6 +16,7 @@ from app.features.ide.schemas import (
     ExerciseGenerateIn,
     ExerciseIn,
     ExerciseOut,
+    ExercisePatch,
     FilesPutIn,
     IdeSessionOut,
     IdeSessionStarted,
@@ -93,6 +94,19 @@ async def list_exercises(ide: Ide) -> list[ExerciseOut]:
 async def create_exercise(body: ExerciseIn, ide: Ide) -> ExerciseOut:
     """Ajoute un exercice écrit à la main (ou par Claude : `origin` vient de l'appelant)."""
     return await ide.create_exercise(body)
+
+
+@router.patch(
+    "/exercises/{exercise_id}",
+    response_model=ExerciseOut,
+    responses={
+        **_NOT_FOUND,
+        422: {"description": "`entry_invalid` ou champs à corriger (`details.fields`)"},
+    },
+)
+async def update_exercise(exercise_id: Id, body: ExercisePatch, ide: Ide) -> ExerciseOut:
+    """Retouche un exercice (énoncé, fichiers de départ, tests pytest) sans agent ni exécution."""
+    return await ide.update_exercise(exercise_id, body)
 
 
 @router.post("/exercises/generate", response_model=IdeSessionStarted, status_code=202)

@@ -11,6 +11,7 @@ from app.db.models.ide import ExerciseOrigin
 from app.features.ide.schemas import (
     ExerciseIn,
     ExerciseOut,
+    ExercisePatch,
     IdeSessionOut,
     NoteIn,
     NoteOut,
@@ -51,6 +52,10 @@ class IdeService:
             self._ctx, data, origin=origin, topic=topic, agent_session_id=agent_session_id
         )
         return ExerciseOut.model_validate(row)
+
+    async def update_exercise(self, exercise_id: str, patch: ExercisePatch) -> ExerciseOut:
+        """Retouche un exercice (écriture directe, sans agent ni exécution)."""
+        return ExerciseOut.model_validate(await exercises.update(self._ctx, exercise_id, patch))
 
     async def delete_exercise(self, exercise_id: str) -> None:
         await exercises.delete(self._ctx, exercise_id)
