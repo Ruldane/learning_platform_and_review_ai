@@ -4,6 +4,52 @@
  */
 
 export interface paths {
+    "/api/v1/account/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Account
+         * @description Tout supprimer : annule les sessions en cours, puis efface les vecteurs, les fichiers, les
+         *     points de reprise et toutes les lignes du compte. `confirm` doit être `SUPPRIMER`, sinon 422
+         *     `confirmation_required`. Rejouable jusqu'au bout si elle est interrompue. Mode local : l'espace
+         *     reste utilisable, vide ; mode Google : le compte et la session disparaissent.
+         */
+        post: operations["delete_account_api_v1_account_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Account
+         * @description Toutes les données de l'utilisatrice dans une archive zip `tremplin-export-AAAAMMJJ.zip`
+         *     (téléchargement) : `manifest.json`, une table par fichier JSON (`tables/<table>.json`) et les
+         *     fichiers déposés (`files/…`). Les clés d'API n'y sont jamais (seulement leurs quatre derniers
+         *     caractères) ; ni vecteurs ni points de reprise des agents (recalculables).
+         */
+        get: operations["export_account_api_v1_account_export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/activity": {
         parameters: {
             query?: never;
@@ -243,6 +289,94 @@ export interface paths {
         patch: operations["patch_kit_item_api_v1_applications__application_id__kit__kind__patch"];
         trace?: never;
     };
+    "/api/v1/auth/google/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Google Callback
+         * @description Retour de Google : contrôle le `state`, échange le code, vérifie le jeton d'identité
+         *     (émetteur, audience, `nonce`, adresse vérifiée, `ALLOWED_EMAILS`) puis ouvre la session ou
+         *     propose la reprise de l'espace local. Toujours une redirection vers le front, jamais une
+         *     erreur affichée par l'API.
+         */
+        get: operations["google_callback_api_v1_auth_google_callback_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/google/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Google Claim
+         * @description Le choix de la toute première connexion : `take_local` attache l'identité Google à
+         *     l'espace local, `fresh` crée un espace vide. Ouvre la session (cookie posé) et rend
+         *     l'utilisateur.
+         */
+        post: operations["google_claim_api_v1_auth_google_claim_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/google/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Google Login
+         * @description Commence la connexion : pose le témoin `tremplin_oauth` (`state`, vérificateur PKCE,
+         *     `nonce`, chiffrés, 10 minutes) et renvoie vers Google. `login_hint` (facultatif) préremplit
+         *     l'adresse. Mode local : 404 `google_auth_disabled`.
+         */
+        get: operations["google_login_api_v1_auth_google_login_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Logout
+         * @description Supprime la session du cookie et efface le cookie (même chemin que la pose). Sans effet en
+         *     mode local ; sans session, 204 aussi.
+         */
+        post: operations["logout_api_v1_auth_logout_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/me": {
         parameters: {
             query?: never;
@@ -250,7 +384,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Me */
+        /**
+         * Me
+         * @description L'utilisateur connecté (mode local : l'utilisateur unique).
+         */
         get: operations["me_api_v1_auth_me_get"];
         put?: never;
         post?: never;
@@ -353,6 +490,50 @@ export interface paths {
         };
         /** Get Committee */
         get: operations["get_committee_api_v1_committee__run_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/costs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Costs
+         * @description Les coûts des 7, 30 ou 90 derniers jours (jours du fuseau de l'utilisatrice, aujourd'hui
+         *     compris), agrégés depuis les appels journalisés, aux prix de l'appel. Toute autre durée : 422
+         *     (`details.fields` : `days`).
+         */
+        get: operations["get_costs_api_v1_costs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/costs/calls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Calls
+         * @description Le journal des agents : les appels du plus récent au plus ancien, `limit` par page (50 par
+         *     défaut). `before` est le curseur `next_before` de la page précédente ; `agent` et `graph`
+         *     filtrent. Aucun contenu de prompt.
+         */
+        get: operations["get_calls_api_v1_costs_calls_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -851,6 +1032,27 @@ export interface paths {
          * @description Toujours 200 et sans authentification : le front lit `status`.
          */
         get: operations["health_api_v1_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/health/embedding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Embedding Progress
+         * @description Progression du modèle d'embeddings (`bge-m3`) : public, comme `/health`. Si le modèle
+         *     manque, le back le télécharge depuis Ollama, une seule fois par processus.
+         */
+        get: operations["embedding_progress_api_v1_health_embedding_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1530,6 +1732,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Drafts
+         * @description Relance les brouillons d'un projet validé qui n'en a pas (leur écriture avait échoué,
+         *     D173 n° 4) : une session les écrit sans refaire l'évaluation.
+         */
+        post: operations["post_drafts_api_v1_projects__project_id__drafts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/drafts/{kind}": {
         parameters: {
             query?: never;
@@ -2005,6 +2228,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/settings/agents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Agents
+         * @description Les agents dont on peut surcharger le modèle (mode avancé) : nom et niveau, sans les agents
+         *     de démonstration `demo_*`. Dans l'ordre du registre `AGENTS`.
+         */
+        get: operations["list_agents_api_v1_settings_agents_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/settings/api-keys": {
         parameters: {
             query?: never;
@@ -2283,6 +2527,50 @@ export interface components {
             /** Latest At */
             latest_at: string | null;
         };
+        /**
+         * AgentCallOut
+         * @description Un appel à un modèle, tel que journalisé : jamais le contenu du prompt.
+         */
+        AgentCallOut: {
+            /** Agent */
+            agent: string | null;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Cost Usd */
+            cost_usd: number;
+            /** Estimated */
+            estimated: boolean;
+            /** Graph */
+            graph: string | null;
+            /** Id */
+            id: string;
+            /** Latency Ms */
+            latency_ms: number;
+            /** Model */
+            model: string;
+            /** Provider */
+            provider: string;
+            /** Session Id */
+            session_id: string | null;
+            /** Tokens In */
+            tokens_in: number;
+            /** Tokens Out */
+            tokens_out: number;
+        };
+        /**
+         * AgentCallPage
+         * @description Une page du journal ; `next_before` (curseur opaque) donne la page suivante, `None` à la
+         *     fin.
+         */
+        AgentCallPage: {
+            /** Items */
+            items: components["schemas"]["AgentCallOut"][];
+            /** Next Before */
+            next_before: string | null;
+        };
         /** AgentMessageEvent */
         AgentMessageEvent: {
             /**
@@ -2316,6 +2604,19 @@ export interface components {
             message_id: string;
             /** Text */
             text: string;
+        };
+        /**
+         * AgentOut
+         * @description Un agent dont le modèle se choisit (surcharge par agent, P17) et le niveau qu'il suit.
+         */
+        AgentOut: {
+            /** Name */
+            name: string;
+            /**
+             * Tier
+             * @enum {string}
+             */
+            tier: "rapide" | "standard" | "fort" | "vision";
         };
         /** AgentStartedEvent */
         AgentStartedEvent: {
@@ -3209,6 +3510,18 @@ export interface components {
             url: string | null;
         };
         /**
+         * ClaimIn
+         * @description Le choix de la toute première connexion Google : reprendre l'espace local (même `id`,
+         *     donc aucune donnée déplacée) ou repartir d'un espace vide (l'espace local reste intact).
+         */
+        ClaimIn: {
+            /**
+             * Choice
+             * @enum {string}
+             */
+            choice: "take_local" | "fresh";
+        };
+        /**
          * CommitteeDiff
          * @description L'avant et l'après (F19) : les votes, les objections disparues (`objections_resolved`) et les
          *     nouvelles (`objections_new`) par rapport à l'exécution `previous_id`.
@@ -3321,6 +3634,42 @@ export interface components {
             /** Url */
             url: string | null;
         };
+        /**
+         * CostRow
+         * @description Une ligne du rapport. `key` : le jour (`2026-11-16`), le graphe (`""` hors session),
+         *     l'agent (`""` aucun) ou `fournisseur:modèle` (`glm:glm-5.3-flash`).
+         */
+        CostRow: {
+            /** Calls */
+            calls: number;
+            /** Cost Usd */
+            cost_usd: number;
+            /** Estimated Calls */
+            estimated_calls: number;
+            /** Key */
+            key: string;
+            /** Tokens In */
+            tokens_in: number;
+            /** Tokens Out */
+            tokens_out: number;
+        };
+        /**
+         * CostTotals
+         * @description Appels, jetons et coût d'un groupe d'appels ; `estimated_calls` : combien de ces appels
+         *     ont un coût estimé (le fournisseur n'a pas rendu ses jetons).
+         */
+        CostTotals: {
+            /** Calls */
+            calls: number;
+            /** Cost Usd */
+            cost_usd: number;
+            /** Estimated Calls */
+            estimated_calls: number;
+            /** Tokens In */
+            tokens_in: number;
+            /** Tokens Out */
+            tokens_out: number;
+        };
         /** CostUpdatedEvent */
         CostUpdatedEvent: {
             /**
@@ -3356,6 +3705,34 @@ export interface components {
             tokens_in: number;
             /** Tokens Out */
             tokens_out: number;
+        };
+        /**
+         * CostsReport
+         * @description Les coûts des `days` derniers jours locaux, de `since` à `until` inclus ; les jours sans
+         *     appel sont présents, à zéro.
+         */
+        CostsReport: {
+            /** By Agent */
+            by_agent: components["schemas"]["CostRow"][];
+            /** By Day */
+            by_day: components["schemas"]["CostRow"][];
+            /** By Feature */
+            by_feature: components["schemas"]["CostRow"][];
+            /** By Model */
+            by_model: components["schemas"]["CostRow"][];
+            /** Days */
+            days: number;
+            /**
+             * Since
+             * Format: date
+             */
+            since: string;
+            total: components["schemas"]["CostTotals"];
+            /**
+             * Until
+             * Format: date
+             */
+            until: string;
         };
         /** CreatedOut */
         CreatedOut: {
@@ -3435,6 +3812,14 @@ export interface components {
             unrated: number[];
             /** Weakest Index */
             weakest_index: number;
+        };
+        /**
+         * DeleteAccountIn
+         * @description La confirmation de « Tout supprimer » : `confirm` doit être exactement `SUPPRIMER`.
+         */
+        DeleteAccountIn: {
+            /** Confirm */
+            confirm: string;
         };
         /** DistinctIn */
         DistinctIn: {
@@ -3602,6 +3987,21 @@ export interface components {
             kind: "experience_years" | "location" | "language" | "degree" | "other";
             /** Text */
             text: string;
+        };
+        /**
+         * EmbeddingProgress
+         * @description Le modèle d'embeddings : présent, ou en cours de téléchargement (`percent` de 0 à 100, vide
+         *     tant que la taille n'est pas connue). `detail` est un texte français sans donnée personnelle.
+         */
+        EmbeddingProgress: {
+            /** Detail */
+            detail: string;
+            /** Model */
+            model: string;
+            /** Percent */
+            percent: number | null;
+            /** Present */
+            present: boolean;
         };
         /** ErrorDetailOut */
         ErrorDetailOut: {
@@ -6188,6 +6588,11 @@ export interface components {
              * @default fr
              */
             lesson_language: string;
+            /**
+             * Onboarding Done
+             * @default false
+             */
+            onboarding_done: boolean;
             /** Preferred Domains */
             preferred_domains?: string[];
             /**
@@ -6921,6 +7326,11 @@ export interface components {
              * @default fr
              */
             lesson_language: string;
+            /**
+             * Onboarding Done
+             * @default false
+             */
+            onboarding_done: boolean;
             /** Preferred Domains */
             preferred_domains?: string[];
             /**
@@ -7233,6 +7643,55 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    delete_account_api_v1_account_delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteAccountIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `confirmation_required` : `details.fields` : `confirm` */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    export_account_api_v1_account_export_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description L'archive de toutes les données */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/zip": unknown;
+                };
+            };
+        };
+    };
     get_activity_api_v1_activity_get: {
         parameters: {
             query?: {
@@ -7800,6 +8259,145 @@ export interface operations {
             };
         };
     };
+    google_callback_api_v1_auth_google_callback_get: {
+        parameters: {
+            query?: {
+                code?: string | null;
+                state?: string | null;
+                error?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirection vers le front : `/` (connectée), `/connexion/reprise` (choix de la reprise) ou `/connexion?erreur=<code>` (échec, rien n'est créé) */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `google_auth_disabled` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    google_claim_api_v1_auth_google_claim_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeOut"];
+                };
+            };
+            /** @description `google_auth_disabled` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `claim_expired` (le témoin `tremplin_claim` manque ou a plus de 10 minutes) ou `local_already_claimed` (l'espace local a déjà un propriétaire) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    google_login_api_v1_auth_google_login_get: {
+        parameters: {
+            query?: {
+                login_hint?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirection vers Google */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `google_auth_disabled` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    logout_api_v1_auth_logout_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     me_api_v1_auth_me_get: {
         parameters: {
             query?: never;
@@ -7817,6 +8415,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["MeOut"];
                 };
+            };
+            /** @description `auth_required` : mode Google, aucune session valide */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -8028,6 +8633,69 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    get_costs_api_v1_costs_get: {
+        parameters: {
+            query?: {
+                days?: 7 | 30 | 90;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CostsReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_calls_api_v1_costs_calls_get: {
+        parameters: {
+            query?: {
+                before?: string | null;
+                limit?: number;
+                agent?: string | null;
+                graph?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentCallPage"];
+                };
+            };
+            /** @description `details.fields` : `before` (curseur illisible) ou `limit` */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -9060,6 +9728,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthReport"];
+                };
+            };
+        };
+    };
+    embedding_progress_api_v1_health_embedding_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmbeddingProgress"];
                 };
             };
         };
@@ -10443,6 +11131,51 @@ export interface operations {
             };
         };
     };
+    post_drafts_api_v1_projects__project_id__drafts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionStarted"];
+                };
+            };
+            /** @description `project_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `project_not_validated`, `drafts_present` (le projet a déjà ses brouillons) ou `review_in_progress` (`details.session_id`) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     patch_one_draft_api_v1_projects__project_id__drafts__kind__patch: {
         parameters: {
             query?: never;
@@ -11398,6 +12131,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_agents_api_v1_settings_agents_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentOut"][];
                 };
             };
         };

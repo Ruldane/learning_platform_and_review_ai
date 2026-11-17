@@ -26,6 +26,7 @@ export function buildUserSettings(current: SettingsOut, tiers: TierChoices): Use
     debate_rounds: current.debate_rounds,
     excluded_domains: current.excluded_domains,
     lesson_language: current.lesson_language,
+    onboarding_done: current.onboarding_done,
     preferred_domains: current.preferred_domains,
     radar_role: current.radar_role,
     radar_zone: current.radar_zone,

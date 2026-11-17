@@ -91,6 +91,126 @@
         "title": "ActivityPage",
         "type": "object"
       },
+      "AgentCallOut": {
+        "description": "Un appel à un modèle, tel que journalisé : jamais le contenu du prompt.",
+        "properties": {
+          "agent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent"
+          },
+          "at": {
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "cost_usd": {
+            "title": "Cost Usd",
+            "type": "number"
+          },
+          "estimated": {
+            "title": "Estimated",
+            "type": "boolean"
+          },
+          "graph": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Graph"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "latency_ms": {
+            "title": "Latency Ms",
+            "type": "integer"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
+          "tokens_in": {
+            "title": "Tokens In",
+            "type": "integer"
+          },
+          "tokens_out": {
+            "title": "Tokens Out",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "at",
+          "session_id",
+          "graph",
+          "agent",
+          "provider",
+          "model",
+          "tokens_in",
+          "tokens_out",
+          "latency_ms",
+          "cost_usd",
+          "estimated"
+        ],
+        "title": "AgentCallOut",
+        "type": "object"
+      },
+      "AgentCallPage": {
+        "description": "Une page du journal ; `next_before` (curseur opaque) donne la page suivante, `None` à la\nfin.",
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AgentCallOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_before": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Before"
+          }
+        },
+        "required": [
+          "items",
+          "next_before"
+        ],
+        "title": "AgentCallPage",
+        "type": "object"
+      },
       "AgentMessageEvent": {
         "properties": {
           "agent": {
@@ -165,6 +285,31 @@
           "text"
         ],
         "title": "AgentMessagePayload",
+        "type": "object"
+      },
+      "AgentOut": {
+        "description": "Un agent dont le modèle se choisit (surcharge par agent, P17) et le niveau qu'il suit.",
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "tier": {
+            "enum": [
+              "rapide",
+              "standard",
+              "fort",
+              "vision"
+            ],
+            "title": "Tier",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "tier"
+        ],
+        "title": "AgentOut",
         "type": "object"
       },
       "AgentStartedEvent": {
@@ -2715,6 +2860,24 @@
         "title": "Citation",
         "type": "object"
       },
+      "ClaimIn": {
+        "description": "Le choix de la toute première connexion Google : reprendre l'espace local (même `id`,\ndonc aucune donnée déplacée) ou repartir d'un espace vide (l'espace local reste intact).",
+        "properties": {
+          "choice": {
+            "enum": [
+              "take_local",
+              "fresh"
+            ],
+            "title": "Choice",
+            "type": "string"
+          }
+        },
+        "required": [
+          "choice"
+        ],
+        "title": "ClaimIn",
+        "type": "object"
+      },
       "CommitteeDiff": {
         "description": "L'avant et l'après (F19) : les votes, les objections disparues (`objections_resolved`) et les\nnouvelles (`objections_new`) par rapport à l'exécution `previous_id`.",
         "properties": {
@@ -3061,6 +3224,79 @@
         "title": "ContactOut",
         "type": "object"
       },
+      "CostRow": {
+        "description": "Une ligne du rapport. `key` : le jour (`2026-11-16`), le graphe (`\"\"` hors session),\nl'agent (`\"\"` aucun) ou `fournisseur:modèle` (`glm:glm-5.3-flash`).",
+        "properties": {
+          "calls": {
+            "title": "Calls",
+            "type": "integer"
+          },
+          "cost_usd": {
+            "title": "Cost Usd",
+            "type": "number"
+          },
+          "estimated_calls": {
+            "title": "Estimated Calls",
+            "type": "integer"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "tokens_in": {
+            "title": "Tokens In",
+            "type": "integer"
+          },
+          "tokens_out": {
+            "title": "Tokens Out",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "calls",
+          "tokens_in",
+          "tokens_out",
+          "cost_usd",
+          "estimated_calls",
+          "key"
+        ],
+        "title": "CostRow",
+        "type": "object"
+      },
+      "CostTotals": {
+        "description": "Appels, jetons et coût d'un groupe d'appels ; `estimated_calls` : combien de ces appels\nont un coût estimé (le fournisseur n'a pas rendu ses jetons).",
+        "properties": {
+          "calls": {
+            "title": "Calls",
+            "type": "integer"
+          },
+          "cost_usd": {
+            "title": "Cost Usd",
+            "type": "number"
+          },
+          "estimated_calls": {
+            "title": "Estimated Calls",
+            "type": "integer"
+          },
+          "tokens_in": {
+            "title": "Tokens In",
+            "type": "integer"
+          },
+          "tokens_out": {
+            "title": "Tokens Out",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "calls",
+          "tokens_in",
+          "tokens_out",
+          "cost_usd",
+          "estimated_calls"
+        ],
+        "title": "CostTotals",
+        "type": "object"
+      },
       "CostUpdatedEvent": {
         "properties": {
           "agent": {
@@ -3138,6 +3374,68 @@
           "cap_tokens"
         ],
         "title": "CostUpdatedPayload",
+        "type": "object"
+      },
+      "CostsReport": {
+        "description": "Les coûts des `days` derniers jours locaux, de `since` à `until` inclus ; les jours sans\nappel sont présents, à zéro.",
+        "properties": {
+          "by_agent": {
+            "items": {
+              "$ref": "#/components/schemas/CostRow"
+            },
+            "title": "By Agent",
+            "type": "array"
+          },
+          "by_day": {
+            "items": {
+              "$ref": "#/components/schemas/CostRow"
+            },
+            "title": "By Day",
+            "type": "array"
+          },
+          "by_feature": {
+            "items": {
+              "$ref": "#/components/schemas/CostRow"
+            },
+            "title": "By Feature",
+            "type": "array"
+          },
+          "by_model": {
+            "items": {
+              "$ref": "#/components/schemas/CostRow"
+            },
+            "title": "By Model",
+            "type": "array"
+          },
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "since": {
+            "format": "date",
+            "title": "Since",
+            "type": "string"
+          },
+          "total": {
+            "$ref": "#/components/schemas/CostTotals"
+          },
+          "until": {
+            "format": "date",
+            "title": "Until",
+            "type": "string"
+          }
+        },
+        "required": [
+          "days",
+          "since",
+          "until",
+          "total",
+          "by_day",
+          "by_feature",
+          "by_agent",
+          "by_model"
+        ],
+        "title": "CostsReport",
         "type": "object"
       },
       "CreatedOut": {
@@ -3361,6 +3659,21 @@
           "unrated"
         ],
         "title": "DebriefOut",
+        "type": "object"
+      },
+      "DeleteAccountIn": {
+        "description": "La confirmation de « Tout supprimer » : `confirm` doit être exactement `SUPPRIMER`.",
+        "properties": {
+          "confirm": {
+            "maxLength": 32,
+            "title": "Confirm",
+            "type": "string"
+          }
+        },
+        "required": [
+          "confirm"
+        ],
+        "title": "DeleteAccountIn",
         "type": "object"
       },
       "DistinctIn": {
@@ -3836,6 +4149,42 @@
           "text"
         ],
         "title": "EliminatoryOut",
+        "type": "object"
+      },
+      "EmbeddingProgress": {
+        "description": "Le modèle d'embeddings : présent, ou en cours de téléchargement (`percent` de 0 à 100, vide\ntant que la taille n'est pas connue). `detail` est un texte français sans donnée personnelle.",
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "percent": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percent"
+          },
+          "present": {
+            "title": "Present",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "model",
+          "present",
+          "percent",
+          "detail"
+        ],
+        "title": "EmbeddingProgress",
         "type": "object"
       },
       "ErrorDetailOut": {
@@ -11020,6 +11369,11 @@
             "title": "Lesson Language",
             "type": "string"
           },
+          "onboarding_done": {
+            "default": false,
+            "title": "Onboarding Done",
+            "type": "boolean"
+          },
           "preferred_domains": {
             "items": {
               "type": "string"
@@ -12956,6 +13310,11 @@
             "title": "Lesson Language",
             "type": "string"
           },
+          "onboarding_done": {
+            "default": false,
+            "title": "Onboarding Done",
+            "type": "boolean"
+          },
           "preferred_domains": {
             "items": {
               "type": "string"
@@ -13593,6 +13952,52 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/account/delete": {
+      "post": {
+        "description": "Tout supprimer : annule les sessions en cours, puis efface les vecteurs, les fichiers, les\npoints de reprise et toutes les lignes du compte. `confirm` doit être `SUPPRIMER`, sinon 422\n`confirmation_required`. Rejouable jusqu'au bout si elle est interrompue. Mode local : l'espace\nreste utilisable, vide ; mode Google : le compte et la session disparaissent.",
+        "operationId": "delete_account_api_v1_account_delete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteAccountIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "`confirmation_required` : `details.fields` : `confirm`"
+          }
+        },
+        "summary": "Delete Account",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/api/v1/account/export": {
+      "get": {
+        "description": "Toutes les données de l'utilisatrice dans une archive zip `tremplin-export-AAAAMMJJ.zip`\n(téléchargement) : `manifest.json`, une table par fichier JSON (`tables/<table>.json`) et les\nfichiers déposés (`files/…`). Les clés d'API n'y sont jamais (seulement leurs quatre derniers\ncaractères) ; ni vecteurs ni points de reprise des agents (recalculables).",
+        "operationId": "export_account_api_v1_account_export_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/zip": {}
+            },
+            "description": "L'archive de toutes les données"
+          }
+        },
+        "summary": "Export Account",
+        "tags": [
+          "account"
+        ]
+      }
+    },
     "/api/v1/activity": {
       "get": {
         "description": "Les événements des agents et des tâches de fond, triés par `(at, id)` décroissant.\nRelecture : `after` = `latest_at` et `after_id` = `id` du premier événement de la page\nprécédente. Page plus ancienne : `before` et `before_id` = `at` et `id` du dernier. Un `id`\nest stable (`{kind}:{ref}:{état}`) : le front ne montre jamais deux fois le même.",
@@ -14429,8 +14834,200 @@
         ]
       }
     },
+    "/api/v1/auth/google/callback": {
+      "get": {
+        "description": "Retour de Google : contrôle le `state`, échange le code, vérifie le jeton d'identité\n(émetteur, audience, `nonce`, adresse vérifiée, `ALLOWED_EMAILS`) puis ouvre la session ou\npropose la reprise de l'espace local. Toujours une redirection vers le front, jamais une\nerreur affichée par l'API.",
+        "operationId": "google_callback_api_v1_auth_google_callback_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "code",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 2048,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Code"
+            }
+          },
+          {
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 2048,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "State"
+            }
+          },
+          {
+            "in": "query",
+            "name": "error",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 256,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Error"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirection vers le front : `/` (connectée), `/connexion/reprise` (choix de la reprise) ou `/connexion?erreur=<code>` (échec, rien n'est créé)"
+          },
+          "404": {
+            "description": "`google_auth_disabled`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Google Callback",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/google/claim": {
+      "post": {
+        "description": "Le choix de la toute première connexion : `take_local` attache l'identité Google à\nl'espace local, `fresh` crée un espace vide. Ouvre la session (cookie posé) et rend\nl'utilisateur.",
+        "operationId": "google_claim_api_v1_auth_google_claim_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`google_auth_disabled`"
+          },
+          "409": {
+            "description": "`claim_expired` (le témoin `tremplin_claim` manque ou a plus de 10 minutes) ou `local_already_claimed` (l'espace local a déjà un propriétaire)"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Google Claim",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/google/login": {
+      "get": {
+        "description": "Commence la connexion : pose le témoin `tremplin_oauth` (`state`, vérificateur PKCE,\n`nonce`, chiffrés, 10 minutes) et renvoie vers Google. `login_hint` (facultatif) préremplit\nl'adresse. Mode local : 404 `google_auth_disabled`.",
+        "operationId": "google_login_api_v1_auth_google_login_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "login_hint",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 320,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Login Hint"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirection vers Google"
+          },
+          "404": {
+            "description": "`google_auth_disabled`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Google Login",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "description": "Supprime la session du cookie et efface le cookie (même chemin que la pose). Sans effet en\nmode local ; sans session, 204 aussi.",
+        "operationId": "logout_api_v1_auth_logout_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Logout",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/v1/auth/me": {
       "get": {
+        "description": "L'utilisateur connecté (mode local : l'utilisateur unique).",
         "operationId": "me_api_v1_auth_me_get",
         "responses": {
           "200": {
@@ -14442,6 +15039,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "401": {
+            "description": "`auth_required` : mode Google, aucune session valide"
           }
         },
         "summary": "Me",
@@ -14715,6 +15315,145 @@
         "summary": "Get Committee",
         "tags": [
           "committee"
+        ]
+      }
+    },
+    "/api/v1/costs": {
+      "get": {
+        "description": "Les coûts des 7, 30 ou 90 derniers jours (jours du fuseau de l'utilisatrice, aujourd'hui\ncompris), agrégés depuis les appels journalisés, aux prix de l'appel. Toute autre durée : 422\n(`details.fields` : `days`).",
+        "operationId": "get_costs_api_v1_costs_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "enum": [
+                7,
+                30,
+                90
+              ],
+              "title": "Days",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CostsReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Costs",
+        "tags": [
+          "costs"
+        ]
+      }
+    },
+    "/api/v1/costs/calls": {
+      "get": {
+        "description": "Le journal des agents : les appels du plus récent au plus ancien, `limit` par page (50 par\ndéfaut). `before` est le curseur `next_before` de la page précédente ; `agent` et `graph`\nfiltrent. Aucun contenu de prompt.",
+        "operationId": "get_calls_api_v1_costs_calls_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Before"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "agent",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Agent"
+            }
+          },
+          {
+            "in": "query",
+            "name": "graph",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Graph"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentCallPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "`details.fields` : `before` (curseur illisible) ou `limit`"
+          }
+        },
+        "summary": "Get Calls",
+        "tags": [
+          "costs"
         ]
       }
     },
@@ -16131,6 +16870,28 @@
           }
         },
         "summary": "Health",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/v1/health/embedding": {
+      "get": {
+        "description": "Progression du modèle d'embeddings (`bge-m3`) : public, comme `/health`. Si le modèle\nmanque, le back le télécharge depuis Ollama, une seule fois par processus.",
+        "operationId": "embedding_progress_api_v1_health_embedding_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmbeddingProgress"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Embedding Progress",
         "tags": [
           "health"
         ]
@@ -18090,6 +18851,57 @@
         ]
       }
     },
+    "/api/v1/projects/{project_id}/drafts": {
+      "post": {
+        "description": "Relance les brouillons d'un projet validé qui n'en a pas (leur écriture avait échoué,\nD173 n° 4) : une session les écrit sans refaire l'évaluation.",
+        "operationId": "post_drafts_api_v1_projects__project_id__drafts_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`project_not_found`"
+          },
+          "409": {
+            "description": "`project_not_validated`, `drafts_present` (le projet a déjà ses brouillons) ou `review_in_progress` (`details.session_id`)"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Post Drafts",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
     "/api/v1/projects/{project_id}/drafts/{kind}": {
       "patch": {
         "description": "Retouche un brouillon : `entry` pour `profile_entry`, `content` (3 000 caractères au plus)\npour les autres. Un brouillon « à vérifier » modifié est recontrôlé.",
@@ -19570,6 +20382,32 @@
           }
         },
         "summary": "Replace Settings",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
+    "/api/v1/settings/agents": {
+      "get": {
+        "description": "Les agents dont on peut surcharger le modèle (mode avancé) : nom et niveau, sans les agents\nde démonstration `demo_*`. Dans l'ordre du registre `AGENTS`.",
+        "operationId": "list_agents_api_v1_settings_agents_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AgentOut"
+                  },
+                  "title": "Response List Agents Api V1 Settings Agents Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Agents",
         "tags": [
           "settings"
         ]

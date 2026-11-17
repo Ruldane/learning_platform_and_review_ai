@@ -22,6 +22,7 @@ from starlette.exceptions import HTTPException
 from starlette.requests import HTTPConnection
 
 from app.core.deps import CurrentUserDep, Db
+from app.core.errors import AppError
 from app.core.field_paths import FieldPathsRoute
 from app.features.projects.schemas import (
     DraftKind,
@@ -206,3 +207,23 @@ async def post_brief(
 ) -> SessionStarted:
     """Relance l'énoncé d'un projet dont les trois essais ont échoué."""
     return await retry_brief(rt, current.id, project_id)
+
+
+@router.post(
+    "/{project_id}/drafts",
+    response_model=SessionStarted,
+    status_code=status.HTTP_202_ACCEPTED,
+    responses={
+        404: {"description": "`project_not_found`"},
+        409: {
+            "description": "`project_not_validated`, `drafts_present` (le projet a déjà ses "
+            "brouillons) ou `review_in_progress` (`details.session_id`)"
+        },
+    },
+)
+async def post_drafts(
+    project_id: ProjectId, current: CurrentUserDep, rt: ProjectsDep
+) -> SessionStarted:
+    """Relance les brouillons d'un projet validé qui n'en a pas (leur écriture avait échoué,
+    D173 n° 4) : une session les écrit sans refaire l'évaluation."""
+    raise AppError("not_implemented", "Pas encore disponible.", 501)

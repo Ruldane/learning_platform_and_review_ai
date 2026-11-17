@@ -111,6 +111,9 @@ class UserSettings(BaseModel):
     # dernier objectif. Données personnelles : jamais journalisées.
     radar_role: str = Field(default="", max_length=120)
     radar_zone: str = Field(default="France", max_length=120)
+    # Premier lancement fini (P20, phase 9) : posé par l'assistant d'accueil, vrai d'office pour les
+    # réglages déjà stockés (migration 0015). Le back ne le remet jamais à faux.
+    onboarding_done: bool = False
 
     @field_validator("reminder_delays_days")
     @classmethod
@@ -126,6 +129,13 @@ class UserSettings(BaseModel):
     def _complete_tiers(cls, tiers: dict[Tier, ModelChoice]) -> dict[Tier, ModelChoice]:
         """Un niveau absent reprend sa valeur par défaut : la fabrique trouve toujours un modèle."""
         return {tier: tiers.get(tier, DEFAULT_TIERS[tier]) for tier in TIERS}
+
+
+class AgentOut(BaseModel):
+    """Un agent dont le modèle se choisit (surcharge par agent, P17) et le niveau qu'il suit."""
+
+    name: str
+    tier: Tier
 
 
 class SettingsOut(UserSettings):

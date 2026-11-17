@@ -38,3 +38,13 @@ class ApiKey(UserScopedMixin, Base):
     last4: Mapped[str] = mapped_column(String(4))
     last_tested_at: Mapped[datetime | None] = mapped_column(UTCDateTime, default=None)
     last_test_ok: Mapped[bool | None] = mapped_column(Boolean, default=None)
+
+
+class AuthSession(UserScopedMixin, Base):
+    """Session de connexion du mode Google (9.A2) : seul le SHA-256 du jeton du cookie est gardé
+    (jamais le jeton), la session vaut jusqu'à `expires_at` (durée fixe depuis la connexion)."""
+
+    __tablename__ = "auth_sessions"
+
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    expires_at: Mapped[datetime] = mapped_column(UTCDateTime)

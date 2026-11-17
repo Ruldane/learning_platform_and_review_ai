@@ -18,6 +18,7 @@ export const settingsFixture: SettingsOut = {
   debate_rounds: 3,
   excluded_domains: [],
   lesson_language: "fr",
+  onboarding_done: true,
   preferred_domains: [],
   radar_role: "",
   radar_zone: "France",

@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from app.features.account.router import router as account_router
 from app.features.activity.router import router as activity_router
 from app.features.applications.router import router as applications_router
 from app.features.applications.router_committee import router as committee_router
@@ -9,6 +10,7 @@ from app.features.applications.router_reminders import router as reminders_route
 from app.features.auth.router import router as auth_router
 from app.features.brief.router import router as brief_router
 from app.features.capture.router import router as capture_router
+from app.features.costs.router import router as costs_router
 from app.features.cv.router import router as cv_router
 from app.features.gap.router import router as gap_router
 from app.features.health.router import router as health_router
@@ -57,4 +59,6 @@ FEATURE_ROUTERS: list[APIRouter] = [
     brief_router,
     activity_router,
     projects_router,
+    account_router,
+    costs_router,
 ]

@@ -3,9 +3,11 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Response
 
 from app.core.deps import CurrentUserDep, Db, get_providers
+from app.core.errors import AppError
 from app.core.providers import Providers
 from app.features.settings.keys_schemas import ApiKeyIn, ApiKeyOut, ModelsOut
 from app.features.settings.keys_service import ApiKeyService
+from app.features.settings.schemas import AgentOut
 from app.providers.llm.base import KeyTestResult
 
 router = APIRouter(prefix="/settings", tags=["settings"])
@@ -56,3 +58,10 @@ async def test_api_key(
 @router.get("/models", response_model=ModelsOut)
 async def list_models(current: CurrentUserDep, db: Db, providers: ProvidersDep) -> ModelsOut:
     return await _service(db, current, providers).models_overview()
+
+
+@router.get("/agents", response_model=list[AgentOut])
+async def list_agents(current: CurrentUserDep) -> list[AgentOut]:
+    """Les agents dont on peut surcharger le modèle (mode avancé) : nom et niveau, sans les agents
+    de démonstration `demo_*`. Dans l'ordre du registre `AGENTS`."""
+    raise AppError("not_implemented", "Pas encore disponible.", 501)

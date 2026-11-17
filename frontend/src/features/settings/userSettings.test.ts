@@ -44,6 +44,7 @@ describe("buildUserSettings", () => {
       "debate_rounds",
       "excluded_domains",
       "lesson_language",
+      "onboarding_done",
       "preferred_domains",
       "radar_role",
       "radar_zone",

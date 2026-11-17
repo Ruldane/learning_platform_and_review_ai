@@ -55,6 +55,16 @@ class Settings(BaseSettings):
     google_client_id: str | None = None
     google_client_secret: str | None = None
     allowed_emails: str | None = None
+    # Adresses de Google (point d'autorisation, point `token`, émetteur attendu) : celles de Google
+    # par défaut ; le faux fournisseur des essais les remplace (P5, phase 9).
+    google_auth_url: str = "https://accounts.google.com/o/oauth2/v2/auth"
+    google_token_url: str = "https://oauth2.googleapis.com/token"
+    google_issuer: str = "https://accounts.google.com"
+    # Adresse de retour enregistrée chez Google, et adresse du front où l'on revient (P10).
+    google_redirect_uri: str = "http://localhost:8000/api/v1/auth/google/callback"
+    frontend_url: str = "http://localhost:5173"
+    # Durée fixe d'une session de connexion, en jours, depuis la connexion (P6).
+    session_days: int = Field(default=30, ge=1, le=90)
 
     @model_validator(mode="after")
     def _default_database_url(self) -> "Settings":
