@@ -11,11 +11,13 @@ accède par `group_add: ["12345"]`. Si le bac est arrêté, `submit` lève une `
 import asyncio
 import json
 import os
+import secrets
 import time
 from pathlib import Path
 from typing import Literal
 
 from app.providers.sandbox.base import (
+    MAX_OUTPUT_BYTES,
     SandboxJob,
     SandboxProgress,
     SandboxResult,
@@ -25,6 +27,12 @@ from app.providers.sandbox.base import (
 )
 
 HEARTBEAT_MAX_AGE_S = 5.0
+# Le lanceur borne le journal à `MAX_OUTPUT_BYTES` : le back ne lit jamais plus (plus quatre octets
+# pour un caractère coupé), même si le volume contenait un fichier énorme.
+MAX_READ_BYTES = MAX_OUTPUT_BYTES + 4
+# Taille d'un travail déposé : le lanceur en refuse au-delà (200 000 octets de caractères de
+# contrôle font 1,2 Mo une fois échappés en JSON ; même valeur que `MAX_JOB_BYTES` du lanceur).
+MAX_JOB_BYTES = 1_500_000
 # Un travail resté en file plus longtemps alors que le lanceur ne bat plus : le bac est tombé.
 QUEUE_DEAD_S = 60.0
 _STATUSES: tuple[Literal["done", "timeout", "killed", "error"], ...] = (
@@ -85,25 +93,34 @@ class SpoolSandbox:
         await asyncio.to_thread(self._write_job, job)
 
     def _write_job(self, job: SandboxJob) -> None:
-        if self._job(job.run_id).exists() or self._log(job.run_id).exists():
+        if self._log(job.run_id).exists():
             raise ValueError("travail déjà déposé")
-        payload = json.dumps(
-            {
-                "run_id": job.run_id,
-                "files": job.files,
-                "entry": job.entry,
-                "kind": job.kind,
-                "timeout_s": job.timeout_s,
-            }
-        ).encode("utf-8")
-        tmp = self._dir / "jobs" / f".{job.run_id}.tmp"
+        body = {
+            "run_id": job.run_id,
+            "files": job.files,
+            "entry": job.entry,
+            "kind": job.kind,
+            "timeout_s": job.timeout_s,
+        }
+        try:
+            payload = json.dumps(body, ensure_ascii=False).encode("utf-8")
+        except UnicodeEncodeError:  # une substitution orpheline n'est pas du texte
+            raise ValueError("texte invalide dans les fichiers") from None
+        if len(payload) > MAX_JOB_BYTES:
+            raise ValueError("travail trop gros")
+        tmp = self._dir / "jobs" / f".{job.run_id}.{secrets.token_hex(4)}.tmp"  # un par dépôt
         fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o660)
         try:
             os.fchmod(fd, 0o660)  # le umask du back (022) retirerait l'écriture au groupe
             os.write(fd, payload)
         finally:
             os.close(fd)
-        os.replace(tmp, self._job(job.run_id))
+        try:
+            os.link(tmp, self._job(job.run_id))  # échoue si présent : deux dépôts ne s'écrasent pas
+        except FileExistsError:
+            raise ValueError("travail déjà déposé") from None
+        finally:
+            os.unlink(tmp)
 
     async def poll(self, run_id: str, offset: int) -> SandboxProgress:
         try:
@@ -117,7 +134,7 @@ class SpoolSandbox:
         try:
             with open(self._log(run_id), "rb") as handle:
                 handle.seek(offset)
-                data = handle.read()
+                data = handle.read(MAX_READ_BYTES)
         except FileNotFoundError:
             data = None
         if data is None:

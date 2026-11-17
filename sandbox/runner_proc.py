@@ -20,6 +20,29 @@ PROC = Path("/proc")
 _SYSV = (("shm", "shmid", "shmctl"), ("sem", "semid", "semctl"), ("msg", "msqid", "msgctl"))
 
 
+def parse_status(raw: bytes) -> tuple[set[int], str, int] | None:
+    """`(uid réels et effectifs, état, mémoire résidente en octets)` d'un `/proc/<pid>/status`.
+    Le nom du processus (`Name:`, première ligne) est fixé par le code (`prctl(PR_SET_NAME)`) :
+    on ne coupe que sur le saut de ligne (le noyau l'échappe dans le nom), on ignore la première
+    ligne et on garde la première occurrence de chaque clé après elle. `None` si l'uid reste
+    illisible ; une mémoire illisible vaut 0. Jamais d'exception."""
+    fields: dict[bytes, list[bytes]] = {}
+    for line in raw.split(b"\n")[1:]:
+        key, sep, value = line.partition(b":")
+        if sep and key not in fields:
+            fields[key] = value.split()
+    try:
+        uids = {int(x) for x in fields[b"Uid"][:2]}
+    except (KeyError, ValueError):
+        return None
+    state = fields.get(b"State", [b"?"])[0].decode("ascii", "replace")
+    try:
+        rss = int(fields[b"VmRSS"][0]) * 1024
+    except (KeyError, IndexError, ValueError):
+        rss = 0
+    return uids, state, rss
+
+
 def user_processes(uid: int) -> list[tuple[int, int]]:
     """Processus vivants (zombies exclus) d'uid `uid` : (pid, mémoire résidente en octets)."""
     found: list[tuple[int, int]] = []
@@ -27,19 +50,12 @@ def user_processes(uid: int) -> list[tuple[int, int]]:
         if not name.isdigit():
             continue
         try:
-            text = (PROC / name / "status").read_text(errors="replace")
+            raw = (PROC / name / "status").read_bytes()
         except OSError:
             continue
-        fields = {
-            line.split(":", 1)[0]: line.split(":", 1)[1].split()
-            for line in text.splitlines()
-            if ":" in line
-        }
-        owners = fields.get("Uid", [])
-        state = fields.get("State", ["?"])
-        if uid in {int(x) for x in owners[:2]} and state[0] != "Z":
-            rss = int(fields["VmRSS"][0]) * 1024 if fields.get("VmRSS") else 0
-            found.append((int(name), rss))
+        parsed = parse_status(raw)
+        if parsed is not None and uid in parsed[0] and parsed[1] != "Z":
+            found.append((int(name), parsed[2]))
     return found
 
 
@@ -81,20 +97,27 @@ def _drop_to(uid: int, gid: int) -> None:
     os.setuid(uid)
 
 
-def _wipe_dir(path: str, uid: int) -> None:
+def _wipe_dir(path: str, uid: int) -> bool:
     """Vide `path` (sans le retirer) de tout ce qui appartient à `uid`, sans récursion : un
     arbre très profond ne doit pas faire échouer le nettoyage. Descripteurs de dossier, jamais
-    de suivi de lien symbolique."""
+    de suivi de lien symbolique. `False` si une entrée à nous n'a pas pu partir. Le retrait d'un
+    dossier directement sous la racine n'est pas tenté s'il est refusé (`/work` n'est pas
+    inscriptible par le code : le lanceur retire ce dossier lui-même, une fois vide)."""
     flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
     root = os.open(path, flags)
     stack: list[tuple[int, int | None, str, list[str]]] = [(root, None, "", os.listdir(root))]
+    clean = True
     while stack:
         fd, parent, name, pending = stack[-1]
         if not pending:
             stack.pop()
             os.close(fd)
             if parent is not None:
-                os.rmdir(name, dir_fd=parent)
+                try:
+                    os.rmdir(name, dir_fd=parent)
+                except OSError:
+                    top = len(stack) == 1  # enfant direct de la racine
+                    clean = clean and top
             continue
         entry = pending.pop()
         try:
@@ -108,23 +131,37 @@ def _wipe_dir(path: str, uid: int) -> None:
             else:
                 os.unlink(entry, dir_fd=fd)
         except OSError:
+            clean = False
+    return clean
+
+
+def sysv_ids(table: str, uid: int, id_column: str) -> list[int]:
+    """Les identifiants des objets System V d'un tableau de `/proc/sysvipc` que `uid` possède
+    **ou a créé** : le propriétaire d'un objet peut le transférer (`IPC_SET`), le créateur
+    (`cuid`) le retire quand même."""
+    lines = table.splitlines()
+    if not lines:
+        return []
+    header = lines[0].split()
+    found: list[int] = []
+    for line in lines[1:]:
+        cols = line.split()
+        if len(cols) < len(header):
             continue
+        if uid in (int(cols[header.index("uid")]), int(cols[header.index("cuid")])):
+            found.append(int(cols[header.index(id_column)]))
+    return found
 
 
 def _remove_sysv_ipc(uid: int) -> None:
-    """Retire les objets IPC System V créés par `uid` (ils survivent à leur processus)."""
+    """Retire les objets IPC System V du code (ils survivent à leur processus)."""
     libc = ctypes.CDLL(None, use_errno=True)
     for table, id_column, func in _SYSV:
         try:
-            lines = Path(f"/proc/sysvipc/{table}").read_text().splitlines()
+            text = Path(f"/proc/sysvipc/{table}").read_text()
         except OSError:
             continue
-        header = lines[0].split()
-        for line in lines[1:]:
-            cols = line.split()
-            if int(cols[header.index("uid")]) != uid:
-                continue
-            ident = int(cols[header.index(id_column)])
+        for ident in sysv_ids(text, uid, id_column):
             getattr(libc, func)(ident, 0, 0 if table == "sem" else None)
 
 
@@ -138,7 +175,7 @@ def purge_user_files(uid: int, gid: int, roots: Iterable[str]) -> bool:
             _drop_to(uid, gid)
             for root in roots:
                 try:
-                    _wipe_dir(root, uid)
+                    code = code if _wipe_dir(root, uid) else 1
                 except OSError:
                     code = 1
             _remove_sysv_ipc(uid)

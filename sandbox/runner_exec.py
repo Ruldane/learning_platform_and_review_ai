@@ -24,6 +24,7 @@ from runner_job import (
     Limits,
     RunEnv,
     SandboxResult,
+    Unsafe,
     build_command,
     build_env,
     job_from_json,
@@ -31,7 +32,9 @@ from runner_job import (
     validate_job,
 )
 
-__all__ = ["JobRefused", "Limits", "RunEnv", "SandboxResult", "job_from_json", "run_job"]
+__all__ = ["JobRefused", "Limits", "RunEnv", "SandboxResult", "Unsafe", "job_from_json", "run_job"]
+
+WAIT_S = 5.0  # attente du processus principal après SIGKILL ; au-delà, le bac n'est plus sûr
 
 
 def child_setup(limits: Limits, drop: bool, workdir: Path) -> Callable[[], None]:
@@ -80,10 +83,11 @@ def utf8_prefix(data: bytes) -> bytes:
 
 
 class LogSink:
-    """Le journal de sortie `out/<id>.log` : 64 Kio au plus, le reste est jeté (`truncated`)."""
+    """Le journal de sortie `out/<id>.log` : 64 Kio au plus, le reste est jeté (`truncated`). Le
+    lanceur le crée (vide) dès qu'il prend le travail (`Runner.claim`) : il est rouvert ici."""
 
     def __init__(self, path: Path, cap: int) -> None:
-        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o660)
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND | os.O_NOFOLLOW, 0o660)
         os.fchmod(fd, 0o660)
         self._file = os.fdopen(fd, "wb", buffering=0)
         self._cap, self.size, self.truncated = cap, 0, False
@@ -177,7 +181,11 @@ def supervise(
                 stop_run(proc, limits)
     stop_run(proc, limits)
     _drain(fd, sink)
-    return _after_exit(proc.wait(), forced)
+    try:
+        code = proc.wait(timeout=WAIT_S)
+    except subprocess.TimeoutExpired:
+        raise Unsafe("un processus du code ne meurt pas") from None
+    return _after_exit(code, forced)
 
 
 def _drain(fd: int, sink: LogSink) -> None:
@@ -222,6 +230,7 @@ def run_job(job: dict[str, object], limits: Limits, env: RunEnv | None = None) -
     (message en français dans le journal). Après coup, plus aucun processus ni fichier du code."""
     env = env or RunEnv()
     started = time.monotonic()
+    clean = False
     sink: LogSink | None = None
     workdir: Path | None = None
     try:
@@ -240,11 +249,13 @@ def run_job(job: dict[str, object], limits: Limits, env: RunEnv | None = None) -
         if sink is not None:
             sink.write(f"{message}\n".encode())
     finally:
-        runner_proc.kill_user_processes(limits.uid)
-        _cleanup(workdir, limits, env)
+        clean = runner_proc.kill_user_processes(limits.uid)
+        clean = _cleanup(workdir, limits, env) and clean
         truncated = sink.truncated if sink else False
         if sink is not None:
             sink.close()
+    if not clean:
+        raise Unsafe("un reste du code n'a pas pu être retiré")
     return SandboxResult(
         outcome.status, outcome.exit_code, int((time.monotonic() - started) * 1000), truncated
     )
@@ -256,15 +267,22 @@ def _describe(exc: Exception) -> str:
     return f"Le bac n'a pas pu lancer ce travail ({type(exc).__name__})."
 
 
-def _cleanup(workdir: Path | None, limits: Limits, env: RunEnv) -> None:
+def _cleanup(workdir: Path | None, limits: Limits, env: RunEnv) -> bool:
     """Efface ce que le code a laissé. Avec changement d'identité, sous l'uid du code (le lanceur
     ne peut pas entrer chez lui) ; le lanceur ne retire que le dossier devenu vide. Sans (tests
-    unitaires), le dossier appartient à l'appelant : retrait direct."""
+    unitaires), le dossier appartient à l'appelant : retrait direct. Rend `False` si le nettoyage
+    a échoué (le lanceur ne sert alors plus de travail)."""
+    clean = True
     if env.drop:
         roots = [str(env.work), *env.clean_roots]
-        runner_proc.purge_user_files(limits.uid, limits.gid, [r for r in roots if os.path.isdir(r)])
+        clean = runner_proc.purge_user_files(
+            limits.uid, limits.gid, [r for r in roots if os.path.isdir(r)]
+        )
     elif workdir is not None:
         shutil.rmtree(workdir, ignore_errors=True)
     if workdir is not None and workdir.is_dir():
-        with contextlib.suppress(OSError):
+        try:
             os.rmdir(workdir)
+        except OSError:
+            clean = False
+    return clean

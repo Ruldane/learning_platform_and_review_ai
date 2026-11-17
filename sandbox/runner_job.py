@@ -62,6 +62,13 @@ class RunEnv:
     stop: Callable[[], bool] = field(default=lambda: False)
 
 
+class Unsafe(BaseException):
+    """Le bac n'est plus sûr (processus survivant, nettoyage échoué, processus qui ne meurt pas) :
+    plus aucun travail n'est servi. Le lanceur écrit une fin `error` puis s'arrête (code 70) ;
+    Compose le relance (`restart: on-failure`) avec un conteneur neuf. Volontairement hors de
+    `Exception` : aucun `except Exception` ne l'avale."""
+
+
 class JobRefused(ValueError):
     """Le travail est refusé (message en français, écrit dans le journal de sortie)."""
 

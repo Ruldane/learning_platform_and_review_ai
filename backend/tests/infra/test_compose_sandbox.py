@@ -50,6 +50,11 @@ def test_sandbox_filesystem_and_limits() -> None:
     assert (svc["cpus"], svc["pids_limit"]) == (1.0, 128)
 
 
+def test_sandbox_restarts_on_failure_only() -> None:
+    """Le lanceur sort en code 70 quand le bac n'est plus sûr : Compose le relance neuf."""
+    assert _sandbox()["restart"] == "on-failure"
+
+
 def test_sandbox_healthcheck_reads_the_heartbeat_age() -> None:
     check = _sandbox()["healthcheck"]["test"]
     assert "/spool/heartbeat" in check[-1] and "< 5" in check[-1]

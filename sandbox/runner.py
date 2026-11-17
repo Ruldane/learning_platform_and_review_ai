@@ -15,9 +15,11 @@ from pathlib import Path
 import runner_exec
 import runner_job
 import runner_proc
-from runner_job import JobRefused, Limits, RunEnv, SandboxResult
+from runner_job import JobRefused, Limits, RunEnv, SandboxResult, Unsafe
 
-MAX_JOB_BYTES = 1_000_000
+# 200 000 octets de caractères de contrôle donnent 1,2 Mo une fois échappés en JSON.
+MAX_JOB_BYTES = 1_500_000
+UNSAFE_EXIT = 70
 RETENTION_S = 1800
 TMP_RETENTION_S = 60
 POLL_S = 0.1
@@ -32,6 +34,8 @@ class Runner:
         self.limits = limits or Limits()
         self.spool, self.work = env.spool, env.work
         self._last_beat = 0.0
+        self._last_purge = 0.0
+        self.current: Path | None = None
         self.stopping = False
         self.env = RunEnv(
             spool=env.spool,
@@ -72,22 +76,29 @@ class Runner:
             os.chmod(sub, 0o2770)
         if self.env.drop:
             os.chmod(self.work, 0o755)  # le code n'écrit que dans son propre dossier
-        runner_proc.kill_user_processes(self.limits.uid)
+        if not runner_proc.kill_user_processes(self.limits.uid):
+            raise Unsafe("un processus du code survit au démarrage")
         self.fail_orphans()
         self.clean_work()
 
     def clean_work(self) -> None:
+        clean = True
         if self.env.drop:
-            runner_proc.purge_user_files(self.limits.uid, self.limits.gid, [str(self.work)])
+            clean = runner_proc.purge_user_files(self.limits.uid, self.limits.gid, [str(self.work)])
         for child in self.work.iterdir() if self.work.is_dir() else []:
             if child.is_dir():
-                with contextlib.suppress(OSError):
+                try:
                     os.rmdir(child)
+                except OSError:
+                    clean = False
+        if not clean:
+            raise Unsafe("des restes du code n'ont pas pu être retirés au démarrage")
 
     def fail_orphans(self) -> None:
         """Un journal sans fin (lanceur redémarré en pleine exécution) reçoit une fin `error`."""
         for log in (self.spool / "out").glob("*.log"):
             if not log.with_suffix(".done.json").exists():
+                _unlink(self.spool / "jobs" / f"{log.stem}.json")  # pris puis interrompu
                 self.write_done(log.stem, SandboxResult("error", None, 0, False))
 
     def write_done(self, run_id: str, result: SandboxResult) -> None:
@@ -110,29 +121,47 @@ class Runner:
     def next_job(self) -> Path | None:
         names = []
         for path in (self.spool / "jobs").iterdir():
+            try:  # `lstat` : un lien (même pendant) ne fait jamais tomber le lanceur
+                mtime = path.lstat().st_mtime
+            except OSError:
+                continue
             if path.suffix == ".json" and runner_job.RUN_ID.fullmatch(path.stem):
-                names.append((path.stat().st_mtime, path))
+                names.append((mtime, path))
             elif not path.name.startswith("."):  # un nom qu'on ne sert pas : jeté
                 _unlink(path)
         return min(names)[1] if names else None
 
     def read_job(self, path: Path) -> bytes:
-        """Lit puis retire le fichier du travail (même s'il est illisible) ; jamais de lien."""
-        try:
-            fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
-            with os.fdopen(fd, "rb") as handle:
-                data = handle.read(MAX_JOB_BYTES + 1)
-        finally:
-            _unlink(path)
+        """Lit le fichier du travail, jamais par un lien. Il n'est pas retiré ici : `claim` crée
+        d'abord le journal."""
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+        with os.fdopen(fd, "rb") as handle:
+            data = handle.read(MAX_JOB_BYTES + 1)
         if len(data) > MAX_JOB_BYTES:
             raise JobRefused("travail trop gros")
         return data
+
+    def claim(self, run_id: str, path: Path) -> None:
+        """Prend le travail sans jamais le rendre invisible : le journal (vide) existe **avant**
+        que le fichier du travail soit retiré (`poll` et `cancel` voient toujours l'un ou l'autre).
+        """
+        log = self.spool / "out" / f"{run_id}.log"
+        fd = os.open(log, os.O_WRONLY | os.O_CREAT | os.O_APPEND | os.O_NOFOLLOW, 0o660)
+        try:
+            os.fchmod(fd, 0o660)
+        finally:
+            os.close(fd)
+        _unlink(path)
 
     def process(self, path: Path) -> None:
         run_id = path.name.removesuffix(".json")
         cancel = self.spool / "cancel" / run_id
         try:
-            job = runner_exec.job_from_json(self.read_job(path))
+            try:
+                data = self.read_job(path)
+            finally:
+                self.claim(run_id, path)  # même illisible, le travail est pris
+            job = runner_exec.job_from_json(data)
             if job.get("run_id") != run_id:
                 raise JobRefused("identifiant de travail incohérent")
             if cancel.exists():
@@ -143,33 +172,66 @@ class Runner:
             result = self.refuse(
                 run_id, str(exc) if isinstance(exc, JobRefused) else "travail illisible"
             )
+        except Unsafe:
+            self.refuse(run_id, "Le bac s'arrête par précaution : réessaie dans un instant.")
+            _unlink(cancel)
+            self.write_done(run_id, SandboxResult("error", None, 0, False))
+            raise
         _unlink(cancel)
         self.write_done(run_id, result)
 
     def refuse(self, run_id: str, message: str, status: str = "error") -> SandboxResult:
+        """Écrit `message` dans le journal du travail (créé au besoin) ; rend la fin voulue."""
         log = self.spool / "out" / f"{run_id}.log"
-        if not log.exists():
-            fd = os.open(log, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o660)
+        fd = os.open(log, os.O_WRONLY | os.O_CREAT | os.O_APPEND | os.O_NOFOLLOW, 0o660)
+        try:
             os.fchmod(fd, 0o660)
             os.write(fd, f"{message}\n".encode())
+        finally:
             os.close(fd)
         return SandboxResult(status, None, 0, False)  # type: ignore[arg-type]
 
     def purge_stale(self, now: float | None = None) -> None:
         purge_stale(self.spool, time.time() if now is None else now)
 
+    def step(self) -> None:
+        """Un tour : battement, purge, puis le plus ancien travail (ou une courte pause)."""
+        self.beat()
+        if time.monotonic() - self._last_purge > PURGE_EVERY_S:
+            self._last_purge = time.monotonic()
+            self.purge_stale()
+        path = self.next_job()
+        if path is None:
+            time.sleep(POLL_S)
+            return
+        self.current = path
+        self.process(path)
+        self.current = None
+
+    def survive(self, exc: Exception) -> None:
+        """Un incident inattendu ne fait jamais tomber le lanceur : on le note (type et
+        identifiant, jamais un contenu), le travail en cause est clos en `error`."""
+        path, self.current = self.current, None
+        run_id = path.name.removesuffix(".json") if path is not None else None
+        print(
+            f"lanceur : incident {type(exc).__name__} (travail {run_id})",
+            file=sys.stderr,
+            flush=True,
+        )
+        if path is not None and run_id is not None and runner_job.RUN_ID.fullmatch(run_id):
+            _unlink(path)
+            with contextlib.suppress(OSError):
+                if not (self.spool / "out" / f"{run_id}.done.json").exists():
+                    self.refuse(run_id, "Le bac a rencontré un incident : réessaie.")
+                    self.write_done(run_id, SandboxResult("error", None, 0, False))
+        time.sleep(POLL_S)
+
     def serve(self) -> None:
-        last_purge = 0.0
         while not self.stopping:
-            self.beat()
-            if time.monotonic() - last_purge > PURGE_EVERY_S:
-                last_purge = time.monotonic()
-                self.purge_stale()
-            path = self.next_job()
-            if path is None:
-                time.sleep(POLL_S)
-            else:
-                self.process(path)
+            try:
+                self.step()
+            except Exception as exc:  # `Unsafe` (BaseException) passe : le lanceur s'arrête
+                self.survive(exc)
 
 
 def _unlink(path: Path) -> None:
@@ -204,8 +266,12 @@ def main() -> int:
     runner = Runner(RunEnv())
     signal.signal(signal.SIGTERM, lambda *_: setattr(runner, "stopping", True))
     signal.signal(signal.SIGINT, lambda *_: setattr(runner, "stopping", True))
-    runner.prepare()
-    runner.serve()
+    try:
+        runner.prepare()
+        runner.serve()
+    except Unsafe as exc:
+        print(f"lanceur : arrêt par précaution ({exc})", file=sys.stderr, flush=True)
+        return UNSAFE_EXIT
     return 0
 
 

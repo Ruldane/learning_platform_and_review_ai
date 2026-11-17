@@ -177,6 +177,10 @@ services:
     memswap_limit: 512m
     cpus: 1.0
     pids_limit: 128
+    # Le lanceur sort en code 70 quand le bac n'est plus sûr (processus qui ne meurt pas, reste du
+    # code impossible à retirer) : Compose le relance avec un conteneur neuf (tmpfs, espace IPC et
+    # processus vierges). Un arrêt voulu (`docker compose stop`) n'est pas relancé.
+    restart: on-failure
     # `nr_inodes` (en plus des valeurs du plan) : sans lui, une boucle qui crée des millions de
     # fichiers vides remplit la mémoire du noyau (inodes de tmpfs, hors des 64 Mo) et le noyau
     # tue tout le conteneur, lanceur compris (constaté, D201). `/dev/shm` : monté par Docker avec

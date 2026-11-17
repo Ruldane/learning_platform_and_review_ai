@@ -77,6 +77,14 @@ class CodeSandbox(Protocol):
         ...
 
 
+def _size(text: str) -> int:
+    """Les octets d'un texte en UTF-8 ; `ValueError` pour une substitution orpheline."""
+    try:
+        return len(text.encode())
+    except UnicodeEncodeError:
+        raise ValueError("texte invalide (UTF-8)") from None
+
+
 def check_run_id(run_id: str) -> None:
     """Refuse (`ValueError`) un identifiant qui n'est pas un uuid (32 hexadécimaux, ou uuid4 en
     texte) : il sert de nom de fichier au bac, jamais un chemin."""
@@ -102,7 +110,7 @@ def check_job_limits(job: SandboxJob) -> None:
     check_run_id(job.run_id)
     if not 1 <= len(job.files) <= MAX_FILES:
         raise ValueError(f"entre 1 et {MAX_FILES} fichiers attendus")
-    if sum(len(text.encode()) for text in job.files.values()) > MAX_TOTAL_BYTES:
+    if sum(_size(text) for text in job.files.values()) > MAX_TOTAL_BYTES:
         raise ValueError(f"{MAX_TOTAL_BYTES} octets au plus")
     if not 1 <= job.timeout_s <= MAX_TIMEOUT_S:
         raise ValueError(f"durée entre 1 et {MAX_TIMEOUT_S} secondes")
