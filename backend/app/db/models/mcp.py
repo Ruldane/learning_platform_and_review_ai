@@ -47,12 +47,14 @@ class McpPrefs(UserScopedMixin, Base):
 
 class McpCall(UserScopedMixin, Base):
     """Un appel d'outil (P19) : l'outil, son niveau, le code de résultat (HTTP), la durée et les
-    identifiants touchés. **Jamais le contenu** des paramètres ni de la réponse."""
+    identifiants touchés. **Jamais le contenu** des paramètres ni de la réponse. Un appel refusé
+    est journalisé aussi : `level` 0 = refusé avant la résolution de l'outil, `token_id` vide =
+    jeton non reconnu."""
 
     __tablename__ = "mcp_calls"
     __table_args__ = (Index("ix_mcp_calls_user_created", "user_id", "created_at"),)
 
-    token_id: Mapped[str] = mapped_column(String(36), index=True)
+    token_id: Mapped[str | None] = mapped_column(String(36), index=True, default=None)
     action: Mapped[str] = mapped_column(String(80))
     level: Mapped[int] = mapped_column(Integer)
     code: Mapped[int] = mapped_column(Integer)

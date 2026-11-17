@@ -64,6 +64,7 @@ REVIEWED_NOT_SECRET = frozenset(
         # empreinte : `mcp_tokens.hash` est écartée de l'export par son modèle).
         "ide_notes.base_hash",
         "ide_notes.error_key",
+        "ide_runs.error_signature",  # idem : empreinte d'une erreur
         "ide_sessions.teacher_tokens",
         "mcp_calls.token_id",
         "mcp_confirmations.token_id",

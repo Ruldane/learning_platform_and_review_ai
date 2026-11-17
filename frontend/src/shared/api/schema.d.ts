@@ -4985,6 +4985,30 @@ export interface components {
              */
             week_start: string;
         };
+        /** IdeSessionOut */
+        IdeSessionOut: {
+            /** Entry */
+            entry: string;
+            /** Exercise Id */
+            exercise_id: string | null;
+            /** Files */
+            files: {
+                [key: string]: string;
+            };
+            /** Id */
+            id: string;
+            /** Passed */
+            passed: boolean;
+            /** Passed At */
+            passed_at: string | null;
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
         /**
          * IdeSessionStarted
          * @description Le graphe tourne : `session_id` désigne la session d'agents à suivre (en moins de 2 s).
@@ -5533,7 +5557,8 @@ export interface components {
         /**
          * McpCallOut
          * @description Une ligne du journal : l'outil, le niveau, le code de résultat, la durée, les identifiants.
-         *     Jamais le contenu.
+         *     Jamais le contenu. Niveau 0 : appel refusé avant la résolution de l'outil ; `token_id` vide :
+         *     jeton non reconnu.
          */
         McpCallOut: {
             /** Action */
@@ -5557,9 +5582,9 @@ export interface components {
              * Level
              * @enum {integer}
              */
-            level: 1 | 2 | 3;
+            level: 0 | 1 | 2 | 3;
             /** Token Id */
-            token_id: string;
+            token_id: string | null;
         };
         /**
          * McpChangeOut
@@ -6159,7 +6184,8 @@ export interface components {
         /**
          * NoteIn
          * @description Une note ajoutée à la main ou par Claude : l'auteur vient de l'appelant, jamais du corps.
-         *     Une proposition porte `replacement`, la plage de lignes et `base_hash`.
+         *     Une proposition porte `replacement`, la plage de lignes et `base_hash` : le sha256 hexadécimal
+         *     (minuscules, 64 signes) du contenu du fichier encodé en UTF-8.
          */
         NoteIn: {
             /** Base Hash */
@@ -7427,8 +7453,8 @@ export interface components {
         };
         /**
          * RunIn
-         * @description `run` exécute, `check` vérifie seulement la syntaxe ; `entry` : le fichier d'entrée (celui
-         *     de la séance par défaut).
+         * @description `run` exécute `entry` ; `check` lance les tests de l'exercice par pytest dans le bac (code de
+         *     sortie 0 = réussi). `entry` : le fichier d'entrée (celui de la séance par défaut).
          */
         RunIn: {
             /** Entry */
@@ -7561,37 +7587,24 @@ export interface components {
             title?: string | null;
         };
         SessionEvent: components["schemas"]["AgentStartedEvent"] | components["schemas"]["AgentTokenEvent"] | components["schemas"]["AgentMessageEvent"] | components["schemas"]["ToolCalledEvent"] | components["schemas"]["ToolResultEvent"] | components["schemas"]["SourceFoundEvent"] | components["schemas"]["BoardUpdateEvent"] | components["schemas"]["MemoryWrittenEvent"] | components["schemas"]["InterruptRequestedEvent"] | components["schemas"]["ProposalReadyEvent"] | components["schemas"]["ArtifactReadyEvent"] | components["schemas"]["CostUpdatedEvent"] | components["schemas"]["RunCompletedEvent"] | components["schemas"]["RunFailedEvent"] | components["schemas"]["UserMessageEvent"];
-        /** SessionOut */
-        SessionOut: {
-            /** Entry */
-            entry: string;
-            /** Exercise Id */
-            exercise_id: string | null;
-            /** Files */
-            files: {
-                [key: string]: string;
-            };
-            /** Id */
-            id: string;
-            /** Title */
-            title: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-        };
         /** SessionStarted */
         SessionStarted: {
             /** Session Id */
             session_id: string;
         };
-        /** SessionSummary */
+        /**
+         * SessionSummary
+         * @description `passed` : la séance a eu une vérification (`check`) réussie (`passed_at` : la première).
+         */
         SessionSummary: {
             /** Exercise Id */
             exercise_id: string | null;
             /** Id */
             id: string;
+            /** Passed */
+            passed: boolean;
+            /** Passed At */
+            passed_at: string | null;
             /** Title */
             title: string;
             /**
@@ -8161,8 +8174,9 @@ export interface components {
         };
         /**
          * TeachIn
-         * @description Ce qui déclenche le professeur : une exécution, une erreur, une question ou, en option,
-         *     30 s d'arrêt sur une ligne. Jamais à la frappe.
+         * @description Ce qui déclenche le professeur : une exécution en erreur (`run_error`) ou réussie
+         *     (`run_ok`), une question (`question`, non vide : 422 sinon), une demande d'indice (`hint`) ou,
+         *     en option, 30 s d'arrêt sur une ligne (`idle`). Jamais à la frappe.
          */
         TeachIn: {
             /** File Path */
@@ -8177,7 +8191,7 @@ export interface components {
              * Trigger
              * @enum {string}
              */
-            trigger: "run" | "error" | "question" | "idle";
+            trigger: "run_error" | "run_ok" | "question" | "hint" | "idle";
         };
         /**
          * TeachOut
@@ -8191,7 +8205,7 @@ export interface components {
             /** Session Id */
             session_id?: string | null;
             /** Skipped */
-            skipped?: ("cap_reached" | "on_demand" | "busy" | "empty_question") | null;
+            skipped?: ("cap_reached" | "on_demand" | "busy") | null;
         };
         /**
          * TemplateCreated
@@ -11022,7 +11036,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SessionOut"];
+                    "application/json": components["schemas"]["IdeSessionOut"];
                 };
             };
             /** @description Validation Error */
@@ -11192,7 +11206,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SessionOut"];
+                    "application/json": components["schemas"]["IdeSessionOut"];
                 };
             };
             /** @description Validation Error */
@@ -11223,7 +11237,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SessionOut"];
+                    "application/json": components["schemas"]["IdeSessionOut"];
                 };
             };
             /** @description Validation Error */
@@ -11258,7 +11272,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SessionOut"];
+                    "application/json": components["schemas"]["IdeSessionOut"];
                 };
             };
             /** @description Validation Error */
