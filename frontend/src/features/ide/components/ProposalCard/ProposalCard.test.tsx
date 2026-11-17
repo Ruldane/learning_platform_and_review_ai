@@ -9,6 +9,7 @@ const proposal = (over: Partial<NoteView> = {}): NoteView => ({
   kind: "proposal",
   author: "claude",
   authorLabel: "Claude",
+  origin: "mcp",
   status: "open",
   filePath: "main.py",
   lineStart: 2,

@@ -20,6 +20,7 @@ export function TeacherSettings({ prefs }: TeacherSettingsProps) {
             auto: prefs.teacher_mode === "auto",
             idle: prefs.idle_trigger,
             style: prefs.teacher_style,
+            claudeWrites: prefs.mcp_can_write_files,
           }}
           pending={save.isPending}
           onChange={(next) =>
@@ -28,6 +29,7 @@ export function TeacherSettings({ prefs }: TeacherSettingsProps) {
               teacher_mode: next.auto ? "auto" : "on_demand",
               idle_trigger: next.idle,
               teacher_style: next.style,
+              mcp_can_write_files: next.claudeWrites,
             })
           }
         />

@@ -16,5 +16,7 @@ export type TeachIn = Schemas["TeachIn"];
 export type TeachOut = Schemas["TeachOut"];
 
 export type RunKind = Schemas["RunIn"]["kind"];
+/** D'où vient une exécution ou une note : l'interface (`app`) ou Claude par le MCP (`mcp`). */
+export type Origin = Schemas["RunOut"]["origin"];
 export type RunStatus = RunProgress["status"];
 export type TeacherMode = Preferences["teacher_mode"];

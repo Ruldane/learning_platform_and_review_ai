@@ -78,3 +78,44 @@ def not_a_proposal() -> AppError:
 
 def entry_invalid() -> AppError:
     return AppError("entry_invalid", "Le nom du fichier d'entrée n'est pas permis.", 422)
+
+
+def mcp_ide_write_off() -> AppError:
+    """Claude n'écrit dans les fichiers que si January a allumé l'interrupteur (jamais de contenu
+    dans le message)."""
+    return AppError(
+        "mcp_ide_write_off",
+        "January n'a pas autorisé Claude à écrire dans ses fichiers : l'interrupteur de l'IDE "
+        "est éteint. Propose plutôt une correction dans une note.",
+        403,
+    )
+
+
+def base_hash_required() -> AppError:
+    return AppError(
+        "base_hash_required",
+        "Écrire un fichier demande base_hash : le sha256 du contenu actuel de ce fichier, lu dans "
+        "file_hashes de la séance (l'empreinte du texte vide pour un nouveau fichier).",
+        422,
+    )
+
+
+def stale_base() -> AppError:
+    """L'empreinte donnée n'est plus celle du fichier : January a écrit depuis la lecture."""
+    return AppError(
+        "stale_base",
+        "Le fichier a changé depuis ta lecture : relis la séance avant de réécrire ce fichier.",
+        409,
+    )
+
+
+def mcp_write_one_file() -> AppError:
+    return AppError("mcp_write_one_file", "Écris un seul fichier à la fois.", 422)
+
+
+def mcp_prefs_forbidden() -> AppError:
+    return AppError(
+        "mcp_prefs_forbidden",
+        "Les préférences de l'IDE se règlent dans l'interface, jamais par le MCP.",
+        403,
+    )

@@ -28,15 +28,17 @@ function bodyText(view: OutputView): string {
 
 /**
  * La sortie d'une exécution : en lecture seule (le programme ne lit pas le clavier), avec son état
- * en texte. Quand une exécution part, le focus vient ici : c'est là qu'on lit le résultat.
+ * en texte. Quand tu lances une exécution, le focus vient ici : c'est là qu'on lit le résultat. Une
+ * exécution lancée par Claude s'affiche de même, marquée « lancée par Claude », sans le focus.
  */
 export function OutputPanel({ view }: OutputPanelProps) {
   const headingId = useId();
   const region = useRef<HTMLElement>(null);
-  const { runId } = view;
+  const { runId, origin } = view;
   useEffect(() => {
-    if (runId) region.current?.focus();
-  }, [runId]);
+    // Une exécution de Claude n'arrache jamais le focus : tu es peut-être en train de taper.
+    if (runId && origin === "app") region.current?.focus();
+  }, [runId, origin]);
   return (
     <section
       ref={region}
@@ -47,6 +49,11 @@ export function OutputPanel({ view }: OutputPanelProps) {
       <h2 id={headingId} className="font-medium">
         {t("ide.output.title")}
       </h2>
+      {origin === "mcp" ? (
+        <p className="w-fit rounded-md border border-border bg-muted px-2 py-0.5 text-xs font-medium">
+          {t("ide.output.byClaude")}
+        </p>
+      ) : null}
       <p role="status" className="text-sm">
         {statusLine(view)}
       </p>

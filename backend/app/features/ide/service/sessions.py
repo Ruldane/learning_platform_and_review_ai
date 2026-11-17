@@ -1,6 +1,7 @@
 """Séances de code : les fichiers en cours (au plus 20, 200 Ko), le fichier d'entrée, la première
 vérification réussie (`passed_at`)."""
 
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -8,16 +9,23 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.base import utcnow
 from app.db.models.ide import IdeSession
-from app.features.ide.repository import ExerciseRepository, SessionRepository
+from app.features.ide.hashing import file_hash, is_file_hash
+from app.features.ide.repository import ExerciseRepository, PreferenceRepository, SessionRepository
 from app.features.ide.service.context import IdeContext
 from app.features.ide.service.errors import (
+    base_hash_required,
     entry_invalid,
     entry_missing,
     exercise_not_found,
     files_too_large,
+    mcp_ide_write_off,
+    mcp_write_one_file,
     session_not_found,
+    stale_base,
 )
 from app.providers.sandbox.base import MAX_FILES, MAX_TOTAL_BYTES, check_file_name
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_ENTRY = "main.py"
 FREE_TITLE = "Séance libre"
@@ -83,6 +91,35 @@ async def save_files(
     check_files(files, wanted)
     session.files = dict(files)
     session.entry = wanted
+    session.updated_at = utcnow()
+    await ctx.db.flush()
+    return session
+
+
+async def write_file_as_claude(
+    ctx: IdeContext, session_id: str, files: dict[str, str], base_hash: str | None
+) -> IdeSession:
+    """Claude (MCP) écrit **un** fichier, les autres sont gardés. Seulement si January a allumé
+    l'interrupteur (403 `mcp_ide_write_off`, jamais de contenu dans le message ni le journal) ;
+    `base_hash` doit être le sha256 du contenu actuel (texte vide pour un nouveau fichier), sinon
+    409 `stale_base` : on n'écrase jamais ce que January vient de taper. L'entrée ne change pas."""
+    session = await get(ctx, session_id)
+    prefs = await PreferenceRepository(ctx.db, ctx.user_id).mine()
+    if prefs is None or not prefs.mcp_can_write_files:
+        logger.info("mcp_ide_write_off : écriture refusée dans la séance %s", session.id)
+        raise mcp_ide_write_off()
+    if len(files) != 1:
+        raise mcp_write_one_file()
+    ((name, text),) = files.items()
+    if not is_file_hash(base_hash):
+        raise base_hash_required()
+    current = session.files.get(name)
+    if base_hash != file_hash("" if current is None else str(current)):
+        logger.info("stale_base : écriture refusée dans la séance %s", session.id)
+        raise stale_base()
+    merged = {**session.files, name: text}
+    check_files(merged, session.entry)
+    session.files = merged
     session.updated_at = utcnow()
     await ctx.db.flush()
     return session

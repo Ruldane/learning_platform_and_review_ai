@@ -4830,8 +4830,21 @@
         "type": "object"
       },
       "FilesPutIn": {
-        "description": "Remplace tous les fichiers de la séance (geste de l'interface, exclu du MCP).",
+        "description": "Enregistre les fichiers de la séance. Interface : remplace tous les fichiers. Claude (MCP,\ninterrupteur allumé) : un seul fichier de `files`, les autres sont gardés ; `base_hash` est\nalors obligatoire : le sha256 du contenu actuel de ce fichier (`file_hashes` de la séance ;\ntexte vide pour un nouveau fichier). Il est ignoré pour l'interface. `entry` aussi, pour\nClaude.",
         "properties": {
+          "base_hash": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Hash"
+          },
           "entry": {
             "anyOf": [
               {
@@ -5459,6 +5472,7 @@
         "type": "object"
       },
       "IdeSessionOut": {
+        "description": "`file_hashes` : le sha256 de chaque fichier (le `base_hash` que Claude renvoie).",
         "properties": {
           "entry": {
             "title": "Entry",
@@ -5474,6 +5488,14 @@
               }
             ],
             "title": "Exercise Id"
+          },
+          "file_hashes": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "readOnly": true,
+            "title": "File Hashes",
+            "type": "object"
           },
           "files": {
             "additionalProperties": {
@@ -5520,7 +5542,8 @@
           "passed",
           "passed_at",
           "files",
-          "entry"
+          "entry",
+          "file_hashes"
         ],
         "title": "IdeSessionOut",
         "type": "object"
@@ -8800,6 +8823,14 @@
             ],
             "title": "Line Start"
           },
+          "origin": {
+            "enum": [
+              "app",
+              "mcp"
+            ],
+            "title": "Origin",
+            "type": "string"
+          },
           "reference_note_id": {
             "anyOf": [
               {
@@ -8843,6 +8874,7 @@
           "kind",
           "author",
           "author_label",
+          "origin",
           "status",
           "file_path",
           "line_start",
@@ -9665,7 +9697,7 @@
         "type": "object"
       },
       "PreferencesIn": {
-        "description": "Mode du professeur (`auto` ou sur demande), style (`guide` : indices gradués ; `pair` :\nbinôme, annotations en marge et propositions à accepter), minuterie d'inactivité (30 s, en\noption) et plafonds de jetons.",
+        "description": "Mode du professeur (`auto` ou sur demande), style (`guide` : indices gradués ; `pair` :\nbinôme, annotations en marge et propositions à accepter), minuterie d'inactivité (30 s, en\noption), plafonds de jetons, et l'interrupteur « Claude peut écrire dans mes fichiers »\n(`mcp_can_write_files`, éteint par défaut : seule l'interface le règle, jamais le MCP).",
         "properties": {
           "day_cap": {
             "default": 300000,
@@ -9677,6 +9709,11 @@
           "idle_trigger": {
             "default": false,
             "title": "Idle Trigger",
+            "type": "boolean"
+          },
+          "mcp_can_write_files": {
+            "default": false,
+            "title": "Mcp Can Write Files",
             "type": "boolean"
           },
           "session_cap": {
@@ -9720,6 +9757,11 @@
           "idle_trigger": {
             "default": false,
             "title": "Idle Trigger",
+            "type": "boolean"
+          },
+          "mcp_can_write_files": {
+            "default": false,
+            "title": "Mcp Can Write Files",
             "type": "boolean"
           },
           "session_cap": {
@@ -12189,7 +12231,7 @@
         "type": "object"
       },
       "RunOut": {
-        "description": "Une exécution déposée (202) : on lit la sortie par `GET /ide/runs/{id}?after=`.",
+        "description": "Une exécution déposée (202) : on lit la sortie par `GET /ide/runs/{id}?after=`. `origin` :\n`mcp` quand Claude l'a lancée (la page affiche « lancée par Claude »).",
         "properties": {
           "created_at": {
             "format": "date-time",
@@ -12210,6 +12252,14 @@
               "check"
             ],
             "title": "Kind",
+            "type": "string"
+          },
+          "origin": {
+            "enum": [
+              "app",
+              "mcp"
+            ],
+            "title": "Origin",
             "type": "string"
           },
           "session_id": {
@@ -12234,7 +12284,8 @@
           "kind",
           "entry",
           "status",
-          "created_at"
+          "created_at",
+          "origin"
         ],
         "title": "RunOut",
         "type": "object"
@@ -18734,7 +18785,7 @@
         ]
       },
       "put": {
-        "description": "Remplace les préférences du professeur.",
+        "description": "Remplace les préférences (professeur, interrupteur d'écriture de Claude). Geste de\nl'interface : jamais du MCP, qui n'a pas à régler son propre budget ni ses propres droits.",
         "operationId": "put_preferences_api_v1_ide_preferences_put",
         "requestBody": {
           "content": {
@@ -18756,6 +18807,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "403": {
+            "description": "`mcp_prefs_forbidden` : jamais par le MCP"
           },
           "422": {
             "content": {
@@ -18955,7 +19009,7 @@
     },
     "/api/v1/ide/sessions/{session_id}/files": {
       "put": {
-        "description": "Remplace les fichiers de la séance (20 au plus, 200 Ko). Geste de l'interface.",
+        "description": "Enregistre les fichiers de la séance (20 au plus, 200 Ko) : l'interface les remplace tous ;\nClaude (MCP, interrupteur allumé) écrit un fichier avec `base_hash`.",
         "operationId": "put_files_api_v1_ide_sessions__session_id__files_put",
         "parameters": [
           {
@@ -18991,11 +19045,17 @@
             },
             "description": "Successful Response"
           },
+          "403": {
+            "description": "`mcp_ide_write_off` : Claude n'y est pas autorisé (interrupteur)"
+          },
           "404": {
             "description": "`session_not_found`"
           },
+          "409": {
+            "description": "`stale_base` : le fichier a changé depuis la lecture (Claude)"
+          },
           "422": {
-            "description": "`entry_missing`, `entry_invalid`, `files_too_large`"
+            "description": "`entry_missing`, `entry_invalid`, `files_too_large`, `base_hash_required`, `mcp_write_one_file`"
           }
         },
         "summary": "Put Files",
@@ -19109,6 +19169,56 @@
       }
     },
     "/api/v1/ide/sessions/{session_id}/runs": {
+      "get": {
+        "description": "Les 20 dernières exécutions de la séance, la plus récente d'abord (lues toutes les 3 s par la\npage ouverte : une exécution lancée par Claude y apparaît).",
+        "operationId": "list_runs_api_v1_ide_sessions__session_id__runs_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RunOut"
+                  },
+                  "title": "Response List Runs Api V1 Ide Sessions  Session Id  Runs Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Introuvable (ou pas à moi)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Runs",
+        "tags": [
+          "ide"
+        ]
+      },
       "post": {
         "description": "Dépose une exécution ou une vérification dans le bac à sable (une par utilisatrice).",
         "operationId": "start_run_api_v1_ide_sessions__session_id__runs_post",

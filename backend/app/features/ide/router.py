@@ -2,7 +2,8 @@
 préférences et consommation. Surface posée par 10.P ; 10.A2 remplit les exercices, les séances, les
 exécutions et les notes ; 10.A3 remplit `exercises/generate`, `teach` (barrière de coût du
 professeur), `preferences` et `usage`. Au nom de l'utilisatrice courante (404 sur l'objet
-d'une autre) ; `accept`, `reject` et `PUT files` sont des gestes de l'interface (exclus du MCP)."""
+d'une autre) ; `accept`, `reject` et `PUT preferences` sont des gestes de l'interface (exclus du
+MCP) ; `PUT files` est aussi celui de Claude, sous l'interrupteur de January (10.X)."""
 
 from typing import Annotated, Any
 
@@ -33,6 +34,7 @@ from app.features.ide.schemas import (
     UsageOut,
 )
 from app.features.ide.service import IdeService
+from app.features.ide.service.errors import mcp_prefs_forbidden
 from app.features.ide.service.teaching import TeachingService
 from app.features.ide.service.usage import UsageService
 
@@ -133,13 +135,26 @@ async def get_session(session_id: Id, ide: Ide) -> IdeSessionOut:
     "/sessions/{session_id}/files",
     response_model=IdeSessionOut,
     responses={
+        403: {"description": "`mcp_ide_write_off` : Claude n'y est pas autorisé (interrupteur)"},
         404: {"description": "`session_not_found`"},
-        422: {"description": "`entry_missing`, `entry_invalid`, `files_too_large`"},
+        409: {"description": "`stale_base` : le fichier a changé depuis la lecture (Claude)"},
+        422: {
+            "description": "`entry_missing`, `entry_invalid`, `files_too_large`, "
+            "`base_hash_required`, `mcp_write_one_file`"
+        },
     },
 )
 async def put_files(session_id: Id, body: FilesPutIn, ide: Ide) -> IdeSessionOut:
-    """Remplace les fichiers de la séance (20 au plus, 200 Ko). Geste de l'interface."""
-    return await ide.save_files(session_id, body.files, body.entry)
+    """Enregistre les fichiers de la séance (20 au plus, 200 Ko) : l'interface les remplace tous ;
+    Claude (MCP, interrupteur allumé) écrit un fichier avec `base_hash`."""
+    return await ide.save_files(session_id, body.files, body.entry, body.base_hash)
+
+
+@router.get("/sessions/{session_id}/runs", response_model=list[RunOut], responses=_NOT_FOUND)
+async def list_runs(session_id: Id, ide: Ide) -> list[RunOut]:
+    """Les 20 dernières exécutions de la séance, la plus récente d'abord (lues toutes les 3 s par la
+    page ouverte : une exécution lancée par Claude y apparaît)."""
+    return await ide.list_runs(session_id)
 
 
 @router.post(
@@ -215,9 +230,16 @@ async def get_preferences(usage: Usage) -> PreferencesOut:
     return await usage.preferences()
 
 
-@router.put("/preferences", response_model=PreferencesOut)
-async def put_preferences(body: PreferencesIn, usage: Usage) -> PreferencesOut:
-    """Remplace les préférences du professeur."""
+@router.put(
+    "/preferences",
+    response_model=PreferencesOut,
+    responses={403: {"description": "`mcp_prefs_forbidden` : jamais par le MCP"}},
+)
+async def put_preferences(body: PreferencesIn, usage: Usage, caller: CallerDep) -> PreferencesOut:
+    """Remplace les préférences (professeur, interrupteur d'écriture de Claude). Geste de
+    l'interface : jamais du MCP, qui n'a pas à régler son propre budget ni ses propres droits."""
+    if caller.kind == "mcp":
+        raise mcp_prefs_forbidden()
     return await usage.save_preferences(body)
 
 

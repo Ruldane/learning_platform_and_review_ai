@@ -1,12 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { acceptNote, fetchNotes, rejectNote } from "../api";
 import { ideKeys } from "../queryKeys";
+import { liveOptions } from "./live";
 
-/** Les notes de la séance (`GET /ide/sessions/{id}/notes`). */
+/** Les notes de la séance (`GET /ide/sessions/{id}/notes`), relues en direct. */
 export function useNotes(sessionId: string) {
   return useQuery({
     queryKey: ideKeys.notes(sessionId),
     queryFn: ({ signal }) => fetchNotes(sessionId, signal),
+    ...liveOptions,
   });
 }
 

@@ -69,11 +69,19 @@ class IdeService:
         return IdeSessionOut.model_validate(await sessions.get(self._ctx, session_id))
 
     async def save_files(
-        self, session_id: str, files: dict[str, str], entry: str | None = None
+        self,
+        session_id: str,
+        files: dict[str, str],
+        entry: str | None = None,
+        base_hash: str | None = None,
     ) -> IdeSessionOut:
-        """Geste de l'interface : remplace les fichiers (20 au plus, 200 Ko) ; les propositions
-        dont le fichier a changé deviennent `stale`."""
-        row = await sessions.save_files(self._ctx, session_id, files, entry)
+        """L'interface remplace les fichiers (20 au plus, 200 Ko). Claude (MCP) écrit un fichier,
+        sous l'interrupteur de January et avec `base_hash` (`sessions.write_file_as_claude`). Les
+        propositions dont le fichier a changé deviennent `stale`."""
+        if self._ctx.caller.kind == "mcp":
+            row = await sessions.write_file_as_claude(self._ctx, session_id, files, base_hash)
+        else:
+            row = await sessions.save_files(self._ctx, session_id, files, entry)
         await notes.sweep_stale(self._ctx, row)
         return IdeSessionOut.model_validate(row)
 
@@ -83,6 +91,11 @@ class IdeService:
         """Une exécution à la fois par utilisatrice (409 `run_in_progress`) ; bac arrêté : 503
         `sandbox_unavailable`."""
         return RunOut.model_validate(await runs.start(self._ctx, session_id, kind, entry))
+
+    async def list_runs(self, session_id: str) -> list[RunOut]:
+        """Les 20 dernières exécutions de la séance, la plus récente d'abord."""
+        found = await runs.list_for(self._ctx, session_id)
+        return [RunOut.model_validate(row) for row in found]
 
     async def get_run(self, run_id: str, after: int = 0) -> RunProgress:
         """La sortie depuis l'octet `after` ; fige la sortie et la signature à la fin."""

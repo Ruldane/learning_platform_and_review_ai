@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 JOB_TIMEOUT_S = 10  # durée réelle demandée au bac (il plafonne à 15)
 PROOF_LABEL = "Exercice réussi : "
+RECENT_RUNS = 20
 
 
 def _sandbox(ctx: IdeContext) -> CodeSandbox:
@@ -117,7 +118,11 @@ async def start(
     if wanted not in session.files:
         raise entry_missing()
     run = await repo.add(
-        session_id=session.id, kind=kind, entry=wanted, requested_by=ctx.caller.label
+        session_id=session.id,
+        kind=kind,
+        entry=wanted,
+        requested_by=ctx.caller.label,
+        origin=ctx.caller.kind,
     )
     job = SandboxJob(
         run_id=run.id,
@@ -170,3 +175,9 @@ async def _settle_with(ctx: IdeContext, run: IdeRun, live: SandboxProgress | Non
     complet dès que la fin est visible)."""
     full = await _poll(ctx, run.id, 0) if live is not None else None
     await _freeze(ctx, run, full)
+
+
+async def list_for(ctx: IdeContext, session_id: str) -> list[IdeRun]:
+    """Les `RECENT_RUNS` dernières exécutions de la séance (la page les relit toutes les 3 s)."""
+    session = await sessions.get(ctx, session_id)
+    return await RunRepository(ctx.db, ctx.user_id).recent_of_session(session.id, RECENT_RUNS)

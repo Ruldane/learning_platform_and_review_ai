@@ -91,3 +91,9 @@ export async function fetchUsage(sessionId: string, signal?: AbortSignal) {
   const params = { query: { session_id: sessionId } };
   return unwrap(await api.GET("/ide/usage", { params, signal }));
 }
+
+/** `GET /ide/sessions/{id}/runs` : les 20 dernières exécutions (celles de Claude comprises). */
+export async function fetchRuns(sessionId: string, signal?: AbortSignal) {
+  const params = { path: { session_id: sessionId } };
+  return unwrap(await api.GET("/ide/sessions/{session_id}/runs", { params, signal }));
+}

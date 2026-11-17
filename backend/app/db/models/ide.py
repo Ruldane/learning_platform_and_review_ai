@@ -22,6 +22,8 @@ TeacherMode = Literal["auto", "on_demand"]
 # `guide` : le professeur donne des indices gradués ; `pair` : binôme (annotations en marge et
 # propositions à accepter).
 TeacherStyle = Literal["guide", "pair"]
+# D'où vient le geste (`app/core/caller.py`) : l'interface ou Claude par le MCP.
+Origin = Literal["app", "mcp"]
 
 
 class IdeExercise(UserScopedMixin, Base):
@@ -76,6 +78,8 @@ class IdeRun(UserScopedMixin, Base):
     truncated: Mapped[bool] = mapped_column(Boolean, default=False)
     output: Mapped[str] = mapped_column(Text, default="")
     requested_by: Mapped[str] = mapped_column(String(60), default="app")
+    # `app` (l'interface) ou `mcp` (Claude) : la page affiche « lancée par Claude » (10.X).
+    origin: Mapped[str] = mapped_column(String(8), default="app")
     error_signature: Mapped[str | None] = mapped_column(String(40), default=None)
 
 
@@ -93,6 +97,8 @@ class IdeNote(UserScopedMixin, Base):
     kind: Mapped[str] = mapped_column(String(16))
     author: Mapped[str] = mapped_column(String(16))
     author_label: Mapped[str | None] = mapped_column(String(60), default=None)
+    # `app` ou `mcp` : d'où vient le geste (le professeur interne et January sont `app`).
+    origin: Mapped[str] = mapped_column(String(8), default="app")
     status: Mapped[str] = mapped_column(String(16), default="open")
     file_path: Mapped[str | None] = mapped_column(String(200), default=None)
     line_start: Mapped[int | None] = mapped_column(Integer, default=None)
@@ -118,5 +124,8 @@ class IdePreference(UserScopedMixin, Base):
     teacher_mode: Mapped[str] = mapped_column(String(16), default="auto")
     teacher_style: Mapped[str] = mapped_column(String(8), default="guide")
     idle_trigger: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Interrupteur de January : Claude (MCP) peut écrire dans ses fichiers. Éteint par défaut ;
+    # réglable seulement depuis l'interface.
+    mcp_can_write_files: Mapped[bool] = mapped_column(Boolean, default=False)
     session_cap: Mapped[int] = mapped_column(Integer, default=100_000)
     day_cap: Mapped[int] = mapped_column(Integer, default=300_000)

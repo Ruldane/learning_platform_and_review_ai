@@ -13,16 +13,17 @@ interface IdeSessionPageProps {
 }
 
 /**
- * Une séance de code : l'éditeur, la sortie et le professeur côte à côte. La séance est lue une
- * fois ; ensuite l'éditeur est la source de ce qu'on voit et le serveur celle de ce qui est
- * enregistré.
+ * Une séance de code : l'éditeur, la sortie et le professeur côte à côte. La séance est relue toutes
+ * les 3 s tant que l'onglet est visible (Claude peut y écrire) ; l'éditeur reste la source de ce qu'on
+ * voit et le serveur celle de ce qui est enregistré.
  */
 export function IdeSessionPage({ createSocket }: IdeSessionPageProps) {
   const { sessionId = "" } = useParams();
   const query = useIdeSession(sessionId);
-  if (query.isPending) return <LoadingState label={t("ide.session.loading")} />;
-  if (query.isError) {
+  if (query.data === undefined) {
+    if (!query.isError) return <LoadingState label={t("ide.session.loading")} />;
     return <ErrorState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />;
   }
+  // Une relecture en direct qui échoue garde la séance affichée (et ses retouches) : pas d'erreur.
   return <SessionWorkspace key={query.data.id} session={query.data} createSocket={createSocket} />;
 }

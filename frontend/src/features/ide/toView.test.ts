@@ -22,6 +22,24 @@ describe("excerpt", () => {
 });
 
 describe("toNoteViews", () => {
+  it("names Claude on a note written through the MCP, with the token label when it differs", () => {
+    const views = toNoteViews(
+      [
+        note({ id: "a", author: "claude", author_label: null, origin: "mcp" }),
+        note({ id: "b", author: "claude", author_label: "Claude Code", origin: "mcp" }),
+        note({ id: "c", author: "claude", author_label: "Mon jeton", origin: "mcp" }),
+        note({ id: "d", author: "professor", author_label: null, origin: "app" }),
+      ],
+      {},
+    );
+    expect(views.map((v) => [v.authorLabel, v.origin])).toEqual([
+      ["Claude", "mcp"],
+      ["Claude Code", "mcp"],
+      ["Claude (Mon jeton)", "mcp"],
+      ["Le professeur", "app"],
+    ]);
+  });
+
   it("numbers the hints in the order they were written", () => {
     const views = toNoteViews(
       [

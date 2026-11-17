@@ -16,6 +16,14 @@ export function excerpt(text: string | undefined, start: number, end: number): s
   return lines.slice(start - 1, end).join("\n");
 }
 
+/** Le nom sous lequel la note s'affiche : Claude (par le MCP) est toujours nommé « Claude ». */
+function authorLabel(note: Note): string {
+  if (note.origin !== "mcp") return note.author_label ?? t(`ide.authors.${note.author}`);
+  const label = note.author_label;
+  if (!label) return t("ide.authors.claude");
+  return label.toLowerCase().includes("claude") ? label : t("ide.authors.claudeVia", { label });
+}
+
 function beforeText(note: Note, files: Record<string, string>): string | null {
   if (note.kind !== "proposal" || !note.file_path || note.line_start === null) return null;
   return excerpt(files[note.file_path], note.line_start, note.line_end ?? note.line_start);
@@ -34,7 +42,8 @@ export function toNoteViews(notes: Note[], files: Record<string, string>): NoteV
       id: note.id,
       kind: note.kind,
       author: note.author,
-      authorLabel: note.author_label ?? t(`ide.authors.${note.author}`),
+      authorLabel: authorLabel(note),
+      origin: note.origin,
       status: note.status,
       filePath: note.file_path,
       lineStart: note.line_start,

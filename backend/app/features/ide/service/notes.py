@@ -4,10 +4,9 @@ tiré de l'appelant, change. Une proposition remplace une plage de lignes d'un f
 l'empreinte (sha256) du fichier qu'elle a lu : elle ne s'applique que si le fichier n'a pas
 changé. `accept` et `reject` sont des gestes de l'interface (exclus du MCP)."""
 
-import re
-
 from app.core.caller import Caller
 from app.db.models.ide import IdeNote, IdeSession, NoteAuthor
+from app.features.ide.hashing import is_file_hash
 from app.features.ide.repository import NoteRepository
 from app.features.ide.schemas import NoteIn
 from app.features.ide.service import sessions
@@ -25,7 +24,6 @@ from app.providers.sandbox.base import MAX_TOTAL_BYTES
 # Étiquette de l'appelant interne du professeur (graphe `ide_teacher`, 10.A3). Un jeton MCP n'y
 # accède jamais : tout appel MCP est `claude`, quelle que soit l'étiquette du jeton.
 PROFESSOR_LABEL = "professor"
-_HASH = re.compile(r"[0-9a-f]{64}")
 
 
 def author_of(caller: Caller) -> tuple[NoteAuthor, str | None]:
@@ -75,7 +73,7 @@ def _check_proposal(data: NoteIn, text: str | None) -> None:
     if text is None or data.line_start is None or data.replacement is None:
         raise note_invalid("Une proposition demande un fichier, une plage de lignes et un texte.")
     current = file_hash(text)
-    if data.base_hash is None or not _HASH.fullmatch(data.base_hash):
+    if not is_file_hash(data.base_hash):
         raise note_invalid(
             "Une proposition demande l'empreinte sha256 du fichier lu.", {"file_hash": current}
         )
@@ -109,6 +107,7 @@ async def add(
         kind=data.kind,
         author=author,
         author_label=label,
+        origin=ctx.caller.kind,
         file_path=data.file_path,
         line_start=data.line_start,
         line_end=data.line_end or (data.line_start if data.kind == "proposal" else None),

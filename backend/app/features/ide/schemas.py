@@ -4,18 +4,20 @@ surface (s'il le faut, il régénère `contracts/openapi.json` et `schema.d.ts` 
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator, model_validator
 
 from app.db.models.ide import (
     ExerciseOrigin,
     NoteAuthor,
     NoteKind,
     NoteStatus,
+    Origin,
     RunKind,
     RunStatus,
     TeacherMode,
     TeacherStyle,
 )
+from app.features.ide.hashing import file_hash
 from app.providers.sandbox.base import (
     MAX_FILES,
     MAX_PATH_CHARS,
@@ -34,6 +36,7 @@ __all__ = [
     "NoteKind",
     "NoteOut",
     "NoteStatus",
+    "Origin",
     "PreferencesIn",
     "PreferencesOut",
     "RunIn",
@@ -132,15 +135,27 @@ class SessionSummary(BaseModel):
 
 
 class IdeSessionOut(SessionSummary):
+    """`file_hashes` : le sha256 de chaque fichier (le `base_hash` que Claude renvoie)."""
+
     files: dict[str, str]
     entry: str
 
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def file_hashes(self) -> dict[str, str]:
+        return {name: file_hash(text) for name, text in self.files.items()}
+
 
 class FilesPutIn(BaseModel):
-    """Remplace tous les fichiers de la séance (geste de l'interface, exclu du MCP)."""
+    """Enregistre les fichiers de la séance. Interface : remplace tous les fichiers. Claude (MCP,
+    interrupteur allumé) : un seul fichier de `files`, les autres sont gardés ; `base_hash` est
+    alors obligatoire : le sha256 du contenu actuel de ce fichier (`file_hashes` de la séance ;
+    texte vide pour un nouveau fichier). Il est ignoré pour l'interface. `entry` aussi, pour
+    Claude."""
 
     files: dict[str, str]
     entry: str | None = Field(default=None, min_length=1, max_length=PATH_MAX)
+    base_hash: str | None = Field(default=None, min_length=64, max_length=64)
 
     _files = field_validator("files")(_check_files)
 
@@ -154,7 +169,8 @@ class RunIn(BaseModel):
 
 
 class RunOut(BaseModel):
-    """Une exécution déposée (202) : on lit la sortie par `GET /ide/runs/{id}?after=`."""
+    """Une exécution déposée (202) : on lit la sortie par `GET /ide/runs/{id}?after=`. `origin` :
+    `mcp` quand Claude l'a lancée (la page affiche « lancée par Claude »)."""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -164,6 +180,7 @@ class RunOut(BaseModel):
     entry: str
     status: RunStatus
     created_at: datetime
+    origin: Origin
 
 
 class RunProgress(BaseModel):
@@ -228,6 +245,7 @@ class NoteOut(BaseModel):
     kind: NoteKind
     author: NoteAuthor
     author_label: str | None
+    origin: Origin  # `mcp` : écrite par Claude (la page affiche « Claude »)
     status: NoteStatus
     file_path: str | None
     line_start: int | None
@@ -243,11 +261,13 @@ class NoteOut(BaseModel):
 class PreferencesIn(BaseModel):
     """Mode du professeur (`auto` ou sur demande), style (`guide` : indices gradués ; `pair` :
     binôme, annotations en marge et propositions à accepter), minuterie d'inactivité (30 s, en
-    option) et plafonds de jetons."""
+    option), plafonds de jetons, et l'interrupteur « Claude peut écrire dans mes fichiers »
+    (`mcp_can_write_files`, éteint par défaut : seule l'interface le règle, jamais le MCP)."""
 
     teacher_mode: TeacherMode = "auto"
     teacher_style: TeacherStyle = "guide"
     idle_trigger: bool = False
+    mcp_can_write_files: bool = False
     session_cap: int = Field(default=100_000, ge=1_000, le=2_000_000)
     day_cap: int = Field(default=300_000, ge=1_000, le=10_000_000)
 

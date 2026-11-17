@@ -1,4 +1,5 @@
 import { t } from "@/shared/i18n/t";
+import { ClaudeChanges } from "../../components/ClaudeChanges";
 import { CodeEditor } from "../../components/CodeEditor";
 import { OutputPanel } from "../../components/OutputPanel";
 import type { Workspace } from "../../hooks/useWorkspace";
@@ -8,6 +9,7 @@ import { SessionToolbar } from "./SessionToolbar";
 /** À gauche : les fichiers, l'éditeur, les boutons d'exécution et la sortie. */
 export function EditorColumn({ ws }: { ws: Workspace }) {
   const { draft, runner, file, session } = ws;
+  const { claude } = draft;
   return (
     <div className="flex min-w-0 flex-col gap-3">
       <h2 className="sr-only">{t("ide.session.editor")}</h2>
@@ -24,7 +26,16 @@ export function EditorColumn({ ws }: { ws: Workspace }) {
         names={Object.keys(draft.files)}
         current={file}
         entry={session.entry}
+        changed={claude.notices}
         onOpen={ws.openFile}
+      />
+      <ClaudeChanges
+        file={file}
+        notices={claude.notices}
+        conflicts={claude.conflicts}
+        onDismiss={claude.dismiss}
+        onKeepMine={claude.keepMine}
+        onTakeTheirs={claude.takeTheirs}
       />
       <CodeEditor
         path={file}
