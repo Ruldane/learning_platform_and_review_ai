@@ -24,7 +24,12 @@ export function useFilesDraft(session: IdeSession) {
   const [edits, setEdits] = useState<Files>({});
   const { conflicts, notices, acknowledge, markMine } = useClaudeChanges(session.files, edits);
   const held = useMemo(() => Object.keys(conflicts), [conflicts]);
-  const saver = useDraftSave(session, { edits, held, server: session.files }, setEdits, markMine);
+  const saver = useDraftSave(
+    session,
+    { edits, held, server: session.files, hashes: session.file_hashes },
+    setEdits,
+    markMine,
+  );
   const files = useMemo(() => ({ ...session.files, ...edits }), [session.files, edits]);
   const edit = useCallback(
     (name: string, text: string) => {

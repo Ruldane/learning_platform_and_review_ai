@@ -137,7 +137,10 @@ async def get_session(session_id: Id, ide: Ide) -> IdeSessionOut:
     responses={
         403: {"description": "`mcp_ide_write_off` : Claude n'y est pas autorisé (interrupteur)"},
         404: {"description": "`session_not_found`"},
-        409: {"description": "`stale_base` : le fichier a changé depuis la lecture (Claude)"},
+        409: {
+            "description": "`stale_base` : un fichier a changé depuis la lecture "
+            "(`details.files` côté interface)"
+        },
         422: {
             "description": "`entry_missing`, `entry_invalid`, `files_too_large`, "
             "`base_hash_required`, `mcp_write_one_file`"
@@ -147,7 +150,9 @@ async def get_session(session_id: Id, ide: Ide) -> IdeSessionOut:
 async def put_files(session_id: Id, body: FilesPutIn, ide: Ide) -> IdeSessionOut:
     """Enregistre les fichiers de la séance (20 au plus, 200 Ko) : l'interface les remplace tous ;
     Claude (MCP, interrupteur allumé) écrit un fichier avec `base_hash`."""
-    return await ide.save_files(session_id, body.files, body.entry, body.base_hash)
+    return await ide.save_files(
+        session_id, body.files, body.entry, body.base_hash, body.base_hashes
+    )
 
 
 @router.get("/sessions/{session_id}/runs", response_model=list[RunOut], responses=_NOT_FOUND)

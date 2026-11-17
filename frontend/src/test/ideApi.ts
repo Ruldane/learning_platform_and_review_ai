@@ -1,8 +1,19 @@
+/// <reference types="node" />
+import { createHash } from "node:crypto";
 import { http, HttpResponse, type HttpHandler } from "msw";
 import { errorBody } from "./authApi";
 import { API } from "./councilApi";
 
 type Over = Record<string, unknown>;
+
+/** Les empreintes sha256 des fichiers, comme le serveur les donne (`file_hashes`). */
+export const hashesOf = (files: Record<string, string>): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(files).map(([name, text]) => [
+      name,
+      createHash("sha256").update(text).digest("hex"),
+    ]),
+  );
 
 export const exerciseOut = (over: Over = {}) => ({
   id: "e1",
@@ -26,13 +37,15 @@ export const sessionSummary = (over: Over = {}) => ({
   ...over,
 });
 
-export const sessionOut = (over: Over = {}) => ({
-  ...sessionSummary(),
-  files: { "main.py": "print('bonjour')\n" },
-  entry: "main.py",
-  file_hashes: {},
-  ...over,
-});
+export const sessionOut = (over: Over = {}) => {
+  const session = {
+    ...sessionSummary(),
+    files: { "main.py": "print('bonjour')\n" } as Record<string, string>,
+    entry: "main.py",
+    ...over,
+  };
+  return { ...session, file_hashes: hashesOf(session.files) };
+};
 
 /** Une exécution de la liste de la séance : par défaut lancée par Claude (MCP), déjà finie. */
 export const runOut = (over: Over = {}) => ({
@@ -160,8 +173,16 @@ function dataHandlers(api: IdeApi, calls: Calls): HttpHandler[] {
       return HttpResponse.json(sessionOut(api.session));
     }),
     http.put(`${API}/ide/sessions/:id/files`, async ({ request }) => {
-      const body = (await request.json()) as { files: Record<string, string> };
+      const body = (await request.json()) as {
+        files: Record<string, string>;
+        base_hashes?: Record<string, string>;
+      };
       calls.puts.push(body);
+      const clash = staleFiles(sessionOut(api.session).files, body);
+      if (clash.length > 0) {
+        const stale = errorBody("stale_base", "Claude a modifié des fichiers.", { files: clash });
+        return HttpResponse.json(stale, { status: 409 });
+      }
       api.session = { ...api.session, files: body.files }; // le serveur garde ce qu'on lui envoie
       return HttpResponse.json(sessionOut(api.session));
     }),
@@ -176,6 +197,17 @@ function dataHandlers(api: IdeApi, calls: Calls): HttpHandler[] {
       return HttpResponse.json(usageOut(api.usage));
     }),
   ];
+}
+
+/** Les fichiers que l'envoi écraserait alors que le serveur n'a plus la version éditée (409). */
+function staleFiles(
+  current: Record<string, string>,
+  body: { files: Record<string, string>; base_hashes?: Record<string, string> },
+): string[] {
+  const now = hashesOf(current);
+  return Object.entries(body.base_hashes ?? {})
+    .filter(([name, hash]) => now[name] !== hash && body.files[name] !== current[name])
+    .map(([name]) => name);
 }
 
 /** Les exécutions et la lecture de leur sortie. */

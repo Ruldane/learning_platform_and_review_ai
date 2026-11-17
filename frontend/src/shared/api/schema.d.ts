@@ -4769,11 +4769,17 @@ export interface components {
          *     interrupteur allumé) : un seul fichier de `files`, les autres sont gardés ; `base_hash` est
          *     alors obligatoire : le sha256 du contenu actuel de ce fichier (`file_hashes` de la séance ;
          *     texte vide pour un nouveau fichier). Il est ignoré pour l'interface. `entry` aussi, pour
-         *     Claude.
+         *     Claude. `base_hashes` (interface, facultatif) : le sha256 de la version de chaque fichier sur
+         *     laquelle tu as édité ; un fichier que Claude a changé depuis et que l'envoi écraserait donne 409
+         *     `stale_base` (`details.files` : les noms) et rien n'est écrit.
          */
         FilesPutIn: {
             /** Base Hash */
             base_hash?: string | null;
+            /** Base Hashes */
+            base_hashes?: {
+                [key: string]: string;
+            } | null;
             /** Entry */
             entry?: string | null;
             /** Files */
@@ -11452,7 +11458,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `stale_base` : le fichier a changé depuis la lecture (Claude) */
+            /** @description `stale_base` : un fichier a changé depuis la lecture (`details.files` côté interface) */
             409: {
                 headers: {
                     [name: string]: unknown;

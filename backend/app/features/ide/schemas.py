@@ -17,7 +17,7 @@ from app.db.models.ide import (
     TeacherMode,
     TeacherStyle,
 )
-from app.features.ide.hashing import file_hash
+from app.features.ide.hashing import file_hash, is_file_hash
 from app.providers.sandbox.base import (
     MAX_FILES,
     MAX_PATH_CHARS,
@@ -151,13 +151,23 @@ class FilesPutIn(BaseModel):
     interrupteur allumé) : un seul fichier de `files`, les autres sont gardés ; `base_hash` est
     alors obligatoire : le sha256 du contenu actuel de ce fichier (`file_hashes` de la séance ;
     texte vide pour un nouveau fichier). Il est ignoré pour l'interface. `entry` aussi, pour
-    Claude."""
+    Claude. `base_hashes` (interface, facultatif) : le sha256 de la version de chaque fichier sur
+    laquelle tu as édité ; un fichier que Claude a changé depuis et que l'envoi écraserait donne 409
+    `stale_base` (`details.files` : les noms) et rien n'est écrit."""
 
     files: dict[str, str]
     entry: str | None = Field(default=None, min_length=1, max_length=PATH_MAX)
     base_hash: str | None = Field(default=None, min_length=64, max_length=64)
+    base_hashes: dict[str, str] | None = None
 
     _files = field_validator("files")(_check_files)
+
+    @field_validator("base_hashes")
+    @classmethod
+    def _hashes(cls, hashes: dict[str, str] | None) -> dict[str, str] | None:
+        if hashes is not None and not all(is_file_hash(value) for value in hashes.values()):
+            raise ValueError("empreinte invalide")
+        return hashes
 
 
 class RunIn(BaseModel):

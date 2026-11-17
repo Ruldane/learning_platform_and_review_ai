@@ -109,6 +109,17 @@ def stale_base() -> AppError:
     )
 
 
+def files_changed(names: list[str]) -> AppError:
+    """L'enregistrement de l'interface se heurte à des fichiers que Claude a changés depuis la
+    dernière lecture : seuls les noms sont rendus, rien n'est écrit."""
+    return AppError(
+        "stale_base",
+        "Claude a modifié des fichiers depuis ta dernière lecture : rien n'est enregistré.",
+        409,
+        {"files": names},
+    )
+
+
 def mcp_write_one_file() -> AppError:
     return AppError("mcp_write_one_file", "Écris un seul fichier à la fois.", 422)
 

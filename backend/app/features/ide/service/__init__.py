@@ -74,6 +74,7 @@ class IdeService:
         files: dict[str, str],
         entry: str | None = None,
         base_hash: str | None = None,
+        base_hashes: dict[str, str] | None = None,
     ) -> IdeSessionOut:
         """L'interface remplace les fichiers (20 au plus, 200 Ko). Claude (MCP) écrit un fichier,
         sous l'interrupteur de January et avec `base_hash` (`sessions.write_file_as_claude`). Les
@@ -81,7 +82,7 @@ class IdeService:
         if self._ctx.caller.kind == "mcp":
             row = await sessions.write_file_as_claude(self._ctx, session_id, files, base_hash)
         else:
-            row = await sessions.save_files(self._ctx, session_id, files, entry)
+            row = await sessions.save_files(self._ctx, session_id, files, entry, base_hashes)
         await notes.sweep_stale(self._ctx, row)
         return IdeSessionOut.model_validate(row)
 

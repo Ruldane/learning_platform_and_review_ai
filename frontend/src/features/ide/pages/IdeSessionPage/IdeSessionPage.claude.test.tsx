@@ -109,7 +109,7 @@ describe("IdeSessionPage, files changed by Claude", () => {
       await user.click(within(card).getByRole("button", { name: "Garder la mienne" }));
       expect(screen.queryByRole("alert", { name: /pendant que tu écrivais/ })).toBeNull();
       await waitFor(() => expect(calls.puts).toHaveLength(1), { timeout: AUTOSAVE_MS + 2000 });
-      expect(calls.puts[0]).toEqual({ files: { "main.py": "a = 1\nb" }, entry: "main.py" });
+      expect(calls.puts[0]).toMatchObject({ files: { "main.py": "a = 1\nb" }, entry: "main.py" });
       expect(editor).toHaveValue("a = 1\nb");
       await refresh();
       await settle(300);
@@ -154,7 +154,7 @@ describe("IdeSessionPage, files changed by Claude", () => {
       await screen.findByRole("alert", { name: /Claude a modifié main.py/ });
       await waitFor(() => expect(calls.puts).toHaveLength(1), { timeout: AUTOSAVE_MS + 2000 });
       // util.py part ; main.py garde la version de Claude côté serveur, la tienne reste à l'écran
-      expect(calls.puts[0]).toEqual({
+      expect(calls.puts[0]).toMatchObject({
         files: { "main.py": "a = 2\n", "util.py": "b = 1\ny" },
         entry: "main.py",
       });

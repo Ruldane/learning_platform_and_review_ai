@@ -17,6 +17,7 @@ from app.features.ide.service.errors import (
     entry_invalid,
     entry_missing,
     exercise_not_found,
+    files_changed,
     files_too_large,
     mcp_ide_write_off,
     mcp_write_one_file,
@@ -81,12 +82,34 @@ def check_files(files: dict[str, str], entry: str) -> None:
         raise files_too_large()
 
 
+def _clashes(session: IdeSession, files: dict[str, str], base_hashes: dict[str, str]) -> list[str]:
+    """Les fichiers dont la version du serveur n'est plus celle de `base_hashes` et que `files`
+    changerait (envoyer le texte actuel n'efface rien)."""
+    clash: list[str] = []
+    for name, base in sorted(base_hashes.items()):
+        current = str(session.files.get(name, ""))
+        if file_hash(current) != base and files.get(name, "") != current:
+            clash.append(name)
+    return clash
+
+
 async def save_files(
-    ctx: IdeContext, session_id: str, files: dict[str, str], entry: str | None
+    ctx: IdeContext,
+    session_id: str,
+    files: dict[str, str],
+    entry: str | None,
+    base_hashes: dict[str, str] | None = None,
 ) -> IdeSession:
     """Remplace les fichiers (geste de l'interface). L'entrée reste celle de la séance sauf si
-    `entry` en donne une autre."""
+    `entry` en donne une autre. `base_hashes` (facultatif) : la version sur laquelle chaque fichier
+    a été édité ; un fichier que Claude a changé depuis et que l'envoi écraserait donne 409
+    `stale_base` (noms seulement), rien n'est écrit."""
     session = await get(ctx, session_id)
+    if base_hashes:
+        clash = _clashes(session, files, base_hashes)
+        if clash:
+            logger.info("stale_base : enregistrement refusé dans la séance %s", session.id)
+            raise files_changed(clash)
     wanted = entry or session.entry
     check_files(files, wanted)
     session.files = dict(files)
