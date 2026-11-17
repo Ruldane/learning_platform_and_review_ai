@@ -1,6 +1,7 @@
 import { applicationsManifest } from "@/features/applications/manifest";
 import { authManifest } from "@/features/auth/manifest";
 import { captureManifest } from "@/features/capture/manifest";
+import { costsManifest } from "@/features/costs/manifest";
 import { cvManifest } from "@/features/cv/manifest";
 import { demoManifest } from "@/features/demo/manifest";
 import { gapManifest } from "@/features/gap/manifest";
@@ -40,6 +41,7 @@ export const FEATURES: FeatureManifest[] = [
   replanManifest,
   memoryManifest,
   settingsManifest,
+  costsManifest,
   researchManifest,
   demoManifest,
 ];

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { GRAPH_SCREENS } from "@/features/costs/components/graphs";
 import { buildNav } from "./buildNav";
 import { FEATURES } from "./registry";
 
@@ -66,6 +67,18 @@ describe("registre des features", () => {
       { labelKey: "settings.search.navLabel", path: "/reglages/recherche" },
       { labelKey: "research.nav.bench", path: "/reglages/recherche/essai" },
       { labelKey: "settings.study.navLabel", path: "/reglages/etude" },
+      { labelKey: "costs.nav.costs", path: "/reglages/couts" },
+      { labelKey: "costs.nav.log", path: "/reglages/journal" },
     ]);
+  });
+
+  it("le journal des agents ne mène qu'à des écrans qui existent", () => {
+    const known = new Set([
+      ...FEATURES.flatMap((f) => f.nav?.map((entry) => entry.path) ?? []),
+      ...FEATURES.flatMap((f) =>
+        f.routes.map((route) => `/${(route.path ?? "").replace(/^\//, "")}`),
+      ),
+    ]);
+    for (const path of Object.values(GRAPH_SCREENS)) expect(known).toContain(path);
   });
 });

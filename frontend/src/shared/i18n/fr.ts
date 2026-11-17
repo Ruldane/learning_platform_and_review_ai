@@ -3,6 +3,7 @@ import { applications } from "./messages/applications";
 import { appMessages } from "./messages/app";
 import { auth } from "./messages/auth";
 import { capture } from "./messages/capture";
+import { costs } from "./messages/costs";
 import { cv } from "./messages/cv";
 import { demo } from "./messages/demo";
 import { gap } from "./messages/gap";
@@ -44,6 +45,7 @@ export const fr = {
   replan,
   capture,
   gap,
+  costs,
   cv,
   applications,
   home,
