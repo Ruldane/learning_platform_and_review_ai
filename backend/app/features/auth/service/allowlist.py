@@ -2,7 +2,8 @@
 
 Liste séparée par des virgules, comparée en minuscules sans espaces ; `*` laisse entrer tous les
 comptes Google. Vide ou absente : personne n'entre (et le démarrage est refusé, voir `startup`).
-Contrôlée à la connexion et à chaque requête : retirer une adresse coupe l'accès aussitôt."""
+Contrôlée à la connexion et à chaque requête, mais lue **au démarrage** (`Settings`) : retirer une
+adresse du `.env` coupe l'accès de ce compte au redémarrage du back, pas avant."""
 
 ALL_ACCOUNTS = "*"
 

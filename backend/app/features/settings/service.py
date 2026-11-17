@@ -72,6 +72,11 @@ class SettingsService:
             )
         return _parse_stored(stored if isinstance(stored, dict) else {})
 
+    async def close_local_claim(self) -> None:
+        """Ferme pour toujours la reprise de l'espace local (clé réservée de ces réglages, qui
+        survit à tout remplacement ; jamais exposée par l'API)."""
+        await self._repo.close_local_claim()
+
     async def replace(self, new: UserSettings) -> UserSettings:
         """Enregistre les réglages. `onboarding_done` ne repasse jamais à faux : une page qui
         renvoie l'ancien réglage (ou l'oublie) ne rouvre pas le premier lancement (P20). Le

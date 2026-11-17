@@ -6,7 +6,8 @@ from sqlalchemy import String, case, exists, func, literal, or_, select, update
 from sqlalchemy.dialects.sqlite import insert
 
 from app.db.base import new_id
-from app.db.models.accounts import ApiKey, UserSettingsRow
+from app.db.models.accounts import LOCAL_CLAIM_CLOSED, ApiKey, UserSettingsRow
+from app.db.models.agents import LlmCall
 from app.db.models.learning import Goal
 from app.db.repository import UserScopedRepository
 
@@ -27,8 +28,12 @@ class UserSettingsRepository(UserScopedRepository[UserSettingsRow]):
     async def save_data(self, data: dict[str, Any]) -> None:
         """Remplace les réglages. Si `data` porte `onboarding_done`, il s'écrit de façon
         **monotone**, dans la requête même : `onboarding_done = onboarding_done OR :nouveau`. Une
-        requête qui a lu `faux` avant qu'une autre commite `vrai` ne le défait donc jamais (P20)."""
+        requête qui a lu `faux` avant qu'une autre commite `vrai` ne le défait donc jamais (P20).
+        La clé réservée `local_claim_closed` survit à tout remplacement (elle n'est pas un
+        réglage)."""
         row = await self._row()
+        if row is not None and row.data.get(LOCAL_CLAIM_CLOSED) is True:
+            data = {**data, LOCAL_CLAIM_CLOSED: True}
         if row is None:
             await self.add(data=dict(data))
         elif "onboarding_done" not in data:
@@ -53,12 +58,24 @@ class UserSettingsRepository(UserScopedRepository[UserSettingsRow]):
             )
             await self.session.refresh(row)
 
+    async def close_local_claim(self) -> None:
+        """Pose la clé réservée `local_claim_closed` (idempotent), en créant au besoin la ligne
+        de réglages avec le même `onboarding_done` qu'un premier accès (D183)."""
+        await self.initialize({"onboarding_done": await self.has_prior_data()})
+        stmt = update(UserSettingsRow).where(UserSettingsRow.user_id == self.user_id)
+        flag = func.json_set(UserSettingsRow.data, f"$.{LOCAL_CLAIM_CLOSED}", func.json("true"))
+        await self.session.execute(
+            stmt.values(data=flag), execution_options={"synchronize_session": False}
+        )
+
     async def has_prior_data(self) -> bool:
-        """Vrai si le compte a déjà une clé d'API enregistrée ou un objectif : il s'en est déjà
-        servi, il n'a pas de premier lancement à faire (P20)."""
+        """Vrai si le compte a déjà une clé d'API enregistrée, un objectif ou un appel de modèle
+        (clé seulement dans `.env`) : il s'en est déjà servi, il n'a pas de premier lancement à
+        faire (P20)."""
         key = select(ApiKey.id).where(ApiKey.user_id == self.user_id)
         goal = select(Goal.id).where(Goal.user_id == self.user_id)
-        found = await self.session.execute(select(or_(exists(key), exists(goal))))
+        call = select(LlmCall.id).where(LlmCall.user_id == self.user_id)
+        found = await self.session.execute(select(or_(exists(key), exists(goal), exists(call))))
         return bool(found.scalar())
 
     async def initialize(self, data: dict[str, Any]) -> dict[str, Any]:

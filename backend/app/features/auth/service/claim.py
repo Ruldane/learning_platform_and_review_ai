@@ -30,6 +30,7 @@ from app.db.models.accounts import User
 from app.features.auth.repository import UserRepository
 from app.features.auth.service.allowlist import explicitly_allowed
 from app.features.auth.service.cookies import OAUTH_COOKIE_SECONDS
+from app.features.settings.service import SettingsService
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +79,20 @@ async def claim_offered(db: AsyncSession) -> bool:
     """Vrai si la reprise doit être proposée : aucun compte Google, et l'utilisateur `local`
     est là (jamais repris : une fois repris il porte un e-mail, `get_local` ne le rend plus)."""
     users = UserRepository(db)
-    return not await users.any_google_user() and await users.get_local() is not None
+    if await users.any_google_user():
+        return False
+    local = await users.get_local()
+    return local is not None and not await users.local_claim_closed(local.id)
+
+
+async def close_claim(db: AsyncSession, users: UserRepository) -> None:
+    """Dès qu'un premier compte Google naît (« Espace vide » ou connexion sans offre ; une reprise
+    consomme la ligne `local` elle-même), la reprise est close pour toujours : le fait est gardé
+    dans les réglages de la ligne `local`, que « Tout supprimer » d'un compte Google n'efface
+    jamais (revue 9.R, B-I1)."""
+    local = await users.get_local()
+    if local is not None:
+        await SettingsService(db, local.id).close_local_claim()
 
 
 async def claim(
@@ -129,6 +143,9 @@ async def _take_local(users: UserRepository, identity: ClaimIdentity) -> User:
 
 
 async def _fresh(db: AsyncSession, users: UserRepository, identity: ClaimIdentity) -> User:
+    # Avant le point de sauvegarde : la transaction commence par une écriture, jamais par une
+    # lecture suivie d'une écriture (SQLite rendrait « database is locked » à une course).
+    await close_claim(db, users)
     try:
         async with db.begin_nested():  # un doublon (deux onglets) ne défait pas la transaction
             return await users.add_google(

@@ -150,6 +150,16 @@ de la base, chaque vecteur et chaque fichier porte l'identifiant de son proprié
 comptes ne voient jamais les données l'un de l'autre. Les clés d'API saisies dans l'interface
 sont celles de chaque compte ; celles du `.env` servent à tous.
 
+**Avec `ALLOWED_EMAILS=*`, ne mets aucune clé d'API dans le `.env`** : tout compte Google qui se
+connecte consommerait tes clés et verrait leurs 4 derniers caractères. Mets-y plutôt la liste
+des adresses nommées, ou fais saisir à chacun ses propres clés dans l'interface.
+
+**Cookies de `localhost`** : un cookie ne distingue pas les ports (RFC 6265). Tout autre
+serveur web de ta machine ouvert dans le même navigateur sur `localhost` reçoit donc le cookie
+de session de Tremplin ; ne navigue pas vers des applications locales auxquelles tu ne fais
+pas confiance pendant que tu es connecté. Pour un hébergement public, `https` (cookie
+`Secure`) est obligatoire.
+
 ### Reprise de l'espace local
 
 Si tu as déjà utilisé Tremplin en mode local, tes données sont dans l'espace `local`. Au premier
@@ -164,9 +174,13 @@ en repassant en `AUTH_MODE=local`). Règles à connaître :
 - Avec **plusieurs adresses nommées, la première qui se connecte prend l'espace local** (ou le
   refuse en choisissant « Espace vide »). Dès qu'un compte Google existe, la reprise n'est plus
   proposée à personne d'autre.
-- Si le premier compte choisit « Espace vide » puis « Tout supprimer » (voir plus bas), son
-  compte disparaît : l'espace local, resté en base, est de nouveau proposé à la prochaine
-  adresse nommée qui se connecte.
+- La reprise est **close pour toujours** dès qu'un premier compte Google existe, même si ce
+  compte est ensuite supprimé par « Tout supprimer » (voir plus bas) : l'espace local, resté en
+  base, n'est plus jamais proposé à une autre adresse (ni à la même).
+- **Repasser en `AUTH_MODE=local` après « Reprendre »** : si la base ne contient qu'un seul
+  compte, l'application le reprend comme utilisateur unique et tes données reviennent. S'il y a
+  plusieurs comptes (par exemple un compte Google créé après « Espace vide »), le mode local
+  ouvre un espace **neuf et vide** : pour retrouver les données reprises, reste en mode Google.
 
 ## Export et suppression de tes données
 

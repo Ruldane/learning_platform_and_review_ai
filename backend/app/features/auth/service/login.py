@@ -22,7 +22,7 @@ from app.db.models.accounts import User
 from app.features.auth.repository import UserRepository
 from app.features.auth.service import sessions
 from app.features.auth.service.allowlist import allowed, explicitly_allowed
-from app.features.auth.service.claim import ClaimIdentity, claim_offered, seal_identity
+from app.features.auth.service.claim import ClaimIdentity, claim_offered, close_claim, seal_identity
 from app.features.auth.service.cookies import OAUTH_COOKIE_SECONDS
 from app.providers.auth import pkce
 from app.providers.auth.base import OidcError, OidcIdentity, OidcProvider
@@ -167,7 +167,7 @@ async def _sign_in(
             identity.sub, identity.email.strip().lower(), identity.name[:MAX_NAME]
         )
         return CallbackOutcome(kind="claim", claim_cookie=seal_identity(cipher, clean))
-    user = await _find_or_create(users, identity)
+    user = await _find_or_create(db, users, identity)
     if user is None:
         return _failed("token_invalid")
     token = await sessions.open_session(db, user.id, now=now, days=settings.session_days)
@@ -175,7 +175,9 @@ async def _sign_in(
     return CallbackOutcome(kind="signed_in", token=token)
 
 
-async def _find_or_create(users: UserRepository, identity: OidcIdentity) -> User | None:
+async def _find_or_create(
+    db: AsyncSession, users: UserRepository, identity: OidcIdentity
+) -> User | None:
     """L'utilisateur de cette identité Google (retrouvé par `sub` : e-mail et nom sont remis à
     jour), sinon un nouveau. `None`, rien d'écrit, si l'adresse appartient déjà à un autre compte
     (jamais deux comptes fusionnés, ni une erreur de base, ni une adresse contrôlée qui n'est pas
@@ -187,6 +189,8 @@ async def _find_or_create(users: UserRepository, identity: OidcIdentity) -> User
     if holder is not None and (user is None or holder.id != user.id):
         return None
     if user is None:
+        if not await users.any_google_user():
+            await close_claim(db, users)  # le premier compte Google ferme la reprise
         return await users.add_google(sub=identity.sub, email=email, name=name)
     await users.update_identity(user, email=email, name=name)
     return user

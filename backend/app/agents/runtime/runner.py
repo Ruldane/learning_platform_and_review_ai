@@ -11,6 +11,7 @@ Le corps d'une tâche vit dans `execution.py`, les règles de statut dans `contr
 """
 
 import asyncio
+import contextlib
 import contextvars
 import logging
 from collections.abc import AsyncIterator, Iterable, Mapping
@@ -108,6 +109,10 @@ class SessionRunner:
                 subject_id=subject_id,
             )
             await db.commit()
+        if user_id in self._deleting:  # « Tout supprimer » a commencé pendant l'insertion
+            with contextlib.suppress(AppError):  # déjà annulée par la suppression
+                await control.claim_cancel(self._db, user_id, row.id)
+            self._refuse_if_deleting(user_id)
         self._launch(user_id, row.id, None)
         return row.id
 

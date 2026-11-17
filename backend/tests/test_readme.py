@@ -84,6 +84,10 @@ def test_compose_passes_the_google_configuration_to_the_backend() -> None:
         "**jamais** proposée",
         "par `http://localhost:5173`",
         "health/embedding",
+        "close pour toujours",
+        "repasser en `AUTH_MODE=local` après « Reprendre »",
+        "ne mets aucune clé d'API dans le `.env`",
+        "cookies de `localhost`",
     ],
 )
 def test_readme_covers_the_google_setup_and_data_rights(needle: str) -> None:

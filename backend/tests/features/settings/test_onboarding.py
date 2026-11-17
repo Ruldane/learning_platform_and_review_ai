@@ -231,3 +231,15 @@ async def test_save_data_without_the_key_is_a_plain_replace(
     await repo.save_data({"onboarding_done": True})
     await repo.save_data({"debate_rounds": 5})  # un test, un outil : la clé n'y est pas
     assert await repo.get_data() == {"debate_rounds": 5}
+
+
+async def test_existing_account_with_only_llm_calls_is_not_sent_back(
+    db_session: AsyncSession,
+) -> None:
+    """Revue 9.R (B-m4) : une clé seulement dans `.env`, ni réglages ni objectif, mais des appels
+    déjà faits : le compte s'est servi de l'application."""
+    from app.db.models.agents import LlmCall
+
+    db_session.add(LlmCall(user_id="u1", provider="glm", model="modele"))
+    await db_session.commit()
+    assert (await SettingsService(db_session, "u1").get(initialize=True)).onboarding_done is True

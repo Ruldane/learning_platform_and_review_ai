@@ -62,7 +62,11 @@ class OllamaPullWatcher:
         if response.status_code != 200:
             raise httpx.HTTPError("statut inattendu")
         models = response.json().get("models")
-        names = [m.get("name") for m in models if isinstance(m, dict)] if models else []
+        if not isinstance(models, list):
+            if models:  # un type inattendu n'est pas une liste vide : Ollama a répondu autre chose
+                raise ValueError("liste de modèles inattendue")
+            models = []
+        names = [m.get("name") for m in models if isinstance(m, dict)]
         return any(isinstance(n, str) and self._model in (n, n.split(":", 1)[0]) for n in names)
 
     async def progress(self) -> EmbeddingProgressData:
@@ -71,7 +75,7 @@ class OllamaPullWatcher:
                 return self._data(
                     present=True, percent=100, detail=f"Le modèle {self._model} est prêt."
                 )
-        except (httpx.HTTPError, ValueError, AttributeError):
+        except (httpx.HTTPError, ValueError, AttributeError, TypeError, RecursionError):
             return self._data(present=False, percent=None, detail=DOWN_DETAIL)
         return self._missing()
 

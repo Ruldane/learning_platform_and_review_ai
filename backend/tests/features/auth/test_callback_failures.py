@@ -61,8 +61,8 @@ async def test_an_unexpected_error_redirects_and_undoes_everything(
 ) -> None:
     real = login._find_or_create
 
-    async def broken(users: object, identity: object) -> object:
-        await real(users, identity)  # type: ignore[arg-type]  # écrit, puis échoue
+    async def broken(db: object, users: object, identity: object) -> object:
+        await real(db, users, identity)  # type: ignore[arg-type]  # écrit, puis échoue
         raise RuntimeError("detail-never-logged")
 
     monkeypatch.setattr(login, "_find_or_create", broken)
