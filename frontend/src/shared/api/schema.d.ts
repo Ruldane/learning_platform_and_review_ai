@@ -1182,7 +1182,8 @@ export interface paths {
         get: operations["get_preferences_api_v1_ide_preferences_get"];
         /**
          * Put Preferences
-         * @description Remplace les préférences du professeur.
+         * @description Remplace les préférences (professeur, interrupteur d'écriture de Claude). Geste de
+         *     l'interface : jamais du MCP, qui n'a pas à régler son propre budget ni ses propres droits.
          */
         put: operations["put_preferences_api_v1_ide_preferences_put"];
         post?: never;
@@ -1266,7 +1267,8 @@ export interface paths {
         get?: never;
         /**
          * Put Files
-         * @description Remplace les fichiers de la séance (20 au plus, 200 Ko). Geste de l'interface.
+         * @description Enregistre les fichiers de la séance (20 au plus, 200 Ko) : l'interface les remplace tous ;
+         *     Claude (MCP, interrupteur allumé) écrit un fichier avec `base_hash`.
          */
         put: operations["put_files_api_v1_ide_sessions__session_id__files_put"];
         post?: never;
@@ -1307,7 +1309,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * List Runs
+         * @description Les 20 dernières exécutions de la séance, la plus récente d'abord (lues toutes les 3 s par la
+         *     page ouverte : une exécution lancée par Claude y apparaît).
+         */
+        get: operations["list_runs_api_v1_ide_sessions__session_id__runs_get"];
         put?: never;
         /**
          * Start Run
@@ -4758,9 +4765,21 @@ export interface components {
         };
         /**
          * FilesPutIn
-         * @description Remplace tous les fichiers de la séance (geste de l'interface, exclu du MCP).
+         * @description Enregistre les fichiers de la séance. Interface : remplace tous les fichiers. Claude (MCP,
+         *     interrupteur allumé) : un seul fichier de `files`, les autres sont gardés ; `base_hash` est
+         *     alors obligatoire : le sha256 du contenu actuel de ce fichier (`file_hashes` de la séance ;
+         *     texte vide pour un nouveau fichier). Il est ignoré pour l'interface. `entry` aussi, pour
+         *     Claude. `base_hashes` (interface, facultatif) : le sha256 de la version de chaque fichier sur
+         *     laquelle tu as édité ; un fichier que Claude a changé depuis et que l'envoi écraserait donne 409
+         *     `stale_base` (`details.files` : les noms) et rien n'est écrit.
          */
         FilesPutIn: {
+            /** Base Hash */
+            base_hash?: string | null;
+            /** Base Hashes */
+            base_hashes?: {
+                [key: string]: string;
+            } | null;
             /** Entry */
             entry?: string | null;
             /** Files */
@@ -4987,12 +5006,19 @@ export interface components {
              */
             week_start: string;
         };
-        /** IdeSessionOut */
+        /**
+         * IdeSessionOut
+         * @description `file_hashes` : le sha256 de chaque fichier (le `base_hash` que Claude renvoie).
+         */
         IdeSessionOut: {
             /** Entry */
             entry: string;
             /** Exercise Id */
             exercise_id: string | null;
+            /** File Hashes */
+            readonly file_hashes: {
+                [key: string]: string;
+            };
             /** Files */
             files: {
                 [key: string]: string;
@@ -6274,6 +6300,11 @@ export interface components {
             line_end: number | null;
             /** Line Start */
             line_start: number | null;
+            /**
+             * Origin
+             * @enum {string}
+             */
+            origin: "app" | "mcp";
             /** Reference Note Id */
             reference_note_id: string | null;
             /** Replacement */
@@ -6552,7 +6583,8 @@ export interface components {
          * PreferencesIn
          * @description Mode du professeur (`auto` ou sur demande), style (`guide` : indices gradués ; `pair` :
          *     binôme, annotations en marge et propositions à accepter), minuterie d'inactivité (30 s, en
-         *     option) et plafonds de jetons.
+         *     option), plafonds de jetons, et l'interrupteur « Claude peut écrire dans mes fichiers »
+         *     (`mcp_can_write_files`, éteint par défaut : seule l'interface le règle, jamais le MCP).
          */
         PreferencesIn: {
             /**
@@ -6565,6 +6597,11 @@ export interface components {
              * @default false
              */
             idle_trigger: boolean;
+            /**
+             * Mcp Can Write Files
+             * @default false
+             */
+            mcp_can_write_files: boolean;
             /**
              * Session Cap
              * @default 100000
@@ -6595,6 +6632,11 @@ export interface components {
              * @default false
              */
             idle_trigger: boolean;
+            /**
+             * Mcp Can Write Files
+             * @default false
+             */
+            mcp_can_write_files: boolean;
             /**
              * Session Cap
              * @default 100000
@@ -7519,7 +7561,8 @@ export interface components {
         };
         /**
          * RunOut
-         * @description Une exécution déposée (202) : on lit la sortie par `GET /ide/runs/{id}?after=`.
+         * @description Une exécution déposée (202) : on lit la sortie par `GET /ide/runs/{id}?after=`. `origin` :
+         *     `mcp` quand Claude l'a lancée (la page affiche « lancée par Claude »).
          */
         RunOut: {
             /**
@@ -7536,6 +7579,11 @@ export interface components {
              * @enum {string}
              */
             kind: "run" | "check";
+            /**
+             * Origin
+             * @enum {string}
+             */
+            origin: "app" | "mcp";
             /** Session Id */
             session_id: string;
             /**
@@ -11209,6 +11257,13 @@ export interface operations {
                     "application/json": components["schemas"]["PreferencesOut"];
                 };
             };
+            /** @description `mcp_prefs_forbidden` : jamais par le MCP */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -11389,6 +11444,13 @@ export interface operations {
                     "application/json": components["schemas"]["IdeSessionOut"];
                 };
             };
+            /** @description `mcp_ide_write_off` : Claude n'y est pas autorisé (interrupteur) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description `session_not_found` */
             404: {
                 headers: {
@@ -11396,7 +11458,14 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `entry_missing`, `entry_invalid`, `files_too_large` */
+            /** @description `stale_base` : un fichier a changé depuis la lecture (`details.files` côté interface) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `entry_missing`, `entry_invalid`, `files_too_large`, `base_hash_required`, `mcp_write_one_file` */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -11481,12 +11550,50 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `note_invalid` : plage, fichier ou empreinte (`details.file_hash`) */
+            /** @description `note_invalid` : plage, fichier ou empreinte (relire `file_hashes`) */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    list_runs_api_v1_ide_sessions__session_id__runs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"][];
+                };
+            };
+            /** @description Introuvable (ou pas à moi). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

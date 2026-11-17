@@ -6,6 +6,7 @@ import { OutputPanel } from "./OutputPanel";
 const view = (over: Partial<OutputView> = {}): OutputView => ({
   runId: null,
   kind: null,
+  origin: "app",
   status: "idle",
   output: "",
   exitCode: null,

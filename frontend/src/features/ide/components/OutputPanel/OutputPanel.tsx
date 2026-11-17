@@ -8,12 +8,14 @@ interface OutputPanelProps {
 
 /** La ligne d'état en toutes lettres : jamais portée par la seule couleur. */
 export function statusLine(view: OutputView): string {
-  const { status, exitCode, durationMs, kind } = view;
+  const { status, exitCode, durationMs, kind, origin } = view;
   if (status === "idle") return t("ide.output.idle");
   if (status === "running") return t("ide.output.status.running");
   if (status !== "done") return t(`ide.output.status.${status}`);
   if (kind === "check") {
-    return exitCode === 0 ? t("ide.output.checkPassed") : t("ide.output.checkFailed");
+    if (exitCode !== 0) return t("ide.output.checkFailed");
+    // Seule ta vérification valide l'exercice : celle de Claude est lue, pas comptée.
+    return t(origin === "mcp" ? "ide.output.checkPassedByClaude" : "ide.output.checkPassed");
   }
   return durationMs === null
     ? t("ide.output.status.doneNoTime", { code: exitCode ?? 0 })
@@ -28,15 +30,17 @@ function bodyText(view: OutputView): string {
 
 /**
  * La sortie d'une exécution : en lecture seule (le programme ne lit pas le clavier), avec son état
- * en texte. Quand une exécution part, le focus vient ici : c'est là qu'on lit le résultat.
+ * en texte. Quand tu lances une exécution, le focus vient ici : c'est là qu'on lit le résultat. Une
+ * exécution lancée par Claude s'affiche de même, marquée « lancée par Claude », sans le focus.
  */
 export function OutputPanel({ view }: OutputPanelProps) {
   const headingId = useId();
   const region = useRef<HTMLElement>(null);
-  const { runId } = view;
+  const { runId, origin } = view;
   useEffect(() => {
-    if (runId) region.current?.focus();
-  }, [runId]);
+    // Une exécution de Claude n'arrache jamais le focus : tu es peut-être en train de taper.
+    if (runId && origin === "app") region.current?.focus();
+  }, [runId, origin]);
   return (
     <section
       ref={region}
@@ -47,6 +51,11 @@ export function OutputPanel({ view }: OutputPanelProps) {
       <h2 id={headingId} className="font-medium">
         {t("ide.output.title")}
       </h2>
+      {origin === "mcp" ? (
+        <p className="w-fit rounded-md border border-border bg-muted px-2 py-0.5 text-xs font-medium">
+          {t("ide.output.byClaude")}
+        </p>
+      ) : null}
       <p role="status" className="text-sm">
         {statusLine(view)}
       </p>

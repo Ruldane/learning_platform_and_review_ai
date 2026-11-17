@@ -1,7 +1,12 @@
 /** Textes de l'IDE Python (phase 10, 10.C1) : éditeur, sortie, professeur, exercices. */
 export const ide = {
   nav: { code: "Code" },
-  authors: { professor: "Le professeur", claude: "Claude", user: "Toi" },
+  authors: {
+    professor: "Le professeur",
+    claude: "Claude",
+    claudeVia: "Claude ({label})",
+    user: "Toi",
+  },
   home: {
     title: "Code",
     intro:
@@ -72,10 +77,29 @@ export const ide = {
     saveFailed: "L'enregistrement a échoué : {message}",
     saveBeforeRun: "Le code n'a pas pu être enregistré : il n'est pas lancé.",
   },
+  claude: {
+    changed: "Claude a modifié ce fichier.",
+    dismiss: "Compris",
+    changedTab: "{name} (modifié par Claude)",
+    conflictTitle: "Claude a modifié {file} pendant que tu écrivais",
+    conflictText:
+      "Tes modifications sont gardées dans l'éditeur et ne sont pas enregistrées : choisis laquelle garder avant d'exécuter.",
+    view: "Voir la version de Claude",
+    hide: "Masquer la version de Claude",
+    versionLabel: "Version de Claude de {file}",
+    keepMine: "Garder la mienne",
+    takeTheirs: "Prendre celle de Claude",
+    keepMineHint: "Ta version remplacera celle de Claude à l'enregistrement.",
+    discardWarning:
+      "Tes retouches de {file} seront perdues : le fichier reprendra la version de Claude.",
+    discardMine: "Jeter mes retouches",
+    cancel: "Annuler",
+  },
   output: {
     title: "Sortie",
     label: "Sortie du programme",
     readonly: "La sortie est en lecture seule : le programme ne lit pas le clavier.",
+    byClaude: "Lancée par Claude",
     idle: "Rien n'a été exécuté. Appuie sur Ctrl+Entrée.",
     waiting: "Aucune sortie pour l'instant.",
     empty: "Le programme n'a rien affiché.",
@@ -89,6 +113,7 @@ export const ide = {
       error: "Le bac à sable n'a pas pu exécuter le code.",
     },
     checkPassed: "Vérification réussie : les tests passent.",
+    checkPassedByClaude: "Tests réussis (exécution de Claude, non comptée)",
     checkFailed: "Vérification échouée.",
     pollFailed: "La sortie n'a pas pu être relue.",
   },
@@ -150,6 +175,11 @@ export const ide = {
     autoOff: "Sur demande",
     idle: "Proposer de l'aide après 30 s sans bouger de ligne",
     idleHint: "Désactivé par défaut : chaque appel coûte des jetons.",
+    claudeWrites: "Claude peut écrire dans mes fichiers",
+    claudeWritesOn: "Autorisé",
+    claudeWritesOff: "Non autorisé",
+    claudeWritesHint:
+      "Éteint par défaut. Claude écrit un fichier à la fois et jamais sur ce que tu viens de taper ; ses notes et ses corrections proposées restent toujours possibles.",
     style: {
       title: "Façon d'aider",
       guide: "Guide",

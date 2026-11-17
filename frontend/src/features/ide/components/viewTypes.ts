@@ -7,6 +7,7 @@ export type ExerciseState = "todo" | "doing" | "passed";
 export type ExerciseOrigin = "user" | "generated" | "claude";
 export type Level = "beginner" | "intermediate" | "advanced";
 export type TeachSkip = "cap_reached" | "on_demand" | "busy";
+export type Origin = "app" | "mcp";
 
 /** Une note du professeur (ou de Claude) prête à l'affichage. */
 export interface NoteView {
@@ -14,6 +15,8 @@ export interface NoteView {
   kind: NoteKind;
   author: NoteAuthor;
   authorLabel: string;
+  /** `mcp` : écrite par Claude (la page le dit en toutes lettres). */
+  origin: Origin;
   status: NoteStatus;
   filePath: string | null;
   lineStart: number | null;
@@ -46,6 +49,8 @@ export interface UsageView {
 export interface OutputView {
   runId: string | null;
   kind: RunKind | null;
+  /** `mcp` : lancée par Claude (« lancée par Claude » ; elle ne prend pas le focus). */
+  origin: Origin;
   status: RunStatus | "idle";
   output: string;
   exitCode: number | null;
@@ -88,4 +93,6 @@ export interface PreferencesView {
   idle: boolean;
   /** `guide` oriente par des indices ; `pair` réfléchit avec toi et peut proposer la correction. */
   style: "guide" | "pair";
+  /** Claude (MCP) peut écrire dans tes fichiers ; éteint par défaut, réglé ici seulement. */
+  claudeWrites: boolean;
 }

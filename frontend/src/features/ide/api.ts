@@ -33,10 +33,15 @@ export async function fetchSession(sessionId: string, signal?: AbortSignal) {
   return unwrap(await api.GET("/ide/sessions/{session_id}", { params, signal }));
 }
 
-/** `PUT /ide/sessions/{id}/files` : remplace tous les fichiers de la séance. */
-export async function putFiles(sessionId: string, files: Record<string, string>, entry: string) {
+/** `PUT /ide/sessions/{id}/files` : remplace tous les fichiers ; 409 `stale_base` si Claude en a changé. */
+export async function putFiles(
+  sessionId: string,
+  files: Record<string, string>,
+  entry: string,
+  baseHashes: Record<string, string>,
+) {
   const params = { path: { session_id: sessionId } };
-  const body = { files, entry };
+  const body = { files, entry, base_hashes: baseHashes };
   return unwrap(await api.PUT("/ide/sessions/{session_id}/files", { params, body }));
 }
 
@@ -90,4 +95,10 @@ export async function putPreferences(body: Preferences) {
 export async function fetchUsage(sessionId: string, signal?: AbortSignal) {
   const params = { query: { session_id: sessionId } };
   return unwrap(await api.GET("/ide/usage", { params, signal }));
+}
+
+/** `GET /ide/sessions/{id}/runs` : les 20 dernières exécutions (celles de Claude comprises). */
+export async function fetchRuns(sessionId: string, signal?: AbortSignal) {
+  const params = { path: { session_id: sessionId } };
+  return unwrap(await api.GET("/ide/sessions/{session_id}/runs", { params, signal }));
 }

@@ -114,7 +114,7 @@ describe("IdeSessionPage, running code", () => {
     await user.click(screen.getByRole("button", RUN));
     await screen.findByText("Terminé (code 0, 120 ms).");
     expect(calls.puts).toHaveLength(1);
-    expect(calls.puts[0]).toEqual({
+    expect(calls.puts[0]).toMatchObject({
       files: { "main.py": "print('bonjour')\nx" },
       entry: "main.py",
     });

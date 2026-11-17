@@ -14,6 +14,7 @@ from app.db.models.skills import Skill, UserSkill
 from app.features.skills.service import SkillsService
 from app.providers.sandbox.base import SandboxResult
 from tests.features.ide.conftest import USER, UseSandbox
+from tests.features.ide.mcp_support import acting_as_claude
 from tests.features.ide.support import API, new_session, session_row, start_run
 
 pytestmark = pytest.mark.usefixtures("me")
@@ -145,3 +146,22 @@ async def test_activity_event_on_pass(
     assert item["link"] == f"/code/{session['id']}"
     await check(client, session["id"])  # un second passage n'ajoute rien
     assert len((await client.get("/api/v1/activity")).json()["items"]) == 1
+
+
+async def test_a_check_run_by_claude_never_passes_the_session_nor_adds_a_proof(
+    app: FastAPI, client: httpx.AsyncClient, use_sandbox: UseSandbox
+) -> None:
+    """Seule une vérification de January valide l'exercice : Claude ne le valide pas à sa place."""
+    use_sandbox({"*": PASSED})
+    skill_id = await add_skill(app, "Boucles")
+    session = await new_session(client, title="Boucles")
+    with acting_as_claude():
+        run = await check(client, session["id"])
+    assert (run["status"], run["exit_code"]) == ("done", 0)
+    assert (await session_row(app, session["id"])).passed_at is None
+    assert (await client.get(f"{API}/sessions/{session['id']}")).json()["passed"] is False
+    assert await level_of(app, skill_id) is None
+    # la vérification de January, elle, compte
+    await check(client, session["id"])
+    assert (await session_row(app, session["id"])).passed_at is not None
+    assert (await level_of(app, skill_id) or ("",))[0] == "en_cours"

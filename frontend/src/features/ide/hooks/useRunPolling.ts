@@ -1,3 +1,4 @@
+import { focusManager } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { errorMessage } from "@/shared/api/errors";
 import { t } from "@/shared/i18n/t";
@@ -61,6 +62,10 @@ export function useRunPolling(runId: string | null, onFinished: (run: RunProgres
     let output = "";
     let failures = 0;
     const tick = async (): Promise<void> => {
+      if (!focusManager.isFocused()) {
+        timer = setTimeout(() => void tick(), POLL_MS); // onglet caché : on ne relit plus, on guette
+        return;
+      }
       try {
         const p = await fetchRun(runId, offset, control.signal);
         if (control.signal.aborted) return;

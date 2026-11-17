@@ -93,6 +93,7 @@ def _create_ide_content() -> None:
         _j("files"),
         _s("entry", 200),
         _i("teacher_tokens"),
+        _i("files_version"),
         _dt("passed_at", True),
         indexes={"ix_ide_sessions_user_updated": ["user_id", "updated_at"]},
     )
@@ -101,6 +102,7 @@ def _create_ide_content() -> None:
         _s("teacher_mode", 16),
         _s("teacher_style", 8),
         _b("idle_trigger"),
+        _b("mcp_can_write_files"),
         _i("session_cap"),
         _i("day_cap"),
         sa.UniqueConstraint("user_id", name=op.f("uq_ide_preferences_user_id")),
@@ -119,6 +121,7 @@ def _create_ide_runs_and_notes() -> None:
         _b("truncated"),
         _t("output"),
         _s("requested_by", 60),
+        _s("origin", 8),
         _s("error_signature", 40, True),
         indexes={"ix_ide_runs_session": ["session_id", "created_at"]},
     )
@@ -128,6 +131,7 @@ def _create_ide_runs_and_notes() -> None:
         _s("kind", 16),
         _s("author", 16),
         _s("author_label", 60, True),
+        _s("origin", 8),
         _s("status", 16),
         _s("file_path", 200, True),
         _i("line_start", True),

@@ -76,6 +76,7 @@ describe("IdeSessionPage", () => {
       teacher_mode: "on_demand",
       idle_trigger: false,
       teacher_style: "guide",
+      mcp_can_write_files: false,
       session_cap: 5000,
       day_cap: 9000,
     });
@@ -90,6 +91,7 @@ describe("IdeSessionPage", () => {
       teacher_mode: "auto",
       idle_trigger: false,
       teacher_style: "pair",
+      mcp_can_write_files: false,
       session_cap: 5000,
       day_cap: 9000,
     });

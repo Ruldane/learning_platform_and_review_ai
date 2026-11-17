@@ -64,6 +64,7 @@ async def test_ide_isolation_between_users(
             await client.post(f"{API}/sessions/{sid}/notes", json={"kind": "hint", "content": "x"}),
             await client.post(f"{API}/notes/{mine.note}/accept"),
             await client.post(f"{API}/notes/{mine.note}/reject"),
+            await client.get(f"{API}/sessions/{sid}/runs"),
         ]
         for response in calls:
             assert response.status_code == 404, response.text

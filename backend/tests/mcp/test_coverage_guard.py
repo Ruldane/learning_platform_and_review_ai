@@ -65,7 +65,6 @@ WEB_TEXT_ROUTES = frozenset(
     }
 )
 IDE_CODE_WRITES = (
-    "PUT /ide/sessions/{session_id}/files",
     "POST /ide/notes/{note_id}/accept",
     "POST /ide/notes/{note_id}/reject",
 )
@@ -236,7 +235,14 @@ def test_text_variants_of_uploads_are_declared() -> None:
 def test_ide_code_writes_are_excluded() -> None:
     for key in IDE_CODE_WRITES:
         assert key in FEATURES["ide"].excluded and key not in ACTION_BY_ROUTE
-    assert all("/files" not in a.route for _, a in ACTIONS if a.route.startswith("PUT "))
+    # `PUT files` est l'écriture de Claude (10.X) : niveau 2, un fichier, jamais le fichier d'entrée
+    write = ACTION_BY_ROUTE["PUT /ide/sessions/{session_id}/files"]
+    assert (write.level, write.name) == (2, "ide_write_file")
+    assert write.body_fields == frozenset({"files", "base_hash"})
+    assert "PUT /ide/sessions/{session_id}/files" not in FEATURES["ide"].excluded
+    # l'interrupteur qui l'autorise ne se règle jamais par le MCP
+    assert "PUT /ide/preferences" in FEATURES["ide"].excluded
+    assert "PUT /ide/preferences" not in ACTION_BY_ROUTE
 
 
 def test_profile_write_actions_have_precheck() -> None:

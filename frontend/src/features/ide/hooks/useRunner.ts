@@ -6,12 +6,15 @@ import { startRun } from "../api";
 import type { OutputView } from "../components/viewTypes";
 import { ideKeys } from "../queryKeys";
 import { isFailedRun } from "../toView";
-import type { RunKind, RunProgress } from "../types";
+import type { Origin, RunKind, RunProgress } from "../types";
+import { useClaudeRuns } from "./useClaudeRuns";
+import { useLiveRuns } from "./useLiveRuns";
 import { useRunPolling, type PolledRun } from "./useRunPolling";
 
 const IDLE: OutputView = {
   runId: null,
   kind: null,
+  origin: "app",
   status: "idle",
   output: "",
   exitCode: null,
@@ -20,10 +23,17 @@ const IDLE: OutputView = {
   error: null,
 };
 
-function toOutput(kind: RunKind, polled: PolledRun): OutputView {
+interface Watched {
+  id: string;
+  kind: RunKind;
+  origin: Origin;
+}
+
+function toOutput(run: Watched, polled: PolledRun): OutputView {
   return {
     runId: polled.runId,
-    kind,
+    kind: run.kind,
+    origin: run.origin,
     status: polled.status,
     output: polled.output,
     exitCode: polled.exitCode,
@@ -43,6 +53,8 @@ function failedRun(polled: PolledRun | null): string | null {
  * Lance une exécution ou une vérification : le code est d'abord enregistré (`flush`), puis la
  * sortie est lue jusqu'à la fin. Une seule exécution à la fois ; Ctrl+Entrée pendant une exécution
  * ne fait rien. À la fin, la séance est relue (une vérification réussie la passe en « réussie »).
+ * Une exécution lancée par Claude (MCP) apparaît d'elle-même dans la sortie, marquée « lancée par
+ * Claude » ; elle n'appelle jamais le professeur (`onFinished` ne part que pour les tiennes).
  */
 export function useRunner(
   sessionId: string,
@@ -50,15 +62,17 @@ export function useRunner(
   onFinished: (run: RunProgress) => void,
 ) {
   const queryClient = useQueryClient();
-  const [run, setRun] = useState<{ id: string; kind: RunKind } | null>(null);
+  const [run, setRun] = useState<Watched | null>(null);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const busy = useRef(false);
   const polled = useRunPolling(run?.id ?? null, (finished) => {
     void queryClient.invalidateQueries({ queryKey: ideKeys.session(sessionId) });
     void queryClient.invalidateQueries({ queryKey: ideKeys.sessions });
-    onFinished(finished);
+    void queryClient.invalidateQueries({ queryKey: ideKeys.runs(sessionId) });
+    if (run?.origin === "app") onFinished(finished);
   });
+  useClaudeRuns(useLiveRuns(sessionId).data, run?.id ?? null, setRun);
   const start = useCallback(
     async (next: RunKind) => {
       if (busy.current) return;
@@ -67,7 +81,7 @@ export function useRunner(
       setError(null);
       try {
         if (!(await flush())) return setError(t("ide.toolbar.saveBeforeRun"));
-        setRun({ id: (await startRun(sessionId, next)).id, kind: next });
+        setRun({ id: (await startRun(sessionId, next)).id, kind: next, origin: "app" });
       } catch (failure) {
         setError(errorMessage(failure));
       } finally {
@@ -77,7 +91,7 @@ export function useRunner(
     },
     [flush, sessionId],
   );
-  const output = polled && run ? toOutput(run.kind, polled) : IDLE;
+  const output = polled && run ? toOutput(run, polled) : IDLE;
   const failedRunId = failedRun(polled);
   const running = starting || polled?.status === "running";
   return {

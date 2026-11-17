@@ -56,6 +56,12 @@ def _check_columns(inspector: Inspector) -> None:
     assert columns["mcp_calls"]["level"]["nullable"] is False
     for table in ("ide_sessions", "ide_runs", "ide_exercises"):
         assert columns[table]["entry"]["type"].length == 200, table
+    # 10.X : l'origine du geste (app ou mcp) et l'interrupteur d'écriture de Claude
+    for table in ("ide_runs", "ide_notes"):
+        origin = {str(c["name"]): c for c in inspector.get_columns(table)}["origin"]
+        assert origin["nullable"] is False and origin["type"].length == 8, table
+    prefs = {str(c["name"]): c for c in inspector.get_columns("ide_preferences")}
+    assert prefs["mcp_can_write_files"]["nullable"] is False
 
 
 def test_migration_creates_and_drops_the_phase10_tables(tmp_path: Path) -> None:

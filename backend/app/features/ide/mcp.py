@@ -1,13 +1,15 @@
 """Déclaration MCP de `ide` : exercices, séances, exécutions et notes. Claude lit, lance le code et
-écrit des notes ; il n'écrit jamais dans le code de January (une correction est une proposition
-qu'elle accepte dans l'interface) et ne déclenche pas le professeur interne (coût d'API : Claude
-écrit lui-même ses notes et ses exercices)."""
+écrit des notes. Il n'écrit dans les fichiers de January que si elle a allumé l'interrupteur
+(`mcp_can_write_files`, réglé dans l'interface seulement, `ide_write_file`, annulable) ; sinon une
+correction est une proposition qu'elle accepte dans l'interface. Il ne déclenche pas le professeur
+interne (coût d'API : Claude écrit lui-même ses notes et ses exercices)."""
 
 from app.mcp.base import FeatureMcp, McpAction
 
 _GESTURE = (
-    "Geste de January dans l'interface : jamais d'écriture directe dans son code, ni par un "
-    "agent ni par Claude (une correction est une proposition qu'elle accepte ou refuse)."
+    "Geste de January dans l'interface : jamais d'écriture directe dans son code par ce geste "
+    "(une correction est une proposition qu'elle accepte ou refuse ; Claude écrit un fichier par "
+    "`ide_write_file`, seulement si elle a allumé l'interrupteur)."
 )
 _COST = (
     "Coût d'API : Claude écrit lui-même ses notes (`ide_add_note`) et ses exercices "
@@ -80,16 +82,35 @@ MCP = FeatureMcp(
             "ide_get_usage",
             "La consommation du professeur : séance, jour, plafonds.",
         ),
+        McpAction(
+            "GET /ide/sessions/{session_id}/runs",
+            1,
+            "ide_list_runs",
+            "Les 20 dernières exécutions d'une séance (celles de January et les tiennes), la plus "
+            "récente d'abord.",
+        ),
+        McpAction(
+            "PUT /ide/sessions/{session_id}/files",
+            2,
+            "ide_write_file",
+            "Écrit UN fichier de la séance (le contenu entier). Seulement si January a allumé "
+            "l'interrupteur « Claude peut écrire dans mes fichiers » (sinon 403 mcp_ide_write_off, "
+            "propose alors une correction par une note). `base_hash` obligatoire : le sha256 du "
+            "contenu actuel du fichier, donné par `file_hashes` dans `ide_get_session` (empreinte "
+            "du texte vide pour un nouveau fichier). Si January a écrit depuis ta lecture : 409 "
+            "stale_base, relis la séance. Annulable depuis « Accès MCP ».",
+            body_fields=frozenset({"files", "base_hash"}),
+        ),
     ),
     excluded={
-        "PUT /ide/sessions/{session_id}/files": _GESTURE,
         "POST /ide/notes/{note_id}/accept": _GESTURE,
         "POST /ide/notes/{note_id}/reject": _GESTURE,
         "POST /ide/sessions/{session_id}/teach": _COST,
         "POST /ide/exercises/generate": _COST,
         "PUT /ide/preferences": (
-            "Préférences de l'IDE (mode du professeur, plafonds de coût) : réservées à "
-            "January dans l'interface, un agent ne règle pas son propre budget."
+            "Préférences de l'IDE (mode du professeur, plafonds de coût, interrupteur d'écriture "
+            "de Claude) : réservées à January dans l'interface, un agent ne règle ni son budget ni "
+            "ses propres droits."
         ),
         "graph:ide_teacher": (
             "Lancé seulement par POST /ide/sessions/{session_id}/teach (exclue : coût de l'API de "

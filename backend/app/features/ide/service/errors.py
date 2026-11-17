@@ -1,7 +1,5 @@
 """Les erreurs de la feature `ide` (messages en français, jamais une sortie ni un fichier)."""
 
-from typing import Any
-
 from app.core.errors import AppError
 
 
@@ -54,17 +52,17 @@ def files_too_large() -> AppError:
     return AppError("files_too_large", "Les fichiers dépassent la taille permise.", 422)
 
 
-def note_invalid(message: str, details: dict[str, Any] | None = None) -> AppError:
-    return AppError("note_invalid", message, 422, details)
+def note_invalid(message: str) -> AppError:
+    return AppError("note_invalid", message, 422)
 
 
-def note_stale(file_hash: str | None) -> AppError:
-    """`details.file_hash` : l'empreinte actuelle du fichier (sha256), pour recommencer."""
+def note_stale() -> AppError:
+    """Le fichier a changé : on ne rend pas l'empreinte, il relit la séance (`file_hashes`)."""
     return AppError(
         "note_stale",
-        "Le code a changé depuis cette proposition : elle ne s'applique plus.",
+        "Le code a changé depuis cette proposition : relis la séance (file_hashes) avant d'en "
+        "proposer une autre.",
         409,
-        {"file_hash": file_hash},
     )
 
 
@@ -78,3 +76,64 @@ def not_a_proposal() -> AppError:
 
 def entry_invalid() -> AppError:
     return AppError("entry_invalid", "Le nom du fichier d'entrée n'est pas permis.", 422)
+
+
+def mcp_ide_write_off() -> AppError:
+    """Claude n'écrit dans les fichiers que si January a allumé l'interrupteur (jamais de contenu
+    dans le message)."""
+    return AppError(
+        "mcp_ide_write_off",
+        "January n'a pas autorisé Claude à écrire dans ses fichiers : l'interrupteur de l'IDE "
+        "est éteint. Propose plutôt une correction dans une note.",
+        403,
+    )
+
+
+def base_hash_required() -> AppError:
+    return AppError(
+        "base_hash_required",
+        "Écrire un fichier demande base_hash : le sha256 du contenu actuel de ce fichier, lu dans "
+        "file_hashes de la séance (l'empreinte du texte vide pour un nouveau fichier).",
+        422,
+    )
+
+
+def stale_base() -> AppError:
+    """L'empreinte donnée n'est plus celle du fichier : January a écrit depuis la lecture."""
+    return AppError(
+        "stale_base",
+        "Le fichier a changé depuis ta lecture : relis la séance avant de réécrire ce fichier.",
+        409,
+    )
+
+
+def files_changed(names: list[str]) -> AppError:
+    """L'enregistrement de l'interface se heurte à des fichiers que Claude a changés depuis la
+    dernière lecture : seuls les noms sont rendus, rien n'est écrit."""
+    return AppError(
+        "stale_base",
+        "Claude a modifié des fichiers depuis ta dernière lecture : rien n'est enregistré.",
+        409,
+        {"files": names},
+    )
+
+
+def mcp_write_one_file() -> AppError:
+    return AppError("mcp_write_one_file", "Écris un seul fichier à la fois.", 422)
+
+
+def mcp_prefs_forbidden() -> AppError:
+    return AppError(
+        "mcp_prefs_forbidden",
+        "Les préférences de l'IDE se règlent dans l'interface, jamais par le MCP.",
+        403,
+    )
+
+
+def mcp_gesture_forbidden() -> AppError:
+    """Accepter ou refuser une proposition est un geste de January (il écrit dans ses fichiers)."""
+    return AppError(
+        "mcp_gesture_forbidden",
+        "Ce geste est réservé à January dans l'interface : propose une correction dans une note.",
+        403,
+    )

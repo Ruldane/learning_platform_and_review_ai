@@ -5,11 +5,18 @@ interface FileTabsProps {
   names: string[];
   current: string;
   entry: string;
+  /** Les fichiers que Claude a modifiés : signalés en toutes lettres. */
+  changed?: string[];
   onOpen: (name: string) => void;
 }
 
+function tabLabel(name: string, entry: string, changed: string[]): string {
+  const shown = name === entry ? t("ide.session.entryFile", { name }) : name;
+  return changed.includes(name) ? t("ide.claude.changedTab", { name: shown }) : shown;
+}
+
 /** Les fichiers de la séance : un bouton par fichier, celui d'entrée est signalé en texte. */
-export function FileTabs({ names, current, entry, onOpen }: FileTabsProps) {
+export function FileTabs({ names, current, entry, changed = [], onOpen }: FileTabsProps) {
   if (names.length <= 1) return null;
   return (
     <nav aria-label={t("ide.session.files")}>
@@ -26,7 +33,7 @@ export function FileTabs({ names, current, entry, onOpen }: FileTabsProps) {
                 name === current ? "bg-muted font-medium" : "bg-background",
               )}
             >
-              {name === entry ? t("ide.session.entryFile", { name }) : name}
+              {tabLabel(name, entry, changed)}
             </button>
           </li>
         ))}

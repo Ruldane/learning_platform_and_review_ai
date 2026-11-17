@@ -86,6 +86,17 @@ class RunRepository(UserScopedRepository[IdeRun]):
         )
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
+    async def recent_of_session(self, session_id: str, limit: int) -> builtins.list[IdeRun]:
+        """Les dernières exécutions de la séance, la plus récente d'abord."""
+        stmt = (
+            select(IdeRun)
+            .where(IdeRun.user_id == self.user_id, IdeRun.session_id == session_id)
+            .order_by(IdeRun.created_at.desc(), IdeRun.id.desc())
+            .limit(limit)
+            .execution_options(populate_existing=True)
+        )
+        return builtins.list((await self.session.execute(stmt)).scalars().all())
+
     async def running(self) -> builtins.list[IdeRun]:
         """Les exécutions que le bac n'a pas encore rendues (au plus une par utilisatrice)."""
         stmt = (

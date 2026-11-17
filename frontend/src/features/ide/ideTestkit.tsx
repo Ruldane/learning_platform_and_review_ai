@@ -1,4 +1,5 @@
-import { screen } from "@testing-library/react";
+import { focusManager } from "@tanstack/react-query";
+import { act, screen } from "@testing-library/react";
 import { fakeEditor } from "@/test/fakeMonacoReact";
 import { createFakeSocketServer } from "@/test/fakeSocket";
 import { ideApi } from "@/test/ideApi";
@@ -45,3 +46,10 @@ export const findEditor = () => screen.findByRole("textbox", { name: "Code Pytho
 
 /** Laisse passer `ms` millisecondes réelles : pour prouver qu'une chose n'arrive plus. */
 export const settle = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Un retour de l'onglet : TanStack relit tout de suite ce qui est affiché (sans attendre 3 s). */
+export const refresh = () =>
+  act(() => {
+    focusManager.setFocused(false);
+    focusManager.setFocused(true);
+  });

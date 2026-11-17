@@ -10,6 +10,7 @@ const note = (over: Partial<NoteView> = {}): NoteView => ({
   kind: "hint",
   author: "professor",
   authorLabel: "Le professeur",
+  origin: "app",
   status: "open",
   filePath: null,
   lineStart: null,
