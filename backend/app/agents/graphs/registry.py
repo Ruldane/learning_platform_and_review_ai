@@ -18,6 +18,8 @@ from app.agents.graphs import (
     demo_debate,
     gap_analysis,
     hiring_committee,
+    ide_exercise,
+    ide_teacher,
     interview,
     learned_document,
     learning_council,
@@ -86,6 +88,8 @@ GRAPHS: dict[str, GraphSpec] = {
         GraphSpec("daily_brief", daily_brief.DailyBriefInput, daily_brief.build),
         GraphSpec("project_brief", project_brief.ProjectBriefInput, project_brief.build),
         GraphSpec("project_review", project_review.ProjectReviewInput, project_review.build),
+        GraphSpec("ide_teacher", ide_teacher.IdeTeacherInput, ide_teacher.build),
+        GraphSpec("ide_exercise", ide_exercise.IdeExerciseInput, ide_exercise.build),
     )
 }
 

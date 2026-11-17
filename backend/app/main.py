@@ -157,7 +157,7 @@ def _compose_features(app: FastAPI) -> StudyRuntimes:
         career=app.state.career,
         study=study,
     )
-    compose_phase10(app)  # IDE et serveur MCP (phase 10) : vides jusqu'à 10.A1 et 10.B1
+    compose_phase10(app)  # IDE (bac à sable, port du professeur) et serveur MCP (phase 10)
     return study
 
 
@@ -194,13 +194,18 @@ async def _open_agents(app: FastAPI, stack: AsyncExitStack) -> None:
                 radar=app.state.daily.radar_store,
                 brief=app.state.daily.brief_store,
                 projects=app.state.daily.project_store,
+                ide=app.state.ide_store,
             ),
         )
     )
     app.state.launcher.bind(app.state.runtime.runner)
     stack.callback(app.state.launcher.unbind)
-    # Tâches planifiées (leçons « J-7 », D91) : après le moteur et le lanceur lié, donc arrêtées
-    # avant eux (passage en cours annulé et attendu). `scheduler_enabled = false` (tests) : aucun.
+    await _open_scheduler(app, stack)
+
+
+async def _open_scheduler(app: FastAPI, stack: AsyncExitStack) -> None:
+    """Tâches planifiées (leçons « J-7 », D91) : après le moteur et le lanceur lié, donc arrêtées
+    avant eux (passage en cours annulé et attendu). `scheduler_enabled = false` (tests) : aucune."""
     if app.state.settings.scheduler_enabled:
         context = scheduler_context(
             app.state.session_factory,

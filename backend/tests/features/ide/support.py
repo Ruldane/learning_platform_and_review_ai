@@ -8,6 +8,7 @@ from sqlalchemy import select
 
 from app.db.models.ide import IdeRun, IdeSession
 
+USER = "utilisatrice-a"
 API = "/api/v1/ide"
 FILES = {"main.py": "print('bonjour')\n", "test_main.py": "def test_ok():\n    assert True\n"}
 TRACE = (

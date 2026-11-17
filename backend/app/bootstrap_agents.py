@@ -16,6 +16,7 @@ from app.agents.tools.committee_port import NO_COMMITTEE, CommitteeStore
 from app.agents.tools.cv_review_port import NO_CV_REVIEW, CvReviewStore
 from app.agents.tools.cv_template_port import NO_CV_TEMPLATES, CvTemplateStore
 from app.agents.tools.gap_port import NO_GAP, GapStore
+from app.agents.tools.ide_port import NO_IDE, IdeStore
 from app.agents.tools.interview_port import NO_INTERVIEWS, InterviewStore
 from app.agents.tools.kit_port import NO_KIT, KitStore
 from app.agents.tools.memory_port import MemoryGateway
@@ -113,13 +114,11 @@ def agent_ports(
     radar: RadarStore = NO_RADAR,
     brief: BriefStore = NO_BRIEF,
     projects: ProjectStore = NO_PROJECTS,
+    ide: IdeStore = NO_IDE,
 ) -> AgentPorts:
     """Tous les ports du moteur (D82) : un port de plus = un champ d'`AgentPorts` et une ligne ici.
-    Conseil (D84), programme (D86), leçons (D90), quiz (D100), étude (D102), replanification (D105)
-    et capture (D108) des features du même nom ; analyse d'offre (D121), profil maître (D124),
-    gabarits (D126), revue de CV (D130), fiche en une phrase (D141), kit (D142), entretien (D145),
-    comité (D147), radar (D159), brief (D161) et projets (D165) des features du même nom.
-    Composés par `app.bootstrap_career`."""
+    Un port par feature du même nom (Conseil D84 ... projets D165, IDE D203), composés par
+    `app.bootstrap_career` ; les décisions de chacun sont dans `AgentPorts`."""
     council = AgentCouncilStore(learning.session_factory, learning.launcher, learning)
     program_store = AgentProgramStore(program)
     return AgentPorts(
@@ -143,6 +142,7 @@ def agent_ports(
         radar,
         brief,
         projects,
+        ide,
     )
 
 

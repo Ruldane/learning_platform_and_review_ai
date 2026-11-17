@@ -1,7 +1,7 @@
 """API de l'IDE Python (phase 10, P1) : exercices, séances, exécutions, professeur, notes,
 préférences et consommation. Surface posée par 10.P ; 10.A2 remplit les exercices, les séances, les
-exécutions et les notes ; `exercises/generate`, `teach`, `preferences` et `usage` restent des
-bouchons 501 `not_implemented` jusqu'à 10.A3. Au nom de l'utilisatrice courante (404 sur l'objet
+exécutions et les notes ; 10.A3 remplit `exercises/generate`, `teach` (barrière de coût du
+professeur), `preferences` et `usage`. Au nom de l'utilisatrice courante (404 sur l'objet
 d'une autre) ; `accept`, `reject` et `PUT files` sont des gestes de l'interface (exclus du MCP)."""
 
 from typing import Annotated, Any
@@ -12,7 +12,6 @@ from starlette.requests import HTTPConnection
 from app.core.caller import CallerDep
 from app.core.deps import CurrentUserDep, Db, get_current_user
 from app.core.field_paths import FieldPathsRoute
-from app.core.stubs import not_implemented
 from app.features.ide.schemas import (
     ExerciseGenerateIn,
     ExerciseIn,
@@ -34,6 +33,8 @@ from app.features.ide.schemas import (
     UsageOut,
 )
 from app.features.ide.service import IdeService
+from app.features.ide.service.teaching import TeachingService
+from app.features.ide.service.usage import UsageService
 
 router = APIRouter(
     prefix="/ide",
@@ -52,7 +53,18 @@ def get_ide_service(
     return IdeService(db, current.id, conn.app.state.providers.sandbox, caller)
 
 
+def teaching_service(conn: HTTPConnection, current: CurrentUserDep, db: Db) -> TeachingService:
+    """La barrière de coût du professeur ; le lanceur de sessions est celui de l'application."""
+    return TeachingService(db, current.id, conn.app.state.launcher)
+
+
+def usage_service(current: CurrentUserDep, db: Db) -> UsageService:
+    return UsageService(db, current.id)
+
+
 Ide = Annotated[IdeService, Depends(get_ide_service)]
+Teaching = Annotated[TeachingService, Depends(teaching_service)]
+Usage = Annotated[UsageService, Depends(usage_service)]
 _NOT_FOUND: dict[int | str, dict[str, Any]] = {404: {"description": "Introuvable (ou pas à moi)."}}
 _RUN_ERRORS: dict[int | str, dict[str, Any]] = {
     404: {"description": "`session_not_found`"},
@@ -84,9 +96,10 @@ async def create_exercise(body: ExerciseIn, ide: Ide) -> ExerciseOut:
 
 
 @router.post("/exercises/generate", response_model=IdeSessionStarted, status_code=202)
-async def generate_exercise(body: ExerciseGenerateIn) -> IdeSessionStarted:
-    """Fait générer un exercice par les agents : rend aussitôt la session à suivre."""
-    not_implemented()
+async def generate_exercise(body: ExerciseGenerateIn, teaching: Teaching) -> IdeSessionStarted:
+    """Fait générer un exercice par les agents : rend aussitôt la session à suivre. L'exercice
+    n'est rangé qu'une fois sa solution vérifiée dans le bac à sable."""
+    return await teaching.generate(body)
 
 
 @router.delete(
@@ -150,11 +163,20 @@ async def read_run(run_id: Id, ide: Ide, after: Annotated[int, Query(ge=0)] = 0)
     return await ide.get_run(run_id, after)
 
 
-@router.post("/sessions/{session_id}/teach", response_model=TeachOut, status_code=202)
-async def teach(session_id: Id, body: TeachIn) -> TeachOut:
+@router.post(
+    "/sessions/{session_id}/teach",
+    response_model=TeachOut,
+    status_code=202,
+    responses={
+        404: {"description": "`session_not_found`, `run_not_found`"},
+        422: {"description": "Déclencheur inconnu, ou question vide"},
+    },
+)
+async def teach(session_id: Id, body: TeachIn, teaching: Teaching) -> TeachOut:
     """Réveille le professeur : un graphe (`session_id`), un renvoi à la note précédente
-    (`reference_note_id`) ou rien (`skipped`)."""
-    not_implemented()
+    (`reference_note_id`) ou rien (`skipped`). Seule route qui lance le professeur : ni la
+    sauvegarde des fichiers ni la frappe ne l'appellent."""
+    return await teaching.teach(session_id, body)
 
 
 @router.get("/sessions/{session_id}/notes", response_model=list[NoteOut], responses=_NOT_FOUND)
@@ -188,18 +210,20 @@ async def reject_note(note_id: Id, ide: Ide) -> NoteOut:
 
 
 @router.get("/preferences", response_model=PreferencesOut)
-async def get_preferences() -> PreferencesOut:
-    """Mode du professeur, minuterie d'inactivité, plafonds de jetons."""
-    not_implemented()
+async def get_preferences(usage: Usage) -> PreferencesOut:
+    """Mode et style du professeur, minuterie d'inactivité, plafonds de jetons."""
+    return await usage.preferences()
 
 
 @router.put("/preferences", response_model=PreferencesOut)
-async def put_preferences(body: PreferencesIn) -> PreferencesOut:
+async def put_preferences(body: PreferencesIn, usage: Usage) -> PreferencesOut:
     """Remplace les préférences du professeur."""
-    not_implemented()
+    return await usage.save_preferences(body)
 
 
-@router.get("/usage", response_model=UsageOut)
-async def get_usage(session_id: Annotated[str | None, Query(max_length=36)] = None) -> UsageOut:
+@router.get("/usage", response_model=UsageOut, responses=_NOT_FOUND)
+async def get_usage(
+    usage: Usage, session_id: Annotated[str | None, Query(max_length=36)] = None
+) -> UsageOut:
     """Les jetons du professeur : séance (si `session_id`), jour, plafonds, mode sur demande."""
-    not_implemented()
+    return await usage.usage(session_id)

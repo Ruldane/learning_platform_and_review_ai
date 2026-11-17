@@ -19,6 +19,9 @@ NoteKind = Literal["hint", "explanation", "annotation", "proposal", "reference"]
 NoteAuthor = Literal["professor", "claude", "user"]
 NoteStatus = Literal["open", "accepted", "rejected", "stale"]
 TeacherMode = Literal["auto", "on_demand"]
+# `guide` : le professeur donne des indices gradués ; `pair` : binôme (annotations en marge et
+# propositions à accepter).
+TeacherStyle = Literal["guide", "pair"]
 
 
 class IdeExercise(UserScopedMixin, Base):
@@ -100,6 +103,8 @@ class IdeNote(UserScopedMixin, Base):
     reference_note_id: Mapped[str | None] = mapped_column(String(36), default=None)
     # Empreinte de l'erreur et de son lieu : une même erreur au même endroit ne se réexplique pas.
     error_key: Mapped[str | None] = mapped_column(String(64), default=None)
+    # Niveau réel d'un indice gradué (1 à 3), vide pour les autres notes.
+    level: Mapped[int | None] = mapped_column(Integer, default=None)
 
 
 class IdePreference(UserScopedMixin, Base):
@@ -111,6 +116,7 @@ class IdePreference(UserScopedMixin, Base):
     __table_args__ = (UniqueConstraint("user_id"),)
 
     teacher_mode: Mapped[str] = mapped_column(String(16), default="auto")
+    teacher_style: Mapped[str] = mapped_column(String(8), default="guide")
     idle_trigger: Mapped[bool] = mapped_column(Boolean, default=False)
     session_cap: Mapped[int] = mapped_column(Integer, default=100_000)
     day_cap: Mapped[int] = mapped_column(Integer, default=300_000)

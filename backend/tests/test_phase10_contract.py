@@ -76,8 +76,8 @@ NEW_ROUTES: list[tuple[str, str, dict[str, Any] | None]] = [
 ]
 # Routes déjà remplies par un flux (vidé à l'intégration, 10.I : plus aucun bouchon).
 LIVE: set[tuple[str, str]] = set()
-# 10.A2 : exercices, séances, exécutions, notes (restent des bouchons : generate, teach, préférences
-# et consommation, 10.A3).
+# 10.A2 : exercices, séances, exécutions, notes ; 10.A3 : génération d'exercices, professeur,
+# préférences et consommation.
 LIVE |= {
     ("GET", "/ide/exercises"),
     ("POST", "/ide/exercises"),
@@ -92,6 +92,11 @@ LIVE |= {
     ("POST", "/ide/sessions/x1/notes"),
     ("POST", "/ide/notes/x1/accept"),
     ("POST", "/ide/notes/x1/reject"),
+    ("POST", "/ide/exercises/generate"),
+    ("POST", "/ide/sessions/x1/teach"),
+    ("GET", "/ide/preferences"),
+    ("PUT", "/ide/preferences"),
+    ("GET", "/ide/usage"),
 }
 
 

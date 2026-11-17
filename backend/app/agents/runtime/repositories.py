@@ -105,6 +105,17 @@ class EventRepository(UserScopedRepository[SessionEventRecord]):
 class LlmCallRepository(UserScopedRepository[LlmCall]):
     model = LlmCall
 
+    async def usage_of_session(self, session_id: str) -> tuple[str | None, int]:
+        """`(modèle du dernier appel, tokens entrée + sortie)` de la session : ce que le journal
+        d'un appel du professeur dit (jamais un texte). `(None, 0)` sans appel journalisé."""
+        stmt = (
+            select(LlmCall.model, LlmCall.tokens_in + LlmCall.tokens_out)
+            .where(LlmCall.user_id == self.user_id, LlmCall.session_id == session_id)
+            .order_by(LlmCall.created_at, LlmCall.id)
+        )
+        rows = (await self.session.execute(stmt)).all()
+        return (rows[-1][0] if rows else None), sum(int(row[1]) for row in rows)
+
 
 async def list_sessions_to_recover(db: AsyncSession) -> list[tuple[str, str]]:
     """`(user_id, session_id)` des sessions `running`, tous utilisateurs confondus.

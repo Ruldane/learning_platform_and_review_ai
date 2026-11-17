@@ -14,6 +14,7 @@ from app.db.models.ide import (
     RunKind,
     RunStatus,
     TeacherMode,
+    TeacherStyle,
 )
 from app.providers.sandbox.base import (
     MAX_FILES,
@@ -47,6 +48,7 @@ __all__ = [
     "TeachIn",
     "TeachOut",
     "TeacherMode",
+    "TeacherStyle",
     "UsageOut",
 ]
 
@@ -234,13 +236,17 @@ class NoteOut(BaseModel):
     replacement: str | None
     base_hash: str | None
     reference_note_id: str | None
+    level: int | None  # niveau réel d'un indice gradué (1 à 3), vide pour les autres notes
     created_at: datetime
 
 
 class PreferencesIn(BaseModel):
-    """Mode du professeur, minuterie d'inactivité (30 s, en option) et plafonds de jetons."""
+    """Mode du professeur (`auto` ou sur demande), style (`guide` : indices gradués ; `pair` :
+    binôme, annotations en marge et propositions à accepter), minuterie d'inactivité (30 s, en
+    option) et plafonds de jetons."""
 
     teacher_mode: TeacherMode = "auto"
+    teacher_style: TeacherStyle = "guide"
     idle_trigger: bool = False
     session_cap: int = Field(default=100_000, ge=1_000, le=2_000_000)
     day_cap: int = Field(default=300_000, ge=1_000, le=10_000_000)

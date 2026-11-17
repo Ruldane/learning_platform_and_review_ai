@@ -37,6 +37,10 @@ AGENTS: dict[str, AgentSpec] = {
         AgentSpec(name="interviewer", tier="fort"),  # Intervieweur : entretien blanc, débrief
         AgentSpec(name="manager", tier="standard"),  # Manager du poste : comité de recrutement
         AgentSpec(name="colleague", tier="standard"),  # Futur collègue : comité de recrutement
+        # Professeur de l'IDE : rapide (indices, annotations), `fort` choisi par le nœud pour les
+        # explications et les propositions ; rédacteur d'exercices : standard
+        AgentSpec(name="professor", tier="rapide"),
+        AgentSpec(name="exercise_writer", tier="standard"),
     )
 }
 

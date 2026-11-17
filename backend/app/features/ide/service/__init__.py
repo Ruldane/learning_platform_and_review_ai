@@ -98,6 +98,7 @@ class IdeService:
         *,
         reference_note_id: str | None = None,
         error_key: str | None = None,
+        level: int | None = None,
     ) -> NoteOut:
         """L'auteur est tiré de l'appelant (`Caller`), jamais du corps."""
         row = await notes.add(
@@ -106,6 +107,7 @@ class IdeService:
             data,
             reference_note_id=reference_note_id,
             error_key=error_key,
+            level=level,
         )
         return NoteOut.model_validate(row)
 

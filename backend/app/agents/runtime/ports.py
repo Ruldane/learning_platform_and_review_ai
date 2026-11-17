@@ -13,6 +13,7 @@ from app.agents.tools.council_port import NO_COUNCIL, CouncilStore
 from app.agents.tools.cv_review_port import NO_CV_REVIEW, CvReviewStore
 from app.agents.tools.cv_template_port import NO_CV_TEMPLATES, CvTemplateStore
 from app.agents.tools.gap_port import NO_GAP, GapStore
+from app.agents.tools.ide_port import NO_IDE, IdeStore
 from app.agents.tools.interview_port import NO_INTERVIEWS, InterviewStore
 from app.agents.tools.kit_port import NO_KIT, KitStore
 from app.agents.tools.lesson_port import NO_LESSONS, LessonStore
@@ -49,6 +50,7 @@ class AgentPorts:
     radar: RadarStore = NO_RADAR  # radar du marché : relevé, lecture, extraction (D159)
     brief: BriefStore = NO_BRIEF  # brief du jour : ressource et conseil (D161)
     projects: ProjectStore = NO_PROJECTS  # énoncé et évaluation des projets preuves (D165)
+    ide: IdeStore = NO_IDE  # professeur et exercices générés de l'IDE (D203)
 
 
 NO_PORTS = AgentPorts()

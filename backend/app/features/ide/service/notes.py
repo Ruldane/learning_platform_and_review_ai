@@ -90,9 +90,10 @@ async def add(
     *,
     reference_note_id: str | None = None,
     error_key: str | None = None,
+    level: int | None = None,
 ) -> IdeNote:
-    """Ajoute une note ; l'auteur vient de l'appelant. `reference_note_id` et `error_key` sont
-    ceux du professeur interne (renvoi, anti-répétition), jamais du corps d'une requête."""
+    """Ajoute une note ; l'auteur vient de l'appelant. `reference_note_id`, `error_key` et `level`
+    (niveau d'un indice gradué) sont ceux du professeur interne, jamais du corps d'une requête."""
     session = await sessions.get(ctx, session_id)
     repo = NoteRepository(ctx.db, ctx.user_id)
     if data.kind != "proposal" and (data.replacement is not None or data.base_hash is not None):
@@ -116,6 +117,7 @@ async def add(
         base_hash=data.base_hash,
         reference_note_id=reference_note_id,
         error_key=error_key,
+        level=level,
     )
 
 

@@ -1097,7 +1097,8 @@ export interface paths {
         put?: never;
         /**
          * Generate Exercise
-         * @description Fait générer un exercice par les agents : rend aussitôt la session à suivre.
+         * @description Fait générer un exercice par les agents : rend aussitôt la session à suivre. L'exercice
+         *     n'est rangé qu'une fois sa solution vérifiée dans le bac à sable.
          */
         post: operations["generate_exercise_api_v1_ide_exercises_generate_post"];
         delete?: never;
@@ -1176,7 +1177,7 @@ export interface paths {
         };
         /**
          * Get Preferences
-         * @description Mode du professeur, minuterie d'inactivité, plafonds de jetons.
+         * @description Mode et style du professeur, minuterie d'inactivité, plafonds de jetons.
          */
         get: operations["get_preferences_api_v1_ide_preferences_get"];
         /**
@@ -1331,7 +1332,8 @@ export interface paths {
         /**
          * Teach
          * @description Réveille le professeur : un graphe (`session_id`), un renvoi à la note précédente
-         *     (`reference_note_id`) ou rien (`skipped`).
+         *     (`reference_note_id`) ou rien (`skipped`). Seule route qui lance le professeur : ni la
+         *     sauvegarde des fichiers ni la frappe ne l'appellent.
          */
         post: operations["teach_api_v1_ide_sessions__session_id__teach_post"];
         delete?: never;
@@ -6233,6 +6235,8 @@ export interface components {
              * @enum {string}
              */
             kind: "hint" | "explanation" | "annotation" | "proposal" | "reference";
+            /** Level */
+            level: number | null;
             /** Line End */
             line_end: number | null;
             /** Line Start */
@@ -6513,7 +6517,9 @@ export interface components {
         };
         /**
          * PreferencesIn
-         * @description Mode du professeur, minuterie d'inactivité (30 s, en option) et plafonds de jetons.
+         * @description Mode du professeur (`auto` ou sur demande), style (`guide` : indices gradués ; `pair` :
+         *     binôme, annotations en marge et propositions à accepter), minuterie d'inactivité (30 s, en
+         *     option) et plafonds de jetons.
          */
         PreferencesIn: {
             /**
@@ -6537,6 +6543,12 @@ export interface components {
              * @enum {string}
              */
             teacher_mode: "auto" | "on_demand";
+            /**
+             * Teacher Style
+             * @default guide
+             * @enum {string}
+             */
+            teacher_style: "guide" | "pair";
         };
         /** PreferencesOut */
         PreferencesOut: {
@@ -6561,6 +6573,12 @@ export interface components {
              * @enum {string}
              */
             teacher_mode: "auto" | "on_demand";
+            /**
+             * Teacher Style
+             * @default guide
+             * @enum {string}
+             */
+            teacher_style: "guide" | "pair";
         };
         /**
          * ProfileEntryIn
@@ -11517,14 +11535,19 @@ export interface operations {
                     "application/json": components["schemas"]["TeachOut"];
                 };
             };
-            /** @description Validation Error */
+            /** @description `session_not_found`, `run_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Déclencheur inconnu, ou question vide */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
+                content?: never;
             };
         };
     };
@@ -11547,6 +11570,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["UsageOut"];
                 };
+            };
+            /** @description Introuvable (ou pas à moi). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

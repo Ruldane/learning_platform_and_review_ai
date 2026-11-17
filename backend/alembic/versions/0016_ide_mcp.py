@@ -99,6 +99,7 @@ def _create_ide_content() -> None:
     _create(
         "ide_preferences",
         _s("teacher_mode", 16),
+        _s("teacher_style", 8),
         _b("idle_trigger"),
         _i("session_cap"),
         _i("day_cap"),
@@ -136,6 +137,7 @@ def _create_ide_runs_and_notes() -> None:
         _s("base_hash", 64, True),
         _s("reference_note_id", 36, True),
         _s("error_key", 64, True),
+        _i("level", True),
         indexes={"ix_ide_notes_session": ["session_id", "created_at"]},
     )
 
