@@ -5,7 +5,9 @@ from collections.abc import Callable, Iterable, Mapping
 from typing import Any
 
 REDACTED = "***"
-_KEY_PATTERN = re.compile(r"sk-[A-Za-z0-9_-]{16,}")
+# `sk-…` seulement en début de mot (« risk-assessment-framework » reste lisible) ; `tmcp_…` : les
+# jetons du serveur MCP, même avant leur première présentation après un redémarrage.
+_KEY_PATTERN = re.compile(r"(?<![A-Za-z0-9_-])sk-[A-Za-z0-9_-]{16,}|tmcp_[A-Za-z0-9_-]{20,}")
 # Journaux de uvicorn : ils ne se propagent pas jusqu'à la racine.
 _OWN_HANDLER_LOGGERS = ("uvicorn", "uvicorn.error", "uvicorn.access")
 # Bibliothèques dont les journaux citeraient une URL ou un extrait de document (spec 17.2) :

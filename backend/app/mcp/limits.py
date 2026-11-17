@@ -30,6 +30,7 @@ class Limits:
     writes_per_day: int = 100
     confirmations_per_day: int = 20
     code_runs_per_minute: int = 2
+    requests_per_minute: int = 600  # toute requête authentifiée (plafond grossier)
 
 
 @dataclass(frozen=True)
@@ -108,6 +109,16 @@ class RateLimiter:
             raise _too_many(*worst)
         for kind in dict.fromkeys(rule.kind for rule in rules):
             self._events_of(identity.token_id, kind, now).append(now)
+
+    async def check_request(self, token_id: str, now: datetime) -> None:
+        """Plafond grossier de toute requête authentifiée (`ping`, `tools/list`, JSON invalide…),
+        avant la moindre écriture en base. Même 429 lisible que `check`."""
+        rule = _Rule("requests", MINUTE, self._limits.requests_per_minute, "requêtes")
+        events = self._events_of(token_id, rule.kind, now)
+        wait = self._wait_seconds(events, rule, now)
+        if wait is not None:
+            raise _too_many(wait, rule)
+        events.append(now)
 
     def _forget_empty(self, token_id: str) -> None:
         for key in [k for k, events in self._events.items() if k[0] == token_id and not events]:

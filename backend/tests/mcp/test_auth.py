@@ -181,8 +181,12 @@ async def test_bearer_on_api_v1_is_ignored(
         response = await google_mcp.http.request(
             method, f"{API}{path}", headers=bearer(token), json=None
         )
-        assert response.status_code == 401, (method, path, response.text)
-        assert response.json()["error"]["code"] == "auth_required"
+        if path.startswith("/mcp"):  # un jeton rejoué sur les réglages de l'interface : refusé
+            assert response.status_code == 403, (method, path, response.text)
+            assert response.json()["error"]["code"] == "mcp_token_on_api"
+        else:  # ailleurs : ignoré, donc 401 sans cookie
+            assert response.status_code == 401, (method, path, response.text)
+            assert response.json()["error"]["code"] == "auth_required"
 
 
 async def test_session_cookie_on_mcp_is_ignored(
@@ -259,7 +263,8 @@ async def test_token_routes_need_cookie_not_token(
         json={"label": "Autre", "features": ["postings"]},
         headers=bearer(token),
     )
-    assert with_token.status_code == 401
+    assert with_token.status_code == 403
+    assert with_token.json()["error"]["code"] == "mcp_token_on_api"
     listed = await browser.get(f"{API}/mcp/tokens")
     assert [item["label"] for item in listed.json()] == ["Claude Code"]
 

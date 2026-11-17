@@ -109,7 +109,8 @@ async def test_every_new_route_is_501_until_filled(
 ) -> None:
     if (method, path) in LIVE:
         pytest.skip("route remplie par un flux")
-    response = await client.request(method, f"{P}{path}", json=body)
+    headers = {"Host": "localhost"}  # les routes de `mcp` exigent un hôte local (mode local)
+    response = await client.request(method, f"{P}{path}", json=body, headers=headers)
     assert response.status_code == 501, (method, path, response.text)
     error = response.json()["error"]
     assert error["code"] == "not_implemented"

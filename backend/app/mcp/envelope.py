@@ -21,32 +21,38 @@ REDACTED = "***"
 
 _ANY_TAG = re.compile(r"<\s*/?\s*donnee_non_fiable[^>]*>", re.IGNORECASE)
 _KEY_PATTERNS = (
-    re.compile(r"sk-[A-Za-z0-9_-]{16,}"),
+    re.compile(r"(?<![A-Za-z0-9_-])sk-[A-Za-z0-9_-]{16,}"),
     re.compile(r"tmcp_[A-Za-z0-9_-]{20,}"),
-    re.compile(r"Bearer\s+[A-Za-z0-9._~+/-]{20,}=*", re.IGNORECASE),
+    # Un mot long sans chiffre ni `._~+/` n'est pas un jeton (« bearer representative-of-… »).
+    re.compile(r"Bearer\s+(?=[A-Za-z0-9._~+/-]*[0-9._~+/])[A-Za-z0-9._~+/-]{20,}=*", re.IGNORECASE),
     re.compile(r"AIza[0-9A-Za-z_-]{30,}"),
     re.compile(r"xox[abprs]-[A-Za-z0-9-]{10,}"),
     re.compile(r"gh[pousr]_[A-Za-z0-9]{30,}"),
 )
 
 
-def scrub_text(text: str) -> str:
+def _known_secrets() -> list[str]:
+    """Les clés connues, les plus longues d'abord (triées une fois par réponse)."""
+    return sorted(KnownSecrets.values(), key=len, reverse=True)
+
+
+def scrub_text(text: str, secrets: list[str] | None = None) -> str:
     """Masque les clés connues et les motifs de clés d'un texte."""
-    for secret in sorted(KnownSecrets.values(), key=len, reverse=True):
+    for secret in _known_secrets() if secrets is None else secrets:
         text = text.replace(secret, REDACTED)
     for pattern in _KEY_PATTERNS:
         text = pattern.sub(REDACTED, text)
     return text
 
 
-def _scrub(node: Any) -> Any:
+def _scrub(node: Any, secrets: list[str]) -> Any:
     """Copie de `node` dont toutes les chaînes sont passées par `scrub_text`."""
     if isinstance(node, str):
-        return scrub_text(node)
+        return scrub_text(node, secrets)
     if isinstance(node, dict):
-        return {key: _scrub(value) for key, value in node.items()}
+        return {key: _scrub(value, secrets) for key, value in node.items()}
     if isinstance(node, list | tuple):
-        return [_scrub(value) for value in node]
+        return [_scrub(value, secrets) for value in node]
     return node
 
 
@@ -104,5 +110,5 @@ def fence(data: Any, untrusted: tuple[str, ...]) -> Any:
 def envelope(data: Any, untrusted: tuple[str, ...], *, ok: bool = True) -> dict[str, Any]:
     """`{ok, data, notice}` : les clés masquées, puis les champs non fiables entourés (pas pour une
     erreur : son message vient de l'application, pas du web)."""
-    clean = _scrub(data)
+    clean = _scrub(data, _known_secrets())
     return {"ok": ok, "data": clean if not ok else fence(clean, untrusted), "notice": NOTICE}

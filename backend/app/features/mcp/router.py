@@ -27,12 +27,13 @@ from app.features.mcp.schemas import (
     McpUndoOut,
 )
 from app.features.mcp.service import CallsService, PrefsService, TokenService
+from app.mcp.auth import guard_interface_request
 
 router = APIRouter(
     prefix="/mcp",
     tags=["mcp"],
     route_class=FieldPathsRoute,
-    dependencies=[Depends(get_interface_user)],
+    dependencies=[Depends(guard_interface_request), Depends(get_interface_user)],
 )
 
 Id = Annotated[str, Path(min_length=1, max_length=36)]

@@ -48,11 +48,19 @@ def _rpc_response(message: dict[str, Any], status: int = 200) -> JSONResponse:
     return JSONResponse(message, status_code=status, headers=_NO_STORE)
 
 
+def _as_int(text: str) -> int:
+    """Un entier lu d'un en-tête, ou 0 s'il est hors limites de Python (jamais une erreur)."""
+    try:
+        return int(text)
+    except ValueError:
+        return 0
+
+
 async def _read_body(request: Request, limit: int) -> bytes:
     """Le corps, lu par morceaux et abandonné au dépassement de `limit` octets (413)."""
     too_large = AppError("body_too_large", "Corps trop volumineux : 1 Mo au maximum.", 413)
     declared = request.headers.get("content-length", "")
-    if declared.isdigit() and int(declared) > limit:
+    if declared.isascii() and declared.isdecimal() and _as_int(declared) > limit:
         raise too_large
     chunks: list[bytes] = []
     total = 0
