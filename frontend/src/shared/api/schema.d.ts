@@ -11008,6 +11008,13 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Introuvable (ou pas à moi). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -11039,6 +11046,20 @@ export interface operations {
                     "application/json": components["schemas"]["IdeSessionOut"];
                 };
             };
+            /** @description `note_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `note_stale` (la note passe à `stale`), `note_closed`, `not_a_proposal` */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -11069,6 +11090,20 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["NoteOut"];
                 };
+            };
+            /** @description `note_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `note_stale` (la note passe à `stale`), `note_closed`, `not_a_proposal` */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -11156,6 +11191,13 @@ export interface operations {
                     "application/json": components["schemas"]["RunProgress"];
                 };
             };
+            /** @description `run_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -11164,6 +11206,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+            /** @description `sandbox_unavailable` */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -11209,6 +11258,13 @@ export interface operations {
                     "application/json": components["schemas"]["IdeSessionOut"];
                 };
             };
+            /** @description Introuvable (ou pas à moi). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -11239,6 +11295,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["IdeSessionOut"];
                 };
+            };
+            /** @description Introuvable (ou pas à moi). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -11275,14 +11338,19 @@ export interface operations {
                     "application/json": components["schemas"]["IdeSessionOut"];
                 };
             };
-            /** @description Validation Error */
+            /** @description `session_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `entry_missing`, `entry_invalid`, `files_too_large` */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
+                content?: never;
             };
         };
     };
@@ -11305,6 +11373,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["NoteOut"][];
                 };
+            };
+            /** @description Introuvable (ou pas à moi). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -11341,14 +11416,26 @@ export interface operations {
                     "application/json": components["schemas"]["NoteOut"];
                 };
             };
-            /** @description Validation Error */
+            /** @description `session_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `note_stale` : le fichier a changé depuis la lecture */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `note_invalid` : plage, fichier ou empreinte (`details.file_hash`) */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
+                content?: never;
             };
         };
     };
@@ -11376,14 +11463,33 @@ export interface operations {
                     "application/json": components["schemas"]["RunOut"];
                 };
             };
-            /** @description Validation Error */
+            /** @description `session_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `run_in_progress` : une exécution est déjà en cours */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `entry_missing`, `run_refused` */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                content?: never;
+            };
+            /** @description `sandbox_unavailable` : le bac à sable est arrêté */
+            503: {
+                headers: {
+                    [name: string]: unknown;
                 };
+                content?: never;
             };
         };
     };

@@ -18493,6 +18493,9 @@
           "204": {
             "description": "Successful Response"
           },
+          "404": {
+            "description": "Introuvable (ou pas à moi)."
+          },
           "422": {
             "content": {
               "application/json": {
@@ -18538,6 +18541,12 @@
             },
             "description": "Successful Response"
           },
+          "404": {
+            "description": "`note_not_found`"
+          },
+          "409": {
+            "description": "`note_stale` (la note passe à `stale`), `note_closed`, `not_a_proposal`"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -18582,6 +18591,12 @@
               }
             },
             "description": "Successful Response"
+          },
+          "404": {
+            "description": "`note_not_found`"
+          },
+          "409": {
+            "description": "`note_stale` (la note passe à `stale`), `note_closed`, `not_a_proposal`"
           },
           "422": {
             "content": {
@@ -18701,6 +18716,9 @@
             },
             "description": "Successful Response"
           },
+          "404": {
+            "description": "`run_not_found`"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -18710,6 +18728,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "description": "`sandbox_unavailable`"
           }
         },
         "summary": "Read Run",
@@ -18767,6 +18788,9 @@
             },
             "description": "Successful Response"
           },
+          "404": {
+            "description": "Introuvable (ou pas à moi)."
+          },
           "422": {
             "content": {
               "application/json": {
@@ -18811,6 +18835,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "404": {
+            "description": "Introuvable (ou pas à moi)."
           },
           "422": {
             "content": {
@@ -18867,15 +18894,11 @@
             },
             "description": "Successful Response"
           },
+          "404": {
+            "description": "`session_not_found`"
+          },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "description": "`entry_missing`, `entry_invalid`, `files_too_large`"
           }
         },
         "summary": "Put Files",
@@ -18915,6 +18938,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "404": {
+            "description": "Introuvable (ou pas à moi)."
           },
           "422": {
             "content": {
@@ -18969,15 +18995,14 @@
             },
             "description": "Successful Response"
           },
+          "404": {
+            "description": "`session_not_found`"
+          },
+          "409": {
+            "description": "`note_stale` : le fichier a changé depuis la lecture"
+          },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "description": "`note_invalid` : plage, fichier ou empreinte (`details.file_hash`)"
           }
         },
         "summary": "Add Note",
@@ -19024,15 +19049,17 @@
             },
             "description": "Successful Response"
           },
+          "404": {
+            "description": "`session_not_found`"
+          },
+          "409": {
+            "description": "`run_in_progress` : une exécution est déjà en cours"
+          },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "description": "`entry_missing`, `run_refused`"
+          },
+          "503": {
+            "description": "`sandbox_unavailable` : le bac à sable est arrêté"
           }
         },
         "summary": "Start Run",

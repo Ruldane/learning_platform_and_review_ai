@@ -76,6 +76,23 @@ NEW_ROUTES: list[tuple[str, str, dict[str, Any] | None]] = [
 ]
 # Routes déjà remplies par un flux (vidé à l'intégration, 10.I : plus aucun bouchon).
 LIVE: set[tuple[str, str]] = set()
+# 10.A2 : exercices, séances, exécutions, notes (restent des bouchons : generate, teach, préférences
+# et consommation, 10.A3).
+LIVE |= {
+    ("GET", "/ide/exercises"),
+    ("POST", "/ide/exercises"),
+    ("DELETE", "/ide/exercises/x1"),
+    ("GET", "/ide/sessions"),
+    ("POST", "/ide/sessions"),
+    ("GET", "/ide/sessions/x1"),
+    ("PUT", "/ide/sessions/x1/files"),
+    ("POST", "/ide/sessions/x1/runs"),
+    ("GET", "/ide/runs/x1"),
+    ("GET", "/ide/sessions/x1/notes"),
+    ("POST", "/ide/sessions/x1/notes"),
+    ("POST", "/ide/notes/x1/accept"),
+    ("POST", "/ide/notes/x1/reject"),
+}
 
 
 def test_single_alembic_head() -> None:

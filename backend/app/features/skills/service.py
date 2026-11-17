@@ -3,14 +3,15 @@ prérequis) et niveaux, qui ne baissent jamais. Le commit appartient à l'appela
 
 import logging
 from collections.abc import Sequence
-from datetime import datetime
-from typing import Any
+from datetime import UTC, datetime
+from typing import Any, Literal
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.agents.tools.plan_schema import EdgeDraft, SkillDraft
 from app.core.clock import local_today, user_zone, week_start
 from app.core.skills import Evidence, normalize_skill_name, read_evidence
+from app.core.skills import evidence as make_evidence
 from app.db.models.skills import LEVEL_ORDER, SkillLevel, UserSkill
 from app.features.quiz.service.spacing import DEMOTE_AFTER
 from app.features.settings.service import SettingsService
@@ -180,6 +181,27 @@ class SkillsService:
             row.level, row.fail_streak, demoted = "en_cours", 0, "en_cours"
         await self._db.flush()
         return demoted
+
+    async def skill_id_for(self, name: str) -> str | None:
+        """L'identifiant de la compétence de ce nom (normalisé), `None` si le référentiel de
+        January ne l'a pas : on ne crée jamais une compétence pour une simple preuve."""
+        norm = normalize_skill_name(name)
+        rows = await self._skills.by_norm([norm]) if norm else {}
+        return rows[norm].id if norm in rows else None
+
+    async def add_proof(self, skill_id: str, kind: Literal["ide"], label: str, ref: str) -> None:
+        """Une preuve d'exercice de code réussi (`ide`, P20), dédoublonnée par `ref`. Elle ne
+        monte jamais au-delà de `en_cours` : une compétence `declare` y passe, une compétence
+        `en_cours`, `valide` ou `prouve` garde son niveau (un exercice ne valide rien)."""
+        await self._levels.ensure(skill_id, "en_cours")
+        row = (await self._levels.for_skills([skill_id])).get(skill_id)
+        if row is None:
+            return
+        proof = make_evidence(kind, ref, label[:200], datetime.now(UTC))
+        row.evidence = list(_with_proof(row.evidence, proof))
+        if row.level == "declare":
+            row.level = "en_cours"
+        await self._db.flush()
 
     async def display_name(self, skill: str) -> str | None:
         """Le nom affiché de la compétence, `None` si elle n'a pas de niveau."""
