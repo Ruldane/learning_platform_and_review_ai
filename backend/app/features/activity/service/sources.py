@@ -50,6 +50,8 @@ AGENT_NAMES: dict[str, str] = {
     "colleague": "Le Futur collègue",
     "demo_proponent": "L'Avocat",
     "demo_critic": "Le Critique",
+    "professor": "Le Professeur",
+    "exercise_writer": "L'Auteur d'exercices",
 }
 DEFAULT_AGENT = "Un agent"
 JOB_NAMES: dict[str, str] = {
