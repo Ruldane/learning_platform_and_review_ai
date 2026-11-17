@@ -17,6 +17,7 @@ from app.features.program.service.store import AgentProgramStore
 from app.features.quiz.service.runtime import QuizRuntime
 from tests.features.lessons.conftest import RecordingLauncher
 from tests.features.program.support import MONDAY, add_goal, sample_plan
+from tests.support.direct import drafted  # noqa: F401
 
 NOW = datetime(2026, 11, 17, 10, 0, tzinfo=UTC)  # mardi de la semaine 1, 11 h à Paris
 SKILLS = ["pandas", "Séries", "Index"]

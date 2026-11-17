@@ -1124,7 +1124,11 @@ export interface paths {
         delete: operations["delete_exercise_api_v1_ide_exercises__exercise_id__delete"];
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Update Exercise
+         * @description Retouche un exercice (énoncé, fichiers de départ, tests pytest) sans agent ni exécution.
+         */
+        patch: operations["update_exercise_api_v1_ide_exercises__exercise_id__patch"];
         trace?: never;
     };
     "/api/v1/ide/notes/{note_id}/accept": {
@@ -1447,7 +1451,11 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Patch Lesson
+         * @description Retouche le titre ou le Markdown d'une leçon prête, sans agent (le PDF gardé est oublié).
+         */
+        patch: operations["patch_lesson_api_v1_lessons__lesson_id__patch"];
         trace?: never;
     };
     "/api/v1/lessons/{lesson_id}/pdf": {
@@ -1542,7 +1550,7 @@ export interface paths {
         /**
          * Undo Changes
          * @description Remet les lignes d'un appel dans leur état d'avant, si aucune n'a changé depuis (409
-         *     sinon).
+         *     sinon). Une mémoire restaurée ou retirée se réindexe ensuite, hors de l'appel.
          */
         post: operations["undo_changes_api_v1_mcp_changes__call_id__undo_post"];
         delete?: never;
@@ -1844,6 +1852,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/modules/{module_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Module
+         * @description Retouche le titre, les compétences ou les prérequis d'un module, sans agent.
+         */
+        patch: operations["patch_module_api_v1_modules__module_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/modules/{module_id}/lesson": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Write Lesson
+         * @description Écrit la leçon d'un module en direct, sans agent ni appel au modèle (le Markdown est celui
+         *     de January ou de Claude) ; son texte entre dans la mémoire. Ni PDF ni ressources.
+         */
+        post: operations["write_lesson_api_v1_modules__module_id__lesson_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/modules/{module_id}/quiz": {
         parameters: {
             query?: never;
@@ -1892,6 +1941,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/postings/direct": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Write Posting
+         * @description Écrit une offre en direct : son texte et son analyse sont ceux de January ou de Claude,
+         *     sans agent ni appel au modèle (l'écart se lance ensuite par `POST /postings/{id}/gap`). 201 :
+         *     offre créée, prête. 200 : même lien (ou, sans lien, même texte), l'offre existante. 422
+         *     `posting_too_short`, `posting_analysis_invalid`, `invalid_url`, `url_forbidden` : jamais
+         *     l'entrée dans la réponse.
+         */
+        post: operations["write_posting_api_v1_postings_direct_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/postings/{posting_id}": {
         parameters: {
             query?: never;
@@ -1911,7 +1984,12 @@ export interface paths {
         delete: operations["remove_posting_api_v1_postings__posting_id__delete"];
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Patch Posting
+         * @description Retouche l'analyse d'une offre analysée (titre, entreprise, exigences, mots clés…), sans
+         *     agent : sa mémoire et ses doublons sont recalculés.
+         */
+        patch: operations["patch_posting_api_v1_postings__posting_id__patch"];
         trace?: never;
     };
     "/api/v1/postings/{posting_id}/distinct": {
@@ -2137,6 +2215,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/programs/{program_id}/modules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Module
+         * @description Ajoute un module (sans tâche) à une semaine du programme, sans agent.
+         */
+        post: operations["add_module_api_v1_programs__program_id__modules_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/programs/{program_id}/quizzes": {
         parameters: {
             query?: never;
@@ -2212,6 +2310,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/programs/{program_id}/weeks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Week
+         * @description Ajoute une semaine (sans module) à la fin du programme, sans agent.
+         */
+        post: operations["add_week_api_v1_programs__program_id__weeks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects": {
         parameters: {
             query?: never;
@@ -2225,7 +2343,12 @@ export interface paths {
          */
         get: operations["get_projects_api_v1_projects_get"];
         put?: never;
-        post?: never;
+        /**
+         * Post Project
+         * @description Écrit le mini projet d'un module en direct : l'énoncé est celui de January ou de Claude,
+         *     sans agent ni appel au modèle ; le projet est « à faire ».
+         */
+        post: operations["post_project_api_v1_projects_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2246,7 +2369,11 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Patch One Project
+         * @description Retouche l'énoncé d'un projet sans rendu, sans agent.
+         */
+        patch: operations["patch_one_project_api_v1_projects__project_id__patch"];
         trace?: never;
     };
     "/api/v1/projects/{project_id}/brief": {
@@ -2391,6 +2518,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/quizzes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Write Quiz
+         * @description Écrit le quiz d'un module en direct (1 à 12 questions, sans fiches), sans agent ni appel au
+         *     modèle ; la leçon du module n'a pas à être prête. Il reste « en préparation » (`generating`,
+         *     sans session) tant qu'il n'a pas 8 questions, 3 types et des énoncés de 10 caractères : toute
+         *     tentative donne alors 409 `quiz_incomplete`.
+         */
+        post: operations["write_quiz_api_v1_quizzes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/quizzes/{quiz_id}": {
         parameters: {
             query?: never;
@@ -2405,7 +2555,11 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Patch Quiz
+         * @description Change le titre d'un quiz prêt.
+         */
+        patch: operations["patch_quiz_api_v1_quizzes__quiz_id__patch"];
         trace?: never;
     };
     "/api/v1/quizzes/{quiz_id}/attempts": {
@@ -2444,6 +2598,46 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quizzes/{quiz_id}/questions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Question
+         * @description Ajoute une question à un quiz prêt qui n'a pas de tentative, sans agent.
+         */
+        post: operations["add_question_api_v1_quizzes__quiz_id__questions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quizzes/{quiz_id}/questions/{question_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Question
+         * @description Retouche une question d'un quiz prêt qui n'a pas de tentative, sans agent.
+         */
+        patch: operations["patch_question_api_v1_quizzes__quiz_id__questions__question_id__patch"];
         trace?: never;
     };
     "/api/v1/radar/latest": {
@@ -3021,6 +3215,26 @@ export interface paths {
         head?: never;
         /** Patch Task */
         patch: operations["patch_task_api_v1_tasks__task_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/weeks/{week_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Week
+         * @description Retouche le thème, l'objectif ou le livrable d'une semaine, sans agent.
+         */
+        patch: operations["patch_week_api_v1_weeks__week_id__patch"];
         trace?: never;
     };
 }
@@ -4515,6 +4729,16 @@ export interface components {
             /** Start */
             start?: string | null;
         };
+        /** EliminatoryIn */
+        EliminatoryIn: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "experience_years" | "location" | "language" | "degree" | "other";
+            /** Text */
+            text: string;
+        };
         /** EliminatoryOut */
         EliminatoryOut: {
             /**
@@ -4730,6 +4954,23 @@ export interface components {
             title: string;
             /** Topic */
             topic: string | null;
+        };
+        /**
+         * ExercisePatch
+         * @description Retouche d'un exercice : les champs donnés remplacent ceux de l'exercice (`files` remplace
+         *     tous ses fichiers, énoncé de départ et tests pytest compris) ; l'origine ne change pas.
+         */
+        ExercisePatch: {
+            /** Entry */
+            entry?: string | null;
+            /** Files */
+            files?: {
+                [key: string]: string;
+            } | null;
+            /** Statement */
+            statement?: string | null;
+            /** Title */
+            title?: string | null;
         };
         /**
          * ExpectedOut
@@ -5299,6 +5540,13 @@ export interface components {
             /** Ok */
             ok: boolean;
         };
+        /** KeywordIn */
+        KeywordIn: {
+            /** Term */
+            term: string;
+            /** Variants */
+            variants?: string[];
+        };
         /** KeywordOut */
         KeywordOut: {
             /** Term */
@@ -5439,6 +5687,16 @@ export interface components {
             /** Word Count */
             word_count: number;
         };
+        /**
+         * LessonPatch
+         * @description Retouche d'une leçon prête : son titre, son Markdown, ou les deux.
+         */
+        LessonPatch: {
+            /** Markdown */
+            markdown?: string | null;
+            /** Title */
+            title?: string | null;
+        };
         /** LessonSummaryOut */
         LessonSummaryOut: {
             /**
@@ -5464,6 +5722,17 @@ export interface components {
             week_rank: number;
             /** Word Count */
             word_count: number;
+        };
+        /**
+         * LessonWriteIn
+         * @description La leçon d'un module écrite à la main ou par Claude (aucun agent, aucun appel au modèle) :
+         *     `title` vaut par défaut le titre du module.
+         */
+        LessonWriteIn: {
+            /** Markdown */
+            markdown: string;
+            /** Title */
+            title?: string | null;
         };
         /** LevelCountsOut */
         LevelCountsOut: {
@@ -6178,6 +6447,21 @@ export interface components {
              */
             status: "accepted" | "refused";
         };
+        /**
+         * ModuleCreate
+         * @description Un module de plus dans une semaine (4 au plus par semaine), sans tâche : elles s'ajoutent
+         *     par `PATCH /programs/{id}` (`add_tasks`).
+         */
+        ModuleCreate: {
+            /** Prerequisites */
+            prerequisites?: string[];
+            /** Skills */
+            skills: string[];
+            /** Title */
+            title: string;
+            /** Week Id */
+            week_id: string;
+        };
         /** ModuleOut */
         ModuleOut: {
             /** Id */
@@ -6200,6 +6484,15 @@ export interface components {
             tasks: components["schemas"]["TaskOut"][];
             /** Title */
             title: string;
+        };
+        /** ModulePatch */
+        ModulePatch: {
+            /** Prerequisites */
+            prerequisites?: string[] | null;
+            /** Skills */
+            skills?: string[] | null;
+            /** Title */
+            title?: string | null;
         };
         /** MovedTaskOut */
         MovedTaskOut: {
@@ -6489,6 +6782,48 @@ export interface components {
             session_id: string | null;
         };
         /**
+         * PostingDirectIn
+         * @description Une offre écrite en direct : son texte (copie figée, 300 caractères et 50 mots au moins), son
+         *     lien s'il y en a un (jamais lu : rien n'est téléchargé), et son analyse.
+         */
+        PostingDirectIn: {
+            /** Apply Url */
+            apply_url?: string | null;
+            /** Company */
+            company?: string | null;
+            /** Eliminatory */
+            eliminatory?: components["schemas"]["EliminatoryIn"][];
+            /** Keywords */
+            keywords?: components["schemas"]["KeywordIn"][];
+            /**
+             * Language
+             * @default fr
+             */
+            language: string;
+            /**
+             * Level
+             * @default inconnu
+             * @enum {string}
+             */
+            level: "junior" | "confirme" | "senior" | "lead" | "inconnu";
+            /** Location */
+            location?: string | null;
+            /** Remote */
+            remote?: string | null;
+            /** Requirements */
+            requirements?: components["schemas"]["RequirementIn"][];
+            /** Skills */
+            skills?: components["schemas"]["SkillNeedIn"][];
+            /** Text */
+            text: string;
+            /** Title */
+            title: string;
+            /** Tools */
+            tools?: string[];
+            /** Url */
+            url?: string | null;
+        };
+        /**
          * PostingIn
          * @description Exactement une source : le lien de l'offre ou son texte collé ; sinon 422
          *     `posting_source`.
@@ -6537,6 +6872,37 @@ export interface components {
             title: string | null;
             /** Url */
             url: string | null;
+        };
+        /**
+         * PostingPatch
+         * @description Retouche de l'analyse d'une offre : les champs donnés remplacent ceux de l'analyse (une liste
+         *     donnée remplace toute la liste), qui est revalidée en entier. Le texte figé ne change pas.
+         */
+        PostingPatch: {
+            /** Apply Url */
+            apply_url?: string | null;
+            /** Company */
+            company?: string | null;
+            /** Eliminatory */
+            eliminatory?: components["schemas"]["EliminatoryIn"][] | null;
+            /** Keywords */
+            keywords?: components["schemas"]["KeywordIn"][] | null;
+            /** Language */
+            language?: string | null;
+            /** Level */
+            level?: ("junior" | "confirme" | "senior" | "lead" | "inconnu") | null;
+            /** Location */
+            location?: string | null;
+            /** Remote */
+            remote?: string | null;
+            /** Requirements */
+            requirements?: components["schemas"]["RequirementIn"][] | null;
+            /** Skills */
+            skills?: components["schemas"]["SkillNeedIn"][] | null;
+            /** Title */
+            title?: string | null;
+            /** Tools */
+            tools?: string[] | null;
         };
         /**
          * PostingRefOut
@@ -6857,6 +7223,31 @@ export interface components {
             sources?: ("cv" | "linkedin" | "note" | "january")[];
         };
         /**
+         * ProjectBriefIn
+         * @description L'énoncé d'un mini projet écrit à la main ou par Claude (aucun agent) : mêmes bornes que
+         *     celui du Praticien (`ProjectBrief`) : 2 à 5 contraintes, 3 à 6 critères vérifiables, 3 à 6
+         *     heures.
+         */
+        ProjectBriefIn: {
+            /** Constraints */
+            constraints: string[];
+            /** Context */
+            context: string;
+            /** Criteria */
+            criteria: string[];
+            /**
+             * Deliverable
+             * @enum {string}
+             */
+            deliverable: "repo" | "description" | "either";
+            /** Hours */
+            hours: number;
+            /** Objective */
+            objective: string;
+            /** Title */
+            title: string;
+        };
+        /**
          * ProjectBriefOut
          * @description L'énoncé écrit par le Praticien.
          */
@@ -6878,6 +7269,35 @@ export interface components {
             objective: string;
             /** Title */
             title: string;
+        };
+        /**
+         * ProjectBriefPatch
+         * @description Retouche de l'énoncé : les champs donnés remplacent ceux de l'énoncé, les autres restent.
+         */
+        ProjectBriefPatch: {
+            /** Constraints */
+            constraints?: string[] | null;
+            /** Context */
+            context?: string | null;
+            /** Criteria */
+            criteria?: string[] | null;
+            /** Deliverable */
+            deliverable?: ("repo" | "description" | "either") | null;
+            /** Hours */
+            hours?: number | null;
+            /** Objective */
+            objective?: string | null;
+            /** Title */
+            title?: string | null;
+        };
+        /**
+         * ProjectCreateIn
+         * @description Le mini projet d'un module (un seul par module) : son énoncé, prêt à rendre.
+         */
+        ProjectCreateIn: {
+            brief: components["schemas"]["ProjectBriefIn"];
+            /** Module Id */
+            module_id: string;
         };
         /** ProjectOut */
         ProjectOut: {
@@ -7015,6 +7435,42 @@ export interface components {
             /** Name */
             name: string;
         };
+        /**
+         * QuestionIn
+         * @description Une question écrite à la main ou par Claude, aux bornes de celles de l'Examinateur : un QCM
+         *     a 3 à 5 choix distincts et le rang du bon (`correct_index`) ; une question ouverte (`short`,
+         *     `code`, `explain`) a la réponse attendue et une grille (1 à 4 critères) ; `code` donne
+         *     l'extrait dans `code`.
+         */
+        QuestionIn: {
+            /** Choices */
+            choices?: string[];
+            /** Code */
+            code?: string | null;
+            /** Correct Index */
+            correct_index?: number | null;
+            /**
+             * Expected
+             * @default
+             */
+            expected: string;
+            /**
+             * Explanation
+             * @default
+             */
+            explanation: string;
+            /** Prompt */
+            prompt: string;
+            /** Rubric */
+            rubric?: string[];
+            /** Skill */
+            skill: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "qcm" | "short" | "code" | "explain";
+        };
         /** QuestionOut */
         QuestionOut: {
             /** Choices */
@@ -7032,6 +7488,29 @@ export interface components {
              * @enum {string}
              */
             type: "qcm" | "short" | "code" | "explain";
+        };
+        /**
+         * QuestionPatch
+         * @description Retouche d'une question : les champs donnés remplacent ceux de la question, qui est
+         *     revalidée en entier (`QuestionIn`).
+         */
+        QuestionPatch: {
+            /** Choices */
+            choices?: string[] | null;
+            /** Code */
+            code?: string | null;
+            /** Correct Index */
+            correct_index?: number | null;
+            /** Expected */
+            expected?: string | null;
+            /** Explanation */
+            explanation?: string | null;
+            /** Prompt */
+            prompt?: string | null;
+            /** Rubric */
+            rubric?: string[] | null;
+            /** Skill */
+            skill?: string | null;
         };
         /** QuizOut */
         QuizOut: {
@@ -7052,6 +7531,11 @@ export interface components {
              * @enum {string}
              */
             status: "generating" | "ready" | "failed";
+            /** Title */
+            title: string;
+        };
+        /** QuizPatch */
+        QuizPatch: {
             /** Title */
             title: string;
         };
@@ -7083,6 +7567,20 @@ export interface components {
             status: ("generating" | "ready" | "failed") | null;
             /** Week Rank */
             week_rank: number;
+        };
+        /**
+         * QuizWriteIn
+         * @description Le quiz d'un module écrit en direct (aucun agent) : de 1 à 12 questions. Le module n'a pas
+         *     besoin d'une leçon prête. Pas de fiches de révision : leur écriture est une requête en masse que
+         *     l'historique du MCP ne verrait pas.
+         */
+        QuizWriteIn: {
+            /** Module Id */
+            module_id: string;
+            /** Questions */
+            questions: components["schemas"]["QuestionIn"][];
+            /** Title */
+            title: string;
         };
         /** RadarAlertOut */
         RadarAlertOut: {
@@ -7320,6 +7818,15 @@ export interface components {
         ReplanStarted: {
             /** Session Id */
             session_id: string;
+        };
+        /** RequirementIn */
+        RequirementIn: {
+            /** Required */
+            required: boolean;
+            /** Skills */
+            skills?: string[];
+            /** Text */
+            text: string;
         };
         /** RequirementOut */
         RequirementOut: {
@@ -7906,6 +8413,20 @@ export interface components {
             level: "declare" | "en_cours" | "valide" | "prouve";
             /** Name */
             name: string;
+        };
+        /** SkillNeedIn */
+        SkillNeedIn: {
+            /** Domain */
+            domain?: string | null;
+            /**
+             * Learnable
+             * @default true
+             */
+            learnable: boolean;
+            /** Name */
+            name: string;
+            /** Required */
+            required: boolean;
         };
         /** SkillNeedOut */
         SkillNeedOut: {
@@ -8777,6 +9298,19 @@ export interface components {
             vote: "oui" | "non" | "peut_etre";
         };
         /**
+         * WeekCreate
+         * @description Une semaine de plus à la fin du programme (52 au plus), écrite à la main ou par Claude :
+         *     elle n'a ni module ni tâche, ils s'ajoutent ensuite.
+         */
+        WeekCreate: {
+            /** Deliverable */
+            deliverable: string;
+            /** Objective */
+            objective: string;
+            /** Theme */
+            theme: string;
+        };
+        /**
          * WeekLoadOut
          * @description Charge d'une semaine touchée, avant et après la proposition, et son plafond.
          */
@@ -8832,6 +9366,15 @@ export interface components {
             start_date: string;
             /** Theme */
             theme: string;
+        };
+        /** WeekPatch */
+        WeekPatch: {
+            /** Deliverable */
+            deliverable?: string | null;
+            /** Objective */
+            objective?: string | null;
+            /** Theme */
+            theme?: string | null;
         };
         /**
          * WeekRubric
@@ -11125,6 +11668,46 @@ export interface operations {
             };
         };
     };
+    update_exercise_api_v1_ide_exercises__exercise_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                exercise_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExercisePatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExerciseOut"];
+                };
+            };
+            /** @description Introuvable (ou pas à moi). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `entry_invalid` ou champs à corriger (`details.fields`) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     accept_note_api_v1_ide_notes__note_id__accept_post: {
         parameters: {
             query?: never;
@@ -11923,6 +12506,55 @@ export interface operations {
             };
         };
     };
+    patch_lesson_api_v1_lessons__lesson_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lesson_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LessonPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonOut"];
+                };
+            };
+            /** @description `lesson_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `lesson_not_ready` */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_lesson_pdf_api_v1_lessons__lesson_id__pdf_get: {
         parameters: {
             query?: never;
@@ -12618,6 +13250,97 @@ export interface operations {
             };
         };
     };
+    patch_module_api_v1_modules__module_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                module_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModulePatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModuleOut"];
+                };
+            };
+            /** @description `module_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    write_lesson_api_v1_modules__module_id__lesson_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                module_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LessonWriteIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonOut"];
+                };
+            };
+            /** @description `module_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `lesson_exists`, `lesson_generating` ou `module_skipped` */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     start_quiz_api_v1_modules__module_id__quiz_post: {
         parameters: {
             query?: never;
@@ -12688,6 +13411,48 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["PostingIn"];
+            };
+        };
+        responses: {
+            /** @description Offre déjà ajoutée */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PostingCreatedOut"];
+                };
+            };
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PostingCreatedOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    write_posting_api_v1_postings_direct_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PostingDirectIn"];
             };
         };
         responses: {
@@ -12791,6 +13556,53 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    patch_posting_api_v1_postings__posting_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                posting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PostingPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PostingOut"];
+                };
+            };
+            /** @description `posting_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `posting_not_analyzed` */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `posting_analysis_invalid` */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -13209,6 +14021,55 @@ export interface operations {
             };
         };
     };
+    add_module_api_v1_programs__program_id__modules_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                program_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModuleCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModuleOut"];
+                };
+            };
+            /** @description `program_not_found` ou `week_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `week_full` */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_quizzes_api_v1_programs__program_id__quizzes_get: {
         parameters: {
             query?: never;
@@ -13337,6 +14198,55 @@ export interface operations {
             };
         };
     };
+    add_week_api_v1_programs__program_id__weeks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                program_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WeekCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WeekOut"];
+                };
+            };
+            /** @description `program_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `too_many_weeks` */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_projects_api_v1_projects_get: {
         parameters: {
             query?: {
@@ -13356,6 +14266,53 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ProjectSummary"][];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_project_api_v1_projects_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectCreateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectOut"];
+                };
+            };
+            /** @description `module_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `project_exists` ou `module_skipped` */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -13390,6 +14347,55 @@ export interface operations {
             };
             /** @description `project_not_found` */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_one_project_api_v1_projects__project_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectBriefPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectOut"];
+                };
+            };
+            /** @description `project_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `project_not_editable` : le projet est rendu, évalué ou validé */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -13741,6 +14747,53 @@ export interface operations {
             };
         };
     };
+    write_quiz_api_v1_quizzes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuizWriteIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuizOut"];
+                };
+            };
+            /** @description `module_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `quiz_exists`, `quiz_generating` ou `module_skipped` */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_quiz_api_v1_quizzes__quiz_id__get: {
         parameters: {
             query?: never;
@@ -13760,6 +14813,55 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["QuizOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_quiz_api_v1_quizzes__quiz_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quiz_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuizPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuizOut"];
+                };
+            };
+            /** @description `quiz_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `quiz_not_ready` */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -13827,6 +14929,105 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AttemptOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_question_api_v1_quizzes__quiz_id__questions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quiz_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuestionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuizOut"];
+                };
+            };
+            /** @description `quiz_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `quiz_not_ready`, `quiz_has_attempts` ou `quiz_full` */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_question_api_v1_quizzes__quiz_id__questions__question_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quiz_id: string;
+                question_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuestionPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuizOut"];
+                };
+            };
+            /** @description `quiz_not_found` ou `question_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `quiz_not_ready` ou `quiz_has_attempts` */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -14888,6 +16089,48 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["TaskOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_week_api_v1_weeks__week_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                week_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WeekPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WeekOut"];
+                };
+            };
+            /** @description `week_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

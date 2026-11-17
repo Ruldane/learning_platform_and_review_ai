@@ -9,14 +9,20 @@ from starlette.requests import HTTPConnection
 
 from app.core.deps import CurrentUserDep, Db, PublishingDep, RuntimeDep
 from app.features.program.schemas import (
+    ModuleCreate,
+    ModuleOut,
+    ModulePatch,
     ProgramOut,
     ProgramPatch,
     ProgramSummaryOut,
     TaskOut,
     TaskPatch,
     ValidateOut,
+    WeekCreate,
+    WeekOut,
+    WeekPatch,
 )
-from app.features.program.service import editing, programs, validation
+from app.features.program.service import editing, programs, structure, validation
 from app.features.program.service.export_pdf import export_program_pdf
 from app.features.program.service.ics import program_ics
 from app.features.program.service.runtime import ProgramRuntime
@@ -51,6 +57,62 @@ async def patch_program(
     program_id: str, body: ProgramPatch, current: CurrentUserDep, rt: ProgramDep
 ) -> ProgramOut:
     return await editing.add_and_delete(rt, current.id, program_id, body)
+
+
+@router.post(
+    "/programs/{program_id}/weeks",
+    response_model=WeekOut,
+    status_code=http.HTTP_201_CREATED,
+    responses={
+        404: {"description": "`program_not_found`"},
+        409: {"description": "`too_many_weeks`"},
+    },
+)
+async def add_week(
+    program_id: str, body: WeekCreate, current: CurrentUserDep, rt: ProgramDep
+) -> WeekOut:
+    """Ajoute une semaine (sans module) à la fin du programme, sans agent."""
+    return await structure.add_week(rt, current.id, program_id, body)
+
+
+@router.patch(
+    "/weeks/{week_id}",
+    response_model=WeekOut,
+    responses={404: {"description": "`week_not_found`"}},
+)
+async def patch_week(
+    week_id: str, body: WeekPatch, current: CurrentUserDep, rt: ProgramDep
+) -> WeekOut:
+    """Retouche le thème, l'objectif ou le livrable d'une semaine, sans agent."""
+    return await structure.patch_week(rt, current.id, week_id, body)
+
+
+@router.post(
+    "/programs/{program_id}/modules",
+    response_model=ModuleOut,
+    status_code=http.HTTP_201_CREATED,
+    responses={
+        404: {"description": "`program_not_found` ou `week_not_found`"},
+        409: {"description": "`week_full`"},
+    },
+)
+async def add_module(
+    program_id: str, body: ModuleCreate, current: CurrentUserDep, rt: ProgramDep
+) -> ModuleOut:
+    """Ajoute un module (sans tâche) à une semaine du programme, sans agent."""
+    return await structure.add_module(rt, current.id, program_id, body)
+
+
+@router.patch(
+    "/modules/{module_id}",
+    response_model=ModuleOut,
+    responses={404: {"description": "`module_not_found`"}},
+)
+async def patch_module(
+    module_id: str, body: ModulePatch, current: CurrentUserDep, rt: ProgramDep
+) -> ModuleOut:
+    """Retouche le titre, les compétences ou les prérequis d'un module, sans agent."""
+    return await structure.patch_module(rt, current.id, module_id, body)
 
 
 @router.post(

@@ -5,19 +5,22 @@ ne sont servis qu'à leur propriétaire (404 sinon)."""
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Query, Response
+from fastapi import APIRouter, Depends, Query, Response, status
 from starlette.requests import HTTPConnection
 
+from app.core.caller import CallerDep
 from app.core.deps import CurrentUserDep, Db
 from app.features.lessons.schemas import (
     LessonOut,
+    LessonPatch,
     LessonSummaryOut,
+    LessonWriteIn,
     ResourceOut,
     ResourcePatch,
     ResourceStatus,
     ResourceType,
 )
-from app.features.lessons.service import lessons, resources
+from app.features.lessons.service import direct, lessons, resources
 from app.features.lessons.service.runtime import LessonsRuntime
 
 router = APIRouter(tags=["lessons"])
@@ -61,6 +64,38 @@ async def list_program_lessons(
 @router.get("/lessons/{lesson_id}", response_model=LessonOut)
 async def get_lesson(lesson_id: str, current: CurrentUserDep, db: Db) -> LessonOut:
     return await lessons.get_lesson(db, current.id, lesson_id)
+
+
+@router.post(
+    "/modules/{module_id}/lesson",
+    response_model=LessonOut,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        404: {"description": "`module_not_found`"},
+        409: {"description": "`lesson_exists`, `lesson_generating` ou `module_skipped`"},
+    },
+)
+async def write_lesson(
+    module_id: str, body: LessonWriteIn, current: CurrentUserDep, rt: LessonsDep, caller: CallerDep
+) -> LessonOut:
+    """Écrit la leçon d'un module en direct, sans agent ni appel au modèle (le Markdown est celui
+    de January ou de Claude) ; son texte entre dans la mémoire. Ni PDF ni ressources."""
+    return await direct.write_lesson(rt, current.id, module_id, body, is_mcp=caller.kind == "mcp")
+
+
+@router.patch(
+    "/lessons/{lesson_id}",
+    response_model=LessonOut,
+    responses={
+        404: {"description": "`lesson_not_found`"},
+        409: {"description": "`lesson_not_ready`"},
+    },
+)
+async def patch_lesson(
+    lesson_id: str, body: LessonPatch, current: CurrentUserDep, rt: LessonsDep, caller: CallerDep
+) -> LessonOut:
+    """Retouche le titre ou le Markdown d'une leçon prête, sans agent (le PDF gardé est oublié)."""
+    return await direct.patch_lesson(rt, current.id, lesson_id, body, is_mcp=caller.kind == "mcp")
 
 
 @router.get("/lessons/{lesson_id}/pdf", response_class=Response, responses=_PDF_RESPONSE)

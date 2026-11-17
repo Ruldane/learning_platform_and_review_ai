@@ -25,6 +25,7 @@ from app.features.quiz.service.runtime import GRAPH, SUBJECT, QuizRuntime
 from app.features.quiz.service.scoring import passed
 from app.features.quiz.service.shuffle import choice_order
 from app.features.quiz.service.status import (
+    DRAFT_REASON,
     attempt_shown,
     interrupted,
     open_sessions,
@@ -36,6 +37,14 @@ logger = logging.getLogger(__name__)
 
 def attempt_not_found() -> AppError:
     return AppError("attempt_not_found", "Tentative introuvable.", 404)
+
+
+def quiz_incomplete() -> AppError:
+    return AppError(
+        "quiz_incomplete",
+        "Ce quiz n'est pas complet : il lui faut des questions de plus avant d'y répondre.",
+        409,
+    )
 
 
 def attempt_in_progress() -> AppError:
@@ -107,6 +116,8 @@ async def _insert(
     quiz = await owned_quiz(db, user_id, quiz_id)
     open_ids = await open_sessions(db, user_id, quiz_id)
     quiz = await owned_quiz(db, user_id, quiz_id)
+    if quiz.status == "generating" and quiz.failure_reason == DRAFT_REASON:
+        raise quiz_incomplete()
     if quiz.status != "ready":
         raise AppError("quiz_not_ready", "Ce quiz n'est pas encore prêt.", 409)
     repo = AttemptRepository(db, user_id)

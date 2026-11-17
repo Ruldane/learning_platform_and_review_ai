@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.core.errors import AppError
 from app.db.base import Base
 from app.db.models.mcp import McpChange
-from app.mcp.rowstate import UndoResult, recordable, revive, snapshot
+from app.mcp.rowstate import UndoResult, derived, recordable, revive, snapshot, volatile_columns
 
 
 async def undo_call(
@@ -96,7 +96,7 @@ async def _check_dependents(db: AsyncSession, row: McpChange, added: set[tuple[s
         found = (await db.execute(select(*keys).where(column == value))).all()
         for dependent in found:
             same_call = recordable(child) and (child.name, str(dependent[0])) in added
-            if not same_call:
+            if not same_call and not derived(child):
                 raise AppError(
                     "undo_has_dependents",
                     f"Annulation refusée : des lignes de « {child.name} » ont été ajoutées "
@@ -131,10 +131,16 @@ async def _current(db: AsyncSession, row: McpChange) -> dict[str, Any] | None:
     return None if found is None else snapshot(table, found)
 
 
+def _without(state: dict[str, Any] | None, ignored: frozenset[str]) -> dict[str, Any] | None:
+    return None if state is None else {k: v for k, v in state.items() if k not in ignored}
+
+
 async def _check(db: AsyncSession, row: McpChange) -> None:
     """La ligne est-elle restée comme l'appel l'a laissée ? Sinon 409, sans son contenu."""
     expected = None if row.op == "delete" else row.after
-    if await _current(db, row) != expected:
+    ignored = volatile_columns(_table(row))
+    current = await _current(db, row)
+    if _without(current, ignored) != _without(expected, ignored):
         raise AppError(
             "undo_refused",
             f"Annulation refusée : une ligne de « {row.table_name} » a changé depuis cet "
@@ -152,6 +158,7 @@ async def _apply(db: AsyncSession, row: McpChange, user_id: str) -> None:
         await db.execute(delete(table).where(pk == row.row_id, *scope))
         return
     values = revive(table, dict(row.before or {}))
+    values.update({name: None for name in volatile_columns(table) if name in values})
     if row.op == "update":
         values.pop(pk.name, None)
         await db.execute(update(table).where(pk == row.row_id, *scope).values(**values))

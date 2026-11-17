@@ -18,6 +18,10 @@ from app.features.quiz.service.runtime import GRAPH, SUBJECT
 from app.features.sessions.service import list_open_sessions, list_open_sessions_by_subject
 
 QUIZ_INTERRUPTED = "La préparation du quiz s'est arrêtée avant la fin : relance-la."
+# Un quiz écrit à la main qui n'a pas encore les bornes de l'Examinateur (`quiz_gaps`) reste « en
+# préparation » : `generating`, sans session, avec cette raison ; ce n'est pas une préparation
+# interrompue.
+DRAFT_REASON = "En cours d'écriture : il manque des questions avant de pouvoir répondre au quiz."
 LIVE = {"generating", "grading"}
 
 
@@ -33,10 +37,12 @@ async def open_sessions_by_quiz(db: AsyncSession, user_id: str) -> dict[str, lis
     return await list_open_sessions_by_subject(db, user_id, graph=GRAPH, subject_type=SUBJECT)
 
 
-def interrupted(status: str, session_id: str | None, open_ids: list[str]) -> bool:
+def interrupted(
+    status: str, session_id: str | None, open_ids: list[str], reason: str | None = None
+) -> bool:
     """Quiz `generating` ou tentative `grading` dont la session rangée n'est plus ouverte
     (terminée sans le port, échouée, annulée), ou quiz `generating` sans session rangée."""
-    if status not in LIVE:
+    if status not in LIVE or reason == DRAFT_REASON:
         return False
     if session_id is None:
         return status == "generating"
@@ -63,7 +69,7 @@ def quiz_shown(
     status: str, session_id: str | None, reason: str | None, open_ids: list[str]
 ) -> tuple[str, str | None]:
     """`(statut, raison)` du quiz à montrer."""
-    if interrupted(status, session_id, open_ids):
+    if interrupted(status, session_id, open_ids, reason):
         return "failed", QUIZ_INTERRUPTED
     return status, reason
 

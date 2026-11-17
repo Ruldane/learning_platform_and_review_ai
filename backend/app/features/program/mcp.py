@@ -37,6 +37,34 @@ MCP = FeatureMcp(
             "program_update_task",
             "Déplace ou retouche une tâche du programme.",
         ),
+        McpAction(
+            "POST /programs/{program_id}/weeks",
+            2,
+            "program_add_week",
+            "Écriture directe, aucun agent : ajoute une semaine (thème, objectif, livrable) à la "
+            "fin du programme ; ses modules et ses tâches viennent ensuite.",
+        ),
+        McpAction(
+            "PATCH /weeks/{week_id}",
+            2,
+            "program_update_week",
+            "Écriture directe, aucun agent : retouche le thème, l'objectif ou le livrable d'une "
+            "semaine.",
+        ),
+        McpAction(
+            "POST /programs/{program_id}/modules",
+            2,
+            "program_add_module",
+            "Écriture directe, aucun agent : ajoute un module (titre, compétences, prérequis) à "
+            "une semaine du programme ; ses tâches se posent par `program_update_program`.",
+        ),
+        McpAction(
+            "PATCH /modules/{module_id}",
+            2,
+            "program_update_module",
+            "Écriture directe, aucun agent : retouche le titre, les compétences ou les prérequis "
+            "d'un module.",
+        ),
     ),
     graphs=(
         McpGraph(

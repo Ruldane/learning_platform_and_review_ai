@@ -4125,6 +4125,33 @@
         "title": "Education",
         "type": "object"
       },
+      "EliminatoryIn": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "experience_years",
+              "location",
+              "language",
+              "degree",
+              "other"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 200,
+            "minLength": 3,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "text"
+        ],
+        "title": "EliminatoryIn",
+        "type": "object"
+      },
       "EliminatoryOut": {
         "properties": {
           "kind": {
@@ -4720,6 +4747,66 @@
           "created_at"
         ],
         "title": "ExerciseOut",
+        "type": "object"
+      },
+      "ExercisePatch": {
+        "description": "Retouche d'un exercice : les champs donnés remplacent ceux de l'exercice (`files` remplace\ntous ses fichiers, énoncé de départ et tests pytest compris) ; l'origine ne change pas.",
+        "properties": {
+          "entry": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entry"
+          },
+          "files": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Files"
+          },
+          "statement": {
+            "anyOf": [
+              {
+                "maxLength": 8000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Statement"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "title": "ExercisePatch",
         "type": "object"
       },
       "ExpectedOut": {
@@ -6201,6 +6288,31 @@
         "title": "KeyTestResult",
         "type": "object"
       },
+      "KeywordIn": {
+        "properties": {
+          "term": {
+            "maxLength": 80,
+            "minLength": 2,
+            "title": "Term",
+            "type": "string"
+          },
+          "variants": {
+            "items": {
+              "maxLength": 80,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 5,
+            "title": "Variants",
+            "type": "array"
+          }
+        },
+        "required": [
+          "term"
+        ],
+        "title": "KeywordIn",
+        "type": "object"
+      },
       "KeywordOut": {
         "properties": {
           "term": {
@@ -6578,6 +6690,39 @@
         "title": "LessonOut",
         "type": "object"
       },
+      "LessonPatch": {
+        "description": "Retouche d'une leçon prête : son titre, son Markdown, ou les deux.",
+        "properties": {
+          "markdown": {
+            "anyOf": [
+              {
+                "maxLength": 60000,
+                "minLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Markdown"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "title": "LessonPatch",
+        "type": "object"
+      },
       "LessonSummaryOut": {
         "properties": {
           "attempts": {
@@ -6634,6 +6779,35 @@
           "pdf_available"
         ],
         "title": "LessonSummaryOut",
+        "type": "object"
+      },
+      "LessonWriteIn": {
+        "description": "La leçon d'un module écrite à la main ou par Claude (aucun agent, aucun appel au modèle) :\n`title` vaut par défaut le titre du module.",
+        "properties": {
+          "markdown": {
+            "maxLength": 60000,
+            "minLength": 300,
+            "title": "Markdown",
+            "type": "string"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "required": [
+          "markdown"
+        ],
+        "title": "LessonWriteIn",
         "type": "object"
       },
       "LevelCountsOut": {
@@ -8463,6 +8637,51 @@
         "title": "ModificationPatch",
         "type": "object"
       },
+      "ModuleCreate": {
+        "description": "Un module de plus dans une semaine (4 au plus par semaine), sans tâche : elles s'ajoutent\npar `PATCH /programs/{id}` (`add_tasks`).",
+        "properties": {
+          "prerequisites": {
+            "items": {
+              "maxLength": 120,
+              "minLength": 2,
+              "type": "string"
+            },
+            "maxItems": 8,
+            "title": "Prerequisites",
+            "type": "array"
+          },
+          "skills": {
+            "items": {
+              "maxLength": 120,
+              "minLength": 2,
+              "type": "string"
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "title": "Skills",
+            "type": "array"
+          },
+          "title": {
+            "maxLength": 120,
+            "minLength": 3,
+            "title": "Title",
+            "type": "string"
+          },
+          "week_id": {
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Week Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "week_id",
+          "title",
+          "skills"
+        ],
+        "title": "ModuleCreate",
+        "type": "object"
+      },
       "ModuleOut": {
         "properties": {
           "id": {
@@ -8548,6 +8767,60 @@
           "tasks"
         ],
         "title": "ModuleOut",
+        "type": "object"
+      },
+      "ModulePatch": {
+        "properties": {
+          "prerequisites": {
+            "anyOf": [
+              {
+                "items": {
+                  "maxLength": 120,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                "maxItems": 8,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prerequisites"
+          },
+          "skills": {
+            "anyOf": [
+              {
+                "items": {
+                  "maxLength": 120,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                "maxItems": 8,
+                "minItems": 1,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skills"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 3,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "title": "ModulePatch",
         "type": "object"
       },
       "MovedTaskOut": {
@@ -9428,6 +9701,148 @@
         "title": "PostingCreatedOut",
         "type": "object"
       },
+      "PostingDirectIn": {
+        "description": "Une offre écrite en direct : son texte (copie figée, 300 caractères et 50 mots au moins), son\nlien s'il y en a un (jamais lu : rien n'est téléchargé), et son analyse.",
+        "properties": {
+          "apply_url": {
+            "anyOf": [
+              {
+                "maxLength": 2048,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Apply Url"
+          },
+          "company": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "eliminatory": {
+            "items": {
+              "$ref": "#/components/schemas/EliminatoryIn"
+            },
+            "maxItems": 10,
+            "title": "Eliminatory",
+            "type": "array"
+          },
+          "keywords": {
+            "items": {
+              "$ref": "#/components/schemas/KeywordIn"
+            },
+            "maxItems": 40,
+            "title": "Keywords",
+            "type": "array"
+          },
+          "language": {
+            "default": "fr",
+            "pattern": "^[a-z]{2}$",
+            "title": "Language",
+            "type": "string"
+          },
+          "level": {
+            "default": "inconnu",
+            "enum": [
+              "junior",
+              "confirme",
+              "senior",
+              "lead",
+              "inconnu"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "remote": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remote"
+          },
+          "requirements": {
+            "items": {
+              "$ref": "#/components/schemas/RequirementIn"
+            },
+            "maxItems": 40,
+            "title": "Requirements",
+            "type": "array"
+          },
+          "skills": {
+            "items": {
+              "$ref": "#/components/schemas/SkillNeedIn"
+            },
+            "maxItems": 40,
+            "title": "Skills",
+            "type": "array"
+          },
+          "text": {
+            "maxLength": 60000,
+            "title": "Text",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 2,
+            "title": "Title",
+            "type": "string"
+          },
+          "tools": {
+            "items": {
+              "maxLength": 80,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 30,
+            "title": "Tools",
+            "type": "array"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "maxLength": 2048,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "title",
+          "text"
+        ],
+        "title": "PostingDirectIn",
+        "type": "object"
+      },
       "PostingIn": {
         "description": "Exactement une source : le lien de l'offre ou son texte collé ; sinon 422\n`posting_source`.",
         "properties": {
@@ -9597,6 +10012,181 @@
           "gap_session_id"
         ],
         "title": "PostingOut",
+        "type": "object"
+      },
+      "PostingPatch": {
+        "description": "Retouche de l'analyse d'une offre : les champs donnés remplacent ceux de l'analyse (une liste\ndonnée remplace toute la liste), qui est revalidée en entier. Le texte figé ne change pas.",
+        "properties": {
+          "apply_url": {
+            "anyOf": [
+              {
+                "maxLength": 2048,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Apply Url"
+          },
+          "company": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "eliminatory": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/EliminatoryIn"
+                },
+                "maxItems": 10,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eliminatory"
+          },
+          "keywords": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/KeywordIn"
+                },
+                "maxItems": 40,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keywords"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "pattern": "^[a-z]{2}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "enum": [
+                  "junior",
+                  "confirme",
+                  "senior",
+                  "lead",
+                  "inconnu"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "remote": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remote"
+          },
+          "requirements": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/RequirementIn"
+                },
+                "maxItems": 40,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requirements"
+          },
+          "skills": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/SkillNeedIn"
+                },
+                "maxItems": 40,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skills"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 2,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "tools": {
+            "anyOf": [
+              {
+                "items": {
+                  "maxLength": 80,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "maxItems": 30,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tools"
+          }
+        },
+        "title": "PostingPatch",
         "type": "object"
       },
       "PostingRefOut": {
@@ -10298,6 +10888,77 @@
         "title": "Project",
         "type": "object"
       },
+      "ProjectBriefIn": {
+        "description": "L'énoncé d'un mini projet écrit à la main ou par Claude (aucun agent) : mêmes bornes que\ncelui du Praticien (`ProjectBrief`) : 2 à 5 contraintes, 3 à 6 critères vérifiables, 3 à 6\nheures.",
+        "properties": {
+          "constraints": {
+            "items": {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 5,
+            "minItems": 2,
+            "title": "Constraints",
+            "type": "array"
+          },
+          "context": {
+            "maxLength": 900,
+            "minLength": 1,
+            "title": "Context",
+            "type": "string"
+          },
+          "criteria": {
+            "items": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 6,
+            "minItems": 3,
+            "title": "Criteria",
+            "type": "array"
+          },
+          "deliverable": {
+            "enum": [
+              "repo",
+              "description",
+              "either"
+            ],
+            "title": "Deliverable",
+            "type": "string"
+          },
+          "hours": {
+            "maximum": 6.0,
+            "minimum": 3.0,
+            "title": "Hours",
+            "type": "integer"
+          },
+          "objective": {
+            "maxLength": 450,
+            "minLength": 1,
+            "title": "Objective",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 120,
+            "minLength": 3,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "context",
+          "objective",
+          "constraints",
+          "criteria",
+          "hours",
+          "deliverable"
+        ],
+        "title": "ProjectBriefIn",
+        "type": "object"
+      },
       "ProjectBriefOut": {
         "description": "L'énoncé écrit par le Praticien.",
         "properties": {
@@ -10351,6 +11012,137 @@
           "deliverable"
         ],
         "title": "ProjectBriefOut",
+        "type": "object"
+      },
+      "ProjectBriefPatch": {
+        "description": "Retouche de l'énoncé : les champs donnés remplacent ceux de l'énoncé, les autres restent.",
+        "properties": {
+          "constraints": {
+            "anyOf": [
+              {
+                "items": {
+                  "maxLength": 160,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "maxItems": 5,
+                "minItems": 2,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Constraints"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "maxLength": 900,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context"
+          },
+          "criteria": {
+            "anyOf": [
+              {
+                "items": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "maxItems": 6,
+                "minItems": 3,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Criteria"
+          },
+          "deliverable": {
+            "anyOf": [
+              {
+                "enum": [
+                  "repo",
+                  "description",
+                  "either"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deliverable"
+          },
+          "hours": {
+            "anyOf": [
+              {
+                "maximum": 6.0,
+                "minimum": 3.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hours"
+          },
+          "objective": {
+            "anyOf": [
+              {
+                "maxLength": 450,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objective"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 3,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "title": "ProjectBriefPatch",
+        "type": "object"
+      },
+      "ProjectCreateIn": {
+        "description": "Le mini projet d'un module (un seul par module) : son énoncé, prêt à rendre.",
+        "properties": {
+          "brief": {
+            "$ref": "#/components/schemas/ProjectBriefIn"
+          },
+          "module_id": {
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Module Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "module_id",
+          "brief"
+        ],
+        "title": "ProjectCreateIn",
         "type": "object"
       },
       "ProjectOut": {
@@ -10797,6 +11589,95 @@
         "title": "ProviderModels",
         "type": "object"
       },
+      "QuestionIn": {
+        "description": "Une question écrite à la main ou par Claude, aux bornes de celles de l'Examinateur : un QCM\na 3 à 5 choix distincts et le rang du bon (`correct_index`) ; une question ouverte (`short`,\n`code`, `explain`) a la réponse attendue et une grille (1 à 4 critères) ; `code` donne\nl'extrait dans `code`.",
+        "properties": {
+          "choices": {
+            "items": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 5,
+            "title": "Choices",
+            "type": "array"
+          },
+          "code": {
+            "anyOf": [
+              {
+                "maxLength": 3000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "correct_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correct Index"
+          },
+          "expected": {
+            "default": "",
+            "maxLength": 800,
+            "title": "Expected",
+            "type": "string"
+          },
+          "explanation": {
+            "default": "",
+            "maxLength": 800,
+            "title": "Explanation",
+            "type": "string"
+          },
+          "prompt": {
+            "maxLength": 600,
+            "minLength": 10,
+            "title": "Prompt",
+            "type": "string"
+          },
+          "rubric": {
+            "items": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 4,
+            "title": "Rubric",
+            "type": "array"
+          },
+          "skill": {
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Skill",
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "qcm",
+              "short",
+              "code",
+              "explain"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "prompt",
+          "skill"
+        ],
+        "title": "QuestionIn",
+        "type": "object"
+      },
       "QuestionOut": {
         "properties": {
           "choices": {
@@ -10849,6 +11730,120 @@
           "choices"
         ],
         "title": "QuestionOut",
+        "type": "object"
+      },
+      "QuestionPatch": {
+        "description": "Retouche d'une question : les champs donnés remplacent ceux de la question, qui est\nrevalidée en entier (`QuestionIn`).",
+        "properties": {
+          "choices": {
+            "anyOf": [
+              {
+                "items": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "maxItems": 5,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Choices"
+          },
+          "code": {
+            "anyOf": [
+              {
+                "maxLength": 3000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "correct_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correct Index"
+          },
+          "expected": {
+            "anyOf": [
+              {
+                "maxLength": 800,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected"
+          },
+          "explanation": {
+            "anyOf": [
+              {
+                "maxLength": 800,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Explanation"
+          },
+          "prompt": {
+            "anyOf": [
+              {
+                "maxLength": 600,
+                "minLength": 10,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt"
+          },
+          "rubric": {
+            "anyOf": [
+              {
+                "items": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "maxItems": 4,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric"
+          },
+          "skill": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 2,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skill"
+          }
+        },
+        "title": "QuestionPatch",
         "type": "object"
       },
       "QuizOut": {
@@ -10922,6 +11917,21 @@
           "attempts"
         ],
         "title": "QuizOut",
+        "type": "object"
+      },
+      "QuizPatch": {
+        "properties": {
+          "title": {
+            "maxLength": 200,
+            "minLength": 3,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "QuizPatch",
         "type": "object"
       },
       "QuizStarted": {
@@ -11034,6 +12044,39 @@
           "retry_on"
         ],
         "title": "QuizSummaryOut",
+        "type": "object"
+      },
+      "QuizWriteIn": {
+        "description": "Le quiz d'un module écrit en direct (aucun agent) : de 1 à 12 questions. Le module n'a pas\nbesoin d'une leçon prête. Pas de fiches de révision : leur écriture est une requête en masse que\nl'historique du MCP ne verrait pas.",
+        "properties": {
+          "module_id": {
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Module Id",
+            "type": "string"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionIn"
+            },
+            "maxItems": 12,
+            "minItems": 1,
+            "title": "Questions",
+            "type": "array"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 3,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "module_id",
+          "title",
+          "questions"
+        ],
+        "title": "QuizWriteIn",
         "type": "object"
       },
       "RadarAlertOut": {
@@ -11656,6 +12699,36 @@
           "session_id"
         ],
         "title": "ReplanStarted",
+        "type": "object"
+      },
+      "RequirementIn": {
+        "properties": {
+          "required": {
+            "title": "Required",
+            "type": "boolean"
+          },
+          "skills": {
+            "items": {
+              "maxLength": 80,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 6,
+            "title": "Skills",
+            "type": "array"
+          },
+          "text": {
+            "maxLength": 300,
+            "minLength": 3,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "required"
+        ],
+        "title": "RequirementIn",
         "type": "object"
       },
       "RequirementOut": {
@@ -13177,6 +14250,43 @@
           "level"
         ],
         "title": "SkillLevelOut",
+        "type": "object"
+      },
+      "SkillNeedIn": {
+        "properties": {
+          "domain": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domain"
+          },
+          "learnable": {
+            "default": true,
+            "title": "Learnable",
+            "type": "boolean"
+          },
+          "name": {
+            "maxLength": 80,
+            "minLength": 2,
+            "title": "Name",
+            "type": "string"
+          },
+          "required": {
+            "title": "Required",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "required"
+        ],
+        "title": "SkillNeedIn",
         "type": "object"
       },
       "SkillNeedOut": {
@@ -15388,6 +16498,36 @@
         "title": "VoteOut",
         "type": "object"
       },
+      "WeekCreate": {
+        "description": "Une semaine de plus à la fin du programme (52 au plus), écrite à la main ou par Claude :\nelle n'a ni module ni tâche, ils s'ajoutent ensuite.",
+        "properties": {
+          "deliverable": {
+            "maxLength": 300,
+            "minLength": 3,
+            "title": "Deliverable",
+            "type": "string"
+          },
+          "objective": {
+            "maxLength": 300,
+            "minLength": 3,
+            "title": "Objective",
+            "type": "string"
+          },
+          "theme": {
+            "maxLength": 120,
+            "minLength": 3,
+            "title": "Theme",
+            "type": "string"
+          }
+        },
+        "required": [
+          "theme",
+          "objective",
+          "deliverable"
+        ],
+        "title": "WeekCreate",
+        "type": "object"
+      },
       "WeekLoadOut": {
         "description": "Charge d'une semaine touchée, avant et après la proposition, et son plafond.",
         "properties": {
@@ -15482,6 +16622,51 @@
           "modules"
         ],
         "title": "WeekOut",
+        "type": "object"
+      },
+      "WeekPatch": {
+        "properties": {
+          "deliverable": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "minLength": 3,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deliverable"
+          },
+          "objective": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "minLength": 3,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objective"
+          },
+          "theme": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 3,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Theme"
+          }
+        },
+        "title": "WeekPatch",
         "type": "object"
       },
       "WeekRubric": {
@@ -18673,6 +19858,55 @@
         "tags": [
           "ide"
         ]
+      },
+      "patch": {
+        "description": "Retouche un exercice (énoncé, fichiers de départ, tests pytest) sans agent ni exécution.",
+        "operationId": "update_exercise_api_v1_ide_exercises__exercise_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "exercise_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Exercise Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExercisePatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExerciseOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Introuvable (ou pas à moi)."
+          },
+          "422": {
+            "description": "`entry_invalid` ou champs à corriger (`details.fields`)"
+          }
+        },
+        "summary": "Update Exercise",
+        "tags": [
+          "ide"
+        ]
       }
     },
     "/api/v1/ide/notes/{note_id}/accept": {
@@ -19675,6 +20909,63 @@
         "tags": [
           "lessons"
         ]
+      },
+      "patch": {
+        "description": "Retouche le titre ou le Markdown d'une leçon prête, sans agent (le PDF gardé est oublié).",
+        "operationId": "patch_lesson_api_v1_lessons__lesson_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "lesson_id",
+            "required": true,
+            "schema": {
+              "title": "Lesson Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LessonPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`lesson_not_found`"
+          },
+          "409": {
+            "description": "`lesson_not_ready`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Patch Lesson",
+        "tags": [
+          "lessons"
+        ]
       }
     },
     "/api/v1/lessons/{lesson_id}/pdf": {
@@ -19849,7 +21140,7 @@
     },
     "/api/v1/mcp/changes/{call_id}/undo": {
       "post": {
-        "description": "Remet les lignes d'un appel dans leur état d'avant, si aucune n'a changé depuis (409\nsinon).",
+        "description": "Remet les lignes d'un appel dans leur état d'avant, si aucune n'a changé depuis (409\nsinon). Une mémoire restaurée ou retirée se réindexe ensuite, hors de l'appel.",
         "operationId": "undo_changes_api_v1_mcp_changes__call_id__undo_post",
         "parameters": [
           {
@@ -20703,6 +21994,121 @@
         ]
       }
     },
+    "/api/v1/modules/{module_id}": {
+      "patch": {
+        "description": "Retouche le titre, les compétences ou les prérequis d'un module, sans agent.",
+        "operationId": "patch_module_api_v1_modules__module_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "module_id",
+            "required": true,
+            "schema": {
+              "title": "Module Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModulePatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModuleOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`module_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Patch Module",
+        "tags": [
+          "program"
+        ]
+      }
+    },
+    "/api/v1/modules/{module_id}/lesson": {
+      "post": {
+        "description": "Écrit la leçon d'un module en direct, sans agent ni appel au modèle (le Markdown est celui\nde January ou de Claude) ; son texte entre dans la mémoire. Ni PDF ni ressources.",
+        "operationId": "write_lesson_api_v1_modules__module_id__lesson_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "module_id",
+            "required": true,
+            "schema": {
+              "title": "Module Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LessonWriteIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`module_not_found`"
+          },
+          "409": {
+            "description": "`lesson_exists`, `lesson_generating` ou `module_skipped`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Write Lesson",
+        "tags": [
+          "lessons"
+        ]
+      }
+    },
     "/api/v1/modules/{module_id}/quiz": {
       "post": {
         "description": "Prépare le quiz du module (202) ; déjà prêt : 200 ; en préparation : même session ; en\néchec : relancé. Leçon pas prête : 409 `lesson_not_ready`.",
@@ -20832,6 +22238,58 @@
         ]
       }
     },
+    "/api/v1/postings/direct": {
+      "post": {
+        "description": "Écrit une offre en direct : son texte et son analyse sont ceux de January ou de Claude,\nsans agent ni appel au modèle (l'écart se lance ensuite par `POST /postings/{id}/gap`). 201 :\noffre créée, prête. 200 : même lien (ou, sans lien, même texte), l'offre existante. 422\n`posting_too_short`, `posting_analysis_invalid`, `invalid_url`, `url_forbidden` : jamais\nl'entrée dans la réponse.",
+        "operationId": "write_posting_api_v1_postings_direct_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostingDirectIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostingCreatedOut"
+                }
+              }
+            },
+            "description": "Offre déjà ajoutée"
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostingCreatedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Write Posting",
+        "tags": [
+          "postings"
+        ]
+      }
+    },
     "/api/v1/postings/{posting_id}": {
       "delete": {
         "description": "Retire l'offre, son élément de mémoire `offre`, ses revues et versions (PDF et images\ncompris) ; 409 `review_in_progress` ou `analysis_in_progress` si l'une tourne.",
@@ -20909,6 +22367,56 @@
           }
         },
         "summary": "Get Posting",
+        "tags": [
+          "postings"
+        ]
+      },
+      "patch": {
+        "description": "Retouche l'analyse d'une offre analysée (titre, entreprise, exigences, mots clés…), sans\nagent : sa mémoire et ses doublons sont recalculés.",
+        "operationId": "patch_posting_api_v1_postings__posting_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "posting_id",
+            "required": true,
+            "schema": {
+              "title": "Posting Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostingPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`posting_not_found`"
+          },
+          "409": {
+            "description": "`posting_not_analyzed`"
+          },
+          "422": {
+            "description": "`posting_analysis_invalid`"
+          }
+        },
+        "summary": "Patch Posting",
         "tags": [
           "postings"
         ]
@@ -21476,6 +22984,65 @@
         ]
       }
     },
+    "/api/v1/programs/{program_id}/modules": {
+      "post": {
+        "description": "Ajoute un module (sans tâche) à une semaine du programme, sans agent.",
+        "operationId": "add_module_api_v1_programs__program_id__modules_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "program_id",
+            "required": true,
+            "schema": {
+              "title": "Program Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModuleCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModuleOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`program_not_found` ou `week_not_found`"
+          },
+          "409": {
+            "description": "`week_full`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Module",
+        "tags": [
+          "program"
+        ]
+      }
+    },
     "/api/v1/programs/{program_id}/quizzes": {
       "get": {
         "operationId": "list_quizzes_api_v1_programs__program_id__quizzes_get",
@@ -21664,6 +23231,65 @@
         ]
       }
     },
+    "/api/v1/programs/{program_id}/weeks": {
+      "post": {
+        "description": "Ajoute une semaine (sans module) à la fin du programme, sans agent.",
+        "operationId": "add_week_api_v1_programs__program_id__weeks_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "program_id",
+            "required": true,
+            "schema": {
+              "title": "Program Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WeekCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeekOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`program_not_found`"
+          },
+          "409": {
+            "description": "`too_many_weeks`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Week",
+        "tags": [
+          "program"
+        ]
+      }
+    },
     "/api/v1/projects": {
       "get": {
         "description": "Le Portfolio : programme, semaine et rang de chaque projet ; `status` filtre.",
@@ -21724,6 +23350,52 @@
         "tags": [
           "projects"
         ]
+      },
+      "post": {
+        "description": "Écrit le mini projet d'un module en direct : l'énoncé est celui de January ou de Claude,\nsans agent ni appel au modèle ; le projet est « à faire ».",
+        "operationId": "post_project_api_v1_projects_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectCreateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`module_not_found`"
+          },
+          "409": {
+            "description": "`project_exists` ou `module_skipped`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Post Project",
+        "tags": [
+          "projects"
+        ]
       }
     },
     "/api/v1/projects/{project_id}": {
@@ -21768,6 +23440,65 @@
           }
         },
         "summary": "Get One Project",
+        "tags": [
+          "projects"
+        ]
+      },
+      "patch": {
+        "description": "Retouche l'énoncé d'un projet sans rendu, sans agent.",
+        "operationId": "patch_one_project_api_v1_projects__project_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectBriefPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`project_not_found`"
+          },
+          "409": {
+            "description": "`project_not_editable` : le projet est rendu, évalué ou validé"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Patch One Project",
         "tags": [
           "projects"
         ]
@@ -22210,6 +23941,54 @@
         ]
       }
     },
+    "/api/v1/quizzes": {
+      "post": {
+        "description": "Écrit le quiz d'un module en direct (1 à 12 questions, sans fiches), sans agent ni appel au\nmodèle ; la leçon du module n'a pas à être prête. Il reste « en préparation » (`generating`,\nsans session) tant qu'il n'a pas 8 questions, 3 types et des énoncés de 10 caractères : toute\ntentative donne alors 409 `quiz_incomplete`.",
+        "operationId": "write_quiz_api_v1_quizzes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuizWriteIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`module_not_found`"
+          },
+          "409": {
+            "description": "`quiz_exists`, `quiz_generating` ou `module_skipped`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Write Quiz",
+        "tags": [
+          "quiz"
+        ]
+      }
+    },
     "/api/v1/quizzes/{quiz_id}": {
       "get": {
         "operationId": "get_quiz_api_v1_quizzes__quiz_id__get",
@@ -22247,6 +24026,63 @@
           }
         },
         "summary": "Get Quiz",
+        "tags": [
+          "quiz"
+        ]
+      },
+      "patch": {
+        "description": "Change le titre d'un quiz prêt.",
+        "operationId": "patch_quiz_api_v1_quizzes__quiz_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "quiz_id",
+            "required": true,
+            "schema": {
+              "title": "Quiz Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuizPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`quiz_not_found`"
+          },
+          "409": {
+            "description": "`quiz_not_ready`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Patch Quiz",
         "tags": [
           "quiz"
         ]
@@ -22351,6 +24187,133 @@
           }
         },
         "summary": "Get Attempt",
+        "tags": [
+          "quiz"
+        ]
+      }
+    },
+    "/api/v1/quizzes/{quiz_id}/questions": {
+      "post": {
+        "description": "Ajoute une question à un quiz prêt qui n'a pas de tentative, sans agent.",
+        "operationId": "add_question_api_v1_quizzes__quiz_id__questions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "quiz_id",
+            "required": true,
+            "schema": {
+              "title": "Quiz Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuestionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`quiz_not_found`"
+          },
+          "409": {
+            "description": "`quiz_not_ready`, `quiz_has_attempts` ou `quiz_full`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Question",
+        "tags": [
+          "quiz"
+        ]
+      }
+    },
+    "/api/v1/quizzes/{quiz_id}/questions/{question_id}": {
+      "patch": {
+        "description": "Retouche une question d'un quiz prêt qui n'a pas de tentative, sans agent.",
+        "operationId": "patch_question_api_v1_quizzes__quiz_id__questions__question_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "quiz_id",
+            "required": true,
+            "schema": {
+              "title": "Quiz Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "question_id",
+            "required": true,
+            "schema": {
+              "title": "Question Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuestionPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`quiz_not_found` ou `question_not_found`"
+          },
+          "409": {
+            "description": "`quiz_not_ready` ou `quiz_has_attempts`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Patch Question",
         "tags": [
           "quiz"
         ]
@@ -23961,6 +25924,62 @@
           }
         },
         "summary": "Patch Task",
+        "tags": [
+          "program"
+        ]
+      }
+    },
+    "/api/v1/weeks/{week_id}": {
+      "patch": {
+        "description": "Retouche le thème, l'objectif ou le livrable d'une semaine, sans agent.",
+        "operationId": "patch_week_api_v1_weeks__week_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "week_id",
+            "required": true,
+            "schema": {
+              "title": "Week Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WeekPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeekOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`week_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Patch Week",
         "tags": [
           "program"
         ]

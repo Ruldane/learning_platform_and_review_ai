@@ -18,11 +18,14 @@ from app.db.models.ide import (
     TeacherStyle,
 )
 from app.features.ide.hashing import file_hash, is_file_hash
-from app.providers.sandbox.base import (
-    MAX_FILES,
-    MAX_PATH_CHARS,
-    MAX_TOTAL_BYTES,
-    check_file_name,
+from app.features.ide.schemas_exercise import (
+    PATH_MAX,
+    TITLE_MAX,
+    ExerciseGenerateIn,
+    ExerciseIn,
+    ExerciseOut,
+    ExercisePatch,
+    check_files,
 )
 
 __all__ = [
@@ -30,6 +33,7 @@ __all__ = [
     "ExerciseIn",
     "ExerciseOrigin",
     "ExerciseOut",
+    "ExercisePatch",
     "FilesPutIn",
     "NoteAuthor",
     "NoteIn",
@@ -55,57 +59,11 @@ __all__ = [
     "UsageOut",
 ]
 
-TITLE_MAX = 120
-STATEMENT_MAX = 8_000
 NOTE_MAX = 4_000
 QUESTION_MAX = 2_000
-PATH_MAX = MAX_PATH_CHARS
 
-Level = Literal["beginner", "intermediate", "advanced"]
 TeachTrigger = Literal["run_error", "run_ok", "question", "hint", "idle"]
 SkipReason = Literal["cap_reached", "on_demand", "busy"]
-
-
-def _check_files(files: dict[str, str]) -> dict[str, str]:
-    """Au plus 20 fichiers et 200 000 octets ; chemins relatifs (`check_file_name`)."""
-    if len(files) > MAX_FILES:
-        raise ValueError("trop de fichiers")
-    if sum(len(text.encode()) for text in files.values()) > MAX_TOTAL_BYTES:
-        raise ValueError("fichiers trop volumineux")
-    for name in files:
-        check_file_name(name)
-    return files
-
-
-class ExerciseIn(BaseModel):
-    """Un exercice écrit à la main : l'énoncé et, au choix, des fichiers de départ."""
-
-    title: str = Field(min_length=1, max_length=TITLE_MAX)
-    statement: str = Field(min_length=1, max_length=STATEMENT_MAX)
-    files: dict[str, str] = Field(default_factory=dict)
-    entry: str = Field(default="main.py", min_length=1, max_length=PATH_MAX)
-
-    _files = field_validator("files")(_check_files)
-
-
-class ExerciseOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: str
-    title: str
-    statement: str
-    files: dict[str, str]
-    entry: str
-    origin: ExerciseOrigin
-    topic: str | None
-    created_at: datetime
-
-
-class ExerciseGenerateIn(BaseModel):
-    """`topic` : le sujet de l'exercice à faire générer par les agents."""
-
-    topic: str = Field(min_length=1, max_length=300)
-    level: Level = "beginner"
 
 
 class IdeSessionStarted(BaseModel):
@@ -160,7 +118,7 @@ class FilesPutIn(BaseModel):
     base_hash: str | None = Field(default=None, min_length=64, max_length=64)
     base_hashes: dict[str, str] | None = None
 
-    _files = field_validator("files")(_check_files)
+    _files = field_validator("files")(check_files)
 
     @field_validator("base_hashes")
     @classmethod

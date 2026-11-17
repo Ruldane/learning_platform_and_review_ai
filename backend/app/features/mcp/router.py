@@ -30,6 +30,7 @@ from app.features.mcp.service.actions import list_actions as table_of_actions
 from app.features.mcp.service.actions import list_features as table_of_features
 from app.features.mcp.service.changes import ChangesService
 from app.features.mcp.service.confirmations import ConfirmationService
+from app.features.memory.service.direct import schedule_indexing
 from app.mcp.auth import guard_interface_request
 from app.mcp.registry import Registry
 
@@ -156,5 +157,7 @@ async def list_changes(
 @router.post("/changes/{call_id}/undo", response_model=McpUndoOut)
 async def undo_changes(call_id: Id, request: Request, current: InterfaceUserDep) -> McpUndoOut:
     """Remet les lignes d'un appel dans leur état d'avant, si aucune n'a changé depuis (409
-    sinon)."""
-    return await ChangesService(request.app.state.session_factory, current.id).undo(call_id)
+    sinon). Une mémoire restaurée ou retirée se réindexe ensuite, hors de l'appel."""
+    undone = await ChangesService(request.app.state.session_factory, current.id).undo(call_id)
+    schedule_indexing(request.app.state.memory, current.id)
+    return undone

@@ -13,13 +13,17 @@ from app.features.quiz.schemas import (
     AttemptOut,
     AttemptStarted,
     DueQueue,
+    QuestionIn,
+    QuestionPatch,
     QuizOut,
+    QuizPatch,
     QuizStarted,
     QuizSummaryOut,
+    QuizWriteIn,
     ReviewIn,
     ReviewOut,
 )
-from app.features.quiz.service import attempts, cards, quizzes
+from app.features.quiz.service import attempts, cards, direct, quizzes
 from app.features.quiz.service.runtime import QuizRuntime
 
 router = APIRouter(tags=["quiz"])
@@ -52,6 +56,66 @@ async def start_quiz(
     if started.status == "ready":
         response.status_code = status.HTTP_200_OK
     return started
+
+
+@router.post(
+    "/quizzes",
+    response_model=QuizOut,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        404: {"description": "`module_not_found`"},
+        409: {"description": "`quiz_exists`, `quiz_generating` ou `module_skipped`"},
+    },
+)
+async def write_quiz(body: QuizWriteIn, current: CurrentUserDep, rt: QuizDep) -> QuizOut:
+    """Écrit le quiz d'un module en direct (1 à 12 questions, sans fiches), sans agent ni appel au
+    modèle ; la leçon du module n'a pas à être prête. Il reste « en préparation » (`generating`,
+    sans session) tant qu'il n'a pas 8 questions, 3 types et des énoncés de 10 caractères : toute
+    tentative donne alors 409 `quiz_incomplete`."""
+    return await direct.create_quiz(rt, current.id, body)
+
+
+@router.patch(
+    "/quizzes/{quiz_id}",
+    response_model=QuizOut,
+    responses={404: {"description": "`quiz_not_found`"}, 409: {"description": "`quiz_not_ready`"}},
+)
+async def patch_quiz(
+    quiz_id: str, body: QuizPatch, current: CurrentUserDep, rt: QuizDep
+) -> QuizOut:
+    """Change le titre d'un quiz prêt."""
+    return await direct.patch_quiz(rt, current.id, quiz_id, body)
+
+
+@router.post(
+    "/quizzes/{quiz_id}/questions",
+    response_model=QuizOut,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        404: {"description": "`quiz_not_found`"},
+        409: {"description": "`quiz_not_ready`, `quiz_has_attempts` ou `quiz_full`"},
+    },
+)
+async def add_question(
+    quiz_id: str, body: QuestionIn, current: CurrentUserDep, rt: QuizDep
+) -> QuizOut:
+    """Ajoute une question à un quiz prêt qui n'a pas de tentative, sans agent."""
+    return await direct.add_question(rt, current.id, quiz_id, body)
+
+
+@router.patch(
+    "/quizzes/{quiz_id}/questions/{question_id}",
+    response_model=QuizOut,
+    responses={
+        404: {"description": "`quiz_not_found` ou `question_not_found`"},
+        409: {"description": "`quiz_not_ready` ou `quiz_has_attempts`"},
+    },
+)
+async def patch_question(
+    quiz_id: str, question_id: str, body: QuestionPatch, current: CurrentUserDep, rt: QuizDep
+) -> QuizOut:
+    """Retouche une question d'un quiz prêt qui n'a pas de tentative, sans agent."""
+    return await direct.patch_question(rt, current.id, quiz_id, question_id, body)
 
 
 @router.get("/programs/{program_id}/quizzes", response_model=list[QuizSummaryOut])

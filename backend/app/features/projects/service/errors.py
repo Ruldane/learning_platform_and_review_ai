@@ -108,3 +108,21 @@ def drafts_unavailable() -> AppError:
         "Les brouillons n'ont pas pu être relancés : réessaie dans un instant.",
         503,
     )
+
+
+def project_exists() -> AppError:
+    return AppError(
+        "project_exists", "Ce module a déjà son projet : retouche son énoncé (PATCH).", 409
+    )
+
+
+def project_not_editable() -> AppError:
+    return AppError(
+        "project_not_editable",
+        "L'énoncé de ce projet ne se retouche plus : il est rendu, évalué ou validé.",
+        409,
+    )
+
+
+def module_skipped() -> AppError:
+    return AppError("module_skipped", "Ce module est sauté : il n'a pas de projet.", 409)

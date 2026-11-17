@@ -11,6 +11,7 @@ from app.features.program.service.budget import Budget
 from app.features.program.service.runtime import ProgramRuntime
 from app.features.program.service.store import AgentProgramStore
 from tests.features.program.support import MONDAY, Factory, add_goal, sample_plan
+from tests.support.direct import drafted  # noqa: F401
 
 
 @pytest.fixture

@@ -1,6 +1,10 @@
 from app.features.memory.repository.chunks import ChunkDraftLike, ChunkRepository
 from app.features.memory.repository.documents import DocumentRepository, list_documents_to_resume
-from app.features.memory.repository.items import ItemFilter, MemoryItemRepository
+from app.features.memory.repository.items import (
+    ItemFilter,
+    MemoryItemRepository,
+    users_with_unindexed,
+)
 from app.features.memory.repository.writes import WriteRepository
 
 __all__ = [
@@ -11,4 +15,5 @@ __all__ = [
     "MemoryItemRepository",
     "WriteRepository",
     "list_documents_to_resume",
+    "users_with_unindexed",
 ]

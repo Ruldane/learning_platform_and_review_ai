@@ -88,6 +88,21 @@ MCP = FeatureMcp(
             encoding="form",
             launches="project_review",
         ),
+        McpAction(
+            "POST /projects",
+            2,
+            "projects_write_project",
+            "Écriture directe, aucun agent : écrit le mini projet d'un module (`module_id`, "
+            "`brief` : titre, contexte, objectif, contraintes, critères, heures, livrable) ; "
+            "le projet est à faire.",
+        ),
+        McpAction(
+            "PATCH /projects/{project_id}",
+            2,
+            "projects_update_project",
+            "Écriture directe, aucun agent : retouche l'énoncé d'un projet qui n'a pas encore "
+            "de rendu.",
+        ),
     ),
     graphs=(
         McpGraph(

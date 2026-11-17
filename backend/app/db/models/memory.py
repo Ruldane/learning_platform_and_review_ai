@@ -74,14 +74,21 @@ class MemoryItem(UserScopedMixin, Base):
     status: Mapped[str] = mapped_column(String(16), default="active")
     meta: Mapped[dict[str, Any]] = mapped_column(default=dict)
     content_hash: Mapped[str] = mapped_column(String(64))
-    indexed_at: Mapped[datetime | None] = mapped_column(UTCDateTime, default=None)
+    # `undo_volatile` : posée par l'indexation, hors de l'appel du MCP ; l'annulation ne la compare
+    # pas et la remet à vide (l'élément se réindexe, `app.mcp.undo`).
+    indexed_at: Mapped[datetime | None] = mapped_column(
+        UTCDateTime, default=None, info={"undo_volatile": True}
+    )
 
 
 class MemoryChunk(UserScopedMixin, Base):
     """Un fragment d'élément ; son `id` est l'identifiant du point dans Qdrant (UUID)."""
 
     __tablename__ = "memory_chunks"
-    __table_args__ = (UniqueConstraint("item_id", "ordinal"),)
+    # `undo_derived` : les fragments se déduisent du texte de l'élément ; retirer l'élément
+    # (annulation d'un ajout du MCP) les retire avec lui, ils ne comptent pas comme des lignes qui
+    # en dépendent.
+    __table_args__ = (UniqueConstraint("item_id", "ordinal"), {"info": {"undo_derived": True}})
 
     item_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("memory_items.id", ondelete="CASCADE")
