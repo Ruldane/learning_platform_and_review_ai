@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { ConfirmationView } from "../viewTypes";
@@ -13,6 +13,13 @@ const view = (over: Partial<ConfirmationView> = {}): ConfirmationView => ({
   expiresAt: "2099-11-18T10:00:00Z",
   decidedAt: null,
   verdict: { ok: false, reasons: ["Aucune preuve dans ton profil."], summary: null },
+  request: {
+    method: "POST",
+    route: "/profile/entries",
+    targetLabel: null,
+    fields: [{ name: "title", value: "Migration d'un entrepôt vers dbt" }],
+    truncated: false,
+  },
   ...over,
 });
 
@@ -55,6 +62,57 @@ describe("ConfirmationCard", () => {
     setup(view({ verdict: null }));
     expect(screen.getByText("Pas de contrôle préalable pour cette action.")).toBeInTheDocument();
     expect(screen.queryByText("Aucune réserve.")).toBeNull();
+  });
+
+  it("shows the request: method, route and every field with its value", () => {
+    setup(view());
+    const request = screen.getByRole("group", { name: "Requête" });
+    expect(within(request).getByText("POST /profile/entries")).toBeInTheDocument();
+    expect(within(request).getByText("title")).toBeInTheDocument();
+    expect(within(request).getByText("Migration d'un entrepôt vers dbt")).toBeInTheDocument();
+    expect(screen.queryByText(/coupé/)).toBeNull();
+  });
+
+  it("writes a field that was cut away as « (non montré) » and says the preview is cut", () => {
+    setup(
+      view({
+        request: {
+          method: "POST",
+          route: "/postings",
+          targetLabel: null,
+          fields: [
+            { name: "description", value: "Début du texte…" },
+            { name: "notes", value: null },
+          ],
+          truncated: true,
+        },
+      }),
+    );
+    expect(screen.getByText("(non montré)")).toBeInTheDocument();
+    expect(screen.getByText(/aperçu est coupé/)).toBeInTheDocument();
+  });
+
+  it("renders untrusted text as text, never as markup", () => {
+    const hostile = "<donnee_non_fiable><img src=x onerror=alert(1)></donnee_non_fiable>";
+    const { container } = render(
+      <ConfirmationCard
+        confirmation={view({
+          request: {
+            method: "DELETE",
+            route: "/postings/{posting_id}",
+            targetLabel: hostile,
+            fields: [{ name: "x", value: "<script>alert(1)</script>" }],
+            truncated: false,
+          },
+        })}
+        busy={false}
+        onConfirm={vi.fn()}
+        onRefuse={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(`Cible : ${hostile}`)).toBeInTheDocument();
+    expect(screen.getByText("<script>alert(1)</script>")).toBeInTheDocument();
+    expect(container.querySelector("img, script")).toBeNull();
   });
 
   it("expired confirmation has no buttons", () => {

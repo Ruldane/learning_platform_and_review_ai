@@ -91,6 +91,12 @@ export const mcp = {
     precheckOk: "Aucune réserve.",
     precheckReserves: "Réserves :",
     precheckNone: "Pas de contrôle préalable pour cette action.",
+    request: {
+      title: "Requête",
+      target: "Cible : {label}",
+      notShown: "(non montré)",
+      cut: "L'aperçu est coupé : une partie du contenu n'est pas montrée ici.",
+    },
     confirm: "Confirmer",
     refuse: "Refuser",
   },

@@ -16,6 +16,8 @@ __all__ = [
     "ConfirmationStatus",
     "McpFeatureOut",
     "McpMode",
+    "McpRequestField",
+    "McpRequestPreview",
     "McpSettingsIn",
     "McpSettingsOut",
     "McpTokenCreateIn",
@@ -93,16 +95,38 @@ class McpTokenCreated(McpTokenOut):
     token: str
 
 
-class McpConfirmationOut(BaseModel):
-    """Une demande « À confirmer » (niveau 3) : ce que Claude veut faire, en résumé neutre, et le
-    verdict d'un éventuel contrôle préalable. Rien ne s'exécute avant la confirmation."""
+class McpRequestField(BaseModel):
+    """Un champ de la requête à confirmer : son nom et sa valeur en texte (objets et listes en JSON
+    compact), tronquée à 500 caractères ; les clés d'API sont masquées."""
 
-    model_config = ConfigDict(from_attributes=True)
+    name: str
+    value_preview: str
+
+
+class McpRequestPreview(BaseModel):
+    """La requête qui partira à la confirmation, de quoi la lire en entier : méthode, route (le
+    gabarit, sans identifiant), libellé lisible de la cible quand la route en a une (titre, nom ;
+    lu par la route de lecture de la même ressource ; un texte venu du web est entouré de
+    `<donnee_non_fiable>`), **tous** les champs du corps et des paramètres, et `truncated` si une
+    valeur ou le total (4 000 caractères) a été coupé."""
+
+    method: str
+    route: str
+    target_label: str | None
+    fields: list[McpRequestField]
+    truncated: bool
+
+
+class McpConfirmationOut(BaseModel):
+    """Une demande « À confirmer » (niveau 3) : ce que Claude veut faire (un résumé neutre et la
+    requête complète en `request`) et le verdict d'un éventuel contrôle préalable. Rien ne
+    s'exécute avant la confirmation."""
 
     id: str
     token_id: str
     action: str
     summary: str
+    request: McpRequestPreview
     precheck: dict[str, Any] | None
     status: ConfirmationStatus
     expires_at: datetime

@@ -3,6 +3,7 @@ import { t } from "@/shared/i18n/t";
 import { fullDateTime } from "@/shared/lib/relativeTime";
 import { Button } from "@/shared/ui/button";
 import type { ConfirmationView } from "../viewTypes";
+import { RequestBlock } from "./RequestBlock";
 import { VerdictBlock } from "./VerdictBlock";
 
 interface ConfirmationCardProps {
@@ -33,7 +34,7 @@ export function ConfirmationCard({
   onRefuse,
 }: ConfirmationCardProps) {
   const headingId = useId();
-  const { state, summary, action, tokenLabel, verdict } = confirmation;
+  const { state, summary, action, tokenLabel, verdict, request } = confirmation;
   return (
     <article
       aria-labelledby={headingId}
@@ -51,6 +52,7 @@ export function ConfirmationCard({
         {tokenLabel ? `${t("mcp.confirmations.by", { label: tokenLabel })} · ` : ""}
         {t("mcp.confirmations.action", { action })}
       </p>
+      <RequestBlock request={request} />
       <VerdictBlock verdict={verdict} />
       {state === "failed" ? <p className="text-sm">{t("mcp.confirmations.failedText")}</p> : null}
       <p className="text-sm text-muted-foreground">{dateLine(confirmation)}</p>

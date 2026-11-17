@@ -5,6 +5,7 @@ import type {
   ChangeView,
   ConfirmationView,
   FeatureOption,
+  RequestView,
   TokenView,
   VerdictView,
 } from "./components/viewTypes";
@@ -63,6 +64,19 @@ export function toVerdict(precheck: McpConfirmationOut["precheck"]): VerdictView
   return { ok: precheck.ok === true, reasons, summary };
 }
 
+export function toRequestView(request: McpConfirmationOut["request"]): RequestView {
+  return {
+    method: request.method,
+    route: request.route,
+    targetLabel: request.target_label,
+    fields: request.fields.map((field) => ({
+      name: field.name,
+      value: field.value_preview === "" ? null : field.value_preview,
+    })),
+    truncated: request.truncated,
+  };
+}
+
 export function toConfirmationView(
   confirmation: McpConfirmationOut,
   tokenLabels: ReadonlyMap<string, string>,
@@ -78,6 +92,7 @@ export function toConfirmationView(
     expiresAt: confirmation.expires_at,
     decidedAt: confirmation.decided_at,
     verdict: toVerdict(confirmation.precheck),
+    request: toRequestView(confirmation.request),
   };
 }
 

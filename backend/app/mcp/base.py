@@ -70,7 +70,10 @@ class McpAction:
     profil) ; `body_fields` (si non `None`) = liste blanche des champs du corps que le MCP peut
     envoyer, tout autre champ est refusé ; `merge_from` = route GET dont la réponse sert de base :
     l'adaptateur la lit, remplace seulement `body_fields` et renvoie le tout (exige `body_fields`).
-    Un effet `external` est de niveau 3 au moins (`ValueError` sinon)."""
+    Un effet `external` est de niveau 3 au moins (`ValueError` sinon). `response_fields` (si non
+    `None`) : l'adaptateur ne renvoie que ces clés de l'objet racine de la réponse (de chaque objet
+    si c'est une liste), ex. les préférences sans les modèles ; `encoding="form"` : les champs
+    texte du corps partent en `multipart/form-data` (aucun fichier), pour un formulaire."""
 
     route: str
     level: Level
@@ -81,6 +84,8 @@ class McpAction:
     precheck: Callable[[PrecheckInput], Awaitable[Verdict]] | None = None
     body_fields: frozenset[str] | None = None
     merge_from: str | None = None
+    response_fields: frozenset[str] | None = None
+    encoding: Literal["json", "form"] = "json"
 
     def __post_init__(self) -> None:
         if self.side_effects == "external" and self.level == 2:

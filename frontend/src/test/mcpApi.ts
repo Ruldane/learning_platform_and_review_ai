@@ -23,6 +23,13 @@ export const confirmationOut = (over: Over = {}) => ({
   action: "cv_master_profile_draft",
   summary: "Ajouter au profil maître : « Migration d'un entrepôt vers dbt ».",
   precheck: { ok: true, reasons: [], summary: "Tient face au profil." },
+  request: {
+    method: "POST",
+    route: "/profile/entries",
+    target_label: null,
+    fields: [{ name: "title", value_preview: "Migration d'un entrepôt vers dbt" }],
+    truncated: false,
+  },
   status: "pending",
   expires_at: "2099-11-18T10:00:00Z",
   decided_at: null,

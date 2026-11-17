@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any
 
 import httpx
-import pytest
 from alembic.config import Config
 from alembic.script import ScriptDirectory
 from fastapi import FastAPI
@@ -74,7 +73,7 @@ NEW_ROUTES: list[tuple[str, str, dict[str, Any] | None]] = [
     ("GET", "/mcp/changes", None),
     ("POST", "/mcp/changes/x1/undo", None),
 ]
-# Routes déjà remplies par un flux (vidé à l'intégration, 10.I : plus aucun bouchon).
+# Routes remplies par un flux : à l'intégration (10.I), toutes les routes nouvelles le sont.
 LIVE: set[tuple[str, str]] = set()
 # 10.A2 : exercices, séances, exécutions, notes ; 10.A3 : génération d'exercices, professeur,
 # préférences et consommation.
@@ -98,6 +97,25 @@ LIVE |= {
     ("PUT", "/ide/preferences"),
     ("GET", "/ide/usage"),
 }
+# 10.B1 : interrupteur, jetons et journal du MCP.
+LIVE |= {
+    ("GET", "/mcp/settings"),
+    ("PUT", "/mcp/settings"),
+    ("POST", "/mcp/tokens"),
+    ("GET", "/mcp/tokens"),
+    ("DELETE", "/mcp/tokens/x1"),
+    ("GET", "/mcp/calls"),
+}
+# 10.B2 : tables d'outils, demandes « À confirmer », changements et annulation.
+LIVE |= {
+    ("GET", "/mcp/features"),
+    ("GET", "/mcp/actions"),
+    ("GET", "/mcp/confirmations"),
+    ("POST", "/mcp/confirmations/x1/confirm"),
+    ("POST", "/mcp/confirmations/x1/refuse"),
+    ("GET", "/mcp/changes"),
+    ("POST", "/mcp/changes/x1/undo"),
+}
 
 
 def test_single_alembic_head() -> None:
@@ -116,22 +134,9 @@ def test_all_new_tables_have_user_id() -> None:
         assert "id" in table.c and "created_at" in table.c, name
 
 
-@pytest.mark.parametrize(("method", "path", "body"), NEW_ROUTES)
-async def test_every_new_route_is_501_until_filled(
-    client: httpx.AsyncClient, method: str, path: str, body: dict[str, Any] | None
-) -> None:
-    if (method, path) in LIVE:
-        pytest.skip("route remplie par un flux")
-    response = await client.request(method, f"{P}{path}", json=body)
-    assert response.status_code == 501, (method, path, response.text)
-    error = response.json()["error"]
-    assert error["code"] == "not_implemented"
-
-
-def test_no_ide_route_is_a_stub_any_more() -> None:
-    """10.I : le flux A a rempli toute la feature `ide` ; seuls les bouchons `mcp` restent."""
-    ide = {(method, path) for method, path, _ in NEW_ROUTES if path.startswith("/ide/")}
-    assert ide <= LIVE
+def test_no_new_route_is_a_stub_any_more() -> None:
+    """10.I : les flux A et B ont rempli les 31 routes de la phase 10 ; plus aucun bouchon 501."""
+    assert {(method, path) for method, path, _ in NEW_ROUTES} == LIVE
 
 
 def test_contract_lists_phase10_paths() -> None:

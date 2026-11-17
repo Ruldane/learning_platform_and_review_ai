@@ -24,6 +24,37 @@ describe("toConfirmationView", () => {
   });
 });
 
+describe("toConfirmationView request", () => {
+  it("reads the whole request: method, route, target and every field", () => {
+    const view = toConfirmationView(
+      confirmation({
+        request: {
+          method: "DELETE",
+          route: "/postings/{posting_id}",
+          target_label: "<donnee_non_fiable>Data engineer</donnee_non_fiable>",
+          fields: [
+            { name: "reason", value_preview: "doublon" },
+            { name: "notes", value_preview: "" },
+          ],
+          truncated: true,
+        },
+      }),
+      new Map(),
+      NOW,
+    );
+    expect(view.request).toEqual({
+      method: "DELETE",
+      route: "/postings/{posting_id}",
+      targetLabel: "<donnee_non_fiable>Data engineer</donnee_non_fiable>",
+      fields: [
+        { name: "reason", value: "doublon" },
+        { name: "notes", value: null },
+      ],
+      truncated: true,
+    });
+  });
+});
+
 describe("toVerdict", () => {
   it("is null without precheck", () => expect(toVerdict(null)).toBeNull());
 

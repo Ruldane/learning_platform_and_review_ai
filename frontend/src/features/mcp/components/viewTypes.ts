@@ -50,6 +50,22 @@ export interface VerdictView {
   summary: string | null;
 }
 
+/** Un champ de la requête à confirmer ; `value` nul : la valeur n'est pas montrée (aperçu coupé). */
+export interface RequestFieldView {
+  name: string;
+  value: string | null;
+}
+
+/** La requête qui partira à la confirmation, lue en entier. Les textes sont affichés comme texte. */
+export interface RequestView {
+  method: string;
+  route: string;
+  /** Libellé de la cible ; un texte venu du web y est entouré de `<donnee_non_fiable>`. */
+  targetLabel: string | null;
+  fields: RequestFieldView[];
+  truncated: boolean;
+}
+
 export interface ConfirmationView {
   id: string;
   summary: string;
@@ -60,6 +76,7 @@ export interface ConfirmationView {
   expiresAt: string;
   decidedAt: string | null;
   verdict: VerdictView | null;
+  request: RequestView;
 }
 
 export interface CallView {
