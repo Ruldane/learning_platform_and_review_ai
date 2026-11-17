@@ -9,6 +9,7 @@ import { cv } from "./messages/cv";
 import { demo } from "./messages/demo";
 import { gap } from "./messages/gap";
 import { home } from "./messages/home";
+import { ide } from "./messages/ide";
 import { learning } from "./messages/learning";
 import { lessons } from "./messages/lessons";
 import { mcp } from "./messages/mcp";
@@ -57,4 +58,5 @@ export const fr = {
   radar,
   projects,
   mcp,
+  ide,
 } as const;

@@ -1,0 +1,1 @@
+export { TeacherPanel } from "./TeacherPanel";

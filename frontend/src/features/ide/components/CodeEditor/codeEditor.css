@@ -1,0 +1,14 @@
+/* Marge de l'éditeur : un losange plein, lisible sans la couleur seule (l'info est aussi dans la
+   liste « Dans la marge » du professeur). */
+.ide-annotation-glyph {
+  margin-left: 4px;
+  width: 10px !important;
+  height: 10px !important;
+  margin-top: 4px;
+  transform: rotate(45deg);
+  background: #9a3412;
+}
+
+.ide-annotation-line {
+  background: rgba(154, 52, 18, 0.1);
+}

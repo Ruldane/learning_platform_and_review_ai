@@ -8,6 +8,7 @@ import { demoManifest } from "@/features/demo/manifest";
 import { gapManifest } from "@/features/gap/manifest";
 import { healthManifest } from "@/features/health/manifest";
 import { homeManifest } from "@/features/home/manifest";
+import { ideManifest } from "@/features/ide/manifest";
 import { learningManifest } from "@/features/learning/manifest";
 import { lessonsManifest } from "@/features/lessons/manifest";
 import { mcpManifest } from "@/features/mcp/manifest";
@@ -48,4 +49,5 @@ export const FEATURES: FeatureManifest[] = [
   researchManifest,
   demoManifest,
   mcpManifest,
+  ideManifest,
 ];
