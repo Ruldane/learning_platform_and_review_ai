@@ -8,7 +8,7 @@ describe("researchManifest", () => {
       section: "settings",
       labelKey: "research.nav.bench",
       path: "/reglages/recherche/essai",
-      order: 3,
+      order: 2.5,
     });
     expect(researchManifest.routes.map((route) => route.path)).toEqual([
       "reglages/recherche/essai",

@@ -1,3 +1,4 @@
+import { accountManifest } from "@/features/account/manifest";
 import { applicationsManifest } from "@/features/applications/manifest";
 import { authManifest } from "@/features/auth/manifest";
 import { captureManifest } from "@/features/capture/manifest";
@@ -42,6 +43,7 @@ export const FEATURES: FeatureManifest[] = [
   memoryManifest,
   settingsManifest,
   costsManifest,
+  accountManifest,
   researchManifest,
   demoManifest,
 ];

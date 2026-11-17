@@ -10,7 +10,7 @@ export const researchManifest: FeatureManifest = {
       section: "settings",
       labelKey: "research.nav.bench",
       path: "/reglages/recherche/essai",
-      order: 3,
+      order: 2.5,
     },
   ],
 };
