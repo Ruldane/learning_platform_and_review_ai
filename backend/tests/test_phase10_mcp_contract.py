@@ -49,7 +49,7 @@ def test_mcp_declarations_are_frozen_data() -> None:
     with pytest.raises(AttributeError):
         action.level = 1  # type: ignore[misc]
     assert frozenset({"auth", "account", "mcp"}) == NEVER_EXPOSED_FEATURES
-    assert MCP_FEATURES == []  # 10.D1 déclare une feature par ligne
+    assert MCP_FEATURES  # 10.D1 déclare une feature par ligne (garde : tests/mcp)
 
 
 @pytest.mark.parametrize(
