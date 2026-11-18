@@ -1,4 +1,4 @@
-import { api } from "@/shared/api/client";
+import { api, apiBaseUrl } from "@/shared/api/client";
 import { unwrap } from "@/shared/api/errors";
 import { fetchSession } from "@/shared/realtime/sessionApi";
 
@@ -110,3 +110,14 @@ export async function validateGap(postingId: string, skills: string[]) {
     }),
   );
 }
+
+/** `GET /cv/versions?posting_id=` : les CV générés pour cette offre, le plus récent d'abord. */
+export async function fetchPostingCvs(postingId: string, signal?: AbortSignal) {
+  return unwrap(
+    await api.GET("/cv/versions", { params: { query: { posting_id: postingId } }, signal }),
+  );
+}
+
+/** Le PDF d'un CV généré (le nom `CV_….pdf` vient de l'en-tête du serveur). */
+export const cvPdfUrl = (versionId: string) =>
+  `${apiBaseUrl}/api/v1/cv/versions/${versionId}/pdf`;

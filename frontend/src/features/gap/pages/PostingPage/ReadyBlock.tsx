@@ -5,8 +5,10 @@ import type { SocketFactory } from "@/shared/realtime/socket";
 import { buttonVariants } from "@/shared/ui/button";
 import { InlineError } from "@/shared/ui/states/InlineError";
 import { DuplicateNotice } from "../../components/DuplicateNotice";
+import { PostingCvList } from "../../components/PostingCvList";
 import { PostingAnalysisCard } from "../../components/PostingAnalysisCard";
 import { useMarkDistinct } from "../../hooks/useMarkDistinct";
+import { usePostingCvs } from "../../hooks/usePostingCvs";
 import { toAnalysisView, toDuplicateViews } from "../../toView";
 import type { PostingOut } from "../../types";
 import { ApplicationBlock } from "./ApplicationBlock";
@@ -25,6 +27,7 @@ interface ReadyBlockProps {
 export function ReadyBlock({ posting, pollMs, createSocket }: ReadyBlockProps) {
   const navigate = useNavigate();
   const { distinct, error } = useMarkDistinct(posting.id);
+  const cvs = usePostingCvs(posting.id);
   const analysis = useMemo(
     () => (posting.analysis ? toAnalysisView(posting.analysis) : null),
     [posting.analysis],
@@ -41,6 +44,7 @@ export function ReadyBlock({ posting, pollMs, createSocket }: ReadyBlockProps) {
       {analysis ? <PostingAnalysisCard analysis={analysis} showTitle={false} /> : null}
       <GapSection postingId={posting.id} pollMs={pollMs} createSocket={createSocket} />
       <ApplicationBlock postingId={posting.id} />
+      {cvs ? <PostingCvList cvs={cvs} /> : null}
       <div className="flex flex-wrap gap-2">
         <Link to={`/carriere/cv/revue/nouvelle/${posting.id}`} className={buttonVariants()}>
           {t("gap.posting.reviewCv")}

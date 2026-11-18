@@ -141,6 +141,8 @@ export const gap = {
     gapPending: "Calcul de l'écart en cours…",
     gapFailed: "L'écart n'a pas pu être calculé.",
     gapTitle: "Écart avec ton profil",
+    cvsTitle: "Mes CV pour cette offre",
+    cvDownload: "Télécharger le CV n° {number} ({date})",
     reviewCv: "Revoir mon CV pour cette offre",
     sourceLink: "Voir l'annonce",
     compare: "Comparer à ma carte",

@@ -5,4 +5,5 @@ export const gapKeys = {
   gap: (postingId: string) => ["gap", "gap", postingId] as const,
   topMissing: ["gap", "top-missing"],
   applicationCheck: (postingId: string) => ["gap", "application-check", postingId] as const,
+  cvs: (postingId: string) => ["gap", "cvs", postingId] as const,
 } as const;
