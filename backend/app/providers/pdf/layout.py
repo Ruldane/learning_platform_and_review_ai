@@ -64,7 +64,7 @@ class SubprocessPdfLayoutExtractor:
         self._slots = asyncio.Semaphore(concurrency)
 
     async def extract_layout(self, data: bytes, *, max_pages: int = base.MAX_CV_PAGES) -> PdfLayout:
-        command = worker_command(self._max_memory_bytes)
+        command = worker_command(self._max_memory_bytes, max_pages)
         async with self._slots:
             try:
                 process = await spawn_worker(command)
@@ -91,7 +91,7 @@ class SubprocessPdfLayoutExtractor:
             logger.info("Mise en page PDF : worker en échec (code %s)", code)
             raise PdfUnreadable() from None
         # Hors de la boucle d'événements : relire 40 Mo de JSON bloque (revue 6.3, I4).
-        layout = await asyncio.to_thread(parse_layout, output)
+        layout = await asyncio.to_thread(parse_layout, output, max_pages)
         logger.info("Mise en page PDF extraite (code %s, %s pages)", code, len(layout.pages))
         return layout
 
@@ -167,7 +167,7 @@ def _png_bytes(value: Any) -> bytes:
     return base64.b64decode(value, validate=True)
 
 
-def parse_layout(output: bytes) -> PdfLayout:
+def parse_layout(output: bytes, max_pages: int = base.MAX_CV_PAGES) -> PdfLayout:
     """Sortie JSON du worker relue en `PdfLayout` ; toute forme inattendue (sortie tronquée,
     worker remplacé) donne `PdfUnreadable`, jamais une erreur interne."""
     try:
@@ -177,7 +177,7 @@ def parse_layout(output: bytes) -> PdfLayout:
         selectable = payload["selectable"]
         if not isinstance(fonts, list) or not all(isinstance(name, str) for name in fonts):
             raise ValueError("polices mal formées")
-        if not isinstance(selectable, bool) or not 1 <= len(pages) <= base.MAX_CV_PAGES:
+        if not isinstance(selectable, bool) or not 1 <= len(pages) <= max_pages:
             raise ValueError("mise en page mal formée")
     except (ValueError, KeyError, TypeError, binascii.Error) as exc:
         logger.info("Mise en page PDF : sortie du worker illisible (%s)", type(exc).__name__)
