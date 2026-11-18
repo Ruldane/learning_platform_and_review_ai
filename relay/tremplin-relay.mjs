@@ -17,7 +17,10 @@ const RUN_TIMEOUT_MS = 20 * 60_000;
 const running = new Map(); // session_id -> processus du client
 const pausedUntil = new Map(); // session_id -> instant de la prochaine tentative
 const PAUSE_MS = 15 * 60_000;
-const QUICK_EXIT_MS = 60_000; // un client parti en moins d'une minute n'a rien pu jouer
+const QUICK_EXIT_MS = 60_000;
+// session_id -> étape pour laquelle un client est reparti en moins d'une minute : si la même étape
+// attend encore, il n'a rien pu jouer (la session est mise de côté) ; une autre étape, il a avancé.
+const quickExit = new Map();
 
 function log(line) {
   mkdirSync(appDir, { recursive: true });
@@ -69,7 +72,7 @@ function claudeServer() {
   return path ? ["--mcp-config", `"${path}"`, "--strict-mcp-config"] : [];
 }
 
-function launch(client, sessionId) {
+function launch(client, sessionId, stepId) {
   const prompt = PROMPT.replaceAll("{session_id}", sessionId);
   const tools = [
     "mcp__tremplin__agents_play_brief",
@@ -93,7 +96,7 @@ function launch(client, sessionId) {
   child.on("exit", (code) => {
     clearTimeout(timer);
     running.delete(sessionId);
-    if (Date.now() - started < QUICK_EXIT_MS) pausedUntil.set(sessionId, Date.now() + PAUSE_MS);
+    if (Date.now() - started < QUICK_EXIT_MS) quickExit.set(sessionId, stepId);
     log(`fin ${client} session ${sessionId} code ${code}`);
   });
   child.on("error", (err) => {
@@ -123,7 +126,14 @@ async function tick(cfg) {
       log(`session ${row.id} mise de côté (${code}) pour ${PAUSE_MS / 60_000} min`);
       continue;
     }
-    launch(client, row.id);
+    if (quickExit.get(row.id) === brief.data.step_id) {
+      quickExit.delete(row.id);
+      pausedUntil.set(row.id, Date.now() + PAUSE_MS);
+      log(`session ${row.id} mise de côté (étape non jouée) pour ${PAUSE_MS / 60_000} min`);
+      continue;
+    }
+    quickExit.delete(row.id);
+    launch(client, row.id, brief.data.step_id);
   }
   return POLL_MS;
 }
