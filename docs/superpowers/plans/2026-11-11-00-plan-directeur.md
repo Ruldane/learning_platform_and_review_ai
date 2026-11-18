@@ -365,8 +365,13 @@ Un serveur MCP donne à Claude Code ou à Codex l'accès aux features de Trempli
 - **Échec de planification renvoyé au Stratège :** une tâche plus longue que la plus longue
   journée ne fait plus échouer `program_builder` (`planning_impossible`, message trompeur sur
   le budget hebdomadaire) ; le Stratège reçoit le motif et refait son brouillon.
-- **Tests repris :** l'en-tête `X-Tremplin-Run`, le menu, le relais (`node:test`), puis un essai
-  de bout en bout avec Codex.
+- **Replanification « impossible » :** quand le budget hebdomadaire est plein, proposer une
+  semaine de plus au lieu de rendre seulement « impossible ».
+- **Écart d'une offre :** pouvoir cocher aussi les lignes « Hors périmètre » et choisir le
+  programme qui reçoit l'ajout (aujourd'hui : le programme validé le plus récent).
+- **Tests repris :** l'en-tête `X-Tremplin-Run`, le menu, le relais (`node:test`), le sélecteur
+  d'offre des modèles de CV, « Je les maîtrise déjà » (D220 : module de validation, quiz sans
+  leçon), puis un essai de bout en bout avec Codex.
 
 #### Liens entre les phases
 
