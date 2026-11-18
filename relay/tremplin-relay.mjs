@@ -15,6 +15,9 @@ const POLL_MS = 10_000;
 const MAX_RUNNING = 2;
 const RUN_TIMEOUT_MS = 20 * 60_000;
 const running = new Map(); // session_id -> processus du client
+const pausedUntil = new Map(); // session_id -> instant de la prochaine tentative
+const PAUSE_MS = 15 * 60_000;
+const QUICK_EXIT_MS = 60_000; // un client parti en moins d'une minute n'a rien pu jouer
 
 function log(line) {
   mkdirSync(appDir, { recursive: true });
@@ -86,9 +89,11 @@ function launch(client, sessionId) {
   const timer = setTimeout(() => child.kill(), RUN_TIMEOUT_MS);
   running.set(sessionId, child);
   log(`lancé ${client} pour la session ${sessionId}`);
+  const started = Date.now();
   child.on("exit", (code) => {
     clearTimeout(timer);
     running.delete(sessionId);
+    if (Date.now() - started < QUICK_EXIT_MS) pausedUntil.set(sessionId, Date.now() + PAUSE_MS);
     log(`fin ${client} session ${sessionId} code ${code}`);
   });
   child.on("error", (err) => {
@@ -107,6 +112,17 @@ async function tick(cfg) {
     const client = row.played_by;
     if (client !== "claude-code" && client !== "codex") continue;
     if (row.pending_interrupt?.kind !== "mcp_model" || running.has(row.id)) continue;
+    if ((pausedUntil.get(row.id) ?? 0) > Date.now()) continue;
+    // Le relais lit l'étape lui-même avant de payer un client : hors de portée du jeton ou
+    // illisible, la session est mise de côté au lieu d'être relancée en boucle.
+    const brief = await call(cfg, "agents_play_brief", { session_id: row.id });
+    if (brief.wait) return brief.wait;
+    if (!brief.data?.step_id) {
+      const code = brief.data?.error?.code ?? "sans_etape";
+      pausedUntil.set(row.id, Date.now() + PAUSE_MS);
+      log(`session ${row.id} mise de côté (${code}) pour ${PAUSE_MS / 60_000} min`);
+      continue;
+    }
     launch(client, row.id);
   }
   return POLL_MS;
