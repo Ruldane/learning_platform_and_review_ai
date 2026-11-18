@@ -12,6 +12,14 @@ MCP = FeatureMcp(
             "Crée un objectif d'apprentissage et lance le Conseil qui propose des parcours.",
             launches="learning_council",
         ),
+        McpAction(
+            "POST /goals/direct",
+            2,
+            "learning_write_goal",
+            "Écriture directe, aucun agent : crée un objectif (intitulé, métier visé, échéance, "
+            "heures par semaine) sans lancer le Conseil, donc sans coût d'API ; le programme "
+            "s'écrit ensuite par `program_write_program`.",
+        ),
         McpAction("GET /goals", 1, "learning_list_goals", "Les objectifs d'apprentissage."),
         McpAction("GET /goals/{goal_id}", 1, "learning_get_goal", "Un objectif et son état."),
         McpAction(

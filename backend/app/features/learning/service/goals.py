@@ -73,16 +73,7 @@ async def create_goal(
     L'objectif est commité AVANT le lancement : le nœud `context` le relit dans sa propre
     session. Lancement impossible, quelle que soit l'erreur : l'objectif est retiré (`_discard`),
     l'erreur passe."""
-    repo = GoalRepository(db, user_id)
-    weekly = None if req.weekly_hours is None else req.weekly_hours * 60
-    goal = await repo.add(
-        text=req.text,
-        target_role=req.target_role,
-        deadline=req.deadline,
-        weekly_minutes=weekly,
-        status="council",
-        framing={},
-    )
+    goal = await _add_goal(db, user_id, req, status="council")
     await db.commit()
     try:
         session_id = await learning.launcher.start(
@@ -97,6 +88,28 @@ async def create_goal(
         "Objectif créé : utilisateur %s, objectif %s, Conseil %s", user_id, goal.id, session_id
     )
     return GoalStarted(goal=await goal_out(db, user_id, goal), session_id=session_id)
+
+
+async def _add_goal(db: AsyncSession, user_id: str, req: GoalCreate, *, status: str) -> Goal:
+    weekly = None if req.weekly_hours is None else req.weekly_hours * 60
+    return await GoalRepository(db, user_id).add(
+        text=req.text,
+        target_role=req.target_role,
+        deadline=req.deadline,
+        weekly_minutes=weekly,
+        status=status,
+        framing={},
+    )
+
+
+async def write_goal(db: AsyncSession, user_id: str, req: GoalCreate) -> GoalOut:
+    """Écriture directe (phase 10, D213) : l'objectif seul, sans Conseil, sans session ni appel au
+    modèle. Il est déjà « chosen » : aucun parcours n'est à choisir, le programme s'écrit ensuite
+    (`POST /programs/direct`). Un Conseil ne s'y relance pas (`council_not_failed`)."""
+    goal = await _add_goal(db, user_id, req, status="chosen")
+    await db.commit()
+    logger.info("Objectif écrit en direct : utilisateur %s, objectif %s", user_id, goal.id)
+    return await goal_out(db, user_id, goal)
 
 
 async def _discard(db: AsyncSession, user_id: str, goal_id: str) -> None:

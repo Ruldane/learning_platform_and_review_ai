@@ -948,6 +948,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/goals/direct": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Write Goal
+         * @description Écrit un objectif sans lancer le Conseil (aucun agent, aucun appel au modèle) : mêmes champs
+         *     que `POST /goals`.
+         */
+        post: operations["write_goal_api_v1_goals_direct_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/goals/{goal_id}": {
         parameters: {
             query?: never;
@@ -2137,6 +2158,26 @@ export interface paths {
         get: operations["list_programs_api_v1_programs_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/programs/direct": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Write Program
+         * @description Écrit un programme complet (semaines, modules, tâches) en brouillon à valider, sans agent.
+         */
+        post: operations["write_program_api_v1_programs_direct_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4709,6 +4750,16 @@ export interface components {
             /** Title */
             title: string | null;
         };
+        /**
+         * EdgeWrite
+         * @description `before` précède `after` (noms de compétences).
+         */
+        EdgeWrite: {
+            /** After */
+            after: string;
+            /** Before */
+            before: string;
+        };
         /** Education */
         Education: {
             /** Degree */
@@ -6494,6 +6545,17 @@ export interface components {
             /** Title */
             title?: string | null;
         };
+        /** ModuleWrite */
+        ModuleWrite: {
+            /** Prerequisites */
+            prerequisites?: string[];
+            /** Skills */
+            skills: string[];
+            /** Tasks */
+            tasks: components["schemas"]["TaskWrite"][];
+            /** Title */
+            title: string;
+        };
         /** MovedTaskOut */
         MovedTaskOut: {
             /**
@@ -7189,6 +7251,26 @@ export interface components {
             title: string;
             /** Weeks */
             weeks: number;
+        };
+        /**
+         * ProgramWrite
+         * @description Un programme complet écrit en un appel, sans agent (semaines, modules, tâches : les champs
+         *     et les bornes du Stratège, 1 à 52 semaines). L'application range les tâches sur le calendrier
+         *     selon les règles du Stratège ; le programme entre en brouillon, « à valider ».
+         */
+        ProgramWrite: {
+            /** Edges */
+            edges?: components["schemas"]["EdgeWrite"][];
+            /** Goal Id */
+            goal_id: string;
+            /** Skills */
+            skills?: components["schemas"]["SkillWrite"][];
+            /** Start Date */
+            start_date?: string | null;
+            /** Title */
+            title: string;
+            /** Weeks */
+            weeks: components["schemas"]["WeekWrite"][];
         };
         /** ProgressOut */
         ProgressOut: {
@@ -8454,6 +8536,19 @@ export interface components {
             /** Name */
             name: string;
         };
+        /**
+         * SkillWrite
+         * @description Une compétence du référentiel, avec son domaine (facultatif : celles des modules sont
+         *     créées sans domaine à la validation).
+         */
+        SkillWrite: {
+            /** Domain */
+            domain: string;
+            /** Name */
+            name: string;
+            /** Synonyms */
+            synonyms?: string[];
+        };
         /** SourceFoundEvent */
         SourceFoundEvent: {
             /**
@@ -8791,6 +8886,24 @@ export interface components {
             status?: ("todo" | "done") | null;
             /** Title */
             title?: string | null;
+        };
+        /**
+         * TaskWrite
+         * @description Une tâche d'un programme écrit en direct : les champs et les bornes de `TaskDraft`. Son jour
+         *     est choisi par l'application, comme pour le Stratège.
+         */
+        TaskWrite: {
+            /** Done Criterion */
+            done_criterion: string;
+            /** Minutes */
+            minutes: number;
+            /** Title */
+            title: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "lire" | "regarder" | "pratiquer" | "quiz" | "projet";
         };
         /**
          * TeachIn
@@ -9393,6 +9506,17 @@ export interface components {
             tasks_done: number;
             /** Tasks Total */
             tasks_total: number;
+        };
+        /** WeekWrite */
+        WeekWrite: {
+            /** Deliverable */
+            deliverable: string;
+            /** Modules */
+            modules: components["schemas"]["ModuleWrite"][];
+            /** Objective */
+            objective: string;
+            /** Theme */
+            theme: string;
         };
         /** WeeklyReview */
         WeeklyReview: {
@@ -11369,6 +11493,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GoalStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    write_goal_api_v1_goals_direct_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoalCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalOut"];
                 };
             };
             /** @description Validation Error */
@@ -13859,6 +14016,51 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ProgramSummaryOut"][];
                 };
+            };
+        };
+    };
+    write_program_api_v1_programs_direct_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProgramWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProgramOut"];
+                };
+            };
+            /** @description `goal_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `program_exists` */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `invalid_start_date`, `planning_impossible` ou `plan_invalid` */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

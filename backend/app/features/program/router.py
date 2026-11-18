@@ -15,6 +15,7 @@ from app.features.program.schemas import (
     ProgramOut,
     ProgramPatch,
     ProgramSummaryOut,
+    ProgramWrite,
     TaskOut,
     TaskPatch,
     ValidateOut,
@@ -22,7 +23,7 @@ from app.features.program.schemas import (
     WeekOut,
     WeekPatch,
 )
-from app.features.program.service import editing, programs, structure, validation
+from app.features.program.service import direct, editing, programs, structure, validation
 from app.features.program.service.export_pdf import export_program_pdf
 from app.features.program.service.ics import program_ics
 from app.features.program.service.runtime import ProgramRuntime
@@ -45,6 +46,21 @@ ProgramDep = Annotated[ProgramRuntime, Depends(get_program_runtime)]
 @router.get("/programs", response_model=list[ProgramSummaryOut])
 async def list_programs(current: CurrentUserDep, db: Db) -> list[ProgramSummaryOut]:
     return await programs.list_programs(db, current.id)
+
+
+@router.post(
+    "/programs/direct",
+    response_model=ProgramOut,
+    status_code=http.HTTP_201_CREATED,
+    responses={
+        404: {"description": "`goal_not_found`"},
+        409: {"description": "`program_exists`"},
+        422: {"description": "`invalid_start_date`, `planning_impossible` ou `plan_invalid`"},
+    },
+)
+async def write_program(body: ProgramWrite, current: CurrentUserDep, rt: ProgramDep) -> ProgramOut:
+    """Écrit un programme complet (semaines, modules, tâches) en brouillon à valider, sans agent."""
+    return await direct.write_program(rt, current.id, body)
 
 
 @router.get("/programs/{program_id}", response_model=ProgramOut)

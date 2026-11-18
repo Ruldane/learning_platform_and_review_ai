@@ -42,6 +42,13 @@ async def create_goal(
     return await goals.create_goal(db, learning, current.id, body)
 
 
+@router.post("/goals/direct", status_code=http.HTTP_201_CREATED, response_model=GoalOut)
+async def write_goal(body: GoalCreate, current: CurrentUserDep, db: Db) -> GoalOut:
+    """Écrit un objectif sans lancer le Conseil (aucun agent, aucun appel au modèle) : mêmes champs
+    que `POST /goals`."""
+    return await goals.write_goal(db, current.id, body)
+
+
 @router.get("/goals", response_model=list[GoalOut])
 async def list_goals(current: CurrentUserDep, db: Db) -> list[GoalOut]:
     return await goals.list_goals(db, current.id)

@@ -63,7 +63,7 @@ def saved_of(version: PlanVersion) -> DraftSaved:
     )
 
 
-async def _write_rows(
+async def write_rows(
     db: AsyncSession, user_id: str, program_id: str, plan: ScheduledPlan, draft: PlanDraft
 ) -> None:
     """Semaines, modules et tâches du plan rangé ; les modules sautés (déjà acquis) sont gardés
@@ -114,7 +114,7 @@ async def _write_rows(
         )
 
 
-def _snapshot(plan: ScheduledPlan, draft: PlanDraft, budget: Budget) -> dict[str, Any]:
+def plan_snapshot(plan: ScheduledPlan, draft: PlanDraft, budget: Budget) -> dict[str, Any]:
     """Instantané de D83, plus le budget par jour, les reports et le référentiel du Stratège
     (relu à la validation pour le graphe de compétences)."""
     return {
@@ -182,8 +182,8 @@ async def save_version(
     if not plan.weeks:
         raise nothing_to_plan()
     program, before = await _program_row(db, user_id, goal.goal_id, session_id, start, draft.title)
-    await _write_rows(db, user_id, program.id, plan, draft)
-    after = _snapshot(plan, draft, budget)
+    await write_rows(db, user_id, program.id, plan, draft)
+    after = plan_snapshot(plan, draft, budget)
     number = await versions.next_version(program.id)
     await versions.supersede_pending(program.id)  # la nouvelle proposition remplace l'ancienne
     version = await versions.add(

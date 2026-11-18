@@ -19,6 +19,10 @@ INSTRUCTIONS = "\n".join(
         "session (sessions_get_session) ; au plus 30 lancements par jour.",
         "- Pour ajouter du contenu (leçon, offre, quiz, projet, programme), écris-le toi-même avec "
         "les outils *_write_* : aucun agent ne tourne, l'écriture est annulable.",
+        "- Bâtir un programme sans agent : learning_write_goal, program_write_program, puis "
+        "lessons_write_lesson et quiz_write_quiz par module, puis program_validate_program "
+        "(January confirme). learning_create_goal lance le Conseil et la validation lance les "
+        "leçons : cela coûte l'API de January, préfère les outils directs quand elle le demande.",
         "- IDE : lis l'exercice, les fichiers et la sortie, lance le code, écris des notes, et "
         "propose une correction par une note de type proposal avec base_hash (sha256 du "
         "fichier) ; January l'accepte dans l'interface. N'écris dans ses fichiers que par "

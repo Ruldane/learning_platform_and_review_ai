@@ -4052,6 +4052,29 @@
         "title": "DuplicateOut",
         "type": "object"
       },
+      "EdgeWrite": {
+        "description": "`before` précède `after` (noms de compétences).",
+        "properties": {
+          "after": {
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "After",
+            "type": "string"
+          },
+          "before": {
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Before",
+            "type": "string"
+          }
+        },
+        "required": [
+          "before",
+          "after"
+        ],
+        "title": "EdgeWrite",
+        "type": "object"
+      },
       "Education": {
         "properties": {
           "degree": {
@@ -8823,6 +8846,53 @@
         "title": "ModulePatch",
         "type": "object"
       },
+      "ModuleWrite": {
+        "properties": {
+          "prerequisites": {
+            "items": {
+              "maxLength": 120,
+              "minLength": 2,
+              "type": "string"
+            },
+            "maxItems": 8,
+            "title": "Prerequisites",
+            "type": "array"
+          },
+          "skills": {
+            "items": {
+              "maxLength": 120,
+              "minLength": 2,
+              "type": "string"
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "title": "Skills",
+            "type": "array"
+          },
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/TaskWrite"
+            },
+            "maxItems": 12,
+            "minItems": 1,
+            "title": "Tasks",
+            "type": "array"
+          },
+          "title": {
+            "maxLength": 120,
+            "minLength": 3,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "skills",
+          "tasks"
+        ],
+        "title": "ModuleWrite",
+        "type": "object"
+      },
       "MovedTaskOut": {
         "properties": {
           "after": {
@@ -10800,6 +10870,67 @@
           "progress"
         ],
         "title": "ProgramSummaryOut",
+        "type": "object"
+      },
+      "ProgramWrite": {
+        "description": "Un programme complet écrit en un appel, sans agent (semaines, modules, tâches : les champs\net les bornes du Stratège, 1 à 52 semaines). L'application range les tâches sur le calendrier\nselon les règles du Stratège ; le programme entre en brouillon, « à valider ».",
+        "properties": {
+          "edges": {
+            "items": {
+              "$ref": "#/components/schemas/EdgeWrite"
+            },
+            "maxItems": 120,
+            "title": "Edges",
+            "type": "array"
+          },
+          "goal_id": {
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Goal Id",
+            "type": "string"
+          },
+          "skills": {
+            "items": {
+              "$ref": "#/components/schemas/SkillWrite"
+            },
+            "maxItems": 60,
+            "title": "Skills",
+            "type": "array"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 3,
+            "title": "Title",
+            "type": "string"
+          },
+          "weeks": {
+            "items": {
+              "$ref": "#/components/schemas/WeekWrite"
+            },
+            "maxItems": 52,
+            "minItems": 1,
+            "title": "Weeks",
+            "type": "array"
+          }
+        },
+        "required": [
+          "goal_id",
+          "title",
+          "weeks"
+        ],
+        "title": "ProgramWrite",
         "type": "object"
       },
       "ProgressOut": {
@@ -14384,6 +14515,39 @@
         "title": "SkillNodeOut",
         "type": "object"
       },
+      "SkillWrite": {
+        "description": "Une compétence du référentiel, avec son domaine (facultatif : celles des modules sont\ncréées sans domaine à la validation).",
+        "properties": {
+          "domain": {
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Domain",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Name",
+            "type": "string"
+          },
+          "synonyms": {
+            "items": {
+              "maxLength": 120,
+              "minLength": 2,
+              "type": "string"
+            },
+            "maxItems": 5,
+            "title": "Synonyms",
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "domain"
+        ],
+        "title": "SkillWrite",
+        "type": "object"
+      },
       "SourceFoundEvent": {
         "properties": {
           "agent": {
@@ -15348,6 +15512,48 @@
           }
         },
         "title": "TaskPatch",
+        "type": "object"
+      },
+      "TaskWrite": {
+        "description": "Une tâche d'un programme écrit en direct : les champs et les bornes de `TaskDraft`. Son jour\nest choisi par l'application, comme pour le Stratège.",
+        "properties": {
+          "done_criterion": {
+            "maxLength": 200,
+            "minLength": 3,
+            "title": "Done Criterion",
+            "type": "string"
+          },
+          "minutes": {
+            "maximum": 120.0,
+            "minimum": 15.0,
+            "title": "Minutes",
+            "type": "integer"
+          },
+          "title": {
+            "maxLength": 120,
+            "minLength": 3,
+            "title": "Title",
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "lire",
+              "regarder",
+              "pratiquer",
+              "quiz",
+              "projet"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "type",
+          "minutes",
+          "done_criterion"
+        ],
+        "title": "TaskWrite",
         "type": "object"
       },
       "TeachIn": {
@@ -16708,6 +16914,45 @@
           "streak_days"
         ],
         "title": "WeekRubric",
+        "type": "object"
+      },
+      "WeekWrite": {
+        "properties": {
+          "deliverable": {
+            "maxLength": 300,
+            "minLength": 3,
+            "title": "Deliverable",
+            "type": "string"
+          },
+          "modules": {
+            "items": {
+              "$ref": "#/components/schemas/ModuleWrite"
+            },
+            "maxItems": 4,
+            "minItems": 1,
+            "title": "Modules",
+            "type": "array"
+          },
+          "objective": {
+            "maxLength": 300,
+            "minLength": 3,
+            "title": "Objective",
+            "type": "string"
+          },
+          "theme": {
+            "maxLength": 120,
+            "minLength": 3,
+            "title": "Theme",
+            "type": "string"
+          }
+        },
+        "required": [
+          "theme",
+          "objective",
+          "deliverable",
+          "modules"
+        ],
+        "title": "WeekWrite",
         "type": "object"
       },
       "WeeklyReview": {
@@ -19487,6 +19732,48 @@
           }
         },
         "summary": "Create Goal",
+        "tags": [
+          "learning"
+        ]
+      }
+    },
+    "/api/v1/goals/direct": {
+      "post": {
+        "description": "Écrit un objectif sans lancer le Conseil (aucun agent, aucun appel au modèle) : mêmes champs\nque `POST /goals`.",
+        "operationId": "write_goal_api_v1_goals_direct_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoalCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoalOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Write Goal",
         "tags": [
           "learning"
         ]
@@ -22757,6 +23044,47 @@
           }
         },
         "summary": "List Programs",
+        "tags": [
+          "program"
+        ]
+      }
+    },
+    "/api/v1/programs/direct": {
+      "post": {
+        "description": "Écrit un programme complet (semaines, modules, tâches) en brouillon à valider, sans agent.",
+        "operationId": "write_program_api_v1_programs_direct_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgramWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgramOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`goal_not_found`"
+          },
+          "409": {
+            "description": "`program_exists`"
+          },
+          "422": {
+            "description": "`invalid_start_date`, `planning_impossible` ou `plan_invalid`"
+          }
+        },
+        "summary": "Write Program",
         "tags": [
           "program"
         ]

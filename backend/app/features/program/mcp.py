@@ -18,6 +18,16 @@ MCP = FeatureMcp(
             "Un programme complet : modules, semaines, tâches.",
         ),
         McpAction(
+            "POST /programs/direct",
+            2,
+            "program_write_program",
+            "Écriture directe, aucun agent : écrit un programme complet d'un objectif "
+            "(`goal_id`, titre, date de début, puis semaines, modules, tâches) en brouillon, à "
+            "valider ; mêmes bornes et mêmes règles que le Stratège (4 modules par semaine, 12 "
+            "tâches par module, 85 % du budget, pratique et quiz chaque semaine : l'application "
+            "range les jours). Leçons et quiz s'écrivent ensuite par module.",
+        ),
+        McpAction(
             "PATCH /programs/{program_id}",
             2,
             "program_update_program",
