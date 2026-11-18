@@ -28,6 +28,8 @@ export const lessons = {
     weekGroup: "Semaine {rank}",
     open: "Lire « {title} »",
     words: "{count} mots",
+    completed: "Terminée",
+    tasksDone: "{done} / {total} tâches faites",
     emptyTitle: "Pas encore de leçon",
     emptyDescription:
       "Les leçons sont préparées une fois le programme validé : les semaines 1 et 2 tout de suite, les suivantes 7 jours avant leur début.",

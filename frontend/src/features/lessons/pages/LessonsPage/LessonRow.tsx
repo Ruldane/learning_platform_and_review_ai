@@ -2,8 +2,12 @@ import { Link } from "react-router";
 import { t } from "@/shared/i18n/t";
 import { cn } from "@/shared/lib/utils";
 import type { LessonSummaryOut } from "../../types";
+import { LessonTaskProgress } from "./LessonTaskProgress";
 
-/** Une leçon de la liste : son titre (lien vers le lecteur), son état et sa longueur. */
+/**
+ * Une leçon de la liste : son titre (lien vers le lecteur), son état, sa longueur et son
+ * avancement dans le programme (« Terminée » quand toutes les tâches du module sont faites).
+ */
 export function LessonRow({ lesson }: { lesson: LessonSummaryOut }) {
   const ready = lesson.status === "ready";
   return (
@@ -15,7 +19,7 @@ export function LessonRow({ lesson }: { lesson: LessonSummaryOut }) {
       >
         {lesson.title}
       </Link>
-      <span className="flex items-baseline gap-3 text-sm">
+      <span className="flex flex-wrap items-baseline gap-3 text-sm">
         {ready ? (
           <span className="text-muted-foreground">
             {t("lessons.list.words", { count: lesson.word_count.toLocaleString("fr-FR") })}
@@ -24,6 +28,7 @@ export function LessonRow({ lesson }: { lesson: LessonSummaryOut }) {
         <span className={cn("font-medium", ready ? "text-primary" : "text-muted-foreground")}>
           {t(`lessons.status.${lesson.status}`)}
         </span>
+        <LessonTaskProgress lesson={lesson} />
       </span>
     </li>
   );

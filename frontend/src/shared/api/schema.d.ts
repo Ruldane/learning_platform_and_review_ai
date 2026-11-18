@@ -5711,6 +5711,16 @@ export interface components {
              * @description Essais de production faits (3 au plus) : une leçon `failed` avec moins de 3 essais sera relancée.
              */
             attempts: number;
+            /**
+             * Completed
+             * @description Toutes les tâches du module sont faites (au moins une) : leçon terminée.
+             */
+            completed: boolean;
+            /**
+             * Done Tasks
+             * @description Tâches faites du module de la leçon (programme).
+             */
+            done_tasks: number;
             /** Failure Reason */
             failure_reason: string | null;
             /** Id */
@@ -5733,6 +5743,11 @@ export interface components {
             status: "pending" | "generating" | "ready" | "failed";
             /** Title */
             title: string;
+            /**
+             * Total Tasks
+             * @description Tâches du module de la leçon.
+             */
+            total_tasks: number;
             /** Week Rank */
             week_rank: number;
             /** Word Count */
@@ -5755,6 +5770,16 @@ export interface components {
              * @description Essais de production faits (3 au plus) : une leçon `failed` avec moins de 3 essais sera relancée.
              */
             attempts: number;
+            /**
+             * Completed
+             * @description Toutes les tâches du module sont faites (au moins une) : leçon terminée.
+             */
+            completed: boolean;
+            /**
+             * Done Tasks
+             * @description Tâches faites du module de la leçon (programme).
+             */
+            done_tasks: number;
             /** Id */
             id: string;
             /** Module Id */
@@ -5769,6 +5794,11 @@ export interface components {
             status: "pending" | "generating" | "ready" | "failed";
             /** Title */
             title: string;
+            /**
+             * Total Tasks
+             * @description Tâches du module de la leçon.
+             */
+            total_tasks: number;
             /** Week Rank */
             week_rank: number;
             /** Word Count */

@@ -1,20 +1,24 @@
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { errorMessage } from "@/shared/api/errors";
 import { t } from "@/shared/i18n/t";
 import { EmptyState } from "@/shared/ui/states/EmptyState";
 import { ErrorState } from "@/shared/ui/states/ErrorState";
 import { LoadingState } from "@/shared/ui/states/LoadingState";
+import { ProgramPicker } from "../../components/ProgramPicker";
 import { usePrograms } from "../../hooks/usePrograms";
 import { LessonsBody } from "./LessonsBody";
 
 /**
- * Leçons (`/apprendre/lecons`) : les leçons du programme le plus récent, par semaine, avec leur
- * état (à venir, en préparation, prête, nouvelle tentative prévue).
+ * Leçons (`/apprendre/lecons`) : les leçons d'un programme, par semaine, avec leur état (à venir,
+ * en préparation, prête, nouvelle tentative prévue) et leur avancement. Le plus récent par défaut ;
+ * avec plusieurs programmes, une liste déroulante choisit (`?programme=<id>`).
  */
 export function LessonsPage() {
   const navigate = useNavigate();
   const programs = usePrograms();
-  const latest = programs.data?.[0];
+  const [params, setParams] = useSearchParams();
+  const list = programs.data ?? [];
+  const chosen = list.find((program) => program.id === params.get("programme")) ?? list[0];
 
   let body;
   if (programs.isPending) {
@@ -23,8 +27,8 @@ export function LessonsPage() {
     body = (
       <ErrorState message={errorMessage(programs.error)} onRetry={() => void programs.refetch()} />
     );
-  } else if (latest) {
-    body = <LessonsBody programId={latest.id} />;
+  } else if (chosen) {
+    body = <LessonsBody key={chosen.id} programId={chosen.id} />;
   } else {
     body = (
       <EmptyState
@@ -40,9 +44,18 @@ export function LessonsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-2xl font-semibold">{t("lessons.list.title")}</h1>
-        <p className="mt-2 text-muted-foreground">{t("lessons.list.intro")}</p>
+      <header className="flex flex-col gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold">{t("lessons.list.title")}</h1>
+          <p className="mt-2 text-muted-foreground">{t("lessons.list.intro")}</p>
+        </div>
+        {chosen && list.length > 1 ? (
+          <ProgramPicker
+            programs={list.map(({ id, title }) => ({ id, title }))}
+            value={chosen.id}
+            onChange={(programme) => setParams({ programme }, { replace: true })}
+          />
+        ) : null}
       </header>
       {body}
     </div>

@@ -33,6 +33,9 @@ export const lessonOut = (over: Record<string, unknown> = {}) => ({
   markdown: "## L'essentiel\n\nUne variable nomme une valeur.\n\n## Exemple\n\nx = 3",
   word_count: 1400,
   pdf_available: true,
+  done_tasks: 0,
+  total_tasks: 3,
+  completed: false,
   resources: [resourceOut()],
   ...over,
 });
@@ -46,5 +49,8 @@ export const lessonSummary = (over: Record<string, unknown> = {}) => ({
   status: "ready",
   word_count: 1400,
   pdf_available: true,
+  done_tasks: 0,
+  total_tasks: 3,
+  completed: false,
   ...over,
 });

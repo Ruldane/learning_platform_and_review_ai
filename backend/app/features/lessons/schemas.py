@@ -69,6 +69,11 @@ class LessonSummaryOut(BaseModel):
     )
     word_count: int
     pdf_available: bool
+    done_tasks: int = Field(ge=0, description="Tâches faites du module de la leçon (programme).")
+    total_tasks: int = Field(ge=0, description="Tâches du module de la leçon.")
+    completed: bool = Field(
+        description="Toutes les tâches du module sont faites (au moins une) : leçon terminée."
+    )
 
 
 class LessonOut(LessonSummaryOut):
