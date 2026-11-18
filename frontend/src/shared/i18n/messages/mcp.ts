@@ -43,6 +43,9 @@ export const mcp = {
     features: "Features ouvertes",
     featuresHint: "Coche seulement ce que Claude doit voir.",
     featureCounts: "{read} en lecture, {write} en écriture, {confirm} à confirmer",
+    selectAll: "Tout cocher",
+    selectAllHint:
+      "Pour un client qui joue les parcours (Claude Code, Codex ou le relais) : toutes les features, avec « sessions », en mode écriture.",
     noFeatures: "Aucune feature n'expose d'outil MCP pour l'instant.",
     mode: "Mode",
     modeRead: "Lecture seule",

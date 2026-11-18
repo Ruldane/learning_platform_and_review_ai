@@ -1,20 +1,30 @@
 import { useId } from "react";
 import { t } from "@/shared/i18n/t";
+import { Button } from "@/shared/ui/button";
 import type { FeatureOption } from "../viewTypes";
 
 interface FeaturePickerProps {
   options: FeatureOption[];
   selected: readonly string[];
   onToggle: (feature: string) => void;
+  onSelectAll: () => void;
 }
 
 /** Les features que le jeton peut voir : aucune de cochée au départ, on ouvre ce qu'on choisit. */
-export function FeaturePicker({ options, selected, onToggle }: FeaturePickerProps) {
+export function FeaturePicker({ options, selected, onToggle, onSelectAll }: FeaturePickerProps) {
   const prefix = useId();
   return (
     <fieldset className="flex flex-col gap-2">
       <legend className="text-sm font-medium">{t("mcp.form.features")}</legend>
       <p className="text-sm text-muted-foreground">{t("mcp.form.featuresHint")}</p>
+      {options.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={onSelectAll}>
+            {t("mcp.form.selectAll")}
+          </Button>
+          <span className="text-xs text-muted-foreground">{t("mcp.form.selectAllHint")}</span>
+        </div>
+      ) : null}
       {options.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t("mcp.form.noFeatures")}</p>
       ) : null}

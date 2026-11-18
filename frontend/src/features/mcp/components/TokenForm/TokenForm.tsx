@@ -47,6 +47,7 @@ export function TokenForm({ features, pending, onSubmit }: TokenFormProps) {
         options={features}
         selected={selected}
         onToggle={(feature) => setSelected((list) => toggled(list, feature))}
+        onSelectAll={() => setSelected(features.map((option) => option.id))}
       />
       <ModeChoice value={mode} onChange={setMode} />
       <DurationSelect value={days} onChange={setDays} />
