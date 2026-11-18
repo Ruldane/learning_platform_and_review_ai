@@ -48,9 +48,9 @@ describe("IdeSessionPage, asking the teacher", () => {
     const { user, calls } = renderSession();
     await findEditor();
     const field = screen.getByRole("textbox", { name: "Ta question" });
-    expect(screen.getByRole("button", { name: "Poser la question" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Envoyer" })).toBeDisabled();
     await user.type(field, "C'est quoi une liste ?");
-    await user.click(screen.getByRole("button", { name: "Poser la question" }));
+    await user.click(screen.getByRole("button", { name: "Envoyer" }));
     await waitFor(() => expect(calls.teach).toHaveLength(1));
     expect(calls.teach[0]).toMatchObject({
       trigger: "question",
@@ -86,14 +86,14 @@ describe("IdeSessionPage, asking the teacher", () => {
     const { user, sockets, calls } = renderSession({ teach: { session_id: "t1" } });
     await findEditor();
     await user.click(screen.getByRole("button", { name: "Indice" }));
-    expect(await screen.findByText("Le professeur réfléchit…")).toBeInTheDocument();
+    expect(await screen.findByText("Le professeur écrit…")).toBeInTheDocument();
     await waitFor(() => expect(sockets.sockets.length).toBeGreaterThan(0));
     const stream = sockets.sockets.find((s) => s.url.includes("/sessions/t1/stream"));
     expect(stream).toBeDefined();
     act(() => {
       stream?.open().push(councilEvents("t1").completed());
     });
-    await waitFor(() => expect(screen.queryByText("Le professeur réfléchit…")).toBeNull());
+    await waitFor(() => expect(screen.queryByText("Le professeur écrit…")).toBeNull());
     expect(calls.teach).toHaveLength(1);
   });
 
@@ -106,7 +106,7 @@ describe("IdeSessionPage, asking the teacher", () => {
     expect(calls.teach).toHaveLength(0);
   });
 
-  it("lists the notes by kind, with hint levels, and draws annotations in the margin", async () => {
+  it("puts the notes in the thread, with hint levels, and draws annotations in the margin", async () => {
     renderSession({
       notes: [
         noteOut({ id: "n1", level: 2, content: "Regarde le signe." }),
@@ -122,17 +122,18 @@ describe("IdeSessionPage, asking the teacher", () => {
           file_path: "main.py",
           line_start: 1,
           content: "Ici.",
+          created_at: "2026-11-17T10:07:00Z",
         }),
       ],
     });
     await findEditor();
-    const hints = await screen.findByRole("region", { name: "Indices" });
-    expect(within(hints).getByText(/Indice 2/)).toBeInTheDocument();
-    expect(within(hints).getByText(/Indice 3/)).toBeInTheDocument();
-    expect(within(hints).queryByText(/Indice 1/)).not.toBeInTheDocument();
-    expect(
-      within(screen.getByRole("region", { name: "Dans la marge" })).getByText("Ici."),
-    ).toBeVisible();
+    const thread = await screen.findByRole("log", { name: "Conversation avec le professeur" });
+    expect(within(thread).getByText("Regarde le signe.")).toBeVisible();
+    expect(within(thread).getByText(/Indice 2/)).toBeInTheDocument();
+    expect(within(thread).getByText(/Indice 3/)).toBeInTheDocument();
+    expect(within(thread).queryByText(/Indice 1/)).not.toBeInTheDocument();
+    const margin = within(thread).getByRole("article", { name: /dans la marge/ });
+    expect(within(margin).getByText("Ici.")).toBeVisible();
     await waitFor(() => expect(fakeEditor.decorations).toHaveLength(1));
     expect(fakeEditor.decorations[0]?.range.startLineNumber).toBe(1);
   });

@@ -25,13 +25,32 @@ export function useCoach(sessionId: string, automatic: boolean, where: Where) {
   useEffect(() => {
     latest.current = { automatic, where };
   });
-  const { mutate } = teach;
+  const { mutate, mutateAsync } = teach;
   const ask = useCallback(
     (what: Ask) => {
       const { filePath, line } = latest.current.where;
       mutate({ ...what, file_path: filePath, line });
     },
     [mutate],
+  );
+  /** Une question tapée : `true` si le professeur la prend (sinon la saisie reste à sa place). */
+  const sendQuestion = useCallback(
+    async (question: string, runId: string | null): Promise<boolean> => {
+      const { filePath, line } = latest.current.where;
+      try {
+        const out = await mutateAsync({
+          trigger: "question",
+          question,
+          run_id: runId,
+          file_path: filePath,
+          line,
+        });
+        return !out.skipped;
+      } catch {
+        return false; // l'erreur est lue dans `teach.error`
+      }
+    },
+    [mutateAsync],
   );
   const afterRun = useCallback(
     (run: RunProgress) => {
@@ -41,5 +60,5 @@ export function useCoach(sessionId: string, automatic: boolean, where: Where) {
     },
     [ask],
   );
-  return { teach, ask, afterRun };
+  return { teach, ask, sendQuestion, afterRun };
 }

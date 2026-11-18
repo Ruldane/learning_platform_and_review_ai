@@ -1,6 +1,7 @@
 """Le contexte envoyé au professeur (10.A3), borné par le code : un seul fichier (jamais un
 second), la fenêtre de ±30 lignes autour de la ligne en cause (ou du curseur), les 40 dernières
-lignes de la sortie d'erreur (2 000 caractères au plus) et les 4 derniers échanges. Jamais tout le
+lignes de la sortie d'erreur (2 000 caractères au plus) et le fil des 12 derniers messages (4 000
+caractères au plus). Jamais tout le
 projet ni tout l'historique. Constantes nommées, réglables."""
 
 import hashlib
@@ -13,8 +14,9 @@ WINDOW_LINES = 30  # de chaque côté de la ligne en cause
 LINE_CHARS = 200  # une ligne plus longue est coupée (code minifié, donnée collée)
 ERROR_LINES = 40
 ERROR_CHARS = 2_000
-EXCHANGES = 4
+EXCHANGES = 12  # messages du fil : questions de January et réponses, les plus récents
 EXCHANGE_CHARS = 400
+THREAD_CHARS = 4_000  # le fil entier ; les plus anciens messages tombent d'abord
 
 _FRAME = re.compile(r'File "(?P<path>[^"]+)", line (?P<line>\d+)')
 _PYTEST = re.compile(r"^(?P<path>[^\s:]+\.py):(?P<line>\d+):")
@@ -30,7 +32,7 @@ class TeacherContext:
     window: str  # lignes numérotées « 12 | code »
     base_hash: str  # sha256 du fichier entier (empreinte d'une proposition, P9)
     error_tail: str  # fin de la sortie de la dernière exécution ; vide s'il n'y en a pas
-    exchanges: list[str]  # les 4 dernières notes (les plus anciennes d'abord)
+    exchanges: list[str]  # le fil, les 12 derniers messages (les plus anciens d'abord)
 
 
 def file_hash(text: str) -> str:
@@ -97,18 +99,35 @@ def error_tail(run: RunView | None) -> str:
 
 
 def _exchange(note: NoteView) -> str:
-    return f"{note.author} ({note.kind}) : {' '.join(note.text.split())[:EXCHANGE_CHARS]}"
+    who = "January" if note.author == "user" else note.author
+    return f"{who} ({note.kind}) : {' '.join(note.text.split())[:EXCHANGE_CHARS]}"
+
+
+def _thread(notes: list[NoteView], current_question: str | None) -> list[str]:
+    """Le fil dans l'ordre : au plus `EXCHANGES` messages et `THREAD_CHARS` caractères (le plus
+    récent est gardé). La question qu'on est en train de poser est donnée à part : pas deux fois."""
+    kept = [note for note in notes if note.kind != "reference"]
+    last = kept[-1] if kept else None
+    if last and last.kind == "question" and last.text.strip() == (current_question or "").strip():
+        kept = kept[:-1]
+    lines = [_exchange(note) for note in kept[-EXCHANGES:]]
+    while len(lines) > 1 and sum(len(line) for line in lines) > THREAD_CHARS:
+        lines.pop(0)
+    return lines
 
 
 def build_context(
-    inputs: TeachInputs, *, file_path: str | None = None, cursor_line: int | None = None
+    inputs: TeachInputs,
+    *,
+    file_path: str | None = None,
+    cursor_line: int | None = None,
+    question: str | None = None,
 ) -> TeacherContext:
     """Le contexte d'un appel : une seule fenêtre d'un seul fichier, la fin de la sortie de la
-    dernière exécution, les 4 dernières notes qui ne sont pas des renvois."""
+    dernière exécution, le fil des 12 derniers messages (hors renvois)."""
     path, focus = focus_of(inputs, file_path, cursor_line)
     text = inputs.files[path]
     window, first, last, count = _window(text, focus)
-    notes = [note for note in inputs.notes if note.kind != "reference"][-EXCHANGES:]
     return TeacherContext(
         path=path,
         focus=min(max(focus, 1), count),
@@ -118,5 +137,5 @@ def build_context(
         window=window,
         base_hash=file_hash(text),
         error_tail=error_tail(inputs.run),
-        exchanges=[_exchange(note) for note in notes],
+        exchanges=_thread(inputs.notes, question),
     )

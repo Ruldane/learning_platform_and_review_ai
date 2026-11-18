@@ -182,7 +182,10 @@ async def test_stale_proposal_is_dropped_when_the_code_changed_meanwhile(
     await client.put(f"{API}/sessions/{sid}/files", json={"files": changed})
     hold.set()
     done = await wait_done(client, sent["session_id"])
-    assert (await client.get(f"{API}/sessions/{sid}/notes")).json() == []  # rien de périmé rangé
+    notes = (await client.get(f"{API}/sessions/{sid}/notes")).json()
+    assert [n["kind"] for n in notes] == [
+        "question"
+    ]  # sa question, mais aucune proposition périmée
     assert done["status"] == "completed"
 
 

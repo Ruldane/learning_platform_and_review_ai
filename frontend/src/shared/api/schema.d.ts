@@ -6552,7 +6552,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "hint" | "explanation" | "annotation" | "proposal" | "reference";
+            kind: "hint" | "explanation" | "annotation" | "proposal" | "reference" | "question";
             /** Line End */
             line_end?: number | null;
             /** Line Start */
@@ -6586,7 +6586,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "hint" | "explanation" | "annotation" | "proposal" | "reference";
+            kind: "hint" | "explanation" | "annotation" | "proposal" | "reference" | "question";
             /** Level */
             level: number | null;
             /** Line End */

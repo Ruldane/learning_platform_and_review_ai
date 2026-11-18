@@ -63,7 +63,7 @@ describe("IdeSessionPage, running code", () => {
     });
     await settle(800);
     expect(calls.teach).toHaveLength(1);
-    expect(await screen.findByText("Le professeur réfléchit…")).toBeInTheDocument();
+    expect(await screen.findByText("Le professeur écrit…")).toBeInTheDocument();
   });
 
   it("a run that succeeds never calls the teacher", async () => {

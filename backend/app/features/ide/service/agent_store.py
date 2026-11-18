@@ -31,7 +31,7 @@ from app.providers.sandbox.base import CodeSandbox, SandboxJob, UnknownRun
 
 logger = logging.getLogger(__name__)
 
-NOTES_SEEN = 8  # les notes relues (les 4 derniers échanges en sont tirés)
+NOTES_SEEN = 30  # les notes relues (les 12 derniers messages en sont tirés, renvois exclus)
 VERIFY_TIMEOUT_S = 15  # durée réelle demandée au bac pour les tests d'un exercice
 VERIFY_WAIT_S = 40.0  # attente totale du résultat (file d'attente comprise)
 POLL_S = 0.3

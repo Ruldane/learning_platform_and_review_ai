@@ -1,1 +1,0 @@
-export { TeacherAsk } from "./TeacherAsk";

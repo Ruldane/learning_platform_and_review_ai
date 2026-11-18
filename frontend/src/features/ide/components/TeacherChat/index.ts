@@ -1,0 +1,1 @@
+export { TeacherChat } from "./TeacherChat";

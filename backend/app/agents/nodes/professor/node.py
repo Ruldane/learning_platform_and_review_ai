@@ -54,7 +54,12 @@ def make_teach(deps: GraphDeps) -> Node:
         ports = deps.ports.ide
         inputs = await ports.teacher_inputs(deps.user_id, ide_session_id, state.get("run_id"))
         plan = plan_of(trigger, inputs.style)
-        ctx = build_context(inputs, file_path=state.get("file_path"), cursor_line=state.get("line"))
+        ctx = build_context(
+            inputs,
+            file_path=state.get("file_path"),
+            cursor_line=state.get("line"),
+            question=state.get("question"),
+        )
         level = state.get("level") or 1
         messages: list[BaseMessage] = [
             prefix_of(inputs),

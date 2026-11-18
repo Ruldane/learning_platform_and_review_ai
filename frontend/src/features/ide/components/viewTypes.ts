@@ -1,4 +1,4 @@
-export type NoteKind = "hint" | "explanation" | "annotation" | "proposal" | "reference";
+export type NoteKind = "hint" | "explanation" | "annotation" | "proposal" | "reference" | "question";
 export type NoteStatus = "open" | "accepted" | "rejected" | "stale";
 export type NoteAuthor = "professor" | "claude" | "user";
 export type RunKind = "run" | "check";

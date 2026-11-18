@@ -12,6 +12,7 @@ déjà donnés pour la même erreur."""
 
 import asyncio
 import hashlib
+import logging
 import weakref
 from dataclasses import dataclass
 from datetime import timedelta
@@ -55,6 +56,8 @@ COMPLIMENT = "Bravo : tes tests passent. Relis ton code une dernière fois, tu p
 REFERENCE = "Même erreur au même endroit : relis ma note précédente, elle s'applique encore."
 
 PROFESSOR = Caller(kind="app", label=PROFESSOR_LABEL)
+JANUARY = Caller(kind="app", label="app")  # l'interface : l'auteur des notes est alors `user`
+logger = logging.getLogger(__name__)
 _LOCKS: weakref.WeakValueDictionary[str, asyncio.Lock] = weakref.WeakValueDictionary()
 
 
@@ -147,6 +150,7 @@ class TeachingService:
         self._user_id = user_id
         self._launcher = launcher
         self._ctx = IdeContext(db, user_id, None, PROFESSOR)
+        self._january = IdeContext(db, user_id, None, JANUARY)
 
     async def _run_of(self, session: IdeSession, run_id: str | None) -> IdeRun | None:
         repo = RunRepository(self._db, self._user_id)
@@ -201,13 +205,22 @@ class TeachingService:
             if decision.action == "skip":
                 return TeachOut(skipped=decision.reason)
             path = body.file_path if body.file_path in session.files else None
+            question = body.question.strip() if body.question else None
+            if trigger == "question" and question:
+                # Sa question reste dans le fil : le professeur la relira avec les suivantes.
+                await notes.add(
+                    self._january, session.id, NoteIn(kind="question", content=question)
+                )
+                # Rangée avant le lancement : le parcours la relit, et il écrit lui aussi en base.
+                await self._db.commit()
+                logger.info("Question rangée : séance %s", session.id)  # jamais son texte
             started = await self._launcher.start(
                 self._user_id,
                 TEACHER_GRAPH,
                 {
                     "ide_session_id": session.id,
                     "trigger": trigger,
-                    "question": body.question.strip() if body.question else None,
+                    "question": question,
                     "file_path": path,
                     "line": body.line if path else None,
                     "run_id": run.id if run else None,

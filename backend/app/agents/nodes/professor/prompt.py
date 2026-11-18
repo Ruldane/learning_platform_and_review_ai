@@ -57,6 +57,8 @@ def turn_of(
         question=untrusted(question, "question de January") if question else "",
         code=untrusted(f"Ligne en cause : {ctx.focus}\n{ctx.window}", f"code ({where})"),
         error=untrusted(ctx.error_tail, "fin de la sortie") if ctx.error_tail else "",
-        exchanges=untrusted(exchanges, "derniers échanges") if exchanges else "",
+        exchanges=untrusted(exchanges, "fil de la conversation, du plus ancien au plus récent")
+        if exchanges
+        else "",
     )
     return HumanMessage(text)

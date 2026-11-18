@@ -7,6 +7,7 @@ from app.agents.nodes.professor.context import (
     ERROR_CHARS,
     ERROR_LINES,
     EXCHANGES,
+    THREAD_CHARS,
     WINDOW_LINES,
     build_context,
     file_hash,
@@ -42,7 +43,7 @@ def inputs(output: str = "", style: str = "guide") -> TeachInputs:
         passed=False,
         style="pair" if style == "pair" else "guide",
         run=run,
-        notes=[note(n) for n in range(1, 11)],
+        notes=[note(n) for n in range(1, 21)],
     )
 
 
@@ -57,8 +58,10 @@ def test_context_is_bounded() -> None:
     )
     assert len(ctx.error_tail) <= ERROR_CHARS and len(ctx.error_tail.splitlines()) <= ERROR_LINES
     assert ctx.error_tail.endswith("x" * 80)  # c'est la fin de la sortie qui est gardée
-    assert len(ctx.exchanges) == EXCHANGES  # les 4 dernières notes, hors renvois
-    assert "échange numéro 10" in ctx.exchanges[-1] and "numéro 9 " not in " ".join(ctx.exchanges)
+    # Les 12 derniers messages, hors renvois, et le fil entier borné en caractères.
+    assert 0 < len(ctx.exchanges) <= EXCHANGES
+    assert sum(len(line) for line in ctx.exchanges) <= THREAD_CHARS
+    assert "échange numéro 20" in ctx.exchanges[-1] and "numéro 9 " not in " ".join(ctx.exchanges)
     assert all(len(line) < 500 for line in ctx.exchanges)
     assert OTHER_FILE.strip() not in ctx.window  # jamais un second fichier
     assert ctx.base_hash == file_hash(BIG)

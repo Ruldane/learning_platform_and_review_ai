@@ -8960,7 +8960,8 @@
               "explanation",
               "annotation",
               "proposal",
-              "reference"
+              "reference",
+              "question"
             ],
             "title": "Kind",
             "type": "string"
@@ -9072,7 +9073,8 @@
               "explanation",
               "annotation",
               "proposal",
-              "reference"
+              "reference",
+              "question"
             ],
             "title": "Kind",
             "type": "string"

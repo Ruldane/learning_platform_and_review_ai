@@ -15,7 +15,8 @@ from app.db.base import Base, UserScopedMixin, UTCDateTime
 ExerciseOrigin = Literal["user", "generated", "claude"]
 RunKind = Literal["run", "check"]
 RunStatus = Literal["running", "done", "timeout", "killed", "error"]
-NoteKind = Literal["hint", "explanation", "annotation", "proposal", "reference"]
+# `question` : une question de January au professeur (auteur `user`), gardée dans le fil.
+NoteKind = Literal["hint", "explanation", "annotation", "proposal", "reference", "question"]
 NoteAuthor = Literal["professor", "claude", "user"]
 NoteStatus = Literal["open", "accepted", "rejected", "stale"]
 TeacherMode = Literal["auto", "on_demand"]

@@ -8,7 +8,7 @@ from app.core.caller import Caller
 from app.db.models.ide import IdeNote, IdeSession, NoteAuthor
 from app.features.ide.hashing import is_file_hash
 from app.features.ide.repository import NoteRepository
-from app.features.ide.schemas import NoteIn
+from app.features.ide.schemas import QUESTION_MAX, NoteIn
 from app.features.ide.service import sessions
 from app.features.ide.service.context import IdeContext, file_hash
 from app.features.ide.service.errors import (
@@ -96,12 +96,14 @@ async def add(
     repo = NoteRepository(ctx.db, ctx.user_id)
     if data.kind != "proposal" and (data.replacement is not None or data.base_hash is not None):
         raise note_invalid("Seule une proposition porte un texte de remplacement et une empreinte.")
+    author, label = author_of(ctx.caller)
+    if data.kind == "question" and (author != "user" or len(data.content) > QUESTION_MAX):
+        raise note_invalid("Une question est celle de January, et tient en 2 000 caractères.")
     text = _check_place(session, data)
     if data.kind == "proposal":
         _check_proposal(data, text)
     if reference_note_id is not None and await repo.get(reference_note_id) is None:
         raise note_invalid("La note citée est introuvable.")
-    author, label = author_of(ctx.caller)
     return await repo.add(
         session_id=session.id,
         kind=data.kind,
