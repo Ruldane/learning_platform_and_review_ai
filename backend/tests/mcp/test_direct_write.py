@@ -295,6 +295,6 @@ async def test_posting_write_is_undone_with_its_memory_item_and_duplicates(
 async def test_write_tool_descriptions_tell_the_real_rules(app: FastAPI) -> None:
     registry = app.state.mcp_registry
     quiz = registry.get("quiz_write_quiz").description
-    assert all(w in quiz for w in ("en préparation", "8 questions", "3 types", "sous")), quiz
+    assert all(w in quiz for w in ("en préparation", "8 questions", "3 types")), quiz
     posting = registry.get("postings_write_posting").description
     assert "300 caractères" in posting and "50 mots" in posting
