@@ -122,7 +122,12 @@ def test_duplicate_tool_names_stop_the_startup(app: FastAPI) -> None:
 
 def test_body_fields_must_exist(app: FastAPI) -> None:
     bad = McpAction(
-        "PUT /settings", 2, "x_prefs", body_fields=frozenset({"nope"}), merge_from="GET /settings"
+        "PUT /settings",
+        2,
+        "x_prefs",
+        body_fields=frozenset({"nope"}),
+        merge_from="GET /settings",
+        response_fields=frozenset({"timezone"}),
     )
     with pytest.raises(McpConfigError, match="inconnus"):
         build_registry(one("settings", bad), app)

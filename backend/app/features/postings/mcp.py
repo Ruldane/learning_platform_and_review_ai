@@ -58,8 +58,9 @@ MCP = FeatureMcp(
             "POST /postings/direct",
             2,
             "postings_write_posting",
-            "Écriture directe, aucun agent : range une offre que Claude a lue (`text`, `url` "
-            "facultatif, et son analyse : `title`, `company`, `requirements`, `keywords`, "
+            "Écriture directe, aucun agent : range une offre que Claude a lue (`text` : 300 "
+            "caractères et 50 mots au moins, `url` facultatif, et son analyse : `title`, "
+            "`company`, `requirements`, `keywords`, "
             "`skills`…) ; l'offre est prête aussitôt, sans écart (`postings_relaunch_gap`).",
             untrusted=tuple(f"posting.{name}" for name in _TEXT),
         ),

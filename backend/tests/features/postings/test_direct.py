@@ -2,15 +2,18 @@
 texte et l'analyse de January ou de Claude comme le port de l'Analyste, sans agent ni appel au
 modèle."""
 
+import asyncio
 from typing import Any
 
 import httpx
 import pytest
 from fastapi import FastAPI
-from sqlalchemy import select
+from sqlalchemy import event, select
 
+from app.agents.tools.memory_port import MemorySearchResult
 from app.db.models.memory import MemoryItem
 from app.db.models.postings import JobPosting
+from app.features.memory.service.gateway import AgentMemoryGateway
 from scripts.sample_posting import POSTING_TEXT
 from tests.features.lessons.conftest import RecordingLauncher
 from tests.features.postings.conftest import API, LINK, ME
@@ -186,3 +189,60 @@ async def test_posting_write_is_isolated_between_users(
     assert (await client.get(f"{API}/postings/{posting['id']}")).json()[
         "title"
     ] == "AI Product Engineer"
+
+
+# --- 10.R (I2) : aucune attente réseau sous le verrou d'écriture de SQLite ------------------
+
+
+@pytest.fixture
+def write_lock_watch(app: FastAPI, monkeypatch: pytest.MonkeyPatch) -> list[bool]:
+    """Remplace la recherche de la mémoire (embedding et Qdrant) par un faux qui note, à chaque
+    appel, si la tâche qui l'appelle tient une transaction d'écriture ouverte (une écriture non
+    validée sur une connexion de la base). Les écritures d'autres tâches (l'indexation de fond)
+    ne comptent pas. Rend la liste de ces constats, un par appel."""
+    dirty: dict[int, asyncio.Task[Any] | None] = {}
+    seen: list[bool] = []
+    sync_engine = app.state.engine.sync_engine
+
+    @event.listens_for(sync_engine, "before_cursor_execute")
+    def _write(conn: Any, cursor: Any, statement: str, *rest: Any) -> None:
+        if statement.lstrip().upper().startswith(("INSERT", "UPDATE", "DELETE")):
+            dirty[id(conn.connection.dbapi_connection)] = asyncio.current_task()
+
+    @event.listens_for(sync_engine, "commit")
+    @event.listens_for(sync_engine, "rollback")
+    def _end(conn: Any) -> None:
+        dirty.pop(id(conn.connection.dbapi_connection), None)
+
+    async def search(
+        self: AgentMemoryGateway, user_id: str, query: str, *, kinds: Any, k: int
+    ) -> MemorySearchResult:
+        seen.append(asyncio.current_task() in dirty.values())
+        return MemorySearchResult([], "")
+
+    monkeypatch.setattr(AgentMemoryGateway, "search", search)
+    return seen
+
+
+async def test_duplicate_search_waits_for_no_write_lock(
+    client: httpx.AsyncClient, write_lock_watch: list[bool]
+) -> None:
+    """Une offre de plus pour une société qui en a déjà une (titres éloignés : doublon « possible »
+    à chercher par vecteur) : l'embedding et la recherche ont lieu avant la première écriture, la
+    base n'est écrite que dans une transaction courte, à l'écriture comme à la retouche."""
+    first = await client.post(f"{API}/postings/direct", json=body())
+    assert first.status_code == 201, first.text
+    assert write_lock_watch == []  # la première offre de la société : rien à comparer
+    far = body(
+        title="Comptable fournisseurs", text=POSTING_TEXT + "\nAutre texte, autre date de poste."
+    )
+
+    second = await client.post(f"{API}/postings/direct", json=far)
+
+    assert second.status_code == 201, second.text
+    assert write_lock_watch == [False]  # cherché une fois, sans écriture ouverte
+    patched = await client.patch(
+        f"{API}/postings/{second.json()['posting']['id']}", json={"title": "Chef comptable"}
+    )
+    assert patched.status_code == 200, patched.text
+    assert write_lock_watch == [False, False]

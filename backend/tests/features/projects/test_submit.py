@@ -10,6 +10,7 @@ import httpx
 import pytest
 
 from app.features.projects.service.submit import MAX_SUBMISSIONS
+from tests.features.ide.mcp_support import acting_as_claude
 from tests.features.projects.support import (
     API,
     JPEG,
@@ -265,3 +266,17 @@ async def test_refused_launch_keeps_the_oldest_submission_of_a_full_list(
     assert [s["description"] for s in (await env.row(pid)).submissions] == [
         f"Rendu {n}" for n in range(MAX_SUBMISSIONS)
     ]
+
+
+async def test_claude_cannot_submit_a_project(env: Env, client: httpx.AsyncClient) -> None:
+    """10.R (I1) : rendre un projet est un geste de January ; sous identité MCP, 403 et rien n'est
+    évalué ni rendu."""
+    pid = await env.add_project()
+    with acting_as_claude(env.user_id):
+        refused = await submit(client, pid)
+    assert refused.status_code == 403
+    assert refused.json()["error"]["code"] == "mcp_gesture_forbidden"
+    row = await env.row(pid)
+    assert (row.status, row.submissions, row.session_id) == ("todo", [], None)
+    assert not env.launcher.started
+    assert (await submit(client, pid)).status_code == 202

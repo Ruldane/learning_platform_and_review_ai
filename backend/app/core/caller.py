@@ -12,6 +12,8 @@ from typing import Annotated, Literal
 
 from fastapi import Depends
 
+from app.core.errors import AppError
+
 
 @dataclass(frozen=True)
 class McpIdentity:
@@ -47,3 +49,20 @@ def current_caller() -> Caller:
 
 
 CallerDep = Annotated[Caller, Depends(current_caller)]
+
+
+def january_only() -> None:
+    """Dépendance de route : un geste de January (ses réponses à un quiz, la note d'une fiche, le
+    rendu d'un projet) n'est jamais fait à sa place par Claude. Sous une identité MCP : 403
+    `mcp_gesture_forbidden`, avant toute écriture. La déclaration MCP de ces routes les exclut déjà
+    (défense en profondeur : un registre mal déclaré n'ouvre pas le geste)."""
+    if MCP_IDENTITY.get() is not None:
+        raise AppError(
+            "mcp_gesture_forbidden",
+            "Ce geste est réservé à January dans l'interface : ses réponses et son rendu ne se "
+            "font jamais à sa place.",
+            403,
+        )
+
+
+JanuaryOnly = Depends(january_only)

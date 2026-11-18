@@ -26,6 +26,9 @@ from app.mcp.tools import ToolSpec
 
 _NAME = re.compile(r"[a-z0-9_]{1,64}")
 GRAPH_PREFIX = "graph_"
+# Les champs des réglages qui ne sortent jamais par le MCP (modèles par niveau, surcharges par
+# agent) ; la feature `settings` déclare les mêmes (`PROTECTED_FIELDS`), un test les compare.
+SETTINGS_LEVEL_4_FIELDS = frozenset({"tiers", "agent_overrides"})
 _LEVEL_TEXT = {
     1: "Lecture.",
     2: "Écriture réversible : January peut l'annuler depuis l'application.",
@@ -82,10 +85,16 @@ def _check_action(feature: str, action: McpAction) -> tuple[str, str]:
     if action.precheck is not None and action.level != 3:
         raise McpConfigError(f"{action.name} : un contrôle préalable ne va qu'avec le niveau 3")
     if path == SETTINGS_PATH or path.startswith(SETTINGS_PATH + "/"):
-        if method == "GET" and action.response_fields is None:
-            raise McpConfigError(f"{action.route} : les réglages exigent response_fields")
         if method != "GET" and action.body_fields is None:
             raise McpConfigError(f"{action.route} : les réglages exigent body_fields")
+        # Toute méthode, lecture ou écriture : l'écriture rend l'objet entier (modèles compris).
+        if action.response_fields is None:
+            raise McpConfigError(f"{action.route} : les réglages exigent response_fields")
+        if leaked := action.response_fields & SETTINGS_LEVEL_4_FIELDS:
+            raise McpConfigError(
+                f"{action.route} : response_fields ne rend jamais {', '.join(sorted(leaked))} "
+                "(niveau 4)"
+            )
     if action.level == 1 and method != "GET" and action.route not in READ_ONLY_POSTS:
         raise McpConfigError(f"{action.route} écrit : il ne peut pas être de niveau 1")
     if action.side_effects == "external" and action.level < 3:

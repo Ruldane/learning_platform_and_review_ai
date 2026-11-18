@@ -5,12 +5,9 @@ au modèle : l'offre est « prête » aussitôt, avec son élément de mémoire 
 doublons probables et possibles. L'écart de compétences, lui, se lance comme avant
 (`POST /postings/{id}/gap`) : c'est un agent, il n'est pas lancé ici.
 
-Mêmes règles de doublon que `POST /postings` : le même lien, ou (sans lien) le même texte, rend
-l'offre existante (200). Le lien n'est jamais lu : rien n'est téléchargé. Une offre existante dont
-l'analyse a échoué ou a été refusée reçoit l'analyse donnée.
-
-Chaque ligne est écrite par l'ORM (pas de requête en masse) : l'historique du MCP la voit et
-l'annulation la retire."""
+Doublons comme `POST /postings` (même lien, ou même texte sans lien : offre existante, 200 ; lien
+jamais lu). Une offre en échec ou refusée reçoit l'analyse donnée. Écriture par l'ORM seulement :
+l'historique du MCP voit chaque ligne et l'annulation la retire."""
 
 import logging
 
@@ -43,7 +40,12 @@ from app.features.postings.service.create import (
     posting_too_short,
     text_digest,
 )
-from app.features.postings.service.duplicates import find_duplicates, not_found, store_duplicates
+from app.features.postings.service.duplicates import (
+    find_duplicates,
+    not_found,
+    prefetch_scores,
+    store_duplicates,
+)
 from app.features.postings.service.queries import read_posting
 from app.features.postings.service.rules import company_key, posting_url_key
 from app.features.postings.service.runtime import PostingsRuntime
@@ -137,13 +139,15 @@ async def _memory_and_duplicates(
     posting: JobPosting,
     analysis: PostingAnalysis,
     *,
+    scores: dict[str, float],
     is_mcp: bool,
     replaces_title: str | None = None,
 ) -> None:
     """Dans la transaction de l'offre : son élément de mémoire `offre` (écrit ou mis à jour, pas
-    indexé ici : voir `memory.service.direct`), puis ses doublons probables et possibles (la
-    recherche lit les autres offres déjà indexées), rangés des deux côtés ; ceux qui ne tiennent
-    plus sont retirés de l'autre côté."""
+    indexé ici : voir `memory.service.direct`), puis ses doublons probables et possibles, rangés
+    des deux côtés ; ceux qui ne tiennent plus sont retirés de l'autre côté. `scores` : la recherche
+    des offres proches, déjà faite (`_scores`) : aucune attente réseau ici, sous le verrou
+    d'écriture."""
     item_id = await write_direct(
         db,
         rt.memory,
@@ -159,12 +163,37 @@ async def _memory_and_duplicates(
     if posting.memory_item_id is None:
         posting.memory_item_id = item_id
     await db.flush()
-    hits = await find_duplicates(db, rt.memory, user_id, posting)
+    hits = await find_duplicates(db, rt.memory, user_id, posting, scores)
     gone = {str(d.get("posting_id")) for d in posting.duplicates if isinstance(d, dict)}
     gone -= {hit.posting_id for hit in hits}
     for other in (await PostingRepository(db, user_id).by_ids(gone)).values():
         other.duplicates = [d for d in other.duplicates if d.get("posting_id") != posting.id]
     await store_duplicates(db, user_id, posting, hits)
+
+
+async def _scores(
+    db: AsyncSession,
+    rt: PostingsRuntime,
+    user_id: str,
+    analysis: PostingAnalysis,
+    text: str,
+    row: JobPosting | None,
+) -> dict[str, float]:
+    """La recherche des offres proches (embedding et Qdrant, parfois plusieurs secondes quand Ollama
+    est froid), faite **avant la première écriture** : le verrou d'écriture de SQLite n'attend
+    jamais le réseau (D66). `row` : l'offre déjà là (reprise ou retouche), `None` pour une neuve."""
+    company = (analysis.company or "").strip() or None
+    return await prefetch_scores(
+        db,
+        rt.memory,
+        user_id,
+        title=analysis.title[:TITLE_MAX],
+        company=company[:TITLE_MAX] if company else None,
+        text=text,
+        own_id=None if row is None else row.id,
+        own_item_id=None if row is None else row.memory_item_id,
+        distinct_from=[] if row is None else list(row.distinct_from or []),
+    )
 
 
 async def _store(
@@ -189,7 +218,9 @@ async def _store(
                 raise posting_analysis_invalid(fields)
             row = await PostingRepository(db, user_id).get_fresh(found.id)
             assert row is not None
+            scores = await _scores(db, rt, user_id, analysis, row.text, row)
         else:
+            scores = await _scores(db, rt, user_id, analysis, text, None)
             row = JobPosting(
                 user_id=user_id,
                 url=source.url,
@@ -202,7 +233,9 @@ async def _store(
         _apply(row, analysis)
         try:
             await db.flush()
-            await _memory_and_duplicates(db, rt, user_id, row, analysis, is_mcp=is_mcp)
+            await _memory_and_duplicates(
+                db, rt, user_id, row, analysis, scores=scores, is_mcp=is_mcp
+            )
             await db.commit()
         except IntegrityError:  # une autre requête vient de l'écrire : on rend la sienne
             await db.rollback()
@@ -254,10 +287,12 @@ async def patch_direct(
                 raise not_analyzed()
             before = item_title(PostingAnalysis.model_validate(posting.analysis))
             analysis = _analysis({**posting.analysis, **changes}, posting.text[:TEXT_MAX])
+            scores = await _scores(db, rt, user_id, analysis, posting.text, posting)
             _apply(posting, analysis)
             await _memory_and_duplicates(
-                db, rt, user_id, posting, analysis, is_mcp=is_mcp, replaces_title=before
-            )
+                db, rt, user_id, posting, analysis, scores=scores, is_mcp=is_mcp,
+                replaces_title=before,
+            )  # fmt: skip
             await db.commit()
         schedule_indexing(rt.memory, user_id)
     logger.info("Offre retouchée en direct : utilisateur %s, offre %s", user_id, posting_id)

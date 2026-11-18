@@ -61,6 +61,7 @@ def _settings() -> FeatureMcp:
         "settings_update_preferences",
         body_fields=PREFS,
         merge_from="GET /settings",
+        response_fields=READABLE,
     )
     read = McpAction("GET /settings", 1, "settings_get", response_fields=READABLE)
     return FeatureMcp("settings", actions=(read, update))

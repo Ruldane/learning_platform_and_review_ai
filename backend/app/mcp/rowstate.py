@@ -38,6 +38,13 @@ def volatile_columns(table: Table) -> frozenset[str]:
     return frozenset(c.name for c in table.columns if c.info.get("undo_volatile"))
 
 
+def counter_columns(table: Table) -> frozenset[str]:
+    """Les compteurs de version (`info={"undo_counter": True}`) : l'annulation d'une modification
+    les **avance** au lieu de les ramener à leur ancienne valeur, pour qu'une lecture faite avant
+    l'annulation reste périmée (jamais de retour à une valeur déjà vue)."""
+    return frozenset(c.name for c in table.columns if c.info.get("undo_counter"))
+
+
 def derived(table: Table) -> bool:
     """Table dont les lignes se déduisent de la ligne qu'elles visent (`info={"undo_derived":
     True}`) : retirer l'ajout les retire avec lui (clé étrangère en cascade), elles ne le

@@ -1,7 +1,6 @@
-"""Écriture directe par le MCP, sans agent (10.W) : chaque outil est de niveau 2, sans lancement de
-graphe ; un appel écrit la ligne, le journal et l'historique la gardent, l'annulation la retire (y
-compris l'élément de mémoire écrit avec la leçon ou l'offre) ; un jeton en lecture seule est
-refusé."""
+"""Écriture directe par le MCP, sans agent (10.W) : outils de niveau 2 sans graphe ; un appel écrit
+la ligne, journal et historique la gardent, l'annulation la retire (élément de mémoire compris) ; un
+jeton en lecture seule est refusé."""
 
 from typing import Any
 
@@ -291,3 +290,11 @@ async def test_posting_write_is_undone_with_its_memory_item_and_duplicates(
     kept = (await client.get(f"{API}/postings/{first_id}")).json()
     assert kept["duplicates"] == []
     await assert_no_agent(app)
+
+
+async def test_write_tool_descriptions_tell_the_real_rules(app: FastAPI) -> None:
+    registry = app.state.mcp_registry
+    quiz = registry.get("quiz_write_quiz").description
+    assert all(w in quiz for w in ("en préparation", "8 questions", "3 types", "sous")), quiz
+    posting = registry.get("postings_write_posting").description
+    assert "300 caractères" in posting and "50 mots" in posting

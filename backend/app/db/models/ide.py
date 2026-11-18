@@ -55,7 +55,8 @@ class IdeSession(UserScopedMixin, Base):
     # Jetons du professeur (entrée + sortie) consommés dans cette séance : plafond de séance.
     teacher_tokens: Mapped[int] = mapped_column(Integer, default=0)
     # Compteur d'écritures de fichiers : la base compare « lu = actuel » (10.X).
-    files_version: Mapped[int] = mapped_column(Integer, default=0)
+    # `undo_counter` : l'annulation d'une écriture l'avance au lieu de le ramener en arrière.
+    files_version: Mapped[int] = mapped_column(Integer, default=0, info={"undo_counter": True})
     passed_at: Mapped[datetime | None] = mapped_column(UTCDateTime, default=None)
 
     @property

@@ -21,6 +21,7 @@ from app.features.ide.service.errors import (
     exercise_not_found,
     files_changed,
     files_too_large,
+    mcp_ide_test_file,
     mcp_ide_write_off,
     mcp_write_one_file,
     session_not_found,
@@ -147,13 +148,24 @@ async def save_files(
     return session
 
 
+def is_test_file(name: str) -> bool:
+    """Un fichier que pytest collecte (`test_*.py`, `*_test.py`) ou qui le configure
+    (`conftest.py`), où qu'il soit dans les dossiers de la séance."""
+    base = name.rsplit("/", 1)[-1]
+    return base == "conftest.py" or (
+        base.endswith(".py") and (base.startswith("test_") or base.endswith("_test.py"))
+    )
+
+
 async def write_file_as_claude(
     ctx: IdeContext, session_id: str, files: dict[str, str], base_hash: str | None
 ) -> IdeSession:
     """Claude (MCP) écrit **un** fichier, les autres sont gardés. Seulement si January a allumé
     l'interrupteur (403 `mcp_ide_write_off`, jamais de contenu dans le message ni le journal) ;
     `base_hash` doit être le sha256 du contenu actuel (texte vide pour un nouveau fichier), sinon
-    409 `stale_base` : on n'écrase jamais ce que January vient de taper. L'entrée ne change pas."""
+    409 `stale_base` : on n'écrase jamais ce que January vient de taper. L'entrée ne change pas.
+    Dans une séance sur exercice, jamais un fichier de test (403 `mcp_ide_test_file`) : ce sont les
+    siens."""
     session = await get(ctx, session_id)
     prefs = await PreferenceRepository(ctx.db, ctx.user_id).mine()
     if prefs is None or not prefs.mcp_can_write_files:
@@ -162,6 +174,9 @@ async def write_file_as_claude(
     if len(files) != 1:
         raise mcp_write_one_file()
     ((name, text),) = files.items()
+    if session.exercise_id is not None and is_test_file(name):
+        logger.info("mcp_ide_test_file : écriture refusée dans la séance %s", session.id)
+        raise mcp_ide_test_file()
     if not is_file_hash(base_hash):
         raise base_hash_required()
     current = session.files.get(name)

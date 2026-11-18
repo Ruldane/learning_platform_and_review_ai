@@ -105,7 +105,9 @@ MCP = FeatureMcp(
             "propose alors une correction par une note). `base_hash` obligatoire : le sha256 du "
             "contenu actuel du fichier, donné par `file_hashes` dans `ide_get_session` (empreinte "
             "du texte vide pour un nouveau fichier). Si January a écrit depuis ta lecture : 409 "
-            "stale_base, relis la séance. Annulable depuis « Accès MCP ».",
+            "stale_base, relis la séance. Jamais un fichier de test d'une séance sur exercice "
+            "(`test_*.py`, `*_test.py`, `conftest.py`) : 403 mcp_ide_test_file, ce sont les "
+            "siens. Annulable depuis « Accès MCP ».",
             body_fields=frozenset({"files", "base_hash"}),
         ),
     ),

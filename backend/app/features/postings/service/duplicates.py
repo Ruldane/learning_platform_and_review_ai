@@ -23,7 +23,12 @@ from app.db.models.postings import JobPosting
 from app.features.memory.service.gateway import AgentMemoryGateway
 from app.features.memory.service.runtime import MemoryRuntime
 from app.features.postings.repository import PostingRepository
-from app.features.postings.service.rules import POSSIBLE_COSINE, PROBABLE_TITLE, title_similarity
+from app.features.postings.service.rules import (
+    POSSIBLE_COSINE,
+    PROBABLE_TITLE,
+    company_key,
+    title_similarity,
+)
 from app.features.settings.service import SettingsService
 
 logger = logging.getLogger(__name__)
@@ -49,36 +54,80 @@ def _apart(posting: JobPosting, other: JobPosting) -> bool:
 
 
 def search_query(posting: JobPosting) -> str:
-    head = " ".join(part for part in (posting.title, posting.company) if part)
-    return f"{head}\n{posting.text}".strip()[:QUERY_MAX]
+    return query_of(posting.title, posting.company, posting.text)
+
+
+def query_of(title: str | None, company: str | None, text: str) -> str:
+    head = " ".join(part for part in (title, company) if part)
+    return f"{head}\n{text}".strip()[:QUERY_MAX]
 
 
 async def _best_scores(
-    memory: MemoryRuntime, user_id: str, posting: JobPosting
+    memory: MemoryRuntime, user_id: str, query: str, own_item_id: str | None, label: str | None
 ) -> dict[str, float]:
     """`élément de mémoire → meilleur score` des offres proches ; recherche indisponible :
     aucune (le doublon possible n'est qu'un signal)."""
     gateway = AgentMemoryGateway(memory)
     try:
-        found = await gateway.search(
-            user_id, search_query(posting), kinds=["offre"], k=SEARCH_HITS + 1
-        )
+        found = await gateway.search(user_id, query, kinds=["offre"], k=SEARCH_HITS + 1)
     except AppError as exc:
-        logger.warning("Doublons possibles non cherchés : offre %s (%s)", posting.id, exc.code)
+        logger.warning("Doublons possibles non cherchés : offre %s (%s)", label, exc.code)
         return {}
     best: dict[str, float] = {}
     for hit in found.hits:
-        if hit.item_id == posting.memory_item_id:
+        if hit.item_id == own_item_id:
             continue
         if hit.item_id in best or len(best) < SEARCH_HITS:
             best[hit.item_id] = max(best.get(hit.item_id, 0.0), hit.score)
     return best
 
 
+async def prefetch_scores(
+    db: AsyncSession,
+    memory: MemoryRuntime,
+    user_id: str,
+    *,
+    title: str,
+    company: str | None,
+    text: str,
+    own_id: str | None,
+    own_item_id: str | None,
+    distinct_from: list[Any],
+) -> dict[str, float]:
+    """Les scores de recherche dont `find_duplicates` aura besoin pour l'offre décrite, calculés
+    **avant toute écriture** : la vectorisation (Ollama) et la recherche (Qdrant) peuvent durer
+    plusieurs secondes, et le verrou d'écriture de SQLite ne doit pas les attendre (D66). `{}` sans
+    entreprise ou sans autre offre de la même entreprise qui ne soit pas déjà « probable »
+    (aucune recherche dans ce cas). `db` ne doit avoir écrit encore aucune ligne."""
+    norm = company_key(company) if company else ""
+    if not norm:
+        return {}
+    others = await PostingRepository(db, user_id).same_company(norm, own_id or "")
+    rest = [
+        other
+        for other in others
+        if other.memory_item_id
+        and other.id not in distinct_from
+        and (own_id is None or own_id not in other.distinct_from)
+        and title_similarity(title, other.title or "") < PROBABLE_TITLE
+    ]
+    if not rest:
+        return {}
+    return await _best_scores(
+        memory, user_id, query_of(title, company, text), own_item_id, "écrite"
+    )
+
+
 async def find_duplicates(
-    db: AsyncSession, memory: MemoryRuntime, user_id: str, posting: JobPosting
+    db: AsyncSession,
+    memory: MemoryRuntime,
+    user_id: str,
+    posting: JobPosting,
+    scores: dict[str, float] | None = None,
 ) -> list[DuplicateHit]:
-    """Les doublons probables puis possibles de l'offre analysée, les plus anciens d'abord."""
+    """Les doublons probables puis possibles de l'offre analysée, les plus anciens d'abord.
+    `scores` : ceux que `prefetch_scores` a déjà cherchés (aucune attente réseau ici) ; sinon la
+    recherche se fait ici."""
     if not posting.company_norm:
         return []
     same = [
@@ -96,9 +145,15 @@ async def find_duplicates(
     hits: list[DuplicateHit] = [_hit("probable", other, zone, None) for other in probable]
     rest = [o for o in same if o not in probable and o.memory_item_id]
     if rest and posting.memory_item_id:
-        scores = await _best_scores(memory, user_id, posting)
+        found = (
+            scores
+            if scores is not None
+            else await _best_scores(
+                memory, user_id, search_query(posting), posting.memory_item_id, posting.id
+            )
+        )
         for other in rest:
-            score = scores.get(other.memory_item_id or "")
+            score = found.get(other.memory_item_id or "")
             if score is not None and score >= POSSIBLE_COSINE:
                 hits.append(_hit("possible", other, zone, round(score, 4)))
     return hits

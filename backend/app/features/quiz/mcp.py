@@ -2,6 +2,12 @@
 
 from app.mcp.base import FeatureMcp, McpAction, McpGraph
 
+_GESTURE = (
+    "Geste de January : ses réponses, jamais faites à sa place (la notation d'un quiz et la "
+    "révision d'une fiche valident ou rétrogradent ses acquis). Claude écrit le quiz et lit les "
+    "résultats."
+)
+
 MCP = FeatureMcp(
     feature="quiz",
     actions=(
@@ -20,13 +26,6 @@ MCP = FeatureMcp(
         ),
         McpAction("GET /quizzes/{quiz_id}", 1, "quiz_get_quiz", "Un quiz et ses questions."),
         McpAction(
-            "POST /quizzes/{quiz_id}/attempts",
-            2,
-            "quiz_submit_attempt",
-            "Envoie des réponses à un quiz et lance la notation.",
-            launches="quiz",
-        ),
-        McpAction(
             "GET /quizzes/{quiz_id}/attempts/{attempt_id}",
             1,
             "quiz_get_attempt",
@@ -36,17 +35,12 @@ MCP = FeatureMcp(
             "GET /flashcards/due", 1, "quiz_list_due_cards", "La file de fiches à réviser du jour."
         ),
         McpAction(
-            "POST /flashcards/{card_id}/review",
-            2,
-            "quiz_review_card",
-            "Note une fiche due : sue ou non.",
-        ),
-        McpAction(
             "POST /quizzes",
             2,
             "quiz_write_quiz",
             "Écriture directe, aucun agent : écrit le quiz d'un module (`module_id`, `title`, "
-            "1 à 12 questions) ; le quiz est prêt aussitôt.",
+            "1 à 12 questions) ; il reste en préparation tant qu'il n'a pas 8 questions, 3 types "
+            "différents et des énoncés d'au moins 10 caractères.",
         ),
         McpAction(
             "PATCH /quizzes/{quiz_id}",
@@ -68,6 +62,10 @@ MCP = FeatureMcp(
             "Écriture directe, aucun agent : retouche une question d'un quiz prêt sans tentative.",
         ),
     ),
+    excluded={
+        "POST /quizzes/{quiz_id}/attempts": _GESTURE,
+        "POST /flashcards/{card_id}/review": _GESTURE,
+    },
     graphs=(
         McpGraph(
             "quiz",

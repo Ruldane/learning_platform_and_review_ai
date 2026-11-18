@@ -73,6 +73,32 @@ def test_registry_requires_fields_under_every_settings_route() -> None:
     )
 
 
+def test_registry_requires_response_fields_for_every_settings_method() -> None:
+    """10.R (M6) : une écriture sous `/settings` rend l'objet entier : sans `response_fields`, les
+    modèles et surcharges par agent (niveau 4) sortiraient ; avec eux, jamais `tiers` ni
+    `agent_overrides`."""
+    body = frozenset({"timezone"})
+    with pytest.raises(McpConfigError, match="response_fields"):
+        _check_action("settings", McpAction("PUT /settings", 2, "p", body_fields=body))  # type: ignore[arg-type]
+    for leak in ("tiers", "agent_overrides"):
+        with pytest.raises(McpConfigError, match=leak):
+            _check_action(
+                "settings",
+                McpAction(
+                    "PUT /settings", 2, "p", body_fields=body, response_fields=frozenset({leak})
+                ),  # type: ignore[arg-type]
+            )
+        with pytest.raises(McpConfigError, match=leak):
+            _check_action(
+                "settings",
+                McpAction("GET /settings", 1, "g", response_fields=frozenset({"timezone", leak})),
+            )
+    _check_action(
+        "settings",
+        McpAction("PUT /settings", 2, "p", body_fields=body, response_fields=body),
+    )
+
+
 # --- M9 de 10.B1 : garde des routes de réglages et de compte ------------------------------------
 
 SECRET_PREFIXES = ("/settings", "/auth", "/account", "/mcp")
@@ -92,10 +118,10 @@ def unprotected(routes: list[tuple[str, str]], declared: dict[str, McpAction]) -
         if never_reachable(path):
             continue
         action = declared.get(key)
-        fields = None if action is None else (
-            action.response_fields if method == "GET" else action.body_fields
+        complete = action is None or (
+            action.response_fields is not None and (method == "GET" or action.body_fields)
         )  # fmt: skip
-        if key in PREFERENCE_ROUTES and (action is None or fields is not None):
+        if key in PREFERENCE_ROUTES and complete:
             continue
         bad.append(key)
     return bad

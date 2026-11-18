@@ -13,6 +13,7 @@ from app.features.registry import FEATURE_ROUTERS, MCP_FEATURES
 from app.features.settings.mcp import PREFERENCE_FIELDS, PROTECTED_FIELDS
 from app.features.settings.schemas import UserSettings
 from app.mcp.base import NEVER_EXPOSED_FEATURES, READ_ONLY_POSTS, McpAction, untrusted_paths_valid
+from app.mcp.registry import SETTINGS_LEVEL_4_FIELDS
 from scripts.mcp_levels import RouteInfo, iter_routes, main, render_table
 
 ROUTES = iter_routes(FEATURE_ROUTERS)
@@ -195,7 +196,7 @@ def test_settings_put_only_through_the_preferences_action() -> None:
     assert action.merge_from == "GET /settings" and "GET /settings" in ACTION_BY_ROUTE
     assert action.body_fields == PREFERENCE_FIELDS
     assert not PREFERENCE_FIELDS & PROTECTED_FIELDS
-    assert {"tiers", "agent_overrides"} == PROTECTED_FIELDS
+    assert {"tiers", "agent_overrides"} == PROTECTED_FIELDS == SETTINGS_LEVEL_4_FIELDS
     # Un champ de plus dans `UserSettings` oblige à décider s'il est sensible.
     assert set(UserSettings.model_fields) == PREFERENCE_FIELDS | PROTECTED_FIELDS
 

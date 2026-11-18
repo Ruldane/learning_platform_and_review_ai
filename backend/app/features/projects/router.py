@@ -21,6 +21,7 @@ from fastapi import (
 from starlette.exceptions import HTTPException
 from starlette.requests import HTTPConnection
 
+from app.core.caller import JanuaryOnly
 from app.core.deps import CurrentUserDep, Db
 from app.core.field_paths import FieldPathsRoute
 from app.features.projects.schemas import (
@@ -160,6 +161,7 @@ async def get_one_project(
     response_model=SessionStarted,
     status_code=status.HTTP_202_ACCEPTED,
     responses=_SUBMIT_ERRORS,
+    dependencies=[JanuaryOnly],  # geste de January : jamais fait à sa place par le MCP
 )
 async def post_submit(
     project_id: ProjectId,

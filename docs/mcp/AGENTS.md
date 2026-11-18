@@ -15,6 +15,7 @@ Serveur MCP local de Tremplin, la plateforme d'apprentissage et de carrière de 
 - Un parcours se lance par son outil graph_<nom> ou par sa route, puis tu suis la session (sessions_get_session) ; au plus 30 lancements par jour.
 - Pour ajouter du contenu (leçon, offre, quiz, projet, programme), écris-le toi-même avec les outils *_write_* : aucun agent ne tourne, l'écriture est annulable.
 - IDE : lis l'exercice, les fichiers et la sortie, lance le code, écris des notes, et propose une correction par une note de type proposal avec base_hash (sha256 du fichier) ; January l'accepte dans l'interface. N'écris dans ses fichiers que par ide_write_file, seulement si elle a allumé l'interrupteur (sinon 403), après avoir relu la séance (409 stale_base si elle a tapé depuis).
+- Les gestes de January ne sont pas à toi : répondre à un quiz, noter une fiche, rendre un projet, et dans l'IDE les fichiers de test de l'exercice. Écris le quiz, l'énoncé, tes notes ; lis les résultats.
 - Une limite atteinte répond 429 avec le délai : attends, ne réessaie pas en boucle.
 <!-- instructions-serveur:fin -->
 
@@ -136,7 +137,7 @@ lance l'Analyste et compte dans les 30 lancements du jour).
   (`add_tasks`) ; `program_update_week`, `program_update_module`.
 - Projet : `projects_write_project` (`module_id`, énoncé `brief` complet), puis
   `projects_update_project` tant qu'il n'y a pas de rendu (sinon 409 `project_not_editable`).
-- Offre : `postings_write_posting` (`text`, `url` facultatif, et l'analyse : `title`, `company`,
+- Offre : `postings_write_posting` (`text` de 300 caractères et 50 mots au moins, `url` facultatif, et l'analyse : `title`, `company`,
   `requirements`, `keywords` présents tels quels dans le texte, `skills`), puis
   `postings_update_posting` ; l'écart se lance ensuite par `postings_relaunch_gap`.
 - Quiz : `quiz_write_quiz` (1 à 12 questions), `quiz_add_question`, `quiz_update_question`,
@@ -156,8 +157,21 @@ Un 422 nomme les champs à corriger, jamais leur valeur. Un contenu d'une autre 
 
 Par les outils déclarés, jamais en appelant l'API : `postings_add_posting` (un lien `url` ou un
 texte collé `text`, l'analyse se lance), `postings_*` et `projects_*` pour suivre et retoucher
-(`projects_update_draft`, `projects_submit_project` avec un lien et une description, sans capture), et
-`memory_*` pour la mémoire. Une écriture au profil maître ou une suppression est de niveau 3.
+(`projects_update_draft`), et `memory_*` pour la mémoire. Une écriture au profil maître ou une
+suppression est de niveau 3.
+
+## Les gestes de January
+
+Ces gestes sont les siens : ils valident ou rétrogradent ses acquis, ou ils sont son rendu. Aucun
+outil ne les expose (la route répond 403 `mcp_gesture_forbidden` si un appel MCP la visait).
+
+- Répondre à un quiz (`POST /quizzes/{id}/attempts`) et noter une fiche de révision : tu écris le
+  quiz (`quiz_write_quiz`), tu lis les résultats (`quiz_get_attempt`, `quiz_list_due_cards`).
+- Rendre un projet (`POST /projects/{id}/submit`) : tu écris l'énoncé (`projects_write_project`),
+  tu retouches les brouillons (`projects_update_draft`), tu suis l'évaluation.
+- Dans l'IDE : accepter ou refuser une proposition, et écrire un fichier de test d'une séance sur
+  exercice (`test_*.py`, `*_test.py`, `conftest.py` : 403 `mcp_ide_test_file`) ; corrige le code, ou
+  propose une correction par une note.
 
 ## À ne jamais faire
 

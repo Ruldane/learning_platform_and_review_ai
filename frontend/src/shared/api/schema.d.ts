@@ -12027,7 +12027,7 @@ export interface operations {
                     "application/json": components["schemas"]["IdeSessionOut"];
                 };
             };
-            /** @description `mcp_ide_write_off` : Claude n'y est pas autorisé (interrupteur) */
+            /** @description `mcp_ide_write_off` : Claude n'y est pas autorisé (interrupteur) ; `mcp_ide_test_file` : un fichier de test de l'exercice */
             403: {
                 headers: {
                     [name: string]: unknown;

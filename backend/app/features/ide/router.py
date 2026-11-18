@@ -149,7 +149,10 @@ async def get_session(session_id: Id, ide: Ide) -> IdeSessionOut:
     "/sessions/{session_id}/files",
     response_model=IdeSessionOut,
     responses={
-        403: {"description": "`mcp_ide_write_off` : Claude n'y est pas autorisé (interrupteur)"},
+        403: {
+            "description": "`mcp_ide_write_off` : Claude n'y est pas autorisé (interrupteur) ; "
+            "`mcp_ide_test_file` : un fichier de test de l'exercice"
+        },
         404: {"description": "`session_not_found`"},
         409: {
             "description": "`stale_base` : un fichier a changé depuis la lecture "

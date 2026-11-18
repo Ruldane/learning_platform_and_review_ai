@@ -19,7 +19,15 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.core.errors import AppError
 from app.db.base import Base
 from app.db.models.mcp import McpChange
-from app.mcp.rowstate import UndoResult, derived, recordable, revive, snapshot, volatile_columns
+from app.mcp.rowstate import (
+    UndoResult,
+    counter_columns,
+    derived,
+    recordable,
+    revive,
+    snapshot,
+    volatile_columns,
+)
 
 
 async def undo_call(
@@ -161,6 +169,9 @@ async def _apply(db: AsyncSession, row: McpChange, user_id: str) -> None:
     values.update({name: None for name in volatile_columns(table) if name in values})
     if row.op == "update":
         values.pop(pk.name, None)
+        values.update(
+            {name: table.c[name] + 1 for name in counter_columns(table) if name in values}
+        )
         await db.execute(update(table).where(pk == row.row_id, *scope).values(**values))
     else:
         await db.execute(insert(table).values(**values))

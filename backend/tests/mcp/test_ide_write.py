@@ -162,3 +162,30 @@ async def test_runs_list_tool_reads_the_runs_of_a_session(client: httpx.AsyncCli
     token = await mcp.token(("ide",), "read")
     envelope, is_error = await tool(mcp, token, "ide_list_runs", session_id=sid)
     assert not is_error and envelope["data"] == []
+
+
+async def test_undo_moves_files_version_forward(client: httpx.AsyncClient, app: FastAPI) -> None:
+    """10.R (M2) : l'annulation ne ramène pas le compteur d'écritures en arrière : une écriture
+    lue avant l'annulation reste en conflit (elle comparerait sinon un compteur revenu à son
+    ancienne valeur)."""
+    mcp = Mcp(client)
+    sid = await make_session(client)
+    token = await mcp.token(("ide",), "write")
+    await switch(client, True)
+
+    async def version() -> int:
+        async with app.state.session_factory() as db:
+            row = await db.get(IdeSession, sid)
+            assert row is not None
+            return int(row.files_version)
+
+    await tool(
+        mcp, token, "ide_write_file", session_id=sid, files={"main.py": "claude\n"},
+        base_hash=file_hash(BEFORE),
+    )  # fmt: skip
+    written = await version()
+    call_id = (await client.get(f"{API}/mcp/changes")).json()[0]["call_id"]
+    undone = await client.post(f"{API}/mcp/changes/{call_id}/undo")
+    assert undone.status_code == 200, undone.text
+    assert await files(client, sid) == {"main.py": BEFORE}
+    assert await version() > written

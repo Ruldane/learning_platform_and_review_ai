@@ -237,3 +237,36 @@ async def test_another_user_gets_404_even_with_a_valid_hash(
     assert (gone.status_code, code(gone)) == (404, "session_not_found")
     act_as(app, USER)
     assert await files_of(client, session["id"]) == FILES
+
+
+# --- 10.R : les tests de l'exercice sont ceux de January -----------------------------------
+
+
+async def test_claude_cannot_write_a_test_file_of_the_exercise(client: httpx.AsyncClient) -> None:
+    """Réécrire les tests ferait passer la vérification de January sans rien résoudre : refusé
+    (403 `mcp_ide_test_file`), pour les fichiers `test_*.py`, `*_test.py` et `conftest.py` d'une
+    séance sur exercice ; le code, lui, s'écrit."""
+    files = {"main.py": "x = 1\n", "test_main.py": "def test_ok():\n    assert True\n"}
+    session = await new_session(client, files, topic="boucles")
+    await set_switch(client, True)
+    for name in ("test_main.py", "tests/test_autre.py", "main_test.py", "conftest.py"):
+        base = file_hash(files.get(name, ""))
+        with acting_as_claude():
+            refused = await write(client, session["id"], {name: "assert True\n"}, base_hash=base)
+        assert (refused.status_code, code(refused)) == (403, "mcp_ide_test_file"), name
+    assert await files_of(client, session["id"]) == files  # rien d'écrit
+    with acting_as_claude():
+        done = await write(
+            client, session["id"], {"main.py": "x = 2\n"}, base_hash=file_hash("x = 1\n")
+        )
+    assert done.status_code == 200, done.text
+    mine = await write(client, session["id"], {**files, "test_main.py": "def test_ok(): ...\n"})
+    assert mine.status_code == 200  # January, elle, retouche ses tests
+
+
+async def test_a_free_session_has_no_exercise_tests_to_protect(client: httpx.AsyncClient) -> None:
+    session = await new_session(client, FILES)
+    await set_switch(client, True)
+    with acting_as_claude():
+        done = await write(client, session["id"], {"test_x.py": "z = 1\n"}, base_hash=EMPTY_HASH)
+    assert done.status_code == 200, done.text

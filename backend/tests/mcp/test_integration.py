@@ -57,14 +57,19 @@ def test_preferences_read_only_returns_the_preference_fields(
     assert not tool.response_fields & PROTECTED_FIELDS  # jamais `tiers` ni `agent_overrides`
 
 
-def test_project_submit_is_a_level_2_form_without_files(real: tuple[FastAPI, Registry]) -> None:
-    tool = real[1].get("projects_submit_project")
-    assert tool is not None and tool.level == 2 and tool.launches == "project_review"
-    assert tool.plan is not None and tool.plan.form
-    assert "screenshots" not in tool.input_schema["properties"]
-    assert {"repo_url", "description"} <= set(tool.input_schema["properties"])
-    projects = next(feature for feature in MCP_FEATURES if feature.feature == "projects")
-    assert "POST /projects/{project_id}/submit" not in projects.excluded
+def test_january_gestures_are_excluded_and_not_tools(real: tuple[FastAPI, Registry]) -> None:
+    """10.R (I1) : répondre à un quiz, noter une fiche et rendre un projet sont des gestes de
+    January, jamais faits à sa place : ni outil, ni action déclarée (motif dans `excluded`)."""
+    names = {tool.name for tool in real[1].all()}
+    assert {"quiz_submit_attempt", "quiz_review_card", "projects_submit_project"}.isdisjoint(names)
+    for feature, route in (
+        ("quiz", "POST /quizzes/{quiz_id}/attempts"),
+        ("quiz", "POST /flashcards/{card_id}/review"),
+        ("projects", "POST /projects/{project_id}/submit"),
+    ):
+        declared = next(item for item in MCP_FEATURES if item.feature == feature)
+        assert "geste de january" in declared.excluded[route].lower(), route
+        assert route not in {action.route for action in declared.actions}
 
 
 def test_route_only_graphs_have_no_launch_tool_only_their_route(
@@ -111,7 +116,6 @@ def test_routes_that_start_a_graph_say_so_for_the_levels_table() -> None:
         "POST /postings/{posting_id}/gap": "gap_analysis",
         "POST /goals": "learning_council",
         "POST /goals/{goal_id}/council": "learning_council",
-        "POST /quizzes/{quiz_id}/attempts": "quiz",
         "POST /documents/{document_id}/learned": "learned_document",
     }
     found = {

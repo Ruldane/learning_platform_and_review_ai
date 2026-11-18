@@ -24,6 +24,9 @@ INSTRUCTIONS = "\n".join(
         "fichier) ; January l'accepte dans l'interface. N'écris dans ses fichiers que par "
         "ide_write_file, seulement si elle a allumé l'interrupteur (sinon 403), après avoir relu "
         "la séance (409 stale_base si elle a tapé depuis).",
+        "- Les gestes de January ne sont pas à toi : répondre à un quiz, noter une fiche, "
+        "rendre un projet, et dans l'IDE les fichiers de test de l'exercice. Écris le quiz, "
+        "l'énoncé, tes notes ; lis les résultats.",
         "- Une limite atteinte répond 429 avec le délai : attends, ne réessaie pas en boucle.",
     )
 )

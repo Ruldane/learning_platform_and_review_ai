@@ -89,6 +89,17 @@ def mcp_ide_write_off() -> AppError:
     )
 
 
+def mcp_ide_test_file() -> AppError:
+    """Les tests d'un exercice sont ceux de January : Claude ne les réécrit pas (la vérification
+    passerait sans que le code soit juste)."""
+    return AppError(
+        "mcp_ide_test_file",
+        "Les tests de l'exercice sont ceux de January : Claude n'y écrit pas. Corrige le code, ou "
+        "propose une correction dans une note.",
+        403,
+    )
+
+
 def base_hash_required() -> AppError:
     return AppError(
         "base_hash_required",

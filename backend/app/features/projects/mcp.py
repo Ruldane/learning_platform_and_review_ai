@@ -1,8 +1,8 @@
 """Déclaration MCP de `projects` : le Portfolio des mini projets preuves.
 
-Le rendu d'un projet (`POST /projects/{id}/submit`) est un formulaire multipart : le MCP l'envoie
-avec le lien et la description (`encoding="form"`), jamais de capture. L'entrée au profil maître
-est de niveau 3, avec un contrôle préalable des chiffres."""
+Le rendu d'un projet (`POST /projects/{id}/submit`) est un geste de January : exclu du MCP, et la
+route refuse tout appelant MCP (10.R). L'entrée au profil maître est de niveau 3, avec un contrôle
+préalable des chiffres."""
 
 from pydantic import ValidationError
 
@@ -80,15 +80,6 @@ MCP = FeatureMcp(
             launches="project_review",
         ),
         McpAction(
-            "POST /projects/{project_id}/submit",
-            2,
-            "projects_submit_project",
-            "Rend le projet : un lien (`repo_url`) et/ou une description (4 000 caractères au "
-            "plus), sans capture. L'évaluation se lance ; suis la session.",
-            encoding="form",
-            launches="project_review",
-        ),
-        McpAction(
             "POST /projects",
             2,
             "projects_write_project",
@@ -116,6 +107,11 @@ MCP = FeatureMcp(
         ),
     ),
     excluded={
+        "POST /projects/{project_id}/submit": (
+            "Geste de January : son rendu, jamais fait à sa place (il lance l'évaluation et peut "
+            "valider le projet). Claude écrit l'énoncé, retouche les brouillons et suit "
+            "l'évaluation."
+        ),
         "GET /projects/{project_id}/screenshots/{number}": (
             "Image d'une capture (binaire, pas du JSON) : visible dans le Portfolio de l'interface."
         ),
