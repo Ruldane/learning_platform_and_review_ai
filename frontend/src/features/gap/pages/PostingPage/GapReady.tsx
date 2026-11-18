@@ -3,6 +3,8 @@ import { GapTable } from "../../components/GapTable";
 import { MatchScore } from "../../components/MatchScore";
 import { isAddable, MAX_PLAN_SKILLS } from "../../components/viewTypes";
 import { usePlanGap } from "../../hooks/usePlanGap";
+import { useValidateGap } from "../../hooks/useValidateGap";
+import { InlineError } from "@/shared/ui/states/InlineError";
 import { toGapRows } from "../../toView";
 import type { GapOut } from "../../types";
 import { PlanResult } from "./PlanResult";
@@ -15,6 +17,7 @@ import { PlanResult } from "./PlanResult";
 export function GapReady({ postingId, gap }: { postingId: string; gap: GapOut }) {
   const [selected, setSelected] = useState<string[]>([]);
   const planner = usePlanGap(postingId, () => setSelected([]));
+  const validator = useValidateGap(postingId);
   const rows = useMemo(() => toGapRows(gap.rows), [gap.rows]);
   const chosen = useMemo(() => {
     const addable = new Set(rows.filter(isAddable).map((row) => row.skill));
@@ -35,8 +38,10 @@ export function GapReady({ postingId, gap }: { postingId: string; gap: GapOut })
         selected={chosen}
         onToggle={toggle}
         onAddToPlan={() => planner.plan(chosen)}
-        adding={planner.pending}
+        onValidate={() => validator.validate(chosen)}
+        adding={planner.pending || validator.pending}
       />
+      {validator.failure ? <InlineError message={validator.failure} /> : null}
       <PlanResult outcome={planner.outcome} failure={planner.failure} />
     </div>
   );

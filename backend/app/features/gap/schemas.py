@@ -44,3 +44,11 @@ class PlanGapIn(BaseModel):
 
 class PlanGapStarted(BaseModel):
     session_id: str  # la replanification `replan` (déclencheur `gap`) à suivre et à valider
+
+
+class ValidateGapStarted(BaseModel):
+    """« Je les maîtrise déjà » : le module de validation ajouté et son quiz en préparation."""
+
+    module_id: str
+    quiz_id: str
+    session_id: str | None  # la session de l'Examinateur à suivre

@@ -19,6 +19,14 @@ MCP = FeatureMcp(
             "manquantes (`skills`) ; January la valide avant toute écriture.",
         ),
         McpAction(
+            "POST /postings/{posting_id}/gap/validate",
+            2,
+            "gap_validate_skills",
+            "« Je les maîtrise déjà » : ajoute un module « Valider mes acquis » (`skills`) "
+            "et lance "
+            "son quiz ; January le passe pour faire valider ces compétences.",
+        ),
+        McpAction(
             "GET /gap/top-missing",
             1,
             "gap_list_top_missing",

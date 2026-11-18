@@ -1,0 +1,18 @@
+import { useMutation } from "@tanstack/react-query";
+import { useNavigate } from "react-router";
+import { errorMessage } from "@/shared/api/errors";
+import { validateGap } from "../api";
+
+/** « Je les maîtrise déjà » : prépare le quiz de validation puis ouvre sa page. */
+export function useValidateGap(postingId: string) {
+  const navigate = useNavigate();
+  const mutation = useMutation({
+    mutationFn: (skills: string[]) => validateGap(postingId, skills),
+    onSuccess: (started) => void navigate(`/etudier/quiz/${started.quiz_id}`),
+  });
+  return {
+    validate: (skills: string[]) => mutation.mutate(skills),
+    pending: mutation.isPending,
+    failure: mutation.isError ? errorMessage(mutation.error) : null,
+  };
+}

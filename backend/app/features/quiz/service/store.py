@@ -27,6 +27,7 @@ from app.db.models.study import Quiz
 from app.features.lessons.service.lessons import ready_markdown
 from app.features.memory.service.skill_levels import reflect_skill_levels
 from app.features.program.service.programs import load
+from app.features.program.service.validation_module import VALIDATION_BRIEF, VALIDATION_KIND
 from app.features.quiz.repository import AttemptRepository, QuestionRepository, QuizRepository
 from app.features.quiz.service.attempts import attempt_not_found
 from app.features.quiz.service.cards import NewCard, add_cards
@@ -73,6 +74,8 @@ class AgentQuizStore:
             quiz = await owned_quiz(db, user_id, quiz_id)
             module = await _module(db, user_id, quiz)
             markdown = await ready_markdown(db, user_id, module.id)
+            if markdown is None and module.kind == VALIDATION_KIND:
+                markdown = VALIDATION_BRIEF
             if markdown is None:
                 raise lesson_not_ready()
             language = (await SettingsService(db, user_id).get()).lesson_language

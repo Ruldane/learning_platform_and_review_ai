@@ -16,6 +16,7 @@ from app.core.errors import AppError
 from app.db.models.study import Quiz, QuizAttempt, QuizQuestion
 from app.features.lessons.service.lessons import ready_markdown
 from app.features.program.service.programs import load, program_of_module
+from app.features.program.service.validation_module import is_validation_module
 from app.features.quiz.repository import AttemptRepository, QuestionRepository, QuizRepository
 from app.features.quiz.schemas import (
     AttemptSummaryOut,
@@ -82,7 +83,9 @@ async def _prepare(db: AsyncSession, user_id: str, module_id: str) -> QuizStarte
             return QuizStarted(quiz_id=found.id, session_id=found.session_id, status="generating")
         if found.status == "generating" and found.failure_reason == DRAFT_REASON:
             raise quiz_draft()
-    if await ready_markdown(db, user_id, module_id) is None:
+    if await ready_markdown(db, user_id, module_id) is None and not await is_validation_module(
+        db, user_id, module_id
+    ):
         raise lesson_not_ready()
     if found is None:
         loaded = await load(db, user_id, await program_of_module(db, user_id, module_id))

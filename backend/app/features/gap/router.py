@@ -8,10 +8,19 @@ from fastapi import APIRouter, Depends, status
 from starlette.requests import HTTPConnection
 
 from app.core.deps import CurrentUserDep, Db
-from app.features.gap.schemas import GapOut, PlanGapIn, PlanGapStarted, TopMissingOut
+from app.features.gap.schemas import (
+    GapOut,
+    PlanGapIn,
+    PlanGapStarted,
+    TopMissingOut,
+    ValidateGapStarted,
+)
 from app.features.gap.service.plan import plan_gap
 from app.features.gap.service.top import top_missing_skills
+from app.features.gap.service.validate import validate_gap
 from app.features.gap.service.view import posting_gap
+from app.features.program.service.runtime import ProgramRuntime
+from app.features.quiz.service.runtime import QuizRuntime
 from app.features.replan.service.runtime import ReplanRuntime
 
 router = APIRouter(tags=["gap"])
@@ -47,6 +56,34 @@ async def post_gap_plan(
     (`details.session_id`) si une replanification est déjà ouverte."""
     session_id = await plan_gap(rt, current.id, posting_id, body.skills)
     return PlanGapStarted(session_id=session_id)
+
+
+def get_program_runtime(conn: HTTPConnection) -> ProgramRuntime:
+    runtime: ProgramRuntime = conn.app.state.program
+    return runtime
+
+
+def get_quiz_runtime(conn: HTTPConnection) -> QuizRuntime:
+    runtime: QuizRuntime = conn.app.state.quiz
+    return runtime
+
+
+@router.post(
+    "/postings/{posting_id}/gap/validate",
+    response_model=ValidateGapStarted,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def post_gap_validate(
+    posting_id: str,
+    body: PlanGapIn,
+    current: CurrentUserDep,
+    program: Annotated[ProgramRuntime, Depends(get_program_runtime)],
+    quiz: Annotated[QuizRuntime, Depends(get_quiz_runtime)],
+) -> ValidateGapStarted:
+    """« Je les maîtrise déjà » (D220) : un module « Valider mes acquis » avec ces compétences dans
+    le programme validé le plus récent, et son quiz écrit par l'Examinateur ; réussi, il les passe
+    à « validé ». 422 `gap_skill_unknown`, 409 `no_program`, 409 `week_full`."""
+    return await validate_gap(program, quiz, current.id, posting_id, body.skills)
 
 
 @router.get("/gap/top-missing", response_model=list[TopMissingOut])

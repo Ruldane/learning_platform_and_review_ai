@@ -68,6 +68,8 @@ export const gap = {
     fromReview: "relevé par la revue du CV",
     add: "Ajouter au planning ({count})",
     addNone: "Ajouter au planning",
+    validate: "Je les maîtrise déjà ({count}) : passer un quiz",
+    validateNone: "Je les maîtrise déjà : passer un quiz",
     adding: "Ajout en cours…",
     limit: "{max} compétences au plus par ajout.",
     empty: "Aucune compétence à comparer pour cette offre.",

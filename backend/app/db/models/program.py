@@ -61,6 +61,8 @@ class Module(UserScopedMixin, Base):
     skills: Mapped[list[Any]] = mapped_column(default=list)
     prerequisites: Mapped[list[Any]] = mapped_column(default=list)
     skipped: Mapped[bool] = mapped_column(default=False)
+    # « validation » : module « Valider mes acquis » (quiz sans leçon) ; sinon nul.
+    kind: Mapped[str | None] = mapped_column(String(16), default=None)
 
 
 class Task(UserScopedMixin, Base):

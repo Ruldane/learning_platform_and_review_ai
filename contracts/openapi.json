@@ -16671,6 +16671,37 @@
         "title": "UserSettings",
         "type": "object"
       },
+      "ValidateGapStarted": {
+        "description": "« Je les maîtrise déjà » : le module de validation ajouté et son quiz en préparation.",
+        "properties": {
+          "module_id": {
+            "title": "Module Id",
+            "type": "string"
+          },
+          "quiz_id": {
+            "title": "Quiz Id",
+            "type": "string"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          }
+        },
+        "required": [
+          "module_id",
+          "quiz_id",
+          "session_id"
+        ],
+        "title": "ValidateGapStarted",
+        "type": "object"
+      },
       "ValidateOut": {
         "description": "`session_id` : session du Stratège reprise (la validation s'y termine) ; `None` : la\nvalidation est faite (ou l'était déjà).",
         "properties": {
@@ -23180,6 +23211,59 @@
           }
         },
         "summary": "Post Gap Plan",
+        "tags": [
+          "gap"
+        ]
+      }
+    },
+    "/api/v1/postings/{posting_id}/gap/validate": {
+      "post": {
+        "description": "« Je les maîtrise déjà » (D220) : un module « Valider mes acquis » avec ces compétences dans\nle programme validé le plus récent, et son quiz écrit par l'Examinateur ; réussi, il les passe\nà « validé ». 422 `gap_skill_unknown`, 409 `no_program`, 409 `week_full`.",
+        "operationId": "post_gap_validate_api_v1_postings__posting_id__gap_validate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "posting_id",
+            "required": true,
+            "schema": {
+              "title": "Posting Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanGapIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidateGapStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Post Gap Validate",
         "tags": [
           "gap"
         ]

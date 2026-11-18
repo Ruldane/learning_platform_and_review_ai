@@ -2081,6 +2081,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/postings/{posting_id}/gap/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Gap Validate
+         * @description « Je les maîtrise déjà » (D220) : un module « Valider mes acquis » avec ces compétences dans
+         *     le programme validé le plus récent, et son quiz écrit par l'Examinateur ; réussi, il les passe
+         *     à « validé ». 422 `gap_skill_unknown`, 409 `no_program`, 409 `week_full`.
+         */
+        post: operations["post_gap_validate_api_v1_postings__posting_id__gap_validate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/profile": {
         parameters: {
             query?: never;
@@ -9429,6 +9451,18 @@ export interface components {
             weekly_review?: components["schemas"]["WeeklyReview"];
         };
         /**
+         * ValidateGapStarted
+         * @description « Je les maîtrise déjà » : le module de validation ajouté et son quiz en préparation.
+         */
+        ValidateGapStarted: {
+            /** Module Id */
+            module_id: string;
+            /** Quiz Id */
+            quiz_id: string;
+            /** Session Id */
+            session_id: string | null;
+        };
+        /**
          * ValidateOut
          * @description `session_id` : session du Stratège reprise (la validation s'y termine) ; `None` : la
          *     validation est faite (ou l'était déjà).
@@ -14040,6 +14074,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PlanGapStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_gap_validate_api_v1_postings__posting_id__gap_validate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                posting_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanGapIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidateGapStarted"];
                 };
             };
             /** @description Validation Error */

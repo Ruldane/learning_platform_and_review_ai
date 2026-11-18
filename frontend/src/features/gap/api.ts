@@ -97,3 +97,16 @@ export async function programOfSession(sessionId: string): Promise<string | null
   const session = await fetchSession(sessionId);
   return session.subject_type === "program" ? session.subject_id : null;
 }
+
+/**
+ * `POST /postings/{id}/gap/validate` (202) : « Je les maîtrise déjà », un module « Valider mes
+ * acquis » et son quiz. 409 `no_program`, 409 `week_full`, 422 `skills.N`.
+ */
+export async function validateGap(postingId: string, skills: string[]) {
+  return unwrap(
+    await api.POST("/postings/{posting_id}/gap/validate", {
+      ...postingPath(postingId),
+      body: { skills },
+    }),
+  );
+}

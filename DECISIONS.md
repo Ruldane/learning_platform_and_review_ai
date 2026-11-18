@@ -2202,3 +2202,15 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
   le CV garde sa limite de 4 pages.
 - **Raison** : l'export LinkedIn dépasse souvent 4 pages ; son texte est de toute façon coupé à
   `MAX_SOURCE_CHARS`.
+
+## D220
+
+- **Date** : 2026-11-18
+- **Sujet** : « Je les maîtrise déjà » depuis l'écart d'une offre.
+- **Décision** : les compétences cochées reçoivent un module « Valider mes acquis »
+  (`modules.kind = "validation"`, migration 0019) dans le programme validé le plus récent : la
+  semaine en cours ou la prochaine qui a de la place. Le module n'a ni tâche ni leçon ; l'Examinateur
+  écrit son quiz d'après les compétences seules, et le réussir les passe à « validé ». La notation
+  est celle de tout quiz de module. Route `POST /postings/{id}/gap/validate`, niveau MCP 2.
+- **Raison** : January veut déclarer ce qu'elle maîtrise, mais « validé » ne s'obtient que par un
+  quiz ou une évaluation ; on réutilise donc le quiz de module au lieu d'un niveau déclaratif.
