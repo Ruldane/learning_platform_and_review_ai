@@ -357,6 +357,16 @@ Un serveur MCP donne à Claude Code ou à Codex l'accès aux features de Trempli
   avec le Vérificateur. La 10b ne recette qu'un programme court (2 à 3 modules, leçons d'un ou deux
   modules). Accord de January avant d'engager le quota : compter plusieurs heures et plus de
   1,5 M de jetons du client.
+- **Menu par bouton de lancement (D218) :** un petit menu « Qui fait tourner les agents » à côté
+  de chaque bouton qui lance un parcours, en plus du menu global, pour choisir au cas par cas.
+- **Appairage du relais en un clic :** un bouton dans Réglages donne au relais son jeton MCP,
+  sans copier-coller ni `relay.json`. Le jeton couvre toutes les features jouables, sinon le
+  relais met la session de côté (`play_forbidden`) : l'interface doit le signaler.
+- **Échec de planification renvoyé au Stratège :** une tâche plus longue que la plus longue
+  journée ne fait plus échouer `program_builder` (`planning_impossible`, message trompeur sur
+  le budget hebdomadaire) ; le Stratège reçoit le motif et refait son brouillon.
+- **Tests repris :** l'en-tête `X-Tremplin-Run`, le menu, le relais (`node:test`), puis un essai
+  de bout en bout avec Codex.
 
 #### Liens entre les phases
 
