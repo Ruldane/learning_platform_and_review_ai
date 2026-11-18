@@ -41,6 +41,14 @@ export const cvPages = {
     versions: "Versions du profil",
     toCv: "Aller à mes modèles de CV",
   },
+  postingPicker: {
+    title: "Générer un CV pour une offre",
+    hint: "Choisis une offre analysée : les agents comparent ton profil à l’offre, tu acceptes leurs propositions, puis le CV ciblé est généré dans ton modèle actif.",
+    label: "Offre",
+    submit: "Revoir mon CV pour cette offre",
+    none: "Aucune offre analysée pour l’instant : ajoute une offre dans Offres, puis reviens ici.",
+    untitled: "Offre sans titre",
+  },
   templatesPage: {
     title: "Mes modèles de CV",
     intro:

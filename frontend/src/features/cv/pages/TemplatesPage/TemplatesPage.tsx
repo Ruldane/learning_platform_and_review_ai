@@ -9,6 +9,7 @@ import { useTemplates } from "../../hooks/useTemplates";
 import { useProfile } from "../../hooks/useProfile";
 import { FILE_FIELD_ID } from "./PdfFields";
 import { TemplateCreateForm } from "./TemplateCreateForm";
+import { TemplatePostingPicker } from "./TemplatePostingPicker";
 import { TemplateList } from "./TemplateList";
 
 const link = "text-sm font-medium underline underline-offset-4";
@@ -55,6 +56,7 @@ export function TemplatesPage({ pollMs = POLL_MS }: { pollMs?: number }) {
       ) : (
         <TemplateList templates={query.data} />
       )}
+      {query.data && query.data.length > 0 ? <TemplatePostingPicker /> : null}
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-medium">{t("cv.templatesPage.formTitle")}</h2>
         <TemplateCreateForm
