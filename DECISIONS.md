@@ -2177,3 +2177,28 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
   au référentiel du compte. Un nom normalisé déjà présent donne 409. L'ORM permet l'annulation
   de niveau 2. Les preuves et niveaux suivent les gestes et validations qui les établissent.
 - **Raison** : préparer le référentiel via MCP et garder la progression liée aux preuves.
+
+## D218
+
+- **Date** : 2026-11-18
+- **Sujet** : Menu « Qui fait tourner les agents ».
+- **Décision** : un seul menu, dans le panneau de gauche et en tête de Réglages > Modèles, retenu
+  par le navigateur : « Selon mes réglages », Claude Code (MCP), Codex (MCP), API Claude, API GLM,
+  API OpenAI (grisée sans clé). Il part dans l'en-tête `X-Tremplin-Run` ; le back ne le lit qu'au
+  lancement d'un parcours et le garde sur la session (`played_by` ou `model_provider`, migration
+  0018). Les reprises, les sessions filles, refaire le programme et relancer les brouillons
+  gardent la source de la session d'origine ; une session en cours n'est jamais changée par le
+  menu d'une requête plus tardive. Un fournisseur forcé garde le modèle choisi s'il est chez lui,
+  sinon prend celui de son préréglage pour le niveau.
+- **Raison** : choisir à chaud entre l'abonnement d'un client MCP et une clé d'API, sans toucher
+  aux réglages des niveaux. Menu global plutôt qu'un menu par bouton : livré vite, à affiner en
+  phase 11 si besoin.
+
+## D219
+
+- **Date** : 2026-11-18
+- **Sujet** : Taille du profil LinkedIn importé.
+- **Décision** : le PDF LinkedIn du profil maître est lu jusqu'à 40 pages (borne de sûreté) ;
+  le CV garde sa limite de 4 pages.
+- **Raison** : l'export LinkedIn dépasse souvent 4 pages ; son texte est de toute façon coupé à
+  `MAX_SOURCE_CHARS`.

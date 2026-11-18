@@ -26,7 +26,7 @@ from app.features.cv.service.profile_merge import all_ids, merge_draft
 from app.features.cv.service.runtime import CvRuntime
 from app.features.memory.service.document_files import StoredFile, document_file
 from app.features.sessions.service import session_facts
-from app.providers.pdf.base import PdfLayout
+from app.providers.pdf.base import MAX_CV_PAGES, MAX_LINKEDIN_PAGES, PdfLayout
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,9 @@ class AgentProfileStore:
             raise document_not_found()
         if file.source_kind != "pdf":
             raise not_a_pdf()
-        return _kind(file), await self._rt.layout.extract_layout(file.data)
+        kind = _kind(file)
+        pages = MAX_LINKEDIN_PAGES if kind == "linkedin" else MAX_CV_PAGES
+        return kind, await self._rt.layout.extract_layout(file.data, max_pages=pages)
 
     async def sources(
         self, user_id: str, document_ids: Sequence[str], note: str | None

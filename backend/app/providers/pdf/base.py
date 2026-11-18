@@ -113,6 +113,8 @@ class HtmlPdfRenderer(Protocol):
 
 # Mise en page d'un CV (D119) : même sous-processus borné que l'extraction du texte (D72).
 MAX_CV_PAGES = 4
+# Profil LinkedIn exporté en PDF : souvent plus long qu'un CV ; borne de sûreté seulement.
+MAX_LINKEDIN_PAGES = 40
 LAYOUT_DPI = 72
 LAYOUT_TIMEOUT_S = 60.0
 # Sortie du worker (JSON, images PNG en base64) : 40 Mo au plus.
@@ -167,7 +169,7 @@ class PdfLayout:
 
 
 class PdfLayoutExtractor(Protocol):
-    async def extract_layout(self, data: bytes) -> PdfLayout:
+    async def extract_layout(self, data: bytes, *, max_pages: int = MAX_CV_PAGES) -> PdfLayout:
         """Mise en page des `MAX_CV_PAGES` pages au plus. `PdfUnreadable` : PDF protégé,
         endommagé, trop long à lire, page démesurée ou plus de `MAX_CV_PAGES` pages
         (`CV_TOO_LONG_MESSAGE`). Un PDF scanné rend des pages sans blocs, pas une erreur."""

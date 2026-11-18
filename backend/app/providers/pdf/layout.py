@@ -43,9 +43,9 @@ EXIT_ROTATED_PAGE = 5
 _BLOCK_FIELDS = 10
 
 
-def worker_command(max_memory_bytes: int) -> list[str]:
+def worker_command(max_memory_bytes: int, max_pages: int = base.MAX_CV_PAGES) -> list[str]:
     """Plafonds lus à chaque appel dans `base` (pages, résolution, côté de page)."""
-    limits = (base.MAX_CV_PAGES, max_memory_bytes, base.LAYOUT_DPI, base.MAX_PAGE_SIDE_PT)
+    limits = (max_pages, max_memory_bytes, base.LAYOUT_DPI, base.MAX_PAGE_SIDE_PT)
     return [sys.executable, "-m", WORKER_MODULE, *(str(value) for value in limits)]
 
 
@@ -63,7 +63,7 @@ class SubprocessPdfLayoutExtractor:
         self._max_memory_bytes = max_memory_bytes
         self._slots = asyncio.Semaphore(concurrency)
 
-    async def extract_layout(self, data: bytes) -> PdfLayout:
+    async def extract_layout(self, data: bytes, *, max_pages: int = base.MAX_CV_PAGES) -> PdfLayout:
         command = worker_command(self._max_memory_bytes)
         async with self._slots:
             try:
@@ -100,13 +100,11 @@ class SubprocessPdfLayoutExtractor:
 _PDFIUM_LOCK = threading.Lock()
 
 
-def _extract_locally(data: bytes) -> bytes:
+def _extract_locally(data: bytes, max_pages: int) -> bytes:
     from app.providers.pdf.layout_extract import extract_layout_payload
 
     with _PDFIUM_LOCK:
-        payload = extract_layout_payload(
-            data, base.MAX_CV_PAGES, base.LAYOUT_DPI, base.MAX_PAGE_SIDE_PT
-        )
+        payload = extract_layout_payload(data, max_pages, base.LAYOUT_DPI, base.MAX_PAGE_SIDE_PT)
     return json.dumps(payload, ensure_ascii=True).encode("ascii")
 
 
@@ -114,11 +112,11 @@ class LocalPdfLayoutExtractor:
     """`PdfLayoutExtractor` dans un thread (tests) : même extraction et même relecture que le
     worker, mêmes refus."""
 
-    async def extract_layout(self, data: bytes) -> PdfLayout:
+    async def extract_layout(self, data: bytes, *, max_pages: int = base.MAX_CV_PAGES) -> PdfLayout:
         from app.providers.pdf.layout_extract import RotatedPage, TooManyPages
 
         try:
-            output = await asyncio.to_thread(_extract_locally, data)
+            output = await asyncio.to_thread(_extract_locally, data, max_pages)
         except TooManyPages:
             raise PdfUnreadable(CV_TOO_LONG_MESSAGE) from None
         except RotatedPage:

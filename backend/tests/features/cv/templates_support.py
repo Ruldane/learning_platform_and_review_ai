@@ -62,6 +62,6 @@ class CountingLayout:
     inner: PdfLayoutExtractor
     calls: int = 0
 
-    async def extract_layout(self, data: bytes) -> PdfLayout:
+    async def extract_layout(self, data: bytes, *, max_pages: int = 4) -> PdfLayout:
         self.calls += 1
-        return await self.inner.extract_layout(data)
+        return await self.inner.extract_layout(data, max_pages=max_pages)
