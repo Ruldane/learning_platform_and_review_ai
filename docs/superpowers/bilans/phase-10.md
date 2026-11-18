@@ -72,3 +72,33 @@ Tag `phase-10`. Plan : `docs/superpowers/plans/2026-11-17-11-phase-10-ide-mcp.md
 - Fil d'activité : un exercice d'IDE réussi réutilise le genre `project`.
 - Non vérifié en réel : l'interface à l'écran (Chromium de Playwright bloqué par Smart App
   Control) et un vrai client Claude Code ou Codex branché (JSON-RPC rejoué à la main).
+
+## Revue finale (après le tag, 17–18/11)
+
+Revue Opus plafonnée sur deux zones : le cœur MCP (dispatcher, jetons, niveaux, annulation,
+confirmations, plafond) et les trois correctifs non revérifiés. Le cœur tient. Verdict : à
+corriger, 0 Critical, 2 Important, corrigés en f176ff9 et 9233d97 (D212) :
+
+- **I1** : Claude pouvait passer un quiz à la place de January, réviser ses fiches, rendre son
+  projet, ou réécrire les tests d'un exercice. Ces actions deviennent des gestes de January :
+  refus 403 `mcp_gesture_forbidden` sous identité MCP, et `mcp_ide_test_file` pour les tests.
+- **I2** : l'écriture directe d'une offre tenait le verrou SQLite pendant Ollama/Qdrant. La
+  recherche de doublons se fait désormais avant toute écriture.
+- Mineurs pris : l'annulation fait avancer `files_version` ; `response_fields` est exigé sous
+  `/settings` pour toute méthode ; les descriptions d'outils sont corrigées.
+
+La revérification ciblée ne trouve aucun nouveau Critical ni Important. Restent parqués :
+
+- **N1** : une séance libre dont le titre est une compétence peut recevoir des tests écrits par
+  Claude, avec un plafond `en_cours`.
+- **N2** : un `pytest.py` écrit par Claude, interrupteur allumé, masque pytest dans le bac. À
+  fermer côté bac, en lançant pytest hors du dossier de travail.
+- **N3** : la retouche d'une offre lit puis attend le réseau, ce qui peut écraser un « distinct »
+  posé entre-temps.
+- Les points parqués de D212 n° 6.
+- La limite du mode local, **bloquante avant tout hébergement ou le mode Google**.
+
+Incident de clôture : retirer le worktree `b` a vidé les paquets de `frontend/node_modules` (git a
+suivi des liens). Ils ont été réinstallés par `npx pnpm@12.18.0 install --frozen-lockfile --force`,
+avec l'accord de l'utilisatrice. Pour les prochains worktrees : supprimer tout lien vers l'arbre
+principal avant `git worktree remove`, ou ne jamais en créer.
