@@ -25614,7 +25614,6 @@
         },
         "summary": "List Played",
         "tags": [
-          "sessions",
           "sessions"
         ]
       },
@@ -25654,7 +25653,6 @@
         },
         "summary": "Start Played",
         "tags": [
-          "sessions",
           "sessions"
         ]
       }
@@ -25942,7 +25940,6 @@
         },
         "summary": "Read Played",
         "tags": [
-          "sessions",
           "sessions"
         ]
       },
@@ -25993,7 +25990,6 @@
         },
         "summary": "Submit Played",
         "tags": [
-          "sessions",
           "sessions"
         ]
       }

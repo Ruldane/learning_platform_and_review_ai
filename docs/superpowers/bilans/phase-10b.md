@@ -46,11 +46,20 @@ CV, brief du jour et démo se découvrent avec `agents_play_list` et se lancent 
   écarts. Les contrôles ciblés ont validé les corrections du nom de l'outil IDE, du garde
   multipart, de la migration, du contrat CV et du rejeu de recherche.
 - Le contrat OpenAPI et les types TypeScript ont été régénérés. Les neuf contrats d'imports
-  et le contrôle mypy passent. La suite backend complète est lancée.
+  et le contrôle mypy passent.
+- Backend, suite complète (6 463 tests collectés, 38 exclus `live`/`sandbox_live`) : trois
+  échecs, tous corrigés le 18 novembre.
+  - Deux gardes d'isolation. `play_router` était inclus en tête du routeur des sessions, si
+    bien que le garde nommait ce routeur d'après lui. Il devient une entrée de
+    `FEATURE_ROUTERS`, placée avant `sessions_router` pour que `/sessions/play` passe avant
+    `/{session_id}`, avec son cas d'isolation (`test_played_sessions.py`).
+  - `test_openapi_exposes_session_types` ignorait le statut `expired`, voulu par la phase.
+  - Après correction : 358 tests passent (isolation, sessions, MCP), ainsi que les 1 477 de la
+    fin de la suite (fournisseurs, scripts, contrats, démarrage) et les 247 encore marqués en
+    échec dans le cache pytest. Le contrat OpenAPI perd seulement le tag `sessions` en double.
 
 ## À terminer ou à vérifier
 
-- Attendre le résultat de la suite backend complète.
 - Recette avec un client Claude Code ou Codex connecté à une pile de test. Pour le Maquettiste,
   vérifier aussi que le client choisi interprète les images MCP.
 - Menu de choix dans Tremplin et branchement au client local. Le chantier est détaillé à la

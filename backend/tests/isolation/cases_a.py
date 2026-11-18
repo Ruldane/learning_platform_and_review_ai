@@ -12,6 +12,9 @@ CASES: dict[str, str] = {
     "app.features.sessions.router": (
         "tests/features/sessions/test_router.py::test_other_user_cannot_read_or_drive_session"
     ),
+    "app.features.sessions.play_router": (
+        "tests/isolation/test_played_sessions.py::test_foreign_session_is_invisible"
+    ),
     "app.features.memory.router.items": (
         "tests/features/memory/test_items_router.py::test_items_isolated_between_users"
     ),

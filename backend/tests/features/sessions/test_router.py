@@ -250,6 +250,7 @@ async def test_openapi_exposes_session_types(client: httpx.AsyncClient):
         "completed",
         "failed",
         "cancelled",
+        "expired",  # étape jouée non rendue à temps (D215)
     }
     assert "SessionEvent" in schema["components"]["schemas"]
     assert "InterruptRequestedPayload" in schema["components"]["schemas"]

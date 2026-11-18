@@ -9,7 +9,7 @@ from app.features.sessions.schemas import StartSessionResponse
 from app.mcp.played import play_identity
 from app.mcp.registry import Registry
 
-router = APIRouter(tags=["sessions"])
+router = APIRouter(prefix="/sessions", tags=["sessions"])
 
 
 @router.get("/play")

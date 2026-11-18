@@ -8,7 +8,6 @@ from fastapi import status as http
 
 from app.agents.runtime.events import SessionEvent
 from app.core.deps import CurrentUserDep, Db, RuntimeDep
-from app.features.sessions.play_router import router as play_router
 from app.features.sessions.schemas import (
     MessageRequest,
     ResumeRequest,
@@ -21,7 +20,6 @@ from app.features.sessions.service import SessionsService
 from app.realtime.websocket import check_origin, serve_session_stream
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
-router.include_router(play_router)
 
 
 def _service(current: CurrentUserDep, db: Db, runtime: RuntimeDep) -> SessionsService:

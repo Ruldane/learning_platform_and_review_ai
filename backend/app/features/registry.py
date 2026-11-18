@@ -49,6 +49,7 @@ from app.features.replan.router import router as replan_router
 from app.features.research.mcp import MCP as research_mcp
 from app.features.research.router import router as research_router
 from app.features.sessions.mcp import MCP as sessions_mcp
+from app.features.sessions.play_router import router as sessions_play_router
 from app.features.sessions.router import router as sessions_router
 from app.features.settings.keys_router import router as keys_router
 from app.features.settings.mcp import MCP as settings_mcp
@@ -65,6 +66,7 @@ FEATURE_ROUTERS: list[APIRouter] = [
     settings_router,
     keys_router,
     health_router,
+    sessions_play_router,  # avant `sessions_router` : `/sessions/play` avant `/{session_id}`
     sessions_router,
     memory_router,
     research_router,
