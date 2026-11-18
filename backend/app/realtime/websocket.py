@@ -75,7 +75,7 @@ def end_seq_reader(
             return None
         async with factory() as db:
             events = EventRepository(db, user_id)
-            if status == "cancelled":  # aucun événement final : tout ce qui est écrit
+            if status in ("cancelled", "expired"):  # aucun événement final : tout ce qui est écrit
                 return await events.max_seq(session_id)
             # `completed` / `failed` : l'événement final, écrit dans la même transaction que
             # le statut (D61). `None` (ligne d'avant D61 sans son événement) : flux ouvert.

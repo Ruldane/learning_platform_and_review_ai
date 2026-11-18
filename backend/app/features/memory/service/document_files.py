@@ -36,3 +36,10 @@ async def document_tags(db: AsyncSession, user_id: str, document_id: str) -> tup
     """Les étiquettes du document de l'utilisateur ; `None` s'il est absent ou d'un autre."""
     doc = await DocumentRepository(db, user_id).get(document_id)
     return None if doc is None else tuple(map(str, doc.tags))
+
+
+async def add_document_tag(db: AsyncSession, user_id: str, document_id: str, tag: str) -> None:
+    repo = DocumentRepository(db, user_id)
+    doc = await repo.get(document_id)
+    if doc is not None and tag not in doc.tags:
+        doc.tags = [*doc.tags, tag]

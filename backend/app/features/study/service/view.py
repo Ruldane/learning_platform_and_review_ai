@@ -24,7 +24,7 @@ from app.features.study.service.finish import finished_of, study_not_found
 from app.features.study.service.runtime import StudyRuntime
 from app.features.study.service.streak import streak
 
-TERMINAL = frozenset({"completed", "failed", "cancelled"})
+TERMINAL = frozenset({"completed", "failed", "cancelled", "expired"})
 
 
 async def agent_status(db: AsyncSession, user_id: str, session_id: str | None) -> str | None:

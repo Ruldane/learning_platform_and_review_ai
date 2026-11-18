@@ -23,6 +23,10 @@ ACTIONS: list[tuple[str, McpAction]] = [
     (feature.feature, action) for feature in MCP_FEATURES for action in feature.actions
 ]
 ACTION_BY_ROUTE = {action.route: action for _, action in ACTIONS}
+PLAY_ACTIONS = [
+    (feature.feature, action) for feature in MCP_FEATURES for action in feature.play_actions
+]
+PLAY_BY_ROUTE = {action.route: action for _, action in PLAY_ACTIONS}
 EXCLUDED = {key: why for feature in MCP_FEATURES for key, why in feature.excluded.items()}
 
 GRAPH_PREFIX = "graph:"
@@ -102,7 +106,9 @@ def test_every_route_declared_or_excluded() -> None:
     missing = [
         route.key
         for route in ROUTES
-        if route.key not in ACTION_BY_ROUTE and route.key not in EXCLUDED
+        if route.key not in ACTION_BY_ROUTE
+        and route.key not in EXCLUDED
+        and route.key not in PLAY_BY_ROUTE
     ]
     assert missing == []
 
@@ -219,9 +225,7 @@ def test_upload_and_stream_routes_are_excluded() -> None:
         "WS /sessions/{session_id}/stream",
     }
     for route in risky:
-        # Un formulaire sans fichier (`encoding="form"`) peut être déclaré : ses fichiers sont
-        # écartés du schéma de l'outil. Tout autre envoi de fichier ou flux est exclu.
-        action = ACTION_BY_ROUTE.get(route.key)
+        action = ACTION_BY_ROUTE.get(route.key) or PLAY_BY_ROUTE.get(route.key)
         if action is not None:
             assert action.encoding == "form" and route.key not in EXCLUDED, route.key
         else:
@@ -241,7 +245,6 @@ def test_ide_code_writes_are_excluded() -> None:
     assert (write.level, write.name) == (2, "ide_write_file")
     assert write.body_fields == frozenset({"files", "base_hash"})
     assert "PUT /ide/sessions/{session_id}/files" not in FEATURES["ide"].excluded
-    # l'interrupteur qui l'autorise ne se règle jamais par le MCP
     assert "PUT /ide/preferences" in FEATURES["ide"].excluded
     assert "PUT /ide/preferences" not in ACTION_BY_ROUTE
 
@@ -256,11 +259,15 @@ def test_profile_write_actions_have_precheck() -> None:
 
 
 def test_tool_names_unique_valid_and_short() -> None:
-    names = [action.name for _, action in ACTIONS]
+    actions = ACTIONS + PLAY_ACTIONS
+    names = [action.name for _, action in actions]
     assert len(names) == len(set(names))
-    for feature, action in ACTIONS:
+    for feature, action in actions:
         assert re.fullmatch(r"[a-z0-9_]{1,64}", action.name), action.name
-        assert action.name.startswith(f"{feature}_"), action.name
+        prefix = (
+            "agents_play_" if feature == "sessions" and "/play" in action.route else f"{feature}_"
+        )
+        assert action.name.startswith(prefix), action.name
         assert action.name.count("_") >= 2, action.name  # <feature>_<verbe>_<objet>
 
 

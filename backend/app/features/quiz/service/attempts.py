@@ -17,6 +17,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
+from app.core.played import inherit_play
 from app.db.models.study import QuizAttempt, QuizQuestion
 from app.features.quiz.repository import AttemptRepository, QuestionRepository
 from app.features.quiz.schemas import AnswerIn, AttemptCreate, AttemptOut, AttemptStarted
@@ -31,6 +32,7 @@ from app.features.quiz.service.status import (
     open_sessions,
     read_with_sessions,
 )
+from app.features.sessions.service import session_facts
 
 logger = logging.getLogger(__name__)
 
@@ -163,12 +165,15 @@ async def create_attempt(
     """Range la tentative puis lance sa notation (202). Voir le module pour les erreurs."""
     async with rt.quiz_lock(user_id, quiz_id):
         async with rt.session_factory() as db:
+            quiz = await owned_quiz(db, user_id, quiz_id)
+            source = await session_facts(db, user_id, quiz.session_id) if quiz.session_id else None
             attempt_id = await _insert(db, user_id, rt, quiz_id, body)
         payload = {"mode": "grade", "attempt_id": attempt_id}
         try:
-            sid = await rt.launcher.start(
-                user_id, GRAPH, payload, subject_type=SUBJECT, subject_id=quiz_id
-            )
+            with inherit_play(user_id, source.played_by if source else None):
+                sid = await rt.launcher.start(
+                    user_id, GRAPH, payload, subject_type=SUBJECT, subject_id=quiz_id
+                )
         except BaseException:
             await _set_session(rt, user_id, attempt_id, None)
             raise

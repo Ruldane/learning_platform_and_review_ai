@@ -1,7 +1,7 @@
 import type { ApiError } from "@/shared/api/errors";
 import { t } from "@/shared/i18n/t";
 
-const STATUSES = ["running", "waiting_user", "paused", "completed", "failed", "cancelled"] as const;
+const STATUSES = ["running", "waiting_user", "paused", "completed", "failed", "cancelled", "expired"] as const;
 type Status = (typeof STATUSES)[number];
 
 /** Statut de session lu dans les détails d'un 409 `program_not_waiting`. */

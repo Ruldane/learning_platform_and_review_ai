@@ -14,6 +14,7 @@ from sqlalchemy import func, select
 from app.agents.runtime.repositories import SessionRepository
 from app.agents.tools.plan_schema import PlanDraft
 from app.core.errors import AppError
+from app.core.played import played_by
 from app.core.providers import MemoryProviders, PublishingProviders
 from app.core.security import Cipher
 from app.db.models.agents import AgentSession
@@ -61,6 +62,7 @@ class RecordingLauncher:
         async with self.factory() as db:
             row = await SessionRepository(db, user_id).add(
                 graph=graph,
+                played_by=played_by(user_id),
                 status="running",
                 input=input,
                 subject_type=subject_type,

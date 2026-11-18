@@ -15,6 +15,7 @@ export const session = {
     session_not_found: "Cette session est introuvable.",
     server_stopping: "Le serveur est en train de s'arrêter. Réessaie dans un instant.",
   },
+  played: { codex: "Joué par Codex", claude: "Joué par Claude", waiting: "En attente du client MCP" },
   status: {
     label: "État de la session",
     running: "En cours",
@@ -23,6 +24,7 @@ export const session = {
     completed: "Terminée",
     failed: "Échouée",
     cancelled: "Annulée",
+    expired: "Expirée",
   },
   round: "Tour {round}",
   cost: {

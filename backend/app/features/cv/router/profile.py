@@ -54,13 +54,24 @@ async def import_profile(
     current: CurrentUserDep,
     db: Db,
     rt: CvDep,
-    cv: Annotated[UploadFile, File()],
+    cv: Annotated[UploadFile | None, File()] = None,
     linkedin: Annotated[UploadFile | None, File()] = None,
     note: Annotated[str | None, Form(max_length=MAX_NOTE_CHARS)] = None,
+    cv_document_id: Annotated[str | None, Form(min_length=36, max_length=36)] = None,
+    linkedin_document_id: Annotated[str | None, Form(min_length=36, max_length=36)] = None,
 ) -> ProfileImportStarted:
     """CV en PDF (10 Mo au plus), profil LinkedIn en PDF facultatif, note facultative. 409
     `capture_in_progress`, 413 `file_too_large`, 415 `unsupported_file_type`."""
-    return await start_import(rt, db, current.id, cv=cv, linkedin=linkedin, note=note)
+    return await start_import(
+        rt,
+        db,
+        current.id,
+        cv=cv,
+        linkedin=linkedin,
+        note=note,
+        cv_document_id=cv_document_id,
+        linkedin_document_id=linkedin_document_id,
+    )
 
 
 @router.get("/profile/versions", response_model=list[ProfileVersionOut])

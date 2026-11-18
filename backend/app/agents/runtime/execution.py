@@ -37,6 +37,7 @@ from app.agents.runtime.checkpointer import thread_config
 from app.agents.runtime.control import TERMINAL
 from app.agents.runtime.costs import CostTracker, ModelPrice
 from app.agents.runtime.deps import ChatModelSource, GraphDeps
+from app.agents.runtime.playback import models_for, public_question, restore_delivery
 from app.agents.runtime.ports import NO_PORTS, AgentPorts
 from app.agents.runtime.repositories import SessionRepository
 from app.agents.runtime.run_settings import RunSettingsSource
@@ -151,7 +152,7 @@ class _Run:
         deps = GraphDeps(
             self.user_id,
             self.session_id,
-            ctx.models,
+            models_for(row, ctx.models),
             ctx.bus,
             settings,
             ctx.session_factory,
@@ -171,6 +172,10 @@ class _Run:
         if spec.recursion_limit is not None:
             config["recursion_limit"] = spec.recursion_limit
         graph_input: Any = command
+        if command is None and row.play_delivery:
+            graph_input = restore_delivery(
+                (await graph.aget_state(config)).interrupts, row.play_delivery
+            )
         if command is None and await ctx.checkpointer.aget_tuple(config) is None:
             graph_input = row.input  # aucun checkpoint : (re)départ depuis l'entrée
         return graph, config, graph_input
@@ -211,7 +216,7 @@ class _Run:
     def _guard(self, to: str, **values: Any) -> Guard:
         async def guard(db: AsyncSession) -> bool:
             return await SessionRepository(db, self.user_id).transition(
-                self.session_id, from_={"running"}, to=to, **values
+                self.session_id, from_={"running"}, to=to, play_delivery=None, **values
             )
 
         return guard
@@ -232,7 +237,12 @@ class _Run:
 
     async def wait_user(self, pending: dict[str, Any]) -> None:
         # Question et statut ensemble : qui reçoit la question peut y répondre aussitôt.
-        await self._issue("waiting_user", "interrupt.requested", pending, pending_interrupt=pending)
+        await self._issue(
+            "waiting_user",
+            "interrupt.requested",
+            public_question(pending),
+            pending_interrupt=pending,
+        )
 
     async def complete(self, summary: str) -> None:
         await self._issue("completed", "run.completed", {"summary": summary}, error=None)

@@ -47,7 +47,8 @@ export function ResearchRun({ sessionId, stream, onRestart }: ResearchRunProps) 
   const failure = status === "failed" ? (view.error?.message ?? t("research.page.failed")) : null;
   return (
     <div className="flex flex-col gap-4">
-      <SessionStatusBar status={status} cost={view.cost} />
+      <SessionStatusBar status={status} cost={view.cost}
+        playedBy={view.playedBy} waitingForClient={view.pendingInterrupt?.kind === "mcp_model"} />
       {connection === "reconnecting" ? (
         <p role="status" className="text-sm text-muted-foreground">
           {t("research.page.reconnecting")}

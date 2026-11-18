@@ -1,11 +1,35 @@
 """Déclaration MCP de `sessions` : suivre une session d'agents et lui répondre. Lancer un parcours
 se fait par l'outil de son graphe (`McpGraph`), jamais par `POST /sessions` brut."""
 
-from app.mcp.base import FeatureMcp, McpAction
+from app.mcp.base import FeatureMcp, McpAction, McpGraph
 
 MCP = FeatureMcp(
     feature="sessions",
     actions=(
+        McpAction(
+            "GET /sessions/play",
+            1,
+            "agents_play_list",
+            "Liste les lancements jouables ouverts à ce jeton et le schéma de leurs arguments.",
+        ),
+        McpAction(
+            "POST /sessions/play",
+            2,
+            "agents_play_start",
+            "Lance un parcours avec le modèle du client, par son outil de lancement.",
+        ),
+        McpAction(
+            "GET /sessions/{session_id}/play",
+            1,
+            "agents_play_brief",
+            "Lit les messages, le rôle et le schéma de la réponse attendue.",
+        ),
+        McpAction(
+            "POST /sessions/{session_id}/play",
+            2,
+            "agents_play_submit",
+            "Rend une réponse du modèle à l'étape indiquée.",
+        ),
         McpAction(
             "GET /sessions",
             1,
@@ -45,6 +69,7 @@ MCP = FeatureMcp(
             "Annule une session en cours.",
         ),
     ),
+    graphs=(McpGraph("demo_debate", play_only=True),),
     excluded={
         "POST /sessions": (
             "Lancement brut d'un parcours par son nom : remplacé par un outil par graphe "
@@ -53,10 +78,6 @@ MCP = FeatureMcp(
         "WS /sessions/{session_id}/stream": (
             "WebSocket de diffusion des événements : le MCP suit une session par "
             "`sessions_get_session`, il n'ouvre pas de flux."
-        ),
-        "graph:demo_debate": (
-            "Parcours de démo interne du débat (phase 3), aucune action de l'utilisatrice ne le "
-            "lance : il consommerait des appels au modèle sans rien produire."
         ),
     },
 )

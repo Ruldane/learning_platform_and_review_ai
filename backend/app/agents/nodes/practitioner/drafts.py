@@ -25,6 +25,7 @@ from typing import Any
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from langgraph.errors import GraphInterrupt
 
 from app.agents.nodes.practitioner.outcome import from_state, to_state
 from app.agents.prompts.loader import render_prompt, untrusted
@@ -182,6 +183,8 @@ def make_drafts(deps: GraphDeps) -> Node:
                     step="brouillons",
                     intent="j'écris les brouillons du projet",
                 )
+        except GraphInterrupt:
+            raise
         except Exception as exc:  # les brouillons sont facultatifs : l'évaluation validée reste
             logger.info(
                 "Brouillons impossibles : session %s, projet %s, cause %s",
@@ -218,11 +221,9 @@ def _code(exc: Exception) -> str:
 
 
 def make_redo(deps: GraphDeps) -> Node:
-    """Le nouvel essai, facultatif : toute panne (fournisseur, plafond de jetons, délai, format)
-    garde le premier jet `to_check` ; l'évaluation validée n'est jamais perdue."""
-
     @node_timeout()
     async def redo(state: ProjectReviewState) -> ProjectReviewState:
+        """Garde le premier jet et l'évaluation validée si la correction échoue."""
         project_id = state["project_id"]
         inputs = await deps.ports.projects.review_inputs(deps.user_id, project_id)
         reference, title = _reference(inputs), inputs.brief.title
@@ -247,6 +248,8 @@ def make_redo(deps: GraphDeps) -> Node:
                     step="brouillons-2",
                     intent="je corrige les brouillons du projet",
                 )
+        except GraphInterrupt:
+            raise
         except Exception as exc:  # le premier jet reste rangé, `to_check`
             logger.info(
                 "Nouvel essai des brouillons impossible : session %s, projet %s, cause %s",

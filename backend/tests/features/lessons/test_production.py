@@ -10,6 +10,7 @@ from typing import Any
 import pytest
 from sqlalchemy import func, select
 
+from app.agents.runtime.repositories import SessionRepository
 from app.core.errors import AppError
 from app.db.models.lessons import Lesson
 from app.features.lessons.service import production
@@ -21,7 +22,9 @@ from app.features.program.service.runtime import ProgramRuntime
 from app.features.program.service.validation import request_validation
 from app.scheduler.base import JobContext
 from app.scheduler.jobs import lessons_due
+from tests.agents.runtime.runner_helpers import get_session
 from tests.features.lessons.conftest import (
+    DRAFT_SESSION,
     ME,
     OTHER,
     RecordingLauncher,
@@ -71,6 +74,21 @@ async def test_draft_program_starts_nothing(
     program = await draft_program(program_rt)
     assert await ensure_lessons(lessons_rt, ME, program.program_id) is None
     assert launcher.started == []
+
+
+async def test_resumed_production_keeps_the_program_client(
+    program_rt: ProgramRuntime, db_session_factory: Factory
+) -> None:
+    program = await draft_program(program_rt)
+    async with db_session_factory() as db:
+        await SessionRepository(db, ME).add(
+            id=DRAFT_SESSION, graph="program_builder", status="completed", played_by="codex"
+        )
+        await db.commit()
+    await validate(program_rt, program)
+    produced = await lessons_of(db_session_factory, program.program_id)
+    sid = produced[program.modules[0]].session_id
+    assert sid and (await get_session(db_session_factory, ME, sid)).played_by == "codex"
 
 
 async def test_chain_runs_one_module_at_a_time(

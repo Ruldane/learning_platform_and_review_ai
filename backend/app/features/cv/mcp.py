@@ -178,16 +178,27 @@ MCP = FeatureMcp(
             "ou le design d'un gabarit (`mode` design, `template_id`) ; January valide.",
         ),
     ),
+    play_actions=(
+        McpAction(
+            "POST /profile/import",
+            2,
+            "cv_capture_profile",
+            "Prépare un brouillon de profil à partir d'un PDF rangé dans Tremplin.",
+            body_fields=frozenset({"cv_document_id", "linkedin_document_id", "note"}),
+            encoding="form",
+            launches="cv_capture",
+        ),
+        McpAction(
+            "POST /cv/templates",
+            2,
+            "cv_capture_design",
+            "Analyse les images d'un PDF rangé dans Tremplin pour en créer un gabarit.",
+            body_fields=frozenset({"document_id", "name"}),
+            encoding="form",
+            launches="cv_capture",
+        ),
+    ),
     excluded={
-        "POST /profile/import": (
-            "Téléversement du CV en PDF (multipart, `UploadFile`) : le MCP n'envoie pas de "
-            "fichier ; l'import du CV (et le graphe `cv_capture` qui le lit) se fait depuis "
-            "l'interface."
-        ),
-        "POST /cv/templates": (
-            "Téléversement d'un CV en PDF (multipart, `UploadFile`) : le MCP n'envoie pas de "
-            "fichier ; le gabarit se crée depuis l'interface."
-        ),
         "GET /cv/templates/{template_id}/pages/{kind}/{number}": (
             "Image PNG d'une page, pas du JSON : le MCP lit le gabarit par `cv_get_template`."
         ),

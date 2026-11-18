@@ -166,6 +166,8 @@ class CostTracker(AsyncCallbackHandler):
         if session is not None and session.tokens_in + session.tokens_out >= self._cap:
             raise TokenBudgetExceeded(self._cap)
         meta = metadata or {}
+        if meta.get("tremplin_provider") == "mcp":
+            return  # La réservation de l’étape journalise le rendu une seule fois.
         self._calls[run_id] = _CallStart(
             started=time.monotonic(),
             agent=meta.get("agent"),

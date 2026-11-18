@@ -10,6 +10,7 @@ from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.skills import Skill, SkillEdge, SkillSnapshot, UserSkill
@@ -22,7 +23,7 @@ class SkillRepository(UserScopedRepository[Skill]):
     async def ensure(
         self, name: str, norm_name: str, domain: str | None, synonyms: list[Any]
     ) -> None:
-        """Crée la compétence si son nom normalisé est nouveau ; sinon rien (la première gagne)."""
+        """Crée la compétence si son nom normalisé est nouveau."""
         stmt = sqlite_insert(Skill).values(
             user_id=self.user_id,
             name=name,
@@ -33,6 +34,20 @@ class SkillRepository(UserScopedRepository[Skill]):
         await self.session.execute(
             stmt.on_conflict_do_nothing(index_elements=["user_id", "norm_name"])
         )
+
+    async def create(
+        self, name: str, norm_name: str, domain: str | None, synonyms: list[str]
+    ) -> str | None:
+        """Ajoute la ligne par l'ORM pour la rendre annulable depuis l'historique MCP."""
+        try:
+            row = await self.add(name=name, norm_name=norm_name, domain=domain, synonyms=synonyms)
+        except IntegrityError:
+            # La transaction de la route ne contient que cette insertion.
+            await self.session.rollback()
+            if not await self.by_norm([norm_name]):
+                raise
+            return None
+        return row.id
 
     async def by_norm(self, norm_names: Collection[str]) -> dict[str, Skill]:
         if not norm_names:

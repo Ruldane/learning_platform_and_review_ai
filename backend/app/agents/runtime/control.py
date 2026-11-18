@@ -16,7 +16,7 @@ from app.agents.runtime.repositories import SessionRepository
 from app.core.errors import AppError
 from app.db.models.agents import AgentSession
 
-TERMINAL = frozenset({"completed", "failed", "cancelled"})
+TERMINAL = frozenset({"completed", "failed", "cancelled", "expired"})
 OPEN = frozenset({"running", "waiting_user", "paused"})  # reçoit des messages, annulable
 PAUSABLE = frozenset({"running", "waiting_user"})
 
@@ -64,6 +64,8 @@ async def claim_resume(
     adressée à l'interruption par son id, ou `None` (reprise d'une pause sur le dernier
     checkpoint). 409 lisible si la question est périmée ou la session pas en attente."""
     row = await get_owned(db, user_id, session_id)
+    if (row.pending_interrupt or {}).get("brief") is not None:
+        raise AppError("played_step_required", "Cette étape attend le client MCP.", 409)
     if row.status == "waiting_user" and interrupt_id is not None:
         pending = (row.pending_interrupt or {}).get("interrupt_id")
         if interrupt_id != pending or not await transition(

@@ -4,7 +4,7 @@ import type { SessionStatus } from "@/shared/realtime/types";
 import { useSessionActions } from "@/shared/realtime/useSessionActions";
 import { useSessionStream } from "@/shared/realtime/useSessionStream";
 
-const FINISHED: readonly SessionStatus[] = ["completed", "failed", "cancelled"];
+const FINISHED: readonly SessionStatus[] = ["completed", "failed", "cancelled", "expired"];
 
 /** Données et actions d'une session de démo, plus l'état de la confirmation d'annulation. */
 export function useDemoSession(sessionId: string, createSocket?: SocketFactory) {

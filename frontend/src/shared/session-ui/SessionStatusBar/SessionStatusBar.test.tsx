@@ -13,6 +13,14 @@ describe("SessionStatusBar", () => {
     expect(screen.getByText(/150 tokens/)).toBeInTheDocument();
   });
 
+  it.each([
+    ["codex", "Joué par Codex"],
+    ["claude-code", "Joué par Claude"],
+  ] as const)("identifie le client %s", (playedBy, label) => {
+    render(<SessionStatusBar status="running" cost={null} playedBy={playedBy} />);
+    expect(screen.getByText(label)).toBeInTheDocument();
+  });
+
   it("announces status changes politely", () => {
     render(<SessionStatusBar status="waiting_user" cost={null} />);
     expect(screen.getByText("En attente de ta réponse").closest("[role=status]")).not.toBeNull();
@@ -23,6 +31,7 @@ describe("SessionStatusBar", () => {
     ["completed", "Terminée"],
     ["failed", "Échouée"],
     ["cancelled", "Annulée"],
+    ["expired", "Expirée"],
   ] as const)("labels %s in French", (status, label) => {
     render(<SessionStatusBar status={status} cost={null} />);
     expect(screen.getByText(label)).toBeInTheDocument();

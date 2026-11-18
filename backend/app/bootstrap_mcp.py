@@ -104,6 +104,7 @@ def install_adapter(
         )
 
     dispatcher = McpDispatcher(app, app.state.session_factory, registry, confirmations)
+    app.state.mcp_play_launch = dispatcher.play_launch
     app.state.mcp_registry = registry
     app.state.mcp_confirmations = confirmations
     install_gate(app, registry, dispatcher, limits, features)

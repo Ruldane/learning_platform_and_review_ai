@@ -8,6 +8,14 @@ l’association entre chaque demande et sa réponse. Les lots suivants dépenden
 verdict de chaque source après redémarrage et atteint le choix du parcours. Le Constructeur
 enregistre le brouillon corrigé et attend la validation. Voir [D215](../../../DECISIONS.md#d215).
 
+**Reprise de la phase.** Le catalogue de niveau 1 restitue les entrées des 23 graphes.
+Les tests ciblés passent pour le Conseil, le Constructeur, les leçons, le quiz, le tutorat, la
+replanification, le document appris, les projets, l'IDE, le brief du jour, les candidatures,
+le radar, la revue de CV et la recherche jouée. La capture de CV reçoit les images en blocs
+MCP et l'Archiviste écrit un brouillon sous validation humaine. Les vérifications intégrées
+des reprises et la campagne de régression sont en cours. Voir
+[le bilan de reprise](../bilans/phase-10b.md).
+
 ## 1. Conseil et Constructeur
 
 - [x] Dans `backend/tests/agents/graphs/test_played_proof.py`, lancer les deux graphes avec
@@ -20,14 +28,14 @@ enregistre le brouillon corrigé et attend la validation. Voir [D215](../../../D
 - [x] Exécuter `pytest tests/agents/graphs/test_played_proof.py -q`. Si le fournisseur seul
   associe une réponse à la mauvaise demande, consigner le contre-exemple en D214 et arrêter
   avant de brancher le MCP. Sinon consigner le mécanisme retenu et poursuivre.
-- [ ] Après preuve, enregistrer le client sur la session par migration Alembic. Sélectionner
+- [x] Après preuve, enregistrer le client sur la session par migration Alembic. Sélectionner
   la source de modèles dans `runtime/execution.py` avant tout accès aux clés. Propager le client
   aux sessions filles, y compris après une confirmation dans l’interface ou un redémarrage.
-- [ ] Déclarer les outils génériques de lancement, lecture et rendu aux niveaux 2, 1 et 2.
+- [x] Déclarer les outils génériques de lancement, lecture et rendu aux niveaux 2, 1 et 2.
   Réutiliser le lancement de la feature avec sa portée et ses préconditions. Réserver le rendu
   par compte, session et étape en base. Tester les soumissions concurrentes, le redémarrage
   après réservation, l’expiration à 24 h, l’annulation et la limite de lancements.
-- [ ] Dans les tests MCP et d’isolation, essayer une session étrangère (404), un jeton hors
+- [x] Dans les tests MCP et d’isolation, essayer une session étrangère (404), un jeton hors
   portée, un jeton en lecture seule et un rendu sur une décision humaine. Vérifier qu’une
   422, le journal et le brief respectent chacun leurs règles de confidentialité.
 - [ ] Régénérer OpenAPI et les types TypeScript. Exécuter les tests ciblés et les hooks.
@@ -57,8 +65,22 @@ enregistre le brouillon corrigé et attend la validation. Voir [D215](../../../D
 
 - [ ] Tester les anciens enregistrements et les deux libellés en français dans le suivi et
   le rapport des coûts. Ajouter les textes i18n et vérifier le rendu à zéro.
-- [ ] Documenter la chaîne du programme dans `docs/mcp/AGENTS.md`, mettre à jour la règle
+- [x] Documenter la chaîne du programme dans `docs/mcp/AGENTS.md`, mettre à jour la règle
   recopiée depuis `backend/app/mcp/instructions.py` et vérifier le test de recopie.
 - [ ] Vérifier contrats générés, types, lint, longueurs et table `scripts.mcp_levels`.
   Exécuter une fois la suite back complète, les tests front et consigner résultats et
   exclusions dans `docs/superpowers/bilans/phase-10b.md`. Commits par chemins explicites.
+
+## 5. Lancement des parcours depuis Tremplin
+
+Ce chantier suit la validation du MCP. Il relie les boutons de lancement de Tremplin aux
+clients locaux et aux fournisseurs de l'application.
+
+- [ ] Proposer un seul menu sur les fonctionnalités qui lancent des agents. Les choix sont
+  Claude Code, Codex, API Claude, API GLM et API OpenAI, selon les clients disponibles et
+  les fournisseurs configurés.
+- [ ] Brancher l'interface aux clients locaux pour qu'un lancement depuis Tremplin puisse
+  utiliser la connexion du client choisi. Afficher sa disponibilité et conserver le choix
+  pendant les attentes, reprises et sessions filles du parcours.
+- [ ] Vérifier la chaîne complète depuis le bouton de la fonctionnalité jusqu'aux résultats
+  dans Tremplin. Garder le suivi de chaque rôle et les décisions de January dans l'interface.

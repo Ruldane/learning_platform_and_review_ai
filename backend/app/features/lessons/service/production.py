@@ -23,12 +23,13 @@ from typing import Protocol
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.core.played import inherit_play
 from app.db.models.lessons import MAX_LESSON_ATTEMPTS, Lesson
 from app.features.lessons.repository import LessonRepository
 from app.features.lessons.service.runtime import Launcher
 from app.features.lessons.service.status import GRAPH, INTERRUPTED, SUBJECT
 from app.features.program.service.programs import Loaded, list_validated_programs, load
-from app.features.sessions.service import list_open_sessions
+from app.features.sessions.service import list_open_sessions, session_facts
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +54,7 @@ class _Pick:
     module_id: str
     # Statut, essais et raison d'avant : rétablis si le lancement échoue.
     previous: tuple[str, int, str | None]
+    played_by: str | None
 
 
 def week_due(rank: int, start: date, today: date) -> bool:
@@ -122,8 +124,13 @@ async def _prepare(
     lesson = _first_due(loaded, {x.module_id: x for x in rows}, today)
     if lesson is None:
         return None
+    parent = loaded.program.session_id
+    source = await session_facts(db, user_id, parent) if parent else None
     pick = _Pick(
-        lesson.id, lesson.module_id, (lesson.status, lesson.attempts, lesson.failure_reason)
+        lesson.id,
+        lesson.module_id,
+        (lesson.status, lesson.attempts, lesson.failure_reason),
+        source.played_by if source else None,
     )
     lesson.status, lesson.attempts = "generating", lesson.attempts + 1
     lesson.failure_reason, lesson.session_id = None, None
@@ -162,9 +169,10 @@ async def ensure_lessons(
             return None
         payload = {"program_id": program_id, "module_id": pick.module_id}
         try:
-            sid = await ctx.launcher.start(
-                user_id, GRAPH, payload, subject_type=SUBJECT, subject_id=program_id
-            )
+            with inherit_play(user_id, pick.played_by):
+                sid = await ctx.launcher.start(
+                    user_id, GRAPH, payload, subject_type=SUBJECT, subject_id=program_id
+                )
         except BaseException:
             await _set_session(ctx, user_id, pick, None)
             raise

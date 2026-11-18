@@ -15,6 +15,7 @@ from app.core.errors import AppError
 from app.features.cv.schemas_profile import ProfileImportStarted
 from app.features.cv.service.profile import capture_session
 from app.features.cv.service.runtime import CAPTURE_GRAPH, PROFILE_SUBJECT, CvRuntime
+from app.features.memory.service.document_files import add_document_tag, document_file
 from app.features.memory.service.documents import DocumentService
 from app.features.memory.service.upload import detect_upload
 
@@ -74,23 +75,60 @@ async def _store(
     return list(dict.fromkeys(ids))
 
 
+async def _validate_stored(rt: CvRuntime, user_id: str, stored: list[tuple[str, str]]) -> None:
+    for document_id, _ in stored:
+        source = await document_file(rt.memory, user_id, document_id)
+        if source is None:
+            raise AppError("document_not_found", "Document introuvable.", 404)
+        if source.source_kind != "pdf":
+            raise pdf_only()
+        if len(source.data) > MAX_PROFILE_FILE_BYTES:
+            raise pdf_too_large()
+
+
+async def _tag_stored(
+    db: AsyncSession, user_id: str, stored: list[tuple[str, str]], document_ids: list[str]
+) -> list[str]:
+    for document_id, tag in stored:
+        await add_document_tag(db, user_id, document_id, tag)
+    return list(dict.fromkeys([*document_ids, *(document_id for document_id, _ in stored)]))
+
+
 async def start_import(
     rt: CvRuntime,
     db: AsyncSession,
     user_id: str,
     *,
-    cv: UploadFile,
+    cv: UploadFile | None,
     linkedin: UploadFile | None,
     note: str | None,
+    cv_document_id: str | None = None,
+    linkedin_document_id: str | None = None,
 ) -> ProfileImportStarted:
-    files = [(cv, "cv")] + ([(linkedin, "linkedin")] if linkedin is not None else [])
+    if cv is None and cv_document_id is None:
+        raise AppError("validation_error", "Requête invalide.", 422, {"fields": ["cv"]})
+    if (cv is not None and cv_document_id is not None) or (linkedin and linkedin_document_id):
+        raise AppError(
+            "validation_error",
+            "Indique une seule source par document.",
+            422,
+            {"fields": ["cv", "cv_document_id", "linkedin", "linkedin_document_id"]},
+        )
+    files = [(file, tag) for file, tag in [(cv, "cv"), (linkedin, "linkedin")] if file is not None]
+    stored = [
+        (id_, tag)
+        for id_, tag in [(cv_document_id, "cv"), (linkedin_document_id, "linkedin")]
+        if id_ is not None
+    ]
     for file, _ in files:
         await check_pdf(file)
     note = note.strip() if note and note.strip() else None
     async with rt.import_lock(user_id):
         if (open_id := await capture_session(db, user_id)) is not None:
             raise capture_in_progress(open_id)
+        await _validate_stored(rt, user_id, stored)
         document_ids = await _store(rt, db, user_id, files)
+        document_ids = await _tag_stored(db, user_id, stored, document_ids)
         await db.commit()  # aucune écriture en attente quand le moteur écrit la session
         body = {"mode": "profile", "document_ids": document_ids, "note": note}
         session_id = await rt.launcher.start(

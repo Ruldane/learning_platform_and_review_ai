@@ -15,7 +15,7 @@ import type {
  * Pause et annulation ne publient aucun événement (D46 §7) : un événement publié juste avant elles
  * peut arriver après ; il ne lève donc jamais `paused` ni `cancelled` (seul `run.*`, final, le peut).
  */
-const STICKY: ReadonlySet<SessionStatus> = new Set(["paused", "cancelled"]);
+const STICKY: ReadonlySet<SessionStatus> = new Set(["paused", "cancelled", "expired"]);
 
 interface StatusChange {
   status: SessionStatus;
@@ -55,6 +55,7 @@ export function serverInstant(iso: string): number {
 
 export const snapshotOf = (view: SessionView): StatusSnapshot => ({
   status: view.status,
+  playedBy: view.played_by,
   lastSeq: view.last_seq,
   updatedAt: view.updated_at,
   pendingInterrupt: view.pending_interrupt,
@@ -87,6 +88,7 @@ export function applySnapshot(state: SessionViewState, snap: StatusSnapshot): Se
   return {
     ...state,
     status: snap.status,
+    playedBy: snap.playedBy,
     pendingInterrupt: snap.pendingInterrupt,
     statusVersion: { seq: snap.lastSeq, at },
     currentAgent: running ? state.currentAgent : null,

@@ -45,10 +45,15 @@ class Registry:
     résultat des sessions de chaque graphe (rendus comme données quand Claude suit la session)."""
 
     def __init__(
-        self, specs: Sequence[ToolSpec], graph_untrusted: Mapping[str, tuple[str, ...]]
+        self,
+        specs: Sequence[ToolSpec],
+        graph_untrusted: Mapping[str, tuple[str, ...]],
+        play_specs: Sequence[ToolSpec] = (),
     ) -> None:
         self._tools = {spec.name: spec for spec in specs}
+        self._play_specs = {spec.name: spec for spec in play_specs}
         self.graph_untrusted = dict(graph_untrusted)
+        self.graph_features: dict[str, str] = {}
 
     def list_for(self, identity: McpIdentity) -> list[ToolSpec]:
         return [tool for tool in self._tools.values() if tool.feature in identity.features]
@@ -58,6 +63,22 @@ class Registry:
 
     def all(self) -> list[ToolSpec]:
         return list(self._tools.values())
+
+    def play_tool(self, name: str) -> ToolSpec | None:
+        return self._play_specs.get(name) or self.get(name)
+
+    def play_launches(self, identity: McpIdentity) -> list[tuple[ToolSpec, str]]:
+        available = []
+        for tool in (*self._tools.values(), *self._play_specs.values()):
+            graph = tool.graph or tool.launches
+            if (
+                graph
+                and tool.level == 2
+                and tool.feature in identity.features
+                and self.graph_features.get(graph) in identity.features
+            ):
+                available.append((tool, graph))
+        return sorted(available, key=lambda item: (item[1], item[0].name))
 
     def reader_of(self, template: str) -> ToolSpec | None:
         """L'outil de lecture (niveau 1) de la route `GET <template>`, s'il est déclaré."""
@@ -166,26 +187,44 @@ def build_registry(
     graphe de l'application (donné par la composition ; `app.mcp` ne connaît pas `app.agents`)."""
     openapi = app.openapi()
     specs: list[ToolSpec] = []
+    play_specs: list[ToolSpec] = []
+    confirmations = {a.route for f in features for a in f.actions if a.level == 3}
     seen: set[str] = set()
     graph_untrusted: dict[str, tuple[str, ...]] = {}
     for declared in features:
-        if (declared.actions or declared.graphs) and declared.feature in NEVER_EXPOSED_FEATURES:
+        if (
+            declared.actions or declared.graphs or declared.play_actions
+        ) and declared.feature in NEVER_EXPOSED_FEATURES:
             raise McpConfigError(f"la feature « {declared.feature} » n'expose jamais d'outil")
         built = [_action_tool(declared.feature, action, openapi) for action in declared.actions]
+        played = []
+        for action in declared.play_actions:
+            if action.route in confirmations:
+                raise McpConfigError(f"{action.route} : la confirmation de niveau 3 est requise")
+            if action.level != 2 or action.launches not in (graphs or {}):
+                raise McpConfigError(
+                    f"{action.name} : un lancement joué exige un graphe et le niveau 2"
+                )
+            played.append(_action_tool(declared.feature, action, openapi))
         for graph in declared.graphs:
+            if graph.untrusted:
+                graph_untrusted[graph.graph] = graph.untrusted
             if graph.follow_only:  # pas d'outil de lancement : la route de la feature le lance
                 if graph.graph not in (graphs or {}):
                     raise McpConfigError(
                         f"graphe déclaré mais inconnu de l'application : {graph.graph}"
                     )
             else:
-                built.append(_graph_tool(declared.feature, graph, graphs))
-        for graph in declared.graphs:
-            if graph.untrusted:
-                graph_untrusted[graph.graph] = graph.untrusted
-        for spec in built:
+                target = played if graph.play_only else built
+                target.append(_graph_tool(declared.feature, graph, graphs))
+        for spec in (*built, *played):
             if spec.name in seen:
                 raise McpConfigError(f"nom d'outil en double : {spec.name}")
             seen.add(spec.name)
         specs += built
-    return Registry(specs, graph_untrusted)
+        play_specs += played
+    registry = Registry(specs, graph_untrusted, play_specs)
+    registry.graph_features = {
+        graph.graph: declared.feature for declared in features for graph in declared.graphs
+    }
+    return registry

@@ -11,6 +11,7 @@ from typing import Any
 from uuid import uuid4
 
 from langchain_core.tools import BaseTool, StructuredTool
+from langgraph.func import task
 from pydantic import BaseModel, Field
 
 from app.agents.prompts.loader import untrusted
@@ -18,6 +19,7 @@ from app.agents.runtime.deps import GraphDeps
 from app.agents.runtime.emit import emit
 from app.agents.tools.web_port import PageRead, WebSearchResult
 from app.core.errors import AppError
+from app.core.played import played_by
 
 MAX_SNIPPET_CHARS = 300
 
@@ -51,35 +53,41 @@ async def web_search(
     """Cherche sur le web (SearXNG, Brave en secours) ; `time_range` (« month »…) est transmis à
     la passerelle. Lève `AppError` : plafond atteint (429), aucun moteur disponible (503),
     requête vide une fois nettoyée (422)."""
-    try:
+
+    async def search() -> WebSearchResult:
         found = await deps.web.search(
             deps.user_id, deps.session_id, query, lang=lang, time_range=time_range
         )
+        call_id = _call(agent, "web_search", {"query": found.query, "lang": lang})
+        provider = found.provider or "aucun fournisseur"
+        summary = f"{len(found.hits)} résultat(s) via {provider}"
+        _result(agent, call_id, "web_search", ok=True, summary=summary)
+        return found
+
+    try:
+        return await task(search)() if played_by(deps.user_id) else await search()
     except AppError as exc:
         call_id = _call(agent, "web_search", {"lang": lang})  # la requête brute n'est jamais émise
         _failed(agent, call_id, "web_search", exc)
         raise
-    call_id = _call(agent, "web_search", {"query": found.query, "lang": lang})
-    provider = found.provider or "aucun fournisseur"
-    summary = f"{len(found.hits)} résultat(s) via {provider}"
-    _result(agent, call_id, "web_search", ok=True, summary=summary)
-    return found
 
 
 async def web_read(deps: GraphDeps, url: str, *, agent: str) -> PageRead:
     """Lit une page : statut `ok` ou `unreadable` (avec la raison). Une page illisible n'est
     jamais citée (SPEC 10.2). Lève `AppError` : plafond de pages (429), adresse refusée (422)."""
-    call_id = _call(agent, "web_read", {"url": url})
-    try:
-        page = await deps.web.read(deps.user_id, deps.session_id, url)
-    except AppError as exc:
-        _failed(agent, call_id, "web_read", exc)
-        raise
-    if page.status == "ok":
-        _result(agent, call_id, "web_read", ok=True, summary="Lue")
-    else:
-        _result(agent, call_id, "web_read", ok=True, summary=f"Illisible : {page.reason or '?'}")
-    return page
+
+    async def read() -> PageRead:
+        call_id = _call(agent, "web_read", {"url": url})
+        try:
+            page = await deps.web.read(deps.user_id, deps.session_id, url)
+        except AppError as exc:
+            _failed(agent, call_id, "web_read", exc)
+            raise
+        summary = "Lue" if page.status == "ok" else f"Illisible : {page.reason or '?'}"
+        _result(agent, call_id, "web_read", ok=True, summary=summary)
+        return page
+
+    return await task(read)() if played_by(deps.user_id) else await read()
 
 
 # --- Outils pour l'appel d'outils par le LLM --------------------------------------------------

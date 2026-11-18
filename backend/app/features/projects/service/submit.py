@@ -15,6 +15,7 @@ from typing import Any
 
 from fastapi import UploadFile
 
+from app.core.played import inherit_play
 from app.db.models.daily import Project
 from app.features.projects.repository import ProjectRepository
 from app.features.projects.schemas import SessionStarted
@@ -27,7 +28,12 @@ from app.features.projects.service.errors import (
     review_unavailable,
 )
 from app.features.projects.service.rules import SCREENSHOTS_MAX, submission_problems
-from app.features.projects.service.runtime import REVIEW_GRAPH, SUBJECT, ProjectsRuntime
+from app.features.projects.service.runtime import (
+    BRIEF_GRAPH,
+    REVIEW_GRAPH,
+    SUBJECT,
+    ProjectsRuntime,
+)
 from app.features.projects.service.screenshots import (
     delete_all,
     detect_image,
@@ -35,6 +41,7 @@ from app.features.projects.service.screenshots import (
     store_all,
 )
 from app.features.projects.service.settle import settle_project
+from app.features.sessions.service import find_latest_session, session_facts
 
 logger = logging.getLogger(__name__)
 
@@ -158,6 +165,10 @@ async def submit_project(
     async with rt.project_lock(user_id, project_id):
         async with rt.session_factory() as db:
             _check_open(await ProjectRepository(db, user_id).get_fresh(project_id))
+            parent = await find_latest_session(
+                db, user_id, graph=BRIEF_GRAPH, subject_type=SUBJECT, subject_id=project_id
+            )
+            source = await session_facts(db, user_id, parent) if parent else None
         link = (repo_url or "").strip() or None
         text = (description or "").strip() or None
         problems = submission_problems(link, text, len(files))
@@ -172,7 +183,8 @@ async def submit_project(
             "screenshots": keys,
         }
         previous, dropped = await _append(rt, user_id, project_id, entry)
-        session_id = await _launch(rt, user_id, project_id, entry, previous, dropped)
+        with inherit_play(user_id, source.played_by if source else None):
+            session_id = await _launch(rt, user_id, project_id, entry, previous, dropped)
     old_keys = [str(key) for item in dropped for key in item.get("screenshots", [])]
     await delete_all(rt, user_id, old_keys)
     logger.info(

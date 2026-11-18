@@ -12,7 +12,7 @@ interface SessionControlsProps {
   extraActions?: ReactNode;
 }
 
-const FINISHED: readonly SessionStatus[] = ["completed", "failed", "cancelled"];
+const FINISHED: readonly SessionStatus[] = ["completed", "failed", "cancelled", "expired"];
 
 /** Pause si la session tourne, Reprendre si elle est en pause, Annuler tant qu'elle n'est pas terminée. */
 export function SessionControls({

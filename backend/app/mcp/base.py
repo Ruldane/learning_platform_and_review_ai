@@ -118,6 +118,8 @@ class McpGraph:
     # serait refusé en 409), la déclaration ne sert qu'à rendre non fiables les champs du résultat
     # de la session quand Claude la suit.
     follow_only: bool = False
+    # Le parcours n'a pas d'outil payant. Son nom graph_<nom> sert à agents_play_start.
+    play_only: bool = False
 
     def __post_init__(self) -> None:
         if not untrusted_paths_valid(self.untrusted):
@@ -134,3 +136,5 @@ class FeatureMcp:
     actions: tuple[McpAction, ...] = ()
     graphs: tuple[McpGraph, ...] = ()
     excluded: Mapping[str, str] = field(default_factory=dict)
+    # Ces routes ne peuvent être appelées que sous le contexte de modèle joué.
+    play_actions: tuple[McpAction, ...] = ()

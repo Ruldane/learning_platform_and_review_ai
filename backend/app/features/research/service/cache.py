@@ -39,6 +39,10 @@ def url_key(url: str) -> str:
     return _sha256(normalize_url(url))
 
 
+def _page_key(url: str, client: bool) -> str:
+    return _sha256(f"mcp:{normalize_url(url)}") if client else url_key(url)
+
+
 def search_key(
     provider: str,
     query: str,
@@ -66,8 +70,9 @@ class WebCache:
         entry = await self._repo.get(kind, key, self._now())
         return entry.payload if entry is not None else None
 
-    async def get_page(self, url: str) -> CachedPage | None:
-        payload = await self._get("page", url_key(url))
+    async def get_page(self, url: str, *, client: bool = False) -> CachedPage | None:
+        key = _page_key(url, client)
+        payload = await self._get("page", key)
         if payload is None:
             return None
         try:
@@ -75,9 +80,11 @@ class WebCache:
         except TypeError:
             return None  # entrée d'une ancienne forme : comme si elle n'existait pas
 
-    async def put_page(self, url: str, page: CachedPage) -> None:
+    async def put_page(self, url: str, page: CachedPage, *, client: bool = False) -> None:
         ttl = PAGE_TTL if page.status == "ok" else UNREADABLE_TTL
-        await self._repo.put("page", url_key(url), page.status, asdict(page), self._now() + ttl)
+        await self._repo.put(
+            "page", _page_key(url, client), page.status, asdict(page), self._now() + ttl
+        )
 
     async def get_search(self, key: str) -> list[SearchResult] | None:
         payload = await self._get("search", key)

@@ -19,6 +19,7 @@ from urllib.parse import urlsplit
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage, SystemMessage
+from langgraph.errors import GraphInterrupt
 
 from app.agents.nodes.scout.models import one_line
 from app.agents.prompts.loader import render_prompt, untrusted
@@ -186,6 +187,8 @@ def make_resource(deps: GraphDeps) -> Node:
         try:
             async with asyncio.timeout(BUDGET_S):
                 view = await find_resource(deps, ctx)
+        except GraphInterrupt:
+            raise
         except Exception as exc:  # une rubrique en panne n'arrête pas l'autre
             code = exc.code if isinstance(exc, AppError) else type(exc).__name__
             logger.info("Ressource du brief vide : session %s, cause %s", deps.session_id, code)

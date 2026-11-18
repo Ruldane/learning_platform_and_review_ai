@@ -2139,3 +2139,41 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
   2. La tâche enregistre le verdict par la passerelle existante et rend au nœud le résultat de cette page ou les informations de son erreur. Le nœud conserve la règle d’échec si toutes les notations échouent. Le Conseil, la recherche web et la Fabrique de leçons partagent ce nœud.
   3. Le test coupe le premier runner après le brief de la deuxième source, rouvre le même point de reprise SQLite et rend un verdict distinct. Il relit les deux verdicts en base, mène le Conseil jusqu’au choix humain et vérifie un seul démarrage du programme sur le port de test. Un second test du Constructeur vérifie le prompt, la correction du JSON, l’écriture du brouillon, la validation et le coût nul.
 - **Raison** : D214 a montré que la position d’une réponse dans une boucle ne suffit pas quand les écritures précédentes modifient les appels restants. La tâche par source conserve la progression au niveau où les effets se produisent.
+
+## D216
+
+- **Date** : 2026-11-18
+- **Sujet** : Sessions jouées par Claude Code ou Codex via MCP.
+- **Décision** :
+  1. Réutiliser les routes métiers et les graphes. Un lancement joué choisit le client avant la
+     création de la session. Le runner retrouve ce choix en base, y compris après un redémarrage.
+     Le nombre de rendus vient du journal des appels au fournisseur `mcp`, avec un coût LLM nul.
+  2. Le client découvre les entrées via `agents_play_list` (niveau 1). Les entrées réservées
+     au mode joué sont déclarées dans la feature et ouvertes par `agents_play_start` (niveau 2).
+     Les droits du jeton sont vérifiés sur la feature de la route et celle du graphe. Une route
+     soumise à confirmation garde son niveau.
+  3. Réserver une réponse par étape en base avant de reprendre le graphe. La comparaison de
+     l'empreinte du brief protège l'association avec la réponse. Une décision humaine suit son
+     entrée existante. Le brief non rendu expire au bout de 24 heures.
+  4. Garder les messages utilisateur et les résultats web déjà lus au point de reprise.
+     Les messages arrivés pendant une réponse du Conseil sont lus au nœud suivant. Les prises
+     de parole indépendantes et les votes du comité suivent l'ordre des personas en mode joué.
+  5. Pour la recherche jouée, l'Éclaireur demande au client les résultats et le texte des pages
+     publiques. Le service conserve le nettoyage des requêtes, les plafonds et les filtres.
+     Les résultats et pages du client ont leur propre cache. Le Maquettiste reçoit les pages
+     du PDF en blocs image MCP. Les schémas Pydantic construits dans un nœud sont vérifiés
+     par ce nœud à la reprise, avec ses tentatives habituelles.
+  6. Les leçons reprennent le client du programme lorsque leur production repart hors du
+     contexte de validation. La notation du quiz et l'évaluation d'un projet reprennent le
+     client de leur génération après le geste de January.
+- **Raison** : conserver la même validation métier et l'ordre des échanges, tout en laissant
+  le client utiliser sa connexion pour les appels de modèle du parcours.
+
+## D217
+
+- **Date** : 2026-11-18
+- **Sujet** : Ajout d'une compétence au référentiel par MCP.
+- **Décision** : `skills_write_skill` ajoute un nom, un domaine facultatif et des synonymes
+  au référentiel du compte. Un nom normalisé déjà présent donne 409. L'ORM permet l'annulation
+  de niveau 2. Les preuves et niveaux suivent les gestes et validations qui les établissent.
+- **Raison** : préparer le référentiel via MCP et garder la progression liée aux preuves.

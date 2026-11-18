@@ -11,6 +11,7 @@ import asyncio
 import logging
 
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langgraph.errors import GraphInterrupt
 
 from app.agents.prompts.loader import render_prompt, untrusted
 from app.agents.registry import get_agent
@@ -90,6 +91,8 @@ def make_write(deps: GraphDeps) -> Node:
                     step="enonce",
                     intent="j'écris l'énoncé du projet",
                 )
+        except GraphInterrupt:
+            raise
         except Exception as exc:  # l'échec est rangé (un code), puis le parcours s'arrête
             timed_out = isinstance(exc, TimeoutError)
             code = (

@@ -40,6 +40,7 @@ class SessionView(BaseModel):
     status: SessionStatus
     subject_type: str | None
     subject_id: str | None
+    played_by: str | None = None
     last_seq: int
     pending_interrupt: InterruptRequestedPayload | None
     error: RunFailedPayload | None

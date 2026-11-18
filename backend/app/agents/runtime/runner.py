@@ -2,11 +2,6 @@
 arrêt du serveur a interrompues. Une tâche asyncio par session active, toujours suivie : aucune
 n'est orpheline, `shutdown` les annule et les attend.
 
-Les actions de contrôle d'une même session (reprise, pause, annulation) sont sérialisées par
-un verrou par session, tenu de la décision en base jusqu'au lancement ou à l'arrêt de la tâche ;
-une tâche lancée attend ce verrou avant de démarrer : une pause ou une annulation arrivée pendant
-une reprise passe avant elle et l'arrête avant tout progrès du graphe.
-
 Le corps d'une tâche vit dans `execution.py`, les règles de statut dans `control.py`.
 """
 
@@ -32,12 +27,14 @@ from app.agents.runtime.costs import ModelPrice
 from app.agents.runtime.deps import ChatModelSource
 from app.agents.runtime.events import SessionEvent, UserCommand
 from app.agents.runtime.execution import RunContext, run_session, unknown_graph
+from app.agents.runtime.playback import claim_step
 from app.agents.runtime.ports import NO_PORTS, AgentPorts
 from app.agents.runtime.repositories import SessionRepository, list_sessions_to_recover
 from app.agents.runtime.run_settings import RunSettingsSource
 from app.core.caller import MCP_IDENTITY
 from app.core.errors import AppError
 from app.core.launch_quota import LaunchQuota
+from app.core.played import PLAY_CONTEXT, played_by
 from app.db.models.agents import AgentSession
 
 logger = logging.getLogger(__name__)
@@ -106,11 +103,14 @@ class SessionRunner:
             ) from None
         # Sous une identité MCP, le lancement compte dans le plafond du jour (M11), quelle que soit
         # la route ; une place réservée est rendue si rien n'a démarré.
-        reserved = self.launch_quota.reserve(user_id) if MCP_IDENTITY.get() is not None else None
+        client = played_by(user_id)
+        limited = client is not None or MCP_IDENTITY.get() is not None
+        reserved = self.launch_quota.reserve(user_id) if limited else None
         try:
             async with self._db() as db:
                 row = await SessionRepository(db, user_id).add(
                     graph=graph,
+                    played_by=client,
                     status="running",
                     input=data,
                     subject_type=subject_type,
@@ -126,6 +126,8 @@ class SessionRunner:
                 await control.claim_cancel(self._db, user_id, row.id)
             self._refuse_if_deleting(user_id)
         self._launch(user_id, row.id, None)
+        if (play := PLAY_CONTEXT.get()) and play.user_id == user_id and play.graph == graph:
+            play.started.append(row.id)
         return row.id
 
     async def resume(
@@ -139,6 +141,19 @@ class SessionRunner:
             command = await control.claim_resume(self._db, user_id, session_id, interrupt_id, value)
             await self._settle(session_id)  # la tâche qui a posé la question finit d'en publier
             self._launch(user_id, session_id, command)
+
+    async def submit_step(self, user_id: str, session_id: str, step_id: str, response: str) -> None:
+        async with self._control(session_id):
+            self._refuse_if_stopping()
+            self._refuse_if_deleting(user_id)
+            row = await control.get_owned(self._db, user_id, session_id)
+            command, problem = await claim_step(self._db, row, step_id, response)
+            await self._settle(session_id)
+            self._launch(user_id, session_id, command)
+            if problem:
+                raise AppError(
+                    "played_output_invalid", "Réponse invalide.", 422, {"reason": problem}
+                )
 
     async def recover_on_startup(self) -> list[str]:
         """Relance les sessions `running` qu'un arrêt a interrompues (dernier checkpoint : aucun

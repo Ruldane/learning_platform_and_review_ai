@@ -17,6 +17,7 @@ import logging
 from collections.abc import Callable
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from langgraph.errors import GraphInterrupt
 
 from app.agents.prompts.loader import render_prompt, untrusted
 from app.agents.registry import get_agent
@@ -188,6 +189,8 @@ def make_advice(deps: GraphDeps) -> Node:
         try:
             async with asyncio.timeout(BUDGET_S):
                 sentences = await advise(deps, ctx)
+        except GraphInterrupt:
+            raise
         except Exception as exc:  # une rubrique en panne n'arrête pas l'autre
             code = exc.code if isinstance(exc, AppError) else type(exc).__name__
             unavailable = code in MODEL_UNAVAILABLE_CODES  # aucun modèle : « indisponible »

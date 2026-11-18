@@ -18,7 +18,9 @@ from app.agents.tools.web_port import (
     WebLimits,
     WebSearchResult,
 )
+from app.core.played import played_by
 from app.db.models.research import PageStatus
+from app.features.research.service.client_web import ClientWeb
 from app.features.research.service.people import person_of, record_person, session_people
 from app.features.research.service.prefs import load_prefs
 from app.features.research.service.reading import (
@@ -113,6 +115,7 @@ class AgentWebGateway:
         time_range: str | None = None,
         categories: Sequence[str] = (),
     ) -> WebSearchResult:
+        client = played_by(user_id)
         outcome = await search(
             self._runtime,
             user_id,
@@ -121,11 +124,14 @@ class AgentWebGateway:
             lang=lang,
             time_range=_time_range(time_range),
             categories=categories,
+            client=ClientWeb(user_id, client).search if client else None,
         )
         return _search_result(outcome)
 
     async def read(self, user_id: str, session_id: str, url: str) -> PageRead:
-        return _page(await read(self._runtime, user_id, session_id, url))
+        client = played_by(user_id)
+        fetch = ClientWeb(user_id, client).read if client else None
+        return _page(await read(self._runtime, user_id, session_id, url, client=fetch))
 
     async def judge(
         self,

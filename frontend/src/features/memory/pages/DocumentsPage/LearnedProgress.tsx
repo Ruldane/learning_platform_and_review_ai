@@ -16,7 +16,7 @@ interface LearnedProgressProps {
   createSocket?: SocketFactory;
 }
 
-const FINISHED = ["completed", "failed", "cancelled"];
+const FINISHED = ["completed", "failed", "cancelled", "expired"];
 
 /**
  * Avancement de l'Archiviste pour un document, lu dans le flux de la session : « extrait les

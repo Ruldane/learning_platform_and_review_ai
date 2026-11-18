@@ -1,10 +1,16 @@
-"""Déclaration MCP de `skills` : la carte de compétences (lecture seule)."""
+"""Déclaration MCP de la carte de compétences et de la création au référentiel."""
 
 from app.mcp.base import FeatureMcp, McpAction
 
 MCP = FeatureMcp(
     feature="skills",
     actions=(
+        McpAction(
+            "POST /skills",
+            2,
+            "skills_write_skill",
+            "Ajoute une compétence au référentiel, sans attribuer de niveau ni de preuve.",
+        ),
         McpAction(
             "GET /skills/graph",
             1,

@@ -34,7 +34,8 @@ export function RunFeed({ run, label, renderInterrupt }: RunFeedProps) {
   );
   return (
     <section aria-label={label} className="flex min-w-0 flex-col gap-3">
-      <SessionStatusBar status={stream.status} cost={stream.view.cost} />
+      <SessionStatusBar status={stream.status} cost={stream.view.cost}
+        playedBy={stream.view.playedBy} waitingForClient={stream.view.pendingInterrupt?.kind === "mcp_model"} />
       {stream.connection === "reconnecting" ? (
         <p role="status" className="text-sm text-muted-foreground">
           {t("session.reconnecting")}

@@ -41,6 +41,7 @@ export function InterruptCard({
   const fields = interrupt.fields ?? [];
   const [draft, setDraft] = useState<Record<string, string>>({});
 
+  if (interrupt.kind === "mcp_model") return <p>{interrupt.question}</p>;
   if (answered) {
     return (
       <FoldedCard

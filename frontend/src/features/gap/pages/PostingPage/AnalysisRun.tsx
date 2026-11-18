@@ -6,7 +6,7 @@ import { useSessionStream } from "@/shared/realtime/useSessionStream";
 import { DebateFeed, SessionStatusBar } from "@/shared/session-ui";
 import { gapKeys } from "../../queryKeys";
 
-const OVER = ["completed", "failed", "cancelled"];
+const OVER = ["completed", "failed", "cancelled", "expired"];
 
 interface AnalysisRunProps {
   sessionId: string;
@@ -34,7 +34,8 @@ export function AnalysisRun({ sessionId, postingId, createSocket }: AnalysisRunP
   if (stream.connection === "failed") return null;
   return (
     <section aria-label={t("gap.posting.feed")} className="flex flex-col gap-3">
-      <SessionStatusBar status={stream.status} cost={stream.view.cost} />
+      <SessionStatusBar status={stream.status} cost={stream.view.cost}
+        playedBy={stream.view.playedBy} waitingForClient={stream.view.pendingInterrupt?.kind === "mcp_model"} />
       <DebateFeed items={stream.view.feed} renderInterrupt={() => null} />
     </section>
   );

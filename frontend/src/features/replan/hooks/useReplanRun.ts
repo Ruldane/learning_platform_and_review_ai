@@ -5,7 +5,7 @@ import { useSessionActions } from "@/shared/realtime/useSessionActions";
 import { useSessionStream } from "@/shared/realtime/useSessionStream";
 import { replanKeys } from "../queryKeys";
 
-const OVER = ["completed", "failed", "cancelled"] as const;
+const OVER = ["completed", "failed", "cancelled", "expired"] as const;
 
 /**
  * Suit une session de replanification : le flux, les actions par REST, et les relectures qui vont

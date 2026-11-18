@@ -33,7 +33,7 @@ from app.features.sessions.service import find_active_session, session_facts
 
 logger = logging.getLogger(__name__)
 
-TERMINAL = frozenset({"completed", "failed", "cancelled"})  # sessions closes (D91)
+TERMINAL = frozenset({"completed", "failed", "cancelled", "expired"})  # sessions closes (D91)
 
 
 def replan_open(session_id: str) -> AppError:

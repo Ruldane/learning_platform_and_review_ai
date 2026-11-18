@@ -1,3 +1,4 @@
+import { playedLabel } from "@/shared/i18n/playedLabel";
 import { t } from "@/shared/i18n/t";
 import { CostBadge } from "@/shared/session-ui";
 import { CouncilStageBar } from "../../components/CouncilStageBar";
@@ -27,8 +28,9 @@ export function CouncilStatus({ session, programRetry }: CouncilStatusProps) {
     >
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
         <p role="status" className="font-medium">
-          {t(`session.status.${stream.status}`)}
+          {stream.view.pendingInterrupt?.kind === "mcp_model" ? t("session.played.waiting") : t(`session.status.${stream.status}`)}
         </p>
+        {stream.view.playedBy && <span>{playedLabel(stream.view.playedBy)}</span>}
         <CouncilStageBar stage={progress.stage} round={progress.round} rounds={progress.rounds} />
         <div className="ml-auto">
           <CostBadge cost={stream.view.cost} />

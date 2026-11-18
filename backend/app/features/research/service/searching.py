@@ -6,7 +6,7 @@ plafond, cache), puis appel, puis une écriture courte. Journaux : identifiants 
 la requête (SPEC 17.2)."""
 
 import logging
-from collections.abc import Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, replace
 
 from app.db.models.research import WebQuery
@@ -23,6 +23,7 @@ from app.features.research.service.runtime import ResearchRuntime
 from app.providers.search.base import SearchResult, TimeRange
 
 logger = logging.getLogger(__name__)
+type SearchFromClient = Callable[[SearchRequest, ResearchPrefs], Awaitable[list[SearchResult]]]
 
 
 @dataclass(frozen=True)
@@ -94,12 +95,17 @@ async def _run(
     *,
     session_id: str | None,
     allow_brave: bool,
+    client: SearchFromClient | None = None,
 ) -> SearchOutcome:
-    order = settings.provider_order
+    order = ("mcp",) if client is not None else settings.provider_order
     found = await _cached(runtime, user_id, order, request)
     cached = found is not None
     if found is None:
-        found = await provider_chain(runtime, user_id, order, request, allow_brave=allow_brave)
+        found = (
+            ("mcp", await client(request, settings))
+            if client is not None
+            else await provider_chain(runtime, user_id, order, request, allow_brave=allow_brave)
+        )
     hits = rank_results(found[1], preferred=settings.preferred, excluded=settings.excluded)
     await _save(
         runtime,
@@ -119,6 +125,7 @@ async def _in_session(
     session_id: str,
     settings: ResearchPrefs,
     request: SearchRequest,
+    client: SearchFromClient | None = None,
 ) -> SearchOutcome:
     """À appeler sous `session_lock`. Une requête déjà lancée par la session (nœud rejoué) n'est
     ni recomptée ni refacturée : liste du cache, sinon nouvel essai sans Brave."""
@@ -128,12 +135,26 @@ async def _in_session(
         count = await repo.count(session_id) if known is None else 0
     if known is not None:
         outcome = await _run(
-            runtime, user_id, settings, request, session_id=None, allow_brave=False
+            runtime,
+            user_id,
+            settings,
+            request,
+            session_id=None,
+            allow_brave=False,
+            client=client,
         )
         return replace(outcome, replayed=True)
     if count >= settings.max_queries:
         raise WebQuotaReached(settings.max_queries, "queries")
-    return await _run(runtime, user_id, settings, request, session_id=session_id, allow_brave=True)
+    return await _run(
+        runtime,
+        user_id,
+        settings,
+        request,
+        session_id=session_id,
+        allow_brave=True,
+        client=client,
+    )
 
 
 async def search(
@@ -146,6 +167,7 @@ async def search(
     time_range: TimeRange | None = None,
     categories: Sequence[str] = (),
     budget_s: float = BRAVE_MAX_WAIT_S,
+    client: SearchFromClient | None = None,
 ) -> SearchOutcome:
     """Recherche `query` nettoyée de toute donnée personnelle. `budget_s` : attente maximale
     acceptée pour le créneau de Brave (au-delà, Brave est sauté). Lève `WebQuotaReached` (429),
@@ -158,11 +180,17 @@ async def search(
     try:
         if session_id is None:
             outcome = await _run(
-                runtime, user_id, settings, request, session_id=None, allow_brave=True
+                runtime,
+                user_id,
+                settings,
+                request,
+                session_id=None,
+                allow_brave=True,
+                client=client,
             )
         else:
             async with runtime.session_lock(user_id, session_id):
-                outcome = await _in_session(runtime, user_id, session_id, settings, request)
+                outcome = await _in_session(runtime, user_id, session_id, settings, request, client)
     except (NoSearchProvider, WebQuotaReached) as exc:
         logger.warning(
             "Recherche web : utilisateur %s, session %s, %s", user_id, session_id, exc.code

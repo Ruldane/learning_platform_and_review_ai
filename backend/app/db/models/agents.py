@@ -5,7 +5,9 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, UserScopedMixin
 
-SessionStatus = Literal["running", "waiting_user", "paused", "completed", "failed", "cancelled"]
+SessionStatus = Literal[
+    "running", "waiting_user", "paused", "completed", "failed", "cancelled", "expired"
+]
 
 
 class AgentSession(UserScopedMixin, Base):
@@ -14,6 +16,8 @@ class AgentSession(UserScopedMixin, Base):
     __tablename__ = "sessions"
     __table_args__ = (Index("ix_sessions_user_status", "user_id", "status"),)
 
+    played_by: Mapped[str | None] = mapped_column(String(16), default=None)
+    play_delivery: Mapped[dict[str, Any] | None] = mapped_column(default=None)
     graph: Mapped[str] = mapped_column(String(64))
     status: Mapped[str] = mapped_column(String(16))
     input: Mapped[dict[str, Any]] = mapped_column(default=dict)

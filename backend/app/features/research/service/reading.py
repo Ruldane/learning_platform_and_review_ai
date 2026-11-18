@@ -5,6 +5,7 @@ Aucune transaction pendant la lecture (D66). Journaux : identifiants seulement, 
 le titre (SPEC 17.2)."""
 
 import logging
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Literal
 from urllib.parse import urlsplit
@@ -30,6 +31,7 @@ _READ_ERRORS = (UrlForbidden, UrlTooLarge, UrlUnsupported, UrlUnreadable, PdfUnr
 _MAX_REASON = 300
 _MAX_LANG = 8
 _MAX_DATE = 32
+type PageFromClient = Callable[[str], Awaitable[CachedPage]]
 
 
 @dataclass(frozen=True)
@@ -100,13 +102,17 @@ async def _settings(runtime: ResearchRuntime, user_id: str) -> ResearchPrefs:
         return await load_prefs(db, user_id)
 
 
-async def _fetch(runtime: ResearchRuntime, user_id: str, url: str) -> tuple[CachedPage, bool]:
+async def _fetch(
+    runtime: ResearchRuntime, user_id: str, url: str, client: PageFromClient | None = None
+) -> tuple[CachedPage, bool]:
     """Page du cache (rien n'est relu), sinon lue par le lecteur web ; une erreur de lecture
     devient une page illisible avec sa raison. Rend aussi « venait du cache »."""
     async with runtime.session_factory() as db:
-        page = await WebCache(db, user_id, now=runtime.now).get_page(url)
+        page = await WebCache(db, user_id, now=runtime.now).get_page(url, client=client is not None)
     if page is not None:
         return page, True
+    if client is not None:
+        return await client(url), False
     try:
         doc = await runtime.providers.web.read(url)
     except _READ_ERRORS as exc:
@@ -137,6 +143,8 @@ async def _save(
     url: str,
     found: tuple[CachedPage, bool],
     session_id: str | None,
+    *,
+    client: bool = False,
 ) -> str | None:
     """Une transaction courte : page mise en cache (si elle vient d'être lue), ligne `sources`
     de la session, purge du cache si due. Rend l'id de la source créée."""
@@ -144,7 +152,7 @@ async def _save(
     source_id: str | None = None
     async with runtime.session_factory() as db:
         if not cached:
-            await WebCache(db, user_id, now=runtime.now).put_page(url, page)
+            await WebCache(db, user_id, now=runtime.now).put_page(url, page, client=client)
         if session_id is not None:
             source_id = (await SourceRepository(db, user_id).add(_source(session_id, url, page))).id
         await runtime.purge_if_due(db, user_id)
@@ -153,7 +161,12 @@ async def _save(
 
 
 async def _in_session(
-    runtime: ResearchRuntime, user_id: str, session_id: str, settings: ResearchPrefs, url: str
+    runtime: ResearchRuntime,
+    user_id: str,
+    session_id: str,
+    settings: ResearchPrefs,
+    url: str,
+    client: PageFromClient | None = None,
 ) -> PageOutcome:
     """À appeler sous `session_lock`. Une URL déjà lue par la session (nœud rejoué) rend sa
     source, et son verdict si elle est déjà notée, sans compter une page de plus ni créer de
@@ -163,20 +176,25 @@ async def _in_session(
         known = await repo.get_by_url(session_id, url_key(url))
         count = await repo.count_pages(session_id) if known is None else 0
     if known is not None:
-        found = await _fetch(runtime, user_id, url)
-        await _save(runtime, user_id, url, found, None)
+        found = await _fetch(runtime, user_id, url, client)
+        await _save(runtime, user_id, url, found, None, client=client is not None)
         return _outcome(
             known.id, url, found[0], cached=found[1], replayed=True, judged=_judged(known)
         )
     if count >= settings.max_pages:
         raise WebQuotaReached(settings.max_pages, "pages")
-    found = await _fetch(runtime, user_id, url)
-    source_id = await _save(runtime, user_id, url, found, session_id)
+    found = await _fetch(runtime, user_id, url, client)
+    source_id = await _save(runtime, user_id, url, found, session_id, client=client is not None)
     return _outcome(source_id, url, found[0], cached=found[1], replayed=False)
 
 
 async def read(
-    runtime: ResearchRuntime, user_id: str, session_id: str | None, url: str
+    runtime: ResearchRuntime,
+    user_id: str,
+    session_id: str | None,
+    url: str,
+    *,
+    client: PageFromClient | None = None,
 ) -> PageOutcome:
     """Lit `url` (http(s), normalisée ; sinon 422 `invalid_url` ou `url_forbidden`). Un domaine
     exclu n'est jamais lu. Lève `WebQuotaReached` (429) au-delà du plafond de pages."""
@@ -188,12 +206,12 @@ async def read(
         return _outcome(None, target, page, cached=False, replayed=False)
     try:
         if session_id is None:
-            found = await _fetch(runtime, user_id, target)
-            await _save(runtime, user_id, target, found, None)
+            found = await _fetch(runtime, user_id, target, client)
+            await _save(runtime, user_id, target, found, None, client=client is not None)
             outcome = _outcome(None, target, found[0], cached=found[1], replayed=False)
         else:
             async with runtime.session_lock(user_id, session_id):
-                outcome = await _in_session(runtime, user_id, session_id, settings, target)
+                outcome = await _in_session(runtime, user_id, session_id, settings, target, client)
     except WebQuotaReached as exc:
         logger.warning(
             "Lecture web : utilisateur %s, session %s, %s", user_id, session_id, exc.code

@@ -12,13 +12,13 @@ from app.agents.nodes.committee.common import (
     Node,
     context_of,
     persona_call,
-    together,
+    persona_results,
 )
 from app.agents.runtime.deps import GraphDeps
 from app.agents.runtime.invoke import node_timeout
 from app.agents.runtime.speech import speak
 from app.agents.state.hiring_committee import HiringCommitteeState
-from app.agents.tools.committee_schema import MAX_WORDS, PERSONAS, CommitteeContext, Persona
+from app.agents.tools.committee_schema import MAX_WORDS, CommitteeContext, Persona
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ def make_impressions(deps: GraphDeps) -> Node:
     async def impressions(state: HiringCommitteeState) -> HiringCommitteeState:
         """Quatre impressions, dans l'ordre des personas."""
         ctx = context_of(state)
-        spoken = await together(*(_impression(deps, ctx, p) for p in PERSONAS))
+        spoken = await persona_results(deps, lambda persona: _impression(deps, ctx, persona))
         logger.info("Impressions données : session %s, %d persona(s)", deps.session_id, len(spoken))
         return {"spoken": spoken}
 

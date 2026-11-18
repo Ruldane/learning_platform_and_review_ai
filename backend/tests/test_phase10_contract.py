@@ -122,7 +122,9 @@ def test_single_alembic_head() -> None:
     config = Config(str(BACKEND / "alembic.ini"))
     config.set_main_option("script_location", str(BACKEND / "alembic"))
     script = ScriptDirectory.from_config(config)
-    assert script.get_heads() == ["0016"]
+    assert script.get_heads() == ["0017"]
+    played = script.get_revision("0017")
+    assert played is not None and played.down_revision == "0016"
     revision = script.get_revision("0016")
     assert revision is not None and revision.down_revision == "0015"
 

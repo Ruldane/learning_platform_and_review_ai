@@ -42,6 +42,7 @@ export type FeedItem =
 
 /** Statut lu en REST (`GET /sessions/{id}` ou réponse d'une action), vrai au moins à `lastSeq`. */
 export interface StatusSnapshot {
+  playedBy?: string | null;
   status: SessionStatus;
   lastSeq: number;
   /** `updated_at` du serveur : départage deux lectures du même `lastSeq`. */
@@ -56,6 +57,7 @@ export interface StatusVersion {
 }
 
 export interface SessionViewState {
+  playedBy?: string | null;
   lastSeq: number;
   status: SessionStatus;
   statusVersion: StatusVersion;

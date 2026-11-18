@@ -30,7 +30,8 @@ export function ReplanRun(props: ReplanRunProps) {
   }
   return (
     <section aria-label={t("replan.run.label")} className="flex flex-col gap-3">
-      <SessionStatusBar status={stream.status} cost={stream.view.cost} />
+      <SessionStatusBar status={stream.status} cost={stream.view.cost}
+        playedBy={stream.view.playedBy} waitingForClient={stream.view.pendingInterrupt?.kind === "mcp_model"} />
       <ReplanFeed run={run} />
       <SessionControls
         status={stream.status}

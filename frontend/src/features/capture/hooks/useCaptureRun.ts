@@ -5,7 +5,7 @@ import { useSessionStream } from "@/shared/realtime/useSessionStream";
 import type { SocketFactory } from "@/shared/realtime/socket";
 import { captureKeys } from "../queryKeys";
 
-const OVER = ["completed", "failed", "cancelled"] as const;
+const OVER = ["completed", "failed", "cancelled", "expired"] as const;
 
 /**
  * Suit la session de l'Archiviste d'une capture : le flux, les actions par REST (la réponse aux

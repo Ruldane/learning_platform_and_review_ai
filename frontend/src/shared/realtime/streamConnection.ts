@@ -32,7 +32,7 @@ export interface StreamConnectionDeps {
   onState: (state: ConnectionState, failure: StreamFailure | null) => void;
 }
 
-const TERMINAL: ReadonlySet<SessionStatus> = new Set(["completed", "failed", "cancelled"]);
+const TERMINAL: ReadonlySet<SessionStatus> = new Set(["completed", "failed", "cancelled", "expired"]);
 export const isTerminalStatus = (status: SessionStatus): boolean => TERMINAL.has(status);
 
 /**

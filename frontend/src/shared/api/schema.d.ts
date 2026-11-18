@@ -2897,6 +2897,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/sessions/play": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Played */
+        get: operations["list_played_api_v1_sessions_play_get"];
+        put?: never;
+        /** Start Played */
+        post: operations["start_played_api_v1_sessions_play_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sessions/{session_id}": {
         parameters: {
             query?: never;
@@ -2959,6 +2977,24 @@ export interface paths {
         put?: never;
         /** Pause Session */
         post: operations["pause_session_api_v1_sessions__session_id__pause_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sessions/{session_id}/play": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Played */
+        get: operations["read_played_api_v1_sessions__session_id__play_get"];
+        put?: never;
+        /** Submit Played */
+        post: operations["submit_played_api_v1_sessions__session_id__play_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3084,6 +3120,26 @@ export interface paths {
         get: operations["list_models_api_v1_settings_models_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/skills": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Skill
+         * @description Ajoute une compétence au référentiel. Son niveau sera établi par ses preuves.
+         */
+        post: operations["create_skill_api_v1_skills_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4060,9 +4116,13 @@ export interface components {
         /** Body_import_profile_api_v1_profile_import_post */
         Body_import_profile_api_v1_profile_import_post: {
             /** Cv */
-            cv: string;
+            cv?: string | null;
+            /** Cv Document Id */
+            cv_document_id?: string | null;
             /** Linkedin */
             linkedin?: string | null;
+            /** Linkedin Document Id */
+            linkedin_document_id?: string | null;
             /** Note */
             note?: string | null;
         };
@@ -4259,7 +4319,7 @@ export interface components {
              * Status
              * @enum {string}
              */
-            status: "running" | "waiting_user" | "paused" | "completed" | "failed" | "cancelled";
+            status: "running" | "waiting_user" | "paused" | "completed" | "failed" | "cancelled" | "expired";
         };
         /**
          * ChooseRequest
@@ -6828,6 +6888,60 @@ export interface components {
             /** Week Loads */
             week_loads: components["schemas"]["WeekLoadOut"][];
         };
+        /** PlayBrief */
+        PlayBrief: {
+            /** Agent */
+            agent?: string | null;
+            /** Expires At */
+            expires_at?: string | null;
+            /** Messages */
+            messages?: {
+                [key: string]: unknown;
+            }[];
+            /** Output Schema */
+            output_schema?: {
+                [key: string]: unknown;
+            } | null;
+            played_by: components["schemas"]["PlayClient"];
+            /** Session Id */
+            session_id: string;
+            /** Status */
+            status: string;
+            /** Step Id */
+            step_id?: string | null;
+        };
+        /** @enum {string} */
+        PlayClient: "claude-code" | "codex";
+        /** PlayLaunch */
+        PlayLaunch: {
+            /** Description */
+            description: string;
+            /** Graph */
+            graph: string;
+            /** Input Schema */
+            input_schema: {
+                [key: string]: unknown;
+            };
+            /** Launch */
+            launch: string;
+        };
+        /** PlayStart */
+        PlayStart: {
+            /** Arguments */
+            arguments?: {
+                [key: string]: unknown;
+            };
+            /** Launch */
+            launch: string;
+            played_by: components["schemas"]["PlayClient"];
+        };
+        /** PlaySubmit */
+        PlaySubmit: {
+            /** Response */
+            response: string;
+            /** Step Id */
+            step_id: string;
+        };
         /**
          * PostingAnalysisOut
          * @description L'analyse de l'Analyste (`PostingAnalysis`, D121), telle qu'elle est rangée.
@@ -8353,11 +8467,13 @@ export interface components {
             /** Last Seq */
             last_seq: number;
             pending_interrupt: components["schemas"]["InterruptRequestedPayload"] | null;
+            /** Played By */
+            played_by?: string | null;
             /**
              * Status
              * @enum {string}
              */
-            status: "running" | "waiting_user" | "paused" | "completed" | "failed" | "cancelled";
+            status: "running" | "waiting_user" | "paused" | "completed" | "failed" | "cancelled" | "expired";
             /** Subject Id */
             subject_id: string | null;
             /** Subject Type */
@@ -8467,6 +8583,20 @@ export interface components {
              */
             readonly vision_enabled: boolean;
             weekly_review?: components["schemas"]["WeeklyReview"];
+        };
+        /** SkillCreate */
+        SkillCreate: {
+            /** Domain */
+            domain?: string | null;
+            /** Name */
+            name: string;
+            /** Synonyms */
+            synonyms?: string[];
+        };
+        /** SkillCreated */
+        SkillCreated: {
+            /** Id */
+            id: string;
         };
         /** SkillDetailOut */
         SkillDetailOut: {
@@ -13983,7 +14113,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_import_profile_api_v1_profile_import_post"];
             };
@@ -15625,7 +15755,7 @@ export interface operations {
         parameters: {
             query?: {
                 graph?: string | null;
-                status?: ("running" | "waiting_user" | "paused" | "completed" | "failed" | "cancelled") | null;
+                status?: ("running" | "waiting_user" | "paused" | "completed" | "failed" | "cancelled" | "expired") | null;
             };
             header?: never;
             path?: never;
@@ -15663,6 +15793,59 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["StartSessionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StartSessionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_played_api_v1_sessions_play_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlayLaunch"][];
+                };
+            };
+        };
+    };
+    start_played_api_v1_sessions_play_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlayStart"];
             };
         };
         responses: {
@@ -15801,6 +15984,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SessionView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_played_api_v1_sessions__session_id__play_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlayBrief"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_played_api_v1_sessions__session_id__play_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlaySubmit"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StartSessionResponse"];
                 };
             };
             /** @description Validation Error */
@@ -16051,6 +16300,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ModelsOut"];
+                };
+            };
+        };
+    };
+    create_skill_api_v1_skills_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SkillCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SkillCreated"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

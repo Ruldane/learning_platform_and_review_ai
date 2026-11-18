@@ -13,6 +13,7 @@ from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
+from app.core.played import played_by
 from app.db.models.career import CvTemplate
 from app.features.cv.repository import TemplateRepository
 from app.features.cv.schemas_templates import TemplateCreated
@@ -126,9 +127,10 @@ async def create_template(
 ) -> TemplateCreated:
     if (file is None) == (document_id is None):
         raise one_source()
-    async with rt.session_factory() as db:
-        if not await vision_enabled(db, user_id):
-            raise vision_unavailable()
+    if not played_by(user_id):
+        async with rt.session_factory() as db:
+            if not await vision_enabled(db, user_id):
+                raise vision_unavailable()
     layout = await rt.layout.extract_layout(await _source(rt, user_id, file, document_id))
     async with rt.template_lock(user_id), rt.session_factory() as db:
         open_ids = await settle(db, user_id)

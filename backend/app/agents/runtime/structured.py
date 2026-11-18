@@ -15,6 +15,7 @@ from pydantic import BaseModel, ValidationError
 
 from app.agents.runtime.emit import emit
 from app.agents.runtime.invoke import call_with_retries, message_text
+from app.agents.runtime.played_model import PlayedChat
 from app.core.errors import AppError
 
 logger = logging.getLogger(__name__)
@@ -51,7 +52,7 @@ def _validation_problem(exc: ValidationError) -> str:
     )
 
 
-def _parse[T: BaseModel](schema: type[T], reply: AIMessage) -> tuple[T | None, str]:
+def parse_reply[T: BaseModel](schema: type[T], reply: AIMessage) -> tuple[T | None, str]:
     """`(résultat, "")` ou `(None, problème à renvoyer au modèle)`."""
     text = message_text(reply)
     if not text.strip():
@@ -79,13 +80,20 @@ async def structured_call[T: BaseModel](
     retente ; après `1 + retries` essais : `AppError("structured_output_invalid")`."""
     emit("agent.started", {"step": step, "intent": intent}, agent=agent)
     schema_json = json.dumps(schema.model_json_schema(), ensure_ascii=False)
+    if isinstance(model, PlayedChat):
+        model = model.model_copy(
+            update={
+                "expected_schema": schema.model_json_schema(),
+                "schema_ref": (schema.__module__, schema.__qualname__),
+            }
+        )
     conversation = [*messages, HumanMessage(_INSTRUCTIONS.format(schema=schema_json))]
     attempts = 1 + retries
     for attempt in range(attempts):
         reply = await call_with_retries(  # JSON brut : pas de tokens en direct
             model, conversation, agent=agent, allow_empty=True, stream=False
         )
-        result, problem = _parse(schema, reply)
+        result, problem = parse_reply(schema, reply)
         if result is not None:
             return result
         # Champ et motif de pydantic seulement : ni valeur reçue ni contenu (SPEC 17.2).

@@ -150,12 +150,37 @@ def _authorize(tool: ToolSpec, identity: McpIdentity) -> None:
         )
 
 
+def _brief_content(data: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, str]]]:
+    """Les images passent dans les blocs MCP, à la place du base64 dans le texte."""
+    images: list[dict[str, str]] = []
+    messages = []
+    for message in data["messages"]:
+        blocks = message["content"]
+        if isinstance(blocks, list):
+            clean = []
+            for block in blocks:
+                if isinstance(block, dict) and block.get("type") == "image":
+                    images.append(
+                        {"type": "image", "data": block["base64"], "mimeType": block["mime_type"]}
+                    )
+                    clean.append({"type": "image", "index": len(images)})
+                else:
+                    clean.append(block)
+            blocks = clean
+        messages.append({**message, "content": blocks})
+    return {**data, "messages": messages}, images
+
+
 def _tool_result(tool: ToolSpec, outcome: ToolResult) -> dict[str, Any]:
-    body = envelope(outcome.data, tool.untrusted, ok=not outcome.is_error)
+    data = outcome.data
+    images: list[dict[str, str]] = []
+    if tool.name == "agents_play_brief" and not outcome.is_error:
+        data, images = _brief_content(data)
+    body = envelope(data, tool.untrusted, ok=not outcome.is_error)
     if outcome.notice:
         body["notice"] = f"{body['notice']} {outcome.notice}"
     text = json.dumps(body, ensure_ascii=False, default=str)
-    if len(text) > MAX_RESULT_CHARS:
+    if len(text) > MAX_RESULT_CHARS or sum(len(image["data"]) for image in images) > 8_000_000:
         too_big = {
             "error": {
                 "code": "result_too_large",
@@ -170,7 +195,7 @@ def _tool_result(tool: ToolSpec, outcome: ToolResult) -> dict[str, Any]:
         }
     return {
         "resultType": "complete",
-        "content": [{"type": "text", "text": text}],
+        "content": [{"type": "text", "text": text}, *images],
         "isError": outcome.is_error,
     }
 

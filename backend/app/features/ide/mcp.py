@@ -4,7 +4,7 @@
 correction est une proposition qu'elle accepte dans l'interface. Il ne déclenche pas le professeur
 interne (coût d'API : Claude écrit lui-même ses notes et ses exercices)."""
 
-from app.mcp.base import FeatureMcp, McpAction
+from app.mcp.base import FeatureMcp, McpAction, McpGraph
 
 _GESTURE = (
     "Geste de January dans l'interface : jamais d'écriture directe dans son code par ce geste "
@@ -111,6 +111,15 @@ MCP = FeatureMcp(
             body_fields=frozenset({"files", "base_hash"}),
         ),
     ),
+    graphs=(McpGraph("ide_teacher", follow_only=True), McpGraph("ide_exercise", follow_only=True)),
+    play_actions=(
+        McpAction(
+            "POST /ide/sessions/{session_id}/teach", 2, "ide_teach_session", launches="ide_teacher"
+        ),
+        McpAction(
+            "POST /ide/exercises/generate", 2, "ide_generate_exercise", launches="ide_exercise"
+        ),
+    ),
     excluded={
         "POST /ide/notes/{note_id}/accept": _GESTURE,
         "POST /ide/notes/{note_id}/reject": _GESTURE,
@@ -120,16 +129,6 @@ MCP = FeatureMcp(
             "Préférences de l'IDE (mode du professeur, plafonds de coût, interrupteur d'écriture "
             "de Claude) : réservées à January dans l'interface, un agent ne règle ni son budget ni "
             "ses propres droits."
-        ),
-        "graph:ide_teacher": (
-            "Lancé seulement par POST /ide/sessions/{session_id}/teach (exclue : coût de l'API de "
-            "January). Claude fait ce travail lui-même par les notes "
-            "(POST /ide/sessions/{session_id}/notes)."
-        ),
-        "graph:ide_exercise": (
-            "Lancé seulement par POST /ide/exercises/generate (exclue : coût de l'API de "
-            "January). Claude fait ce travail lui-même : il écrit ses exercices "
-            "(POST /ide/exercises) et ses notes (POST /ide/sessions/{session_id}/notes)."
         ),
     },
 )

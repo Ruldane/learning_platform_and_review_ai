@@ -3,7 +3,7 @@ import type { SocketFactory } from "@/shared/realtime/socket";
 import { useSessionActions } from "@/shared/realtime/useSessionActions";
 import { useSessionStream } from "@/shared/realtime/useSessionStream";
 
-const OVER = ["completed", "failed", "cancelled"];
+const OVER = ["completed", "failed", "cancelled", "expired"];
 
 /**
  * Suit la session d'un parcours du CV (lecture du profil, capture d'un modèle, revue) : le flux, les

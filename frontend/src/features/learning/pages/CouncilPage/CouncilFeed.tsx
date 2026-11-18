@@ -13,7 +13,7 @@ import { CouncilFailure } from "./CouncilFailure";
 
 type Session = ReturnType<typeof useCouncilSession>;
 
-const FINISHED: readonly SessionStatus[] = ["completed", "failed", "cancelled"];
+const FINISHED: readonly SessionStatus[] = ["completed", "failed", "cancelled", "expired"];
 /** Question du choix du parcours : on y répond par les cartes de l'onglet Propositions. */
 const CHOICE_KIND = "choose_path";
 

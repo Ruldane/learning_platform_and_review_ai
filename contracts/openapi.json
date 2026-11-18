@@ -2205,9 +2205,29 @@
       "Body_import_profile_api_v1_profile_import_post": {
         "properties": {
           "cv": {
-            "contentMediaType": "application/octet-stream",
-            "title": "Cv",
-            "type": "string"
+            "anyOf": [
+              {
+                "contentMediaType": "application/octet-stream",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cv"
+          },
+          "cv_document_id": {
+            "anyOf": [
+              {
+                "maxLength": 36,
+                "minLength": 36,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cv Document Id"
           },
           "linkedin": {
             "anyOf": [
@@ -2220,6 +2240,19 @@
               }
             ],
             "title": "Linkedin"
+          },
+          "linkedin_document_id": {
+            "anyOf": [
+              {
+                "maxLength": 36,
+                "minLength": 36,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linkedin Document Id"
           },
           "note": {
             "anyOf": [
@@ -2234,9 +2267,6 @@
             "title": "Note"
           }
         },
-        "required": [
-          "cv"
-        ],
         "title": "Body_import_profile_api_v1_profile_import_post",
         "type": "object"
       },
@@ -2745,7 +2775,8 @@
               "paused",
               "completed",
               "failed",
-              "cancelled"
+              "cancelled",
+              "expired"
             ],
             "title": "Status",
             "type": "string"
@@ -9664,6 +9695,162 @@
         "title": "PlanVersionOut",
         "type": "object"
       },
+      "PlayBrief": {
+        "properties": {
+          "agent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "messages": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Messages",
+            "type": "array"
+          },
+          "output_schema": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Schema"
+          },
+          "played_by": {
+            "$ref": "#/components/schemas/PlayClient"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "step_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step Id"
+          }
+        },
+        "required": [
+          "session_id",
+          "status",
+          "played_by"
+        ],
+        "title": "PlayBrief",
+        "type": "object"
+      },
+      "PlayClient": {
+        "enum": [
+          "claude-code",
+          "codex"
+        ],
+        "type": "string"
+      },
+      "PlayLaunch": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "graph": {
+            "title": "Graph",
+            "type": "string"
+          },
+          "input_schema": {
+            "additionalProperties": true,
+            "title": "Input Schema",
+            "type": "object"
+          },
+          "launch": {
+            "title": "Launch",
+            "type": "string"
+          }
+        },
+        "required": [
+          "launch",
+          "graph",
+          "description",
+          "input_schema"
+        ],
+        "title": "PlayLaunch",
+        "type": "object"
+      },
+      "PlayStart": {
+        "properties": {
+          "arguments": {
+            "additionalProperties": true,
+            "title": "Arguments",
+            "type": "object"
+          },
+          "launch": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Launch",
+            "type": "string"
+          },
+          "played_by": {
+            "$ref": "#/components/schemas/PlayClient"
+          }
+        },
+        "required": [
+          "launch",
+          "played_by"
+        ],
+        "title": "PlayStart",
+        "type": "object"
+      },
+      "PlaySubmit": {
+        "properties": {
+          "response": {
+            "maxLength": 500000,
+            "title": "Response",
+            "type": "string"
+          },
+          "step_id": {
+            "maxLength": 36,
+            "minLength": 36,
+            "title": "Step Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "step_id",
+          "response"
+        ],
+        "title": "PlaySubmit",
+        "type": "object"
+      },
       "PostingAnalysisOut": {
         "description": "L'analyse de l'Analyste (`PostingAnalysis`, D121), telle qu'elle est rangée.",
         "properties": {
@@ -13992,6 +14179,17 @@
               }
             ]
           },
+          "played_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Played By"
+          },
           "status": {
             "enum": [
               "running",
@@ -13999,7 +14197,8 @@
               "paused",
               "completed",
               "failed",
-              "cancelled"
+              "cancelled",
+              "expired"
             ],
             "title": "Status",
             "type": "string"
@@ -14227,6 +14426,58 @@
           "vision_enabled"
         ],
         "title": "SettingsOut",
+        "type": "object"
+      },
+      "SkillCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "domain": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 2,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domain"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Name",
+            "type": "string"
+          },
+          "synonyms": {
+            "items": {
+              "maxLength": 120,
+              "minLength": 2,
+              "type": "string"
+            },
+            "maxItems": 5,
+            "title": "Synonyms",
+            "type": "array"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "SkillCreate",
+        "type": "object"
+      },
+      "SkillCreated": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "SkillCreated",
         "type": "object"
       },
       "SkillDetailOut": {
@@ -23007,8 +23258,7 @@
                 "$ref": "#/components/schemas/Body_import_profile_api_v1_profile_import_post"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "202": {
@@ -25259,7 +25509,8 @@
                     "paused",
                     "completed",
                     "failed",
-                    "cancelled"
+                    "cancelled",
+                    "expired"
                   ],
                   "type": "string"
                 },
@@ -25338,6 +25589,72 @@
         },
         "summary": "Start Session",
         "tags": [
+          "sessions"
+        ]
+      }
+    },
+    "/api/v1/sessions/play": {
+      "get": {
+        "operationId": "list_played_api_v1_sessions_play_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PlayLaunch"
+                  },
+                  "title": "Response List Played Api V1 Sessions Play Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Played",
+        "tags": [
+          "sessions",
+          "sessions"
+        ]
+      },
+      "post": {
+        "operationId": "start_played_api_v1_sessions_play_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlayStart"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartSessionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Played",
+        "tags": [
+          "sessions",
           "sessions"
         ]
       }
@@ -25583,6 +25900,100 @@
         },
         "summary": "Pause Session",
         "tags": [
+          "sessions"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/play": {
+      "get": {
+        "operationId": "read_played_api_v1_sessions__session_id__play_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayBrief"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read Played",
+        "tags": [
+          "sessions",
+          "sessions"
+        ]
+      },
+      "post": {
+        "operationId": "submit_played_api_v1_sessions__session_id__play_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlaySubmit"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartSessionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit Played",
+        "tags": [
+          "sessions",
           "sessions"
         ]
       }
@@ -25884,6 +26295,48 @@
         "summary": "List Models",
         "tags": [
           "settings"
+        ]
+      }
+    },
+    "/api/v1/skills": {
+      "post": {
+        "description": "Ajoute une compétence au référentiel. Son niveau sera établi par ses preuves.",
+        "operationId": "create_skill_api_v1_skills_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SkillCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SkillCreated"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Skill",
+        "tags": [
+          "skills"
         ]
       }
     },

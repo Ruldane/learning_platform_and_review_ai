@@ -4,6 +4,7 @@ les identifiants pour le journal, et poster un formulaire sans fichier."""
 
 import json
 from collections.abc import Mapping
+from dataclasses import dataclass
 from typing import Any
 
 import httpx
@@ -122,4 +123,18 @@ def timed_out(data: Any, arguments: Mapping[str, Any], call_id: str | None) -> T
         ids={**result_ids(arguments, data), "outcome": "timeout"},
         call_id=call_id,
         notice=notice,
+    )
+
+
+@dataclass(frozen=True)
+class InternalResponse:
+    """La réponse de la route : code HTTP et corps (JSON lu, `None` si vide)."""
+
+    status: int
+    data: Any
+
+
+def internal_error(status: int, code: str, message: str, details: Any = None) -> InternalResponse:
+    return InternalResponse(
+        status, {"error": {"code": code, "message": message, "details": details}}
     )

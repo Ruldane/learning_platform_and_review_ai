@@ -12,7 +12,6 @@ graphe est un `POST /sessions` dont l'`input` est validé par le `input_model` (
 import asyncio
 import logging
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass
 from typing import Any
 
 import httpx
@@ -25,11 +24,14 @@ from app.mcp.arguments import ArgumentError, ToolRequest, build_request, check_a
 from app.mcp.base import PrecheckInput, Verdict
 from app.mcp.confirm import ConfirmationPort, StoredRequest, summarize
 from app.mcp.envelope import fence
+from app.mcp.played import PlayLauncher
 from app.mcp.recorder import ChangeRecorder, install_recorder_events
 from app.mcp.registry import Registry
 from app.mcp.results import (
+    InternalResponse,
     filter_fields,
     form_fields,
+    internal_error,
     read_response,
     result_ids,
     timed_out,
@@ -52,20 +54,6 @@ _NO_HISTORY = {
 }
 
 
-@dataclass(frozen=True)
-class InternalResponse:
-    """La réponse de la route : code HTTP et corps (JSON lu, `None` si vide)."""
-
-    status: int
-    data: Any
-
-
-def _error(status: int, code: str, message: str, details: Any = None) -> InternalResponse:
-    return InternalResponse(
-        status, {"error": {"code": code, "message": message, "details": details}}
-    )
-
-
 async def internal_request(
     app: FastAPI,
     identity: McpIdentity,
@@ -81,7 +69,7 @@ async def internal_request(
     niveau 4 (connexion, compte, MCP, clés, modèles) ne sont jamais atteintes, quelle que soit la
     demande."""
     if not path.startswith("/") or never_reachable(path) or any(c in path for c in _BAD_PATH_CHARS):
-        return _error(403, "route_not_reachable", "Cette route n'est pas ouverte au MCP.")
+        return internal_error(403, "route_not_reachable", "Cette route n'est pas ouverte au MCP.")
     options: dict[str, Any] = {"params": dict(params) or None}
     if form:
         options["files"] = form_fields(body)
@@ -94,7 +82,7 @@ async def internal_request(
             call = http.request(method, API_PREFIX + path, **options)
             response = await asyncio.wait_for(call, REQUEST_TIMEOUT_S)
     except TimeoutError:
-        return _error(504, "tool_timeout", "La route a mis trop de temps à répondre.")
+        return internal_error(504, "tool_timeout", "La route a mis trop de temps à répondre.")
     finally:
         MCP_IDENTITY.reset(token)
     return InternalResponse(response.status_code, read_response(response))
@@ -115,6 +103,7 @@ class McpDispatcher:
         self._factory = session_factory
         self._registry = registry
         self._confirmations = confirmations
+        self.play_launch = PlayLauncher(registry, self._routes, self._send)
         install_recorder_events()
 
     async def call(
@@ -152,7 +141,7 @@ class McpDispatcher:
             if base.status >= 400:
                 return base
             if not isinstance(base.data, dict):
-                return _error(502, "merge_failed", "Lecture de base inattendue.")
+                return internal_error(502, "merge_failed", "Lecture de base inattendue.")
             body = {**base.data, **(body or {})}
         return await internal_request(
             self._app, identity, request.method, request.path, request.params, body,

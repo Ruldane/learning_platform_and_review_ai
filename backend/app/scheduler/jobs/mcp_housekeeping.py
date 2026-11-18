@@ -14,12 +14,14 @@ from app.features.mcp.service.changes import purge_old_changes
 from app.features.mcp.service.confirmation_support import purge_closed_confirmations
 from app.features.mcp.service.confirmations import expire_due
 from app.features.memory.service.direct import index_pending_all
+from app.features.sessions.service import expire_steps
 from app.scheduler.base import JobContext
 
 
 async def run(ctx: JobContext) -> None:
     now = datetime.now(UTC)
     await expire_due(ctx.session_factory, now)
+    await expire_steps(ctx.session_factory, now)
     await purge_old_calls(ctx.session_factory, now)
     await purge_old_changes(ctx.session_factory, now)
     await purge_closed_confirmations(ctx.session_factory, now)

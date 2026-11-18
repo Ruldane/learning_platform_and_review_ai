@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.agents.tools.plan_schema import EdgeDraft, SkillDraft
 from app.core.clock import local_today, user_zone, week_start
+from app.core.errors import AppError
 from app.core.skills import Evidence, normalize_skill_name, read_evidence
 from app.core.skills import evidence as make_evidence
 from app.db.models.skills import LEVEL_ORDER, SkillLevel, UserSkill
@@ -23,6 +24,7 @@ from app.features.skills.repository import (
     UserSkillRepository,
     users_with_levels,
 )
+from app.features.skills.schemas import SkillCreate
 
 __all__ = ["SkillLevel", "SkillsService", "higher_level", "write_weekly_snapshots"]
 
@@ -55,6 +57,15 @@ class SkillsService:
         self._skills = SkillRepository(db, user_id)
         self._edges = SkillEdgeRepository(db, user_id)
         self._levels = UserSkillRepository(db, user_id)
+
+    async def create(self, body: SkillCreate) -> str:
+        norm = normalize_skill_name(body.name)
+        if not norm:
+            raise AppError("invalid_skill_name", "Nom de compétence invalide.", 422)
+        created = await self._skills.create(body.name, norm, body.domain, body.synonyms)
+        if created is None:
+            raise AppError("skill_exists", "Cette compétence existe déjà.", 409)
+        return created
 
     async def upsert_catalog(
         self, skills: Sequence[SkillDraft], edges: Sequence[EdgeDraft]

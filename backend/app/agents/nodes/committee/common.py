@@ -4,7 +4,7 @@ ses deux messages. Journaux : identifiants et nombres seulement, jamais une paro
 l'offre."""
 
 import asyncio
-from collections.abc import Coroutine, Sequence
+from collections.abc import Callable, Coroutine, Sequence
 from typing import Any, Protocol
 
 from langchain_core.language_models import BaseChatModel
@@ -15,7 +15,8 @@ from app.agents.prompts.loader import render_prompt
 from app.agents.registry import get_agent
 from app.agents.runtime.deps import GraphDeps
 from app.agents.state.hiring_committee import HiringCommitteeState
-from app.agents.tools.committee_schema import CommitteeContext, Persona
+from app.agents.tools.committee_schema import PERSONAS, CommitteeContext, Persona
+from app.core.played import played_by
 
 IMPRESSION_REQUEST = "Donne ta première impression."
 DEBATE_REQUEST = "Prends la parole au débat."
@@ -62,3 +63,12 @@ async def together[T](*calls: Coroutine[Any, Any, T]) -> list[T]:
             task.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
         raise
+
+
+async def persona_results[T](
+    deps: GraphDeps, ask: Callable[[Persona], Coroutine[Any, Any, T]]
+) -> list[T]:
+    # Une interruption LangGraph par nœud doit être rencontrée dans le même ordre au rejeu.
+    if played_by(deps.user_id):
+        return [await ask(persona) for persona in PERSONAS]
+    return await together(*(ask(persona) for persona in PERSONAS))

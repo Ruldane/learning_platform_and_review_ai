@@ -15,6 +15,7 @@ from app.agents.runtime.events import (
 from app.agents.runtime.handle import AgentRuntime
 from app.core.errors import AppError
 from app.db.models.agents import AgentSession, SessionStatus
+from app.features.sessions.play_service import expire_steps
 from app.features.sessions.repository import SessionReadRepository
 from app.features.sessions.schemas import (
     MessageRequest,
@@ -30,6 +31,7 @@ __all__ = [
     "SessionFacts",
     "SessionView",
     "SessionsService",
+    "expire_steps",
     "find_active_session",
     "find_latest_session",
     "list_open_sessions",
@@ -71,6 +73,7 @@ def to_view(row: AgentSession, last_seq: int) -> SessionView:
     return SessionView(
         id=row.id,
         graph=row.graph,
+        played_by=row.played_by,
         status=row.status,  # type: ignore[arg-type]  # colonne texte, valeurs de SessionStatus
         subject_type=row.subject_type,
         subject_id=row.subject_id,
@@ -130,6 +133,7 @@ class SessionFacts:
     status: str
     input: dict[str, Any]
     pending: dict[str, Any] | None = None  # question en attente (`InterruptRequestedPayload`)
+    played_by: str | None = None
 
 
 async def session_facts(db: AsyncSession, user_id: str, session_id: str) -> SessionFacts | None:
@@ -138,7 +142,7 @@ async def session_facts(db: AsyncSession, user_id: str, session_id: str) -> Sess
     row = await SessionReadRepository(db, user_id).get(session_id)
     if row is None:
         return None
-    return SessionFacts(row.status, dict(row.input or {}), row.pending_interrupt)
+    return SessionFacts(row.status, dict(row.input or {}), row.pending_interrupt, row.played_by)
 
 
 class SessionsService:

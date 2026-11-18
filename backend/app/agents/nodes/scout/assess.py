@@ -68,7 +68,7 @@ def _prompt(page: dict[str, Any]) -> str:
     )
 
 
-def _emit_judged(page: dict[str, Any], verdict: SourceVerdictView) -> None:
+def _emit_judged(page: dict[str, Any], verdict: dict[str, Any]) -> None:
     emit(
         "source.found",
         {
@@ -77,11 +77,11 @@ def _emit_judged(page: dict[str, Any], verdict: SourceVerdictView) -> None:
             "author": page["author"],
             "date": page["date"],
             "lang": page["lang"],
-            "score": verdict.score,
-            "source_id": verdict.source_id,
+            "score": verdict["score"],
+            "source_id": verdict["source_id"],
             "status": "ok",
-            "verdict": verdict.verdict,
-            "reason": verdict.reason,
+            "verdict": verdict["verdict"],
+            "reason": verdict["reason"],
         },
         agent=AGENT,
     )
@@ -146,6 +146,7 @@ def _entry(
         "summary": one_line(verdict.summary if score is None else score.summary),
         "score": verdict.score,
         "verdict": verdict.verdict,
+        "reason": verdict.reason,
     }
 
 
@@ -196,7 +197,6 @@ async def _judge_page(
         else:
             score = outcome
         known = await _record(deps, page, score)
-    _emit_judged(page, known)
     return _entry(page, score, known), failure
 
 
@@ -220,6 +220,9 @@ def make_judge(deps: GraphDeps, *, checkpoint_pages: bool = True) -> Node:
         score_page = task(judge_source) if checkpoint_pages else judge_source
         for page in pages:
             entry, error = await score_page(page)
+            if "reason" not in entry and (saved := already.get(entry["source_id"])):
+                entry = {**entry, "reason": saved.reason}
+            _emit_judged(page, entry)
             verdicts.append(entry)
             if error is not None:
                 failure, unscored = error, unscored + 1

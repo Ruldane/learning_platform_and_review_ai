@@ -48,7 +48,8 @@ export function DemoSession({ sessionId, createSocket, onRestart }: DemoSessionP
 
   return (
     <div className="flex flex-col gap-4">
-      <SessionStatusBar status={status} cost={view.cost} />
+      <SessionStatusBar status={status} cost={view.cost}
+        playedBy={view.playedBy} waitingForClient={view.pendingInterrupt?.kind === "mcp_model"} />
       {connection === "reconnecting" ? (
         <p role="status" className="text-sm text-muted-foreground">
           {t("demo.reconnecting")}

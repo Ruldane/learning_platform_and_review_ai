@@ -10,6 +10,7 @@ const STATUSES: readonly string[] = [
   "completed",
   "failed",
   "cancelled",
+  "expired",
 ];
 
 /** Statut de session lu dans les détails d'un 409 (`council_not_waiting`, `council_not_failed`). */

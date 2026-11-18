@@ -16,9 +16,12 @@ from app.features.skills.schemas import (
     CompareOut,
     CompareTarget,
     HistoryOut,
+    SkillCreate,
+    SkillCreated,
     SkillDetailOut,
     SkillGraphOut,
 )
+from app.features.skills.service import SkillsService
 
 router = APIRouter(prefix="/skills", tags=["skills"])
 
@@ -33,6 +36,14 @@ NowDep = Annotated[datetime, Depends(clock)]
 
 def _no_store(response: Response) -> None:
     response.headers["Cache-Control"] = "no-store"
+
+
+@router.post("", response_model=SkillCreated, status_code=201)
+async def create_skill(body: SkillCreate, current: CurrentUserDep, db: Db) -> SkillCreated:
+    """Ajoute une compétence au référentiel. Son niveau sera établi par ses preuves."""
+    skill_id = await SkillsService(db, current.id).create(body)
+    await db.commit()
+    return SkillCreated(id=skill_id)
 
 
 @router.get("/graph", response_model=SkillGraphOut)

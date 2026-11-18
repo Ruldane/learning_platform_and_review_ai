@@ -15,7 +15,7 @@ interface StudyRunOptions {
   createSocket?: SocketFactory;
 }
 
-const OVER = ["completed", "failed", "cancelled"] as const;
+const OVER = ["completed", "failed", "cancelled", "expired"] as const;
 
 /**
  * Une session d'étude en cours : le flux du Tuteur (seulement quand la session d'agents vit), les

@@ -38,6 +38,44 @@ def test_migrations_match_models(tmp_path: Path) -> None:
     assert diff == []
 
 
+def test_played_session_migration_preserves_existing_events(tmp_path: Path) -> None:
+    db_file = tmp_path / "app.db"
+    cfg = Config(str(BACKEND_DIR / "alembic.ini"))
+    cfg.set_main_option("sqlalchemy.url", f"sqlite+aiosqlite:///{db_file.as_posix()}")
+    command.upgrade(cfg, "0016")
+    engine = create_sync_engine(f"sqlite:///{db_file.as_posix()}")
+    try:
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    "INSERT INTO sessions (id, user_id, graph, status, input, tokens_in, "
+                    "tokens_out, cost_usd, created_at, updated_at) VALUES "
+                    "('s1', 'u1', 'demo_debate', 'completed', '{}', 0, 0, 0, "
+                    "CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
+                )
+            )
+            conn.execute(
+                text(
+                    "INSERT INTO session_events (id, user_id, session_id, seq, type, payload, "
+                    "created_at, updated_at) VALUES ('e1', 'u1', 's1', 1, 'run.completed', "
+                    "'{}', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
+                )
+            )
+        command.upgrade(cfg, "0017")
+        with engine.connect() as conn:
+            assert tuple(
+                conn.execute(text("SELECT played_by, play_delivery FROM sessions")).one()
+            ) == (
+                None,
+                None,
+            )
+        command.downgrade(cfg, "0016")
+        with engine.connect() as conn:
+            assert conn.execute(text("SELECT session_id FROM session_events")).scalar_one() == "s1"
+    finally:
+        engine.dispose()
+
+
 async def test_wal_mode_is_enabled(tmp_path: Path) -> None:
     engine = create_engine(f"sqlite+aiosqlite:///{(tmp_path / 'wal.db').as_posix()}")
     try:

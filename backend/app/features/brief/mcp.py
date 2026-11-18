@@ -20,4 +20,5 @@ MCP = FeatureMcp(
             summary="Écrit le conseil et la ressource du brief du jour (`brief_id`).",
         ),
     ),
+    play_actions=(McpAction("GET /brief/today", 2, "brief_play_today", launches="daily_brief"),),
 )

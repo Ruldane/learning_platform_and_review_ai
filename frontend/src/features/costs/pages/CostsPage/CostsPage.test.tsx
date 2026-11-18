@@ -55,6 +55,23 @@ describe("CostsPage", () => {
     expect(agents.getByRole("rowheader", { name: "Sans agent" })).toBeInTheDocument();
   });
 
+  it("affiche les deux clients MCP avec un coût nul", async () => {
+    setup({
+      report: (days) =>
+        costsReport(days, {
+          by_model: [
+            costRow("mcp:codex", { cost_usd: 0 }),
+            costRow("mcp:claude-code", { cost_usd: 0 }),
+          ],
+        }),
+    });
+    const models = within(await screen.findByRole("table", { name: "Par modèle" }));
+    for (const name of ["Joué par Codex", "Joué par Claude"]) {
+      const row = models.getByRole("row", { name: new RegExp(name) });
+      expect(within(row).getByText("0,00 $")).toBeInTheDocument();
+    }
+  });
+
   it("unknown graph shown raw", async () => {
     setup();
     await screen.findByRole("table", { name: "Par feature" });

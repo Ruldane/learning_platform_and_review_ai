@@ -33,7 +33,10 @@ def interrupt_payload(interrupt: Interrupt) -> dict[str, Any]:
     (`kind`, `question`, `options`). `ValueError` si la valeur ne suit pas le catalogue."""
     value = interrupt.value if isinstance(interrupt.value, dict) else {}
     data = {**value, "interrupt_id": interrupt.id}
-    return validate_payload("interrupt.requested", data).model_dump(mode="json")
+    public = validate_payload("interrupt.requested", data).model_dump(mode="json")
+    if value.get("kind") == "mcp_model" and "brief" in value:
+        public["brief"] = value["brief"]
+    return public
 
 
 def interrupts_of(mode: str, chunk: Any) -> tuple[Interrupt, ...]:

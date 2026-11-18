@@ -17,6 +17,9 @@ INSTRUCTIONS = "\n".join(
         "- Ne demande et ne cherche jamais de clé d'API ni de jeton.",
         "- Un parcours se lance par son outil graph_<nom> ou par sa route, puis tu suis la "
         "session (sessions_get_session) ; au plus 30 lancements par jour.",
+        "- Pour jouer un parcours avec ton modèle, lis agents_play_list, démarre avec "
+        "agents_play_start puis lis et rends chaque rôle avec agents_play_brief et "
+        "agents_play_submit. Quand l'étape attend January, laisse-la décider dans Tremplin.",
         "- Pour ajouter du contenu (leçon, offre, quiz, projet, programme), écris-le toi-même avec "
         "les outils *_write_* : aucun agent ne tourne, l'écriture est annulable.",
         "- Bâtir un programme sans agent : learning_write_goal, program_write_program, puis "

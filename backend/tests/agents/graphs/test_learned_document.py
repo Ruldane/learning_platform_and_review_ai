@@ -15,10 +15,11 @@ from app.agents.runtime.deps import GraphDeps
 from app.agents.runtime.ports import AgentPorts
 from app.agents.runtime.run_settings import RunSettings
 from app.agents.tools.memory_port import AgentWrite
+from app.core.played import PLAY_CONTEXT, PlayContext
 from app.features.memory.repository import ItemFilter, MemoryItemRepository, WriteRepository
 from app.features.memory.service.gateway import AgentMemoryGateway
 from tests.agents.graphs.conftest import Learned, MakeDebate, MakeLearned
-from tests.agents.runtime.runner_helpers import all_events, wait_status
+from tests.agents.runtime.runner_helpers import all_events, get_session, wait_idle, wait_status
 from tests.features.memory.doc_support import add_indexed_document
 
 type Factory = async_sessionmaker[AsyncSession]
@@ -68,14 +69,27 @@ async def _acquis_titles(learned: Learned, user_id: str) -> list[str]:
     return sorted(row.title for row in rows)
 
 
+@pytest.mark.parametrize("played", [False, True])
 async def test_learned_document_creates_declare_acquis_with_reason(
-    make_learned_runner: MakeLearned, user_id: str
+    make_learned_runner: MakeLearned, user_id: str, played: bool
 ) -> None:
     learned = await make_learned_runner([CONCEPTS])
     doc_id = await _document(learned, user_id)
     await _user_acquis(learned, user_id, "python")  # déjà là, sous une autre casse
-    sid = await _start(learned, user_id, doc_id)
+    flag = PLAY_CONTEXT.set(PlayContext(user_id, "codex") if played else None)
+    try:
+        sid = await _start(learned, user_id, doc_id)
+    finally:
+        PLAY_CONTEXT.reset(flag)
+    if played:
+        await wait_idle(learned.runner, sid)
+        pending = (await get_session(learned.factory, user_id, sid)).pending_interrupt
+        assert pending and pending["brief"]["agent"] == "archivist"
+        assert "<<<CONTENU_NON_FIABLE" in str(pending["brief"]["messages"])
+        await learned.runner.submit_step(user_id, sid, pending["brief"]["step_id"], CONCEPTS)
     row = await wait_status(learned.factory, user_id, sid, "completed")
+    if played:
+        assert row.played_by == "codex" and row.cost_usd == 0 and not learned.fake.received
     assert (row.subject_type, row.subject_id) == ("document", doc_id)
     assert await _written(learned, user_id, sid) == [("archivist", "Attention", REASON, "active")]
     events = await all_events(learned.factory, user_id, sid)

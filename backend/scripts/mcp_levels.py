@@ -104,10 +104,14 @@ def render_table(features: Iterable[FeatureMcp]) -> str:
     tools = ["== Outils (feature | niveau | outil | route | effets)"]
     graphs = ["== Graphes (feature | niveau | graphe | lancement)"]
     launched_by: dict[str, list[str]] = {}
+    played_by: dict[str, list[str]] = {}
     for feature in ordered:
         for action in feature.actions:
             if action.launches is not None:
                 launched_by.setdefault(action.launches, []).append(action.route)
+        for action in feature.play_actions:
+            if action.launches:
+                played_by.setdefault(action.launches, []).append(action.name)
     excluded = ["== Exclus (feature | route | motif)"]
     for feature in ordered:
         for action in sorted(feature.actions, key=lambda a: a.route):
@@ -122,6 +126,10 @@ def render_table(features: Iterable[FeatureMcp]) -> str:
                 if graph.follow_only
                 else f"outil graph_{graph.graph}"
             )
+            if graph.play_only:
+                launch = f"agents_play_start : graph_{graph.graph}"
+            elif graph.graph in played_by:
+                launch += " ; agents_play_start : " + ", ".join(sorted(played_by[graph.graph]))
             graphs.append(f"{feature.feature} | {graph.level} | {graph.graph} | {launch}")
         for key, reason in sorted(feature.excluded.items()):
             excluded.append(f"{feature.feature} | {key} | {reason}")

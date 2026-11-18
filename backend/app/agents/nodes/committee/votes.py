@@ -14,7 +14,7 @@ from app.agents.nodes.committee.common import (
     Node,
     context_of,
     persona_call,
-    together,
+    persona_results,
 )
 from app.agents.runtime.deps import GraphDeps
 from app.agents.runtime.emit import emit
@@ -22,7 +22,6 @@ from app.agents.runtime.invoke import node_timeout
 from app.agents.runtime.structured import structured_call
 from app.agents.state.hiring_committee import HiringCommitteeState
 from app.agents.tools.committee_schema import (
-    PERSONAS,
     CommitteeContext,
     Persona,
     PersonaVote,
@@ -57,7 +56,7 @@ def make_votes(deps: GraphDeps) -> Node:
         """Les quatre votes, dans l'ordre des personas."""
         ctx = context_of(state)
         spoken = list(state["spoken"])
-        cast = await together(*(_vote(deps, ctx, spoken, p) for p in PERSONAS))
+        cast = await persona_results(deps, lambda persona: _vote(deps, ctx, spoken, persona))
         logger.info("Votes rendus : session %s, %d vote(s)", deps.session_id, len(cast))
         return {"votes": [vote.model_dump(mode="json") for vote in cast]}
 

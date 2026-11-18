@@ -87,14 +87,15 @@ def test_route_only_graphs_have_no_launch_tool_only_their_route(
 
 def test_every_launching_route_is_marked_and_every_route_only_graph_follows() -> None:
     """`launches` (affichage des niveaux) nomme un parcours de l'application ; chaque parcours de
-    `ROUTE_ONLY` a au moins une route déclarée qui le lance, sauf `daily_brief` (une lecture) et
-    `cv_capture` (routes à fichiers). Le plafond (M11) ne dépend pas de ces marques."""
+    `ROUTE_ONLY` a une route déclarée qui le lance, y compris en mode joué.
+    Le plafond (M11) ne dépend pas de ces marques."""
     declared: dict[str, list[str]] = {}
     for feature in MCP_FEATURES:
-        for action in feature.actions:
+        for action in (*feature.actions, *feature.play_actions):
             if action.launches is not None:
                 assert action.launches in GRAPHS, action.route
-                assert action.level == 2 and action.route.startswith("POST "), action.route
+                assert action.level == 2, action.route
+                assert action.route.startswith("POST ") or action.route == "GET /brief/today"
                 declared.setdefault(action.launches, []).append(action.route)
     excluded_graphs = {
         key.removeprefix("graph:")
@@ -102,8 +103,7 @@ def test_every_launching_route_is_marked_and_every_route_only_graph_follows() ->
         for key in feature.excluded
         if key.startswith("graph:")
     }
-    uncovered = set(ROUTE_ONLY) - set(declared) - excluded_graphs - {"daily_brief"}
-    assert uncovered == {"cv_capture"}
+    assert not set(ROUTE_ONLY) - set(declared) - excluded_graphs
     for feature in MCP_FEATURES:
         for graph in feature.graphs:
             assert graph.follow_only == (graph.graph in ROUTE_ONLY), graph.graph

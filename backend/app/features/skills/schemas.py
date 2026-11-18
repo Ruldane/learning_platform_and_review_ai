@@ -2,15 +2,29 @@
 compétence (preuves, offres, prochaine action), comparaison avec une cible, courbe."""
 
 from datetime import date, datetime
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 from app.core.skills import EvidenceKind
 from app.db.models.skills import SkillLevel
 
 NextActionKind = Literal["study", "quiz", "review", "project"]
 CompareTarget = Literal["goal", "posting"]  # poste cible ; offre précise (D123)
+
+SkillName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=120)]
+
+
+class SkillCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: SkillName
+    domain: SkillName | None = None
+    synonyms: list[SkillName] = Field(default_factory=list, max_length=5)
+
+
+class SkillCreated(BaseModel):
+    id: str
 
 
 class SkillNodeOut(BaseModel):
