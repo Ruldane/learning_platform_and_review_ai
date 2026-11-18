@@ -13,6 +13,15 @@ export function addCommand(token: string): string {
   return `claude mcp add --transport http tremplin ${MCP_URL} --header "Authorization: Bearer ${token}"`;
 }
 
+/** Les lignes pour Codex : le jeton dans `TREMPLIN_MCP_TOKEN` (lue aussi par le relais), puis le
+ * serveur déclaré avec cette variable (le jeton n'est pas écrit dans la configuration). */
+export function codexCommand(token: string): string {
+  return [
+    `setx TREMPLIN_MCP_TOKEN "${token}"`,
+    `codex mcp add tremplin --url ${MCP_URL} --bearer-token-env-var TREMPLIN_MCP_TOKEN`,
+  ].join("\n");
+}
+
 interface TokenRevealOnceProps {
   token: RevealedToken;
   onDone: () => void;
@@ -46,6 +55,14 @@ export function TokenRevealOnce({ token, onDone }: TokenRevealOnceProps) {
           {addCommand(token.token)}
         </pre>
         <CopyButton text={addCommand(token.token)} label={t("mcp.reveal.copyCommand")} />
+      </div>
+      <div className="flex flex-col gap-1">
+        <p className="text-sm font-medium">{t("mcp.reveal.codexCommand")}</p>
+        <p className="text-sm text-muted-foreground">{t("mcp.reveal.codexHint")}</p>
+        <pre className="overflow-x-auto rounded-lg bg-muted px-2 py-1.5 text-sm whitespace-pre-wrap break-all">
+          {codexCommand(token.token)}
+        </pre>
+        <CopyButton text={codexCommand(token.token)} label={t("mcp.reveal.copyCodexCommand")} />
       </div>
       <Button className="self-start" onClick={onDone}>
         {t("mcp.reveal.done")}

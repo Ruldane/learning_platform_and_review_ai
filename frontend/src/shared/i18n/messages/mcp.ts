@@ -66,6 +66,10 @@ export const mcp = {
     copyFailed: "Copie impossible : sélectionne le texte et copie-le à la main.",
     command: "Commande pour Claude Code",
     copyCommand: "Copier la commande",
+    codexCommand: "Commandes pour Codex",
+    codexHint:
+      "À coller dans un terminal Windows, puis rouvrir le terminal. La variable sert aussi au relais qui lance Claude Code ou Codex tout seul.",
+    copyCodexCommand: "Copier les commandes Codex",
     done: "J'ai copié le jeton",
   },
   confirmations: {
