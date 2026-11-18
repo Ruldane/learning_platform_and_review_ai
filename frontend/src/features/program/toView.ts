@@ -146,6 +146,8 @@ export function toModuleLessons(program: ProgramOut): ModuleLessonView[] {
         weekRank: week.rank,
         lessonId: module.lesson_id,
         status: module.lesson_status,
+        completed:
+          module.tasks.length > 0 && module.tasks.every((task) => task.status === "done"),
       })),
   );
 }

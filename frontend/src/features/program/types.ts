@@ -29,6 +29,8 @@ export interface ModuleLessonView {
   /** `null` : la leçon du module n'existe pas encore. */
   lessonId: string | null;
   status: LessonStatus | null;
+  /** Toutes les tâches du module sont faites (au moins une) : leçon terminée. */
+  completed: boolean;
 }
 
 /** Budget de disponibilité d'un programme, en minutes par jour. */

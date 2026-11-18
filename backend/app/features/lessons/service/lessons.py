@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
 from app.db.models.lessons import Lesson
+from app.db.models.program import Task
 from app.features.lessons.repository import LessonRepository, ResourceRepository
 from app.features.lessons.schemas import LessonOut, LessonSummaryOut
 from app.features.lessons.service.production import MAX_ATTEMPTS
@@ -32,8 +33,12 @@ def _week_ranks(loaded: Loaded) -> dict[str, int]:
     return {module.id: weeks.get(module.week_id, 0) for module in loaded.modules}
 
 
-def _summary(lesson: Lesson, week_rank: int, open_ids: list[str]) -> dict[str, object]:
+def _summary(
+    lesson: Lesson, week_rank: int, open_ids: list[str], tasks: list[Task]
+) -> dict[str, object]:
+    """Résumé d'une leçon ; `tasks` : celles de son module (terminée quand toutes sont faites)."""
     status, reason = shown(lesson.status, lesson.session_id, lesson.failure_reason, open_ids)
+    done = sum(1 for task in tasks if task.status == "done")
     return {
         "id": lesson.id,
         "module_id": lesson.module_id,
@@ -44,6 +49,9 @@ def _summary(lesson: Lesson, week_rank: int, open_ids: list[str]) -> dict[str, o
         "attempts": min(lesson.attempts, MAX_ATTEMPTS),
         "word_count": lesson.word_count,
         "pdf_available": lesson.pdf_key is not None,
+        "done_tasks": done,
+        "total_tasks": len(tasks),
+        "completed": bool(tasks) and done == len(tasks),
     }
 
 
@@ -67,7 +75,11 @@ async def list_lessons(db: AsyncSession, user_id: str, program_id: str) -> list[
     )
     rows.sort(key=lambda lesson: order.get(lesson.module_id, len(order)))
     return [
-        LessonSummaryOut.model_validate(_summary(row, ranks.get(row.module_id, 0), open_ids))
+        LessonSummaryOut.model_validate(
+            _summary(
+                row, ranks.get(row.module_id, 0), open_ids, loaded.tasks_of_module(row.module_id)
+            )
+        )
         for row in rows
     ]
 
@@ -92,7 +104,12 @@ async def get_lesson(db: AsyncSession, user_id: str, lesson_id: str) -> LessonOu
     resources = await ResourceRepository(db, user_id).for_module(lesson.module_id)
     return LessonOut.model_validate(
         {
-            **_summary(lesson, _week_ranks(loaded).get(lesson.module_id, 0), open_ids),
+            **_summary(
+                lesson,
+                _week_ranks(loaded).get(lesson.module_id, 0),
+                open_ids,
+                loaded.tasks_of_module(lesson.module_id),
+            ),
             "program_id": lesson.program_id,
             "markdown": lesson.markdown,
             "resources": [to_out(row) for row in resources],

@@ -1,3 +1,4 @@
+import { CircleCheck } from "lucide-react";
 import { Link } from "react-router";
 import { t } from "@/shared/i18n/t";
 import type { ModuleLessonView } from "../../types";
@@ -27,6 +28,12 @@ export function ModuleLessons({ lessons }: ModuleLessonsProps) {
                   ? t(`lessons.status.${lesson.status}`)
                   : t("program.lessons.waiting")}
               </span>
+              {lesson.completed ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary">
+                  <CircleCheck aria-hidden="true" className="size-4" />
+                  {t("program.lessons.completed")}
+                </span>
+              ) : null}
               {lesson.lessonId ? (
                 <Link
                   to={`/apprendre/lecons/${lesson.lessonId}`}

@@ -157,6 +157,7 @@ describe("toModuleLessons", () => {
         weekRank: 1,
         lessonId: "l1",
         status: "ready",
+        completed: false,
       },
       {
         moduleId: "m2",
@@ -164,6 +165,7 @@ describe("toModuleLessons", () => {
         weekRank: 2,
         lessonId: "l2",
         status: "generating",
+        completed: false,
       },
     ]);
   });
@@ -188,8 +190,18 @@ describe("toModuleLessons", () => {
         weekRank: 1,
         lessonId: null,
         status: null,
+        completed: false,
       },
     ]);
+  });
+
+  it("marks a module finished once all its tasks are done", () => {
+    const done = moduleOut({
+      tasks: [taskOut({ id: "a", status: "done" }), taskOut({ id: "b", status: "done" })],
+    });
+    const empty = moduleOut({ id: "m4", tasks: [] });
+    const view = toModuleLessons(program({ weeks: [weekOut({ modules: [done, empty] })] }));
+    expect(view.map((lesson) => lesson.completed)).toEqual([true, false]);
   });
 });
 

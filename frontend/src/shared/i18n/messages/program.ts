@@ -69,6 +69,7 @@ export const program = {
     heading: "Leçons du programme",
     open: "Ouvrir la leçon",
     waiting: "Pas encore de leçon pour ce module.",
+    completed: "Terminée",
     link: "{module} : {status}",
   },
   taskType: {

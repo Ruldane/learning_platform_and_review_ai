@@ -16,6 +16,8 @@ export function useProgramLessons(programId: string | undefined) {
     queryKey: lessonsKeys.ofProgram(programId ?? ""),
     queryFn: ({ signal }) => fetchProgramLessons(programId ?? "", signal),
     enabled: programId !== undefined,
+    // Une tâche cochée dans le programme change l'avancement d'une leçon : relire à l'ouverture.
+    refetchOnMount: "always",
     refetchInterval: (query) => {
       const lessons = query.state.data;
       const updates = query.state.dataUpdateCount;

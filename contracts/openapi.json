@@ -6634,6 +6634,17 @@
             "title": "Attempts",
             "type": "integer"
           },
+          "completed": {
+            "description": "Toutes les tâches du module sont faites (au moins une) : leçon terminée.",
+            "title": "Completed",
+            "type": "boolean"
+          },
+          "done_tasks": {
+            "description": "Tâches faites du module de la leçon (programme).",
+            "minimum": 0.0,
+            "title": "Done Tasks",
+            "type": "integer"
+          },
           "failure_reason": {
             "anyOf": [
               {
@@ -6687,6 +6698,12 @@
             "title": "Title",
             "type": "string"
           },
+          "total_tasks": {
+            "description": "Tâches du module de la leçon.",
+            "minimum": 0.0,
+            "title": "Total Tasks",
+            "type": "integer"
+          },
           "week_rank": {
             "title": "Week Rank",
             "type": "integer"
@@ -6705,6 +6722,9 @@
           "attempts",
           "word_count",
           "pdf_available",
+          "done_tasks",
+          "total_tasks",
+          "completed",
           "program_id",
           "markdown",
           "failure_reason",
@@ -6755,6 +6775,17 @@
             "title": "Attempts",
             "type": "integer"
           },
+          "completed": {
+            "description": "Toutes les tâches du module sont faites (au moins une) : leçon terminée.",
+            "title": "Completed",
+            "type": "boolean"
+          },
+          "done_tasks": {
+            "description": "Tâches faites du module de la leçon (programme).",
+            "minimum": 0.0,
+            "title": "Done Tasks",
+            "type": "integer"
+          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -6782,6 +6813,12 @@
             "title": "Title",
             "type": "string"
           },
+          "total_tasks": {
+            "description": "Tâches du module de la leçon.",
+            "minimum": 0.0,
+            "title": "Total Tasks",
+            "type": "integer"
+          },
           "week_rank": {
             "title": "Week Rank",
             "type": "integer"
@@ -6799,7 +6836,10 @@
           "status",
           "attempts",
           "word_count",
-          "pdf_available"
+          "pdf_available",
+          "done_tasks",
+          "total_tasks",
+          "completed"
         ],
         "title": "LessonSummaryOut",
         "type": "object"

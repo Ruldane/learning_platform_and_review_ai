@@ -70,4 +70,44 @@ describe("LessonsPage", () => {
     await user.click(await screen.findByRole("button", { name: "Réessayer" }));
     expect(await screen.findByText("Les variables et les types")).toBeInTheDocument();
   });
+
+  it("lets her pick another program", async () => {
+    server.use(
+      http.get(`${API}/programs`, () =>
+        HttpResponse.json([summaryOut({ id: "p2", title: "Bases du ML" }), summaryOut()]),
+      ),
+      http.get(`${API}/programs/p2/lessons`, () =>
+        HttpResponse.json([lessonSummary({ id: "l9", title: "La régression" })]),
+      ),
+      http.get(`${API}/programs/p1/lessons`, () => HttpResponse.json([lessonSummary()])),
+    );
+    const { router, user } = renderRoutes(routes, "/apprendre/lecons");
+    expect(await screen.findByText("La régression")).toBeInTheDocument();
+    const picker = screen.getByRole("combobox", { name: "Programme" });
+    expect(picker).toHaveValue("p2");
+    await user.selectOptions(picker, "Python pour la data");
+    expect(await screen.findByText("Les variables et les types")).toBeInTheDocument();
+    expect(screen.queryByText("La régression")).not.toBeInTheDocument();
+    expect(router.state.location.search).toBe("?programme=p1");
+  });
+
+  it("hides the picker with a single program", async () => {
+    setup([lessonSummary()]);
+    expect(await screen.findByText("Les variables et les types")).toBeInTheDocument();
+    expect(screen.queryByRole("combobox", { name: "Programme" })).not.toBeInTheDocument();
+  });
+
+  it("marks a lesson finished once its module tasks are done in the program", async () => {
+    setup([
+      lessonSummary({ done_tasks: 3, total_tasks: 3, completed: true }),
+      lessonSummary({ id: "l2", title: "Les fichiers CSV", done_tasks: 1 }),
+    ]);
+    const [finished, started] = (await screen.findAllByRole("listitem")) as [
+      HTMLElement,
+      HTMLElement,
+    ];
+    expect(within(finished).getByText("Terminée")).toBeInTheDocument();
+    expect(within(started).queryByText("Terminée")).not.toBeInTheDocument();
+    expect(within(started).getByText("1 / 3 tâches faites")).toBeInTheDocument();
+  });
 });

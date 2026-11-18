@@ -178,3 +178,25 @@ async def test_lesson_summary_exposes_attempts(client: httpx.AsyncClient, app: F
     listed = (await client.get(f"{API}/programs/{s.program_id}/lessons")).json()
     assert [(x["status"], x["attempts"]) for x in listed] == [("ready", 3), ("failed", 1)]
     assert (await client.get(f"{API}/lessons/{s.pending_id}")).json()["attempts"] == 1
+
+
+async def test_lesson_summary_follows_module_tasks(client: httpx.AsyncClient, app: FastAPI) -> None:
+    """Une leçon est terminée quand toutes les tâches de son module sont faites (programme)."""
+    s = await seed(app)
+    user_id: str = app.state.local_user_id
+    async with app.state.session_factory() as db:
+        loaded = await load(db, user_id, s.program_id)
+        first, second = [m.id for m in loaded.modules]
+        for task in loaded.tasks_of_module(first):
+            task.status = "done"
+        for task in loaded.tasks_of_module(second)[:1]:
+            task.status = "done"
+        await db.commit()
+        totals = (len(loaded.tasks_of_module(first)), len(loaded.tasks_of_module(second)))
+    listed = (await client.get(f"{API}/programs/{s.program_id}/lessons")).json()
+    assert [(x["done_tasks"], x["total_tasks"], x["completed"]) for x in listed] == [
+        (totals[0], totals[0], True),
+        (1, totals[1], totals[1] == 1),
+    ]
+    lesson = (await client.get(f"{API}/lessons/{s.lesson_id}")).json()
+    assert (lesson["done_tasks"], lesson["completed"]) == (totals[0], True)
