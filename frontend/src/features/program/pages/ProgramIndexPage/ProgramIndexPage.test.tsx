@@ -13,16 +13,35 @@ const routes = [
 ];
 
 describe("ProgramIndexPage", () => {
-  it("opens the most recent program", async () => {
-    server.use(
-      http.get(`${API}/programs`, () =>
-        HttpResponse.json([summaryOut({ id: "new" }), summaryOut({ id: "old" })]),
-      ),
-    );
+  it("opens the only program directly", async () => {
+    server.use(http.get(`${API}/programs`, () => HttpResponse.json([summaryOut({ id: "solo" })])));
     const { router } = renderRoutes(routes, "/apprendre/programme");
     expect(await screen.findByRole("heading", { name: "Programme ouvert" })).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe("/apprendre/programme/new");
+    expect(router.state.location.pathname).toBe("/apprendre/programme/solo");
     expect(router.state.historyAction).toBe("REPLACE");
+  });
+
+  it("lets her choose among several programs", async () => {
+    server.use(
+      http.get(`${API}/programs`, () =>
+        HttpResponse.json([
+          summaryOut({ id: "new", title: "Bases du ML" }),
+          summaryOut({ id: "old", title: "Python pour la data" }),
+        ]),
+      ),
+    );
+    const { router, user } = renderRoutes(routes, "/apprendre/programme");
+    expect(await screen.findByRole("heading", { name: "Mes programmes" })).toBeInTheDocument();
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+    await user.click(screen.getByRole("link", { name: "Python pour la data" }));
+    expect(router.state.location.pathname).toBe("/apprendre/programme/old");
+  });
+
+  it("shows the list even for one program with « ?liste »", async () => {
+    server.use(http.get(`${API}/programs`, () => HttpResponse.json([summaryOut({ id: "solo" })])));
+    renderRoutes(routes, "/apprendre/programme?liste");
+    expect(await screen.findByRole("heading", { name: "Mes programmes" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Python pour la data" })).toBeInTheDocument();
   });
 
   it("sends to the council when there is no program", async () => {

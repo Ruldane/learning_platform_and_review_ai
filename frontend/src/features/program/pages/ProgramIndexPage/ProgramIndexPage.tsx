@@ -1,19 +1,22 @@
-import { Navigate, useNavigate } from "react-router";
+import { Navigate, useNavigate, useSearchParams } from "react-router";
 import { errorMessage } from "@/shared/api/errors";
 import { t } from "@/shared/i18n/t";
 import { EmptyState } from "@/shared/ui/states/EmptyState";
 import { ErrorState } from "@/shared/ui/states/ErrorState";
 import { LoadingState } from "@/shared/ui/states/LoadingState";
+import { ProgramList } from "../../components/ProgramList";
 import { usePrograms } from "../../hooks/usePrograms";
+import { toProgramSummaryView } from "../../toView";
 
 /**
- * Programme (`/apprendre/programme`) : ouvre le programme le plus récent ; sans programme, renvoie
- * au Conseil, qui le fait naître.
+ * Programmes (`/apprendre/programme`) : la liste pour choisir dès qu'il y en a plusieurs (ou avec
+ * `?liste`) ; un seul programme s'ouvre directement ; sans programme, renvoi au Conseil.
  */
 export function ProgramIndexPage() {
   const programs = usePrograms();
   const navigate = useNavigate();
-  const latest = programs.data?.[0];
+  const [params] = useSearchParams();
+  const list = programs.data ?? [];
 
   if (programs.isPending) return <LoadingState label={t("program.page.indexLoading")} />;
   if (programs.isError) {
@@ -21,7 +24,21 @@ export function ProgramIndexPage() {
       <ErrorState message={errorMessage(programs.error)} onRetry={() => void programs.refetch()} />
     );
   }
-  if (latest) return <Navigate to={`/apprendre/programme/${latest.id}`} replace />;
+  const [only] = list;
+  if (only && list.length === 1 && !params.has("liste")) {
+    return <Navigate to={`/apprendre/programme/${only.id}`} replace />;
+  }
+  if (list.length > 0) {
+    return (
+      <div className="flex flex-col gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold">{t("program.page.listTitle")}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t("program.page.listIntro")}</p>
+        </div>
+        <ProgramList programs={list.map(toProgramSummaryView)} />
+      </div>
+    );
+  }
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-2xl font-semibold">{t("program.nav.program")}</h1>

@@ -1,4 +1,4 @@
-import { Download, RefreshCw } from "lucide-react";
+import { ArrowLeft, Download, RefreshCw } from "lucide-react";
 import { Link } from "react-router";
 import { longDay } from "@/shared/lib/format";
 import { t } from "@/shared/i18n/t";
@@ -16,6 +16,13 @@ export function ProgramHeader({ program }: { program: ProgramOut }) {
     <header className="flex flex-col gap-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
+          <Link
+            to="/apprendre/programme?liste"
+            className="mb-1 inline-flex items-center gap-1 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+          >
+            <ArrowLeft aria-hidden="true" className="size-4" />
+            {t("program.page.allPrograms")}
+          </Link>
           <h1 className="text-2xl font-semibold break-words">{program.title}</h1>
           <p className="mt-1 flex flex-wrap gap-x-3 text-sm text-muted-foreground">
             <span className="font-medium text-foreground">

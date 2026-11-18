@@ -56,3 +56,15 @@ export interface ProgressView {
   minutesDone: number;
   minutesPlanned: number;
 }
+
+/** Un programme dans la liste « Mes programmes ». */
+export interface ProgramSummaryView {
+  id: string;
+  title: string;
+  status: "draft" | "validated";
+  /** Début, au format `AAAA-MM-JJ`. */
+  startDate: string;
+  weeks: number;
+  /** Avancement en minutes faites, de 0 à 100. */
+  percent: number;
+}

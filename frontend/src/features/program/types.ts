@@ -13,7 +13,13 @@ export type ValidateOut = Schemas["ValidateOut"];
 export type LessonStatus = NonNullable<ModuleOut["lesson_status"]>;
 
 export type { PlanDiffTask, PlanDiffView } from "@/shared/session-ui";
-export type { NewTaskInput, ProgressView, TaskView, WeekView } from "./components/viewTypes";
+export type {
+  NewTaskInput,
+  ProgramSummaryView,
+  ProgressView,
+  TaskView,
+  WeekView,
+} from "./components/viewTypes";
 
 /** Une leçon de module, telle que la liste du programme la montre. */
 export interface ModuleLessonView {

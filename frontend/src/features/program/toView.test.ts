@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { moduleOut, programOut, taskOut, weekOut } from "@/test/programApi";
-import type { ProgramOut } from "./types";
+import { moduleOut, programOut, summaryOut, taskOut, weekOut } from "@/test/programApi";
+import type { ProgramOut, ProgramSummaryOut } from "./types";
 import {
   moduleForDate,
   toModuleLessons,
   toPlanDiffView,
+  toProgramSummaryView,
   toProgressView,
   toWeekViews,
 } from "./toView";
@@ -189,5 +190,28 @@ describe("toModuleLessons", () => {
         status: null,
       },
     ]);
+  });
+});
+
+describe("toProgramSummaryView", () => {
+  it("turns the summary into a view with the progress in minutes", () => {
+    const view = toProgramSummaryView(
+      summaryOut({
+        progress: { done_tasks: 1, total_tasks: 4, done_minutes: 75, total_minutes: 300 },
+      }) as ProgramSummaryOut,
+    );
+    expect(view).toEqual({
+      id: "p1",
+      title: "Python pour la data",
+      status: "validated",
+      startDate: "2026-11-16",
+      weeks: 2,
+      percent: 25,
+    });
+  });
+
+  it("gives 0 % when nothing is planned", () => {
+    const empty = { done_tasks: 0, total_tasks: 0, done_minutes: 0, total_minutes: 0 };
+    expect(toProgramSummaryView(summaryOut({ progress: empty }) as ProgramSummaryOut).percent).toBe(0);
   });
 });

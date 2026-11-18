@@ -1,6 +1,6 @@
 /** Textes du programme : semaine, calendrier, liste, changements et avancement. */
 export const program = {
-  nav: { program: "Programme" },
+  nav: { program: "Programmes" },
   page: {
     loading: "Chargement du programme…",
     status: { draft: "Brouillon", validated: "Validé" },
@@ -11,6 +11,12 @@ export const program = {
     indexEmptyDescription:
       "Le programme naît du Conseil : choisis un parcours et le Stratège le bâtit semaine par semaine.",
     indexEmptyAction: "Ouvrir le Conseil",
+    listTitle: "Mes programmes",
+    listIntro: "Du plus récent au plus ancien. Choisis le programme à ouvrir.",
+    allPrograms: "Tous mes programmes",
+    weeksOne: "{count} semaine",
+    weeksMany: "{count} semaines",
+    progressLabel: "Avancement de « {title} »",
   },
   views: {
     label: "Vues du programme",

@@ -109,7 +109,7 @@ describe("TopNav", () => {
       "aria-current",
       "page",
     );
-    expect(screen.getByRole("menuitem", { name: "Programme" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("menuitem", { name: "Programmes" })).not.toHaveAttribute("aria-current");
   });
 
   it("marks the one-page section link as current on its page", () => {
@@ -121,7 +121,7 @@ describe("TopNav", () => {
     renderNav();
     await userEvent.click(section("Apprendre"));
     await userEvent.keyboard("{ArrowDown}");
-    expect(screen.getByRole("menuitem", { name: "Programme" })).toHaveFocus();
+    expect(screen.getByRole("menuitem", { name: "Programmes" })).toHaveFocus();
     await userEvent.keyboard("{Escape}");
     expect(screen.queryByRole("menu")).toBeNull();
     expect(section("Apprendre")).toHaveFocus();
@@ -139,11 +139,11 @@ describe("TopNav", () => {
     renderNav();
     await userEvent.click(section("Apprendre"));
     await userEvent.keyboard("{ArrowDown}");
-    expect(screen.getByRole("menuitem", { name: "Programme" })).toHaveFocus();
+    expect(screen.getByRole("menuitem", { name: "Programmes" })).toHaveFocus();
     await userEvent.keyboard("{ArrowDown}");
     expect(screen.getByRole("menuitem", { name: "Leçons" })).toHaveFocus();
     await userEvent.keyboard("{ArrowDown}");
-    expect(screen.getByRole("menuitem", { name: "Programme" })).toHaveFocus();
+    expect(screen.getByRole("menuitem", { name: "Programmes" })).toHaveFocus();
     await userEvent.keyboard("{ArrowUp}");
     expect(screen.getByRole("menuitem", { name: "Leçons" })).toHaveFocus();
   });
@@ -167,7 +167,7 @@ describe("TopNav", () => {
   it("closes after a navigation, from the menu or from elsewhere", async () => {
     renderNav();
     await userEvent.click(section("Apprendre"));
-    await userEvent.click(screen.getByRole("menuitem", { name: "Programme" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Programmes" }));
     expect(screen.queryByRole("menu")).toBeNull();
     await userEvent.click(section("Réglages"));
     await userEvent.click(screen.getByRole("link", { name: "Hors menu" }));
@@ -220,7 +220,7 @@ describe("TopNav", () => {
       expect(menu).toHaveAttribute("aria-expanded", "false");
       expect(menu).toHaveFocus();
       await userEvent.click(menu);
-      await userEvent.click(screen.getByRole("link", { name: "Programme" }));
+      await userEvent.click(screen.getByRole("link", { name: "Programmes" }));
       expect(menu).toHaveAttribute("aria-expanded", "false");
     });
   });

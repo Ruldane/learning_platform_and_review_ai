@@ -1,5 +1,7 @@
-import type { PlanDiffTask, PlanDiffView, ProgressView, TaskView, WeekView } from "./types";
-import type { DayBudget, ModuleLessonView, PlanDiffOut, ProgramOut, TaskOut } from "./types";
+import type { PlanDiffTask, PlanDiffView, ProgramSummaryView, ProgressView } from "./types";
+import type { TaskView, WeekView } from "./types";
+import type { DayBudget, ModuleLessonView, PlanDiffOut, ProgramOut } from "./types";
+import type { ProgramSummaryOut, TaskOut } from "./types";
 
 const DAY_MS = 86_400_000;
 /** Lundi à vendredi : budget en semaine ; samedi : bloc du week-end ; dimanche : repos. */
@@ -146,4 +148,19 @@ export function toModuleLessons(program: ProgramOut): ModuleLessonView[] {
         status: module.lesson_status,
       })),
   );
+}
+
+/** Un programme de `GET /programs` pour la liste « Mes programmes » : avancement en minutes. */
+export function toProgramSummaryView(program: ProgramSummaryOut): ProgramSummaryView {
+  const { done_minutes, total_minutes } = program.progress;
+  const percent =
+    total_minutes > 0 ? Math.min(100, Math.round((done_minutes / total_minutes) * 100)) : 0;
+  return {
+    id: program.id,
+    title: program.title,
+    status: program.status,
+    startDate: program.start_date,
+    weeks: program.weeks,
+    percent,
+  };
 }
