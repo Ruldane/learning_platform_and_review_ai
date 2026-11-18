@@ -3,6 +3,7 @@ import type { KeyboardEvent, Ref } from "react";
 import { t } from "@/shared/i18n/t";
 import { cn } from "@/shared/lib/utils";
 import type { NavGroup } from "../../buildNav";
+import { ACTIVE_TINT, IDLE_TINT, sectionVars } from "../sectionTint";
 import { SumBadges } from "../SumBadges";
 import { SumLabel } from "../SumLabel";
 
@@ -30,9 +31,11 @@ export function SectionButton(props: SectionButtonProps) {
       data-active={active ? "true" : undefined}
       onClick={onToggle}
       onKeyDown={onKeyDown}
+      style={sectionVars(group.color)}
       className={cn(
-        "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap hover:bg-muted",
-        active || open ? "bg-accent text-accent-foreground" : "text-foreground",
+        "flex items-center gap-2 rounded-lg border-b-2 px-3 py-2 text-sm font-medium whitespace-nowrap hover:bg-muted",
+        active ? ACTIVE_TINT : IDLE_TINT,
+        open && !active ? "bg-muted" : null,
       )}
     >
       <Icon aria-hidden="true" className="size-4" />

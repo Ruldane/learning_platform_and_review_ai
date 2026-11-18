@@ -16,6 +16,8 @@ export interface NavGroup {
   section: NavSection;
   labelKey: MessageKey;
   icon: LucideIcon;
+  /** Jeton de couleur de la section (voir `NAV_SECTIONS`). */
+  color: string;
   items: NavItem[];
 }
 
@@ -25,7 +27,7 @@ export interface NavGroup {
  */
 export function buildNav(features: FeatureManifest[]): NavGroup[] {
   const entries = features.flatMap((feature) => feature.nav ?? []);
-  return NAV_SECTIONS.flatMap(({ id, labelKey, icon }) => {
+  return NAV_SECTIONS.flatMap(({ id, labelKey, icon, color }) => {
     const items = entries
       .filter((entry) => entry.section === id)
       .sort((a, b) => a.order - b.order)
@@ -34,6 +36,6 @@ export function buildNav(features: FeatureManifest[]): NavGroup[] {
         path,
         ...(useBadge && badgeLabel ? { useBadge, badgeLabel } : {}),
       }));
-    return items.length > 0 ? [{ section: id, labelKey, icon, items }] : [];
+    return items.length > 0 ? [{ section: id, labelKey, icon, color, items }] : [];
   });
 }

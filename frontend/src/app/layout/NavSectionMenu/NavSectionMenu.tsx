@@ -43,6 +43,7 @@ export function NavSectionMenu({ group, current, open, onOpenChange }: NavSectio
             <li key={item.path} role="none">
               <NavMenuLink
                 item={item}
+                color={group.color}
                 role="menuitem"
                 active={current?.path === item.path}
                 onNavigate={close}

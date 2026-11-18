@@ -11,12 +11,14 @@ const groups: NavGroup[] = [
     section: "home",
     labelKey: "nav.home",
     icon: Home,
+    color: "var(--section-home)",
     items: [{ labelKey: "nav.home", path: "/" }],
   },
   {
     section: "learn",
     labelKey: "nav.learn",
     icon: BookOpen,
+    color: "var(--section-learn)",
     items: [
       { labelKey: "program.nav.program", path: "/apprendre/programme" },
       { labelKey: "lessons.nav.lessons", path: "/apprendre/lecons" },
@@ -26,6 +28,7 @@ const groups: NavGroup[] = [
     section: "settings",
     labelKey: "nav.settings",
     icon: Settings,
+    color: "var(--section-settings)",
     items: [
       { labelKey: "costs.nav.costs", path: "/reglages/couts" },
       { labelKey: "account.nav.data", path: "/reglages/donnees" },
@@ -56,6 +59,33 @@ describe("TopNav", () => {
     expect(section("Apprendre")).toHaveAttribute("aria-expanded", "false");
     expect(section("Réglages")).toBeInTheDocument();
     expect(screen.queryByRole("menu")).toBeNull();
+  });
+
+  it("centers the menus in the bar", () => {
+    renderNav();
+    const nav = screen.getByRole("navigation", { name: "Navigation principale" });
+    expect(within(nav).getByRole("list").className).toContain("justify-center");
+  });
+
+  it("carries the colour of the active section (tint and border), not of the others", () => {
+    renderNav("/apprendre/lecons");
+    const active = section("Apprendre");
+    expect(active.style.getPropertyValue("--section-color")).toBe("var(--section-learn)");
+    expect(active.className).toContain(
+      "bg-[color-mix(in_srgb,var(--section-color)_14%,transparent)]",
+    );
+    expect(active.className).toContain("border-[var(--section-color)]");
+    expect(section("Réglages").className).not.toContain("border-[var(--section-color)]");
+    expect(section("Réglages").style.getPropertyValue("--section-color")).toBe(
+      "var(--section-settings)",
+    );
+  });
+
+  it("tints the one-page section link on its page", () => {
+    renderNav("/");
+    const link = screen.getByRole("link", { name: "Accueil" });
+    expect(link.style.getPropertyValue("--section-color")).toBe("var(--section-home)");
+    expect(link.className).toContain("border-[var(--section-color)]");
   });
 
   it("opens the sub-menu on click, in the order of the navigation", async () => {
@@ -151,6 +181,20 @@ describe("TopNav", () => {
         addEventListener: () => undefined,
         removeEventListener: () => undefined,
       }));
+
+    it("switches below 1024 px", () => {
+      const queries: string[] = [];
+      vi.stubGlobal("matchMedia", (query: string) => {
+        queries.push(query);
+        return {
+          matches: false,
+          addEventListener: () => undefined,
+          removeEventListener: () => undefined,
+        };
+      });
+      renderNav();
+      expect(queries).toContain("(max-width: 1023px)");
+    });
 
     it("shows a Menu button instead of the bar, and a panel with every section and page", async () => {
       narrow();

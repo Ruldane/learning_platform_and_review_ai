@@ -19,6 +19,23 @@ describe("buildNav", () => {
     expect(groups.map((g) => g.section)).toEqual(["home", "settings"]);
   });
 
+  it("donne à chaque groupe la couleur de sa section", () => {
+    const groups = buildNav([
+      {
+        id: "x",
+        routes: [],
+        nav: [
+          { section: "learn", labelKey: "nav.learn", path: "/a", order: 1 },
+          { section: "settings", labelKey: "nav.settings", path: "/r", order: 1 },
+        ],
+      },
+    ]);
+    expect(groups.map((group) => group.color)).toEqual([
+      "var(--section-learn)",
+      "var(--section-settings)",
+    ]);
+  });
+
   it("ne crée pas de groupe pour une feature sans entrée de navigation", () => {
     expect(buildNav([{ id: "health", routes: [] }])).toEqual([]);
   });

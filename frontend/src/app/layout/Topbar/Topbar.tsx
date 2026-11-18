@@ -1,33 +1,28 @@
 import type { ReactNode } from "react";
-import { Link } from "react-router";
 import { t } from "@/shared/i18n/t";
 import { ShellSlots } from "../Shell";
 
 interface TopbarProps {
-  /** Le voyant de santé, à droite du nom ; absent sur une page nue. */
-  health?: ReactNode;
-  /** Les menus de navigation ; absents sur une page nue (le nom n'y est alors pas un lien). */
+  /**
+   * Les menus de navigation, centrés dans la barre. Absents sur une page nue : la barre garde
+   * alors le nom (en simple texte) et les emplacements `topbar` des features (compte,
+   * déconnexion), car le panneau de gauche n'y est pas.
+   */
   menus?: ReactNode;
 }
 
-/**
- * Barre du haut : à gauche le nom de l'application (lien vers l'accueil) et le voyant de santé,
- * puis les menus (sur deux lignes au besoin), à droite les emplacements `topbar` des features.
- */
-export function Topbar({ health, menus }: TopbarProps) {
+/** Barre du haut : les menus au centre ; le reste vit dans le panneau de gauche (`InfoPanel`). */
+export function Topbar({ menus }: TopbarProps) {
+  if (menus) {
+    return (
+      <header className="flex items-start justify-center border-b border-border bg-card px-4 py-2">
+        {menus}
+      </header>
+    );
+  }
   return (
-    <header className="flex flex-wrap items-start gap-x-4 gap-y-1 border-b border-border bg-card px-4 py-2">
-      <div className="flex shrink-0 items-center gap-3 py-2">
-        {menus ? (
-          <Link to="/" className="font-semibold">
-            {t("app.name")}
-          </Link>
-        ) : (
-          <span className="font-semibold">{t("app.name")}</span>
-        )}
-        {health}
-      </div>
-      {menus}
+    <header className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-border bg-card px-4 py-2">
+      <span className="py-2 font-semibold">{t("app.name")}</span>
       <div className="ml-auto flex items-center gap-4 py-2">
         <ShellSlots slot="topbar" />
       </div>

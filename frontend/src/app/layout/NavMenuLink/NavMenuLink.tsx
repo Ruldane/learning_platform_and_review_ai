@@ -3,10 +3,13 @@ import { Link } from "react-router";
 import { cn } from "@/shared/lib/utils";
 import type { NavItem } from "../../buildNav";
 import { NavItemLabel } from "../NavItemLabel";
+import { ACTIVE_TINT, IDLE_TINT, sectionVars } from "../sectionTint";
 
 interface NavMenuLinkProps {
   item: NavItem;
   active: boolean;
+  /** La couleur de la section de l'entrée : teinte et liseré quand elle est active. */
+  color: string;
   /** Appelé au clic, pour refermer le menu qui contient le lien (même sur la page courante). */
   onNavigate?: () => void;
   /** `menuitem` dans un sous-menu ; aucun rôle ajouté ailleurs. */
@@ -16,16 +19,25 @@ interface NavMenuLinkProps {
 }
 
 /** Un lien de navigation : page courante en évidence (`aria-current`), pastille de l'entrée. */
-export function NavMenuLink({ item, active, onNavigate, role, icon: Icon }: NavMenuLinkProps) {
+export function NavMenuLink({
+  item,
+  active,
+  color,
+  onNavigate,
+  role,
+  icon: Icon,
+}: NavMenuLinkProps) {
   return (
     <Link
       to={item.path}
       role={role}
       aria-current={active ? "page" : undefined}
+      data-active={active ? "true" : undefined}
       onClick={onNavigate}
+      style={sectionVars(color)}
       className={cn(
-        "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap hover:bg-muted",
-        active ? "bg-accent text-accent-foreground" : "text-foreground",
+        "flex items-center gap-2 rounded-lg border-b-2 px-3 py-2 text-sm font-medium whitespace-nowrap hover:bg-muted",
+        active ? ACTIVE_TINT : IDLE_TINT,
       )}
     >
       {Icon ? <Icon aria-hidden="true" className="size-4" /> : null}

@@ -53,7 +53,8 @@ describe("AppLayout", () => {
       "#contenu",
     );
     const banner = screen.getByRole("banner");
-    expect(within(banner).getByRole("link", { name: "Tremplin" })).toHaveAttribute("href", "/");
+    const panel = screen.getByRole("complementary", { name: "Repères et informations" });
+    expect(within(panel).getByRole("link", { name: "Tremplin" })).toHaveAttribute("href", "/");
     const nav = within(banner).getByRole("navigation", { name: "Navigation principale" });
     expect(within(nav).getByRole("button", { name: "Apprendre" })).toHaveAttribute(
       "aria-haspopup",
@@ -67,7 +68,9 @@ describe("AppLayout", () => {
     expect(main).toHaveAttribute("id", "contenu");
     expect(main).toHaveAttribute("tabindex", "-1");
     expect(main).toHaveTextContent("Contenu");
-    expect(await screen.findByText("Tous les services répondent")).toBeInTheDocument();
+    expect(
+      await within(panel).findByText("Tous les services répondent"),
+    ).toBeInTheDocument();
   });
 
   it("donne plus de largeur à une page qui le demande (handle wide), pas aux autres", async () => {
@@ -109,7 +112,7 @@ describe("AppLayout", () => {
     expect(screen.getByRole("main").className).toContain("max-w-4xl");
   });
 
-  it("hides the menus and the health light on a bare page (handle bare)", async () => {
+  it("hides the menus, the panel and the health light on a bare page (handle bare)", async () => {
     let healthReads = 0;
     server.use(
       http.get(`${apiBaseUrl}/api/v1/health`, () => {
@@ -131,13 +134,14 @@ describe("AppLayout", () => {
     await screen.findByText("Nue");
     expect(screen.queryByRole("navigation", { name: "Navigation principale" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Tremplin" })).toBeNull();
+    expect(screen.queryByRole("complementary")).toBeNull();
     expect(screen.queryByText("Tous les services répondent")).toBeNull();
     // La barre du haut reste (compte, déconnexion) ; seul le voyant, qui lit `/health`, s'en va.
     expect(within(screen.getByRole("banner")).getByText("Emplacement du haut")).toBeInTheDocument();
     expect(healthReads).toBe(0);
   });
 
-  it("renders shell slots of features", async () => {
+  it("renders the topbar slots of features in the left panel, not in the top bar", async () => {
     server.use(
       http.get(`${apiBaseUrl}/api/v1/health`, () =>
         HttpResponse.json({ status: "ok", checks: {} }),
@@ -147,9 +151,9 @@ describe("AppLayout", () => {
       { path: "/", Component: AppLayout, children: [{ index: true, element: <p>Contenu</p> }] },
     ]);
     render(<RouterProvider router={router} />, { wrapper: createQueryWrapper() });
-    expect(
-      within(await screen.findByRole("banner")).getByText("Emplacement du haut"),
-    ).toBeInTheDocument();
+    const panel = await screen.findByRole("complementary", { name: "Repères et informations" });
+    expect(within(panel).getByText("Emplacement du haut")).toBeInTheDocument();
+    expect(within(screen.getByRole("banner")).queryByText("Emplacement du haut")).toBeNull();
     expect(screen.getByRole("dialog", { name: "Surcouche" })).toBeInTheDocument();
     expect(within(screen.getByRole("banner")).queryByRole("dialog")).toBeNull();
   });

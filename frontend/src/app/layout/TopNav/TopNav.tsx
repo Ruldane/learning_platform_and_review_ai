@@ -14,7 +14,8 @@ type OpenMenu = NavSection | "menu" | null;
 /**
  * Les menus de la barre du haut, construits à partir des manifestes (voir `buildNav`) : une
  * section d'une seule page est un lien direct, les autres ouvrent un sous-menu au clic (un seul à
- * la fois, refermé après navigation). Sous 768 px, un panneau « Menu » prend le relais.
+ * la fois, refermé après navigation), centrés dans la barre. Sous 1024 px, un panneau « Menu »
+ * prend le relais.
  */
 export function TopNav({ groups }: { groups: NavGroup[] }) {
   const { pathname } = useLocation();
@@ -39,7 +40,7 @@ export function TopNav({ groups }: { groups: NavGroup[] }) {
           onOpenChange={(open) => setOpenMenu(open ? "menu" : null)}
         />
       ) : (
-        <ul className="flex flex-wrap items-center gap-x-1 gap-y-1">
+        <ul className="flex flex-wrap items-center justify-center gap-x-1 gap-y-1">
           {groups.map((group) => {
             const [single] = group.items;
             return (
@@ -47,6 +48,7 @@ export function TopNav({ groups }: { groups: NavGroup[] }) {
                 {group.items.length === 1 && single ? (
                   <NavMenuLink
                     item={single}
+                    color={group.color}
                     icon={group.icon}
                     active={current?.path === single.path}
                   />

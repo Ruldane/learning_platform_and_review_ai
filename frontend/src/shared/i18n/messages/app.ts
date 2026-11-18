@@ -13,6 +13,9 @@ export const appMessages = {
   nav: {
     label: "Navigation principale",
     menu: "Menu",
+    here: "Tu es ici",
+    crumb: "{section} › {page}",
+    panel: "Repères et informations",
     home: "Accueil",
     learn: "Apprendre",
     study: "Étudier",

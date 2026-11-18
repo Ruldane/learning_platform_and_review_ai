@@ -17,6 +17,7 @@ export function NavMobileSection({ group, current, onClose }: NavMobileSectionPr
     return (
       <NavMenuLink
         item={single}
+        color={group.color}
         icon={Icon}
         active={current?.path === single.path}
         onNavigate={onClose}
@@ -32,7 +33,12 @@ export function NavMobileSection({ group, current, onClose }: NavMobileSectionPr
       <ul className="flex flex-col gap-1">
         {group.items.map((item) => (
           <li key={item.path}>
-            <NavMenuLink item={item} active={current?.path === item.path} onNavigate={onClose} />
+            <NavMenuLink
+              item={item}
+              color={group.color}
+              active={current?.path === item.path}
+              onNavigate={onClose}
+            />
           </li>
         ))}
       </ul>

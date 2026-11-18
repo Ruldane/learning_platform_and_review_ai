@@ -31,6 +31,20 @@
   --input: #8a9099;
   --ring: #0f6b5c;
   --radius: 0.625rem;
+
+  /*
+   * Une couleur par section de la navigation (voir `NAV_SECTIONS`) : liseré, pastille « Tu es
+   * ici » et fond teinté à 14 %. Chacune tient 4,5:1 au moins sur #FFFFFF ; le texte reste en
+   * --foreground (~ 15:1 sur la teinte).
+   */
+  --section-home: #0f6b5c;
+  --section-learn: #1d4ed8;
+  --section-study: #6d28d9;
+  --section-skills: #b45309;
+  --section-career: #0e7490;
+  --section-applications: #be185d;
+  --section-memory: #4d7c0f;
+  --section-settings: #475569;
 }
 
 @theme inline {

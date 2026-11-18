@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { NavGroup } from "./buildNav";
 import { currentNav } from "./navActive";
 
-const base = { icon: Home } as const;
+const base = { icon: Home, color: "var(--section-home)" } as const;
 const groups: NavGroup[] = [
   { ...base, section: "home", labelKey: "nav.home", items: [{ labelKey: "nav.home", path: "/" }] },
   {

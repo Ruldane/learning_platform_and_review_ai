@@ -9,10 +9,24 @@ import { server } from "@/test/server";
 import { Topbar } from "./Topbar";
 
 describe("Topbar", () => {
-  it("affiche le nom (lien vers l'accueil), le voyant et les menus", () => {
-    // La série d'étude (emplacement `topbar` de la feature `study`) lit son résumé.
+  it("ne porte que les menus, centrés : le nom et les infos sont dans le panneau de gauche", () => {
+    render(
+      <MemoryRouter>
+        <Topbar menus={<nav>Menus</nav>} />
+      </MemoryRouter>,
+      { wrapper: createQueryWrapper() },
+    );
+    const banner = screen.getByRole("banner");
+    expect(screen.getByRole("navigation")).toHaveTextContent("Menus");
+    expect(banner.className).toContain("justify-center");
+    expect(banner).not.toHaveTextContent("Tremplin");
+    expect(screen.queryByRole("link", { name: "Tremplin" })).toBeNull();
+  });
+
+  it("garde le nom en simple texte et les emplacements sans menus (page nue)", () => {
+    // Le compte connecté (emplacement `topbar` de la feature `auth`) lit `me` ; la série d'étude
+    // (feature `study`) lit son résumé.
     server.use(
-      // Le compte connecté (emplacement `topbar` de la feature `auth`) lit `me`.
       ...authApi({ me: camille }).handlers,
       http.get(`${apiBaseUrl}/api/v1/study-sessions/summary`, () =>
         HttpResponse.json({
@@ -25,19 +39,6 @@ describe("Topbar", () => {
         }),
       ),
     );
-    render(
-      <MemoryRouter>
-        <Topbar health={<span>Voyant</span>} menus={<nav>Menus</nav>} />
-      </MemoryRouter>,
-      { wrapper: createQueryWrapper() },
-    );
-    expect(screen.getByRole("link", { name: "Tremplin" })).toHaveAttribute("href", "/");
-    expect(screen.getByText("Voyant")).toBeInTheDocument();
-    expect(screen.getByRole("navigation")).toHaveTextContent("Menus");
-  });
-
-  it("garde le nom en simple texte sans menus (page nue)", () => {
-    server.use(...authApi({ me: camille }).handlers);
     render(
       <MemoryRouter>
         <Topbar />
