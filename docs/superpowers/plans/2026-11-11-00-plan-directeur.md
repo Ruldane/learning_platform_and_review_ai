@@ -369,6 +369,18 @@ Un serveur MCP donne à Claude Code ou à Codex l'accès aux features de Trempli
   semaine de plus au lieu de rendre seulement « impossible ».
 - **Écart d'une offre :** pouvoir cocher aussi les lignes « Hors périmètre » et choisir le
   programme qui reçoit l'ajout (aujourd'hui : le programme validé le plus récent).
+- **Qualité du CV généré pour une offre (retour de January du 2026-11-18, revue jouée par
+  Claude Code) :**
+  - Le lien du site personnel (`laurent-nizzoli.com`) disparaît du CV généré : tous les liens
+    du profil doivent passer dans l'en-tête.
+  - Les compétences tombent en une seule colonne, la moitié droite reste vide : les répartir sur
+    2 ou 3 colonnes selon la place du modèle.
+  - Les expériences perdent leurs informations utiles et l'IA n'apparaît plus : la composition
+    raccourcit trop. Elle doit garder les faits forts (IA, agents, résultats chiffrés) et ne
+    couper que le moins pertinent pour l'offre.
+  - Revoir le rendu d'ensemble (hiérarchie, espacements) face au CV d'origine.
+  - Avant de corriger : refaire l'essai avec un CV source à jour, pour séparer ce qui vient de
+    la source de ce qui vient de la composition.
 - **Tests repris :** l'en-tête `X-Tremplin-Run`, le menu, le relais (`node:test`), le sélecteur
   d'offre des modèles de CV, « Je les maîtrise déjà » (D220 : module de validation, quiz sans
   leçon), puis un essai de bout en bout avec Codex.
