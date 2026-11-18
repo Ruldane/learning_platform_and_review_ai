@@ -9,6 +9,7 @@ from typing import Any
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage, SystemMessage
+from langgraph.func import task
 
 from app.agents.nodes.scout.models import (
     AGENT,
@@ -173,37 +174,57 @@ async def _known(deps: GraphDeps, pages: list[dict[str, Any]]) -> dict[str, Sour
     return known
 
 
-def make_judge(deps: GraphDeps) -> Node:
+type PageFailure = tuple[str, str, int, dict[str, Any] | None]
+type PageResult = tuple[dict[str, Any], PageFailure | None]
+
+
+async def _judge_page(
+    deps: GraphDeps, model: BaseChatModel, page: dict[str, Any], known: SourceVerdictView | None
+) -> PageResult:
+    failure = None
+    score = None
+    if known is None:
+        outcome = await _score(model, page)
+        if isinstance(outcome, AppError):
+            failure = (outcome.code, outcome.message, outcome.status_code, outcome.details)
+            logger.warning(
+                "Note impossible (%s) : session %s, source %s",
+                outcome.code,
+                deps.session_id,
+                page["source_id"],
+            )
+        else:
+            score = outcome
+        known = await _record(deps, page, score)
+    _emit_judged(page, known)
+    return _entry(page, score, known), failure
+
+
+def make_judge(deps: GraphDeps, *, checkpoint_pages: bool = True) -> Node:
     @node_timeout(JUDGE_TIMEOUT_S)
     async def judge(state: WebResearchState) -> WebResearchState:
         """Une page dont la note est impossible à établir est écartée sans note et la session
         continue ; elle échoue seulement si aucune page n'a pu être notée."""
         model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
         verdicts: list[dict[str, Any]] = []
-        failure: AppError | None = None
+        failure: PageFailure | None = None
         unscored = 0
         pages = [page for page in state.get("pages", []) if page["source_id"] is not None]
         already = await _known(deps, pages)
+
+        async def judge_source(page: dict[str, Any]) -> PageResult:
+            return await _judge_page(deps, model, page, already.get(page["source_id"]))
+
+        # Toujours la même séquence de tâches, même si la base connaît désormais un verdict.
+        # Une reprise retrouve le résultat de chaque source terminée avant la source en attente.
+        score_page = task(judge_source) if checkpoint_pages else judge_source
         for page in pages:
-            if (known := already.get(page["source_id"])) is not None:  # réémise, sans modèle
-                _emit_judged(page, known)
-                verdicts.append(_entry(page, None, known))
-                continue
-            outcome = await _score(model, page)
-            score = outcome if isinstance(outcome, SourceScore) else None
-            if isinstance(outcome, AppError):
-                failure, unscored = outcome, unscored + 1
-                logger.warning(
-                    "Note impossible (%s) : session %s, source %s",
-                    outcome.code,
-                    deps.session_id,
-                    page["source_id"],
-                )
-            verdict = await _record(deps, page, score)
-            _emit_judged(page, verdict)
-            verdicts.append(_entry(page, score, verdict))
+            entry, error = await score_page(page)
+            verdicts.append(entry)
+            if error is not None:
+                failure, unscored = error, unscored + 1
         if failure is not None and unscored == len(verdicts):
-            raise failure  # aucune page notée : la session échoue, message lisible
+            raise AppError(*failure)
         return {"verdicts": verdicts}
 
     return judge

@@ -2119,3 +2119,23 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
   7. **Les outils de 10.W suffisent à le remplir** (vérifié par un test sur l'application réelle et par le MCP) : leçon d'un module `lessons_write_lesson`, quiz `quiz_write_quiz` / `quiz_add_question`, tâches `program_update_program` / `program_update_task`, semaines et modules `program_*_week` / `program_*_module`. Rien n'est ajouté : les ressources d'un module (`resources`) viennent de la recherche, un programme sans ressource se lit et se suit comme les autres.
   8. **Aucun agent, vérifié** : les tests assertent qu'aucune `AgentSession` ni aucun `LlmCall` n'existe après l'appel et que `launcher.start` n'est pas appelé. Contrat : deux routes, `contracts/openapi.json` et `schema.d.ts` régénérés. Consigne ajoutée à `app/mcp/instructions.py` et section « Bâtir un programme sans agent » dans `docs/mcp/AGENTS.md` (ordre des appels, ce qui coûte l'API : `POST /goals` lance le Conseil, la validation lance les leçons ; préférer les outils directs quand January le demande).
 - **Raison** : demande de January (18/11) : que Claude écrive lui-même un programme complet, avec ses cours, leçons et quiz, sans aucun agent de l'application ni coût d'API ; D210 (modèle d'écriture directe), P14 (annulation), P11 (niveaux).
+
+## D214
+
+- **Date** : 2026-11-18
+- **Sujet** : Phase 10b, preuve d’un fournisseur qui appelle `interrupt()` dans les graphes actuels.
+- **Décision** :
+  1. Suspendre l’intégration de ce fournisseur. Sur `learning_council`, deux réponses valides et distinctes conduisent à l’enregistrement de la première sur la deuxième source. Étendre ce mécanisme aux autres parcours propagerait une erreur silencieuse.
+  2. Conserver le contre-exemple dans `backend/tests/agents/graphs/test_played_proof.py`. Le test utilise le runner, le point de reprise SQLite et la passerelle de recherche du Conseil, avec deux pages et deux réponses identifiables parmi les données de test. Le même fichier vérifie le cas favorable du Constructeur : texte du premier prompt identique au témoin, rejet d’un JSON incomplet, nouvelle demande du nœud, un brouillon, validation humaine et coût nul.
+  3. Pour une nouvelle preuve, essayer une étape de graphe par source, avec son identifiant et son verdict dans le point de reprise. Le test doit vérifier les deux verdicts en base, y compris après un redémarrage. Un identifiant contrôlé uniquement à l’entrée MCP laisserait subsister le décalage au rejeu du nœud. Des ports de rendu spécifiques à chaque rôle risqueraient de dupliquer les règles de validation. Aucune de ces alternatives n’a été validée par cet essai.
+- **Raison** : à chaque reprise, le nœud `judge` de l’Éclaireur relit les verdicts persistés et saute les sources déjà notées (`scout/assess.py`, `_known`). LangGraph rejoue les réponses aux interruptions selon leur ordre dans le nœud. À la deuxième reprise, le premier appel au modèle concerne désormais la deuxième source et reçoit la première réponse. Ce mécanisme ne conserve donc pas l’association entre le brief et son rendu.
+
+## D215
+
+- **Date** : 2026-11-18
+- **Sujet** : Reprise du Conseil entre deux sources.
+- **Décision** :
+  1. Dans le nœud `judge`, confier chaque page à une tâche LangGraph durable. Le nœud soumet toujours les pages dans l’ordre du point de reprise, y compris lorsque la base connaît déjà un verdict. LangGraph restitue le résultat des tâches terminées et reprend celle qui attend le client.
+  2. La tâche enregistre le verdict par la passerelle existante et rend au nœud le résultat de cette page ou les informations de son erreur. Le nœud conserve la règle d’échec si toutes les notations échouent. Le Conseil, la recherche web et la Fabrique de leçons partagent ce nœud.
+  3. Le test coupe le premier runner après le brief de la deuxième source, rouvre le même point de reprise SQLite et rend un verdict distinct. Il relit les deux verdicts en base, mène le Conseil jusqu’au choix humain et vérifie un seul démarrage du programme sur le port de test. Un second test du Constructeur vérifie le prompt, la correction du JSON, l’écriture du brouillon, la validation et le coût nul.
+- **Raison** : D214 a montré que la position d’une réponse dans une boucle ne suffit pas quand les écritures précédentes modifient les appels restants. La tâche par source conserve la progression au niveau où les effets se produisent.

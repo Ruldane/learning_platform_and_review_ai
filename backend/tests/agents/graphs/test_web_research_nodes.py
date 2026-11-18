@@ -188,13 +188,13 @@ async def test_replayed_judge_does_not_call_model_again(
     deps = _deps(web, user_id, "s5", models)
     pages = (await make_read(deps)(_TWO_HITS))["pages"]
     assert [p["verdict"] for p in pages] == [None, None]
-    first = await make_judge(deps)({"pages": pages})
+    first = await make_judge(deps, checkpoint_pages=False)({"pages": pages})
     assert len(fake.received) == 2
     first_found = _found(emitted)
     emitted.clear()
     again = (await make_read(deps)(_TWO_HITS))["pages"]
     assert [p["verdict"]["verdict"] for p in again] == ["kept", "rejected"]
-    second = await make_judge(deps)({"pages": again})
+    second = await make_judge(deps, checkpoint_pages=False)({"pages": again})
     assert len(fake.received) == 2  # aucun nouvel appel au modèle
     assert second == first and _found(emitted) == first_found
 
@@ -236,7 +236,7 @@ async def test_slow_page_score_is_rejected_without_failing_session(
     script_web(web)
     deps = _deps(web, user_id, "s6", _SlowFirst([SCORE_82]))
     pages = (await make_read(deps)(_TWO_HITS))["pages"]
-    out = await make_judge(deps)({"pages": pages})
+    out = await make_judge(deps, checkpoint_pages=False)({"pages": pages})
     verdicts = {v["url"]: (v["verdict"], v["score"]) for v in out["verdicts"]}
     assert verdicts == {URL_A: ("rejected", None), URL_B: ("kept", 82)}
     async with web.factory() as db:
@@ -257,7 +257,7 @@ async def test_judge_fails_when_every_page_is_too_slow(
     hits: Any = {"hits": [{"url": URL_A, "title": "t", "preferred": False}], "urls": []}
     pages = (await make_read(deps)(hits))["pages"]
     with pytest.raises(AppError) as exc:
-        await make_judge(deps)({"pages": pages})
+        await make_judge(deps, checkpoint_pages=False)({"pages": pages})
     assert exc.value.code == "page_judge_timeout" and exc.value.status_code == 504
 
 
