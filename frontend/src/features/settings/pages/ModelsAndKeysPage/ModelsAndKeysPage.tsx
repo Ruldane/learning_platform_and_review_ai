@@ -12,6 +12,7 @@ import { useKeyActions } from "../../hooks/useKeyActions";
 import { useModels } from "../../hooks/useModels";
 import { useSettings } from "../../hooks/useSettings";
 import { useTierActions } from "../../hooks/useTierActions";
+import { RunSourceSlot } from "../../RunSourceSlot";
 import { readPresets, readTiers } from "../../tierChoices";
 import { AdvancedMode } from "./AdvancedMode";
 
@@ -47,6 +48,7 @@ export function ModelsAndKeysPage() {
         <p className="mt-2 text-muted-foreground">{t("settings.models.intro")}</p>
       </header>
       {error ? <InlineError message={error} /> : null}
+      <RunSourceSlot detailed />
       <KeysSection entries={keys.data} {...keyActions} />
       <TiersSection
         tiers={readTiers(settings.data.tiers)}

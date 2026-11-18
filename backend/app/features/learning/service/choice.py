@@ -201,7 +201,7 @@ async def choose(
             if {p.id for p in batch if p.chosen} != set(ids):
                 raise council_not_waiting(view.status)
             retried = await retry_program(
-                learning, user_id, goal_id, view.status, ids, req.start_date
+                learning, user_id, goal_id, view.status, ids, req.start_date, session_id
             )
             return ChooseOut(
                 council_session_id=session_id, status=view.status, already_chosen=retried is None

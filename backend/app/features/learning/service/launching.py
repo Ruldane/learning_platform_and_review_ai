@@ -19,6 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.agents.runtime.launcher import SessionLauncher
 from app.agents.tools.council_port import Choice
 from app.core.errors import AppError
+from app.core.played import inherit_source
 from app.db.models.learning import Goal
 from app.features.learning.repository import GoalRepository
 from app.features.learning.schemas import GoalStarted
@@ -99,12 +100,14 @@ async def retry_program(
     council_status: str,
     ids: Sequence[str],
     start: date | None,
+    council_session_id: str | None = None,
 ) -> str | None:
     """Sous le verrou de l'objectif, le même choix étant déjà écrit : relance `program_builder`
     si le Conseil est fermé (`finalize` passé ou arrêté), qu'aucun Conseil n'est ouvert pour
     l'objectif, et qu'il n'y a ni programme ni session `program_builder` ouverte. Date de début :
     `start`, sinon celle de l'entrée précédente si c'est encore un lundi à venir. Rend la
-    session lancée, `None` si rien n'est relancé."""
+    session lancée, `None` si rien n'est relancé. La source du Conseil (client joué ou
+    fournisseur forcé) est reprise."""
     if council_status in OPEN_STATUSES:
         return None
     async with learning.session_factory() as db:
@@ -113,11 +116,17 @@ async def retry_program(
         if await goals.open_council(db, user_id, goal_id) is not None:
             return None
         start = start or await _previous_start(db, user_id, goal_id)
+        council = (
+            await session_facts(db, user_id, council_session_id) if council_session_id else None
+        )
     action: Literal["choose", "mix"] = "mix" if len(ids) == 2 else "choose"
     choice = Choice(action, tuple(ids), start)
-    session_id = await launch_program(
-        learning.session_factory, learning.launcher, user_id, goal_id, choice
-    )
+    with inherit_source(
+        user_id, council.played_by if council else None, council.model_provider if council else None
+    ):
+        session_id = await launch_program(
+            learning.session_factory, learning.launcher, user_id, goal_id, choice
+        )
     logger.info(
         "Programme relancé : utilisateur %s, objectif %s, session %s", user_id, goal_id, session_id
     )

@@ -11,6 +11,7 @@ changé). Journaux : identifiants et codes seulement."""
 import logging
 
 from app.core.errors import AppError
+from app.core.played import inherit_source
 from app.features.ledger.service.ledger import safe_code
 from app.features.projects.schemas import SessionStarted
 from app.features.projects.service.errors import (
@@ -22,13 +23,18 @@ from app.features.projects.service.errors import (
 from app.features.projects.service.inputs import owned
 from app.features.projects.service.runtime import REVIEW_GRAPH, SUBJECT, ProjectsRuntime
 from app.features.projects.service.settle import settle_project
-from app.features.sessions.service import list_open_sessions_by_subject
+from app.features.sessions.service import (
+    SessionFacts,
+    list_open_sessions_by_subject,
+    session_facts,
+)
 
 logger = logging.getLogger(__name__)
 
 
-async def _check(rt: ProjectsRuntime, user_id: str, project_id: str) -> None:
-    """Le projet peut recevoir ses brouillons ; sinon l'erreur lisible."""
+async def _check(rt: ProjectsRuntime, user_id: str, project_id: str) -> SessionFacts | None:
+    """Le projet peut recevoir ses brouillons ; sinon l'erreur lisible. Rend sa dernière session,
+    dont la relance reprend la source (client joué ou fournisseur forcé)."""
     async with rt.session_factory() as db:
         row = await owned(db, user_id, project_id)
         open_ids = await list_open_sessions_by_subject(
@@ -43,20 +49,26 @@ async def _check(rt: ProjectsRuntime, user_id: str, project_id: str) -> None:
             raise project_not_validated("Seul un projet validé a des brouillons.")
         if row.drafts:
             raise drafts_present()
+        return await session_facts(db, user_id, row.session_id) if row.session_id else None
 
 
 async def regenerate_drafts(rt: ProjectsRuntime, user_id: str, project_id: str) -> SessionStarted:
     await settle_project(rt, user_id, project_id)
     async with rt.project_lock(user_id, project_id):
-        await _check(rt, user_id, project_id)
+        source = await _check(rt, user_id, project_id)
         try:
-            session_id = await rt.launcher.start(
+            with inherit_source(
                 user_id,
-                REVIEW_GRAPH,
-                {"project_id": project_id, "mode": "drafts"},
-                subject_type=SUBJECT,
-                subject_id=project_id,
-            )
+                source.played_by if source else None,
+                source.model_provider if source else None,
+            ):
+                session_id = await rt.launcher.start(
+                    user_id,
+                    REVIEW_GRAPH,
+                    {"project_id": project_id, "mode": "drafts"},
+                    subject_type=SUBJECT,
+                    subject_id=project_id,
+                )
         except Exception as exc:
             code = exc.code if isinstance(exc, AppError) else type(exc).__name__
             logger.warning(

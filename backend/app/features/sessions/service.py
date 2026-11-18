@@ -134,6 +134,7 @@ class SessionFacts:
     input: dict[str, Any]
     pending: dict[str, Any] | None = None  # question en attente (`InterruptRequestedPayload`)
     played_by: str | None = None
+    model_provider: str | None = None
 
 
 async def session_facts(db: AsyncSession, user_id: str, session_id: str) -> SessionFacts | None:
@@ -142,7 +143,9 @@ async def session_facts(db: AsyncSession, user_id: str, session_id: str) -> Sess
     row = await SessionReadRepository(db, user_id).get(session_id)
     if row is None:
         return None
-    return SessionFacts(row.status, dict(row.input or {}), row.pending_interrupt, row.played_by)
+    return SessionFacts(
+        row.status, dict(row.input or {}), row.pending_interrupt, row.played_by, row.model_provider
+    )
 
 
 class SessionsService:

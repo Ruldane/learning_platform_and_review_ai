@@ -1,4 +1,5 @@
 import createClient, { type Middleware } from "openapi-fetch";
+import { getRunSource, RUN_HEADER } from "@/shared/lib/runSource";
 import { emitAuthRequired } from "./authEvents";
 import { errorFromResponse, networkError } from "./errors";
 import type { paths } from "./schema";
@@ -40,4 +41,15 @@ export const api = createClient<WithoutPrefix<paths>>({
   fetch: (request) => globalThis.fetch(request),
 });
 
+/** Le choix du menu « Qui fait tourner les agents » part avec chaque appel (lu par le back au
+ * lancement d'un parcours seulement). */
+const runSourceMiddleware: Middleware = {
+  onRequest({ request }) {
+    const source = getRunSource();
+    if (source !== "settings") request.headers.set(RUN_HEADER, source);
+    return request;
+  },
+};
+
 api.use(errorMiddleware);
+api.use(runSourceMiddleware);

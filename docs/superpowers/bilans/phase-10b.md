@@ -60,7 +60,8 @@ CV, brief du jour et démo se découvrent avec `agents_play_list` et se lancent 
 
 ## À terminer ou à vérifier
 
-- Recette avec un client Claude Code ou Codex connecté à une pile de test. Pour le Maquettiste,
+- Recette avec un client Claude Code ou Codex connecté à une pile de test, sur un programme
+  court. La recette d'un programme complet est reportée en phase 11 (plan directeur, §5). Pour le Maquettiste,
   vérifier aussi que le client choisi interprète les images MCP.
 - Menu de choix dans Tremplin et branchement au client local. Le chantier est détaillé à la
   section 5 du [plan](../plans/2026-11-18-10b-plan-detaille.md).

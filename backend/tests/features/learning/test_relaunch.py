@@ -9,6 +9,7 @@ import httpx
 from fastapi import FastAPI
 from sqlalchemy import update
 
+from app.db.models.agents import AgentSession
 from app.db.models.learning import Goal
 from tests.features.learning.conftest import (
     GOALS,
@@ -141,3 +142,26 @@ async def test_concurrent_council_relaunches_start_one_session(
         ("council_not_failed", "running")
     }
     assert await count_sessions(client, "learning_council") == 2
+
+
+async def test_relaunched_program_keeps_the_council_source(
+    client: httpx.AsyncClient, app: FastAPI, stub: Stub
+) -> None:
+    """Le Conseil lancé avec « API GLM » : le Stratège relancé par « Choisir » le garde."""
+    stub.program_failures = 1
+    waiting = await wait_choice(client)
+    async with app.state.session_factory() as db:
+        await db.execute(
+            update(AgentSession).where(AgentSession.id == waiting.sid).values(model_provider="glm")
+        )
+        await db.commit()
+    p1 = waiting.ids[0]
+    await client.post(CHOOSE.format(p1), json={"start_date": next_monday(2)})
+    await wait_status(client, waiting.sid, "completed")
+    await wait_status(client, await _program_sid(client, waiting.goal_id), "failed")
+    r = await client.post(CHOOSE.format(p1), json={})
+    assert r.json()["already_chosen"] is False
+    retried = await _program_sid(client, waiting.goal_id)
+    async with app.state.session_factory() as db:
+        row = await db.get(AgentSession, retried)
+    assert row is not None and row.model_provider == "glm"

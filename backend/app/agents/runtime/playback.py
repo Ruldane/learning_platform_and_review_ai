@@ -15,17 +15,26 @@ from app.agents.runtime.deps import ChatModelSource
 from app.agents.runtime.played_model import PLAY_KIND, PlayedModels
 from app.agents.runtime.structured import extract_json_object, parse_reply
 from app.core.errors import AppError
-from app.core.played import PLAY_CONTEXT, PlayClient, PlayContext
+from app.core.played import PLAY_CONTEXT, PlayClient, PlayContext, as_client, as_provider
 from app.db.models.agents import AgentSession, LlmCall
 
 
 def models_for(row: AgentSession, usual: ChatModelSource) -> ChatModelSource:
-    if row.played_by is None:
-        return usual
-    if row.played_by not in ("claude-code", "codex"):
-        raise AppError("unknown_play_client", "Client MCP inconnu.", 409)
-    PLAY_CONTEXT.set(PlayContext(row.user_id, cast(PlayClient, row.played_by)))
-    return PlayedModels(row.played_by)
+    """La source des modèles de la session, et sa source de parcours rétablie dans le contexte
+    de son exécution (reprise, redémarrage) : client joué, ou fournisseur forcé lu par la
+    fabrique, ou rien (réglages)."""
+    if row.played_by is not None:
+        if as_client(row.played_by) is None:
+            raise AppError("unknown_play_client", "Client MCP inconnu.", 409)
+        PLAY_CONTEXT.set(PlayContext(row.user_id, cast(PlayClient, row.played_by)))
+        return PlayedModels(row.played_by)
+    provider = as_provider(row.model_provider)
+    if row.model_provider is not None and provider is None:
+        raise AppError("unknown_model_provider", "Fournisseur du parcours inconnu.", 409)
+    # Toujours posé : le menu d'une requête plus tardive (réponse, reprise) ne change pas la
+    # source d'un parcours déjà lancé.
+    PLAY_CONTEXT.set(PlayContext(row.user_id, None, provider=provider))
+    return usual
 
 
 def public_question(pending: dict[str, Any]) -> dict[str, Any]:

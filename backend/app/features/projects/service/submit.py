@@ -15,7 +15,7 @@ from typing import Any
 
 from fastapi import UploadFile
 
-from app.core.played import inherit_play
+from app.core.played import inherit_source
 from app.db.models.daily import Project
 from app.features.projects.repository import ProjectRepository
 from app.features.projects.schemas import SessionStarted
@@ -183,7 +183,9 @@ async def submit_project(
             "screenshots": keys,
         }
         previous, dropped = await _append(rt, user_id, project_id, entry)
-        with inherit_play(user_id, source.played_by if source else None):
+        with inherit_source(
+            user_id, source.played_by if source else None, source.model_provider if source else None
+        ):
             session_id = await _launch(rt, user_id, project_id, entry, previous, dropped)
     old_keys = [str(key) for item in dropped for key in item.get("screenshots", [])]
     await delete_all(rt, user_id, old_keys)

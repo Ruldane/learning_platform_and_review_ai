@@ -1,5 +1,27 @@
 /** Textes d'une session d'agents : flux, erreurs d'action, statut, coût, fil, contrôles, diff. */
 export const session = {
+  runSource: {
+    label: "Qui fait tourner les agents",
+    noKey: "(aucune clé)",
+    options: {
+      settings: "Selon mes réglages",
+      "claude-code": "Claude Code (MCP)",
+      codex: "Codex (MCP)",
+      anthropic: "API Claude",
+      glm: "API GLM",
+      openai: "API OpenAI",
+    },
+    help: {
+      settings: "Chaque agent utilise le modèle choisi ci-dessous pour son niveau.",
+      "claude-code":
+        "Les parcours que tu lances sont joués par Claude Code avec sa propre connexion : aucun coût d’API dans Tremplin.",
+      codex:
+        "Les parcours que tu lances sont joués par Codex avec sa propre connexion : aucun coût d’API dans Tremplin.",
+      anthropic: "Tous les agents passent par ta clé Claude, quel que soit le réglage des niveaux.",
+      glm: "Tous les agents passent par ta clé GLM, quel que soit le réglage des niveaux.",
+      openai: "Tous les agents passent par ta clé OpenAI, quel que soit le réglage des niveaux.",
+    },
+  },
   stream: {
     not_found: "Cette session est introuvable.",
     refused: "Le serveur a refusé la connexion au direct de la session.",

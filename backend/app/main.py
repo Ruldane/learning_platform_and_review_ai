@@ -32,6 +32,7 @@ from app.bootstrap_daily import daily_runtimes
 from app.config import Settings, get_settings
 from app.core.body_limits import add_body_limits
 from app.core.errors import register_error_handlers
+from app.core.played import RunSourceHeader
 from app.core.providers import MemoryProviders, PublishingProviders, ResearchProviders
 from app.db.engine import create_engine, create_session_factory
 from app.features.auth.service.authenticator import build_authenticator
@@ -249,6 +250,7 @@ def create_app(
     register_error_handlers(app)
     # Entre la gestion des erreurs et CORS : la 413 traverse CORS (lisible par le navigateur).
     add_body_limits(app, API_PREFIX)
+    app.add_middleware(RunSourceHeader)  # choix du menu « qui fait tourner les agents »
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,

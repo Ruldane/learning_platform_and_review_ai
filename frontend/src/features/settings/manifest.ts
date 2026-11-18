@@ -1,6 +1,7 @@
 import type { FeatureManifest } from "@/shared/lib/feature";
 import { AvailabilityPage } from "./pages/AvailabilityPage";
 import { OnboardingGate } from "./OnboardingGate";
+import { RunSourceSlot } from "./RunSourceSlot";
 import { ModelsAndKeysPage } from "./pages/ModelsAndKeysPage";
 import { SearchSettingsPage } from "./pages/SearchSettingsPage";
 import { StudySettingsPage } from "./pages/StudySettingsPage";
@@ -22,7 +23,7 @@ export const settingsManifest: FeatureManifest = {
     // Le premier lancement : une route, jamais une entrée de navigation (la porte y mène), et sans navigation latérale (`bare`).
     { path: "bienvenue", Component: WelcomePage, handle: { bare: true } },
   ],
-  shell: { gate: OnboardingGate },
+  shell: { gate: OnboardingGate, topbar: RunSourceSlot },
   nav: [
     {
       section: "settings",

@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from langchain_core.language_models import BaseChatModel
 
 from app.core.errors import AppError
+from app.core.played import run_source
 from app.core.security import SecretUnreadable
 from app.providers.llm.base import (
     CALL_DEADLINE_KEY,
@@ -16,6 +17,7 @@ from app.providers.llm.base import (
     ModelChoiceReader,
     Tier,
 )
+from app.providers.llm.forcing import forced_choice
 
 _SETTINGS_PLACE = "Réglages > Modèles et clés"
 
@@ -39,8 +41,11 @@ class LlmFactory:
         self._call_deadline_s = call_deadline_s
 
     async def resolve(self, user_id: str, tier: Tier, agent: str | None = None) -> ModelChoice:
-        """Fournisseur et modèle retenus : surcharge de l'agent si elle existe, sinon le niveau."""
-        return await self._choices.get_model_choice(user_id, tier, agent)
+        """Fournisseur et modèle retenus : surcharge de l'agent si elle existe, sinon le niveau ;
+        un fournisseur forcé pour le parcours en cours (`run_source`) l'emporte."""
+        choice = await self._choices.get_model_choice(user_id, tier, agent)
+        provider = run_source(user_id)[1]
+        return choice if provider is None else forced_choice(choice, provider, tier)
 
     async def get_chat_model(
         self, user_id: str, tier: Tier, agent: str | None = None

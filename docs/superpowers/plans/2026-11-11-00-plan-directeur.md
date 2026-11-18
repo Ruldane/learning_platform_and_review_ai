@@ -350,6 +350,14 @@ Un serveur MCP donne à Claude Code ou à Codex l'accès aux features de Trempli
 - **Réseau :** d'abord en local seulement (127.0.0.1). L'accès à distance viendra plus tard, avec OAuth.
 - **Fin de phase :** des tests d'abus (outil hors liste, jeton expiré ou révoqué, feature non autorisée, tentative de validation du profil, injection dans une offre) et un essai réel avec Claude Code sur une pile jetable.
 
+#### Phase 11 — report de la 10b (demande du 2026-11-18)
+
+- **Recette longue des agents joués par MCP :** un programme complet joué par Claude Code (ou
+  Codex) sur une pile jetable, Conseil, Constructeur, puis toutes les leçons de tous les modules
+  avec le Vérificateur. La 10b ne recette qu'un programme court (2 à 3 modules, leçons d'un ou deux
+  modules). Accord de January avant d'engager le quota : compter plusieurs heures et plus de
+  1,5 M de jetons du client.
+
 #### Liens entre les phases
 
 Chaque phase branche ses liens par les registres existants (manifeste front, `AGENTS`, `GRAPHS`, ports, tâches planifiées), sans retoucher le code des autres phases. Quand une phase prépare un lien vers une phase qui n'existe pas encore, elle expose seulement le point d'accroche (événement, port ou champ) ; la phase suivante s'y branche.

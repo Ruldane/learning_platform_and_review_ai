@@ -34,7 +34,7 @@ from app.agents.runtime.run_settings import RunSettingsSource
 from app.core.caller import MCP_IDENTITY
 from app.core.errors import AppError
 from app.core.launch_quota import LaunchQuota
-from app.core.played import PLAY_CONTEXT, played_by
+from app.core.played import PLAY_CONTEXT, run_source
 from app.db.models.agents import AgentSession
 
 logger = logging.getLogger(__name__)
@@ -101,9 +101,8 @@ class SessionRunner:
             raise AppError(
                 "invalid_input", "L'entrée du parcours est invalide.", 422, {"fields": fields}
             ) from None
-        # Sous une identité MCP, le lancement compte dans le plafond du jour (M11), quelle que soit
-        # la route ; une place réservée est rendue si rien n'a démarré.
-        client = played_by(user_id)
+        # Identité MCP ou client joué : compte dans le plafond du jour (M11), rendu si rien ne part.
+        client, provider = run_source(user_id)
         limited = client is not None or MCP_IDENTITY.get() is not None
         reserved = self.launch_quota.reserve(user_id) if limited else None
         try:
@@ -111,6 +110,7 @@ class SessionRunner:
                 row = await SessionRepository(db, user_id).add(
                     graph=graph,
                     played_by=client,
+                    model_provider=provider,
                     status="running",
                     input=data,
                     subject_type=subject_type,

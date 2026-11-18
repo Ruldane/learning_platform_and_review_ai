@@ -23,7 +23,7 @@ from typing import Protocol
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.core.played import inherit_play
+from app.core.played import inherit_source
 from app.db.models.lessons import MAX_LESSON_ATTEMPTS, Lesson
 from app.features.lessons.repository import LessonRepository
 from app.features.lessons.service.runtime import Launcher
@@ -55,6 +55,7 @@ class _Pick:
     # Statut, essais et raison d'avant : rétablis si le lancement échoue.
     previous: tuple[str, int, str | None]
     played_by: str | None
+    model_provider: str | None
 
 
 def week_due(rank: int, start: date, today: date) -> bool:
@@ -131,6 +132,7 @@ async def _prepare(
         lesson.module_id,
         (lesson.status, lesson.attempts, lesson.failure_reason),
         source.played_by if source else None,
+        source.model_provider if source else None,
     )
     lesson.status, lesson.attempts = "generating", lesson.attempts + 1
     lesson.failure_reason, lesson.session_id = None, None
@@ -169,7 +171,7 @@ async def ensure_lessons(
             return None
         payload = {"program_id": program_id, "module_id": pick.module_id}
         try:
-            with inherit_play(user_id, pick.played_by):
+            with inherit_source(user_id, pick.played_by, pick.model_provider):
                 sid = await ctx.launcher.start(
                     user_id, GRAPH, payload, subject_type=SUBJECT, subject_id=program_id
                 )
