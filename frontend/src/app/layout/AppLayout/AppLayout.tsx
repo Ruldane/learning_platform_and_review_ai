@@ -6,8 +6,8 @@ import { FEATURES } from "../../registry";
 import { HealthStatus } from "../HealthStatus";
 import { ShellGates } from "../ShellGates";
 import { ShellSlots } from "../Shell";
-import { Sidebar } from "../Sidebar";
 import { Topbar } from "../Topbar";
+import { TopNav } from "../TopNav";
 
 const NAV_GROUPS = buildNav(FEATURES);
 
@@ -15,7 +15,7 @@ type PageFlag = "wide" | "bare";
 
 /**
  * Une route peut demander la pleine largeur (`handle: { wide: true }` : le Conseil a deux zones) ou
- * une page nue (`handle: { bare: true }` : ni navigation latérale ni voyant de santé, comme le
+ * une page nue (`handle: { bare: true }` : ni menus ni voyant de santé, comme le
  * premier lancement, dont un clic de navigation ferait perdre la saisie).
  */
 function usePageFlag(flag: PageFlag): boolean {
@@ -25,7 +25,7 @@ function usePageFlag(flag: PageFlag): boolean {
 }
 
 /**
- * Coquille : lien d'évitement, navigation latérale, barre du haut (voyant de santé), contenu et
+ * Coquille : lien d'évitement, barre du haut (nom, voyant de santé, menus), contenu et
  * surcouches des features (`shell.overlay`), le tout derrière les portes des features
  * (`shell.gate` : connexion, premier lancement).
  */
@@ -34,27 +34,27 @@ export function AppLayout() {
   const bare = usePageFlag("bare");
   return (
     <ShellGates>
-      <div className="flex min-h-screen">
+      <div className="flex min-h-screen flex-col">
         <a
           href="#contenu"
           className="sr-only focus:not-sr-only focus:absolute focus:z-10 focus:m-2 focus:rounded-md focus:bg-card focus:px-3 focus:py-2"
         >
           {t("app.skipToContent")}
         </a>
-        {bare ? null : <Sidebar groups={NAV_GROUPS} />}
-        <div className="flex min-w-0 flex-1 flex-col">
-          <Topbar right={bare ? null : <HealthStatus />} />
-          <main
-            id="contenu"
-            tabIndex={-1}
-            className={cn(
-              "mx-auto w-full px-6 py-8 focus:outline-none",
-              wide ? "max-w-7xl" : "max-w-4xl",
-            )}
-          >
-            <Outlet />
-          </main>
-        </div>
+        <Topbar
+          health={bare ? null : <HealthStatus />}
+          menus={bare ? null : <TopNav groups={NAV_GROUPS} />}
+        />
+        <main
+          id="contenu"
+          tabIndex={-1}
+          className={cn(
+            "mx-auto w-full px-6 py-8 focus:outline-none",
+            wide ? "max-w-7xl" : "max-w-4xl",
+          )}
+        >
+          <Outlet />
+        </main>
         <ShellSlots slot="overlay" />
       </div>
     </ShellGates>

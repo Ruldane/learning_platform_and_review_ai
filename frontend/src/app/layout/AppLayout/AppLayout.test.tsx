@@ -52,7 +52,17 @@ describe("AppLayout", () => {
       "href",
       "#contenu",
     );
-    expect(screen.getByRole("navigation", { name: "Navigation principale" })).toBeInTheDocument();
+    const banner = screen.getByRole("banner");
+    expect(within(banner).getByRole("link", { name: "Tremplin" })).toHaveAttribute("href", "/");
+    const nav = within(banner).getByRole("navigation", { name: "Navigation principale" });
+    expect(within(nav).getByRole("button", { name: "Apprendre" })).toHaveAttribute(
+      "aria-haspopup",
+      "true",
+    );
+    expect(within(nav).getByRole("link", { name: "Accueil" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
     const main = screen.getByRole("main");
     expect(main).toHaveAttribute("id", "contenu");
     expect(main).toHaveAttribute("tabindex", "-1");
@@ -99,7 +109,7 @@ describe("AppLayout", () => {
     expect(screen.getByRole("main").className).toContain("max-w-4xl");
   });
 
-  it("hides the navigation and the health light on a bare page (handle bare)", async () => {
+  it("hides the menus and the health light on a bare page (handle bare)", async () => {
     let healthReads = 0;
     server.use(
       http.get(`${apiBaseUrl}/api/v1/health`, () => {
@@ -120,6 +130,7 @@ describe("AppLayout", () => {
     render(<RouterProvider router={router} />, { wrapper: createQueryWrapper() });
     await screen.findByText("Nue");
     expect(screen.queryByRole("navigation", { name: "Navigation principale" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Tremplin" })).toBeNull();
     expect(screen.queryByText("Tous les services répondent")).toBeNull();
     // La barre du haut reste (compte, déconnexion) ; seul le voyant, qui lit `/health`, s'en va.
     expect(within(screen.getByRole("banner")).getByText("Emplacement du haut")).toBeInTheDocument();

@@ -12,6 +12,7 @@ export const appMessages = {
   },
   nav: {
     label: "Navigation principale",
+    menu: "Menu",
     home: "Accueil",
     learn: "Apprendre",
     study: "Étudier",
