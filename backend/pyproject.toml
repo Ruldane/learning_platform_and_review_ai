@@ -67,6 +67,9 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 [tool.mypy]
 strict = true
 python_version = "3.12"
+# Le back ne tourne que dans son conteneur Linux : vérifier pour Linux, même lancé sous Windows
+# (sinon `os.fchmod`, absent de Windows avant Python 3.13, est refusé dans le bac à sable).
+platform = "linux"
 
 # APScheduler 3.x n'est pas typé (pas de `py.typed`) : utilisé par `app/scheduler/runner.py`.
 [[tool.mypy.overrides]]
