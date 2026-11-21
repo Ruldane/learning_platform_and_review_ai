@@ -385,6 +385,103 @@ Un serveur MCP donne à Claude Code ou à Codex l'accès aux features de Trempli
   d'offre des modèles de CV, « Je les maîtrise déjà » (D220 : module de validation, quiz sans
   leçon), puis un essai de bout en bout avec Codex.
 
+#### Phase 11 — professeur dans la leçon, session training, cerveau (demande du 2026-11-20)
+
+Cadrage : `2026-11-20-11-chats-et-cerveau-cadrage.md`. Un seul moteur de conversation (recherche
+dans la mémoire, réponse en flux, sources citées, coût plafonné) ouvert à trois endroits :
+
+- **« Demander au professeur » :** sélectionner un passage d'une leçon fait apparaître un bouton ;
+  un panneau de chat s'ouvre à droite par-dessus la leçon, sans changer de page ; le fil reste
+  rattaché à la leçon.
+- **Session training (Étudier) :** séance libre sans choix de leçon ; le Tuteur demande quoi
+  travailler (une ou plusieurs leçons, n'importe quel sujet des programmes), conduit selon le
+  mode, et le mode se change pendant la séance.
+- **Cerveau :** plusieurs dossiers (aujourd'hui des coffres Obsidian) synchronisés
+  automatiquement par un synchroniseur intégré au relais (ajouts, modifications et suppressions
+  suivis) ; chat sur les documents et les programmes en cours, avec sources.
+- **MCP :** les trois portes exposées ; ajouter ou retirer un dossier surveillé n'est jamais
+  exposé (niveau 4).
+- Qui répond : le modèle de Tremplin par défaut, ou Claude Code / Codex par le relais (menu D218).
+
+#### Phase 11 — qualité des leçons (retour de January du 2026-11-20)
+
+Constat sur le programme LangChain (50 leçons prêtes) : le fond est juste et à jour (LangChain et
+LangGraph 1.x, un fil conducteur), mais les leçons ne sont « pas assez structurées » ni assez
+profondes. 48 sur 50 ont été écrites par Codex avec `lessons_write_lesson`, qui n'impose aucun
+plan : une seule partie puis « Ressources », sans le plan en 11 parties du Rédacteur, sans
+Vérificateur. Le code est écrit en français (`Etat`, `normaliser`), « ça pique ».
+
+- **Une seule norme de leçon** pour le Rédacteur de la fabrique **et** pour l'écriture directe
+  par MCP : même plan, contrôlé à l'écriture (`lessons_write_lesson` refuse une leçon hors norme
+  avec les raisons, comme le Vérificateur), et rendue aux clients MCP (brief, `docs/mcp`).
+- **Inspirée des skills `teach` et `writing-beats` de Matt Pocock :**
+  - **chaque notion est définie avant d'être utilisée**, même une notion de base (« LLM »,
+    « token », « embedding ») : January veut savoir de quoi on parle même quand elle le sait
+    déjà. Un glossaire par programme, repris tel quel d'une leçon à l'autre ;
+  - l'explication avance **par étapes courtes**, une idée par étape, chacune ne s'appuyant que
+    sur des notions déjà posées ;
+  - **plus profond** : comment ça marche dessous et pourquoi, pas seulement comment s'en servir ;
+  - d'abord le savoir, puis la pratique : questions de rappel au fil de la leçon, rappels des
+    leçons précédentes, exercices qui mêlent les notions ;
+  - chaque leçon reliée à l'objectif du programme, avec **une source principale** à lire ou
+    regarder, et une **fiche de référence** courte (l'essentiel à relire plus tard) ;
+  - quiz : réponses de même longueur, bonne réponse placée au hasard.
+- **Code en anglais** : identifiants, commentaires et textes dans le code en anglais ; le texte
+  de la leçon reste en français.
+- **Un programme se lit comme un livre, de zéro à expert (précision de January, 20/11) :**
+  « comprendre deeply chaque leçon, chaque programme, comme dans un livre où tout est expliqué,
+  pas un truc ciblé comme LoRA ». Quel que soit le domaine, le programme part des fondations du
+  domaine, et chaque leçon est un chapitre qui s'appuie sur les précédents jusqu'au niveau
+  expert. Rien n'est supposé connu sans avoir été posé, même ce que January sait déjà (« Je les
+  maîtrise déjà », D220, reste le moyen de passer un chapitre par un quiz).
+- **Réécriture de tous les cours existants dans la phase 11**, selon cette norme (décision de
+  January, 20/11).
+- **Les 4 programmes existants sont reconstruits comme des livres (décision de January, 20/11,
+  option A) :** le Conseil et le Constructeur repartent de chaque objectif avec la règle « de
+  zéro à expert » (chapitres de fondations en tête, progression jusqu'au niveau expert), et
+  toutes les leçons sont écrites selon la nouvelle norme. Ce qui est acquis (compétences
+  validées, quiz réussis) est repris quand un chapitre correspond. Les programmes s'allongent :
+  à budget hebdomadaire égal, le planning s'étend sur plus de semaines. Écarté : garder les plans
+  actuels et seulement réécrire les leçons (fondations éparpillées, pas un livre).
+
+#### Phase 11 — relais (constat du 2026-11-20)
+
+- **Quota MCP épuisé par l'attente :** le relais interroge Tremplin toutes les 10 s (≈ 360 appels
+  par heure) avec le jeton « Claude Code », limité à 1000 appels par jour : il est bloqué dès le
+  matin jusqu'à la remise à zéro, et le jeton avec lui. Jeton propre au relais (lié à
+  l'appairage) dont l'interrogation ne compte pas dans la limite, ou interrogation plus espacée.
+- **Lancement de Codex cassé :** `codex exec … --search` sort en code 2 avec codex 0.170
+  (`--search` n'est accepté qu'avant `exec`) : `relay/tremplin-relay.mjs` ligne 86.
+
+#### Phases ajoutées après la 11 (demande du 2026-11-21)
+
+Retenues par January le 21/11 parmi les propositions de la séance (« tout sauf l'auto-génération
+de CV » : le « chasseur de nuit », qui préparait CV et lettre pour chaque offre, est écarté ; les
+offres arrivent dans la pile de lecture). **Chaque feature déclare ses outils MCP** (lecture,
+écriture annulable, demandes « À confirmer »), comme le reste de Tremplin. Chacune commence par
+une séance de conception, puis son plan.
+
+**Nouvel ordre (décision de January du 21/11) :** la phase 11 est celle décrite plus haut
+(reports de la 10b, chats et cerveau, qualité des leçons, relais) ; l'extension « Capturer
+l'offre », phase 11 d'origine du tableau ci-dessus, devient la **phase 12** ; les features
+ci-dessous sont les **phases 13 à 24** ; les phases 12 à 20 du tableau ci-dessus (« Explique-moi »
+à portfolio) viennent ensuite, dans leur ordre, à partir de la **phase 25**.
+
+| Ordre | Fonctionnalité | Idée | S'appuie sur |
+| --- | --- | --- | --- |
+| 13 | Pile de lecture | Chaque matin, des agents déposent ce qu'ils ont trouvé : offres d'emploi, articles, papiers, nouveautés des bibliothèques étudiées, tout sujet surveillé. Un lecteur : liste des nouveautés (non-lues, filtres), mode lecture propre (résumé, texte, « pourquoi c'est pour toi »), et pour chaque élément : lu, garder en mémoire, en faire des fiches, ajouter à un programme, créer une candidature. Sources réglables (sujets, sites, RSS) ; le brief annonce le nombre de nouveautés | Lecture web (research), radar, mémoire, brief |
+| 14 | IDE de projets Python | Comme VS Code : arborescence (créer, renommer, supprimer des fichiers), onglets, vrai terminal (xterm) sur le bac à sable, **notebooks Jupyter**, professeur en temps réel qui voit tout le projet. Petits projets Python d'entraînement, quel que soit le sujet (pas seulement LangChain). Pour appeler un LLM depuis le bac sans réseau ni secret : une passerelle modèle de Tremplin, compatible OpenAI, qui ajoute la clé côté serveur avec un plafond par jour, ou le modèle local Ollama | Phase 10 (IDE, bac à sable, professeur) |
+| 15 | Simulateur d'astreinte | Un service réaliste tourne dans le bac à sable et casse à un moment imprévu (latence, réponses inventées, quota, file bloquée) ; January reçoit l'alerte, enquête dans les journaux, corrige, écrit le rapport d'incident ; un agent note comme un responsable d'exploitation | 14, carte des compétences |
+| 16 | Ton futur toi | Projection du rythme d'étude réel, de la carte des compétences et des offres visées : « crédible pour 60 % des offres AI Engineer le 12 mars ; le 3 février à 8 h par semaine », et les chapitres qui débloquent le plus d'offres | Écart, radar, replanification |
+| 17 | Ton livre | Chaque programme compilé en livre PDF et EPUB (couverture, sommaire, glossaire, index), avec notes Obsidian en marge, erreurs fréquentes en encadré, code des exercices en annexe ; mis à jour à chaque chapitre | Phase 11 (programmes-livres, cerveau), Gotenberg |
+| 18 | Podcast du matin | Épisode de 10 à 15 min à deux voix sur le chapitre du jour, tiré des leçons, des notes et des erreurs de la veille, suivi d'un quiz de trois questions | Brief, leçons, quiz ; synthèse vocale à ajouter |
+| 19 | Contributrice open source | De vraies issues faciles dans les projets étudiés, choisies pour le chapitre en cours ; préparation (code concerné, notions), suivi jusqu'à la pull request ; une contribution acceptée devient une preuve et une ligne de CV | Programmes, carte, CV ; liaison GitHub |
+| 20 | Classe virtuelle | Trois camarades IA de niveaux différents suivent le même programme : January explique au plus faible, débat avec le plus fort, questions entre pairs | Tuteur, programmes |
+| 21 | Négociation de salaire | Recruteur au budget réel (salaires du radar) qui joue ses contraintes ; bilan : ce qui a été laissé sur la table et pourquoi | Radar, entretien (phase 7) |
+| 22 | Chasse aux erreurs | Sur demande, une leçon contient deux erreurs subtiles et plausibles à trouver et expliquer : lecture critique face aux LLM qui inventent | Leçons, Vérificateur |
+| 23 | Procès de ton code | Un procureur attaque la conception d'un projet, un avocat la défend, January juge : les compromis d'architecture par la plaidoirie | 14, agents de débat (comité) |
+| 24 | Révision par messagerie | Une question de révision par WhatsApp ou Telegram au moment idéal pour la mémoire, par Nod (agent de January branché sur le MCP de Tremplin) | Fiches, MCP |
+
 #### Liens entre les phases
 
 Chaque phase branche ses liens par les registres existants (manifeste front, `AGENTS`, `GRAPHS`, ports, tâches planifiées), sans retoucher le code des autres phases. Quand une phase prépare un lien vers une phase qui n'existe pas encore, elle expose seulement le point d'accroche (événement, port ou champ) ; la phase suivante s'y branche.
