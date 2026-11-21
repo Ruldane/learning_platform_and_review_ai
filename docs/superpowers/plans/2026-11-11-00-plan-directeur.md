@@ -444,6 +444,39 @@ Vérificateur. Le code est écrit en français (`Etat`, `normaliser`), « ça pi
   à budget hebdomadaire égal, le planning s'étend sur plus de semaines. Écarté : garder les plans
   actuels et seulement réécrire les leçons (fondations éparpillées, pas un livre).
 
+**Garanties de qualité « enseignant expert » (demande de January du 21/11) :** la qualité ne doit
+pas dépendre du modèle qui écrit (agents de Tremplin, Codex, Claude ou autre), mais de ce qui lui
+est imposé et vérifié. Six exigences :
+
+1. **Toujours la chaîne de la fabrique, jamais l'écriture brute.** Une leçon passe par la
+   recherche de sources (Éclaireur), le Rédacteur et le Vérificateur, que ces rôles soient tenus
+   par les agents de Tremplin ou joués par Codex / Claude (`agents_play_*`, sans coût d'API pour
+   January). `docs/mcp/AGENTS.md` et les instructions du serveur cessent de pousser vers
+   `lessons_write_lesson` « pour économiser l'API » ; une leçon écrite directement n'est publiée
+   qu'après le Vérificateur (statut « à vérifier » jusque-là).
+2. **Une norme écrite une seule fois, servie à tous.** Un seul fichier décrit la leçon d'expert
+   (plan du chapitre, notion définie avant usage, étapes courtes, profondeur « comment ça marche
+   dessous et pourquoi », code en anglais, schéma, exemple travaillé, exercice et corrigé,
+   questions de rappel, fiche de référence, source principale). Le Rédacteur l'inclut dans ses
+   consignes et le brief MCP rend le même texte : personne n'écrit « à sa façon ».
+3. **Contrôle automatique à l'écriture.** Le serveur refuse, avec les raisons, une leçon à la
+   partie manquante, trop courte, sans schéma, ou dont le code a des identifiants en français. Une
+   consigne est suivie la plupart du temps ; un contrôle l'est à tous les coups.
+4. **Vérificateur exigeant, avec une grille notée.** En plus des sources, il vérifie que chaque
+   notion utilisée a été posée avant (chapitre précédent ou glossaire), que l'explication va au
+   fond (mécanisme et raison, pas seulement l'usage), que l'exemple et l'exercice éclairent la
+   notion, et que la leçon enchaîne avec la précédente sans la répéter. Il rend une note par
+   critère ; sous le seuil, la leçon est réécrite avec les raisons.
+5. **Le programme est un sommaire de livre.** Le Constructeur produit une table des matières de
+   zéro à expert. Chaque chapitre déclare les notions qu'il **requiert** et celles qu'il
+   **introduit** (principe de `writing-beats`) ; aucune notion requise sans avoir été introduite
+   plus tôt. Le glossaire du programme en découle. Le Rédacteur reçoit le glossaire, le résumé du
+   chapitre précédent et le plan du suivant : il enchaîne au lieu de réintroduire.
+6. **Un pilote avant la réécriture en masse.** Deux ou trois chapitres du programme LangChain sont
+   réécrits selon la norme ; January les lit ; la norme et la grille sont ajustées ; alors
+   seulement la reconstruction des 4 programmes est lancée (des dizaines d'heures de quota : pas
+   avant d'avoir validé la norme).
+
 #### Phase 11 — relais (constat du 2026-11-20)
 
 - **Quota MCP épuisé par l'attente :** le relais interroge Tremplin toutes les 10 s (≈ 360 appels
