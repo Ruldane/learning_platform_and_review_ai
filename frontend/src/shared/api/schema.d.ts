@@ -1474,7 +1474,8 @@ export interface paths {
         head?: never;
         /**
          * Patch Lesson
-         * @description Retouche le titre ou le Markdown d'une leçon prête, sans agent (le PDF gardé est oublié).
+         * @description Retouche le titre ou le Markdown d'une leçon prête, ou y ajoute des ressources, sans agent.
+         *     Un PDF antérieur est détaché si le Markdown change.
          */
         patch: operations["patch_lesson_api_v1_lessons__lesson_id__patch"];
         trace?: never;
@@ -1905,7 +1906,8 @@ export interface paths {
         /**
          * Write Lesson
          * @description Écrit la leçon d'un module en direct, sans agent ni appel au modèle (le Markdown est celui
-         *     de January ou de Claude) ; son texte entre dans la mémoire. Ni PDF ni ressources.
+         *     de January ou de Claude). Son texte entre dans la mémoire et les liens fournis dans la
+         *     Bibliothèque. L'écriture directe ne génère pas de PDF.
          */
         post: operations["write_lesson_api_v1_modules__module_id__lesson_post"];
         delete?: never;
@@ -5837,11 +5839,13 @@ export interface components {
         };
         /**
          * LessonPatch
-         * @description Retouche d'une leçon prête : son titre, son Markdown, ou les deux.
+         * @description Retouche du titre ou du texte d'une leçon prête, ou ajout de ressources.
          */
         LessonPatch: {
             /** Markdown */
             markdown?: string | null;
+            /** Resources */
+            resources?: components["schemas"]["ResourceWriteIn"][];
             /** Title */
             title?: string | null;
         };
@@ -5894,6 +5898,8 @@ export interface components {
         LessonWriteIn: {
             /** Markdown */
             markdown: string;
+            /** Resources */
+            resources?: components["schemas"]["ResourceWriteIn"][];
             /** Title */
             title?: string | null;
         };
@@ -8141,6 +8147,36 @@ export interface components {
              * @enum {string}
              */
             status: "to_read" | "read";
+        };
+        /**
+         * ResourceWriteIn
+         * @description Un lien de lecture fourni avec une leçon, enregistré sans télécharger la page.
+         */
+        ResourceWriteIn: {
+            /** Author */
+            author?: string | null;
+            /** Date */
+            date?: string | null;
+            /** Duration Minutes */
+            duration_minutes?: number | null;
+            /** Lang */
+            lang?: string | null;
+            /** Level */
+            level?: ("debutant" | "intermediaire" | "avance") | null;
+            /** Reason */
+            reason: string;
+            /** Title */
+            title: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "documentation" | "cours" | "video" | "article" | "depot" | "papier";
+            /**
+             * Url
+             * Format: uri
+             */
+            url: string;
         };
         /** ResultOut */
         ResultOut: {

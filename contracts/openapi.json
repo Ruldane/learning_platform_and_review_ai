@@ -6765,7 +6765,7 @@
         "type": "object"
       },
       "LessonPatch": {
-        "description": "Retouche d'une leçon prête : son titre, son Markdown, ou les deux.",
+        "description": "Retouche du titre ou du texte d'une leçon prête, ou ajout de ressources.",
         "properties": {
           "markdown": {
             "anyOf": [
@@ -6779,6 +6779,14 @@
               }
             ],
             "title": "Markdown"
+          },
+          "resources": {
+            "items": {
+              "$ref": "#/components/schemas/ResourceWriteIn"
+            },
+            "maxItems": 12,
+            "title": "Resources",
+            "type": "array"
           },
           "title": {
             "anyOf": [
@@ -6883,6 +6891,14 @@
             "minLength": 300,
             "title": "Markdown",
             "type": "string"
+          },
+          "resources": {
+            "items": {
+              "$ref": "#/components/schemas/ResourceWriteIn"
+            },
+            "maxItems": 12,
+            "title": "Resources",
+            "type": "array"
           },
           "title": {
             "anyOf": [
@@ -13288,6 +13304,119 @@
           "status"
         ],
         "title": "ResourcePatch",
+        "type": "object"
+      },
+      "ResourceWriteIn": {
+        "additionalProperties": false,
+        "description": "Un lien de lecture fourni avec une leçon, enregistré sans télécharger la page.",
+        "properties": {
+          "author": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "duration_minutes": {
+            "anyOf": [
+              {
+                "maximum": 600.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Minutes"
+          },
+          "lang": {
+            "anyOf": [
+              {
+                "maxLength": 8,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lang"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "enum": [
+                  "debutant",
+                  "intermediaire",
+                  "avance"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level"
+          },
+          "reason": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "documentation",
+              "cours",
+              "video",
+              "article",
+              "depot",
+              "papier"
+            ],
+            "title": "Type",
+            "type": "string"
+          },
+          "url": {
+            "format": "uri",
+            "maxLength": 2083,
+            "minLength": 1,
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url",
+          "title",
+          "type",
+          "reason"
+        ],
+        "title": "ResourceWriteIn",
         "type": "object"
       },
       "ResultOut": {
@@ -21522,7 +21651,7 @@
         ]
       },
       "patch": {
-        "description": "Retouche le titre ou le Markdown d'une leçon prête, sans agent (le PDF gardé est oublié).",
+        "description": "Retouche le titre ou le Markdown d'une leçon prête, ou y ajoute des ressources, sans agent.\nUn PDF antérieur est détaché si le Markdown change.",
         "operationId": "patch_lesson_api_v1_lessons__lesson_id__patch",
         "parameters": [
           {
@@ -22663,7 +22792,7 @@
     },
     "/api/v1/modules/{module_id}/lesson": {
       "post": {
-        "description": "Écrit la leçon d'un module en direct, sans agent ni appel au modèle (le Markdown est celui\nde January ou de Claude) ; son texte entre dans la mémoire. Ni PDF ni ressources.",
+        "description": "Écrit la leçon d'un module en direct, sans agent ni appel au modèle (le Markdown est celui\nde January ou de Claude). Son texte entre dans la mémoire et les liens fournis dans la\nBibliothèque. L'écriture directe ne génère pas de PDF.",
         "operationId": "write_lesson_api_v1_modules__module_id__lesson_post",
         "parameters": [
           {

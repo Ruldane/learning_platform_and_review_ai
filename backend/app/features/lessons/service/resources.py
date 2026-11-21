@@ -12,7 +12,8 @@ from app.core.errors import AppError
 from app.db.models.lessons import Resource
 from app.db.models.research import Source
 from app.features.lessons.repository import ResourceFilter, ResourceRepository
-from app.features.lessons.schemas import ResourceOut, ResourcePatch
+from app.features.lessons.schemas import ResourceOut, ResourcePatch, ResourceWriteIn
+from app.features.research.service.cache import url_key
 from app.providers.storage.base import FileStorage, StorageKeyInvalid
 
 __all__ = [
@@ -112,6 +113,32 @@ async def upsert_resources(
         kept += 1
     await db.flush()
     return kept
+
+
+async def attach_resources(
+    db: AsyncSession,
+    user_id: str,
+    *,
+    module_id: str,
+    program_id: str,
+    readings: Sequence[ResourceWriteIn],
+) -> None:
+    """Ajoute les liens dans la transaction de la leçon, sans toucher aux fiches déjà lues."""
+    if not readings:
+        return
+    repo = ResourceRepository(db, user_id)
+    for reading in readings:
+        key = url_key(str(reading.url))
+        if await repo.by_url(module_id, key) is not None:
+            continue
+        fields = reading.model_dump(mode="json", exclude={"date"}, exclude_none=True)
+        await repo.add(
+            module_id=module_id,
+            program_id=program_id,
+            url_hash=key,
+            published=reading.date,
+            **fields,
+        )
 
 
 async def list_resources(db: AsyncSession, user_id: str, f: ResourceFilter) -> list[ResourceOut]:

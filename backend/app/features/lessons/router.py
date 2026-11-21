@@ -79,7 +79,8 @@ async def write_lesson(
     module_id: str, body: LessonWriteIn, current: CurrentUserDep, rt: LessonsDep, caller: CallerDep
 ) -> LessonOut:
     """Écrit la leçon d'un module en direct, sans agent ni appel au modèle (le Markdown est celui
-    de January ou de Claude) ; son texte entre dans la mémoire. Ni PDF ni ressources."""
+    de January ou de Claude). Son texte entre dans la mémoire et les liens fournis dans la
+    Bibliothèque. L'écriture directe ne génère pas de PDF."""
     return await direct.write_lesson(rt, current.id, module_id, body, is_mcp=caller.kind == "mcp")
 
 
@@ -94,7 +95,8 @@ async def write_lesson(
 async def patch_lesson(
     lesson_id: str, body: LessonPatch, current: CurrentUserDep, rt: LessonsDep, caller: CallerDep
 ) -> LessonOut:
-    """Retouche le titre ou le Markdown d'une leçon prête, sans agent (le PDF gardé est oublié)."""
+    """Retouche le titre ou le Markdown d'une leçon prête, ou y ajoute des ressources, sans agent.
+    Un PDF antérieur est détaché si le Markdown change."""
     return await direct.patch_lesson(rt, current.id, lesson_id, body, is_mcp=caller.kind == "mcp")
 
 

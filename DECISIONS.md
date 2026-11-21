@@ -2214,3 +2214,16 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
   est celle de tout quiz de module. Route `POST /postings/{id}/gap/validate`, niveau MCP 2.
 - **Raison** : January veut déclarer ce qu'elle maîtrise, mais « validé » ne s'obtient que par un
   quiz ou une évaluation ; on réutilise donc le quiz de module au lieu d'un niveau déclaratif.
+
+## D221
+
+- **Date** : 2026-11-19
+- **Sujet** : Ressources suivies pour les leçons écrites en direct.
+- **Décision** : les outils `lessons_write_lesson` et `lessons_update_lesson` acceptent jusqu'à
+  douze fiches par appel. Une fiche fournit le lien HTTP(S), le titre, le type et la raison de
+  lecture, avec métadonnées facultatives. Les liens sont enregistrés avec la leçon et dédoublonnés
+  par module et adresse normalisée. Les fiches existantes conservent leurs données et leur statut.
+  L'ajout seul préserve le texte, le PDF et le compteur de mots. Les nouvelles fiches commencent à
+  lire et suivent le même historique d'annulation que la leçon. Le serveur ne télécharge pas le lien.
+- **Raison** : January souhaite préparer les cours par MCP et suivre chaque lecture dans la même
+  bibliothèque que les cours issus de la Fabrique de leçons.

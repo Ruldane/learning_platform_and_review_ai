@@ -165,6 +165,10 @@ lance l'Analyste et compte dans les 30 lancements du jour).
 
 - Leçon : `lessons_write_lesson` (`module_id`, `markdown` de 300 caractères au moins, `title`
   facultatif), puis `lessons_update_lesson` (leçon prête seulement, sinon 409 `lesson_not_ready`).
+  Les deux acceptent `resources` (jusqu'à douze fiches par appel) pour le suivi « Lu / Non lu ».
+  Chaque fiche contient `url`, `title`, `type` et `reason`, avec `author`, `date`, `lang`,
+  `duration_minutes` et `level` en option. Un lien déjà présent dans le module garde sa fiche
+  et son statut. Pour compléter une leçon prête, `lessons_update_lesson` accepte `resources` seul.
 - Programme : `program_write_program` écrit un programme entier d'un coup (voir plus bas) ;
   `program_add_week`, `program_add_module`, puis les tâches par `program_update_program`
   (`add_tasks`) ; `program_update_week`, `program_update_module`.

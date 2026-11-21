@@ -1,6 +1,6 @@
 """Schémas de l'API des leçons et des ressources (SPEC 3.5, 3.6, 14.2 ; D91)."""
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator, model_validator
 
 from app.db.models.lessons import (
     MAX_LESSON_ATTEMPTS,
@@ -27,6 +27,7 @@ __all__ = [
 TITLE_MAX = 200
 MARKDOWN_MIN = 300  # une leçon des agents passe le Vérificateur (1 200 mots) ; ici un plancher
 MARKDOWN_MAX = 60_000
+RESOURCES_MAX = 12
 
 
 class ResourceOut(BaseModel):
@@ -87,22 +88,47 @@ class ResourcePatch(BaseModel):
     status: ResourceStatus
 
 
+class ResourceWriteIn(BaseModel):
+    """Un lien de lecture fourni avec une leçon, enregistré sans télécharger la page."""
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    url: HttpUrl
+    title: str = Field(min_length=1, max_length=TITLE_MAX)
+    type: ResourceType
+    reason: str = Field(min_length=1, max_length=300)
+    author: str | None = Field(default=None, min_length=1, max_length=200)
+    date: str | None = Field(default=None, min_length=1, max_length=32)
+    lang: str | None = Field(default=None, min_length=1, max_length=8)
+    duration_minutes: int | None = Field(default=None, ge=1, le=600)
+    level: ResourceLevel | None = None
+
+    @field_validator("url")
+    @classmethod
+    def _no_credentials(cls, url: HttpUrl) -> HttpUrl:
+        if url.username is not None or url.password is not None:
+            raise ValueError("Le lien ne doit pas contenir d'identifiants.")
+        return url
+
+
 class LessonWriteIn(BaseModel):
     """La leçon d'un module écrite à la main ou par Claude (aucun agent, aucun appel au modèle) :
     `title` vaut par défaut le titre du module."""
 
     title: str | None = Field(default=None, min_length=1, max_length=TITLE_MAX)
     markdown: str = Field(min_length=MARKDOWN_MIN, max_length=MARKDOWN_MAX)
+    resources: list[ResourceWriteIn] = Field(default_factory=list, max_length=RESOURCES_MAX)
 
 
 class LessonPatch(BaseModel):
-    """Retouche d'une leçon prête : son titre, son Markdown, ou les deux."""
+    """Retouche du titre ou du texte d'une leçon prête, ou ajout de ressources."""
 
     title: str | None = Field(default=None, min_length=1, max_length=TITLE_MAX)
     markdown: str | None = Field(default=None, min_length=MARKDOWN_MIN, max_length=MARKDOWN_MAX)
+    resources: list[ResourceWriteIn] = Field(default_factory=list, max_length=RESOURCES_MAX)
 
     @model_validator(mode="after")
     def _something(self) -> "LessonPatch":
-        if self.title is None and self.markdown is None:
+        if self.title is None and self.markdown is None and not self.resources:
             raise ValueError("rien à changer")
         return self

@@ -4,8 +4,7 @@ sans agent, sans session et sans appel au modèle. Sous le verrou des leçons du
 production en chaîne : jamais deux leçons d'un module, ni une leçon écrite pendant qu'un agent
 travaille sur la même.
 
-Pas de PDF ni de copies de ressources : ce sont des fichiers hors base (rendu Gotenberg, stockage),
-que l'annulation de l'historique ne reprendrait pas ; la leçon se lit dans l'application. Son texte
+Les ressources fournies sont des liens suivis en base. La leçon se lit dans l'application. Son texte
 entre dans la mémoire (`lecon`) comme celui d'une leçon des agents, dans la même
 transaction ; son indexation suit hors de l'appel (`memory.service.direct`)."""
 
@@ -18,6 +17,7 @@ from app.db.models.lessons import Lesson
 from app.features.lessons.repository import LessonRepository
 from app.features.lessons.schemas import LessonOut, LessonPatch, LessonWriteIn
 from app.features.lessons.service.lessons import get_lesson, lesson_not_found
+from app.features.lessons.service.resources import attach_resources
 from app.features.lessons.service.runtime import LessonsRuntime
 from app.features.lessons.service.status import open_lesson_sessions
 from app.features.memory.service.direct import author_of, schedule_indexing, write_direct
@@ -118,6 +118,9 @@ async def write_lesson(
             lesson = await repo.add(module_id=module_id, program_id=program_id, title=title)
         _lesson_fields(lesson, title, body.markdown)
         lesson.status, lesson.failure_reason, lesson.session_id = "ready", None, None
+        await attach_resources(
+            db, user_id, module_id=module_id, program_id=program_id, readings=body.resources
+        )
         await _remember(db, rt, user_id, lesson, loaded.program.title, is_mcp=is_mcp)
         await db.commit()
         lesson_id = lesson.id
@@ -152,15 +155,20 @@ async def patch_lesson(
         before = (lesson.title, lesson.markdown)
         title = patch.title or lesson.title
         markdown = lesson.markdown if patch.markdown is None else patch.markdown
-        _lesson_fields(lesson, title, markdown)
-        if markdown != before[1]:
-            lesson.pdf_key = None
-        loaded = await load(db, user_id, program_id)
-        if (title, markdown) != before:
+        changed = (title, markdown) != before
+        if changed:
+            _lesson_fields(lesson, title, markdown)
+            if markdown != before[1]:
+                lesson.pdf_key = None
+            loaded = await load(db, user_id, program_id)
             await _remember(
                 db, rt, user_id, lesson, loaded.program.title, is_mcp=is_mcp, replaces=before
             )
+        await attach_resources(
+            db, user_id, module_id=lesson.module_id, program_id=program_id, readings=patch.resources
+        )
         await db.commit()
-    schedule_indexing(rt.memory, user_id)
+    if changed:
+        schedule_indexing(rt.memory, user_id)
     async with rt.session_factory() as db:
         return await get_lesson(db, user_id, lesson_id)
