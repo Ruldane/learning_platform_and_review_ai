@@ -467,6 +467,11 @@ l'offre », phase 11 d'origine du tableau ci-dessus, devient la **phase 12** ; l
 ci-dessous sont les **phases 13 à 24** ; les phases 12 à 20 du tableau ci-dessus (« Explique-moi »
 à portfolio) viennent ensuite, dans leur ordre, à partir de la **phase 25**.
 
+**Extension Chrome mise de côté (décision de January du 21/11) :** on oublie l'extension
+« Capturer l'offre » pour le moment. La phase 12 ne se fait pas : après la phase 11, on passe
+directement à la phase 13 (pile de lecture), qui apporte déjà des offres chaque matin.
+L'extension garde son numéro et reviendra seulement si January la redemande.
+
 | Ordre | Fonctionnalité | Idée | S'appuie sur |
 | --- | --- | --- | --- |
 | 13 | Pile de lecture | Chaque matin, des agents déposent ce qu'ils ont trouvé : offres d'emploi, articles, papiers, nouveautés des bibliothèques étudiées, tout sujet surveillé. Un lecteur : liste des nouveautés (non-lues, filtres), mode lecture propre (résumé, texte, « pourquoi c'est pour toi »), et pour chaque élément : lu, garder en mémoire, en faire des fiches, ajouter à un programme, créer une candidature. Sources réglables (sujets, sites, RSS) ; le brief annonce le nombre de nouveautés | Lecture web (research), radar, mémoire, brief |
