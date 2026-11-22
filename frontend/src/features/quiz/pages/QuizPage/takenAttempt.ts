@@ -1,3 +1,4 @@
+import type { ResponseTiming } from "@/shared/lib/concentration";
 import type { AnswerDraft, QuestionView } from "../../components/viewTypes";
 
 /** Un essai envoyé : les questions telles qu'elles s'affichaient, et les réponses (pour les renvoyer). */
@@ -7,4 +8,5 @@ export interface TakenAttempt {
   /** `null` quand l'essai est une correction reprise après un rechargement de la page. */
   drafts: AnswerDraft[] | null;
   elapsedMs?: number;
+  timings?: ResponseTiming[];
 }

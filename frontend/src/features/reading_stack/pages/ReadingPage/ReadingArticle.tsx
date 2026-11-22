@@ -1,8 +1,14 @@
 import { useEffect, useRef } from "react";
 import { t } from "@/shared/i18n/t";
 import type { ReadingDetail } from "../../api";
+import { AnnotatedText } from "./AnnotatedText";
 
-export function ReadingArticle({ article }: { article: ReadingDetail }) {
+interface Props {
+  article: ReadingDetail;
+  onPassage: (passage: string) => void;
+}
+
+export function ReadingArticle({ article, onPassage }: Props) {
   const title = useRef<HTMLHeadingElement>(null);
   useEffect(() => title.current?.focus(), [article.id]);
   return (
@@ -31,9 +37,7 @@ export function ReadingArticle({ article }: { article: ReadingDetail }) {
       {article.summary ? (
         <p className="break-words text-sm font-medium">{article.summary}</p>
       ) : null}
-      <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
-        {article.text || t("reading.contentUnavailable")}
-      </p>
+      <AnnotatedText key={article.id} article={article} onPassage={onPassage} />
     </>
   );
 }

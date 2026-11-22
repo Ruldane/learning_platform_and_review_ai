@@ -20,7 +20,17 @@ def normalize_skill_name(name: str) -> str:
 
 
 EvidenceKind = Literal[
-    "program", "lesson", "study", "quiz", "project", "cv", "capture", "ide", "contribution"
+    "program",
+    "lesson",
+    "study",
+    "quiz",
+    "project",
+    "cv",
+    "capture",
+    "ide",
+    "github",
+    "contribution",
+    "feynman",
 ]
 _KINDS: frozenset[str] = frozenset(get_args(EvidenceKind))
 

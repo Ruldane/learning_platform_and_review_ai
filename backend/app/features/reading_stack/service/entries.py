@@ -5,6 +5,7 @@ from app.db.base import utcnow
 from app.db.models.reading_stack import ReadingItem, ReadingKind
 from app.features.reading_stack.repository import ReadingRepository
 from app.features.reading_stack.schemas import ReadingDetail, ReadingItemOut, ReadingPage
+from app.features.reading_stack.service.glossary import annotations
 
 PAGE_SIZE = 50
 
@@ -18,6 +19,13 @@ async def read_entry(db: AsyncSession, user_id: str, item_id: str) -> ReadingIte
     if row is None:
         raise reading_not_found()
     return row
+
+
+async def read_detail(db: AsyncSession, user_id: str, item_id: str) -> ReadingDetail:
+    row = await read_entry(db, user_id, item_id)
+    detail = ReadingDetail.model_validate(row)
+    detail.annotations = await annotations(db, user_id, detail.text)
+    return detail
 
 
 async def list_entries(

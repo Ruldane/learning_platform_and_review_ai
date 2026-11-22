@@ -138,6 +138,7 @@ async def offers_since(
     return [
         {
             "run_id": run.id,
+            "offer_ref": entry.get("ref"),
             "url_key": str(entry["key"]),
             "url": str(entry["url"]),
             "title": entry.get("title"),

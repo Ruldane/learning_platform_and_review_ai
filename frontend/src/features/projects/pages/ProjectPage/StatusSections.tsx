@@ -24,7 +24,7 @@ export function StatusSections({ project, run, submitter, regeneration }: Status
   const criteria = project.brief?.criteria ?? [];
   switch (project.status) {
     case "todo":
-      return <SubmitSection submitter={submitter} />;
+      return <SubmitSection projectId={project.id} submitter={submitter} />;
     case "to_redo":
       return (
         <>
@@ -32,7 +32,11 @@ export function StatusSections({ project, run, submitter, regeneration }: Status
             <EvaluationView evaluation={project.evaluation} criteria={criteria} />
           ) : null}
           <p className="text-sm font-medium">{t("projects.page.toRedo")}</p>
-          <SubmitSection submitter={submitter} previous={project.submissions[0] ?? null} />
+          <SubmitSection
+            projectId={project.id}
+            submitter={submitter}
+            previous={project.submissions[0] ?? null}
+          />
         </>
       );
     case "reviewing":

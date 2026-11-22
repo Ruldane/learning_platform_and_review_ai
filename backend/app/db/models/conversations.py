@@ -43,6 +43,10 @@ class ConversationTurn(UserScopedMixin, Base):
     practice: Mapped[list[Any] | None] = mapped_column(default=None)
     context_notes: Mapped[dict[str, str] | None] = mapped_column(JSON, default=None)
     classmates: Mapped[list[Any] | None] = mapped_column(JSON, default=None)
+    expert_speeches: Mapped[list[Any] | None] = mapped_column(JSON, default=None)
+    expert_judgment: Mapped[str | None] = mapped_column(Text, default=None)
+    feynman: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None)
     strong: Mapped[bool]
     answer: Mapped[str | None] = mapped_column(Text, default=None)
+    focus_outcome: Mapped[str | None] = mapped_column(String(7), default=None)
     sources: Mapped[list[Any]] = mapped_column(default=list)

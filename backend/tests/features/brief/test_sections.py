@@ -239,7 +239,7 @@ async def test_offers_since_reads_only_scored_analyzed_entries_of_done_runs(env:
         found = await offers_since(db, env.user_id, None)
         none_after = await offers_since(db, env.user_id, NOW)
     assert [entry["score"] for entry in found] == [80]
-    assert set(found[0]) == {"run_id", "url_key", "url", "title", "company", "score"}
+    assert set(found[0]) == {"run_id", "offer_ref", "url_key", "url", "title", "company", "score"}
     assert none_after == []
 
 

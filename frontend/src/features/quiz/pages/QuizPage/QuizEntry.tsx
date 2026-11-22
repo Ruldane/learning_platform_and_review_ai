@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { ResponseTiming } from "@/shared/lib/concentration";
 import type { LiveQuizPractice } from "@/shared/lib/ghostPanels";
 import { t } from "@/shared/i18n/t";
 import { longDay } from "@/shared/lib/format";
@@ -18,7 +19,7 @@ interface QuizEntryProps {
   pending: boolean;
   /** Change à chaque retour au formulaire : il repart vide. */
   round: number;
-  onSubmit: (drafts: AnswerDraft[], elapsedMs?: number) => void;
+  onSubmit: (drafts: AnswerDraft[], elapsedMs?: number, timings?: ResponseTiming[]) => void;
   renderGhost?: (live?: LiveQuizPractice) => ReactNode;
 }
 

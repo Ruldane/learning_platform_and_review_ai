@@ -24,14 +24,19 @@ from app.features.capture.mcp import MCP as capture_mcp
 from app.features.capture.router import router as capture_router
 from app.features.code_trial.mcp import MCP as code_trial_mcp
 from app.features.code_trial.router import router as code_trial_router
+from app.features.compatible_offers.mcp import MCP as compatible_offers_mcp
+from app.features.compatible_offers.router import router as compatible_offers_router
 from app.features.contributions.mcp import MCP as contributions_mcp
 from app.features.contributions.router import router as contributions_router
+from app.features.conversations.feynman_router import router as feynman_router
 from app.features.conversations.mcp import MCP as conversations_mcp
 from app.features.conversations.router import router as conversations_router
 from app.features.costs.mcp import MCP as costs_mcp
 from app.features.costs.router import router as costs_router
 from app.features.cv.mcp import MCP as cv_mcp
 from app.features.cv.router import router as cv_router
+from app.features.expert_debates.mcp import MCP as expert_debates_mcp
+from app.features.expert_debates.router import router as expert_debates_router
 from app.features.future_self.mcp import MCP as future_self_mcp
 from app.features.future_self.router import router as future_self_router
 from app.features.galaxy.mcp import MCP as galaxy_mcp
@@ -52,6 +57,8 @@ from app.features.lesson_updates.mcp import MCP as lesson_updates_mcp
 from app.features.lesson_updates.router import router as lesson_updates_router
 from app.features.lessons.mcp import MCP as lessons_mcp
 from app.features.lessons.router import router as lessons_router
+from app.features.linkedin_drafts.mcp import MCP as linkedin_drafts_mcp
+from app.features.linkedin_drafts.router import router as linkedin_drafts_router
 from app.features.mcp.mcp import MCP as mcp_mcp
 from app.features.mcp.relay_router import router as mcp_relay_router
 from app.features.mcp.router import router as mcp_router
@@ -117,7 +124,10 @@ FEATURE_ROUTERS: list[APIRouter] = [
     lesson_hunt_router,
     lesson_updates_router,
     lessons_router,
+    linkedin_drafts_router,
     conversations_router,
+    feynman_router,
+    expert_debates_router,
     quiz_router,
     message_review_router,
     ghost_router,
@@ -150,6 +160,7 @@ FEATURE_ROUTERS: list[APIRouter] = [
     costs_router,
     ide_router,
     code_trial_router,
+    compatible_offers_router,
     mcp_router,
     mcp_relay_router,
 ]
@@ -167,10 +178,12 @@ MCP_FEATURES: list[FeatureMcp] = [
     brief_mcp,
     capture_mcp,
     code_trial_mcp,
+    compatible_offers_mcp,
     contributions_mcp,
     conversations_mcp,
     costs_mcp,
     cv_mcp,
+    expert_debates_mcp,
     future_self_mcp,
     galaxy_mcp,
     gap_mcp,
@@ -181,6 +194,7 @@ MCP_FEATURES: list[FeatureMcp] = [
     lesson_hunt_mcp,
     lesson_updates_mcp,
     lessons_mcp,
+    linkedin_drafts_mcp,
     mcp_mcp,
     memory_mcp,
     message_review_mcp,

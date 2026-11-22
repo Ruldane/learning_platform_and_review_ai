@@ -29,7 +29,7 @@ from app.features.brief.schemas import (
     ReviewsRubric,
     WeekRubric,
 )
-from app.features.brief.service.rules import REMINDERS_MAX, SHOWN_BRIEFS, new_offers
+from app.features.brief.service.rules import OFFERS_MAX, REMINDERS_MAX, SHOWN_BRIEFS, new_offers
 from app.features.brief.service.runtime import BriefRuntime
 from app.features.program.service.programs import list_programs
 from app.features.quiz.service.cards import due_queue
@@ -82,7 +82,11 @@ async def _offers(db: AsyncSession, user_id: str, today: date) -> dict[str, Any]
     earlier = await repo.before(today, SHOWN_BRIEFS)
     postings = await offers_since(db, user_id, earlier[0].created_at if earlier else None)
     shown = {str(key) for brief in earlier for key in brief.offer_keys}
-    chosen = new_offers(postings, shown, await repo.known_keys())
+    this_week = {
+        str(key) for brief in earlier if brief.day >= week_start(today) for key in brief.offer_keys
+    }
+    remaining = max(0, OFFERS_MAX - len(this_week))
+    chosen = new_offers(postings, shown, await repo.known_keys())[:remaining]
     rubric = OffersRubric(
         run_id=str(chosen[0]["run_id"]) if chosen else None,
         items=[
@@ -91,6 +95,8 @@ async def _offers(db: AsyncSession, user_id: str, today: date) -> dict[str, Any]
                 title=posting.get("title"),
                 company=posting.get("company"),
                 score=posting["score"],
+                run_id=posting["run_id"],
+                offer_ref=posting["offer_ref"],
             )
             for posting in chosen
         ],

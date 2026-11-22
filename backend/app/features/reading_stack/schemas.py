@@ -34,8 +34,18 @@ class ReadingItemOut(BaseModel):
     created_at: datetime
 
 
+class ReadingAnnotation(BaseModel):
+    start: int = Field(ge=0, description="Début du terme, en unités UTF-16.")
+    end: int = Field(gt=0, description="Fin exclusive du terme, en unités UTF-16.")
+    term: str
+    definition: str
+    chapter: str
+    lesson_id: str | None
+
+
 class ReadingDetail(ReadingItemOut):
     text: str
+    annotations: list[ReadingAnnotation] = Field(default_factory=list)
 
 
 class ReadingPage(BaseModel):
@@ -80,6 +90,10 @@ class MemorySaved(BaseModel):
 
 class CardsSaved(BaseModel):
     count: int
+
+
+class ReadingCardIn(BaseModel):
+    passage: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1200)]
 
 
 class ReadingPlanStarted(BaseModel):

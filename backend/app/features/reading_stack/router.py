@@ -53,7 +53,7 @@ async def delete_source(source_id: str, current: CurrentUserDep, db: Db) -> Resp
 
 @router.get("/{item_id}", response_model=ReadingDetail)
 async def get_entry(item_id: str, current: CurrentUserDep, db: Db) -> ReadingDetail:
-    return ReadingDetail.model_validate(await entries.read_entry(db, current.id, item_id))
+    return await entries.read_detail(db, current.id, item_id)
 
 
 @router.patch("/{item_id}", response_model=ReadingDetail)

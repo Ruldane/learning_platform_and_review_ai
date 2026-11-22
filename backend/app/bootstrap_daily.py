@@ -22,6 +22,7 @@ from app.features.projects.service.store import AgentProjectStore
 from app.features.radar.service.runtime import RadarRuntime
 from app.features.radar.service.store import AgentRadarStore
 from app.features.research.service.runtime import ResearchRuntime
+from app.providers.github.base import GithubContributions
 from app.providers.speech.realtime import OpenAIRealtimeSpeech
 
 
@@ -47,6 +48,7 @@ def daily_runtimes(
     research: ResearchRuntime,
     career: CareerRuntimes,
     study: StudyRuntimes,
+    github: GithubContributions,
 ) -> DailyRuntimes:
     """Radar (base, lanceur lié au moteur ensuite, lecture des pages par la recherche web) et son
     port ; brief du jour (quiz, étude et candidatures dont il lit les faits) et son port. `career`
@@ -55,7 +57,9 @@ def daily_runtimes(
     radar = RadarRuntime(session_factory, launcher, research)
     brief = BriefRuntime(session_factory, launcher, study.quiz, study.study, career.applications)
     cv = career.cv
-    projects = ProjectsRuntime(session_factory, launcher, cv.storage, cv.memory, cv, research)
+    projects = ProjectsRuntime(
+        session_factory, launcher, cv.storage, cv.memory, cv, research, github
+    )
     podcast = PodcastRuntime(
         session_factory, launcher, study.quiz, cv.storage, OpenAIRealtimeSpeech(research.keys)
     )

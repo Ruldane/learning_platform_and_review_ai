@@ -51,6 +51,13 @@ MCP = FeatureMcp(
             "Un projet : énoncé, rendus, évaluation, brouillons.",
         ),
         McpAction(
+            "GET /projects/{project_id}/github-claims",
+            1,
+            "projects_list_verified_github_commits",
+            "Liste les commits publics dont le projet a vérifié l’attribution.",
+            untrusted=("[].commit_url",),
+        ),
+        McpAction(
             "PATCH /projects/{project_id}/drafts/{kind}",
             2,
             "projects_update_draft",
@@ -107,6 +114,7 @@ MCP = FeatureMcp(
         ),
     ),
     excluded={
+        "POST /projects/{project_id}/github-claims": "Défi de profil à réaliser dans l’interface.",
         "POST /projects/{project_id}/submit": (
             "Geste de January : son rendu, jamais fait à sa place (il lance l'évaluation et peut "
             "valider le projet). Claude écrit l'énoncé, retouche les brouillons et suit "

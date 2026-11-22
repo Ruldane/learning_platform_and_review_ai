@@ -142,9 +142,8 @@ def _compose_features(app: FastAPI) -> StudyRuntimes:
     app.state.book = BookRuntime(
         app.state.session_factory, app.state.lessons.storage, app.state.publishing_providers
     )
-    app.state.contributions = ContributionRuntime(
-        app.state.session_factory, PublicGithub(app.state.research_providers.fetcher)
-    )
+    github = PublicGithub(app.state.research_providers.fetcher)
+    app.state.contributions = ContributionRuntime(app.state.session_factory, github)
     study = study_runtimes(
         app.state.session_factory,
         app.state.launcher,
@@ -168,6 +167,7 @@ def _compose_features(app: FastAPI) -> StudyRuntimes:
         research=app.state.research,
         career=app.state.career,
         study=study,
+        github=github,
     )
     compose_phase10(app)  # IDE (bac à sable, port du professeur) et serveur MCP (phase 10)
     return study

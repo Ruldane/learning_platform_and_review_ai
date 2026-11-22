@@ -6,6 +6,7 @@ import { bossManifest } from "@/features/boss/manifest";
 import { makeBrainManifest } from "@/features/brain/manifest";
 import { codeTrialManifest } from "@/features/code_trial/manifest";
 import { captureManifest } from "@/features/capture/manifest";
+import { compatibleOffersManifest } from "@/features/compatible_offers/manifest";
 import { contributionsManifest } from "@/features/contributions/manifest";
 import { conversationsManifest } from "@/features/conversations/manifest";
 import { BrainConversation } from "@/features/conversations/pages/BrainConversation";
@@ -13,6 +14,7 @@ import { LessonConversation } from "@/features/conversations/pages/LessonConvers
 import { costsManifest } from "@/features/costs/manifest";
 import { cvManifest } from "@/features/cv/manifest";
 import { demoManifest } from "@/features/demo/manifest";
+import { expertDebatesManifest } from "@/features/expert_debates/manifest";
 import { futureSelfManifest } from "@/features/future_self/manifest";
 import { galaxyManifest } from "@/features/galaxy/manifest";
 import { gapManifest } from "@/features/gap/manifest";
@@ -26,6 +28,7 @@ import { lessonHuntManifest } from "@/features/lesson_hunt/manifest";
 import { lessonUpdatesManifest } from "@/features/lesson_updates/manifest";
 import { LessonUpdates } from "@/features/lesson_updates/pages/LessonUpdates";
 import { makeLessonsManifest } from "@/features/lessons/manifest";
+import { linkedInDraftsManifest } from "@/features/linkedin_drafts/manifest";
 import { mcpManifest } from "@/features/mcp/manifest";
 import { memoryManifest } from "@/features/memory/manifest";
 import { messageReviewManifest } from "@/features/message_review/manifest";
@@ -60,6 +63,7 @@ export const FEATURES: FeatureManifest[] = [
   bossManifest,
   paperLabManifest,
   conversationsManifest,
+  expertDebatesManifest,
   studyManifest,
   podcastManifest,
   makeQuizManifest(QuizGhostPanel),
@@ -68,6 +72,7 @@ export const FEATURES: FeatureManifest[] = [
   skillsManifest,
   galaxyManifest,
   projectsManifest,
+  compatibleOffersManifest,
   contributionsManifest,
   gapManifest,
   radarManifest,
@@ -85,6 +90,7 @@ export const FEATURES: FeatureManifest[] = [
   accountManifest,
   researchManifest,
   demoManifest,
+  linkedInDraftsManifest,
   mcpManifest,
   makeIdeManifest(IdeGhostPanel),
   codeTrialManifest,

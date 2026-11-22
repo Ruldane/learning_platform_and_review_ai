@@ -65,6 +65,25 @@ export interface SubmissionView {
   repoUrl: string | null;
   description: string | null;
   screenshots: File[];
+  githubClaimId?: string;
+}
+
+export interface GithubCommitSelection {
+  repoUrl: string;
+  sha: string;
+}
+
+export interface GithubClaimView extends GithubCommitSelection {
+  id: string;
+  code: string;
+  profileUrl: string;
+}
+
+export interface GithubClaimForm {
+  request: (selection: GithubCommitSelection) => void;
+  pending: boolean;
+  error: string | null;
+  claim: GithubClaimView | null;
 }
 
 export type DraftKindView = "cv_line" | "profile_entry" | "linkedin_post" | "readme_plan";

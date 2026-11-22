@@ -51,7 +51,9 @@ _EVIDENCE_PAGES: dict[EvidenceKind, str] = {
     "quiz": "/etudier/quiz/",
     "study": "/etudier/session/",
     "program": "/apprendre/programme/",
+    "github": "/competences/portfolio/",
     "contribution": "/competences/contributions/",
+    "feynman": "/etudier/explique-moi/",
 }
 
 
@@ -102,6 +104,8 @@ def evidence_url(item: Evidence) -> str | None:
         return JOURNAL_URL
     page = _EVIDENCE_PAGES.get(item["kind"])
     ref_id = item["ref_id"]
+    if item["kind"] == "github" and ref_id:
+        ref_id = ref_id.partition(":")[0]
     return f"{page}{quote(ref_id, safe='')}" if page is not None and ref_id else None
 
 

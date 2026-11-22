@@ -1,0 +1,1 @@
+export { LinkedInPage } from "./LinkedInPage";

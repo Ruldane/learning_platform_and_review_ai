@@ -19,6 +19,7 @@ from app.agents.graphs import (
     cv_review,
     daily_brief,
     demo_debate,
+    expert_debate,
     gap_analysis,
     hiring_committee,
     ide_exercise,
@@ -29,6 +30,7 @@ from app.agents.graphs import (
     lesson_factory,
     lesson_hunt,
     lesson_update,
+    linkedin_draft,
     market_radar,
     oncall_review,
     paper_lab,
@@ -44,6 +46,7 @@ from app.agents.graphs import (
 from app.agents.runtime.deps import GraphDeps
 from app.agents.tools.boss_port import BOSS_GRAPH
 from app.agents.tools.conversation_port import CONVERSATION_GRAPH
+from app.agents.tools.expert_debate_port import EXPERT_GRAPH
 from app.agents.tools.lesson_hunt_port import HUNT_GRAPH
 from app.agents.tools.oncall_port import REVIEW_GRAPH
 from app.agents.tools.paper_lab_port import PAPER_GRAPH
@@ -76,12 +79,14 @@ GRAPHS: dict[str, GraphSpec] = {
         GraphSpec("program_builder", program_builder.ProgramBuilderInput, program_builder.build),
         GraphSpec("lesson_factory", lesson_factory.LessonFactoryInput, lesson_factory.build),
         GraphSpec("lesson_update", lesson_update.UpdateInput, lesson_update.build),
+        GraphSpec("linkedin_draft", linkedin_draft.LinkedInInput, linkedin_draft.build),
         GraphSpec("quiz", quiz.QuizInput, quiz.build),
         GraphSpec("study_session", study_session.StudySessionInput, study_session.build),
         GraphSpec("replan", replan.ReplanInput, replan.build),
         GraphSpec("capture", capture.CaptureInput, capture.build),
         GraphSpec("code_trial", code_trial.TrialInput, code_trial.build),
         GraphSpec(CONVERSATION_GRAPH, conversation.ConversationInput, conversation.build),
+        GraphSpec(EXPERT_GRAPH, expert_debate.ExpertDebateInput, expert_debate.build),
         GraphSpec("gap_analysis", gap_analysis.GapAnalysisInput, gap_analysis.build),
         GraphSpec("cv_capture", cv_capture.CvCaptureInput, cv_capture.build),
         GraphSpec("cv_review", cv_review.CvReviewInput, cv_review.build),

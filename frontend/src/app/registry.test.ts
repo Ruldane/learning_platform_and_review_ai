@@ -39,6 +39,7 @@ describe("registre des features", () => {
     expect(groups[2]?.items.map((item) => item.path)).toEqual([
       "/etudier/session",
       "/etudier/training",
+      "/etudier/debats",
       "/etudier/revisions",
       "/etudier/quiz",
       "/etudier/journal",
@@ -60,6 +61,7 @@ describe("registre des features", () => {
       { labelKey: "radar.nav.radar", path: "/carriere/radar" },
       { labelKey: "futureSelf.title", path: "/carriere/futur" },
       { labelKey: "skillMarket.title", path: "/carriere/competences" },
+      { labelKey: "linkedInDrafts.title", path: "/carriere/linkedin" },
     ]);
     expect(groups[5]?.items.map((item) => item.path)).toEqual([
       "/candidatures",

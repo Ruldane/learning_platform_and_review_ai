@@ -11,6 +11,7 @@ from app.features.reading_stack.schemas import (
     PlanReadingIn,
     ReadingApplicationIn,
     ReadingApplicationSaved,
+    ReadingCardIn,
     ReadingPlanStarted,
 )
 from app.features.reading_stack.service.actions import (
@@ -45,8 +46,11 @@ async def save_memory(
 
 
 @router.post("/{item_id}/cards", response_model=CardsSaved)
-async def save_cards(item_id: str, current: CurrentUserDep, db: Db) -> CardsSaved:
-    return CardsSaved(count=await make_card(db, await read_entry(db, current.id, item_id)))
+async def save_cards(
+    item_id: str, current: CurrentUserDep, db: Db, body: ReadingCardIn | None = None
+) -> CardsSaved:
+    row = await read_entry(db, current.id, item_id)
+    return CardsSaved(count=await make_card(db, row, passage=body.passage if body else None))
 
 
 @router.post("/{item_id}/plan", response_model=ReadingPlanStarted, status_code=202)

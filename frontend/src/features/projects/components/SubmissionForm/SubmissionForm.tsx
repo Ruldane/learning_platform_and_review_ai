@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
-import type { SubmissionRefusalView, SubmissionView } from "../viewTypes";
+import type { GithubClaimForm, SubmissionRefusalView, SubmissionView } from "../viewTypes";
+import { GithubCommitFields } from "./GithubCommitFields";
 import { submissionErrors } from "./rules";
 import { SubmissionFields } from "./SubmissionFields";
 import { useRefusal } from "./useRefusal";
@@ -17,17 +18,24 @@ interface SubmissionFormProps {
    * reprennent pas.
    */
   initial?: { repoUrl: string | null; description: string | null };
+  github?: GithubClaimForm;
 }
 
-/**
- * Rendre un projet : un lien de dépôt et/ou une description (4 000 caractères au plus, compteur),
- * jusqu'à 5 captures. Chaque champ à corriger a son message ; le serveur reste l'autorité.
- */
-export function SubmissionForm({ onSubmit, busy, refusal = null, initial }: SubmissionFormProps) {
+function useSubmissionDraft({
+  onSubmit,
+  busy,
+  refusal = null,
+  initial,
+  github,
+}: SubmissionFormProps) {
   const [repoUrl, setRepoUrl] = useState(initial?.repoUrl ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [screenshots, setScreenshots] = useState<File[]>([]);
   const [attempted, setAttempted] = useState(false);
+  const [sha, setSha] = useState("");
+  const issued = github?.claim;
+  const claim =
+    issued?.repoUrl === repoUrl.trim() && issued.sha === sha.trim().toLowerCase() ? issued : null;
   const { refused, clear } = useRefusal(refusal);
 
   const errors = submissionErrors(repoUrl, description);
@@ -36,16 +44,42 @@ export function SubmissionForm({ onSubmit, busy, refusal = null, initial }: Subm
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (busy) return;
+    if (busy || (sha && !claim)) return;
     setAttempted(true);
     if (Object.keys(errors).length > 0) return;
     onSubmit({
       repoUrl: repoUrl.trim() || null,
       description: description.trim() || null,
       screenshots,
+      ...(claim ? { githubClaimId: claim.id } : {}),
     });
   };
 
+  return {
+    submit,
+    sha,
+    setSha,
+    claim,
+    waitingForClaim: Boolean(sha && !claim),
+    fields: {
+      repoUrl,
+      description,
+      screenshots,
+      busy,
+      errors: shown,
+      refused,
+      clear,
+      onRepoUrl: setRepoUrl,
+      onDescription: setDescription,
+      onScreenshots: setScreenshots,
+    },
+  };
+}
+
+/** Le rendu avec le lien du dépôt, la description, les captures et l’attribution facultative. */
+export function SubmissionForm(props: SubmissionFormProps) {
+  const { busy, github } = props;
+  const { submit, fields, sha, setSha, claim, waitingForClaim } = useSubmissionDraft(props);
   return (
     <form
       onSubmit={submit}
@@ -54,19 +88,21 @@ export function SubmissionForm({ onSubmit, busy, refusal = null, initial }: Subm
       aria-busy={busy}
       className="flex flex-col gap-4 rounded-xl border bg-card p-4"
     >
-      <SubmissionFields
-        repoUrl={repoUrl}
-        description={description}
-        screenshots={screenshots}
-        busy={busy}
-        errors={shown}
-        refused={refused}
-        clear={clear}
-        onRepoUrl={setRepoUrl}
-        onDescription={setDescription}
-        onScreenshots={setScreenshots}
-      />
-      <Button type="submit" className="self-start" aria-disabled={busy}>
+      <SubmissionFields {...fields} />
+      {github && (
+        <GithubCommitFields
+          form={github}
+          claim={claim}
+          repoUrl={fields.repoUrl.trim()}
+          sha={sha}
+          onSha={setSha}
+          busy={busy}
+        />
+      )}
+      {waitingForClaim && (
+        <p className="text-sm text-muted-foreground">{t("projects.github.waitingForCode")}</p>
+      )}
+      <Button type="submit" className="self-start" aria-disabled={busy || waitingForClaim}>
         {busy ? t("projects.submission.busy") : t("projects.submission.submit")}
       </Button>
     </form>

@@ -29,6 +29,12 @@ export function LessonConversationActions({ lessonId, professorButton, onAskProf
       >
         {t("lessonHunt.title")}
       </Link>
+      <Link
+        to={`/apprendre/lecons/${encodeURIComponent(lessonId)}/explique-moi`}
+        className={buttonVariants({ variant: "outline" })}
+      >
+        {t("feynman.title")}
+      </Link>
     </div>
   );
 }

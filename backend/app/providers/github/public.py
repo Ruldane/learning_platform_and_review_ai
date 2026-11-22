@@ -1,18 +1,50 @@
 """Lecture bornée de l'API publique, via le fetcher sûr déjà utilisé par la recherche."""
 
 import json
+import re
 from typing import Any
+from urllib.parse import quote
 
 from app.core.errors import AppError
-from app.providers.github.base import GithubIssue, GithubPull, RepoRef
+from app.providers.github.base import GithubCommit, GithubIssue, GithubPull, RepoRef
 from app.providers.web.base import WebFetcher
 
 API = "https://api.github.com/repos"
 _HEADERS = {"Accept": "application/vnd.github+json"}
+_LOGIN = re.compile(r"[a-zA-Z0-9-]{1,39}")
+_SHA = re.compile(r"[a-f0-9]{40}")
 
 
 def _unavailable() -> AppError:
     return AppError("github_unavailable", "GitHub n’a pas pu être lu. Réessaie plus tard.", 502)
+
+
+def _identity(raw: object) -> int:
+    return raw if type(raw) is int and 0 < raw < 2**63 else 0
+
+
+def _commit_author(value: object, sha: str) -> tuple[int, str]:
+    author = _field(value, "author")
+    author_id = _identity(_field(author, "id"))
+    login = _field(author, "login")
+    committer_id = _identity(_field(_field(value, "committer"), "id"))
+    signature = _field(_field(value, "commit"), "verification")
+    if (
+        _field(value, "sha") != sha
+        or not author_id
+        or author_id != committer_id
+        or _field(author, "type") != "User"
+        or not isinstance(login, str)
+        or not _LOGIN.fullmatch(login)
+        or _field(signature, "verified") is not True
+        or _field(signature, "reason") != "valid"
+    ):
+        raise AppError(
+            "github_commit_unverified",
+            "Choisis un commit signé, vérifié par GitHub et rattaché à son auteur.",
+            409,
+        )
+    return author_id, login
 
 
 def _str(raw: object, limit: int) -> str:
@@ -67,9 +99,12 @@ class PublicGithub:
         self._fetcher = fetcher
 
     async def _read(self, path: str) -> object:
+        return await self._read_url(f"{API}/{path}")
+
+    async def _read_url(self, url: str) -> object:
         try:
             result = await self._fetcher.fetch(
-                f"{API}/{path}", content_types=("application/json",), headers=_HEADERS
+                url, content_types=("application/json",), headers=_HEADERS
             )
             value: object = json.loads(result.body)
         except (AppError, ValueError, RecursionError):
@@ -93,3 +128,42 @@ class PublicGithub:
         if not isinstance(value, dict):
             raise _unavailable()
         return _pull(value, number)
+
+    async def attributed_commit(self, repo: RepoRef, sha: str) -> GithubCommit:
+        if not _SHA.fullmatch(sha):
+            raise AppError("github_invalid_sha", "Le SHA complet du commit est attendu.", 422)
+        metadata = await self._read(repo.name)
+        if _field(metadata, "private") is not False:
+            raise AppError("github_repo_not_public", "Choisis un dépôt GitHub public.", 409)
+        repo_id = _identity(_field(metadata, "id"))
+        branch = _field(metadata, "default_branch")
+        full_name = _field(metadata, "full_name")
+        if (
+            not isinstance(full_name, str)
+            or not isinstance(branch, str)
+            or not 0 < len(branch) <= 255
+        ):
+            raise _unavailable()
+        found = RepoRef.from_url(f"https://github.com/{full_name}")
+        if not repo_id or found is None or found.name != full_name.lower():
+            raise _unavailable()
+        author_id, login = _commit_author(await self._read(f"{found.name}/commits/{sha}"), sha)
+        comparison = await self._read(
+            f"{found.name}/compare/{sha}...{quote(branch, safe='')}?per_page=1"
+        )
+        if (
+            _field(comparison, "status") not in ("identical", "ahead")
+            or _field(_field(comparison, "merge_base_commit"), "sha") != sha
+        ):
+            raise AppError(
+                "github_commit_outside_branch",
+                "Choisis un commit présent dans l’historique de la branche par défaut.",
+                409,
+            )
+        return GithubCommit(found, repo_id, sha, author_id, login)
+
+    async def public_bio(self, author_id: int) -> str | None:
+        profile = await self._read_url(f"https://api.github.com/user/{author_id:d}")
+        if _identity(_field(profile, "id")) != author_id or _field(profile, "type") != "User":
+            return None
+        return _str(_field(profile, "bio"), 500)

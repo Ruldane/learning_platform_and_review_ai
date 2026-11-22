@@ -89,6 +89,7 @@ describe("QuizForm", () => {
         { question_id: "q4", choice: null, text: "Un lien" },
       ],
       expect.any(Number),
+      expect.any(Array),
     );
   });
 
@@ -112,6 +113,7 @@ describe("QuizForm", () => {
         { question_id: "q4", choice: null, text: "" },
       ],
       expect.any(Number),
+      expect.any(Array),
     );
   });
 

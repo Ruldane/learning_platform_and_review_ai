@@ -11,6 +11,7 @@ import pytest
 from cryptography.fernet import Fernet
 from sqlalchemy import func, select
 
+from app.agents.runtime.creation import PrepareSession
 from app.agents.runtime.repositories import SessionRepository
 from app.agents.tools.plan_schema import PlanDraft
 from app.core.errors import AppError
@@ -57,6 +58,7 @@ class RecordingLauncher:
         *,
         subject_type: str | None = None,
         subject_id: str | None = None,
+        prepare: PrepareSession | None = None,
     ) -> str:
         if self.refuse:
             raise AppError("engine_unavailable", "Le moteur d'agents n'est pas prêt.", 503)
@@ -71,6 +73,8 @@ class RecordingLauncher:
                 subject_type=subject_type,
                 subject_id=subject_id,
             )
+            if prepare is not None:
+                await prepare(db, row.id)
             await db.commit()
         self.started.append((graph, dict(input)))
         return row.id

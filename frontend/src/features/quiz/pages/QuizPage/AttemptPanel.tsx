@@ -6,7 +6,7 @@ import { ErrorState } from "@/shared/ui/states/ErrorState";
 import { LoadingState } from "@/shared/ui/states/LoadingState";
 import { useAttempt } from "../../hooks/useAttempt";
 import { toAttemptResultView } from "../../toView";
-import { AttemptResult } from "./AttemptResult";
+import { TimedAttemptResult } from "./TimedAttemptResult";
 import { GradingFailed } from "./GradingFailed";
 import { GradingLate } from "./GradingLate";
 import type { TakenAttempt } from "./takenAttempt";
@@ -65,13 +65,13 @@ export function AttemptPanel(props: AttemptPanelProps) {
     );
   }
   return (
-    <>
-      <AttemptResult
-        result={toAttemptResultView(attempt, taken.questions)}
-        refreshing={refreshing}
-        onBack={onBack}
-      />
+    <TimedAttemptResult
+      result={toAttemptResultView(attempt, taken.questions)}
+      timings={taken.timings}
+      refreshing={refreshing}
+      onBack={onBack}
+    >
       {GhostPanel && <GhostPanel quizId={quizId} currentAttemptId={attempt.id} />}
-    </>
+    </TimedAttemptResult>
   );
 }

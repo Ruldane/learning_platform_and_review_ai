@@ -4,6 +4,7 @@ from sqlalchemy import and_, case, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.tools.conversation_port import CONVERSATION_GRAPH
+from app.agents.tools.expert_debate_port import EXPERT_GRAPH
 from app.db.models.agents import OPEN_SESSION_STATES, AgentSession, LlmCall
 from app.db.models.conversations import Conversation, ConversationTurn
 from app.db.repository import UserScopedRepository
@@ -30,6 +31,34 @@ class TurnRepository(UserScopedRepository[ConversationTurn]):
             AgentSession.id == session_id, AgentSession.user_id == self.user_id
         )
         return int(await self.session.scalar(stmt) or 0)
+
+    async def latest(self, thread_id: str) -> tuple[ConversationTurn, str] | None:
+        stmt = (
+            select(ConversationTurn, AgentSession.status)
+            .join(AgentSession, self._owned_session)
+            .where(
+                ConversationTurn.thread_id == thread_id, ConversationTurn.user_id == self.user_id
+            )
+            .order_by(ConversationTurn.created_at.desc(), ConversationTurn.id.desc())
+            .limit(1)
+        )
+        found = (await self.session.execute(stmt)).first()
+        return (found[0], found[1]) if found is not None else None
+
+    async def lock_completed(self, turn_id: str) -> ConversationTurn | None:
+        completed = select(AgentSession.id).where(
+            self._owned_session, AgentSession.status == "completed"
+        )
+        return await self.session.scalar(
+            update(ConversationTurn)
+            .where(
+                ConversationTurn.id == turn_id,
+                ConversationTurn.user_id == self.user_id,
+                completed.exists(),
+            )
+            .values(updated_at=ConversationTurn.updated_at)
+            .returning(ConversationTurn)
+        )
 
     async def turns(self, thread_id: str) -> list[tuple[ConversationTurn, str]]:
         stmt = (
@@ -70,7 +99,7 @@ class TurnRepository(UserScopedRepository[ConversationTurn]):
             select(func.coalesce(func.sum(LlmCall.tokens_in + LlmCall.tokens_out), 0))
             .where(
                 LlmCall.user_id == self.user_id,
-                LlmCall.graph == CONVERSATION_GRAPH,
+                LlmCall.graph.in_((CONVERSATION_GRAPH, EXPERT_GRAPH)),
                 LlmCall.created_at >= since,
             )
             .scalar_subquery()

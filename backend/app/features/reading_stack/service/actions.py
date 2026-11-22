@@ -42,13 +42,21 @@ async def keep_memory(actions: ReadingActions, db: AsyncSession, row: ReadingIte
     )
 
 
-async def make_card(db: AsyncSession, row: ReadingItem) -> int:
-    content = (row.summary.strip() or row.text.strip())[:1650]
+def _passage_front(row: ReadingItem, passage: str) -> str:
+    cue = " ".join(passage.split()[:6])
+    return f"Que retenir du passage « {cue}… » dans « {row.title} » ?"
+
+
+async def make_card(db: AsyncSession, row: ReadingItem, *, passage: str | None = None) -> int:
+    normalized = (row.text or "").replace("\r\n", "\n").replace("\r", "\n")
+    if passage is not None and passage not in normalized:
+        raise AppError("reading_passage_missing", "Ce passage ne figure plus dans la lecture.", 409)
+    content = passage or (row.summary.strip() or row.text.strip())[:1650]
     if not content:
         raise AppError("reading_content_missing", "Cette lecture ne contient pas de résumé.", 409)
     settings = await SettingsService(db, row.user_id).get()
     card = NewCard(
-        front=f"Que retenir de « {row.title} » ?",
+        front=_passage_front(row, passage) if passage else f"Que retenir de « {row.title} » ?",
         back=f"{content}\n\n{row.url}",
         skill=None,
         module_id=None,

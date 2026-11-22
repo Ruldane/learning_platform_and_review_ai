@@ -47,6 +47,7 @@ export const home = {
     listLabel: "Nouvelles offres du radar",
     untitled: "Offre sans titre",
     score: "score {score} sur 100",
+    gap: "Voir l’écart · {title}",
   },
   week: {
     title: "Ta semaine",

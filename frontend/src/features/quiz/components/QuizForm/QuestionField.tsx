@@ -10,6 +10,7 @@ interface QuestionFieldProps {
   choice: number | null;
   text: string;
   disabled: boolean;
+  onLeave: () => void;
   onChoice: (index: number) => void;
   onText: (text: string) => void;
 }
@@ -18,18 +19,18 @@ interface QuestionFieldProps {
  * Une question du quiz : son type et sa consigne, l'énoncé, le code éventuel (affiché tel quel,
  * jamais interprété) puis les choix d'un QCM ou la zone de réponse des autres types.
  */
-export function QuestionField({
-  question,
-  choice,
-  text,
-  disabled,
-  onChoice,
-  onText,
-}: QuestionFieldProps) {
+export function QuestionField(props: QuestionFieldProps) {
+  const { question, choice, text, disabled, onLeave, onChoice, onText } = props;
   const promptId = useId();
   const { rank, type } = question;
   return (
-    <li data-question={question.id} className="rounded-xl border bg-card p-4">
+    <li
+      data-question={question.id}
+      className="rounded-xl border bg-card p-4"
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) onLeave();
+      }}
+    >
       <p className="text-xs text-muted-foreground">
         <span className="font-medium uppercase tracking-wide">
           {t("quiz.form.question", { rank })}

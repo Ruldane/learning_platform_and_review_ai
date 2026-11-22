@@ -2321,6 +2321,18 @@
             ],
             "title": "Description"
           },
+          "github_claim_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Github Claim Id"
+          },
           "repo_url": {
             "anyOf": [
               {
@@ -3698,6 +3710,74 @@
         "title": "CompareRowOut",
         "type": "object"
       },
+      "CompatibleOfferOut": {
+        "properties": {
+          "company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/GapRowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "company",
+          "url",
+          "score",
+          "rows"
+        ],
+        "title": "CompatibleOfferOut",
+        "type": "object"
+      },
+      "CompatibleOfferPlan": {
+        "properties": {
+          "program_id": {
+            "title": "Program Id",
+            "type": "string"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "program_id",
+          "session_id"
+        ],
+        "title": "CompatibleOfferPlan",
+        "type": "object"
+      },
       "ContactIn": {
         "properties": {
           "name": {
@@ -4042,6 +4122,21 @@
               }
             ],
             "title": "Classmates"
+          },
+          "focus_outcome": {
+            "anyOf": [
+              {
+                "enum": [
+                  "correct",
+                  "retry"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Focus Outcome"
           },
           "id": {
             "format": "uuid",
@@ -5567,7 +5662,9 @@
               "cv",
               "capture",
               "ide",
-              "contribution"
+              "github",
+              "contribution",
+              "feynman"
             ],
             "title": "Kind",
             "type": "string"
@@ -5970,6 +6067,456 @@
           "company"
         ],
         "title": "Experience",
+        "type": "object"
+      },
+      "ExpertCitation": {
+        "properties": {
+          "index": {
+            "minimum": 1.0,
+            "title": "Index",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "url": {
+            "format": "uri",
+            "maxLength": 2083,
+            "minLength": 1,
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "index",
+          "title",
+          "url"
+        ],
+        "title": "ExpertCitation",
+        "type": "object"
+      },
+      "ExpertDebateOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "judgment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Judgment"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "session_id": {
+            "format": "uuid",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "speeches": {
+            "items": {
+              "$ref": "#/components/schemas/ExpertSpeech"
+            },
+            "title": "Speeches",
+            "type": "array"
+          },
+          "status": {
+            "enum": [
+              "running",
+              "waiting_user",
+              "paused",
+              "completed",
+              "failed",
+              "cancelled",
+              "expired"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "question",
+          "status",
+          "created_at",
+          "speeches",
+          "judgment"
+        ],
+        "title": "ExpertDebateOut",
+        "type": "object"
+      },
+      "ExpertDebateStarted": {
+        "properties": {
+          "debate_id": {
+            "format": "uuid",
+            "title": "Debate Id",
+            "type": "string"
+          },
+          "session_id": {
+            "format": "uuid",
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "debate_id",
+          "session_id"
+        ],
+        "title": "ExpertDebateStarted",
+        "type": "object"
+      },
+      "ExpertDebateSummary": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "session_id": {
+            "format": "uuid",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "running",
+              "waiting_user",
+              "paused",
+              "completed",
+              "failed",
+              "cancelled",
+              "expired"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "question",
+          "status",
+          "created_at"
+        ],
+        "title": "ExpertDebateSummary",
+        "type": "object"
+      },
+      "ExpertJudgmentIn": {
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "ExpertJudgmentIn",
+        "type": "object"
+      },
+      "ExpertSpeech": {
+        "properties": {
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/ExpertCitation"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "role": {
+            "enum": [
+              "researcher",
+              "practitioner",
+              "skeptic"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "text",
+          "citations"
+        ],
+        "title": "ExpertSpeech",
+        "type": "object"
+      },
+      "FeynmanCard": {
+        "additionalProperties": false,
+        "properties": {
+          "back": {
+            "maxLength": 1200,
+            "minLength": 1,
+            "title": "Back",
+            "type": "string"
+          },
+          "front": {
+            "maxLength": 600,
+            "minLength": 1,
+            "title": "Front",
+            "type": "string"
+          }
+        },
+        "required": [
+          "front",
+          "back"
+        ],
+        "title": "FeynmanCard",
+        "type": "object"
+      },
+      "FeynmanFileStart": {
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "maxLength": 250,
+            "minLength": 1,
+            "title": "Path",
+            "type": "string"
+          },
+          "request_id": {
+            "format": "uuid",
+            "title": "Request Id",
+            "type": "string"
+          },
+          "strong": {
+            "default": false,
+            "title": "Strong",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "request_id",
+          "path"
+        ],
+        "title": "FeynmanFileStart",
+        "type": "object"
+      },
+      "FeynmanReport": {
+        "properties": {
+          "cards": {
+            "items": {
+              "$ref": "#/components/schemas/FeynmanCard"
+            },
+            "title": "Cards",
+            "type": "array"
+          },
+          "clarification": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clarification"
+          },
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          },
+          "follow_up": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Follow Up"
+          },
+          "proof_skill": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proof Skill"
+          },
+          "saved": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FeynmanSaved"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "explanation",
+          "summary",
+          "cards",
+          "proof_skill"
+        ],
+        "title": "FeynmanReport",
+        "type": "object"
+      },
+      "FeynmanRunOut": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "report": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FeynmanReport"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "session_id": {
+            "format": "uuid",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/FeynmanSource"
+          },
+          "status": {
+            "enum": [
+              "running",
+              "waiting_user",
+              "paused",
+              "completed",
+              "failed",
+              "cancelled",
+              "expired"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "status",
+          "source",
+          "report"
+        ],
+        "title": "FeynmanRunOut",
+        "type": "object"
+      },
+      "FeynmanSaved": {
+        "properties": {
+          "cards_added": {
+            "title": "Cards Added",
+            "type": "integer"
+          },
+          "proof_saved": {
+            "title": "Proof Saved",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "cards_added",
+          "proof_saved"
+        ],
+        "title": "FeynmanSaved",
+        "type": "object"
+      },
+      "FeynmanSource": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "lesson",
+              "ide"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "title"
+        ],
+        "title": "FeynmanSource",
+        "type": "object"
+      },
+      "FeynmanStart": {
+        "additionalProperties": false,
+        "properties": {
+          "request_id": {
+            "format": "uuid",
+            "title": "Request Id",
+            "type": "string"
+          },
+          "strong": {
+            "default": false,
+            "title": "Strong",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "request_id"
+        ],
+        "title": "FeynmanStart",
         "type": "object"
       },
       "FileOut": {
@@ -6882,6 +7429,88 @@
           "version_id"
         ],
         "title": "GenerateStarted",
+        "type": "object"
+      },
+      "GithubClaimIn": {
+        "properties": {
+          "repo_url": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Repo Url",
+            "type": "string"
+          },
+          "sha": {
+            "pattern": "^[a-fA-F0-9]{40}$",
+            "title": "Sha",
+            "type": "string"
+          }
+        },
+        "required": [
+          "repo_url",
+          "sha"
+        ],
+        "title": "GithubClaimIn",
+        "type": "object"
+      },
+      "GithubClaimOut": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "profile_url": {
+            "format": "uri",
+            "maxLength": 2083,
+            "minLength": 1,
+            "title": "Profile Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "profile_url",
+          "code",
+          "expires_at"
+        ],
+        "title": "GithubClaimOut",
+        "type": "object"
+      },
+      "GithubProofOut": {
+        "properties": {
+          "commit_url": {
+            "format": "uri",
+            "maxLength": 2083,
+            "minLength": 1,
+            "title": "Commit Url",
+            "type": "string"
+          },
+          "sha": {
+            "pattern": "^[a-fA-F0-9]{40}$",
+            "title": "Sha",
+            "type": "string"
+          },
+          "verified_at": {
+            "format": "date-time",
+            "title": "Verified At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "commit_url",
+          "sha",
+          "verified_at"
+        ],
+        "title": "GithubProofOut",
         "type": "object"
       },
       "GoalCreate": {
@@ -9330,6 +9959,154 @@
           "url"
         ],
         "title": "Link",
+        "type": "object"
+      },
+      "LinkedInClaim": {
+        "properties": {
+          "field": {
+            "enum": [
+              "headline",
+              "about",
+              "skills"
+            ],
+            "title": "Field",
+            "type": "string"
+          },
+          "term": {
+            "title": "Term",
+            "type": "string"
+          }
+        },
+        "required": [
+          "field",
+          "term"
+        ],
+        "title": "LinkedInClaim",
+        "type": "object"
+      },
+      "LinkedInDraftOut": {
+        "properties": {
+          "claims": {
+            "items": {
+              "$ref": "#/components/schemas/LinkedInClaim"
+            },
+            "title": "Claims",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "profile_version": {
+            "title": "Profile Version",
+            "type": "integer"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "pending",
+              "failed",
+              "ready",
+              "stale"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LinkedInText"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "revision",
+          "profile_version",
+          "session_id",
+          "state"
+        ],
+        "title": "LinkedInDraftOut",
+        "type": "object"
+      },
+      "LinkedInEdit": {
+        "properties": {
+          "revision": {
+            "minimum": 1.0,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "text": {
+            "$ref": "#/components/schemas/LinkedInText"
+          }
+        },
+        "required": [
+          "text",
+          "revision"
+        ],
+        "title": "LinkedInEdit",
+        "type": "object"
+      },
+      "LinkedInStart": {
+        "properties": {
+          "posting_id": {
+            "anyOf": [
+              {
+                "maxLength": 36,
+                "minLength": 36,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Posting Id"
+          }
+        },
+        "title": "LinkedInStart",
+        "type": "object"
+      },
+      "LinkedInText": {
+        "properties": {
+          "about": {
+            "maxLength": 2600,
+            "minLength": 1,
+            "title": "About",
+            "type": "string"
+          },
+          "headline": {
+            "maxLength": 220,
+            "minLength": 1,
+            "title": "Headline",
+            "type": "string"
+          },
+          "skills": {
+            "items": {
+              "maxLength": 80,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Skills",
+            "type": "array"
+          }
+        },
+        "required": [
+          "headline",
+          "about"
+        ],
+        "title": "LinkedInText",
         "type": "object"
       },
       "LinkedNoteOut": {
@@ -11956,6 +12733,28 @@
               }
             ],
             "title": "Company"
+          },
+          "offer_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offer Ref"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
           },
           "score": {
             "title": "Score",
@@ -16092,6 +16891,55 @@
         "title": "ReadState",
         "type": "object"
       },
+      "ReadingAnnotation": {
+        "properties": {
+          "chapter": {
+            "title": "Chapter",
+            "type": "string"
+          },
+          "definition": {
+            "title": "Definition",
+            "type": "string"
+          },
+          "end": {
+            "description": "Fin exclusive du terme, en unités UTF-16.",
+            "exclusiveMinimum": 0.0,
+            "title": "End",
+            "type": "integer"
+          },
+          "lesson_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lesson Id"
+          },
+          "start": {
+            "description": "Début du terme, en unités UTF-16.",
+            "minimum": 0.0,
+            "title": "Start",
+            "type": "integer"
+          },
+          "term": {
+            "title": "Term",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "term",
+          "definition",
+          "chapter",
+          "lesson_id"
+        ],
+        "title": "ReadingAnnotation",
+        "type": "object"
+      },
       "ReadingApplicationIn": {
         "properties": {
           "company": {
@@ -16128,8 +16976,30 @@
         "title": "ReadingApplicationSaved",
         "type": "object"
       },
+      "ReadingCardIn": {
+        "properties": {
+          "passage": {
+            "maxLength": 1200,
+            "minLength": 1,
+            "title": "Passage",
+            "type": "string"
+          }
+        },
+        "required": [
+          "passage"
+        ],
+        "title": "ReadingCardIn",
+        "type": "object"
+      },
       "ReadingDetail": {
         "properties": {
+          "annotations": {
+            "items": {
+              "$ref": "#/components/schemas/ReadingAnnotation"
+            },
+            "title": "Annotations",
+            "type": "array"
+          },
           "company": {
             "anyOf": [
               {
@@ -24709,6 +25579,124 @@
         ]
       }
     },
+    "/api/v1/compatible-offers/{run_id}/{ref}": {
+      "get": {
+        "operationId": "read_offer_api_v1_compatible_offers__run_id___ref__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "ref",
+            "required": true,
+            "schema": {
+              "pattern": "^p[1-9][0-9]{0,2}$",
+              "title": "Ref",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompatibleOfferOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read Offer",
+        "tags": [
+          "compatible_offers"
+        ]
+      }
+    },
+    "/api/v1/compatible-offers/{run_id}/{ref}/plan": {
+      "post": {
+        "operationId": "start_offer_plan_api_v1_compatible_offers__run_id___ref__plan_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "ref",
+            "required": true,
+            "schema": {
+              "pattern": "^p[1-9][0-9]{0,2}$",
+              "title": "Ref",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanGapIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompatibleOfferPlan"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Offer Plan",
+        "tags": [
+          "compatible_offers"
+        ]
+      }
+    },
     "/api/v1/contributions": {
       "get": {
         "operationId": "list_contributions_api_v1_contributions_get",
@@ -25001,6 +25989,92 @@
         "summary": "Refresh Pull",
         "tags": [
           "contributions"
+        ]
+      }
+    },
+    "/api/v1/conversations/explain/{turn_id}": {
+      "get": {
+        "operationId": "read_explanation_api_v1_conversations_explain__turn_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "turn_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Turn Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeynmanRunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read Explanation",
+        "tags": [
+          "conversations"
+        ]
+      }
+    },
+    "/api/v1/conversations/explain/{turn_id}/accept": {
+      "post": {
+        "operationId": "accept_explanation_api_v1_conversations_explain__turn_id__accept_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "turn_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Turn Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeynmanSaved"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Accept Explanation",
+        "tags": [
+          "conversations"
         ]
       }
     },
@@ -26187,6 +27261,166 @@
         "summary": "Mark Learned",
         "tags": [
           "documents"
+        ]
+      }
+    },
+    "/api/v1/expert-debates": {
+      "get": {
+        "operationId": "list_debates_api_v1_expert_debates_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ExpertDebateSummary"
+                  },
+                  "title": "Response List Debates Api V1 Expert Debates Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Debates",
+        "tags": [
+          "expert-debates"
+        ]
+      },
+      "post": {
+        "operationId": "open_debate_api_v1_expert_debates_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConversationQuestionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExpertDebateStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Open Debate",
+        "tags": [
+          "expert-debates"
+        ]
+      }
+    },
+    "/api/v1/expert-debates/{debate_id}": {
+      "get": {
+        "operationId": "get_debate_api_v1_expert_debates__debate_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "debate_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Debate Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExpertDebateOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Debate",
+        "tags": [
+          "expert-debates"
+        ]
+      }
+    },
+    "/api/v1/expert-debates/{debate_id}/judgment": {
+      "put": {
+        "operationId": "put_judgment_api_v1_expert_debates__debate_id__judgment_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "debate_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Debate Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExpertJudgmentIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExpertDebateOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Judgment",
+        "tags": [
+          "expert-debates"
         ]
       }
     },
@@ -27569,6 +28803,108 @@
         "summary": "Decide Trial",
         "tags": [
           "code_trial"
+        ]
+      }
+    },
+    "/api/v1/ide/sessions/{session_id}/explain": {
+      "get": {
+        "operationId": "latest_ide_explanation_api_v1_ide_sessions__session_id__explain_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/FeynmanRunOut"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Latest Ide Explanation Api V1 Ide Sessions  Session Id  Explain Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Latest Ide Explanation",
+        "tags": [
+          "conversations"
+        ]
+      },
+      "post": {
+        "operationId": "explain_file_api_v1_ide_sessions__session_id__explain_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeynmanFileStart"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Explain File",
+        "tags": [
+          "conversations"
         ]
       }
     },
@@ -29261,6 +30597,108 @@
         ]
       }
     },
+    "/api/v1/lessons/{lesson_id}/explain": {
+      "get": {
+        "operationId": "latest_lesson_explanation_api_v1_lessons__lesson_id__explain_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "lesson_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Lesson Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/FeynmanRunOut"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Latest Lesson Explanation Api V1 Lessons  Lesson Id  Explain Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Latest Lesson Explanation",
+        "tags": [
+          "conversations"
+        ]
+      },
+      "post": {
+        "operationId": "explain_lesson_api_v1_lessons__lesson_id__explain_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "lesson_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Lesson Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeynmanStart"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Explain Lesson",
+        "tags": [
+          "conversations"
+        ]
+      }
+    },
     "/api/v1/lessons/{lesson_id}/pdf": {
       "get": {
         "description": "PDF A4 de la leçon ; 404 `lesson_pdf_missing` tant qu'il n'est pas produit.",
@@ -29405,6 +30843,130 @@
         "summary": "Approve Update",
         "tags": [
           "lesson_updates"
+        ]
+      }
+    },
+    "/api/v1/linkedin-drafts": {
+      "post": {
+        "operationId": "launch_api_v1_linkedin_drafts_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkedInStart"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkedInDraftOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Launch",
+        "tags": [
+          "linkedin_drafts"
+        ]
+      }
+    },
+    "/api/v1/linkedin-drafts/latest": {
+      "get": {
+        "operationId": "get_latest_api_v1_linkedin_drafts_latest_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/LinkedInDraftOut"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Get Latest Api V1 Linkedin Drafts Latest Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Latest",
+        "tags": [
+          "linkedin_drafts"
+        ]
+      }
+    },
+    "/api/v1/linkedin-drafts/{draft_id}": {
+      "put": {
+        "operationId": "save_api_v1_linkedin_drafts__draft_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 36,
+              "title": "Draft Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkedInEdit"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkedInDraftOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save",
+        "tags": [
+          "linkedin_drafts"
         ]
       }
     },
@@ -33176,6 +34738,109 @@
         ]
       }
     },
+    "/api/v1/projects/{project_id}/github-claims": {
+      "get": {
+        "operationId": "get_github_proofs_api_v1_projects__project_id__github_claims_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/GithubProofOut"
+                  },
+                  "title": "Response Get Github Proofs Api V1 Projects  Project Id  Github Claims Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "`project_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Github Proofs",
+        "tags": [
+          "projects"
+        ]
+      },
+      "post": {
+        "operationId": "make_github_claim_api_v1_projects__project_id__github_claims_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GithubClaimIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GithubClaimOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Make Github Claim",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
     "/api/v1/projects/{project_id}/profile-entry": {
       "post": {
         "description": "Ajoute le projet validé au profil maître (nouvelle version validée) : le seul chemin.",
@@ -34403,6 +36068,23 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ReadingCardIn"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "content": {

@@ -106,6 +106,7 @@ function readHandlers(state: ProjectsState) {
       const project = find(state, params.id);
       return project ? HttpResponse.json(project) : notFound();
     }),
+    http.get(`${API}/projects/:id/github-claims`, () => HttpResponse.json([])),
     http.get(
       `${API}/projects/:id/screenshots/:n`,
       () =>

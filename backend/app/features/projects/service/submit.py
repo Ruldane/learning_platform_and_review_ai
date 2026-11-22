@@ -12,11 +12,15 @@ Journaux : identifiants et nombres, jamais le lien, la description ni un nom de 
 
 import logging
 from typing import Any
+from uuid import UUID
 
 from fastapi import UploadFile
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.errors import AppError
 from app.core.played import inherit_source
 from app.db.models.daily import Project
+from app.db.models.github_claims import ProjectGithubClaim
 from app.features.projects.repository import ProjectRepository
 from app.features.projects.schemas import SessionStarted
 from app.features.projects.service.errors import (
@@ -26,6 +30,11 @@ from app.features.projects.service.errors import (
     project_validated,
     review_in_progress,
     review_unavailable,
+)
+from app.features.projects.service.github import (
+    get_github_claim,
+    record_github_proof,
+    verify_github_claim,
 )
 from app.features.projects.service.rules import SCREENSHOTS_MAX, submission_problems
 from app.features.projects.service.runtime import (
@@ -42,6 +51,7 @@ from app.features.projects.service.screenshots import (
 )
 from app.features.projects.service.settle import settle_project
 from app.features.sessions.service import find_latest_session, session_facts
+from app.providers.github.base import RepoRef
 
 logger = logging.getLogger(__name__)
 
@@ -89,13 +99,17 @@ async def _append(
         if row is None:
             raise project_not_found()
         previous = row.status
-        rows: list[Any] = [*row.submissions, entry]
-        dropped: list[dict[str, Any]] = []
-        while len(rows) > MAX_SUBMISSIONS:
-            dropped.append(rows.pop(0))
-        row.submissions, row.status, row.session_id = rows, "reviewing", None
+        dropped = _save_submission(row, entry, None)
         await db.commit()
     return previous, dropped
+
+
+def _save_submission(
+    row: Project, entry: dict[str, Any], session_id: str | None
+) -> list[dict[str, Any]]:
+    rows = [*row.submissions, entry]
+    row.submissions, row.status, row.session_id = rows[-MAX_SUBMISSIONS:], "reviewing", session_id
+    return rows[:-MAX_SUBMISSIONS]
 
 
 async def _rollback(
@@ -152,6 +166,61 @@ async def _launch(
     return session_id
 
 
+async def _launch_verified(
+    rt: ProjectsRuntime,
+    user_id: str,
+    project_id: str,
+    entry: dict[str, Any],
+    claim: ProjectGithubClaim,
+) -> tuple[str, list[dict[str, Any]]]:
+    dropped: list[dict[str, Any]] = []
+
+    async def prepare(db: AsyncSession, session_id: str) -> None:
+        row = _check_open(await ProjectRepository(db, user_id).get_fresh(project_id))
+        await record_github_proof(rt, db, row, claim, session_id)
+        dropped.extend(_save_submission(row, entry, session_id))
+
+    try:
+        sid = await rt.launcher.start(
+            user_id,
+            REVIEW_GRAPH,
+            {"project_id": project_id},
+            subject_type=SUBJECT,
+            subject_id=project_id,
+            prepare=prepare,
+        )
+    except Exception as exc:
+        await delete_all(rt, user_id, entry["screenshots"])
+        if isinstance(exc, AppError) and exc.status_code < 500:
+            raise
+        logger.warning(
+            "Évaluation GitHub non lancée : projet %s, cause %s", project_id, type(exc).__name__
+        )
+        raise review_unavailable() from None
+    return sid, dropped
+
+
+async def _entry(
+    rt: ProjectsRuntime,
+    user_id: str,
+    repo_url: str | None,
+    description: str | None,
+    files: list[UploadFile],
+) -> dict[str, Any]:
+    link = (repo_url or "").strip() or None
+    text = (description or "").strip() or None
+    problems = submission_problems(link, text, len(files))
+    images = await _images(files, problems)
+    if problems:
+        raise invalid_submission(problems)
+    return {
+        "at": rt.now().isoformat(),
+        "repo_url": link,
+        "description": text,
+        "screenshots": await store_all(rt, user_id, images),
+    }
+
+
 async def submit_project(
     rt: ProjectsRuntime,
     user_id: str,
@@ -160,39 +229,44 @@ async def submit_project(
     repo_url: str | None,
     description: str | None,
     files: list[UploadFile],
+    github_claim_id: UUID | None = None,
 ) -> SessionStarted:
     await settle_project(rt, user_id, project_id)
     async with rt.project_lock(user_id, project_id):
+        claim = (
+            await get_github_claim(rt, user_id, project_id, github_claim_id)
+            if github_claim_id
+            else None
+        )
+        if claim and claim.session_id:
+            return SessionStarted(session_id=claim.session_id)
         async with rt.session_factory() as db:
             _check_open(await ProjectRepository(db, user_id).get_fresh(project_id))
             parent = await find_latest_session(
                 db, user_id, graph=BRIEF_GRAPH, subject_type=SUBJECT, subject_id=project_id
             )
             source = await session_facts(db, user_id, parent) if parent else None
-        link = (repo_url or "").strip() or None
-        text = (description or "").strip() or None
-        problems = submission_problems(link, text, len(files))
-        images = await _images(files, problems)
-        if problems:
-            raise invalid_submission(problems)
-        keys = await store_all(rt, user_id, images)
-        entry: dict[str, Any] = {
-            "at": rt.now().isoformat(),
-            "repo_url": link,
-            "description": text,
-            "screenshots": keys,
-        }
-        previous, dropped = await _append(rt, user_id, project_id, entry)
+        if claim:
+            await verify_github_claim(rt, claim)
+            repo_url = RepoRef(claim.owner, claim.repository).url
+        entry = await _entry(rt, user_id, repo_url, description, files)
         with inherit_source(
             user_id,
             source.played_by if source else None,
             source.model_provider if source else None,
             has_origin=source is not None,
         ):
-            session_id = await _launch(rt, user_id, project_id, entry, previous, dropped)
+            if claim:
+                session_id, dropped = await _launch_verified(rt, user_id, project_id, entry, claim)
+            else:
+                previous, dropped = await _append(rt, user_id, project_id, entry)
+                session_id = await _launch(rt, user_id, project_id, entry, previous, dropped)
     old_keys = [str(key) for item in dropped for key in item.get("screenshots", [])]
     await delete_all(rt, user_id, old_keys)
     logger.info(
-        "Rendu reçu : projet %s, session %s, %d capture(s)", project_id, session_id, len(keys)
+        "Rendu reçu : projet %s, session %s, %d capture(s)",
+        project_id,
+        session_id,
+        len(entry["screenshots"]),
     )
     return SessionStarted(session_id=session_id)

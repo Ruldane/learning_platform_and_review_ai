@@ -15,6 +15,7 @@ from app.agents.tools.conversation_port import NO_CONVERSATION, ConversationStor
 from app.agents.tools.council_port import NO_COUNCIL, CouncilStore
 from app.agents.tools.cv_review_port import NO_CV_REVIEW, CvReviewStore
 from app.agents.tools.cv_template_port import NO_CV_TEMPLATES, CvTemplateStore
+from app.agents.tools.expert_debate_port import NO_EXPERT_DEBATE, ExpertDebateStore
 from app.agents.tools.gap_port import NO_GAP, GapStore
 from app.agents.tools.ide_port import NO_IDE, IdeStore
 from app.agents.tools.interview_port import NO_INTERVIEWS, InterviewStore
@@ -22,6 +23,7 @@ from app.agents.tools.kit_port import NO_KIT, KitStore
 from app.agents.tools.lesson_hunt_port import NO_HUNT, LessonHuntStore
 from app.agents.tools.lesson_port import NO_LESSONS, LessonStore
 from app.agents.tools.lesson_updates_port import NO_LESSON_UPDATE, LessonUpdatePort
+from app.agents.tools.linkedin_port import NO_LINKEDIN, LinkedInStore
 from app.agents.tools.memory_port import NO_MEMORY, MemoryGateway
 from app.agents.tools.oncall_port import NO_ONCALL, OncallPort
 from app.agents.tools.paper_lab_port import NO_PAPER_LAB, PaperLabStore
@@ -66,6 +68,8 @@ class AgentPorts:
     oncall: OncallPort = NO_ONCALL
     paper_lab: PaperLabStore = NO_PAPER_LAB
     lesson_updates: LessonUpdatePort = NO_LESSON_UPDATE
+    expert_debates: ExpertDebateStore = NO_EXPERT_DEBATE
+    linkedin: LinkedInStore = NO_LINKEDIN
     podcast: PodcastStore = NO_PODCAST
 
 

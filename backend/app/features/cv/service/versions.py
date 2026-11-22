@@ -79,8 +79,15 @@ async def version_numbers(
 async def validated_profile(db: AsyncSession, user_id: str) -> MasterProfileData | None:
     """Lecture seule, pour les candidatures : le profil maître validé le plus récent, `None` si
     January n'en a pas validé."""
+    found = await validated_profile_version(db, user_id)
+    return found[1] if found is not None else None
+
+
+async def validated_profile_version(
+    db: AsyncSession, user_id: str
+) -> tuple[int, MasterProfileData] | None:
     row = await ProfileRepository(db, user_id).latest("validated")
-    return MasterProfileData.model_validate(row.data) if row is not None else None
+    return (row.version, MasterProfileData.model_validate(row.data)) if row is not None else None
 
 
 async def version_ref(db: AsyncSession, user_id: str, version_id: str) -> tuple[str, str] | None:

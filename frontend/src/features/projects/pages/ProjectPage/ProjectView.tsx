@@ -8,6 +8,7 @@ import { useSubmitProject } from "../../hooks/useSubmitProject";
 import type { ProjectDetailView } from "../../toView";
 import { BackLink } from "./BackLink";
 import { BriefFailed } from "./BriefFailed";
+import { ProjectGithubProofs } from "./ProjectGithubProofs";
 import { RunPanel } from "./RunPanel";
 import { StatusSections } from "./StatusSections";
 import { SubmissionHistory } from "./SubmissionHistory";
@@ -73,6 +74,7 @@ export function ProjectView({ project, createSocket }: ProjectViewProps) {
         submitter={submitter}
         regeneration={regeneration}
       />
+      {project.submissions.length > 0 && <ProjectGithubProofs projectId={project.id} />}
       <SubmissionHistory submissions={project.submissions} />
     </div>
   );

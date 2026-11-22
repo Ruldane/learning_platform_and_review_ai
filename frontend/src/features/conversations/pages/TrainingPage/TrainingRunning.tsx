@@ -1,11 +1,10 @@
-import { errorMessage } from "@/shared/api/errors";
-import { t } from "@/shared/i18n/t";
-import { InlineError } from "@/shared/ui/states/InlineError";
-import { useSend, useTurnStream } from "../../hooks/useConversation";
-import { sendTrainingQuestion, type TrainingChange, type TrainingSession } from "../../trainingApi";
-import { ConversationComposer } from "../LessonConversation/ConversationComposer";
-import { ConversationTranscript } from "../LessonConversation/ConversationTranscript";
+import { useRef } from "react";
+import { ConcentrationPanel } from "@/shared/ui/ConcentrationPanel";
+import { useTurnStream } from "../../hooks/useConversation";
+import type { TrainingChange, TrainingSession } from "../../trainingApi";
 import { TrainingControls } from "./TrainingControls";
+import { TrainingConversation } from "./TrainingConversation";
+import { useTrainingConcentration } from "./useTrainingConcentration";
 
 interface TrainingRunningProps {
   session: TrainingSession;
@@ -26,34 +25,41 @@ export function TrainingRunning({
   onSubmitted,
   onRefresh,
 }: TrainingRunningProps) {
-  const send = useSend(
-    (message, choice) => sendTrainingQuestion(session.id, message, choice),
-    onSubmitted,
-  );
+  const thread = useRef<HTMLDivElement>(null);
   const streaming = useTurnStream(sessionId, "training_tutor", onRefresh);
-  const busy = send.pending || sessionId !== null;
+  const pilot = useTrainingConcentration({
+    session,
+    busy: sessionId !== null || saving,
+    onSubmitted,
+    restoreFocus: () => thread.current?.querySelector("textarea")?.focus(),
+  });
+  const busy = pilot.send.pending || sessionId !== null;
   return (
-    <section className="flex max-w-3xl flex-col gap-3">
-      <TrainingControls mode={session.mode} saving={saving} busy={busy} onChange={onChange} />
-      <div className="flex h-[min(44rem,72dvh)] min-h-[24rem] flex-col rounded-xl border border-border">
-        <ConversationTranscript
-          turns={session.conversation.turns}
+    <section
+      className="flex max-w-3xl flex-col gap-3"
+      onKeyDownCapture={pilot.activity}
+      onPointerDownCapture={pilot.activity}
+    >
+      {pilot.phase && (
+        <ConcentrationPanel
+          phase={pilot.phase}
+          busy={busy || saving}
+          onPause={pilot.pause}
+          onReview={() => void pilot.easier()}
+          onSummary={() => onChange({ action: "finish" })}
+          onContinue={pilot.close}
+        />
+      )}
+      <div ref={thread} className={pilot.paused ? "hidden" : "flex flex-col gap-3"}>
+        <TrainingControls mode={session.mode} saving={saving} busy={busy} onChange={onChange} />
+        <TrainingConversation
+          session={session}
           sessionId={sessionId}
           streaming={streaming}
-          assistant={t("training.tutor")}
-          label={t("training.thread")}
-          typing={t("training.typing")}
-          greeting={session.greeting}
-        />
-        {send.error ? <InlineError message={errorMessage(send.error)} /> : null}
-        <ConversationComposer
-          identity={session.id}
-          label={t("training.message")}
-          placeholder={t("training.placeholder")}
           initialText={initialText}
-          busy={busy || saving}
-          usage={session.conversation.usage}
-          onSend={send.send}
+          busy={busy || saving || pilot.paused}
+          error={pilot.send.error}
+          onSend={pilot.submit}
         />
       </div>
     </section>

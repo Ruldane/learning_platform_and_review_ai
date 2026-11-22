@@ -15,10 +15,19 @@ from app.agents.tools.conversation_port import (
     ConversationPractice,
     ConversationReference,
     ConversationSource,
+    FocusOutcome,
+)
+from app.agents.tools.feynman_port import (
+    FEYNMAN_SCOPES,
+    FeynmanAssessment,
+    FeynmanContext,
+    FeynmanExchange,
 )
 from app.core.errors import AppError
 from app.db.models.conversations import Conversation, ConversationTurn
 from app.features.brain.service.reading import active_note_versions, matching_notes
+from app.features.conversations.feynman_schemas import FeynmanData, FeynmanReport
+from app.features.conversations.feynman_source import material
 from app.features.conversations.lesson_context import (
     lesson_excerpt,
     lesson_material,
@@ -160,6 +169,47 @@ class AgentConversationStore:
     def __init__(self, factory: async_sessionmaker[AsyncSession]) -> None:
         self._factory = factory
 
+    async def feynman_context(
+        self, user_id: str, session_id: str, thread_id: str, turn_id: str
+    ) -> FeynmanContext | None:
+        async with self._factory() as db:
+            repo = TurnRepository(db, user_id)
+            thread, turn = await _owned_turn(repo, session_id, thread_id, turn_id)
+            if turn.answer is not None:
+                return None
+            if thread.scope not in FEYNMAN_SCOPES or turn.feynman is None:
+                raise AppError("feynman_not_found", "Explication introuvable.", 404)
+            data = FeynmanData.model_validate(turn.feynman)
+            text = await material(db, user_id, data.source, turn.lesson_version)
+            title = data.source.path or data.source.title
+            return FeynmanContext(title, text, turn.strong, await repo.used_tokens(session_id))
+
+    async def save_feynman(
+        self,
+        user_id: str,
+        session_id: str,
+        thread_id: str,
+        turn_id: str,
+        *,
+        assessment: FeynmanAssessment,
+        exchange: FeynmanExchange,
+    ) -> None:
+        async with self._factory() as db:
+            turn = await TurnRepository(db, user_id).claim_reply(thread_id, turn_id, session_id)
+            if turn is None:
+                return
+            data = FeynmanData.model_validate(turn.feynman)
+            await material(db, user_id, data.source, turn.lesson_version)
+            data.report = FeynmanReport(
+                **exchange.model_dump(),
+                summary=assessment.summary,
+                cards=assessment.cards,
+                proof_skill=data.skill if assessment.mastered else None,
+            )
+            turn.feynman = data.model_dump(mode="json")
+            turn.answer = assessment.summary
+            await db.commit()
+
     async def context(
         self, user_id: str, session_id: str, thread_id: str, turn_id: str
     ) -> ConversationContext | None:
@@ -209,6 +259,7 @@ class AgentConversationStore:
         practice: Sequence[ConversationPractice] = (),
         context_notes: dict[str, str] | None = None,
         classmates: Sequence[ClassmateReply] = (),
+        focus_outcome: FocusOutcome | None = None,
     ) -> None:
         async with self._factory() as db:
             repo = TurnRepository(db, user_id)
@@ -235,6 +286,7 @@ class AgentConversationStore:
             )
             async with recorder if recorder is not None else nullcontext():
                 turn.answer = answer
+                turn.focus_outcome = focus_outcome
                 turn.sources = [source.model_dump(mode="json") for source in sources]
                 if practice:
                     turn.practice = [card.model_dump(mode="json") for card in practice]

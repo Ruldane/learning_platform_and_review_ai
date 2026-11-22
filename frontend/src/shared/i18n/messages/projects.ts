@@ -189,4 +189,17 @@ export const projects = {
       tooLong: "Chaque réalisation fait 200 caractères au plus.",
     },
   },
+  github: {
+    title: "Faire vérifier un commit GitHub",
+    hint: "Indique le lien du dépôt public ci-dessus et le SHA complet d’un commit signé de sa branche par défaut.",
+    sha: "SHA complet du commit",
+    create: "Créer le code de vérification",
+    creating: "Lecture de GitHub…",
+    waitingForCode: "Crée le code pour ce dépôt et ce commit avant de rendre le projet.",
+    instructions:
+      "Ajoute ce code à la bio publique de ton profil GitHub, puis rends le projet dans les 15 minutes. Tu pourras retirer le code après la vérification.",
+    profile: "Ouvrir le profil GitHub de l’auteur",
+    proofs: "Commits GitHub vérifiés",
+    commitLink: "Ouvrir le commit {sha} sur GitHub",
+  },
 } as const;

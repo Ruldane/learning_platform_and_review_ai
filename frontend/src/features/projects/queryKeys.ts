@@ -3,4 +3,5 @@ export const projectKeys = {
   all: ["projects"] as const,
   list: ["projects", "list"] as const,
   one: (projectId: string) => ["projects", "one", projectId] as const,
+  github: (projectId: string) => ["projects", "github", projectId] as const,
 } as const;

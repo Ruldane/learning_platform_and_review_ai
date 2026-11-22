@@ -7,9 +7,10 @@ interface Props {
   given: (id: string) => Given;
   disabled: boolean;
   onAnswer: (id: string, patch: Partial<Given>) => void;
+  onLeave: (id: string) => void;
 }
 
-export function QuizQuestions({ questions, given, disabled, onAnswer }: Props) {
+export function QuizQuestions({ questions, given, disabled, onAnswer, onLeave }: Props) {
   return (
     <ol className="flex flex-col gap-3">
       {questions.map((question) => (
@@ -19,6 +20,7 @@ export function QuizQuestions({ questions, given, disabled, onAnswer }: Props) {
           choice={given(question.id).choice}
           text={given(question.id).text}
           disabled={disabled}
+          onLeave={() => onLeave(question.id)}
           onChoice={(choice) => onAnswer(question.id, { choice })}
           onText={(text) => onAnswer(question.id, { text })}
         />

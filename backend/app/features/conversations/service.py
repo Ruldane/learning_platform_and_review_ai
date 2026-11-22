@@ -12,12 +12,14 @@ from app.agents.tools.conversation_port import (
     ConversationPractice,
     ConversationSource,
 )
+from app.agents.tools.feynman_port import FEYNMAN_SCOPES
 from app.core.clock import local_moment, local_today, user_zone
 from app.core.errors import AppError
 from app.core.played import PLAY_CONTEXT
 from app.db.base import new_id
 from app.db.models.agents import OPEN_SESSION_STATES
 from app.db.models.conversations import ConversationTurn
+from app.features.conversations.feynman_schemas import FeynmanData
 from app.features.conversations.lesson_context import lesson_material, lesson_version, ready_lesson
 from app.features.conversations.repository import ConversationRepository, TurnRepository
 from app.features.conversations.schemas import (
@@ -41,11 +43,6 @@ BRAIN_SCOPE = "brain"
 THREAD_TOKEN_LIMIT = 100_000
 DAY_TOKEN_LIMIT = 300_000
 TURN_LIMIT = 100
-
-
-def _thread_id(user_id: str, scope: str, subject_id: str) -> str:
-    # Permet à deux premières soumissions concurrentes de réserver le même fil dans prepare.
-    return str(uuid5(NAMESPACE_URL, f"tremplin/conversations/{user_id}/{scope}/{subject_id}"))
 
 
 async def _usage(repo: TurnRepository, thread_id: str) -> tuple[ConversationUsage, int]:
@@ -72,16 +69,22 @@ class ConversationThread:
     id: str
     scope: str
     subject_id: str
+    graph: str = CONVERSATION_GRAPH
 
     @classmethod
-    def for_subject(cls, user_id: str, scope: str, subject_id: str) -> "ConversationThread":
-        return cls(_thread_id(user_id, scope, subject_id), scope, subject_id)
+    def for_subject(
+        cls, user_id: str, scope: str, subject_id: str, *, graph: str = CONVERSATION_GRAPH
+    ) -> "ConversationThread":
+        # Deux premières soumissions concurrentes réservent le même fil dans prepare.
+        key = uuid5(NAMESPACE_URL, f"tremplin/conversations/{user_id}/{scope}/{subject_id}")
+        return cls(str(key), scope, subject_id, graph)
 
 
 @dataclass(frozen=True)
 class TurnOptions:
     lesson_version: str | None = None
     mode: str | None = None
+    feynman: FeynmanData | None = None
 
 
 type PrepareTurn = Callable[[AsyncSession], Awaitable[TurnOptions]]
@@ -162,7 +165,7 @@ async def read_lesson_conversation(
     db: AsyncSession, user_id: str, lesson_id: str
 ) -> LessonConversationOut | None:
     await ready_lesson(db, user_id, lesson_id)
-    thread_id = _thread_id(user_id, LESSON_SCOPE, lesson_id)
+    thread_id = ConversationThread.for_subject(user_id, LESSON_SCOPE, lesson_id).id
     thread = await read_conversation(db, user_id, thread_id)
     if thread is None:
         return None
@@ -222,6 +225,7 @@ def _reserve(
             passage_occurrence=occurrence,
             lesson_version=options.lesson_version,
             mode=options.mode,
+            feynman=options.feynman.model_dump(mode="json") if options.feynman else None,
             strong=message.strong,
             mcp_call_id=recorder.call_id if recorder is not None else None,
         )
@@ -247,9 +251,7 @@ async def ask_lesson_professor(
         lesson_material(markdown, message.passage, message.passage_occurrence)
         return TurnOptions(lesson_version=lesson_version(markdown))
 
-    thread = ConversationThread(
-        _thread_id(user_id, LESSON_SCOPE, lesson_id), LESSON_SCOPE, lesson_id
-    )
+    thread = ConversationThread.for_subject(user_id, LESSON_SCOPE, lesson_id)
     return await submit_turn(runner, db, user_id, thread, message, authorize)
 
 
@@ -263,27 +265,35 @@ async def submit_turn(
 ) -> ConversationStarted:
     if previous := await TurnRepository(db, user_id).by_request(thread.id, str(message.request_id)):
         sid = _same_request(previous, message)
-        return await _replayed_start(db, user_id, sid)
+        return await _replayed_start(db, user_id, sid, thread.graph)
     turn_id = new_id()
     try:
         sid = await runner.start(
             user_id,
-            CONVERSATION_GRAPH,
-            {"thread_id": thread.id, "turn_id": turn_id},
+            thread.graph,
+            {"thread_id": thread.id, "turn_id": turn_id, "feynman": thread.scope in FEYNMAN_SCOPES},
             subject_type=thread.scope,
             subject_id=thread.subject_id,
             prepare=_reserve(user_id, thread, turn_id, message, authorize),
         )
     except _RepeatedRequest as repeated:
-        return await _replayed_start(db, user_id, repeated.session_id)
+        return await _replayed_start(db, user_id, repeated.session_id, thread.graph)
     return ConversationStarted.model_validate({"session_id": sid})
 
 
-async def _replayed_start(db: AsyncSession, user_id: str, sid: str) -> ConversationStarted:
+async def _replayed_start(
+    db: AsyncSession, user_id: str, sid: str, graph: str
+) -> ConversationStarted:
     """Rend le même lancement au MCP joué, si la session appartient bien à ce client."""
     play = PLAY_CONTEXT.get()
-    if play is not None and play.user_id == user_id and play.graph == CONVERSATION_GRAPH:
+    if play is not None and play.user_id == user_id and play.graph == graph:
         facts = await session_facts(db, user_id, sid)
         if facts is not None and play.client is not None and facts.played_by == play.client:
             play.started.append(sid)
     return ConversationStarted.model_validate({"session_id": sid})
+
+
+async def claim_turn_reply(
+    db: AsyncSession, user_id: str, thread_id: str, turn_id: str, session_id: str
+) -> ConversationTurn | None:
+    return await TurnRepository(db, user_id).claim_reply(thread_id, turn_id, session_id)

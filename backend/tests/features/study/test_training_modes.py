@@ -53,9 +53,10 @@ async def test_training_mode_changes_the_following_turn_without_restarting(
         changed = await client.patch(path, json={"action": "mode", "mode": mode})
         assert changed.status_code == 200 and changed.json()["mode"] == mode
         args = {"study_session_id": study_id, "request_id": str(uuid4()), "question": "Pourquoi ?"}
-        sid, messages = await _played_turn(
-            client, claude, token, args, f"Question suivante {index}."
-        )
+        outcome = [None, "correct", "retry"][index]
+        reply = f"Question suivante {index}."
+        marked = f"{reply}\n\n<!-- concentration:{outcome} -->" if outcome else reply
+        sid, messages = await _played_turn(client, claude, token, args, marked)
         assert instruction in messages
         if index:
             assert f"Question suivante {index - 1}." in messages
@@ -69,7 +70,10 @@ async def test_training_mode_changes_the_following_turn_without_restarting(
         assert duplicate.status_code == 202 and duplicate.json()["session_id"] == sid
         actual = (await client.get(path)).json()
         assert actual["conversation"]["id"] == study_id
-        assert len(actual["conversation"]["turns"]) == index + 1
+        turns = actual["conversation"]["turns"]
+        assert len(turns) == index + 1
+        assert turns[-1]["answer"] == reply
+        assert turns[-1]["focus_outcome"] == outcome
 
 
 async def test_cancel_revokes_the_active_turn_and_frees_the_study_slot(

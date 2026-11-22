@@ -2620,3 +2620,80 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
   vérification IDE terminée depuis l’interface à son repère dans le journal.
 - **Raison** : permettre de reprendre les parcours après un échec en conservant la provenance
   de la citation, de la réponse Telegram et de la mesure de vérification.
+
+## D257
+
+- **Date** : 2026-11-22
+- **Sujet** : Débat d’experts sur une question.
+- **Décision** : le Chercheur, le Praticien et le Sceptique parlent successivement dans un
+  fil du compte. Les sources proviennent d’une recherche nettoyée suivie d’au plus quatre
+  lectures. Chaque prise de parole conserve uniquement les références qu’elle a citées et
+  qui figurent dans ce catalogue. Le jugement est saisi et enregistré après le débat.
+- **Raison** : permettre de vérifier les références de chaque position et de reprendre son jugement.
+
+## D258
+
+- **Date** : 2026-11-22
+- **Sujet** : Glossaire de la liseuse et fiches d’extraits.
+- **Décision** : utiliser les définitions des sommaires validés, avec priorité au programme
+  le plus récent en cas d’homonyme. Un terme ouvre la définition au survol ou au clavier,
+  avec un lien lorsque son chapitre est publié. Le serveur vérifie qu’un passage choisi
+  figure encore dans l’article avant d’en faire une fiche associée à sa source.
+- **Raison** : garder les définitions et les fiches liées aux données effectivement lues.
+
+## D259
+
+- **Date** : 2026-11-22
+- **Sujet** : Alertes du Radar vers les écarts de compétences.
+- **Décision** : réutiliser le relevé hebdomadaire et le brief. Au plus cinq offres notées
+  à 70 ou plus apparaissent par semaine locale, avec dédoublonnage des liens. L’écart
+  s’appuie sur les exigences du relevé et les niveaux actuels. Les manques choisis ouvrent
+  une proposition du Stratège soumise à la validation habituelle.
+- **Raison** : rendre une offre sélectionnée exploitable depuis le brief et décider des ajouts au planning.
+
+## D260
+
+- **Date** 2026-11-22
+- **Sujet** Pilote de concentration en quiz et training.
+- **Décision** Comparer les trois premières réponses mesurées et évaluées aux trois dernières.
+  Proposer une adaptation quand leur médiane augmente d’au moins 40 % et 1,5 seconde et que
+  deux erreurs supplémentaires sont observées. Les mesures de 300 ms à 90 s restent dans le
+  navigateur. Une interruption, un intervalle d’inactivité supérieur à 30 s ou un onglet masqué
+  écarte la mesure. Le quiz attend la correction existante. Le Tuteur joint à sa réponse un
+  repère facultatif uniquement pour un exercice qu’il estime avoir pu évaluer. La pause garde
+  le résultat du quiz ou le fil et le brouillon du training à leur place.
+- **Raison** Appuyer une proposition ponctuelle sur deux variations observées et laisser le
+  choix de l’adaptation à l’utilisatrice.
+
+## D261
+
+- **Date** : 2026-11-22
+- **Sujet** : Preuve et fiches d’une explication Feynman.
+- **Décision** : ouvrir un fil sur la version de la leçon ou du fichier enregistrée.
+  Le Tuteur pose une question et, au besoin, une relance. Le bilan propose jusqu’à trois
+  fiches et une preuve lorsque la compréhension est étayée. L’accord enregistre la preuve
+  au plus au niveau « En cours » et conserve les niveaux supérieurs.
+- **Raison** : une explication orale ou écrite établit un premier niveau de pratique.
+
+## D262
+
+- **Date** : 2026-11-22
+- **Sujet** : Attribution d’un commit GitHub public à un projet.
+- **Décision** : s’appuyer sur une signature déclarée valide par GitHub, l’identité
+  stable et commune de l’auteur et du committer, puis un code à durée limitée
+  dans la bio publique de ce compte. Le commit doit être dans la branche par
+  défaut du dépôt. Écrire l’attribution et la preuve de pratique avec le rendu
+  et sa session. Un SHA ne compte qu’une fois par compte Tremplin.
+- **Raison** : attacher une contribution publique au projet avec une trace
+  vérifiable du compte auteur et du contrôle du profil, sans accès GitHub en écriture.
+
+## D263
+
+- **Date** : 2026-11-22
+- **Sujet** : Rédaction et copie du profil LinkedIn.
+- **Décision** : partir du profil maître validé, des intitulés des projets validés et
+  de l’offre facultative choisie. Les termes de l’offre orientent la rédaction. Le
+  contrôle du CV signale les affirmations non étayées et borne les compétences aux
+  faits du profil. Un changement de version demande une nouvelle proposition.
+  La personne enregistre et vérifie les corrections avant la copie.
+- **Raison** : garder le titre, le résumé et les compétences cohérents avec les faits confirmés.

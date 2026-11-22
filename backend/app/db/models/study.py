@@ -25,7 +25,7 @@ AttemptStatus = Literal["grading", "graded", "failed"]
 StudyMode = Literal["socratic", "feynman", "direct"]
 StudyStatus = Literal["open", "finished", "cancelled"]
 JournalKind = Literal["capture", "study_session", "quiz", "weekly_review", "project", "ide_check"]
-CardSource = Literal["lesson", "quiz", "study", "capture", "interview"]
+CardSource = Literal["lesson", "quiz", "study", "capture", "interview", "feynman"]
 
 
 class Quiz(UserScopedMixin, Base):

@@ -16,6 +16,7 @@ from app.features.lessons.service.runtime import Launcher
 from app.features.memory.service.runtime import MemoryRuntime
 from app.features.postings.service.runtime import KeyLocks
 from app.features.research.service.runtime import ResearchRuntime
+from app.providers.github.base import GithubContributions
 from app.providers.storage.base import FileStorage
 
 BRIEF_GRAPH = "project_brief"
@@ -37,6 +38,7 @@ class ProjectsRuntime:
     memory: MemoryRuntime
     cv: CvRuntime
     research: ResearchRuntime
+    github: GithubContributions
     now: Callable[[], datetime] = utc_now
     locks: KeyLocks = field(default_factory=KeyLocks, repr=False, compare=False)
 

@@ -1,0 +1,1 @@
+export { DebateJudgment } from "./DebateJudgment";

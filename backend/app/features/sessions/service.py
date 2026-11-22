@@ -15,6 +15,7 @@ from app.agents.runtime.events import (
 from app.agents.runtime.handle import AgentRuntime
 from app.agents.tools.boss_port import BOSS_GRAPH
 from app.agents.tools.conversation_port import CONVERSATION_GRAPH
+from app.agents.tools.expert_debate_port import EXPERT_GRAPH
 from app.core.errors import AppError
 from app.db.models.agents import AgentSession, SessionStatus
 from app.features.sessions.play_service import expire_steps
@@ -49,6 +50,7 @@ __all__ = [
 ROUTE_ONLY: dict[str, str] = {
     BOSS_GRAPH: "POST /boss/programs/{program_id}/submit",
     CONVERSATION_GRAPH: "POST /lessons/{lesson_id}/conversation/messages",
+    EXPERT_GRAPH: "POST /expert-debates",
     "replan": "POST /programs/{program_id}/replan",
     "capture": "POST /capture",
     "quiz": "POST /modules/{module_id}/quiz",
@@ -61,6 +63,7 @@ ROUTE_ONLY: dict[str, str] = {
     "hiring_committee": "POST /committee",  # version de CV prête, un seul comité par offre (D147)
     "daily_brief": "GET /brief/today",  # brief créé et ouvert par sa route (D161)
     "lesson_update": "Planificateur de la veille des leçons",
+    "linkedin_draft": "POST /linkedin-drafts",
     "lesson_hunt": "POST /lesson-hunts",
     "paper_lab": "POST /paper-labs",
     "podcast": "POST /podcast/today",

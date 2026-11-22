@@ -41,8 +41,13 @@ export async function keepReading(id: string) {
   return unwrap(await api.POST("/reading-stack/{item_id}/memory", entryPath(id)));
 }
 
-export async function makeReadingCard(id: string) {
-  return unwrap(await api.POST("/reading-stack/{item_id}/cards", entryPath(id)));
+export async function makeReadingCard(id: string, passage?: string) {
+  return unwrap(
+    await api.POST("/reading-stack/{item_id}/cards", {
+      ...entryPath(id),
+      body: passage ? { passage } : undefined,
+    }),
+  );
 }
 
 export async function planReading(id: string, programId: string, provider?: RunSource) {

@@ -1,3 +1,4 @@
+import { Link } from "react-router";
 import { t } from "@/shared/i18n/t";
 import { ExternalLink } from "@/shared/ui/ExternalLink";
 import type { OfferItemView } from "../viewTypes";
@@ -34,6 +35,11 @@ export function OffersCard({ items, unavailable = false }: OffersCardProps) {
                 <span className="text-muted-foreground">{offer.company}</span>
               ) : null}
               <span className="tabular-nums">{t("home.offers.score", { score: offer.score })}</span>
+              {offer.gapPath ? (
+                <Link className="self-start underline underline-offset-4" to={offer.gapPath}>
+                  {t("home.offers.gap", { title: offer.title ?? t("home.offers.untitled") })}
+                </Link>
+              ) : null}
             </li>
           ))}
         </ul>

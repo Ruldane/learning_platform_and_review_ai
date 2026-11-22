@@ -35,7 +35,12 @@ export function useSubmitProject(projectId: string) {
   const mutation = useMutation({
     mutationFn: (submission: SubmissionView) => send(projectId, submission),
     // Attendu : le formulaire reste verrouillé jusqu'à ce que le statut `reviewing` soit lu.
-    onSuccess: () => client.invalidateQueries({ queryKey: projectKeys.one(projectId) }),
+    onSuccess: async () => {
+      await Promise.all([
+        client.invalidateQueries({ queryKey: projectKeys.one(projectId) }),
+        client.invalidateQueries({ queryKey: projectKeys.github(projectId) }),
+      ]);
+    },
     onError: (error) => {
       // Le projet a changé sous nos yeux (validé, énoncé encore absent) : la page se relit.
       const code = errorCode(error);

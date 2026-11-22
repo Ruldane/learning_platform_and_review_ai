@@ -1,7 +1,7 @@
 import { api } from "@/shared/api/client";
 import { unwrap } from "@/shared/api/errors";
 import { runSourceHeaders, type RunSource } from "@/shared/lib/runSource";
-import type { DraftKind, ProfileEntryIn, SubmissionView } from "./types";
+import type { DraftKind, GithubCommitSelection, ProfileEntryIn, SubmissionView } from "./types";
 
 /** `GET /projects` : tous les projets, dans l'ordre du programme (semaine, rang). */
 export async function fetchProjects(signal?: AbortSignal) {
@@ -29,8 +29,27 @@ export function submissionForm(submission: SubmissionView): FormData {
   const form = new FormData();
   if (submission.repoUrl) form.append("repo_url", submission.repoUrl);
   if (submission.description) form.append("description", submission.description);
+  if (submission.githubClaimId) form.append("github_claim_id", submission.githubClaimId);
   for (const file of submission.screenshots) form.append("screenshots", file);
   return form;
+}
+
+export async function fetchGithubProofs(projectId: string, signal?: AbortSignal) {
+  return unwrap(
+    await api.GET("/projects/{project_id}/github-claims", {
+      params: { path: { project_id: projectId } },
+      signal,
+    }),
+  );
+}
+
+export async function requestGithubClaim(projectId: string, selection: GithubCommitSelection) {
+  return unwrap(
+    await api.POST("/projects/{project_id}/github-claims", {
+      params: { path: { project_id: projectId } },
+      body: { repo_url: selection.repoUrl, sha: selection.sha },
+    }),
+  );
 }
 
 /**

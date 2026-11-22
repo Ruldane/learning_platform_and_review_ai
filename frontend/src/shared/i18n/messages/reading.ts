@@ -26,6 +26,11 @@ export const reading = {
   markRead: "Marquer comme lu",
   markUnread: "Marquer comme non lu",
   inBrief: "Voir la pile de lecture",
+  glossary: {
+    definition: "Définition de {term}",
+    chapter: "Chapitre · {chapter}",
+    makeCard: "Créer une fiche de ce passage",
+  },
   actions: {
     label: "Actions sur la lecture",
     memory: "Garder en mémoire",

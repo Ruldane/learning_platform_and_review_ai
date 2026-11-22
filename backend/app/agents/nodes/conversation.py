@@ -1,11 +1,13 @@
 import re
 from collections.abc import Sequence
 from dataclasses import replace
-from typing import Any, Protocol, TypedDict
+from typing import Any, Protocol
 from uuid import UUID
 
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 
+from app.agents.nodes.concentration import training_outcome
+from app.agents.nodes.feynman import FeynmanState
 from app.agents.prompts.loader import render_prompt, untrusted
 from app.agents.runtime.deps import GraphDeps
 from app.agents.runtime.invoke import message_text, node_timeout
@@ -23,6 +25,7 @@ from app.agents.tools.conversation_port import (
     ConversationPractice,
     ConversationReference,
     ConversationSource,
+    FocusOutcome,
 )
 from app.core.errors import AppError
 from app.providers.llm.limits import with_output_limit
@@ -43,15 +46,13 @@ _REVISION = re.compile(
 )
 
 
-class ConversationState(TypedDict, total=False):
-    thread_id: str
-    turn_id: str
+class ConversationState(FeynmanState, total=False):
     answer: str
     sources: list[dict[str, Any]]
     practice: list[dict[str, Any]]
     classmates: list[dict[str, Any]]
     context_notes: dict[str, str] | None
-    summary: str
+    focus_outcome: FocusOutcome | None
 
 
 class Node(Protocol):
@@ -207,6 +208,26 @@ async def _classroom_reply(deps: GraphDeps, context: ConversationContext) -> Con
     }
 
 
+def _reply_fields(
+    text: str,
+    context: ConversationContext,
+    sources: list[ConversationSource],
+    catalog: list[CitationEntry],
+) -> ConversationState:
+    training = context.agent == TRAINING_TUTOR
+    raw, outcome = training_outcome(text) if training else (text, None)
+    answer = raw[:MAX_ANSWER]
+    return {
+        "answer": answer,
+        "sources": [
+            sources[c.index - 1].model_dump(mode="json") for c in extract_citations(answer, catalog)
+        ],
+        "practice": _practice_of(answer, sources) if training else [],
+        "context_notes": context.context_notes,
+        "focus_outcome": outcome,
+    }
+
+
 def make_reply(deps: GraphDeps) -> Node:
     @node_timeout()
     async def reply(state: ConversationState) -> ConversationState:
@@ -244,16 +265,7 @@ def make_reply(deps: GraphDeps) -> Node:
             max_words=600,
             retry=False,
         )
-        answer = spoken.text[:MAX_ANSWER]
-        return {
-            "answer": answer,
-            "sources": [
-                sources[c.index - 1].model_dump(mode="json")
-                for c in extract_citations(answer, catalog)
-            ],
-            "practice": _practice_of(answer, sources) if context.agent == TRAINING_TUTOR else [],
-            "context_notes": context.context_notes,
-        }
+        return _reply_fields(spoken.text, context, sources, catalog)
 
     return reply
 
@@ -272,6 +284,7 @@ def make_save(deps: GraphDeps) -> Node:
                     ConversationPractice.model_validate(card) for card in state.get("practice", [])
                 ],
                 context_notes=state.get("context_notes"),
+                focus_outcome=state.get("focus_outcome"),
                 classmates=[
                     ClassmateReply.model_validate(reply) for reply in state.get("classmates", [])
                 ],

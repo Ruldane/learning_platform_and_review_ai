@@ -5,6 +5,7 @@ une 422 nomme les champs, sans jamais recopier le rendu."""
 
 from collections.abc import Callable, Coroutine
 from typing import Annotated, Any
+from uuid import UUID
 
 from fastapi import (
     APIRouter,
@@ -24,6 +25,7 @@ from starlette.requests import HTTPConnection
 from app.core.caller import JanuaryOnly
 from app.core.deps import CurrentUserDep, Db
 from app.core.field_paths import FieldPathsRoute
+from app.features.projects.github_schemas import GithubClaimIn, GithubClaimOut, GithubProofOut
 from app.features.projects.schemas import (
     DraftKind,
     DraftPatchIn,
@@ -39,6 +41,7 @@ from app.features.projects.service.briefs import retry_brief
 from app.features.projects.service.direct import create_project, patch_project
 from app.features.projects.service.drafts import patch_draft
 from app.features.projects.service.errors import invalid_submission
+from app.features.projects.service.github import issue_github_claim, list_github_proofs
 from app.features.projects.service.profile_entry import add_profile_entry
 from app.features.projects.service.regenerate import regenerate_drafts
 from app.features.projects.service.runtime import ProjectsRuntime
@@ -156,6 +159,25 @@ async def get_one_project(
     return await get_project(rt, db, current.id, project_id)
 
 
+@router.get("/{project_id}/github-claims", responses=_NOT_FOUND)
+async def get_github_proofs(
+    project_id: ProjectId, current: CurrentUserDep, db: Db
+) -> list[GithubProofOut]:
+    return await list_github_proofs(db, current.id, project_id)
+
+
+@router.post("/{project_id}/github-claims", status_code=201, dependencies=[JanuaryOnly])
+async def make_github_claim(
+    project_id: ProjectId,
+    body: GithubClaimIn,
+    current: CurrentUserDep,
+    rt: ProjectsDep,
+    response: Response,
+) -> GithubClaimOut:
+    response.headers["Cache-Control"] = "no-store"
+    return await issue_github_claim(rt, current.id, project_id, body)
+
+
 @router.post(
     "/{project_id}/submit",
     response_model=SessionStarted,
@@ -170,6 +192,7 @@ async def post_submit(
     repo_url: Annotated[str | None, Form()] = None,
     description: Annotated[str | None, Form()] = None,
     screenshots: Annotated[list[UploadFile] | None, File()] = None,
+    github_claim_id: Annotated[UUID | None, Form()] = None,
 ) -> SessionStarted:
     """Rend le projet : un lien http(s) et/ou une description (4 000 caractères au plus), jusqu'à
     cinq captures PNG, JPEG ou WebP de 5 Mo (vérifiées par leurs octets, jamais par leur nom).
@@ -181,6 +204,7 @@ async def post_submit(
         repo_url=repo_url,
         description=description,
         files=screenshots or [],
+        github_claim_id=github_claim_id,
     )
 
 

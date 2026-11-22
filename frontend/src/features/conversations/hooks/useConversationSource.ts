@@ -1,16 +1,20 @@
 import { useState } from "react";
 import { RUN_SOURCES, type RunSource } from "@/shared/lib/runSource";
 
+const keyOf = (identity: string) => `tremplin.conversation.source.${identity}`;
+
+export function readConversationSource(identity: string): RunSource | undefined {
+  try {
+    const saved = localStorage.getItem(keyOf(identity));
+    return RUN_SOURCES.find((value) => value === saved);
+  } catch {
+    return undefined;
+  }
+}
+
 export function useConversationSource(identity: string) {
-  const key = `tremplin.conversation.source.${identity}`;
-  const [source, setSource] = useState<RunSource | undefined>(() => {
-    try {
-      const saved = localStorage.getItem(key);
-      return RUN_SOURCES.find((value) => value === saved);
-    } catch {
-      return undefined;
-    }
-  });
+  const key = keyOf(identity);
+  const [source, setSource] = useState(() => readConversationSource(identity));
   return [
     source,
     (choice: RunSource | undefined) => {

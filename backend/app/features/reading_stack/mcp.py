@@ -17,7 +17,16 @@ MCP = FeatureMcp(
             1,
             "reading_stack_read",
             "Affiche la lecture, sa source et son texte accessible.",
-            untrusted=("title", "summary", "text", "reason", "company"),
+            untrusted=(
+                "title",
+                "summary",
+                "text",
+                "reason",
+                "company",
+                "annotations[].term",
+                "annotations[].definition",
+                "annotations[].chapter",
+            ),
         ),
         McpAction(
             "PATCH /reading-stack/{item_id}",
@@ -63,7 +72,7 @@ MCP = FeatureMcp(
             "POST /reading-stack/{item_id}/cards",
             2,
             "reading_stack_make_cards",
-            "Crée une fiche à réviser à partir du résumé.",
+            "Crée une fiche à réviser à partir du résumé ou d’un passage vérifié du texte.",
         ),
         McpAction(
             "POST /reading-stack/{item_id}/plan",

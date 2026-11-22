@@ -728,6 +728,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/compatible-offers/{run_id}/{ref}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Offer */
+        get: operations["read_offer_api_v1_compatible_offers__run_id___ref__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/compatible-offers/{run_id}/{ref}/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start Offer Plan */
+        post: operations["start_offer_plan_api_v1_compatible_offers__run_id___ref__plan_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/contributions": {
         parameters: {
             query?: never;
@@ -825,6 +859,40 @@ export interface paths {
         put?: never;
         /** Refresh Pull */
         post: operations["refresh_pull_api_v1_contributions__contribution_id__refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conversations/explain/{turn_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Explanation */
+        get: operations["read_explanation_api_v1_conversations_explain__turn_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conversations/explain/{turn_id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept Explanation */
+        post: operations["accept_explanation_api_v1_conversations_explain__turn_id__accept_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1197,6 +1265,58 @@ export interface paths {
          * @description « Déjà appris » : l'Archiviste crée des acquis déclarés à partir du document indexé.
          */
         post: operations["mark_learned_api_v1_documents__document_id__learned_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/expert-debates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Debates */
+        get: operations["list_debates_api_v1_expert_debates_get"];
+        put?: never;
+        /** Open Debate */
+        post: operations["open_debate_api_v1_expert_debates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/expert-debates/{debate_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Debate */
+        get: operations["get_debate_api_v1_expert_debates__debate_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/expert-debates/{debate_id}/judgment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Put Judgment */
+        put: operations["put_judgment_api_v1_expert_debates__debate_id__judgment_put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1724,6 +1844,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ide/sessions/{session_id}/explain": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Latest Ide Explanation */
+        get: operations["latest_ide_explanation_api_v1_ide_sessions__session_id__explain_get"];
+        put?: never;
+        /** Explain File */
+        post: operations["explain_file_api_v1_ide_sessions__session_id__explain_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/ide/sessions/{session_id}/files": {
         parameters: {
             query?: never;
@@ -2179,6 +2317,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/lessons/{lesson_id}/explain": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Latest Lesson Explanation */
+        get: operations["latest_lesson_explanation_api_v1_lessons__lesson_id__explain_get"];
+        put?: never;
+        /** Explain Lesson */
+        post: operations["explain_lesson_api_v1_lessons__lesson_id__explain_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/lessons/{lesson_id}/pdf": {
         parameters: {
             query?: never;
@@ -2227,6 +2383,57 @@ export interface paths {
         put?: never;
         /** Approve Update */
         post: operations["approve_update_api_v1_lessons__lesson_id__updates__update_id__accept_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/linkedin-drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Launch */
+        post: operations["launch_api_v1_linkedin_drafts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/linkedin-drafts/latest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Latest */
+        get: operations["get_latest_api_v1_linkedin_drafts_latest_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/linkedin-drafts/{draft_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Save */
+        put: operations["save_api_v1_linkedin_drafts__draft_id__put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3573,6 +3780,24 @@ export interface paths {
          *     pour les autres. Un brouillon « à vérifier » modifié est recontrôlé.
          */
         patch: operations["patch_one_draft_api_v1_projects__project_id__drafts__kind__patch"];
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/github-claims": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Github Proofs */
+        get: operations["get_github_proofs_api_v1_projects__project_id__github_claims_get"];
+        put?: never;
+        /** Make Github Claim */
+        post: operations["make_github_claim_api_v1_projects__project_id__github_claims_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/projects/{project_id}/profile-entry": {
@@ -5568,6 +5793,8 @@ export interface components {
         Body_post_submit_api_v1_projects__project_id__submit_post: {
             /** Description */
             description?: string | null;
+            /** Github Claim Id */
+            github_claim_id?: string | null;
             /** Repo Url */
             repo_url?: string | null;
             /** Screenshots */
@@ -6089,6 +6316,26 @@ export interface components {
              */
             target: "declare" | "en_cours" | "valide" | "prouve";
         };
+        /** CompatibleOfferOut */
+        CompatibleOfferOut: {
+            /** Company */
+            company: string | null;
+            /** Rows */
+            rows: components["schemas"]["GapRowOut"][];
+            /** Score */
+            score: number;
+            /** Title */
+            title: string | null;
+            /** Url */
+            url: string;
+        };
+        /** CompatibleOfferPlan */
+        CompatibleOfferPlan: {
+            /** Program Id */
+            program_id: string;
+            /** Session Id */
+            session_id: string;
+        };
         /** ContactIn */
         ContactIn: {
             /** Name */
@@ -6208,6 +6455,8 @@ export interface components {
             answer: string | null;
             /** Classmates */
             classmates?: components["schemas"]["ClassmateReply"][] | null;
+            /** Focus Outcome */
+            focus_outcome?: ("correct" | "retry") | null;
             /**
              * Id
              * Format: uuid
@@ -6765,7 +7014,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "program" | "lesson" | "study" | "quiz" | "project" | "cv" | "capture" | "ide" | "contribution";
+            kind: "program" | "lesson" | "study" | "quiz" | "project" | "cv" | "capture" | "ide" | "github" | "contribution" | "feynman";
             /** Label */
             label: string;
             /** Url */
@@ -6910,6 +7159,197 @@ export interface components {
             sources?: ("cv" | "linkedin" | "note" | "january")[];
             /** Start */
             start?: string | null;
+        };
+        /** ExpertCitation */
+        ExpertCitation: {
+            /** Index */
+            index: number;
+            /** Title */
+            title: string;
+            /**
+             * Url
+             * Format: uri
+             */
+            url: string;
+        };
+        /** ExpertDebateOut */
+        ExpertDebateOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Judgment */
+            judgment: string | null;
+            /** Question */
+            question: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Speeches */
+            speeches: components["schemas"]["ExpertSpeech"][];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "running" | "waiting_user" | "paused" | "completed" | "failed" | "cancelled" | "expired";
+        };
+        /** ExpertDebateStarted */
+        ExpertDebateStarted: {
+            /**
+             * Debate Id
+             * Format: uuid
+             */
+            debate_id: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+        };
+        /** ExpertDebateSummary */
+        ExpertDebateSummary: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Question */
+            question: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "running" | "waiting_user" | "paused" | "completed" | "failed" | "cancelled" | "expired";
+        };
+        /** ExpertJudgmentIn */
+        ExpertJudgmentIn: {
+            /** Text */
+            text: string;
+        };
+        /** ExpertSpeech */
+        ExpertSpeech: {
+            /** Citations */
+            citations: components["schemas"]["ExpertCitation"][];
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "researcher" | "practitioner" | "skeptic";
+            /** Text */
+            text: string;
+        };
+        /** FeynmanCard */
+        FeynmanCard: {
+            /** Back */
+            back: string;
+            /** Front */
+            front: string;
+        };
+        /** FeynmanFileStart */
+        FeynmanFileStart: {
+            /** Path */
+            path: string;
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /**
+             * Strong
+             * @default false
+             */
+            strong: boolean;
+        };
+        /** FeynmanReport */
+        FeynmanReport: {
+            /** Cards */
+            cards: components["schemas"]["FeynmanCard"][];
+            /** Clarification */
+            clarification?: string | null;
+            /** Explanation */
+            explanation: string;
+            /** Follow Up */
+            follow_up?: string | null;
+            /** Proof Skill */
+            proof_skill: string | null;
+            saved?: components["schemas"]["FeynmanSaved"] | null;
+            /** Summary */
+            summary: string;
+        };
+        /** FeynmanRunOut */
+        FeynmanRunOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            report: components["schemas"]["FeynmanReport"] | null;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            source: components["schemas"]["FeynmanSource"];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "running" | "waiting_user" | "paused" | "completed" | "failed" | "cancelled" | "expired";
+        };
+        /** FeynmanSaved */
+        FeynmanSaved: {
+            /** Cards Added */
+            cards_added: number;
+            /** Proof Saved */
+            proof_saved: boolean;
+        };
+        /** FeynmanSource */
+        FeynmanSource: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "lesson" | "ide";
+            /** Path */
+            path?: string | null;
+            /** Title */
+            title: string;
+        };
+        /** FeynmanStart */
+        FeynmanStart: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /**
+             * Strong
+             * @default false
+             */
+            strong: boolean;
         };
         /** FileOut */
         FileOut: {
@@ -7217,6 +7657,48 @@ export interface components {
         GenerateStarted: {
             /** Version Id */
             version_id: string;
+        };
+        /** GithubClaimIn */
+        GithubClaimIn: {
+            /** Repo Url */
+            repo_url: string;
+            /** Sha */
+            sha: string;
+        };
+        /** GithubClaimOut */
+        GithubClaimOut: {
+            /** Code */
+            code: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Profile Url
+             * Format: uri
+             */
+            profile_url: string;
+        };
+        /** GithubProofOut */
+        GithubProofOut: {
+            /**
+             * Commit Url
+             * Format: uri
+             */
+            commit_url: string;
+            /** Sha */
+            sha: string;
+            /**
+             * Verified At
+             * Format: date-time
+             */
+            verified_at: string;
         };
         /**
          * GoalCreate
@@ -8123,6 +8605,55 @@ export interface components {
             sources?: ("cv" | "linkedin" | "note" | "january")[];
             /** Url */
             url: string;
+        };
+        /** LinkedInClaim */
+        LinkedInClaim: {
+            /**
+             * Field
+             * @enum {string}
+             */
+            field: "headline" | "about" | "skills";
+            /** Term */
+            term: string;
+        };
+        /** LinkedInDraftOut */
+        LinkedInDraftOut: {
+            /** Claims */
+            claims?: components["schemas"]["LinkedInClaim"][];
+            /** Id */
+            id: string;
+            /** Profile Version */
+            profile_version: number;
+            /** Revision */
+            revision: number;
+            /** Session Id */
+            session_id: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "pending" | "failed" | "ready" | "stale";
+            text?: components["schemas"]["LinkedInText"] | null;
+        };
+        /** LinkedInEdit */
+        LinkedInEdit: {
+            /** Revision */
+            revision: number;
+            text: components["schemas"]["LinkedInText"];
+        };
+        /** LinkedInStart */
+        LinkedInStart: {
+            /** Posting Id */
+            posting_id?: string | null;
+        };
+        /** LinkedInText */
+        LinkedInText: {
+            /** About */
+            about: string;
+            /** Headline */
+            headline: string;
+            /** Skills */
+            skills?: string[];
         };
         /** LinkedNoteOut */
         LinkedNoteOut: {
@@ -9083,6 +9614,10 @@ export interface components {
         OfferItem: {
             /** Company */
             company: string | null;
+            /** Offer Ref */
+            offer_ref?: string | null;
+            /** Run Id */
+            run_id?: string | null;
             /** Score */
             score: number;
             /** Title */
@@ -10470,6 +11005,27 @@ export interface components {
             /** Read */
             read: boolean;
         };
+        /** ReadingAnnotation */
+        ReadingAnnotation: {
+            /** Chapter */
+            chapter: string;
+            /** Definition */
+            definition: string;
+            /**
+             * End
+             * @description Fin exclusive du terme, en unités UTF-16.
+             */
+            end: number;
+            /** Lesson Id */
+            lesson_id: string | null;
+            /**
+             * Start
+             * @description Début du terme, en unités UTF-16.
+             */
+            start: number;
+            /** Term */
+            term: string;
+        };
         /** ReadingApplicationIn */
         ReadingApplicationIn: {
             /** Company */
@@ -10482,8 +11038,15 @@ export interface components {
             /** Application Id */
             application_id: string;
         };
+        /** ReadingCardIn */
+        ReadingCardIn: {
+            /** Passage */
+            passage: string;
+        };
         /** ReadingDetail */
         ReadingDetail: {
+            /** Annotations */
+            annotations?: components["schemas"]["ReadingAnnotation"][];
             /** Company */
             company: string | null;
             /**
@@ -14439,6 +15002,74 @@ export interface operations {
             };
         };
     };
+    read_offer_api_v1_compatible_offers__run_id___ref__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompatibleOfferOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_offer_plan_api_v1_compatible_offers__run_id___ref__plan_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanGapIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompatibleOfferPlan"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_contributions_api_v1_contributions_get: {
         parameters: {
             query?: never;
@@ -14642,6 +15273,68 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ContributionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_explanation_api_v1_conversations_explain__turn_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                turn_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeynmanRunOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_explanation_api_v1_conversations_explain__turn_id__accept_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                turn_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeynmanSaved"];
                 };
             };
             /** @description Validation Error */
@@ -15464,6 +16157,125 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LearnedStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_debates_api_v1_expert_debates_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExpertDebateSummary"][];
+                };
+            };
+        };
+    };
+    open_debate_api_v1_expert_debates_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConversationQuestionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExpertDebateStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_debate_api_v1_expert_debates__debate_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                debate_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExpertDebateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_judgment_api_v1_expert_debates__debate_id__judgment_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                debate_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExpertJudgmentIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExpertDebateOut"];
                 };
             };
             /** @description Validation Error */
@@ -16464,6 +17276,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TrialView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    latest_ide_explanation_api_v1_ide_sessions__session_id__explain_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeynmanRunOut"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    explain_file_api_v1_ide_sessions__session_id__explain_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeynmanFileStart"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationStarted"];
                 };
             };
             /** @description Validation Error */
@@ -17671,6 +18549,72 @@ export interface operations {
             };
         };
     };
+    latest_lesson_explanation_api_v1_lessons__lesson_id__explain_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lesson_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeynmanRunOut"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    explain_lesson_api_v1_lessons__lesson_id__explain_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lesson_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeynmanStart"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_lesson_pdf_api_v1_lessons__lesson_id__pdf_get: {
         parameters: {
             query?: never;
@@ -17752,6 +18696,94 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UpdateAccepted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    launch_api_v1_linkedin_drafts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkedInStart"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkedInDraftOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_latest_api_v1_linkedin_drafts_latest_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkedInDraftOut"] | null;
+                };
+            };
+        };
+    };
+    save_api_v1_linkedin_drafts__draft_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                draft_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkedInEdit"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkedInDraftOut"];
                 };
             };
             /** @description Validation Error */
@@ -20562,6 +21594,79 @@ export interface operations {
             };
         };
     };
+    get_github_proofs_api_v1_projects__project_id__github_claims_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GithubProofOut"][];
+                };
+            };
+            /** @description `project_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    make_github_claim_api_v1_projects__project_id__github_claims_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GithubClaimIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GithubClaimOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     post_profile_entry_api_v1_projects__project_id__profile_entry_post: {
         parameters: {
             query?: never;
@@ -21454,7 +22559,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ReadingCardIn"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

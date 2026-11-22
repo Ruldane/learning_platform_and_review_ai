@@ -53,6 +53,8 @@ class OfferItem(BaseModel):
     title: str | None
     company: str | None
     score: int
+    run_id: str | None = None
+    offer_ref: str | None = None
 
 
 class OffersRubric(BaseModel):

@@ -36,6 +36,11 @@ en remplaçant le numéro par celui de cette leçon, et le texte par la question
 À revoir [1] : Question de révision → Corrigé concis
 N'ajoute pas cette ligne si l'exercice a seulement été proposé, si la réponse était juste,
 ou si aucune leçon proposée ne fonde le corrigé.
+
+Uniquement si January vient de répondre à un exercice et que tu peux juger sa réponse,
+ajoute en dernière ligne `<!-- concentration:correct -->` si elle a réussi ou
+`<!-- concentration:retry -->` si une erreur réelle demande une correction. En cas de doute,
+de question libre ou de changement de sujet, ne mets aucune ligne de ce type.
 {% endif %}
 
 {% include "_shared/untrusted.md" %}

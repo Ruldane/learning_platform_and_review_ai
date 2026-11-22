@@ -4,7 +4,7 @@ ses deux messages. Journaux : identifiants et nombres seulement, jamais une paro
 l'offre."""
 
 import asyncio
-from collections.abc import Callable, Coroutine, Sequence
+from collections.abc import Callable, Coroutine, Mapping, Sequence
 from typing import Any, Protocol
 
 from langchain_core.language_models import BaseChatModel
@@ -17,6 +17,7 @@ from app.agents.runtime.deps import GraphDeps
 from app.agents.state.hiring_committee import HiringCommitteeState
 from app.agents.tools.committee_schema import PERSONAS, CommitteeContext, Persona
 from app.core.played import played_by
+from app.providers.llm.base import Tier
 
 IMPRESSION_REQUEST = "Donne ta première impression."
 DEBATE_REQUEST = "Prends la parole au débat."
@@ -46,9 +47,24 @@ async def persona_call(
 ) -> tuple[BaseChatModel, list[BaseMessage]]:
     """Le modèle de la persona (niveau de son agent) et ses messages : son prompt en mode
     `committee` pour l'étape `step` (`impression`, `debate`, `vote`), puis la demande."""
-    model = await deps.models.get_chat_model(deps.user_id, get_agent(persona).tier, agent=persona)
     variables = persona_vars(ctx, persona, step, spoken, round_number, addressee)
-    prompt = render_prompt(persona, **variables)
+    return await role_call(deps, persona, persona, request, variables)
+
+
+async def role_call(
+    deps: GraphDeps,
+    agent: str,
+    prompt_name: str,
+    request: str,
+    variables: Mapping[str, object],
+    *,
+    tier: Tier | None = None,
+) -> tuple[BaseChatModel, list[BaseMessage]]:
+    """Fabrique et messages d'une voix de débat."""
+    model = await deps.models.get_chat_model(
+        deps.user_id, tier or get_agent(agent).tier, agent=agent
+    )
+    prompt = render_prompt(prompt_name, **variables)
     return model, [SystemMessage(prompt), HumanMessage(request)]
 
 

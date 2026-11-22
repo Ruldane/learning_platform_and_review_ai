@@ -47,6 +47,9 @@ CASES: dict[str, str] = {
         "tests/isolation/test_conversations.py"
         "::test_cannot_read_or_add_to_another_accounts_conversation"
     ),
+    "app.features.conversations.feynman_router": (
+        "tests/isolation/test_conversations.py::test_feynman_context_and_report_are_private"
+    ),
     "app.features.replan.router": (
         "tests/features/replan/test_router.py::test_replan_routes_isolate_users"
     ),

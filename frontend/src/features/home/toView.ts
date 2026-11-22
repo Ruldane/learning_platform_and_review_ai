@@ -30,6 +30,16 @@ export interface BriefView {
   unavailable: readonly string[];
 }
 
+function offerView(offer: BriefOut["offers"]["items"][number]): OfferItemView {
+  const { title, company, score, url, run_id, offer_ref } = offer;
+  const view = { title, company, score, url };
+  if (!run_id || !offer_ref) return view;
+  return {
+    ...view,
+    gapPath: "/carriere/offres-compatibles/" + encodeURIComponent(run_id) + "/" + encodeURIComponent(offer_ref),
+  };
+}
+
 export function toBriefView(brief: BriefOut): BriefView {
   return {
     id: brief.id,
@@ -52,12 +62,7 @@ export function toBriefView(brief: BriefOut): BriefView {
         dueOn: item.due_on,
       })),
     },
-    offers: brief.offers.items.map((offer) => ({
-      title: offer.title,
-      company: offer.company,
-      score: offer.score,
-      url: offer.url,
-    })),
+    offers: brief.offers.items.map(offerView),
     readingUnread: brief.reading_unread ?? 0,
     week: brief.week && {
       doneMinutes: brief.week.done_minutes,

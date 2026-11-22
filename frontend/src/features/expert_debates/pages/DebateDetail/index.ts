@@ -1,0 +1,1 @@
+export { DebateDetail } from "./DebateDetail";

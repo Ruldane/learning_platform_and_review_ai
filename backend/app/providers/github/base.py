@@ -19,6 +19,13 @@ class RepoRef:
     def name(self) -> str:
         return f"{self.owner}/{self.repository}"
 
+    @property
+    def url(self) -> str:
+        return f"https://github.com/{self.name}"
+
+    def commit_url(self, sha: str) -> str:
+        return f"{self.url}/commit/{sha}"
+
     def issue_url(self, number: int) -> str:
         return f"https://github.com/{self.name}/issues/{number}"
 
@@ -62,9 +69,22 @@ class GithubPull:
     state: str = "open"
 
 
+@dataclass(frozen=True)
+class GithubCommit:
+    repo: RepoRef
+    repository_id: int
+    sha: str
+    author_id: int
+    author_login: str
+
+
 class GithubContributions(Protocol):
     async def open_issues(self, repo: RepoRef) -> tuple[GithubIssue, ...]: ...
 
     async def default_branch(self, repo: RepoRef) -> str: ...
 
     async def pull(self, repo: RepoRef, number: int) -> GithubPull: ...
+
+    async def attributed_commit(self, repo: RepoRef, sha: str) -> GithubCommit: ...
+
+    async def public_bio(self, author_id: int) -> str | None: ...

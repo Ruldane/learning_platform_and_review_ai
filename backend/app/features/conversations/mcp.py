@@ -1,6 +1,8 @@
 from app.agents.tools.conversation_port import CONVERSATION_GRAPH
 from app.mcp.base import FeatureMcp, McpAction, McpGraph
 
+_EXPLAIN = "L’explication et l’acceptation des propositions se font dans l’interface."
+
 MCP = FeatureMcp(
     feature="conversations",
     actions=(
@@ -49,4 +51,12 @@ MCP = FeatureMcp(
         ),
     ),
     graphs=(McpGraph(CONVERSATION_GRAPH, follow_only=True),),
+    excluded={
+        "GET /lessons/{lesson_id}/explain": _EXPLAIN,
+        "POST /lessons/{lesson_id}/explain": _EXPLAIN,
+        "GET /ide/sessions/{session_id}/explain": _EXPLAIN,
+        "POST /ide/sessions/{session_id}/explain": _EXPLAIN,
+        "GET /conversations/explain/{turn_id}": _EXPLAIN,
+        "POST /conversations/explain/{turn_id}/accept": _EXPLAIN,
+    },
 )

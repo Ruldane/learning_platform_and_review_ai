@@ -5,6 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.agents.tools.feynman_port import FeynmanAssessment, FeynmanContext, FeynmanExchange
 from app.core.errors import AppError
 
 CONVERSATION_GRAPH = "conversation"
@@ -13,6 +14,8 @@ TRAINING_TUTOR = "training_tutor"
 BRAIN_LIBRARIAN = "brain_librarian"
 CLASSROOM_SCOPE = "classroom"
 TURN_TOKEN_LIMIT = 12_000
+
+FocusOutcome = Literal["correct", "retry"]
 
 ClassmateRole = Literal["beginner", "peer", "advanced"]
 CLASSMATE_ROLES: tuple[ClassmateRole, ...] = ("beginner", "peer", "advanced")
@@ -63,6 +66,21 @@ class ConversationContext:
 
 
 class ConversationStore(Protocol):
+    async def feynman_context(
+        self, user_id: str, session_id: str, thread_id: str, turn_id: str
+    ) -> FeynmanContext | None: ...
+
+    async def save_feynman(
+        self,
+        user_id: str,
+        session_id: str,
+        thread_id: str,
+        turn_id: str,
+        *,
+        assessment: FeynmanAssessment,
+        exchange: FeynmanExchange,
+    ) -> None: ...
+
     async def context(
         self, user_id: str, session_id: str, thread_id: str, turn_id: str
     ) -> ConversationContext | None: ...
@@ -79,6 +97,7 @@ class ConversationStore(Protocol):
         practice: Sequence[ConversationPractice] = (),
         context_notes: dict[str, str] | None = None,
         classmates: Sequence[ClassmateReply] = (),
+        focus_outcome: FocusOutcome | None = None,
     ) -> None: ...
 
 
@@ -87,6 +106,23 @@ def _unavailable() -> AppError:
 
 
 class _NoConversation:
+    async def feynman_context(
+        self, user_id: str, session_id: str, thread_id: str, turn_id: str
+    ) -> FeynmanContext | None:
+        raise _unavailable()
+
+    async def save_feynman(
+        self,
+        user_id: str,
+        session_id: str,
+        thread_id: str,
+        turn_id: str,
+        *,
+        assessment: FeynmanAssessment,
+        exchange: FeynmanExchange,
+    ) -> None:
+        raise _unavailable()
+
     async def context(
         self, user_id: str, session_id: str, thread_id: str, turn_id: str
     ) -> ConversationContext | None:
@@ -104,6 +140,7 @@ class _NoConversation:
         practice: Sequence[ConversationPractice] = (),
         context_notes: dict[str, str] | None = None,
         classmates: Sequence[ClassmateReply] = (),
+        focus_outcome: FocusOutcome | None = None,
     ) -> None:
         raise _unavailable()
 

@@ -33,6 +33,7 @@ export interface OfferItemView {
   company: string | null;
   score: number;
   url: string;
+  gapPath?: string;
 }
 
 /** `WeekRubric` : l'avancement de la semaine du programme. */

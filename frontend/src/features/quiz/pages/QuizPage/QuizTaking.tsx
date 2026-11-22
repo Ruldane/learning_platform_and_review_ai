@@ -8,6 +8,8 @@ import { AttemptPanel } from "./AttemptPanel";
 import { QuizEntry } from "./QuizEntry";
 import type { TakenAttempt } from "./takenAttempt";
 
+type Presented = Omit<TakenAttempt, "attemptId" | "drafts">;
+
 interface QuizTakingProps {
   quiz: QuizOut;
   /** Le quiz est en cours de relecture (après une note) : l'ordre des questions peut changer. */
@@ -36,9 +38,9 @@ export function QuizTaking({ quiz, refreshing, gradePollMs, GhostPanel }: QuizTa
   const [taken, setTaken] = useState<TakenAttempt | null>(() => resumeGrading(quiz));
   const questions = useMemo(() => toQuestionViews(quiz.questions), [quiz.questions]);
 
-  const send = async (drafts: AnswerDraft[], elapsedMs?: number, shown = questions) => {
-    const attemptId = await submitter.submit(drafts, elapsedMs);
-    if (attemptId) setTaken({ attemptId, questions: shown, drafts, elapsedMs });
+  const send = async (drafts: AnswerDraft[], presentation: Presented) => {
+    const attemptId = await submitter.submit(drafts, presentation.elapsedMs);
+    if (attemptId) setTaken({ ...presentation, attemptId, drafts });
   };
   const back = () => {
     submitter.release();
@@ -48,7 +50,7 @@ export function QuizTaking({ quiz, refreshing, gradePollMs, GhostPanel }: QuizTa
   const resend = () => {
     if (!taken?.drafts) return;
     submitter.release();
-    void send(taken.drafts, taken.elapsedMs, taken.questions);
+    void send(taken.drafts, taken);
   };
 
   if (taken) {
@@ -75,7 +77,9 @@ export function QuizTaking({ quiz, refreshing, gradePollMs, GhostPanel }: QuizTa
       error={submitter.error}
       pending={submitter.pending}
       round={round}
-      onSubmit={(drafts, elapsedMs) => void send(drafts, elapsedMs)}
+      onSubmit={(drafts, elapsedMs, timings) =>
+        void send(drafts, { questions, elapsedMs, timings })
+      }
       renderGhost={GhostPanel ? (live) => <GhostPanel quizId={quiz.id} live={live} /> : undefined}
     />
   );

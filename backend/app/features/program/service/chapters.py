@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.tools.plan_schema import ChapterOutline
-from app.features.program.repository import PlanVersionRepository
+from app.features.program.repository import PlanVersionRepository, ProgramRepository
 
 
 class ProgramOutline(BaseModel):
@@ -17,3 +17,10 @@ async def program_outline(db: AsyncSession, user_id: str, program_id: str) -> Pr
     if version is None:
         return ProgramOutline()
     return ProgramOutline.model_validate(version.snapshot)
+
+
+async def validated_outlines(db: AsyncSession, user_id: str) -> list[ProgramOutline]:
+    programs = await ProgramRepository(db, user_id).list_recent()
+    return [
+        await program_outline(db, user_id, row.id) for row in programs if row.status == "validated"
+    ]

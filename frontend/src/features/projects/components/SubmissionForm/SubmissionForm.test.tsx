@@ -18,6 +18,42 @@ const description = () => screen.getByLabelText("Description");
 const pickerInput = () => screen.getByLabelText("Captures d'écran");
 
 describe("SubmissionForm", () => {
+  it("attaches the issued GitHub claim to the selected commit and repository", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn();
+    const url = "https://github.com/orga-fictive/bibliotheque";
+    const sha = "a".repeat(40);
+    render(
+      <SubmissionForm
+        onSubmit={onSubmit}
+        busy={false}
+        initial={{ repoUrl: url, description: null }}
+        github={{
+          pending: false,
+          error: null,
+          request: vi.fn(),
+          claim: {
+            repoUrl: url,
+            sha,
+            id: "defi",
+            code: "tremplin:exemple",
+            profileUrl: "https://github.com/camille-fictive",
+          },
+        }}
+      />,
+    );
+    await user.click(screen.getByText("Faire vérifier un commit GitHub"));
+    await user.type(screen.getByRole("textbox", { name: "SHA complet du commit" }), sha);
+    expect(screen.getByText("tremplin:exemple")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Rendre le projet" }));
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ githubClaimId: "defi" }));
+    await user.clear(repo());
+    await user.type(repo(), "https://github.com/orga-fictive/autre");
+    expect(screen.queryByText("tremplin:exemple")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Rendre le projet" }));
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+  });
+
   it("starts from initial: both fields are prefilled, editable and sent as they are", async () => {
     const { onSubmit, user } = setup(false, {
       repoUrl: "https://example.org/camille/ventes",

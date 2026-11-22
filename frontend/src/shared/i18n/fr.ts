@@ -8,12 +8,16 @@ import { boss } from "./messages/boss";
 import { brain } from "./messages/brain";
 import { capture } from "./messages/capture";
 import { chat } from "./messages/chat";
+import { concentration } from "./messages/concentration";
 import { conversations } from "./messages/conversations";
 import { codeTrial } from "./messages/codeTrial";
+import { compatibleOffers } from "./messages/compatibleOffers";
 import { contributions } from "./messages/contributions";
 import { costs } from "./messages/costs";
 import { cv } from "./messages/cv";
 import { demo } from "./messages/demo";
+import { expertDebates } from "./messages/expertDebates";
+import { feynman } from "./messages/feynman";
 import { futureSelf } from "./messages/futureSelf";
 import { galaxy } from "./messages/galaxy";
 import { gap } from "./messages/gap";
@@ -24,6 +28,7 @@ import { learning } from "./messages/learning";
 import { lessonHunt } from "./messages/lessonHunt";
 import { lessonUpdates } from "./messages/lessonUpdates";
 import { lessons } from "./messages/lessons";
+import { linkedInDrafts } from "./messages/linkedInDrafts";
 import { mcp } from "./messages/mcp";
 import { memory } from "./messages/memory";
 import { messageReview } from "./messages/messageReview";
@@ -84,7 +89,9 @@ export const fr = {
   replan,
   capture,
   chat,
+  concentration,
   conversations,
+  compatibleOffers,
   contributions,
   codeTrial,
   gap,
@@ -93,10 +100,13 @@ export const fr = {
   applications,
   home,
   radar,
+  expertDebates,
+  feynman,
   futureSelf,
   galaxy,
   reading,
   projects,
+  linkedInDrafts,
   mcp,
   ide,
 } as const;

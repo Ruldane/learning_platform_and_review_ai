@@ -33,12 +33,14 @@ from app.features.capture.service.runtime import CaptureRuntime
 from app.features.capture.service.store import AgentCaptureStore
 from app.features.code_trial.store import AgentCodeTrialStore
 from app.features.conversations.store import AgentConversationStore
+from app.features.expert_debates.service import AgentExpertDebates
 from app.features.learning.service.runtime import LearningRuntime
 from app.features.learning.service.store import AgentCouncilStore
 from app.features.lesson_hunt.service.store import AgentLessonHuntStore
 from app.features.lesson_updates.service.store import AgentLessonUpdatesStore
 from app.features.lessons.service.runtime import LessonsRuntime
 from app.features.lessons.service.store import AgentLessonStore
+from app.features.linkedin_drafts.service.store import AgentLinkedInStore
 from app.features.memory.service.gateway import AgentMemoryGateway
 from app.features.memory.service.runtime import MemoryRuntime
 from app.features.oncall.service.report import AgentOncallStore
@@ -162,9 +164,11 @@ def _persisted_ports(
     return replace(
         ports,
         conversations=AgentConversationStore(session_factory),
+        expert_debates=AgentExpertDebates(session_factory),
         lesson_hunt=AgentLessonHuntStore(session_factory),
         oncall=AgentOncallStore(session_factory),
         lesson_updates=AgentLessonUpdatesStore(session_factory),
+        linkedin=AgentLinkedInStore(session_factory),
         paper_lab=AgentPaperLabStore(session_factory),
         code_trial=AgentCodeTrialStore(session_factory),
     )

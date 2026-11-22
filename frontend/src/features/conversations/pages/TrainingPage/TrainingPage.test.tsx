@@ -78,6 +78,7 @@ describe("TrainingPage", () => {
 
     await user.click(screen.getByRole("button", { name: "Terminer le training" }));
     expect(await screen.findByText("Tu as travaillé les chaînes.")).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Bilan du training" })).toHaveFocus();
     expect(screen.getByText(/12 min/)).toBeVisible();
     expect(screen.getByText(/2 fiches/)).toBeVisible();
   });

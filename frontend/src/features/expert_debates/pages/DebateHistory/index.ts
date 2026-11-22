@@ -1,0 +1,1 @@
+export { DebateHistory } from "./DebateHistory";
