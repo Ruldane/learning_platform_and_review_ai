@@ -64,6 +64,7 @@ describe("registre des features", () => {
       "/memoire/banc",
       "/memoire/documents",
       "/memoire/cerveau",
+      "/memoire/lecture",
     ]);
     expect(groups[7]?.items).toEqual([
       { labelKey: "settings.models.navLabel", path: "/reglages/modeles" },
