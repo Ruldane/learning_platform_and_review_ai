@@ -21,6 +21,7 @@ import { lessons } from "./messages/lessons";
 import { mcp } from "./messages/mcp";
 import { memory } from "./messages/memory";
 import { onboarding } from "./messages/onboarding";
+import { oncall } from "./messages/oncall";
 import { podcast } from "./messages/podcast";
 import { program } from "./messages/program";
 import { projects } from "./messages/projects";
@@ -58,6 +59,7 @@ export const fr = {
   learning,
   study,
   training,
+  oncall,
   podcast,
   quiz,
   skills,

@@ -67,6 +67,7 @@ ROUTE_ONLY: dict[str, str] = {
     # vérifiés dans le bac (D203)
     "ide_teacher": "POST /ide/sessions/{id}/teach",
     "ide_exercise": "POST /ide/exercises/generate",
+    "oncall_review": "POST /oncall/incidents/{id}/report",
     "cv_review": "POST /cv/reviews",  # profil, gabarit et offre vérifiés puis figés (D130)
 }
 

@@ -24,6 +24,9 @@ dd { margin-block-end: 0.75em; }
 .chapter-notes {
   border-inline-start: 0.25em solid #54718a; background: #f1f4f7; padding: 0.25em 0.75em;
 }
+.book-diagram { margin: 1em auto; break-inside: avoid; }
+.book-diagram img { display: block; height: auto; max-width: 100%; margin-inline: auto; }
+.book-diagram figcaption { margin-block-start: 0.5em; }
 @media screen and (min-width: 46em), print {
   .chapter-notes { float: right; width: 30%; margin: 0 0 1em 1em; }
   .book-page { display: flow-root; }
@@ -34,7 +37,7 @@ dd { margin-block-end: 0.75em; }
 }
 """
 
-_CSP = "default-src 'none'; style-src 'self'; base-uri 'none'; form-action 'none'"
+_CSP = "default-src 'none'; style-src 'self'; img-src data:; base-uri 'none'; form-action 'none'"
 
 
 @dataclass(frozen=True)

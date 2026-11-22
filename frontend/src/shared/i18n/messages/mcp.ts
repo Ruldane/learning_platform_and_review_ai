@@ -184,6 +184,7 @@ export const mcp = {
     learning: "Objectifs et conseil",
     lessons: "Leçons",
     memory: "Mémoire",
+    oncall: "Astreinte",
     podcast: "Podcast du matin",
     postings: "Offres",
     program: "Programme",

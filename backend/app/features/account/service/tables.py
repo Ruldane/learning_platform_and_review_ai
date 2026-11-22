@@ -50,6 +50,7 @@ REVIEWED_NOT_SECRET = frozenset(
         "lessons.pdf_key",
         "program_books.pdf_key",
         "program_books.epub_key",
+        "oncall_incidents.diagnostic_hash",  # empreinte du fichier de simulation
         "podcast_episodes.audio_key",  # emplacement du WAV dans le stockage par compte
         "resources.local_key",
         "boards.scribe_key",

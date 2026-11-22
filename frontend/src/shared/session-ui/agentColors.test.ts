@@ -31,7 +31,8 @@ describe("agentColors", () => {
   });
 
   it("reserves all the slugs of the roadmap", () => {
-    expect(Object.keys(AGENT_COLORS)).toHaveLength(23);
+    expect(Object.keys(AGENT_COLORS)).toHaveLength(24);
+    expect(agentIdentity("oncall_reviewer").name).toBe("Responsable d’exploitation");
     expect(Object.keys(AGENT_COLORS)).toContain("demo_critic");
     expect(Object.keys(AGENT_COLORS)).toContain("ats_reader");
   });

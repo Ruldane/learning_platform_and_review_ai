@@ -67,6 +67,7 @@ from tests.e2e.contribution_fixture import router as contribution_fixture
 from tests.e2e.council_script import DEBATERS, council_scripts, script_web
 from tests.e2e.cv_script import cv_scripts, script_company_web
 from tests.e2e.daily_script import daily_scripts, script_daily_web
+from tests.e2e.oncall_fixtures import REVIEW, install_sandbox
 from tests.e2e.scripted_models import Reply, ScriptedModels, merge_scripts
 from tests.e2e.seed import seed_local_space
 from tests.support.memory import FakeWebReader, fake_memory_providers, fake_publishing_providers
@@ -153,13 +154,15 @@ def build_app(
                 {
                     "training_tutor": [
                         "Une chaîne relie une étape à la suivante. Propose un exemple."
-                    ]
+                    ],
+                    "oncall_reviewer": [REVIEW],
                 },
             ),
             delays=delays,
         ),
     )
     app.dependency_overrides[get_health_service] = healthy_service
+    install_sandbox(app)
     app.include_router(book_fixture)
     app.include_router(contribution_fixture)
     if settings.auth_mode == "google":  # le faux fournisseur, sur le même serveur (P5)

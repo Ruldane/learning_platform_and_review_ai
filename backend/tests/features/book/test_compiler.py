@@ -1,4 +1,6 @@
 import re
+from base64 import b64decode
+from dataclasses import replace
 from datetime import UTC, datetime
 from io import BytesIO
 from xml.etree.ElementTree import fromstring
@@ -8,7 +10,7 @@ import pytest
 
 from app.features.book.service.compiler import compile_book
 from app.features.book.service.models import BookChapter, BookNote, BookSource, GlossaryEntry
-from app.providers.pdf.base import RenderFailed
+from app.providers.pdf.base import PageLayout, PdfLayout, RenderFailed
 from tests.support.memory import FakeHtmlRenderer
 
 XHTML = {"x": "http://www.w3.org/1999/xhtml"}
@@ -120,3 +122,43 @@ async def test_pdf_failure_propagates_without_a_partial_book(source: BookSource)
     with pytest.raises(RenderFailed) as error:
         await compile_book(source, renderer)
     assert source.title not in str(error.value)
+
+
+async def test_mermaid_is_rendered_as_an_accessible_image_in_both_formats(
+    source: BookSource,
+) -> None:
+    png = b64decode(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMB/efEphkAAAAASUVORK5CYII="
+    )
+
+    class FakeLayout:
+        async def extract_layout(self, data: bytes, *, max_pages: int = 4) -> PdfLayout:
+            assert data.startswith(b"%PDF") and max_pages >= 1
+            return PdfLayout([PageLayout(842, 595, [], png, "Entrée Sortie")], [], True)
+
+    chapter = replace(
+        source.chapters[0],
+        markdown="## Schémas\n\n```mermaid\nflowchart LR\n  A[Entrée] --> B[Sortie]\n```\n",
+    )
+    book = replace(source, chapters=(chapter,))
+    renderer = FakeHtmlRenderer()
+    files = await compile_book(book, renderer, diagram_layout=FakeLayout())
+
+    diagram_document, book_document = renderer.documents
+    assert diagram_document.wait_for_expression == "window.__lessonReady === true"
+    assert set(diagram_document.assets) >= {"mermaid.min.js", "render.js"}
+    assert 'class="mermaid"' in diagram_document.index_html
+    assert 'src="data:image/png;base64,' in book_document.index_html
+    assert 'alt="Entrée → Sortie"' in book_document.index_html
+    assert "<figcaption>Entrée → Sortie</figcaption>" in book_document.index_html
+    assert "flowchart" not in book_document.index_html and "<script" not in book_document.index_html
+
+    with ZipFile(BytesIO(files.epub)) as epub:
+        page = fromstring(epub.read("EPUB/chapter-4.xhtml"))
+        (figure,) = page.findall(".//x:figure/x:img", XHTML)
+        assert figure.attrib["alt"] == "Entrée → Sortie"
+        package = fromstring(epub.read("EPUB/package.opf"))
+        (entry,) = package.findall('.//p:item[@media-type="image/png"]', OPF)
+        assert entry.attrib["href"] == figure.attrib["src"]
+        assert epub.read(f"EPUB/{entry.attrib['href']}") == png
+        assert len(page.findall(".//x:script", XHTML)) == 0

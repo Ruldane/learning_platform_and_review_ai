@@ -19,6 +19,7 @@ from app.agents.tools.interview_port import NO_INTERVIEWS, InterviewStore
 from app.agents.tools.kit_port import NO_KIT, KitStore
 from app.agents.tools.lesson_port import NO_LESSONS, LessonStore
 from app.agents.tools.memory_port import NO_MEMORY, MemoryGateway
+from app.agents.tools.oncall_port import NO_ONCALL, OncallPort
 from app.agents.tools.podcast_port import NO_PODCAST, PodcastStore
 from app.agents.tools.profile_port import NO_PROFILE, ProfileStore
 from app.agents.tools.program_port import NO_PROGRAM, ProgramStore
@@ -54,6 +55,7 @@ class AgentPorts:
     projects: ProjectStore = NO_PROJECTS  # énoncé et évaluation des projets preuves (D165)
     ide: IdeStore = NO_IDE  # professeur et exercices générés de l'IDE (D203)
     conversations: ConversationStore = NO_CONVERSATION
+    oncall: OncallPort = NO_ONCALL
     podcast: PodcastStore = NO_PODCAST
 
 

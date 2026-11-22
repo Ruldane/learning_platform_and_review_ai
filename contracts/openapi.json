@@ -4270,6 +4270,37 @@
         "title": "DeleteAccountIn",
         "type": "object"
       },
+      "DiagnosticView": {
+        "properties": {
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "state": {
+            "enum": [
+              "idle",
+              "running",
+              "passed",
+              "failed",
+              "stale"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state"
+        ],
+        "title": "DiagnosticView",
+        "type": "object"
+      },
       "DistinctIn": {
         "properties": {
           "other_id": {
@@ -6811,6 +6842,257 @@
           }
         },
         "title": "IgnoredCounts",
+        "type": "object"
+      },
+      "IncidentCreate": {
+        "properties": {
+          "kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "latency",
+                  "queue",
+                  "quota",
+                  "fidelity"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "seed": {
+            "anyOf": [
+              {
+                "maximum": 999999.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seed"
+          }
+        },
+        "title": "IncidentCreate",
+        "type": "object"
+      },
+      "IncidentEvent": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "sample",
+              "alert",
+              "diagnostic"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "metric": {
+            "enum": [
+              "latency",
+              "queue",
+              "quota",
+              "fidelity"
+            ],
+            "title": "Metric",
+            "type": "string"
+          },
+          "minute": {
+            "title": "Minute",
+            "type": "integer"
+          },
+          "value": {
+            "title": "Value",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "minute",
+          "kind",
+          "metric",
+          "value"
+        ],
+        "title": "IncidentEvent",
+        "type": "object"
+      },
+      "IncidentSummary": {
+        "properties": {
+          "alerted": {
+            "title": "Alerted",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "ide_session_id": {
+            "title": "Ide Session Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "latency",
+              "queue",
+              "quota",
+              "fidelity"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "minute": {
+            "title": "Minute",
+            "type": "integer"
+          },
+          "proof_recorded": {
+            "title": "Proof Recorded",
+            "type": "boolean"
+          },
+          "seed": {
+            "title": "Seed",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "title",
+          "seed",
+          "minute",
+          "alerted",
+          "ide_session_id",
+          "proof_recorded"
+        ],
+        "title": "IncidentSummary",
+        "type": "object"
+      },
+      "IncidentView": {
+        "properties": {
+          "alerted": {
+            "title": "Alerted",
+            "type": "boolean"
+          },
+          "diagnostic": {
+            "$ref": "#/components/schemas/DiagnosticView"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/IncidentEvent"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "ide_session_id": {
+            "title": "Ide Session Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "latency",
+              "queue",
+              "quota",
+              "fidelity"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "minute": {
+            "title": "Minute",
+            "type": "integer"
+          },
+          "observed_events": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Observed Events",
+            "type": "array"
+          },
+          "proof_recorded": {
+            "title": "Proof Recorded",
+            "type": "boolean"
+          },
+          "report": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report"
+          },
+          "review_session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Session Id"
+          },
+          "review_state": {
+            "default": "idle",
+            "enum": [
+              "idle",
+              "running",
+              "failed",
+              "complete"
+            ],
+            "title": "Review State",
+            "type": "string"
+          },
+          "seed": {
+            "title": "Seed",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "verdict": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReviewScore"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "title",
+          "seed",
+          "minute",
+          "alerted",
+          "ide_session_id",
+          "proof_recorded",
+          "events",
+          "observed_events",
+          "diagnostic"
+        ],
+        "title": "IncidentView",
         "type": "object"
       },
       "IndicatorsOut": {
@@ -10910,6 +11192,34 @@
           "items"
         ],
         "title": "OffersRubric",
+        "type": "object"
+      },
+      "OncallReportIn": {
+        "properties": {
+          "text": {
+            "maxLength": 6000,
+            "minLength": 8,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "OncallReportIn",
+        "type": "object"
+      },
+      "OncallReviewStarted": {
+        "properties": {
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id"
+        ],
+        "title": "OncallReviewStarted",
         "type": "object"
       },
       "PasteCreate": {
@@ -15943,6 +16253,49 @@
           }
         },
         "title": "ReviewReport",
+        "type": "object"
+      },
+      "ReviewScore": {
+        "properties": {
+          "correction": {
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Correction",
+            "type": "integer"
+          },
+          "diagnosis": {
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Diagnosis",
+            "type": "integer"
+          },
+          "evidence": {
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Evidence",
+            "type": "integer"
+          },
+          "feedback": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Feedback",
+            "type": "string"
+          },
+          "prevention": {
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Prevention",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "diagnosis",
+          "evidence",
+          "correction",
+          "prevention",
+          "feedback"
+        ],
+        "title": "ReviewScore",
         "type": "object"
       },
       "ReviewStart": {
@@ -27567,6 +27920,311 @@
         "summary": "Start Quiz",
         "tags": [
           "quiz"
+        ]
+      }
+    },
+    "/api/v1/oncall/incidents": {
+      "get": {
+        "operationId": "list_incidents_api_v1_oncall_incidents_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/IncidentSummary"
+                  },
+                  "title": "Response List Incidents Api V1 Oncall Incidents Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Incidents",
+        "tags": [
+          "oncall"
+        ]
+      },
+      "post": {
+        "operationId": "create_incident_api_v1_oncall_incidents_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Incident",
+        "tags": [
+          "oncall"
+        ]
+      }
+    },
+    "/api/v1/oncall/incidents/{incident_id}": {
+      "get": {
+        "operationId": "get_incident_api_v1_oncall_incidents__incident_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "incident_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Incident Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Incident",
+        "tags": [
+          "oncall"
+        ]
+      }
+    },
+    "/api/v1/oncall/incidents/{incident_id}/advance": {
+      "post": {
+        "operationId": "advance_incident_api_v1_oncall_incidents__incident_id__advance_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "incident_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Incident Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Advance Incident",
+        "tags": [
+          "oncall"
+        ]
+      }
+    },
+    "/api/v1/oncall/incidents/{incident_id}/diagnostic": {
+      "post": {
+        "operationId": "diagnose_incident_api_v1_oncall_incidents__incident_id__diagnostic_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "incident_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Incident Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiagnosticView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Diagnose Incident",
+        "tags": [
+          "oncall"
+        ]
+      }
+    },
+    "/api/v1/oncall/incidents/{incident_id}/events/{event_id}/observe": {
+      "post": {
+        "operationId": "observe_event_api_v1_oncall_incidents__incident_id__events__event_id__observe_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "incident_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Incident Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Observe Event",
+        "tags": [
+          "oncall"
+        ]
+      }
+    },
+    "/api/v1/oncall/incidents/{incident_id}/report": {
+      "post": {
+        "operationId": "submit_incident_report_api_v1_oncall_incidents__incident_id__report_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "incident_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Incident Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OncallReportIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OncallReviewStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit Incident Report",
+        "tags": [
+          "oncall"
         ]
       }
     },

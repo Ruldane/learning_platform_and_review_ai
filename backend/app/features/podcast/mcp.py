@@ -12,9 +12,10 @@ MCP = FeatureMcp(
         ),
         McpAction(
             "POST /podcast/today",
-            2,
+            3,
             "podcast_prepare_today",
-            "Prépare l’épisode du jour avec le chapitre prévu pour l’étude.",
+            "Demande la synthèse de l’épisode du jour avec le chapitre prévu, à confirmer.",
+            side_effects="external",
             launches="podcast",
         ),
         McpAction(

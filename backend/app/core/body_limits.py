@@ -26,6 +26,7 @@ def add_body_limits(app: FastAPI, prefix: str) -> None:
     app.add_middleware(
         BodySizeLimit, path=f"{prefix}/brain/sync/folders", max_bytes=_UPLOAD_BODY_MAX
     )
+    app.add_middleware(BodySizeLimit, path=f"{prefix}/oncall/incidents", max_bytes=64 * 1024)
     app.add_middleware(BodySizeLimit, path=f"{prefix}/mcp/relay", max_bytes=1024)
     app.add_middleware(BodySizeLimit, path=f"{prefix}/ide/terminals", max_bytes=32 * 1024)
     app.add_middleware(BodySizeLimit, path=f"{prefix}/ide/sessions", max_bytes=1_500_000)

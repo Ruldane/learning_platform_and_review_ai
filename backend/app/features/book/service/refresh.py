@@ -57,7 +57,9 @@ async def _settle(runtime: BookRuntime, user_id: str, build: _Build, files: Book
 
 
 async def _compile(runtime: BookRuntime, user_id: str, build: _Build) -> None:
-    compiled = await compile_book(build.source, runtime.renderer)
+    compiled = await compile_book(
+        build.source, runtime.publishing.html_pdf, diagram_layout=runtime.publishing.layout
+    )
     files = await stage_book(runtime.storage, user_id, compiled)
     committing = asyncio.create_task(_settle(runtime, user_id, build, files))
     try:

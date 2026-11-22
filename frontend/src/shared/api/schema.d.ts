@@ -2520,6 +2520,109 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/oncall/incidents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Incidents */
+        get: operations["list_incidents_api_v1_oncall_incidents_get"];
+        put?: never;
+        /** Create Incident */
+        post: operations["create_incident_api_v1_oncall_incidents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/oncall/incidents/{incident_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Incident */
+        get: operations["get_incident_api_v1_oncall_incidents__incident_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/oncall/incidents/{incident_id}/advance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Advance Incident */
+        post: operations["advance_incident_api_v1_oncall_incidents__incident_id__advance_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/oncall/incidents/{incident_id}/diagnostic": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Diagnose Incident */
+        post: operations["diagnose_incident_api_v1_oncall_incidents__incident_id__diagnostic_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/oncall/incidents/{incident_id}/events/{event_id}/observe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Observe Event */
+        post: operations["observe_event_api_v1_oncall_incidents__incident_id__events__event_id__observe_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/oncall/incidents/{incident_id}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Incident Report */
+        post: operations["submit_incident_report_api_v1_oncall_incidents__incident_id__report_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/podcast/today": {
         parameters: {
             query?: never;
@@ -5790,6 +5893,16 @@ export interface components {
             /** Confirm */
             confirm: string;
         };
+        /** DiagnosticView */
+        DiagnosticView: {
+            /** Run Id */
+            run_id?: string | null;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "idle" | "running" | "passed" | "failed" | "stale";
+        };
         /** DistinctIn */
         DistinctIn: {
             /** Other Id */
@@ -6692,6 +6805,92 @@ export interface components {
              * @default 0
              */
             unreadable: number;
+        };
+        /** IncidentCreate */
+        IncidentCreate: {
+            /** Kind */
+            kind?: ("latency" | "queue" | "quota" | "fidelity") | null;
+            /** Seed */
+            seed?: number | null;
+        };
+        /** IncidentEvent */
+        IncidentEvent: {
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "sample" | "alert" | "diagnostic";
+            /**
+             * Metric
+             * @enum {string}
+             */
+            metric: "latency" | "queue" | "quota" | "fidelity";
+            /** Minute */
+            minute: number;
+            /** Value */
+            value: number;
+        };
+        /** IncidentSummary */
+        IncidentSummary: {
+            /** Alerted */
+            alerted: boolean;
+            /** Id */
+            id: string;
+            /** Ide Session Id */
+            ide_session_id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "latency" | "queue" | "quota" | "fidelity";
+            /** Minute */
+            minute: number;
+            /** Proof Recorded */
+            proof_recorded: boolean;
+            /** Seed */
+            seed: number;
+            /** Title */
+            title: string;
+        };
+        /** IncidentView */
+        IncidentView: {
+            /** Alerted */
+            alerted: boolean;
+            diagnostic: components["schemas"]["DiagnosticView"];
+            /** Events */
+            events: components["schemas"]["IncidentEvent"][];
+            /** Id */
+            id: string;
+            /** Ide Session Id */
+            ide_session_id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "latency" | "queue" | "quota" | "fidelity";
+            /** Minute */
+            minute: number;
+            /** Observed Events */
+            observed_events: string[];
+            /** Proof Recorded */
+            proof_recorded: boolean;
+            /** Report */
+            report?: string | null;
+            /** Review Session Id */
+            review_session_id?: string | null;
+            /**
+             * Review State
+             * @default idle
+             * @enum {string}
+             */
+            review_state: "idle" | "running" | "failed" | "complete";
+            /** Seed */
+            seed: number;
+            /** Title */
+            title: string;
+            verdict?: components["schemas"]["ReviewScore"] | null;
         };
         /**
          * IndicatorsOut
@@ -8219,6 +8418,16 @@ export interface components {
             items: components["schemas"]["OfferItem"][];
             /** Run Id */
             run_id: string | null;
+        };
+        /** OncallReportIn */
+        OncallReportIn: {
+            /** Text */
+            text: string;
+        };
+        /** OncallReviewStarted */
+        OncallReviewStarted: {
+            /** Session Id */
+            session_id: string;
         };
         /**
          * PasteCreate
@@ -9945,6 +10154,19 @@ export interface components {
             risks?: string[];
             /** Strengths */
             strengths?: string[];
+        };
+        /** ReviewScore */
+        ReviewScore: {
+            /** Correction */
+            correction: number;
+            /** Diagnosis */
+            diagnosis: number;
+            /** Evidence */
+            evidence: number;
+            /** Feedback */
+            feedback: string;
+            /** Prevention */
+            prevention: number;
         };
         /** ReviewStart */
         ReviewStart: {
@@ -16870,6 +17092,219 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["QuizStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_incidents_api_v1_oncall_incidents_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncidentSummary"][];
+                };
+            };
+        };
+    };
+    create_incident_api_v1_oncall_incidents_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IncidentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncidentView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_incident_api_v1_oncall_incidents__incident_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                incident_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncidentView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    advance_incident_api_v1_oncall_incidents__incident_id__advance_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                incident_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncidentView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    diagnose_incident_api_v1_oncall_incidents__incident_id__diagnostic_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                incident_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiagnosticView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    observe_event_api_v1_oncall_incidents__incident_id__events__event_id__observe_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                incident_id: string;
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncidentView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_incident_report_api_v1_oncall_incidents__incident_id__report_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                incident_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OncallReportIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OncallReviewStarted"];
                 };
             };
             /** @description Validation Error */

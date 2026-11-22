@@ -1,5 +1,6 @@
 """Emballage EPUB 3 de l'édition, sans date ni chemin dépendant de la machine."""
 
+from collections.abc import Mapping
 from datetime import UTC
 from io import BytesIO
 from urllib.parse import quote
@@ -54,13 +55,19 @@ def _metadata(package: Element, source: BookSource) -> None:
     )
 
 
-def _package(source: BookSource, pages: list[BookPage]) -> bytes:
+def _package(source: BookSource, pages: list[BookPage], diagrams: Mapping[str, bytes]) -> bytes:
     package = Element(
         "package", {"xmlns": _OPF_NS, "version": "3.0", "unique-identifier": "publication-id"}
     )
     _metadata(package, source)
     manifest = SubElement(package, "manifest")
     SubElement(manifest, "item", {"id": "css", "href": STYLESHEET, "media-type": "text/css"})
+    for name in diagrams:
+        SubElement(
+            manifest,
+            "item",
+            {"id": name.removesuffix(".png"), "href": name, "media-type": "image/png"},
+        )
     spine = SubElement(package, "spine")
     for page in pages:
         item = SubElement(
@@ -79,14 +86,16 @@ def _write(archive: ZipFile, name: str, body: bytes, *, compression: int = ZIP_D
     archive.writestr(entry, body, compress_type=compression)
 
 
-def epub_bytes(book: PreparedBook) -> bytes:
+def epub_bytes(book: PreparedBook, diagrams: Mapping[str, bytes]) -> bytes:
     pages = book_pages(book, epub=True)
     buffer = BytesIO()
     with ZipFile(buffer, "w") as archive:
         _write(archive, "mimetype", _MIMETYPE, compression=ZIP_STORED)
         _write(archive, "META-INF/container.xml", _container())
-        _write(archive, _PACKAGE, _package(book.source, pages))
+        _write(archive, _PACKAGE, _package(book.source, pages, diagrams))
         _write(archive, f"EPUB/{STYLESHEET}", BOOK_CSS)
+        for name, image in diagrams.items():
+            _write(archive, f"EPUB/{name}", image)
         for page in pages:
             document = book_document(page.title, book.source.language, [page], epub=True)
             _write(archive, f"EPUB/{page.id}.xhtml", _xml(document))

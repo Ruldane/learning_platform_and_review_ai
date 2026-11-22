@@ -18,6 +18,7 @@ PCM_LIMIT = 8 * 1024 * 1024
 VOICES: dict[Speaker, Literal["marin", "cedar"]] = {"host": "marin", "coach": "cedar"}
 _PROMPT = (
     "Lis le texte transmis mot pour mot en français, avec une voix naturelle et claire. "
+    "Adopte un débit posé, autour de 145 mots par minute. "
     "Respecte chaque phrase et rends uniquement la lecture du texte transmis."
 )
 

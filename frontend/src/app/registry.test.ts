@@ -42,6 +42,7 @@ describe("registre des features", () => {
       "/etudier/quiz",
       "/etudier/journal",
       "/code",
+      "/astreinte",
       "/etudier/podcast",
     ]);
     expect(groups[3]?.items).toEqual([

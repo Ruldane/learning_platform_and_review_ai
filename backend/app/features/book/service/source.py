@@ -80,4 +80,5 @@ def source_hash(source: BookSource) -> str:
     data = asdict(source)
     data["modified_at"] = source.modified_at.isoformat()
     serialized = json.dumps(data, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-    return hashlib.sha256(serialized.encode()).hexdigest()
+    # Les éditions déjà publiées doivent être recompilées quand leur rendu change.
+    return hashlib.sha256(b"book-diagrams-v1\0" + serialized.encode()).hexdigest()

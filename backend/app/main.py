@@ -139,7 +139,7 @@ def _compose_features(app: FastAPI) -> StudyRuntimes:
         app.state.session_factory, app.state.memory, lessons=app.state.lessons
     )
     app.state.book = BookRuntime(
-        app.state.session_factory, app.state.lessons.storage, app.state.lessons.publishing.html_pdf
+        app.state.session_factory, app.state.lessons.storage, app.state.publishing_providers
     )
     app.state.contributions = ContributionRuntime(
         app.state.session_factory, PublicGithub(app.state.research_providers.fetcher)

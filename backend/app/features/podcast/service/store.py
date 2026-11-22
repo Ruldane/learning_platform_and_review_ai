@@ -76,6 +76,10 @@ class AgentPodcastStore:
                 script = PodcastScript.model_validate(row.script)
             try:
                 audio = await synthesize(rt.speech, user_id, script.lines)
+                if not 600 <= audio.duration_seconds <= 900:
+                    raise AppError(
+                        "podcast_audio_duration", "La synthèse doit durer de 10 à 15 minutes.", 422
+                    )
                 key = await rt.storage.save(user_id, CATEGORY, audio.data, ".wav")
             except (AppError, OSError) as exc:
                 await self._fallback(user_id, episode_id, exc)

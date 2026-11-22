@@ -45,6 +45,8 @@ from app.features.mcp.relay_router import router as mcp_relay_router
 from app.features.mcp.router import router as mcp_router
 from app.features.memory.mcp import MCP as memory_mcp
 from app.features.memory.router import router as memory_router
+from app.features.oncall.mcp import MCP as oncall_mcp
+from app.features.oncall.router import router as oncall_router
 from app.features.podcast.mcp import MCP as podcast_mcp
 from app.features.podcast.router import router as podcast_router
 from app.features.postings.mcp import MCP as postings_mcp
@@ -86,6 +88,7 @@ FEATURE_ROUTERS: list[APIRouter] = [
     sessions_router,
     memory_router,
     brain_router,
+    oncall_router,
     research_router,
     learning_router,
     program_router,
@@ -144,6 +147,7 @@ MCP_FEATURES: list[FeatureMcp] = [
     lessons_mcp,
     mcp_mcp,
     memory_mcp,
+    oncall_mcp,
     podcast_mcp,
     postings_mcp,
     program_mcp,

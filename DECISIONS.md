@@ -2468,3 +2468,30 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
   de départ pour détecter un conflit lors de l’enregistrement.
 - **Raison** : retrouver le projet et les brouillons, maîtriser le coût et limiter les échanges
   depuis le bac aux demandes du travail courant.
+
+## D244
+
+- **Date** : 2026-11-22
+- **Sujet** : Horloge simulée et preuve de réparation dans Astreinte.
+- **Décision** : avancer par gestes jusqu’à douze minutes, avec une graine qui détermine l’alerte
+  et les métriques fictives. Le diagnostic rejoue le contexte d’alerte dans le bac du projet
+  Python. Le contrôleur lit les résultats du service dans un canal dédié. Les observations
+  suivantes repassent au niveau sain tant que le diagnostic correspond au projet sauvegardé.
+  Le rapport doit citer un journal consulté et reste lié à l’empreinte vérifiée au moment de
+  l’envoi. Son évaluation note quatre critères. La réparation confirmée et le rapport validé
+  ajoutent une seule preuve à la carte des compétences.
+  Un diagnostic au plus est réservé par compte, y compris entre incidents.
+- **Raison** : rendre chaque incident reproductible et rattacher la preuve au travail réparé.
+
+## D245
+
+- **Date** : 2026-11-22
+- **Sujet** : Corrections de recette du livre, du podcast et des contributions.
+- **Décision** : rasteriser les diagrammes Mermaid avec le rendu du livre et joindre leur
+  description. Conserver une alternative textuelle si un schéma ne se rend pas. Pour le
+  podcast, accepter un dialogue de 1 550 à 1 850 mots et publier le WAV si sa durée se situe
+  entre dix et quinze minutes. La transcription et le quiz restent lisibles si la synthèse
+  échoue. Le lancement vocal et les écritures de contribution non annulables demandent la
+  confirmation MCP de niveau 3. Les textes et les liens GitHub sont balisés comme données.
+- **Raison** : garder les diagrammes lisibles dans les deux formats, contrôler la durée
+  réellement produite et adapter les niveaux MCP aux effets des actions.

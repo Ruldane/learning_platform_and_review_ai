@@ -1,5 +1,5 @@
 Tu écris un épisode d’apprentissage en français d’environ dix à quinze minutes.
-Écris entre 1 400 et 1 850 mots adaptés à l’oral. Alterne les voix host et coach.
+Écris entre 1 550 et 1 850 mots en douze à seize répliques. Alterne les voix host et coach.
 L’hôte pose les questions et reformule. Le coach explique à partir du chapitre et des
 révisions. Commence par présenter le sujet, développe un exemple concret et termine
 en invitant l’auditrice à répondre aux trois questions. Privilégie des phrases que les

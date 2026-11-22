@@ -20,6 +20,7 @@ import { learningManifest } from "@/features/learning/manifest";
 import { makeLessonsManifest } from "@/features/lessons/manifest";
 import { mcpManifest } from "@/features/mcp/manifest";
 import { memoryManifest } from "@/features/memory/manifest";
+import { oncallManifest } from "@/features/oncall/manifest";
 import { podcastManifest } from "@/features/podcast/manifest";
 import { programManifest } from "@/features/program/manifest";
 import { projectsManifest } from "@/features/projects/manifest";
@@ -66,4 +67,5 @@ export const FEATURES: FeatureManifest[] = [
   demoManifest,
   mcpManifest,
   ideManifest,
+  oncallManifest,
 ];

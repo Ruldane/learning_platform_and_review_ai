@@ -45,6 +45,7 @@ AGENTS: dict[str, AgentSpec] = {
         AgentSpec(name=TRAINING_TUTOR, tier="rapide"),
         AgentSpec(name=BRAIN_LIBRARIAN, tier="rapide"),
         AgentSpec(name="exercise_writer", tier="standard"),
+        AgentSpec(name="oncall_reviewer", tier="standard"),
         AgentSpec(name="podcast_host", tier="standard"),
     )
 }

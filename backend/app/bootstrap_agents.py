@@ -37,6 +37,7 @@ from app.features.lessons.service.runtime import LessonsRuntime
 from app.features.lessons.service.store import AgentLessonStore
 from app.features.memory.service.gateway import AgentMemoryGateway
 from app.features.memory.service.runtime import MemoryRuntime
+from app.features.oncall.service.report import AgentOncallStore
 from app.features.program.service.runtime import ProgramRuntime
 from app.features.program.service.store import AgentProgramStore
 from app.features.quiz.service.runtime import QuizRuntime
@@ -144,6 +145,7 @@ def agent_ports(
         projects,
         ide,
         conversations=AgentConversationStore(lessons.session_factory),
+        oncall=AgentOncallStore(lessons.session_factory),
         podcast=podcast,
     )
 

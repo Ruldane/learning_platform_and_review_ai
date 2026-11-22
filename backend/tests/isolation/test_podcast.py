@@ -3,7 +3,9 @@ from dataclasses import dataclass
 from io import BytesIO
 
 import httpx
+import pytest
 from fastapi import FastAPI
+from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.tools.podcast_port import PodcastLine, PodcastQuestion, PodcastScript
@@ -37,12 +39,13 @@ SCRIPT = PodcastScript(
 class Voices:
     fail_for: str
     called: list[Speaker]
+    seconds: int = 302
 
     async def speak(self, user_id: str, speaker: Speaker, text: str) -> bytes:
         if user_id == self.fail_for:
             raise SpeechUnavailable()
         self.called.append(speaker)
-        return b"\0\0" * PCM_RATE
+        return b"\0\0" * (PCM_RATE * self.seconds)
 
 
 async def _seed(runtime: PodcastRuntime, db: AsyncSession, uid: str) -> str:
@@ -88,3 +91,20 @@ async def test_two_voices_and_audio_failure_keep_tenant_bound_transcripts(
     assert (
         await owner.post(f"{API}/{fallback}/quiz", json={"choices": [1, 1, 1]})
     ).status_code == 404
+
+
+async def test_short_episode_keeps_the_transcript_without_publishing_audio(
+    app: FastAPI, client: httpx.AsyncClient, db_session: AsyncSession
+) -> None:
+    from app.agents.graphs.podcast import PodcastDraft
+
+    with pytest.raises(ValidationError):
+        PodcastDraft.model_validate(SCRIPT.model_dump())
+
+    uid = str(app.state.local_user_id)
+    runtime: PodcastRuntime = app.state.daily.podcast
+    runtime.speech = Voices("unused", [], seconds=1)
+    episode = await _seed(runtime, db_session, uid)
+    today = (await client.get(f"{API}/today")).json()
+    assert (today["id"], today["status"]) == (episode, "transcript")
+    assert (await client.get(f"{API}/{episode}/audio")).status_code == 404
