@@ -52,6 +52,7 @@ describe("registre des features", () => {
       { labelKey: "gap.nav.postings", path: "/carriere/offres" },
       { labelKey: "gap.nav.overview", path: "/carriere/ecarts" },
       { labelKey: "radar.nav.radar", path: "/carriere/radar" },
+      { labelKey: "futureSelf.title", path: "/carriere/futur" },
     ]);
     expect(groups[5]?.items.map((item) => item.path)).toEqual([
       "/candidatures",

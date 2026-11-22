@@ -176,6 +176,7 @@ export const mcp = {
     capture: "Capture",
     costs: "Coûts",
     cv: "CV et profil",
+    future_self: "Ton futur toi",
     gap: "Écarts de compétences",
     ide: "IDE Python",
     learning: "Objectifs et conseil",

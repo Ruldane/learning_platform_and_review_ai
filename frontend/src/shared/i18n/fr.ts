@@ -10,6 +10,7 @@ import { conversations } from "./messages/conversations";
 import { costs } from "./messages/costs";
 import { cv } from "./messages/cv";
 import { demo } from "./messages/demo";
+import { futureSelf } from "./messages/futureSelf";
 import { gap } from "./messages/gap";
 import { home } from "./messages/home";
 import { ide } from "./messages/ide";
@@ -65,6 +66,7 @@ export const fr = {
   applications,
   home,
   radar,
+  futureSelf,
   reading,
   projects,
   mcp,

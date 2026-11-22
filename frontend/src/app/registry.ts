@@ -9,6 +9,7 @@ import { LessonConversation } from "@/features/conversations/pages/LessonConvers
 import { costsManifest } from "@/features/costs/manifest";
 import { cvManifest } from "@/features/cv/manifest";
 import { demoManifest } from "@/features/demo/manifest";
+import { futureSelfManifest } from "@/features/future_self/manifest";
 import { gapManifest } from "@/features/gap/manifest";
 import { healthManifest } from "@/features/health/manifest";
 import { homeManifest } from "@/features/home/manifest";
@@ -45,6 +46,7 @@ export const FEATURES: FeatureManifest[] = [
   projectsManifest,
   gapManifest,
   radarManifest,
+  futureSelfManifest,
   cvManifest,
   applicationsManifest,
   replanManifest,

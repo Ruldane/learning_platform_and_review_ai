@@ -2391,3 +2391,18 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
   Une proposition pour un programme passe par la replanification et son acceptation.
 - **Raison** : reprendre après interruption et rendre chaque action explicite dans son outil
   d’origine.
+
+## D237
+
+- **Date** : 2026-11-22
+- **Sujet** : Comparaison des rythmes dans « Ton futur toi ».
+- **Décision** : la projection lit le dernier relevé exploitable du poste et de la zone ainsi que
+  les niveaux actuels. Une offre compte si son score atteint le seuil du radar (70 %) et si
+  toutes ses compétences obligatoires sont acquises. Le rythme observé prend jusqu’à quatre
+  semaines locales complètes, jours sans étude compris. Deux semaines sont nécessaires pour
+  estimer ce rythme. Le calcul suppose que le travail restant d’un chapitre valide les
+  compétences qu’il vise. Les scénarios divisent sa charge par le rythme choisi et arrondissent
+  le délai au jour supérieur. Un relevé de moins de 30 offres exploitables rend l’estimation
+  indicative. La comparaison est en lecture seule, y compris par MCP. Le changement de rythme
+  planifié passe par la replanification et sa confirmation.
+- **Raison** : rapprocher les offres et le travail réellement accompli avec une règle reproductible.

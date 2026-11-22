@@ -1105,6 +1105,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/future-self": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Projection
+         * @description Compare les rythmes pour un programme validé et le relevé du poste et de la zone choisis.
+         */
+        get: operations["get_projection_api_v1_future_self_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/gap/top-missing": {
         parameters: {
             query?: never;
@@ -4829,6 +4849,21 @@ export interface components {
             /** Text */
             text: string;
         };
+        /** ChapterWork */
+        ChapterWork: {
+            /** Lesson Id */
+            lesson_id: string | null;
+            /** Minutes */
+            minutes: number;
+            /** Module Id */
+            module_id: string;
+            /** Program Id */
+            program_id: string;
+            /** Skills */
+            skills: string[];
+            /** Title */
+            title: string;
+        };
         /**
          * CheckOut
          * @description `own` : la fiche de cette offre, si elle existe ; `alerts` : certain, probable, possible ;
@@ -5930,6 +5965,35 @@ export interface components {
             posting_id?: string | null;
             /** Role */
             role?: string | null;
+        };
+        /** FutureSelfOut */
+        FutureSelfOut: {
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of: string;
+            /** Current Percent */
+            current_percent: number | null;
+            /** Observed Weeks */
+            observed_weeks: number;
+            /** Offer Count */
+            offer_count: number;
+            /** Program Id */
+            program_id: string | null;
+            /** Recommendations */
+            recommendations: components["schemas"]["Recommendation"][];
+            /** Role */
+            role: string | null;
+            sample: components["schemas"]["ProjectionSampleOut"] | null;
+            /** Scenarios */
+            scenarios: components["schemas"]["Scenario"][];
+            /** Target Percent */
+            target_percent: number;
+            /** Uncertainty */
+            uncertainty: ("insufficient_study_history" | "no_offer_sample" | "small_offer_sample" | "no_planned_chapters")[];
+            /** Zone */
+            zone: string;
         };
         /**
          * GapOut
@@ -8439,6 +8503,18 @@ export interface components {
             /** Week */
             week: number | null;
         };
+        /** ProjectionSampleOut */
+        ProjectionSampleOut: {
+            /** Analyzed */
+            analyzed: number;
+            /**
+             * Finished At
+             * Format: date-time
+             */
+            finished_at: string;
+            /** Run Id */
+            run_id: string;
+        };
         /** ProposalOut */
         ProposalOut: {
             /** Batch */
@@ -8888,6 +8964,16 @@ export interface components {
         ReadingSourceState: {
             /** Active */
             active: boolean;
+        };
+        /** Recommendation */
+        Recommendation: {
+            chapter: components["schemas"]["ChapterWork"];
+            /** Offers Improved */
+            offers_improved: number;
+            /** Offers Unlocked */
+            offers_unlocked: number;
+            /** Score Points */
+            score_points: number;
         };
         /**
          * ReindexState
@@ -9418,6 +9504,20 @@ export interface components {
             run_id: string;
             /** Session Id */
             session_id: string;
+        };
+        /** Scenario */
+        Scenario: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "observed" | "planned" | "alternative";
+            /** Projected Percent */
+            projected_percent: number | null;
+            /** Target Date */
+            target_date: string | null;
+            /** Weekly Minutes */
+            weekly_minutes: number | null;
         };
         /** SearchHitOut */
         SearchHitOut: {
@@ -13099,6 +13199,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReviewOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_projection_api_v1_future_self_get: {
+        parameters: {
+            query?: {
+                role?: string | null;
+                zone?: string | null;
+                program_id?: string | null;
+                alternative_weekly_minutes?: number | null;
+                target_percent?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FutureSelfOut"];
                 };
             };
             /** @description Validation Error */

@@ -24,6 +24,8 @@ from app.features.costs.mcp import MCP as costs_mcp
 from app.features.costs.router import router as costs_router
 from app.features.cv.mcp import MCP as cv_mcp
 from app.features.cv.router import router as cv_router
+from app.features.future_self.mcp import MCP as future_self_mcp
+from app.features.future_self.router import router as future_self_router
 from app.features.gap.mcp import MCP as gap_mcp
 from app.features.gap.router import router as gap_router
 from app.features.health.mcp import MCP as health_mcp
@@ -97,6 +99,7 @@ FEATURE_ROUTERS: list[APIRouter] = [
     committee_router,
     reminders_router,
     radar_router,
+    future_self_router,
     reading_stack_router,
     reading_actions_router,
     brief_router,
@@ -122,6 +125,7 @@ MCP_FEATURES: list[FeatureMcp] = [
     conversations_mcp,
     costs_mcp,
     cv_mcp,
+    future_self_mcp,
     gap_mcp,
     health_mcp,
     ide_mcp,

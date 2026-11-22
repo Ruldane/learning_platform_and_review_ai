@@ -2765,6 +2765,54 @@
         "title": "ChangeOut",
         "type": "object"
       },
+      "ChapterWork": {
+        "properties": {
+          "lesson_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lesson Id"
+          },
+          "minutes": {
+            "title": "Minutes",
+            "type": "integer"
+          },
+          "module_id": {
+            "title": "Module Id",
+            "type": "string"
+          },
+          "program_id": {
+            "title": "Program Id",
+            "type": "string"
+          },
+          "skills": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Skills",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "program_id",
+          "module_id",
+          "lesson_id",
+          "title",
+          "minutes",
+          "skills"
+        ],
+        "title": "ChapterWork",
+        "type": "object"
+      },
       "CheckOut": {
         "description": "`own` : la fiche de cette offre, si elle existe ; `alerts` : certain, probable, possible ;\n`info` : même entreprise dans les 30 jours.",
         "properties": {
@@ -5735,6 +5783,117 @@
           "duration_min"
         ],
         "title": "FreeInterviewIn",
+        "type": "object"
+      },
+      "FutureSelfOut": {
+        "properties": {
+          "as_of": {
+            "format": "date",
+            "title": "As Of",
+            "type": "string"
+          },
+          "current_percent": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Percent"
+          },
+          "observed_weeks": {
+            "title": "Observed Weeks",
+            "type": "integer"
+          },
+          "offer_count": {
+            "title": "Offer Count",
+            "type": "integer"
+          },
+          "program_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Program Id"
+          },
+          "recommendations": {
+            "items": {
+              "$ref": "#/components/schemas/Recommendation"
+            },
+            "title": "Recommendations",
+            "type": "array"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "sample": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProjectionSampleOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "scenarios": {
+            "items": {
+              "$ref": "#/components/schemas/Scenario"
+            },
+            "title": "Scenarios",
+            "type": "array"
+          },
+          "target_percent": {
+            "title": "Target Percent",
+            "type": "integer"
+          },
+          "uncertainty": {
+            "items": {
+              "enum": [
+                "insufficient_study_history",
+                "no_offer_sample",
+                "small_offer_sample",
+                "no_planned_chapters"
+              ],
+              "type": "string"
+            },
+            "title": "Uncertainty",
+            "type": "array"
+          },
+          "zone": {
+            "title": "Zone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "as_of",
+          "role",
+          "zone",
+          "program_id",
+          "sample",
+          "offer_count",
+          "current_percent",
+          "target_percent",
+          "observed_weeks",
+          "scenarios",
+          "recommendations",
+          "uncertainty"
+        ],
+        "title": "FutureSelfOut",
         "type": "object"
       },
       "GapOut": {
@@ -12586,6 +12745,30 @@
         "title": "ProjectSummary",
         "type": "object"
       },
+      "ProjectionSampleOut": {
+        "properties": {
+          "analyzed": {
+            "title": "Analyzed",
+            "type": "integer"
+          },
+          "finished_at": {
+            "format": "date-time",
+            "title": "Finished At",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "finished_at",
+          "analyzed"
+        ],
+        "title": "ProjectionSampleOut",
+        "type": "object"
+      },
       "ProposalOut": {
         "properties": {
           "batch": {
@@ -13942,6 +14125,33 @@
         "title": "ReadingSourceState",
         "type": "object"
       },
+      "Recommendation": {
+        "properties": {
+          "chapter": {
+            "$ref": "#/components/schemas/ChapterWork"
+          },
+          "offers_improved": {
+            "title": "Offers Improved",
+            "type": "integer"
+          },
+          "offers_unlocked": {
+            "title": "Offers Unlocked",
+            "type": "integer"
+          },
+          "score_points": {
+            "title": "Score Points",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "chapter",
+          "offers_unlocked",
+          "offers_improved",
+          "score_points"
+        ],
+        "title": "Recommendation",
+        "type": "object"
+      },
       "ReindexState": {
         "description": "État de la réindexation de l'utilisateur, tenu en mémoire (perdu au redémarrage).",
         "properties": {
@@ -15291,6 +15501,61 @@
           "session_id"
         ],
         "title": "RunStarted",
+        "type": "object"
+      },
+      "Scenario": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "observed",
+              "planned",
+              "alternative"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "projected_percent": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Projected Percent"
+          },
+          "target_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Date"
+          },
+          "weekly_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weekly Minutes"
+          }
+        },
+        "required": [
+          "kind",
+          "weekly_minutes",
+          "target_date",
+          "projected_percent"
+        ],
+        "title": "Scenario",
         "type": "object"
       },
       "SearchHitOut": {
@@ -22165,6 +22430,124 @@
         "summary": "Review Card",
         "tags": [
           "quiz"
+        ]
+      }
+    },
+    "/api/v1/future-self": {
+      "get": {
+        "description": "Compare les rythmes pour un programme validé et le relevé du poste et de la zone choisis.",
+        "operationId": "get_projection_api_v1_future_self_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 120,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Role"
+            }
+          },
+          {
+            "in": "query",
+            "name": "zone",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 120,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Zone"
+            }
+          },
+          {
+            "in": "query",
+            "name": "program_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 36,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Program Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "alternative_weekly_minutes",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 10080,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Alternative Weekly Minutes"
+            }
+          },
+          {
+            "in": "query",
+            "name": "target_percent",
+            "required": false,
+            "schema": {
+              "default": 60,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Target Percent",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FutureSelfOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Projection",
+        "tags": [
+          "future_self"
         ]
       }
     },
