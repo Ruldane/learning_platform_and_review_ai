@@ -12,12 +12,16 @@ from app.features.applications.router_kit import router as kit_router
 from app.features.applications.router_reminders import router as reminders_router
 from app.features.auth.mcp import MCP as auth_mcp
 from app.features.auth.router import router as auth_router
+from app.features.book.mcp import MCP as book_mcp
+from app.features.book.router import router as book_router
 from app.features.brain.mcp import MCP as brain_mcp
 from app.features.brain.router import router as brain_router
 from app.features.brief.mcp import MCP as brief_mcp
 from app.features.brief.router import router as brief_router
 from app.features.capture.mcp import MCP as capture_mcp
 from app.features.capture.router import router as capture_router
+from app.features.contributions.mcp import MCP as contributions_mcp
+from app.features.contributions.router import router as contributions_router
 from app.features.conversations.mcp import MCP as conversations_mcp
 from app.features.conversations.router import router as conversations_router
 from app.features.costs.mcp import MCP as costs_mcp
@@ -41,6 +45,8 @@ from app.features.mcp.relay_router import router as mcp_relay_router
 from app.features.mcp.router import router as mcp_router
 from app.features.memory.mcp import MCP as memory_mcp
 from app.features.memory.router import router as memory_router
+from app.features.podcast.mcp import MCP as podcast_mcp
+from app.features.podcast.router import router as podcast_router
 from app.features.postings.mcp import MCP as postings_mcp
 from app.features.postings.router import router as postings_router
 from app.features.program.mcp import MCP as program_mcp
@@ -83,12 +89,14 @@ FEATURE_ROUTERS: list[APIRouter] = [
     research_router,
     learning_router,
     program_router,
+    book_router,
     lessons_router,
     conversations_router,
     quiz_router,
     study_router,
     replan_router,
     skills_router,
+    contributions_router,
     capture_router,
     postings_router,
     gap_router,
@@ -103,6 +111,7 @@ FEATURE_ROUTERS: list[APIRouter] = [
     reading_stack_router,
     reading_actions_router,
     brief_router,
+    podcast_router,
     activity_router,
     projects_router,
     account_router,
@@ -119,9 +128,11 @@ MCP_FEATURES: list[FeatureMcp] = [
     activity_mcp,
     applications_mcp,
     auth_mcp,
+    book_mcp,
     brain_mcp,
     brief_mcp,
     capture_mcp,
+    contributions_mcp,
     conversations_mcp,
     costs_mcp,
     cv_mcp,
@@ -133,6 +144,7 @@ MCP_FEATURES: list[FeatureMcp] = [
     lessons_mcp,
     mcp_mcp,
     memory_mcp,
+    podcast_mcp,
     postings_mcp,
     program_mcp,
     projects_mcp,

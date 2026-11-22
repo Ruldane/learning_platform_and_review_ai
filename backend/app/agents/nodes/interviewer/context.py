@@ -100,6 +100,7 @@ MODE_LABELS = {
     "technical": "technique",
     "case": "étude de cas",
     "mixed": "mixte (comportemental et technique)",
+    "salary": "simulation de négociation salariale",
 }
 MODE_GUIDES = {
     "behavioral": (
@@ -129,4 +130,5 @@ def head_vars(ctx: InterviewContext) -> dict[str, object]:
         "mode_label": MODE_LABELS[ctx.mode],
         "duration": ctx.duration_min,
         "language": ctx.language,
+        "salary": ctx.salary is not None,
     }

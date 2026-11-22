@@ -24,6 +24,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 
 from app.agents.nodes.interviewer.common import AGENT, RECOVERABLE_CODES, Node, context_of
 from app.agents.nodes.interviewer.context import exchanges_block, head_vars, profile_block
+from app.agents.nodes.interviewer.salary import without_unsourced_figures
 from app.agents.prompts.loader import render_prompt
 from app.agents.registry import get_agent
 from app.agents.runtime.deps import GraphDeps
@@ -172,8 +173,10 @@ def make_debrief(deps: GraphDeps) -> Node:
         written = await _try_written(deps, ctx, exchanges)
         if written is None:  # les réponses sont rangées sans débrief (`save`)
             return {"debrief": None, "flags": [], "cards": []}
+        if ctx.salary is not None:
+            written = without_unsourced_figures(written, ctx.language)
         flags = flagged_terms(written.improved_answer, ctx)
-        cards = revision_cards(exchanges, written)
+        cards = [] if ctx.salary is not None else revision_cards(exchanges, written)
         logger.info(
             "Débrief écrit : session %s, %d question(s), %d ratée(s), %d terme(s) signalé(s)",
             deps.session_id,

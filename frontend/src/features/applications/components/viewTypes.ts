@@ -1,3 +1,5 @@
+import type { SalaryScenarioView } from "./salaryScenarioView";
+
 /**
  * Types de vue des composants des candidatures : indépendants du contrat d'API (D34). Les pages
  * (7.13) convertissent les réponses du serveur (`ApplicationOut`, `ReminderOut`, `EventOut`,
@@ -163,7 +165,7 @@ export interface KitPieceView {
 export type KitSaveResult = { ok: true; status: KitStatusView } | { ok: false; message: string };
 
 /** Les quatre formules d'entretien. */
-export const INTERVIEW_MODES = ["behavioral", "technical", "case", "mixed"] as const;
+export const INTERVIEW_MODES = ["behavioral", "technical", "case", "mixed", "salary"] as const;
 export type InterviewModeView = (typeof INTERVIEW_MODES)[number];
 
 /** Les trois durées : 4, 7 ou 10 questions principales. */
@@ -217,6 +219,7 @@ export interface DebriefDataView {
 
 /** Un entretien blanc tel que les pages le montrent. */
 export interface InterviewView {
+  salary?: SalaryScenarioView;
   id: string;
   applicationId: string | null;
   postingId: string | null;

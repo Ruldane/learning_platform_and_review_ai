@@ -33,6 +33,7 @@ export function TeacherColumn({ ws, createSocket }: TeacherColumnProps) {
         onWhy={chat.why}
         onAccept={(id) => void proposals.decide(id, "accept")}
         onReject={(id) => void proposals.decide(id, "reject")}
+        onOpenFile={ws.openFile}
         headingRef={ws.panelHeading}
       />
       {proposals.error ? <InlineError message={proposals.error} /> : null}

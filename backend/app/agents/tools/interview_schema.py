@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from app.agents.runtime.prose import Prose, ShortenToMax, shorten
 from app.agents.tools.cv_schema import CvContent, MasterProfileData
 from app.agents.tools.kit_schema import CompanyDossier
+from app.agents.tools.negotiation import SalarySample
 from app.agents.tools.posting_schema import PostingAnalysis
 from app.db.models.applications import InterviewMode
 
@@ -76,6 +77,7 @@ class TurnDecision(BaseModel):
 
     follow_up: str | None = Field(default=None, max_length=300)
     note: int = Field(ge=1, le=5)
+    salary_move: bool = False
 
     @field_validator("follow_up", mode="before")
     @classmethod
@@ -98,6 +100,7 @@ class Exchange(BaseModel):
     follow_up_answer: str | None = None
     note: int = Field(ge=1, le=5)
     unrated: bool = False  # le modèle n'a pas répondu : la note est neutre, posée par le code
+    salary_raised: bool = False
 
 
 class ExpectedPoints(BaseModel):
@@ -157,3 +160,4 @@ class InterviewContext(BaseModel):
     cv_content: CvContent | None = None
     gaps: list[str] = Field(default_factory=list)
     profile: MasterProfileData
+    salary: SalarySample | None = None

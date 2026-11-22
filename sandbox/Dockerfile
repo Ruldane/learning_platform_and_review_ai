@@ -21,7 +21,8 @@ RUN groupadd --gid 20000 sandbox \
     && chmod 0755 /work \
     && (find / -xdev -perm /6000 -type f -exec chmod a-s {} + 2>/dev/null || true)
 
-COPY runner.py runner_exec.py runner_job.py runner_proc.py /opt/sandbox/
+COPY runner.py runner_exec.py runner_job.py runner_proc.py runner_terminal.py runner_model.py /opt/sandbox/
+COPY tremplin_model.py /usr/local/lib/python3.12/site-packages/tremplin_model.py
 RUN chmod 0644 /opt/sandbox/*.py
 
 WORKDIR /opt/sandbox

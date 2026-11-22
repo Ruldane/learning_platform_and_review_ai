@@ -48,6 +48,9 @@ REVIEWED_NOT_SECRET = frozenset(
         "documents.storage_key",
         "cv_versions.storage_key",
         "lessons.pdf_key",
+        "program_books.pdf_key",
+        "program_books.epub_key",
+        "podcast_episodes.audio_key",  # emplacement du WAV dans le stockage par compte
         "resources.local_key",
         "boards.scribe_key",
         "journal_entries.ref_key",

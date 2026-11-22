@@ -2406,3 +2406,65 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
   indicative. La comparaison est en lecture seule, y compris par MCP. Le changement de rythme
   planifié passe par la replanification et sa confirmation.
 - **Raison** : rapprocher les offres et le travail réellement accompli avec une règle reproductible.
+
+## D238
+
+- **Date** : 2026-11-22
+- **Sujet** : Compilation et notes liées dans Ton livre.
+- **Décision** : lire l’ordre du sommaire, avec l’ordre des modules comme repli pour les plans
+  historiques. Inclure les chapitres publiés et les notes Markdown synchronisées du compte qui
+  portent le lien wiki `[[tremplin:lesson:<id-de-la-leçon>]]`. Le planificateur relit les sources
+  toutes les 30 secondes. Les deux fichiers sont remplacés ensemble après un rendu réussi.
+- **Raison** : reproduire la compilation et sélectionner les notes sur un lien explicite.
+
+## D239
+
+- **Date** : 2026-11-22
+- **Sujet** : Synthèse de voix et révisions du podcast.
+- **Décision** : publier le dialogue et les trois questions avant de lancer les voix. Utiliser deux
+  voix OpenAI Realtime en PCM mono 24 kHz, stockées dans le même WAV par compte. Si l’audio échoue,
+  afficher le dialogue et les questions. Collecter les erreurs de la veille dans le fuseau du
+  compte, les cartes dues et les notes actives pertinentes pour le chapitre publié.
+- **Raison** : garder l’épisode lisible et le quiz disponible quand la synthèse est indisponible.
+
+## D240
+
+- **Date** : 2026-11-22
+- **Sujet** : Issues et publication dans Contributrice open source.
+- **Décision** : chercher dans trois dépôts publics étudiés au plus. Après confirmation du texte
+  et des branches, ouvrir GitHub pour que l’utilisatrice y publie avec son compte. Un repère du
+  dossier et la comparaison du compte et des branches associent la pull request à la préparation.
+  Une fusion vérifiée entraîne une preuve et une proposition de ligne de CV.
+- **Raison** : laisser la publication à l’utilisatrice et relier la preuve au travail préparé.
+
+## D241
+
+- **Date** : 2026-11-22
+- **Sujet** : Trois camarades pour une leçon dans la classe virtuelle.
+- **Décision** : créer un fil de classe par leçon prête et par compte. Le Tuteur répond en
+  débutant, pair puis avancé dans le budget d’un tour. Les trois rôles et la leçon source sont
+  conservés dans une même écriture après vérification de la version publiée.
+- **Raison** : exercer l’explication à trois niveaux et reprendre la discussion.
+
+## D242
+
+- **Date** : 2026-11-22
+- **Sujet** : Relevé de référence pour la négociation de salaire.
+- **Décision** : figer le dernier relevé terminé du poste et de la zone. Les salaires annuels
+  bruts explicitement publiés en euros définissent l’offre basse et la limite haute. Une demande
+  argumentée peut obtenir une concession plafonnée. Le bilan indique l’écart et le motif.
+- **Raison** : garder des montants reliés à une source et des règles de simulation vérifiables.
+
+## D243
+
+- **Date** : 2026-11-22
+- **Sujet** : Séances Python, notebooks et passerelle modèle.
+- **Décision** : une séance contient les fichiers du projet et leurs onglets. Le terminal utilise
+  un pseudo-terminal Linux avec une interface texte et une saisie par ligne. Chaque exécution
+  de cellule ouvre un processus Python dans le bac. La réexécution des cellules précédentes
+  est proposée avec le notebook `.ipynb`. La passerelle OpenAI utilise le client Tremplin sur
+  socket local et réserve jusqu’à 10 000 jetons par compte et par jour, à raison de trois appels
+  par travail au plus. Le navigateur garde les brouillons de cellules par onglet et la version
+  de départ pour détecter un conflit lors de l’enregistrement.
+- **Raison** : retrouver le projet et les brouillons, maîtriser le coût et limiter les échanges
+  depuis le bac aux demandes du travail courant.

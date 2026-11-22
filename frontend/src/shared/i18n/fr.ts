@@ -3,10 +3,12 @@ import { agents } from "./messages/agents";
 import { applications } from "./messages/applications";
 import { appMessages } from "./messages/app";
 import { auth } from "./messages/auth";
+import { book } from "./messages/book";
 import { brain } from "./messages/brain";
 import { capture } from "./messages/capture";
 import { chat } from "./messages/chat";
 import { conversations } from "./messages/conversations";
+import { contributions } from "./messages/contributions";
 import { costs } from "./messages/costs";
 import { cv } from "./messages/cv";
 import { demo } from "./messages/demo";
@@ -19,6 +21,7 @@ import { lessons } from "./messages/lessons";
 import { mcp } from "./messages/mcp";
 import { memory } from "./messages/memory";
 import { onboarding } from "./messages/onboarding";
+import { podcast } from "./messages/podcast";
 import { program } from "./messages/program";
 import { projects } from "./messages/projects";
 import { quiz } from "./messages/quiz";
@@ -41,6 +44,7 @@ export const fr = {
   ...appMessages,
   auth,
   brain,
+  book,
   account,
   session,
   agents,
@@ -54,12 +58,14 @@ export const fr = {
   learning,
   study,
   training,
+  podcast,
   quiz,
   skills,
   replan,
   capture,
   chat,
   conversations,
+  contributions,
   gap,
   costs,
   cv,

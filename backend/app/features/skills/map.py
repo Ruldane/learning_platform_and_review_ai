@@ -51,6 +51,7 @@ _EVIDENCE_PAGES: dict[EvidenceKind, str] = {
     "quiz": "/etudier/quiz/",
     "study": "/etudier/session/",
     "program": "/apprendre/programme/",
+    "contribution": "/competences/contributions/",
 }
 
 

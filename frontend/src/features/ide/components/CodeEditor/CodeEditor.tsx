@@ -9,6 +9,7 @@ interface CodeEditorProps {
   /** Le fichier ouvert : chaque chemin a son propre modèle (et son annulation). */
   path: string;
   value: string;
+  readOnly?: boolean;
   annotations: AnnotationView[];
   onChange: (value: string) => void;
   /** La ligne du curseur, à chaque déplacement. Ne réveille jamais le professeur. */
@@ -75,7 +76,7 @@ export function CodeEditor(props: CodeEditorProps) {
         language="python"
         theme="vs"
         value={value}
-        options={OPTIONS}
+        options={{ ...OPTIONS, readOnly: props.readOnly }}
         loading={<p className="p-3 text-sm">{t("ide.editor.loading")}</p>}
         onChange={(text) => onChange(text ?? "")}
         onMount={mount}

@@ -22,6 +22,7 @@ from app.agents.nodes.interviewer.context import (
     posting_block,
     profile_block,
 )
+from app.agents.nodes.interviewer.salary import salary_questions
 from app.agents.prompts.loader import render_prompt
 from app.agents.registry import get_agent
 from app.agents.runtime.deps import GraphDeps
@@ -76,17 +77,25 @@ def make_plan(deps: GraphDeps) -> Node:
         """Les questions principales (exactement `QUESTIONS_BY_DURATION`), puis la première."""
         ctx = context_of(state)
         count = QUESTIONS_BY_DURATION[ctx.duration_min]
-        model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
-        prompt = render_prompt(AGENT, **plan_vars(ctx, count))
-        planned = await structured_call(
-            model,
-            plan_schema(count),
-            [SystemMessage(prompt), HumanMessage(PLAN_REQUEST)],
-            agent=AGENT,
-            step="plan",
-            intent="je prépare tes questions",
-        )
-        questions = [question.model_dump() for question in planned.questions]
+        if ctx.salary is not None:
+            questions = [
+                question.model_dump()
+                for question in salary_questions(ctx.salary, ctx.language, count)
+            ]
+        else:
+            model = await deps.models.get_chat_model(
+                deps.user_id, get_agent(AGENT).tier, agent=AGENT
+            )
+            prompt = render_prompt(AGENT, **plan_vars(ctx, count))
+            planned = await structured_call(
+                model,
+                plan_schema(count),
+                [SystemMessage(prompt), HumanMessage(PLAN_REQUEST)],
+                agent=AGENT,
+                step="plan",
+                intent="je prépare tes questions",
+            )
+            questions = [question.model_dump() for question in planned.questions]
         logger.info("Plan écrit : session %s, %d question(s)", deps.session_id, len(questions))
         say_question(1, questions[0]["text"])
         return {

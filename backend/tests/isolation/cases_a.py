@@ -28,6 +28,9 @@ CASES: dict[str, str] = {
     "app.features.program.router": (
         "tests/features/program/test_router.py::test_programs_isolated_between_users"
     ),
+    "app.features.book.router": (
+        "tests/features/book/test_book_routes.py::test_book_routes_are_isolated"
+    ),
     "app.features.lessons.router": (
         "tests/features/lessons/test_router.py::test_lesson_routes_and_isolation"
     ),
@@ -49,6 +52,10 @@ CASES: dict[str, str] = {
     ),
     "app.features.skills.router": (
         "tests/features/skills/test_router.py::test_skills_routes_isolate_users"
+    ),
+    "app.features.contributions.router": (
+        "tests/features/contributions/test_routes.py"
+        "::test_another_account_cannot_open_or_publish_a_contribution"
     ),
     "app.features.capture.router": (
         "tests/features/capture/test_router.py::test_capture_and_journal_isolate_users"
@@ -95,8 +102,9 @@ CASES: dict[str, str] = {
     "app.features.activity.router": (
         "tests/isolation/test_cross_user_activity.py::test_activity_of_another_account_is_invisible"
     ),
-    "app.features.ide.router": (
-        "tests/features/ide/test_isolation.py::test_ide_isolation_between_users"
+    "app.features.ide.router_project": (
+        "tests/isolation/test_ide_project_api.py"
+        "::test_foreign_project_file_and_tab_operations_are_refused"
     ),
     "app.features.mcp.router": "tests/mcp/test_isolation.py::test_mcp_user_isolation",
     "app.features.mcp.relay_router": (

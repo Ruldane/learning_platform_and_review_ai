@@ -58,6 +58,7 @@ class IdeSession(UserScopedMixin, Base):
     # Compteur d'écritures de fichiers : la base compare « lu = actuel » (10.X).
     # `undo_counter` : l'annulation d'une écriture l'avance au lieu de le ramener en arrière.
     files_version: Mapped[int] = mapped_column(Integer, default=0, info={"undo_counter": True})
+    workspace_tabs: Mapped[dict[str, Any] | None] = mapped_column(default=None)
     passed_at: Mapped[datetime | None] = mapped_column(UTCDateTime, default=None)
 
     @property
@@ -85,6 +86,7 @@ class IdeRun(UserScopedMixin, Base):
     # `app` (l'interface) ou `mcp` (Claude) : la page affiche « lancée par Claude » (10.X).
     origin: Mapped[str] = mapped_column(String(8), default="app")
     error_signature: Mapped[str | None] = mapped_column(String(40), default=None)
+    notebook_cell: Mapped[dict[str, Any] | None] = mapped_column(default=None)
 
 
 class IdeNote(UserScopedMixin, Base):

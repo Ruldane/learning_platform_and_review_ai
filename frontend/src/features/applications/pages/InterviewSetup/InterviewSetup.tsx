@@ -1,9 +1,7 @@
-import { Link } from "react-router";
 import { t } from "@/shared/i18n/t";
-import { Button } from "@/shared/ui/button";
-import { InlineError } from "@/shared/ui/states/InlineError";
-import { PROFILE_PATH } from "../../urls";
+import { SalaryFields } from "./SalaryFields";
 import { SettingsFields } from "./SettingsFields";
+import { StartControls } from "./StartControls";
 import { TargetFields } from "./TargetFields";
 import { useInterviewSetup } from "./useInterviewSetup";
 
@@ -42,25 +40,14 @@ export function InterviewSetup({ applicationId, onStarted }: InterviewSetupProps
         disabled={launcher.pending}
         onChange={form.setSettings}
       />
-      <div className="flex flex-col items-start gap-2">
-        {launcher.launchMenu}
-        <Button type="submit" disabled={launcher.pending}>
-          {t(
-            launcher.pending
-              ? "applications.interviewSetup.starting"
-              : "applications.interviewSetup.start",
-          )}
-        </Button>
-        {launcher.error ? <InlineError message={launcher.error} /> : null}
-        {launcher.profileMissing ? (
-          <Link
-            to={PROFILE_PATH}
-            className="text-sm font-medium text-primary underline underline-offset-4"
-          >
-            {t("applications.interviewSetup.openProfile")}
-          </Link>
-        ) : null}
-      </div>
+      {form.settings.mode === "salary" ? (
+        <SalaryFields
+          settings={form.settings}
+          disabled={launcher.pending}
+          onChange={form.setSettings}
+        />
+      ) : null}
+      <StartControls launcher={launcher} />
     </form>
   );
 }

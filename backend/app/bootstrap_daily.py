@@ -8,17 +8,21 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.agents.runtime.launcher import SessionLauncher
 from app.agents.tools.brief_port import BriefStore
+from app.agents.tools.podcast_port import PodcastStore
 from app.agents.tools.project_port import ProjectStore
 from app.agents.tools.radar_port import RadarStore
 from app.bootstrap_agents import StudyRuntimes
 from app.bootstrap_career import CareerRuntimes
 from app.features.brief.service.runtime import BriefRuntime
 from app.features.brief.service.store import AgentBriefStore
+from app.features.podcast.service.runtime import PodcastRuntime
+from app.features.podcast.service.store import AgentPodcastStore
 from app.features.projects.service.runtime import ProjectsRuntime
 from app.features.projects.service.store import AgentProjectStore
 from app.features.radar.service.runtime import RadarRuntime
 from app.features.radar.service.store import AgentRadarStore
 from app.features.research.service.runtime import ResearchRuntime
+from app.providers.speech.realtime import OpenAIRealtimeSpeech
 
 
 @dataclass(frozen=True)
@@ -32,6 +36,8 @@ class DailyRuntimes:
     brief_store: BriefStore  # port du parcours `daily_brief` (D161, D162)
     projects: ProjectsRuntime  # mini projets, tâche des énoncés, entrée au profil (D166)
     project_store: ProjectStore  # port des parcours `project_brief` et `project_review` (D165)
+    podcast: PodcastRuntime
+    podcast_store: PodcastStore
 
 
 def daily_runtimes(
@@ -50,6 +56,9 @@ def daily_runtimes(
     brief = BriefRuntime(session_factory, launcher, study.quiz, study.study, career.applications)
     cv = career.cv
     projects = ProjectsRuntime(session_factory, launcher, cv.storage, cv.memory, cv, research)
+    podcast = PodcastRuntime(
+        session_factory, launcher, study.quiz, cv.storage, OpenAIRealtimeSpeech(research.keys)
+    )
     return DailyRuntimes(
         radar=radar,
         radar_store=AgentRadarStore(radar),
@@ -57,4 +66,6 @@ def daily_runtimes(
         brief_store=AgentBriefStore(brief),
         projects=projects,
         project_store=AgentProjectStore(projects),
+        podcast=podcast,
+        podcast_store=AgentPodcastStore(podcast),
     )

@@ -4,6 +4,21 @@ import { ChatThread } from "@/shared/ui/ChatThread";
 import type { ConversationTurn } from "../../api";
 import { ConversationSources } from "./ConversationSources";
 
+function classmateMessages(turn: ConversationTurn) {
+  const classmates = turn.classmates ?? [];
+  return classmates.map(({ role, answer }, index) => (
+    <ChatMessage
+      key={`${turn.id}-${role}`}
+      author="assistant"
+      allowLinks={false}
+      label={t(`conversations.classroom.roles.${role}`)}
+      content={answer}
+    >
+      {index === classmates.length - 1 ? <ConversationSources sources={turn.sources} /> : null}
+    </ChatMessage>
+  ));
+}
+
 function messages(turn: ConversationTurn, live: string | null, assistant: string) {
   const question = (
     <ChatMessage
@@ -14,6 +29,7 @@ function messages(turn: ConversationTurn, live: string | null, assistant: string
       context={turn.passage}
     />
   );
+  if (turn.classmates?.length) return [question, ...classmateMessages(turn)];
   const failed =
     turn.status === "failed" || turn.status === "cancelled" || turn.status === "expired";
   const answer = turn.answer ?? (failed ? t("conversations.failed") : live);

@@ -17,6 +17,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agents.tools.negotiation import SalarySample, salary_outcome
 from app.core.errors import AppError
 from app.db.models.applications import Interview
 from app.features.applications.repository import ApplicationRepository
@@ -35,6 +36,8 @@ from app.features.applications.service.runtime import ApplicationsRuntime
 from app.features.applications.service.views import get_application, invalid, not_found
 from app.features.cv.service.versions import validated_profile
 from app.features.postings.service.queries import get_posting
+from app.features.radar.service.runs import defaults as radar_defaults
+from app.features.radar.service.salary_sample import radar_salary
 from app.features.sessions.service import list_open_sessions_by_subject
 
 logger = logging.getLogger(__name__)
@@ -90,6 +93,12 @@ def interview_out(row: Interview) -> InterviewOut:
     data: dict[str, Any] = dict(row.debrief or {})
     flags = [str(flag) for flag in data.pop("flags", [])]
     cards_created = int(data.pop("cards_created", 0))
+    salary = SalarySample.model_validate(row.salary) if row.salary is not None else None
+    outcome = None
+    if salary is not None and row.status in ("done", "debrief_failed") and row.exchanges:
+        outcome = salary_outcome(
+            salary, any(item.get("salary_raised") is True for item in row.exchanges)
+        )
     return InterviewOut.model_validate(
         {
             "id": row.id,
@@ -106,8 +115,29 @@ def interview_out(row: Interview) -> InterviewOut:
             "flags": flags,
             "cards_created": cards_created,
             "created_at": row.created_at,
+            "salary": salary,
+            "salary_outcome": outcome,
         }
     )
+
+
+async def _salary_snapshot(
+    db: AsyncSession, user_id: str, setup: InterviewIn, role: str | None
+) -> SalarySample | None:
+    if setup.mode != "salary":
+        return None
+    default_role, default_zone = await radar_defaults(db, user_id)
+    sample = await radar_salary(
+        db, user_id, setup.radar_role or role or default_role, setup.radar_zone or default_zone
+    )
+    if sample is None:
+        raise AppError(
+            "radar_salary_missing",
+            "Aucun salaire annuel brut en euros exploitable dans le radar "
+            "pour ce poste et cette zone.",
+            409,
+        )
+    return sample
 
 
 async def _launch(
@@ -127,6 +157,7 @@ async def _launch(
         raise interview_in_progress(running[0].id)
     if await validated_profile(db, user_id) is None:
         raise profile_required()
+    salary = await _salary_snapshot(db, user_id, setup, role)
     row = await repo.add(
         application_id=application_id,
         posting_id=posting_id,
@@ -134,6 +165,7 @@ async def _launch(
         mode=setup.mode,
         duration_min=setup.duration_min,
         language=setup.language,
+        salary=salary.model_dump(mode="json") if salary is not None else None,
         session_id="",  # posé dès que le parcours est lancé (la colonne est obligatoire)
         status="running",
     )

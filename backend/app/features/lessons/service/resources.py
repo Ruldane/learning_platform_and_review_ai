@@ -150,6 +150,15 @@ async def list_resources(db: AsyncSession, user_id: str, f: ResourceFilter) -> l
     return [to_out(row) for row in await ResourceRepository(db, user_id).filtered(f)]
 
 
+async def repository_resources(
+    db: AsyncSession, user_id: str, program_id: str
+) -> tuple[tuple[str, str], ...]:
+    """Liens de dépôts étudiés, avec leur module, pour les suggestions de contribution."""
+    filter_ = ResourceFilter(program_id=program_id, type="depot")
+    rows = await ResourceRepository(db, user_id).filtered(filter_)
+    return tuple((row.module_id, row.url) for row in rows)
+
+
 async def patch_resource(
     db: AsyncSession, user_id: str, resource_id: str, patch: ResourcePatch
 ) -> ResourceOut:

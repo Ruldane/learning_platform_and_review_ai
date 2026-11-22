@@ -1,8 +1,10 @@
 import { accountManifest } from "@/features/account/manifest";
 import { applicationsManifest } from "@/features/applications/manifest";
 import { authManifest } from "@/features/auth/manifest";
+import { bookManifest } from "@/features/book/manifest";
 import { makeBrainManifest } from "@/features/brain/manifest";
 import { captureManifest } from "@/features/capture/manifest";
+import { contributionsManifest } from "@/features/contributions/manifest";
 import { conversationsManifest } from "@/features/conversations/manifest";
 import { BrainConversation } from "@/features/conversations/pages/BrainConversation";
 import { LessonConversation } from "@/features/conversations/pages/LessonConversation";
@@ -18,6 +20,7 @@ import { learningManifest } from "@/features/learning/manifest";
 import { makeLessonsManifest } from "@/features/lessons/manifest";
 import { mcpManifest } from "@/features/mcp/manifest";
 import { memoryManifest } from "@/features/memory/manifest";
+import { podcastManifest } from "@/features/podcast/manifest";
 import { programManifest } from "@/features/program/manifest";
 import { projectsManifest } from "@/features/projects/manifest";
 import { quizManifest } from "@/features/quiz/manifest";
@@ -38,12 +41,15 @@ export const FEATURES: FeatureManifest[] = [
   learningManifest,
   programManifest,
   makeLessonsManifest(LessonConversation),
+  bookManifest,
   conversationsManifest,
   studyManifest,
+  podcastManifest,
   quizManifest,
   captureManifest,
   skillsManifest,
   projectsManifest,
+  contributionsManifest,
   gapManifest,
   radarManifest,
   futureSelfManifest,

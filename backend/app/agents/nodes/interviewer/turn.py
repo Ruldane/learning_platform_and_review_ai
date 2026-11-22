@@ -28,6 +28,7 @@ from app.agents.nodes.interviewer.common import (
     say_question,
 )
 from app.agents.nodes.interviewer.context import exchange_text, head_vars
+from app.agents.nodes.interviewer.salary import salary_decision
 from app.agents.prompts.loader import render_prompt, untrusted
 from app.agents.registry import get_agent
 from app.agents.runtime.deps import GraphDeps
@@ -179,6 +180,7 @@ def _answered(
         follow_up=decision.follow_up,
         note=decision.note,
         unrated=fallback,
+        salary_raised=decision.salary_move,
     )
     return [*exchanges, exchange.model_dump()]
 
@@ -192,6 +194,7 @@ def make_turn(deps: GraphDeps) -> Node:
             raise RuntimeError("`turn` demande une réponse lue par `ask`")
         planned = PlannedQuestion.model_validate(state["plan"][state["position"]])
         decision, fallback = await _decide(deps, state, planned, reply["text"])
+        decision = salary_decision(state, context_of(state), decision)
         exchanges = _answered(state, planned, reply["text"], decision, fallback)
         position = state["position"]
         logger.info("Réponse notée : session %s, question %d", deps.session_id, position + 1)

@@ -7,7 +7,7 @@ from typing import Literal
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.caller import Caller
-from app.db.models.ide import ExerciseOrigin
+from app.db.models.ide import ExerciseOrigin, IdeSession
 from app.features.ide.schemas import (
     ExerciseIn,
     ExerciseOut,
@@ -19,12 +19,35 @@ from app.features.ide.schemas import (
     RunProgress,
     SessionSummary,
 )
-from app.features.ide.service import exercises, notes, runs, sessions
+from app.features.ide.schemas_notebook import NotebookPut, NotebookRunIn, NotebookView
+from app.features.ide.schemas_project import (
+    ProjectFileCreate,
+    ProjectFileRemove,
+    ProjectFileRename,
+    ProjectTabsState,
+)
+from app.features.ide.schemas_terminal import TerminalStarted
+from app.features.ide.service import (
+    exercises,
+    notebooks,
+    notes,
+    project_files,
+    project_tabs,
+    runs,
+    sessions,
+    terminal,
+)
 from app.features.ide.service.context import IdeContext, file_hash
 from app.features.ide.service.signature import error_signature
 from app.providers.sandbox.base import CodeSandbox
 
 __all__ = ["IdeService", "error_signature", "file_hash"]
+
+
+def _session_view(row: IdeSession) -> IdeSessionOut:
+    return IdeSessionOut.model_validate(row).model_copy(
+        update={"tabs": project_tabs.current(row).to_state()}
+    )
 
 
 class IdeService:
@@ -68,10 +91,10 @@ class IdeService:
     ) -> IdeSessionOut:
         """Une séance sur un exercice, ou une séance libre (sans `exercise_id`)."""
         row = await sessions.open_session(self._ctx, exercise_id, title)
-        return IdeSessionOut.model_validate(row)
+        return _session_view(row)
 
     async def get_session(self, session_id: str) -> IdeSessionOut:
-        return IdeSessionOut.model_validate(await sessions.get(self._ctx, session_id))
+        return _session_view(await sessions.get(self._ctx, session_id))
 
     async def save_files(
         self,
@@ -89,7 +112,34 @@ class IdeService:
         else:
             row = await sessions.save_files(self._ctx, session_id, files, entry, base_hashes)
         await notes.sweep_stale(self._ctx, row)
-        return IdeSessionOut.model_validate(row)
+        return _session_view(row)
+
+    async def create_project_file(self, session_id: str, data: ProjectFileCreate) -> IdeSessionOut:
+        row = await project_files.create(
+            self._ctx, session_id, data.path, data.content, version=data.version
+        )
+        return _session_view(row)
+
+    async def rename_project_file(self, session_id: str, data: ProjectFileRename) -> IdeSessionOut:
+        row = await project_files.rename(
+            self._ctx, session_id, data.path, data.destination, version=data.version
+        )
+        await notes.sweep_stale(self._ctx, row)
+        return _session_view(row)
+
+    async def remove_project_file(self, session_id: str, data: ProjectFileRemove) -> IdeSessionOut:
+        row = await project_files.remove(
+            self._ctx,
+            session_id,
+            data.path,
+            version=data.version,
+            replacement_entry=data.replacement_entry,
+        )
+        await notes.sweep_stale(self._ctx, row)
+        return _session_view(row)
+
+    async def save_project_tabs(self, session_id: str, draft: ProjectTabsState) -> ProjectTabsState:
+        return await project_tabs.save(self._ctx, session_id, draft)
 
     async def start_run(
         self, session_id: str, kind: Literal["run", "check"], entry: str | None = None
@@ -106,6 +156,30 @@ class IdeService:
     async def get_run(self, run_id: str, after: int = 0) -> RunProgress:
         """La sortie depuis l'octet `after` ; fige la sortie et la signature à la fin."""
         return await runs.progress(self._ctx, run_id, after)
+
+    async def start_terminal(self, session_id: str) -> TerminalStarted:
+        return await terminal.start(self._ctx, session_id)
+
+    async def read_terminal(self, run_id: str, after: int) -> RunProgress:
+        return await terminal.read(self._ctx, run_id, after)
+
+    async def send_terminal(self, run_id: str, text: str) -> None:
+        await terminal.send(self._ctx, run_id, text)
+
+    async def cancel_terminal(self, run_id: str) -> None:
+        await terminal.cancel(self._ctx, run_id)
+
+    async def get_notebook(self, session_id: str, path: str) -> NotebookView:
+        return await notebooks.get(self._ctx, session_id, path)
+
+    async def save_notebook(self, session_id: str, draft: NotebookPut) -> NotebookView:
+        return await notebooks.save(self._ctx, session_id, draft)
+
+    async def run_notebook_cell(self, session_id: str, draft: NotebookRunIn) -> TerminalStarted:
+        return await notebooks.start(self._ctx, session_id, draft)
+
+    async def read_notebook_run(self, run_id: str, after: int) -> RunProgress:
+        return await notebooks.progress(self._ctx, run_id, after)
 
     async def list_notes(self, session_id: str) -> list[NoteOut]:
         return [NoteOut.model_validate(row) for row in await notes.list_for(self._ctx, session_id)]
@@ -132,7 +206,7 @@ class IdeService:
 
     async def accept_note(self, note_id: str) -> IdeSessionOut:
         """Geste de l'interface : applique la proposition si son fichier n'a pas changé."""
-        return IdeSessionOut.model_validate(await notes.accept(self._ctx, note_id))
+        return _session_view(await notes.accept(self._ctx, note_id))
 
     async def reject_note(self, note_id: str) -> NoteOut:
         return NoteOut.model_validate(await notes.reject(self._ctx, note_id))

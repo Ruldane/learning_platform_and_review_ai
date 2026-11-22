@@ -2381,6 +2381,47 @@
         "title": "Body_sync_file_api_v1_brain_sync_folders__folder_id__files_post",
         "type": "object"
       },
+      "BookOut": {
+        "properties": {
+          "available": {
+            "default": false,
+            "title": "Available",
+            "type": "boolean"
+          },
+          "chapters": {
+            "default": 0,
+            "title": "Chapters",
+            "type": "integer"
+          },
+          "rendered_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rendered At"
+          },
+          "status": {
+            "enum": [
+              "not_requested",
+              "queued",
+              "ready",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "BookOut",
+        "type": "object"
+      },
       "BraveUsageOut": {
         "description": "Requêtes Brave du mois civil UTC (`month` : « AAAA-MM ») pour la clé en vigueur.",
         "properties": {
@@ -3002,6 +3043,29 @@
         "title": "ClaimIn",
         "type": "object"
       },
+      "ClassmateReply": {
+        "properties": {
+          "answer": {
+            "title": "Answer",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "beginner",
+              "peer",
+              "advanced"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "answer"
+        ],
+        "title": "ClassmateReply",
+        "type": "object"
+      },
       "CommitteeDiff": {
         "description": "L'avant et l'après (F19) : les votes, les objections disparues (`objections_resolved`) et les\nnouvelles (`objections_new`) par rapport à l'exécution `previous_id`.",
         "properties": {
@@ -3348,6 +3412,83 @@
         "title": "ContactOut",
         "type": "object"
       },
+      "ContributionOut": {
+        "properties": {
+          "base": {
+            "title": "Base",
+            "type": "string"
+          },
+          "chapter": {
+            "title": "Chapter",
+            "type": "string"
+          },
+          "cv_line": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cv Line"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "issue": {
+            "$ref": "#/components/schemas/SuggestedIssue"
+          },
+          "program_id": {
+            "title": "Program Id",
+            "type": "string"
+          },
+          "publication_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Publication Url"
+          },
+          "pull_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pull Url"
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "confirmed",
+              "open",
+              "closed",
+              "accepted"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "program_id",
+          "chapter",
+          "issue",
+          "status",
+          "base"
+        ],
+        "title": "ContributionOut",
+        "type": "object"
+      },
       "ConversationMessageIn": {
         "additionalProperties": false,
         "properties": {
@@ -3520,6 +3661,20 @@
               }
             ],
             "title": "Answer"
+          },
+          "classmates": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ClassmateReply"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Classmates"
           },
           "id": {
             "format": "uuid",
@@ -3847,6 +4002,35 @@
           "by_model"
         ],
         "title": "CostsReport",
+        "type": "object"
+      },
+      "CreateContribution": {
+        "properties": {
+          "issue_number": {
+            "exclusiveMaximum": 1000000000.0,
+            "minimum": 1.0,
+            "title": "Issue Number",
+            "type": "integer"
+          },
+          "program_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Program Id",
+            "type": "string"
+          },
+          "repository": {
+            "maxLength": 140,
+            "minLength": 3,
+            "title": "Repository",
+            "type": "string"
+          }
+        },
+        "required": [
+          "program_id",
+          "repository",
+          "issue_number"
+        ],
+        "title": "CreateContribution",
         "type": "object"
       },
       "CreatedOut": {
@@ -4647,6 +4831,16 @@
         "title": "EmbeddingProgress",
         "type": "object"
       },
+      "EpisodeStatus": {
+        "enum": [
+          "queued",
+          "script",
+          "ready",
+          "transcript",
+          "failed"
+        ],
+        "type": "string"
+      },
       "ErrorDetailOut": {
         "properties": {
           "code": {
@@ -4945,7 +5139,8 @@
               "project",
               "cv",
               "capture",
-              "ide"
+              "ide",
+              "contribution"
             ],
             "title": "Kind",
             "type": "string"
@@ -5746,7 +5941,8 @@
               "behavioral",
               "technical",
               "case",
-              "mixed"
+              "mixed",
+              "salary"
             ],
             "title": "Mode",
             "type": "string"
@@ -5763,6 +5959,32 @@
               }
             ],
             "title": "Posting Id"
+          },
+          "radar_role": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Radar Role"
+          },
+          "radar_zone": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Radar Zone"
           },
           "role": {
             "anyOf": [
@@ -6386,6 +6608,11 @@
             "title": "Files",
             "type": "object"
           },
+          "files_version": {
+            "default": 0,
+            "title": "Files Version",
+            "type": "integer"
+          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -6405,6 +6632,16 @@
               }
             ],
             "title": "Passed At"
+          },
+          "tabs": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProjectTabsState"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "title": {
             "title": "Title",
@@ -6822,10 +7059,37 @@
               "behavioral",
               "technical",
               "case",
-              "mixed"
+              "mixed",
+              "salary"
             ],
             "title": "Mode",
             "type": "string"
+          },
+          "radar_role": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Radar Role"
+          },
+          "radar_zone": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Radar Zone"
           }
         },
         "required": [
@@ -6908,7 +7172,8 @@
               "behavioral",
               "technical",
               "case",
-              "mixed"
+              "mixed",
+              "salary"
             ],
             "title": "Mode",
             "type": "string"
@@ -6934,6 +7199,26 @@
               }
             ],
             "title": "Role"
+          },
+          "salary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SalarySample"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "salary_outcome": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SalaryOutcome"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "session_id": {
             "title": "Session Id",
@@ -10280,6 +10565,183 @@
         "title": "NoteOut",
         "type": "object"
       },
+      "NotebookCellIn": {
+        "properties": {
+          "id": {
+            "pattern": "^[A-Za-z0-9_-]{1,64}$",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "code",
+              "markdown",
+              "raw"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "source": {
+            "maxLength": 200000,
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "source"
+        ],
+        "title": "NotebookCellIn",
+        "type": "object"
+      },
+      "NotebookCellOut": {
+        "properties": {
+          "execution_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Execution Count"
+          },
+          "id": {
+            "pattern": "^[A-Za-z0-9_-]{1,64}$",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "code",
+              "markdown",
+              "raw"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "output": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output"
+          },
+          "source": {
+            "maxLength": 200000,
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "source"
+        ],
+        "title": "NotebookCellOut",
+        "type": "object"
+      },
+      "NotebookPut": {
+        "properties": {
+          "cells": {
+            "items": {
+              "$ref": "#/components/schemas/NotebookCellIn"
+            },
+            "maxItems": 100,
+            "title": "Cells",
+            "type": "array"
+          },
+          "path": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Path",
+            "type": "string"
+          },
+          "version": {
+            "minimum": 0.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "path",
+          "version",
+          "cells"
+        ],
+        "title": "NotebookPut",
+        "type": "object"
+      },
+      "NotebookRunIn": {
+        "properties": {
+          "cell_id": {
+            "pattern": "^[A-Za-z0-9_-]{1,64}$",
+            "title": "Cell Id",
+            "type": "string"
+          },
+          "include_previous": {
+            "default": false,
+            "title": "Include Previous",
+            "type": "boolean"
+          },
+          "path": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "cell_id"
+        ],
+        "title": "NotebookRunIn",
+        "type": "object"
+      },
+      "NotebookView": {
+        "properties": {
+          "active_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Run Id"
+          },
+          "cells": {
+            "items": {
+              "$ref": "#/components/schemas/NotebookCellOut"
+            },
+            "title": "Cells",
+            "type": "array"
+          },
+          "files_version": {
+            "title": "Files Version",
+            "type": "integer"
+          },
+          "path": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "files_version",
+          "cells"
+        ],
+        "title": "NotebookView",
+        "type": "object"
+      },
       "ObjectionOut": {
         "description": "Une objection du comité (la plus lourde d'abord) et les personas qui la portent.",
         "properties": {
@@ -10838,6 +11300,184 @@
           "response"
         ],
         "title": "PlaySubmit",
+        "type": "object"
+      },
+      "PodcastAnswers": {
+        "properties": {
+          "choices": {
+            "items": {
+              "maximum": 2.0,
+              "minimum": 0.0,
+              "type": "integer"
+            },
+            "maxItems": 3,
+            "minItems": 3,
+            "title": "Choices",
+            "type": "array"
+          }
+        },
+        "required": [
+          "choices"
+        ],
+        "title": "PodcastAnswers",
+        "type": "object"
+      },
+      "PodcastCorrection": {
+        "properties": {
+          "answer": {
+            "title": "Answer",
+            "type": "integer"
+          },
+          "correct": {
+            "title": "Correct",
+            "type": "boolean"
+          },
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          }
+        },
+        "required": [
+          "answer",
+          "correct",
+          "explanation"
+        ],
+        "title": "PodcastCorrection",
+        "type": "object"
+      },
+      "PodcastEpisodeOut": {
+        "properties": {
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "lesson_id": {
+            "title": "Lesson Id",
+            "type": "string"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/PodcastLine"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/PodcastQuestionOut"
+            },
+            "title": "Questions",
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EpisodeStatus"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "day",
+          "lesson_id",
+          "title",
+          "status",
+          "lines",
+          "questions",
+          "duration_seconds"
+        ],
+        "title": "PodcastEpisodeOut",
+        "type": "object"
+      },
+      "PodcastLine": {
+        "properties": {
+          "speaker": {
+            "$ref": "#/components/schemas/Speaker"
+          },
+          "text": {
+            "maxLength": 1800,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "speaker",
+          "text"
+        ],
+        "title": "PodcastLine",
+        "type": "object"
+      },
+      "PodcastQuestionOut": {
+        "properties": {
+          "choices": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Choices",
+            "type": "array"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question",
+          "choices"
+        ],
+        "title": "PodcastQuestionOut",
+        "type": "object"
+      },
+      "PodcastQuizOut": {
+        "properties": {
+          "corrections": {
+            "items": {
+              "$ref": "#/components/schemas/PodcastCorrection"
+            },
+            "title": "Corrections",
+            "type": "array"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "score",
+          "corrections"
+        ],
+        "title": "PodcastQuizOut",
+        "type": "object"
+      },
+      "PodcastStarted": {
+        "properties": {
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id"
+        ],
+        "title": "PodcastStarted",
         "type": "object"
       },
       "PostingAnalysisOut": {
@@ -12494,6 +13134,95 @@
         "title": "ProjectCreateIn",
         "type": "object"
       },
+      "ProjectFileCreate": {
+        "properties": {
+          "content": {
+            "default": "",
+            "maxLength": 200000,
+            "title": "Content",
+            "type": "string"
+          },
+          "path": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Path",
+            "type": "string"
+          },
+          "version": {
+            "minimum": 0.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "path",
+          "version"
+        ],
+        "title": "ProjectFileCreate",
+        "type": "object"
+      },
+      "ProjectFileRemove": {
+        "properties": {
+          "path": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Path",
+            "type": "string"
+          },
+          "replacement_entry": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replacement Entry"
+          },
+          "version": {
+            "minimum": 0.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "path",
+          "version"
+        ],
+        "title": "ProjectFileRemove",
+        "type": "object"
+      },
+      "ProjectFileRename": {
+        "properties": {
+          "destination": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Destination",
+            "type": "string"
+          },
+          "path": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Path",
+            "type": "string"
+          },
+          "version": {
+            "minimum": 0.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "path",
+          "version",
+          "destination"
+        ],
+        "title": "ProjectFileRename",
+        "type": "object"
+      },
       "ProjectOut": {
         "properties": {
           "brief": {
@@ -12745,6 +13474,38 @@
         "title": "ProjectSummary",
         "type": "object"
       },
+      "ProjectTabsState": {
+        "properties": {
+          "active_path": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Path"
+          },
+          "open_paths": {
+            "items": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Open Paths",
+            "type": "array"
+          }
+        },
+        "required": [
+          "open_paths"
+        ],
+        "title": "ProjectTabsState",
+        "type": "object"
+      },
       "ProjectionSampleOut": {
         "properties": {
           "analyzed": {
@@ -12960,6 +13721,62 @@
           "models"
         ],
         "title": "ProviderModels",
+        "type": "object"
+      },
+      "PublicationIn": {
+        "properties": {
+          "author": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{0,38}$",
+            "title": "Author",
+            "type": "string"
+          },
+          "body": {
+            "maxLength": 1400,
+            "minLength": 3,
+            "title": "Body",
+            "type": "string"
+          },
+          "confirm": {
+            "const": true,
+            "title": "Confirm",
+            "type": "boolean"
+          },
+          "head": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Head",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 120,
+            "minLength": 3,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "confirm",
+          "author",
+          "head",
+          "title",
+          "body"
+        ],
+        "title": "PublicationIn",
+        "type": "object"
+      },
+      "PullIn": {
+        "properties": {
+          "url": {
+            "maxLength": 350,
+            "minLength": 1,
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "title": "PullIn",
         "type": "object"
       },
       "QuestionIn": {
@@ -15503,6 +16320,75 @@
         "title": "RunStarted",
         "type": "object"
       },
+      "SalaryOutcome": {
+        "properties": {
+          "offer_eur": {
+            "title": "Offer Eur",
+            "type": "integer"
+          },
+          "reason": {
+            "enum": [
+              "ceiling_reached",
+              "budget_held",
+              "fixed_amount"
+            ],
+            "title": "Reason",
+            "type": "string"
+          },
+          "remaining_eur": {
+            "title": "Remaining Eur",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "offer_eur",
+          "remaining_eur",
+          "reason"
+        ],
+        "title": "SalaryOutcome",
+        "type": "object"
+      },
+      "SalarySample": {
+        "properties": {
+          "maximum_eur": {
+            "exclusiveMinimum": 0.0,
+            "title": "Maximum Eur",
+            "type": "integer"
+          },
+          "minimum_eur": {
+            "exclusiveMinimum": 0.0,
+            "title": "Minimum Eur",
+            "type": "integer"
+          },
+          "observations": {
+            "exclusiveMinimum": 0.0,
+            "title": "Observations",
+            "type": "integer"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "zone": {
+            "title": "Zone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "role",
+          "zone",
+          "minimum_eur",
+          "maximum_eur",
+          "observations"
+        ],
+        "title": "SalarySample",
+        "type": "object"
+      },
       "Scenario": {
         "properties": {
           "kind": {
@@ -16906,6 +17792,13 @@
         "title": "SourcedLine",
         "type": "object"
       },
+      "Speaker": {
+        "enum": [
+          "host",
+          "coach"
+        ],
+        "type": "string"
+      },
       "StartSessionRequest": {
         "properties": {
           "graph": {
@@ -17349,6 +18242,75 @@
           "screenshots"
         ],
         "title": "SubmissionOut",
+        "type": "object"
+      },
+      "SuggestedIssue": {
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "number": {
+            "title": "Number",
+            "type": "integer"
+          },
+          "repository": {
+            "title": "Repository",
+            "type": "string"
+          },
+          "skills": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Skills",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "repository",
+          "number",
+          "title",
+          "body",
+          "url",
+          "skills"
+        ],
+        "title": "SuggestedIssue",
+        "type": "object"
+      },
+      "SuggestionsOut": {
+        "properties": {
+          "chapter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chapter"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SuggestedIssue"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "chapter",
+          "items"
+        ],
+        "title": "SuggestionsOut",
         "type": "object"
       },
       "SyncTokenOut": {
@@ -17898,6 +18860,34 @@
           "created_at"
         ],
         "title": "TemplateSummaryOut",
+        "type": "object"
+      },
+      "TerminalInput": {
+        "properties": {
+          "data": {
+            "maxLength": 4096,
+            "minLength": 1,
+            "title": "Data",
+            "type": "string"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "TerminalInput",
+        "type": "object"
+      },
+      "TerminalStarted": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "TerminalStarted",
         "type": "object"
       },
       "ToolCalledEvent": {
@@ -19909,7 +20899,7 @@
             "description": "`application_not_found`"
           },
           "409": {
-            "description": "`interview_in_progress` (`details.interview_id` : l'entretien ouvert), `profile_required` (aucun profil maître validé)"
+            "description": "`interview_in_progress` (`details.interview_id` : l'entretien ouvert), `profile_required` (aucun profil maître validé), `radar_salary_missing` (pas de montant annuel brut pour le scénario salarial)"
           },
           "422": {
             "content": {
@@ -21169,6 +22159,301 @@
         "summary": "Get Committee",
         "tags": [
           "committee"
+        ]
+      }
+    },
+    "/api/v1/contributions": {
+      "get": {
+        "operationId": "list_contributions_api_v1_contributions_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ContributionOut"
+                  },
+                  "title": "Response List Contributions Api V1 Contributions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Contributions",
+        "tags": [
+          "contributions"
+        ]
+      },
+      "post": {
+        "operationId": "create_contribution_api_v1_contributions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateContribution"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContributionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Contribution",
+        "tags": [
+          "contributions"
+        ]
+      }
+    },
+    "/api/v1/contributions/suggestions": {
+      "get": {
+        "operationId": "propose_issues_api_v1_contributions_suggestions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "program_id",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "title": "Program Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuggestionsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Propose Issues",
+        "tags": [
+          "contributions"
+        ]
+      }
+    },
+    "/api/v1/contributions/{contribution_id}": {
+      "get": {
+        "operationId": "read_contribution_api_v1_contributions__contribution_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "contribution_id",
+            "required": true,
+            "schema": {
+              "title": "Contribution Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContributionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read Contribution",
+        "tags": [
+          "contributions"
+        ]
+      }
+    },
+    "/api/v1/contributions/{contribution_id}/publication": {
+      "post": {
+        "operationId": "prepare_publication_api_v1_contributions__contribution_id__publication_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "contribution_id",
+            "required": true,
+            "schema": {
+              "title": "Contribution Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContributionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Prepare Publication",
+        "tags": [
+          "contributions"
+        ]
+      }
+    },
+    "/api/v1/contributions/{contribution_id}/pull": {
+      "post": {
+        "operationId": "track_pull_api_v1_contributions__contribution_id__pull_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "contribution_id",
+            "required": true,
+            "schema": {
+              "title": "Contribution Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PullIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContributionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Track Pull",
+        "tags": [
+          "contributions"
+        ]
+      }
+    },
+    "/api/v1/contributions/{contribution_id}/refresh": {
+      "post": {
+        "operationId": "refresh_pull_api_v1_contributions__contribution_id__refresh_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "contribution_id",
+            "required": true,
+            "schema": {
+              "title": "Contribution Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContributionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Refresh Pull",
+        "tags": [
+          "contributions"
         ]
       }
     },
@@ -23102,6 +24387,62 @@
         ]
       }
     },
+    "/api/v1/ide/notebook-runs/{run_id}": {
+      "get": {
+        "operationId": "read_notebook_run_api_v1_ide_notebook_runs__run_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 65536,
+              "minimum": 0,
+              "title": "After",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunProgress"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read Notebook Run",
+        "tags": [
+          "ide"
+        ]
+      }
+    },
     "/api/v1/ide/notes/{note_id}/accept": {
       "post": {
         "description": "Applique une proposition au fichier si celui-ci n'a pas changé (sinon 409 `note_stale`).\nGeste de l'interface, jamais du MCP.",
@@ -23449,6 +24790,165 @@
       }
     },
     "/api/v1/ide/sessions/{session_id}/files": {
+      "delete": {
+        "description": "Retire un fichier du projet et referme son onglet.",
+        "operationId": "remove_project_file_api_v1_ide_sessions__session_id__files_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectFileRemove"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdeSessionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Remove Project File",
+        "tags": [
+          "ide"
+        ]
+      },
+      "patch": {
+        "description": "Renomme un fichier du projet et adapte l'entrée et les onglets.",
+        "operationId": "rename_project_file_api_v1_ide_sessions__session_id__files_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectFileRename"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdeSessionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Rename Project File",
+        "tags": [
+          "ide"
+        ]
+      },
+      "post": {
+        "description": "Crée un fichier à partir de la version lue de la séance.",
+        "operationId": "add_project_file_api_v1_ide_sessions__session_id__files_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectFileCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdeSessionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Project File",
+        "tags": [
+          "ide"
+        ]
+      },
       "put": {
         "description": "Enregistre les fichiers de la séance (20 au plus, 200 Ko) : l'interface les remplace tous ;\nClaude (MCP, interrupteur allumé) écrit un fichier avec `base_hash`.",
         "operationId": "put_files_api_v1_ide_sessions__session_id__files_put",
@@ -23500,6 +25000,167 @@
           }
         },
         "summary": "Put Files",
+        "tags": [
+          "ide"
+        ]
+      }
+    },
+    "/api/v1/ide/sessions/{session_id}/notebook": {
+      "get": {
+        "operationId": "get_notebook_api_v1_ide_sessions__session_id__notebook_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "path",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 1,
+              "title": "Path",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotebookView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Notebook",
+        "tags": [
+          "ide"
+        ]
+      },
+      "put": {
+        "operationId": "save_notebook_api_v1_ide_sessions__session_id__notebook_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotebookPut"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotebookView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Notebook",
+        "tags": [
+          "ide"
+        ]
+      }
+    },
+    "/api/v1/ide/sessions/{session_id}/notebook/run": {
+      "post": {
+        "operationId": "run_notebook_cell_api_v1_ide_sessions__session_id__notebook_run_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotebookRunIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TerminalStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Notebook Cell",
         "tags": [
           "ide"
         ]
@@ -23716,6 +25377,61 @@
         ]
       }
     },
+    "/api/v1/ide/sessions/{session_id}/tabs": {
+      "put": {
+        "description": "Garde les onglets de l'interface pour la prochaine ouverture de la séance.",
+        "operationId": "save_project_tabs_api_v1_ide_sessions__session_id__tabs_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectTabsState"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectTabsState"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Project Tabs",
+        "tags": [
+          "ide"
+        ]
+      }
+    },
     "/api/v1/ide/sessions/{session_id}/teach": {
       "post": {
         "description": "Réveille le professeur : un graphe (`session_id`), un renvoi à la note précédente\n(`reference_note_id`) ou rien (`skipped`). Seule route qui lance le professeur : ni la\nsauvegarde des fichiers ni la frappe ne l'appellent.",
@@ -23762,6 +25478,188 @@
           }
         },
         "summary": "Teach",
+        "tags": [
+          "ide"
+        ]
+      }
+    },
+    "/api/v1/ide/sessions/{session_id}/terminal": {
+      "post": {
+        "operationId": "start_terminal_api_v1_ide_sessions__session_id__terminal_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TerminalStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Terminal",
+        "tags": [
+          "ide"
+        ]
+      }
+    },
+    "/api/v1/ide/terminals/{run_id}": {
+      "delete": {
+        "operationId": "cancel_terminal_api_v1_ide_terminals__run_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cancel Terminal",
+        "tags": [
+          "ide"
+        ]
+      },
+      "get": {
+        "operationId": "read_terminal_api_v1_ide_terminals__run_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 65536,
+              "minimum": 0,
+              "title": "After",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunProgress"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read Terminal",
+        "tags": [
+          "ide"
+        ]
+      }
+    },
+    "/api/v1/ide/terminals/{run_id}/input": {
+      "post": {
+        "operationId": "send_terminal_api_v1_ide_terminals__run_id__input_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TerminalInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Send Terminal",
         "tags": [
           "ide"
         ]
@@ -23907,7 +25805,7 @@
             "description": "`posting_not_found`"
           },
           "409": {
-            "description": "`interview_in_progress` (`details.interview_id` : l'entretien ouvert), `profile_required` (aucun profil maître validé)"
+            "description": "`interview_in_progress` (`details.interview_id` : l'entretien ouvert), `profile_required` (aucun profil maître validé), `radar_salary_missing` (pas de montant annuel brut pour le scénario salarial)"
           },
           "422": {
             "content": {
@@ -24168,6 +26066,110 @@
         "summary": "Patch Lesson",
         "tags": [
           "lessons"
+        ]
+      }
+    },
+    "/api/v1/lessons/{lesson_id}/classroom": {
+      "get": {
+        "operationId": "get_classroom_api_v1_lessons__lesson_id__classroom_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "lesson_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Lesson Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/LessonConversationOut"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Get Classroom Api V1 Lessons  Lesson Id  Classroom Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Classroom",
+        "tags": [
+          "conversations"
+        ]
+      }
+    },
+    "/api/v1/lessons/{lesson_id}/classroom/messages": {
+      "post": {
+        "operationId": "post_classroom_message_api_v1_lessons__lesson_id__classroom_messages_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "lesson_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Lesson Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConversationMessageIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Post Classroom Message",
+        "tags": [
+          "conversations"
         ]
       }
     },
@@ -25568,6 +27570,147 @@
         ]
       }
     },
+    "/api/v1/podcast/today": {
+      "get": {
+        "operationId": "get_today_api_v1_podcast_today_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/PodcastEpisodeOut"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Get Today Api V1 Podcast Today Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Today",
+        "tags": [
+          "podcast"
+        ]
+      },
+      "post": {
+        "operationId": "create_today_api_v1_podcast_today_post",
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodcastStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Create Today",
+        "tags": [
+          "podcast"
+        ]
+      }
+    },
+    "/api/v1/podcast/{episode_id}/audio": {
+      "get": {
+        "operationId": "get_audio_api_v1_podcast__episode_id__audio_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "episode_id",
+            "required": true,
+            "schema": {
+              "title": "Episode Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "audio/wav": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Audio",
+        "tags": [
+          "podcast"
+        ]
+      }
+    },
+    "/api/v1/podcast/{episode_id}/quiz": {
+      "post": {
+        "operationId": "post_quiz_api_v1_podcast__episode_id__quiz_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "episode_id",
+            "required": true,
+            "schema": {
+              "title": "Episode Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PodcastAnswers"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodcastQuizOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Post Quiz",
+        "tags": [
+          "podcast"
+        ]
+      }
+    },
     "/api/v1/postings": {
       "get": {
         "description": "Les offres de January, les plus récentes d'abord.",
@@ -26348,6 +28491,150 @@
         "summary": "Patch Program",
         "tags": [
           "program"
+        ]
+      }
+    },
+    "/api/v1/programs/{program_id}/book": {
+      "get": {
+        "operationId": "get_book_api_v1_programs__program_id__book_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "program_id",
+            "required": true,
+            "schema": {
+              "title": "Program Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Book",
+        "tags": [
+          "book"
+        ]
+      },
+      "post": {
+        "operationId": "request_book_api_v1_programs__program_id__book_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "program_id",
+            "required": true,
+            "schema": {
+              "title": "Program Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Request Book",
+        "tags": [
+          "book"
+        ]
+      }
+    },
+    "/api/v1/programs/{program_id}/book/{format}": {
+      "get": {
+        "operationId": "download_book_api_v1_programs__program_id__book__format__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "program_id",
+            "required": true,
+            "schema": {
+              "title": "Program Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "format",
+            "required": true,
+            "schema": {
+              "enum": [
+                "pdf",
+                "epub"
+              ],
+              "title": "Format",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/epub+zip": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              },
+              "application/pdf": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Download Book",
+        "tags": [
+          "book"
         ]
       }
     },

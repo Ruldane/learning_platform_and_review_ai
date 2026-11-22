@@ -1,0 +1,17 @@
+export const podcast = {
+  title: "Podcast du matin",
+  loading: "Chargement du podcast…",
+  pending: "Préparation de l’épisode…",
+  prepare: "Préparer l’épisode du jour",
+  failed: "La préparation de l’épisode a été interrompue.",
+  openLesson: "Ouvrir le chapitre",
+  player: "Écouter l’épisode",
+  audioAI: "Voix générées par IA",
+  transcript: "Transcription",
+  transcriptOnly: "La transcription et les questions sont disponibles.",
+  speakers: { host: "Hôte", coach: "Coach" },
+  quiz: "Trois questions",
+  check: "Vérifier mes réponses",
+  score: "{score} réponses correctes sur 3",
+  answer: "Réponse attendue",
+} as const;

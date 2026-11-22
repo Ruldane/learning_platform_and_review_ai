@@ -33,6 +33,7 @@ describe("registre des features", () => {
       "/apprendre/programme",
       "/apprendre/lecons",
       "/apprendre/bibliotheque",
+      "/apprendre/livre",
     ]);
     expect(groups[2]?.items.map((item) => item.path)).toEqual([
       "/etudier/session",
@@ -41,10 +42,12 @@ describe("registre des features", () => {
       "/etudier/quiz",
       "/etudier/journal",
       "/code",
+      "/etudier/podcast",
     ]);
     expect(groups[3]?.items).toEqual([
       { labelKey: "skills.nav.map", path: "/competences" },
       { labelKey: "projects.nav.portfolio", path: "/competences/portfolio" },
+      { labelKey: "contributions.title", path: "/competences/contributions" },
     ]);
     expect(groups[4]?.items).toEqual([
       { labelKey: "cv.nav.profile", path: "/carriere/profil" },

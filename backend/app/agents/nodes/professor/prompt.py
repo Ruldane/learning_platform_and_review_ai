@@ -48,6 +48,8 @@ def turn_of(
     """La demande de cet appel : tâche, déclencheur, question, fichier, erreur, échanges."""
     where = f"{ctx.path}, lignes {ctx.first_line} à {ctx.last_line} sur {ctx.line_count}"
     exchanges = "\n".join(f"- {line}" for line in ctx.exchanges)
+    files = "\n".join(f"- {path}" for path in ctx.project_paths)
+    projection = f"Ligne en cause : {ctx.focus}\n{ctx.window}\n\nFichiers du projet :\n{files}"
     text = render_prompt(
         AGENT,
         mode="turn",
@@ -55,7 +57,7 @@ def turn_of(
         level=level,
         trigger=TRIGGERS[trigger],
         question=untrusted(question, "question de January") if question else "",
-        code=untrusted(f"Ligne en cause : {ctx.focus}\n{ctx.window}", f"code ({where})"),
+        code=untrusted(projection, f"code ({where})"),
         error=untrusted(ctx.error_tail, "fin de la sortie") if ctx.error_tail else "",
         exchanges=untrusted(exchanges, "fil de la conversation, du plus ancien au plus récent")
         if exchanges

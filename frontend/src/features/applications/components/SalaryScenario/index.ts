@@ -1,0 +1,1 @@
+export { SalaryScenario } from "./SalaryScenario";

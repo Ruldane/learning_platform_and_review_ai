@@ -11,12 +11,14 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, StringConstraints
 
 from app.agents.tools.interview_schema import Criterion, QuestionSource, ScoreKey
+from app.agents.tools.negotiation import SalaryOutcome, SalarySample
 from app.db.models.applications import InterviewMode as InterviewMode
 from app.db.models.applications import InterviewStatus as InterviewStatus
 from app.features.applications.schemas import Id
 
 ROLE_MAX = 200
 Role = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=ROLE_MAX)]
+RadarLabel = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
 
 
 class InterviewIn(BaseModel):
@@ -26,6 +28,8 @@ class InterviewIn(BaseModel):
     mode: InterviewMode
     duration_min: Literal[15, 30, 45]
     language: Literal["fr", "en"] = "fr"
+    radar_role: RadarLabel | None = None
+    radar_zone: RadarLabel | None = None
 
 
 class FreeInterviewIn(InterviewIn):
@@ -97,3 +101,5 @@ class InterviewOut(BaseModel):
     flags: list[str]
     cards_created: int
     created_at: datetime
+    salary: SalarySample | None = None
+    salary_outcome: SalaryOutcome | None = None

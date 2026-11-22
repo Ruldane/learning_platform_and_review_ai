@@ -1,6 +1,7 @@
 from collections.abc import Collection, Sequence
+from datetime import datetime
 
-from sqlalchemy import ColumnElement, Select, and_, case, func, literal, select
+from sqlalchemy import ColumnElement, Select, and_, case, func, literal, select, true
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.brain import BrainFile, BrainFolder
@@ -41,6 +42,26 @@ class NoteReadingRepository:
             .with_only_columns(MemoryItem.id, BrainFile.sha256, MemoryItem.content_hash)
         )
         return {item_id: f"{file}:{item}" for item_id, file, item in await self._db.execute(stmt)}
+
+    async def explicitly_linked(
+        self, references: Collection[str]
+    ) -> list[tuple[str, str, str, datetime]]:
+        if not references:
+            return []
+        links = func.json_each(Document.sync_metadata["links"]).table_valued("key", "value")
+        stmt = (
+            self._active()
+            .join(links, true())
+            .where(Document.source_kind == "markdown", links.c.value.in_(references))
+            .with_only_columns(
+                links.c.value, MemoryItem.title, MemoryItem.text, BrainFile.updated_at
+            )
+            .order_by(MemoryItem.title, MemoryItem.id)
+        )
+        return [
+            (reference, title, text, changed_at)
+            for reference, title, text, changed_at in await self._db.execute(stmt)
+        ]
 
     async def matching(self, terms: Sequence[str], limit: int) -> list[tuple[str, str, str, str]]:
         """Un fragment par note, le mieux classé par son titre et son texte."""

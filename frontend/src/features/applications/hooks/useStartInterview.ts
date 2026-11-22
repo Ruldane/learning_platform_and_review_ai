@@ -11,6 +11,8 @@ export interface InterviewSettings {
   mode: InterviewModeView;
   durationMin: InterviewDurationView;
   language: InterviewLanguageView;
+  radarRole?: string;
+  radarZone?: string;
 }
 
 /** Sur quoi porte un entretien sans fiche : une offre, ou un intitulé de poste. */
@@ -32,6 +34,10 @@ async function launch(
     mode: settings.mode,
     duration_min: settings.durationMin,
     language: settings.language,
+    ...(settings.mode === "salary" && {
+      radar_role: settings.radarRole?.trim() || undefined,
+      radar_zone: settings.radarZone?.trim() || undefined,
+    }),
   };
   try {
     const started = applicationId

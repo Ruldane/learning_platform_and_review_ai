@@ -24,6 +24,7 @@ interface TeacherChatProps {
   onWhy: () => void;
   onAccept: (noteId: string) => void;
   onReject: (noteId: string) => void;
+  onOpenFile?: (path: string) => void;
   /** Reçoit le focus quand une proposition quitte la liste d'attente (accepter, refuser). */
   headingRef?: Ref<HTMLHeadingElement>;
 }
@@ -33,6 +34,7 @@ function renderMessage(
   busy: boolean,
   onAccept: TeacherChatProps["onAccept"],
   onReject: TeacherChatProps["onReject"],
+  onOpenFile?: TeacherChatProps["onOpenFile"],
 ) {
   if (item.type === "pending") return <PendingMessage key={item.id} text={item.text} />;
   return (
@@ -44,6 +46,7 @@ function renderMessage(
       busy={busy}
       onAccept={() => onAccept(item.id)}
       onReject={() => onReject(item.id)}
+      onOpenFile={onOpenFile}
     />
   );
 }
@@ -66,6 +69,7 @@ export function TeacherChat({
   onWhy,
   onAccept,
   onReject,
+  onOpenFile,
   headingRef,
 }: TeacherChatProps) {
   const headingId = useId();
@@ -88,7 +92,7 @@ export function TeacherChat({
         footer={<ChatFooter typing={typing} notice={notice} />}
         scrollSignal={`${typing}|${notice?.text ?? ""}`}
       >
-        {items.map((item) => renderMessage(item, proposalsBusy, onAccept, onReject))}
+        {items.map((item) => renderMessage(item, proposalsBusy, onAccept, onReject, onOpenFile))}
       </ChatThread>
       {launchMenu ? <div className="px-3 py-2">{launchMenu}</div> : null}
       <ChatComposer

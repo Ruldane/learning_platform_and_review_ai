@@ -20,6 +20,8 @@ export const applicationsPages = {
     kit_item_not_found: "Cette pièce n'est pas encore arrivée : attends qu'elle soit prête.",
     interview_in_progress:
       "Un entretien est déjà en cours : reprends-le avant d'en commencer un autre.",
+    radar_salary_missing:
+      "Ce relevé n’indique aucun salaire annuel brut en euros pour ce poste et cette zone.",
     interview_not_found: "Cet entretien n'existe plus.",
     posting_not_found: "Cette offre n'existe plus.",
     version_not_found: "Cette version du CV n'existe plus : choisis-en une autre.",

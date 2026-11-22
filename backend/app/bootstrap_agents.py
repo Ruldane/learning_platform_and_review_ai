@@ -20,12 +20,14 @@ from app.agents.tools.ide_port import NO_IDE, IdeStore
 from app.agents.tools.interview_port import NO_INTERVIEWS, InterviewStore
 from app.agents.tools.kit_port import NO_KIT, KitStore
 from app.agents.tools.memory_port import MemoryGateway
+from app.agents.tools.podcast_port import NO_PODCAST, PodcastStore
 from app.agents.tools.profile_port import NO_PROFILE, ProfileStore
 from app.agents.tools.project_port import NO_PROJECTS, ProjectStore
 from app.agents.tools.radar_port import NO_RADAR, RadarStore
 from app.agents.tools.web_port import WebGateway
 from app.core.providers import MemoryProviders, PublishingProviders
 from app.features.applications.service.runtime import ApplicationsRuntime
+from app.features.book.service.runtime import BookRuntime
 from app.features.capture.service.runtime import CaptureRuntime
 from app.features.capture.service.store import AgentCaptureStore
 from app.features.conversations.store import AgentConversationStore
@@ -116,17 +118,14 @@ def agent_ports(
     brief: BriefStore = NO_BRIEF,
     projects: ProjectStore = NO_PROJECTS,
     ide: IdeStore = NO_IDE,
+    podcast: PodcastStore = NO_PODCAST,
 ) -> AgentPorts:
-    """Tous les ports du moteur (D82) : un port de plus = un champ d'`AgentPorts` et une ligne ici.
-    Un port par feature du même nom (Conseil D84 ... projets D165, IDE D203), composés par
-    `app.bootstrap_career` ; les décisions de chacun sont dans `AgentPorts`."""
-    council = AgentCouncilStore(learning.session_factory, learning.launcher, learning)
-    program_store = AgentProgramStore(program)
+    """Compose les ports des agents à partir des services de leurs features (D82)."""
     return AgentPorts(
         memory_gateway(memory),
         web_gateway(research),
-        council,
-        program_store,
+        AgentCouncilStore(learning.session_factory, learning.launcher, learning),
+        AgentProgramStore(program),
         AgentLessonStore(lessons),
         AgentQuizStore(study.quiz),
         AgentStudyStore(study.study),
@@ -145,6 +144,7 @@ def agent_ports(
         projects,
         ide,
         conversations=AgentConversationStore(lessons.session_factory),
+        podcast=podcast,
     )
 
 
@@ -169,8 +169,9 @@ def scheduler_context(
     replan: ReplanRuntime,
     applications: ApplicationsRuntime,
     daily: DailyJobs,
+    book: BookRuntime | None = None,
 ) -> JobContext:
     """Ce que reçoivent les tâches planifiées (D91) : base, lanceur, production des leçons,
     replanification (bilan hebdomadaire, D106), candidatures (relances, D140), quotidien (relevé
     du radar, D160)."""
-    return JobContext(session_factory, launcher, lessons, replan, applications, daily)
+    return JobContext(session_factory, launcher, lessons, replan, applications, daily, book)

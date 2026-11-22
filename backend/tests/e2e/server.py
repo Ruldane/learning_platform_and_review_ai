@@ -61,7 +61,9 @@ from app.providers.health import HealthStatus
 from app.providers.search.fake import FakeSearch
 from scripts.fake_oidc import create_fake_oidc_app
 from tests.e2e.applications_script import applications_scripts, script_posting_web
+from tests.e2e.book_fixture import router as book_fixture
 from tests.e2e.brain_script import brain_scripts
+from tests.e2e.contribution_fixture import router as contribution_fixture
 from tests.e2e.council_script import DEBATERS, council_scripts, script_web
 from tests.e2e.cv_script import cv_scripts, script_company_web
 from tests.e2e.daily_script import daily_scripts, script_daily_web
@@ -158,6 +160,8 @@ def build_app(
         ),
     )
     app.dependency_overrides[get_health_service] = healthy_service
+    app.include_router(book_fixture)
+    app.include_router(contribution_fixture)
     if settings.auth_mode == "google":  # le faux fournisseur, sur le même serveur (P5)
         oidc = create_fake_oidc_app(issuer=settings.google_issuer, client_id=FAKE_CLIENT_ID)
         app.mount(FAKE_OIDC_PATH, oidc)

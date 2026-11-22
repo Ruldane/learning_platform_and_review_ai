@@ -1,11 +1,10 @@
 import { useRef, useState, type ComponentType } from "react";
-import { t } from "@/shared/i18n/t";
 import type { LessonPassage } from "@/shared/lib/lessonPassage";
-import { Button } from "@/shared/ui/button";
 import { LessonReader } from "../../components/LessonReader";
 import type { useResourceStatus } from "../../hooks/useResourceStatus";
 import { toLessonView, toResourceView } from "../../toView";
 import type { LessonOut } from "../../types";
+import { LessonConversationActions } from "./LessonConversationActions";
 import { LessonResources } from "./LessonResources";
 
 export interface LessonConversationPanelProps {
@@ -38,17 +37,11 @@ export function PublishedLesson({
         lesson={toLessonView(lesson)}
         onAskProfessor={Panel ? (passage) => setDiscussion({ passage }) : undefined}
         conversationButton={
-          Panel ? (
-            <Button
-              type="button"
-              ref={openButton}
-              variant="outline"
-              className="self-start"
-              onClick={() => setDiscussion({ passage: null })}
-            >
-              {t("lessons.reader.openConversation")}
-            </Button>
-          ) : null
+          <LessonConversationActions
+            lessonId={lesson.id}
+            professorButton={openButton}
+            onAskProfessor={Panel ? () => setDiscussion({ passage: null }) : undefined}
+          />
         }
       />
       <LessonResources resources={lesson.resources.map(toResourceView)} status={resources} />

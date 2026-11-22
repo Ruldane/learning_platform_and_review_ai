@@ -26,6 +26,29 @@ export async function sendQuestion(lesson: string, body: ConversationMessage, so
   );
 }
 
+export async function fetchClassroom(lesson: string, signal?: AbortSignal) {
+  return unwrap(
+    await api.GET("/lessons/{lesson_id}/classroom", {
+      params: { path: { lesson_id: lesson } },
+      signal,
+    }),
+  );
+}
+
+export async function sendClassroomMessage(
+  lesson: string,
+  body: ConversationMessage,
+  source: RunSource,
+) {
+  return unwrap(
+    await api.POST("/lessons/{lesson_id}/classroom/messages", {
+      params: { path: { lesson_id: lesson } },
+      headers: { [RUN_HEADER]: source },
+      body,
+    }),
+  );
+}
+
 export async function fetchBrainConversation(signal?: AbortSignal) {
   return unwrap(await api.GET("/brain/conversation", { signal }));
 }

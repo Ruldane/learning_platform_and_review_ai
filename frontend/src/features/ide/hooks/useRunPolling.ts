@@ -48,7 +48,11 @@ function fromProgress(runId: string, output: string, p: RunProgress): PolledRun 
  * lecture qui échoue cinq fois de suite arrête la lecture avec un message. Sans `runId`, rien ne
  * tourne.
  */
-export function useRunPolling(runId: string | null, onFinished: (run: RunProgress) => void) {
+export function useRunPolling(
+  runId: string | null,
+  onFinished: (run: RunProgress) => void,
+  read = fetchRun,
+) {
   const [state, setState] = useState<PolledRun | null>(null);
   const finished = useRef(onFinished);
   useEffect(() => {
@@ -67,7 +71,7 @@ export function useRunPolling(runId: string | null, onFinished: (run: RunProgres
         return;
       }
       try {
-        const p = await fetchRun(runId, offset, control.signal);
+        const p = await read(runId, offset, control.signal);
         if (control.signal.aborted) return;
         offset = p.next_offset;
         output += p.output;
@@ -89,7 +93,7 @@ export function useRunPolling(runId: string | null, onFinished: (run: RunProgres
       control.abort();
       clearTimeout(timer);
     };
-  }, [runId]);
+  }, [read, runId]);
   if (!runId) return null;
   return state?.runId === runId ? state : waiting(runId);
 }

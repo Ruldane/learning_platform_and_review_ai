@@ -168,6 +168,7 @@ forbidden_modules = [
     "app.providers.search.fake",
     "app.providers.pdf.gotenberg_probe",
     "app.providers.storage.local",
+    "app.providers.speech.realtime",
     "app.providers.auth.google",
     "app.providers.pdf.extract",
     "app.providers.pdf.subprocess",

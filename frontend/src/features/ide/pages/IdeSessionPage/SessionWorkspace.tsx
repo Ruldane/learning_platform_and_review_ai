@@ -6,6 +6,7 @@ import { useWorkspace } from "../../hooks/useWorkspace";
 import type { IdeSession } from "../../types";
 import { EditorColumn } from "./EditorColumn";
 import { TeacherColumn } from "./TeacherColumn";
+import { TerminalPanel } from "./TerminalPanel";
 
 interface SessionWorkspaceProps {
   session: IdeSession;
@@ -32,7 +33,10 @@ export function SessionWorkspace({ session, createSocket }: SessionWorkspaceProp
         ) : null}
       </header>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
-        <EditorColumn ws={ws} />
+        <div className="flex min-w-0 flex-col gap-3">
+          <EditorColumn ws={ws} />
+          <TerminalPanel sessionId={session.id} save={ws.draft.save} />
+        </div>
         <TeacherColumn ws={ws} createSocket={createSocket} />
       </div>
     </div>

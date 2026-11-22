@@ -69,7 +69,14 @@ La note juge la question en entier : sa première réponse et celle-ci.
 
 - `note` : de 1 (à côté de la question) à 5 (complète, claire et précise). Cette note reste interne :
   January ne la voit qu'au débrief, sous forme de notes par critère.
+{% if salary | default(false) %}
+- C'est une simulation. `salary_move` vaut vrai seulement si January demande une amélioration du
+  fixe et la soutient par un exemple ou une responsabilité pertinente. Les montants et les
+  contraintes appartiennent au scénario. L'application choisit la réponse du recruteur.
+- Réponse : `{"follow_up": "…" ou null, "note": 1 à 5, "salary_move": true ou false}`.
+{% else %}
 - Réponse : `{"follow_up": "…" ou null, "note": 1 à 5}`.
+{% endif %}
 {% else %}
 Tâche : écrire le débrief de l'entretien, sur les {{ answered }} question(s) auxquelles January a
 répondu.
@@ -79,6 +86,10 @@ répondu.
 
 Profil de January (un fait par ligne) :
 {{ profile }}
+{% if salary | default(false) %}
+Commente sa pratique de la négociation et sa manière d'étayer la demande. Le bilan chiffré du
+jeu de rôle et les données du radar sont affichés séparément. Rédige ton commentaire sans montant.
+{% endif %}
 
 - `scores` : une note de 1 à 5 pour chaque critère : « clarte », « structure »,
   « profondeur_technique », « adequation », toujours les quatre, selon ce que disent les échanges.

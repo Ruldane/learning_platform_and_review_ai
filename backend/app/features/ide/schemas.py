@@ -27,6 +27,7 @@ from app.features.ide.schemas_exercise import (
     ExercisePatch,
     check_files,
 )
+from app.features.ide.schemas_project import ProjectTabsState
 
 __all__ = [
     "ExerciseGenerateIn",
@@ -97,6 +98,8 @@ class IdeSessionOut(SessionSummary):
 
     files: dict[str, str]
     entry: str
+    files_version: int = 0
+    tabs: ProjectTabsState | None = None
 
     @computed_field  # type: ignore[prop-decorator]
     @property

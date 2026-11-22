@@ -154,6 +154,27 @@ async def ready_markdown(db: AsyncSession, user_id: str, module_id: str) -> str 
     return lesson.markdown if lesson is not None and lesson.status == "ready" else None
 
 
+@dataclass(frozen=True)
+class PublishedChapter:
+    id: str
+    module_id: str
+    title: str
+    markdown: str
+    published_at: datetime
+
+
+async def published_chapters(
+    db: AsyncSession, user_id: str, program_id: str
+) -> tuple[PublishedChapter, ...]:
+    """Versions publiées uniquement, même quand une nouvelle retouche est en préparation."""
+    rows = await LessonRepository(db, user_id).for_program(program_id)
+    return tuple(
+        PublishedChapter(row.id, row.module_id, row.title, row.markdown, row.updated_at)
+        for row in rows
+        if row.status == "ready" and row.markdown.strip()
+    )
+
+
 async def ready_lesson_id(db: AsyncSession, user_id: str, module_id: str) -> str | None:
     """La leçon prête du module, `None` sinon (prochaine action de la carte, D107). Lecture
     pour les autres features (contrat 2)."""

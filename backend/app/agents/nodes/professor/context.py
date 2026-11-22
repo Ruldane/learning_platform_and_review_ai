@@ -6,7 +6,7 @@ projet ni tout l'historique. Constantes nommées, réglables."""
 
 import hashlib
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from app.agents.tools.ide_port import NoteView, RunView, TeachInputs
 
@@ -17,6 +17,7 @@ ERROR_CHARS = 2_000
 EXCHANGES = 12  # messages du fil : questions de January et réponses, les plus récents
 EXCHANGE_CHARS = 400
 THREAD_CHARS = 4_000  # le fil entier ; les plus anciens messages tombent d'abord
+PATHS_CHARS = 2_000
 
 _FRAME = re.compile(r'File "(?P<path>[^"]+)", line (?P<line>\d+)')
 _PYTEST = re.compile(r"^(?P<path>[^\s:]+\.py):(?P<line>\d+):")
@@ -33,6 +34,7 @@ class TeacherContext:
     base_hash: str  # sha256 du fichier entier (empreinte d'une proposition, P9)
     error_tail: str  # fin de la sortie de la dernière exécution ; vide s'il n'y en a pas
     exchanges: list[str]  # le fil, les 12 derniers messages (les plus anciens d'abord)
+    project_paths: list[str] = field(default_factory=list)
 
 
 def file_hash(text: str) -> str:
@@ -52,7 +54,29 @@ def _user_file(path: str, names: set[str]) -> str | None:
     normal = path.replace("\\", "/")
     if normal in names:
         return normal
-    return next((name for name in sorted(names) if normal.endswith("/" + name)), None)
+    return max((name for name in names if normal.endswith("/" + name)), key=len, default=None)
+
+
+def _mentioned_file(question: str | None, names: set[str]) -> str | None:
+    if not question:
+        return None
+    normal = question.replace("\\", "/")
+    for name in sorted(names, key=lambda path: (-len(path), path)):
+        if re.search(rf"(?<![\w./-]){re.escape(name)}(?![\w/-]|\.[\w])", normal):
+            return name
+    return None
+
+
+def _catalog(names: set[str]) -> list[str]:
+    seen: list[str] = []
+    remaining = PATHS_CHARS
+    for path in sorted(names):
+        size = len(path) + 3  # préfixe de liste et saut de ligne
+        if size > remaining:
+            break
+        seen.append(path)
+        remaining -= size
+    return seen
 
 
 def error_place(output: str, names: set[str]) -> tuple[str, int] | None:
@@ -67,11 +91,14 @@ def error_place(output: str, names: set[str]) -> tuple[str, int] | None:
 
 
 def focus_of(
-    inputs: TeachInputs, file_path: str | None, cursor_line: int | None
+    inputs: TeachInputs, file_path: str | None, cursor_line: int | None, question: str | None = None
 ) -> tuple[str, int]:
     """Le fichier et la ligne : ceux que January montre, sinon l'endroit de l'erreur, sinon le
     fichier d'entrée."""
     names = set(inputs.files)
+    named = _mentioned_file(question, names)
+    if named is not None and named != file_path:
+        return named, 1
     if file_path in names:
         return str(file_path), cursor_line or 1
     if inputs.run is not None and (place := error_place(inputs.run.output, names)):
@@ -125,7 +152,7 @@ def build_context(
 ) -> TeacherContext:
     """Le contexte d'un appel : une seule fenêtre d'un seul fichier, la fin de la sortie de la
     dernière exécution, le fil des 12 derniers messages (hors renvois)."""
-    path, focus = focus_of(inputs, file_path, cursor_line)
+    path, focus = focus_of(inputs, file_path, cursor_line, question)
     text = inputs.files[path]
     window, first, last, count = _window(text, focus)
     return TeacherContext(
@@ -138,4 +165,5 @@ def build_context(
         base_hash=file_hash(text),
         error_tail=error_tail(inputs.run),
         exchanges=_thread(inputs.notes, question),
+        project_paths=_catalog(set(inputs.files)),
     )

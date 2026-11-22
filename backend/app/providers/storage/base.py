@@ -7,7 +7,19 @@ from app.core.errors import AppError
 
 # Documents importés ; images des pages et polices d'un gabarit de CV (D119) ; captures d'un projet
 # (PNG, JPEG, WebP : D166).
-ALLOWED_SUFFIXES = (".pdf", ".docx", ".md", ".txt", ".png", ".jpg", ".webp", ".woff2", ".ttf")
+ALLOWED_SUFFIXES = (
+    ".pdf",
+    ".docx",
+    ".md",
+    ".txt",
+    ".png",
+    ".jpg",
+    ".webp",
+    ".woff2",
+    ".ttf",
+    ".epub",
+    ".wav",
+)
 
 
 class StorageKeyInvalid(AppError):

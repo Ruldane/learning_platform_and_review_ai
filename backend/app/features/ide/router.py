@@ -7,12 +7,16 @@ MCP) ; `PUT files` est aussi celui de Claude, sous l'interrupteur de January (10
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Path, Query, Response
+from fastapi import APIRouter, Depends, Query, Response
 from starlette.requests import HTTPConnection
 
 from app.core.caller import CallerDep
 from app.core.deps import CurrentUserDep, Db, get_current_user
 from app.core.field_paths import FieldPathsRoute
+from app.features.ide.router_deps import Id, Ide
+from app.features.ide.router_notebook import router as notebook_router
+from app.features.ide.router_project import router as project_router
+from app.features.ide.router_terminal import router as terminal_router
 from app.features.ide.schemas import (
     ExerciseGenerateIn,
     ExerciseIn,
@@ -34,7 +38,6 @@ from app.features.ide.schemas import (
     TeachOut,
     UsageOut,
 )
-from app.features.ide.service import IdeService
 from app.features.ide.service.errors import mcp_prefs_forbidden
 from app.features.ide.service.teaching import TeachingService
 from app.features.ide.service.usage import UsageService
@@ -46,14 +49,9 @@ router = APIRouter(
     dependencies=[Depends(get_current_user)],
 )
 
-Id = Annotated[str, Path(min_length=1, max_length=36)]
-
-
-def get_ide_service(
-    conn: HTTPConnection, current: CurrentUserDep, db: Db, caller: CallerDep
-) -> IdeService:
-    """Le service de l'utilisatrice courante, avec le bac à sable posé par la composition."""
-    return IdeService(db, current.id, conn.app.state.providers.sandbox, caller)
+router.include_router(project_router)
+router.include_router(terminal_router)
+router.include_router(notebook_router)
 
 
 def teaching_service(conn: HTTPConnection, current: CurrentUserDep, db: Db) -> TeachingService:
@@ -65,7 +63,6 @@ def usage_service(current: CurrentUserDep, db: Db) -> UsageService:
     return UsageService(db, current.id)
 
 
-Ide = Annotated[IdeService, Depends(get_ide_service)]
 Teaching = Annotated[TeachingService, Depends(teaching_service)]
 Usage = Annotated[UsageService, Depends(usage_service)]
 _NOT_FOUND: dict[int | str, dict[str, Any]] = {404: {"description": "Introuvable (ou pas à moi)."}}

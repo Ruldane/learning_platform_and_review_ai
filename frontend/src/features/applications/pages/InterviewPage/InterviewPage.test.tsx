@@ -13,7 +13,7 @@ import { ask, SESSION, setup, startInterview } from "./interviewTestkit";
 describe("InterviewPage, réglages", () => {
   beforeEach(() => useSessionStore.getState().reset(SESSION));
 
-  it("introduces the interview with the application and offers the four settings", async () => {
+  it("introduces the interview with the application and offers the interview modes including salary negotiation", async () => {
     setup();
     expect(await screen.findByRole("heading", { level: 1, name: "Entretien blanc" })).toBeVisible();
     expect(await screen.findByText("Acme, Data engineer")).toBeVisible();
@@ -26,7 +26,7 @@ describe("InterviewPage, réglages", () => {
       within(mode)
         .getAllByRole("radio")
         .map((radio) => radio.getAttribute("value")),
-    ).toEqual(["behavioral", "technical", "case", "mixed"]);
+    ).toEqual(["behavioral", "technical", "case", "mixed", "salary"]);
     const duration = screen.getByRole("group", { name: "Durée" });
     expect(within(duration).getByRole("radio", { name: "15 minutes" })).toHaveAccessibleDescription(
       "4 questions principales",

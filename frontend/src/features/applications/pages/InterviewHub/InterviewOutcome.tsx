@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
+import { SalaryScenario } from "../../components/SalaryScenario";
 import type { InterviewView } from "../../types";
 import { InterviewResult } from "./InterviewResult";
 
@@ -23,6 +24,7 @@ export function InterviewOutcome({ interview, closeLabel, onClose }: InterviewOu
       <h2 ref={title} tabIndex={-1} className="text-xl font-semibold outline-none">
         {t("applications.debrief.title")}
       </h2>
+      {interview.salary ? <SalaryScenario data={interview.salary} /> : null}
       <InterviewResult interview={interview} />
       <div>
         <Button type="button" variant="outline" onClick={onClose}>

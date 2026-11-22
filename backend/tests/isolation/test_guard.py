@@ -40,7 +40,7 @@ def test_expected_from_b_is_emptied_once_b_delivers() -> None:
 def test_phase10_routers_have_their_isolation_case() -> None:
     """10.I : les routeurs `ide` (flux A) et `mcp` (flux B) ont leur cas, plus aucune attente."""
     cases = load_cases()
-    assert {"app.features.ide.router", "app.features.mcp.router"} <= cases.keys()
+    assert {"app.features.ide.router_project", "app.features.mcp.router"} <= cases.keys()
 
 
 def test_every_case_points_to_an_existing_test() -> None:

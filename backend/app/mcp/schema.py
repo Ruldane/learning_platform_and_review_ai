@@ -19,6 +19,8 @@ NEVER_REACHABLE = (
     "/brain/folders",
     "/brain/sync",
     "/brain/sync-token",
+    "/ide/terminals",
+    "/ide/notebook-runs",
     "/mcp",
     "/settings/api-keys",
     "/settings/models",

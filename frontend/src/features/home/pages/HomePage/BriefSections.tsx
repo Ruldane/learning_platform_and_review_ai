@@ -6,6 +6,7 @@ import { AdviceCard } from "../../components/AdviceCard";
 import { BlockCard } from "../../components/BlockCard";
 import { BriefHeader } from "../../components/BriefHeader";
 import { OffersCard } from "../../components/OffersCard";
+import { PodcastBriefLink } from "../../components/PodcastBriefLink";
 import { QuickActions } from "../../components/QuickActions";
 import { ReadingBriefLink } from "../../components/ReadingBriefLink";
 import { RemindersCard } from "../../components/RemindersCard";
@@ -71,6 +72,7 @@ export function BriefSections({ brief }: { brief: BriefView }) {
       {noProgram ? null : <WeekCard week={brief.week} unavailable={down("week")} />}
       <ResourceCard resource={brief.resource} />
       <AdviceCard sentences={brief.advice.sentences} status={brief.advice.status} />
+      <PodcastBriefLink />
     </div>
   );
 }

@@ -67,6 +67,20 @@ class SessionRepository(UserScopedRepository[IdeSession]):
 class RunRepository(UserScopedRepository[IdeRun]):
     model = IdeRun
 
+    async def pending_notebook(self, session_id: str, path: str) -> IdeRun | None:
+        stmt = (
+            select(IdeRun)
+            .where(
+                IdeRun.user_id == self.user_id,
+                IdeRun.session_id == session_id,
+                IdeRun.kind == "notebook",
+                IdeRun.notebook_cell["path"].as_string() == path,
+            )
+            .order_by(IdeRun.created_at.desc(), IdeRun.id.desc())
+            .limit(1)
+        )
+        return (await self.session.execute(stmt)).scalar_one_or_none()
+
     async def get_fresh(self, run_id: str) -> IdeRun | None:
         stmt = (
             select(IdeRun)
@@ -79,7 +93,11 @@ class RunRepository(UserScopedRepository[IdeRun]):
         """La dernière exécution de la séance, `None` s'il n'y en a pas."""
         stmt = (
             select(IdeRun)
-            .where(IdeRun.user_id == self.user_id, IdeRun.session_id == session_id)
+            .where(
+                IdeRun.user_id == self.user_id,
+                IdeRun.session_id == session_id,
+                IdeRun.kind.in_(("run", "check")),
+            )
             .order_by(IdeRun.created_at.desc(), IdeRun.id.desc())
             .limit(1)
             .execution_options(populate_existing=True)
@@ -90,7 +108,11 @@ class RunRepository(UserScopedRepository[IdeRun]):
         """Les dernières exécutions de la séance, la plus récente d'abord."""
         stmt = (
             select(IdeRun)
-            .where(IdeRun.user_id == self.user_id, IdeRun.session_id == session_id)
+            .where(
+                IdeRun.user_id == self.user_id,
+                IdeRun.session_id == session_id,
+                IdeRun.kind.in_(("run", "check")),
+            )
             .order_by(IdeRun.created_at.desc(), IdeRun.id.desc())
             .limit(limit)
             .execution_options(populate_existing=True)

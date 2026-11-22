@@ -26,7 +26,7 @@ POLL_S = 0.1
 BEAT_EVERY_S = 1.0
 PURGE_EVERY_S = 60.0
 SPOOL_GID = 12345
-SUBDIRS = ("jobs", "out", "cancel")
+SUBDIRS = ("jobs", "out", "cancel", "input")
 
 
 class Runner:
@@ -182,6 +182,7 @@ class Runner:
             raise
         _unlink(cancel)
         self.write_done(run_id, result)
+        _unlink(self.spool / "input" / f"{run_id}.in")
 
     def refuse(self, run_id: str, message: str, status: str = "error") -> SandboxResult:
         """Écrit `message` dans le journal du travail (créé au besoin) ; rend la fin voulue."""
@@ -248,7 +249,8 @@ def purge_stale(spool: Path, now: float) -> int:
     Rend le nombre de fichiers retirés."""
     groups: dict[tuple[str, str], list[Path]] = {}
     for sub in SUBDIRS:
-        for path in (spool / sub).iterdir():
+        folder = spool / sub
+        for path in folder.iterdir() if folder.is_dir() else ():
             if path.is_file():
                 groups.setdefault((sub, path.name.lstrip(".").split(".")[0]), []).append(path)
     removed = 0

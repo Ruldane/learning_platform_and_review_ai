@@ -14,4 +14,20 @@ export const conversations = {
   strong: "Utiliser le modèle avancé pour cette question",
   relayWait: "Le relais relève les questions toutes les deux minutes. Le client répond ensuite.",
   usage: "Fil {thread} / {threadLimit} jetons · Aujourd’hui {day} / {dayLimit} jetons",
+  classroom: {
+    title: "Classe virtuelle",
+    open: "Entrer en classe virtuelle",
+    back: "Revenir à la leçon",
+    thread: "Discussion de classe",
+    explanation: "Ton explication",
+    placeholder: "Explique un point de la leçon avec tes mots…",
+    empty: "Explique un point de la leçon avec tes mots pour lancer la discussion.",
+    classmates: "Les camarades",
+    typing: "Les camarades préparent leurs questions…",
+    roles: {
+      beginner: "Camarade débutant",
+      peer: "Camarade de ton niveau",
+      advanced: "Camarade avancé",
+    },
+  },
 } as const;

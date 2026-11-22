@@ -35,6 +35,16 @@ export const applicationsInterview = {
       technical: { label: "Technique", hint: "Tes compétences et tes choix techniques." },
       case: { label: "Étude de cas", hint: "Un problème à poser, structurer et résoudre." },
       mixed: { label: "Mixte", hint: "Un peu de tout, comme dans un vrai entretien." },
+      salary: {
+        label: "Négociation de salaire",
+        hint: "Argumente face à un recruteur simulé à partir des salaires relevés dans le radar.",
+      },
+    },
+    salarySource: {
+      legend: "Relevé de référence",
+      role: "Poste du relevé",
+      zone: "Zone du relevé",
+      hint: "Facultatif. Par défaut, le poste de l’entretien et la zone du radar sont utilisés.",
     },
     duration: {
       legend: "Durée",
@@ -52,6 +62,26 @@ export const applicationsInterview = {
       roleHint: "Par exemple : Data engineer.",
       noPostings: "Tu n'as pas encore d'offre analysée : saisis un intitulé de poste.",
       required: "Choisis une offre ou saisis un intitulé de poste.",
+    },
+  },
+  salaryScenario: {
+    source: "Données du radar",
+    scope: "{role} · {zone}",
+    amount: "{amount} bruts par an",
+    range: "{min} à {max} bruts par an",
+    one: "1 salaire publié exploitable",
+    many: "{count} salaires publiés exploitables",
+    open: "Consulter le relevé",
+    rules: "Règles de la simulation",
+    initial: "Offre de départ du recruteur simulé : {amount} bruts par an.",
+    limit: "Plafond de la simulation : {amount} bruts par an.",
+    result: "Bilan de la simulation",
+    final: "Dernière offre du recruteur simulé : {amount} bruts par an.",
+    remaining: "Marge restante dans la simulation : {amount} bruts par an.",
+    reason: {
+      ceiling_reached: "Ton argumentation a amené le recruteur simulé au plafond.",
+      budget_held: "Le recruteur simulé a maintenu l’offre d’ouverture.",
+      fixed_amount: "La simulation prévoyait un seul montant.",
     },
   },
   interviewRun: {

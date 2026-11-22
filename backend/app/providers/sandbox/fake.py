@@ -10,6 +10,7 @@ déjà révélée reste) ; un travail fini reste fini, un inconnu est sans effet
 from dataclasses import dataclass, field
 
 from app.providers.sandbox.base import (
+    MAX_INPUT_CHUNK_BYTES,
     MAX_OUTPUT_BYTES,
     SandboxJob,
     SandboxProgress,
@@ -47,9 +48,12 @@ class FakeSandbox:
     def __init__(self, scripted: dict[str, Script] | None = None) -> None:
         self._scripted = dict(scripted or {})
         self._runs: dict[str, _Run] = {}
+        self.inputs: list[tuple[str, bytes]] = []
+        self.jobs: list[SandboxJob] = []
 
     async def submit(self, job: SandboxJob) -> None:
         check_job_limits(job)
+        self.jobs.append(job)
         script = self._scripted.get(job.run_id, self._scripted.get("*", ""))
         if isinstance(script, SandboxResult):
             self._runs[job.run_id] = _Run(b"", script, [0], 1)
@@ -84,6 +88,14 @@ class FakeSandbox:
         run = self._runs.get(run_id)
         if run is not None and not run.finished:
             run.killed = True
+
+    async def write_input(self, run_id: str, data: bytes) -> None:
+        run = self._runs.get(run_id)
+        if run is None or run.finished:
+            raise UnknownRun(run_id)
+        if not 0 < len(data) <= MAX_INPUT_CHUNK_BYTES:
+            raise ValueError("entrée trop grande")
+        self.inputs.append((run_id, data))
 
     async def healthy(self) -> bool:
         return True

@@ -9,8 +9,10 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.agents.runtime.launcher import SessionLauncher
 from app.features.applications.service.runtime import ApplicationsRuntime
+from app.features.book.service.runtime import BookRuntime
 from app.features.brief.service.runtime import BriefRuntime
 from app.features.lessons.service.production import ProductionContext
+from app.features.podcast.service.runtime import PodcastRuntime
 from app.features.projects.service.runtime import ProjectsRuntime
 from app.features.radar.service.runtime import RadarRuntime
 from app.features.replan.service.runtime import ReplanRuntime
@@ -29,6 +31,9 @@ class DailyJobs(Protocol):
     @property
     def projects(self) -> ProjectsRuntime: ...
 
+    @property
+    def podcast(self) -> PodcastRuntime: ...
+
 
 @dataclass(frozen=True)
 class JobContext:
@@ -43,6 +48,7 @@ class JobContext:
     replan: ReplanRuntime
     applications: ApplicationsRuntime
     daily: DailyJobs
+    book: BookRuntime | None = None
 
 
 @dataclass(frozen=True)

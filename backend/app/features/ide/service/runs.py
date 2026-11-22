@@ -4,7 +4,7 @@ d'erreur) est figée à la première lecture qui la voit. Un code d'utilisatrice
 ici : seul le bac l'exécute. La sortie n'est jamais journalisée."""
 
 import logging
-from typing import Literal, cast
+from typing import Any, cast
 
 from app.db.base import utcnow
 from app.db.models.ide import IdeRun, IdeSession
@@ -21,7 +21,14 @@ from app.features.ide.service.errors import (
 )
 from app.features.ide.service.signature import error_signature
 from app.features.skills.service import SkillsService
-from app.providers.sandbox.base import CodeSandbox, SandboxJob, SandboxProgress, UnknownRun
+from app.providers.sandbox.base import (
+    MAX_TIMEOUT_S,
+    CodeSandbox,
+    SandboxJob,
+    SandboxKind,
+    SandboxProgress,
+    UnknownRun,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +114,13 @@ async def _settle(ctx: IdeContext, run: IdeRun) -> bool:
 
 
 async def start(
-    ctx: IdeContext, session_id: str, kind: Literal["run", "check"], entry: str | None
+    ctx: IdeContext,
+    session_id: str,
+    kind: SandboxKind,
+    entry: str | None,
+    *,
+    source: str | None = None,
+    notebook_cell: dict[str, Any] | None = None,
 ) -> IdeRun:
     session = await sessions.get(ctx, session_id)
     sandbox = _sandbox(ctx)
@@ -124,13 +137,16 @@ async def start(
         entry=wanted,
         requested_by=ctx.caller.label,
         origin=ctx.caller.kind,
+        notebook_cell=notebook_cell,
     )
     job = SandboxJob(
         run_id=run.id,
         files={str(path): str(text) for path, text in session.files.items()},
         entry=wanted,
         kind=kind,
-        timeout_s=JOB_TIMEOUT_S,
+        timeout_s=MAX_TIMEOUT_S if kind == "terminal" else JOB_TIMEOUT_S,
+        source=source,
+        model_user=ctx.user_id if ctx.caller.kind == "app" and kind != "check" else None,
     )
     try:
         await sandbox.submit(job)
@@ -141,10 +157,13 @@ async def start(
     return run
 
 
-async def progress(ctx: IdeContext, run_id: str, after: int) -> RunProgress:
+async def progress(
+    ctx: IdeContext, run_id: str, after: int, *, kind: SandboxKind | None = None
+) -> RunProgress:
     """La sortie depuis l'octet `after`. Fin vue = tout figé (sortie complète, signature)."""
     run = await RunRepository(ctx.db, ctx.user_id).get_fresh(run_id)
-    if run is None:
+    allowed = ("run", "check") if kind is None else (kind,)
+    if run is None or run.kind not in allowed:
         raise run_not_found()
     if run.status == "running":
         live = await _poll(ctx, run.id, after)

@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
-from app.agents.tools.conversation_port import ConversationSource
+from app.agents.tools.conversation_port import ClassmateReply, ConversationSource
 from app.db.models.agents import SessionStatus
 
 MAX_QUESTION = 2_000
@@ -54,6 +54,7 @@ class ConversationTurnOut(BaseModel):
     answer: str | None
     status: SessionStatus
     sources: list[ConversationSource]
+    classmates: list[ClassmateReply] | None = None
 
 
 class ConversationUsage(BaseModel):

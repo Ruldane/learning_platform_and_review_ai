@@ -11,7 +11,16 @@ CONVERSATION_GRAPH = "conversation"
 LESSON_PROFESSOR = "lesson_professor"
 TRAINING_TUTOR = "training_tutor"
 BRAIN_LIBRARIAN = "brain_librarian"
+CLASSROOM_SCOPE = "classroom"
 TURN_TOKEN_LIMIT = 12_000
+
+ClassmateRole = Literal["beginner", "peer", "advanced"]
+CLASSMATE_ROLES: tuple[ClassmateRole, ...] = ("beginner", "peer", "advanced")
+
+
+class ClassmateReply(BaseModel):
+    role: ClassmateRole
+    answer: str
 
 
 class ConversationSource(BaseModel):
@@ -69,6 +78,7 @@ class ConversationStore(Protocol):
         sources: Sequence[ConversationSource],
         practice: Sequence[ConversationPractice] = (),
         context_notes: dict[str, str] | None = None,
+        classmates: Sequence[ClassmateReply] = (),
     ) -> None: ...
 
 
@@ -93,6 +103,7 @@ class _NoConversation:
         sources: Sequence[ConversationSource],
         practice: Sequence[ConversationPractice] = (),
         context_notes: dict[str, str] | None = None,
+        classmates: Sequence[ClassmateReply] = (),
     ) -> None:
         raise _unavailable()
 

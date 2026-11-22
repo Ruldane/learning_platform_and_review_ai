@@ -1,9 +1,10 @@
 import { t } from "@/shared/i18n/t";
 import { ClaudeChanges } from "../../components/ClaudeChanges";
-import { CodeEditor } from "../../components/CodeEditor";
 import { OutputPanel } from "../../components/OutputPanel";
 import type { Workspace } from "../../hooks/useWorkspace";
 import { FileTabs } from "./FileTabs";
+import { ProjectFilesPanel } from "./ProjectFilesPanel";
+import { SessionFileEditor } from "./SessionFileEditor";
 import { SessionToolbar } from "./SessionToolbar";
 
 /** À gauche : les fichiers, l'éditeur, les boutons d'exécution et la sortie. */
@@ -22,12 +23,14 @@ export function EditorColumn({ ws }: { ws: Workspace }) {
         onRun={() => void runner.start("run")}
         onCheck={() => void runner.start("check")}
       />
+      <ProjectFilesPanel ws={ws} />
       <FileTabs
-        names={Object.keys(draft.files)}
+        names={ws.tabs.paths}
         current={file}
         entry={session.entry}
         changed={claude.notices}
-        onOpen={ws.openFile}
+        onOpen={ws.project.isPending ? () => undefined : ws.openFile}
+        onClose={session.tabs && !ws.project.isPending ? ws.tabs.closeFile : undefined}
       />
       <ClaudeChanges
         file={file}
@@ -37,17 +40,7 @@ export function EditorColumn({ ws }: { ws: Workspace }) {
         onKeepMine={claude.keepMine}
         onTakeTheirs={claude.takeTheirs}
       />
-      <CodeEditor
-        path={file}
-        value={draft.files[file] ?? ""}
-        annotations={ws.annotations}
-        onChange={(text) => {
-          draft.edit(file, text);
-          ws.typed();
-        }}
-        onCursorLine={ws.setLine}
-        onRun={() => void runner.start("run")}
-      />
+      <SessionFileEditor ws={ws} />
       <OutputPanel view={runner.output} />
     </div>
   );

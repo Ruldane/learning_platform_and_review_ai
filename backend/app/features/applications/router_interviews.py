@@ -28,7 +28,8 @@ _START: dict[int | str, dict[str, Any]] = {
     409: {
         "description": (
             "`interview_in_progress` (`details.interview_id` : l'entretien ouvert), "
-            "`profile_required` (aucun profil maître validé)"
+            "`profile_required` (aucun profil maître validé), "
+            "`radar_salary_missing` (pas de montant annuel brut pour le scénario salarial)"
         )
     },
     503: {"description": "`engine_unavailable`"},

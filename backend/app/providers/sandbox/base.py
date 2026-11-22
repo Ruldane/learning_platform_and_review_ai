@@ -12,6 +12,8 @@ from typing import Literal, Protocol
 
 # Plafonds d'un travail : fichiers, octets au total, durée réelle (s) et sortie (octets).
 MAX_FILES, MAX_TOTAL_BYTES, MAX_TIMEOUT_S, MAX_OUTPUT_BYTES = 20, 200_000, 15, 65_536
+MAX_INPUT_CHUNK_BYTES, MAX_INPUT_BYTES = 4_096, 65_536
+MAX_NOTEBOOK_SOURCE_BYTES = 65_536
 # Longueur d'un chemin de fichier (et du fichier d'entrée), en base comme dans les schémas.
 MAX_PATH_CHARS = 200
 
@@ -19,6 +21,7 @@ MAX_PATH_CHARS = 200
 # en texte (avec tirets), rien d'autre.
 _RUN_ID = re.compile(r"[0-9a-f]{32}|[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}")
 _DRIVE = re.compile(r"[A-Za-z]:")
+SandboxKind = Literal["run", "check", "terminal", "notebook"]
 
 
 @dataclass(frozen=True)
@@ -30,8 +33,10 @@ class SandboxJob:
     run_id: str
     files: dict[str, str]
     entry: str
-    kind: Literal["run", "check"]
+    kind: SandboxKind
     timeout_s: int = 10
+    source: str | None = None
+    model_user: str | None = None
 
 
 @dataclass(frozen=True)
@@ -72,6 +77,10 @@ class CodeSandbox(Protocol):
         """Demande l'arrêt du travail ; sans effet s'il est fini ou inconnu."""
         ...
 
+    async def write_input(self, run_id: str, data: bytes) -> None:
+        """Transmet une entrée bornée au travail interactif. Lève `UnknownRun` s'il est fini."""
+        ...
+
     async def healthy(self) -> bool:
         """Le bac répond-il ? (jamais d'exception : `False` en cas de doute)."""
         ...
@@ -110,7 +119,12 @@ def check_job_limits(job: SandboxJob) -> None:
     check_run_id(job.run_id)
     if not 1 <= len(job.files) <= MAX_FILES:
         raise ValueError(f"entre 1 et {MAX_FILES} fichiers attendus")
-    if sum(_size(text) for text in job.files.values()) > MAX_TOTAL_BYTES:
+    if (job.kind == "notebook") != (job.source is not None):
+        raise ValueError("source de cellule invalide")
+    source_size = _size(job.source or "")
+    if source_size > MAX_NOTEBOOK_SOURCE_BYTES:
+        raise ValueError("source de cellule trop longue")
+    if sum(_size(text) for text in job.files.values()) + source_size > MAX_TOTAL_BYTES:
         raise ValueError(f"{MAX_TOTAL_BYTES} octets au plus")
     if not 1 <= job.timeout_s <= MAX_TIMEOUT_S:
         raise ValueError(f"durée entre 1 et {MAX_TIMEOUT_S} secondes")

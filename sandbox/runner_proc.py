@@ -9,15 +9,50 @@ dossier de travail devenu vide."""
 import contextlib
 import ctypes
 import os
+import resource
 import signal
 import stat
 import sys
 import time
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from pathlib import Path
+
+from runner_job import Limits
 
 PROC = Path("/proc")
 _SYSV = (("shm", "shmid", "shmctl"), ("sem", "semid", "semctl"), ("msg", "msqid", "msgctl"))
+
+
+def child_setup(limits: Limits, drop: bool, workdir: Path) -> Callable[[], None]:
+    """Le fils pose les limites et perd l'identité du lanceur avant d'exécuter le code."""
+
+    def setup() -> None:
+        pairs = [
+            (resource.RLIMIT_CPU, (limits.cpu_s, limits.cpu_s + 1)),
+            (resource.RLIMIT_AS, (limits.memory_bytes, limits.memory_bytes)),
+            (resource.RLIMIT_NPROC, (limits.processes, limits.processes)),
+            (resource.RLIMIT_FSIZE, (limits.file_bytes, limits.file_bytes)),
+            (resource.RLIMIT_NOFILE, (limits.open_files, limits.open_files)),
+            (resource.RLIMIT_CORE, (0, 0)),  # core_pattern appartient à l'hôte
+            (resource.RLIMIT_MEMLOCK, (0, 0)),
+            (resource.RLIMIT_MSGQUEUE, (0, 0)),
+        ]
+        for which, value in pairs:
+            resource.setrlimit(which, value)
+        try:
+            with open("/proc/self/oom_score_adj", "w") as handle:
+                handle.write("1000")
+        except OSError:
+            pass
+        os.nice(5)
+        os.umask(0o022)
+        if drop:
+            os.setgroups([])
+            os.setgid(limits.gid)
+            os.setuid(limits.uid)
+        os.chdir(workdir)
+
+    return setup
 
 
 def parse_status(raw: bytes) -> tuple[set[int], str, int] | None:

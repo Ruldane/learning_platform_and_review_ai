@@ -5,6 +5,7 @@ import type { SocketFactory } from "@/shared/realtime/socket";
 import { useRun } from "@/shared/realtime/useRun";
 import { RunFeed } from "@/shared/session-ui";
 import { InlineError } from "@/shared/ui/states/InlineError";
+import { SalaryScenario } from "../../components/SalaryScenario";
 import { applicationsKeys } from "../../queryKeys";
 import type { InterviewView } from "../../types";
 import { announcementOf, isFinishing } from "./questionPosition";
@@ -39,6 +40,7 @@ export function InterviewLive({ interview, createSocket }: InterviewLiveProps) {
       <p role="status" className="sr-only">
         <span key={pendingInterrupt?.interrupt_id ?? "none"}>{announcement}</span>
       </p>
+      {interview.salary ? <SalaryScenario data={interview.salary} /> : null}
       <RunFeed
         run={run}
         label={t("applications.interviewRun.feed")}

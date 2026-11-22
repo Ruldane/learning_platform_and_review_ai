@@ -22,6 +22,7 @@ async def wait_for(predicate: object, timeout: float = 3.0) -> None:
 
 def test_jobs_run_on_schedule_and_at_startup() -> None:
     assert [(j.name, j.every, j.at_startup) for j in JOBS] == [
+        ("book_refresh", timedelta(seconds=30), True),
         ("lessons_due", timedelta(minutes=15), True),
         ("weekly_review", timedelta(minutes=15), True),
         ("skill_snapshots", timedelta(minutes=15), True),
@@ -30,6 +31,7 @@ def test_jobs_run_on_schedule_and_at_startup() -> None:
         ("market_radar", timedelta(minutes=15), True),
         ("daily_brief", timedelta(minutes=10), True),
         ("reading_stack", timedelta(minutes=15), True),
+        ("podcast_daily", timedelta(minutes=15), True),
         ("project_briefs", timedelta(minutes=15), True),
         ("mcp_housekeeping", timedelta(minutes=10), True),
     ]

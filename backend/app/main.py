@@ -29,6 +29,7 @@ from app.bootstrap import research_providers as open_research_providers
 from app.bootstrap_auth import ensure_local_user, open_oidc, setup_security
 from app.bootstrap_career import career_runtimes
 from app.bootstrap_daily import daily_runtimes
+from app.bootstrap_ide import start_ide_gateway
 from app.config import Settings, get_settings
 from app.core.body_limits import add_body_limits
 from app.core.errors import register_error_handlers
@@ -37,9 +38,12 @@ from app.core.providers import MemoryProviders, PublishingProviders, ResearchPro
 from app.db.engine import create_engine, create_session_factory
 from app.features.auth.service.authenticator import build_authenticator
 from app.features.auth.service.startup import check_google_config
+from app.features.book.service.runtime import BookRuntime
+from app.features.contributions.service.runtime import ContributionRuntime
 from app.features.learning.service.runtime import LearningRuntime
 from app.features.program.service.runtime import ProgramRuntime
 from app.features.registry import FEATURE_ROUTERS
+from app.providers.github.public import PublicGithub
 from app.scheduler.registry import JOBS
 from app.scheduler.runner import open_scheduler
 
@@ -134,6 +138,12 @@ def _compose_features(app: FastAPI) -> StudyRuntimes:
     app.state.program = ProgramRuntime(
         app.state.session_factory, app.state.memory, lessons=app.state.lessons
     )
+    app.state.book = BookRuntime(
+        app.state.session_factory, app.state.lessons.storage, app.state.lessons.publishing.html_pdf
+    )
+    app.state.contributions = ContributionRuntime(
+        app.state.session_factory, PublicGithub(app.state.research_providers.fetcher)
+    )
     study = study_runtimes(
         app.state.session_factory,
         app.state.launcher,
@@ -168,6 +178,7 @@ async def _open_agents(app: FastAPI, stack: AsyncExitStack) -> None:
     (la pile dépile à l'envers) ; reprend les sessions interrompues. Enfin, le planificateur des
     tâches (D91)."""
     study = _compose_features(app)
+    await start_ide_gateway(app, stack)
     # Modèles injectés (parcours de bout en bout, tests), sinon la fabrique réelle.
     models: ChatModelSource = app.state.injected_chat_models or app.state.providers.llm_factory
     app.state.runtime = await stack.enter_async_context(
@@ -195,6 +206,7 @@ async def _open_agents(app: FastAPI, stack: AsyncExitStack) -> None:
                 radar=app.state.daily.radar_store,
                 brief=app.state.daily.brief_store,
                 projects=app.state.daily.project_store,
+                podcast=app.state.daily.podcast_store,
                 ide=app.state.ide_store,
             ),
         )
@@ -215,6 +227,7 @@ async def _open_scheduler(app: FastAPI, stack: AsyncExitStack) -> None:
             app.state.replan,
             app.state.career.applications,
             app.state.daily,
+            app.state.book,
         )
         await stack.enter_async_context(open_scheduler(JOBS, context))
 

@@ -41,7 +41,21 @@ function toDebriefView(out: DebriefOut): DebriefDataView {
 
 /** Un entretien du serveur → la vue des pages. */
 export function toInterviewView(out: InterviewOut): InterviewView {
+  const { salary, salary_outcome: outcome } = out;
   return {
+    salary: salary
+      ? {
+          runId: salary.run_id,
+          role: salary.role,
+          zone: salary.zone,
+          minimum: salary.minimum_eur,
+          maximum: salary.maximum_eur,
+          observations: salary.observations,
+          outcome: outcome
+            ? { offer: outcome.offer_eur, remaining: outcome.remaining_eur, reason: outcome.reason }
+            : null,
+        }
+      : undefined,
     id: out.id,
     applicationId: out.application_id,
     postingId: out.posting_id,

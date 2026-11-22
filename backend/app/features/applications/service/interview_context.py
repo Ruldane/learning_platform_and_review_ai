@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.tools.interview_schema import InterviewContext
 from app.agents.tools.kit_schema import CompanyDossier
+from app.agents.tools.negotiation import SalarySample
 from app.agents.tools.posting_schema import PostingAnalysis
 from app.db.models.applications import Application, Interview
 from app.db.models.postings import JobPosting
@@ -127,4 +128,5 @@ async def build_context(rt: ApplicationsRuntime, user_id: str, row: Interview) -
         cv_content=cv,
         gaps=gaps_of(source.posting),
         profile=profile,
+        salary=SalarySample.model_validate(row.salary) if row.salary is not None else None,
     )

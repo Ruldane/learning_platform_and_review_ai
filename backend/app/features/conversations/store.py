@@ -6,8 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.agents.tools.conversation_port import (
     BRAIN_LIBRARIAN,
+    CLASSROOM_SCOPE,
     LESSON_PROFESSOR,
     TRAINING_TUTOR,
+    ClassmateReply,
     ConversationContext,
     ConversationExchange,
     ConversationPractice,
@@ -35,6 +37,12 @@ MAX_HISTORY_FIELD = 800
 
 def _check_version(markdown: str, turn: ConversationTurn) -> None:
     if turn.lesson_version is not None and turn.lesson_version != lesson_version(markdown):
+        if turn.mode == CLASSROOM_SCOPE and turn.passage is None:
+            raise AppError(
+                "classroom_lesson_changed",
+                "La leçon a changé pendant la réponse. Tu peux renvoyer ton explication.",
+                409,
+            )
         raise stale_passage()
 
 
@@ -138,6 +146,16 @@ async def _brain_context(
     return safe, references, versions
 
 
+def _exchange(row: ConversationTurn) -> ConversationExchange:
+    if row.classmates:
+        replies = [ClassmateReply.model_validate(reply) for reply in row.classmates]
+        answer = " | ".join(f"{reply.role} : {reply.answer[:130]}" for reply in replies)
+        return ConversationExchange(row.question[:210], answer)
+    return ConversationExchange(
+        row.question[:MAX_HISTORY_FIELD], (row.answer or "")[:MAX_HISTORY_FIELD]
+    )
+
+
 class AgentConversationStore:
     def __init__(self, factory: async_sessionmaker[AsyncSession]) -> None:
         self._factory = factory
@@ -154,6 +172,8 @@ class AgentConversationStore:
             notes: dict[str, str] | None = None
             if thread.scope == LESSON_SCOPE:
                 agent, refs = LESSON_PROFESSOR, await _lesson_refs(db, thread, turn)
+            elif thread.scope == CLASSROOM_SCOPE:
+                agent, refs = TRAINING_TUTOR, await _lesson_refs(db, thread, turn)
             elif thread.scope == TRAINING_SCOPE:
                 agent, refs = TRAINING_TUTOR, await _published_refs(db, turn, history)
             elif thread.scope == BRAIN_SCOPE:
@@ -164,11 +184,7 @@ class AgentConversationStore:
                     "conversation_scope_unknown", "Ce type de fil est indisponible.", 409
                 )
             used = await repo.used_tokens(session_id)
-        exchanges = [
-            ConversationExchange(row.question[:MAX_HISTORY_FIELD], row.answer[:MAX_HISTORY_FIELD])
-            for row in history
-            if row.answer is not None
-        ]
+        exchanges = [_exchange(row) for row in history if row.answer is not None]
         return ConversationContext(
             agent,
             turn.question,
@@ -192,6 +208,7 @@ class AgentConversationStore:
         sources: Sequence[ConversationSource],
         practice: Sequence[ConversationPractice] = (),
         context_notes: dict[str, str] | None = None,
+        classmates: Sequence[ClassmateReply] = (),
     ) -> None:
         async with self._factory() as db:
             repo = TurnRepository(db, user_id)
@@ -222,6 +239,8 @@ class AgentConversationStore:
                 if practice:
                     turn.practice = [card.model_dump(mode="json") for card in practice]
                 turn.context_notes = context_notes
+                if classmates:
+                    turn.classmates = [reply.model_dump(mode="json") for reply in classmates]
                 if recorder is not None:
                     await recorder.extend_in(db, keep_latest=frozenset())
             await db.commit()

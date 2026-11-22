@@ -12,11 +12,15 @@ import asyncio
 import json
 import os
 import secrets
+import stat
+import threading
 import time
 from pathlib import Path
 from typing import Literal
 
 from app.providers.sandbox.base import (
+    MAX_INPUT_BYTES,
+    MAX_INPUT_CHUNK_BYTES,
     MAX_OUTPUT_BYTES,
     SandboxJob,
     SandboxProgress,
@@ -78,6 +82,7 @@ class SpoolSandbox:
 
     def __init__(self, spool_dir: Path) -> None:
         self._dir = Path(spool_dir)
+        self._input_lock = threading.Lock()
 
     def _job(self, run_id: str) -> Path:
         return self._dir / "jobs" / f"{run_id}.json"
@@ -101,6 +106,8 @@ class SpoolSandbox:
             "entry": job.entry,
             "kind": job.kind,
             "timeout_s": job.timeout_s,
+            "source": job.source,
+            "model_user": job.model_user,
         }
         try:
             payload = json.dumps(body, ensure_ascii=False).encode("utf-8")
@@ -177,6 +184,31 @@ class SpoolSandbox:
         fd = os.open(marker, os.O_WRONLY | os.O_CREAT, 0o660)
         os.fchmod(fd, 0o660)
         os.close(fd)
+
+    async def write_input(self, run_id: str, data: bytes) -> None:
+        check_run_id(run_id)
+        if not 0 < len(data) <= MAX_INPUT_CHUNK_BYTES:
+            raise ValueError("entrée trop grande")
+        await asyncio.to_thread(self._append_input, run_id, data)
+
+    def _append_input(self, run_id: str, data: bytes) -> None:
+        with self._input_lock:
+            if self._done(run_id).exists() or not (
+                self._job(run_id).exists() or self._log(run_id).exists()
+            ):
+                raise UnknownRun(run_id)
+            path = self._dir / "input" / f"{run_id}.in"
+            flags = os.O_WRONLY | os.O_APPEND | os.O_CREAT | os.O_NOFOLLOW | os.O_NONBLOCK
+            fd = os.open(path, flags, 0o660)
+            with os.fdopen(fd, "ab") as handle:
+                current = os.fstat(fd)
+                if (
+                    not stat.S_ISREG(current.st_mode)
+                    or current.st_size + len(data) > MAX_INPUT_BYTES
+                ):
+                    raise ValueError("entrée trop grande")
+                os.fchmod(fd, 0o660)
+                handle.write(data)
 
     def _beating(self) -> bool:
         try:

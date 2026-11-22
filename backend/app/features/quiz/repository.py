@@ -4,7 +4,7 @@ attendu, `INSERT … ON CONFLICT DO NOTHING`) : un double envoi n'écrit qu'une 
 
 import builtins
 from collections.abc import Collection
-from datetime import date
+from datetime import date, datetime
 from typing import Any
 
 from sqlalchemy import CursorResult, func, select, update
@@ -149,6 +149,22 @@ class AttemptRepository(UserScopedRepository[QuizAttempt]):
 
 class FlashcardRepository(UserScopedRepository[Flashcard]):
     model = Flashcard
+
+    async def recent_quiz_errors(
+        self, start: datetime, end: datetime
+    ) -> builtins.list[tuple[str, str]]:
+        stmt = (
+            select(Flashcard.front, Flashcard.back)
+            .where(
+                Flashcard.user_id == self.user_id,
+                Flashcard.source == "quiz",
+                Flashcard.created_at >= start,
+                Flashcard.created_at < end,
+            )
+            .order_by(Flashcard.created_at.desc())
+            .limit(5)
+        )
+        return [(front, back) for front, back in (await self.session.execute(stmt)).all()]
 
     async def insert_once(self, **fields: Any) -> bool:
         """Écrit la fiche si son recto (`front_hash`) est nouveau ; vrai si elle est créée."""

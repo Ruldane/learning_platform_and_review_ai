@@ -5,7 +5,6 @@ plafonds sont dans `runner_job` (réexportés ici : `Limits`, `RunEnv`, `Sandbox
 import contextlib
 import errno
 import os
-import resource
 import select
 import shutil
 import signal
@@ -31,43 +30,13 @@ from runner_job import (
     materialize,
     validate_job,
 )
+from runner_model import ModelRelay
+from runner_proc import child_setup
+from runner_terminal import TerminalProcess, open_terminal
 
 __all__ = ["JobRefused", "Limits", "RunEnv", "SandboxResult", "Unsafe", "job_from_json", "run_job"]
 
 WAIT_S = 5.0  # attente du processus principal après SIGKILL ; au-delà, le bac n'est plus sûr
-
-
-def child_setup(limits: Limits, drop: bool, workdir: Path) -> Callable[[], None]:
-    """Ce que le fils fait avant `exec` : limites, priorité, puis perte de toute identité du
-    lanceur (`setgroups([])`, `setgid`, `setuid`). Rien n'est lu dans le travail."""
-
-    def setup() -> None:
-        pairs = [
-            (resource.RLIMIT_CPU, (limits.cpu_s, limits.cpu_s + 1)),
-            (resource.RLIMIT_AS, (limits.memory_bytes, limits.memory_bytes)),
-            (resource.RLIMIT_NPROC, (limits.processes, limits.processes)),
-            (resource.RLIMIT_FSIZE, (limits.file_bytes, limits.file_bytes)),
-            (resource.RLIMIT_NOFILE, (limits.open_files, limits.open_files)),
-            (resource.RLIMIT_CORE, (0, 0)),  # jamais de core : `core_pattern` est celui de l'hôte
-            (resource.RLIMIT_MEMLOCK, (0, 0)),
-            (resource.RLIMIT_MSGQUEUE, (0, 0)),
-        ]
-        for which, value in pairs:
-            resource.setrlimit(which, value)
-        try:  # le noyau tue ce code avant le lanceur en cas de manque de mémoire
-            with open("/proc/self/oom_score_adj", "w") as handle:
-                handle.write("1000")
-        except OSError:
-            pass
-        os.nice(5)
-        os.umask(0o022)
-        if drop:
-            os.setgroups([])
-            os.setgid(limits.gid)
-            os.setuid(limits.uid)
-        os.chdir(workdir)
-
-    return setup
 
 
 def utf8_prefix(data: bytes) -> bytes:
@@ -153,12 +122,20 @@ def _pump(fd: int, sink: LogSink, eof: bool) -> bool:
 
 
 def supervise(
-    proc: subprocess.Popen[bytes], sink: LogSink, job: Job, limits: Limits, env: RunEnv
+    proc: subprocess.Popen[bytes],
+    sink: LogSink,
+    job: Job,
+    limits: Limits,
+    env: RunEnv,
+    terminal: TerminalProcess | None = None,
 ) -> Outcome:
     """Surveille jusqu'à la fin : sortie, durée réelle, annulation, mémoire de tous les
     processus du code. Un contrôle toutes les 50 ms ; aucun cas ne laisse la boucle sans fin."""
-    assert proc.stdout is not None
-    fd = proc.stdout.fileno()
+    if terminal is None:
+        assert proc.stdout is not None
+        fd = proc.stdout.fileno()
+    else:
+        fd = terminal.fd
     os.set_blocking(fd, False)
     deadline = time.monotonic() + job.wall_s
     cancel = env.spool / "cancel" / job.run_id
@@ -166,6 +143,8 @@ def supervise(
     forced_at = 0.0
     eof, exited_at, ticks, next_check = False, None, 0, 0.0
     while True:
+        if terminal is not None and forced is None:
+            terminal.feed()
         eof = _pump(fd, sink, eof)
         now = time.monotonic()
         if now < next_check:
@@ -214,18 +193,36 @@ def _verdict(deadline: float, cancel: Path, ticks: int, limits: Limits, env: Run
     return None
 
 
-def _spawn(job: Job, workdir: Path, limits: Limits, env: RunEnv) -> subprocess.Popen[bytes]:
+def _spawn(
+    job: Job, workdir: Path, limits: Limits, env: RunEnv, model: ModelRelay
+) -> subprocess.Popen[bytes]:
     return subprocess.Popen(  # noqa: S603 (arguments construits ici, jamais par le travail)
         build_command(job, env.python),
-        env=build_env(workdir),
+        env={**build_env(workdir), **model.environment()},
         stdin=subprocess.DEVNULL,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         close_fds=True,
+        pass_fds=model.fds(),
         start_new_session=True,
         preexec_fn=child_setup(limits, env.drop, workdir),
         bufsize=0,
     )
+
+
+def _execute(job: Job, workdir: Path, sink: LogSink, limits: Limits, env: RunEnv) -> Outcome:
+    with contextlib.closing(ModelRelay(job, env.spool)) as model:
+        if job.kind == "terminal":
+            path = env.spool / "input" / f"{job.run_id}.in"
+            setup = child_setup(limits, env.drop, workdir)
+            with (
+                open_terminal(workdir, path, setup, model.environment(), model.fds()) as terminal,
+                model.serve(),
+            ):
+                return supervise(terminal.proc, sink, job, limits, env, terminal)
+        proc = _spawn(job, workdir, limits, env, model)
+        with model.serve():
+            return supervise(proc, sink, job, limits, env)
 
 
 def run_job(job: dict[str, object], limits: Limits, env: RunEnv | None = None) -> SandboxResult:
@@ -246,7 +243,7 @@ def run_job(job: dict[str, object], limits: Limits, env: RunEnv | None = None) -
         workdir = env.work / valid.run_id
         runner_proc.kill_user_processes(limits.uid)
         materialize(valid, workdir, limits, env)
-        outcome = supervise(_spawn(valid, workdir, limits, env), sink, valid, limits, env)
+        outcome = _execute(valid, workdir, sink, limits, env)
     except Exception as exc:  # un incident ne fait jamais tomber le lanceur
         message = _describe(exc)
         outcome = Outcome("error", None)

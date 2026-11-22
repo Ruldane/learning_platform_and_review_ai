@@ -15,6 +15,8 @@ _COST = (
     "Coût d'API : Claude écrit lui-même ses notes (`ide_add_note`) et ses exercices "
     "(`ide_create_exercise`) au lieu de déclencher le professeur interne."
 )
+_TERMINAL = "Terminal interactif du bac, réservé à l’interface."
+_NOTEBOOK = "Édition des cellules et exécution interactive réservées à l’interface."
 
 MCP = FeatureMcp(
     feature="ide",
@@ -110,6 +112,26 @@ MCP = FeatureMcp(
             "siens. Annulable depuis « Accès MCP ».",
             body_fields=frozenset({"files", "base_hash"}),
         ),
+        McpAction(
+            "POST /ide/sessions/{session_id}/files",
+            2,
+            "ide_create_project_file",
+            "Ajoute un fichier au projet si l’écriture MCP a été autorisée. "
+            "Prends la version `files_version` de `ide_get_session`.",
+        ),
+        McpAction(
+            "PATCH /ide/sessions/{session_id}/files",
+            2,
+            "ide_rename_project_file",
+            "Renomme un fichier du projet si l’écriture MCP a été autorisée. "
+            "Prends la version `files_version` de `ide_get_session`.",
+        ),
+        McpAction(
+            "DELETE /ide/sessions/{session_id}/files",
+            3,
+            "ide_delete_project_file",
+            "Supprime un fichier du projet : demande à confirmer.",
+        ),
     ),
     graphs=(McpGraph("ide_teacher", follow_only=True), McpGraph("ide_exercise", follow_only=True)),
     play_actions=(
@@ -125,6 +147,15 @@ MCP = FeatureMcp(
         "POST /ide/notes/{note_id}/reject": _GESTURE,
         "POST /ide/sessions/{session_id}/teach": _COST,
         "POST /ide/exercises/generate": _COST,
+        "PUT /ide/sessions/{session_id}/tabs": "Onglets et fichier sélectionné dans l’interface.",
+        "POST /ide/sessions/{session_id}/terminal": _TERMINAL,
+        "GET /ide/terminals/{run_id}": _TERMINAL,
+        "POST /ide/terminals/{run_id}/input": _TERMINAL,
+        "DELETE /ide/terminals/{run_id}": _TERMINAL,
+        "GET /ide/sessions/{session_id}/notebook": _NOTEBOOK,
+        "PUT /ide/sessions/{session_id}/notebook": _NOTEBOOK,
+        "POST /ide/sessions/{session_id}/notebook/run": _NOTEBOOK,
+        "GET /ide/notebook-runs/{run_id}": _NOTEBOOK,
         "PUT /ide/preferences": (
             "Préférences de l'IDE (mode du professeur, plafonds de coût, interrupteur d'écriture "
             "de Claude) : réservées à January dans l'interface, un agent ne règle ni son budget ni "

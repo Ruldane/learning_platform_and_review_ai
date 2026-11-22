@@ -18,6 +18,8 @@ from typing import Literal
 MIB = 1024 * 1024
 RUN_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}")
 MAX_NAME, MAX_PART, MAX_DEPTH = 200, 100, 8
+MAX_NOTEBOOK_SOURCE_BYTES = 65_536
+_OWNER = re.compile(r"[A-Za-z0-9_-]{1,36}")
 
 
 @dataclass(frozen=True)
@@ -78,8 +80,10 @@ class Job:
     run_id: str
     files: dict[str, str]
     entry: str
-    kind: Literal["run", "check"]
+    kind: Literal["run", "check", "terminal", "notebook"]
     wall_s: int
+    source: str | None = None
+    model_user: str | None = None
 
 
 def clamp_timeout(raw: object, limits: Limits) -> int:
@@ -118,14 +122,36 @@ def validate_job(job: object, limits: Limits) -> Job:
             text.encode("utf-8")
         except UnicodeEncodeError as exc:
             raise JobRefused("contenu de fichier refusé") from exc
-    if sum(len(t.encode("utf-8")) for t in clean.values()) > limits.max_total_bytes:
+    source = job.get("source")
+    kind = job.get("kind")
+    if kind not in ("run", "check", "terminal", "notebook"):
+        raise JobRefused("nature du travail refusée")
+    if (kind == "notebook" and not isinstance(source, str)) or (
+        kind != "notebook" and source is not None
+    ):
+        raise JobRefused("source de cellule invalide")
+    source_text = source if isinstance(source, str) else None
+    try:
+        source_size = len(source_text.encode("utf-8")) if source_text is not None else 0
+    except UnicodeEncodeError:
+        raise JobRefused("source de cellule illisible") from None
+    if source_size > MAX_NOTEBOOK_SOURCE_BYTES:
+        raise JobRefused("source de cellule trop longue")
+    if sum(len(t.encode("utf-8")) for t in clean.values()) + source_size > limits.max_total_bytes:
         raise JobRefused(f"{limits.max_total_bytes} octets au plus")
     if not isinstance(entry, str) or entry not in clean:
         raise JobRefused("le fichier d'entrée est absent des fichiers")
-    kind = job.get("kind")
-    if kind not in ("run", "check"):
-        raise JobRefused("nature du travail refusée")
-    return Job(run_id, clean, entry, kind, clamp_timeout(job.get("timeout_s"), limits))
+    owner = job.get("model_user")
+    model_user = owner if isinstance(owner, str) and _OWNER.fullmatch(owner) else None
+    return Job(
+        run_id,
+        clean,
+        entry,
+        kind,
+        clamp_timeout(job.get("timeout_s"), limits),
+        source_text,
+        model_user if kind != "check" else None,
+    )
 
 
 def _chown(path: str, limits: Limits, env: RunEnv) -> None:
@@ -171,6 +197,8 @@ def is_test_file(name: str) -> bool:
 def build_command(job: Job, python: str) -> list[str]:
     """`run` : exécute le fichier d'entrée. `check` : lance les tests de l'exercice par pytest
     (fichiers `test_*.py` ou `*_test.py` du travail), sans cache ni fichier de configuration."""
+    if job.kind == "notebook":
+        return [python, "-X", "utf8", "-u", "-s", "-c", job.source or ""]
     if job.kind == "check":
         tests = sorted(n for n in job.files if is_test_file(n))
         return [

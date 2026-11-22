@@ -25,6 +25,28 @@ MCP = FeatureMcp(
             "Réutilise le même request_id (UUID) pour rejouer l'envoi du même message.",
             launches=CONVERSATION_GRAPH,
         ),
+        McpAction(
+            "GET /lessons/{lesson_id}/classroom",
+            1,
+            "conversations_read_classroom",
+            "Lit la classe virtuelle d'une leçon publiée avec les réponses des trois camarades.",
+            untrusted=(
+                "turns[].question",
+                "turns[].passage",
+                "turns[].answer",
+                "turns[].classmates[].answer",
+                "turns[].sources[].title",
+                "turns[].sources[].excerpt",
+            ),
+        ),
+        McpAction(
+            "POST /lessons/{lesson_id}/classroom/messages",
+            2,
+            "conversations_ask_classroom",
+            "Partage une explication avec les trois camarades d'une leçon publiée. "
+            "Réutilise le même request_id (UUID) pour rejouer l'envoi du même message.",
+            launches=CONVERSATION_GRAPH,
+        ),
     ),
     graphs=(McpGraph(CONVERSATION_GRAPH, follow_only=True),),
 )

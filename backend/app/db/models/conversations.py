@@ -42,6 +42,7 @@ class ConversationTurn(UserScopedMixin, Base):
     mode: Mapped[str | None] = mapped_column(String(16), default=None)
     practice: Mapped[list[Any] | None] = mapped_column(default=None)
     context_notes: Mapped[dict[str, str] | None] = mapped_column(JSON, default=None)
+    classmates: Mapped[list[Any] | None] = mapped_column(JSON, default=None)
     strong: Mapped[bool]
     answer: Mapped[str | None] = mapped_column(Text, default=None)
     sources: Mapped[list[Any]] = mapped_column(default=list)

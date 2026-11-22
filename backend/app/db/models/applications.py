@@ -29,7 +29,7 @@ ReminderKind = Literal["linkedin_7", "email_14", "close_21", "thanks", "news_7"]
 ReminderStatus = Literal["pending", "done", "ignored"]
 KitKind = Literal["cv", "letter", "linkedin", "followups", "form_answers", "company_brief", "pitch"]
 KitStatus = Literal["pending", "ready", "to_check", "failed"]
-InterviewMode = Literal["behavioral", "technical", "case", "mixed"]
+InterviewMode = Literal["behavioral", "technical", "case", "mixed", "salary"]
 RunStatus = Literal["running", "done", "failed", "stopped"]
 # Un entretien : `stopped` (arrêté avant toute réponse), `debrief_failed` (réponses gardées, débrief
 # non écrit), `failed` (session close sans résultat, posé à la lecture).
@@ -152,6 +152,7 @@ class Interview(UserScopedMixin, Base):
     mode: Mapped[str] = mapped_column(String(16))
     duration_min: Mapped[int] = mapped_column(Integer)  # 15, 30 ou 45
     language: Mapped[str] = mapped_column(String(2))  # « fr » ou « en »
+    salary: Mapped[dict[str, Any] | None] = mapped_column(default=None)
     session_id: Mapped[str] = mapped_column(String(36))
     status: Mapped[str] = mapped_column(String(16), default="running")
     exchanges: Mapped[list[Any]] = mapped_column(default=list)
