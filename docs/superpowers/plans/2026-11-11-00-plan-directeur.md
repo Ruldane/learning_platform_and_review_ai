@@ -497,8 +497,9 @@ une séance de conception, puis son plan.
 **Nouvel ordre (décision de January du 21/11) :** la phase 11 est celle décrite plus haut
 (reports de la 10b, chats et cerveau, qualité des leçons, relais) ; l'extension « Capturer
 l'offre », phase 11 d'origine du tableau ci-dessus, devient la **phase 12** ; les features
-ci-dessous sont les **phases 13 à 24** ; les phases 12 à 20 du tableau ci-dessus (« Explique-moi »
-à portfolio) viennent ensuite, dans leur ordre, à partir de la **phase 25**.
+ci-dessous sont les **phases 13 à 24**, puis les dix features de la section suivante sont les
+**phases 25 à 34** ; les phases 12 à 20 du tableau ci-dessus (« Explique-moi » à portfolio)
+viennent ensuite, dans leur ordre, à partir de la **phase 35**.
 
 **Extension Chrome mise de côté (décision de January du 21/11) :** on oublie l'extension
 « Capturer l'offre » pour le moment. La phase 12 ne se fait pas : après la phase 11, on passe
@@ -519,6 +520,24 @@ L'extension garde son numéro et reviendra seulement si January la redemande.
 | 22 | Chasse aux erreurs | Sur demande, une leçon contient deux erreurs subtiles et plausibles à trouver et expliquer : lecture critique face aux LLM qui inventent | Leçons, Vérificateur |
 | 23 | Procès de ton code | Un procureur attaque la conception d'un projet, un avocat la défend, January juge : les compromis d'architecture par la plaidoirie | 14, agents de débat (comité) |
 | 24 | Révision par messagerie | Une question de révision par WhatsApp ou Telegram au moment idéal pour la mémoire, par Nod (agent de January branché sur le MCP de Tremplin) | Fiches, MCP |
+
+#### Dix features folles (demande du 2026-11-22)
+
+Demandées par January « dans la P10 » ; la phase 10 étant en clôture (branche `phase-10b`), elles
+sont rangées en **phases 25 à 34**. Mêmes règles : séance de conception, plan, outils MCP.
+
+| Ordre | Fonctionnalité | Idée | S'appuie sur |
+| --- | --- | --- | --- |
+| 25 | Boss de fin de programme | Chaque programme se termine par un défi chronométré dans l'IDE : un vrai petit système à livrer, pendant qu'un agent « client » change les exigences en cours de route ; note détaillée et preuve de compétence | 14 (IDE), programmes, carte |
+| 26 | Du papier au code | January donne un article de recherche (arXiv…) : Tremplin en tire un mini-cours de zéro à expert et un notebook qui reproduit le résultat principal à petite échelle | Fabrique de leçons, 14 (notebooks) |
+| 27 | Leçons qui se mettent à jour seules | Tremplin suit les versions des bibliothèques étudiées ; quand une API change, il repère les leçons et les exemples devenus faux et propose la correction | 13 (nouveautés des bibliothèques), Vérificateur |
+| 28 | Galaxie du savoir | La carte des compétences et la mémoire en 3D navigable : chaque notion est une étoile, ses liens des constellations, les trous brillent ; un clic ouvre le chapitre ou une séance training | Carte, mémoire, 11 (cerveau) |
+| 29 | Entretien surprise | Sans prévenir, un recruteur fictif « appelle » (message ou voix, par Nod) avec trois questions techniques à chaud, comme un vrai premier entretien téléphonique ; bilan ensuite | Entretien (phase 7), 24 (messagerie) |
+| 30 | Bourse des compétences | Chaque compétence a un « cours » tiré de la demande du marché (radar) ; un portefeuille montre lesquelles montent, lesquelles sont sous-évaluées, et ce qu'« investir » une heure d'étude rapporte | Radar, carte, 16 (futur toi) |
+| 31 | Course contre ton fantôme | Refaire un exercice ou un quiz contre l'enregistrement de sa propre tentative passée, comme le fantôme d'un jeu de course : temps, erreurs, progrès visibles | IDE, quiz, journal |
+| 32 | Pilote de concentration | Tremplin repère la fatigue (erreurs qui montent, réponses plus lentes) et ajuste la séance : pause, révision plus facile, ou fin conseillée avec un bilan | Étude, quiz, 11 (training) |
+| 33 | Débat d'experts sur ta question | Une question posée est débattue par trois experts fictifs (chercheur, praticien, sceptique) ; January lit le débat et tranche, avec les sources de chacun | Agents de débat, 11 (moteur de conversation) |
+| 34 | Liseuse augmentée | Dans la pile de lecture, chaque terme technique d'un article ou d'un papier s'explique au survol, d'après le glossaire et les chapitres de January ; un passage se transforme en fiche d'un geste | 13 (pile de lecture), glossaire (11) |
 
 #### Liens entre les phases
 
