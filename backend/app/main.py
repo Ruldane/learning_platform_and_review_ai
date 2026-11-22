@@ -39,6 +39,7 @@ from app.db.engine import create_engine, create_session_factory
 from app.features.auth.service.authenticator import build_authenticator
 from app.features.auth.service.startup import check_google_config
 from app.features.book.service.runtime import BookRuntime
+from app.features.boss.service.review import AgentBossReview
 from app.features.contributions.service.runtime import ContributionRuntime
 from app.features.learning.service.runtime import LearningRuntime
 from app.features.program.service.runtime import ProgramRuntime
@@ -208,6 +209,9 @@ async def _open_agents(app: FastAPI, stack: AsyncExitStack) -> None:
                 projects=app.state.daily.project_store,
                 podcast=app.state.daily.podcast_store,
                 ide=app.state.ide_store,
+                boss=AgentBossReview(
+                    app.state.session_factory, lambda: app.state.providers.sandbox
+                ),
             ),
         )
     )

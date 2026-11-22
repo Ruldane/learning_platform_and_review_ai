@@ -414,6 +414,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/boss/programs/{program_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Boss */
+        get: operations["get_boss_api_v1_boss_programs__program_id__get"];
+        put?: never;
+        /** Start Boss */
+        post: operations["start_boss_api_v1_boss_programs__program_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/boss/programs/{program_id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Boss */
+        post: operations["submit_boss_api_v1_boss_programs__program_id__submit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/brain/conversation": {
         parameters: {
             query?: never;
@@ -1617,6 +1652,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ide/sessions/{session_id}/code-trials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Latest Trial */
+        get: operations["latest_trial_api_v1_ide_sessions__session_id__code_trials_get"];
+        put?: never;
+        /** Start Trial */
+        post: operations["start_trial_api_v1_ide_sessions__session_id__code_trials_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ide/sessions/{session_id}/code-trials/{trial_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Trial */
+        get: operations["get_trial_api_v1_ide_sessions__session_id__code_trials__trial_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ide/sessions/{session_id}/code-trials/{trial_id}/verdict": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Decide Trial */
+        put: operations["decide_trial_api_v1_ide_sessions__session_id__code_trials__trial_id__verdict_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/ide/sessions/{session_id}/files": {
         parameters: {
             query?: never;
@@ -2510,6 +2597,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/message-reviews/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Claim */
+        post: operations["claim_api_v1_message_reviews_claim_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/message-reviews/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Settings */
+        get: operations["read_settings_api_v1_message_reviews_settings_get"];
+        /** Change Settings */
+        put: operations["change_settings_api_v1_message_reviews_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/message-reviews/{challenge_id}/answer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Reveal */
+        get: operations["reveal_api_v1_message_reviews__challenge_id__answer_get"];
+        put?: never;
+        /** Answer */
+        post: operations["answer_api_v1_message_reviews__challenge_id__answer_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/modules/{module_id}": {
         parameters: {
             query?: never;
@@ -2668,6 +2808,41 @@ export interface paths {
         put?: never;
         /** Submit Incident Report */
         post: operations["submit_incident_report_api_v1_oncall_incidents__incident_id__report_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/paper-labs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Course Sources */
+        get: operations["list_course_sources_api_v1_paper_labs_get"];
+        put?: never;
+        /** Create Course */
+        post: operations["create_course_api_v1_paper_labs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/paper-labs/{lab_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Course */
+        get: operations["get_course_api_v1_paper_labs__lab_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -5237,6 +5412,104 @@ export interface components {
              */
             status: "not_requested" | "queued" | "ready" | "failed";
         };
+        /** BossAttemptOut */
+        BossAttemptOut: {
+            /** Brief */
+            brief: string;
+            client_change: components["schemas"]["BossClientChange"] | null;
+            /**
+             * Deadline At
+             * Format: date-time
+             */
+            deadline_at: string;
+            grade: components["schemas"]["BossGrade"] | null;
+            /** Id */
+            id: string;
+            /** Ide Session Id */
+            ide_session_id: string;
+            /** Proof Recorded */
+            proof_recorded: boolean;
+            /**
+             * Server Time
+             * Format: date-time
+             */
+            server_time: string;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "building" | "expired" | "reviewing" | "graded" | "review_failed";
+            /** Submitted At */
+            submitted_at: string | null;
+        };
+        /** BossCheck */
+        BossCheck: {
+            /** Label */
+            label: string;
+            /** Passed */
+            passed: boolean;
+        };
+        /** BossClientChange */
+        BossClientChange: {
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Requirement */
+            requirement: string;
+        };
+        /** BossCriterion */
+        BossCriterion: {
+            /** Feedback */
+            feedback: string;
+            /** Score */
+            score: number;
+        };
+        /** BossDiagnostic */
+        BossDiagnostic: {
+            /** Checks */
+            checks: components["schemas"]["BossCheck"][];
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "completed" | "failed" | "timeout";
+        };
+        /** BossGrade */
+        BossGrade: {
+            diagnostic: components["schemas"]["BossDiagnostic"];
+            /** Functionality */
+            functionality: number;
+            rubric: components["schemas"]["BossRubric"];
+            /** Total */
+            total: number;
+        };
+        /** BossProgramOut */
+        BossProgramOut: {
+            attempt: components["schemas"]["BossAttemptOut"] | null;
+            /** Eligible */
+            eligible: boolean;
+            /** Program Id */
+            program_id: string;
+            /** Title */
+            title: string;
+        };
+        /** BossReviewStarted */
+        BossReviewStarted: {
+            /** Session Id */
+            session_id: string;
+        };
+        /** BossRubric */
+        BossRubric: {
+            maintenance: components["schemas"]["BossCriterion"];
+            readability: components["schemas"]["BossCriterion"];
+        };
         /**
          * BraveUsageOut
          * @description Requêtes Brave du mois civil UTC (`month` : « AAAA-MM ») pour la clé en vigueur.
@@ -5500,6 +5773,29 @@ export interface components {
              * @enum {string}
              */
             role: "beginner" | "peer" | "advanced";
+        };
+        /** CodePassage */
+        CodePassage: {
+            /** End Line */
+            end_line: number;
+            /** Path */
+            path: string;
+            /** Start Line */
+            start_line: number;
+            /** Text */
+            text: string;
+        };
+        /** CodePleading */
+        CodePleading: {
+            /** Argument */
+            argument: string;
+            /** Citations */
+            citations: components["schemas"]["CodePassage"][];
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "prosecutor" | "defender";
         };
         /**
          * CommitteeDiff
@@ -8348,6 +8644,13 @@ export interface components {
             /** Url */
             url: string | null;
         };
+        /** NodTokenOption */
+        NodTokenOption: {
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+        };
         /**
          * NoteIn
          * @description Une note ajoutée à la main ou par Claude : l'auteur vient de l'appelant, jamais du corps.
@@ -8541,6 +8844,59 @@ export interface components {
         OncallReviewStarted: {
             /** Session Id */
             session_id: string;
+        };
+        /** PaperLabCreate */
+        PaperLabCreate: {
+            /**
+             * Url
+             * Format: uri
+             */
+            url: string;
+        };
+        /** PaperLabOut */
+        PaperLabOut: {
+            /** Course */
+            course: string | null;
+            /** Expected */
+            expected: string | null;
+            /** Id */
+            id: string;
+            /** Ide Session Id */
+            ide_session_id: string | null;
+            /** Session Id */
+            session_id: string;
+            /** Source Title */
+            source_title: string | null;
+            /**
+             * Stage
+             * @enum {string}
+             */
+            stage: "queued" | "ready" | "failed";
+            /** Title */
+            title: string | null;
+            /** Url */
+            url: string;
+        };
+        /** PaperLabStarted */
+        PaperLabStarted: {
+            /** Lab Id */
+            lab_id: string;
+            /** Session Id */
+            session_id: string;
+        };
+        /** PaperLabSummary */
+        PaperLabSummary: {
+            /** Id */
+            id: string;
+            /**
+             * Stage
+             * @enum {string}
+             */
+            stage: "queued" | "ready" | "failed";
+            /** Title */
+            title: string | null;
+            /** Url */
+            url: string;
         };
         /**
          * PasteCreate
@@ -11267,6 +11623,100 @@ export interface components {
             /** Skipped */
             skipped?: ("cap_reached" | "on_demand" | "busy") | null;
         };
+        /** TelegramAnswerIn */
+        TelegramAnswerIn: {
+            /** Chat Id */
+            chat_id: string;
+            /**
+             * Result
+             * @enum {string}
+             */
+            result: "ok" | "fail";
+        };
+        /** TelegramAnswerOut */
+        TelegramAnswerOut: {
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /** Step */
+            step: number;
+        };
+        /** TelegramChallenge */
+        TelegramChallenge: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Id */
+            id: string;
+            /** Question */
+            question: string;
+        };
+        /** TelegramClaimIn */
+        TelegramClaimIn: {
+            /** Chat Id */
+            chat_id: string;
+        };
+        /** TelegramClaimOut */
+        TelegramClaimOut: {
+            challenge?: components["schemas"]["TelegramChallenge"] | null;
+        };
+        /** TelegramRevealOut */
+        TelegramRevealOut: {
+            /** Answer */
+            answer: string;
+        };
+        /** TelegramReviewPreferences */
+        TelegramReviewPreferences: {
+            /** Chat Id */
+            chat_id?: string | null;
+            /**
+             * Enabled
+             * @default false
+             */
+            enabled: boolean;
+            /**
+             * End
+             * @default 20:00
+             */
+            end: string;
+            /**
+             * Start
+             * @default 18:00
+             */
+            start: string;
+            /** Token Id */
+            token_id?: string | null;
+        };
+        /** TelegramReviewSettingsOut */
+        TelegramReviewSettingsOut: {
+            /** Chat Id */
+            chat_id?: string | null;
+            /**
+             * Enabled
+             * @default false
+             */
+            enabled: boolean;
+            /**
+             * End
+             * @default 20:00
+             */
+            end: string;
+            /**
+             * Start
+             * @default 18:00
+             */
+            start: string;
+            /** Timezone */
+            timezone: string;
+            /** Token Id */
+            token_id?: string | null;
+            /** Tokens */
+            tokens: components["schemas"]["NodTokenOption"][];
+        };
         /**
          * TemplateCreated
          * @description Capture du design lancée : le gabarit (`capturing`) et sa session `cv_capture`.
@@ -11534,6 +11984,46 @@ export interface components {
             share: number;
             /** Skill */
             skill: string;
+        };
+        /** TrialOpened */
+        TrialOpened: {
+            /** Session Id */
+            session_id: string;
+            /** Trial Id */
+            trial_id: string;
+        };
+        /** TrialVerdict */
+        TrialVerdict: {
+            /**
+             * Choice
+             * @enum {string}
+             */
+            choice: "prosecutor" | "defender" | "compromise";
+            /** Reason */
+            reason: string;
+        };
+        /** TrialView */
+        TrialView: {
+            /** Current */
+            current: boolean;
+            /** File Count */
+            file_count: number;
+            /** Files Version */
+            files_version: number;
+            /** Id */
+            id: string;
+            /** Pleadings */
+            pleadings: components["schemas"]["CodePleading"][];
+            /** Session Id */
+            session_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "running" | "ready" | "decided" | "failed";
+            /** Title */
+            title: string;
+            verdict: components["schemas"]["TrialVerdict"] | null;
         };
         /**
          * UsageOut
@@ -12792,6 +13282,99 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BoardOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_boss_api_v1_boss_programs__program_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                program_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BossProgramOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_boss_api_v1_boss_programs__program_id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                program_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BossAttemptOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_boss_api_v1_boss_programs__program_id__submit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                program_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BossReviewStarted"];
                 };
             };
             /** @description Validation Error */
@@ -15239,6 +15822,136 @@ export interface operations {
             };
         };
     };
+    latest_trial_api_v1_ide_sessions__session_id__code_trials_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrialView"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_trial_api_v1_ide_sessions__session_id__code_trials_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrialOpened"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_trial_api_v1_ide_sessions__session_id__code_trials__trial_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+                trial_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrialView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    decide_trial_api_v1_ide_sessions__session_id__code_trials__trial_id__verdict_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+                trial_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrialVerdict"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrialView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     put_files_api_v1_ide_sessions__session_id__files_put: {
         parameters: {
             query?: never;
@@ -17186,6 +17899,160 @@ export interface operations {
             };
         };
     };
+    claim_api_v1_message_reviews_claim_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TelegramClaimIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelegramClaimOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_settings_api_v1_message_reviews_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelegramReviewSettingsOut"];
+                };
+            };
+        };
+    };
+    change_settings_api_v1_message_reviews_settings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TelegramReviewPreferences"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelegramReviewSettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reveal_api_v1_message_reviews__challenge_id__answer_get: {
+        parameters: {
+            query: {
+                chat_id: string;
+            };
+            header?: never;
+            path: {
+                challenge_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelegramRevealOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    answer_api_v1_message_reviews__challenge_id__answer_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                challenge_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TelegramAnswerIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelegramAnswerOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     patch_module_api_v1_modules__module_id__patch: {
         parameters: {
             query?: never;
@@ -17517,6 +18384,90 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OncallReviewStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_course_sources_api_v1_paper_labs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperLabSummary"][];
+                };
+            };
+        };
+    };
+    create_course_api_v1_paper_labs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaperLabCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperLabStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_course_api_v1_paper_labs__lab_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lab_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperLabOut"];
                 };
             };
             /** @description Validation Error */

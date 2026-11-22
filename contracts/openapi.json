@@ -2447,6 +2447,277 @@
         "title": "BookOut",
         "type": "object"
       },
+      "BossAttemptOut": {
+        "properties": {
+          "brief": {
+            "title": "Brief",
+            "type": "string"
+          },
+          "client_change": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BossClientChange"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "deadline_at": {
+            "format": "date-time",
+            "title": "Deadline At",
+            "type": "string"
+          },
+          "grade": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BossGrade"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "ide_session_id": {
+            "title": "Ide Session Id",
+            "type": "string"
+          },
+          "proof_recorded": {
+            "title": "Proof Recorded",
+            "type": "boolean"
+          },
+          "server_time": {
+            "format": "date-time",
+            "title": "Server Time",
+            "type": "string"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "building",
+              "expired",
+              "reviewing",
+              "graded",
+              "review_failed"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "submitted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Submitted At"
+          }
+        },
+        "required": [
+          "id",
+          "ide_session_id",
+          "state",
+          "started_at",
+          "deadline_at",
+          "submitted_at",
+          "server_time",
+          "brief",
+          "client_change",
+          "grade",
+          "proof_recorded"
+        ],
+        "title": "BossAttemptOut",
+        "type": "object"
+      },
+      "BossCheck": {
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "label",
+          "passed"
+        ],
+        "title": "BossCheck",
+        "type": "object"
+      },
+      "BossClientChange": {
+        "properties": {
+          "at": {
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "requirement": {
+            "title": "Requirement",
+            "type": "string"
+          }
+        },
+        "required": [
+          "at",
+          "requirement"
+        ],
+        "title": "BossClientChange",
+        "type": "object"
+      },
+      "BossCriterion": {
+        "properties": {
+          "feedback": {
+            "maxLength": 1200,
+            "minLength": 1,
+            "title": "Feedback",
+            "type": "string"
+          },
+          "score": {
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Score",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "score",
+          "feedback"
+        ],
+        "title": "BossCriterion",
+        "type": "object"
+      },
+      "BossDiagnostic": {
+        "properties": {
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/BossCheck"
+            },
+            "title": "Checks",
+            "type": "array"
+          },
+          "outcome": {
+            "enum": [
+              "completed",
+              "failed",
+              "timeout"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          }
+        },
+        "required": [
+          "outcome",
+          "checks"
+        ],
+        "title": "BossDiagnostic",
+        "type": "object"
+      },
+      "BossGrade": {
+        "properties": {
+          "diagnostic": {
+            "$ref": "#/components/schemas/BossDiagnostic"
+          },
+          "functionality": {
+            "maximum": 10.0,
+            "minimum": 0.0,
+            "title": "Functionality",
+            "type": "integer"
+          },
+          "rubric": {
+            "$ref": "#/components/schemas/BossRubric"
+          },
+          "total": {
+            "maximum": 20.0,
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "functionality",
+          "total",
+          "rubric",
+          "diagnostic"
+        ],
+        "title": "BossGrade",
+        "type": "object"
+      },
+      "BossProgramOut": {
+        "properties": {
+          "attempt": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BossAttemptOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "eligible": {
+            "title": "Eligible",
+            "type": "boolean"
+          },
+          "program_id": {
+            "title": "Program Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "program_id",
+          "title",
+          "eligible",
+          "attempt"
+        ],
+        "title": "BossProgramOut",
+        "type": "object"
+      },
+      "BossReviewStarted": {
+        "properties": {
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id"
+        ],
+        "title": "BossReviewStarted",
+        "type": "object"
+      },
+      "BossRubric": {
+        "properties": {
+          "maintenance": {
+            "$ref": "#/components/schemas/BossCriterion"
+          },
+          "readability": {
+            "$ref": "#/components/schemas/BossCriterion"
+          }
+        },
+        "required": [
+          "readability",
+          "maintenance"
+        ],
+        "title": "BossRubric",
+        "type": "object"
+      },
       "BraveUsageOut": {
         "description": "Requêtes Brave du mois civil UTC (`month` : « AAAA-MM ») pour la clé en vigueur.",
         "properties": {
@@ -3089,6 +3360,64 @@
           "answer"
         ],
         "title": "ClassmateReply",
+        "type": "object"
+      },
+      "CodePassage": {
+        "properties": {
+          "end_line": {
+            "title": "End Line",
+            "type": "integer"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "start_line": {
+            "title": "Start Line",
+            "type": "integer"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "start_line",
+          "end_line",
+          "text"
+        ],
+        "title": "CodePassage",
+        "type": "object"
+      },
+      "CodePleading": {
+        "properties": {
+          "argument": {
+            "title": "Argument",
+            "type": "string"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/CodePassage"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "role": {
+            "enum": [
+              "prosecutor",
+              "defender"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "argument",
+          "citations"
+        ],
+        "title": "CodePleading",
         "type": "object"
       },
       "CommitteeDiff": {
@@ -10817,6 +11146,24 @@
         "title": "NextActionOut",
         "type": "object"
       },
+      "NodTokenOption": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label"
+        ],
+        "title": "NodTokenOption",
+        "type": "object"
+      },
       "NoteIn": {
         "description": "Une note ajoutée à la main ou par Claude : l'auteur vient de l'appelant, jamais du corps.\nUne proposition porte `replacement`, la plage de lignes et `base_hash` : le sha256 hexadécimal\n(minuscules, 64 signes) du contenu du fichier encodé en UTF-8.",
         "properties": {
@@ -11448,6 +11795,173 @@
           "session_id"
         ],
         "title": "OncallReviewStarted",
+        "type": "object"
+      },
+      "PaperLabCreate": {
+        "properties": {
+          "url": {
+            "format": "uri",
+            "maxLength": 2083,
+            "minLength": 1,
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "title": "PaperLabCreate",
+        "type": "object"
+      },
+      "PaperLabOut": {
+        "properties": {
+          "course": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Course"
+          },
+          "expected": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "ide_session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ide Session Id"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "source_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Title"
+          },
+          "stage": {
+            "enum": [
+              "queued",
+              "ready",
+              "failed"
+            ],
+            "title": "Stage",
+            "type": "string"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "url",
+          "title",
+          "stage",
+          "source_title",
+          "course",
+          "expected",
+          "ide_session_id",
+          "session_id"
+        ],
+        "title": "PaperLabOut",
+        "type": "object"
+      },
+      "PaperLabStarted": {
+        "properties": {
+          "lab_id": {
+            "title": "Lab Id",
+            "type": "string"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "lab_id",
+          "session_id"
+        ],
+        "title": "PaperLabStarted",
+        "type": "object"
+      },
+      "PaperLabSummary": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "stage": {
+            "enum": [
+              "queued",
+              "ready",
+              "failed"
+            ],
+            "title": "Stage",
+            "type": "string"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "url",
+          "title",
+          "stage"
+        ],
+        "title": "PaperLabSummary",
         "type": "object"
       },
       "PasteCreate": {
@@ -19243,6 +19757,230 @@
         "title": "TeachOut",
         "type": "object"
       },
+      "TelegramAnswerIn": {
+        "additionalProperties": false,
+        "properties": {
+          "chat_id": {
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "title": "Chat Id",
+            "type": "string"
+          },
+          "result": {
+            "enum": [
+              "ok",
+              "fail"
+            ],
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "chat_id",
+          "result"
+        ],
+        "title": "TelegramAnswerIn",
+        "type": "object"
+      },
+      "TelegramAnswerOut": {
+        "properties": {
+          "due_date": {
+            "format": "date",
+            "title": "Due Date",
+            "type": "string"
+          },
+          "step": {
+            "title": "Step",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "step",
+          "due_date"
+        ],
+        "title": "TelegramAnswerOut",
+        "type": "object"
+      },
+      "TelegramChallenge": {
+        "properties": {
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "day",
+          "question"
+        ],
+        "title": "TelegramChallenge",
+        "type": "object"
+      },
+      "TelegramClaimIn": {
+        "additionalProperties": false,
+        "properties": {
+          "chat_id": {
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "title": "Chat Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "chat_id"
+        ],
+        "title": "TelegramClaimIn",
+        "type": "object"
+      },
+      "TelegramClaimOut": {
+        "properties": {
+          "challenge": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TelegramChallenge"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "TelegramClaimOut",
+        "type": "object"
+      },
+      "TelegramRevealOut": {
+        "properties": {
+          "answer": {
+            "title": "Answer",
+            "type": "string"
+          }
+        },
+        "required": [
+          "answer"
+        ],
+        "title": "TelegramRevealOut",
+        "type": "object"
+      },
+      "TelegramReviewPreferences": {
+        "additionalProperties": false,
+        "properties": {
+          "chat_id": {
+            "anyOf": [
+              {
+                "pattern": "^[1-9][0-9]{0,18}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Id"
+          },
+          "enabled": {
+            "default": false,
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "end": {
+            "default": "20:00",
+            "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$",
+            "title": "End",
+            "type": "string"
+          },
+          "start": {
+            "default": "18:00",
+            "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$",
+            "title": "Start",
+            "type": "string"
+          },
+          "token_id": {
+            "anyOf": [
+              {
+                "maxLength": 36,
+                "minLength": 36,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Token Id"
+          }
+        },
+        "title": "TelegramReviewPreferences",
+        "type": "object"
+      },
+      "TelegramReviewSettingsOut": {
+        "additionalProperties": false,
+        "properties": {
+          "chat_id": {
+            "anyOf": [
+              {
+                "pattern": "^[1-9][0-9]{0,18}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Id"
+          },
+          "enabled": {
+            "default": false,
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "end": {
+            "default": "20:00",
+            "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$",
+            "title": "End",
+            "type": "string"
+          },
+          "start": {
+            "default": "18:00",
+            "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$",
+            "title": "Start",
+            "type": "string"
+          },
+          "timezone": {
+            "title": "Timezone",
+            "type": "string"
+          },
+          "token_id": {
+            "anyOf": [
+              {
+                "maxLength": 36,
+                "minLength": 36,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Token Id"
+          },
+          "tokens": {
+            "items": {
+              "$ref": "#/components/schemas/NodTokenOption"
+            },
+            "title": "Tokens",
+            "type": "array"
+          }
+        },
+        "required": [
+          "timezone",
+          "tokens"
+        ],
+        "title": "TelegramReviewSettingsOut",
+        "type": "object"
+      },
       "TemplateCreated": {
         "description": "Capture du design lancée : le gabarit (`capturing`) et sa session `cv_capture`.",
         "properties": {
@@ -19881,6 +20619,117 @@
           "new"
         ],
         "title": "TrendOut",
+        "type": "object"
+      },
+      "TrialOpened": {
+        "properties": {
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "trial_id": {
+            "title": "Trial Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "trial_id",
+          "session_id"
+        ],
+        "title": "TrialOpened",
+        "type": "object"
+      },
+      "TrialVerdict": {
+        "properties": {
+          "choice": {
+            "enum": [
+              "prosecutor",
+              "defender",
+              "compromise"
+            ],
+            "title": "Choice",
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 2000,
+            "minLength": 8,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "choice",
+          "reason"
+        ],
+        "title": "TrialVerdict",
+        "type": "object"
+      },
+      "TrialView": {
+        "properties": {
+          "current": {
+            "title": "Current",
+            "type": "boolean"
+          },
+          "file_count": {
+            "title": "File Count",
+            "type": "integer"
+          },
+          "files_version": {
+            "title": "Files Version",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "pleadings": {
+            "items": {
+              "$ref": "#/components/schemas/CodePleading"
+            },
+            "title": "Pleadings",
+            "type": "array"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "running",
+              "ready",
+              "decided",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "verdict": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrialVerdict"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "title",
+          "files_version",
+          "current",
+          "file_count",
+          "status",
+          "pleadings",
+          "verdict"
+        ],
+        "title": "TrialView",
         "type": "object"
       },
       "UsageOut": {
@@ -21983,6 +22832,136 @@
         "summary": "Edit Board",
         "tags": [
           "learning"
+        ]
+      }
+    },
+    "/api/v1/boss/programs/{program_id}": {
+      "get": {
+        "operationId": "get_boss_api_v1_boss_programs__program_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "program_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 36,
+              "title": "Program Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BossProgramOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Boss",
+        "tags": [
+          "boss"
+        ]
+      },
+      "post": {
+        "operationId": "start_boss_api_v1_boss_programs__program_id__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "program_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 36,
+              "title": "Program Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BossAttemptOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Boss",
+        "tags": [
+          "boss"
+        ]
+      }
+    },
+    "/api/v1/boss/programs/{program_id}/submit": {
+      "post": {
+        "operationId": "submit_boss_api_v1_boss_programs__program_id__submit_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "program_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 36,
+              "title": "Program Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BossReviewStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit Boss",
+        "tags": [
+          "boss"
         ]
       }
     },
@@ -25370,6 +26349,220 @@
         ]
       }
     },
+    "/api/v1/ide/sessions/{session_id}/code-trials": {
+      "get": {
+        "operationId": "latest_trial_api_v1_ide_sessions__session_id__code_trials_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/TrialView"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Latest Trial Api V1 Ide Sessions  Session Id  Code Trials Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Latest Trial",
+        "tags": [
+          "code_trial"
+        ]
+      },
+      "post": {
+        "operationId": "start_trial_api_v1_ide_sessions__session_id__code_trials_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrialOpened"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Trial",
+        "tags": [
+          "code_trial"
+        ]
+      }
+    },
+    "/api/v1/ide/sessions/{session_id}/code-trials/{trial_id}": {
+      "get": {
+        "operationId": "get_trial_api_v1_ide_sessions__session_id__code_trials__trial_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "trial_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Trial Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrialView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Trial",
+        "tags": [
+          "code_trial"
+        ]
+      }
+    },
+    "/api/v1/ide/sessions/{session_id}/code-trials/{trial_id}/verdict": {
+      "put": {
+        "operationId": "decide_trial_api_v1_ide_sessions__session_id__code_trials__trial_id__verdict_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "trial_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Trial Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrialVerdict"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrialView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Decide Trial",
+        "tags": [
+          "code_trial"
+        ]
+      }
+    },
     "/api/v1/ide/sessions/{session_id}/files": {
       "delete": {
         "description": "Retire un fichier du projet et referme son onglet.",
@@ -28118,6 +29311,213 @@
         ]
       }
     },
+    "/api/v1/message-reviews/claim": {
+      "post": {
+        "operationId": "claim_api_v1_message_reviews_claim_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TelegramClaimIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramClaimOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Claim",
+        "tags": [
+          "message_review"
+        ]
+      }
+    },
+    "/api/v1/message-reviews/settings": {
+      "get": {
+        "operationId": "read_settings_api_v1_message_reviews_settings_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramReviewSettingsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Read Settings",
+        "tags": [
+          "message_review"
+        ]
+      },
+      "put": {
+        "operationId": "change_settings_api_v1_message_reviews_settings_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TelegramReviewPreferences"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramReviewSettingsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change Settings",
+        "tags": [
+          "message_review"
+        ]
+      }
+    },
+    "/api/v1/message-reviews/{challenge_id}/answer": {
+      "get": {
+        "operationId": "reveal_api_v1_message_reviews__challenge_id__answer_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "challenge_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 36,
+              "title": "Challenge Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "chat_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[1-9][0-9]{0,18}$",
+              "title": "Chat Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramRevealOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reveal",
+        "tags": [
+          "message_review"
+        ]
+      },
+      "post": {
+        "operationId": "answer_api_v1_message_reviews__challenge_id__answer_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "challenge_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 36,
+              "title": "Challenge Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TelegramAnswerIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramAnswerOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Answer",
+        "tags": [
+          "message_review"
+        ]
+      }
+    },
     "/api/v1/modules/{module_id}": {
       "patch": {
         "description": "Retouche le titre, les compétences ou les prérequis d'un module, sans agent.",
@@ -28588,6 +29988,112 @@
         "summary": "Submit Incident Report",
         "tags": [
           "oncall"
+        ]
+      }
+    },
+    "/api/v1/paper-labs": {
+      "get": {
+        "operationId": "list_course_sources_api_v1_paper_labs_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PaperLabSummary"
+                  },
+                  "title": "Response List Course Sources Api V1 Paper Labs Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Course Sources",
+        "tags": [
+          "paper_lab"
+        ]
+      },
+      "post": {
+        "operationId": "create_course_api_v1_paper_labs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaperLabCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaperLabStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Course",
+        "tags": [
+          "paper_lab"
+        ]
+      }
+    },
+    "/api/v1/paper-labs/{lab_id}": {
+      "get": {
+        "operationId": "get_course_api_v1_paper_labs__lab_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "lab_id",
+            "required": true,
+            "schema": {
+              "title": "Lab Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaperLabOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Course",
+        "tags": [
+          "paper_lab"
         ]
       }
     },

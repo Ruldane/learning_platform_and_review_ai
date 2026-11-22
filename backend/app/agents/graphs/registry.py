@@ -11,7 +11,9 @@ from pydantic import BaseModel
 from app.agents.graphs import (
     application_intake,
     application_kit,
+    boss_review,
     capture,
+    code_trial,
     conversation,
     cv_capture,
     cv_review,
@@ -28,6 +30,7 @@ from app.agents.graphs import (
     lesson_hunt,
     market_radar,
     oncall_review,
+    paper_lab,
     podcast,
     program_builder,
     project_brief,
@@ -38,9 +41,11 @@ from app.agents.graphs import (
     web_research,
 )
 from app.agents.runtime.deps import GraphDeps
+from app.agents.tools.boss_port import BOSS_GRAPH
 from app.agents.tools.conversation_port import CONVERSATION_GRAPH
 from app.agents.tools.lesson_hunt_port import HUNT_GRAPH
 from app.agents.tools.oncall_port import REVIEW_GRAPH
+from app.agents.tools.paper_lab_port import PAPER_GRAPH
 from app.core.errors import AppError
 
 
@@ -73,6 +78,7 @@ GRAPHS: dict[str, GraphSpec] = {
         GraphSpec("study_session", study_session.StudySessionInput, study_session.build),
         GraphSpec("replan", replan.ReplanInput, replan.build),
         GraphSpec("capture", capture.CaptureInput, capture.build),
+        GraphSpec("code_trial", code_trial.TrialInput, code_trial.build),
         GraphSpec(CONVERSATION_GRAPH, conversation.ConversationInput, conversation.build),
         GraphSpec("gap_analysis", gap_analysis.GapAnalysisInput, gap_analysis.build),
         GraphSpec("cv_capture", cv_capture.CvCaptureInput, cv_capture.build),
@@ -95,7 +101,9 @@ GRAPHS: dict[str, GraphSpec] = {
         ),
         GraphSpec("daily_brief", daily_brief.DailyBriefInput, daily_brief.build),
         GraphSpec(HUNT_GRAPH, lesson_hunt.LessonHuntInput, lesson_hunt.build),
+        GraphSpec(BOSS_GRAPH, boss_review.BossReviewInput, boss_review.build),
         GraphSpec(REVIEW_GRAPH, oncall_review.OncallReviewInput, oncall_review.build),
+        GraphSpec(PAPER_GRAPH, paper_lab.PaperLabInput, paper_lab.build),
         GraphSpec("podcast", podcast.PodcastInput, podcast.build),
         GraphSpec("project_brief", project_brief.ProjectBriefInput, project_brief.build),
         GraphSpec("project_review", project_review.ProjectReviewInput, project_review.build),

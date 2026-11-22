@@ -4,6 +4,7 @@ import type { SocketFactory } from "@/shared/realtime/socket";
 import { useExercises } from "../../hooks/useExercises";
 import { useWorkspace } from "../../hooks/useWorkspace";
 import type { IdeSession } from "../../types";
+import { ProjectTrialLink } from "./ProjectTrialLink";
 import { EditorColumn } from "./EditorColumn";
 import { TeacherColumn } from "./TeacherColumn";
 import { TerminalPanel } from "./TerminalPanel";
@@ -24,6 +25,7 @@ export function SessionWorkspace({ session, createSocket }: SessionWorkspaceProp
           {t("ide.session.back")}
         </Link>
         <h1 className="text-2xl font-semibold">{exercise?.title ?? session.title}</h1>
+        <ProjectTrialLink sessionId={session.id} save={ws.draft.save} />
         {session.passed ? <p className="text-sm font-medium">{t("ide.session.passed")}</p> : null}
         {exercise ? (
           <details>

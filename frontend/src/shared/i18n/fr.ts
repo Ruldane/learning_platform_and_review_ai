@@ -4,10 +4,12 @@ import { applications } from "./messages/applications";
 import { appMessages } from "./messages/app";
 import { auth } from "./messages/auth";
 import { book } from "./messages/book";
+import { boss } from "./messages/boss";
 import { brain } from "./messages/brain";
 import { capture } from "./messages/capture";
 import { chat } from "./messages/chat";
 import { conversations } from "./messages/conversations";
+import { codeTrial } from "./messages/codeTrial";
 import { contributions } from "./messages/contributions";
 import { costs } from "./messages/costs";
 import { cv } from "./messages/cv";
@@ -21,8 +23,10 @@ import { lessonHunt } from "./messages/lessonHunt";
 import { lessons } from "./messages/lessons";
 import { mcp } from "./messages/mcp";
 import { memory } from "./messages/memory";
+import { messageReview } from "./messages/messageReview";
 import { onboarding } from "./messages/onboarding";
 import { oncall } from "./messages/oncall";
+import { paperLab } from "./messages/paperLab";
 import { podcast } from "./messages/podcast";
 import { program } from "./messages/program";
 import { projects } from "./messages/projects";
@@ -47,6 +51,7 @@ export const fr = {
   auth,
   brain,
   book,
+  boss,
   account,
   session,
   agents,
@@ -54,6 +59,7 @@ export const fr = {
   settings,
   onboarding,
   memory,
+  messageReview,
   research,
   program,
   lessonHunt,
@@ -62,6 +68,7 @@ export const fr = {
   study,
   training,
   oncall,
+  paperLab,
   podcast,
   quiz,
   skills,
@@ -70,6 +77,7 @@ export const fr = {
   chat,
   conversations,
   contributions,
+  codeTrial,
   gap,
   costs,
   cv,

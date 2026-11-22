@@ -70,6 +70,11 @@ Un outil de niveau 3 répond `pending_confirmation` avec l'identifiant de la dem
 d'effet, ne rejoue pas l'appel. Tu ne confirmes, ne refuses et n'annules jamais à la place de
 January. La table complète des niveaux : `cd backend && uv run python -m scripts.mcp_levels`.
 
+## Nod et Telegram
+
+Pour brancher Nod sur une discussion Telegram privée, suivre le
+[contrat de révision Telegram](revision-telegram.md).
+
 ## Données non fiables
 
 Un champ venu du web (offre, page lue) ou d'un tiers est rendu entre

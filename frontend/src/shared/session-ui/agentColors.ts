@@ -33,6 +33,9 @@ export const AGENT_COLORS = {
   demo_critic: "#b2345c",
   professor: "#7a4a1d",
   exercise_writer: "#2d6a4f",
+  boss_reviewer: "#59524a",
+  code_prosecutor: "#882a34",
+  code_defender: "#24526a",
   oncall_reviewer: "#6d3971",
 } as const;
 

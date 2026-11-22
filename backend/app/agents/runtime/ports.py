@@ -6,8 +6,10 @@ contrat 6). Un port de plus = un champ ici, avec sa valeur « non branché », e
 from dataclasses import dataclass
 
 from app.agents.tools.applications_port import NO_APPLICATIONS, ApplicationStore
+from app.agents.tools.boss_port import NO_BOSS, BossReviewPort
 from app.agents.tools.brief_port import NO_BRIEF, BriefStore
 from app.agents.tools.capture_port import NO_CAPTURE, CaptureStore
+from app.agents.tools.code_trial_port import NO_CODE_TRIAL, CodeTrialPort
 from app.agents.tools.committee_port import NO_COMMITTEE, CommitteeStore
 from app.agents.tools.conversation_port import NO_CONVERSATION, ConversationStore
 from app.agents.tools.council_port import NO_COUNCIL, CouncilStore
@@ -21,6 +23,7 @@ from app.agents.tools.lesson_hunt_port import NO_HUNT, LessonHuntStore
 from app.agents.tools.lesson_port import NO_LESSONS, LessonStore
 from app.agents.tools.memory_port import NO_MEMORY, MemoryGateway
 from app.agents.tools.oncall_port import NO_ONCALL, OncallPort
+from app.agents.tools.paper_lab_port import NO_PAPER_LAB, PaperLabStore
 from app.agents.tools.podcast_port import NO_PODCAST, PodcastStore
 from app.agents.tools.profile_port import NO_PROFILE, ProfileStore
 from app.agents.tools.program_port import NO_PROGRAM, ProgramStore
@@ -55,9 +58,12 @@ class AgentPorts:
     brief: BriefStore = NO_BRIEF  # brief du jour : ressource et conseil (D161)
     projects: ProjectStore = NO_PROJECTS  # énoncé et évaluation des projets preuves (D165)
     ide: IdeStore = NO_IDE  # professeur et exercices générés de l'IDE (D203)
+    boss: BossReviewPort = NO_BOSS
+    code_trial: CodeTrialPort = NO_CODE_TRIAL
     conversations: ConversationStore = NO_CONVERSATION
     lesson_hunt: LessonHuntStore = NO_HUNT
     oncall: OncallPort = NO_ONCALL
+    paper_lab: PaperLabStore = NO_PAPER_LAB
     podcast: PodcastStore = NO_PODCAST
 
 

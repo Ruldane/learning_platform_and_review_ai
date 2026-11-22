@@ -23,5 +23,8 @@ export const agents = {
   demo_critic: { name: "Critique", role: "Challenge l'idée" },
   professor: { name: "Professeur", role: "Guide le code pas à pas" },
   exercise_writer: { name: "Auteur d'exercices", role: "Écrit des exercices sur mesure" },
+  boss_reviewer: { name: "Évaluateur du défi", role: "Évalue la remise du projet" },
+  code_prosecutor: { name: "Procureur", role: "Questionne la conception du projet" },
+  code_defender: { name: "Avocat", role: "Défend les choix de conception" },
   oncall_reviewer: { name: "Responsable d’exploitation", role: "Évalue le rapport d’incident" },
 } as const;

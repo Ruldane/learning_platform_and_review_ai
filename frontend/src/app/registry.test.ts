@@ -34,6 +34,7 @@ describe("registre des features", () => {
       "/apprendre/lecons",
       "/apprendre/bibliotheque",
       "/apprendre/livre",
+      "/apprendre/articles",
     ]);
     expect(groups[2]?.items.map((item) => item.path)).toEqual([
       "/etudier/session",
@@ -82,6 +83,7 @@ describe("registre des features", () => {
       { labelKey: "costs.nav.log", path: "/reglages/journal" },
       { labelKey: "account.nav.data", path: "/reglages/donnees" },
       { labelKey: "mcp.nav.access", path: "/reglages/mcp" },
+      { labelKey: "messageReview.title", path: "/reglages/revision-messagerie" },
     ]);
   });
 

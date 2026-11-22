@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.agents.tools.study_schema import card_hash
 from app.core.errors import AppError
 from app.core.skills import normalize_skill_name
-from app.db.models.study import CardSource
+from app.db.models.study import CardSource, Flashcard
 from app.features.memory.service.skill_levels import reflect_skill_level
 from app.features.quiz.repository import FlashcardRepository
 from app.features.quiz.schemas import DueQueue, FlashcardOut, ReviewOut
@@ -94,33 +94,52 @@ def card_not_due() -> AppError:
     return AppError("card_not_due", "Cette fiche n'est pas à revoir aujourd'hui.", 409)
 
 
-async def _review(
-    rt: QuizRuntime, db: AsyncSession, user_id: str, card_id: str, ok: bool
-) -> tuple[ReviewOut, str | None]:
-    today = await rt.today(db, user_id)
-    repo = FlashcardRepository(db, user_id)
+async def _due_card(repo: FlashcardRepository, card_id: str, today: date) -> Flashcard:
     card = await repo.get_fresh(card_id)
     if card is None:
         raise card_not_found()
     if card.due_date > today:
         raise card_not_due()
+    return card
+
+
+async def read_due_card(
+    rt: QuizRuntime, db: AsyncSession, user_id: str, card_id: str
+) -> FlashcardOut:
+    card = await _due_card(FlashcardRepository(db, user_id), card_id, await rt.today(db, user_id))
+    return FlashcardOut(id=card.id, front=card.front, back=card.back, skill=card.skill)
+
+
+async def review_in_session(
+    rt: QuizRuntime, db: AsyncSession, user_id: str, card_id: str, ok: bool
+) -> ReviewOut:
+    """Applique le même avis dans la transaction qui valide la réponse d’un canal."""
+    today = await rt.today(db, user_id)
+    repo = FlashcardRepository(db, user_id)
+    card = await _due_card(repo, card_id, today)
     step, due = next_review(card.step, ok, today)
-    if not await repo.claim_review(card_id, today, step, due):
+    if not await repo.claim_review(card, today, step, due):
         raise card_not_due()
     demoted: str | None = None
     if card.skill:
         skills = SkillsService(db, user_id)
         if await skills.record_review(card.skill, ok) is not None:
             demoted = await skills.display_name(card.skill)
-    out = ReviewOut(card_id=card_id, step=step, due_date=due, demoted_skill=demoted)
-    return out, demoted
+    return ReviewOut(card_id=card_id, step=step, due_date=due, demoted_skill=demoted)
 
 
 async def review_card(rt: QuizRuntime, user_id: str, card_id: str, ok: bool) -> ReviewOut:
     """Avis sur une fiche due : palier et échéance mis à jour (une erreur : demain local)."""
     async with rt.session_factory() as db:
-        out, demoted = await _review(rt, db, user_id, card_id, ok)
+        out = await review_in_session(rt, db, user_id, card_id, ok)
         await db.commit()
+    await reflect_review(rt, user_id, out)
+    return out
+
+
+async def reflect_review(rt: QuizRuntime, user_id: str, out: ReviewOut) -> None:
+    """Répercute dans la mémoire un changement de niveau dont la transaction est validée."""
+    demoted = out.demoted_skill
     if demoted is not None:
         try:
             await reflect_skill_level(
@@ -135,7 +154,6 @@ async def review_card(rt: QuizRuntime, user_id: str, card_id: str, ok: bool) -> 
             )
         except Exception:
             logger.warning(
-                "Rétrogradation non reflétée : utilisateur %s, fiche %s", user_id, card_id
+                "Rétrogradation non reflétée : utilisateur %s, fiche %s", user_id, out.card_id
             )
-        logger.info("Acquis rétrogradé : utilisateur %s, fiche %s", user_id, card_id)
-    return out
+        logger.info("Acquis rétrogradé : utilisateur %s, fiche %s", user_id, out.card_id)

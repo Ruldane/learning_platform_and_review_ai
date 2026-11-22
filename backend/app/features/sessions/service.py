@@ -13,6 +13,7 @@ from app.agents.runtime.events import (
     SessionEvent,
 )
 from app.agents.runtime.handle import AgentRuntime
+from app.agents.tools.boss_port import BOSS_GRAPH
 from app.agents.tools.conversation_port import CONVERSATION_GRAPH
 from app.core.errors import AppError
 from app.db.models.agents import AgentSession, SessionStatus
@@ -46,6 +47,7 @@ __all__ = [
 # (D106 : une replanification par programme, programme validé ; 409 `replan_open` ; quiz et
 # séance : verrou, sujet et ligne de la feature, revue finale de la phase 5).
 ROUTE_ONLY: dict[str, str] = {
+    BOSS_GRAPH: "POST /boss/programs/{program_id}/submit",
     CONVERSATION_GRAPH: "POST /lessons/{lesson_id}/conversation/messages",
     "replan": "POST /programs/{program_id}/replan",
     "capture": "POST /capture",
@@ -59,6 +61,7 @@ ROUTE_ONLY: dict[str, str] = {
     "hiring_committee": "POST /committee",  # version de CV prête, un seul comité par offre (D147)
     "daily_brief": "GET /brief/today",  # brief créé et ouvert par sa route (D161)
     "lesson_hunt": "POST /lesson-hunts",
+    "paper_lab": "POST /paper-labs",
     "podcast": "POST /podcast/today",
     "market_radar": "POST /radar/runs",  # relevé créé, poste et zone fixés par sa route (D159)
     "project_brief": "planificateur ou POST /projects/{id}/brief",  # énoncé d'un module (D165)
@@ -68,6 +71,7 @@ ROUTE_ONLY: dict[str, str] = {
     # vérifiés dans le bac (D203)
     "ide_teacher": "POST /ide/sessions/{id}/teach",
     "ide_exercise": "POST /ide/exercises/generate",
+    "code_trial": "POST /ide/sessions/{session_id}/code-trials",
     "oncall_review": "POST /oncall/incidents/{id}/report",
     "cv_review": "POST /cv/reviews",  # profil, gabarit et offre vérifiés puis figés (D130)
 }

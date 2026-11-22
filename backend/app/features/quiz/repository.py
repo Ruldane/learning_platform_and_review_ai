@@ -221,16 +221,21 @@ class FlashcardRepository(UserScopedRepository[Flashcard]):
         )
         return int((await self.session.execute(stmt)).scalar_one())
 
-    async def claim_review(self, card_id: str, today: date, step: int, due: date) -> bool:
+    async def claim_review(self, card: Flashcard, today: date, step: int, due: date) -> bool:
         """Avis gardé par l'échéance : la fiche doit être due (≤ `today`) ; vrai si c'est cet
         appel qui l'a revue (un second avis la trouve déjà repoussée)."""
         stmt = (
             update(Flashcard)
             .where(
-                Flashcard.id == card_id,
+                Flashcard.id == card.id,
                 Flashcard.user_id == self.user_id,
                 Flashcard.due_date <= today,
             )
-            .values(step=step, due_date=due, last_reviewed_on=today)
+            .values(updated_at=Flashcard.updated_at)
         )
-        return _changed(await self.session.execute(stmt))
+        if not _changed(await self.session.execute(stmt)):
+            return False
+        # L’écriture ORM est enregistrée dans l’historique de la réponse relayée par Nod.
+        card.step, card.due_date, card.last_reviewed_on = step, due, today
+        await self.session.flush()
+        return True

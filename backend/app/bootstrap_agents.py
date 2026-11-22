@@ -3,7 +3,7 @@ par le moteur, ports adaptés des features (D82), production des leçons et cont
 planifiées (D91). Comme `app.bootstrap`, seul `app.main` (par `app.bootstrap`) l'importe
 (contrat 5)."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -11,6 +11,7 @@ from app.agents.runtime.launcher import SessionLauncher
 from app.agents.runtime.ports import AgentPorts
 from app.agents.runtime.run_settings import RunSettingsSource
 from app.agents.tools.applications_port import NO_APPLICATIONS, ApplicationStore
+from app.agents.tools.boss_port import NO_BOSS, BossReviewPort
 from app.agents.tools.brief_port import NO_BRIEF, BriefStore
 from app.agents.tools.committee_port import NO_COMMITTEE, CommitteeStore
 from app.agents.tools.cv_review_port import NO_CV_REVIEW, CvReviewStore
@@ -30,6 +31,7 @@ from app.features.applications.service.runtime import ApplicationsRuntime
 from app.features.book.service.runtime import BookRuntime
 from app.features.capture.service.runtime import CaptureRuntime
 from app.features.capture.service.store import AgentCaptureStore
+from app.features.code_trial.store import AgentCodeTrialStore
 from app.features.conversations.store import AgentConversationStore
 from app.features.learning.service.runtime import LearningRuntime
 from app.features.learning.service.store import AgentCouncilStore
@@ -39,6 +41,7 @@ from app.features.lessons.service.store import AgentLessonStore
 from app.features.memory.service.gateway import AgentMemoryGateway
 from app.features.memory.service.runtime import MemoryRuntime
 from app.features.oncall.service.report import AgentOncallStore
+from app.features.paper_lab.service.store import AgentPaperLabStore
 from app.features.program.service.runtime import ProgramRuntime
 from app.features.program.service.store import AgentProgramStore
 from app.features.quiz.service.runtime import QuizRuntime
@@ -121,9 +124,10 @@ def agent_ports(
     projects: ProjectStore = NO_PROJECTS,
     ide: IdeStore = NO_IDE,
     podcast: PodcastStore = NO_PODCAST,
+    boss: BossReviewPort = NO_BOSS,
 ) -> AgentPorts:
     """Compose les ports des agents à partir des services de leurs features (D82)."""
-    return AgentPorts(
+    ports = AgentPorts(
         memory_gateway(memory),
         web_gateway(research),
         AgentCouncilStore(learning.session_factory, learning.launcher, learning),
@@ -145,10 +149,22 @@ def agent_ports(
         brief,
         projects,
         ide,
-        conversations=AgentConversationStore(lessons.session_factory),
-        lesson_hunt=AgentLessonHuntStore(lessons.session_factory),
-        oncall=AgentOncallStore(lessons.session_factory),
+        boss=boss,
         podcast=podcast,
+    )
+    return _persisted_ports(ports, lessons.session_factory)
+
+
+def _persisted_ports(
+    ports: AgentPorts, session_factory: async_sessionmaker[AsyncSession]
+) -> AgentPorts:
+    return replace(
+        ports,
+        conversations=AgentConversationStore(session_factory),
+        lesson_hunt=AgentLessonHuntStore(session_factory),
+        oncall=AgentOncallStore(session_factory),
+        paper_lab=AgentPaperLabStore(session_factory),
+        code_trial=AgentCodeTrialStore(session_factory),
     )
 
 

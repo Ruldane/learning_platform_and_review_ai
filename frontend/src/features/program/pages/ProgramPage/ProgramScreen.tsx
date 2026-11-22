@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Link } from "react-router";
 import { t } from "@/shared/i18n/t";
 import { PlanDiff } from "@/shared/session-ui";
 import { useTaskMutations } from "../../hooks/useTaskMutations";
@@ -35,6 +36,14 @@ export function ProgramScreen({ program }: { program: ProgramOut }) {
       <ProgramHeader program={program} />
       <ReplanBanner programId={program.id} enabled={program.status === "validated"} />
       <ValidationBar flow={flow} />
+      {program.status === "validated" && (
+        <Link
+          className="self-start underline underline-offset-2"
+          to={`/apprendre/programme/${encodeURIComponent(program.id)}/boss`}
+        >
+          {t("boss.open")}
+        </Link>
+      )}
       {diff ? (
         <section aria-labelledby="program-changes-title" className="flex flex-col gap-2">
           <h2 id="program-changes-title" className="text-lg font-semibold">

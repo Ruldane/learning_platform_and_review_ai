@@ -170,11 +170,14 @@ export const mcp = {
   level: { l0: "Refusé", l1: "Lecture", l2: "Écriture annulable", l3: "À confirmer" },
   /** Les noms des features du back ; une feature inconnue garde son nom brut. */
   features: {
+    message_review: "Révision par messagerie",
     activity: "Activité",
     applications: "Candidatures",
     book: "Ton livre",
+    boss: "Défi de fin de programme",
     brief: "Brief du matin",
     capture: "Capture",
+    code_trial: "Procès de ton code",
     contributions: "Contributions open source",
     costs: "Coûts",
     cv: "CV et profil",
@@ -186,6 +189,7 @@ export const mcp = {
     lessons: "Leçons",
     memory: "Mémoire",
     oncall: "Astreinte",
+    paper_lab: "Du papier au code",
     podcast: "Podcast du matin",
     postings: "Offres",
     program: "Programme",

@@ -24,7 +24,7 @@ MCP = FeatureMcp(
         ),
     ),
     excluded={
-        "graph:lesson_hunt": "Deux étapes réservées au parcours de lecture dans Tremplin.",
+        "graph:lesson_hunt": "Lancé par POST /lesson-hunts ou par la remise des réponses.",
         "POST /lesson-hunts": "Défi créé à la demande de l’utilisatrice dans la leçon.",
         f"POST {_HUNT}/answers": "Réponses de l’utilisatrice au défi de lecture.",
     },

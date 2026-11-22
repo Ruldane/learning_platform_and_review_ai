@@ -72,6 +72,7 @@ REVIEWED_NOT_SECRET = frozenset(
         "ide_sessions.teacher_tokens",
         "mcp_calls.token_id",
         "mcp_confirmations.token_id",
+        "telegram_review_settings.token_id",  # identifiant de ligne du jeton Nod
         "mcp_relay_pairings.token_id",  # identifiant de ligne du jeton dédié
     }
 )

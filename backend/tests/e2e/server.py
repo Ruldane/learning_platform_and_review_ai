@@ -67,6 +67,7 @@ from tests.e2e.contribution_fixture import router as contribution_fixture
 from tests.e2e.council_script import DEBATERS, council_scripts, script_web
 from tests.e2e.cv_script import cv_scripts, script_company_web
 from tests.e2e.daily_script import daily_scripts, script_daily_web
+from tests.e2e.message_review_fixture import router as message_review_fixture
 from tests.e2e.oncall_fixtures import REVIEW, install_sandbox
 from tests.e2e.scripted_models import Reply, ScriptedModels, merge_scripts
 from tests.e2e.seed import seed_local_space
@@ -165,6 +166,7 @@ def build_app(
     install_sandbox(app)
     app.include_router(book_fixture)
     app.include_router(contribution_fixture)
+    app.include_router(message_review_fixture)
     if settings.auth_mode == "google":  # le faux fournisseur, sur le même serveur (P5)
         oidc = create_fake_oidc_app(issuer=settings.google_issuer, client_id=FAKE_CLIENT_ID)
         app.mount(FAKE_OIDC_PATH, oidc)

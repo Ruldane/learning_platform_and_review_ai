@@ -2,7 +2,9 @@ import { accountManifest } from "@/features/account/manifest";
 import { applicationsManifest } from "@/features/applications/manifest";
 import { authManifest } from "@/features/auth/manifest";
 import { bookManifest } from "@/features/book/manifest";
+import { bossManifest } from "@/features/boss/manifest";
 import { makeBrainManifest } from "@/features/brain/manifest";
+import { codeTrialManifest } from "@/features/code_trial/manifest";
 import { captureManifest } from "@/features/capture/manifest";
 import { contributionsManifest } from "@/features/contributions/manifest";
 import { conversationsManifest } from "@/features/conversations/manifest";
@@ -21,7 +23,9 @@ import { lessonHuntManifest } from "@/features/lesson_hunt/manifest";
 import { makeLessonsManifest } from "@/features/lessons/manifest";
 import { mcpManifest } from "@/features/mcp/manifest";
 import { memoryManifest } from "@/features/memory/manifest";
+import { messageReviewManifest } from "@/features/message_review/manifest";
 import { oncallManifest } from "@/features/oncall/manifest";
+import { paperLabManifest } from "@/features/paper_lab/manifest";
 import { podcastManifest } from "@/features/podcast/manifest";
 import { programManifest } from "@/features/program/manifest";
 import { projectsManifest } from "@/features/projects/manifest";
@@ -45,6 +49,8 @@ export const FEATURES: FeatureManifest[] = [
   makeLessonsManifest(LessonConversation),
   lessonHuntManifest,
   bookManifest,
+  bossManifest,
+  paperLabManifest,
   conversationsManifest,
   studyManifest,
   podcastManifest,
@@ -63,11 +69,13 @@ export const FEATURES: FeatureManifest[] = [
   makeBrainManifest(BrainConversation),
   readingManifest,
   settingsManifest,
+  messageReviewManifest,
   costsManifest,
   accountManifest,
   researchManifest,
   demoManifest,
   mcpManifest,
   ideManifest,
+  codeTrialManifest,
   oncallManifest,
 ];

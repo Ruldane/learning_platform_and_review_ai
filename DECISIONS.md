@@ -2506,3 +2506,49 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
   rend un bilan conservé avec les corrections. Le texte publié reste la source du chapitre.
 - **Raison** : exercer la lecture critique sur des passages précis en gardant la correction liée
   à la version effectivement lue.
+
+## D247
+
+- **Date** : 2026-11-22
+- **Sujet** : Instantané et citations du procès du code.
+- **Décision** : conserver un procès par version enregistrée du projet Python et par compte.
+  Les rôles examinent des passages bornés de la même copie sur OpenAI. Le serveur rattache
+  leurs références aux lignes exactes du projet figé. Le verdict motivé est enregistré dans
+  l’interface et reste consultable par identifiant.
+- **Raison** : relire l’argumentation avec sa source après une modification du projet.
+
+## D248
+
+- **Date** : 2026-11-22
+- **Sujet** : Reproduction pédagogique à partir d’un article public.
+- **Décision** : préparer un mini-cours indépendant avec une citation du texte lu par Recherche.
+  Créer avec lui un projet IDE comprenant le notebook et le résultat attendu. L’expérience
+  travaille à petite échelle avec des données générées. Si le protocole disponible est
+  incomplet, le cours précise ce que l’expérience illustre. La préparation par MCP
+  demande confirmation.
+- **Raison** : garder la citation et l’exercice associés, puis comparer la mesure obtenue
+  au résultat annoncé dans le notebook.
+
+## D249
+
+- **Date** : 2026-11-22
+- **Sujet** : Boss chronométré de fin de programme.
+- **Décision** : ouvrir une tentative par programme et par compte après les tâches requises.
+  Le serveur fixe trente minutes et révèle après dix minutes la nouvelle demande du client
+  simulé. La remise fige les fichiers sauvegardés. Le bac vérifie quatre cas sur ce projet
+  et compte pour dix points. Une évaluation OpenAI note la lisibilité et la maintenance
+  sur cinq points chacune. Le succès aux quatre cas et une note d’au moins 14/20 ajoutent
+  une preuve IDE de développement Python, au niveau en cours. Une reprise de l’évaluation
+  conserve la remise.
+- **Raison** : contrôler le fonctionnement et l’adaptation au besoin client sur une version datée.
+
+## D250
+
+- **Date** : 2026-11-22
+- **Sujet** : Révision Telegram en mode texte par Nod.
+- **Décision** : le compte associe le consentement à un chat privé, à un créneau local et
+  à l’identifiant d’un jeton limité à la révision par messagerie. Tremplin réserve une
+  carte due par date locale et conserve la réponse appliquée pour les rejeux. Nod assure
+  le transport. Le geste générique de révision conserve son accès réservé à l’interface.
+- **Raison** : utiliser le calendrier de révision du compte et reconnaître une réponse
+  au même défi sans corriger deux fois la fiche.

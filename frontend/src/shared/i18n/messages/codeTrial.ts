@@ -1,0 +1,27 @@
+export const codeTrial = {
+  title: "Procès de ton code",
+  back: "Retour au projet Python",
+  description:
+    "Le Procureur et l’Avocat examinent la conception de la même version enregistrée du projet. Tu rends ensuite ton verdict.",
+  start: "Ouvrir le procès",
+  loading: "Chargement du procès…",
+  running: "Les deux plaidoiries se préparent…",
+  failed: "Les plaidoiries n’ont pas pu être produites.",
+  retry: "Relancer le procès",
+  newVersion: "Ouvrir un procès pour la version actuelle",
+  snapshotOne: "Version {version} du projet · 1 fichier Python",
+  snapshot: "Version {version} du projet · {count} fichiers Python",
+  roles: { prosecutor: "Procureur", defender: "Avocat" },
+  citation: "{path} · lignes {from} à {to}",
+  verdict: "Ton verdict",
+  choose: "Décision",
+  choosePlaceholder: "Choisir une décision",
+  choices: {
+    prosecutor: "Je retiens la critique",
+    defender: "Je retiens la défense",
+    compromise: "Je choisis un compromis",
+  },
+  reason: "Motif du verdict",
+  save: "Enregistrer mon verdict",
+  savedVerdict: "Verdict enregistré",
+} as const;
