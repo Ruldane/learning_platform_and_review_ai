@@ -645,3 +645,23 @@ leçon. Les règles du bac à sable ne changent pas (aucun réseau, aucun secret
 l'hôte) ; un exemple qui appelle un modèle passe par la passerelle modèle prévue pour l'IDE
 (phase 14) ou affiche clairement qu'il ne peut pas tourner dans le bac. L'action est exposée par
 MCP comme le reste.
+
+## 10. Neuf features retenues le 2026-11-22 (phases 64 à 72)
+
+Proposées le 22/11 ; January garde tout sauf le « diagnostic de ton code réel ». Ordre : **après**
+la réorganisation de l'interface par Codex et la reconstruction des programmes (§8), dont elles
+dépendent. Mêmes règles que les autres phases : séance de conception, plan, outils MCP pour
+chaque feature, et place dans le menu ou le Labo décidée avec January pour ne pas recharger
+l'interface.
+
+| Phase | Fonctionnalité | Idée | S'appuie sur |
+| --- | --- | --- | --- |
+| 64 | Leçons à schéma animé | Pour **chaque** leçon : le schéma reste fixé sur le côté (en haut sur mobile) et se construit pendant que January fait défiler l'explication ; chaque partie qui entre à l'écran fait apparaître ses nœuds et ses flèches, et le schéma se replie quand elle remonte. Le Rédacteur rattache chaque nœud et chaque flèche à une sous-partie de l'Explication ; le Vérificateur contrôle ce rattachement. Avec `prefers-reduced-motion`, le schéma complet s'affiche d'emblée ; tout reste utilisable au clavier et lisible par un lecteur d'écran. | Norme des leçons (§8.1), rendu Mermaid |
+| 65 | Test de placement | Au démarrage d'un programme, un court diagnostic repère les notions déjà acquises ; le parcours de zéro à expert les marque comme sues (rappel bref) au lieu de les réexpliquer. | Graphe des notions (§8.1), quiz |
+| 66 | Projet fil rouge | Un seul projet qui grandit de semaine en semaine dans l'IDE : chaque leçon y ajoute une brique, et le projet final devient une preuve de compétence. | IDE (phase 14), §9, programmes |
+| 67 | Radiographie d'un appel IA | Exécuter une chaîne ou un agent et voir l'intérieur : messages envoyés, appels d'outils, jetons, coût et durée de chaque étape. | IDE, passerelle modèle, coûts |
+| 68 | Banc d'essai des modèles | Le même prompt envoyé à plusieurs modèles (Claude, GPT, GLM, local) : réponses, coût et vitesse côte à côte. | Registre de modèles, coûts |
+| 69 | Absorber un cours externe | Une vidéo, des notes, un PDF ou un **EPUB de plusieurs centaines de pages** : découpage par la table des matières du livre, traitement en tâche de fond avec progression et reprise après coupure, **coût estimé et accepté avant le lancement**, chaque partie rangée au bon endroit du graphe des notions du programme. Le livre reste local ; les leçons le reformulent, jamais de recopie (contrôle de recopie existant). Test obligatoire sur un EPUB réel de plusieurs centaines de pages. | Mémoire, Cerveau, §8.1 |
+| 70 | Katas de code quotidiens | Cinq minutes par jour : un petit exercice de code tiré des leçons, exécuté dans le bac à sable et reprogrammé selon la répétition espacée. | IDE, fiches |
+| 71 | Mode examen de certification | Examens blancs chronométrés dans les conditions d'une vraie certification, puis bilan des points faibles relié aux leçons. | Quiz, programmes |
+| 72 | Mode 100 % local | Étudier entièrement avec le modèle local (Ollama), sans clé ni coût ; Claude seulement pour ce qui l'exige, sur accord. | Registre de modèles, Ollama |
