@@ -10,6 +10,7 @@ from typing import Any
 from sqlalchemy import CursorResult, func, select, update
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 
+from app.core.practice import RECENT_PRACTICE
 from app.db.models.study import Flashcard, Quiz, QuizAttempt, QuizQuestion
 from app.db.repository import UserScopedRepository
 
@@ -101,6 +102,23 @@ class AttemptRepository(UserScopedRepository[QuizAttempt]):
             .execution_options(populate_existing=True)
         )
         return builtins.list((await self.session.execute(stmt)).scalars().all())
+
+    async def recent_completed(self, quiz_id: str, version: str) -> builtins.list[QuizAttempt]:
+        stmt = (
+            select(QuizAttempt)
+            .where(
+                QuizAttempt.user_id == self.user_id,
+                QuizAttempt.quiz_id == quiz_id,
+                QuizAttempt.status.in_(("graded", "failed")),
+            )
+            .order_by(
+                (QuizAttempt.question_version == version).desc(),
+                QuizAttempt.created_at.desc(),
+                QuizAttempt.id.desc(),
+            )
+            .limit(RECENT_PRACTICE)
+        )
+        return builtins.list((await self.session.execute(stmt)).scalars())
 
     async def graded_modules(self, module_ids: Collection[str]) -> set[str]:
         """Modules parmi `module_ids` dont le quiz a au moins une tentative notée."""

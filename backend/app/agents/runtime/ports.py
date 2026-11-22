@@ -21,6 +21,7 @@ from app.agents.tools.interview_port import NO_INTERVIEWS, InterviewStore
 from app.agents.tools.kit_port import NO_KIT, KitStore
 from app.agents.tools.lesson_hunt_port import NO_HUNT, LessonHuntStore
 from app.agents.tools.lesson_port import NO_LESSONS, LessonStore
+from app.agents.tools.lesson_updates_port import NO_LESSON_UPDATE, LessonUpdatePort
 from app.agents.tools.memory_port import NO_MEMORY, MemoryGateway
 from app.agents.tools.oncall_port import NO_ONCALL, OncallPort
 from app.agents.tools.paper_lab_port import NO_PAPER_LAB, PaperLabStore
@@ -64,6 +65,7 @@ class AgentPorts:
     lesson_hunt: LessonHuntStore = NO_HUNT
     oncall: OncallPort = NO_ONCALL
     paper_lab: PaperLabStore = NO_PAPER_LAB
+    lesson_updates: LessonUpdatePort = NO_LESSON_UPDATE
     podcast: PodcastStore = NO_PODCAST
 
 

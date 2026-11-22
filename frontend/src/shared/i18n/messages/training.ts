@@ -9,6 +9,8 @@ export const training = {
   typing: "Le tuteur écrit…",
   message: "Ton message au tuteur",
   placeholder: "Écris un sujet, une question ou une réponse…",
+  topic: "Sujet proposé · {topic}",
+  topicQuestion: "J’aimerais m’entraîner sur {topic}.",
   finish: "Terminer le training",
   result: "Bilan du training",
   cancelled: "Training interrompu",

@@ -94,6 +94,7 @@ class SessionSummary(BaseModel):
 
 
 class IdeSessionOut(SessionSummary):
+    exercise_statement: str | None = None
     """`file_hashes` : le sha256 de chaque fichier (le `base_hash` que Claude renvoie)."""
 
     files: dict[str, str]

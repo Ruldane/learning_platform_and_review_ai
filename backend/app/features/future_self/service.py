@@ -66,7 +66,7 @@ async def _program_work(
     )
 
 
-def _aliases(groups: list[frozenset[str]]) -> dict[str, str]:
+def alias_map(groups: list[frozenset[str]]) -> dict[str, str]:
     count = Counter(name for group in groups for name in group)
     result: dict[str, str] = {}
     for group in groups:
@@ -103,6 +103,23 @@ def _offer_gaps(
     return tuple(offers)
 
 
+async def next_chapter_for_skill(
+    db: AsyncSession, user_id: str, key: str, aliases: dict[str, str]
+) -> ChapterWork | None:
+    """Le premier chapitre restant du programme qui vise cette compétence."""
+    program = await _program_work(db, user_id, None)
+    if program is None:
+        return None
+    return next(
+        (
+            chapter
+            for chapter in program.chapters
+            if any(skill_key(name, aliases) == key for name in chapter.skills)
+        ),
+        None,
+    )
+
+
 async def forecast(db: AsyncSession, user_id: str, params: FutureSelfQuery) -> FutureSelfOut:
     settings = await SettingsService(db, user_id).get()
     timezone = user_zone(settings.timezone)
@@ -116,7 +133,7 @@ async def forecast(db: AsyncSession, user_id: str, params: FutureSelfQuery) -> F
         db, user_id, zone=timezone, since=end - timedelta(weeks=HISTORY_WEEKS), before=end
     )
     skills = SkillsService(db, user_id)
-    aliases = _aliases(await skills.alias_groups())
+    aliases = alias_map(await skills.alias_groups())
     observed_offers = _offer_gaps(sample, await skills.known_levels(), aliases)
     result = project(
         ProjectionInput(

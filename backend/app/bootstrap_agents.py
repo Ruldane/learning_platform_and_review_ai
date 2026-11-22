@@ -36,6 +36,7 @@ from app.features.conversations.store import AgentConversationStore
 from app.features.learning.service.runtime import LearningRuntime
 from app.features.learning.service.store import AgentCouncilStore
 from app.features.lesson_hunt.service.store import AgentLessonHuntStore
+from app.features.lesson_updates.service.store import AgentLessonUpdatesStore
 from app.features.lessons.service.runtime import LessonsRuntime
 from app.features.lessons.service.store import AgentLessonStore
 from app.features.memory.service.gateway import AgentMemoryGateway
@@ -163,6 +164,7 @@ def _persisted_ports(
         conversations=AgentConversationStore(session_factory),
         lesson_hunt=AgentLessonHuntStore(session_factory),
         oncall=AgentOncallStore(session_factory),
+        lesson_updates=AgentLessonUpdatesStore(session_factory),
         paper_lab=AgentPaperLabStore(session_factory),
         code_trial=AgentCodeTrialStore(session_factory),
     )

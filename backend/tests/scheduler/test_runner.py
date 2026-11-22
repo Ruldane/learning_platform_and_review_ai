@@ -31,6 +31,7 @@ def test_jobs_run_on_schedule_and_at_startup() -> None:
         ("market_radar", timedelta(minutes=15), True),
         ("daily_brief", timedelta(minutes=10), True),
         ("reading_stack", timedelta(minutes=15), True),
+        ("lesson_updates", timedelta(minutes=15), True),
         ("podcast_daily", timedelta(minutes=15), True),
         ("project_briefs", timedelta(minutes=15), True),
         ("mcp_housekeeping", timedelta(minutes=10), True),

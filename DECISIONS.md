@@ -2552,3 +2552,71 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
   le transport. Le geste générique de révision conserve son accès réservé à l’interface.
 - **Raison** : utiliser le calendrier de révision du compte et reconnaître une réponse
   au même défi sans corriger deux fois la fiche.
+
+## D251
+
+- **Date** : 2026-11-22
+- **Sujet** : Détection et validation des retouches de bibliothèque.
+- **Décision** : relire les journaux de version de la pile de lecture. Les remplacements
+  explicitement nommés et employés dans un exemple Python publié forment une proposition
+  par compte, leçon, bibliothèque et version. Le Vérificateur prépare les seuls blocs
+  concernés. Après accord de l’utilisatrice et vérification de l’empreinte publiée, le
+  circuit de vérification et de publication de la leçon prend la retouche en charge.
+- **Raison** : retrouver la source de chaque suggestion et garder la leçon lisible pendant la vérification.
+
+## D252
+
+- **Date** : 2026-11-22
+- **Sujet** : Demande et simulation de la Bourse des compétences.
+- **Décision** : comparer deux relevés clos et filtrés sur le même poste et la même zone.
+  Le taux mesure la part des offres d’un relevé qui mentionnent la compétence, une fois
+  par offre. Avec moins de 30 offres dans l’un des relevés, la page indique que
+  l’échantillon est indicatif. La simulation applique 60 minutes au prochain chapitre
+  planifié qui vise cette compétence et estime la couverture des exigences obligatoires
+  dans le relevé courant si le chapitre est achevé.
+- **Raison** : rendre les dénominateurs et hypothèses visibles et préserver le planning.
+
+## D253
+
+- **Date** : 2026-11-22
+- **Sujet** : Projection de la Galaxie du savoir.
+- **Décision** : relire les compétences et les documents actifs du Cerveau. Résoudre les
+  renvois dans leur dossier et rattacher les étiquettes aux noms normalisés des compétences.
+  Les écarts sont ceux du programme de l’objectif courant. La projection 3D Canvas et la
+  liste partagent la sélection. Celle-ci ouvre un chapitre publié lorsqu’il est lié ou propose
+  le sujet dans le training. Toute note active reste accessible dans la Mémoire.
+- **Raison** : rendre visibles les relations et écarts existants avec la même navigation au clavier.
+
+## D254
+
+- **Date** : 2026-11-22
+- **Sujet** : Version et repères des défis personnels.
+- **Décision** : figer l’empreinte des questions ou de l’énoncé pour classer les tentatives
+  comparables. Le quiz enregistre la durée de jeu et la part des questions remplies. L’IDE
+  compare les durées et résultats des vérifications du bac, pour le même exercice. Le journal
+  ouvre aussi une tentative ancienne en dehors de la liste récente. Les anciens enregistrements
+  exposent les seuls repères disponibles et signalent une version inconnue.
+- **Raison** : comparer les mêmes consignes et ne révéler aucune réponse passée pendant le défi.
+
+## D255
+
+- **Date** : 2026-11-22
+- **Sujet** : Consentement et reprise d’un entretien surprise par messagerie.
+- **Décision** : l’entretien demande un consentement et un jeton Nod dédiés. La discussion
+  privée et son créneau proviennent de la phase 24. Un jour et un instant de la semaine
+  locale déterminent l’invitation unique. Le moteur existant réserve l’entretien à
+  l’acceptation et reçoit trois réponses techniques, liées à leurs interruptions et à
+  leurs identifiants de message.
+- **Raison** : permettre de reprendre la discussion et garder les deux autorisations Telegram distinctes.
+
+## D256
+
+- **Date** : 2026-11-22
+- **Sujet** : Corrections et reprises repérées pendant la recette du lot 2.
+- **Décision** : vérifier la citation de l’article dans le texte lu avant publication.
+  Permettre une relance explicite de la proposition de mise à jour après un échec, en
+  contrôlant à nouveau l’empreinte. Garder le reçu technique de Nod dans le transport
+  afin qu’un rejeu puisse reprendre une réponse interrompue sans doublon. Lier chaque
+  vérification IDE terminée depuis l’interface à son repère dans le journal.
+- **Raison** : permettre de reprendre les parcours après un échec en conservant la provenance
+  de la citation, de la réponse Telegram et de la mesure de vérification.

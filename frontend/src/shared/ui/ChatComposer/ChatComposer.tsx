@@ -8,27 +8,36 @@ interface ChatComposerProps {
   busy: boolean;
   label: string;
   placeholder: string;
+  initialText?: string;
   actions?: ReactNode;
   /** Rend `true` quand la question est partie : la saisie n'est vidée que dans ce cas. */
   onSend: (question: string) => Promise<boolean>;
+}
+
+function submitOnEnter(event: KeyboardEvent, submit: () => Promise<void>) {
+  if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return;
+  event.preventDefault();
+  void submit();
 }
 
 /**
  * Entrée envoie, Maj+Entrée fait un retour à la ligne. Une question refusée ou en erreur reste
  * dans la zone de texte.
  */
-export function ChatComposer({ busy, label, placeholder, actions, onSend }: ChatComposerProps) {
+export function ChatComposer({
+  busy,
+  label,
+  placeholder,
+  initialText = "",
+  actions,
+  onSend,
+}: ChatComposerProps) {
   const fieldId = useId();
-  const [text, setText] = useState("");
+  const [text, setText] = useState(initialText);
   const question = text.trim();
   const submit = async () => {
     if (question === "" || busy) return;
     if (await onSend(question)) setText("");
-  };
-  const onKeyDown = (event: KeyboardEvent) => {
-    if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return;
-    event.preventDefault();
-    void submit();
   };
   return (
     <form
@@ -50,7 +59,7 @@ export function ChatComposer({ busy, label, placeholder, actions, onSend }: Chat
         placeholder={placeholder}
         aria-describedby={`${fieldId}-help`}
         onChange={(event) => setText(event.target.value)}
-        onKeyDown={onKeyDown}
+        onKeyDown={(event) => submitOnEnter(event, submit)}
         className={cn(fieldClass, "h-auto resize-none py-1.5")}
       />
       <div className="flex items-center justify-between gap-2">

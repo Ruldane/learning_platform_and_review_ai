@@ -140,6 +140,14 @@ async def _salary_snapshot(
     return sample
 
 
+async def require_interview_available(db: AsyncSession, user_id: str) -> None:
+    await settle(db, user_id)
+    if running := await InterviewRepository(db, user_id).running():
+        raise interview_in_progress(running[0].id)
+    if await validated_profile(db, user_id) is None:
+        raise profile_required()
+
+
 async def _launch(
     rt: ApplicationsRuntime,
     db: AsyncSession,
@@ -151,12 +159,8 @@ async def _launch(
     role: str | None,
 ) -> InterviewStartOut:
     """Contrôles d'entrée, entretien rangé, parcours lancé. Sous le verrou, dans `db`."""
-    await settle(db, user_id)
+    await require_interview_available(db, user_id)
     repo = InterviewRepository(db, user_id)
-    if running := await repo.running():
-        raise interview_in_progress(running[0].id)
-    if await validated_profile(db, user_id) is None:
-        raise profile_required()
     salary = await _salary_snapshot(db, user_id, setup, role)
     row = await repo.add(
         application_id=application_id,

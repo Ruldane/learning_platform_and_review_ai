@@ -5,6 +5,7 @@ from typing import Any
 from unicodedata import category
 from urllib.parse import urlsplit
 
+from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.nodes.lesson_reference import source_url_key
@@ -25,6 +26,7 @@ from app.features.lessons.service.lessons import get_lesson, lesson_not_found
 from app.features.lessons.service.resources import attach_resources
 from app.features.lessons.service.runtime import LessonsRuntime
 from app.features.lessons.service.status import GRAPH, SUBJECT, open_lesson_sessions
+from app.features.lessons.service.versions import RevisionGuard
 from app.features.program.service.programs import load, program_of_module
 from app.mcp.recorder import ACTIVE
 
@@ -122,12 +124,16 @@ def _reserve(
     draft: dict[str, Any],
     *,
     revision: bool = False,
+    guard: RevisionGuard | None = None,
 ) -> PrepareSession:
     async def prepare(db: AsyncSession, session_id: str) -> None:
         repo = LessonRepository(db, user_id)
         lesson = await repo.by_module(module_id)
         if revision and (lesson is None or lesson.status != "ready"):
             raise lesson_not_ready()
+        if guard is not None and lesson is not None:
+            guard.check(lesson)
+            await guard.prepare(db, session_id)
         if not revision and lesson is not None and lesson.status == "ready":
             raise lesson_exists()
         if lesson is None:
@@ -199,7 +205,13 @@ async def _owned(db: AsyncSession, user_id: str, lesson_id: str) -> Lesson:
 
 
 async def patch_lesson(
-    rt: LessonsRuntime, user_id: str, lesson_id: str, patch: LessonPatch, *, is_mcp: bool
+    rt: LessonsRuntime,
+    user_id: str,
+    lesson_id: str,
+    patch: LessonPatch,
+    *,
+    is_mcp: bool,
+    guard: RevisionGuard | None = None,
 ) -> tuple[LessonOut, bool]:
     async with rt.session_factory() as db:
         program_id = (await _owned(db, user_id, lesson_id)).program_id
@@ -208,6 +220,8 @@ async def patch_lesson(
             lesson = await _owned(db, user_id, lesson_id)
             if lesson.status != "ready":
                 raise lesson_not_ready()
+            if guard is not None:
+                guard.check(lesson)
             title = patch.title or lesson.title
             markdown = patch.markdown if patch.markdown is not None else lesson.markdown
             if (title, markdown) == (lesson.title, lesson.markdown):
@@ -225,19 +239,24 @@ async def patch_lesson(
             draft = _draft(title, markdown, patch.resources, is_mcp=is_mcp)
             if await _active(db, user_id, lesson, draft):
                 return await get_lesson(db, user_id, lesson_id), True
-        await _submit(
-            rt,
-            user_id,
-            program_id,
-            lesson.module_id,
-            _reserve(
-                user_id,
-                program_id,
-                lesson.module_id,
-                lesson.title,
-                draft,
-                revision=True,
-            ),
+        module_id = lesson.module_id
+        reservation = _reserve(
+            user_id, program_id, module_id, title, draft, revision=True, guard=guard
         )
+        await _submit(rt, user_id, program_id, module_id, reservation)
         async with rt.session_factory() as db:
             return await get_lesson(db, user_id, lesson_id), True
+
+
+async def submit_revision(
+    rt: LessonsRuntime, user_id: str, lesson_id: str, markdown: str, guard: RevisionGuard
+) -> bool:
+    """Soumet la retouche approuvée d'une version précise à la vérification existante."""
+    try:
+        patch = LessonPatch(markdown=markdown)
+    except ValidationError:
+        raise AppError(
+            "lesson_update_invalid", "Le brouillon de correction est invalide.", 422
+        ) from None
+    _, submitted = await patch_lesson(rt, user_id, lesson_id, patch, is_mcp=False, guard=guard)
+    return submitted

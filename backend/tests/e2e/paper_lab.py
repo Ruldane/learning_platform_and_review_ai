@@ -16,10 +16,10 @@ from tests.support.memory import FakeWebReader
 
 URL = "https://articles.exemple.org/regression"
 TITLE = "Mesurer une pente sur des points"
+QUOTE = "L'expérience de démonstration obtient une pente de 2,0."
 MATERIAL = (
     "La régression estime la pente qui décrit l'effet d'une variable sur une mesure. "
-    "Trois points de la forme y = 2x forment une série synthétique parfaitement alignée. "
-    "L'expérience de démonstration obtient une pente de 2,0."
+    "Trois points de la forme y = 2x forment une série synthétique parfaitement alignée. " + QUOTE
 )
 RESULT = "La pente estimée vaut 2,0 sur les points générés."
 CODE = "points = [(1, 2), (2, 4), (3, 6)]\nprint(points[2][1] / points[2][0])"
@@ -57,6 +57,7 @@ def main() -> None:
         {
             "title": TITLE,
             "course": COURSE,
+            "source_quote": QUOTE,
             "experiment": {
                 "method": "Calculer la pente des points alignés.",
                 "code": CODE,

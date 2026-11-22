@@ -67,10 +67,12 @@ from tests.e2e.contribution_fixture import router as contribution_fixture
 from tests.e2e.council_script import DEBATERS, council_scripts, script_web
 from tests.e2e.cv_script import cv_scripts, script_company_web
 from tests.e2e.daily_script import daily_scripts, script_daily_web
-from tests.e2e.message_review_fixture import router as message_review_fixture
+from tests.e2e.message_review_fixture import router as review_fixture
 from tests.e2e.oncall_fixtures import REVIEW, install_sandbox
 from tests.e2e.scripted_models import Reply, ScriptedModels, merge_scripts
 from tests.e2e.seed import seed_local_space
+from tests.e2e.surprise_interview_fixture import SCRIPT
+from tests.e2e.surprise_interview_fixture import router as surprise_fixture
 from tests.support.memory import FakeWebReader, fake_memory_providers, fake_publishing_providers
 from tests.support.research import fake_research_providers
 from tests.support.text_renderer import TextHtmlRenderer
@@ -83,7 +85,6 @@ FAKE_CLIENT_ID = "fake-client"
 HEALTH_CHECKS = ("db", "qdrant", "ollama", "searxng", "gotenberg", "llm")
 MARKER = ".tremplin-e2e"
 DATABASE = "app.db"
-
 
 LOOPBACK_HOSTS = ("127.0.0.1", "::1", "localhost")
 
@@ -157,6 +158,7 @@ def build_app(
                         "Une chaîne relie une étape à la suivante. Propose un exemple."
                     ],
                     "oncall_reviewer": [REVIEW],
+                    "interviewer": SCRIPT,
                 },
             ),
             delays=delays,
@@ -164,9 +166,8 @@ def build_app(
     )
     app.dependency_overrides[get_health_service] = healthy_service
     install_sandbox(app)
-    app.include_router(book_fixture)
-    app.include_router(contribution_fixture)
-    app.include_router(message_review_fixture)
+    for fixture in (book_fixture, contribution_fixture, review_fixture, surprise_fixture):
+        app.include_router(fixture)
     if settings.auth_mode == "google":  # le faux fournisseur, sur le même serveur (P5)
         oidc = create_fake_oidc_app(issuer=settings.google_issuer, client_id=FAKE_CLIENT_ID)
         app.mount(FAKE_OIDC_PATH, oidc)

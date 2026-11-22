@@ -27,17 +27,18 @@ export function useSubmitAttempt(quizId: string) {
   const inFlight = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const mutation = useMutation({
-    mutationFn: (answers: AnswerBody[]) => createAttempt(quizId, answers),
+    mutationFn: ({ answers, elapsedMs }: { answers: AnswerBody[]; elapsedMs?: number }) =>
+      createAttempt(quizId, answers, elapsedMs),
   });
   const { mutateAsync } = mutation;
 
-  const submit = async (answers: AnswerBody[]): Promise<string | null> => {
+  const submit = async (answers: AnswerBody[], elapsedMs?: number): Promise<string | null> => {
     if (sending.current) return null;
     sending.current = true;
     inFlight.current = true;
     setError(null);
     try {
-      const started = await mutateAsync(answers);
+      const started = await mutateAsync({ answers, elapsedMs });
       return started.attempt_id;
     } catch (failure) {
       setError(submitErrorMessage(failure));

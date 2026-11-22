@@ -27,6 +27,7 @@ from app.features.ide.service.errors import (
     session_not_found,
     stale_base,
 )
+from app.features.ide.service.ghost import exercise_version
 from app.providers.sandbox.base import MAX_FILES, MAX_TOTAL_BYTES, check_file_name
 
 logger = logging.getLogger(__name__)
@@ -59,6 +60,8 @@ async def open_session(ctx: IdeContext, exercise_id: str | None, title: str | No
     files: dict[str, str] = {DEFAULT_ENTRY: ""}
     entry = DEFAULT_ENTRY
     name = title or FREE_TITLE
+    version = None
+    statement = None
     if exercise_id is not None:
         exercise = await ExerciseRepository(ctx.db, ctx.user_id).get(exercise_id)
         if exercise is None:
@@ -67,8 +70,15 @@ async def open_session(ctx: IdeContext, exercise_id: str | None, title: str | No
         files = {str(path): str(text) for path, text in exercise.files.items()}
         files.setdefault(entry, "")
         name = title or exercise.title
+        version = exercise_version(exercise)
+        statement = exercise.statement
     return await SessionRepository(ctx.db, ctx.user_id).add(
-        exercise_id=exercise_id, title=name, files=files, entry=entry
+        exercise_id=exercise_id,
+        title=name,
+        files=files,
+        entry=entry,
+        exercise_version=version,
+        exercise_statement=statement,
     )
 
 

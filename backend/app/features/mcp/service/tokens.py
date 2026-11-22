@@ -67,6 +67,18 @@ class TokenService:
         """Mes jetons, révoqués compris, sans leur valeur."""
         return [McpTokenOut.model_validate(row) for row in await self._tokens.newest_first()]
 
+    async def dedicated_writers(self, feature: str) -> list[McpTokenOut]:
+        """Jetons actifs limités à une seule feature, pour une autorisation de transport."""
+        now = datetime.now(UTC)
+        return [
+            token
+            for token in await self.mine()
+            if token.mode == "write"
+            and token.features == [feature]
+            and token.revoked_at is None
+            and token.expires_at > now
+        ]
+
     async def revoke(self, token_id: str) -> None:
         """Révoque le jeton (404 s'il n'est pas à moi) ; sans effet s'il l'est déjà."""
         if await self._tokens.revoke(token_id, datetime.now(UTC)) is None:

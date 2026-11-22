@@ -2,7 +2,7 @@
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.agents.tools.paper_lab_port import ArticleSource, PaperDraft, PaperLabContext
+from app.agents.tools.paper_lab_port import ArticleSource, PaperDraft, PaperLabContext, cited_course
 from app.core.caller import Caller
 from app.core.errors import AppError
 from app.db.models.paper_lab import PaperLab
@@ -34,6 +34,7 @@ class AgentPaperLabStore:
             row = await _assigned(db, user_id, lab_id, session_id)
             if not await PaperLabRepository(db, user_id).claim_publication(row):
                 return
+            course = cited_course(source, draft)
             files = notebook_files(source.url, draft.experiment)
             ide = IdeService(db, user_id, None, Caller("app", "papier-au-code"))
             project = await ide.open_session(title=draft.title)
@@ -41,7 +42,7 @@ class AgentPaperLabStore:
             row.url = source.url
             row.source_title = source.title[:240]
             row.title = draft.title
-            row.course = draft.course
+            row.course = course
             row.expected = draft.experiment.expected
             row.ide_session_id = project.id
             await db.commit()

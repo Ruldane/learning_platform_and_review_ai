@@ -1,5 +1,3 @@
-from datetime import UTC, datetime
-
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
@@ -16,14 +14,9 @@ FEATURE = "message_review"
 
 
 async def _tokens(db: AsyncSession, user_id: str) -> list[NodTokenOption]:
-    now = datetime.now(UTC)
     return [
         NodTokenOption(id=token.id, label=token.label)
-        for token in await TokenService(db, user_id).mine()
-        if token.mode == "write"
-        and token.features == [FEATURE]
-        and token.revoked_at is None
-        and token.expires_at > now
+        for token in await TokenService(db, user_id).dedicated_writers(FEATURE)
     ]
 
 

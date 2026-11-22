@@ -24,6 +24,7 @@ test("lit une source, ouvre le mini-cours et joue la mesure du notebook", async 
   ).toHaveAttribute("href", "https://articles.exemple.org/regression");
   await expect(page.getByText("La pente estimée vaut 2,0 sur les points générés.")).toBeVisible();
 
+  await expect(page.locator('blockquote')).toContainText("L'expérience de démonstration obtient une pente de 2,0.");
   await page.getByRole("link", { name: "Ouvrir le projet Python" }).press("Enter");
   await page.getByRole("button", { name: /experience\.ipynb/ }).press("Enter");
   await expect(page.getByRole("textbox", { name: "Source de la cellule 2" })).toHaveValue(/print/);

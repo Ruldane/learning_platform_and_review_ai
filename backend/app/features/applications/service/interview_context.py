@@ -129,4 +129,5 @@ async def build_context(rt: ApplicationsRuntime, user_id: str, row: Interview) -
         gaps=gaps_of(source.posting),
         profile=profile,
         salary=SalarySample.model_validate(row.salary) if row.salary is not None else None,
+        surprise=row.surprise_invitation_id is not None,
     )

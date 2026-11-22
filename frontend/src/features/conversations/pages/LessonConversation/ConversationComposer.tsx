@@ -11,6 +11,7 @@ interface ConversationComposerProps {
   identity: string;
   label: string;
   placeholder: string;
+  initialText?: string;
   busy: boolean;
   passage?: LessonPassage | null;
   usage?: Conversation["usage"];
@@ -21,6 +22,7 @@ export function ConversationComposer({
   identity,
   label,
   placeholder,
+  initialText,
   busy,
   passage,
   usage,
@@ -35,6 +37,7 @@ export function ConversationComposer({
     <ChatComposer
       label={label}
       placeholder={placeholder}
+      initialText={initialText}
       busy={busy}
       actions={
         <ConversationSettings

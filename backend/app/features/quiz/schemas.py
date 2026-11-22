@@ -12,6 +12,7 @@ from app.agents.tools.quiz_port import (
     MIN_CHOICES,
     MIN_PROMPT_CHARS,
 )
+from app.core.practice import MAX_QUIZ_ELAPSED_MS
 
 QuizStatusOut = Literal["generating", "ready", "failed"]
 AttemptStatusOut = Literal["grading", "graded", "failed"]
@@ -69,6 +70,7 @@ class AnswerIn(BaseModel):
 
 class AttemptCreate(BaseModel):
     answers: list[AnswerIn] = Field(max_length=50)
+    elapsed_ms: int | None = Field(default=None, ge=0, le=MAX_QUIZ_ELAPSED_MS, strict=True)
 
 
 class AttemptStarted(BaseModel):

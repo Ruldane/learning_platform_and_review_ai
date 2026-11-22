@@ -1,16 +1,19 @@
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
+import type { LiveQuizPractice } from "@/shared/lib/ghostPanels";
 import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 import type { AnswerDraft, QuestionView } from "../viewTypes";
-import { QuestionField } from "./QuestionField";
+import { QuizQuestions } from "./QuizQuestions";
 import { SendConfirm } from "./SendConfirm";
 import { useQuizAnswers } from "./useQuizAnswers";
+import { useQuizChrono } from "./useQuizChrono";
 
 interface QuizFormProps {
   questions: QuestionView[];
   /** Un envoi est en route : plus rien n'est modifiable. */
   disabled: boolean;
-  onSubmit: (answers: AnswerDraft[]) => void;
+  onSubmit: (answers: AnswerDraft[], elapsedMs?: number) => void;
+  renderGhost?: (live: LiveQuizPractice) => ReactNode;
 }
 
 /**
@@ -18,12 +21,13 @@ interface QuizFormProps {
  * zone de texte. « Envoyer » avec des questions vides demande confirmation dans la carte (jamais
  * `window.confirm`) ; toutes les réponses partent, dans l'ordre des questions.
  */
-export function QuizForm({ questions, disabled, onSubmit }: QuizFormProps) {
+export function QuizForm({ questions, disabled, onSubmit, renderGhost }: QuizFormProps) {
   const { ordered, given, change, empties, drafts } = useQuizAnswers(questions);
   const [asking, setAsking] = useState(false);
+  const { elapsed, readElapsed } = useQuizChrono(renderGhost !== undefined && !disabled);
 
   const send = () => {
-    if (!disabled) onSubmit(drafts());
+    if (!disabled) onSubmit(drafts(), readElapsed());
   };
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -33,25 +37,20 @@ export function QuizForm({ questions, disabled, onSubmit }: QuizFormProps) {
 
   return (
     <form onSubmit={submit} aria-label={t("quiz.form.label")} className="flex flex-col gap-4">
-      <ol className="flex flex-col gap-3">
-        {ordered.map((question) => (
-          <QuestionField
-            key={question.id}
-            question={question}
-            choice={given(question.id).choice}
-            text={given(question.id).text}
-            disabled={disabled}
-            onChoice={(index) => {
-              change(question.id, { choice: index });
-              setAsking(false);
-            }}
-            onText={(text) => {
-              change(question.id, { text });
-              setAsking(false);
-            }}
-          />
-        ))}
-      </ol>
+      {renderGhost?.({
+        elapsedMs: elapsed,
+        answered: ordered.length - empties.length,
+        total: ordered.length,
+      })}
+      <QuizQuestions
+        questions={ordered}
+        given={given}
+        disabled={disabled}
+        onAnswer={(id, patch) => {
+          change(id, patch);
+          setAsking(false);
+        }}
+      />
       <p className="text-sm text-muted-foreground">
         {t("quiz.form.progress", { done: ordered.length - empties.length, total: ordered.length })}
       </p>

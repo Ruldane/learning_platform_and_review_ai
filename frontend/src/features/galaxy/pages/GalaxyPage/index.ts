@@ -1,0 +1,1 @@
+export { GalaxyPage } from "./GalaxyPage";

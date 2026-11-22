@@ -64,10 +64,12 @@ export const capture = {
       capture: "Captures",
       study_session: "Sessions d'étude",
       quiz: "Quiz",
+      ide_check: "Vérifications de code",
       weekly_review: "Bilans hebdomadaires",
       project: "Projets",
     },
     kind: {
+      ide_check: "Vérification de code",
       capture: "Capture",
       study_session: "Session d'étude",
       quiz: "Quiz",

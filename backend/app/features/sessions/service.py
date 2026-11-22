@@ -60,6 +60,7 @@ ROUTE_ONLY: dict[str, str] = {
     "interview": "POST /applications/{id}/interviews",  # entretien et réglages vérifiés (D145)
     "hiring_committee": "POST /committee",  # version de CV prête, un seul comité par offre (D147)
     "daily_brief": "GET /brief/today",  # brief créé et ouvert par sa route (D161)
+    "lesson_update": "Planificateur de la veille des leçons",
     "lesson_hunt": "POST /lesson-hunts",
     "paper_lab": "POST /paper-labs",
     "podcast": "POST /podcast/today",

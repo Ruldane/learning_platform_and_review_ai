@@ -194,7 +194,10 @@ def make_turn(deps: GraphDeps) -> Node:
             raise RuntimeError("`turn` demande une réponse lue par `ask`")
         planned = PlannedQuestion.model_validate(state["plan"][state["position"]])
         decision, fallback = await _decide(deps, state, planned, reply["text"])
-        decision = salary_decision(state, context_of(state), decision)
+        context = context_of(state)
+        decision = salary_decision(state, context, decision)
+        if context.surprise:
+            decision = decision.model_copy(update={"follow_up": None})
         exchanges = _answered(state, planned, reply["text"], decision, fallback)
         position = state["position"]
         logger.info("Réponse notée : session %s, question %d", deps.session_id, position + 1)

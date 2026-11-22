@@ -1,0 +1,1 @@
+export { SkillMarketPage } from "./SkillMarketPage";

@@ -11,6 +11,7 @@ interface TrainingRunningProps {
   session: TrainingSession;
   sessionId: string | null;
   saving: boolean;
+  initialText: string;
   onChange: (body: TrainingChange) => void;
   onSubmitted: (id: string) => void;
   onRefresh: () => void;
@@ -20,6 +21,7 @@ export function TrainingRunning({
   session,
   sessionId,
   saving,
+  initialText,
   onChange,
   onSubmitted,
   onRefresh,
@@ -48,6 +50,7 @@ export function TrainingRunning({
           identity={session.id}
           label={t("training.message")}
           placeholder={t("training.placeholder")}
+          initialText={initialText}
           busy={busy || saving}
           usage={session.conversation.usage}
           onSend={send.send}

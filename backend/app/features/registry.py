@@ -34,8 +34,12 @@ from app.features.cv.mcp import MCP as cv_mcp
 from app.features.cv.router import router as cv_router
 from app.features.future_self.mcp import MCP as future_self_mcp
 from app.features.future_self.router import router as future_self_router
+from app.features.galaxy.mcp import MCP as galaxy_mcp
+from app.features.galaxy.router import router as galaxy_router
 from app.features.gap.mcp import MCP as gap_mcp
 from app.features.gap.router import router as gap_router
+from app.features.ghost.mcp import MCP as ghost_mcp
+from app.features.ghost.router import router as ghost_router
 from app.features.health.mcp import MCP as health_mcp
 from app.features.health.router import router as health_router
 from app.features.ide.mcp import MCP as ide_mcp
@@ -44,6 +48,8 @@ from app.features.learning.mcp import MCP as learning_mcp
 from app.features.learning.router import router as learning_router
 from app.features.lesson_hunt.mcp import MCP as lesson_hunt_mcp
 from app.features.lesson_hunt.router import router as lesson_hunt_router
+from app.features.lesson_updates.mcp import MCP as lesson_updates_mcp
+from app.features.lesson_updates.router import router as lesson_updates_router
 from app.features.lessons.mcp import MCP as lessons_mcp
 from app.features.lessons.router import router as lessons_router
 from app.features.mcp.mcp import MCP as mcp_mcp
@@ -82,10 +88,14 @@ from app.features.sessions.router import router as sessions_router
 from app.features.settings.keys_router import router as keys_router
 from app.features.settings.mcp import MCP as settings_mcp
 from app.features.settings.router import router as settings_router
+from app.features.skill_market.mcp import MCP as skill_market_mcp
+from app.features.skill_market.router import router as skill_market_router
 from app.features.skills.mcp import MCP as skills_mcp
 from app.features.skills.router import router as skills_router
 from app.features.study.mcp import MCP as study_mcp
 from app.features.study.router import router as study_router
+from app.features.surprise_interview.mcp import MCP as surprise_interview_mcp
+from app.features.surprise_interview.router import router as surprise_interview_router
 from app.mcp.base import FeatureMcp
 
 # Chaque feature ajoute ici son routeur ; `create_app` les monte sous `/api/v1`.
@@ -105,13 +115,18 @@ FEATURE_ROUTERS: list[APIRouter] = [
     book_router,
     boss_router,
     lesson_hunt_router,
+    lesson_updates_router,
     lessons_router,
     conversations_router,
     quiz_router,
     message_review_router,
+    ghost_router,
     study_router,
+    surprise_interview_router,
     replan_router,
+    skill_market_router,
     skills_router,
+    galaxy_router,
     contributions_router,
     capture_router,
     postings_router,
@@ -157,11 +172,14 @@ MCP_FEATURES: list[FeatureMcp] = [
     costs_mcp,
     cv_mcp,
     future_self_mcp,
+    galaxy_mcp,
     gap_mcp,
+    ghost_mcp,
     health_mcp,
     ide_mcp,
     learning_mcp,
     lesson_hunt_mcp,
+    lesson_updates_mcp,
     lessons_mcp,
     mcp_mcp,
     memory_mcp,
@@ -179,6 +197,8 @@ MCP_FEATURES: list[FeatureMcp] = [
     research_mcp,
     sessions_mcp,
     settings_mcp,
+    skill_market_mcp,
     skills_mcp,
     study_mcp,
+    surprise_interview_mcp,
 ]

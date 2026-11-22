@@ -1263,6 +1263,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/galaxy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Galaxy
+         * @description La carte des compétences et des notes actives visibles par le compte.
+         */
+        get: operations["get_galaxy_api_v1_galaxy_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/gap/top-missing": {
         parameters: {
             query?: never;
@@ -1737,6 +1757,26 @@ export interface paths {
         patch: operations["rename_project_file_api_v1_ide_sessions__session_id__files_patch"];
         trace?: never;
     };
+    "/api/v1/ide/sessions/{session_id}/ghost": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ide Ghost
+         * @description Repères des vérifications personnelles, dont la référence du journal, sans sortie.
+         */
+        get: operations["ide_ghost_api_v1_ide_sessions__session_id__ghost_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/ide/sessions/{session_id}/notebook": {
         parameters: {
             query?: never;
@@ -2153,6 +2193,40 @@ export interface paths {
         get: operations["get_lesson_pdf_api_v1_lessons__lesson_id__pdf_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lessons/{lesson_id}/updates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Updates */
+        get: operations["get_updates_api_v1_lessons__lesson_id__updates_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lessons/{lesson_id}/updates/{update_id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve Update */
+        post: operations["approve_update_api_v1_lessons__lesson_id__updates__update_id__accept_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3663,6 +3737,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/quizzes/{quiz_id}/ghost": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Quiz Ghost
+         * @description Repères récents et tentative éventuellement choisie depuis le journal, sans réponses.
+         */
+        get: operations["quiz_ghost_api_v1_quizzes__quiz_id__ghost_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/quizzes/{quiz_id}/questions": {
         parameters: {
             query?: never;
@@ -4287,6 +4381,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/skill-market": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Market View */
+        get: operations["market_view_api_v1_skill_market_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/skills": {
         parameters: {
             query?: never;
@@ -4525,6 +4636,92 @@ export interface paths {
          *     Déjà terminée ou abandonnée : l'état, sans rien changer.
          */
         patch: operations["update_study_api_v1_study_sessions__study_session_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/surprise-interviews/invite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Surprise Invite */
+        post: operations["surprise_invite_api_v1_surprise_interviews_invite_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/surprise-interviews/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Surprise Settings */
+        get: operations["surprise_settings_api_v1_surprise_interviews_settings_get"];
+        /** Configure Surprise */
+        put: operations["configure_surprise_api_v1_surprise_interviews_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/surprise-interviews/{invitation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Surprise State */
+        get: operations["surprise_state_api_v1_surprise_interviews__invitation_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/surprise-interviews/{invitation_id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Surprise Accept */
+        post: operations["surprise_accept_api_v1_surprise_interviews__invitation_id__accept_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/surprise-interviews/{invitation_id}/answer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Surprise Answer */
+        post: operations["surprise_answer_api_v1_surprise_interviews__invitation_id__answer_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/tasks/{task_id}": {
@@ -5121,6 +5318,8 @@ export interface components {
         AttemptCreate: {
             /** Answers */
             answers: components["schemas"]["AnswerIn"][];
+            /** Elapsed Ms */
+            elapsed_ms?: number | null;
         };
         /** AttemptOut */
         AttemptOut: {
@@ -6903,6 +7102,56 @@ export interface components {
             /** Zone */
             zone: string;
         };
+        /** GalaxyAction */
+        GalaxyAction: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "lesson" | "training" | "note";
+            /** Ref */
+            ref: string;
+        };
+        /** GalaxyEdge */
+        GalaxyEdge: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "prerequisite" | "reference" | "topic";
+            /** Source */
+            source: string;
+            /** Target */
+            target: string;
+        };
+        /** GalaxyNode */
+        GalaxyNode: {
+            action: components["schemas"]["GalaxyAction"];
+            /** Domain */
+            domain?: string | null;
+            /** Gap */
+            gap?: number | null;
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "skill" | "note";
+            /** Level */
+            level?: ("declare" | "en_cours" | "valide" | "prouve") | null;
+            /** Title */
+            title: string;
+        };
+        /** GalaxyView */
+        GalaxyView: {
+            /** Edges */
+            edges: components["schemas"]["GalaxyEdge"][];
+            /** Nodes */
+            nodes: components["schemas"]["GalaxyNode"][];
+            /** Target Label */
+            target_label: string | null;
+        };
         /**
          * GapOut
          * @description `pending` tant que l'analyse tourne ; `failed` : offre refusée ou analyse arrêtée.
@@ -7065,6 +7314,23 @@ export interface components {
              */
             week_start: string;
         };
+        /** HourSimulation */
+        HourSimulation: {
+            /** Chapter */
+            chapter: string | null;
+            /** Covered After */
+            covered_after: number | null;
+            /** Covered Before */
+            covered_before: number;
+            /** Lesson Id */
+            lesson_id: string | null;
+            /** Progress Percent */
+            progress_percent: number | null;
+            /** Remaining Minutes */
+            remaining_minutes: number | null;
+            /** Skill */
+            skill: string;
+        };
         /** HuntAnswers */
         HuntAnswers: {
             /** Responses */
@@ -7109,15 +7375,14 @@ export interface components {
             /** Session Id */
             session_id: string;
         };
-        /**
-         * IdeSessionOut
-         * @description `file_hashes` : le sha256 de chaque fichier (le `base_hash` que Claude renvoie).
-         */
+        /** IdeSessionOut */
         IdeSessionOut: {
             /** Entry */
             entry: string;
             /** Exercise Id */
             exercise_id: string | null;
+            /** Exercise Statement */
+            exercise_statement?: string | null;
             /** File Hashes */
             readonly file_hashes: {
                 [key: string]: string;
@@ -7511,7 +7776,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "capture" | "study_session" | "quiz" | "weekly_review" | "project";
+            kind: "capture" | "study_session" | "quiz" | "weekly_review" | "project" | "ide_check";
             links: components["schemas"]["JournalLinksOut"];
             /**
              * Occurred On
@@ -7523,10 +7788,16 @@ export interface components {
         };
         /** JournalLinksOut */
         JournalLinksOut: {
+            /** Ide Run Id */
+            ide_run_id?: string | null;
+            /** Ide Session Id */
+            ide_session_id?: string | null;
             /** Memory Item Id */
             memory_item_id: string | null;
             /** Quiz Attempt Id */
             quiz_attempt_id: string | null;
+            /** Quiz Id */
+            quiz_id?: string | null;
             /** Session Id */
             session_id: string | null;
             /** Study Session Id */
@@ -7891,6 +8162,18 @@ export interface components {
             points: components["schemas"]["MapPoint"][];
             /** Truncated */
             truncated: boolean;
+        };
+        /** MarketSample */
+        MarketSample: {
+            /** Analyzed */
+            analyzed: number;
+            /**
+             * Finished At
+             * Format: date-time
+             */
+            finished_at: string;
+            /** Run Id */
+            run_id: string;
         };
         /** MasterProfileData */
         MasterProfileData: {
@@ -9304,6 +9587,31 @@ export interface components {
             status: "analyzing" | "ready" | "rejected" | "failed";
             /** Title */
             title: string | null;
+        };
+        /** PracticeSummary */
+        PracticeSummary: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Elapsed Ms */
+            elapsed_ms: number | null;
+            /** Errors */
+            errors: number | null;
+            /** Id */
+            id: string;
+            /** Progress */
+            progress: number | null;
+            /** Score Percent */
+            score_percent?: number | null;
+            /** Total */
+            total: number | null;
+            /**
+             * Version
+             * @enum {string}
+             */
+            version: "same" | "changed" | "unknown";
         };
         /**
          * PreferencesIn
@@ -11148,6 +11456,26 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** SkillMarketOut */
+        SkillMarketOut: {
+            current: components["schemas"]["MarketSample"] | null;
+            /**
+             * Indicative
+             * @default false
+             */
+            indicative: boolean;
+            previous: components["schemas"]["MarketSample"] | null;
+            /**
+             * Quotes
+             * @default []
+             */
+            quotes: components["schemas"]["SkillQuote"][];
+            /** Role */
+            role: string;
+            simulation?: components["schemas"]["HourSimulation"] | null;
+            /** Zone */
+            zone: string;
+        };
         /** SkillNeedIn */
         SkillNeedIn: {
             /** Domain */
@@ -11187,6 +11515,21 @@ export interface components {
             level: ("declare" | "en_cours" | "valide" | "prouve") | null;
             /** Name */
             name: string;
+        };
+        /** SkillQuote */
+        SkillQuote: {
+            /** Change Points */
+            change_points: number | null;
+            /** Demand Percent */
+            demand_percent: number;
+            /** Key */
+            key: string;
+            /** Level */
+            level: ("declare" | "en_cours" | "valide" | "prouve") | null;
+            /** Name */
+            name: string;
+            /** Opportunity */
+            opportunity: boolean;
         };
         /**
          * SkillWrite
@@ -11494,6 +11837,128 @@ export interface components {
             chapter: string | null;
             /** Items */
             items: components["schemas"]["SuggestedIssue"][];
+        };
+        /** SurpriseAnswerIn */
+        SurpriseAnswerIn: {
+            /** Answer */
+            answer: string;
+            /** Chat Id */
+            chat_id: string;
+            /** Message Id */
+            message_id: string;
+            /** Question Id */
+            question_id: string;
+        };
+        /** SurpriseAnswerOut */
+        SurpriseAnswerOut: {
+            /**
+             * Received
+             * @default true
+             */
+            received: boolean;
+        };
+        /** SurpriseChatIn */
+        SurpriseChatIn: {
+            /** Chat Id */
+            chat_id: string;
+        };
+        /** SurpriseDebrief */
+        SurpriseDebrief: {
+            /** Fixes */
+            fixes: string[];
+            /** Improved Answer */
+            improved_answer: string;
+            /** Scores */
+            scores: {
+                [key: string]: number;
+            };
+            /** Strengths */
+            strengths: string[];
+        };
+        /** SurpriseInvitationOut */
+        SurpriseInvitationOut: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Id */
+            id: string;
+        };
+        /** SurpriseInviteOut */
+        SurpriseInviteOut: {
+            invitation?: components["schemas"]["SurpriseInvitationOut"] | null;
+        };
+        /** SurprisePreferences */
+        SurprisePreferences: {
+            /**
+             * Enabled
+             * @default false
+             */
+            enabled: boolean;
+            /**
+             * Role
+             * @default
+             */
+            role: string;
+            /** Token Id */
+            token_id?: string | null;
+        };
+        /** SurpriseQuestion */
+        SurpriseQuestion: {
+            /** Id */
+            id: string;
+            /** Text */
+            text: string;
+        };
+        /** SurpriseSettingsOut */
+        SurpriseSettingsOut: {
+            /**
+             * Enabled
+             * @default false
+             */
+            enabled: boolean;
+            /** End */
+            end: string | null;
+            /**
+             * Role
+             * @default
+             */
+            role: string;
+            /** Start */
+            start: string | null;
+            /** Telegram Ready */
+            telegram_ready: boolean;
+            /** Timezone */
+            timezone: string | null;
+            /** Token Id */
+            token_id?: string | null;
+            /** Tokens */
+            tokens: components["schemas"]["SurpriseTokenOption"][];
+        };
+        /** SurpriseStartOut */
+        SurpriseStartOut: {
+            /** Interview Id */
+            interview_id: string;
+            /** Session Id */
+            session_id: string;
+        };
+        /** SurpriseStateOut */
+        SurpriseStateOut: {
+            debrief?: components["schemas"]["SurpriseDebrief"] | null;
+            question?: components["schemas"]["SurpriseQuestion"] | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "invited" | "preparing" | "question" | "done" | "stopped" | "failed";
+        };
+        /** SurpriseTokenOption */
+        SurpriseTokenOption: {
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
         };
         /** SyncTokenOut */
         SyncTokenOut: {
@@ -12024,6 +12489,46 @@ export interface components {
             /** Title */
             title: string;
             verdict: components["schemas"]["TrialVerdict"] | null;
+        };
+        /** UpdateAccepted */
+        UpdateAccepted: {
+            /** Session Id */
+            session_id: string;
+        };
+        /** UpdateChange */
+        UpdateChange: {
+            /** After */
+            after: string;
+            /** Before */
+            before: string;
+            /** Block */
+            block: number;
+        };
+        /** UpdateView */
+        UpdateView: {
+            /** Apis */
+            apis: string[];
+            /** Changes */
+            changes: components["schemas"]["UpdateChange"][];
+            /** Explanation */
+            explanation?: string | null;
+            /** Id */
+            id: string;
+            /** Library */
+            library: string;
+            /** Preparation Session Id */
+            preparation_session_id: string;
+            /** Publication Session Id */
+            publication_session_id?: string | null;
+            /** Source Url */
+            source_url: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "preparing" | "ready" | "stale" | "failed" | "checking" | "published";
+            /** Version */
+            version: string;
         };
         /**
          * UsageOut
@@ -15062,6 +15567,26 @@ export interface operations {
             };
         };
     };
+    get_galaxy_api_v1_galaxy_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GalaxyView"];
+                };
+            };
+        };
+    };
     get_top_missing_api_v1_gap_top_missing_get: {
         parameters: {
             query?: never;
@@ -16111,6 +16636,39 @@ export interface operations {
             };
         };
     };
+    ide_ghost_api_v1_ide_sessions__session_id__ghost_get: {
+        parameters: {
+            query?: {
+                run_id?: string | null;
+            };
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeSummary"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_notebook_api_v1_ide_sessions__session_id__notebook_get: {
         parameters: {
             query: {
@@ -16763,7 +17321,7 @@ export interface operations {
     read_journal_api_v1_journal_get: {
         parameters: {
             query?: {
-                kind?: ("capture" | "study_session" | "quiz" | "weekly_review" | "project") | null;
+                kind?: ("capture" | "study_session" | "quiz" | "weekly_review" | "project" | "ide_check") | null;
                 before?: string | null;
                 limit?: number;
             };
@@ -17131,6 +17689,69 @@ export interface operations {
                 };
                 content: {
                     "application/pdf": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_updates_api_v1_lessons__lesson_id__updates_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lesson_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateView"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_update_api_v1_lessons__lesson_id__updates__update_id__accept_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lesson_id: string;
+                update_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateAccepted"];
                 };
             };
             /** @description Validation Error */
@@ -20323,6 +20944,39 @@ export interface operations {
             };
         };
     };
+    quiz_ghost_api_v1_quizzes__quiz_id__ghost_get: {
+        parameters: {
+            query?: {
+                attempt_id?: string | null;
+            };
+            header?: never;
+            path: {
+                quiz_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeSummary"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     add_question_api_v1_quizzes__quiz_id__questions_post: {
         parameters: {
             query?: never;
@@ -21672,6 +22326,39 @@ export interface operations {
             };
         };
     };
+    market_view_api_v1_skill_market_get: {
+        parameters: {
+            query?: {
+                role?: string | null;
+                zone?: string | null;
+                skill?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SkillMarketOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_skill_api_v1_skills_post: {
         parameters: {
             query?: never;
@@ -22098,6 +22785,195 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StudySessionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    surprise_invite_api_v1_surprise_interviews_invite_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SurpriseChatIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SurpriseInviteOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    surprise_settings_api_v1_surprise_interviews_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SurpriseSettingsOut"];
+                };
+            };
+        };
+    };
+    configure_surprise_api_v1_surprise_interviews_settings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SurprisePreferences"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SurpriseSettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    surprise_state_api_v1_surprise_interviews__invitation_id__get: {
+        parameters: {
+            query: {
+                chat_id: string;
+            };
+            header?: never;
+            path: {
+                invitation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SurpriseStateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    surprise_accept_api_v1_surprise_interviews__invitation_id__accept_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                invitation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SurpriseChatIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SurpriseStartOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    surprise_answer_api_v1_surprise_interviews__invitation_id__answer_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                invitation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SurpriseAnswerIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SurpriseAnswerOut"];
                 };
             };
             /** @description Validation Error */

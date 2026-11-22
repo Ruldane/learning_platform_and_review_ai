@@ -161,3 +161,4 @@ class InterviewContext(BaseModel):
     gaps: list[str] = Field(default_factory=list)
     profile: MasterProfileData
     salary: SalarySample | None = None
+    surprise: bool = False

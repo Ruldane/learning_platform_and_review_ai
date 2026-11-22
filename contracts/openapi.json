@@ -1668,6 +1668,19 @@
             "maxItems": 50,
             "title": "Answers",
             "type": "array"
+          },
+          "elapsed_ms": {
+            "anyOf": [
+              {
+                "maximum": 86400000.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Elapsed Ms"
           }
         },
         "required": [
@@ -6532,6 +6545,164 @@
         "title": "FutureSelfOut",
         "type": "object"
       },
+      "GalaxyAction": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "lesson",
+              "training",
+              "note"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "ref": {
+            "title": "Ref",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "ref"
+        ],
+        "title": "GalaxyAction",
+        "type": "object"
+      },
+      "GalaxyEdge": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "prerequisite",
+              "reference",
+              "topic"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "target": {
+            "title": "Target",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "target",
+          "kind"
+        ],
+        "title": "GalaxyEdge",
+        "type": "object"
+      },
+      "GalaxyNode": {
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/GalaxyAction"
+          },
+          "domain": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domain"
+          },
+          "gap": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gap"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "skill",
+              "note"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "enum": [
+                  "declare",
+                  "en_cours",
+                  "valide",
+                  "prouve"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "title",
+          "action"
+        ],
+        "title": "GalaxyNode",
+        "type": "object"
+      },
+      "GalaxyView": {
+        "properties": {
+          "edges": {
+            "items": {
+              "$ref": "#/components/schemas/GalaxyEdge"
+            },
+            "title": "Edges",
+            "type": "array"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/GalaxyNode"
+            },
+            "title": "Nodes",
+            "type": "array"
+          },
+          "target_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Label"
+          }
+        },
+        "required": [
+          "nodes",
+          "edges",
+          "target_label"
+        ],
+        "title": "GalaxyView",
+        "type": "object"
+      },
       "GapOut": {
         "description": "`pending` tant que l'analyse tourne ; `failed` : offre refusée ou analyse arrêtée.",
         "properties": {
@@ -6989,6 +7160,84 @@
         "title": "HistoryPointOut",
         "type": "object"
       },
+      "HourSimulation": {
+        "properties": {
+          "chapter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chapter"
+          },
+          "covered_after": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Covered After"
+          },
+          "covered_before": {
+            "title": "Covered Before",
+            "type": "integer"
+          },
+          "lesson_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lesson Id"
+          },
+          "progress_percent": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Progress Percent"
+          },
+          "remaining_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remaining Minutes"
+          },
+          "skill": {
+            "title": "Skill",
+            "type": "string"
+          }
+        },
+        "required": [
+          "skill",
+          "chapter",
+          "lesson_id",
+          "remaining_minutes",
+          "progress_percent",
+          "covered_before",
+          "covered_after"
+        ],
+        "title": "HourSimulation",
+        "type": "object"
+      },
       "HuntAnswers": {
         "properties": {
           "responses": {
@@ -7164,7 +7413,6 @@
         "type": "object"
       },
       "IdeSessionOut": {
-        "description": "`file_hashes` : le sha256 de chaque fichier (le `base_hash` que Claude renvoie).",
         "properties": {
           "entry": {
             "title": "Entry",
@@ -7180,6 +7428,17 @@
               }
             ],
             "title": "Exercise Id"
+          },
+          "exercise_statement": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exercise Statement"
           },
           "file_hashes": {
             "additionalProperties": {
@@ -8145,7 +8404,8 @@
               "study_session",
               "quiz",
               "weekly_review",
-              "project"
+              "project",
+              "ide_check"
             ],
             "title": "Kind",
             "type": "string"
@@ -8176,6 +8436,28 @@
       },
       "JournalLinksOut": {
         "properties": {
+          "ide_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ide Run Id"
+          },
+          "ide_session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ide Session Id"
+          },
           "memory_item_id": {
             "anyOf": [
               {
@@ -8197,6 +8479,17 @@
               }
             ],
             "title": "Quiz Attempt Id"
+          },
+          "quiz_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quiz Id"
           },
           "session_id": {
             "anyOf": [
@@ -9124,6 +9417,30 @@
           "truncated"
         ],
         "title": "MapResponse",
+        "type": "object"
+      },
+      "MarketSample": {
+        "properties": {
+          "analyzed": {
+            "title": "Analyzed",
+            "type": "integer"
+          },
+          "finished_at": {
+            "format": "date-time",
+            "title": "Finished At",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "finished_at",
+          "analyzed"
+        ],
+        "title": "MarketSample",
         "type": "object"
       },
       "MasterProfileData": {
@@ -13278,6 +13595,94 @@
           "has_review"
         ],
         "title": "PostingSummaryOut",
+        "type": "object"
+      },
+      "PracticeSummary": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "elapsed_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Elapsed Ms"
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "progress": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Progress"
+          },
+          "score_percent": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score Percent"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          },
+          "version": {
+            "enum": [
+              "same",
+              "changed",
+              "unknown"
+            ],
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "created_at",
+          "version",
+          "elapsed_ms",
+          "errors",
+          "progress",
+          "total"
+        ],
+        "title": "PracticeSummary",
         "type": "object"
       },
       "PreferencesIn": {
@@ -18376,6 +18781,69 @@
         "title": "SkillLevelOut",
         "type": "object"
       },
+      "SkillMarketOut": {
+        "properties": {
+          "current": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MarketSample"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "indicative": {
+            "default": false,
+            "title": "Indicative",
+            "type": "boolean"
+          },
+          "previous": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MarketSample"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "quotes": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/SkillQuote"
+            },
+            "title": "Quotes",
+            "type": "array"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "simulation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HourSimulation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "zone": {
+            "title": "Zone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "zone",
+          "current",
+          "previous"
+        ],
+        "title": "SkillMarketOut",
+        "type": "object"
+      },
       "SkillNeedIn": {
         "properties": {
           "domain": {
@@ -18504,6 +18972,64 @@
           "evidence_count"
         ],
         "title": "SkillNodeOut",
+        "type": "object"
+      },
+      "SkillQuote": {
+        "properties": {
+          "change_points": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change Points"
+          },
+          "demand_percent": {
+            "title": "Demand Percent",
+            "type": "number"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "enum": [
+                  "declare",
+                  "en_cours",
+                  "valide",
+                  "prouve"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "opportunity": {
+            "title": "Opportunity",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "key",
+          "level",
+          "demand_percent",
+          "change_points",
+          "opportunity"
+        ],
+        "title": "SkillQuote",
         "type": "object"
       },
       "SkillWrite": {
@@ -19406,6 +19932,347 @@
           "items"
         ],
         "title": "SuggestionsOut",
+        "type": "object"
+      },
+      "SurpriseAnswerIn": {
+        "additionalProperties": false,
+        "properties": {
+          "answer": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Answer",
+            "type": "string"
+          },
+          "chat_id": {
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "title": "Chat Id",
+            "type": "string"
+          },
+          "message_id": {
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "title": "Message Id",
+            "type": "string"
+          },
+          "question_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Question Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "chat_id",
+          "question_id",
+          "message_id",
+          "answer"
+        ],
+        "title": "SurpriseAnswerIn",
+        "type": "object"
+      },
+      "SurpriseAnswerOut": {
+        "properties": {
+          "received": {
+            "default": true,
+            "title": "Received",
+            "type": "boolean"
+          }
+        },
+        "title": "SurpriseAnswerOut",
+        "type": "object"
+      },
+      "SurpriseChatIn": {
+        "additionalProperties": false,
+        "properties": {
+          "chat_id": {
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "title": "Chat Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "chat_id"
+        ],
+        "title": "SurpriseChatIn",
+        "type": "object"
+      },
+      "SurpriseDebrief": {
+        "properties": {
+          "fixes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Fixes",
+            "type": "array"
+          },
+          "improved_answer": {
+            "title": "Improved Answer",
+            "type": "string"
+          },
+          "scores": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Scores",
+            "type": "object"
+          },
+          "strengths": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Strengths",
+            "type": "array"
+          }
+        },
+        "required": [
+          "scores",
+          "strengths",
+          "fixes",
+          "improved_answer"
+        ],
+        "title": "SurpriseDebrief",
+        "type": "object"
+      },
+      "SurpriseInvitationOut": {
+        "properties": {
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "day"
+        ],
+        "title": "SurpriseInvitationOut",
+        "type": "object"
+      },
+      "SurpriseInviteOut": {
+        "properties": {
+          "invitation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SurpriseInvitationOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "SurpriseInviteOut",
+        "type": "object"
+      },
+      "SurprisePreferences": {
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "default": false,
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "role": {
+            "default": "",
+            "maxLength": 200,
+            "title": "Role",
+            "type": "string"
+          },
+          "token_id": {
+            "anyOf": [
+              {
+                "maxLength": 36,
+                "minLength": 36,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Token Id"
+          }
+        },
+        "title": "SurprisePreferences",
+        "type": "object"
+      },
+      "SurpriseQuestion": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "text"
+        ],
+        "title": "SurpriseQuestion",
+        "type": "object"
+      },
+      "SurpriseSettingsOut": {
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "default": false,
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "end": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End"
+          },
+          "role": {
+            "default": "",
+            "maxLength": 200,
+            "title": "Role",
+            "type": "string"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
+          },
+          "telegram_ready": {
+            "title": "Telegram Ready",
+            "type": "boolean"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
+          },
+          "token_id": {
+            "anyOf": [
+              {
+                "maxLength": 36,
+                "minLength": 36,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Token Id"
+          },
+          "tokens": {
+            "items": {
+              "$ref": "#/components/schemas/SurpriseTokenOption"
+            },
+            "title": "Tokens",
+            "type": "array"
+          }
+        },
+        "required": [
+          "telegram_ready",
+          "start",
+          "end",
+          "timezone",
+          "tokens"
+        ],
+        "title": "SurpriseSettingsOut",
+        "type": "object"
+      },
+      "SurpriseStartOut": {
+        "properties": {
+          "interview_id": {
+            "title": "Interview Id",
+            "type": "string"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "interview_id",
+          "session_id"
+        ],
+        "title": "SurpriseStartOut",
+        "type": "object"
+      },
+      "SurpriseStateOut": {
+        "properties": {
+          "debrief": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SurpriseDebrief"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "question": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SurpriseQuestion"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "enum": [
+              "invited",
+              "preparing",
+              "question",
+              "done",
+              "stopped",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "SurpriseStateOut",
+        "type": "object"
+      },
+      "SurpriseTokenOption": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label"
+        ],
+        "title": "SurpriseTokenOption",
         "type": "object"
       },
       "SyncTokenOut": {
@@ -20730,6 +21597,126 @@
           "verdict"
         ],
         "title": "TrialView",
+        "type": "object"
+      },
+      "UpdateAccepted": {
+        "properties": {
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id"
+        ],
+        "title": "UpdateAccepted",
+        "type": "object"
+      },
+      "UpdateChange": {
+        "properties": {
+          "after": {
+            "title": "After",
+            "type": "string"
+          },
+          "before": {
+            "title": "Before",
+            "type": "string"
+          },
+          "block": {
+            "title": "Block",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "block",
+          "before",
+          "after"
+        ],
+        "title": "UpdateChange",
+        "type": "object"
+      },
+      "UpdateView": {
+        "properties": {
+          "apis": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Apis",
+            "type": "array"
+          },
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/UpdateChange"
+            },
+            "title": "Changes",
+            "type": "array"
+          },
+          "explanation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Explanation"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "library": {
+            "title": "Library",
+            "type": "string"
+          },
+          "preparation_session_id": {
+            "title": "Preparation Session Id",
+            "type": "string"
+          },
+          "publication_session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Publication Session Id"
+          },
+          "source_url": {
+            "title": "Source Url",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "preparing",
+              "ready",
+              "stale",
+              "failed",
+              "checking",
+              "published"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "library",
+          "version",
+          "source_url",
+          "apis",
+          "state",
+          "changes",
+          "preparation_session_id"
+        ],
+        "title": "UpdateView",
         "type": "object"
       },
       "UsageOut": {
@@ -25396,6 +26383,28 @@
         ]
       }
     },
+    "/api/v1/galaxy": {
+      "get": {
+        "description": "La carte des compétences et des notes actives visibles par le compte.",
+        "operationId": "get_galaxy_api_v1_galaxy_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GalaxyView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Galaxy",
+        "tags": [
+          "galaxy"
+        ]
+      }
+    },
     "/api/v1/gap/top-missing": {
       "get": {
         "description": "Les 10 compétences absentes demandées par le plus d'offres.",
@@ -26779,6 +27788,71 @@
         ]
       }
     },
+    "/api/v1/ide/sessions/{session_id}/ghost": {
+      "get": {
+        "description": "Repères des vérifications personnelles, dont la référence du journal, sans sortie.",
+        "operationId": "ide_ghost_api_v1_ide_sessions__session_id__ghost_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "run_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 36,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PracticeSummary"
+                  },
+                  "title": "Response Ide Ghost Api V1 Ide Sessions  Session Id  Ghost Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ide Ghost",
+        "tags": [
+          "ghost"
+        ]
+      }
+    },
     "/api/v1/ide/sessions/{session_id}/notebook": {
       "get": {
         "operationId": "get_notebook_api_v1_ide_sessions__session_id__notebook_get",
@@ -27665,7 +28739,8 @@
                     "study_session",
                     "quiz",
                     "weekly_review",
-                    "project"
+                    "project",
+                    "ide_check"
                   ],
                   "type": "string"
                 },
@@ -28227,6 +29302,109 @@
         "summary": "Get Lesson Pdf",
         "tags": [
           "lessons"
+        ]
+      }
+    },
+    "/api/v1/lessons/{lesson_id}/updates": {
+      "get": {
+        "operationId": "get_updates_api_v1_lessons__lesson_id__updates_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "lesson_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Lesson Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/UpdateView"
+                  },
+                  "title": "Response Get Updates Api V1 Lessons  Lesson Id  Updates Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Updates",
+        "tags": [
+          "lesson_updates"
+        ]
+      }
+    },
+    "/api/v1/lessons/{lesson_id}/updates/{update_id}/accept": {
+      "post": {
+        "operationId": "approve_update_api_v1_lessons__lesson_id__updates__update_id__accept_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "lesson_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Lesson Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "update_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Update Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateAccepted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Approve Update",
+        "tags": [
+          "lesson_updates"
         ]
       }
     },
@@ -32505,6 +33683,71 @@
         ]
       }
     },
+    "/api/v1/quizzes/{quiz_id}/ghost": {
+      "get": {
+        "description": "Repères récents et tentative éventuellement choisie depuis le journal, sans réponses.",
+        "operationId": "quiz_ghost_api_v1_quizzes__quiz_id__ghost_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "quiz_id",
+            "required": true,
+            "schema": {
+              "title": "Quiz Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "attempt_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 36,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Attempt Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PracticeSummary"
+                  },
+                  "title": "Response Quiz Ghost Api V1 Quizzes  Quiz Id  Ghost Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Quiz Ghost",
+        "tags": [
+          "ghost"
+        ]
+      }
+    },
     "/api/v1/quizzes/{quiz_id}/questions": {
       "post": {
         "description": "Ajoute une question à un quiz prêt qui n'a pas de tentative, sans agent.",
@@ -34492,6 +35735,93 @@
         ]
       }
     },
+    "/api/v1/skill-market": {
+      "get": {
+        "operationId": "market_view_api_v1_skill_market_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 120,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Role"
+            }
+          },
+          {
+            "in": "query",
+            "name": "zone",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 120,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Zone"
+            }
+          },
+          {
+            "in": "query",
+            "name": "skill",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 120,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Skill"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SkillMarketOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Market View",
+        "tags": [
+          "skill_market"
+        ]
+      }
+    },
     "/api/v1/skills": {
       "post": {
         "description": "Ajoute une compétence au référentiel. Son niveau sera établi par ses preuves.",
@@ -35142,6 +36472,269 @@
         "summary": "Update Study",
         "tags": [
           "study"
+        ]
+      }
+    },
+    "/api/v1/surprise-interviews/invite": {
+      "post": {
+        "operationId": "surprise_invite_api_v1_surprise_interviews_invite_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SurpriseChatIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurpriseInviteOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Surprise Invite",
+        "tags": [
+          "surprise_interview"
+        ]
+      }
+    },
+    "/api/v1/surprise-interviews/settings": {
+      "get": {
+        "operationId": "surprise_settings_api_v1_surprise_interviews_settings_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurpriseSettingsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Surprise Settings",
+        "tags": [
+          "surprise_interview"
+        ]
+      },
+      "put": {
+        "operationId": "configure_surprise_api_v1_surprise_interviews_settings_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SurprisePreferences"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurpriseSettingsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Configure Surprise",
+        "tags": [
+          "surprise_interview"
+        ]
+      }
+    },
+    "/api/v1/surprise-interviews/{invitation_id}": {
+      "get": {
+        "operationId": "surprise_state_api_v1_surprise_interviews__invitation_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "invitation_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 36,
+              "title": "Invitation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "chat_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[1-9][0-9]{0,18}$",
+              "title": "Chat Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurpriseStateOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Surprise State",
+        "tags": [
+          "surprise_interview"
+        ]
+      }
+    },
+    "/api/v1/surprise-interviews/{invitation_id}/accept": {
+      "post": {
+        "operationId": "surprise_accept_api_v1_surprise_interviews__invitation_id__accept_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "invitation_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 36,
+              "title": "Invitation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SurpriseChatIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurpriseStartOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Surprise Accept",
+        "tags": [
+          "surprise_interview"
+        ]
+      }
+    },
+    "/api/v1/surprise-interviews/{invitation_id}/answer": {
+      "post": {
+        "operationId": "surprise_answer_api_v1_surprise_interviews__invitation_id__answer_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "invitation_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 36,
+              "title": "Invitation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SurpriseAnswerIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurpriseAnswerOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Surprise Answer",
+        "tags": [
+          "surprise_interview"
         ]
       }
     },

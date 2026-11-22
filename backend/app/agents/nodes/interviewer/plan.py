@@ -76,7 +76,7 @@ def make_plan(deps: GraphDeps) -> Node:
     async def plan(state: InterviewState) -> InterviewState:
         """Les questions principales (exactement `QUESTIONS_BY_DURATION`), puis la première."""
         ctx = context_of(state)
-        count = QUESTIONS_BY_DURATION[ctx.duration_min]
+        count = 3 if ctx.surprise else QUESTIONS_BY_DURATION[ctx.duration_min]
         if ctx.salary is not None:
             questions = [
                 question.model_dump()

@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+import type { LiveQuizPractice } from "@/shared/lib/ghostPanels";
 import { t } from "@/shared/i18n/t";
 import { longDay } from "@/shared/lib/format";
 import { InlineError } from "@/shared/ui/states/InlineError";
@@ -16,22 +18,32 @@ interface QuizEntryProps {
   pending: boolean;
   /** Change à chaque retour au formulaire : il repart vide. */
   round: number;
-  onSubmit: (drafts: AnswerDraft[]) => void;
+  onSubmit: (drafts: AnswerDraft[], elapsedMs?: number) => void;
+  renderGhost?: (live?: LiveQuizPractice) => ReactNode;
 }
 
 /** Avant l'envoi : les essais précédents, puis le formulaire, ou la date du nouvel essai (F9). */
 export function QuizEntry(props: QuizEntryProps) {
-  const { attempts, questions, retryOn, error, pending, round, onSubmit } = props;
+  const { attempts, questions, retryOn, error, pending, round, onSubmit, renderGhost } = props;
   return (
     <>
       <AttemptHistory attempts={attempts} />
       {error ? <InlineError message={error} /> : null}
       {retryOn !== null ? (
-        <p role="status" className="rounded-xl border bg-card p-4 text-sm">
-          {t("quiz.page.retryTooSoon", { date: longDay(retryOn) })}
-        </p>
+        <>
+          <p role="status" className="rounded-xl border bg-card p-4 text-sm">
+            {t("quiz.page.retryTooSoon", { date: longDay(retryOn) })}
+          </p>
+          {renderGhost?.()}
+        </>
       ) : (
-        <QuizForm key={round} questions={questions} disabled={pending} onSubmit={onSubmit} />
+        <QuizForm
+          key={round}
+          questions={questions}
+          disabled={pending}
+          onSubmit={onSubmit}
+          renderGhost={renderGhost}
+        />
       )}
     </>
   );

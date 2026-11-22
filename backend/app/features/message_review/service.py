@@ -1,5 +1,6 @@
 """Défi d’une seule fiche due associé au compte, au consentement et à sa discussion."""
 
+from dataclasses import dataclass
 from datetime import date, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -28,6 +29,24 @@ def _forbidden() -> AppError:
         "Ce jeton et cette discussion ne sont pas associés à une révision active.",
         403,
     )
+
+
+@dataclass(frozen=True)
+class TelegramConnection:
+    consent_id: str
+    chat_id: str
+    start: str
+    end: str
+    timezone: str
+
+
+async def telegram_connection(db: AsyncSession, user_id: str) -> TelegramConnection | None:
+    """Discussion et créneau déjà consentis, sans partager le jeton de la révision."""
+    row = await ConsentRepository(db, user_id).mine()
+    if row is None or not row.enabled or row.chat_id is None:
+        return None
+    zone = (await SettingsService(db, user_id).get()).timezone
+    return TelegramConnection(row.consent_id, row.chat_id, row.start, row.end, zone)
 
 
 class TelegramReviews:

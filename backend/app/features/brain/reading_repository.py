@@ -1,5 +1,6 @@
 from collections.abc import Collection, Sequence
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import ColumnElement, Select, and_, case, func, literal, select, true
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,6 +33,20 @@ class NoteReadingRepository:
                 MemoryItem.status == "active",
             )
         )
+
+    async def link_entries(self) -> list[tuple[str, str, str, str, dict[str, Any] | None]]:
+        """Métadonnées de résolution des notes actives. Leurs textes ne sont pas lus."""
+        stmt = self._active().with_only_columns(
+            BrainFile.folder_id,
+            BrainFile.path,
+            MemoryItem.id,
+            MemoryItem.title,
+            Document.sync_metadata,
+        )
+        return [
+            (folder, path, key, title, metadata)
+            for folder, path, key, title, metadata in await self._db.execute(stmt)
+        ]
 
     async def versions(self, ids: Collection[str]) -> dict[str, str]:
         if not ids:

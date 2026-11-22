@@ -1,3 +1,5 @@
+import type { ComponentType } from "react";
+import type { QuizGhostProps } from "@/shared/lib/ghostPanels";
 import { errorMessage } from "@/shared/api/errors";
 import { t } from "@/shared/i18n/t";
 import { ErrorState } from "@/shared/ui/states/ErrorState";
@@ -21,6 +23,7 @@ interface AttemptPanelProps {
   gradePollMs: number;
   onResend: () => void;
   onBack: () => void;
+  GhostPanel?: ComponentType<QuizGhostProps>;
 }
 
 /**
@@ -29,7 +32,8 @@ interface AttemptPanelProps {
  * échec, « Refaire le quiz » n'apparaît qu'une fois la date du nouvel essai venue (F9).
  */
 export function AttemptPanel(props: AttemptPanelProps) {
-  const { quizId, taken, refreshing, error, sending, gradePollMs, onResend, onBack } = props;
+  const { quizId, taken, refreshing, error, sending, gradePollMs, onResend, onBack, GhostPanel } =
+    props;
   const { query, budget } = useAttempt(quizId, taken.attemptId, gradePollMs);
   const attempt = query.data;
 
@@ -61,10 +65,13 @@ export function AttemptPanel(props: AttemptPanelProps) {
     );
   }
   return (
-    <AttemptResult
-      result={toAttemptResultView(attempt, taken.questions)}
-      refreshing={refreshing}
-      onBack={onBack}
-    />
+    <>
+      <AttemptResult
+        result={toAttemptResultView(attempt, taken.questions)}
+        refreshing={refreshing}
+        onBack={onBack}
+      />
+      {GhostPanel && <GhostPanel quizId={quizId} currentAttemptId={attempt.id} />}
+    </>
   );
 }

@@ -1,3 +1,5 @@
+import type { ComponentType } from "react";
+import type { QuizGhostProps } from "@/shared/lib/ghostPanels";
 import type { UseQueryResult } from "@tanstack/react-query";
 import type { PollingBudget } from "@/shared/lib/usePollingBudget";
 import type { QuizOut } from "../../types";
@@ -10,10 +12,11 @@ interface QuizBodyProps {
   query: UseQueryResult<QuizOut>;
   budget: PollingBudget;
   gradePollMs: number;
+  GhostPanel?: ComponentType<QuizGhostProps>;
 }
 
 /** Ce que la page montre selon l'état du quiz : préparation, échec ou formulaire. */
-export function QuizBody({ quiz, query, budget, gradePollMs }: QuizBodyProps) {
+export function QuizBody({ quiz, query, budget, gradePollMs, GhostPanel }: QuizBodyProps) {
   if (quiz.status === "generating") {
     return (
       <QuizPreparing
@@ -34,5 +37,13 @@ export function QuizBody({ quiz, query, budget, gradePollMs }: QuizBodyProps) {
       />
     );
   }
-  return <QuizTaking quiz={quiz} refreshing={query.isFetching} gradePollMs={gradePollMs} />;
+  return (
+    <QuizTaking
+      key={quiz.id}
+      quiz={quiz}
+      refreshing={query.isFetching}
+      gradePollMs={gradePollMs}
+      GhostPanel={GhostPanel}
+    />
+  );
 }

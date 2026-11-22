@@ -63,6 +63,21 @@ class LessonRepository(UserScopedRepository[Lesson]):
         }
         return [by_id[lesson_id] for lesson_id in previous if lesson_id in by_id][:limit]
 
+    async def update_targets(self, libraries: builtins.list[str]) -> builtins.list[Lesson]:
+        if not libraries:
+            return []
+        stmt = (
+            select(Lesson)
+            .where(
+                Lesson.user_id == self.user_id,
+                Lesson.status == "ready",
+                or_(*(Lesson.markdown.contains(library, autoescape=True) for library in libraries)),
+            )
+            .order_by(Lesson.updated_at.desc(), Lesson.id)
+            .limit(300)
+        )
+        return builtins.list(await self.session.scalars(stmt))
+
     async def get_fresh(self, lesson_id: str) -> Lesson | None:
         stmt = (
             select(Lesson)
@@ -148,6 +163,12 @@ class LessonRepository(UserScopedRepository[Lesson]):
             .execution_options(populate_existing=True)
         )
         return builtins.list((await self.session.execute(stmt)).scalars().all())
+
+    async def ready_routes(self) -> dict[str, str]:
+        stmt = select(Lesson.module_id, Lesson.id).where(
+            Lesson.user_id == self.user_id, Lesson.status == "ready"
+        )
+        return {module: lesson for module, lesson in await self.session.execute(stmt)}
 
     async def recent_settled(
         self, after: datetime | None, before: datetime | None, limit: int

@@ -24,13 +24,28 @@ from app.features.skills.repository import (
     UserSkillRepository,
     users_with_levels,
 )
-from app.features.skills.schemas import SkillCreate
+from app.features.skills.schemas import CompareOut, SkillCreate, SkillGraphOut
 
 __all__ = ["SkillLevel", "SkillsService", "higher_level", "write_weekly_snapshots"]
 
 logger = logging.getLogger(__name__)
 
 EVIDENCE_MAX = 20  # preuves gardées par compétence (les plus récentes)
+
+
+async def learning_graph(db: AsyncSession, user_id: str) -> tuple[SkillGraphOut, CompareOut | None]:
+    """Carte et écarts de l'objectif courant. Les lectures dépendent du service Programme."""
+    from app.features.skills.compare import compare_with_goal
+    from app.features.skills.map import skill_graph
+
+    graph = await skill_graph(db, user_id)
+    try:
+        target = await compare_with_goal(db, user_id, None)
+    except AppError as exc:
+        if exc.code != "no_compare_target":
+            raise
+        target = None
+    return graph, target
 
 
 def higher_level(a: SkillLevel, b: SkillLevel) -> SkillLevel:

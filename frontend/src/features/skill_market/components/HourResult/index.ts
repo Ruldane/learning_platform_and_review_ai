@@ -1,0 +1,1 @@
+export { HourResult } from "./HourResult";

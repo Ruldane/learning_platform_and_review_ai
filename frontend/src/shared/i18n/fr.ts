@@ -15,11 +15,14 @@ import { costs } from "./messages/costs";
 import { cv } from "./messages/cv";
 import { demo } from "./messages/demo";
 import { futureSelf } from "./messages/futureSelf";
+import { galaxy } from "./messages/galaxy";
 import { gap } from "./messages/gap";
+import { ghost } from "./messages/ghost";
 import { home } from "./messages/home";
 import { ide } from "./messages/ide";
 import { learning } from "./messages/learning";
 import { lessonHunt } from "./messages/lessonHunt";
+import { lessonUpdates } from "./messages/lessonUpdates";
 import { lessons } from "./messages/lessons";
 import { mcp } from "./messages/mcp";
 import { memory } from "./messages/memory";
@@ -37,8 +40,10 @@ import { replan } from "./messages/replan";
 import { research } from "./messages/research";
 import { session } from "./messages/session";
 import { settings } from "./messages/settings";
+import { skillMarket } from "./messages/skillMarket";
 import { skills } from "./messages/skills";
 import { study } from "./messages/study";
+import { surpriseInterview } from "./messages/surpriseInterview";
 import { training } from "./messages/training";
 
 /**
@@ -63,14 +68,18 @@ export const fr = {
   research,
   program,
   lessonHunt,
+  lessonUpdates,
   lessons,
   learning,
   study,
+  surpriseInterview,
   training,
   oncall,
   paperLab,
   podcast,
+  ghost,
   quiz,
+  skillMarket,
   skills,
   replan,
   capture,
@@ -85,6 +94,7 @@ export const fr = {
   home,
   radar,
   futureSelf,
+  galaxy,
   reading,
   projects,
   mcp,

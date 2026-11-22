@@ -153,6 +153,9 @@ class Interview(UserScopedMixin, Base):
     duration_min: Mapped[int] = mapped_column(Integer)  # 15, 30 ou 45
     language: Mapped[str] = mapped_column(String(2))  # « fr » ou « en »
     salary: Mapped[dict[str, Any] | None] = mapped_column(default=None)
+    surprise_invitation_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("surprise_interview_invitations.id", ondelete="RESTRICT")
+    )
     session_id: Mapped[str] = mapped_column(String(36))
     status: Mapped[str] = mapped_column(String(16), default="running")
     exchanges: Mapped[list[Any]] = mapped_column(default=list)

@@ -12,9 +12,12 @@ import {
 import { following } from "./useConversation";
 
 const key = (id?: string) => ["conversations", "training", id ?? "open"] as const;
-export const trainingPath = (id: string) => studySessionPath(id, "training");
+export function trainingPath(id: string, skillId = "") {
+  const path = studySessionPath(id, "training");
+  return skillId ? `${path}?${new URLSearchParams({ competence: skillId })}` : path;
+}
 
-export function useTraining(studyId?: string) {
+export function useTraining(studyId?: string, skillId = "") {
   const client = useQueryClient();
   const navigate = useNavigate();
   const [submitted, setSubmitted] = useState<string | null>(null);
@@ -35,7 +38,7 @@ export function useTraining(studyId?: string) {
     onSuccess: (session) => {
       setSubmitted(null);
       update(session);
-      void navigate(trainingPath(session.id));
+      void navigate(trainingPath(session.id, skillId));
     },
   });
   const change = useMutation({

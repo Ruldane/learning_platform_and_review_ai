@@ -1,0 +1,1 @@
+export { IdeGhostPanel } from "./IdeGhostPanel";

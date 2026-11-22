@@ -1,9 +1,12 @@
 """Données du parcours qui transforme un article lu en exercice Python."""
 
+import re
 from dataclasses import dataclass
 from typing import Protocol
 
 from pydantic import BaseModel, Field
+
+from app.core.errors import AppError
 
 PAPER_GRAPH = "paper_lab"
 
@@ -17,6 +20,7 @@ class ExperimentDraft(BaseModel):
 class PaperDraft(BaseModel):
     title: str = Field(min_length=3, max_length=180)
     course: str = Field(min_length=150, max_length=20_000)
+    source_quote: str = Field(min_length=20, max_length=450)
     experiment: ExperimentDraft
 
 
@@ -25,6 +29,15 @@ class ArticleSource:
     url: str
     title: str
     material: str
+
+
+def cited_course(source: ArticleSource, draft: PaperDraft) -> str:
+    """Le cours cite un extrait vérifié du texte remis au Rédacteur."""
+    quote = " ".join(draft.source_quote.split())
+    if len(quote) < 20 or quote not in " ".join(source.material.split()):
+        raise AppError("paper_lab_citation", "L’extrait cité ne figure pas dans l’article lu.", 422)
+    literal = re.sub(r"([\\\x60*_{}\[\]()<>#!|])", r"\\\1", quote)
+    return f"{draft.course}\n\n## Extrait de l’article\n\n> {literal}"
 
 
 @dataclass(frozen=True)

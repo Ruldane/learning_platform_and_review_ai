@@ -24,7 +24,7 @@ QuestionType = Literal["qcm", "short", "code", "explain"]
 AttemptStatus = Literal["grading", "graded", "failed"]
 StudyMode = Literal["socratic", "feynman", "direct"]
 StudyStatus = Literal["open", "finished", "cancelled"]
-JournalKind = Literal["capture", "study_session", "quiz", "weekly_review", "project"]
+JournalKind = Literal["capture", "study_session", "quiz", "weekly_review", "project", "ide_check"]
 CardSource = Literal["lesson", "quiz", "study", "capture", "interview"]
 
 
@@ -80,6 +80,8 @@ class QuizAttempt(UserScopedMixin, Base):
 
     quiz_id: Mapped[str] = mapped_column(String(36), ForeignKey("quizzes.id", ondelete="CASCADE"))
     answers: Mapped[list[Any]] = mapped_column(default=list)
+    question_version: Mapped[str | None] = mapped_column(String(64), default=None)
+    elapsed_ms: Mapped[int | None] = mapped_column(Integer, default=None)
     status: Mapped[str] = mapped_column(String(8), default="grading")
     score: Mapped[int | None] = mapped_column(Integer, default=None)
     results: Mapped[list[Any] | None] = mapped_column(default=None)

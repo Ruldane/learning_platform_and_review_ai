@@ -7,6 +7,7 @@ const KINDS: readonly JournalKindView[] = [
   "capture",
   "study_session",
   "quiz",
+  "ide_check",
   "weekly_review",
   "project",
 ];

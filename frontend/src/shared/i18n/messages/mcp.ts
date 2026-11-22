@@ -170,6 +170,7 @@ export const mcp = {
   level: { l0: "Refusé", l1: "Lecture", l2: "Écriture annulable", l3: "À confirmer" },
   /** Les noms des features du back ; une feature inconnue garde son nom brut. */
   features: {
+    surprise_interview: "Entretien surprise",
     message_review: "Révision par messagerie",
     activity: "Activité",
     applications: "Candidatures",
@@ -181,8 +182,11 @@ export const mcp = {
     contributions: "Contributions open source",
     costs: "Coûts",
     cv: "CV et profil",
+    lesson_updates: "Veille des versions des leçons",
     future_self: "Ton futur toi",
+    galaxy: "Galaxie du savoir",
     gap: "Écarts de compétences",
+    ghost: "Course contre ton fantôme",
     ide: "IDE Python",
     learning: "Objectifs et conseil",
     lesson_hunt: "Chasse aux erreurs",
@@ -199,6 +203,7 @@ export const mcp = {
     reading_stack: "Pile de lecture",
     replan: "Replanification",
     research: "Recherche web",
+    skill_market: "Bourse des compétences",
     skills: "Compétences",
     study: "Étudier",
   },

@@ -75,6 +75,9 @@ def _out(row: JournalEntry) -> JournalEntryOut:
     study_kind: Literal["guided", "training"] = (
         "training" if row.data.get("kind") == "training" else "guided"
     )
+    quiz_id = row.data.get("quiz_id") if row.kind == "quiz" else None
+    ide_links = row.data if row.kind == "ide_check" else {}
+    ide_session, ide_run = ide_links.get("ide_session_id"), ide_links.get("ide_run_id")
     return JournalEntryOut(
         id=row.id,
         kind=row.kind,  # type: ignore[arg-type]  # colonne texte, valeurs de JournalKind
@@ -86,6 +89,9 @@ def _out(row: JournalEntry) -> JournalEntryOut:
             study_session_id=row.study_session_id,
             study_session_kind=study_kind if row.study_session_id is not None else None,
             quiz_attempt_id=row.quiz_attempt_id,
+            quiz_id=quiz_id if isinstance(quiz_id, str) else None,
+            ide_session_id=ide_session if isinstance(ide_session, str) else None,
+            ide_run_id=ide_run if isinstance(ide_run, str) else None,
             memory_item_id=row.memory_item_id,
         ),
     )

@@ -15,6 +15,7 @@ from app.db.models import (
     ide_gateway,
     learning,
     lesson_hunt,
+    lesson_updates,
     lessons,
     mcp,
     memory,
@@ -28,6 +29,7 @@ from app.db.models import (
     research,
     skills,
     study,
+    surprise_interview,
 )
 
 __all__ = [
@@ -46,6 +48,7 @@ __all__ = [
     "ide_gateway",
     "learning",
     "lesson_hunt",
+    "lesson_updates",
     "lessons",
     "mcp",
     "memory",
@@ -59,4 +62,5 @@ __all__ = [
     "research",
     "skills",
     "study",
+    "surprise_interview",
 ]

@@ -6,4 +6,5 @@ export interface TakenAttempt {
   questions: QuestionView[];
   /** `null` quand l'essai est une correction reprise après un rechargement de la page. */
   drafts: AnswerDraft[] | null;
+  elapsedMs?: number;
 }

@@ -48,6 +48,7 @@ describe("registre des features", () => {
     ]);
     expect(groups[3]?.items).toEqual([
       { labelKey: "skills.nav.map", path: "/competences" },
+      { labelKey: "galaxy.nav", path: "/competences/galaxie" },
       { labelKey: "projects.nav.portfolio", path: "/competences/portfolio" },
       { labelKey: "contributions.title", path: "/competences/contributions" },
     ]);
@@ -58,6 +59,7 @@ describe("registre des features", () => {
       { labelKey: "gap.nav.overview", path: "/carriere/ecarts" },
       { labelKey: "radar.nav.radar", path: "/carriere/radar" },
       { labelKey: "futureSelf.title", path: "/carriere/futur" },
+      { labelKey: "skillMarket.title", path: "/carriere/competences" },
     ]);
     expect(groups[5]?.items.map((item) => item.path)).toEqual([
       "/candidatures",
@@ -84,6 +86,7 @@ describe("registre des features", () => {
       { labelKey: "account.nav.data", path: "/reglages/donnees" },
       { labelKey: "mcp.nav.access", path: "/reglages/mcp" },
       { labelKey: "messageReview.title", path: "/reglages/revision-messagerie" },
+      { labelKey: "surpriseInterview.title", path: "/reglages/entretien-surprise" },
     ]);
   });
 

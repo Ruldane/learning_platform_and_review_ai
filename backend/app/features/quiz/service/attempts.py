@@ -21,6 +21,7 @@ from app.core.played import inherit_source
 from app.db.models.study import QuizAttempt, QuizQuestion
 from app.features.quiz.repository import AttemptRepository, QuestionRepository
 from app.features.quiz.schemas import AnswerIn, AttemptCreate, AttemptOut, AttemptStarted
+from app.features.quiz.service.ghost import question_version
 from app.features.quiz.service.quizzes import graded_count, owned_quiz
 from app.features.quiz.service.runtime import GRAPH, SUBJECT, QuizRuntime
 from app.features.quiz.service.scoring import passed
@@ -139,7 +140,13 @@ async def _insert(
         raise attempt_in_progress()
     await repo.fail_grading(stale)
     try:
-        attempt = await repo.add(quiz_id=quiz_id, answers=answers, status="grading")
+        attempt = await repo.add(
+            quiz_id=quiz_id,
+            answers=answers,
+            status="grading",
+            question_version=question_version(questions),
+            elapsed_ms=body.elapsed_ms,
+        )
         await db.commit()
     except IntegrityError:
         await db.rollback()

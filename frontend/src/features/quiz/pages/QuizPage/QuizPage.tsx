@@ -1,3 +1,5 @@
+import type { ComponentType } from "react";
+import type { QuizGhostProps } from "@/shared/lib/ghostPanels";
 import { Link, useNavigate, useParams } from "react-router";
 import { ApiError, errorMessage } from "@/shared/api/errors";
 import { t } from "@/shared/i18n/t";
@@ -13,6 +15,7 @@ interface QuizPageProps {
   /** Intervalles de relecture, en ms (réduits par les tests). */
   preparePollMs?: number;
   gradePollMs?: number;
+  GhostPanel?: ComponentType<QuizGhostProps>;
 }
 
 /**
@@ -23,6 +26,7 @@ interface QuizPageProps {
 export function QuizPage({
   preparePollMs = PREPARE_POLL_MS,
   gradePollMs = GRADE_POLL_MS,
+  GhostPanel,
 }: QuizPageProps) {
   const { quizId = "" } = useParams();
   const navigate = useNavigate();
@@ -52,7 +56,13 @@ export function QuizPage({
       {query.isError && !query.isFetching ? (
         <InlineError message={errorMessage(query.error)} onRetry={() => void query.refetch()} />
       ) : null}
-      <QuizBody quiz={query.data} query={query} budget={budget} gradePollMs={gradePollMs} />
+      <QuizBody
+        quiz={query.data}
+        query={query}
+        budget={budget}
+        gradePollMs={gradePollMs}
+        GhostPanel={GhostPanel}
+      />
     </div>
   );
 }

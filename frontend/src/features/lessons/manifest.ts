@@ -1,6 +1,7 @@
 import { createElement, type ComponentType } from "react";
 import type { FeatureManifest } from "@/shared/lib/feature";
 import { LessonPage } from "./pages/LessonPage";
+import type { LessonUpdatesPanelProps } from "./pages/LessonPage/LessonPage";
 import type { LessonConversationPanelProps } from "./pages/LessonPage/PublishedLesson";
 import { LessonsPage } from "./pages/LessonsPage";
 import { LibraryPage } from "./pages/LibraryPage";
@@ -12,6 +13,7 @@ import { LibraryPage } from "./pages/LibraryPage";
  */
 export function makeLessonsManifest(
   conversationPanel?: ComponentType<LessonConversationPanelProps>,
+  updatesPanel?: ComponentType<LessonUpdatesPanelProps>,
 ): FeatureManifest {
   return {
     id: "lessons",
@@ -19,7 +21,7 @@ export function makeLessonsManifest(
       { path: "apprendre/lecons", Component: LessonsPage },
       {
         path: "apprendre/lecons/:lessonId",
-        element: createElement(LessonPage, { conversationPanel }),
+        element: createElement(LessonPage, { conversationPanel, updatesPanel }),
         handle: { wide: true },
       },
       { path: "apprendre/bibliotheque", Component: LibraryPage },

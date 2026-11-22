@@ -11,7 +11,13 @@ import { LessonNav } from "./LessonNav";
 import { LessonPreparing } from "./LessonPreparing";
 import { PublishedLesson, type LessonConversationPanelProps } from "./PublishedLesson";
 
+export interface LessonUpdatesPanelProps {
+  lessonId: string;
+  onPublication: () => void;
+}
+
 interface LessonPageProps {
+  updatesPanel?: ComponentType<LessonUpdatesPanelProps>;
   conversationPanel?: ComponentType<LessonConversationPanelProps>;
 }
 
@@ -19,7 +25,7 @@ interface LessonPageProps {
  * Leçon (`/apprendre/lecons/:lessonId`) : le lecteur, les ressources du module et le PDF quand la
  * leçon est prête ; sinon l'état de sa préparation, dit clairement.
  */
-export function LessonPage({ conversationPanel }: LessonPageProps) {
+export function LessonPage({ conversationPanel, updatesPanel: Updates }: LessonPageProps) {
   const { lessonId = "" } = useParams();
   const lesson = useLesson(lessonId);
   const resources = useResourceStatus();
@@ -47,6 +53,7 @@ export function LessonPage({ conversationPanel }: LessonPageProps) {
       {published ? (
         <>
           {verification}
+          {Updates && <Updates lessonId={data.id} onPublication={() => void lesson.refetch()} />}
           <PublishedLesson
             key={data.id}
             lesson={data}

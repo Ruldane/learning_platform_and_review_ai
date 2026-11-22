@@ -64,6 +64,7 @@ describe("QuizPage", () => {
     expect(screen.getByText("Que fait PUT ?")).toBeInTheDocument();
     expect(posts).toEqual([
       {
+        elapsed_ms: expect.any(Number),
         answers: [
           { question_id: "q1", choice: 0, text: "" },
           { question_id: "q2", choice: null, text: "Remplace" },

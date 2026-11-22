@@ -19,6 +19,7 @@ from app.features.ide.service.errors import (
     run_refused,
     sandbox_unavailable,
 )
+from app.features.ide.service.ghost import record_finished_check
 from app.features.ide.service.signature import error_signature
 from app.features.skills.service import SkillsService
 from app.providers.sandbox.base import (
@@ -99,9 +100,12 @@ async def _freeze(ctx: IdeContext, run: IdeRun, progress: SandboxProgress | None
     await ctx.db.flush()
     logger.info("Exécution %s terminée : %s", run.id, run.status)
     # Seule une vérification de January valide l'exercice : celle de Claude ne compte pas.
-    if run.kind == "check" and run.status == "done" and run.exit_code == 0 and run.origin == "app":
-        await _record_pass(ctx, session)
-        await ctx.db.flush()
+    if run.kind == "check" and run.status == "done" and run.origin == "app":
+        if run.exit_code == 0:
+            await _record_pass(ctx, session)
+            await ctx.db.flush()
+        if run.exit_code is not None and session.exercise_id is not None:
+            await record_finished_check(ctx.db, run)
 
 
 async def _settle(ctx: IdeContext, run: IdeRun) -> bool:

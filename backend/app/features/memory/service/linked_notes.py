@@ -2,6 +2,7 @@
 
 import posixpath
 from collections import defaultdict
+from collections.abc import Iterable
 from unicodedata import normalize
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,6 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.models.memory import MemoryItem
 from app.features.memory.repository.linked_notes import NoteCandidate, active_folder_notes
 from app.features.memory.schemas import LinkedNoteOut
+
+__all__ = ["NoteCandidate", "NoteLinkIndex", "linked_notes"]
 
 
 def _key(name: str) -> str:
@@ -43,27 +46,41 @@ def _index_candidates(
     return names, paths
 
 
+class NoteLinkIndex:
+    """Un index par dossier, réutilisable pour chaque note du dossier."""
+
+    def __init__(self, candidates: list[NoteCandidate]) -> None:
+        self._names, self._paths = _index_candidates(candidates)
+
+    def _matches(self, link: str, path: str) -> set[NoteCandidate] | None:
+        if "/" in link:
+            key = _resolve_path(link, path)
+            return self._paths.get(key) if key is not None else None
+        return self._names.get(_key(link))
+
+    def targets(self, origin: NoteCandidate, links: Iterable[object]) -> list[NoteCandidate]:
+        found: dict[str, NoteCandidate] = {}
+        for link in links:
+            if not isinstance(link, str):
+                continue
+            matches = self._matches(link, origin.path)
+            if matches and len(matches) == 1:
+                (note,) = matches
+                if note.item_id != origin.item_id:
+                    found[note.item_id] = note
+        return list(found.values())
+
+
 async def linked_notes(db: AsyncSession, item: MemoryItem) -> list[LinkedNoteOut]:
     meta = (item.meta or {}).get("sync_metadata")
     links = meta.get("links") if isinstance(meta, dict) else None
     if not isinstance(links, list) or not links:
         return []
     candidates = await active_folder_notes(db, item.user_id, item.id)
-    origin = next((note.path for note in candidates if note.item_id == item.id), None)
+    origin = next((note for note in candidates if note.item_id == item.id), None)
     if origin is None:
         return []
-    names, paths = _index_candidates(candidates)
-    found: dict[str, LinkedNoteOut] = {}
-    for link in links:
-        if not isinstance(link, str):
-            continue
-        if "/" in link:
-            key = _resolve_path(link, origin)
-            matches = paths.get(key) if key is not None else None
-        else:
-            matches = names.get(_key(link))
-        if matches and len(matches) == 1:
-            (note,) = matches
-            if note.item_id != item.id:
-                found[note.item_id] = LinkedNoteOut(item_id=note.item_id, title=note.title)
-    return list(found.values())
+    return [
+        LinkedNoteOut(item_id=note.item_id, title=note.title)
+        for note in NoteLinkIndex(candidates).targets(origin, links)
+    ]

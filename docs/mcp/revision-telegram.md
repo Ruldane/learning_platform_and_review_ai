@@ -12,3 +12,5 @@ Dans ta discussion privée Telegram, demande à Nod l’identifiant numérique d
 4. Uniquement après ce choix explicite, appelle `message_review_answer` avec ces deux identifiants et `result: "ok"` ou `"fail"`. Relaie l’avis sans l’inférer du texte. Le rejeu du même avis donne la même échéance. Un avis différent sur le même défi est refusé. Un défi sans avis expire à la fin du jour local. L’ancienne route de révision de fiches reste un geste réservé à l’interface.
 
 Le branchement Telegram appartient à l’instance de Nod. La recette Tremplin simule son transport avec le vrai protocole MCP sur l’application locale et une discussion de test.
+
+[Entretien surprise avec Nod](entretien-surprise.md) utilise la même discussion et un consentement distinct.

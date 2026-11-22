@@ -108,6 +108,30 @@ describe("JournalPage", () => {
     );
   });
 
+  it("opens the exact finished IDE check as the practice reference", async () => {
+    setup([
+      {
+        entries: [
+          entryOut("ide-entry", {
+            kind: "ide_check",
+            links: {
+              session_id: null,
+              study_session_id: null,
+              quiz_attempt_id: null,
+              memory_item_id: null,
+              ide_session_id: "session-1",
+              ide_run_id: "run-1",
+            },
+          }),
+        ],
+        next_before: null,
+      },
+    ]);
+    expect(
+      await screen.findByRole("link", { name: "Courir contre cette tentative" }),
+    ).toHaveAttribute("href", "/code/session-1?fantome=run-1");
+  });
+
   it("keeps the filter and its focus while the new type loads (revue finale 5, C-m2)", async () => {
     const { user } = setup([
       { entries: [entryOut("e1")], next_before: null },

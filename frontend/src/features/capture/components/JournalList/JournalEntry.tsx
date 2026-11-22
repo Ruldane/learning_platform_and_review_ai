@@ -21,11 +21,16 @@ export function JournalEntry({ entry }: JournalEntryProps) {
         </time>
       </p>
       <p className="break-words whitespace-pre-line text-sm">{entry.text}</p>
-      {entry.studySessionPath || entry.memoryItemId ? (
+      {entry.studySessionPath || entry.memoryItemId || entry.practicePath ? (
         <p className="flex flex-wrap gap-x-4 text-sm">
           {entry.studySessionPath ? (
             <Link to={entry.studySessionPath} className="underline">
               {t("capture.journal.openStudy")}
+            </Link>
+          ) : null}
+          {entry.practicePath ? (
+            <Link to={entry.practicePath} className="underline">
+              {t("ghost.journal")}
             </Link>
           ) : null}
           {entry.memoryItemId ? (

@@ -182,6 +182,11 @@ async def ready_lesson_id(db: AsyncSession, user_id: str, module_id: str) -> str
     return lesson.id if lesson is not None and lesson.status == "ready" else None
 
 
+async def published_lesson_routes(db: AsyncSession, user_id: str) -> dict[str, str]:
+    """Identifiants de chapitres publiés par module, sans lire le contenu."""
+    return await LessonRepository(db, user_id).ready_routes()
+
+
 @dataclass(frozen=True)
 class RecentLesson:
     id: str

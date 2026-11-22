@@ -39,6 +39,9 @@ class JournalLinksOut(BaseModel):
     study_session_id: str | None
     study_session_kind: Literal["guided", "training"] | None = None
     quiz_attempt_id: str | None
+    quiz_id: str | None = None
+    ide_session_id: str | None = None
+    ide_run_id: str | None = None
     memory_item_id: str | None
 
 

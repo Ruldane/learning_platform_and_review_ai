@@ -47,12 +47,14 @@ MCP = FeatureMcp(
             1,
             "ide_get_session",
             "Une séance : fichiers, exercice, dernière exécution.",
+            untrusted=("exercise_statement",),
         ),
         McpAction(
             "POST /ide/sessions",
             2,
             "ide_create_session",
             "Ouvre une séance de code, libre ou sur un exercice.",
+            untrusted=("exercise_statement",),
         ),
         McpAction(
             "POST /ide/sessions/{session_id}/runs",
@@ -111,6 +113,7 @@ MCP = FeatureMcp(
             "(`test_*.py`, `*_test.py`, `conftest.py`) : 403 mcp_ide_test_file, ce sont les "
             "siens. Annulable depuis « Accès MCP ».",
             body_fields=frozenset({"files", "base_hash"}),
+            untrusted=("exercise_statement",),
         ),
         McpAction(
             "POST /ide/sessions/{session_id}/files",
@@ -118,6 +121,7 @@ MCP = FeatureMcp(
             "ide_create_project_file",
             "Ajoute un fichier au projet si l’écriture MCP a été autorisée. "
             "Prends la version `files_version` de `ide_get_session`.",
+            untrusted=("exercise_statement",),
         ),
         McpAction(
             "PATCH /ide/sessions/{session_id}/files",
@@ -125,12 +129,14 @@ MCP = FeatureMcp(
             "ide_rename_project_file",
             "Renomme un fichier du projet si l’écriture MCP a été autorisée. "
             "Prends la version `files_version` de `ide_get_session`.",
+            untrusted=("exercise_statement",),
         ),
         McpAction(
             "DELETE /ide/sessions/{session_id}/files",
             3,
             "ide_delete_project_file",
             "Supprime un fichier du projet : demande à confirmer.",
+            untrusted=("exercise_statement",),
         ),
     ),
     graphs=(McpGraph("ide_teacher", follow_only=True), McpGraph("ide_exercise", follow_only=True)),

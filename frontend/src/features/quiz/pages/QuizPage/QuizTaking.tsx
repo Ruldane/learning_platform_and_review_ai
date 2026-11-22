@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
-import type { AnswerDraft, QuestionView } from "../../components/viewTypes";
+import type { QuizGhostProps } from "@/shared/lib/ghostPanels";
+import { useMemo, useState, type ComponentType } from "react";
+import type { AnswerDraft } from "../../components/viewTypes";
 import { useSubmitAttempt } from "../../hooks/useSubmitAttempt";
 import { pendingRetryOn, toQuestionViews } from "../../toView";
 import type { QuizOut } from "../../types";
@@ -12,6 +13,7 @@ interface QuizTakingProps {
   /** Le quiz est en cours de relecture (après une note) : l'ordre des questions peut changer. */
   refreshing: boolean;
   gradePollMs: number;
+  GhostPanel?: ComponentType<QuizGhostProps>;
 }
 
 /** Une correction déjà en cours (page rechargée) est reprise : l'ordre affiché n'a pas changé depuis. */
@@ -28,15 +30,15 @@ function resumeGrading(quiz: QuizOut): TakenAttempt | null {
  * déjà l'ordre du prochain essai (F27). Après un échec, tant que la date du nouvel essai n'est pas
  * venue, la date remplace le formulaire (le back refuserait l'envoi : 409 `retry_too_soon`).
  */
-export function QuizTaking({ quiz, refreshing, gradePollMs }: QuizTakingProps) {
+export function QuizTaking({ quiz, refreshing, gradePollMs, GhostPanel }: QuizTakingProps) {
   const submitter = useSubmitAttempt(quiz.id);
   const [round, setRound] = useState(0);
   const [taken, setTaken] = useState<TakenAttempt | null>(() => resumeGrading(quiz));
   const questions = useMemo(() => toQuestionViews(quiz.questions), [quiz.questions]);
 
-  const send = async (drafts: AnswerDraft[], shown: QuestionView[] = questions) => {
-    const attemptId = await submitter.submit(drafts);
-    if (attemptId) setTaken({ attemptId, questions: shown, drafts });
+  const send = async (drafts: AnswerDraft[], elapsedMs?: number, shown = questions) => {
+    const attemptId = await submitter.submit(drafts, elapsedMs);
+    if (attemptId) setTaken({ attemptId, questions: shown, drafts, elapsedMs });
   };
   const back = () => {
     submitter.release();
@@ -46,7 +48,7 @@ export function QuizTaking({ quiz, refreshing, gradePollMs }: QuizTakingProps) {
   const resend = () => {
     if (!taken?.drafts) return;
     submitter.release();
-    void send(taken.drafts, taken.questions);
+    void send(taken.drafts, taken.elapsedMs, taken.questions);
   };
 
   if (taken) {
@@ -61,6 +63,7 @@ export function QuizTaking({ quiz, refreshing, gradePollMs }: QuizTakingProps) {
         gradePollMs={gradePollMs}
         onResend={resend}
         onBack={back}
+        GhostPanel={GhostPanel}
       />
     );
   }
@@ -72,7 +75,8 @@ export function QuizTaking({ quiz, refreshing, gradePollMs }: QuizTakingProps) {
       error={submitter.error}
       pending={submitter.pending}
       round={round}
-      onSubmit={(drafts) => void send(drafts)}
+      onSubmit={(drafts, elapsedMs) => void send(drafts, elapsedMs)}
+      renderGhost={GhostPanel ? (live) => <GhostPanel quizId={quiz.id} live={live} /> : undefined}
     />
   );
 }

@@ -9,6 +9,7 @@ from typing import Any
 from sqlalchemy import Select, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.practice import RECENT_PRACTICE
 from app.db.models.agents import AgentSession, LlmCall
 from app.db.models.ide import IdeExercise, IdeNote, IdePreference, IdeRun, IdeSession
 from app.db.repository import UserScopedRepository
@@ -118,6 +119,34 @@ class RunRepository(UserScopedRepository[IdeRun]):
             .execution_options(populate_existing=True)
         )
         return builtins.list((await self.session.execute(stmt)).scalars().all())
+
+    async def recent_for_exercise(
+        self, exercise_id: str, version: str | None, run_id: str | None = None
+    ) -> builtins.list[tuple[IdeRun, str | None]]:
+        scope = (
+            select(IdeRun, IdeSession.exercise_version)
+            .join(IdeSession, IdeSession.id == IdeRun.session_id)
+            .where(
+                IdeSession.user_id == self.user_id,
+                IdeSession.exercise_id == exercise_id,
+                IdeRun.user_id == self.user_id,
+                IdeRun.kind == "check",
+                IdeRun.origin == "app",
+                IdeRun.status != "running",
+            )
+        )
+        recent = scope.order_by(
+            (IdeSession.exercise_version == version).desc(),
+            IdeRun.created_at.desc(),
+            IdeRun.id.desc(),
+        ).limit(RECENT_PRACTICE)
+        checks = [(run, fingerprint) for run, fingerprint in await self.session.execute(recent)]
+        if run_id and all(run.id != run_id for run, _ in checks):
+            picked = (await self.session.execute(scope.where(IdeRun.id == run_id))).one_or_none()
+            if picked is not None:
+                run, fingerprint = picked
+                checks.append((run, fingerprint))
+        return checks
 
     async def running(self) -> builtins.list[IdeRun]:
         """Les exécutions que le bac n'a pas encore rendues (au plus une par utilisatrice)."""

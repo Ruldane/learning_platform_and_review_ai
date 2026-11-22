@@ -48,9 +48,12 @@ export interface AnswerBody {
  * `POST /quizzes/{id}/attempts` : envoie les réponses et lance la notation (202). 409
  * `retry_too_soon` (`details.retry_on`), `attempt_in_progress`, `quiz_not_ready` ; 422.
  */
-export async function createAttempt(quizId: string, answers: AnswerBody[]) {
+export async function createAttempt(quizId: string, answers: AnswerBody[], elapsedMs?: number) {
   return unwrap(
-    await api.POST("/quizzes/{quiz_id}/attempts", { ...quizPath(quizId), body: { answers } }),
+    await api.POST("/quizzes/{quiz_id}/attempts", {
+      ...quizPath(quizId),
+      body: { answers, elapsed_ms: elapsedMs },
+    }),
   );
 }
 

@@ -2,6 +2,7 @@
 module qui enseigne une compétence (prochaine action) et les compétences d'un programme (cible
 de la comparaison). Les noms sont comparés normalisés (`normalize_skill_name`)."""
 
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -33,13 +34,28 @@ def _norms(module: Module) -> list[str]:
 async def module_teaching(db: AsyncSession, user_id: str, norm_name: str) -> SkillModule | None:
     """Le premier module non sauté qui enseigne la compétence (nom normalisé) : programmes
     validés seulement, le plus récent d'abord, puis dans l'ordre du programme ; `None` sinon."""
+    async for module in _teaching_modules(db, user_id):
+        if norm_name in _norms(module):
+            return SkillModule(module.id, module.program_id, module.title)
+    return None
+
+
+async def _teaching_modules(db: AsyncSession, user_id: str) -> AsyncIterator[Module]:
     for program in await ProgramRepository(db, user_id).list_recent():
         if program.status != "validated":
             continue
         for module in (await load(db, user_id, program.id)).modules:
-            if not module.skipped and norm_name in _norms(module):
-                return SkillModule(module.id, program.id, module.title)
-    return None
+            if not module.skipped:
+                yield module
+
+
+async def teaching_module_ids(db: AsyncSession, user_id: str) -> dict[str, list[str]]:
+    """Modules enseignant chaque compétence normalisée, dans le même ordre."""
+    modules: dict[str, list[str]] = {}
+    async for module in _teaching_modules(db, user_id):
+        for norm in dict.fromkeys(_norms(module)):
+            modules.setdefault(norm, []).append(module.id)
+    return modules
 
 
 async def program_skill_names(db: AsyncSession, user_id: str, program_id: str) -> list[str]:

@@ -14,12 +14,17 @@ import { costsManifest } from "@/features/costs/manifest";
 import { cvManifest } from "@/features/cv/manifest";
 import { demoManifest } from "@/features/demo/manifest";
 import { futureSelfManifest } from "@/features/future_self/manifest";
+import { galaxyManifest } from "@/features/galaxy/manifest";
 import { gapManifest } from "@/features/gap/manifest";
+import { IdeGhostPanel } from "@/features/ghost/pages/IdeGhostPanel";
+import { QuizGhostPanel } from "@/features/ghost/pages/QuizGhostPanel";
 import { healthManifest } from "@/features/health/manifest";
 import { homeManifest } from "@/features/home/manifest";
-import { ideManifest } from "@/features/ide/manifest";
+import { makeIdeManifest } from "@/features/ide/manifest";
 import { learningManifest } from "@/features/learning/manifest";
 import { lessonHuntManifest } from "@/features/lesson_hunt/manifest";
+import { lessonUpdatesManifest } from "@/features/lesson_updates/manifest";
+import { LessonUpdates } from "@/features/lesson_updates/pages/LessonUpdates";
 import { makeLessonsManifest } from "@/features/lessons/manifest";
 import { mcpManifest } from "@/features/mcp/manifest";
 import { memoryManifest } from "@/features/memory/manifest";
@@ -29,14 +34,16 @@ import { paperLabManifest } from "@/features/paper_lab/manifest";
 import { podcastManifest } from "@/features/podcast/manifest";
 import { programManifest } from "@/features/program/manifest";
 import { projectsManifest } from "@/features/projects/manifest";
-import { quizManifest } from "@/features/quiz/manifest";
+import { makeQuizManifest } from "@/features/quiz/manifest";
 import { radarManifest } from "@/features/radar/manifest";
 import { readingManifest } from "@/features/reading_stack/manifest";
 import { replanManifest } from "@/features/replan/manifest";
 import { researchManifest } from "@/features/research/manifest";
 import { settingsManifest } from "@/features/settings/manifest";
+import { skillMarketManifest } from "@/features/skill_market/manifest";
 import { skillsManifest } from "@/features/skills/manifest";
 import { studyManifest } from "@/features/study/manifest";
+import { surpriseInterviewManifest } from "@/features/surprise_interview/manifest";
 import type { FeatureManifest } from "@/shared/lib/feature";
 
 /** Liste des features : ajouter une feature = un dossier + une ligne ici. */
@@ -46,7 +53,8 @@ export const FEATURES: FeatureManifest[] = [
   healthManifest,
   learningManifest,
   programManifest,
-  makeLessonsManifest(LessonConversation),
+  makeLessonsManifest(LessonConversation, LessonUpdates),
+  lessonUpdatesManifest,
   lessonHuntManifest,
   bookManifest,
   bossManifest,
@@ -54,9 +62,11 @@ export const FEATURES: FeatureManifest[] = [
   conversationsManifest,
   studyManifest,
   podcastManifest,
-  quizManifest,
+  makeQuizManifest(QuizGhostPanel),
   captureManifest,
+  skillMarketManifest,
   skillsManifest,
+  galaxyManifest,
   projectsManifest,
   contributionsManifest,
   gapManifest,
@@ -70,12 +80,13 @@ export const FEATURES: FeatureManifest[] = [
   readingManifest,
   settingsManifest,
   messageReviewManifest,
+  surpriseInterviewManifest,
   costsManifest,
   accountManifest,
   researchManifest,
   demoManifest,
   mcpManifest,
-  ideManifest,
+  makeIdeManifest(IdeGhostPanel),
   codeTrialManifest,
   oncallManifest,
 ];

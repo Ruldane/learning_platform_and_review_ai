@@ -81,12 +81,15 @@ describe("QuizForm", () => {
     await answerAll();
     await userEvent.click(screen.getByRole("button", { name: "Envoyer" }));
     expect(onSubmit).toHaveBeenCalledTimes(1);
-    expect(onSubmit).toHaveBeenCalledWith([
-      { question_id: "q1", choice: 2, text: "" },
-      { question_id: "q2", choice: null, text: "Plan" },
-      { question_id: "q3", choice: null, text: "Le texte" },
-      { question_id: "q4", choice: null, text: "Un lien" },
-    ]);
+    expect(onSubmit).toHaveBeenCalledWith(
+      [
+        { question_id: "q1", choice: 2, text: "" },
+        { question_id: "q2", choice: null, text: "Plan" },
+        { question_id: "q3", choice: null, text: "Le texte" },
+        { question_id: "q4", choice: null, text: "Un lien" },
+      ],
+      expect.any(Number),
+    );
   });
 
   it("asks inline before sending empty answers", async () => {
@@ -101,12 +104,15 @@ describe("QuizForm", () => {
     expect(ask).toHaveTextContent("2 questions sans réponse (3, 4)");
     await userEvent.click(screen.getByRole("button", { name: "Envoyer quand même" }));
     expect(onSubmit).toHaveBeenCalledTimes(1);
-    expect(onSubmit).toHaveBeenCalledWith([
-      { question_id: "q1", choice: 0, text: "" },
-      { question_id: "q2", choice: null, text: "x" },
-      { question_id: "q3", choice: null, text: "" },
-      { question_id: "q4", choice: null, text: "" },
-    ]);
+    expect(onSubmit).toHaveBeenCalledWith(
+      [
+        { question_id: "q1", choice: 0, text: "" },
+        { question_id: "q2", choice: null, text: "x" },
+        { question_id: "q3", choice: null, text: "" },
+        { question_id: "q4", choice: null, text: "" },
+      ],
+      expect.any(Number),
+    );
   });
 
   it("goes back to the quiz instead of sending", async () => {

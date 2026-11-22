@@ -50,6 +50,8 @@ class IdeSession(UserScopedMixin, Base):
     __table_args__ = (Index("ix_ide_sessions_user_updated", "user_id", "updated_at"),)
 
     exercise_id: Mapped[str | None] = mapped_column(String(36), default=None)
+    exercise_version: Mapped[str | None] = mapped_column(String(64), default=None)
+    exercise_statement: Mapped[str | None] = mapped_column(Text, default=None)
     title: Mapped[str] = mapped_column(String(120))
     files: Mapped[dict[str, Any]] = mapped_column(default=dict)
     entry: Mapped[str] = mapped_column(String(200), default="main.py")
