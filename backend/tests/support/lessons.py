@@ -11,6 +11,7 @@ from uuid import uuid4
 from app.agents.nodes.verifier.checks import check_lesson
 from app.agents.tools.lesson_port import (
     LessonReport,
+    LessonSubmission,
     ModuleBrief,
     PublishedLesson,
     ResourcePick,
@@ -176,6 +177,7 @@ class FakeLessonStore:
         markdown: str,
         resources: Sequence[ResourcePick],
         report: LessonReport,
+        verification: bool = False,
     ) -> PublishedLesson:
         await self.brief(user_id, module_id)
         self.publish_calls += 1
@@ -189,7 +191,18 @@ class FakeLessonStore:
             await asyncio.Event().wait()
         return PublishedLesson(done.lesson_id, self.pdf_ok, len(done.resources))
 
-    async def fail(self, user_id: str, session_id: str, module_id: str, reason: str) -> None:
+    async def submission(self, user_id: str, session_id: str, module_id: str) -> LessonSubmission:
+        raise AssertionError("Aucun brouillon direct dans ce faux port.")
+
+    async def fail(
+        self,
+        user_id: str,
+        session_id: str,
+        module_id: str,
+        reason: str,
+        *,
+        verification: bool = False,
+    ) -> None:
         await self.brief(user_id, module_id)
         self.fail_calls += 1
         if all(module != module_id for module, _ in self.failures):

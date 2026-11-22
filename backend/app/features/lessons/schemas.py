@@ -75,6 +75,12 @@ class LessonSummaryOut(BaseModel):
     completed: bool = Field(
         description="Toutes les tâches du module sont faites (au moins une) : leçon terminée."
     )
+    verification_session_id: str | None = Field(
+        default=None, description="Session de vérification d'une écriture directe en cours."
+    )
+    verification_failure_reason: str | None = Field(
+        default=None, description="Motif du dernier échec de vérification d'une écriture directe."
+    )
 
 
 class LessonOut(LessonSummaryOut):
@@ -112,8 +118,7 @@ class ResourceWriteIn(BaseModel):
 
 
 class LessonWriteIn(BaseModel):
-    """La leçon d'un module écrite à la main ou par Claude (aucun agent, aucun appel au modèle) :
-    `title` vaut par défaut le titre du module."""
+    """Le brouillon d'un module soumis à la Fabrique. Par défaut, le titre du module est utilisé."""
 
     title: str | None = Field(default=None, min_length=1, max_length=TITLE_MAX)
     markdown: str = Field(min_length=MARKDOWN_MIN, max_length=MARKDOWN_MAX)

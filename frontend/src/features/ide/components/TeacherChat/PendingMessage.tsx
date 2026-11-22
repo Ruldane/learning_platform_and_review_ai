@@ -1,4 +1,4 @@
-/** La question qui part : à droite, atténuée, jusqu'à ce que le serveur la rende. */
+/** La question qui part reste atténuée à droite jusqu'à ce que le serveur la rende. */
 export function PendingMessage({ text }: { text: string }) {
   return (
     <li className="flex justify-end">

@@ -28,6 +28,7 @@ __all__ = [
 _MAX_LANG = 8
 _MAX_DATE = 32
 _MAX_REASON = 300
+READING_NOTE_MAX = 2000
 
 
 def resource_not_found() -> AppError:
@@ -92,6 +93,7 @@ async def upsert_resources(
     program_id: str,
     picks: Sequence[ResourcePick],
     sources: dict[str, Source],
+    preserve_existing: bool = False,
 ) -> int:
     """Ressources du module, une par adresse (`url_hash` de la source) : rejoué, rien ne double.
     Un choix qui ne désigne pas une page retenue de la session est ignoré."""
@@ -104,10 +106,13 @@ async def upsert_resources(
         fields = _fields(pick, source)
         row = await repo.by_url(module_id, source.url_hash)
         if row is None:
+            if preserve_existing:
+                text = (source.summary or source.reason or "Fiche indisponible.").strip()
+                fields["note"] = text[:READING_NOTE_MAX]
             await repo.add(
                 module_id=module_id, program_id=program_id, url_hash=source.url_hash, **fields
             )
-        else:
+        elif not preserve_existing:
             for key, value in fields.items():
                 setattr(row, key, value)
         kept += 1

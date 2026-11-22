@@ -9,9 +9,10 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.db.models.mcp import McpChange
 from app.features.mcp.repository import ChangeRepository
-from app.features.mcp.schemas import McpChangeOut, McpUndoOut
+from app.features.mcp.schemas import McpChangeOut
 from app.features.mcp.service.calls import RETENTION_DAYS
 from app.mcp.recorder import ChangeRecorder
+from app.mcp.rowstate import UndoResult
 
 
 async def purge_old_changes(
@@ -44,10 +45,9 @@ class ChangesService:
             for call_id, count, when, undone in calls
         ]
 
-    async def undo(self, call_id: str) -> McpUndoOut:
+    async def undo(self, call_id: str) -> UndoResult:
         recorder = ChangeRecorder(self._factory, call_id, self._user_id)
-        result = await recorder.undo(call_id)
-        return McpUndoOut(call_id=result.call_id, undone=result.undone)
+        return await recorder.undo(call_id)
 
 
 def _out(

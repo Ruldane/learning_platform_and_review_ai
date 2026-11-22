@@ -39,17 +39,18 @@ MCP = FeatureMcp(
             "POST /modules/{module_id}/lesson",
             2,
             "lessons_write_lesson",
-            "Écriture directe, aucun agent : écrit la leçon d'un module (`title` facultatif, "
-            "`markdown`, `resources` facultatives avec suivi de lecture). La leçon est prête "
-            "aussitôt, sans PDF.",
+            "Soumet le Markdown d'un module à la Fabrique (`title` et `resources` facultatifs). "
+            "Suis `verification_session_id` : après contrôle, la Fabrique publie la leçon.",
+            launches="lesson_factory",
             untrusted=_LESSON_RESOURCE_TEXT,
         ),
         McpAction(
             "PATCH /lessons/{lesson_id}",
             2,
             "lessons_update_lesson",
-            "Écriture directe, aucun agent : retouche une leçon prête (titre, Markdown, "
-            "ou ajout de `resources` suivies dans la Bibliothèque).",
+            "Soumet le titre ou le Markdown d'une leçon prête à la Fabrique. L'ajout seul de "
+            "`resources` est immédiat. La version publiée reste lisible pendant le contrôle.",
+            launches="lesson_factory",
             untrusted=_LESSON_RESOURCE_TEXT,
         ),
     ),

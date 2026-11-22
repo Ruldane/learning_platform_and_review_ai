@@ -21,6 +21,7 @@ from app.features.sessions.service import list_open_sessions
 GRAPH = "lesson_factory"
 SUBJECT = "program"
 INTERRUPTED = "La production de la leçon s'est arrêtée avant la fin : elle sera relancée."
+VERIFICATION_INTERRUPTED = "La vérification du brouillon s'est arrêtée avant la publication."
 
 
 async def open_lesson_sessions(

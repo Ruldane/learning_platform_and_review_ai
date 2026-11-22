@@ -3255,6 +3255,240 @@
         "title": "ContactOut",
         "type": "object"
       },
+      "ConversationMessageIn": {
+        "additionalProperties": false,
+        "properties": {
+          "passage": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passage"
+          },
+          "passage_occurrence": {
+            "anyOf": [
+              {
+                "maximum": 150000.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passage Occurrence"
+          },
+          "question": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Question",
+            "type": "string"
+          },
+          "request_id": {
+            "format": "uuid",
+            "title": "Request Id",
+            "type": "string"
+          },
+          "strong": {
+            "default": false,
+            "title": "Strong",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "request_id",
+          "question"
+        ],
+        "title": "ConversationMessageIn",
+        "type": "object"
+      },
+      "ConversationSource": {
+        "properties": {
+          "excerpt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Excerpt"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "lesson",
+              "memory"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "title",
+          "excerpt"
+        ],
+        "title": "ConversationSource",
+        "type": "object"
+      },
+      "ConversationStarted": {
+        "properties": {
+          "session_id": {
+            "format": "uuid",
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id"
+        ],
+        "title": "ConversationStarted",
+        "type": "object"
+      },
+      "ConversationTurnOut": {
+        "properties": {
+          "answer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "passage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passage"
+          },
+          "passage_occurrence": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passage Occurrence"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "request_id": {
+            "format": "uuid",
+            "title": "Request Id",
+            "type": "string"
+          },
+          "session_id": {
+            "format": "uuid",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/ConversationSource"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "status": {
+            "enum": [
+              "running",
+              "waiting_user",
+              "paused",
+              "completed",
+              "failed",
+              "cancelled",
+              "expired"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "request_id",
+          "session_id",
+          "question",
+          "passage",
+          "passage_occurrence",
+          "answer",
+          "status",
+          "sources"
+        ],
+        "title": "ConversationTurnOut",
+        "type": "object"
+      },
+      "ConversationUsage": {
+        "properties": {
+          "day_token_limit": {
+            "title": "Day Token Limit",
+            "type": "integer"
+          },
+          "day_tokens": {
+            "title": "Day Tokens",
+            "type": "integer"
+          },
+          "thread_token_limit": {
+            "title": "Thread Token Limit",
+            "type": "integer"
+          },
+          "thread_tokens": {
+            "title": "Thread Tokens",
+            "type": "integer"
+          },
+          "turn_limit": {
+            "title": "Turn Limit",
+            "type": "integer"
+          },
+          "turns": {
+            "title": "Turns",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "thread_tokens",
+          "thread_token_limit",
+          "day_tokens",
+          "day_token_limit",
+          "turns",
+          "turn_limit"
+        ],
+        "title": "ConversationUsage",
+        "type": "object"
+      },
       "CostRow": {
         "description": "Une ligne du rapport. `key` : le jour (`2026-11-16`), le graphe (`\"\"` hors session),\nl'agent (`\"\"` aucun) ou `fournisseur:modèle` (`glm:glm-5.3-flash`).",
         "properties": {
@@ -6656,6 +6890,38 @@
         "title": "LearnedStarted",
         "type": "object"
       },
+      "LessonConversationOut": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "lesson_id": {
+            "format": "uuid",
+            "title": "Lesson Id",
+            "type": "string"
+          },
+          "turns": {
+            "items": {
+              "$ref": "#/components/schemas/ConversationTurnOut"
+            },
+            "title": "Turns",
+            "type": "array"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/ConversationUsage"
+          }
+        },
+        "required": [
+          "id",
+          "lesson_id",
+          "turns",
+          "usage"
+        ],
+        "title": "LessonConversationOut",
+        "type": "object"
+      },
       "LessonOut": {
         "properties": {
           "attempts": {
@@ -6734,6 +7000,30 @@
             "minimum": 0.0,
             "title": "Total Tasks",
             "type": "integer"
+          },
+          "verification_failure_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Motif du dernier échec de vérification d'une écriture directe.",
+            "title": "Verification Failure Reason"
+          },
+          "verification_session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Session de vérification d'une écriture directe en cours.",
+            "title": "Verification Session Id"
           },
           "week_rank": {
             "title": "Week Rank",
@@ -6858,6 +7148,30 @@
             "title": "Total Tasks",
             "type": "integer"
           },
+          "verification_failure_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Motif du dernier échec de vérification d'une écriture directe.",
+            "title": "Verification Failure Reason"
+          },
+          "verification_session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Session de vérification d'une écriture directe en cours.",
+            "title": "Verification Session Id"
+          },
           "week_rank": {
             "title": "Week Rank",
             "type": "integer"
@@ -6884,7 +7198,7 @@
         "type": "object"
       },
       "LessonWriteIn": {
-        "description": "La leçon d'un module écrite à la main ou par Claude (aucun agent, aucun appel au modèle) :\n`title` vaut par défaut le titre du module.",
+        "description": "Le brouillon d'un module soumis à la Fabrique. Par défaut, le titre du module est utilisé.",
         "properties": {
           "markdown": {
             "maxLength": 60000,
@@ -21651,7 +21965,7 @@
         ]
       },
       "patch": {
-        "description": "Retouche le titre ou le Markdown d'une leçon prête, ou y ajoute des ressources, sans agent.\nUn PDF antérieur est détaché si le Markdown change.",
+        "description": "Soumet une retouche de titre ou de texte. Un ajout de ressources seul est immédiat.",
         "operationId": "patch_lesson_api_v1_lessons__lesson_id__patch",
         "parameters": [
           {
@@ -21685,11 +21999,21 @@
             },
             "description": "Successful Response"
           },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonOut"
+                }
+              }
+            },
+            "description": "Brouillon soumis à la vérification."
+          },
           "404": {
             "description": "`lesson_not_found`"
           },
           "409": {
-            "description": "`lesson_not_ready`"
+            "description": "`lesson_not_ready` ou `lesson_generating`"
           },
           "422": {
             "content": {
@@ -21705,6 +22029,110 @@
         "summary": "Patch Lesson",
         "tags": [
           "lessons"
+        ]
+      }
+    },
+    "/api/v1/lessons/{lesson_id}/conversation": {
+      "get": {
+        "operationId": "read_professor_api_v1_lessons__lesson_id__conversation_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "lesson_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Lesson Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/LessonConversationOut"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Read Professor Api V1 Lessons  Lesson Id  Conversation Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read Professor",
+        "tags": [
+          "conversations"
+        ]
+      }
+    },
+    "/api/v1/lessons/{lesson_id}/conversation/messages": {
+      "post": {
+        "operationId": "ask_professor_api_v1_lessons__lesson_id__conversation_messages_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "lesson_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Lesson Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConversationMessageIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ask Professor",
+        "tags": [
+          "conversations"
         ]
       }
     },
@@ -22792,7 +23220,7 @@
     },
     "/api/v1/modules/{module_id}/lesson": {
       "post": {
-        "description": "Écrit la leçon d'un module en direct, sans agent ni appel au modèle (le Markdown est celui\nde January ou de Claude). Son texte entre dans la mémoire et les liens fournis dans la\nBibliothèque. L'écriture directe ne génère pas de PDF.",
+        "description": "Soumet le Markdown fourni à la Fabrique et renvoie sa session de vérification.",
         "operationId": "write_lesson_api_v1_modules__module_id__lesson_post",
         "parameters": [
           {
@@ -22816,7 +23244,7 @@
           "required": true
         },
         "responses": {
-          "201": {
+          "202": {
             "content": {
               "application/json": {
                 "schema": {

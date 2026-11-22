@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { lessonsManifest } from "./manifest";
+import { makeLessonsManifest } from "./manifest";
+
+const lessonsManifest = makeLessonsManifest();
 
 describe("lessonsManifest", () => {
   it("declares Leçons and Bibliothèque under Apprendre, after Programme", () => {

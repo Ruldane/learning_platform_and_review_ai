@@ -2,6 +2,8 @@ import { accountManifest } from "@/features/account/manifest";
 import { applicationsManifest } from "@/features/applications/manifest";
 import { authManifest } from "@/features/auth/manifest";
 import { captureManifest } from "@/features/capture/manifest";
+import { conversationsManifest } from "@/features/conversations/manifest";
+import { LessonConversation } from "@/features/conversations/pages/LessonConversation";
 import { costsManifest } from "@/features/costs/manifest";
 import { cvManifest } from "@/features/cv/manifest";
 import { demoManifest } from "@/features/demo/manifest";
@@ -10,7 +12,7 @@ import { healthManifest } from "@/features/health/manifest";
 import { homeManifest } from "@/features/home/manifest";
 import { ideManifest } from "@/features/ide/manifest";
 import { learningManifest } from "@/features/learning/manifest";
-import { lessonsManifest } from "@/features/lessons/manifest";
+import { makeLessonsManifest } from "@/features/lessons/manifest";
 import { mcpManifest } from "@/features/mcp/manifest";
 import { memoryManifest } from "@/features/memory/manifest";
 import { programManifest } from "@/features/program/manifest";
@@ -31,7 +33,8 @@ export const FEATURES: FeatureManifest[] = [
   healthManifest,
   learningManifest,
   programManifest,
-  lessonsManifest,
+  makeLessonsManifest(LessonConversation),
+  conversationsManifest,
   studyManifest,
   quizManifest,
   captureManifest,

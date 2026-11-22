@@ -7,18 +7,17 @@ l'application et le rejeu du nœud (ou la prochaine publication) rattrape ce qui
 import logging
 from dataclasses import dataclass
 
-from app.agents.tools.memory_port import AgentWrite
 from app.features.lessons.repository import LessonRepository, ResourceRepository
 from app.features.lessons.service.render import render_lesson_pdf
+from app.features.lessons.service.resources import READING_NOTE_MAX
 from app.features.lessons.service.runtime import LessonsRuntime
-from app.features.memory.service.gateway import AgentMemoryGateway
+from app.features.memory.service.direct import schedule_indexing, write_direct
 from app.features.research.service.download import download_pdf
 from app.features.research.service.reading import list_sources
 
 logger = logging.getLogger(__name__)
 
 AUTHOR = "writer"
-NOTE_MAX = 2000
 
 
 @dataclass(frozen=True)
@@ -33,20 +32,25 @@ class Published:
     markdown: str
     language: str
     program_title: str
+    pdf_key: str | None = None
 
 
 async def _pending_copies(rt: LessonsRuntime, p: Published) -> list[tuple[str, str, str | None]]:
     """`(ressource, adresse, source)` des ressources dont la copie n'a pas encore été tentée."""
     async with rt.session_factory() as db:
         rows = await ResourceRepository(db, p.user_id).for_module(p.module_id)
-    return [(r.id, r.url, r.source_id) for r in rows if r.local_key is None and r.note is None]
+    return [
+        (r.id, r.url, r.source_id)
+        for r in rows
+        if r.local_key is None and r.note is None and r.source_id is not None
+    ]
 
 
 async def _notes(rt: LessonsRuntime, p: Published) -> dict[str, str]:
     """Fiche de lecture de chaque source de la session : son résumé, à défaut sa raison."""
     async with rt.session_factory() as db:
         sources = await list_sources(db, p.user_id, p.session_id)
-    return {s.id: ((s.summary or s.reason or "").strip()[:NOTE_MAX]) for s in sources}
+    return {s.id: ((s.summary or s.reason or "").strip()[:READING_NOTE_MAX]) for s in sources}
 
 
 async def copy_resources(rt: LessonsRuntime, p: Published) -> None:
@@ -61,14 +65,20 @@ async def copy_resources(rt: LessonsRuntime, p: Published) -> None:
         data = await download_pdf(rt.research, p.user_id, url)
         key = None if data is None else await rt.storage.save(p.user_id, "resources", data, ".pdf")
         note = notes.get(source_id or "") or "Fiche indisponible."
-        copied += await _settle(rt, p.user_id, resource_id, key, note)
+        copied += await _settle(rt, p.user_id, resource_id, key, note, publication=p)
     logger.info(
         "Ressources : leçon %s, %d copie(s) locale(s) sur %d", p.lesson_id, copied, len(pending)
     )
 
 
 async def _settle(
-    rt: LessonsRuntime, user_id: str, resource_id: str, key: str | None, note: str
+    rt: LessonsRuntime,
+    user_id: str,
+    resource_id: str,
+    key: str | None,
+    note: str,
+    *,
+    publication: Published | None = None,
 ) -> bool:
     """Copie (ou, sans copie, fiche) rangée sur la ressource ; rend « copie gardée ». Une copie
     non gardée (rangée entre-temps par un autre appel, ressource disparue, écriture en échec)
@@ -76,6 +86,10 @@ async def _settle(
     kept = False
     try:
         async with rt.session_factory() as db:
+            if publication is not None and not await LessonRepository(db, user_id).claim_published(
+                publication.lesson_id, publication.session_id
+            ):
+                return False
             row = await ResourceRepository(db, user_id).get(resource_id)
             claimed = row is not None and row.local_key is None
             if row is not None and claimed:
@@ -92,38 +106,57 @@ async def lesson_pdf(rt: LessonsRuntime, p: Published) -> bool:
     """PDF A4 de la leçon (catégorie `lessons`), une seule fois ; `False` s'il manque encore."""
     async with rt.session_factory() as db:
         lesson = await LessonRepository(db, p.user_id).get_fresh(p.lesson_id)
-        if lesson is None or lesson.pdf_key is not None:
-            return lesson is not None
-    try:
-        pdf = await render_lesson_pdf(
-            rt.publishing.html_pdf, title=p.title, markdown=p.markdown, language=p.language
-        )
-        key = await rt.storage.save(p.user_id, "lessons", pdf, ".pdf")
-    except Exception as exc:
-        logger.warning("PDF de la leçon %s non produit (%s)", p.lesson_id, type(exc).__name__)
+        if lesson is None or lesson.session_id != p.session_id:
+            return False
+        if lesson.pdf_key is not None:
+            return True
+    key = await render_pdf_key(rt, p.user_id, p.lesson_id, p.title, p.markdown, p.language)
+    if key is None:
         return False
     async with rt.session_factory() as db:
         repo = LessonRepository(db, p.user_id)
-        kept = await repo.set_pdf_key(p.lesson_id, key)
+        kept = await repo.set_pdf_key(p.lesson_id, key, p.session_id)
         lesson = await repo.get_fresh(p.lesson_id)
         await db.commit()
     if not kept:  # rangé entre-temps par un autre appel (ou leçon disparue) : le nôtre est en trop
         await rt.storage.delete(p.user_id, key)
-    return lesson is not None
+    return lesson is not None and lesson.session_id == p.session_id and lesson.pdf_key is not None
+
+
+async def render_pdf_key(
+    rt: LessonsRuntime, user_id: str, lesson_id: str, title: str, markdown: str, language: str
+) -> str | None:
+    try:
+        pdf = await render_lesson_pdf(
+            rt.publishing.html_pdf, title=title, markdown=markdown, language=language
+        )
+        return await rt.storage.save(user_id, "lessons", pdf, ".pdf")
+    except Exception as exc:
+        logger.warning("PDF de la leçon %s non produit (%s)", lesson_id, type(exc).__name__)
+        return None
 
 
 async def remember(rt: LessonsRuntime, p: Published) -> None:
     """La leçon dans la mémoire (`lecon` : titre, Markdown, étiquette du programme) ; le même
     contenu rejoué n'écrit rien de plus (dédoublonnage de la mémoire)."""
-    write = AgentWrite(
-        kind="lecon",
-        title=p.title,
-        text=p.markdown,
-        reason="Leçon du programme publiée après contrôle du Vérificateur.",
-        tags=(p.program_title,),
-    )
     try:
-        await AgentMemoryGateway(rt.memory).write(p.user_id, p.session_id, AUTHOR, write)
+        async with rt.session_factory() as db:
+            if not await LessonRepository(db, p.user_id).claim_published(p.lesson_id, p.session_id):
+                return
+            await write_direct(
+                db,
+                rt.memory,
+                p.user_id,
+                kind="lecon",
+                title=p.title,
+                text=p.markdown,
+                tags=(p.program_title,),
+                author=AUTHOR,
+                session_id=p.session_id,
+                reason="Leçon du programme publiée après contrôle du Vérificateur.",
+            )
+            await db.commit()
+        schedule_indexing(rt.memory, p.user_id)
     except Exception as exc:
         logger.warning("Leçon %s non rangée en mémoire (%s)", p.lesson_id, type(exc).__name__)
 

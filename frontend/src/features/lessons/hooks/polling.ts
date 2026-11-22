@@ -1,4 +1,4 @@
-import type { LessonStatus } from "../types";
+import type { LessonSummaryOut } from "../types";
 
 const GENERATING_MS = 5000;
 const WAITING_MS = 15_000;
@@ -11,6 +11,12 @@ export const MAX_PDF_POLLS = 24;
  */
 export const MAX_IDLE_POLLS = 20;
 
+type LessonProgress = Pick<LessonSummaryOut, "status" | "verification_session_id">;
+
+export function lessonIsInProgress(lesson: LessonProgress): boolean {
+  return lesson.status === "generating" || Boolean(lesson.verification_session_id);
+}
+
 /**
  * Quand relire une leçon : toutes les 5 s pendant qu'elle s'écrit, toutes les 15 s tant qu'elle
  * attend son tour ou sa nouvelle tentative (elle peut y rester longtemps). Prête, toutes les 5 s
@@ -18,14 +24,15 @@ export const MAX_IDLE_POLLS = 20;
  * depuis qu'elle est prête).
  */
 export function lessonRefetchInterval(
-  lesson: { status: LessonStatus; pdf_available: boolean } | undefined,
+  lesson: (LessonProgress & Pick<LessonSummaryOut, "pdf_available">) | undefined,
   pdfPolls: number,
 ): number | false {
   if (lesson === undefined) return false;
+  if (lessonIsInProgress(lesson)) return GENERATING_MS;
   if (lesson.status === "ready") {
     return !lesson.pdf_available && pdfPolls < MAX_PDF_POLLS ? PDF_MS : false;
   }
-  return lesson.status === "generating" ? GENERATING_MS : WAITING_MS;
+  return WAITING_MS;
 }
 
 /**
@@ -34,11 +41,11 @@ export function lessonRefetchInterval(
  * `MAX_IDLE_POLLS` fois depuis la dernière leçon vue en écriture (`idlePolls`).
  */
 export function lessonsRefetchInterval(
-  lessons: readonly { status: LessonStatus }[] | undefined,
+  lessons: readonly LessonProgress[] | undefined,
   idlePolls: number,
 ): number | false {
   if (lessons === undefined) return false;
-  if (lessons.some((lesson) => lesson.status === "generating")) return GENERATING_MS;
+  if (lessons.some(lessonIsInProgress)) return GENERATING_MS;
   if (lessons.every((lesson) => lesson.status === "ready")) return false;
   return idlePolls < MAX_IDLE_POLLS ? WAITING_MS : false;
 }

@@ -1,6 +1,4 @@
-"""Écriture directe par le MCP, sans agent (10.W) : outils de niveau 2 sans graphe ; un appel écrit
-la ligne, journal et historique la gardent, l'annulation la retire (élément de mémoire compris) ; un
-jeton en lecture seule est refusé."""
+"""Écritures de niveau 2 par le MCP : droits, journal et annulation."""
 
 from typing import Any
 
@@ -18,13 +16,13 @@ from app.db.models.postings import JobPosting
 from app.db.models.program import Module, Week
 from app.db.models.study import Quiz, QuizQuestion
 from scripts.sample_posting import POSTING_TEXT
+from tests.agents.graphs.lesson_support import LessonModels
 from tests.mcp.adapter_support import call
 from tests.mcp.support import API, Mcp
-from tests.support.direct import Seed, assert_no_agent, lesson_text
+from tests.support.direct import Seed, assert_no_agent
 from tests.support.gap import analysis_data
+from tests.support.lesson_verification import submission_text, wait_session
 
-BEFORE = lesson_text("Le texte d'avant la retouche.")
-AFTER = lesson_text("Le texte d'après la retouche.")
 pytestmark = pytest.mark.usefixtures("settled_indexing")
 FEATURES = ("lessons", "program", "projects", "postings", "quiz", "ide")
 TOOLS = {
@@ -89,7 +87,8 @@ async def test_every_direct_write_tool_is_level_2_without_graph(
         tool = registry.get(name)
         assert tool is not None, name
         assert (tool.level, tool.graph, tool.side_effects) == (2, None, "db"), name
-        assert tool.description.count("Écriture directe, aucun agent") == 1, name
+        expected = "Fabrique" if name.startswith("lessons_") else "Écriture directe, aucun agent"
+        assert expected in tool.description, name
 
 
 async def test_read_only_token_cannot_write(
@@ -109,67 +108,41 @@ async def test_read_only_token_cannot_write(
     assert await count(app, Lesson) == 0
 
 
-async def test_lesson_write_is_journaled_and_undone_with_its_memory_item(
+async def test_lesson_submission_is_journaled_and_undone_before_publication(
     client: httpx.AsyncClient,
     app: FastAPI,
     drafted: Seed,
     claude: Mcp,
+    accept_lesson: LessonModels,
 ) -> None:
     token = await writer(claude)
+    accept_lesson.block = lambda agent, _prompt: agent == "verifier"
 
     envelope, is_error = await call(
         claude,
         token,
         "lessons_write_lesson",
-        {"module_id": drafted.modules[0], "markdown": lesson_text("Un texte écrit par Claude.")},
+        {"module_id": drafted.modules[0], "markdown": submission_text("Module Bases")},
     )
 
     assert not is_error, envelope
     lesson_id = envelope["data"]["id"]
-    assert envelope["data"]["status"] == "ready"
+    assert envelope["data"]["status"] == "generating"
+    sid = envelope["data"]["verification_session_id"]
     async with app.state.session_factory() as db:
-        [item] = (await db.execute(select(MemoryItem).where(MemoryItem.kind == "lecon"))).scalars()
         journal = (await db.execute(select(McpCall))).scalars().all()
         recorded = {c.table_name for c in (await db.execute(select(McpChange))).scalars()}
-    assert item.created_by == "claude"
     assert [(c.action, c.level, c.code) for c in journal if c.action == "lessons_write_lesson"] == [
-        ("lessons_write_lesson", 2, 201)
+        ("lessons_write_lesson", 2, 202)
     ]
-    assert {"lessons", "memory_items"} <= recorded
-    await assert_no_agent(app)
+    assert recorded == {"lessons"}
 
     undone = await undo_last(claude)
 
     assert undone.status_code == 200, undone.text
     assert (await client.get(f"{API}/lessons/{lesson_id}")).status_code == 404
+    assert (await wait_session(client, sid))["status"] == "cancelled"
     assert await count(app, MemoryItem, kind="lecon") == 0
-
-
-async def test_lesson_patch_is_undone_to_the_previous_text(
-    client: httpx.AsyncClient,
-    app: FastAPI,
-    drafted: Seed,
-    claude: Mcp,
-) -> None:
-    token = await writer(claude)
-    made, _ = await call(
-        claude,
-        token,
-        "lessons_write_lesson",
-        {"module_id": drafted.modules[0], "markdown": BEFORE},
-    )
-    lesson_id = made["data"]["id"]
-
-    patched, is_error = await call(
-        claude, token, "lessons_update_lesson", {"lesson_id": lesson_id, "markdown": AFTER}
-    )
-    assert not is_error and patched["data"]["markdown"] == AFTER
-    assert (await undo_last(claude)).status_code == 200
-
-    assert (await client.get(f"{API}/lessons/{lesson_id}")).json()["markdown"] == BEFORE
-    async with app.state.session_factory() as db:
-        [item] = (await db.execute(select(MemoryItem).where(MemoryItem.kind == "lecon"))).scalars()
-    assert item.text == BEFORE.strip()  # l'élément de mémoire est celui d'avant la retouche
 
 
 async def write_chain(claude: Mcp, token: str, drafted: Seed) -> list[dict[str, Any]]:

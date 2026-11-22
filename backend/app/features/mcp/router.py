@@ -159,5 +159,7 @@ async def undo_changes(call_id: Id, request: Request, current: InterfaceUserDep)
     """Remet les lignes d'un appel dans leur état d'avant, si aucune n'a changé depuis (409
     sinon). Une mémoire restaurée ou retirée se réindexe ensuite, hors de l'appel."""
     undone = await ChangesService(request.app.state.session_factory, current.id).undo(call_id)
+    for sid in undone.cancelled_sessions:
+        await request.app.state.runtime.runner.settle_cancelled(current.id, sid)
     schedule_indexing(request.app.state.memory, current.id)
-    return undone
+    return McpUndoOut(call_id=undone.call_id, undone=undone.undone)

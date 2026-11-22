@@ -155,6 +155,7 @@ async def speak(
     max_words: int,
     revise: Callable[[str], str | None] | None = None,
     keep: re.Pattern[str] | None = None,
+    retry: bool = True,
 ) -> Spoken:
     """`agent.started`, tokens en direct (`call_with_retries`), puis `agent.message` avec le
     texte coupé à `max_words` et ses citations, sous le `message_id` des tokens (D57).
@@ -165,12 +166,12 @@ async def speak(
 
     `keep` : la première ligne qui correspond survit à la coupe (`cap_words`)."""
     emit("agent.started", {"step": step, "intent": intent}, agent=agent)
-    reply = await call_with_retries(model, messages, agent=agent)
+    reply = await call_with_retries(model, messages, agent=agent, retry=retry)
     text = cap_words(message_text(reply).strip(), max_words, keep=keep)
     correction = revise(text) if revise is not None else None
     if correction is not None:
-        retry = [*messages, AIMessage(text), HumanMessage(correction)]
-        second = await call_with_retries(model, retry, agent=agent, stream=False)
+        revision = [*messages, AIMessage(text), HumanMessage(correction)]
+        second = await call_with_retries(model, revision, agent=agent, stream=False, retry=retry)
         text = cap_words(message_text(second).strip(), max_words, keep=keep)
     citations = extract_citations(text, catalog)
     payload = AgentMessagePayload(

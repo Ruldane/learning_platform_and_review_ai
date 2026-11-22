@@ -266,14 +266,17 @@ class DocumentService:
                 "Le document doit être indexé avant d'être marqué déjà appris.",
                 409,
             )
-        subject = {"subject_type": "document", "subject_id": doc.id}
         async with self._runtime.learn_lock(self._user_id):
             session_id = await find_active_session(
-                self._db, self._user_id, graph=LEARNED_GRAPH, **subject
+                self._db,
+                self._user_id,
+                graph=LEARNED_GRAPH,
+                subject_type="document",
+                subject_id=doc.id,
             )
             if session_id is None:
                 session_id = await runner.start(
-                    self._user_id, LEARNED_GRAPH, {"document_id": doc.id}, **subject
+                    self._user_id, LEARNED_GRAPH, {"document_id": doc.id}, "document", doc.id
                 )
         doc.learned = True
         await self._db.flush()

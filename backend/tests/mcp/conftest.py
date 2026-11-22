@@ -19,6 +19,7 @@ from tests.isolation.conftest import google_client_factory  # noqa: F401
 from tests.mcp.adapter_support import FEATURES, add_probe, declarations
 from tests.mcp.support import FakeDispatcher, FakeTools, Mcp
 from tests.support.direct import claude, drafted, settled_indexing  # noqa: F401
+from tests.support.lesson_verification import accept_lesson, lesson_models  # noqa: F401
 
 
 @pytest.fixture

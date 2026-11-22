@@ -6,6 +6,7 @@ modèle."""
 from dataclasses import dataclass
 from typing import Any, Protocol
 
+from app.agents.nodes.lesson_reference import source_url_key
 from app.agents.nodes.scout.models import one_line, page_title
 from app.agents.prompts.loader import untrusted
 from app.agents.state.lesson_factory import LessonFactoryState
@@ -39,14 +40,23 @@ def kept_verdicts(state: LessonFactoryState) -> list[dict[str, Any]]:
 def lesson_sources(state: LessonFactoryState) -> list[LessonSource]:
     """Sources de la leçon : retenues, lues, numérotées de 1 à `MAX_LESSON_SOURCES`."""
     pages = {p["source_id"]: p for p in state.get("pages", []) if p.get("source_id")}
+    cited = {
+        source_url_key(url): number
+        for number, url in enumerate(state.get("citation_urls", []), start=1)
+    }
+    found = [(v, pages[v["source_id"]]) for v in kept_verdicts(state) if v["source_id"] in pages]
+    if cited:
+        found.sort(key=lambda item: cited.get(source_url_key(item[1]["url"]), len(cited) + 1))
     sources: list[LessonSource] = []
-    for verdict in kept_verdicts(state):
-        page = pages.get(verdict["source_id"])
-        if page is None or len(sources) == MAX_LESSON_SOURCES:
-            continue
+    next_number = len(cited) + 1
+    for verdict, page in found[:MAX_LESSON_SOURCES]:
+        number = cited.get(source_url_key(page["url"]))
+        if number is None:
+            number = next_number
+            next_number += 1
         sources.append(
             LessonSource(
-                number=len(sources) + 1,
+                number=number,
                 source_id=verdict["source_id"],
                 title=page_title(page),
                 url=page["url"],

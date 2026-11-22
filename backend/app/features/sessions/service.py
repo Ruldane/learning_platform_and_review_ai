@@ -13,6 +13,7 @@ from app.agents.runtime.events import (
     SessionEvent,
 )
 from app.agents.runtime.handle import AgentRuntime
+from app.agents.tools.conversation_port import CONVERSATION_GRAPH
 from app.core.errors import AppError
 from app.db.models.agents import AgentSession, SessionStatus
 from app.features.sessions.play_service import expire_steps
@@ -45,6 +46,7 @@ __all__ = [
 # (D106 : une replanification par programme, programme validé ; 409 `replan_open` ; quiz et
 # séance : verrou, sujet et ligne de la feature, revue finale de la phase 5).
 ROUTE_ONLY: dict[str, str] = {
+    CONVERSATION_GRAPH: "POST /lessons/{lesson_id}/conversation/messages",
     "replan": "POST /programs/{program_id}/replan",
     "capture": "POST /capture",
     "quiz": "POST /modules/{module_id}/quiz",

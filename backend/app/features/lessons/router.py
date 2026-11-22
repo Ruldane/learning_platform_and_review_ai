@@ -10,6 +10,8 @@ from starlette.requests import HTTPConnection
 
 from app.core.caller import CallerDep
 from app.core.deps import CurrentUserDep, Db
+from app.core.errors import AppError
+from app.core.played import PLAY_CONTEXT
 from app.features.lessons.schemas import (
     LessonOut,
     LessonPatch,
@@ -69,7 +71,7 @@ async def get_lesson(lesson_id: str, current: CurrentUserDep, db: Db) -> LessonO
 @router.post(
     "/modules/{module_id}/lesson",
     response_model=LessonOut,
-    status_code=status.HTTP_201_CREATED,
+    status_code=status.HTTP_202_ACCEPTED,
     responses={
         404: {"description": "`module_not_found`"},
         409: {"description": "`lesson_exists`, `lesson_generating` ou `module_skipped`"},
@@ -78,9 +80,7 @@ async def get_lesson(lesson_id: str, current: CurrentUserDep, db: Db) -> LessonO
 async def write_lesson(
     module_id: str, body: LessonWriteIn, current: CurrentUserDep, rt: LessonsDep, caller: CallerDep
 ) -> LessonOut:
-    """Écrit la leçon d'un module en direct, sans agent ni appel au modèle (le Markdown est celui
-    de January ou de Claude). Son texte entre dans la mémoire et les liens fournis dans la
-    Bibliothèque. L'écriture directe ne génère pas de PDF."""
+    """Soumet le Markdown fourni à la Fabrique et renvoie sa session de vérification."""
     return await direct.write_lesson(rt, current.id, module_id, body, is_mcp=caller.kind == "mcp")
 
 
@@ -88,16 +88,33 @@ async def write_lesson(
     "/lessons/{lesson_id}",
     response_model=LessonOut,
     responses={
+        202: {"model": LessonOut, "description": "Brouillon soumis à la vérification."},
         404: {"description": "`lesson_not_found`"},
-        409: {"description": "`lesson_not_ready`"},
+        409: {"description": "`lesson_not_ready` ou `lesson_generating`"},
     },
 )
 async def patch_lesson(
-    lesson_id: str, body: LessonPatch, current: CurrentUserDep, rt: LessonsDep, caller: CallerDep
+    lesson_id: str,
+    body: LessonPatch,
+    current: CurrentUserDep,
+    rt: LessonsDep,
+    caller: CallerDep,
+    response: Response,
 ) -> LessonOut:
-    """Retouche le titre ou le Markdown d'une leçon prête, ou y ajoute des ressources, sans agent.
-    Un PDF antérieur est détaché si le Markdown change."""
-    return await direct.patch_lesson(rt, current.id, lesson_id, body, is_mcp=caller.kind == "mcp")
+    """Soumet une retouche de titre ou de texte. Un ajout de ressources seul est immédiat."""
+    play = PLAY_CONTEXT.get()
+    if play and play.graph == "lesson_factory" and body.title is None and body.markdown is None:
+        raise AppError(
+            "lesson_draft_required",
+            "Pour jouer la vérification, fournis un titre ou un texte de leçon.",
+            422,
+        )
+    result, submitted = await direct.patch_lesson(
+        rt, current.id, lesson_id, body, is_mcp=caller.kind == "mcp"
+    )
+    if submitted:
+        response.status_code = status.HTTP_202_ACCEPTED
+    return result
 
 
 @router.get("/lessons/{lesson_id}/pdf", response_class=Response, responses=_PDF_RESPONSE)

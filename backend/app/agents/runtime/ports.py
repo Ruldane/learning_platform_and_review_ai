@@ -9,6 +9,7 @@ from app.agents.tools.applications_port import NO_APPLICATIONS, ApplicationStore
 from app.agents.tools.brief_port import NO_BRIEF, BriefStore
 from app.agents.tools.capture_port import NO_CAPTURE, CaptureStore
 from app.agents.tools.committee_port import NO_COMMITTEE, CommitteeStore
+from app.agents.tools.conversation_port import NO_CONVERSATION, ConversationStore
 from app.agents.tools.council_port import NO_COUNCIL, CouncilStore
 from app.agents.tools.cv_review_port import NO_CV_REVIEW, CvReviewStore
 from app.agents.tools.cv_template_port import NO_CV_TEMPLATES, CvTemplateStore
@@ -51,6 +52,7 @@ class AgentPorts:
     brief: BriefStore = NO_BRIEF  # brief du jour : ressource et conseil (D161)
     projects: ProjectStore = NO_PROJECTS  # énoncé et évaluation des projets preuves (D165)
     ide: IdeStore = NO_IDE  # professeur et exercices générés de l'IDE (D203)
+    conversations: ConversationStore = NO_CONVERSATION
 
 
 NO_PORTS = AgentPorts()

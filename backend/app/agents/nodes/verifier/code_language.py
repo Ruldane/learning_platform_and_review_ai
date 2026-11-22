@@ -98,7 +98,7 @@ def _words(text: str) -> set[str]:
     return set(_WORDS.findall(letters))
 
 
-def python_language_problems(code: str, first_line: int) -> list[str]:
+def python_language_problems(code: str, first_line: int, *, show_input: bool = True) -> list[str]:
     """Retourne les écarts reconnaissables à la ligne du chapitre, sans copier les commentaires."""
     problems: list[str] = []
     seen: set[str] = set()
@@ -109,7 +109,8 @@ def python_language_problems(code: str, first_line: int) -> list[str]:
             if token.type == NAME and value not in seen and not keyword.iskeyword(value):
                 seen.add(value)
                 if _words(value) & _IDENTIFIERS:
-                    problems.append(f"Écris l’identifiant « {value} » en anglais (ligne {row}).")
+                    identifier = f"l’identifiant « {value} »" if show_input else "l’identifiant"
+                    problems.append(f"Écris {identifier} en anglais (ligne {row}).")
             if token.type == COMMENT and len(_words(value) & _COMMENT_WORDS) >= 2:
                 problems.append(f"Écris le commentaire Python en anglais (ligne {row}).")
     except (TokenError, IndentationError):

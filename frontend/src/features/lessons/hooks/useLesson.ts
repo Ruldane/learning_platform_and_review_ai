@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRef } from "react";
 import { fetchLesson } from "../api";
 import { lessonsKeys } from "../queryKeys";
-import { lessonRefetchInterval } from "./polling";
+import { lessonIsInProgress, lessonRefetchInterval } from "./polling";
 
 /**
  * Une leçon (`GET /lessons/{id}`), relue d'elle-même tant qu'elle n'est pas prête, puis tant que
@@ -17,7 +17,7 @@ export function useLesson(lessonId: string) {
     refetchInterval: (query) => {
       const lesson = query.state.data;
       const updates = query.state.dataUpdateCount;
-      if (lesson?.status !== "ready") readyAt.current = null;
+      if (lesson?.status !== "ready" || lessonIsInProgress(lesson)) readyAt.current = null;
       else readyAt.current ??= updates;
       return lessonRefetchInterval(lesson, updates - (readyAt.current ?? updates));
     },

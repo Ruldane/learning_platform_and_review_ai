@@ -31,7 +31,8 @@ from app.features.research.service.runtime import ResearchRuntime
 from app.features.settings.keys_service import DbKeyReader
 from app.scheduler.base import JobContext
 from tests.features.program.support import MONDAY, Factory, add_goal, sample_plan
-from tests.support.direct import drafted, settled_indexing  # noqa: F401
+from tests.support.direct import claude, drafted, settled_indexing  # noqa: F401
+from tests.support.lesson_verification import accept_lesson, lesson_models  # noqa: F401
 from tests.support.memory import FakeWebReader
 from tests.support.research import FakeFetcher, fake_research_providers
 

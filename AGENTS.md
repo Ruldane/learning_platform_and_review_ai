@@ -10,7 +10,7 @@ Ce fichier guide les agents qui **développent** le dépôt. Un agent qui **pilo
 - `backend/app/agents/` (agents `.md` + nœud `.py`, graphes dans `agents/graphs/registry.py` : `GRAPHS`), `providers/` (ports `base` + implémentations), `mcp/` (moteur MCP), `scheduler/` (`JOBS`), `realtime/`, `db/`, `alembic/`, `scripts/`, `tests/`.
 - `frontend/src/features/<f>/` (mêmes noms que le back), `src/shared/` (api, i18n, realtime, session-ui, ui, lib), `src/app/registry.ts` (liste des manifestes de features), `e2e/` (Playwright).
 - `contracts/openapi.json` ; `sandbox/` (image et lanceur du bac à sable de l'IDE) ; `docs/superpowers/{plans,bilans,recette}` ; `DECISIONS.md`.
-- Un plan par phase dans `docs/superpowers/plans/` : ne pas coder une phase sans son plan ; `…-00-plan-directeur.md` §1 fixe l'architecture.
+- Les plans sont dans `docs/superpowers/plans/`. Jusqu’à la phase 11, un plan par phase. À partir de la phase 13, un plan par lot de cinq phases, avec une section par phase. Écrire la section avant le code. Le plan directeur §1 fixe l’architecture et le §7 donne les lots (D228).
 
 ## Architecture
 

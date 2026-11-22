@@ -12,6 +12,7 @@ from app.features.program.service.runtime import ProgramRuntime
 from app.features.program.service.store import AgentProgramStore
 from tests.features.program.support import MONDAY, Factory, add_goal, sample_plan
 from tests.support.direct import drafted  # noqa: F401
+from tests.support.lesson_verification import accept_lesson, lesson_models  # noqa: F401
 
 
 @pytest.fixture

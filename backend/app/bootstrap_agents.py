@@ -28,6 +28,7 @@ from app.core.providers import MemoryProviders, PublishingProviders
 from app.features.applications.service.runtime import ApplicationsRuntime
 from app.features.capture.service.runtime import CaptureRuntime
 from app.features.capture.service.store import AgentCaptureStore
+from app.features.conversations.store import AgentConversationStore
 from app.features.learning.service.runtime import LearningRuntime
 from app.features.learning.service.store import AgentCouncilStore
 from app.features.lessons.service.runtime import LessonsRuntime
@@ -143,6 +144,7 @@ def agent_ports(
         brief,
         projects,
         ide,
+        conversations=AgentConversationStore(lessons.session_factory),
     )
 
 

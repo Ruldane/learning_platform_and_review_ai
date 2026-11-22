@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.agents.tools.lesson_port import (
     MAX_SEED_URLS,
     LessonReport,
+    LessonSubmission,
     ModuleBrief,
     PublishedLesson,
     ResourcePick,
@@ -31,6 +32,15 @@ from app.features.lessons.service.production import ensure_lessons
 from app.features.lessons.service.publishing import Published, finish
 from app.features.lessons.service.resources import upsert_resources
 from app.features.lessons.service.runtime import LessonsRuntime
+from app.features.lessons.service.verification import (
+    RevisionPdfUnavailable,
+    fail_submission,
+    prepare_pdf,
+    save_submission,
+    submission,
+    verification_revoked,
+)
+from app.features.memory.service.direct import schedule_indexing
 from app.features.program.service.programs import Loaded, load, program_of_module
 from app.features.research.service.reading import list_sources
 from app.features.settings.service import SettingsService
@@ -77,9 +87,37 @@ async def _lesson(db: AsyncSession, user_id: str, loaded: Loaded, module: Module
     return lesson
 
 
+async def _save_generated(
+    db: AsyncSession,
+    lesson: Lesson,
+    session_id: str,
+    markdown: str,
+    picks: Sequence[ResourcePick],
+    report: LessonReport,
+) -> None:
+    if lesson.status == "ready":
+        return
+    if lesson.verification_session_id is not None:
+        raise verification_revoked()
+    await upsert_resources(
+        db,
+        lesson.user_id,
+        module_id=lesson.module_id,
+        program_id=lesson.program_id,
+        picks=picks,
+        sources={s.id: s for s in await list_sources(db, lesson.user_id, session_id)},
+    )
+    lesson.status, lesson.markdown, lesson.word_count = "ready", markdown, report.words
+    lesson.report, lesson.failure_reason, lesson.session_id = asdict(report), None, session_id
+
+
 class AgentLessonStore:
     def __init__(self, runtime: LessonsRuntime) -> None:
         self._rt = runtime
+
+    async def submission(self, user_id: str, session_id: str, module_id: str) -> LessonSubmission:
+        async with self._rt.session_factory() as db:
+            return await submission(db, user_id, session_id, module_id)
 
     async def brief(self, user_id: str, module_id: str) -> ModuleBrief:
         async with self._rt.session_factory() as db:
@@ -113,23 +151,34 @@ class AgentLessonStore:
         markdown: str,
         picks: Sequence[ResourcePick],
         report: LessonReport,
+        *,
+        verification: bool,
+        pdf_key: str | None,
     ) -> Published:
+        repo = LessonRepository(db, user_id)
+        candidate = (
+            await repo.claim_verification(module_id, session_id, replay=True)
+            if verification
+            else None
+        )
+        if verification and candidate is None:
+            raise verification_revoked()
         loaded = await load(db, user_id, await program_of_module(db, user_id, module_id))
         module = _module(loaded, module_id)
-        lesson = await _lesson(db, user_id, loaded, module)
-        if lesson.status != "ready":
-            sources = {s.id: s for s in await list_sources(db, user_id, session_id)}
-            await upsert_resources(
-                db,
-                user_id,
-                module_id=module_id,
-                program_id=loaded.program.id,
-                picks=picks,
-                sources=sources,
-            )
-            lesson.status, lesson.markdown, lesson.word_count = "ready", markdown, report.words
-            lesson.report, lesson.failure_reason = asdict(report), None
-            lesson.session_id = session_id
+        lesson = candidate or await _lesson(db, user_id, loaded, module)
+        if verification:
+            try:
+                await save_submission(
+                    db, self._rt, lesson, loaded.program.title, markdown, picks, report, pdf_key
+                )
+            except RevisionPdfUnavailable as exc:
+                await fail_submission(db, user_id, session_id, module_id, exc.message)
+                await (
+                    db.commit()
+                )  # le refus libère la réservation dans la transaction de publication
+                raise
+        else:
+            await _save_generated(db, lesson, session_id, markdown, picks, report)
         language = (await SettingsService(db, user_id).get()).lesson_language
         return Published(
             user_id,
@@ -140,6 +189,7 @@ class AgentLessonStore:
             lesson.markdown,
             language,
             loaded.program.title,
+            lesson.pdf_key,
         )
 
     async def publish(
@@ -151,11 +201,36 @@ class AgentLessonStore:
         markdown: str,
         resources: Sequence[ResourcePick],
         report: LessonReport,
+        verification: bool = False,
     ) -> PublishedLesson:
         async with self._rt.session_factory() as db:
-            done = await self._save(db, user_id, session_id, module_id, markdown, resources, report)
-            await db.commit()
-        pdf_ok = await finish(self._rt, done)
+            program_id = await program_of_module(db, user_id, module_id)
+        key = (
+            await prepare_pdf(self._rt, user_id, module_id, session_id, markdown)
+            if verification
+            else None
+        )
+        done = None
+        try:
+            async with self._rt.lessons_lock(user_id, program_id), self._rt.session_factory() as db:
+                done = await self._save(
+                    db,
+                    user_id,
+                    session_id,
+                    module_id,
+                    markdown,
+                    resources,
+                    report,
+                    verification=verification,
+                    pdf_key=key,
+                )
+                await db.commit()
+        finally:
+            if key is not None and (done is None or done.pdf_key != key):
+                await self._rt.storage.delete(user_id, key)
+        if verification:
+            schedule_indexing(self._rt.memory, user_id)
+        pdf_ok = done.pdf_key is not None if verification else await finish(self._rt, done)
         async with self._rt.session_factory() as db:
             count = len(await ResourceRepository(db, user_id).for_module(module_id))
         logger.info(
@@ -167,11 +242,27 @@ class AgentLessonStore:
         )
         return PublishedLesson(done.lesson_id, pdf_ok, count)
 
-    async def fail(self, user_id: str, session_id: str, module_id: str, reason: str) -> None:
+    async def fail(
+        self,
+        user_id: str,
+        session_id: str,
+        module_id: str,
+        reason: str,
+        *,
+        verification: bool = False,
+    ) -> None:
         async with self._rt.session_factory() as db:
+            program_id = await program_of_module(db, user_id, module_id)
+        async with self._rt.lessons_lock(user_id, program_id), self._rt.session_factory() as db:
+            if verification:
+                await fail_submission(
+                    db, user_id, session_id, module_id, reason.strip()[:MAX_FAILURE]
+                )
+                await db.commit()
+                return
             loaded = await load(db, user_id, await program_of_module(db, user_id, module_id))
             lesson = await _lesson(db, user_id, loaded, _module(loaded, module_id))
-            if lesson.status != "ready":
+            if lesson.status != "ready" and lesson.verification_session_id is None:
                 lesson.status, lesson.failure_reason = "failed", reason.strip()[:MAX_FAILURE]
                 lesson.session_id = session_id
             await db.commit()

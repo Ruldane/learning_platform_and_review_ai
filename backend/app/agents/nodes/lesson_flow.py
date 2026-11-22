@@ -5,9 +5,10 @@ Chaque écriture du port est idempotente par module : un nœud rejoué après un
 rend la même chose sans ligne de plus. Aucun effet de bord avant la lecture de la fiche."""
 
 import logging
-from dataclasses import asdict
+from dataclasses import asdict, replace
 
 from app.agents.nodes.lesson_common import Node, brief_of, kept_verdicts
+from app.agents.nodes.verifier.grades import CRITERIA, MIN_GRADE
 from app.agents.runtime.deps import GraphDeps
 from app.agents.runtime.emit import emit
 from app.agents.runtime.invoke import node_timeout
@@ -36,10 +37,21 @@ def make_brief(deps: GraphDeps) -> Node:
         """Fiche du module (port) : la recherche part de son titre, de ses compétences et du
         thème de la semaine, avec les pages du Conseil comme adresses de départ."""
         found = await deps.ports.lessons.brief(deps.user_id, state["module_id"])
+        query = module_query(found.title, found.skills, found.week_theme)
+        extra: LessonFactoryState = {}
+        urls = list(found.seed_urls)
+        if state.get("verification"):
+            submitted = await deps.ports.lessons.submission(
+                deps.user_id, deps.session_id, state["module_id"]
+            )
+            found = replace(found, title=submitted.title)
+            extra = {"draft": submitted.markdown, "citation_urls": list(submitted.urls)}
+            urls = list(dict.fromkeys([*submitted.urls, *urls]))
         return {
+            **extra,
             "brief": asdict(found),
-            "query": module_query(found.title, found.skills, found.week_theme),
-            "urls": list(found.seed_urls)[:MAX_SEED_URLS],
+            "query": query,
+            "urls": urls[:MAX_SEED_URLS],
         }
 
     return brief
@@ -47,7 +59,14 @@ def make_brief(deps: GraphDeps) -> Node:
 
 def route_resources(state: LessonFactoryState) -> str:
     """Sans aucune source retenue, rien ne peut être écrit ni sourcé : la leçon échoue."""
-    return "write" if kept_verdicts(state) else "fail_lesson"
+    if not kept_verdicts(state):
+        return "fail_lesson"
+    return "verify" if state.get("verification") else "write"
+
+
+def route_next(state: LessonFactoryState) -> str:
+    """Une écriture directe vérifie le module demandé, sans démarrer la chaîne du programme."""
+    return "__end__" if state.get("verification") else "next"
 
 
 def make_publish(deps: GraphDeps) -> Node:
@@ -70,6 +89,7 @@ def make_publish(deps: GraphDeps) -> Node:
             markdown=state["draft"],
             resources=picks,
             report=report,
+            verification=state.get("verification", False),
         )
         logger.info(
             "Leçon publiée : session %s, module %s, leçon %s, %d ressource(s)",
@@ -101,7 +121,22 @@ def _reason(state: LessonFactoryState) -> str:
         return NO_SOURCE
     remaining = [*state.get("problems", []), *state.get("unsupported", [])]
     text = f"Contrôles non satisfaits après {state.get('revisions', 0)} révision(s) : "
+    if state.get("verification"):
+        return (text + ", ".join(_remaining_checks(state)))[:MAX_REASON_CHARS]
     return (text + " ; ".join(remaining))[:MAX_REASON_CHARS]
+
+
+def _remaining_checks(state: LessonFactoryState) -> list[str]:
+    scores = state.get("scores", {})
+    items = [
+        f"{label} ({scores[key]}/100)"
+        for key, label in CRITERIA.items()
+        if key in scores and scores[key] < MIN_GRADE
+    ]
+    items.extend(state.get("check_categories", []))
+    if state.get("unsupported"):
+        items.append("affirmations non sourcées")
+    return items or ["contrôles du chapitre"]
 
 
 def make_fail_lesson(deps: GraphDeps) -> Node:
@@ -110,14 +145,25 @@ def make_fail_lesson(deps: GraphDeps) -> Node:
         """Leçon en échec, avec sa raison (idempotent) : la chaîne continue quand même."""
         brief = brief_of(state)
         reason = _reason(state)
-        await deps.ports.lessons.fail(deps.user_id, deps.session_id, brief.module_id, reason)
+        await deps.ports.lessons.fail(
+            deps.user_id,
+            deps.session_id,
+            brief.module_id,
+            reason,
+            verification=state.get("verification", False),
+        )
         logger.info("Leçon en échec : session %s, module %s", deps.session_id, brief.module_id)
         emit(
             "agent.message",
             {"message_id": "writer-echec", "text": f"Leçon non publiée : {reason}"},
             agent="writer",
         )
-        return {"failure": reason, "summary": f"Leçon en échec : « {brief.title} »."}
+        summary = (
+            "Le brouillon n'a pas été publié."
+            if state.get("verification")
+            else f"Leçon en échec : « {brief.title} »."
+        )
+        return {"failure": reason, "summary": summary}
 
     return fail_lesson
 

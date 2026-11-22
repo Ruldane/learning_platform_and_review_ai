@@ -1,9 +1,10 @@
 import { Download } from "lucide-react";
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, type ReactNode } from "react";
 import { t } from "@/shared/i18n/t";
+import type { LessonPassage } from "@/shared/lib/lessonPassage";
 import { buttonVariants } from "@/shared/ui/button";
 import type { LessonView } from "../viewTypes";
-import { AskTutorBar } from "./AskTutorBar";
+import { AskProfessorBar } from "./AskProfessorBar";
 import { LessonMarkdown } from "./LessonMarkdown";
 import { LessonToc } from "./LessonToc";
 import { ReadingProgress } from "./ReadingProgress";
@@ -15,22 +16,24 @@ import { useSelectedPassage } from "./useSelectedPassage";
 interface LessonReaderProps {
   lesson: LessonView;
   /**
-   * « Demander au tuteur » : le passage sélectionné dans le texte. Sans cette fonction, le bouton
+   * « Demander au professeur » : le passage sélectionné dans le texte. Sans cette fonction, le bouton
    * n'est pas proposé.
    */
-  onAskTutor?: (passage: string) => void;
+  onAskProfessor?: (passage: LessonPassage) => void;
+  conversationButton?: ReactNode;
 }
 
 const WORDS_PER_MINUTE = 200;
 
 /**
  * Lecteur de leçon : sommaire des sections, progression de lecture, colonne de 72 caractères au
- * corps de 18 px, lien vers le PDF quand il existe et, si la page le permet, « Demander au tuteur »
+ * corps de 18 px, lien vers le PDF quand il existe et, si la page le permet, « Demander au professeur »
  * sur le passage sélectionné.
  */
-export function LessonReader({ lesson, onAskTutor }: LessonReaderProps) {
+export function LessonReader({ lesson, onAskProfessor, conversationButton }: LessonReaderProps) {
   const body = useRef<HTMLElement>(null);
-  const passage = useSelectedPassage(body);
+  const bar = useRef<HTMLDivElement>(null);
+  const passage = useSelectedPassage(body, bar);
   // Le titre est celui de la page (`<h1>`) : celui du Markdown ne se répète pas dessous.
   const markdown = useMemo(() => withoutLeadingTitle(lesson.markdown), [lesson.markdown]);
   const headings = useMemo(() => extractHeadings(markdown), [markdown]);
@@ -54,6 +57,7 @@ export function LessonReader({ lesson, onAskTutor }: LessonReaderProps) {
             {t("lessons.reader.pdf")}
           </a>
         )}
+        {conversationButton}
       </header>
       <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,72ch)_14rem]">
         <div className="min-w-0">
@@ -65,7 +69,9 @@ export function LessonReader({ lesson, onAskTutor }: LessonReaderProps) {
           >
             <LessonMarkdown markdown={markdown} headings={headings} />
           </article>
-          {onAskTutor && passage ? <AskTutorBar passage={passage} onAsk={onAskTutor} /> : null}
+          {onAskProfessor && passage ? (
+            <AskProfessorBar passage={passage} barRef={bar} onAsk={onAskProfessor} />
+          ) : null}
         </div>
         <aside className="order-first xl:sticky xl:top-6 xl:order-last">
           <LessonToc headings={headings} />

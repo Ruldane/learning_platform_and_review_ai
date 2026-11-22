@@ -1,0 +1,78 @@
+from collections.abc import Sequence
+from dataclasses import dataclass
+from typing import Literal, Protocol
+from uuid import UUID
+
+from pydantic import BaseModel
+
+from app.core.errors import AppError
+
+CONVERSATION_GRAPH = "conversation"
+LESSON_PROFESSOR = "lesson_professor"
+TURN_TOKEN_LIMIT = 12_000
+
+
+class ConversationSource(BaseModel):
+    kind: Literal["lesson", "memory"]
+    id: UUID
+    title: str
+    excerpt: str | None
+
+
+@dataclass(frozen=True)
+class ConversationExchange:
+    question: str
+    answer: str
+
+
+@dataclass(frozen=True)
+class ConversationContext:
+    question: str
+    strong: bool
+    history: Sequence[ConversationExchange]
+    material: str
+    source: ConversationSource
+    used_tokens: int
+
+
+class ConversationStore(Protocol):
+    async def context(
+        self, user_id: str, session_id: str, thread_id: str, turn_id: str
+    ) -> ConversationContext | None: ...
+
+    async def save_reply(
+        self,
+        user_id: str,
+        session_id: str,
+        thread_id: str,
+        turn_id: str,
+        *,
+        answer: str,
+        sources: Sequence[ConversationSource],
+    ) -> None: ...
+
+
+def _unavailable() -> AppError:
+    return AppError("conversation_unavailable", "La conversation est indisponible.", 503)
+
+
+class _NoConversation:
+    async def context(
+        self, user_id: str, session_id: str, thread_id: str, turn_id: str
+    ) -> ConversationContext | None:
+        raise _unavailable()
+
+    async def save_reply(
+        self,
+        user_id: str,
+        session_id: str,
+        thread_id: str,
+        turn_id: str,
+        *,
+        answer: str,
+        sources: Sequence[ConversationSource],
+    ) -> None:
+        raise _unavailable()
+
+
+NO_CONVERSATION: ConversationStore = _NoConversation()

@@ -16,6 +16,8 @@ from app.features.brief.mcp import MCP as brief_mcp
 from app.features.brief.router import router as brief_router
 from app.features.capture.mcp import MCP as capture_mcp
 from app.features.capture.router import router as capture_router
+from app.features.conversations.mcp import MCP as conversations_mcp
+from app.features.conversations.router import router as conversations_router
 from app.features.costs.mcp import MCP as costs_mcp
 from app.features.costs.router import router as costs_router
 from app.features.cv.mcp import MCP as cv_mcp
@@ -73,6 +75,7 @@ FEATURE_ROUTERS: list[APIRouter] = [
     learning_router,
     program_router,
     lessons_router,
+    conversations_router,
     quiz_router,
     study_router,
     replan_router,
@@ -105,6 +108,7 @@ MCP_FEATURES: list[FeatureMcp] = [
     auth_mcp,
     brief_mcp,
     capture_mcp,
+    conversations_mcp,
     costs_mcp,
     cv_mcp,
     gap_mcp,

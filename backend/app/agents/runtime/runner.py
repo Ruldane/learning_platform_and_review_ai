@@ -17,13 +17,13 @@ from typing import Any
 
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.types import Command
-from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.agents.graphs.registry import GRAPHS, GraphSpec
 from app.agents.runtime import control
 from app.agents.runtime.bus import EventBus
 from app.agents.runtime.costs import ModelPrice
+from app.agents.runtime.creation import PrepareSession, persist_session, validated_input
 from app.agents.runtime.deps import ChatModelSource
 from app.agents.runtime.events import SessionEvent, UserCommand
 from app.agents.runtime.execution import RunContext, run_session, unknown_graph
@@ -78,8 +78,6 @@ class SessionRunner:
         self._stopping = False
         self._deleting: set[str] = set()  # comptes dont « Tout supprimer » est en cours
 
-    # --- Démarrage et reprise ------------------------------------------------------------
-
     async def start(
         self,
         user_id: str,
@@ -87,6 +85,8 @@ class SessionRunner:
         input: dict[str, Any],
         subject_type: str | None = None,
         subject_id: str | None = None,
+        *,
+        prepare: PrepareSession | None = None,
     ) -> str:
         """Valide l'entrée, crée la session `running`, lance sa tâche et rend la main aussitôt."""
         self._refuse_if_stopping()  # avant toute écriture : rien à reprendre au démarrage
@@ -94,41 +94,33 @@ class SessionRunner:
         spec = self._ctx.graphs.get(graph)
         if spec is None:
             raise unknown_graph(graph)
-        try:
-            data = spec.input_model.model_validate(input).model_dump(mode="json")
-        except ValidationError as exc:  # chemins des champs seulement, jamais les valeurs
-            fields = [".".join(str(p) for p in err["loc"]) for err in exc.errors()]
-            raise AppError(
-                "invalid_input", "L'entrée du parcours est invalide.", 422, {"fields": fields}
-            ) from None
+        data = validated_input(spec.input_model, input)
         # Identité MCP ou client joué : compte dans le plafond du jour (M11), rendu si rien ne part.
         client, provider = run_source(user_id)
         limited = client is not None or MCP_IDENTITY.get() is not None
         reserved = self.launch_quota.reserve(user_id) if limited else None
         try:
-            async with self._db() as db:
-                row = await SessionRepository(db, user_id).add(
-                    graph=graph,
-                    played_by=client,
-                    model_provider=provider,
-                    status="running",
-                    input=data,
-                    subject_type=subject_type,
-                    subject_id=subject_id,
-                )
-                await db.commit()
+            sid = await persist_session(
+                self._db,
+                user_id,
+                graph,
+                data,
+                source=(client, provider),
+                subject=(subject_type, subject_id),
+                prepare=prepare,
+            )
         except BaseException:
             if reserved is not None:
                 self.launch_quota.release(user_id, reserved)
             raise
         if user_id in self._deleting:  # « Tout supprimer » a commencé pendant l'insertion
             with contextlib.suppress(AppError):  # déjà annulée par la suppression
-                await control.claim_cancel(self._db, user_id, row.id)
+                await control.claim_cancel(self._db, user_id, sid)
             self._refuse_if_deleting(user_id)
-        self._launch(user_id, row.id, None)
+        self._launch(user_id, sid, None)
         if (play := PLAY_CONTEXT.get()) and play.user_id == user_id and play.graph == graph:
-            play.started.append(row.id)
-        return row.id
+            play.started.append(sid)
+        return sid
 
     async def resume(
         self, user_id: str, session_id: str, interrupt_id: str | None, value: Any
@@ -190,9 +182,17 @@ class SessionRunner:
     async def cancel(self, user_id: str, session_id: str) -> AgentSession:
         async with self._control(session_id):
             await control.claim_cancel(self._db, user_id, session_id)
-            await self._stop(user_id, session_id)
-            await self._bus.close(user_id=user_id, session_id=session_id)
+            await self._close_cancelled(user_id, session_id)
         return await control.get_owned(self._db, user_id, session_id)
+
+    async def settle_cancelled(self, user_id: str, session_id: str) -> None:
+        """Arrête une session dont l'annulation a déjà été commitée avec l'écriture métier."""
+        async with self._control(session_id):
+            await self._close_cancelled(user_id, session_id)
+
+    async def _close_cancelled(self, user_id: str, session_id: str) -> None:
+        await self._stop(user_id, session_id)
+        await self._bus.close(user_id=user_id, session_id=session_id)
 
     async def delete_threads(self, session_ids: Iterable[str]) -> None:
         """Efface les points de reprise (fils du checkpointer) de ces sessions, écritures en

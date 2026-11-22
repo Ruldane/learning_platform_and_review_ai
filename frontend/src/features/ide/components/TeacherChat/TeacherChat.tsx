@@ -1,9 +1,12 @@
 import { useId, type Ref } from "react";
 import { t } from "@/shared/i18n/t";
-import { ChatComposer } from "../ChatComposer";
+import { ChatComposer } from "@/shared/ui/ChatComposer";
+import { ChatThread } from "@/shared/ui/ChatThread";
 import { ChatFooter } from "../ChatFooter";
-import { ChatThread } from "../ChatThread";
+import { ChatMessage } from "../ChatMessage";
 import type { ChatItem } from "../chatItems";
+import { PendingMessage } from "./PendingMessage";
+import { QuickActions } from "./QuickActions";
 
 interface TeacherChatProps {
   items: ChatItem[];
@@ -22,6 +25,26 @@ interface TeacherChatProps {
   onReject: (noteId: string) => void;
   /** Reçoit le focus quand une proposition quitte la liste d'attente (accepter, refuser). */
   headingRef?: Ref<HTMLHeadingElement>;
+}
+
+function renderMessage(
+  item: ChatItem,
+  busy: boolean,
+  onAccept: TeacherChatProps["onAccept"],
+  onReject: TeacherChatProps["onReject"],
+) {
+  if (item.type === "pending") return <PendingMessage key={item.id} text={item.text} />;
+  return (
+    <ChatMessage
+      key={item.id}
+      note={item.note}
+      mine={item.mine}
+      tag={item.tag}
+      busy={busy}
+      onAccept={() => onAccept(item.id)}
+      onReject={() => onReject(item.id)}
+    />
+  );
 }
 
 /**
@@ -58,19 +81,19 @@ export function TeacherChat({
         {t("ide.teacher.title")}
       </h2>
       <ChatThread
-        items={items}
-        busy={proposalsBusy}
-        onAccept={onAccept}
-        onReject={onReject}
+        label={t("ide.chat.thread")}
+        emptyText={t("ide.teacher.empty")}
         footer={<ChatFooter typing={typing} notice={notice} />}
-        footerKey={`${typing}|${notice?.text ?? ""}`}
-      />
+        scrollSignal={`${typing}|${notice?.text ?? ""}`}
+      >
+        {items.map((item) => renderMessage(item, proposalsBusy, onAccept, onReject))}
+      </ChatThread>
       <ChatComposer
         busy={busy}
-        canExplain={canExplain}
+        label={t("ide.teacher.question")}
+        placeholder={t("ide.chat.placeholder")}
         onSend={onSend}
-        onHint={onHint}
-        onWhy={onWhy}
+        actions={<QuickActions busy={busy} canExplain={canExplain} onHint={onHint} onWhy={onWhy} />}
       />
     </section>
   );

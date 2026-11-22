@@ -59,6 +59,36 @@ describe("LessonPage", () => {
     }
   });
 
+  it("keeps the published chapter and its PDF visible during verification", async () => {
+    setup(lessonOut({ verification_session_id: "verification-1" }));
+
+    expect(await screen.findByRole("status", { name: "À vérifier" })).toBeInTheDocument();
+    expect(screen.getByText("Une variable nomme une valeur.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Télécharger le PDF" })).toBeInTheDocument();
+  });
+
+  it("shows the verification of a new draft instead of the reader", async () => {
+    setup(
+      lessonOut({
+        status: "generating",
+        markdown: "",
+        pdf_available: false,
+        verification_session_id: "verification-1",
+      }),
+    );
+
+    expect(await screen.findByRole("status", { name: "À vérifier" })).toBeInTheDocument();
+    expect(screen.queryByText(/Le Rédacteur écrit la leçon/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Télécharger le PDF" })).not.toBeInTheDocument();
+  });
+
+  it("shows why a revision failed next to the previously published text", async () => {
+    setup(lessonOut({ verification_failure_reason: "Le schéma du brouillon est incomplet." }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Le schéma du brouillon est incomplet.");
+    expect(screen.getByText("Une variable nomme une valeur.")).toBeInTheDocument();
+  });
+
   it("toggles a resource as read from the lesson", async () => {
     let body: unknown = null;
     const { user } = setup();

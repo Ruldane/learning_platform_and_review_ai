@@ -8,10 +8,11 @@ from tests.features.lessons.test_router import seed
 from tests.mcp.adapter_support import call
 from tests.mcp.support import API, Mcp
 from tests.sessions_support import act_as
-from tests.support.direct import Seed, assert_no_agent, lesson_text
+from tests.support.direct import Seed, assert_no_agent
+from tests.support.lesson_verification import submission_text, wait_session
 
 pytestmark = pytest.mark.usefixtures("settled_indexing")
-MARKDOWN = lesson_text("Un cours avec une lecture conseillée.")
+MARKDOWN = submission_text("Module Bases")
 ARTICLE = {
     "url": "https://exemple.org/article#resultats",
     "title": "Évaluer la récupération",
@@ -22,6 +23,7 @@ ARTICLE = {
 }
 
 
+@pytest.mark.usefixtures("accept_lesson")
 async def test_lesson_write_includes_trackable_resource(
     client: httpx.AsyncClient, app: FastAPI, drafted: Seed, claude: Mcp
 ) -> None:
@@ -34,15 +36,19 @@ async def test_lesson_write_includes_trackable_resource(
     )
 
     assert not error, result
-    [resource] = result["data"]["resources"]
+    pending = result["data"]
+    assert pending["resources"] == []
+    assert (await wait_session(client, pending["verification_session_id"]))["status"] == "completed"
+    ready, error = await call(claude, token, "lessons_get_lesson", {"lesson_id": pending["id"]})
+    assert not error, ready
+    resource = next(row for row in ready["data"]["resources"] if row["url"] == ARTICLE["url"])
     assert resource["status"] == "to_read"
     assert resource["title"] == "<donnee_non_fiable>Évaluer la récupération</donnee_non_fiable>"
     assert resource["url"] == ARTICLE["url"]
     library = (
         await client.get(f"{API}/resources", params={"program_id": drafted.program_id})
     ).json()
-    assert [row["id"] for row in library] == [resource["id"]]
-    await assert_no_agent(app)
+    assert resource["id"] in [row["id"] for row in library]
 
 
 async def test_attach_to_ready_lesson_preserves_read_status_and_is_reversible(
@@ -72,6 +78,7 @@ async def test_attach_to_ready_lesson_preserves_read_status_and_is_reversible(
     undone = await claude.http.post(f"{API}/mcp/changes/{change['call_id']}/undo")
     assert undone.status_code == 200, undone.text
     assert (await client.get(path)).json()["resources"] == lesson["resources"]
+    await assert_no_agent(app)
 
 
 async def test_cannot_attach_to_another_users_lesson(

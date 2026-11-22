@@ -12,6 +12,7 @@ from app.agents.graphs import (
     application_intake,
     application_kit,
     capture,
+    conversation,
     cv_capture,
     cv_review,
     daily_brief,
@@ -34,6 +35,7 @@ from app.agents.graphs import (
     web_research,
 )
 from app.agents.runtime.deps import GraphDeps
+from app.agents.tools.conversation_port import CONVERSATION_GRAPH
 from app.core.errors import AppError
 
 
@@ -66,6 +68,7 @@ GRAPHS: dict[str, GraphSpec] = {
         GraphSpec("study_session", study_session.StudySessionInput, study_session.build),
         GraphSpec("replan", replan.ReplanInput, replan.build),
         GraphSpec("capture", capture.CaptureInput, capture.build),
+        GraphSpec(CONVERSATION_GRAPH, conversation.ConversationInput, conversation.build),
         GraphSpec("gap_analysis", gap_analysis.GapAnalysisInput, gap_analysis.build),
         GraphSpec("cv_capture", cv_capture.CvCaptureInput, cv_capture.build),
         GraphSpec("cv_review", cv_review.CvReviewInput, cv_review.build),

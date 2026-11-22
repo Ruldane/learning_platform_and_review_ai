@@ -14,7 +14,11 @@ from app.features.lessons.repository import LessonRepository, ResourceRepository
 from app.features.lessons.schemas import LessonOut, LessonSummaryOut
 from app.features.lessons.service.production import MAX_ATTEMPTS
 from app.features.lessons.service.resources import to_out
-from app.features.lessons.service.status import read_with_open_sessions, shown
+from app.features.lessons.service.status import (
+    VERIFICATION_INTERRUPTED,
+    read_with_open_sessions,
+    shown,
+)
 from app.features.program.service.programs import Loaded, load
 from app.providers.storage.base import FileStorage, StorageKeyInvalid
 
@@ -38,6 +42,12 @@ def _summary(
 ) -> dict[str, object]:
     """Résumé d'une leçon ; `tasks` : celles de son module (terminée quand toutes sont faites)."""
     status, reason = shown(lesson.status, lesson.session_id, lesson.failure_reason, open_ids)
+    sid = lesson.verification_session_id
+    verification_reason = lesson.verification_failure_reason
+    if sid is not None and sid not in open_ids:
+        sid, verification_reason = None, VERIFICATION_INTERRUPTED
+        if lesson.status == "generating":
+            status, reason = "failed", verification_reason
     done = sum(1 for task in tasks if task.status == "done")
     return {
         "id": lesson.id,
@@ -52,11 +62,18 @@ def _summary(
         "done_tasks": done,
         "total_tasks": len(tasks),
         "completed": bool(tasks) and done == len(tasks),
+        "verification_session_id": sid,
+        "verification_failure_reason": verification_reason,
     }
 
 
 def _states(rows: list[Lesson]) -> list[tuple[str, str | None]]:
-    return [(row.status, row.session_id) for row in rows]
+    return [
+        ("generating", row.verification_session_id)
+        if row.verification_session_id
+        else (row.status, row.session_id)
+        for row in rows
+    ]
 
 
 async def list_lessons(db: AsyncSession, user_id: str, program_id: str) -> list[LessonSummaryOut]:

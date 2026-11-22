@@ -46,7 +46,9 @@ export const api = createClient<WithoutPrefix<paths>>({
 const runSourceMiddleware: Middleware = {
   onRequest({ request }) {
     const source = getRunSource();
-    if (source !== "settings") request.headers.set(RUN_HEADER, source);
+    if (source !== "settings" && !request.headers.has(RUN_HEADER)) {
+      request.headers.set(RUN_HEADER, source);
+    }
     return request;
   },
 };

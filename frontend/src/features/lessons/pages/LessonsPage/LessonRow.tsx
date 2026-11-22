@@ -10,6 +10,7 @@ import { LessonTaskProgress } from "./LessonTaskProgress";
  */
 export function LessonRow({ lesson }: { lesson: LessonSummaryOut }) {
   const ready = lesson.status === "ready";
+  const status = lesson.verification_session_id ? "verifying" : lesson.status;
   return (
     <li className="flex flex-wrap items-baseline justify-between gap-2 rounded-xl border bg-card px-4 py-3">
       <Link
@@ -26,7 +27,7 @@ export function LessonRow({ lesson }: { lesson: LessonSummaryOut }) {
           </span>
         ) : null}
         <span className={cn("font-medium", ready ? "text-primary" : "text-muted-foreground")}>
-          {t(`lessons.status.${lesson.status}`)}
+          {t(`lessons.status.${status}`)}
         </span>
         <LessonTaskProgress lesson={lesson} />
       </span>

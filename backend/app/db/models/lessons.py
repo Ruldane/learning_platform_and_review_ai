@@ -31,11 +31,20 @@ class Lesson(UserScopedMixin, Base):
     markdown: Mapped[str] = mapped_column(Text, default="")
     word_count: Mapped[int] = mapped_column(Integer, default=0)
     status: Mapped[str] = mapped_column(String(16), default="pending")
-    pdf_key: Mapped[str | None] = mapped_column(String(200), default=None)
+    pdf_key: Mapped[str | None] = mapped_column(
+        String(200), default=None, info={"undo_pending_attachment": True}
+    )
     attempts: Mapped[int] = mapped_column(Integer, default=0)
     failure_reason: Mapped[str | None] = mapped_column(String(300), default=None)
-    session_id: Mapped[str | None] = mapped_column(String(36), default=None)
+    session_id: Mapped[str | None] = mapped_column(
+        String(36), default=None, info={"undo_publication_session": True}
+    )
     report: Mapped[dict[str, Any] | None] = mapped_column(default=None)
+    verification_session_id: Mapped[str | None] = mapped_column(
+        String(36), default=None, info={"undo_pending_session": True}
+    )
+    verification_failure_reason: Mapped[str | None] = mapped_column(String(300), default=None)
+    verification_draft: Mapped[dict[str, Any] | None] = mapped_column(default=None)
 
 
 class Resource(UserScopedMixin, Base):

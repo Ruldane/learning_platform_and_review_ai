@@ -1,25 +1,28 @@
-import { useNavigate, useParams } from "react-router";
+import type { ComponentType } from "react";
+import { useParams } from "react-router";
 import { errorMessage } from "@/shared/api/errors";
 import { t } from "@/shared/i18n/t";
 import { ErrorState } from "@/shared/ui/states/ErrorState";
 import { LoadingState } from "@/shared/ui/states/LoadingState";
-import { LessonReader } from "../../components/LessonReader";
+import { LessonVerification } from "../../components/LessonVerification";
 import { useLesson } from "../../hooks/useLesson";
 import { useResourceStatus } from "../../hooks/useResourceStatus";
-import { toLessonView, toResourceView } from "../../toView";
 import { LessonNav } from "./LessonNav";
 import { LessonPreparing } from "./LessonPreparing";
-import { LessonResources } from "./LessonResources";
+import { PublishedLesson, type LessonConversationPanelProps } from "./PublishedLesson";
+
+interface LessonPageProps {
+  conversationPanel?: ComponentType<LessonConversationPanelProps>;
+}
 
 /**
  * Leçon (`/apprendre/lecons/:lessonId`) : le lecteur, les ressources du module et le PDF quand la
  * leçon est prête ; sinon l'état de sa préparation, dit clairement.
  */
-export function LessonPage() {
+export function LessonPage({ conversationPanel }: LessonPageProps) {
   const { lessonId = "" } = useParams();
   const lesson = useLesson(lessonId);
   const resources = useResourceStatus();
-  const navigate = useNavigate();
 
   if (lesson.isPending) return <LoadingState label={t("lessons.page.loading")} />;
   if (lesson.isError) {
@@ -28,18 +31,28 @@ export function LessonPage() {
     );
   }
   const { data } = lesson;
+  const published = data.status === "ready";
+  const checking = Boolean(data.verification_session_id);
+  const verification =
+    checking || data.verification_failure_reason ? (
+      <LessonVerification
+        published={published}
+        checking={checking}
+        failure={data.verification_failure_reason}
+      />
+    ) : null;
   return (
     <div className="flex flex-col gap-6">
-      <LessonNav lessonId={data.id} ready={data.status === "ready"} />
-      {data.status === "ready" ? (
+      <LessonNav lessonId={data.id} ready={published} />
+      {published ? (
         <>
-          <LessonReader
-            lesson={toLessonView(data)}
-            onAskTutor={(passage) =>
-              void navigate("/etudier/session", { state: { lessonId: data.id, question: passage } })
-            }
+          {verification}
+          <PublishedLesson
+            key={data.id}
+            lesson={data}
+            resources={resources}
+            conversationPanel={conversationPanel}
           />
-          <LessonResources resources={data.resources.map(toResourceView)} status={resources} />
         </>
       ) : (
         <>
@@ -49,7 +62,7 @@ export function LessonPage() {
               {t("lessons.page.week", { rank: data.week_rank })}
             </p>
           </header>
-          <LessonPreparing lesson={data} />
+          {verification ?? <LessonPreparing lesson={data} />}
         </>
       )}
     </div>

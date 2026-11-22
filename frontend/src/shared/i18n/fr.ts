@@ -4,6 +4,8 @@ import { applications } from "./messages/applications";
 import { appMessages } from "./messages/app";
 import { auth } from "./messages/auth";
 import { capture } from "./messages/capture";
+import { chat } from "./messages/chat";
+import { conversations } from "./messages/conversations";
 import { costs } from "./messages/costs";
 import { cv } from "./messages/cv";
 import { demo } from "./messages/demo";
@@ -50,6 +52,8 @@ export const fr = {
   skills,
   replan,
   capture,
+  chat,
+  conversations,
   gap,
   costs,
   cv,

@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.errors import AppError
 from app.db.base import Base
+from app.db.models.agents import OPEN_SESSION_STATES, AgentSession
 from app.db.models.mcp import McpChange
 from app.mcp.rowstate import (
     UndoResult,
@@ -56,6 +57,7 @@ async def undo_call(
                     await _check_dependents(db, row, added)
             for row in pending:
                 await _check(db, row)
+            cancelled = await _cancel_pending_sessions(db, user_id, pending)
             for row in pending:
                 await _apply(db, row, user_id)
             await db.commit()
@@ -70,7 +72,40 @@ async def undo_call(
         except AppError:
             await db.rollback()  # le « pris » de `_claim` ne reste pas
             raise
-    return UndoResult(call_id=call_id, undone=len(pending))
+    return UndoResult(call_id=call_id, undone=len(pending), cancelled_sessions=cancelled)
+
+
+async def _cancel_pending_sessions(
+    db: AsyncSession, user_id: str, changes: list[McpChange]
+) -> tuple[str, ...]:
+    """Révoque avec l'écriture la session que cet appel avait mise en attente."""
+    cancelled: list[str] = []
+    for row in changes:
+        for column in _table(row).columns:
+            if not (
+                column.info.get("undo_pending_session")
+                or column.info.get("undo_publication_session")
+            ):
+                continue
+            old = (row.before or {}).get(column.name)
+            sid = (row.after or {}).get(column.name)
+            if isinstance(sid, str) and sid != old and await _cancel_session(db, user_id, sid):
+                cancelled.append(sid)
+    return tuple(cancelled)
+
+
+async def _cancel_session(db: AsyncSession, user_id: str, sid: str) -> bool:
+    stmt = (
+        update(AgentSession)
+        .where(
+            AgentSession.user_id == user_id,
+            AgentSession.id == sid,
+            AgentSession.status.in_(OPEN_SESSION_STATES),
+        )
+        .values(status="cancelled", pending_interrupt=None)
+        .returning(AgentSession.id)
+    )
+    return (await db.execute(stmt)).scalar_one_or_none() is not None
 
 
 def _already_undone() -> AppError:
@@ -140,13 +175,28 @@ async def _current(db: AsyncSession, row: McpChange) -> dict[str, Any] | None:
 
 
 def _without(state: dict[str, Any] | None, ignored: frozenset[str]) -> dict[str, Any] | None:
-    return None if state is None else {k: v for k, v in state.items() if k not in ignored}
+    # Une colonne nullable ajoutée après l'appel vaut NULL dans son instantané historique.
+    return (
+        None
+        if state is None
+        else {k: v for k, v in state.items() if k not in ignored and v is not None}
+    )
+
+
+def _pending_attachments(table: Table, row: McpChange) -> frozenset[str]:
+    """Un PDF du texte toujours publié peut arriver pendant la vérification du brouillon."""
+    if any(
+        c.info.get("undo_pending_session") and (row.after or {}).get(c.name) for c in table.columns
+    ):
+        return frozenset(c.name for c in table.columns if c.info.get("undo_pending_attachment"))
+    return frozenset()
 
 
 async def _check(db: AsyncSession, row: McpChange) -> None:
     """La ligne est-elle restée comme l'appel l'a laissée ? Sinon 409, sans son contenu."""
     expected = None if row.op == "delete" else row.after
-    ignored = volatile_columns(_table(row))
+    table = _table(row)
+    ignored = volatile_columns(table) | _pending_attachments(table, row)
     current = await _current(db, row)
     if _without(current, ignored) != _without(expected, ignored):
         raise AppError(
@@ -169,6 +219,8 @@ async def _apply(db: AsyncSession, row: McpChange, user_id: str) -> None:
     values.update({name: None for name in volatile_columns(table) if name in values})
     if row.op == "update":
         values.pop(pk.name, None)
+        for name in _pending_attachments(table, row):
+            values.pop(name, None)
         values.update(
             {name: table.c[name] + 1 for name in counter_columns(table) if name in values}
         )

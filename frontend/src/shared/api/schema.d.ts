@@ -1474,10 +1474,43 @@ export interface paths {
         head?: never;
         /**
          * Patch Lesson
-         * @description Retouche le titre ou le Markdown d'une leçon prête, ou y ajoute des ressources, sans agent.
-         *     Un PDF antérieur est détaché si le Markdown change.
+         * @description Soumet une retouche de titre ou de texte. Un ajout de ressources seul est immédiat.
          */
         patch: operations["patch_lesson_api_v1_lessons__lesson_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/lessons/{lesson_id}/conversation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Professor */
+        get: operations["read_professor_api_v1_lessons__lesson_id__conversation_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lessons/{lesson_id}/conversation/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ask Professor */
+        post: operations["ask_professor_api_v1_lessons__lesson_id__conversation_messages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/lessons/{lesson_id}/pdf": {
@@ -1905,9 +1938,7 @@ export interface paths {
         put?: never;
         /**
          * Write Lesson
-         * @description Écrit la leçon d'un module en direct, sans agent ni appel au modèle (le Markdown est celui
-         *     de January ou de Claude). Son texte entre dans la mémoire et les liens fournis dans la
-         *     Bibliothèque. L'écriture directe ne génère pas de PDF.
+         * @description Soumet le Markdown fourni à la Fabrique et renvoie sa session de vérification.
          */
         post: operations["write_lesson_api_v1_modules__module_id__lesson_post"];
         delete?: never;
@@ -4510,6 +4541,98 @@ export interface components {
             /** Url */
             url: string | null;
         };
+        /** ConversationMessageIn */
+        ConversationMessageIn: {
+            /** Passage */
+            passage?: string | null;
+            /** Passage Occurrence */
+            passage_occurrence?: number | null;
+            /** Question */
+            question: string;
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /**
+             * Strong
+             * @default false
+             */
+            strong: boolean;
+        };
+        /** ConversationSource */
+        ConversationSource: {
+            /** Excerpt */
+            excerpt: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "lesson" | "memory";
+            /** Title */
+            title: string;
+        };
+        /** ConversationStarted */
+        ConversationStarted: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+        };
+        /** ConversationTurnOut */
+        ConversationTurnOut: {
+            /** Answer */
+            answer: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Passage */
+            passage: string | null;
+            /** Passage Occurrence */
+            passage_occurrence: number | null;
+            /** Question */
+            question: string;
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Sources */
+            sources: components["schemas"]["ConversationSource"][];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "running" | "waiting_user" | "paused" | "completed" | "failed" | "cancelled" | "expired";
+        };
+        /** ConversationUsage */
+        ConversationUsage: {
+            /** Day Token Limit */
+            day_token_limit: number;
+            /** Day Tokens */
+            day_tokens: number;
+            /** Thread Token Limit */
+            thread_token_limit: number;
+            /** Thread Tokens */
+            thread_tokens: number;
+            /** Turn Limit */
+            turn_limit: number;
+            /** Turns */
+            turns: number;
+        };
         /**
          * CostRow
          * @description Une ligne du rapport. `key` : le jour (`2026-11-16`), le graphe (`""` hors session),
@@ -5788,6 +5911,22 @@ export interface components {
             /** Session Id */
             session_id: string;
         };
+        /** LessonConversationOut */
+        LessonConversationOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Lesson Id
+             * Format: uuid
+             */
+            lesson_id: string;
+            /** Turns */
+            turns: components["schemas"]["ConversationTurnOut"][];
+            usage: components["schemas"]["ConversationUsage"];
+        };
         /** LessonOut */
         LessonOut: {
             /**
@@ -5832,6 +5971,16 @@ export interface components {
              * @description Tâches du module de la leçon.
              */
             total_tasks: number;
+            /**
+             * Verification Failure Reason
+             * @description Motif du dernier échec de vérification d'une écriture directe.
+             */
+            verification_failure_reason?: string | null;
+            /**
+             * Verification Session Id
+             * @description Session de vérification d'une écriture directe en cours.
+             */
+            verification_session_id?: string | null;
             /** Week Rank */
             week_rank: number;
             /** Word Count */
@@ -5885,6 +6034,16 @@ export interface components {
              * @description Tâches du module de la leçon.
              */
             total_tasks: number;
+            /**
+             * Verification Failure Reason
+             * @description Motif du dernier échec de vérification d'une écriture directe.
+             */
+            verification_failure_reason?: string | null;
+            /**
+             * Verification Session Id
+             * @description Session de vérification d'une écriture directe en cours.
+             */
+            verification_session_id?: string | null;
             /** Week Rank */
             week_rank: number;
             /** Word Count */
@@ -5892,8 +6051,7 @@ export interface components {
         };
         /**
          * LessonWriteIn
-         * @description La leçon d'un module écrite à la main ou par Claude (aucun agent, aucun appel au modèle) :
-         *     `title` vaut par défaut le titre du module.
+         * @description Le brouillon d'un module soumis à la Fabrique. Par défaut, le titre du module est utilisé.
          */
         LessonWriteIn: {
             /** Markdown */
@@ -12917,6 +13075,15 @@ export interface operations {
                     "application/json": components["schemas"]["LessonOut"];
                 };
             };
+            /** @description Brouillon soumis à la vérification. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonOut"];
+                };
+            };
             /** @description `lesson_not_found` */
             404: {
                 headers: {
@@ -12924,12 +13091,78 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `lesson_not_ready` */
+            /** @description `lesson_not_ready` ou `lesson_generating` */
             409: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_professor_api_v1_lessons__lesson_id__conversation_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lesson_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonConversationOut"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ask_professor_api_v1_lessons__lesson_id__conversation_messages_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lesson_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConversationMessageIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationStarted"];
+                };
             };
             /** @description Validation Error */
             422: {
@@ -13695,7 +13928,7 @@ export interface operations {
         };
         responses: {
             /** @description Successful Response */
-            201: {
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };

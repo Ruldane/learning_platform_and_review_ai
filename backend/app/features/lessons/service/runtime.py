@@ -12,6 +12,7 @@ from typing import Any, Protocol
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.agents.runtime.creation import PrepareSession
 from app.core.providers import PublishingProviders
 from app.features.memory.service.runtime import MemoryRuntime
 from app.features.research.service.runtime import ResearchRuntime
@@ -29,6 +30,7 @@ class Launcher(Protocol):
         *,
         subject_type: str | None = None,
         subject_id: str | None = None,
+        prepare: PrepareSession | None = None,
     ) -> str: ...
 
 

@@ -1,0 +1,17 @@
+export const conversations = {
+  title: "Professeur",
+  close: "Fermer la conversation",
+  study: "Approfondir en séance",
+  thread: "Conversation avec le professeur",
+  you: "Toi",
+  loading: "Chargement de la conversation…",
+  empty: "Pose une question sur la leçon.",
+  question: "Ta question",
+  placeholder: "Écris ta question sur la leçon…",
+  sources: "Sources citées",
+  typing: "Le professeur écrit…",
+  failed: "La réponse a été interrompue. Tu peux poser ta question à nouveau.",
+  strong: "Utiliser le modèle avancé pour cette question",
+  relayWait: "Le relais relève les questions toutes les deux minutes. Le client répond ensuite.",
+  usage: "Fil {thread} / {threadLimit} jetons · Aujourd’hui {day} / {dayLimit} jetons",
+} as const;

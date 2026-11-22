@@ -2279,3 +2279,50 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
   ceux des sessions jouées.
 - **Raison** : une mise à jour de la norme ou du schéma de réponse peut rendre un ancien rendu
   inutilisable alors que la session doit encore être reprise.
+
+## D227
+
+- **Date** : 2026-11-22
+- **Sujet** : Reconstruction des quatre programmes après les travaux du projet.
+- **Décision** : poursuivre les phases de développement avec les quatre programmes existants.
+  Après la phase 43 et les recettes, relire le pilote LangChain, chiffrer les nouveaux sommaires
+  et chapitres et obtenir l’accord sur le coût avant de tout reconstruire avec OpenAI.
+- **Raison** : January souhaite effectuer la réécriture des cours à la toute fin du projet.
+
+## D228
+
+- **Date** : 2026-11-22
+- **Sujet** : Plans de développement par lots de cinq phases.
+- **Décision** : conserver le plan de la phase 11 et laisser la phase 12 de côté. De la phase 13
+  à la phase 43, préparer un plan par lot de cinq phases dans l’ordre de reprise. Chaque plan
+  détaille les dépendances et les vérifications par phase. Le dernier lot contient la phase 43.
+- **Raison** : réduire le temps de préparation, avancer en parallèle sur les tâches indépendantes
+  et mutualiser la recette Playwright d’un lot.
+
+## D229
+
+- **Date** : 2026-11-22
+- **Sujet** : Vérification et annulation d’une soumission de leçon.
+- **Décision** : réserver le brouillon et sa session Fabrique dans la même transaction. La
+  session vérifie le texte fourni, le fait réviser si nécessaire et prépare le PDF avant de
+  publier. Le chapitre précédent reste disponible pendant cette opération. Une soumission
+  refusée garde un motif par catégorie de contrôle et ne redémarre qu’après une nouvelle
+  demande. Une écriture MCP conserve le même historique pendant et après la vérification.
+  L’annulation rétablit le texte, le lien PDF, les ressources et la mémoire de la version
+  précédente tant que l’historique est disponible et que les données n’ont pas changé.
+- **Raison** : la lecture et la reprise après une interruption doivent rester cohérentes,
+  et les ressources ajoutées avec une leçon gardent l’annulation prévue par D221.
+
+## D230
+
+- **Date** : 2026-11-22
+- **Sujet** : Passage cité et coût du Professeur dans une leçon.
+- **Décision** : un fil par compte et leçon, avec le rang du passage quand le texte se répète.
+  La session vérifie l’empreinte de la version publiée entre l’envoi et la réponse. Chaque
+  fil peut avoir au plus 100 tours et 100 000 jetons. Le total des conversations est limité
+  à 300 000 jetons par jour local. Le serveur réserve jusqu’à 12 000 jetons par tour, borne
+  le contexte et limite la sortie du fournisseur. Si une nouvelle question dépasserait la
+  limite, elle est refusée avant l’appel. Le modèle rapide répond par défaut et le modèle fort
+  est demandé pour un tour. Le client joué utilise le même fil et n’appelle aucun modèle d’API.
+- **Raison** : relire le passage réellement sélectionné et maîtriser le coût même après une
+  reprise ou lorsque plusieurs réponses sont en cours pour le même compte.

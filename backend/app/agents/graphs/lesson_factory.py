@@ -1,14 +1,14 @@
 """Parcours `lesson_factory` (SPEC 3.5, 3.6, D90) : pour un module d'un programme validé,
 l'Éclaireur cherche et note des sources (nœuds de `web_research`, tels quels), choisit 3 à 6
 ressources, le Rédacteur écrit la leçon, le Vérificateur la contrôle (deux révisions au plus) ;
-elle est publiée ou marquée en échec, puis la chaîne passe au module suivant. Aucune
-interruption.
+elle est publiée ou marquée en échec, puis la chaîne passe au module suivant. Une soumission
+directe fournit le premier brouillon et vérifie uniquement son module.
 
 START -> brief -> plan -> search -> read -> judge -> remember -> pick_resources
-pick_resources : aucune source retenue -> fail_lesson ; sinon -> write
+pick_resources : aucune source retenue -> fail_lesson ; brouillon soumis -> verify ; sinon -> write
 write -> verify -> route_verify
 route_verify : conforme -> publish ; problèmes et révisions < 2 -> write ; sinon -> fail_lesson
-publish / fail_lesson -> next -> END
+publish / fail_lesson -> next -> END (soumission directe -> END)
 """
 
 from typing import Any
@@ -21,6 +21,7 @@ from app.agents.nodes.lesson_flow import (
     make_fail_lesson,
     make_next,
     make_publish,
+    route_next,
     route_resources,
 )
 from app.agents.nodes.scout import make_judge, make_plan, make_read, make_remember, make_search
@@ -34,6 +35,7 @@ from app.agents.state.lesson_factory import LessonFactoryState
 class LessonFactoryInput(BaseModel):
     program_id: str = Field(min_length=36, max_length=36)
     module_id: str = Field(min_length=36, max_length=36)
+    verification: bool = False
 
 
 def build(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
@@ -59,11 +61,13 @@ def build(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
         ("judge", "remember"),
         ("remember", "pick_resources"),
         ("write", "verify"),
-        ("publish", "next"),
-        ("fail_lesson", "next"),
         ("next", END),
     ]:
         graph.add_edge(source, target)
-    graph.add_conditional_edges("pick_resources", route_resources, ["write", "fail_lesson"])
+    graph.add_conditional_edges(
+        "pick_resources", route_resources, ["write", "verify", "fail_lesson"]
+    )
     graph.add_conditional_edges("verify", route_verify, ["publish", "write", "fail_lesson"])
+    graph.add_conditional_edges("publish", route_next, ["next", END])
+    graph.add_conditional_edges("fail_lesson", route_next, ["next", END])
     return graph

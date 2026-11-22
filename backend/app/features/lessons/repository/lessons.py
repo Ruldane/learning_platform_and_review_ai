@@ -1,8 +1,9 @@
 import builtins
 from datetime import datetime
 
-from sqlalchemy import CursorResult, select, update
+from sqlalchemy import CursorResult, and_, or_, select, update
 
+from app.db.models.agents import AgentSession
 from app.db.models.lessons import Lesson
 from app.db.repository import UserScopedRepository
 
@@ -21,17 +22,67 @@ class LessonRepository(UserScopedRepository[Lesson]):
         )
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
-    async def set_pdf_key(self, lesson_id: str, key: str) -> bool:
+    async def set_pdf_key(self, lesson_id: str, key: str, session_id: str | None = None) -> bool:
         """Range le PDF si la leçon n'en a pas encore ; `False` sinon (déjà rangé, ou leçon
         disparue). Une écriture technique : `updated_at` garde l'instant où la leçon est devenue
         prête, que le fil d'activité date (D173)."""
-        stmt = (
-            update(Lesson)
-            .where(Lesson.id == lesson_id, Lesson.user_id == self.user_id, Lesson.pdf_key.is_(None))
-            .values(pdf_key=key, updated_at=Lesson.updated_at)
-        )
+        scope = [Lesson.id == lesson_id, Lesson.user_id == self.user_id, Lesson.pdf_key.is_(None)]
+        if session_id is not None:
+            scope.append(Lesson.session_id == session_id)
+        stmt = update(Lesson).where(*scope).values(pdf_key=key, updated_at=Lesson.updated_at)
         result = await self.session.execute(stmt)
         return isinstance(result, CursorResult) and result.rowcount == 1
+
+    async def claim_published(self, lesson_id: str, session_id: str) -> bool:
+        """Autorise la suite d'une publication tant que la même version reste publiée."""
+        stmt = (
+            update(Lesson)
+            .where(
+                Lesson.user_id == self.user_id,
+                Lesson.id == lesson_id,
+                Lesson.session_id == session_id,
+                Lesson.status == "ready",
+            )
+            .values(updated_at=Lesson.updated_at)
+            .returning(Lesson.id)
+        )
+        return (await self.session.execute(stmt)).scalar_one_or_none() is not None
+
+    async def claim_verification(
+        self, module_id: str, session_id: str, *, replay: bool = False
+    ) -> Lesson | None:
+        """Prend le verrou d'écriture SQLite avant de lire le brouillon à publier ou refuser.
+
+        L'annulation MCP et l'annulation moteur prennent ce même verrou. Si elles passent
+        d'abord, la session n'a plus l'autorisation de publier, même avec un checkpoint.
+        """
+        eligible = Lesson.verification_session_id == session_id
+        if replay:
+            eligible = or_(
+                eligible,
+                and_(
+                    Lesson.verification_session_id.is_(None),
+                    Lesson.session_id == session_id,
+                    Lesson.status == "ready",
+                ),
+            )
+        running = (
+            select(AgentSession.id)
+            .where(
+                AgentSession.id == session_id,
+                AgentSession.user_id == self.user_id,
+                AgentSession.status == "running",
+            )
+            .exists()
+        )
+        stmt = (
+            update(Lesson)
+            .where(Lesson.user_id == self.user_id, Lesson.module_id == module_id, eligible, running)
+            .values(updated_at=Lesson.updated_at)
+            .returning(Lesson)
+            .execution_options(populate_existing=True)
+        )
+        return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def by_module(self, module_id: str) -> Lesson | None:
         stmt = (

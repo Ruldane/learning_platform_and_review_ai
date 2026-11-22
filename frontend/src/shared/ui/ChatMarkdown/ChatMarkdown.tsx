@@ -22,20 +22,28 @@ const COMPONENTS: Components = {
       {children}
     </pre>
   ),
-  code: ({ children }) => <code className="rounded bg-muted px-1 font-mono text-xs">{children}</code>,
+  code: ({ children }) => (
+    <code className="rounded bg-muted px-1 font-mono text-xs">{children}</code>
+  ),
 };
 
 /**
- * Le texte du professeur en Markdown sûr : paragraphes, listes, `code` en ligne, blocs de code. Le
+ * Les réponses en Markdown sûr : paragraphes, listes, `code` en ligne, blocs de code. Le
  * contenu n'est pas fiable (SPEC 17.2) : le HTML brut est retiré (`skipHtml`), seules les adresses
  * http(s) passent, aucune image n'est chargée.
  */
-export function ChatMarkdown({ children }: { children: string }) {
+export function ChatMarkdown({
+  children,
+  allowLinks = true,
+}: {
+  children: string;
+  allowLinks?: boolean;
+}) {
   return (
     <div className="flex flex-col gap-2 text-sm [&_pre_code]:bg-transparent [&_pre_code]:p-0">
       <ReactMarkdown
         skipHtml
-        urlTransform={httpUrlOnly}
+        urlTransform={allowLinks ? httpUrlOnly : () => ""}
         components={COMPONENTS}
         disallowedElements={["img"]}
         unwrapDisallowed

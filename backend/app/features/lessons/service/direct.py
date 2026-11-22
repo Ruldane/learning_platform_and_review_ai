@@ -1,31 +1,32 @@
-"""La leçon d'un module écrite en direct (phase 10, 10.W) : Claude (par le MCP) ou January fournit
-le Markdown, l'application le range comme le fait le port du Rédacteur (`AgentLessonStore.publish`),
-sans agent, sans session et sans appel au modèle. Sous le verrou des leçons du programme, comme la
-production en chaîne : jamais deux leçons d'un module, ni une leçon écrite pendant qu'un agent
-travaille sur la même.
+"""Soumission d'un brouillon privé à la Fabrique et ajout immédiat de ressources (D221)."""
 
-Les ressources fournies sont des liens suivis en base. La leçon se lit dans l'application. Son texte
-entre dans la mémoire (`lecon`) comme celui d'une leçon des agents, dans la même
-transaction ; son indexation suit hors de l'appel (`memory.service.direct`)."""
-
-import logging
+from collections.abc import Sequence
+from typing import Any
+from unicodedata import category
+from urllib.parse import urlsplit
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agents.nodes.lesson_reference import source_url_key
+from app.agents.nodes.verifier.checks import change_heading, check_submission
+from app.agents.runtime.creation import PrepareSession
+from app.agents.tools.lesson_port import MAX_SEED_URLS
 from app.core.errors import AppError
 from app.db.models.lessons import Lesson
 from app.features.lessons.repository import LessonRepository
-from app.features.lessons.schemas import LessonOut, LessonPatch, LessonWriteIn
+from app.features.lessons.schemas import (
+    TITLE_MAX,
+    LessonOut,
+    LessonPatch,
+    LessonWriteIn,
+    ResourceWriteIn,
+)
 from app.features.lessons.service.lessons import get_lesson, lesson_not_found
 from app.features.lessons.service.resources import attach_resources
 from app.features.lessons.service.runtime import LessonsRuntime
-from app.features.lessons.service.status import open_lesson_sessions
-from app.features.memory.service.direct import author_of, schedule_indexing, write_direct
+from app.features.lessons.service.status import GRAPH, SUBJECT, open_lesson_sessions
 from app.features.program.service.programs import load, program_of_module
-
-logger = logging.getLogger(__name__)
-
-MEMORY_REASON = "Leçon écrite directement, sans agent."
+from app.mcp.recorder import ACTIVE
 
 
 def lesson_exists() -> AppError:
@@ -36,139 +37,207 @@ def lesson_exists() -> AppError:
 
 def lesson_generating() -> AppError:
     return AppError(
-        "lesson_generating", "Une session écrit déjà la leçon de ce module : attends sa fin.", 409
+        "lesson_generating", "La leçon de ce module est déjà en cours de vérification.", 409
     )
 
 
 def lesson_not_ready() -> AppError:
-    return AppError(
-        "lesson_not_ready",
-        "Cette leçon n'est pas prête : écris-la (POST /modules/{id}/lesson).",
-        409,
-    )
+    return AppError("lesson_not_ready", "Cette leçon n'est pas encore prête.", 409)
 
 
 def module_skipped() -> AppError:
     return AppError("module_skipped", "Ce module est sauté : il n'a pas de leçon.", 409)
 
 
-def _words(markdown: str) -> int:
-    return len(markdown.split())
+def _draft(
+    title: str, markdown: str, readings: Sequence[ResourceWriteIn], *, is_mcp: bool
+) -> dict[str, Any]:
+    reasons, links = check_submission(markdown, title=title)
+    urls = _source_links(links, reasons)
+    if any(category(char) in {"Cc", "Cf"} for char in title):
+        reasons.append("Le titre doit tenir sur une seule ligne, sans caractère de contrôle.")
+    if reasons:
+        raise AppError(
+            "lesson_invalid",
+            "Le brouillon ne respecte pas la structure des leçons.",
+            422,
+            {"reasons": reasons[:30]},
+        )
+    return {
+        "title": title,
+        "markdown": markdown,
+        "urls": urls[:MAX_SEED_URLS],
+        "resources": [reading.model_dump(mode="json") for reading in readings],
+        "is_mcp": is_mcp,
+    }
 
 
-def _lesson_fields(lesson: Lesson, title: str, markdown: str) -> None:
-    lesson.title, lesson.markdown, lesson.word_count = title, markdown, _words(markdown)
+def _source_links(links: list[str], reasons: list[str]) -> list[str]:
+    urls: dict[str, str] = {}
+    for link in links:
+        key = source_url_key(link)
+        if key is None:
+            break
+        parts = urlsplit(key)
+        if (
+            parts.scheme not in {"http", "https"}
+            or not parts.hostname
+            or parts.username is not None
+        ):
+            break
+        urls.setdefault(key, link)
+    else:
+        return list(urls.values())
+    reasons.append("Les sources doivent avoir une adresse HTTP ou HTTPS sans identifiants.")
+    return []
 
 
-async def _remember(
-    db: AsyncSession,
-    rt: LessonsRuntime,
-    user_id: str,
-    lesson: Lesson,
-    program_title: str,
-    *,
-    is_mcp: bool,
-    replaces: tuple[str, str] | None = None,
-) -> None:
-    """La leçon dans la mémoire (`lecon`), dans la transaction de la leçon : tout ou rien. Pas
-    indexée ici (voir `memory.service.direct`)."""
-    await write_direct(
-        db,
-        rt.memory,
-        user_id,
-        kind="lecon",
-        title=lesson.title,
-        text=lesson.markdown,
-        tags=(program_title,),
-        author=author_of(is_mcp),
-        reason=MEMORY_REASON,
-        replaces=replaces,
-    )
-
-
-async def _free(db: AsyncSession, user_id: str, lesson: Lesson | None, program_id: str) -> None:
-    """Refuse (409) une leçon prête, ou que l'agent est en train d'écrire."""
+async def _active(
+    db: AsyncSession, user_id: str, lesson: Lesson | None, draft: dict[str, Any]
+) -> bool:
+    """Une même soumission en cours rend la session existante. Toute autre attend son issue."""
     if lesson is None:
-        return
-    if lesson.status == "ready":
-        raise lesson_exists()
-    open_ids = await open_lesson_sessions(db, user_id, program_id)
-    if lesson.status == "generating" and lesson.session_id in (None, *open_ids):
+        return False
+    open_ids = await open_lesson_sessions(db, user_id, lesson.program_id)
+    if lesson.verification_session_id in open_ids:
+        previous = dict(lesson.verification_draft or {})
+        previous.pop("mcp_call_id", None)
+        if previous == draft:
+            return True
         raise lesson_generating()
+    if (
+        lesson.status == "generating"
+        and lesson.verification_session_id is None
+        and (lesson.session_id is None or lesson.session_id in open_ids)
+    ):
+        raise lesson_generating()
+    return False
+
+
+def _reserve(
+    user_id: str,
+    program_id: str,
+    module_id: str,
+    module_title: str,
+    draft: dict[str, Any],
+    *,
+    revision: bool = False,
+) -> PrepareSession:
+    async def prepare(db: AsyncSession, session_id: str) -> None:
+        repo = LessonRepository(db, user_id)
+        lesson = await repo.by_module(module_id)
+        if revision and (lesson is None or lesson.status != "ready"):
+            raise lesson_not_ready()
+        if not revision and lesson is not None and lesson.status == "ready":
+            raise lesson_exists()
+        if lesson is None:
+            lesson = await repo.add(module_id=module_id, program_id=program_id, title=module_title)
+        if not revision:
+            lesson.status, lesson.session_id, lesson.failure_reason = "generating", session_id, None
+        lesson.verification_session_id = session_id
+        recorder = ACTIVE.get()
+        lesson.verification_draft = (
+            {**draft, "mcp_call_id": recorder.call_id} if recorder else draft
+        )
+        lesson.verification_failure_reason = None
+        if recorder is not None:
+            await recorder.persist_in(db)
+
+    return prepare
+
+
+async def _submit(
+    rt: LessonsRuntime, user_id: str, program_id: str, module_id: str, prepare: PrepareSession
+) -> None:
+    await rt.launcher.start(
+        user_id,
+        GRAPH,
+        {"program_id": program_id, "module_id": module_id, "verification": True},
+        subject_type=SUBJECT,
+        subject_id=program_id,
+        prepare=prepare,
+    )
 
 
 async def write_lesson(
     rt: LessonsRuntime, user_id: str, module_id: str, body: LessonWriteIn, *, is_mcp: bool
 ) -> LessonOut:
-    """Voir le module : crée la leçon du module, ou remplit celle que la production avait posée
-    (en attente ou en échec) ; 409 `lesson_exists` si elle est prête, `lesson_generating` si un
-    agent l'écrit ; 404 `module_not_found` pour un module d'une autre."""
     async with rt.session_factory() as db:
         program_id = await program_of_module(db, user_id, module_id)
-    async with rt.lessons_lock(user_id, program_id), rt.session_factory() as db:
-        loaded = await load(db, user_id, program_id)
-        module = next(m for m in loaded.modules if m.id == module_id)
-        if module.skipped:
-            raise module_skipped()
-        repo = LessonRepository(db, user_id)
-        lesson = await repo.by_module(module_id)
-        await _free(db, user_id, lesson, program_id)
-        title = body.title or module.title[:200]
-        if lesson is None:
-            lesson = await repo.add(module_id=module_id, program_id=program_id, title=title)
-        _lesson_fields(lesson, title, body.markdown)
-        lesson.status, lesson.failure_reason, lesson.session_id = "ready", None, None
-        await attach_resources(
-            db, user_id, module_id=module_id, program_id=program_id, readings=body.resources
+    async with rt.lessons_lock(user_id, program_id):
+        async with rt.session_factory() as db:
+            loaded = await load(db, user_id, program_id)
+            module = next(m for m in loaded.modules if m.id == module_id)
+            if module.skipped:
+                raise module_skipped()
+            lesson = await LessonRepository(db, user_id).by_module(module_id)
+            if lesson is not None and lesson.status == "ready":
+                raise lesson_exists()
+            title = module.title[:TITLE_MAX]
+            draft = _draft(body.title or title, body.markdown, body.resources, is_mcp=is_mcp)
+            if await _active(db, user_id, lesson, draft) and lesson is not None:
+                return await get_lesson(db, user_id, lesson.id)
+        await _submit(
+            rt,
+            user_id,
+            program_id,
+            module_id,
+            _reserve(user_id, program_id, module_id, title, draft),
         )
-        await _remember(db, rt, user_id, lesson, loaded.program.title, is_mcp=is_mcp)
-        await db.commit()
-        lesson_id = lesson.id
-    schedule_indexing(rt.memory, user_id)
-    logger.info(
-        "Leçon écrite en direct : programme %s, module %s, leçon %s",
-        program_id,
-        module_id,
-        lesson_id,
-    )
-    async with rt.session_factory() as db:
-        return await get_lesson(db, user_id, lesson_id)
+        async with rt.session_factory() as db:
+            reserved = await LessonRepository(db, user_id).by_module(module_id)
+            if reserved is None:
+                raise lesson_not_found()
+            return await get_lesson(db, user_id, reserved.id)
+
+
+async def _owned(db: AsyncSession, user_id: str, lesson_id: str) -> Lesson:
+    row = await LessonRepository(db, user_id).get_fresh(lesson_id)
+    if row is None:
+        raise lesson_not_found()
+    return row
 
 
 async def patch_lesson(
     rt: LessonsRuntime, user_id: str, lesson_id: str, patch: LessonPatch, *, is_mcp: bool
-) -> LessonOut:
-    """Retouche le titre ou le Markdown d'une leçon prête (409 `lesson_not_ready` sinon). Le PDF
-    gardé (s'il y en a un) n'est plus celui du texte : la leçon l'oublie, le fichier reste sur le
-    disque. Sa copie en mémoire est mise à jour."""
+) -> tuple[LessonOut, bool]:
     async with rt.session_factory() as db:
-        found = await LessonRepository(db, user_id).get_fresh(lesson_id)
-        if found is None:
-            raise lesson_not_found()
-        program_id = found.program_id
-    async with rt.lessons_lock(user_id, program_id), rt.session_factory() as db:
-        lesson = await LessonRepository(db, user_id).get_fresh(lesson_id)
-        if lesson is None:
-            raise lesson_not_found()
-        if lesson.status != "ready":
-            raise lesson_not_ready()
-        before = (lesson.title, lesson.markdown)
-        title = patch.title or lesson.title
-        markdown = lesson.markdown if patch.markdown is None else patch.markdown
-        changed = (title, markdown) != before
-        if changed:
-            _lesson_fields(lesson, title, markdown)
-            if markdown != before[1]:
-                lesson.pdf_key = None
-            loaded = await load(db, user_id, program_id)
-            await _remember(
-                db, rt, user_id, lesson, loaded.program.title, is_mcp=is_mcp, replaces=before
-            )
-        await attach_resources(
-            db, user_id, module_id=lesson.module_id, program_id=program_id, readings=patch.resources
+        program_id = (await _owned(db, user_id, lesson_id)).program_id
+    async with rt.lessons_lock(user_id, program_id):
+        async with rt.session_factory() as db:
+            lesson = await _owned(db, user_id, lesson_id)
+            if lesson.status != "ready":
+                raise lesson_not_ready()
+            title = patch.title or lesson.title
+            markdown = patch.markdown if patch.markdown is not None else lesson.markdown
+            if (title, markdown) == (lesson.title, lesson.markdown):
+                await attach_resources(
+                    db,
+                    user_id,
+                    module_id=lesson.module_id,
+                    program_id=program_id,
+                    readings=patch.resources,
+                )
+                await db.commit()
+                return await get_lesson(db, user_id, lesson_id), False
+            if patch.markdown is None:
+                markdown = change_heading(markdown, title)
+            draft = _draft(title, markdown, patch.resources, is_mcp=is_mcp)
+            if await _active(db, user_id, lesson, draft):
+                return await get_lesson(db, user_id, lesson_id), True
+        await _submit(
+            rt,
+            user_id,
+            program_id,
+            lesson.module_id,
+            _reserve(
+                user_id,
+                program_id,
+                lesson.module_id,
+                lesson.title,
+                draft,
+                revision=True,
+            ),
         )
-        await db.commit()
-    if changed:
-        schedule_indexing(rt.memory, user_id)
-    async with rt.session_factory() as db:
-        return await get_lesson(db, user_id, lesson_id)
+        async with rt.session_factory() as db:
+            return await get_lesson(db, user_id, lesson_id), True

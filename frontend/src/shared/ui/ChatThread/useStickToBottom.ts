@@ -10,7 +10,7 @@ interface Follow {
 }
 
 /**
- * Garde le fil au dernier message tant qu'on y est ; remontée lire, il ne bouge plus et
+ * Garde le fil au dernier message tant qu'on y est. En remontant lire, le fil reste en place et
  * `unread` dit qu'il est arrivé des messages (bouton « Nouveaux messages »). `jump` redescend.
  */
 export function useStickToBottom(count: number, signal: unknown) {

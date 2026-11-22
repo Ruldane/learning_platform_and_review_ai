@@ -11,6 +11,8 @@ from app.agents.state.web_research import WebResearchState
 class LessonFactoryState(WebResearchState, total=False):
     program_id: str
     module_id: str
+    verification: bool  # soumission directe liée à la session
+    citation_urls: list[str]  # ordre des adresses dans le brouillon soumis
     brief: dict[str, Any]  # `ModuleBrief` en JSON
     resources: list[
         dict[str, Any]
@@ -20,6 +22,7 @@ class LessonFactoryState(WebResearchState, total=False):
     revisions: int  # révisions déjà demandées au Rédacteur (0 : première version)
     words: int  # mots du brouillon, blocs de code exclus
     problems: list[str]  # contrôles déterministes non satisfaits (phrases françaises)
+    check_categories: list[str]  # catégories publiques, sans extrait du brouillon
     unsupported: list[str]  # affirmations non sourcées relevées par le Vérificateur
     scores: dict[str, int]  # notes pédagogiques sur 100, par critère
     published: dict[str, Any]  # `PublishedLesson` en JSON

@@ -6,6 +6,7 @@ from datetime import date
 from typing import Any
 
 import httpx
+import pytest
 from fastapi import FastAPI
 from sqlalchemy import select
 
@@ -16,6 +17,7 @@ from app.features.program.service.planning import next_monday
 from tests.features.program.support import tasks_of, view
 from tests.sessions_support import act_as
 from tests.support.direct import API, OTHER, assert_no_agent
+from tests.support.lesson_verification import submission_text, wait_session
 
 START = next_monday(date.today())  # un début accepté : un lundi, aujourd'hui ou plus tard
 SECRET = "SECRET-DU-PROGRAMME"
@@ -185,6 +187,7 @@ async def test_direct_program_validates_like_an_agent_program(
     assert list(levels) == ["en_cours", "en_cours"]  # les compétences des deux modules
 
 
+@pytest.mark.usefixtures("accept_lesson")
 async def test_direct_program_can_be_filled_with_the_existing_tools(
     client: httpx.AsyncClient,
 ) -> None:
@@ -192,10 +195,13 @@ async def test_direct_program_can_be_filled_with_the_existing_tools(
     goal_id = await new_goal(client)
     program = (await client.post(f"{API}/programs/direct", json=program_body(goal_id))).json()
     module = program["weeks"][0]["modules"][0]
-    text = "# Régression\n\n" + "La régression linéaire ajuste une droite. " * 12
+    text = submission_text(module["title"])
 
     lesson = await client.post(f"{API}/modules/{module['id']}/lesson", json={"markdown": text})
-    assert lesson.status_code == 201, lesson.text
+    assert lesson.status_code == 202, lesson.text
+    assert (await wait_session(client, lesson.json()["verification_session_id"]))[
+        "status"
+    ] == "completed"
     patched = await client.patch(
         f"{API}/tasks/{module['tasks'][0]['id']}", json={"title": "Lire le chapitre un"}
     )

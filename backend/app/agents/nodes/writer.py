@@ -55,7 +55,7 @@ def make_write(deps: GraphDeps) -> Node:
         revision = state.get("revisions", 0) + (1 if previous else 0)
         prompt = render_prompt(
             AGENT,
-            title=brief.title,
+            title=untrusted(f"# {brief.title}", "titre Markdown"),
             module=module_prompt(brief),
             sources=sources_prompt(lesson_sources(state)),
             language=LANGUAGES.get(brief.language, brief.language),
@@ -77,6 +77,7 @@ def make_write(deps: GraphDeps) -> Node:
             agent=AGENT,
             step=f"lecon-{revision}",
             intent="je corrige la leçon" if previous else "j'écris la leçon",
+            expose_reply=not state.get("verification", False),
         )
         return {"draft": unwrap(message_text(reply)), "revisions": revision}
 

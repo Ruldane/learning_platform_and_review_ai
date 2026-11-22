@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRef } from "react";
 import { fetchProgramLessons } from "../api";
 import { lessonsKeys } from "../queryKeys";
-import { lessonsRefetchInterval } from "./polling";
+import { lessonIsInProgress, lessonsRefetchInterval } from "./polling";
 
 /**
  * Les leçons d'un programme (`GET /programs/{id}/lessons`), dans l'ordre du programme ; relues
@@ -21,7 +21,7 @@ export function useProgramLessons(programId: string | undefined) {
     refetchInterval: (query) => {
       const lessons = query.state.data;
       const updates = query.state.dataUpdateCount;
-      if (lessons?.some((lesson) => lesson.status === "generating")) busyAt.current = updates;
+      if (lessons?.some(lessonIsInProgress)) busyAt.current = updates;
       else busyAt.current ??= updates;
       return lessonsRefetchInterval(lessons, updates - busyAt.current);
     },

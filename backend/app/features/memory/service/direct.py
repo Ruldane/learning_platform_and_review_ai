@@ -95,6 +95,7 @@ async def write_direct(
     author: str,
     reason: str,
     replaces: tuple[str, str] | None = None,
+    session_id: str | None = None,
 ) -> str:
     """Écrit l'élément, ou met à jour celui qui portait `replaces` (titre, texte), dans la
     transaction de l'appelant (aucun commit : tout ou rien avec la ligne de la feature). Rend son
@@ -108,7 +109,13 @@ async def write_direct(
         )
     if item is None:
         draft = WriteDraft(
-            kind=kind, title=title, text=text, author=author, reason=reason, tags=tuple(tags)
+            kind=kind,
+            title=title,
+            text=text,
+            author=author,
+            reason=reason,
+            tags=tuple(tags),
+            session_id=session_id,
         )
         item = (await service.write(draft, index=False)).item
     return item.id

@@ -23,6 +23,11 @@ describe("lessonRefetchInterval", () => {
     expect(lessonRefetchInterval(lesson("ready"), MAX_PDF_POLLS - 1)).toBe(5000);
     expect(lessonRefetchInterval(lesson("ready"), MAX_PDF_POLLS)).toBe(false);
   });
+
+  it("polls a published lesson while a replacement is being verified", () => {
+    const reviewing = { ...lesson("ready", true), verification_session_id: "verification-1" };
+    expect(lessonRefetchInterval(reviewing, MAX_PDF_POLLS)).toBe(5000);
+  });
 });
 
 describe("lessonsRefetchInterval", () => {
@@ -30,6 +35,11 @@ describe("lessonsRefetchInterval", () => {
 
   it("polls quickly while a lesson is written", () => {
     expect(lessonsRefetchInterval(list("ready", "generating", "pending"), 99)).toBe(5000);
+  });
+
+  it("polls a list of published lessons while a replacement is being verified", () => {
+    const reviewing = { status: "ready" as const, verification_session_id: "verification-1" };
+    expect(lessonsRefetchInterval([reviewing], MAX_IDLE_POLLS)).toBe(5000);
   });
 
   it("polls slowly while lessons wait, for a bounded time after the last writing", () => {

@@ -8,11 +8,11 @@ la leçon : le rendu HTML/PDF (D89) reconnaît ses encadrés sur ces titres."""
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
-from urllib.parse import urlsplit, urlunsplit
 
 from markdown_it import MarkdownIt
 from markdown_it.token import Token
 
+from app.agents.nodes.lesson_reference import source_url_key
 from app.agents.nodes.mermaid_rules import mermaid_problems, normalize_mermaid
 from app.agents.nodes.verifier.code_language import python_language_problems
 from app.agents.nodes.verifier.overlap import (
@@ -54,6 +54,7 @@ _TRAILING = ".,;:!?"
 class LessonCheck:
     words: int
     problems: list[str]
+    categories: tuple[str, ...] = ()
 
 
 @dataclass
@@ -91,7 +92,7 @@ def _inline_links(token: Token) -> list[str]:
     return links
 
 
-def _parse(markdown: str) -> _Parsed:
+def _parse(markdown: str, *, show_input: bool = True) -> _Parsed:
     parsed = _Parsed([], [], {}, [], [], [], [], [])
     section = ""
     tokens = _MD.parse(markdown)
@@ -109,7 +110,7 @@ def _parse(markdown: str) -> _Parsed:
                 parsed.mermaid.append((section, token.content))
             elif language in {"python", "py", "python3"} and token.map:
                 parsed.code_problems.extend(
-                    python_language_problems(token.content, token.map[0] + 2)
+                    python_language_problems(token.content, token.map[0] + 2, show_input=show_input)
                 )
         elif token.type == "html_block":
             parsed.raw_html.append(token.content)
@@ -121,27 +122,21 @@ def _parse(markdown: str) -> _Parsed:
     return parsed
 
 
-def _url_key(url: str) -> str | None:
-    """Clé tolérante d'une adresse : hôte en minuscules, sans `/` final ni fragment."""
-    try:
-        parts = urlsplit(url.strip())
-    except ValueError:
-        return None
-    path = parts.path.rstrip("/")
-    return urlunsplit((parts.scheme.lower(), parts.netloc.lower(), path, parts.query, ""))
-
-
-def _structure(parsed: _Parsed, title: str) -> list[str]:
+def _structure(parsed: _Parsed, title: str, *, show_input: bool) -> list[str]:
     problems: list[str] = []
     if not parsed.h1 or _key(parsed.h1[0]) != _key(title):
-        problems.append(f"Titre « # {title} » absent : la leçon commence par ce titre exact.")
+        label = f"Titre « # {title} »" if show_input else "Titre principal attendu"
+        problems.append(f"{label} absent : la leçon commence par ce titre exact.")
     expected = [_key(s) for s in SECTIONS]
     found = [_key(h) for h in parsed.h2]
     for name, key in zip(SECTIONS, expected, strict=True):
         if key not in found:
             problems.append(f"Section manquante : « ## {name} ».")
     extra = [h for h, key in zip(parsed.h2, found, strict=True) if key not in expected]
-    problems += [f"Section en trop : « ## {h} » (la structure est fixe)." for h in extra]
+    if show_input:
+        problems += [f"Section en trop : « ## {h} » (la structure est fixe)." for h in extra]
+    elif extra:
+        problems.append(f"{len(extra)} section(s) en trop : la structure est fixe.")
     present = [key for key in found if key in expected]
     if present != [key for key in expected if key in present]:
         problems.append("Sections dans le désordre : respecte l'ordre de la structure fixe.")
@@ -168,7 +163,7 @@ def _counts(parsed: _Parsed) -> list[str]:
     return problems
 
 
-def _diagrams(parsed: _Parsed) -> list[str]:
+def _diagrams(parsed: _Parsed, *, show_input: bool) -> list[str]:
     if not any(section == _key("Schémas") for section, _ in parsed.mermaid):
         return ["Aucun schéma : au moins un bloc ```mermaid (flowchart) dans « Schémas »."]
     problems: list[str] = []
@@ -176,19 +171,24 @@ def _diagrams(parsed: _Parsed) -> list[str]:
         try:
             normalize_mermaid(code)
         except ValueError:
-            first = (mermaid_problems(code) or ["forme non admise"])[0]
+            first = (
+                (mermaid_problems(code) or ["forme non admise"])[0]
+                if show_input
+                else ("utilise un schéma `flowchart` conforme.")
+            )
             problems.append(f"Schéma Mermaid {number} refusé : {first}")
     return problems
 
 
-def _raw_html(parsed: _Parsed) -> list[str]:
+def _raw_html(parsed: _Parsed, *, show_input: bool) -> list[str]:
     """Le rendu retire une balise en ligne et montre un bloc HTML en texte brut (D97) : la leçon
     n'en contient donc aucun hors du code."""
     if not parsed.raw_html:
         return []
-    first = " ".join(parsed.raw_html[0].split())[:_RAW_HTML_SHOWN]
+    sample = " ".join(parsed.raw_html[0].split())[:_RAW_HTML_SHOWN]
+    first = f", dont « {sample} »" if show_input else ""
     return [
-        f"HTML brut hors d'un bloc de code ({len(parsed.raw_html)} fois, dont « {first} ») : "
+        f"HTML brut hors d'un bloc de code ({len(parsed.raw_html)} fois{first}) : "
         "mets toute balise entre accents graves, par exemple `<pre>`, ou dans un bloc de code."
     ]
 
@@ -201,9 +201,9 @@ def _length(words: int) -> list[str]:
 
 def _references(parsed: _Parsed, sources: Sequence[tuple[int, str, str]]) -> list[str]:
     problems: list[str] = []
-    known_urls = {k for _n, url, _t in sources if (k := _url_key(url)) is not None}
+    known_urls = {k for _n, url, _t in sources if (k := source_url_key(url)) is not None}
     for link in dict.fromkeys(parsed.links):
-        if _url_key(link) not in known_urls:
+        if source_url_key(link) not in known_urls:
             problems.append(f"Lien absent des sources lues : {link}")
     numbers = {number for number, _url, _text in sources}
     unknown = sorted(
@@ -237,15 +237,50 @@ def check_lesson(
 ) -> LessonCheck:
     """`sources` : `(numéro, adresse, texte lu)` des seules sources admises dans la leçon."""
     parsed = _parse(markdown)
+    words, groups = _offline_checks(parsed, title, show_input=True)
+    groups.extend(
+        (
+            ("Références aux sources", _references(parsed, sources)),
+            ("Citations et reformulation", _quotes_and_copies(parsed, sources)),
+        )
+    )
+    return LessonCheck(
+        words=words,
+        problems=[problem for _, problems in groups for problem in problems],
+        categories=tuple(label for label, problems in groups if problems),
+    )
+
+
+def _offline_checks(
+    parsed: _Parsed,
+    title: str,
+    *,
+    show_input: bool,
+) -> tuple[int, list[tuple[str, list[str]]]]:
     words = sum(len(text.split()) for text in parsed.texts)
-    problems = [
-        *_structure(parsed, title),
-        *_raw_html(parsed),
-        *_counts(parsed),
-        *_diagrams(parsed),
-        *parsed.code_problems,
-        *_length(words),
-        *_references(parsed, sources),
-        *_quotes_and_copies(parsed, sources),
+    return words, [
+        ("Structure du chapitre", _structure(parsed, title, show_input=show_input)),
+        ("HTML dans le texte", _raw_html(parsed, show_input=show_input)),
+        ("Listes d’objectifs et de questions", _counts(parsed)),
+        ("Schémas Mermaid", _diagrams(parsed, show_input=show_input)),
+        ("Anglais dans les exemples Python", parsed.code_problems),
+        ("Longueur du chapitre", _length(words)),
     ]
-    return LessonCheck(words=words, problems=problems)
+
+
+def check_submission(markdown: str, *, title: str) -> tuple[list[str], list[str]]:
+    """Contrôles possibles avant la lecture des sources, sans citer l'entrée dans les refus."""
+    parsed = _parse(markdown, show_input=False)
+    _, groups = _offline_checks(parsed, title, show_input=False)
+    problems = [problem for _, messages in groups for problem in messages]
+    return [*problems, *_quotes_and_copies(parsed, ())], list(dict.fromkeys(parsed.links))
+
+
+def change_heading(markdown: str, title: str) -> str:
+    """Réécrit l'en-tête du chapitre quand seul le titre est retouché."""
+    for token in _MD.parse(markdown):
+        if token.type == "heading_open" and token.tag == "h1" and token.level == 0 and token.map:
+            start, end = token.map
+            lines = markdown.splitlines(keepends=True)
+            return "".join([*lines[:start], f"# {title}\n", *lines[end:]])
+    return markdown

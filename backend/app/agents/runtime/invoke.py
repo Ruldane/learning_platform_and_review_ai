@@ -53,6 +53,7 @@ async def call_with_retries(
     agent: str,
     allow_empty: bool = False,
     stream: bool = True,
+    retry: bool = True,
 ) -> AIMessage:
     """`model.ainvoke` étiqueté par agent (l'étiquette et les métadonnées remontent aux
     callbacks du coût et au mode `messages` du runner), retenté sur erreur transitoire.
@@ -64,7 +65,7 @@ async def call_with_retries(
     tags = [f"agent:{agent}"] if stream else [f"agent:{agent}", TAG_NOSTREAM]
     chat = model.with_config(metadata={"agent": agent}, tags=tags)
     deadline = _deadline(model)
-    attempts = len(RETRY_DELAYS_S) + 1
+    attempts = len(RETRY_DELAYS_S) + 1 if retry else 1
     for attempt in range(attempts):
         last = attempt == attempts - 1
         try:
@@ -124,17 +125,24 @@ def _readable(exc: Exception, model: BaseChatModel, agent: str) -> AppError | No
 
 
 async def invoke_agent(
-    model: BaseChatModel, messages: list[BaseMessage], *, agent: str, step: str, intent: str
+    model: BaseChatModel,
+    messages: list[BaseMessage],
+    *,
+    agent: str,
+    step: str,
+    intent: str,
+    expose_reply: bool = True,
 ) -> AIMessage:
     """Annonce l'intention (`agent.started`), appelle le modèle (tokens en direct par le mode
     `messages` du runner), puis émet le texte final (`agent.message`)."""
     emit("agent.started", {"step": step, "intent": intent}, agent=agent)
-    reply = await call_with_retries(model, messages, agent=agent)
-    emit(
-        "agent.message",
-        {"message_id": reply.id or f"{agent}-{step}", "text": message_text(reply)},
-        agent=agent,
-    )
+    reply = await call_with_retries(model, messages, agent=agent, stream=expose_reply)
+    if expose_reply:
+        emit(
+            "agent.message",
+            {"message_id": reply.id or f"{agent}-{step}", "text": message_text(reply)},
+            agent=agent,
+        )
     return reply
 
 

@@ -10,10 +10,13 @@ la langue de la leçon, le français par défaut. Présente le code par étapes 
 bloc, indique le résultat attendu, puis explique comment lire ce que le bloc produit.
 
 Structure EXACTE, dans cet ordre, avec ces titres tels quels (même en {{ language }}) :
-# {{ title }}
+{{ title }}
 {% for section in sections %}
 ## {{ section }}
 {% endfor %}
+
+Reprends l'en-tête de niveau 1 tel qu'il est indiqué, en retirant seulement les marqueurs
+d'encadrement du titre.
 
 - **Objectifs**. Au plus trois puces sur ce que January saura faire à la fin.
 - **Prérequis**. Les notions déjà introduites, avec un rappel et le renvoi disponible.

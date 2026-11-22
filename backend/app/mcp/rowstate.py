@@ -18,6 +18,7 @@ class UndoResult:
 
     call_id: str
     undone: int
+    cancelled_sessions: tuple[str, ...] = ()
 
 
 def recordable(table: Table) -> bool:

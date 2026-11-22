@@ -14,10 +14,10 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.agents.runtime.repositories import SessionRepository
 from app.core.errors import AppError
-from app.db.models.agents import AgentSession
+from app.db.models.agents import OPEN_SESSION_STATES, AgentSession
 
 TERMINAL = frozenset({"completed", "failed", "cancelled", "expired"})
-OPEN = frozenset({"running", "waiting_user", "paused"})  # reçoit des messages, annulable
+OPEN = OPEN_SESSION_STATES  # reçoit des messages, annulable
 PAUSABLE = frozenset({"running", "waiting_user"})
 
 type Factory = async_sessionmaker[AsyncSession]

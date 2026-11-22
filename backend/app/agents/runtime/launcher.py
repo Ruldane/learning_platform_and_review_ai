@@ -9,6 +9,7 @@ au moteur, le moteur au lanceur). Non lié, ou serveur qui s'arrête : 503 `engi
 import logging
 from typing import Any
 
+from app.agents.runtime.creation import PrepareSession
 from app.agents.runtime.runner import STOPPING_CODE, SessionRunner
 from app.core.errors import AppError
 
@@ -44,6 +45,7 @@ class SessionLauncher:
         *,
         subject_type: str | None = None,
         subject_id: str | None = None,
+        prepare: PrepareSession | None = None,
     ) -> str:
         """Comme `SessionRunner.start` (entrée validée, session `running`, tâche lancée) ; rend
         l'id de la session. Les erreurs du runner (parcours inconnu, entrée invalide) passent
@@ -53,7 +55,9 @@ class SessionLauncher:
             logger.warning("Session non lancée (utilisateur %s) : moteur non lié", user_id)
             raise engine_unavailable()
         try:
-            return await runner.start(user_id, graph, input, subject_type, subject_id)
+            return await runner.start(
+                user_id, graph, input, subject_type, subject_id, prepare=prepare
+            )
         except AppError as exc:
             if exc.code != STOPPING_CODE:
                 raise

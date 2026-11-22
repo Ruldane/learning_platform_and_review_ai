@@ -144,10 +144,7 @@ export const ide = {
   },
   chat: {
     thread: "Conversation avec le professeur",
-    newMessages: "Nouveaux messages ↓",
-    send: "Envoyer",
     placeholder: "Pose ta question au professeur…",
-    shortcuts: "Entrée envoie, Maj+Entrée fait un retour à la ligne.",
     quick: "Demandes rapides",
     tags: {
       afterRun: "après une exécution",

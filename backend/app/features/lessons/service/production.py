@@ -82,7 +82,13 @@ def _missing_lessons(db: AsyncSession, user_id: str, loaded: Loaded, have: set[s
 
 def _reconcile(lessons: list[Lesson], open_ids: list[str]) -> int:
     """Leçon `generating` dont la session n'est plus ouverte : en échec (relancée ensuite)."""
-    stale = [x for x in lessons if x.status == "generating" and x.session_id not in open_ids]
+    stale = [
+        x
+        for x in lessons
+        if x.status == "generating"
+        and x.session_id not in open_ids
+        and x.verification_session_id is None
+    ]
     for lesson in stale:
         lesson.status, lesson.failure_reason = "failed", INTERRUPTED
     return len(stale)
@@ -99,6 +105,8 @@ def _first_due(loaded: Loaded, lessons: dict[str, Lesson], today: date) -> Lesso
             continue
         if lesson.status not in ("pending", "failed") or lesson.attempts >= MAX_ATTEMPTS:
             continue
+        if lesson.verification_failure_reason is not None:
+            continue  # une soumission manuelle refusée se corrige puis se soumet à nouveau
         if week_due(week.rank, week.start_date, today):
             due.append((lesson.status == "failed", index, lesson))
     return min(due, key=lambda item: (item[0], item[1]))[2] if due else None

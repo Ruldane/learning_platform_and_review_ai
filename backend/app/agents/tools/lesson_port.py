@@ -66,6 +66,13 @@ class LessonReport:
 
 
 @dataclass(frozen=True)
+class LessonSubmission:
+    title: str
+    markdown: str
+    urls: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class PublishedLesson:
     lesson_id: str
     pdf_ok: bool  # le PDF a pu être produit ; sinon la leçon se lit quand même dans l'application
@@ -77,6 +84,10 @@ class LessonStore(Protocol):
         """La fiche du module de l'utilisateur ; `module_not_found` (404) s'il n'est pas à lui."""
         ...
 
+    async def submission(self, user_id: str, session_id: str, module_id: str) -> LessonSubmission:
+        """Lit le brouillon privé autorisé pour la session de vérification."""
+        ...
+
     async def publish(
         self,
         user_id: str,
@@ -86,12 +97,21 @@ class LessonStore(Protocol):
         markdown: str,
         resources: Sequence[ResourcePick],
         report: LessonReport,
+        verification: bool = False,
     ) -> PublishedLesson:
         """Range la leçon prête, ses ressources et son PDF ; idempotent par module : rejoué, il
         rend la même leçon sans écrire de ligne de plus."""
         ...
 
-    async def fail(self, user_id: str, session_id: str, module_id: str, reason: str) -> None:
+    async def fail(
+        self,
+        user_id: str,
+        session_id: str,
+        module_id: str,
+        reason: str,
+        *,
+        verification: bool = False,
+    ) -> None:
         """Marque la leçon du module en échec, avec une raison lisible ; idempotent."""
         ...
 
@@ -114,6 +134,9 @@ class _NoLessons:
     async def brief(self, user_id: str, module_id: str) -> ModuleBrief:
         raise lessons_unavailable()
 
+    async def submission(self, user_id: str, session_id: str, module_id: str) -> LessonSubmission:
+        raise lessons_unavailable()
+
     async def publish(
         self,
         user_id: str,
@@ -123,10 +146,19 @@ class _NoLessons:
         markdown: str,
         resources: Sequence[ResourcePick],
         report: LessonReport,
+        verification: bool = False,
     ) -> PublishedLesson:
         raise lessons_unavailable()
 
-    async def fail(self, user_id: str, session_id: str, module_id: str, reason: str) -> None:
+    async def fail(
+        self,
+        user_id: str,
+        session_id: str,
+        module_id: str,
+        reason: str,
+        *,
+        verification: bool = False,
+    ) -> None:
         raise lessons_unavailable()
 
     async def next_module(

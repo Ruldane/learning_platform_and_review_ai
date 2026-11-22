@@ -434,8 +434,7 @@ Vérificateur. Le code est écrit en français (`Etat`, `normaliser`), « ça pi
   domaine, et chaque leçon est un chapitre qui s'appuie sur les précédents jusqu'au niveau
   expert. Rien n'est supposé connu sans avoir été posé, même ce que January sait déjà (« Je les
   maîtrise déjà », D220, reste le moyen de passer un chapitre par un quiz).
-- **Réécriture de tous les cours existants dans la phase 11**, selon cette norme (décision de
-  January, 20/11).
+- **Réécriture de tous les cours existants après la phase 43**, selon cette norme (D227).
 - **Les 4 programmes existants sont reconstruits comme des livres (décision de January, 20/11,
   option A) :** le Conseil et le Constructeur repartent de chaque objectif avec la règle « de
   zéro à expert » (chapitres de fondations en tête, progression jusqu'au niveau expert), et
@@ -473,9 +472,8 @@ est imposé et vérifié. Six exigences :
    plus tôt. Le glossaire du programme en découle. Le Rédacteur reçoit le glossaire, le résumé du
    chapitre précédent et le plan du suivant : il enchaîne au lieu de réintroduire.
 6. **Un pilote avant la réécriture en masse.** Deux ou trois chapitres du programme LangChain sont
-   réécrits selon la norme ; January les lit ; la norme et la grille sont ajustées ; alors
-   seulement la reconstruction des 4 programmes est lancée (des dizaines d'heures de quota : pas
-   avant d'avoir validé la norme).
+   réécrits selon la norme. À la clôture du projet, January relit le pilote, puis la norme et la
+   grille sont ajustées avant de reconstruire les quatre programmes avec son accord sur le coût.
 
 #### Phase 11 — relais (constat du 2026-11-20)
 
@@ -570,6 +568,29 @@ Ordre et dépendances : une phase ne dépend que de phases déjà livrées. Les 
 - **Bout en bout** : Playwright, back lancé avec le faux fournisseur LLM ; 3 parcours (18.2).
 - **Contrôles** : `ruff`, `mypy --strict`, `import-linter`, `check_file_length.py`, `eslint`, `prettier`, `tsc --noEmit`, `export_openapi.py --check`, tous en pre commit.
 
-## 7. Prochaine étape
+## 7. Plans par lots à partir de la phase 13
 
-Exécuter le plan de la phase 0, puis celui de la phase 1. Avant la phase 2, écrire son plan détaillé à partir du code obtenu.
+Clore la phase 11 selon son plan. La phase 12 (extension Chrome) reste de côté. Prendre les
+phases suivantes par lots de cinq dans l’ordre de reprise, avec un plan par lot (D228).
+
+| Lot | Phases |
+| --- | --- |
+| 1 | 13 à 17 |
+| 2 | 18 à 22 |
+| 3 | 23 à 27 |
+| 4 | 28 à 32 |
+| 5 | 33 à 37 |
+| 6 | 38 à 42 |
+| 7 | 43 |
+
+Le plan d’un lot décrit les dépendances, les tâches et les vérifications de chaque phase.
+Les tâches indépendantes peuvent avancer en parallèle. Les tests de chaque fonctionnalité
+restent ciblés et la recette commune du lot inclut Playwright.
+
+## 8. Reconstruction des programmes après la phase 43
+
+Lorsque toutes les phases de développement et leurs recettes seront terminées, relire le pilote
+LangChain conservé dans le [bilan de la phase 11](../bilans/phase-11.md), ajuster la norme si
+besoin avec January et chiffrer la reconstruction des quatre
+programmes. Après son accord sur le coût, reprendre les objectifs et les acquis correspondants,
+produire les sommaires, puis générer et vérifier toutes les leçons avec OpenAI. Voir D227.

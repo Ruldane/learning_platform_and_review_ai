@@ -8,6 +8,7 @@ from app.db.base import Base, UserScopedMixin
 SessionStatus = Literal[
     "running", "waiting_user", "paused", "completed", "failed", "cancelled", "expired"
 ]
+OPEN_SESSION_STATES = frozenset({"running", "waiting_user", "paused"})
 
 
 class AgentSession(UserScopedMixin, Base):

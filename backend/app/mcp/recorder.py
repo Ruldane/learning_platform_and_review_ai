@@ -55,6 +55,7 @@ class ChangeRecorder:
         self._ops: dict[tuple[str, str], _Op] = {}
         self._touched: dict[tuple[str, str], tuple[Table, str, dict[str, Any]]] = {}
         self._token: Token[ChangeRecorder | None] | None = None
+        self._recorded: int | None = None
 
     async def __aenter__(self) -> "ChangeRecorder":
         self.active = True
@@ -144,33 +145,71 @@ class ChangeRecorder:
     async def persist(self) -> int:
         """Écrit l'historique de l'appel (dans sa propre courte session) ; rend le nombre de
         lignes gardées."""
-        kept = [
+        if self._recorded is not None:
+            return self._recorded
+        async with self._factory() as db:
+            done = self._insert(db, self._kept())
+            if done:
+                await db.commit()
+        return done
+
+    def _kept(self) -> list[tuple[tuple[str, str], _Op]]:
+        return [
             (key, op)
             for key, op in self._ops.items()
             if not (op.kind == "update" and op.before == op.after)
         ]
+
+    def _insert(self, db: AsyncSession, kept: list[tuple[tuple[str, str], _Op]]) -> int:
         if self.overflow:
             logger.warning("MCP : appel %s non annulable (trop de lignes)", self.call_id)
             return 0
-        if not kept:
-            return 0
         base = datetime.now(UTC)
-        async with self._factory() as db:
-            for index, ((table, row_id), op) in enumerate(kept):
-                db.add(
-                    McpChange(
-                        user_id=self.user_id,
-                        call_id=self.call_id,
-                        table_name=table,
-                        row_id=row_id,
-                        op=op.kind,
-                        before=op.before,
-                        after=op.after,
-                        created_at=base + timedelta(microseconds=index),
-                    )
+        for index, ((table, row_id), op) in enumerate(kept):
+            db.add(
+                McpChange(
+                    user_id=self.user_id,
+                    call_id=self.call_id,
+                    table_name=table,
+                    row_id=row_id,
+                    op=op.kind,
+                    before=op.before,
+                    after=op.after,
+                    created_at=base + timedelta(microseconds=index),
                 )
-            await db.commit()
+            )
         return len(kept)
+
+    async def persist_in(self, db: AsyncSession) -> None:
+        """Garde une réservation et son historique dans la même transaction."""
+        await db.flush()
+        self._recorded = self._insert(db, self._kept())
+
+    async def extend_in(self, db: AsyncSession, *, keep_latest: frozenset[str]) -> None:
+        """Fusionne la publication avec l'appel d'origine dans la transaction métier."""
+        await db.flush()
+        stmt = select(McpChange).where(
+            McpChange.user_id == self.user_id,
+            McpChange.call_id == self.call_id,
+            McpChange.undone_at.is_(None),
+        )
+        existing = {(row.table_name, row.row_id): row for row in await db.scalars(stmt)}
+        if not existing:  # historique expiré
+            return
+        kept = self._kept()
+        if self.overflow or len(existing.keys() | {key for key, _ in kept}) > MAX_ROWS:
+            return  # l'ancien instantané fera refuser une annulation partielle
+        added = []
+        for key, op in kept:
+            previous = existing.get(key)
+            if previous is None:
+                added.append((key, op))
+            else:
+                if previous.before is not None and op.before is not None:
+                    latest = {name: op.before[name] for name in keep_latest if name in op.before}
+                    previous.before = previous.before | latest
+                previous.after = op.after
+        self._insert(db, added)
 
     async def undo(self, call_id: str) -> UndoResult:
         """Annule les changements de `call_id` (voir `app/mcp/undo.py`)."""

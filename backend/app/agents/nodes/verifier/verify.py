@@ -68,7 +68,7 @@ async def _facts(
 ) -> FactReport:
     prompt = render_prompt(
         AGENT,
-        title=brief.title,
+        title=untrusted(brief.title, "titre de la leçon"),
         module=module_prompt(brief),
         sources=sources_prompt(sources),
         lesson=untrusted(draft, "leçon"),
@@ -97,14 +97,23 @@ def _converge(
             f"Retrait impossible : {pruned.unlocated} affirmation(s) non sourcée(s) introuvable(s) "
             "dans les sections de faits (citation absente, ambiguë ou trop courte)."
         )
-        return {"problems": [problem]}, 0
+        return {
+            "problems": [problem],
+            "check_categories": ["Retrait des affirmations non sourcées"],
+        }, 0
     if left := still_cited(pruned.markdown, unsupported):
         problem = f"Retrait incomplet : {left} affirmation(s) non sourcée(s) encore dans la leçon."
-        return {"problems": [problem]}, 0
+        return {
+            "problems": [problem],
+            "check_categories": ["Retrait des affirmations non sourcées"],
+        }, 0
     check = check_lesson(pruned.markdown, title=title, sources=_numbered(sources))
     if check.problems:
         lead = f"Retrait de {pruned.removed} phrase(s) non sourcée(s) impossible"
-        return {"problems": [f"{lead} : {p}" for p in check.problems]}, 0
+        return {
+            "problems": [f"{lead} : {p}" for p in check.problems],
+            "check_categories": list(check.categories),
+        }, 0
     update: LessonFactoryState = {"draft": pruned.markdown, "words": check.words, "unsupported": []}
     return update, pruned.removed
 
@@ -126,7 +135,7 @@ async def _review_after_pruning(
     return update, removed
 
 
-def _verdict_text(result: LessonFactoryState, removed: int) -> str:
+def _verdict_text(result: LessonFactoryState, removed: int, *, show_details: bool = True) -> str:
     words, problems, unsupported = result["words"], result["problems"], result["unsupported"]
     scores = result["scores"]
     grades = [f"- {label} — {scores[name]}/100" for name, label in CRITERIA.items()]
@@ -134,8 +143,11 @@ def _verdict_text(result: LessonFactoryState, removed: int) -> str:
         after = f" après retrait de {removed} phrase(s) non sourcée(s)" if removed else ""
         return "\n".join([f"Leçon conforme{after} ({words} mots).", *grades])
     lines = [f"Leçon à corriger ({words} mots) :"]
-    lines += [f"- {p}" for p in problems[:MAX_PROBLEMS_SHOWN]]
-    if len(problems) > MAX_PROBLEMS_SHOWN:
+    if show_details:
+        lines += [f"- {p}" for p in problems[:MAX_PROBLEMS_SHOWN]]
+    else:
+        lines += [f"- {category}" for category in result.get("check_categories", [])]
+    if show_details and len(problems) > MAX_PROBLEMS_SHOWN:
         lines.append(f"- … et {len(problems) - MAX_PROBLEMS_SHOWN} autres problèmes.")
     if unsupported:
         lines.append(f"- {len(unsupported)} affirmation(s) non sourcée(s).")
@@ -169,6 +181,7 @@ def make_verify(deps: GraphDeps) -> Node:
             "problems": problems,
             "unsupported": unsupported,
             "scores": report.grades.scores(),
+            "check_categories": list(check.categories),
         }
         removed = 0
         if revisions >= MAX_REVISIONS and unsupported and not problems:
@@ -181,7 +194,7 @@ def make_verify(deps: GraphDeps) -> Node:
                 removed,
                 len(result.get("problems", [])),
             )
-        text = _verdict_text(result, removed)
+        text = _verdict_text(result, removed, show_details=not state.get("verification", False))
         emit(
             "agent.message",
             {"message_id": f"{AGENT}-controle-{revisions}", "text": text},

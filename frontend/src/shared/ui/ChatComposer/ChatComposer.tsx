@@ -1,27 +1,23 @@
-import { useId, useState, type KeyboardEvent } from "react";
+import { useId, useState, type KeyboardEvent, type ReactNode } from "react";
 import { t } from "@/shared/i18n/t";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
 import { fieldClass } from "@/shared/ui/fieldClass";
-import { QuickActions } from "./QuickActions";
 
 interface ChatComposerProps {
-  /** Le professeur répond (ou une demande part) : « Envoyer » attend, les raccourcis ignorent les clics. */
   busy: boolean;
-  /** Une exécution a échoué : « Pourquoi cette erreur ? » a quelque chose à expliquer. */
-  canExplain: boolean;
+  label: string;
+  placeholder: string;
+  actions?: ReactNode;
   /** Rend `true` quand la question est partie : la saisie n'est vidée que dans ce cas. */
   onSend: (question: string) => Promise<boolean>;
-  onHint: () => void;
-  onWhy: () => void;
 }
 
 /**
- * La saisie du chat : Entrée envoie, Maj+Entrée fait un retour à la ligne. Une question refusée ou
- * en erreur reste dans la zone de texte. Les raccourcis (Indice, Pourquoi cette erreur ?) restent
- * près de la saisie ; occupés, ils restent focalisables (`aria-disabled`).
+ * Entrée envoie, Maj+Entrée fait un retour à la ligne. Une question refusée ou en erreur reste
+ * dans la zone de texte.
  */
-export function ChatComposer({ busy, canExplain, onSend, onHint, onWhy }: ChatComposerProps) {
+export function ChatComposer({ busy, label, placeholder, actions, onSend }: ChatComposerProps) {
   const fieldId = useId();
   const [text, setText] = useState("");
   const question = text.trim();
@@ -42,16 +38,16 @@ export function ChatComposer({ busy, canExplain, onSend, onHint, onWhy }: ChatCo
         void submit();
       }}
     >
-      <QuickActions busy={busy} canExplain={canExplain} onHint={onHint} onWhy={onWhy} />
+      {actions}
       <label htmlFor={fieldId} className="sr-only">
-        {t("ide.teacher.question")}
+        {label}
       </label>
       <textarea
         id={fieldId}
         rows={2}
         value={text}
         maxLength={2000}
-        placeholder={t("ide.chat.placeholder")}
+        placeholder={placeholder}
         aria-describedby={`${fieldId}-help`}
         onChange={(event) => setText(event.target.value)}
         onKeyDown={onKeyDown}
@@ -59,10 +55,10 @@ export function ChatComposer({ busy, canExplain, onSend, onHint, onWhy }: ChatCo
       />
       <div className="flex items-center justify-between gap-2">
         <p id={`${fieldId}-help`} className="text-xs text-muted-foreground">
-          {t("ide.chat.shortcuts")}
+          {t("chat.shortcuts")}
         </p>
         <Button type="submit" size="sm" disabled={question === "" || busy}>
-          {t("ide.chat.send")}
+          {t("chat.send")}
         </Button>
       </div>
     </form>

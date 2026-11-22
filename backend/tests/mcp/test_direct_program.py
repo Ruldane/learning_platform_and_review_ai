@@ -15,7 +15,8 @@ from tests.features.program.test_program_direct import START, program_body
 from tests.mcp.adapter_support import call
 from tests.mcp.support import API, Mcp
 from tests.mcp.test_direct_write import QUESTION, count, undo_last
-from tests.support.direct import assert_no_agent, lesson_text
+from tests.support.direct import assert_no_agent
+from tests.support.lesson_verification import submission_text, wait_session
 
 pytestmark = pytest.mark.usefixtures("settled_indexing")  # la leçon écrite est indexée après
 FEATURES = ("learning", "program", "lessons", "quiz")
@@ -76,6 +77,7 @@ async def test_goal_then_program_by_the_mcp_are_journaled_and_undone(
     await assert_no_agent(app)
 
 
+@pytest.mark.usefixtures("accept_lesson")
 async def test_a_program_written_by_claude_is_filled_then_validated_by_january(
     client: httpx.AsyncClient, app: FastAPI, claude: Mcp
 ) -> None:
@@ -95,7 +97,7 @@ async def test_a_program_written_by_claude_is_filled_then_validated_by_january(
         claude,
         token,
         "lessons_write_lesson",
-        {"module_id": module["id"], "markdown": lesson_text("La régression ajuste une droite.")},
+        {"module_id": module["id"], "markdown": submission_text(module["title"])},
     )
     quiz, e3 = await call(
         claude,
@@ -110,6 +112,8 @@ async def test_a_program_written_by_claude_is_filled_then_validated_by_january(
         {"task_id": module["tasks"][0]["id"], "title": "Lire le chapitre un"},
     )
     assert not (e1 or e2 or e3 or e4), (lesson, quiz, moved)
+    done = await wait_session(client, lesson["data"]["verification_session_id"])
+    assert done["status"] == "completed"
 
     ask, is_error = await call(
         claude, token, "program_validate_program", {"program_id": program_id}
