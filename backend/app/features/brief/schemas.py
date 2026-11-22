@@ -99,6 +99,7 @@ class BriefOut(BaseModel):
     reviews: ReviewsRubric
     reminders: RemindersRubric
     offers: OffersRubric
+    reading_unread: int = 0
     week: WeekRubric | None
     resource: BriefResourceOut | None
     unavailable: list[str] = Field(

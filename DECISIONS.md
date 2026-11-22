@@ -2379,3 +2379,15 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
   retirerait un lien ou une preuve forte est omise de la composition. Le gabarit répartit
   les compétences sur deux ou trois colonnes si le bloc le permet.
 - **Raison** : reproduire le choix d’exécution et conserver les faits utiles du profil source.
+
+## D236
+
+- **Date** : 2026-11-22
+- **Sujet** : Collecte quotidienne et actions de la pile de lecture.
+- **Décision** : collecter par compte après l’heure du brief, en partageant le registre
+  existant des tâches planifiées. Les sources explicites sont limitées à douze. La pile
+  déduplique les URL normalisées et conserve l’état de lecture. Le résumé reprend la notice
+  disponible ou un extrait du texte. La fiche de révision d’une lecture reprend ce résumé.
+  Une proposition pour un programme passe par la replanification et son acceptation.
+- **Raison** : reprendre après interruption et rendre chaque action explicite dans son outil
+  d’origine.

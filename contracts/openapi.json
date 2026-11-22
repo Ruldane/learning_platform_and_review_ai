@@ -2491,6 +2491,11 @@
             "title": "Origin",
             "type": "string"
           },
+          "reading_unread": {
+            "default": 0,
+            "title": "Reading Unread",
+            "type": "integer"
+          },
           "reminders": {
             "$ref": "#/components/schemas/RemindersRubric"
           },
@@ -2699,6 +2704,19 @@
           "session_id"
         ],
         "title": "CaptureStarted",
+        "type": "object"
+      },
+      "CardsSaved": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "count"
+        ],
+        "title": "CardsSaved",
         "type": "object"
       },
       "ChangeOut": {
@@ -9090,6 +9108,19 @@
         "title": "MemoryItemPatch",
         "type": "object"
       },
+      "MemorySaved": {
+        "properties": {
+          "memory_item_id": {
+            "title": "Memory Item Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "memory_item_id"
+        ],
+        "title": "MemorySaved",
+        "type": "object"
+      },
       "MemoryWriteOut": {
         "properties": {
           "action": {
@@ -10374,6 +10405,21 @@
           "session_id"
         ],
         "title": "PlanGapStarted",
+        "type": "object"
+      },
+      "PlanReadingIn": {
+        "properties": {
+          "program_id": {
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Program Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "program_id"
+        ],
+        "title": "PlanReadingIn",
         "type": "object"
       },
       "PlanVersionOut": {
@@ -13576,6 +13622,326 @@
         "title": "RadarRunSummary",
         "type": "object"
       },
+      "ReadState": {
+        "properties": {
+          "read": {
+            "title": "Read",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "read"
+        ],
+        "title": "ReadState",
+        "type": "object"
+      },
+      "ReadingApplicationIn": {
+        "properties": {
+          "company": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Company",
+            "type": "string"
+          },
+          "distinct_from": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 10,
+            "title": "Distinct From",
+            "type": "array"
+          }
+        },
+        "required": [
+          "company"
+        ],
+        "title": "ReadingApplicationIn",
+        "type": "object"
+      },
+      "ReadingApplicationSaved": {
+        "properties": {
+          "application_id": {
+            "title": "Application Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "application_id"
+        ],
+        "title": "ReadingApplicationSaved",
+        "type": "object"
+      },
+      "ReadingDetail": {
+        "properties": {
+          "company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ReadingKind"
+          },
+          "read_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Read At"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "title",
+          "url",
+          "summary",
+          "reason",
+          "company",
+          "read_at",
+          "created_at",
+          "text"
+        ],
+        "title": "ReadingDetail",
+        "type": "object"
+      },
+      "ReadingItemOut": {
+        "properties": {
+          "company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ReadingKind"
+          },
+          "read_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Read At"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "title",
+          "url",
+          "summary",
+          "reason",
+          "company",
+          "read_at",
+          "created_at"
+        ],
+        "title": "ReadingItemOut",
+        "type": "object"
+      },
+      "ReadingKind": {
+        "enum": [
+          "offer",
+          "article",
+          "paper",
+          "release"
+        ],
+        "type": "string"
+      },
+      "ReadingPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReadingItemOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_offset": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Offset"
+          },
+          "unread_count": {
+            "title": "Unread Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "unread_count",
+          "next_offset"
+        ],
+        "title": "ReadingPage",
+        "type": "object"
+      },
+      "ReadingPlanStarted": {
+        "properties": {
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id"
+        ],
+        "title": "ReadingPlanStarted",
+        "type": "object"
+      },
+      "ReadingSourceIn": {
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/SourceKind"
+          },
+          "label": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "value": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "label",
+          "value"
+        ],
+        "title": "ReadingSourceIn",
+        "type": "object"
+      },
+      "ReadingSourceOut": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/SourceKind"
+          },
+          "label": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "value": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "label",
+          "value",
+          "id",
+          "active"
+        ],
+        "title": "ReadingSourceOut",
+        "type": "object"
+      },
+      "ReadingSourceState": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "active"
+        ],
+        "title": "ReadingSourceState",
+        "type": "object"
+      },
       "ReindexState": {
         "description": "État de la réindexation de l'utilisateur, tenu en mémoire (perdu au redémarrage).",
         "properties": {
@@ -16113,6 +16479,14 @@
         ],
         "title": "SourceFoundPayload",
         "type": "object"
+      },
+      "SourceKind": {
+        "enum": [
+          "topic",
+          "site",
+          "rss"
+        ],
+        "type": "string"
       },
       "SourceOut": {
         "properties": {
@@ -27203,6 +27577,511 @@
         "summary": "Get One Run",
         "tags": [
           "radar"
+        ]
+      }
+    },
+    "/api/v1/reading-stack": {
+      "get": {
+        "operationId": "get_entries_api_v1_reading_stack_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "unread",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Unread"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ReadingKind"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadingPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Entries",
+        "tags": [
+          "reading-stack"
+        ]
+      }
+    },
+    "/api/v1/reading-stack/sources": {
+      "get": {
+        "operationId": "get_sources_api_v1_reading_stack_sources_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ReadingSourceOut"
+                  },
+                  "title": "Response Get Sources Api V1 Reading Stack Sources Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Sources",
+        "tags": [
+          "reading-stack"
+        ]
+      },
+      "post": {
+        "operationId": "create_source_api_v1_reading_stack_sources_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReadingSourceIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadingSourceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Source",
+        "tags": [
+          "reading-stack"
+        ]
+      }
+    },
+    "/api/v1/reading-stack/sources/{source_id}": {
+      "delete": {
+        "operationId": "delete_source_api_v1_reading_stack_sources__source_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Source",
+        "tags": [
+          "reading-stack"
+        ]
+      },
+      "patch": {
+        "operationId": "update_source_api_v1_reading_stack_sources__source_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReadingSourceState"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadingSourceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Source",
+        "tags": [
+          "reading-stack"
+        ]
+      }
+    },
+    "/api/v1/reading-stack/{item_id}": {
+      "get": {
+        "operationId": "get_entry_api_v1_reading_stack__item_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadingDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Entry",
+        "tags": [
+          "reading-stack"
+        ]
+      },
+      "patch": {
+        "operationId": "update_entry_api_v1_reading_stack__item_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReadState"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadingDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Entry",
+        "tags": [
+          "reading-stack"
+        ]
+      }
+    },
+    "/api/v1/reading-stack/{item_id}/application": {
+      "post": {
+        "operationId": "save_application_api_v1_reading_stack__item_id__application_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReadingApplicationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadingApplicationSaved"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Application",
+        "tags": [
+          "reading-stack"
+        ]
+      }
+    },
+    "/api/v1/reading-stack/{item_id}/cards": {
+      "post": {
+        "operationId": "save_cards_api_v1_reading_stack__item_id__cards_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CardsSaved"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Cards",
+        "tags": [
+          "reading-stack"
+        ]
+      }
+    },
+    "/api/v1/reading-stack/{item_id}/memory": {
+      "post": {
+        "operationId": "save_memory_api_v1_reading_stack__item_id__memory_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemorySaved"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Memory",
+        "tags": [
+          "reading-stack"
+        ]
+      }
+    },
+    "/api/v1/reading-stack/{item_id}/plan": {
+      "post": {
+        "operationId": "start_plan_api_v1_reading_stack__item_id__plan_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanReadingIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadingPlanStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Plan",
+        "tags": [
+          "reading-stack"
         ]
       }
     },

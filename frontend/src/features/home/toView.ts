@@ -19,6 +19,7 @@ export interface BriefView {
   reviews: { queue: number; remaining: number };
   reminders: { due: number; items: ReminderItemView[] };
   offers: OfferItemView[];
+  readingUnread: number;
   /** `null` : aucun programme validé. */
   week: WeekView | null;
   resource: ResourceView | null;
@@ -57,6 +58,7 @@ export function toBriefView(brief: BriefOut): BriefView {
       score: offer.score,
       url: offer.url,
     })),
+    readingUnread: brief.reading_unread ?? 0,
     week: brief.week && {
       doneMinutes: brief.week.done_minutes,
       plannedMinutes: brief.week.planned_minutes,

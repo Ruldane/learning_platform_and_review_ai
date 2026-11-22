@@ -87,7 +87,7 @@ Conserver les tiers du registre de modèles. Les essais réels choisissent le fo
 
 ## 4. Reports de la phase 10b
 
-- [ ] Tester les choix fournisseur par lancement et l’héritage dans les reprises et sessions
+- [x] Tester les choix fournisseur par lancement et l’héritage dans les reprises et sessions
   enfants. Conserver le réglage global pour les lancements où l’utilisatrice ne choisit rien.
 - [x] Couvrir l’expiration et la révocation de l’appairage du relais ainsi que l’affichage
   d’un jeton au périmètre incomplet. Tester l’appairage depuis Réglages avec Playwright.
@@ -107,9 +107,9 @@ Conserver les tiers du registre de modèles. Les essais réels choisissent le fo
 
 ## 5. Vérifications et clôture
 
-- [ ] Lancer les tests de domaines modifiés, les contrôles de dépendances et de types arrière
+- [x] Lancer les tests de domaines modifiés, les contrôles de dépendances et de types arrière
   et avant, les contrats et les parcours Playwright (application et connexion). Contrôler
   aussi le choix OpenAI dans un parcours isolé si le modèle peut être appelé.
-- [ ] Inscrire les décisions dans `DECISIONS.md` et les preuves dans le bilan. Vérifier le
+- [x] Inscrire les décisions dans `DECISIONS.md` et les preuves dans le bilan. Vérifier le
   diff et l’index, puis créer les commits par chemins et poser le tag après la recette.
   Les commits et le tag restent locaux jusqu’au prochain jalon de push (D231).

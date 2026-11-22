@@ -21,12 +21,12 @@ from app.features.program.service.replan_versions import version_history
 from app.features.replan.repository import ReviewRepository
 from app.features.replan.schemas import (
     PlanVersionOut,
-    ReplanRequest,
     ReplanStarted,
     VersionDiffOut,
     VersionMoveOut,
     WeekLoadOut,
 )
+from app.features.replan.schemas import ReplanRequest as ReplanRequest
 from app.features.replan.service.context import program_not_validated
 from app.features.replan.service.runtime import GRAPH, SUBJECT, ReplanRuntime
 from app.features.sessions.service import find_active_session, session_facts

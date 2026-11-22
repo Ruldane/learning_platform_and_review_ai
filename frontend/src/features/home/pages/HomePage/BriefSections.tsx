@@ -7,6 +7,7 @@ import { BlockCard } from "../../components/BlockCard";
 import { BriefHeader } from "../../components/BriefHeader";
 import { OffersCard } from "../../components/OffersCard";
 import { QuickActions } from "../../components/QuickActions";
+import { ReadingBriefLink } from "../../components/ReadingBriefLink";
 import { RemindersCard } from "../../components/RemindersCard";
 import { ResourceCard } from "../../components/ResourceCard";
 import { ReviewsCard } from "../../components/ReviewsCard";
@@ -66,6 +67,7 @@ export function BriefSections({ brief }: { brief: BriefView }) {
         onOpen={(applicationId) => void navigate(applicationPath(applicationId))}
       />
       <OffersCard items={brief.offers} unavailable={down("offers")} />
+      <ReadingBriefLink count={brief.readingUnread} />
       {noProgram ? null : <WeekCard week={brief.week} unavailable={down("week")} />}
       <ResourceCard resource={brief.resource} />
       <AdviceCard sentences={brief.advice.sentences} status={brief.advice.status} />

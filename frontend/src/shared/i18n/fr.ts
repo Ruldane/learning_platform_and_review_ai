@@ -22,6 +22,7 @@ import { program } from "./messages/program";
 import { projects } from "./messages/projects";
 import { quiz } from "./messages/quiz";
 import { radar } from "./messages/radar";
+import { reading } from "./messages/reading";
 import { replan } from "./messages/replan";
 import { research } from "./messages/research";
 import { session } from "./messages/session";
@@ -64,6 +65,7 @@ export const fr = {
   applications,
   home,
   radar,
+  reading,
   projects,
   mcp,
   ide,

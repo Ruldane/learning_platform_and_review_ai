@@ -30,7 +30,8 @@ from app.features.applications.repository import (
     ContactRepository,
     EventRepository,
 )
-from app.features.applications.schemas import AlertOut, ApplicationIn, CreatedOut
+from app.features.applications.schemas import AlertOut, CreatedOut
+from app.features.applications.schemas import ApplicationIn as ApplicationIn
 from app.features.applications.service.adopt import follows_version, freeze_version
 from app.features.applications.service.check import incoming_from_posting
 from app.features.applications.service.matching import Incoming, match

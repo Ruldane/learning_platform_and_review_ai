@@ -49,6 +49,9 @@ from app.features.quiz.mcp import MCP as quiz_mcp
 from app.features.quiz.router import router as quiz_router
 from app.features.radar.mcp import MCP as radar_mcp
 from app.features.radar.router import router as radar_router
+from app.features.reading_stack.mcp import MCP as reading_stack_mcp
+from app.features.reading_stack.router import router as reading_stack_router
+from app.features.reading_stack.router_actions import router as reading_actions_router
 from app.features.replan.mcp import MCP as replan_mcp
 from app.features.replan.router import router as replan_router
 from app.features.research.mcp import MCP as research_mcp
@@ -94,6 +97,8 @@ FEATURE_ROUTERS: list[APIRouter] = [
     committee_router,
     reminders_router,
     radar_router,
+    reading_stack_router,
+    reading_actions_router,
     brief_router,
     activity_router,
     projects_router,
@@ -129,6 +134,7 @@ MCP_FEATURES: list[FeatureMcp] = [
     projects_mcp,
     quiz_mcp,
     radar_mcp,
+    reading_stack_mcp,
     replan_mcp,
     research_mcp,
     sessions_mcp,

@@ -21,6 +21,7 @@ import { programManifest } from "@/features/program/manifest";
 import { projectsManifest } from "@/features/projects/manifest";
 import { quizManifest } from "@/features/quiz/manifest";
 import { radarManifest } from "@/features/radar/manifest";
+import { readingManifest } from "@/features/reading_stack/manifest";
 import { replanManifest } from "@/features/replan/manifest";
 import { researchManifest } from "@/features/research/manifest";
 import { settingsManifest } from "@/features/settings/manifest";
@@ -49,6 +50,7 @@ export const FEATURES: FeatureManifest[] = [
   replanManifest,
   memoryManifest,
   makeBrainManifest(BrainConversation),
+  readingManifest,
   settingsManifest,
   costsManifest,
   accountManifest,

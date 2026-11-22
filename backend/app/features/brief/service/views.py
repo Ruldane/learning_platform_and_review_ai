@@ -16,6 +16,7 @@ from app.db.models.daily import Brief
 from app.features.brief.repository import BriefRepository
 from app.features.brief.schemas import BriefOut
 from app.features.brief.service.runtime import GRAPH, SUBJECT, BriefRuntime
+from app.features.reading_stack.service.entries import unread_count
 from app.features.sessions.service import list_open_sessions_by_subject
 
 logger = logging.getLogger(__name__)
@@ -80,7 +81,7 @@ async def brief_out(rt: BriefRuntime, db: AsyncSession, user_id: str, brief_id: 
     if row.advice_status == "pending":
         await settle(rt, db, user_id, row)
         row = await repo.get_fresh(brief_id) or row
-    return out_of(row)
+    return out_of(row).model_copy(update={"reading_unread": await unread_count(db, user_id)})
 
 
 @dataclass(frozen=True)
