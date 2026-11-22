@@ -34,8 +34,15 @@ CASES: dict[str, str] = {
     "app.features.quiz.router": (
         "tests/features/quiz/test_router.py::test_quiz_routes_isolate_users"
     ),
-    "app.features.study.router": (
+    "app.features.study.router_training": (
         "tests/features/study/test_router.py::test_study_routes_isolate_users"
+    ),
+    "app.features.brain.router_chat": (
+        "tests/isolation/test_brain_conversation.py::test_brain_thread_is_private_to_each_account"
+    ),
+    "app.features.conversations.router": (
+        "tests/isolation/test_conversations.py"
+        "::test_cannot_read_or_add_to_another_accounts_conversation"
     ),
     "app.features.replan.router": (
         "tests/features/replan/test_router.py::test_replan_routes_isolate_users"
@@ -92,4 +99,14 @@ CASES: dict[str, str] = {
         "tests/features/ide/test_isolation.py::test_ide_isolation_between_users"
     ),
     "app.features.mcp.router": "tests/mcp/test_isolation.py::test_mcp_user_isolation",
+    "app.features.mcp.relay_router": (
+        "tests/isolation/test_mcp_relay_pairing.py"
+        "::test_relay_pairing_belongs_to_the_account_that_created_the_code"
+    ),
+    "app.features.reading_stack.router": (
+        "tests/isolation/test_reading_stack.py::test_reading_sources_items_and_actions_are_private"
+    ),
+    "app.features.reading_stack.router_actions": (
+        "tests/isolation/test_reading_stack.py::test_reading_sources_items_and_actions_are_private"
+    ),
 }
