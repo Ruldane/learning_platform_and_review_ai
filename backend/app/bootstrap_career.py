@@ -3,8 +3,10 @@ au fil de la phase, profil maître, gabarits et revues de CV. Gardée hors de `a
 reste court : une feature de plus = un champ de `CareerRuntimes` et une ligne dans
 `career_runtimes`. Comme `app.bootstrap`, seul `app.main` l'importe (contrat 5)."""
 
+from collections.abc import Callable
 from dataclasses import dataclass
 
+from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.agents.runtime.launcher import SessionLauncher
@@ -16,7 +18,8 @@ from app.agents.tools.gap_port import GapStore
 from app.agents.tools.interview_port import InterviewStore
 from app.agents.tools.kit_port import KitStore
 from app.agents.tools.profile_port import ProfileStore
-from app.core.providers import PublishingProviders
+from app.core.portfolio_urls import no_origin
+from app.core.providers import MemoryProviders, PublishingProviders
 from app.features.applications.service.agent_store import AgentApplicationStore
 from app.features.applications.service.committee_store import AgentCommitteeStore
 from app.features.applications.service.interview_store import AgentInterviewStore
@@ -27,6 +30,7 @@ from app.features.cv.service.review_store import AgentCvReviewStore
 from app.features.cv.service.runtime import CvRuntime
 from app.features.cv.service.templates_store import AgentCvTemplateStore
 from app.features.memory.service.runtime import MemoryRuntime
+from app.features.portfolio.service.runtime import PortfolioRuntime
 from app.features.postings.service.agent_store import AgentGapStore
 from app.features.postings.service.runtime import KeyLocks, PostingsRuntime
 from app.features.research.service.runtime import ResearchRuntime
@@ -57,6 +61,7 @@ def career_runtimes(
     research: ResearchRuntime,
     memory: MemoryRuntime,
     publishing: PublishingProviders,
+    portfolio_origin: Callable[[], str | None] = no_origin,
 ) -> CareerRuntimes:
     """Offres (lecture du lien par la recherche web, élément `offre` et doublons par la mémoire,
     analyse lancée par le lanceur, lié au moteur ensuite) et port de l'écart ; profil maître
@@ -77,8 +82,11 @@ def career_runtimes(
         publishing.fonts,
         resumer=launcher,  # « Générer le PDF » reprend la question de sortie (D130)
         company_locks=company_locks,
+        portfolio_origin=portfolio_origin,
     )
-    applications = ApplicationsRuntime(session_factory, launcher, company_locks=company_locks)
+    applications = ApplicationsRuntime(
+        session_factory, launcher, company_locks=company_locks, portfolio_origin=portfolio_origin
+    )
     return CareerRuntimes(
         postings=postings,
         gap=AgentGapStore(session_factory, memory),
@@ -91,4 +99,13 @@ def career_runtimes(
         kit_store=AgentKitStore(applications),
         interview_store=AgentInterviewStore(applications),
         committee_store=AgentCommitteeStore(applications),
+    )
+
+
+def compose_portfolio(app: FastAPI, providers: MemoryProviders) -> None:
+    app.state.portfolio = PortfolioRuntime(
+        app.state.session_factory,
+        providers.storage,
+        app.state.cipher,
+        lambda: app.state.settings.portfolio_public_origin,
     )

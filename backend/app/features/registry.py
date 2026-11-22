@@ -75,6 +75,8 @@ from app.features.paper_lab.mcp import MCP as paper_lab_mcp
 from app.features.paper_lab.router import router as paper_lab_router
 from app.features.podcast.mcp import MCP as podcast_mcp
 from app.features.podcast.router import router as podcast_router
+from app.features.portfolio.mcp import MCP as portfolio_mcp
+from app.features.portfolio.router import router as portfolio_router
 from app.features.postings.mcp import MCP as postings_mcp
 from app.features.postings.router import router as postings_router
 from app.features.program.mcp import MCP as program_mcp
@@ -164,6 +166,7 @@ FEATURE_ROUTERS: list[APIRouter] = [
     voice_router,
     activity_router,
     projects_router,
+    portfolio_router,
     account_router,
     costs_router,
     ide_router,
@@ -213,6 +216,7 @@ MCP_FEATURES: list[FeatureMcp] = [
     postings_mcp,
     program_mcp,
     projects_mcp,
+    portfolio_mcp,
     quiz_mcp,
     radar_mcp,
     reading_stack_mcp,

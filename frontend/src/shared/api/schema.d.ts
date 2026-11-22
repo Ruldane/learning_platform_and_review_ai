@@ -3286,6 +3286,125 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/portfolio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Portfolio */
+        get: operations["get_portfolio_api_v1_portfolio_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/portfolio/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Build Portfolio */
+        post: operations["build_portfolio_api_v1_portfolio_drafts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/portfolio/drafts/{draft_id}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Preview */
+        get: operations["preview_api_v1_portfolio_drafts__draft_id__preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/portfolio/drafts/{draft_id}/zip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download */
+        get: operations["download_api_v1_portfolio_drafts__draft_id__zip_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/portfolio/links/{target}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Choose Link */
+        put: operations["choose_link_api_v1_portfolio_links__target__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/portfolio/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publish */
+        post: operations["publish_api_v1_portfolio_publish_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/portfolio/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Withdraw */
+        post: operations["withdraw_api_v1_portfolio_withdraw_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/postings": {
         parameters: {
             query?: never;
@@ -3978,6 +4097,23 @@ export interface paths {
         put?: never;
         /** Choose Proposal */
         post: operations["choose_proposal_api_v1_proposals__proposal_id__choose_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/portfolios/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Public Portfolio */
+        get: operations["public_portfolio_api_v1_public_portfolios__slug__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -6244,6 +6380,22 @@ export interface components {
              */
             status: "unconfigured" | "disconnected" | "connected" | "revocation_pending";
         };
+        /** Candidate */
+        Candidate: {
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "profile" | "skill" | "project" | "github" | "linkedin";
+            /** Label */
+            label: string;
+            /** Text */
+            text: string;
+            /** Url */
+            url?: string | null;
+        };
         /**
          * CaptureRequest
          * @description Une seule source : un lien http(s), un texte, ou un document déjà importé
@@ -7641,6 +7793,8 @@ export interface components {
         FlashcardOut: {
             /** Back */
             back: string;
+            /** Due Date */
+            due_date?: string | null;
             /** Front */
             front: string;
             /** Id */
@@ -8865,6 +9019,18 @@ export interface components {
             label: string;
             /** Sources */
             sources?: ("cv" | "linkedin" | "note" | "january")[];
+            /** Url */
+            url: string;
+        };
+        /** LinkChoice */
+        LinkChoice: {
+            /** Enabled */
+            enabled: boolean;
+            /**
+             * Revision Id
+             * Format: uuid
+             */
+            revision_id: string;
             /** Url */
             url: string;
         };
@@ -10181,6 +10347,23 @@ export interface components {
             /** Session Id */
             session_id: string;
         };
+        /** PortfolioDraftOut */
+        PortfolioDraftOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Destination */
+            destination: string | null;
+            /** Digest */
+            digest: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+        };
         /**
          * PostingAnalysisOut
          * @description L'analyse de l'Analyste (`PostingAnalysis`, D121), telle qu'elle est rangée.
@@ -10974,6 +11157,23 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** PublicationApproval */
+        PublicationApproval: {
+            /**
+             * Confirmed
+             * @constant
+             */
+            confirmed: true;
+            /** Destination */
+            destination: string;
+            /** Digest */
+            digest: string;
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+        };
         /** PublicationIn */
         PublicationIn: {
             /** Author */
@@ -10989,6 +11189,27 @@ export interface components {
             head: string;
             /** Title */
             title: string;
+        };
+        /** PublicationOut */
+        PublicationOut: {
+            /** Available */
+            available: boolean;
+            /**
+             * Published At
+             * Format: date-time
+             */
+            published_at: string;
+            /**
+             * Revision Id
+             * Format: uuid
+             */
+            revision_id: string;
+            /** Url */
+            url: string;
+            /** Use In Cv */
+            use_in_cv: boolean;
+            /** Use In Kit */
+            use_in_kit: boolean;
         };
         /** PullIn */
         PullIn: {
@@ -11722,6 +11943,7 @@ export interface components {
         };
         /** ReviewIn */
         ReviewIn: {
+            receipt?: components["schemas"]["ReviewReceiptIn"] | null;
             /**
              * Result
              * @enum {string}
@@ -11741,6 +11963,19 @@ export interface components {
             due_date: string;
             /** Step */
             step: number;
+        };
+        /** ReviewReceiptIn */
+        ReviewReceiptIn: {
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /**
+             * Id
+             * Format: uuid4
+             */
+            id: string;
         };
         /**
          * ReviewReport
@@ -12038,6 +12273,11 @@ export interface components {
         SearchUsageOut: {
             brave: components["schemas"]["BraveUsageOut"];
         };
+        /** SelectDraft */
+        SelectDraft: {
+            /** Selected */
+            selected: string[];
+        };
         /**
          * SessionCreateIn
          * @description Ouvre une séance sur un exercice, ou une séance libre (sans `exercise_id`).
@@ -12213,6 +12453,13 @@ export interface components {
              */
             readonly vision_enabled: boolean;
             weekly_review?: components["schemas"]["WeeklyReview"];
+        };
+        /** SiteOut */
+        SiteOut: {
+            /** Candidates */
+            candidates: components["schemas"]["Candidate"][];
+            draft: components["schemas"]["PortfolioDraftOut"] | null;
+            publication: components["schemas"]["PublicationOut"] | null;
         };
         /** SkillCreate */
         SkillCreate: {
@@ -13831,6 +14078,21 @@ export interface components {
              * @default 18:00
              */
             time: string;
+        };
+        /** WithdrawalApproval */
+        WithdrawalApproval: {
+            /**
+             * Confirmed
+             * @constant
+             */
+            confirmed: true;
+            /** Destination */
+            destination: string;
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
         };
         /**
          * ZoneDiffOut
@@ -20764,6 +21026,222 @@ export interface operations {
             };
         };
     };
+    get_portfolio_api_v1_portfolio_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteOut"];
+                };
+            };
+        };
+    };
+    build_portfolio_api_v1_portfolio_drafts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SelectDraft"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortfolioDraftOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_api_v1_portfolio_drafts__draft_id__preview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                draft_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_api_v1_portfolio_drafts__draft_id__zip_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                draft_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/zip": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    choose_link_api_v1_portfolio_links__target__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                target: "cv" | "kit";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkChoice"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    publish_api_v1_portfolio_publish_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicationApproval"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    withdraw_api_v1_portfolio_withdraw_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WithdrawalApproval"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_postings_api_v1_postings_get: {
         parameters: {
             query?: never;
@@ -22365,6 +22843,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ChooseOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    public_portfolio_api_v1_public_portfolios__slug__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
                 };
             };
             /** @description Validation Error */

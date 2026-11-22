@@ -1,4 +1,5 @@
 import { createElement, type ComponentType } from "react";
+import { MobilePage } from "./pages/MobilePage";
 import type { QuizGhostProps } from "@/shared/lib/ghostPanels";
 import type { FeatureManifest } from "@/shared/lib/feature";
 import { QuizIndexPage } from "./pages/QuizIndexPage";
@@ -12,6 +13,7 @@ import { ReviewsPage } from "./pages/ReviewsPage";
 export function makeQuizManifest(GhostPanel?: ComponentType<QuizGhostProps>): FeatureManifest {
   return {
     id: "quiz",
+    publicRoutes: [{ path: "/mobile", Component: MobilePage }],
     routes: [
       { path: "etudier/revisions", Component: ReviewsPage },
       { path: "etudier/quiz", Component: QuizIndexPage },
@@ -20,6 +22,7 @@ export function makeQuizManifest(GhostPanel?: ComponentType<QuizGhostProps>): Fe
     nav: [
       { section: "study", labelKey: "quiz.nav.reviews", path: "/etudier/revisions", order: 2 },
       { section: "study", labelKey: "quiz.nav.quiz", path: "/etudier/quiz", order: 3 },
+      { section: "study", labelKey: "mobile.title", path: "/mobile", order: 3.5 },
     ],
   };
 }

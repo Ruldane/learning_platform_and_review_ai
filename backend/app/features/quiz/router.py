@@ -25,6 +25,7 @@ from app.features.quiz.schemas import (
     ReviewOut,
 )
 from app.features.quiz.service import attempts, cards, direct, quizzes
+from app.features.quiz.service.offline import review_offline
 from app.features.quiz.service.runtime import QuizRuntime
 
 router = APIRouter(tags=["quiz"])
@@ -159,4 +160,6 @@ async def review_card(
     card_id: str, body: ReviewIn, current: CurrentUserDep, rt: QuizDep
 ) -> ReviewOut:
     """Avis sur une fiche due ; déjà revue : 409 `card_not_due` ; inconnue : 404."""
+    if body.receipt is not None:
+        return await review_offline(rt, current.id, card_id, body.result == "ok", body.receipt)
     return await cards.review_card(rt, current.id, card_id, body.result == "ok")

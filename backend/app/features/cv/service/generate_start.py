@@ -34,6 +34,7 @@ from app.features.cv.service.review_store import frozen_base, review_row
 from app.features.cv.service.reviews import settle, waiting_output
 from app.features.cv.service.runtime import CvRuntime
 from app.features.cv.service.targeted_content import compose_targeted_cv
+from app.features.portfolio.service.links import approved_link
 from app.features.postings.service.queries import get_posting
 
 logger = logging.getLogger(__name__)
@@ -73,7 +74,11 @@ def as_proposal(row: CvModification) -> Proposal:
 
 
 async def _new_version(
-    db: AsyncSession, user_id: str, review: CvReview, allow_extra: bool
+    db: AsyncSession,
+    user_id: str,
+    review: CvReview,
+    allow_extra: bool,
+    portfolio_origin: str | None,
 ) -> CvVersion:
     """La version figée au clic : contenu composé et décisions de cet instant."""
     profile, base = await frozen_base(db, user_id, review)
@@ -83,7 +88,8 @@ async def _new_version(
     title = (analysis.title if analysis else None) or posting.title
     mods = await ModificationRepository(db, user_id).of_review(review.id)
     accepted = [as_proposal(m) for m in mods if m.status == "accepted"]
-    applied = compose_targeted_cv(base, profile, accepted, analysis)
+    portfolio = await approved_link(db, user_id, "cv", portfolio_origin)
+    applied = compose_targeted_cv(base, profile, accepted, analysis, portfolio=portfolio)
     decisions = {m.ref: m.status for m in mods} | dict.fromkeys(applied.ignored, "ignored")
     template = await TemplateRepository(db, user_id).get(review.template_id)
     versions = VersionRepository(db, user_id)
@@ -138,7 +144,9 @@ async def generate(
     async with rt.review_lock(user_id):
         async with rt.session_factory() as db:
             review, interrupt_id = await _checked(db, user_id, review_id)
-            version = await _new_version(db, user_id, review, body.allow_extra_pages)
+            version = await _new_version(
+                db, user_id, review, body.allow_extra_pages, rt.portfolio_origin()
+            )
             await db.commit()  # le parcours relit la version dans sa propre session
             version_id, session_id, number = version.id, str(review.session_id), version.number
         value = {"choice": "pdf", "version_id": version_id}

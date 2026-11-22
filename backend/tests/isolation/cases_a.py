@@ -89,6 +89,9 @@ CASES: dict[str, str] = {
         "tests/features/projects/test_isolation.py"
         "::test_another_user_cannot_reach_any_route_of_my_project"
     ),
+    "app.features.portfolio.router": (
+        "tests/isolation/test_portfolio.py::test_other_account_cannot_read_or_publish_a_private_portfolio"
+    ),
     # Cas écrits par 9.A4 (routeurs qui n'en avaient pas au niveau des routes).
     "app.features.auth.router": (
         "tests/isolation/test_cross_user_auth.py::test_two_accounts_have_their_own_identity"

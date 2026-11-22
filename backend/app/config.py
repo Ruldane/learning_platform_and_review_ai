@@ -3,8 +3,10 @@ from pathlib import Path
 from typing import Literal
 from urllib.parse import urlsplit
 
-from pydantic import Field, SecretStr, model_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from app.core.portfolio_urls import normalize_origin
 
 # Les ports sont publiés sur 127.0.0.1 : l'interface s'ouvre aussi bien par `localhost` que par
 # `127.0.0.1`, et le navigateur envoie l'une ou l'autre origine.
@@ -68,6 +70,7 @@ class Settings(BaseSettings):
     # Adresse de retour enregistrée chez Google, et adresse du front où l'on revient (P10).
     google_redirect_uri: str = "http://localhost:8000/api/v1/auth/google/callback"
     frontend_url: str = "http://localhost:5173"
+    portfolio_public_origin: str | None = Field(default=None, max_length=105)
     # Durée fixe d'une session de connexion, en jours, depuis la connexion (P6).
     session_days: int = Field(default=30, ge=1, le=90)
 
@@ -75,6 +78,11 @@ class Settings(BaseSettings):
     # corps d'un appel du serveur MCP, en octets (P10).
     sandbox_spool_dir: Path = Path("/spool")
     mcp_body_limit: int = Field(default=1_000_000, ge=1_000)
+
+    @field_validator("portfolio_public_origin")
+    @classmethod
+    def _portfolio_origin(cls, value: str | None) -> str | None:
+        return normalize_origin(value)
 
     @model_validator(mode="after")
     def _default_database_url(self) -> "Settings":

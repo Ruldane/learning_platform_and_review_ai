@@ -4,7 +4,7 @@ l'explication d'une question ne sortent qu'avec la note d'une tentative (`Result
 from datetime import date, datetime
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import UUID4, BaseModel, Field, model_validator
 
 from app.agents.tools.quiz_port import (
     MAX_CHOICES,
@@ -106,6 +106,7 @@ class FlashcardOut(BaseModel):
     front: str
     back: str
     skill: str | None
+    due_date: date | None = None
 
 
 class DueQueue(BaseModel):
@@ -115,8 +116,14 @@ class DueQueue(BaseModel):
     remaining_due: int  # fiches dues au-delà de la file du jour (15 min)
 
 
+class ReviewReceiptIn(BaseModel):
+    id: UUID4
+    due_date: date
+
+
 class ReviewIn(BaseModel):
     result: Literal["ok", "fail"]
+    receipt: ReviewReceiptIn | None = None
 
 
 class ReviewOut(BaseModel):

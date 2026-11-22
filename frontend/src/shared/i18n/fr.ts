@@ -33,10 +33,12 @@ import { linkedInDrafts } from "./messages/linkedInDrafts";
 import { mcp } from "./messages/mcp";
 import { memory } from "./messages/memory";
 import { messageReview } from "./messages/messageReview";
+import { mobile } from "./messages/mobile";
 import { onboarding } from "./messages/onboarding";
 import { oncall } from "./messages/oncall";
 import { paperLab } from "./messages/paperLab";
 import { podcast } from "./messages/podcast";
+import { portfolio } from "./messages/portfolio";
 import { program } from "./messages/program";
 import { projects } from "./messages/projects";
 import { quiz } from "./messages/quiz";
@@ -74,6 +76,7 @@ export const fr = {
   settings,
   onboarding,
   memory,
+  mobile,
   messageReview,
   research,
   program,
@@ -88,6 +91,7 @@ export const fr = {
   oncall,
   paperLab,
   podcast,
+  portfolio,
   ghost,
   quiz,
   skillMarket,

@@ -19,6 +19,8 @@ ALLOWED_SUFFIXES = (
     ".ttf",
     ".epub",
     ".wav",
+    ".html",
+    ".zip",
 )
 
 

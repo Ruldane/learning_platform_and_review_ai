@@ -3102,6 +3102,52 @@
         "title": "CalendarStatus",
         "type": "object"
       },
+      "Candidate": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "profile",
+              "skill",
+              "project",
+              "github",
+              "linkedin"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "label",
+          "text"
+        ],
+        "title": "Candidate",
+        "type": "object"
+      },
       "CaptureRequest": {
         "description": "Une seule source : un lien http(s), un texte, ou un document déjà importé\n(`POST /documents`). Zéro ou plusieurs : 422 `invalid_input`.",
         "properties": {
@@ -6878,6 +6924,18 @@
             "title": "Back",
             "type": "string"
           },
+          "due_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
           "front": {
             "title": "Front",
             "type": "string"
@@ -10263,6 +10321,33 @@
           "url"
         ],
         "title": "Link",
+        "type": "object"
+      },
+      "LinkChoice": {
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "revision_id": {
+            "format": "uuid",
+            "title": "Revision Id",
+            "type": "string"
+          },
+          "url": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "revision_id",
+          "url",
+          "enabled"
+        ],
+        "title": "LinkChoice",
         "type": "object"
       },
       "LinkedInClaim": {
@@ -13965,6 +14050,43 @@
         "title": "PodcastStarted",
         "type": "object"
       },
+      "PortfolioDraftOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "destination": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Destination"
+          },
+          "digest": {
+            "title": "Digest",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "digest",
+          "destination",
+          "created_at"
+        ],
+        "title": "PortfolioDraftOut",
+        "type": "object"
+      },
       "PostingAnalysisOut": {
         "description": "L'analyse de l'Analyste (`PostingAnalysis`, D121), telle qu'elle est rangée.",
         "properties": {
@@ -16296,6 +16418,40 @@
         "title": "ProviderModels",
         "type": "object"
       },
+      "PublicationApproval": {
+        "additionalProperties": false,
+        "properties": {
+          "confirmed": {
+            "const": true,
+            "title": "Confirmed",
+            "type": "boolean"
+          },
+          "destination": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Destination",
+            "type": "string"
+          },
+          "digest": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Digest",
+            "type": "string"
+          },
+          "draft_id": {
+            "format": "uuid",
+            "title": "Draft Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "draft_id",
+          "destination",
+          "confirmed",
+          "digest"
+        ],
+        "title": "PublicationApproval",
+        "type": "object"
+      },
       "PublicationIn": {
         "properties": {
           "author": {
@@ -16335,6 +16491,46 @@
           "body"
         ],
         "title": "PublicationIn",
+        "type": "object"
+      },
+      "PublicationOut": {
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "published_at": {
+            "format": "date-time",
+            "title": "Published At",
+            "type": "string"
+          },
+          "revision_id": {
+            "format": "uuid",
+            "title": "Revision Id",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          },
+          "use_in_cv": {
+            "title": "Use In Cv",
+            "type": "boolean"
+          },
+          "use_in_kit": {
+            "title": "Use In Kit",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "revision_id",
+          "url",
+          "published_at",
+          "available",
+          "use_in_cv",
+          "use_in_kit"
+        ],
+        "title": "PublicationOut",
         "type": "object"
       },
       "PullIn": {
@@ -18471,6 +18667,16 @@
       },
       "ReviewIn": {
         "properties": {
+          "receipt": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReviewReceiptIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "result": {
             "enum": [
               "ok",
@@ -18520,6 +18726,26 @@
           "demoted_skill"
         ],
         "title": "ReviewOut",
+        "type": "object"
+      },
+      "ReviewReceiptIn": {
+        "properties": {
+          "due_date": {
+            "format": "date",
+            "title": "Due Date",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid4",
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "due_date"
+        ],
+        "title": "ReviewReceiptIn",
         "type": "object"
       },
       "ReviewReport": {
@@ -19259,6 +19485,27 @@
         "title": "SearchUsageOut",
         "type": "object"
       },
+      "SelectDraft": {
+        "additionalProperties": false,
+        "properties": {
+          "selected": {
+            "items": {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Selected",
+            "type": "array"
+          }
+        },
+        "required": [
+          "selected"
+        ],
+        "title": "SelectDraft",
+        "type": "object"
+      },
       "SessionCreateIn": {
         "description": "Ouvre une séance sur un exercice, ou une séance libre (sans `exercise_id`).",
         "properties": {
@@ -19718,6 +19965,44 @@
           "vision_enabled"
         ],
         "title": "SettingsOut",
+        "type": "object"
+      },
+      "SiteOut": {
+        "properties": {
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/Candidate"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "draft": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PortfolioDraftOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "publication": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PublicationOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "candidates",
+          "draft",
+          "publication"
+        ],
+        "title": "SiteOut",
         "type": "object"
       },
       "SkillCreate": {
@@ -23930,6 +24215,34 @@
           }
         },
         "title": "WeeklyReview",
+        "type": "object"
+      },
+      "WithdrawalApproval": {
+        "additionalProperties": false,
+        "properties": {
+          "confirmed": {
+            "const": true,
+            "title": "Confirmed",
+            "type": "boolean"
+          },
+          "destination": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Destination",
+            "type": "string"
+          },
+          "draft_id": {
+            "format": "uuid",
+            "title": "Draft Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "draft_id",
+          "destination",
+          "confirmed"
+        ],
+        "title": "WithdrawalApproval",
         "type": "object"
       },
       "ZoneDiffOut": {
@@ -33685,6 +33998,291 @@
         ]
       }
     },
+    "/api/v1/portfolio": {
+      "get": {
+        "operationId": "get_portfolio_api_v1_portfolio_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Portfolio",
+        "tags": [
+          "portfolio"
+        ]
+      }
+    },
+    "/api/v1/portfolio/drafts": {
+      "post": {
+        "operationId": "build_portfolio_api_v1_portfolio_drafts_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SelectDraft"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioDraftOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Build Portfolio",
+        "tags": [
+          "portfolio"
+        ]
+      }
+    },
+    "/api/v1/portfolio/drafts/{draft_id}/preview": {
+      "get": {
+        "operationId": "preview_api_v1_portfolio_drafts__draft_id__preview_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Draft Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Preview",
+        "tags": [
+          "portfolio"
+        ]
+      }
+    },
+    "/api/v1/portfolio/drafts/{draft_id}/zip": {
+      "get": {
+        "operationId": "download_api_v1_portfolio_drafts__draft_id__zip_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Draft Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Download",
+        "tags": [
+          "portfolio"
+        ]
+      }
+    },
+    "/api/v1/portfolio/links/{target}": {
+      "put": {
+        "operationId": "choose_link_api_v1_portfolio_links__target__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "target",
+            "required": true,
+            "schema": {
+              "enum": [
+                "cv",
+                "kit"
+              ],
+              "title": "Target",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkChoice"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Choose Link",
+        "tags": [
+          "portfolio"
+        ]
+      }
+    },
+    "/api/v1/portfolio/publish": {
+      "post": {
+        "operationId": "publish_api_v1_portfolio_publish_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicationApproval"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Publish",
+        "tags": [
+          "portfolio"
+        ]
+      }
+    },
+    "/api/v1/portfolio/withdraw": {
+      "post": {
+        "operationId": "withdraw_api_v1_portfolio_withdraw_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WithdrawalApproval"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Withdraw",
+        "tags": [
+          "portfolio"
+        ]
+      }
+    },
     "/api/v1/postings": {
       "get": {
         "description": "Les offres de January, les plus récentes d'abord.",
@@ -35801,6 +36399,51 @@
         "summary": "Choose Proposal",
         "tags": [
           "learning"
+        ]
+      }
+    },
+    "/api/v1/public/portfolios/{slug}": {
+      "get": {
+        "operationId": "public_portfolio_api_v1_public_portfolios__slug__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 64,
+              "pattern": "^[\\w-]+={0,2}$",
+              "title": "Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Public Portfolio",
+        "tags": [
+          "portfolio"
         ]
       }
     },

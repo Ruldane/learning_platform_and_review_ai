@@ -36,6 +36,7 @@ import { messageReviewManifest } from "@/features/message_review/manifest";
 import { oncallManifest } from "@/features/oncall/manifest";
 import { paperLabManifest } from "@/features/paper_lab/manifest";
 import { podcastManifest } from "@/features/podcast/manifest";
+import { portfolioManifest } from "@/features/portfolio/manifest";
 import { programManifest } from "@/features/program/manifest";
 import { projectsManifest } from "@/features/projects/manifest";
 import { makeQuizManifest } from "@/features/quiz/manifest";
@@ -73,6 +74,7 @@ export const FEATURES: FeatureManifest[] = [
   skillsManifest,
   galaxyManifest,
   projectsManifest,
+  portfolioManifest,
   compatibleOffersManifest,
   contributionsManifest,
   gapManifest,

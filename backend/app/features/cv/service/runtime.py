@@ -14,6 +14,7 @@ from typing import Any, Protocol
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.errors import AppError
+from app.core.portfolio_urls import no_origin
 from app.features.lessons.service.runtime import Launcher
 from app.features.memory.service.runtime import MemoryRuntime
 from app.features.postings.service.runtime import KeyLocks
@@ -64,6 +65,7 @@ class CvRuntime:
     _reviews: dict[str, asyncio.Lock] = field(default_factory=dict, repr=False, compare=False)
     # Création de la fiche entreprise : le même `KeyLocks` que celui des candidatures (M7).
     company_locks: KeyLocks = field(default_factory=KeyLocks, repr=False, compare=False)
+    portfolio_origin: Callable[[], str | None] = no_origin
 
     @property
     def storage(self) -> FileStorage:

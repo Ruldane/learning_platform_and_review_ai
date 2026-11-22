@@ -2736,3 +2736,41 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
   Tremplin pour rejouer une écriture et lire le prochain événement local.
 - **Raison** : le programme planifie à la journée et la candidature indique le jour de
   l’entretien. Le créneau présenté recueille un accord sur l’heure exacte et la donnée envoyée.
+
+## D267
+
+- **Date** : 2026-11-22
+- **Sujet** : Révisions hors connexion et notifications du mobile.
+- **Décision** : enregistrer le brief et les fiches du compte après accord sur cet
+  appareil. Associer la réponse à l’échéance de la fiche et à un reçu idempotent.
+  Effacer la copie et invalider les écritures en cours lors d’un changement de
+  compte. Le service worker met en cache les ressources statiques de l’application.
+  Pendant que la page mobile est ouverte et après autorisation, il signale les
+  offres du brief et un créneau Agenda confirmé dans les 30 minutes à venir.
+- **Raison** : pouvoir répondre hors connexion et appliquer chaque réponse une
+  seule fois, avec un contenu de notification bref.
+
+## D268
+
+- **Date** : 2026-11-22
+- **Sujet** : Hébergement et approbation des versions du portfolio.
+- **Décision** : produire un HTML statique et son ZIP dans le stockage privé,
+  à partir d’une sélection initialement vide. L’hébergement Tremplin utilise
+  une origine HTTPS dédiée et reste désactivé sans origine configurée.
+  L’écriture de l’accord porte l’empreinte et l’URL de la version. Le retrait
+  coupe le pointeur public. L’inclusion dans les nouveaux CV et kits dépend
+  de deux choix propres à la version publiée.
+- **Raison** : laisser relire le fichier exact et choisir sa destination,
+  tout en gardant un export utilisable pour héberger la page ailleurs.
+
+## D269
+
+- **Date** : 2026-11-22
+- **Sujet** : Délais d’indexation Ollama sur CPU.
+- **Décision** : conserver les lots habituels. Quand la lecture d’un lot
+  dépasse son délai, réessayer ses deux moitiés dans l’ordre. Un fragment
+  unique qui dépasse le délai remonte l’erreur habituelle. Au transfert,
+  reprendre les éléments non indexés avec le service d’entretien existant.
+- **Raison** : la réindexation des données transférées a dépassé la minute
+  sur un lot de fragments longs. Le découpage permet de reprendre sur le
+  même modèle avec les vecteurs déjà calculés.

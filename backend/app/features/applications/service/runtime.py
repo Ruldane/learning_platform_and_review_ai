@@ -9,6 +9,7 @@ from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.core.portfolio_urls import no_origin
 from app.features.lessons.service.runtime import Launcher
 from app.features.postings.service.runtime import KeyLocks, utc_now
 
@@ -25,6 +26,7 @@ class ApplicationsRuntime:
     locks: KeyLocks = field(default_factory=KeyLocks, repr=False, compare=False)
     # Création de la fiche entreprise : le même `KeyLocks` que celui des revues de CV (M7).
     company_locks: KeyLocks = field(default_factory=KeyLocks, repr=False, compare=False)
+    portfolio_origin: Callable[[], str | None] = no_origin
 
     def lock(self, user_id: str) -> asyncio.Lock:
         """Le verrou des candidatures de l'utilisatrice."""

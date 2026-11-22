@@ -28,13 +28,14 @@ from app.bootstrap import publishing_providers as open_publishing_providers
 from app.bootstrap import research_providers as open_research_providers
 from app.bootstrap_auth import ensure_local_user, open_oidc, setup_security
 from app.bootstrap_calendar import open_calendar
-from app.bootstrap_career import career_runtimes
+from app.bootstrap_career import career_runtimes, compose_portfolio
 from app.bootstrap_daily import daily_runtimes
 from app.bootstrap_ide import start_ide_gateway
 from app.config import Settings, get_settings
 from app.core.body_limits import add_body_limits
 from app.core.errors import register_error_handlers
 from app.core.played import RunSourceHeader
+from app.core.portfolio_host import PortfolioPublicHostGuard
 from app.core.providers import MemoryProviders, PublishingProviders, ResearchProviders
 from app.db.engine import create_engine, create_session_factory
 from app.features.auth.service.authenticator import build_authenticator
@@ -121,6 +122,7 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
                 app.state.session_factory, app.state.research_providers, app.state.providers
             )
         )
+        compose_portfolio(app, injected)
         await _open_agents(app, stack)
         app.state.voice = VoiceService(
             OpenAITranscription(app.state.research.keys), app.state.daily.podcast.speech
@@ -129,10 +131,7 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 def _compose_features(app: FastAPI) -> StudyRuntimes:
-    """Runtimes des features que le moteur sert par ses ports : apprentissage, leçons,
-    programme, puis l'étude (quiz et révisions, D101 ; sessions guidées, D103). Le lanceur
-    existe avant eux (le Conseil le reçoit pour lancer `program_builder`) ; lié au runner
-    juste après le moteur."""
+    """Compose les services avant de lier leur lanceur au moteur d’agents."""
     app.state.launcher = SessionLauncher()
     app.state.learning = LearningRuntime(app.state.session_factory, app.state.launcher)
     app.state.lessons = lessons_runtime(
@@ -167,6 +166,7 @@ def _compose_features(app: FastAPI) -> StudyRuntimes:
         research=app.state.research,
         memory=app.state.memory,
         publishing=app.state.publishing_providers,
+        portfolio_origin=lambda: app.state.settings.portfolio_public_origin,
     )
     app.state.daily = daily_runtimes(
         app.state.session_factory,
@@ -282,6 +282,9 @@ def create_app(
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+    )
+    app.add_middleware(
+        PortfolioPublicHostGuard, origin=lambda: app.state.settings.portfolio_public_origin
     )
     for router in FEATURE_ROUTERS:
         app.include_router(router, prefix=API_PREFIX)

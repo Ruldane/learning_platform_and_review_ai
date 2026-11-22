@@ -72,7 +72,10 @@ async def due_queue(rt: QuizRuntime, db: AsyncSession, user_id: str) -> DueQueue
     cards = await repo.due(today, queue_room(reviewed))
     total = await repo.count_due(today)
     return DueQueue(
-        cards=[FlashcardOut(id=c.id, front=c.front, back=c.back, skill=c.skill) for c in cards],
+        cards=[
+            FlashcardOut(id=c.id, front=c.front, back=c.back, skill=c.skill, due_date=c.due_date)
+            for c in cards
+        ],
         reviewed_today=reviewed,
         daily_cards=DAILY_CARDS,
         remaining_due=max(0, total - len(cards)),
@@ -107,16 +110,26 @@ async def read_due_card(
     rt: QuizRuntime, db: AsyncSession, user_id: str, card_id: str
 ) -> FlashcardOut:
     card = await _due_card(FlashcardRepository(db, user_id), card_id, await rt.today(db, user_id))
-    return FlashcardOut(id=card.id, front=card.front, back=card.back, skill=card.skill)
+    return FlashcardOut(
+        id=card.id, front=card.front, back=card.back, skill=card.skill, due_date=card.due_date
+    )
 
 
 async def review_in_session(
-    rt: QuizRuntime, db: AsyncSession, user_id: str, card_id: str, ok: bool
+    rt: QuizRuntime,
+    db: AsyncSession,
+    user_id: str,
+    card_id: str,
+    ok: bool,
+    *,
+    expected_due: date | None = None,
 ) -> ReviewOut:
     """Applique le même avis dans la transaction qui valide la réponse d’un canal."""
     today = await rt.today(db, user_id)
     repo = FlashcardRepository(db, user_id)
     card = await _due_card(repo, card_id, today)
+    if expected_due is not None and card.due_date != expected_due:
+        raise card_not_due()
     step, due = next_review(card.step, ok, today)
     if not await repo.claim_review(card, today, step, due):
         raise card_not_due()

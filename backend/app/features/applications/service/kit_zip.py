@@ -25,6 +25,7 @@ from app.features.applications.service.views import get_application
 from app.features.cv.service.naming import kit_filename
 from app.features.cv.service.runtime import CvRuntime
 from app.features.cv.service.versions import version_pdf
+from app.features.portfolio.service.links import approved_link
 
 logger = logging.getLogger(__name__)
 
@@ -125,6 +126,7 @@ async def kit_archive(
         app_row = await get_application(db, user_id, application_id)
         rows = await KitRepository(db, user_id).of_application(app_row.id)
         name = kit_filename(app_row.company, app_row.title)
+        portfolio = await approved_link(db, user_id, "kit", rt.portfolio_origin())
     pieces = {row.kind: row for row in rows}
     entries = [Entry(file_name(kind), TITLES[kind], pieces.get(kind)) for kind in KIT_ORDER]
     files = [
@@ -138,6 +140,8 @@ async def kit_archive(
     pdf = await _pdf(cv, user_id, str(version_id)) if wanted else None
     if pdf is not None:
         files.append(pdf)
+    if portfolio is not None:
+        files.append(("08_portfolio.txt", (portfolio + "\n").encode()))
     files.append(
         (README, readme(entries, pdf[0] if pdf else None, wanted and pdf is None).encode())
     )

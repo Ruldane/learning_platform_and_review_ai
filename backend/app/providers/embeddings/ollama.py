@@ -53,11 +53,21 @@ class OllamaEmbedder:
     async def aembed_query(self, text: str) -> list[float]:
         return (await self._embed([text]))[0]
 
-    async def _embed(self, batch: list[str]) -> list[list[float]]:
+    async def _fetch(self, batch: list[str]) -> list[list[float]]:
         try:
             response = await self._http.post(self._url, json={"model": self._model, "input": batch})
-            response.raise_for_status()
-            return _vectors(response.json(), len(batch))
+        except httpx.ReadTimeout:
+            # Un lot de fragments longs peut dépasser le délai sur CPU.
+            if len(batch) == 1:
+                raise
+            middle = len(batch) // 2
+            return await self._fetch(batch[:middle]) + await self._fetch(batch[middle:])
+        response.raise_for_status()
+        return _vectors(response.json(), len(batch))
+
+    async def _embed(self, batch: list[str]) -> list[list[float]]:
+        try:
+            return await self._fetch(batch)
         except (httpx.HTTPError, ValueError) as exc:
             # Statut HTTP ou type seulement : jamais le texte de l'exception ni le corps.
             status = exc.response.status_code if isinstance(exc, httpx.HTTPStatusError) else None

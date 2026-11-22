@@ -59,7 +59,7 @@ async def test_due_queue_caps_at_30_minus_reviewed_today(
     body = (await client.get(f"{API}/flashcards/due")).json()
     assert len(body["cards"]) == 25
     assert (body["reviewed_today"], body["daily_cards"], body["remaining_due"]) == (5, 30, 15)
-    assert set(body["cards"][0]) == {"id", "front", "back", "skill"}
+    assert set(body["cards"][0]) == {"id", "front", "back", "skill", "due_date"}
 
 
 @pytest.mark.parametrize(

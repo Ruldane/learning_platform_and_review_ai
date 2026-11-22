@@ -86,6 +86,8 @@ def compose_targeted_cv(
     profile: MasterProfileData,
     accepted: Sequence[Proposal],
     analysis: PostingAnalysis | None,
+    *,
+    portfolio: str | None = None,
 ) -> Applied:
     """Garde les preuves du CV et déplace ses liens dans l'en-tête de la version ciblée."""
     sections = [section for section in base.sections if section.key != "links"]
@@ -103,5 +105,8 @@ def compose_targeted_cv(
         else:
             kept.append(proposal)
     applied = apply_with_report(base.model_copy(update={"sections": sections}), profile, kept)
-    content = TargetedCvContent(**applied.content.model_dump(), header_links=profile.links)
+    links = list(profile.links)
+    if portfolio and all(link.url != portfolio for link in links):
+        links.append(Link(label="Portfolio", url=portfolio, sources=["january"]))
+    content = TargetedCvContent(**applied.content.model_dump(), header_links=links)
     return Applied(content, [*ignored, *applied.ignored])

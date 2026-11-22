@@ -84,6 +84,21 @@ async def test_ollama_timeout_becomes_unavailable(http: httpx.AsyncClient) -> No
 
 
 @respx.mock
+async def test_ollama_retries_a_slow_batch_in_smaller_groups(http: httpx.AsyncClient) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if len(json.loads(request.content)["input"]) > 2:
+            raise httpx.ReadTimeout("slow")
+        return _echo_embeddings(1)(request)
+
+    route = respx.post(URL).mock(side_effect=handler)
+    vectors = await OllamaEmbedder(BASE, "bge-m3", http).aembed_documents(
+        ["a", "aa", "aaa", "aaaa"]
+    )
+    assert vectors == [[1.0], [2.0], [3.0], [4.0]]
+    assert [len(json.loads(call.request.content)["input"]) for call in route.calls] == [4, 2, 2]
+
+
+@respx.mock
 async def test_ollama_inconsistent_vector_count_is_unavailable(http: httpx.AsyncClient) -> None:
     respx.post(URL).respond(200, json={"embeddings": [[0.1]]})
     with pytest.raises(EmbeddingsUnavailable):
