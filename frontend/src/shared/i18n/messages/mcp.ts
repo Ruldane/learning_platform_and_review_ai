@@ -182,6 +182,7 @@ export const mcp = {
     gap: "Écarts de compétences",
     ide: "IDE Python",
     learning: "Objectifs et conseil",
+    lesson_hunt: "Chasse aux erreurs",
     lessons: "Leçons",
     memory: "Mémoire",
     oncall: "Astreinte",

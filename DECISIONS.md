@@ -2495,3 +2495,14 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
   confirmation MCP de niveau 3. Les textes et les liens GitHub sont balisés comme données.
 - **Raison** : garder les diagrammes lisibles dans les deux formats, contrôler la durée
   réellement produite et adapter les niveaux MCP aux effets des actions.
+
+## D246
+
+- **Date** : 2026-11-22
+- **Sujet** : Deux erreurs isolées dans une copie de la leçon.
+- **Décision** : figer le texte publié à l’ouverture de l’exercice et demander au Vérificateur
+  deux remplacements localisés. Vérifier par le code que chaque extrait apparaît une seule fois
+  et que les deux extraits sont disjoints. Après la remise des deux réponses, le Vérificateur
+  rend un bilan conservé avec les corrections. Le texte publié reste la source du chapitre.
+- **Raison** : exercer la lecture critique sur des passages précis en gardant la correction liée
+  à la version effectivement lue.

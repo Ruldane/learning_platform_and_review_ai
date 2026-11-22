@@ -33,6 +33,7 @@ from app.features.capture.service.store import AgentCaptureStore
 from app.features.conversations.store import AgentConversationStore
 from app.features.learning.service.runtime import LearningRuntime
 from app.features.learning.service.store import AgentCouncilStore
+from app.features.lesson_hunt.service.store import AgentLessonHuntStore
 from app.features.lessons.service.runtime import LessonsRuntime
 from app.features.lessons.service.store import AgentLessonStore
 from app.features.memory.service.gateway import AgentMemoryGateway
@@ -145,6 +146,7 @@ def agent_ports(
         projects,
         ide,
         conversations=AgentConversationStore(lessons.session_factory),
+        lesson_hunt=AgentLessonHuntStore(lessons.session_factory),
         oncall=AgentOncallStore(lessons.session_factory),
         podcast=podcast,
     )

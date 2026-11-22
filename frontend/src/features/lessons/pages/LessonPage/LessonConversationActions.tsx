@@ -23,6 +23,12 @@ export function LessonConversationActions({ lessonId, professorButton, onAskProf
       >
         {t("conversations.classroom.open")}
       </Link>
+      <Link
+        to={"/apprendre/lecons/" + encodeURIComponent(lessonId) + "/erreurs"}
+        className={buttonVariants({ variant: "outline" })}
+      >
+        {t("lessonHunt.title")}
+      </Link>
     </div>
   );
 }

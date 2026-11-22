@@ -17,6 +17,7 @@ import { healthManifest } from "@/features/health/manifest";
 import { homeManifest } from "@/features/home/manifest";
 import { ideManifest } from "@/features/ide/manifest";
 import { learningManifest } from "@/features/learning/manifest";
+import { lessonHuntManifest } from "@/features/lesson_hunt/manifest";
 import { makeLessonsManifest } from "@/features/lessons/manifest";
 import { mcpManifest } from "@/features/mcp/manifest";
 import { memoryManifest } from "@/features/memory/manifest";
@@ -42,6 +43,7 @@ export const FEATURES: FeatureManifest[] = [
   learningManifest,
   programManifest,
   makeLessonsManifest(LessonConversation),
+  lessonHuntManifest,
   bookManifest,
   conversationsManifest,
   studyManifest,

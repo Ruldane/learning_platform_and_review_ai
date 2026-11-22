@@ -1,0 +1,16 @@
+export const lessonHunt = {
+  title: "Chasse aux erreurs",
+  intro: "Deux affirmations de la copie sont fausses. Repère-les et explique la règle correcte.",
+  start: "Préparer la copie",
+  retry: "Préparer une nouvelle copie",
+  preparing: "Préparation des deux passages…",
+  reviewing: "Lecture de tes explications…",
+  failed: "Cette étape a échoué. Tu peux la relancer.",
+  first: "Première erreur et explication",
+  second: "Seconde erreur et explication",
+  submit: "Vérifier mes réponses",
+  corrections: "Bilan de la chasse",
+  explained: "Erreur repérée et expliquée",
+  spotted: "Erreur repérée, explication à compléter",
+  missed: "Erreur à revoir",
+} as const;

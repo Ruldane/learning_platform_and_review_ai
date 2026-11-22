@@ -1912,6 +1912,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/lesson-hunts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Hunt */
+        post: operations["create_hunt_api_v1_lesson_hunts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lesson-hunts/{hunt_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Hunt */
+        get: operations["read_hunt_api_v1_lesson_hunts__hunt_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lesson-hunts/{hunt_id}/answers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Answer Hunt */
+        post: operations["answer_hunt_api_v1_lesson_hunts__hunt_id__answers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/lessons/{lesson_id}": {
         parameters: {
             query?: never;
@@ -4566,6 +4617,15 @@ export interface components {
             /** Title */
             title: string;
         };
+        /** AnswerFeedback */
+        AnswerFeedback: {
+            /** Explained */
+            explained: boolean;
+            /** Feedback */
+            feedback: string;
+            /** Spotted */
+            spotted: boolean;
+        };
         /** AnswerIn */
         AnswerIn: {
             /** Choice */
@@ -6118,6 +6178,15 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** ErrorEdit */
+        ErrorEdit: {
+            /** Explanation */
+            explanation: string;
+            /** Replacement */
+            replacement: string;
+            /** Source */
+            source: string;
+        };
         /**
          * ErrorOut
          * @description L'enveloppe de toute erreur métier : `{error: {code, message, details}}`.
@@ -6699,6 +6768,50 @@ export interface components {
              * Format: date
              */
             week_start: string;
+        };
+        /** HuntAnswers */
+        HuntAnswers: {
+            /** Responses */
+            responses: string[];
+        };
+        /** HuntAssessment */
+        HuntAssessment: {
+            /** Answers */
+            answers: components["schemas"]["AnswerFeedback"][];
+        };
+        /** HuntCreate */
+        HuntCreate: {
+            /** Lesson Id */
+            lesson_id: string;
+        };
+        /** HuntOut */
+        HuntOut: {
+            assessment: components["schemas"]["HuntAssessment"] | null;
+            /** Corrections */
+            corrections: components["schemas"]["ErrorEdit"][] | null;
+            /** Exercise */
+            exercise: string | null;
+            /** Id */
+            id: string;
+            /** Lesson Id */
+            lesson_id: string;
+            /** Responses */
+            responses: string[] | null;
+            /** Session Id */
+            session_id: string;
+            /** Stage */
+            stage: components["schemas"]["HuntStage"] | "failed";
+            /** Title */
+            title: string;
+        };
+        /** @enum {string} */
+        HuntStage: "preparing" | "ready" | "reviewing" | "complete";
+        /** HuntStarted */
+        HuntStarted: {
+            /** Hunt Id */
+            hunt_id: string;
+            /** Session Id */
+            session_id: string;
         };
         /**
          * IdeSessionOut
@@ -15954,6 +16067,105 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["JournalPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_hunt_api_v1_lesson_hunts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HuntCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HuntStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_hunt_api_v1_lesson_hunts__hunt_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hunt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HuntOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    answer_hunt_api_v1_lesson_hunts__hunt_id__answers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hunt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HuntAnswers"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HuntStarted"];
                 };
             };
             /** @description Validation Error */

@@ -524,6 +524,31 @@
         "title": "AlertOut",
         "type": "object"
       },
+      "AnswerFeedback": {
+        "properties": {
+          "explained": {
+            "title": "Explained",
+            "type": "boolean"
+          },
+          "feedback": {
+            "maxLength": 850,
+            "minLength": 1,
+            "title": "Feedback",
+            "type": "string"
+          },
+          "spotted": {
+            "title": "Spotted",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "spotted",
+          "explained",
+          "feedback"
+        ],
+        "title": "AnswerFeedback",
+        "type": "object"
+      },
       "AnswerIn": {
         "properties": {
           "choice": {
@@ -4903,6 +4928,35 @@
         "title": "ErrorDetailOut",
         "type": "object"
       },
+      "ErrorEdit": {
+        "properties": {
+          "explanation": {
+            "maxLength": 900,
+            "minLength": 8,
+            "title": "Explanation",
+            "type": "string"
+          },
+          "replacement": {
+            "maxLength": 1200,
+            "minLength": 8,
+            "title": "Replacement",
+            "type": "string"
+          },
+          "source": {
+            "maxLength": 1200,
+            "minLength": 8,
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "replacement",
+          "explanation"
+        ],
+        "title": "ErrorEdit",
+        "type": "object"
+      },
       "ErrorOut": {
         "description": "L'enveloppe de toute erreur métier : `{error: {code, message, details}}`.",
         "properties": {
@@ -6604,6 +6658,180 @@
           "score"
         ],
         "title": "HistoryPointOut",
+        "type": "object"
+      },
+      "HuntAnswers": {
+        "properties": {
+          "responses": {
+            "items": {
+              "maxLength": 2400,
+              "minLength": 4,
+              "type": "string"
+            },
+            "maxItems": 2,
+            "minItems": 2,
+            "title": "Responses",
+            "type": "array"
+          }
+        },
+        "required": [
+          "responses"
+        ],
+        "title": "HuntAnswers",
+        "type": "object"
+      },
+      "HuntAssessment": {
+        "properties": {
+          "answers": {
+            "items": {
+              "$ref": "#/components/schemas/AnswerFeedback"
+            },
+            "maxItems": 2,
+            "minItems": 2,
+            "title": "Answers",
+            "type": "array"
+          }
+        },
+        "required": [
+          "answers"
+        ],
+        "title": "HuntAssessment",
+        "type": "object"
+      },
+      "HuntCreate": {
+        "properties": {
+          "lesson_id": {
+            "maxLength": 36,
+            "minLength": 36,
+            "title": "Lesson Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "lesson_id"
+        ],
+        "title": "HuntCreate",
+        "type": "object"
+      },
+      "HuntOut": {
+        "properties": {
+          "assessment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HuntAssessment"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "corrections": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ErrorEdit"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Corrections"
+          },
+          "exercise": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exercise"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "lesson_id": {
+            "title": "Lesson Id",
+            "type": "string"
+          },
+          "responses": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responses"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HuntStage"
+              },
+              {
+                "const": "failed",
+                "type": "string"
+              }
+            ],
+            "title": "Stage"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "lesson_id",
+          "title",
+          "stage",
+          "session_id",
+          "exercise",
+          "responses",
+          "corrections",
+          "assessment"
+        ],
+        "title": "HuntOut",
+        "type": "object"
+      },
+      "HuntStage": {
+        "enum": [
+          "preparing",
+          "ready",
+          "reviewing",
+          "complete"
+        ],
+        "type": "string"
+      },
+      "HuntStarted": {
+        "properties": {
+          "hunt_id": {
+            "title": "Hunt Id",
+            "type": "string"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "hunt_id",
+          "session_id"
+        ],
+        "title": "HuntStarted",
         "type": "object"
       },
       "IdeSessionOut": {
@@ -26310,6 +26538,141 @@
         "summary": "Read Journal",
         "tags": [
           "capture"
+        ]
+      }
+    },
+    "/api/v1/lesson-hunts": {
+      "post": {
+        "operationId": "create_hunt_api_v1_lesson_hunts_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HuntCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HuntStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Hunt",
+        "tags": [
+          "lesson_hunt"
+        ]
+      }
+    },
+    "/api/v1/lesson-hunts/{hunt_id}": {
+      "get": {
+        "operationId": "read_hunt_api_v1_lesson_hunts__hunt_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "hunt_id",
+            "required": true,
+            "schema": {
+              "title": "Hunt Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HuntOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read Hunt",
+        "tags": [
+          "lesson_hunt"
+        ]
+      }
+    },
+    "/api/v1/lesson-hunts/{hunt_id}/answers": {
+      "post": {
+        "operationId": "answer_hunt_api_v1_lesson_hunts__hunt_id__answers_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "hunt_id",
+            "required": true,
+            "schema": {
+              "title": "Hunt Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HuntAnswers"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HuntStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Answer Hunt",
+        "tags": [
+          "lesson_hunt"
         ]
       }
     },

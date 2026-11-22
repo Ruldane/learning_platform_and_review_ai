@@ -17,6 +17,7 @@ import { gap } from "./messages/gap";
 import { home } from "./messages/home";
 import { ide } from "./messages/ide";
 import { learning } from "./messages/learning";
+import { lessonHunt } from "./messages/lessonHunt";
 import { lessons } from "./messages/lessons";
 import { mcp } from "./messages/mcp";
 import { memory } from "./messages/memory";
@@ -55,6 +56,7 @@ export const fr = {
   memory,
   research,
   program,
+  lessonHunt,
   lessons,
   learning,
   study,

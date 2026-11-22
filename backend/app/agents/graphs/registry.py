@@ -25,6 +25,7 @@ from app.agents.graphs import (
     learned_document,
     learning_council,
     lesson_factory,
+    lesson_hunt,
     market_radar,
     oncall_review,
     podcast,
@@ -38,6 +39,7 @@ from app.agents.graphs import (
 )
 from app.agents.runtime.deps import GraphDeps
 from app.agents.tools.conversation_port import CONVERSATION_GRAPH
+from app.agents.tools.lesson_hunt_port import HUNT_GRAPH
 from app.agents.tools.oncall_port import REVIEW_GRAPH
 from app.core.errors import AppError
 
@@ -92,6 +94,7 @@ GRAPHS: dict[str, GraphSpec] = {
             recursion_limit=market_radar.RECURSION_LIMIT,
         ),
         GraphSpec("daily_brief", daily_brief.DailyBriefInput, daily_brief.build),
+        GraphSpec(HUNT_GRAPH, lesson_hunt.LessonHuntInput, lesson_hunt.build),
         GraphSpec(REVIEW_GRAPH, oncall_review.OncallReviewInput, oncall_review.build),
         GraphSpec("podcast", podcast.PodcastInput, podcast.build),
         GraphSpec("project_brief", project_brief.ProjectBriefInput, project_brief.build),

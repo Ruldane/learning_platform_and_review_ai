@@ -38,6 +38,8 @@ from app.features.ide.mcp import MCP as ide_mcp
 from app.features.ide.router import router as ide_router
 from app.features.learning.mcp import MCP as learning_mcp
 from app.features.learning.router import router as learning_router
+from app.features.lesson_hunt.mcp import MCP as lesson_hunt_mcp
+from app.features.lesson_hunt.router import router as lesson_hunt_router
 from app.features.lessons.mcp import MCP as lessons_mcp
 from app.features.lessons.router import router as lessons_router
 from app.features.mcp.mcp import MCP as mcp_mcp
@@ -93,6 +95,7 @@ FEATURE_ROUTERS: list[APIRouter] = [
     learning_router,
     program_router,
     book_router,
+    lesson_hunt_router,
     lessons_router,
     conversations_router,
     quiz_router,
@@ -144,6 +147,7 @@ MCP_FEATURES: list[FeatureMcp] = [
     health_mcp,
     ide_mcp,
     learning_mcp,
+    lesson_hunt_mcp,
     lessons_mcp,
     mcp_mcp,
     memory_mcp,
