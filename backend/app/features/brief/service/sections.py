@@ -11,12 +11,12 @@ tout l'écran du matin (D173). Journaux : le nom de la rubrique et la classe de 
 
 import logging
 from collections.abc import Awaitable, Callable
-from datetime import date
+from datetime import date, datetime
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.clock import week_start
+from app.core.clock import local_moment, user_zone, week_start
 from app.features.applications.service.reminders import list_reminders
 from app.features.brief.repository import BriefRepository
 from app.features.brief.schemas import (
@@ -29,12 +29,13 @@ from app.features.brief.schemas import (
     ReviewsRubric,
     WeekRubric,
 )
-from app.features.brief.service.rules import OFFERS_MAX, REMINDERS_MAX, SHOWN_BRIEFS, new_offers
+from app.features.brief.service.rules import REMINDERS_MAX, SHOWN_BRIEFS, new_offers
 from app.features.brief.service.runtime import BriefRuntime
 from app.features.program.service.programs import list_programs
 from app.features.quiz.service.cards import due_queue
 from app.features.radar.service.views import offers_since
 from app.features.replan.service.facts import week_facts
+from app.features.settings.service import SettingsService
 from app.features.study.service.block import block_of_day
 from app.features.study.service.view import summary
 
@@ -75,18 +76,18 @@ async def _reminders(rt: BriefRuntime, user_id: str) -> dict[str, Any]:
     ).model_dump(mode="json")
 
 
-async def _offers(db: AsyncSession, user_id: str, today: date) -> dict[str, Any]:
-    """Les offres des relevés finis depuis le brief précédent (ou du dernier relevé, sans brief
-    avant), au score d'au moins 70, ni déjà montrées dans les 7 derniers briefs ni déjà saisies."""
+async def _offers(db: AsyncSession, user_id: str, today: date, now: datetime) -> dict[str, Any]:
+    """Reclasse la semaine locale et publie les entrées inédites de ses cinq meilleures offres."""
     repo = BriefRepository(db, user_id)
+    monday = week_start(today)
+    settings = await SettingsService(db, user_id).get()
+    start = local_moment(monday, "00:00", user_zone(settings.timezone))
+    postings = await offers_since(db, user_id, start, until=now)
     earlier = await repo.before(today, SHOWN_BRIEFS)
-    postings = await offers_since(db, user_id, earlier[0].created_at if earlier else None)
     shown = {str(key) for brief in earlier for key in brief.offer_keys}
-    this_week = {
-        str(key) for brief in earlier if brief.day >= week_start(today) for key in brief.offer_keys
-    }
-    remaining = max(0, OFFERS_MAX - len(this_week))
-    chosen = new_offers(postings, shown, await repo.known_keys())[:remaining]
+    this_week = {str(key) for brief in earlier if brief.day >= monday for key in brief.offer_keys}
+    ranked = new_offers(postings, shown - this_week, await repo.known_keys())
+    chosen = [posting for posting in ranked if posting["url_key"] not in shown]
     rubric = OffersRubric(
         run_id=str(chosen[0]["run_id"]) if chosen else None,
         items=[
@@ -168,7 +169,9 @@ async def build_sections(
         "block": await _isolated(db, "block", lambda: _block(db, user_id, today), failed),
         "reviews": await _isolated(db, "reviews", lambda: _reviews(rt, db, user_id), failed),
         "reminders": await _isolated(db, "reminders", lambda: _reminders(rt, user_id), failed),
-        "offers": await _isolated(db, "offers", lambda: _offers(db, user_id, today), failed),
+        "offers": await _isolated(
+            db, "offers", lambda: _offers(db, user_id, today, rt.now()), failed
+        ),
         "week": await _isolated(db, "week", lambda: _week(rt, db, user_id, today), failed),
     }
     if failed:

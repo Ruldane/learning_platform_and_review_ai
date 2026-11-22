@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { t } from "@/shared/i18n/t";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
+import { mergeVoiceDraft, VoiceDraftControls } from "@/shared/voice";
 import { AnswerField } from "./AnswerField";
 
 interface FreeTextAnswerProps {
@@ -13,6 +14,7 @@ interface FreeTextAnswerProps {
   maxLength?: number;
   /** Nom du champ lu aux lecteurs d'écran ; « Ta réponse » par défaut. */
   label?: string;
+  voice?: boolean;
 }
 
 /** Champ de réponse libre d'une interruption : Entrée ou « Répondre » envoie, une réponse vide est refusée. */
@@ -22,6 +24,7 @@ export function FreeTextAnswer({
   multiline = false,
   maxLength,
   label,
+  voice = false,
 }: FreeTextAnswerProps) {
   const [draft, setDraft] = useState("");
   const value = draft.trim();
@@ -37,7 +40,7 @@ export function FreeTextAnswer({
   return (
     <form
       onSubmit={submit}
-      className={cn("mt-2 flex gap-2", multiline ? "flex-col items-start" : "items-end")}
+      className={cn("mt-2 flex flex-wrap gap-2", multiline ? "flex-col items-start" : "items-end")}
     >
       <label className={multiline ? "w-full" : "flex-1"}>
         <span className="sr-only">{label ?? t("session.interrupt.answerLabel")}</span>
@@ -53,6 +56,11 @@ export function FreeTextAnswer({
       <Button type="submit" disabled={disabled || value === ""}>
         {t("session.interrupt.answer")}
       </Button>
+      {voice && !disabled && (
+        <VoiceDraftControls
+          onDraft={(text) => setDraft((old) => mergeVoiceDraft(old, text, maxLength))}
+        />
+      )}
     </form>
   );
 }

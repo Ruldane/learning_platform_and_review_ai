@@ -38,6 +38,7 @@ class FreeInterviewIn(InterviewIn):
 
     posting_id: Id | None = None
     role: Role | None = None
+    system_design: Literal[True] | None = None
 
 
 class InterviewStartOut(BaseModel):

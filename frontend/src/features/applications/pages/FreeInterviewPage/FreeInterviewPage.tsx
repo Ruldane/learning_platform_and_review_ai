@@ -23,6 +23,12 @@ export function FreeInterviewPage({ createSocket }: { createSocket?: SocketFacto
         >
           {t("applications.interviewPage.freeBack")}
         </Link>
+        <Link
+          to="/candidatures/system-design"
+          className="w-fit text-sm font-medium text-primary underline underline-offset-4"
+        >
+          {t("systemDesign.title")}
+        </Link>
       </header>
       <InterviewHub applicationId={null} createSocket={createSocket} />
     </div>

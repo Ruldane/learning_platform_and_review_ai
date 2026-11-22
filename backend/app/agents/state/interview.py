@@ -7,6 +7,9 @@ from typing import Any, TypedDict
 
 class InterviewState(TypedDict, total=False):
     interview_id: str
+    system_design: bool
+    design_submission: dict[str, Any] | None
+    design_review: dict[str, Any]
     context: dict[str, Any]  # `InterviewContext` en JSON
     plan: list[dict[str, Any]]  # `PlannedQuestion` en JSON, écrit une fois
     position: int  # rang de la question principale en cours (`len(plan)` : toutes posées)

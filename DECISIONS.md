@@ -2639,14 +2639,16 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
   le plus récent en cas d’homonyme. Un terme ouvre la définition au survol ou au clavier,
   avec un lien lorsque son chapitre est publié. Le serveur vérifie qu’un passage choisi
   figure encore dans l’article avant d’en faire une fiche associée à sa source.
+  L’interface signale la limite de 1 200 caractères sur la sélection entière.
 - **Raison** : garder les définitions et les fiches liées aux données effectivement lues.
 
 ## D259
 
 - **Date** : 2026-11-22
 - **Sujet** : Alertes du Radar vers les écarts de compétences.
-- **Décision** : réutiliser le relevé hebdomadaire et le brief. Au plus cinq offres notées
-  à 70 ou plus apparaissent par semaine locale, avec dédoublonnage des liens. L’écart
+- **Décision** : réutiliser le relevé du Radar et le brief. Chaque brief reclasse les offres
+  de sa semaine locale notées à 70 ou plus, dédoublonne les liens et retient les cinq
+  meilleures. Il signale les entrées du classement encore inédites. L’écart
   s’appuie sur les exigences du relevé et les niveaux actuels. Les manques choisis ouvrent
   une proposition du Stratège soumise à la validation habituelle.
 - **Raison** : rendre une offre sélectionnée exploitable depuis le brief et décider des ajouts au planning.
@@ -2697,3 +2699,40 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
   faits du profil. Un changement de version demande une nouvelle proposition.
   La personne enregistre et vérifie les corrections avant la copie.
 - **Raison** : garder le titre, le résumé et les compétences cohérents avec les faits confirmés.
+
+## D264
+
+- **Date** : 2026-11-22
+- **Sujet** : Évaluation d’une version de tableau en system design.
+- **Décision** : ouvrir un tableau autonome et figer son numéro de version à la remise.
+  L’Intervieweur évalue l’architecture, la fiabilité, la montée en charge et les compromis.
+  Une note d’au moins 14/20 et de 3/5 à chaque axe ajoute une preuve unique de « Conception
+  de systèmes », plafonnée à « En cours ».
+- **Raison** : permettre de retrouver le dessin effectivement évalué et les critères de la preuve.
+
+## D265
+
+- **Date** : 2026-11-22
+- **Sujet** : Dictée relue dans les parcours d’apprentissage et d’entretien.
+- **Décision** : demander le micro au départ, arrêter au plus tard après 60
+  secondes et transmettre le WAV à OpenAI seulement sur demande de
+  transcription. Le résultat rejoint la saisie existante. La restitution
+  volontaire passe par le port de synthèse du podcast et l’audio n’est pas
+  stocké durablement dans Tremplin. Le bilan d’entretien et les explications
+  Feynman et system design commentent la clarté et la structure.
+- **Raison** : permettre de relire la réponse, d’annuler la prise ou de
+  reprendre au clavier avant de remettre le texte.
+
+## D266
+
+- **Date** : 2026-11-22
+- **Sujet** : Consentement et écriture ciblée Google Agenda.
+- **Décision** : utiliser un projet Google Cloud dédié à Agenda et les droits de disponibilité
+  et d’écriture sur les calendriers détenus, avec le port limité au calendrier principal.
+  Garder les créneaux occupés en mémoire pour la replanification, qui borne les 21 prochains
+  jours au plus long créneau libre dans la plage horaire d’étude 8 h–22 h. Chiffrer le jeton
+  de renouvellement. Sceller l’aperçu pour dix minutes et n’écrire qu’après confirmation.
+  Transmettre l’ETag lors d’un déplacement. Retenir un identifiant stable par source
+  Tremplin pour rejouer une écriture et lire le prochain événement local.
+- **Raison** : le programme planifie à la journée et la candidature indique le jour de
+  l’entretien. Le créneau présenté recueille un accord sur l’heure exacte et la donnée envoyée.

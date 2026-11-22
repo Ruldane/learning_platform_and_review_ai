@@ -20,6 +20,7 @@ interface BoardWorkspaceProps {
   onDirtyChange: (id: string, dirty: boolean) => void;
   /** Texte de l'attente pendant la conversion du schéma. */
   drawingLabel: string;
+  saveLabel?: string | undefined;
 }
 
 /** Un état du tableau : canevas, barre d'actions et repli Mermaid. Remonté à chaque état. */
@@ -56,6 +57,7 @@ export function BoardWorkspace(props: BoardWorkspaceProps) {
         canSend={edits.dirty}
         sending={sending}
         readOnly={readOnly}
+        saveLabel={props.saveLabel}
         error={actions.error}
         onExport={(format) => void actions.exportAs(format)}
         onSend={() => void actions.send()}

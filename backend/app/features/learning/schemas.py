@@ -105,7 +105,7 @@ class BoardOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: str
-    goal_id: str
+    goal_id: str | None
     session_id: str | None
     step: int
     kind: BoardKind

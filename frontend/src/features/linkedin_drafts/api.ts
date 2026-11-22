@@ -4,9 +4,10 @@ import type { components } from "@/shared/api/schema";
 
 export type ProfileText = components["schemas"]["LinkedInText"];
 export type DraftView = components["schemas"]["LinkedInDraftOut"];
+export type DraftField = keyof ProfileText;
 
-export async function latestDraft(signal: AbortSignal) {
-  return unwrap(await api.GET("/linkedin-drafts/latest", { signal }));
+export async function latestDraft(signal?: AbortSignal) {
+  return unwrap(await api.GET("/linkedin-drafts/latest", { signal, cache: "no-store" }));
 }
 
 export async function analyzedOffers(signal: AbortSignal) {

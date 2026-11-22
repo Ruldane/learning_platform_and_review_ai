@@ -1,6 +1,7 @@
 import { t } from "@/shared/i18n/t";
 import { FreeTextAnswer } from "@/shared/session-ui";
 import { Button } from "@/shared/ui/button";
+import { VoicePlayback } from "@/shared/voice";
 
 /** La limite d'une réponse (`max_length` de la question `interview_answer`). */
 const MAX_ANSWER = 4000;
@@ -10,14 +11,23 @@ interface AnswerFieldsProps {
   stopLabel: string | null;
   onAnswer: (text: string) => void;
   onStop: () => void;
+  question?: string;
 }
 
 /** Le champ de réponse écrite, la limite de longueur et « Terminer l'entretien » (si le serveur l'offre). */
-export function AnswerFields({ disabled, stopLabel, onAnswer, onStop }: AnswerFieldsProps) {
+export function AnswerFields({
+  disabled,
+  stopLabel,
+  onAnswer,
+  onStop,
+  question,
+}: AnswerFieldsProps) {
   return (
     <>
+      {question && !disabled && <VoicePlayback text={question} />}
       <FreeTextAnswer
         multiline
+        voice
         maxLength={MAX_ANSWER}
         label={t("applications.interviewRun.answerLabel")}
         disabled={disabled}

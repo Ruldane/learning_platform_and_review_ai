@@ -1,15 +1,16 @@
 import { useState } from "react";
 import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
-import type { DraftView, ProfileText } from "../../api";
+import type { DraftField, DraftView, ProfileText } from "../../api";
 import { CopyDraft } from "./CopyDraft";
 import { DraftFields, type EditValues } from "./DraftFields";
 
-export function DraftEditor({ draft, text, busy, onSave }: {
+export function DraftEditor({ draft, text, busy, onSave, readForCopy }: {
   draft: DraftView;
   text: ProfileText;
   busy: boolean;
   onSave: (text: ProfileText) => void;
+  readForCopy: (field: DraftField) => Promise<string>;
 }) {
   const original = { headline: text.headline, about: text.about, skills: (text.skills ?? []).join("\n") };
   const [values, setValues] = useState<EditValues>(original);
@@ -36,9 +37,9 @@ export function DraftEditor({ draft, text, busy, onSave }: {
       ) : null}
       <div className="flex flex-wrap items-start gap-2">
         <Button type="submit" aria-disabled={busy}>{t("linkedInDrafts.check")}</Button>
-        <CopyDraft allowed={canCopy} label={t("linkedInDrafts.copyHeadline")} text={values.headline} />
-        <CopyDraft allowed={canCopy} label={t("linkedInDrafts.copyAbout")} text={values.about} />
-        <CopyDraft allowed={canCopy} label={t("linkedInDrafts.copySkills")} text={values.skills} />
+        <CopyDraft allowed={canCopy} label={t("linkedInDrafts.copyHeadline")} read={() => readForCopy("headline")} />
+        <CopyDraft allowed={canCopy} label={t("linkedInDrafts.copyAbout")} read={() => readForCopy("about")} />
+        <CopyDraft allowed={canCopy} label={t("linkedInDrafts.copySkills")} read={() => readForCopy("skills")} />
       </div>
     </form>
   );

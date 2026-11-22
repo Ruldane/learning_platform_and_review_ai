@@ -21,7 +21,7 @@ from typing import Any, Literal
 Level = Literal[1, 2, 3]
 
 # Niveau 4 : jamais exposé au MCP (connexion, compte et ses données, le MCP lui-même).
-NEVER_EXPOSED_FEATURES = frozenset({"auth", "account", "mcp"})
+NEVER_EXPOSED_FEATURES = frozenset({"auth", "account", "calendar", "mcp"})
 
 # Des POST qui ne font que lire (recherche) : seuls à pouvoir être de niveau 1 sans être un GET,
 # sinon un jeton en lecture seule ne pourrait pas chercher dans la mémoire.

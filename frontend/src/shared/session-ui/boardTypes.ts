@@ -1,5 +1,6 @@
 /** Types de vue du tableau : locaux, sans lien avec `shared/api` (D34). */
-export type BoardKind = "domain_map" | "prerequisites" | "timeline" | "comparison" | "lesson";
+export type BoardKind =
+  "domain_map" | "prerequisites" | "timeline" | "comparison" | "lesson" | "system_design";
 
 export interface BoardStateView {
   id: string;
@@ -22,6 +23,7 @@ export interface BoardLabels {
   label: string;
   empty: string;
   drawing: string;
+  save?: string;
 }
 
 /** Les modifications de January : la scène complète et la note qui les résume pour les agents. */

@@ -6,7 +6,9 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Query
 
+from app.core.caller import MCP_IDENTITY
 from app.core.deps import CurrentUserDep
+from app.core.errors import AppError
 from app.core.field_paths import FieldPathsRoute
 from app.features.applications.router import ApplicationsDep, Id
 from app.features.applications.schemas_interviews import (
@@ -21,6 +23,7 @@ from app.features.applications.service.interviews import (
     start_for_application,
     start_free,
 )
+from app.features.applications.service.system_design import start as start_system_design
 
 router = APIRouter(tags=["interviews"], route_class=FieldPathsRoute)
 
@@ -61,6 +64,10 @@ async def post_free_interview(
 ) -> InterviewStartOut:
     """Entretien libre, sans fiche : sur une offre (`posting_id`) ou sur un intitulé (`role`) ;
     rien n'est écrit au fil d'une candidature."""
+    if body.system_design:
+        if MCP_IDENTITY.get() is not None:
+            raise AppError("interface_only", "Cet entretien se réalise dans l’interface.", 403)
+        return await start_system_design(rt, current.id)
     return await start_free(rt, current.id, body)
 
 

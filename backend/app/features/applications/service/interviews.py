@@ -142,7 +142,8 @@ async def _salary_snapshot(
 
 async def require_interview_available(db: AsyncSession, user_id: str) -> None:
     await settle(db, user_id)
-    if running := await InterviewRepository(db, user_id).running():
+    rows = await InterviewRepository(db, user_id).running()
+    if running := [row for row in rows if row.system_design is None]:
         raise interview_in_progress(running[0].id)
     if await validated_profile(db, user_id) is None:
         raise profile_required()

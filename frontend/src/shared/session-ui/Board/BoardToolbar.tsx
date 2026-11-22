@@ -10,6 +10,7 @@ interface BoardToolbarProps {
   sending: boolean;
   readOnly: boolean;
   error: string | null;
+  saveLabel?: string | undefined;
   onExport: (format: ExportFormat) => void;
   onSend: () => void;
 }
@@ -39,7 +40,7 @@ export function BoardToolbar(props: BoardToolbarProps) {
         ))}
         {readOnly ? null : (
           <Button size="sm" disabled={!canSend || sending} onClick={onSend}>
-            {sending ? t("session.board.sending") : t("session.board.send")}
+            {sending ? t("session.board.sending") : props.saveLabel ?? t("session.board.send")}
           </Button>
         )}
       </div>

@@ -5,6 +5,7 @@ import { bookManifest } from "@/features/book/manifest";
 import { bossManifest } from "@/features/boss/manifest";
 import { makeBrainManifest } from "@/features/brain/manifest";
 import { codeTrialManifest } from "@/features/code_trial/manifest";
+import { calendarManifest } from "@/features/calendar/manifest";
 import { captureManifest } from "@/features/capture/manifest";
 import { compatibleOffersManifest } from "@/features/compatible_offers/manifest";
 import { contributionsManifest } from "@/features/contributions/manifest";
@@ -84,6 +85,7 @@ export const FEATURES: FeatureManifest[] = [
   makeBrainManifest(BrainConversation),
   readingManifest,
   settingsManifest,
+  calendarManifest,
   messageReviewManifest,
   surpriseInterviewManifest,
   costsManifest,

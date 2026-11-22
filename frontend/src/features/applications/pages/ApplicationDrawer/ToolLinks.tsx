@@ -5,12 +5,23 @@ import { committeePath, interviewPath, kitPath } from "../../urls";
 import { DrawerSection } from "./DrawerSection";
 
 /** Les liens vers le kit, l'entretien d'entraînement et le comité de cette candidature. */
-export function ToolLinks({ applicationId }: { applicationId: string }) {
+interface Props {
+  applicationId: string;
+  hasScheduledInterview?: boolean;
+}
+
+export function ToolLinks({ applicationId, hasScheduledInterview }: Props) {
   const links = [
     { to: kitPath(applicationId), label: t("applications.drawer.kit") },
     { to: interviewPath(applicationId), label: t("applications.drawer.interview") },
     { to: committeePath(applicationId), label: t("applications.drawer.committee") },
   ];
+  if (hasScheduledInterview) {
+    links.push({
+      to: `/reglages/agenda?entretien=${encodeURIComponent(applicationId)}`,
+      label: t("calendar.link"),
+    });
+  }
   return (
     <DrawerSection title={t("applications.drawer.toolsTitle")}>
       <ul className="flex flex-wrap gap-2">

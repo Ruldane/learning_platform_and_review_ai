@@ -14,6 +14,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.clock import local_today, user_zone
+from app.features.calendar.service.runtime import CalendarRuntime
 from app.features.lessons.service.runtime import Launcher
 from app.features.program.service.runtime import ProgramRuntime
 from app.features.settings.service import SettingsService
@@ -32,6 +33,7 @@ class ReplanRuntime:
     launcher: Launcher
     program: ProgramRuntime
     now: Callable[[], datetime] = utc_now  # remplacée par les tests (heure figée)
+    calendar: CalendarRuntime | None = field(default=None, kw_only=True)
     # Faible : un verrou que plus personne ne tient disparaît.
     _locks: weakref.WeakValueDictionary[tuple[str, str], asyncio.Lock] = field(
         default_factory=weakref.WeakValueDictionary, repr=False, compare=False

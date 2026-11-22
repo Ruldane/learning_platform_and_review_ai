@@ -5,7 +5,6 @@ import { GlossaryTerm } from "../../components/GlossaryTerm";
 import { ReadingDefinition } from "../../components/ReadingDefinition";
 
 type Annotation = NonNullable<ReadingDetail["annotations"]>[number];
-const MAX_PASSAGE = 1200;
 
 function usePassage(
   root: RefObject<HTMLParagraphElement | null>,
@@ -21,7 +20,7 @@ function usePassage(
       const range = selection.getRangeAt(0);
       const inside = root.current.contains(range.commonAncestorContainer);
       const text = inside ? range.toString().trim() : "";
-      onPassage(Array.from(text).slice(0, MAX_PASSAGE).join("").trimEnd());
+      onPassage(text);
     }
     document.addEventListener("selectionchange", report);
     return () => document.removeEventListener("selectionchange", report);

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link, useParams } from "react-router";
+import { useParams } from "react-router";
 import { errorMessage } from "@/shared/api/errors";
 import { t } from "@/shared/i18n/t";
 import type { SocketFactory } from "@/shared/realtime/socket";
@@ -9,6 +9,7 @@ import { useVersions } from "../../hooks/useVersions";
 import { useWaitingReplan } from "../../hooks/useWaitingReplan";
 import { decisionOf, pendingVersion, toVersionView } from "../../toView";
 import { ProposalPanel } from "./ProposalPanel";
+import { ReplanHeader } from "./ReplanHeader";
 import { ReplanHistory } from "./ReplanHistory";
 import { ReplanRun } from "./ReplanRun";
 import { ReplanStart } from "./ReplanStart";
@@ -35,12 +36,7 @@ export function ReplanPage({ createSocket }: { createSocket?: SocketFactory }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">{t("replan.title")}</h1>
-        <Link to={`/apprendre/programme/${programId}`} className="text-sm underline">
-          {t("replan.back")}
-        </Link>
-      </header>
+      <ReplanHeader programId={programId} />
       {waiting.isPending ? <LoadingState label={t("replan.loading")} /> : null}
       {waiting.isError ? (
         <ErrorState message={errorMessage(waiting.error)} onRetry={() => void waiting.refetch()} />

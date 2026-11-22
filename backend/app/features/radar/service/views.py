@@ -123,14 +123,15 @@ async def get_run(rt: RadarRuntime, db: AsyncSession, user_id: str, run_id: str)
 
 
 async def offers_since(
-    db: AsyncSession, user_id: str, since: datetime | None
+    db: AsyncSession, user_id: str, since: datetime | None, *, until: datetime | None = None
 ) -> list[dict[str, Any]]:
-    """Les offres analysées et notées des relevés finis (`done`) après `since` ; sans `since`
-    (aucun brief avant), celles du dernier relevé fini seulement. Pour le brief du jour (P9) : une
-    entrée par offre, `{run_id, url_key, url, title, company, score}`, relevé le plus récent
-    d'abord, lien jamais lu ni journalisé ici."""
+    """Les offres analysées et notées des relevés finis, du relevé le plus récent au plus ancien.
+    Deux bornes définissent une période inclusive. Sans borne de fin, on garde le dernier
+    relevé fini ou ceux terminés strictement après `since` pour la pile de lecture."""
     repo = RadarRunRepository(db, user_id)
-    if since is None:
+    if until is not None:
+        runs = await repo.done_between(since, until, limit=None)
+    elif since is None:
         latest = await repo.latest_done()
         runs = [latest] if latest is not None else []
     else:

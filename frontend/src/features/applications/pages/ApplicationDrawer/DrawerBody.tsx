@@ -73,7 +73,10 @@ export function DrawerBody({ detail, info }: DrawerBodyProps) {
       <DrawerSection title={t("applications.drawer.timelineTitle")}>
         <EventTimeline events={detail.events.map(toEventView)} />
       </DrawerSection>
-      <ToolLinks applicationId={detail.id} />
+      <ToolLinks
+        applicationId={detail.id}
+        hasScheduledInterview={detail.status === "interview" && Boolean(detail.interview_on)}
+      />
     </div>
   );
 }

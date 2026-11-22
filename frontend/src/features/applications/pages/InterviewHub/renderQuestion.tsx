@@ -24,6 +24,7 @@ export function renderQuestion(
     <InterviewQuestionCard
       number={position?.number ?? null}
       total={total}
+      question={item.interrupt.question}
       followUp={position?.followUp ?? false}
       answered={item.answered}
       disabled={!canAnswer(run, item)}

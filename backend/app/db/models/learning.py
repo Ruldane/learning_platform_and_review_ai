@@ -8,7 +8,7 @@ from app.db.base import Base, UserScopedMixin
 
 # Types partagés avec `app.agents`, qui ne peut pas importer une feature (contrat 6).
 GoalStatus = Literal["council", "chosen", "planned"]
-BoardKind = Literal["domain_map", "prerequisites", "timeline", "comparison"]
+BoardKind = Literal["domain_map", "prerequisites", "timeline", "comparison", "system_design"]
 
 
 class Goal(UserScopedMixin, Base):
@@ -50,6 +50,21 @@ class Board(UserScopedMixin, Base):
     author: Mapped[str] = mapped_column(String(16), default="scribe")
     parent_id: Mapped[str | None] = mapped_column(String(36), default=None)
     scribe_key: Mapped[str | None] = mapped_column(String(80), default=None)
+
+
+class DesignBoardVersion(UserScopedMixin, Base):
+    """Version immuable du tableau d'un entretien d'architecture."""
+
+    __tablename__ = "design_board_versions"
+    __table_args__ = (UniqueConstraint("interview_id", "step"),)
+
+    interview_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("interviews.id", ondelete="CASCADE")
+    )
+    session_id: Mapped[str] = mapped_column(String(36))
+    parent_id: Mapped[str | None] = mapped_column(String(36), default=None)
+    step: Mapped[int] = mapped_column(Integer)
+    scene: Mapped[dict[str, Any]] = mapped_column(default=dict)
 
 
 class Proposal(UserScopedMixin, Base):

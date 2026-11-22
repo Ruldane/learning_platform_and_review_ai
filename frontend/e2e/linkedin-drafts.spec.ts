@@ -11,7 +11,12 @@ test("corrige le résumé proposé et peut ensuite le copier", async ({ page, re
   await finishFirstLaunch(request);
   await page.addInitScript(() => {
     Object.defineProperty(navigator, "clipboard", {
-      value: { async writeText(text: string) { document.body.dataset.copiedSummary = text; } },
+      value: {
+        async write([item]: ClipboardItem[]) {
+          const blob = await item!.getType("text/plain");
+          document.body.dataset.copiedSummary = await blob.text();
+        },
+      },
     });
   });
   await page.goto("/carriere/linkedin");

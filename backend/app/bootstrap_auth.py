@@ -49,6 +49,11 @@ def setup_security(app: FastAPI) -> None:
         settings.zai_api_key,
         settings.brave_api_key,
         settings.google_client_secret,
+        (
+            settings.calendar_google_client_secret.get_secret_value()
+            if settings.calendar_google_client_secret
+            else None
+        ),
     ):
         if key:
             KnownSecrets.add(key)

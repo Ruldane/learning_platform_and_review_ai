@@ -1,20 +1,33 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 
-export function CopyDraft({ allowed, text, label }: {
+export function CopyDraft({ allowed, read, label }: {
   allowed: boolean;
-  text: string;
+  read: () => Promise<string>;
   label: string;
 }) {
   const [status, setStatus] = useState<"copied" | "copyFailed" | null>(null);
+  const copying = useRef(false);
   async function copy() {
-    if (!allowed) return;
+    if (!allowed || copying.current) return;
+    if (!navigator.clipboard?.write || typeof ClipboardItem === "undefined") {
+      setStatus("copyFailed");
+      return;
+    }
+    copying.current = true;
+    setStatus(null);
     try {
-      await navigator.clipboard.writeText(text);
+      const content = read().then((text) => new Blob([text], { type: "text/plain" }));
+      // Une promesse différée garde l’écriture dans le geste utilisateur, y compris dans Safari.
+      void content.catch(() => undefined);
+      const item = new ClipboardItem({ "text/plain": content });
+      await Promise.all([navigator.clipboard.write([item]), content]);
       setStatus("copied");
     } catch {
       setStatus("copyFailed");
+    } finally {
+      copying.current = false;
     }
   }
   return (

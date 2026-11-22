@@ -15,6 +15,7 @@ export interface BoardProps {
   onSelect: (id: string) => void;
   /** Les modifications de January, envoyées sur demande (bouton), jamais à chaque geste. */
   onSendEdit: (boardId: string, edit: BoardEdit) => void | Promise<void>;
+  onDirtyChange?: (dirty: boolean) => void;
   sending: boolean;
   readOnly?: boolean;
   /** Textes propres à la page (titre, tableau vide, dessin en cours) ; absents, ceux du Scribe. */
@@ -34,7 +35,7 @@ function latestOf(states: readonly BoardStateView[]): BoardStateView | undefined
  * Présentationnel : la page lui passe des états de vue et reçoit les modifications (D34).
  */
 export function Board(props: BoardProps) {
-  const { states, activeId, onSelect, onSendEdit, sending, readOnly = false } = props;
+  const { states, activeId, onSelect, onSendEdit, sending, readOnly = false, onDirtyChange } = props;
   const labels = props.labels ?? {
     label: t("session.board.label"),
     empty: t("session.board.empty"),
@@ -47,9 +48,12 @@ export function Board(props: BoardProps) {
   );
   // État retouché et pas encore envoyé : un nouvel état du Scribe ne le remplace pas à l'écran.
   const [editing, setEditing] = useState<string | null>(null);
-  const onDirtyChange = useCallback(
-    (id: string, dirty: boolean) => setEditing((prev) => (dirty ? id : prev === id ? null : prev)),
-    [],
+  const trackEdit = useCallback(
+    (id: string, dirty: boolean) => {
+      setEditing((prev) => (dirty ? id : prev === id ? null : prev));
+      onDirtyChange?.(dirty);
+    },
+    [onDirtyChange],
   );
   const find = (id: string | null) => states.find((state) => state.id === id);
   const active = find(activeId) ?? find(editing) ?? latestOf(states);
@@ -71,8 +75,9 @@ export function Board(props: BoardProps) {
           sending={sending}
           onSendEdit={onSendEdit}
           onSeen={onSeen}
-          onDirtyChange={onDirtyChange}
+          onDirtyChange={trackEdit}
           drawingLabel={labels.drawing}
+          saveLabel={labels.save}
         />
       </div>
     </section>

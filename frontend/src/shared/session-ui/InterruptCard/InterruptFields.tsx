@@ -1,18 +1,19 @@
-import { useId, type FormEvent } from "react";
+import { useId, type Dispatch, type FormEvent, type SetStateAction } from "react";
 import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
-import { cn } from "@/shared/lib/utils";
-import { fieldClass } from "@/shared/ui/fieldClass";
+import { mergeVoiceDraft, VoiceDraftControls } from "@/shared/voice";
 import { fieldAnswers, type InterruptField } from "./fieldAnswers";
+import { InterruptTextField } from "./InterruptTextField";
 
 interface InterruptFieldsProps {
   fields: InterruptField[];
   /** Texte saisi par champ : la carte le garde, pour que les options puissent l'envoyer aussi. */
   draft: Record<string, string>;
-  onDraft: (draft: Record<string, string>) => void;
+  onDraft: Dispatch<SetStateAction<Record<string, string>>>;
   disabled: boolean;
   /** Reçoit `{ answers: { <id du champ>: <texte> } }` : les champs vides sont omis. */
   onSubmit: (value: { answers: Record<string, string> }) => void;
+  voice?: boolean;
 }
 
 /**
@@ -26,11 +27,13 @@ export function InterruptFields({
   onDraft,
   disabled,
   onSubmit,
+  voice,
 }: InterruptFieldsProps) {
   const prefix = useId();
   const answers = fieldAnswers(fields, draft);
   const missing = fields.some((field) => field.required && answers[field.id] === undefined);
   const ready = Object.keys(answers).length > 0 && !missing;
+  const recorded = voice && !disabled && fields.length === 1 ? fields[0] : undefined;
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -40,29 +43,26 @@ export function InterruptFields({
   return (
     <form onSubmit={submit} className="mt-2 flex flex-col gap-3">
       {fields.map((field, index) => (
-        <div key={field.id} className="flex flex-col gap-1">
-          <label htmlFor={`${prefix}-${field.id}`} className="text-sm font-medium">
-            {field.label}
-          </label>
-          <textarea
-            id={`${prefix}-${field.id}`}
-            rows={2}
-            value={draft[field.id] ?? ""}
-            maxLength={field.max_length}
-            required={field.required}
-            disabled={disabled}
-            autoFocus={!disabled && index === 0}
-            aria-describedby={field.required ? `${prefix}-${field.id}-req` : undefined}
-            onChange={(event) => onDraft({ ...draft, [field.id]: event.target.value })}
-            className={cn(fieldClass, "h-auto min-h-16 py-1.5")}
-          />
-          {field.required ? (
-            <span id={`${prefix}-${field.id}-req`} className="text-xs text-muted-foreground">
-              {t("session.interrupt.required")}
-            </span>
-          ) : null}
-        </div>
+        <InterruptTextField
+          key={field.id}
+          id={`${prefix}-${field.id}`}
+          field={field}
+          value={draft[field.id] ?? ""}
+          disabled={disabled}
+          focus={!disabled && index === 0}
+          onChange={(value) => onDraft({ ...draft, [field.id]: value })}
+        />
       ))}
+      {recorded && (
+        <VoiceDraftControls
+          onDraft={(text) =>
+            onDraft((values) => ({
+              ...values,
+              [recorded.id]: mergeVoiceDraft(values[recorded.id] ?? "", text, recorded.max_length),
+            }))
+          }
+        />
+      )}
       <div>
         <Button type="submit" disabled={disabled || !ready}>
           {t("session.interrupt.answer")}

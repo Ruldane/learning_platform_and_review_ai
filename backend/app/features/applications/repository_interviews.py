@@ -23,12 +23,23 @@ class InterviewRepository(UserScopedRepository[Interview]):
 
     async def recent(self, application_id: str | None = None) -> builtins.list[Interview]:
         """Les entretiens (d'une fiche), le plus récent d'abord."""
-        stmt = select(Interview).where(Interview.user_id == self.user_id)
+        stmt = select(Interview).where(
+            Interview.user_id == self.user_id, Interview.system_design.is_(None)
+        )
         if application_id is not None:
             stmt = stmt.where(Interview.application_id == application_id)
         stmt = stmt.order_by(Interview.created_at.desc(), literal_column("rowid").desc())
         stmt = stmt.execution_options(populate_existing=True)
         return builtins.list((await self.session.execute(stmt)).scalars().all())
+
+    async def recent_design(self) -> Interview | None:
+        stmt = (
+            select(Interview)
+            .where(Interview.user_id == self.user_id, Interview.system_design.is_not(None))
+            .order_by(Interview.created_at.desc(), literal_column("rowid").desc())
+            .limit(1)
+        )
+        return await self.session.scalar(stmt)
 
     async def running(self) -> builtins.list[Interview]:
         stmt = (

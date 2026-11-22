@@ -29,6 +29,7 @@ EvidenceKind = Literal[
     "capture",
     "ide",
     "github",
+    "system_design",
     "contribution",
     "feynman",
 ]

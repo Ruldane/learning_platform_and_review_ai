@@ -9,8 +9,8 @@ l'empreinte des lignes qu'elle a rangées (`base_fingerprint`) et ce qu'il faut 
 `impossible`), jamais `pending`. Journaux : identifiants seulement."""
 
 import logging
-from collections.abc import Sequence, Set
-from dataclasses import dataclass
+from collections.abc import Mapping, Sequence, Set
+from dataclasses import dataclass, field, replace
 from datetime import date, datetime
 from typing import Any
 
@@ -69,6 +69,7 @@ class Proposal:
     review_entry_id: str | None
     today: date
     skills: Sequence[str] = ()  # déclencheur `gap` : compétences du module des offres (D123)
+    daily_caps: Mapping[date, int] = field(default_factory=dict)
 
 
 async def program_budget(db: AsyncSession, user_id: str, loaded: Loaded) -> Budget:
@@ -93,7 +94,7 @@ async def _write_proposal(
     db: AsyncSession, user_id: str, loaded: Loaded, proposal: Proposal
 ) -> PlanVersion:
     rows = with_gap_module(rows_of(loaded), proposal.add)
-    budget = await program_budget(db, user_id, loaded)
+    budget = replace(await program_budget(db, user_id, loaded), daily_caps=proposal.daily_caps)
     todo = {t.id for t in loaded.tasks if t.status == "todo"}
     modules = {m.id for m in loaded.modules if not m.skipped} | {NEW_GAP_MODULE}
     try:

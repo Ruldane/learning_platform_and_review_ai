@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Literal
 from urllib.parse import urlsplit
 
-from pydantic import Field, model_validator
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Les ports sont publiés sur 127.0.0.1 : l'interface s'ouvre aussi bien par `localhost` que par
@@ -54,6 +54,11 @@ class Settings(BaseSettings):
 
     google_client_id: str | None = None
     google_client_secret: str | None = None
+    # Attestation de déploiement : Google révoque les jetons au niveau du projet OAuth.
+    calendar_google_dedicated_project: bool = False
+    calendar_google_client_id: str | None = None
+    calendar_google_client_secret: SecretStr | None = None
+    calendar_google_redirect_uri: str | None = None
     allowed_emails: str | None = None
     # Adresses de Google (point d'autorisation, point `token`, émetteur attendu) : celles de Google
     # par défaut ; le faux fournisseur des essais les remplace (P5, phase 9).

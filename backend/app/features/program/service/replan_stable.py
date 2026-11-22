@@ -17,11 +17,16 @@ DAYS = 7
 def keeps_dates(tasks: Sequence[PlannedTask], week: WeekBudget, start: date) -> bool:
     """Vrai si la semaine peut garder les dates de ses tâches à faire telles quelles : aucune
     tâche neuve, toutes datées dans ses jours encore ouverts, sous son plafond (minutes faites
-    déjà retirées). La capacité du jour n'est pas revérifiée : January peut charger un jour à
-    son gré tant que la semaine tient (`editing.check_weeks`)."""
+    déjà retirées). Sur les jours couverts par Agenda, les tâches à faire doivent aussi tenir
+    dans le créneau contigu observé. Ailleurs, le choix manuel d’un jour chargé reste valide."""
     first, end = max(start, week.from_day), start + timedelta(days=DAYS)
+    agenda: dict[date, int] = {}
+    for task in tasks:
+        if task.planned_date in week.daily_caps:
+            agenda[task.planned_date] = agenda.get(task.planned_date, 0) + task.minutes
     return (
-        all(task.task_id for task in tasks)
+        all(minutes <= week.daily_caps[day] for day, minutes in agenda.items())
+        and all(task.task_id for task in tasks)
         and all(first <= task.planned_date < end for task in tasks)
         and sum(task.minutes for task in tasks) <= week.cap_minutes
     )
@@ -62,6 +67,7 @@ def advance(tasks: list[PlannedTask], slots: Slots, *, skip_current: bool) -> li
         slots.budget.cap_minutes,
         {},
         slots.from_day,
+        daily_caps=slots.budget.daily_caps,
     )
     result = list(tasks)
     for move in plan_advances(weeks, budget, floor_share=1.0):

@@ -6,6 +6,7 @@ import { auth } from "./messages/auth";
 import { book } from "./messages/book";
 import { boss } from "./messages/boss";
 import { brain } from "./messages/brain";
+import { calendar } from "./messages/calendar";
 import { capture } from "./messages/capture";
 import { chat } from "./messages/chat";
 import { concentration } from "./messages/concentration";
@@ -48,7 +49,9 @@ import { settings } from "./messages/settings";
 import { skillMarket } from "./messages/skillMarket";
 import { skills } from "./messages/skills";
 import { study } from "./messages/study";
+import { systemDesign } from "./messages/systemDesign";
 import { surpriseInterview } from "./messages/surpriseInterview";
+import { voice } from "./messages/voice";
 import { training } from "./messages/training";
 
 /**
@@ -58,11 +61,13 @@ import { training } from "./messages/training";
  */
 export const fr = {
   ...appMessages,
+  systemDesign,
   auth,
   brain,
   book,
   boss,
   account,
+  calendar,
   session,
   agents,
   demo,
@@ -78,6 +83,7 @@ export const fr = {
   learning,
   study,
   surpriseInterview,
+  voice,
   training,
   oncall,
   paperLab,

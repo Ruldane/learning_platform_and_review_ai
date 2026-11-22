@@ -1,3 +1,4 @@
+import type { Dispatch, SetStateAction } from "react";
 import type { InterruptPayload } from "@/shared/realtime/types";
 import { FreeTextAnswer } from "../FreeTextAnswer";
 import { fieldAnswers, type InterruptField } from "./fieldAnswers";
@@ -9,8 +10,9 @@ interface AnswerInputsProps {
   fields: InterruptField[];
   options: NonNullable<InterruptPayload["options"]>;
   draft: Record<string, string>;
-  onDraft: (draft: Record<string, string>) => void;
+  onDraft: Dispatch<SetStateAction<Record<string, string>>>;
   disabled: boolean;
+  voice?: boolean;
   onAnswer: (value: unknown) => void;
   optionWithAnswers?: (value: string, answers: Record<string, string>) => unknown;
 }
@@ -23,6 +25,7 @@ export function AnswerInputs({
   draft,
   onDraft,
   disabled,
+  voice,
   onAnswer,
   optionWithAnswers,
 }: AnswerInputsProps) {
@@ -40,6 +43,7 @@ export function AnswerInputs({
           draft={draft}
           onDraft={onDraft}
           disabled={disabled}
+          voice={voice}
           onSubmit={onAnswer}
         />
       ) : null}
@@ -53,7 +57,7 @@ export function AnswerInputs({
         />
       ) : null}
       {options.length === 0 && fields.length === 0 ? (
-        <FreeTextAnswer disabled={disabled} onSubmit={onAnswer} />
+        <FreeTextAnswer disabled={disabled} onSubmit={onAnswer} voice={voice} />
       ) : null}
     </>
   );

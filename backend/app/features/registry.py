@@ -10,6 +10,7 @@ from app.features.applications.router_committee import router as committee_route
 from app.features.applications.router_interviews import router as interviews_router
 from app.features.applications.router_kit import router as kit_router
 from app.features.applications.router_reminders import router as reminders_router
+from app.features.applications.router_system_design import router as design_interviews_router
 from app.features.auth.mcp import MCP as auth_mcp
 from app.features.auth.router import router as auth_router
 from app.features.book.mcp import MCP as book_mcp
@@ -20,6 +21,8 @@ from app.features.brain.mcp import MCP as brain_mcp
 from app.features.brain.router import router as brain_router
 from app.features.brief.mcp import MCP as brief_mcp
 from app.features.brief.router import router as brief_router
+from app.features.calendar.mcp import MCP as calendar_mcp
+from app.features.calendar.router import router as calendar_router
 from app.features.capture.mcp import MCP as capture_mcp
 from app.features.capture.router import router as capture_router
 from app.features.code_trial.mcp import MCP as code_trial_mcp
@@ -103,12 +106,15 @@ from app.features.study.mcp import MCP as study_mcp
 from app.features.study.router import router as study_router
 from app.features.surprise_interview.mcp import MCP as surprise_interview_mcp
 from app.features.surprise_interview.router import router as surprise_interview_router
+from app.features.voice.mcp import MCP as voice_mcp
+from app.features.voice.router import router as voice_router
 from app.mcp.base import FeatureMcp
 
 # Chaque feature ajoute ici son routeur ; `create_app` les monte sous `/api/v1`.
 FEATURE_ROUTERS: list[APIRouter] = [
     auth_router,
     settings_router,
+    calendar_router,
     keys_router,
     health_router,
     sessions_play_router,  # avant `sessions_router` : `/sessions/play` avant `/{session_id}`
@@ -145,6 +151,7 @@ FEATURE_ROUTERS: list[APIRouter] = [
     applications_router,
     kit_router,
     interviews_router,
+    design_interviews_router,
     committee_router,
     reminders_router,
     radar_router,
@@ -154,6 +161,7 @@ FEATURE_ROUTERS: list[APIRouter] = [
     brief_router,
     paper_lab_router,
     podcast_router,
+    voice_router,
     activity_router,
     projects_router,
     account_router,
@@ -176,6 +184,7 @@ MCP_FEATURES: list[FeatureMcp] = [
     boss_mcp,
     brain_mcp,
     brief_mcp,
+    calendar_mcp,
     capture_mcp,
     code_trial_mcp,
     compatible_offers_mcp,
@@ -215,4 +224,5 @@ MCP_FEATURES: list[FeatureMcp] = [
     skills_mcp,
     study_mcp,
     surprise_interview_mcp,
+    voice_mcp,
 ]

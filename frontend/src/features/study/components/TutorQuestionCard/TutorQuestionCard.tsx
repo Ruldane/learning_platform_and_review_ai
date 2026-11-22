@@ -1,5 +1,6 @@
 import { useId, useState } from "react";
 import { t } from "@/shared/i18n/t";
+import { VoicePlayback } from "@/shared/voice";
 import type { TutorOptionView } from "../viewTypes";
 import { AnswerForm } from "./AnswerForm";
 
@@ -59,6 +60,7 @@ export function TutorQuestionCard({
       <p id={questionId} className="font-medium">
         {question}
       </p>
+      {!disabled && <VoicePlayback text={question} />}
       <AnswerForm
         disabled={disabled}
         stuckLabel={labelOf("stuck", t("study.tutor.stuck"))}

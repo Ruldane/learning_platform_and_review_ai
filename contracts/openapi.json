@@ -2018,8 +2018,15 @@
             "type": "string"
           },
           "goal_id": {
-            "title": "Goal Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Goal Id"
           },
           "id": {
             "title": "Id",
@@ -2030,7 +2037,8 @@
               "domain_map",
               "prerequisites",
               "timeline",
-              "comparison"
+              "comparison",
+              "system_design"
             ],
             "title": "Kind",
             "type": "string"
@@ -3012,6 +3020,88 @@
         "title": "BulkResult",
         "type": "object"
       },
+      "CalendarProposalOut": {
+        "properties": {
+          "action": {
+            "enum": [
+              "add",
+              "update",
+              "unchanged"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "end": {
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "study",
+              "interview"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "start": {
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "proposed",
+              "synced"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "timezone": {
+            "title": "Timezone",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "action",
+          "kind",
+          "title",
+          "start",
+          "end",
+          "timezone"
+        ],
+        "title": "CalendarProposalOut",
+        "type": "object"
+      },
+      "CalendarStatus": {
+        "properties": {
+          "status": {
+            "enum": [
+              "unconfigured",
+              "disconnected",
+              "connected",
+              "revocation_pending"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "CalendarStatus",
+        "type": "object"
+      },
       "CaptureRequest": {
         "description": "Une seule source : un lien http(s), un texte, ou un document déjà importé\n(`POST /documents`). Zéro ou plusieurs : 422 `invalid_input`.",
         "properties": {
@@ -3776,6 +3866,20 @@
           "session_id"
         ],
         "title": "CompatibleOfferPlan",
+        "type": "object"
+      },
+      "ConnectIn": {
+        "additionalProperties": false,
+        "properties": {
+          "consent": {
+            "title": "Consent",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "consent"
+        ],
+        "title": "ConnectIn",
         "type": "object"
       },
       "ContactIn": {
@@ -4732,6 +4836,158 @@
         "title": "DeleteAccountIn",
         "type": "object"
       },
+      "DesignCriteria": {
+        "additionalProperties": false,
+        "properties": {
+          "architecture": {
+            "$ref": "#/components/schemas/DesignCriterion"
+          },
+          "reliability": {
+            "$ref": "#/components/schemas/DesignCriterion"
+          },
+          "scale": {
+            "$ref": "#/components/schemas/DesignCriterion"
+          },
+          "tradeoffs": {
+            "$ref": "#/components/schemas/DesignCriterion"
+          }
+        },
+        "required": [
+          "architecture",
+          "reliability",
+          "scale",
+          "tradeoffs"
+        ],
+        "title": "DesignCriteria",
+        "type": "object"
+      },
+      "DesignCriterion": {
+        "additionalProperties": false,
+        "properties": {
+          "feedback": {
+            "maxLength": 800,
+            "minLength": 1,
+            "title": "Feedback",
+            "type": "string"
+          },
+          "score": {
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Score",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "score",
+          "feedback"
+        ],
+        "title": "DesignCriterion",
+        "type": "object"
+      },
+      "DesignState": {
+        "properties": {
+          "board": {
+            "$ref": "#/components/schemas/BoardOut"
+          },
+          "defense": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Defense"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "proof_saved": {
+            "title": "Proof Saved",
+            "type": "boolean"
+          },
+          "review": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SystemDesignReview"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "running",
+              "done",
+              "failed",
+              "stopped",
+              "debrief_failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "subject": {
+            "$ref": "#/components/schemas/DesignSubject"
+          },
+          "version_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version Id"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "status",
+          "subject",
+          "board",
+          "version_id",
+          "defense",
+          "review",
+          "proof_saved"
+        ],
+        "title": "DesignState",
+        "type": "object"
+      },
+      "DesignSubject": {
+        "properties": {
+          "requirements": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Requirements",
+            "type": "array"
+          },
+          "situation": {
+            "title": "Situation",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "situation",
+          "requirements"
+        ],
+        "title": "DesignSubject",
+        "type": "object"
+      },
       "DiagnosticView": {
         "properties": {
           "run_id": {
@@ -5663,6 +5919,7 @@
               "capture",
               "ide",
               "github",
+              "system_design",
               "contribution",
               "feynman"
             ],
@@ -6972,6 +7229,18 @@
               }
             ],
             "title": "Role"
+          },
+          "system_design": {
+            "anyOf": [
+              {
+                "const": true,
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System Design"
           }
         },
         "required": [
@@ -8980,6 +9249,41 @@
           "created_at"
         ],
         "title": "InterviewOut",
+        "type": "object"
+      },
+      "InterviewSelection": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "interview",
+            "title": "Kind",
+            "type": "string"
+          },
+          "minutes": {
+            "maximum": 180.0,
+            "minimum": 15.0,
+            "title": "Minutes",
+            "type": "integer"
+          },
+          "source_id": {
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Source Id",
+            "type": "string"
+          },
+          "time": {
+            "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$",
+            "title": "Time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "source_id",
+          "time",
+          "minutes"
+        ],
+        "title": "InterviewSelection",
         "type": "object"
       },
       "InterviewStartOut": {
@@ -12691,6 +12995,19 @@
           "cells"
         ],
         "title": "NotebookView",
+        "type": "object"
+      },
+      "OAuthLink": {
+        "properties": {
+          "authorization_url": {
+            "title": "Authorization Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "authorization_url"
+        ],
+        "title": "OAuthLink",
         "type": "object"
       },
       "ObjectionOut": {
@@ -20290,6 +20607,21 @@
         ],
         "type": "string"
       },
+      "SpeechIn": {
+        "properties": {
+          "text": {
+            "maxLength": 1200,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "SpeechIn",
+        "type": "object"
+      },
       "StartSessionRequest": {
         "properties": {
           "graph": {
@@ -20426,6 +20758,35 @@
           "dashboard_url"
         ],
         "title": "StatsOut",
+        "type": "object"
+      },
+      "StudySelection": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "study",
+            "title": "Kind",
+            "type": "string"
+          },
+          "program_id": {
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Program Id",
+            "type": "string"
+          },
+          "source_id": {
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Source Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "program_id",
+          "source_id"
+        ],
+        "title": "StudySelection",
         "type": "object"
       },
       "StudySessionOut": {
@@ -21156,6 +21517,26 @@
           "token"
         ],
         "title": "SyncTokenOut",
+        "type": "object"
+      },
+      "SystemDesignReview": {
+        "additionalProperties": false,
+        "properties": {
+          "criteria": {
+            "$ref": "#/components/schemas/DesignCriteria"
+          },
+          "summary": {
+            "maxLength": 800,
+            "minLength": 1,
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "criteria",
+          "summary"
+        ],
+        "title": "SystemDesignReview",
         "type": "object"
       },
       "TaskCreate": {
@@ -22469,6 +22850,45 @@
         "title": "TrialView",
         "type": "object"
       },
+      "UpcomingEvent": {
+        "properties": {
+          "end": {
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "study",
+              "interview"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "start": {
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          },
+          "timezone": {
+            "title": "Timezone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "start",
+          "end",
+          "timezone"
+        ],
+        "title": "UpcomingEvent",
+        "type": "object"
+      },
       "UpdateAccepted": {
         "properties": {
           "session_id": {
@@ -23140,6 +23560,21 @@
           "failure_reason"
         ],
         "title": "VersionOut",
+        "type": "object"
+      },
+      "VoiceTranscript": {
+        "properties": {
+          "text": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "VoiceTranscript",
         "type": "object"
       },
       "VoteChange": {
@@ -25382,6 +25817,226 @@
         "summary": "Get Today",
         "tags": [
           "brief"
+        ]
+      }
+    },
+    "/api/v1/calendar/callback": {
+      "get": {
+        "operationId": "callback_api_v1_calendar_callback_get",
+        "responses": {
+          "303": {
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Callback",
+        "tags": [
+          "calendar"
+        ]
+      }
+    },
+    "/api/v1/calendar/connection": {
+      "delete": {
+        "operationId": "disconnect_api_v1_calendar_connection_delete",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Disconnect",
+        "tags": [
+          "calendar"
+        ]
+      },
+      "get": {
+        "operationId": "connection_api_v1_calendar_connection_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Connection",
+        "tags": [
+          "calendar"
+        ]
+      },
+      "post": {
+        "operationId": "connect_api_v1_calendar_connection_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthLink"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Connect",
+        "tags": [
+          "calendar"
+        ]
+      }
+    },
+    "/api/v1/calendar/proposals": {
+      "post": {
+        "operationId": "propose_api_v1_calendar_proposals_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "discriminator": {
+                  "mapping": {
+                    "interview": "#/components/schemas/InterviewSelection",
+                    "study": "#/components/schemas/StudySelection"
+                  },
+                  "propertyName": "kind"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/StudySelection"
+                  },
+                  {
+                    "$ref": "#/components/schemas/InterviewSelection"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarProposalOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Propose",
+        "tags": [
+          "calendar"
+        ]
+      }
+    },
+    "/api/v1/calendar/proposals/{proposal_id}/confirm": {
+      "post": {
+        "operationId": "confirm_api_v1_calendar_proposals__proposal_id__confirm_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarProposalOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Confirm",
+        "tags": [
+          "calendar"
+        ]
+      }
+    },
+    "/api/v1/calendar/upcoming": {
+      "get": {
+        "operationId": "next_event_api_v1_calendar_upcoming_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/UpcomingEvent"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Next Event Api V1 Calendar Upcoming Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Next Event",
+        "tags": [
+          "calendar"
         ]
       }
     },
@@ -30053,6 +30708,58 @@
           }
         },
         "summary": "Get One Interview",
+        "tags": [
+          "interviews"
+        ]
+      }
+    },
+    "/api/v1/interviews/{interview_id}/design": {
+      "get": {
+        "operationId": "get_design_api_v1_interviews__interview_id__design_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "interview_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 1,
+              "title": "Interview Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/DesignState"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Get Design Api V1 Interviews  Interview Id  Design Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Design",
         "tags": [
           "interviews"
         ]
@@ -38420,6 +39127,35 @@
         ]
       }
     },
+    "/api/v1/system-design": {
+      "get": {
+        "operationId": "current_design_api_v1_system_design_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/DesignState"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Current Design Api V1 System Design Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Current Design",
+        "tags": [
+          "interviews"
+        ]
+      }
+    },
     "/api/v1/tasks/{task_id}": {
       "patch": {
         "operationId": "patch_task_api_v1_tasks__task_id__patch",
@@ -38469,6 +39205,92 @@
         "summary": "Patch Task",
         "tags": [
           "program"
+        ]
+      }
+    },
+    "/api/v1/voice/speech": {
+      "post": {
+        "operationId": "create_speech_api_v1_voice_speech_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SpeechIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "audio/wav": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Speech",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/api/v1/voice/transcriptions": {
+      "post": {
+        "operationId": "create_transcription_api_v1_voice_transcriptions_post",
+        "requestBody": {
+          "content": {
+            "audio/wav": {
+              "schema": {
+                "contentMediaType": "application/octet-stream",
+                "description": "PCM mono 16 bits, 16 kHz, 60 s",
+                "title": "Recording",
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceTranscript"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Transcription",
+        "tags": [
+          "voice"
         ]
       }
     },

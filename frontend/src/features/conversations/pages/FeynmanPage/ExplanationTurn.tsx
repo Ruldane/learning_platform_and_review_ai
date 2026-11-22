@@ -12,6 +12,7 @@ export function ExplanationTurn({ run }: { run: Run }) {
         <InterruptCard
           key={question.interrupt_id}
           interrupt={question}
+          voice
           answered={false}
           disabled={run.actions.pending}
           onAnswer={(value) => void run.actions.resume(question.interrupt_id, value)}

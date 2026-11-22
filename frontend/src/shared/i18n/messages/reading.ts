@@ -30,6 +30,7 @@ export const reading = {
     definition: "Définition de {term}",
     chapter: "Chapitre · {chapter}",
     makeCard: "Créer une fiche de ce passage",
+    passageTooLong: "La sélection dépasse {limit} caractères. Raccourcis-la pour créer une fiche.",
   },
   actions: {
     label: "Actions sur la lecture",

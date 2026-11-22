@@ -20,12 +20,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.tools.interview_schema import Debrief, Exchange, InterviewContext
 from app.agents.tools.study_schema import CardDraft
+from app.agents.tools.system_design_port import (
+    SystemDesignContext,
+    SystemDesignReview,
+    SystemDesignSubmission,
+)
 from app.core.clock import local_today
 from app.db.models.applications import Interview
 from app.features.applications.repository import ApplicationRepository, EventRepository
 from app.features.applications.service.interview_context import build_context
 from app.features.applications.service.interviews import interview_lock, interview_row
 from app.features.applications.service.runtime import ApplicationsRuntime
+from app.features.applications.service.system_design import freeze, save_review
 from app.features.postings.service.duplicates import zone_of
 from app.features.quiz.service.cards import NewCard, add_cards
 
@@ -50,6 +56,16 @@ def timeline_text(row: Interview, cards: int) -> str:
 class AgentInterviewStore:
     def __init__(self, runtime: ApplicationsRuntime) -> None:
         self._rt = runtime
+
+    async def freeze_design(
+        self, user_id: str, session_id: str, interview_id: str, submission: SystemDesignSubmission
+    ) -> SystemDesignContext:
+        return await freeze(self._rt, user_id, session_id, interview_id, submission)
+
+    async def save_design_review(
+        self, user_id: str, session_id: str, interview_id: str, review: SystemDesignReview
+    ) -> None:
+        await save_review(self._rt, user_id, session_id, interview_id, review)
 
     async def context(self, user_id: str, interview_id: str) -> InterviewContext:
         async with self._rt.session_factory() as db:

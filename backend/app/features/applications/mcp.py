@@ -99,6 +99,17 @@ MCP = FeatureMcp(
             2,
             "applications_start_free_interview",
             "Lance un entretien blanc libre, sur une offre (`posting_id`) ou un intitulé (`role`).",
+            body_fields=frozenset(
+                {
+                    "mode",
+                    "duration_min",
+                    "language",
+                    "radar_role",
+                    "radar_zone",
+                    "posting_id",
+                    "role",
+                }
+            ),
             launches="interview",
         ),
         McpAction(
@@ -169,5 +180,9 @@ MCP = FeatureMcp(
             summary="Comité de recrutement simulé (`run_id` d'une exécution déjà créée).",
         ),
     ),
-    excluded={"GET /applications/{application_id}/kit.zip": _FILE},
+    excluded={
+        "GET /applications/{application_id}/kit.zip": _FILE,
+        "GET /system-design": "Le tableau d’architecture est réservé à l’interface.",
+        "GET /interviews/{interview_id}/design": "Le tableau privé reste dans l’interface.",
+    },
 )

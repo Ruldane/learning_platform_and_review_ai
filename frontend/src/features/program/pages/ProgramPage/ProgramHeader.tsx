@@ -39,6 +39,14 @@ export function ProgramHeader({ program }: { program: ProgramOut }) {
               {t("program.replan.button")}
             </Link>
           ) : null}
+          {program.status === "validated" ? (
+            <Link
+              to={`/reglages/agenda?programme=${encodeURIComponent(program.id)}`}
+              className={link}
+            >
+              {t("calendar.link")}
+            </Link>
+          ) : null}
           <a href={exportPdfUrl(program.id)} className={link}>
             <Download aria-hidden="true" />
             {t("program.exports.pdf")}

@@ -15,6 +15,7 @@ interface InterviewQuestionCardProps {
   stopLabel: string | null;
   onAnswer: (text: string) => void;
   onStop: () => void;
+  question?: string;
 }
 
 function heading(number: number | null, total: number, followUp: boolean): string {
@@ -57,6 +58,7 @@ export function InterviewQuestionCard(props: InterviewQuestionCardProps) {
       ) : (
         <AnswerFields
           disabled={disabled}
+          question={props.question}
           stopLabel={stopLabel}
           onAnswer={(text) => {
             setSent({ kind: "answer", text });

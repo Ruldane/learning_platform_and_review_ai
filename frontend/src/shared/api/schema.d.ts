@@ -664,6 +664,93 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/calendar/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Callback */
+        get: operations["callback_api_v1_calendar_callback_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/calendar/connection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Connection */
+        get: operations["connection_api_v1_calendar_connection_get"];
+        put?: never;
+        /** Connect */
+        post: operations["connect_api_v1_calendar_connection_post"];
+        /** Disconnect */
+        delete: operations["disconnect_api_v1_calendar_connection_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/calendar/proposals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Propose */
+        post: operations["propose_api_v1_calendar_proposals_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/calendar/proposals/{proposal_id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm */
+        post: operations["confirm_api_v1_calendar_proposals__proposal_id__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/calendar/upcoming": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Next Event */
+        get: operations["next_event_api_v1_calendar_upcoming_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/capture": {
         parameters: {
             query?: never;
@@ -2148,6 +2235,23 @@ export interface paths {
         };
         /** Get One Interview */
         get: operations["get_one_interview_api_v1_interviews__interview_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/interviews/{interview_id}/design": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Design */
+        get: operations["get_design_api_v1_interviews__interview_id__design_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4949,6 +5053,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/system-design": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Current Design */
+        get: operations["current_design_api_v1_system_design_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tasks/{task_id}": {
         parameters: {
             query?: never;
@@ -4964,6 +5085,40 @@ export interface paths {
         head?: never;
         /** Patch Task */
         patch: operations["patch_task_api_v1_tasks__task_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/voice/speech": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Speech */
+        post: operations["create_speech_api_v1_voice_speech_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/voice/transcriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Transcription */
+        post: operations["create_transcription_api_v1_voice_transcriptions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/weeks/{week_id}": {
@@ -5695,14 +5850,14 @@ export interface components {
              */
             created_at: string;
             /** Goal Id */
-            goal_id: string;
+            goal_id: string | null;
             /** Id */
             id: string;
             /**
              * Kind
              * @enum {string}
              */
-            kind: "domain_map" | "prerequisites" | "timeline" | "comparison";
+            kind: "domain_map" | "prerequisites" | "timeline" | "comparison" | "system_design";
             /** Mermaid */
             mermaid: string;
             /** Parent Id */
@@ -6047,6 +6202,48 @@ export interface components {
             /** Updated */
             updated: number;
         };
+        /** CalendarProposalOut */
+        CalendarProposalOut: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "add" | "update" | "unchanged";
+            /**
+             * End
+             * Format: date-time
+             */
+            end: string;
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "study" | "interview";
+            /**
+             * Start
+             * Format: date-time
+             */
+            start: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "proposed" | "synced";
+            /** Timezone */
+            timezone: string;
+            /** Title */
+            title: string;
+        };
+        /** CalendarStatus */
+        CalendarStatus: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "unconfigured" | "disconnected" | "connected" | "revocation_pending";
+        };
         /**
          * CaptureRequest
          * @description Une seule source : un lien http(s), un texte, ou un document déjà importé
@@ -6335,6 +6532,11 @@ export interface components {
             program_id: string;
             /** Session Id */
             session_id: string;
+        };
+        /** ConnectIn */
+        ConnectIn: {
+            /** Consent */
+            consent: boolean;
         };
         /** ContactIn */
         ContactIn: {
@@ -6697,6 +6899,50 @@ export interface components {
             /** Confirm */
             confirm: string;
         };
+        /** DesignCriteria */
+        DesignCriteria: {
+            architecture: components["schemas"]["DesignCriterion"];
+            reliability: components["schemas"]["DesignCriterion"];
+            scale: components["schemas"]["DesignCriterion"];
+            tradeoffs: components["schemas"]["DesignCriterion"];
+        };
+        /** DesignCriterion */
+        DesignCriterion: {
+            /** Feedback */
+            feedback: string;
+            /** Score */
+            score: number;
+        };
+        /** DesignState */
+        DesignState: {
+            board: components["schemas"]["BoardOut"];
+            /** Defense */
+            defense: string | null;
+            /** Id */
+            id: string;
+            /** Proof Saved */
+            proof_saved: boolean;
+            review: components["schemas"]["SystemDesignReview"] | null;
+            /** Session Id */
+            session_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "running" | "done" | "failed" | "stopped" | "debrief_failed";
+            subject: components["schemas"]["DesignSubject"];
+            /** Version Id */
+            version_id: string | null;
+        };
+        /** DesignSubject */
+        DesignSubject: {
+            /** Requirements */
+            requirements: string[];
+            /** Situation */
+            situation: string;
+            /** Title */
+            title: string;
+        };
         /** DiagnosticView */
         DiagnosticView: {
             /** Run Id */
@@ -7014,7 +7260,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "program" | "lesson" | "study" | "quiz" | "project" | "cv" | "capture" | "ide" | "github" | "contribution" | "feynman";
+            kind: "program" | "lesson" | "study" | "quiz" | "project" | "cv" | "capture" | "ide" | "github" | "system_design" | "contribution" | "feynman";
             /** Label */
             label: string;
             /** Url */
@@ -7512,6 +7758,8 @@ export interface components {
             radar_zone?: string | null;
             /** Role */
             role?: string | null;
+            /** System Design */
+            system_design?: true | null;
         };
         /** FutureSelfOut */
         FutureSelfOut: {
@@ -8232,6 +8480,20 @@ export interface components {
              * @enum {string}
              */
             status: "running" | "done" | "failed" | "stopped" | "debrief_failed";
+        };
+        /** InterviewSelection */
+        InterviewSelection: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "interview";
+            /** Minutes */
+            minutes: number;
+            /** Source Id */
+            source_id: string;
+            /** Time */
+            time: string;
         };
         /** InterviewStartOut */
         InterviewStartOut: {
@@ -9599,6 +9861,11 @@ export interface components {
             files_version: number;
             /** Path */
             path: string;
+        };
+        /** OAuthLink */
+        OAuthLink: {
+            /** Authorization Url */
+            authorization_url: string;
         };
         /**
          * ObjectionOut
@@ -12233,6 +12500,11 @@ export interface components {
         };
         /** @enum {string} */
         Speaker: "host" | "coach";
+        /** SpeechIn */
+        SpeechIn: {
+            /** Text */
+            text: string;
+        };
         /** StartSessionRequest */
         StartSessionRequest: {
             /** Graph */
@@ -12275,6 +12547,18 @@ export interface components {
             vectorize_limit: number;
             /** Vectorize Share */
             vectorize_share: number;
+        };
+        /** StudySelection */
+        StudySelection: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "study";
+            /** Program Id */
+            program_id: string;
+            /** Source Id */
+            source_id: string;
         };
         /** StudySessionOut */
         StudySessionOut: {
@@ -12527,6 +12811,12 @@ export interface components {
         SyncTokenOut: {
             /** Token */
             token: string;
+        };
+        /** SystemDesignReview */
+        SystemDesignReview: {
+            criteria: components["schemas"]["DesignCriteria"];
+            /** Summary */
+            summary: string;
         };
         /** TaskCreate */
         TaskCreate: {
@@ -13053,6 +13343,28 @@ export interface components {
             title: string;
             verdict: components["schemas"]["TrialVerdict"] | null;
         };
+        /** UpcomingEvent */
+        UpcomingEvent: {
+            /**
+             * End
+             * Format: date-time
+             */
+            end: string;
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "study" | "interview";
+            /**
+             * Start
+             * Format: date-time
+             */
+            start: string;
+            /** Timezone */
+            timezone: string;
+        };
         /** UpdateAccepted */
         UpdateAccepted: {
             /** Session Id */
@@ -13351,6 +13663,11 @@ export interface components {
              * @enum {string}
              */
             status: "rendering" | "ready" | "pages_exceeded" | "failed";
+        };
+        /** VoiceTranscript */
+        VoiceTranscript: {
+            /** Text */
+            text: string;
         };
         /**
          * VoteChange
@@ -14842,6 +15159,181 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BriefOut"];
+                };
+            };
+        };
+    };
+    callback_api_v1_calendar_callback_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            303: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    connection_api_v1_calendar_connection_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarStatus"];
+                };
+            };
+        };
+    };
+    connect_api_v1_calendar_connection_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConnectIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OAuthLink"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disconnect_api_v1_calendar_connection_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarStatus"];
+                };
+            };
+        };
+    };
+    propose_api_v1_calendar_proposals_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudySelection"] | components["schemas"]["InterviewSelection"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarProposalOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_api_v1_calendar_proposals__proposal_id__confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                proposal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarProposalOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    next_event_api_v1_calendar_upcoming_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpcomingEvent"] | null;
                 };
             };
         };
@@ -18184,6 +18676,37 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_design_api_v1_interviews__interview_id__design_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                interview_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesignState"] | null;
+                };
             };
             /** @description Validation Error */
             422: {
@@ -24096,6 +24619,26 @@ export interface operations {
             };
         };
     };
+    current_design_api_v1_system_design_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesignState"] | null;
+                };
+            };
+        };
+    };
     patch_task_api_v1_tasks__task_id__patch: {
         parameters: {
             query?: never;
@@ -24118,6 +24661,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TaskOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_speech_api_v1_voice_speech_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SpeechIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "audio/wav": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_transcription_api_v1_voice_transcriptions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "audio/wav": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceTranscript"];
                 };
             };
             /** @description Validation Error */

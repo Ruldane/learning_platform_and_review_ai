@@ -110,7 +110,7 @@ class RadarRunRepository(UserScopedRepository[RadarRun]):
         return builtins.list((await self.session.execute(stmt)).scalars())
 
     async def done_between(
-        self, after: datetime | None, before: datetime | None, limit: int
+        self, after: datetime | None, before: datetime | None, limit: int | None
     ) -> builtins.list[RadarRun]:
         """Les relevés `done` finis dans `[after, before]` (bornes incluses), le plus récent
         d'abord (fil d'activité)."""

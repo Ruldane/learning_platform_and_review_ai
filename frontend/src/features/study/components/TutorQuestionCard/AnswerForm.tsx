@@ -3,6 +3,7 @@ import { t } from "@/shared/i18n/t";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
 import { fieldClass } from "@/shared/ui/fieldClass";
+import { mergeVoiceDraft, VoiceDraftControls } from "@/shared/voice";
 
 /** Même plafond que le champ `answer` de l'interruption côté back. */
 const MAX_ANSWER_LENGTH = 4000;
@@ -14,6 +15,10 @@ interface AnswerFormProps {
   onSubmit: (text: string) => void;
   onStuck: () => void;
   onSkip: () => void;
+}
+
+function submitShortcut(event: KeyboardEvent, submit: (event: FormEvent) => void) {
+  if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) submit(event);
 }
 
 /** Champ de réponse (Ctrl ou Cmd + Entrée envoie) et boutons « Répondre », « Je bloque », « Passer ». */
@@ -29,12 +34,9 @@ export function AnswerForm({
   const value = draft.trim();
   const canSend = !disabled && value !== "";
 
-  const submit = (event?: FormEvent) => {
-    event?.preventDefault();
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
     if (canSend) onSubmit(value);
-  };
-  const onKeyDown = (event: KeyboardEvent) => {
-    if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) submit();
   };
 
   return (
@@ -48,10 +50,15 @@ export function AnswerForm({
           maxLength={MAX_ANSWER_LENGTH}
           rows={3}
           onChange={(event) => setDraft(event.target.value)}
-          onKeyDown={onKeyDown}
+          onKeyDown={(event) => submitShortcut(event, submit)}
           className={cn(fieldClass, "h-auto min-h-20 py-1.5")}
         />
       </label>
+      {!disabled && (
+        <VoiceDraftControls
+          onDraft={(text) => setDraft((old) => mergeVoiceDraft(old, text, MAX_ANSWER_LENGTH))}
+        />
+      )}
       <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={!canSend}>
           {t("study.tutor.answer")}

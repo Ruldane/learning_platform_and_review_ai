@@ -21,6 +21,8 @@ from app.agents.tools.replan_port import (
     skills_named,
 )
 from app.agents.tools.study_schema import ReplanOption, ReplanTrigger
+from app.core.clock import local_today
+from app.features.calendar.service.availability import day_caps
 from app.features.program.service.replan_rows import NewTask
 from app.features.program.service.replan_versions import (
     Proposal,
@@ -109,9 +111,13 @@ class AgentReplanStore:
         reason: str,
         week_cap_override: int | None,
     ) -> PreviewSaved:
+        now = self._rt.now()
         async with self._rt.session_factory() as db:
-            today = await self._rt.today(db, user_id)
+            zone = await self._rt.zone(db, user_id)
             facts = await session_facts(db, user_id, session_id)
+        today = local_today(zone, now)
+        calendar = self._rt.calendar
+        caps = await day_caps(calendar, user_id, today, zone, now) if calendar else {}
         given = facts.input if facts is not None else {}
         drop, add, named, unknown = _resolved(draft, refs, option, _gap_skills(given))
         if unknown:
@@ -133,6 +139,7 @@ class AgentReplanStore:
             review_entry_id=entry if isinstance(entry, str) else None,
             today=today,
             skills=named,
+            daily_caps=caps,
         )
         return await save_proposal(self._rt.program, user_id, program_id, proposal)
 

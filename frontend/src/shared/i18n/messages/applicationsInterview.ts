@@ -4,7 +4,7 @@ export const applicationsInterview = {
     title: "Entretien blanc",
     freeTitle: "Entretien blanc libre",
     intro:
-      "Un entretien écrit, une question à la fois. Rien n'est envoyé à personne : l'application note tes réponses, puis écrit un débrief et prépare des fiches de révision.",
+      "Une question à la fois, à l’écrit ou à l’oral. L’application note tes réponses, puis écrit un débrief et prépare des fiches de révision.",
     freeIntro:
       "Choisis une offre analysée ou saisis un intitulé de poste : l'entretien se prépare sans fiche de candidature.",
     for: "{company}, {title}",

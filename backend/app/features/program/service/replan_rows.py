@@ -18,7 +18,7 @@ from app.features.program.service.planning import (
     QUIZ_MINUTES,
     PlanningImpossible,
 )
-from app.features.program.service.rules import week_breaks
+from app.features.program.service.rules import UNDERLOAD_SHARE, floor_minutes, week_breaks
 
 DAYS = 7
 SUITE = "Suite : "
@@ -126,7 +126,29 @@ class WeekBudget(Budget):
     def day_capacity(self, day: date) -> int:
         if day < self.from_day:
             return 0
-        return max(0, super().day_capacity(day) - self.used.get(day, 0))
+        remaining = max(0, self._usual_capacity(day) - self.used.get(day, 0))
+        return min(remaining, self.daily_caps.get(day, remaining))
+
+
+def week_budget(
+    budget: Budget, cap: int, used: dict[date, int], start: date, from_day: date, *, lower: bool
+) -> WeekBudget:
+    """Le budget de la semaine, minutes faites retirées. `lower` (« Repousser l'échéance ») :
+    plafond abaissé à 60 %, en gardant toujours la place d'une pratique et d'un quiz au-delà des
+    minutes faites, et jamais au-delà du plafond (85 %)."""
+    week_used = {d: m for d, m in used.items() if start <= d < start + timedelta(days=DAYS)}
+    done = sum(week_used.values())
+    if lower:
+        room = min(cap, done + PRACTICE_MINUTES + QUIZ_MINUTES)
+        cap = max(floor_minutes(cap, UNDERLOAD_SHARE), room)
+    return WeekBudget(
+        budget.weekday_minutes,
+        budget.weekend_minutes,
+        max(0, cap - done),
+        week_used,
+        from_day,
+        daily_caps=budget.daily_caps,
+    )
 
 
 def suite_week(last: WeekRow, rank: int, last_start: date, count: int) -> NewWeek:

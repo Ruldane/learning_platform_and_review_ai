@@ -14,6 +14,7 @@ from app.agents.runtime.payloads import BoardKind
 from app.core.errors import AppError
 from app.features.learning.repository import BoardRepository, scribe_key
 from app.features.learning.schemas import BoardEdit, BoardOut
+from app.features.learning.service.design_boards import append_design_edit
 from app.features.learning.service.goals import open_council, owned_goal
 from app.features.sessions.service import MessageRequest, SessionsService
 
@@ -75,6 +76,10 @@ async def save_edit(
     repo = BoardRepository(db, user_id)
     parent = await repo.get(board_id)
     if parent is None:
+        edited = await append_design_edit(db, user_id, board_id, edit.scene)
+        if edited is not None:
+            await db.commit()
+            return edited
         raise board_not_found()
     row = await repo.add(
         goal_id=parent.goal_id,

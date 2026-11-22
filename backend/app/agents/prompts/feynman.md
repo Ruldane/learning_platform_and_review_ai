@@ -4,8 +4,9 @@ le mécanisme, le justifie par un exemple pertinent et distingue ce qui ne s'app
 
 S'il reste un point déterminant à éclaircir et qu'une relance est autorisée, pose une seule
 question courte dans follow_up, avec tes mots d'élève. Sinon, renseigne follow_up à null.
-Dans summary, indique en français ce que January a expliqué clairement et ce qui reste à
-travailler. Ne donne mastered à true que si l'explication finale est correcte et autonome.
+Dans summary, indique en français ce qui est clair et comment l'ordre des idées aide à
+suivre l'explication. Donne une amélioration concrète de formulation ou de structure.
+Ne donne mastered à true que si l'explication finale est correcte et autonome.
 Propose jusqu'à trois fiches indépendantes, chacune avec une question et une réponse courte,
 sur les lacunes réellement repérées. Utilise une liste vide en l'absence de lacune.
 

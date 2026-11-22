@@ -75,6 +75,9 @@ CASES: dict[str, str] = {
     "app.features.applications.router_interviews": (
         "tests/features/applications/test_interviews_access.py::test_other_user_gets_404"
     ),
+    "app.features.applications.router_system_design": (
+        "tests/isolation/test_system_design.py::test_system_design_board_and_review_are_private"
+    ),
     "app.features.applications.router_committee": (
         "tests/features/applications/test_committee_access.py::test_other_user_gets_404"
     ),

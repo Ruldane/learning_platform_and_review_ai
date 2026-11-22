@@ -24,8 +24,6 @@ from app.features.program.service.budget import Budget
 from app.features.program.service.diff import ProgramRows, TaskRow
 from app.features.program.service.packing import Entry, NoRoom, WeekPacking, pack_week
 from app.features.program.service.planning import (
-    PRACTICE_MINUTES,
-    QUIZ_MINUTES,
     PlanningImpossible,
 )
 from app.features.program.service.replan_rows import (
@@ -35,15 +33,15 @@ from app.features.program.service.replan_rows import (
     Slots,
     WeekBudget,
     open_week,
+    week_budget,
     week_loads,
 )
 from app.features.program.service.replan_stable import advance, keeps_dates
-from app.features.program.service.rules import UNDERLOAD_SHARE, floor_minutes, is_retry
+from app.features.program.service.rules import is_retry
 
 __all__ = ["NewTask", "NewWeek", "PlannedTask", "RepackResult", "fingerprint", "repack"]
 
 DAYS = 7
-PUSH_SHARE = UNDERLOAD_SHARE  # « Repousser l'échéance » : semaines à venir à 60 % du plafond
 
 
 class ProgramFinished(PlanningImpossible):
@@ -197,22 +195,6 @@ def _done_minutes(found: list[_Row]) -> dict[date, int]:
     return used
 
 
-def _budget(
-    budget: Budget, cap: int, used: dict[date, int], start: date, from_day: date, *, lower: bool
-) -> WeekBudget:
-    """Le budget de la semaine, minutes faites retirées. `lower` (« Repousser l'échéance ») :
-    plafond abaissé à 60 %, en gardant toujours la place d'une pratique et d'un quiz au-delà des
-    minutes faites, et jamais au-delà du plafond (85 %)."""
-    week_used = {d: m for d, m in used.items() if start <= d < start + timedelta(days=DAYS)}
-    done = sum(week_used.values())
-    if lower:
-        room = min(cap, done + PRACTICE_MINUTES + QUIZ_MINUTES)
-        cap = max(floor_minutes(cap, PUSH_SHARE), room)
-    return WeekBudget(
-        budget.weekday_minutes, budget.weekend_minutes, max(0, cap - done), week_used, from_day
-    )
-
-
 def _cap(
     budget: Budget, current: bool, override: int | None, option: ReplanOption | None
 ) -> tuple[int, bool]:
@@ -280,7 +262,7 @@ def repack(
     while index < len(starts) or carried:
         start = open_week(rows, index, new_weeks, own)
         cap, lower = _cap(budget, index == current, week_cap_override, option)
-        week = _budget(budget, cap, used, start, from_day, lower=lower)
+        week = week_budget(budget, cap, used, start, from_day, lower=lower)
         if not carried and keeps_dates(own.get(index, []), week, start):
             placed += _kept(queue, own.get(index, []))  # ni retard ni ajout : dates gardées
             index += 1

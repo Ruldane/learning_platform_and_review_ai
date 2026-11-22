@@ -139,6 +139,7 @@ export const session = {
       prerequisites: "Graphe de prérequis",
       timeline: "Frise du parcours",
       comparison: "Comparaison des propositions",
+      system_design: "Architecture",
       lesson: "Schéma de la leçon",
     },
     empty: "Le Scribe n'a encore rien dessiné.",

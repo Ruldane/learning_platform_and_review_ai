@@ -4,7 +4,17 @@ kit, entretiens d'entraînement et exécutions du comité de recrutement."""
 from datetime import date, datetime
 from typing import Any, Literal
 
-from sqlalchemy import Boolean, Date, ForeignKey, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Date,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, UserScopedMixin, UTCDateTime
@@ -156,6 +166,7 @@ class Interview(UserScopedMixin, Base):
     surprise_invitation_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("surprise_interview_invitations.id", ondelete="RESTRICT")
     )
+    system_design: Mapped[dict[str, Any] | None] = mapped_column(JSON(none_as_null=True))
     session_id: Mapped[str] = mapped_column(String(36))
     status: Mapped[str] = mapped_column(String(16), default="running")
     exchanges: Mapped[list[Any]] = mapped_column(default=list)

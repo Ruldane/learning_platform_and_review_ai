@@ -83,6 +83,7 @@ describe("registre des features", () => {
       { labelKey: "settings.availability.navLabel", path: "/reglages/disponibilite" },
       { labelKey: "settings.study.navLabel", path: "/reglages/etude" },
       { labelKey: "settings.style.navLabel", path: "/reglages/style" },
+      { labelKey: "calendar.title", path: "/reglages/agenda" },
       { labelKey: "costs.nav.costs", path: "/reglages/couts" },
       { labelKey: "costs.nav.log", path: "/reglages/journal" },
       { labelKey: "account.nav.data", path: "/reglages/donnees" },

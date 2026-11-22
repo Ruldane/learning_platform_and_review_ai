@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from app.core.limits import BodySizeLimit
 from app.features.cv.service.profile_import import MAX_PROFILE_FILE_BYTES, TOO_LARGE_MESSAGE
 from app.features.memory.service.upload import MAX_UPLOAD_BYTES
+from app.providers.speech.base import RECORDING_LIMIT
 
 # Corps d'un import : le fichier (20 Mo) plus l'enveloppe multipart et les autres champs.
 _UPLOAD_BODY_MAX = MAX_UPLOAD_BYTES + 1024 * 1024
@@ -26,8 +27,22 @@ def add_body_limits(app: FastAPI, prefix: str) -> None:
     app.add_middleware(
         BodySizeLimit, path=f"{prefix}/brain/sync/folders", max_bytes=_UPLOAD_BODY_MAX
     )
+    app.add_middleware(
+        BodySizeLimit,
+        path=f"{prefix}/calendar",
+        max_bytes=4096,
+        code="calendar_request_too_large",
+        message="La demande Agenda est trop volumineuse.",
+    )
     app.add_middleware(BodySizeLimit, path=f"{prefix}/oncall/incidents", max_bytes=64 * 1024)
     app.add_middleware(BodySizeLimit, path=f"{prefix}/mcp/relay", max_bytes=1024)
+    app.add_middleware(
+        BodySizeLimit,
+        path=f"{prefix}/voice",
+        max_bytes=RECORDING_LIMIT,
+        code="voice_recording_too_large",
+        message="Enregistrement trop volumineux.",
+    )
     app.add_middleware(BodySizeLimit, path=f"{prefix}/ide/terminals", max_bytes=32 * 1024)
     app.add_middleware(BodySizeLimit, path=f"{prefix}/ide/sessions", max_bytes=1_500_000)
     app.add_middleware(  # CV et LinkedIn, 10 Mo chacun (D124)

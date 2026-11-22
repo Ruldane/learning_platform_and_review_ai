@@ -6,16 +6,17 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 const SAME_FEATURE = { feature: "{{ from.captured.feature }}" };
+const VOICE_CONTROLS = { to: { file: { categories: "voice-controls" } } };
 
 /**
  * Règles de découpage (voir SPEC et DECISIONS D32) :
  * - shared      -> shared seulement ;
  * - session-ui  (shared/session-ui, composants de session présentationnels) -> lui-même +
  *   shared/ui, i18n, lib et realtime (types et registre de rendu seulement, voir le bloc
- *   `no-restricted-imports` plus bas) ; jamais shared/api, features ni app ;
+ *   `no-restricted-imports` plus bas) et les contrôles vocaux publics ; jamais shared/api, features ni app ;
  * - feature     -> sa propre feature + shared + session-ui ;
  * - feature-components (présentationnels) -> ses propres components + shared/ui, shared/i18n,
- *   shared/lib + session-ui (ni api.ts, ni hooks/, ni store, ni shared/api) ;
+ *   shared/lib + session-ui et les contrôles vocaux (ni api.ts, ni hooks/, ni store, ni shared/api) ;
  * - app         -> tout.
  * `test-support` (src/test) n'est importé que par des fichiers de test ou d'infrastructure ; il
  * peut importer `shared` (jamais `features` ni `app`).
@@ -35,6 +36,7 @@ const boundaryPolicies = [
   {
     from: { element: { type: "session-ui" } },
     allow: [
+      VOICE_CONTROLS,
       { to: { element: { type: "session-ui" } } },
       {
         to: { element: { type: "shared", captured: { area: ["ui", "i18n", "lib", "realtime"] } } },
@@ -51,6 +53,7 @@ const boundaryPolicies = [
   {
     from: { element: { type: "feature-components" } },
     allow: [
+      VOICE_CONTROLS,
       { to: { element: { type: "shared", captured: { area: ["ui", "i18n", "lib"] } } } },
       { to: { element: { type: "session-ui" } } },
       { to: { element: { type: "feature-components", captured: SAME_FEATURE } } },
@@ -186,6 +189,7 @@ export default tseslint.config(
       // routes en mémoire de `src/test`. L'exception ne couvre que celles qui sont dans une feature ;
       // le bloc `no-restricted-imports` plus haut les garde hors du code livré.
       "boundaries/files": [
+        { pattern: "src/shared/voice/index.ts", category: "voice-controls" },
         {
           pattern: ["**/*.test.{ts,tsx}", "src/features/**/*Testkit.{ts,tsx}"],
           category: "test",

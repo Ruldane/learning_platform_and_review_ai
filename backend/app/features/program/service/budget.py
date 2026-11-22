@@ -1,6 +1,7 @@
 """Budget de temps d'une semaine (SPEC 3.4) : cinq jours, un bloc le samedi, dimanche libre."""
 
-from dataclasses import dataclass
+from collections.abc import Mapping
+from dataclasses import dataclass, field
 from datetime import date
 from typing import Protocol
 
@@ -29,6 +30,7 @@ class AvailabilityLike(Protocol):
 class Budget:
     weekday_minutes: int
     weekend_minutes: int
+    daily_caps: Mapping[date, int] = field(default_factory=dict, kw_only=True)
 
     @property
     def longest_day_minutes(self) -> int:
@@ -44,12 +46,16 @@ class Budget:
         """85 % du budget hebdomadaire, arrondi par défaut (entiers : pas d'erreur flottante)."""
         return self.weekly_minutes * CAP_PERCENT // 100
 
-    def day_capacity(self, day: date) -> int:
-        """Minutes disponibles ce jour-là : lundi à vendredi, samedi, dimanche 0."""
+    def _usual_capacity(self, day: date) -> int:
         weekday = day.weekday()
         if weekday < SATURDAY:
             return self.weekday_minutes
         return self.weekend_minutes if weekday == SATURDAY else 0
+
+    def day_capacity(self, day: date) -> int:
+        """Budget du jour, borné aux disponibilités connues."""
+        planned = self._usual_capacity(day)
+        return min(planned, self.daily_caps.get(day, planned))
 
 
 def budget_for(availability: AvailabilityLike, goal_weekly_minutes: int | None) -> Budget:

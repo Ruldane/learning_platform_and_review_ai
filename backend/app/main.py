@@ -27,6 +27,7 @@ from app.bootstrap import memory_providers as open_memory_providers
 from app.bootstrap import publishing_providers as open_publishing_providers
 from app.bootstrap import research_providers as open_research_providers
 from app.bootstrap_auth import ensure_local_user, open_oidc, setup_security
+from app.bootstrap_calendar import open_calendar
 from app.bootstrap_career import career_runtimes
 from app.bootstrap_daily import daily_runtimes
 from app.bootstrap_ide import start_ide_gateway
@@ -44,7 +45,9 @@ from app.features.contributions.service.runtime import ContributionRuntime
 from app.features.learning.service.runtime import LearningRuntime
 from app.features.program.service.runtime import ProgramRuntime
 from app.features.registry import FEATURE_ROUTERS
+from app.features.voice.service import VoiceService
 from app.providers.github.public import PublicGithub
+from app.providers.speech.transcription import OpenAITranscription
 from app.scheduler.registry import JOBS
 from app.scheduler.runner import open_scheduler
 
@@ -84,6 +87,7 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         stack.push_async_callback(engine.dispose)
         app.state.engine = engine
         app.state.session_factory = create_session_factory(engine)
+        app.state.calendar = await open_calendar(app, stack)
         # Client partagé par les sondes de santé ; le test de la clé Brave a le sien (D74).
         http = await stack.enter_async_context(httpx.AsyncClient(timeout=_PROBE_TIMEOUT_SECONDS))
         key_http = await stack.enter_async_context(key_test_http())
@@ -118,6 +122,9 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
             )
         )
         await _open_agents(app, stack)
+        app.state.voice = VoiceService(
+            OpenAITranscription(app.state.research.keys), app.state.daily.podcast.speech
+        )
         yield
 
 
@@ -179,6 +186,7 @@ async def _open_agents(app: FastAPI, stack: AsyncExitStack) -> None:
     (la pile dépile à l'envers) ; reprend les sessions interrompues. Enfin, le planificateur des
     tâches (D91)."""
     study = _compose_features(app)
+    study.replan.calendar = app.state.calendar
     await start_ide_gateway(app, stack)
     # Modèles injectés (parcours de bout en bout, tests), sinon la fabrique réelle.
     models: ChatModelSource = app.state.injected_chat_models or app.state.providers.llm_factory

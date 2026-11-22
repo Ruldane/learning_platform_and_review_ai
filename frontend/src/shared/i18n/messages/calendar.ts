@@ -1,0 +1,37 @@
+export const calendar = {
+  title: "Google Agenda",
+  permissions:
+    "Autorise Tremplin à consulter les créneaux occupés de ton agenda principal pour replanifier. Seuls les blocs d’étude et les entretiens que tu confirmes sont synchronisés.",
+  loading: "Chargement de l’Agenda…",
+  callbackError: "La connexion Google Agenda n’a pas abouti. Tu peux réessayer.",
+  status: {
+    unconfigured: "Google Agenda est indisponible sur cette installation.",
+    disconnected: "Google Agenda est déconnecté.",
+    connected: "Google Agenda est connecté.",
+    revocation_pending:
+      "L’accès dans Tremplin est suspendu. Réessaie de retirer l’autorisation chez Google.",
+  },
+  connect: "Connecter Google Agenda",
+  disconnect: "Déconnecter Google Agenda",
+  retryRevoke: "Réessayer de retirer l’autorisation",
+  choose: "Choisir un événement à synchroniser",
+  category: "Type d’événement",
+  study: "Bloc d’étude",
+  interview: "Entretien",
+  program: "Programme",
+  block: "Bloc d’étude",
+  chooseOption: "Sélectionner…",
+  noInterviews: "Aucun entretien daté dans les candidatures.",
+  time: "Heure dans le fuseau de Tremplin",
+  minutes: "Durée en minutes",
+  preview: "Préparer un aperçu",
+  actions: {
+    add: "Ajouter à Google Agenda",
+    update: "Mettre à jour dans Google Agenda",
+    unchanged: "Événement déjà présent dans Google Agenda",
+  },
+  period: "{start} à {end} ({timezone})",
+  confirm: "Confirmer la synchronisation",
+  synced: "Événement synchronisé.",
+  link: "Synchroniser dans Google Agenda",
+} as const;

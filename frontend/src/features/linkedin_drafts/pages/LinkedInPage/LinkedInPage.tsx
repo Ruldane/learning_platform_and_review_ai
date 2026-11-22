@@ -3,11 +3,34 @@ import { useRef } from "react";
 import { errorMessage } from "@/shared/api/errors";
 import { t } from "@/shared/i18n/t";
 import { InlineError } from "@/shared/ui/states/InlineError";
-import { analyzedOffers, editDraft, latestDraft, prepareDraft, type ProfileText } from "../../api";
+import {
+  analyzedOffers, editDraft, latestDraft, prepareDraft,
+  type DraftField, type DraftView, type ProfileText,
+} from "../../api";
 import { DraftEditor } from "./DraftEditor";
 import { StartDraft } from "./StartDraft";
 
 const DRAFT = ["linkedin-drafts", "latest"];
+
+async function readForCopy(
+  shown: DraftView,
+  field: DraftField,
+  onChange: (current: DraftView | null) => void,
+): Promise<string> {
+  const current = await latestDraft();
+  if (
+    !current?.text ||
+    current.state !== "ready" ||
+    current.id !== shown.id ||
+    current.revision !== shown.revision ||
+    current.profile_version !== shown.profile_version ||
+    current.claims?.length
+  ) {
+    onChange(current);
+    throw new Error("linkedin_draft_changed");
+  }
+  return field === "skills" ? (current.text.skills ?? []).join("\n") : current.text[field];
+}
 
 export function LinkedInPage() {
   const cache = useQueryClient();
@@ -42,6 +65,10 @@ export function LinkedInPage() {
       {draft && draft.state !== "ready" ? <p role="status">{t(`linkedInDrafts.${draft.state}`)}</p> : null}
       {draft?.text && draft.state === "ready" ? (
         <DraftEditor key={draft.id + ":" + draft.revision} draft={draft} text={draft.text}
+          readForCopy={(field) => readForCopy(draft, field, (current) => {
+            cache.setQueryData(DRAFT, current);
+            heading.current?.focus();
+          })}
           busy={edit.isPending} onSave={(text) => edit.mutate({ id: draft.id, revision: draft.revision, text })} />
       ) : null}
     </section>

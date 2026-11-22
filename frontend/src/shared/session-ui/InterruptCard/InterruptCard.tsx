@@ -1,5 +1,6 @@
 import { useId, useState } from "react";
 import type { InterruptPayload } from "@/shared/realtime/types";
+import { VoicePlayback } from "@/shared/voice";
 import { AnswerInputs } from "./AnswerInputs";
 import { FoldedCard } from "./FoldedCard";
 
@@ -10,6 +11,7 @@ interface InterruptCardProps {
   interrupt: InterruptPayload;
   answered: boolean;
   disabled?: boolean;
+  voice?: boolean;
   /**
    * Une option envoie sa valeur ; des champs envoient `{ answers: { id: texte } }` (et une option
    * clique après saisie envoie ces réponses, jamais perdues) ; sinon le texte libre.
@@ -34,6 +36,7 @@ export function InterruptCard({
   interrupt,
   answered,
   disabled = false,
+  voice = false,
   onAnswer,
   optionWithAnswers,
 }: InterruptCardProps) {
@@ -58,6 +61,7 @@ export function InterruptCard({
       <p id={questionId} className="font-medium">
         {interrupt.question}
       </p>
+      {voice && !disabled && <VoicePlayback text={interrupt.question} />}
       <AnswerInputs
         questionId={questionId}
         fields={fields}
@@ -65,6 +69,7 @@ export function InterruptCard({
         draft={draft}
         onDraft={setDraft}
         disabled={disabled}
+        voice={voice}
         onAnswer={onAnswer}
         optionWithAnswers={optionWithAnswers}
       />

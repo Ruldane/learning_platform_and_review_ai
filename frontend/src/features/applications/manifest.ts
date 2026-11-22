@@ -6,6 +6,7 @@ import { BoardPage } from "./pages/BoardPage";
 import { CommitteePage } from "./pages/CommitteePage";
 import { FreeInterviewPage } from "./pages/FreeInterviewPage";
 import { InterviewPage } from "./pages/InterviewPage";
+import { SystemDesignPage } from "./pages/SystemDesignPage";
 import { KitPage } from "./pages/KitPage";
 import { NewApplicationPage } from "./pages/NewApplication";
 import { RemindersPage } from "./pages/RemindersPage";
@@ -29,6 +30,11 @@ export const applicationsManifest: FeatureManifest = {
     { path: "candidatures/relances", Component: RemindersPage },
     { path: "candidatures/nouvelle", Component: NewApplicationPage },
     { path: "candidatures/entretien", Component: FreeInterviewPage },
+    {
+      path: "candidatures/system-design/:interviewId?",
+      Component: SystemDesignPage,
+      handle: { wide: true },
+    },
     { path: "candidatures/:applicationId/kit", Component: KitPage },
     { path: "candidatures/:applicationId/entretien", Component: InterviewPage },
     { path: "candidatures/:applicationId/comite", Component: CommitteePage },

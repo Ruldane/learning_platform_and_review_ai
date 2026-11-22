@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { renderRoutes } from "@/test/renderRoutes";
@@ -20,6 +20,46 @@ const article = {
 };
 
 describe("ReadingPage", () => {
+  it("refuses an oversized selection, then submits the shortened passage verbatim", async () => {
+    const valid = "y".repeat(1199) + "🌱";
+    const text = valid + "z";
+    const calls: unknown[] = [];
+    server.use(
+      http.get(api, () =>
+        HttpResponse.json({ items: [article], unread_count: 1, next_offset: null }),
+      ),
+      http.get(api + "/article", () => HttpResponse.json({ ...article, text })),
+      http.post(api + "/article/cards", async ({ request }) => {
+        calls.push(await request.json());
+        return HttpResponse.json({ count: 1 });
+      }),
+    );
+    const { user } = renderRoutes(
+      [{ path: "/memoire/lecture/:itemId?", element: <ReadingPage /> }],
+      "/memoire/lecture/article",
+    );
+    const readable = await screen.findByText(text);
+    const select = (end: number) => {
+      const range = document.createRange();
+      range.setStart(readable.firstChild!, 0);
+      range.setEnd(readable.firstChild!, end);
+      const selection = document.getSelection()!;
+      selection.removeAllRanges();
+      selection.addRange(range);
+      fireEvent(document, new Event("selectionchange"));
+    };
+    const button = screen.getByRole("button", { name: "Créer une fiche de ce passage" });
+    select(text.length);
+    expect(screen.getByText(/1\s?200 caractères/)).toBeVisible();
+    expect(button).toBeDisabled();
+    expect(calls).toEqual([]);
+
+    select(valid.length);
+    expect(button).toBeEnabled();
+    await user.click(button);
+    expect(await screen.findByText("La fiche est prête à réviser.")).toBeVisible();
+    expect(calls).toEqual([{ passage: valid }]);
+  });
   it("opens an article and reflects the saved read state", async () => {
     let read = false;
     const detail = () => ({ ...article, read_at: read ? article.created_at : null });
