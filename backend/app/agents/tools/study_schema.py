@@ -8,9 +8,16 @@ from pydantic import BaseModel, Field
 
 from app.agents.runtime.prose import Prose
 
-ReplanTrigger = Literal["weekly_review", "message", "gap"]
+ReplanTrigger = Literal["weekly_review", "message", "gap", "reading"]
 ReplanOption = Literal["reduce_scope", "push_deadline", "advance", "deepen"]
 ReviewState = Literal["late_twice", "late", "ahead", "on_track"]
+
+
+class ReplanReading(BaseModel):
+    """Instantané de la lecture sélectionnée, fourni par sa route."""
+
+    title: str = Field(min_length=1, max_length=240)
+    url: str = Field(min_length=1, max_length=2000)
 
 
 class CardDraft(BaseModel):

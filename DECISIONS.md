@@ -2774,3 +2774,44 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
 - **Raison** : la réindexation des données transférées a dépassé la minute
   sur un lot de fragments longs. Le découpage permet de reprendre sur le
   même modèle avec les vecteurs déjà calculés.
+
+## D270
+
+- **Date** : 2026-11-22
+- **Sujet** : Effacement du stockage mobile sous contrainte de quota.
+- **Décision** : libérer les clés privées avant de renouveler le marqueur.
+  Conserver une génération temporaire en mémoire si la rotation échoue.
+  L’envoi des révisions vérifie sa génération après les attentes réseau.
+- **Raison** : effacer les données hors ligne même quand le stockage est
+  plein et protéger un nouveau lot d’une ancienne synchronisation.
+
+## D271
+
+- **Date** : 2026-11-22
+- **Sujet** : Reprise d’un import Cerveau en erreur.
+- **Décision** : réexpédier la même version une fois toutes les cinq minutes
+  au plus par version de fichier et révision de dossier, pendant la vie du
+  relais. L’inventaire expose le statut de l’import. Le bilan reflète un
+  import incomplet tant que l’état persiste ou que le rejeu est en file.
+- **Raison** : reprendre une erreur transitoire avec le chemin d’import
+  idempotent existant.
+
+## D272
+
+- **Date** : 2026-11-22
+- **Sujet** : Méthode de bibliothèque dans un exemple Python publié.
+- **Décision** : rattacher un appel de méthode au constructeur importé
+  d’une variable affectée une fois dans le bloc. La correspondance s’appuie
+  sur la syntaxe du bloc et la convention de nommage des classes Python.
+- **Raison** : rattacher une dépréciation clairement nommée, telle que
+  `pandas.DataFrame.append`, au chapitre qui l’utilise.
+
+## D273
+
+- **Date** : 2026-11-22
+- **Sujet** : Proposer une lecture dans un programme.
+- **Décision** : figer le titre et l’URL de la lecture choisie. Proposer une
+  seule tâche de 15 minutes dans le module de la prochaine tâche prévue.
+  Passer par l’aperçu et l’accord habituels de replanification.
+- **Raison** : donner un effet concret à la demande d’ajout tout en
+  conservant la validation avant modification du programme.

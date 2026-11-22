@@ -3,6 +3,7 @@
 import httpx
 from fastapi import FastAPI
 
+from app.features.lesson_updates.impact import python_symbols
 from tests.agents.graphs.lesson_support import LessonModels
 from tests.features.lesson_updates.fixtures import (
     AFTER,
@@ -14,6 +15,16 @@ from tests.features.lesson_updates.fixtures import (
 )
 from tests.support.lesson_verification import wait_session
 from tests.support.lessons import verifier_reply
+
+
+def test_recognizes_a_method_on_an_instance_of_an_imported_class() -> None:
+    example = "import pandas as pd\nframe = pd.DataFrame()\nframe.append(row)"
+    assert "pandas.DataFrame.append" in python_symbols(example)
+
+
+def test_does_not_infer_methods_after_a_reassignment() -> None:
+    example = "import pandas as pd\nframe = pd.DataFrame()\nframe = items\nframe.append(row)"
+    assert "pandas.DataFrame.append" not in python_symbols(example)
 
 
 async def test_update_is_grounded_deduplicated_and_published_only_after_acceptance(

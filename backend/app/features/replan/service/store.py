@@ -12,6 +12,8 @@ autre : 404 à chaque appel. Journaux : identifiants et nombres seulement (SPEC 
 import logging
 from collections.abc import Mapping, Sequence
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.agents.tools.replan_port import (
     GAP_MODULE_REF,
     Applied,
@@ -20,9 +22,10 @@ from app.agents.tools.replan_port import (
     ReplanDraft,
     skills_named,
 )
-from app.agents.tools.study_schema import ReplanOption, ReplanTrigger
+from app.agents.tools.study_schema import ReplanOption, ReplanReading, ReplanTrigger
 from app.core.clock import local_today
 from app.features.calendar.service.availability import day_caps
+from app.features.program.service.programs import load
 from app.features.program.service.replan_rows import NewTask
 from app.features.program.service.replan_versions import (
     Proposal,
@@ -70,6 +73,23 @@ def _gap_skills(facts_input: Mapping[str, object]) -> list[str]:
     return [str(skill) for skill in raw]
 
 
+async def _reading_additions(
+    db: AsyncSession, user_id: str, program_id: str, reading: ReplanReading
+) -> list[NewTask]:
+    loaded = await load(db, user_id, program_id)
+    active = {module.id for module in loaded.modules if not module.skipped}
+    task = min(
+        (task for task in loaded.tasks if task.status == "todo" and task.module_id in active),
+        key=lambda task: task.planned_date,
+        default=None,
+    )
+    if task is None:
+        return []
+    return [
+        NewTask(task.module_id, f"Lire : {reading.title}"[:200], "lire", 15, f"Lire {reading.url}")
+    ]
+
+
 class AgentReplanStore:
     def __init__(self, runtime: ReplanRuntime) -> None:
         self._rt = runtime
@@ -115,11 +135,17 @@ class AgentReplanStore:
         async with self._rt.session_factory() as db:
             zone = await self._rt.zone(db, user_id)
             facts = await session_facts(db, user_id, session_id)
+            given = facts.input if facts is not None else {}
+            if given.get("trigger") == "reading":
+                reading = ReplanReading.model_validate(given.get("reading"))
+                add = await _reading_additions(db, user_id, program_id, reading)
+                drop, named, unknown = set[str](), list[str](), 0
+                reason = "Lecture choisie dans la pile de lecture"
+            else:
+                drop, add, named, unknown = _resolved(draft, refs, option, _gap_skills(given))
         today = local_today(zone, now)
         calendar = self._rt.calendar
         caps = await day_caps(calendar, user_id, today, zone, now) if calendar else {}
-        given = facts.input if facts is not None else {}
-        drop, add, named, unknown = _resolved(draft, refs, option, _gap_skills(given))
         if unknown:
             logger.info(
                 "Replanification : %d référence(s) inconnue(s) ou proposition(s) hors droits "

@@ -1,6 +1,7 @@
 """Correspondance statique des API de Python et remplacement ciblé des clôtures Markdown."""
 
 import ast
+from collections import Counter
 from dataclasses import dataclass
 
 from markdown_it import MarkdownIt
@@ -19,7 +20,32 @@ class Example:
     symbols: frozenset[str]
 
 
-def _imports(tree: ast.Module) -> dict[str, str]:
+def _bindings(tree: ast.Module) -> Counter[str]:
+    names: Counter[str] = Counter()
+    for child in ast.walk(tree):
+        if isinstance(child, ast.Name) and isinstance(child.ctx, ast.Store | ast.Del):
+            names[child.id] += 1
+        elif isinstance(child, ast.arg):
+            names[child.arg] += 1
+        elif (
+            isinstance(
+                child,
+                ast.FunctionDef
+                | ast.AsyncFunctionDef
+                | ast.ClassDef
+                | ast.ExceptHandler
+                | ast.MatchAs
+                | ast.MatchStar,
+            )
+            and child.name
+        ):
+            names[child.name] += 1
+        elif isinstance(child, ast.MatchMapping) and child.rest:
+            names[child.rest] += 1
+    return names
+
+
+def _imports(tree: ast.Module, bindings: Counter[str]) -> dict[str, str]:
     aliases: dict[str, str] = {}
     for node in tree.body:
         if isinstance(node, ast.Import):
@@ -30,24 +56,47 @@ def _imports(tree: ast.Module) -> dict[str, str]:
             for alias in node.names:
                 if alias.name != "*":
                     aliases[alias.asname or alias.name] = f"{node.module}.{alias.name}"
-    for child in ast.walk(tree):
-        if isinstance(child, ast.Name) and isinstance(child.ctx, ast.Store | ast.Del):
-            aliases.pop(child.id, None)
-        elif isinstance(child, ast.arg):
-            aliases.pop(child.arg, None)
-        elif isinstance(child, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef):
-            aliases.pop(child.name, None)
-    return aliases
+    return {local: path for local, path in aliases.items() if local not in bindings}
 
 
-def _resolve(node: ast.AST, aliases: dict[str, str]) -> str | None:
+def _resolve(
+    node: ast.AST,
+    aliases: dict[str, str],
+    instances: dict[str, tuple[int, str]] | None = None,
+) -> str | None:
     parts: list[str] = []
     while isinstance(node, ast.Attribute):
         parts.append(node.attr)
         node = node.value
-    if isinstance(node, ast.Name) and (origin := aliases.get(node.id)):
+    if not isinstance(node, ast.Name):
+        return None
+    if origin := aliases.get(node.id):
         return ".".join([origin, *reversed(parts)])
+    if parts and instances and (instance := instances.get(node.id)):
+        assigned_at, origin = instance
+        if node.lineno > assigned_at:
+            return ".".join([origin, *reversed(parts)])
     return None
+
+
+def _instances(
+    tree: ast.Module, aliases: dict[str, str], bindings: Counter[str]
+) -> dict[str, tuple[int, str]]:
+    instances: dict[str, tuple[int, str]] = {}
+    for statement in tree.body:
+        if not isinstance(statement, ast.Assign) or not isinstance(statement.value, ast.Call):
+            continue
+        if len(statement.targets) != 1 or not isinstance(target := statement.targets[0], ast.Name):
+            continue
+        constructor = _resolve(statement.value.func, aliases)
+        # Limité aux constructeurs importés, affectés une seule fois au niveau du bloc.
+        if (
+            bindings[target.id] == 1
+            and constructor
+            and constructor.rsplit(".", 1)[-1][:1].isupper()
+        ):
+            instances[target.id] = (statement.end_lineno or statement.lineno, constructor)
+    return instances
 
 
 def python_symbols(code: str) -> frozenset[str]:
@@ -57,13 +106,15 @@ def python_symbols(code: str) -> frozenset[str]:
         tree = ast.parse(code)
     except (SyntaxError, ValueError, RecursionError):
         return frozenset()
-    aliases = _imports(tree)
+    bindings = _bindings(tree)
+    aliases = _imports(tree, bindings)
+    instances = _instances(tree, aliases, bindings)
     return frozenset(
         path
         for node in ast.walk(tree)
         if isinstance(node, ast.Name | ast.Attribute)
         and isinstance(node.ctx, ast.Load)
-        and (path := _resolve(node, aliases)) is not None
+        and (path := _resolve(node, aliases, instances)) is not None
     )
 
 

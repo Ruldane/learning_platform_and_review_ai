@@ -7,6 +7,9 @@ modèles locaux optionnels.
 Documents de référence : [SPEC.md](SPEC.md) (la spec), [DECISIONS.md](DECISIONS.md) (les choix et
 écarts), `docs/superpowers/plans/` (les plans d'implémentation).
 
+Pour changer de PC ou restaurer une sauvegarde, suivre le
+[guide d’installation et de migration](docs/INSTALLATION-ET-MIGRATION.md).
+
 ## Prérequis
 
 - Docker et Docker Compose **2.24 ou plus récent** (`env_file` avec `required: false`) :

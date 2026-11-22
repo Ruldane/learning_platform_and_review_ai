@@ -139,6 +139,9 @@ def make_propose(deps: GraphDeps) -> Node:
         ctx = context_from_state(state["context"])
         if revision > 0:
             ctx = await _read(deps, state)
+        if state["trigger"] == "reading":
+            draft = ReplanDraft(summary="Ajout de la lecture choisie au programme.")
+            return {"context": as_json(ctx), "draft": draft.model_dump(mode="json")}
         option: ReplanOption | None = state.get("option")  # type: ignore[assignment]
         variables = replan_vars(
             ctx,

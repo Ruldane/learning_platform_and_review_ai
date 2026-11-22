@@ -43,7 +43,7 @@ from app.agents.nodes.strategist.replan_steps import (
 )
 from app.agents.runtime.deps import GraphDeps
 from app.agents.state.replan import ReplanState
-from app.agents.tools.study_schema import ReplanTrigger
+from app.agents.tools.study_schema import ReplanReading, ReplanTrigger
 
 __all__ = [
     "ACCEPT_INTERRUPT",
@@ -62,6 +62,7 @@ class ReplanInput(BaseModel):
     review_entry_id: str | None = None
     available_minutes: int | None = Field(default=None, ge=60, le=10080)
     message: str | None = Field(default=None, max_length=1000)
+    reading: ReplanReading | None = None
     # Déclencheur `gap` seulement (« Ajouter au planning », D123) : noms de lignes `to_add`.
     skills: list[Annotated[str, Field(min_length=1, max_length=120)]] = Field(
         default_factory=list, max_length=10
@@ -79,6 +80,12 @@ class ReplanInput(BaseModel):
         """Des compétences avec le déclencheur `gap`, et avec lui seul."""
         if (self.trigger == "gap") != bool(self.skills):
             raise ValueError("`skills` accompagne le déclencheur `gap`, et lui seul.")
+        return self
+
+    @model_validator(mode="after")
+    def _selected_reading(self) -> Self:
+        if (self.trigger == "reading") != (self.reading is not None):
+            raise ValueError("Une lecture accompagne seulement le déclencheur reading.")
         return self
 
 

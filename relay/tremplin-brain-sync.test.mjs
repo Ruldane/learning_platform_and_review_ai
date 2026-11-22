@@ -54,7 +54,7 @@ function fixture({ complete = true, fail = false } = {}) {
     edits.push(["remove", path]);
     return new Response(null, { status: 204 });
   };
-  return { edits, reports, deps: { fetcher,
+  return { edits, reports, serverFiles, deps: { fetcher,
     scan: async (root) => {
       assert.equal(root, folder.path);
       return { inventory, complete, ignored: { technical: 2 } };
@@ -90,4 +90,41 @@ test("une reconnexion reprend les fichiers restants sans recréer ceux déjà pr
   assert.equal(reports.at(-1).state, "done");
   assert.equal(edits.filter(([, path]) => path === "modifié.md").length, 1);
   assert.equal(edits.filter(([, path]) => path === "nouveau.md").length, 1);
+});
+
+test("un fichier inchangé en erreur est renvoyé à cadence bornée jusqu'à son indexation", async () => {
+  const { deps, edits, reports, serverFiles } = fixture();
+  await syncBrain(cfg, deps);
+  edits.length = 0;
+  const file = "égal.md";
+  const content = serverFiles.get(file);
+  let time = 0;
+  const run = () => syncBrain(cfg, { ...deps, now: () => time });
+
+  serverFiles.set(file, { ...content, status: "error" });
+  await run();
+  assert.deepEqual(edits, [["save", file]]);
+  assert.equal(reports.at(-1).state, "incomplete");
+  assert.equal(reports.at(-1).errors, 1);
+  assert.equal(reports.at(-1).changed, 0);
+
+  serverFiles.set(file, { ...content, status: "error" });
+  await run();
+  assert.equal(edits.length, 1);
+  assert.equal(reports.at(-1).state, "incomplete");
+
+  time += 6 * 60_000;
+  await run();
+  assert.deepEqual(edits, [["save", file], ["save", file]]);
+
+  serverFiles.set(file, { ...content, status: "queued" });
+  await run();
+  assert.equal(edits.length, 2);
+  assert.equal(reports.at(-1).state, "incomplete");
+
+  serverFiles.set(file, { ...content, status: "indexed" });
+  await run();
+  assert.equal(edits.length, 2);
+  assert.equal(reports.at(-1).state, "done");
+  assert.equal(reports.at(-1).errors, 0);
 });

@@ -4,8 +4,10 @@ import type { Answer, MobileCard, MobileSnapshot, QueuedReview } from "./data";
 const PREFIX = "tremplin:mobile:";
 const GENERATION = "tremplin:mobile-generation";
 const CHANGED = PREFIX + "changed";
+let localGeneration: string | null = null;
 
 export function mobileGeneration(): string {
+  if (localGeneration !== null) return localGeneration;
   try {
     return localStorage.getItem(GENERATION) ?? "initial";
   } catch {
@@ -32,7 +34,9 @@ export function subscribeMobile(listener: () => void) {
 
 export function mobileRevision() {
   try {
-    const values = Object.keys(localStorage).filter((key) => key.startsWith(PREFIX)).sort()
+    const values = Object.keys(localStorage)
+      .filter((key) => key.startsWith(PREFIX))
+      .sort()
       .map((key) => localStorage.getItem(key));
     return [mobileGeneration(), ...values].join("\0");
   } catch {
@@ -52,8 +56,14 @@ export function cachedMobile(): MobileSnapshot | null {
   return read<MobileSnapshot>(generationPrefix(mobileGeneration()) + "snapshot");
 }
 
+function persistGeneration(generation: string) {
+  localStorage.setItem(GENERATION, generation);
+  localGeneration = null;
+}
+
 function writeCurrent(key: string, value: unknown, generation: string): boolean {
   if (mobileGeneration() !== generation) return false;
+  if (localGeneration === generation) persistGeneration(generation);
   localStorage.setItem(key, JSON.stringify(value));
   if (mobileGeneration() !== generation) {
     localStorage.removeItem(key);
@@ -67,17 +77,31 @@ export function saveMobile(snapshot: MobileSnapshot, generation = mobileGenerati
   return writeCurrent(generationPrefix(generation) + "snapshot", snapshot, generation);
 }
 
+function purgeMobile(generation: string) {
+  const keep = generationPrefix(generation);
+  for (const key of Object.keys(localStorage)) {
+    if (key.startsWith(PREFIX) && !key.startsWith(keep)) localStorage.removeItem(key);
+  }
+}
+
 export function clearMobile() {
+  const next = crypto.getRandomValues(new Uint32Array(4)).join("-");
+  localGeneration = next;
   try {
-    localStorage.setItem(GENERATION, crypto.getRandomValues(new Uint32Array(4)).join("-"));
-    for (const key of Object.keys(localStorage)) {
-      if (key.startsWith(PREFIX) && !key.startsWith(generationPrefix(mobileGeneration()))) {
-        localStorage.removeItem(key);
-      }
+    // Libère d’abord l’espace nécessaire au marqueur, même si le quota est déjà atteint.
+    purgeMobile(next);
+    try {
+      persistGeneration(next);
+    } catch {
+      purgeMobile(next);
+      persistGeneration(next);
     }
-    changed();
+    // Retire aussi une copie réécrite par un autre onglet avant la rotation du marqueur.
+    purgeMobile(next);
   } catch {
-    // La consultation en ligne fonctionne même si le navigateur interdit le stockage.
+    // Si le marqueur reste impossible à écrire, la génération locale reste invalidée.
+  } finally {
+    changed();
   }
 }
 
@@ -92,7 +116,10 @@ function reviewKey(review: Pick<QueuedReview, "owner" | "card" | "due">, generat
 }
 
 export function queueReview(
-  owner: string, card: MobileCard, result: Answer, generation = mobileGeneration(),
+  owner: string,
+  card: MobileCard,
+  result: Answer,
+  generation = mobileGeneration(),
 ) {
   const identity = { owner, card: card.id, due: card.due };
   const key = reviewKey(identity, generation);
@@ -110,16 +137,20 @@ export function pendingReviews(owner: string) {
     });
 }
 
-export function applyReview(review: QueuedReview) {
-  const generation = mobileGeneration();
+export function applyReview(review: QueuedReview, generation: string) {
+  if (mobileGeneration() !== generation) return;
   const key = reviewKey(review, generation);
   if (read<QueuedReview>(key)?.id !== review.id) return;
   localStorage.removeItem(key);
   const snapshot = cachedMobile();
   if (snapshot?.owner === review.owner) {
-    saveMobile({ ...snapshot, cards: snapshot.cards.filter(
-      (card) => card.id !== review.card || card.due !== review.due,
-    ) }, generation);
+    saveMobile(
+      {
+        ...snapshot,
+        cards: snapshot.cards.filter((card) => card.id !== review.card || card.due !== review.due),
+      },
+      generation,
+    );
   } else {
     changed();
   }

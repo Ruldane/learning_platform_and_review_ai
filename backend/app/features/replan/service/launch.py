@@ -13,6 +13,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agents.tools.study_schema import ReplanReading
 from app.core.errors import AppError
 from app.db.models.program import PlanVersion
 from app.features.program.service.programs import load
@@ -94,6 +95,14 @@ async def start_gap_replan(
     seuls dans le module « Compétences des offres », validée par January. Mêmes refus que
     `start_replan` (404, 409 `program_not_validated`, 409 `replan_open`)."""
     payload = {"program_id": program_id, "trigger": "gap", "skills": list(skills)}
+    return await _start(rt, user_id, payload)
+
+
+async def start_reading_replan(
+    rt: ReplanRuntime, user_id: str, program_id: str, title: str, url: str
+) -> str:
+    reading = ReplanReading(title=title, url=url)
+    payload = {"program_id": program_id, "trigger": "reading", "reading": reading.model_dump()}
     return await _start(rt, user_id, payload)
 
 

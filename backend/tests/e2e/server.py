@@ -68,7 +68,7 @@ from tests.e2e.council_script import DEBATERS, council_scripts, script_web
 from tests.e2e.cv_script import cv_scripts, script_company_web
 from tests.e2e.daily_script import daily_scripts, script_daily_web
 from tests.e2e.message_review_fixture import router as review_fixture
-from tests.e2e.oncall_fixtures import REVIEW, install_sandbox
+from tests.e2e.oncall_fixtures import IDE_SCRIPTS, install_sandbox
 from tests.e2e.scripted_models import Reply, ScriptedModels, merge_scripts
 from tests.e2e.seed import seed_local_space
 from tests.e2e.surprise_interview_fixture import SCRIPT
@@ -153,11 +153,11 @@ def build_app(
                 council_scripts(),
                 cv_scripts(),
                 brain_scripts(),
+                IDE_SCRIPTS,
                 {
                     "training_tutor": [
                         "Une chaîne relie une étape à la suivante. Propose un exemple."
                     ],
-                    "oncall_reviewer": [REVIEW],
                     "interviewer": SCRIPT,
                 },
             ),
