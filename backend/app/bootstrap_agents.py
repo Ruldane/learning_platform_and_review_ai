@@ -28,12 +28,14 @@ from app.agents.tools.radar_port import NO_RADAR, RadarStore
 from app.agents.tools.web_port import WebGateway
 from app.core.providers import MemoryProviders, PublishingProviders
 from app.features.applications.service.runtime import ApplicationsRuntime
+from app.features.blind_assessment.service.store import AgentBlindAssessmentStore
 from app.features.book.service.runtime import BookRuntime
 from app.features.capture.service.runtime import CaptureRuntime
 from app.features.capture.service.store import AgentCaptureStore
 from app.features.code_trial.store import AgentCodeTrialStore
 from app.features.conversations.store import AgentConversationStore
 from app.features.expert_debates.service import AgentExpertDebates
+from app.features.grade_appeals.service.store import AgentGradeAppealsStore
 from app.features.learning.service.runtime import LearningRuntime
 from app.features.learning.service.store import AgentCouncilStore
 from app.features.lesson_hunt.service.store import AgentLessonHuntStore
@@ -49,11 +51,13 @@ from app.features.program.service.runtime import ProgramRuntime
 from app.features.program.service.store import AgentProgramStore
 from app.features.quiz.service.runtime import QuizRuntime
 from app.features.quiz.service.store import AgentQuizStore
+from app.features.recruitment_process.service.store import AgentRecruitmentStore
 from app.features.replan.service.runtime import ReplanRuntime
 from app.features.replan.service.store import AgentReplanStore
 from app.features.research.service.gateway import AgentWebGateway
 from app.features.research.service.runtime import ResearchRuntime
 from app.features.settings.service import SettingsRunReader
+from app.features.skill_transfer.service.store import AgentSkillTransferStore
 from app.features.study.service.runtime import StudyRuntime
 from app.features.study.service.store import AgentStudyStore
 from app.scheduler.base import DailyJobs, JobContext
@@ -170,6 +174,10 @@ def _persisted_ports(
         lesson_updates=AgentLessonUpdatesStore(session_factory),
         linkedin=AgentLinkedInStore(session_factory),
         paper_lab=AgentPaperLabStore(session_factory),
+        skill_transfer=AgentSkillTransferStore(session_factory),
+        blind_assessment=AgentBlindAssessmentStore(session_factory),
+        recruitment_process=AgentRecruitmentStore(session_factory),
+        grade_appeals=AgentGradeAppealsStore(session_factory),
         code_trial=AgentCodeTrialStore(session_factory),
     )
 

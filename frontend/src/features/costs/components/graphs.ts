@@ -33,6 +33,10 @@ export const GRAPH_SCREENS: Partial<Record<GraphKey, string>> = {
   daily_brief: "/",
   project_brief: "/competences/portfolio",
   project_review: "/competences/portfolio",
+  skill_transfer: "/competences/transfert",
+  blind_assessment: "/carriere/epreuve-aveugle",
+  recruitment_process: "/carriere/recrutement-simule",
+  grade_appeals: "/competences/contestations",
 };
 
 /** Le libellé d'un parcours ; un parcours inconnu garde son nom brut, « hors session » si vide. */

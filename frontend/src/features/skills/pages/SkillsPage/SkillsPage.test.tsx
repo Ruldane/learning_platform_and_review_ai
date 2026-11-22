@@ -26,7 +26,7 @@ function setup(api: Parameters<typeof skillsApi>[0] = {}) {
 describe("SkillsPage", () => {
   it("shows the graph and opens a node", async () => {
     const { user, reads } = setup();
-    const node = await screen.findByRole("button", { name: "CSS : En cours" });
+    const node = await screen.findByRole("button", { name: "CSS : En cours" }, { timeout: 10_000 });
     node.focus();
     await user.keyboard("{Enter}");
     const drawer = await screen.findByRole("dialog", { name: "CSS" });

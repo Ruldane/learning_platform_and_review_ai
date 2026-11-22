@@ -37,8 +37,9 @@ from app.agents.runtime.checkpointer import thread_config
 from app.agents.runtime.control import TERMINAL
 from app.agents.runtime.costs import CostTracker, ModelPrice
 from app.agents.runtime.deps import ChatModelSource, GraphDeps
-from app.agents.runtime.playback import models_for, public_question, restore_delivery
+from app.agents.runtime.playback import models_for, public_question
 from app.agents.runtime.ports import NO_PORTS, AgentPorts
+from app.agents.runtime.recovery import saved_command
 from app.agents.runtime.repositories import SessionRepository
 from app.agents.runtime.run_settings import RunSettingsSource
 from app.agents.runtime.stream import translate_chunk
@@ -172,12 +173,10 @@ class _Run:
         if spec.recursion_limit is not None:
             config["recursion_limit"] = spec.recursion_limit
         graph_input: Any = command
-        if command is None and row.play_delivery:
-            graph_input = restore_delivery(
-                (await graph.aget_state(config)).interrupts, row.play_delivery
-            )
-        if command is None and await ctx.checkpointer.aget_tuple(config) is None:
-            graph_input = row.input  # aucun checkpoint : (re)départ depuis l'entrée
+        if command is None:
+            graph_input = await saved_command(graph, config, row)
+            if await ctx.checkpointer.aget_tuple(config) is None:
+                graph_input = row.input  # aucun checkpoint : (re)départ depuis l'entrée
         return graph, config, graph_input
 
     async def stream(
@@ -216,7 +215,12 @@ class _Run:
     def _guard(self, to: str, **values: Any) -> Guard:
         async def guard(db: AsyncSession) -> bool:
             return await SessionRepository(db, self.user_id).transition(
-                self.session_id, from_={"running"}, to=to, play_delivery=None, **values
+                self.session_id,
+                from_={"running"},
+                to=to,
+                play_delivery=None,
+                user_delivery=None,
+                **values,
             )
 
         return guard

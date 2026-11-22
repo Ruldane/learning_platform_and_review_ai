@@ -1,0 +1,1 @@
+export { SkillTransferPage } from "./SkillTransferPage";

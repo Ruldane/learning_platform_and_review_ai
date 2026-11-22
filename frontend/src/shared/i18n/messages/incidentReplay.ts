@@ -1,0 +1,15 @@
+export const incidentReplay = {
+  title: "Replay d’incident",
+  intro: "Rejoue un incident fictif et note le moment où tu aurais pris une autre décision.",
+  start: "Rejouer cet incident",
+  recent: "Mes replays",
+  empty: "Aucun replay enregistré.",
+  loading: "Chargement du replay…",
+  back: "Tous les incidents",
+  timeline: "Position dans la chronologie",
+  minute: "Minute {value}",
+  hypothesis: "Autre décision possible",
+  record: "Consigner l’hypothèse",
+  saved: "Hypothèse enregistrée.",
+  notes: "Hypothèses enregistrées",
+} as const;

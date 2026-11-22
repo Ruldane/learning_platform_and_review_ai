@@ -2815,3 +2815,168 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
   Passer par l’aperçu et l’accord habituels de replanification.
 - **Raison** : donner un effet concret à la demande d’ajout tout en
   conservant la validation avant modification du programme.
+
+## D274
+
+- **Date** : 2026-11-22
+- **Sujet** : Reprise durable d’une réponse d’agent.
+- **Décision** : Le passage en cours stocke la réponse avec l’identifiant précis de la question. Au démarrage, seul un checkpoint qui attend encore cet identifiant reçoit la commande. Un changement d’issue ou un arrêt volontaire de la session libère la réponse temporaire.
+- **Raison** : Conserver la réponse déjà validée après un arrêt du processus.
+
+## D275
+
+- **Date** : 2026-11-22
+- **Sujet** : Routines locales.
+- **Décision** : Une routine active réserve une exécution par compte, action et jour dans le fuseau du compte. Les rappels portent sur les fiches, les contrôles de transfert et les missions à terminer. Une demande manuelle rejoue le même reçu.
+- **Raison** : Donner un historique stable aux actions planifiées et manuelles.
+
+## D276
+
+- **Date** : 2026-11-22
+- **Sujet** : Mission à partir d’une offre.
+- **Décision** : Une offre analysée donne une mission privée de 48 heures, avec une à trois exigences choisies et deux mesures par exigence. Le rendu après validation reçoit un identifiant de preuve.
+- **Raison** : Relier les mesures à la version choisie de l’offre.
+
+## D277
+
+- **Date** : 2026-11-22
+- **Sujet** : Comparaison des architectures.
+- **Décision** : La charge, la durée de panne, la capacité et le prix des répliques suffisent au calcul reproductible. La critique reste un texte séparé et privé.
+- **Raison** : Permettre de comparer les hypothèses avec les mêmes unités et de rejouer le calcul.
+
+## D278
+
+- **Date** : 2026-11-22
+- **Sujet** : Contrôle d’un acquis.
+- **Décision** : Le contrôle retient l’empreinte d’une preuve et une date du compte. Le Vérificateur compare un énoncé inédit et l’appréciation reste associée au contrôle.
+- **Raison** : Distinguer la vérification de transfert de la preuve initiale.
+
+## D279
+
+- **Date** : 2026-11-22
+- **Sujet** : Observations dans l’Atlas.
+- **Décision** : L’Atlas sélectionne les corrections de quiz et les critères de projet conclus. Un libellé normalisé regroupe les hypothèses et chaque source ne compte qu’une fois par groupe.
+- **Raison** : Conserver l’origine des indices et la confiance déclarée.
+
+## D280
+
+- **Date** : 2026-11-22
+- **Sujet** : Dossier de preuves.
+- **Décision** : Le dossier de preuves fige les rendus approuvés de missions, avec leurs révisions et mesures, dans un manifeste privé scellé par empreinte SHA-256.
+- **Raison** : Permettre une vérification externe des octets volontairement exportés.
+
+## D281
+
+- **Date** : 2026-11-22
+- **Sujet** : Veille contradictoire.
+- **Décision** : Chaque expérience fige deux versions de référence, un protocole et un critère. La mesure est saisie après l’expérience et reste liée à ces versions.
+- **Raison** : Séparer le résultat observé des affirmations de départ.
+
+## D282
+
+- **Date** : 2026-11-22
+- **Sujet** : Épreuve en aveugle.
+- **Décision** : Le premier périmètre compare deux versions de CV détenues. Leur ordre est tiré au sort, leurs éléments d’identité sont retirés avant l’envoi au Vérificateur, et les liens des PDF apparaissent avec le verdict.
+- **Raison** : Respecter la même grille et rendre la comparaison traçable.
+
+## D283
+
+- **Date** : 2026-11-22
+- **Sujet** : Semaine entre programmes.
+- **Décision** : La proposition garde les échéances de la semaine, retranche les créneaux déjà confirmés du plafond de 85 % et rapproche les prérequis. L’accord recalcule puis enregistre les dates des tâches à faire dans une transaction.
+- **Raison** : Conserver les plages verrouillées et éviter une proposition périmée.
+
+## D284
+
+- **Date** : 2026-11-22
+- **Sujet** : Relecture par un mentor.
+- **Décision** : Le compte partage une copie figée via un jeton dont la durée est bornée et qui peut être retiré. Le mentor ancre le retour à un rendu du dossier. Le propriétaire peut marquer le commentaire comme traité par MCP.
+- **Raison** : Rendre la relecture révocable et la copie vérifiable.
+
+## D285
+
+- **Date** : 2026-11-22
+- **Sujet** : Recrutement simulé.
+- **Décision** : Une offre analysée fige une grille et les preuves manquantes. La revue de projet, la mise en situation et l’entretien écrit utilisent la même grille et reprennent au dernier stade enregistré.
+- **Raison** : Relier les réponses personnelles aux exigences de la mission choisie.
+
+## D286
+
+- **Date** : 2026-11-22
+- **Sujet** : Chronologies d’entraînement.
+- **Décision** : La bibliothèque propose des incidents fictifs de performance. Le replay fige la chronologie et associe chaque hypothèse à un instant précis.
+- **Raison** : Rendre le raisonnement rejouable sur les mêmes observations.
+
+## D287
+
+- **Date** : 2026-11-22
+- **Sujet** : Reprise après une pause.
+- **Décision** : Le rappel fige des acquis, des fiches dues et le dernier bloc terminé. À l’ouverture du compte, la navigation signale le rappel. Démarrer le bloc et enregistrer son lien partagent la même transaction.
+- **Raison** : Retrouver la reprise sans décaler les tâches du programme.
+
+## D288
+
+- **Date** : 2026-11-22
+- **Sujet** : Enquête sur données synthétiques.
+- **Décision** : Chaque jeu conserve ses lignes sources et leur empreinte. Les opérations choisies produisent une trace ordonnée des lignes écartées. La remise compare les chiffres à cette trace et à la recette de référence.
+- **Raison** : Démontrer comment chaque résultat a été obtenu.
+
+## D289
+
+- **Date** : 2026-11-22
+- **Sujet** : Modules issus de réunions.
+- **Décision** : Les décisions étiquetées ou formulées explicitement alimentent des étapes d’étude avec leur extrait littéral numéroté, une durée et un critère. L’accord fige les étapes en vérifiant que la sélection approuvée est toujours la sélection courante.
+- **Raison** : Conserver la provenance et la possibilité de relire la séquence avant de la ranger.
+
+## D290
+
+- **Date** : 2026-11-22
+- **Sujet** : Accès MCP Agenda et Portfolio.
+- **Décision** : Agenda expose le prochain créneau local et la préparation d’une proposition confirmée. Portfolio expose son état privé et la préparation confirmée d’un brouillon. Les opérations de connexion, de publication et de synchronisation restent réservées à l’interface.
+- **Raison** : Rendre les préparations possibles avec les autorisations du compte.
+
+## D291
+
+- **Date** : 2026-11-22
+- **Sujet** : Engagements datés et exécutions de routine.
+- **Décision** : garder au plus cinq échéances ouvertes ou mesures du jour dans
+  le reçu de la routine. Les écarts d’aujourd’hui ou d’hier gardent une place
+  pour couvrir les mesures saisies après l’exécution. Le reçu indique
+  l’écart à la cible et donne accès à l’engagement du compte.
+- **Raison** : relire le contexte et l’écart obtenus à la date du rappel.
+
+## D292
+
+- **Date** : 2026-11-22
+- **Sujet** : Formats dérivés d’une leçon publiée.
+- **Décision** : une fiche de révision et une lecture guidée réorganisent les
+  éléments de la même version publiée. Les deux formats conservent les
+  objectifs, exemples, références et l’empreinte de la source.
+- **Raison** : comparer les formats et retrouver la leçon d’origine.
+
+## D293
+
+- **Date** : 2026-11-22
+- **Sujet** : Remise examinée dans un recrutement ou une contestation.
+- **Décision** : figer le rendu le plus récent dans les détails d’un projet
+  déjà évalué. La seconde lecture de contestation se fonde sur le critère,
+  la remise et le motif. Le choix final conserve les deux appréciations.
+- **Raison** : rattacher l’évaluation à la bonne version après plusieurs remises.
+
+## D294
+
+- **Date** : 2026-11-22
+- **Sujet** : Comparaison privée des offres.
+- **Décision** : pondérer les critères renseignés dans les deux offres pour
+  comparer sur une base commune. Mesurer la sensibilité en faisant varier
+  chaque poids de dix points et figer les faits et poids enregistrés.
+- **Raison** : expliquer le classement malgré des informations manquantes.
+
+## D295
+
+- **Date** : 2026-11-22
+- **Sujet** : Transmission d’un projet.
+- **Décision** : figer le dernier rendu du compte avec les commandes de
+  recette, les limites et les étapes ajoutées. L’export Markdown porte
+  l’empreinte de l’aperçu approuvé.
+- **Raison** : rendre le document de reprise traçable jusqu’au rendu.

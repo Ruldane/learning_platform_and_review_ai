@@ -1,0 +1,1 @@
+export { SharedReviewPage } from "./SharedReviewPage";

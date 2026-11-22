@@ -65,6 +65,10 @@ ROUTE_ONLY: dict[str, str] = {
     "lesson_update": "Planificateur de la veille des leçons",
     "linkedin_draft": "POST /linkedin-drafts",
     "lesson_hunt": "POST /lesson-hunts",
+    "skill_transfer": "POST /skill-transfers/{transfer_id}/prepare",
+    "blind_assessment": "POST /blind-assessments/{assessment_id}/evaluate",
+    "recruitment_process": "POST /recruitment-processes/{process_id}/steps/{kind}/answers",
+    "grade_appeals": "POST /grade-appeals/{appeal_id}/review",
     "paper_lab": "POST /paper-labs",
     "podcast": "POST /podcast/today",
     "market_radar": "POST /radar/runs",  # relevé créé, poste et zone fixés par sa route (D159)

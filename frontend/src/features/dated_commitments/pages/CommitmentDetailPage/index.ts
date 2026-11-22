@@ -1,0 +1,1 @@
+export { CommitmentDetailPage } from "./CommitmentDetailPage";

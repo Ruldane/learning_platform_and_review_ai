@@ -3,7 +3,7 @@ import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 import type { SkillDetailView } from "../viewTypes";
 import { EvidenceList } from "./EvidenceList";
-import { NextActionBlock } from "./NextActionBlock";
+import { NextActionSection } from "./NextActionSection";
 import { PostingList } from "./PostingList";
 import { Section } from "./Section";
 import { SkillSummary } from "./SkillSummary";
@@ -58,9 +58,7 @@ export function SkillDrawer({ detail, onClose }: SkillDrawerProps) {
         </Button>
       </header>
       <SkillSummary detail={detail} />
-      <Section title={t("skills.drawer.nextAction")}>
-        <NextActionBlock action={detail.nextAction} />
-      </Section>
+      <NextActionSection detail={detail} />
       <Section title={t("skills.drawer.evidence")}>
         <EvidenceList evidence={detail.evidence} />
       </Section>

@@ -1,0 +1,18 @@
+export const lessonVariants = {
+  title: "Édition multiformat",
+  intro: "Prépare une fiche de révision et une lecture guidée à partir d’une leçon publiée.",
+  program: "Programme",
+  lesson: "Leçon publiée",
+  chooseProgram: "Choisis un programme",
+  chooseLesson: "Choisis une leçon publiée",
+  create: "Préparer les variantes",
+  history: "Variantes enregistrées",
+  empty: "Aucune variante enregistrée.",
+  chooseFormat: "Format de lecture",
+  review: "Fiche de révision",
+  guided: "Lecture guidée",
+  source: "Version source",
+  revision: "Révision source",
+  readingSteps: "Étapes de lecture",
+  openSource: "Ouvrir la leçon publiée",
+} as const;

@@ -21,35 +21,55 @@ import { expertDebates } from "./messages/expertDebates";
 import { feynman } from "./messages/feynman";
 import { futureSelf } from "./messages/futureSelf";
 import { galaxy } from "./messages/galaxy";
+import { gradeAppeals } from "./messages/gradeAppeals";
 import { gap } from "./messages/gap";
 import { ghost } from "./messages/ghost";
 import { home } from "./messages/home";
 import { ide } from "./messages/ide";
 import { learning } from "./messages/learning";
 import { lessonHunt } from "./messages/lessonHunt";
+import { lessonVariants } from "./messages/lessonVariants";
 import { lessonUpdates } from "./messages/lessonUpdates";
 import { lessons } from "./messages/lessons";
 import { linkedInDrafts } from "./messages/linkedInDrafts";
+import { blindAssessment } from "./messages/blindAssessment";
+import { interprogramPlanning } from "./messages/interprogramPlanning";
+import { meetingModules } from "./messages/meetingModules";
+import { datedCommitments } from "./messages/datedCommitments";
+import { dataInvestigation } from "./messages/dataInvestigation";
+import { incidentReplay } from "./messages/incidentReplay";
+import { proofPackets } from "./messages/proofPackets";
+import { missions } from "./messages/missions";
+import { decisionLab } from "./messages/decisionLab";
+import { routines } from "./messages/routines";
+import { contradictoryWatch } from "./messages/contradictoryWatch";
+import { errorAtlas } from "./messages/errorAtlas";
+import { skillTransfer } from "./messages/skillTransfer";
 import { mcp } from "./messages/mcp";
+import { mentorReviews } from "./messages/mentorReviews";
 import { memory } from "./messages/memory";
 import { messageReview } from "./messages/messageReview";
 import { mobile } from "./messages/mobile";
 import { onboarding } from "./messages/onboarding";
+import { offerComparison } from "./messages/offerComparison";
 import { oncall } from "./messages/oncall";
 import { paperLab } from "./messages/paperLab";
 import { podcast } from "./messages/podcast";
 import { portfolio } from "./messages/portfolio";
 import { program } from "./messages/program";
+import { projectHandoffs } from "./messages/projectHandoffs";
 import { projects } from "./messages/projects";
 import { quiz } from "./messages/quiz";
 import { radar } from "./messages/radar";
 import { reading } from "./messages/reading";
+import { recruitmentProcess } from "./messages/recruitmentProcess";
 import { replan } from "./messages/replan";
 import { research } from "./messages/research";
 import { session } from "./messages/session";
 import { settings } from "./messages/settings";
 import { skillMarket } from "./messages/skillMarket";
 import { skills } from "./messages/skills";
+import { studyReturn } from "./messages/studyReturn";
 import { study } from "./messages/study";
 import { systemDesign } from "./messages/systemDesign";
 import { surpriseInterview } from "./messages/surpriseInterview";
@@ -76,19 +96,23 @@ export const fr = {
   settings,
   onboarding,
   memory,
+  mentorReviews,
   mobile,
   messageReview,
   research,
   program,
   lessonHunt,
   lessonUpdates,
+  lessonVariants,
   lessons,
   learning,
   study,
+  studyReturn,
   surpriseInterview,
   voice,
   training,
   oncall,
+  offerComparison,
   paperLab,
   podcast,
   portfolio,
@@ -97,6 +121,7 @@ export const fr = {
   skillMarket,
   skills,
   replan,
+  recruitmentProcess,
   capture,
   chat,
   concentration,
@@ -105,6 +130,7 @@ export const fr = {
   contributions,
   codeTrial,
   gap,
+  gradeAppeals,
   costs,
   cv,
   applications,
@@ -116,7 +142,21 @@ export const fr = {
   galaxy,
   reading,
   projects,
+  projectHandoffs,
   linkedInDrafts,
+  missions,
+  proofPackets,
+  incidentReplay,
+  dataInvestigation,
+  datedCommitments,
+  meetingModules,
+  blindAssessment,
+  interprogramPlanning,
+  decisionLab,
+  routines,
+  skillTransfer,
+  errorAtlas,
+  contradictoryWatch,
   mcp,
   ide,
 } as const;

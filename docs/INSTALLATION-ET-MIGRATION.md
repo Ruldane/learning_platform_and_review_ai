@@ -38,9 +38,8 @@ retélécharger son modèle d’embeddings.
 
 Cloner le dépôt GitHub, sélectionner la branche publiée souhaitée et ouvrir
 la racine. `git log -1 --oneline` permet de relever la version qui sera installée.
-Créer `.env` à partir du fichier d’exemple s’il est présent ou restaurer
-la configuration transférée. Définir la clé `OPENAI_API_KEY` en local et
-reprendre les ports souhaités.
+Créer `.env` sur le nouveau PC à partir du fichier d’exemple s’il est
+présent. Renseigner `OPENAI_API_KEY` en local et reprendre les ports souhaités.
 
 Construire les trois images. Avec le port API par défaut, utiliser ces commandes.
 Si `BACKEND_PORT` vaut autre chose, reprendre cette valeur dans `VITE_API_URL`
@@ -72,7 +71,7 @@ de sauvegarde à côté de la racine ou ajuster son chemin dans la commande
 `cp`. L’option `--no-deps` limite cette préparation au backend.
 
 ```sh
-docker compose -p learning_career_platform create --no-build --no-deps backend
+docker compose -p learning_career_platform up --no-start --no-build --no-deps backend
 docker compose -p learning_career_platform cp ../tremplin-donnees/. backend:/data
 docker compose -p learning_career_platform run --rm --no-deps --user 0 --entrypoint chown backend -R app:app /data
 ```
@@ -125,13 +124,20 @@ les exécutables Playwright ou pnpm.
 
 ## Reprendre le projet avec Claude Code
 
-Sur le nouveau PC, remplacer les valeurs entre chevrons par la branche,
-l’adresse GitHub et le commit de la livraison.
+Sur le nouveau PC, utiliser le nom de la branche livrée et comparer le
+commit affiché à celui de la livraison.
 
 ```sh
-git clone --branch "<branche livrée>" "<URL GitHub du dépôt>" Tremplin
+git clone --branch "<branche livrée>" "https://github.com/Ruldane/learning_platform_and_review_ai.git" Tremplin
 cd Tremplin
 git rev-parse HEAD
+```
+
+Pour créer des commits depuis ce PC, configurer l’identité sur ce dépôt.
+
+```sh
+git config --local user.name "Ruldane"
+git config --local user.email "l.nizzoli@gmail.com"
 ```
 
 Si le dépôt existe déjà, garder une trace du travail local avec

@@ -20,6 +20,7 @@ class AgentSession(UserScopedMixin, Base):
     played_by: Mapped[str | None] = mapped_column(String(16), default=None)
     model_provider: Mapped[str | None] = mapped_column(String(16), default=None)
     play_delivery: Mapped[dict[str, Any] | None] = mapped_column(default=None)
+    user_delivery: Mapped[dict[str, Any] | None] = mapped_column(default=None)
     graph: Mapped[str] = mapped_column(String(64))
     status: Mapped[str] = mapped_column(String(16))
     input: Mapped[dict[str, Any]] = mapped_column(default=dict)

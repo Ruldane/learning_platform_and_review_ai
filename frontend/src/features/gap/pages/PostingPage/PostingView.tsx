@@ -1,15 +1,12 @@
-import { useNavigate } from "react-router";
-import { ApiError, errorMessage } from "@/shared/api/errors";
+import { Link, useNavigate } from "react-router";
 import { t } from "@/shared/i18n/t";
 import type { SocketFactory } from "@/shared/realtime/socket";
-import { EmptyState } from "@/shared/ui/states/EmptyState";
-import { ErrorState } from "@/shared/ui/states/ErrorState";
-import { LoadingState } from "@/shared/ui/states/LoadingState";
 import { ANALYSIS_POLL_MS } from "../../hooks/usePostings";
 import { usePosting } from "../../hooks/usePosting";
 import { DeleteSection } from "./DeleteSection";
 import { PostingBody } from "./PostingBody";
 import { PostingHeader } from "./PostingHeader";
+import { PostingUnavailable } from "./PostingUnavailable";
 
 const LIST_PATH = "/carriere/offres";
 
@@ -32,30 +29,27 @@ export function PostingView({
   const posting = query.data;
 
   if (posting === undefined) {
-    if (query.error instanceof ApiError && query.error.status === 404) {
-      return (
-        <EmptyState
-          title={t("gap.posting.notFoundTitle")}
-          description={t("gap.errors.notFound")}
-          action={{
-            label: t("gap.posting.notFoundAction"),
-            onClick: () => void navigate(LIST_PATH),
-          }}
-        />
-      );
-    }
-    if (query.isError) {
-      return (
-        <ErrorState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />
-      );
-    }
-    return <LoadingState label={t("gap.posting.loading")} />;
+    return (
+      <PostingUnavailable
+        error={query.error}
+        retry={() => void query.refetch()}
+        onList={() => void navigate(LIST_PATH)}
+      />
+    );
   }
 
   const title = posting.title ?? posting.analysis?.title ?? t("gap.posting.untitled");
   return (
     <div className="flex flex-col gap-6">
       <PostingHeader title={title} company={posting.company} />
+      {posting.analysis ? (
+        <Link
+          className="self-start underline"
+          to={`/carriere/missions?offre=${encodeURIComponent(posting.id)}`}
+        >
+          {t("missions.openFromOffer")}
+        </Link>
+      ) : null}
       <PostingBody
         posting={posting}
         budget={budget}

@@ -43,6 +43,10 @@ REVIEWED_NOT_SECRET = frozenset(
         "resources.url_hash",
         "web_cache.key_hash",
         "web_queries.query_hash",
+        "atlas_hypotheses.label_key",  # empreinte du libellé normalisé de l’hypothèse
+        "atlas_observations.evidence_key",  # repère stable d’une preuve du compte
+        "shared_week_proposals.fingerprint",  # empreinte du planning proposé
+        "shared_week_proposals.selection_key",  # empreinte du groupe de programmes
         "plan_versions.base_fingerprint",  # empreinte des lignes du plan (détecte un plan changé)
         # Clés de rangement : un nom de fichier du stockage ou un repère de ligne.
         "documents.storage_key",

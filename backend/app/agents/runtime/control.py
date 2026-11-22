@@ -69,7 +69,13 @@ async def claim_resume(
     if row.status == "waiting_user" and interrupt_id is not None:
         pending = (row.pending_interrupt or {}).get("interrupt_id")
         if interrupt_id != pending or not await transition(
-            db, user_id, session_id, from_={"waiting_user"}, to="running", pending_interrupt=None
+            db,
+            user_id,
+            session_id,
+            from_={"waiting_user"},
+            to="running",
+            pending_interrupt=None,
+            user_delivery={"interrupt_id": interrupt_id, "value": value},
         ):
             raise stale_interrupt(row.status)
         # Forme « carte » : la réponse va à cette interruption-là, même s'il y en a d'autres.
@@ -100,7 +106,13 @@ async def claim_pause(db: Factory, user_id: str, session_id: str) -> bool:
     if row.status == "paused":
         return False
     if not await transition(
-        db, user_id, session_id, from_=PAUSABLE, to="paused", pending_interrupt=None
+        db,
+        user_id,
+        session_id,
+        from_=PAUSABLE,
+        to="paused",
+        pending_interrupt=None,
+        user_delivery=None,
     ):
         status = (await get_owned(db, user_id, session_id)).status
         if status == "paused":
@@ -114,7 +126,13 @@ async def claim_pause(db: Factory, user_id: str, session_id: str) -> bool:
 async def claim_cancel(db: Factory, user_id: str, session_id: str) -> None:
     await get_owned(db, user_id, session_id)  # 404 avant 409
     if not await transition(
-        db, user_id, session_id, from_=OPEN, to="cancelled", pending_interrupt=None
+        db,
+        user_id,
+        session_id,
+        from_=OPEN,
+        to="cancelled",
+        pending_interrupt=None,
+        user_delivery=None,
     ):
         status = (await get_owned(db, user_id, session_id)).status
         raise _conflict("session_not_cancellable", "Cette session est déjà terminée.", status)

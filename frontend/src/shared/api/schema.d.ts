@@ -397,6 +397,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/blind-assessments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Blind */
+        get: operations["list_blind_api_v1_blind_assessments_get"];
+        put?: never;
+        /** Create Blind */
+        post: operations["create_blind_api_v1_blind_assessments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/blind-assessments/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Blind Options */
+        get: operations["get_blind_options_api_v1_blind_assessments_options_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/blind-assessments/{assessment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Blind */
+        get: operations["read_blind_api_v1_blind_assessments__assessment_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/blind-assessments/{assessment_id}/evaluate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Evaluate Blind */
+        post: operations["evaluate_blind_api_v1_blind_assessments__assessment_id__evaluate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/boards/{board_id}/edits": {
         parameters: {
             query?: never;
@@ -843,6 +912,58 @@ export interface paths {
         put?: never;
         /** Start Offer Plan */
         post: operations["start_offer_plan_api_v1_compatible_offers__run_id___ref__plan_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/contradictory-watch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Experiments */
+        get: operations["list_experiments_api_v1_contradictory_watch_get"];
+        put?: never;
+        /** Create Experiment */
+        post: operations["create_experiment_api_v1_contradictory_watch_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/contradictory-watch/{experiment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Experiment */
+        get: operations["get_experiment_api_v1_contradictory_watch__experiment_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/contradictory-watch/{experiment_id}/observations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record Observation */
+        post: operations["record_observation_api_v1_contradictory_watch__experiment_id__observations_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1300,6 +1421,180 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/data-investigations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Investigations */
+        get: operations["list_investigations_api_v1_data_investigations_get"];
+        put?: never;
+        /** Create Investigation */
+        post: operations["create_investigation_api_v1_data_investigations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/data-investigations/datasets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Datasets */
+        get: operations["list_datasets_api_v1_data_investigations_datasets_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/data-investigations/{investigation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Investigation */
+        get: operations["read_investigation_api_v1_data_investigations__investigation_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Apply Operations */
+        patch: operations["apply_operations_api_v1_data_investigations__investigation_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/data-investigations/{investigation_id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Investigation */
+        post: operations["submit_investigation_api_v1_data_investigations__investigation_id__submit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dated-commitments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Commitments */
+        get: operations["list_commitments_api_v1_dated_commitments_get"];
+        put?: never;
+        /** Create */
+        post: operations["create_api_v1_dated_commitments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dated-commitments/{commitment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read */
+        get: operations["read_api_v1_dated_commitments__commitment_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dated-commitments/{commitment_id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Review */
+        post: operations["review_api_v1_dated_commitments__commitment_id__review_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/decision-lab/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Compare */
+        post: operations["compare_api_v1_decision_lab_compare_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/decision-lab/scenarios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Scenarios */
+        get: operations["list_scenarios_api_v1_decision_lab_scenarios_get"];
+        put?: never;
+        /** Save Scenario */
+        post: operations["save_scenario_api_v1_decision_lab_scenarios_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/decision-lab/scenarios/{scenario_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Scenario */
+        get: operations["read_scenario_api_v1_decision_lab_scenarios__scenario_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/documents": {
         parameters: {
             query?: never;
@@ -1352,6 +1647,74 @@ export interface paths {
          * @description « Déjà appris » : l'Archiviste crée des acquis déclarés à partir du document indexé.
          */
         post: operations["mark_learned_api_v1_documents__document_id__learned_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/error-atlas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Hypotheses */
+        get: operations["list_hypotheses_api_v1_error_atlas_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/error-atlas/evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Evidence */
+        get: operations["list_evidence_api_v1_error_atlas_evidence_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/error-atlas/hypotheses/{hypothesis_id}/exercise": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start Exercise */
+        post: operations["start_exercise_api_v1_error_atlas_hypotheses__hypothesis_id__exercise_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/error-atlas/observations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Observation */
+        post: operations["add_observation_api_v1_error_atlas_observations_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1615,6 +1978,109 @@ export interface paths {
         get: operations["list_proposals_api_v1_goals__goal_id__proposals_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/grade-appeals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Grade Appeals */
+        get: operations["list_grade_appeals_api_v1_grade_appeals_get"];
+        put?: never;
+        /** Create Grade Appeal */
+        post: operations["create_grade_appeal_api_v1_grade_appeals_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/grade-appeals/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Appeal Projects */
+        get: operations["list_appeal_projects_api_v1_grade_appeals_projects_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/grade-appeals/projects/{project_id}/criteria": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Appeal Criteria */
+        get: operations["list_appeal_criteria_api_v1_grade_appeals_projects__project_id__criteria_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/grade-appeals/{appeal_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Grade Appeal */
+        get: operations["read_grade_appeal_api_v1_grade_appeals__appeal_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/grade-appeals/{appeal_id}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Decide Grade Appeal */
+        post: operations["decide_grade_appeal_api_v1_grade_appeals__appeal_id__decision_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/grade-appeals/{appeal_id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Review Grade Appeal */
+        post: operations["review_grade_appeal_api_v1_grade_appeals__appeal_id__review_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2200,6 +2666,127 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/incident-replays": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Replays */
+        get: operations["list_replays_api_v1_incident_replays_get"];
+        put?: never;
+        /** Create Replay */
+        post: operations["create_replay_api_v1_incident_replays_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/incident-replays/scenarios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Scenarios */
+        get: operations["list_scenarios_api_v1_incident_replays_scenarios_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/incident-replays/{replay_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Replay */
+        get: operations["read_replay_api_v1_incident_replays__replay_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/incident-replays/{replay_id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Annotate Replay */
+        post: operations["annotate_replay_api_v1_incident_replays__replay_id__notes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/interprogram-planning": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Proposals */
+        get: operations["list_proposals_api_v1_interprogram_planning_get"];
+        put?: never;
+        /** Create */
+        post: operations["create_api_v1_interprogram_planning_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/interprogram-planning/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Options */
+        get: operations["options_api_v1_interprogram_planning_options_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/interprogram-planning/{proposal_id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept */
+        post: operations["accept_api_v1_interprogram_planning__proposal_id__accept_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/interviews": {
         parameters: {
             query?: never;
@@ -2326,6 +2913,41 @@ export interface paths {
         put?: never;
         /** Answer Hunt */
         post: operations["answer_hunt_api_v1_lesson_hunts__hunt_id__answers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lesson-variants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Editions */
+        get: operations["list_editions_api_v1_lesson_variants_get"];
+        put?: never;
+        /** Create Edition */
+        post: operations["create_edition_api_v1_lesson_variants_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lesson-variants/{edition_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Edition */
+        get: operations["read_edition_api_v1_lesson_variants__edition_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2837,6 +3459,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/meeting-modules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Modules */
+        get: operations["list_modules_api_v1_meeting_modules_get"];
+        put?: never;
+        /** Prepare Module */
+        post: operations["prepare_module_api_v1_meeting_modules_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/meeting-modules/{module_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Module */
+        get: operations["read_module_api_v1_meeting_modules__module_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/meeting-modules/{module_id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publish Module */
+        post: operations["publish_module_api_v1_meeting_modules__module_id__publish_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/meeting-modules/{module_id}/selection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Change Selection */
+        put: operations["change_selection_api_v1_meeting_modules__module_id__selection_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/memory/export": {
         parameters: {
             query?: never;
@@ -2982,6 +3673,93 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/mentor-reviews/shared": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Shared Work */
+        get: operations["shared_work_api_v1_mentor_reviews_shared_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mentor-reviews/shared/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Write Comment */
+        post: operations["write_comment_api_v1_mentor_reviews_shared_comments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mentor-reviews/shares": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Shares */
+        get: operations["list_shares_api_v1_mentor_reviews_shares_get"];
+        put?: never;
+        /** Issue Share */
+        post: operations["issue_share_api_v1_mentor_reviews_shares_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mentor-reviews/shares/{share_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Share */
+        get: operations["read_share_api_v1_mentor_reviews_shares__share_id__get"];
+        put?: never;
+        post?: never;
+        /** Revoke Share */
+        delete: operations["revoke_share_api_v1_mentor_reviews_shares__share_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mentor-reviews/shares/{share_id}/comments/{comment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Mark Comment */
+        patch: operations["mark_comment_api_v1_mentor_reviews_shares__share_id__comments__comment_id__patch"];
+        trace?: never;
+    };
     "/api/v1/message-reviews/claim": {
         parameters: {
             query?: never;
@@ -3029,6 +3807,75 @@ export interface paths {
         put?: never;
         /** Answer */
         post: operations["answer_api_v1_message_reviews__challenge_id__answer_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/missions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Missions */
+        get: operations["list_missions_api_v1_missions_get"];
+        put?: never;
+        /** Start Mission */
+        post: operations["start_mission_api_v1_missions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/missions/{mission_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Mission */
+        get: operations["read_mission_api_v1_missions__mission_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/missions/{mission_id}/criteria/{index}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Criterion */
+        patch: operations["update_criterion_api_v1_missions__mission_id__criteria__index__patch"];
+        trace?: never;
+    };
+    "/api/v1/missions/{mission_id}/submission": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Mission */
+        post: operations["submit_mission_api_v1_missions__mission_id__submission_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3090,6 +3937,93 @@ export interface paths {
          *     échec : relancé. Leçon pas prête : 409 `lesson_not_ready`.
          */
         post: operations["start_quiz_api_v1_modules__module_id__quiz_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/offer-comparisons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Offer Comparisons */
+        get: operations["list_offer_comparisons_api_v1_offer_comparisons_get"];
+        put?: never;
+        /** Save Offer Comparison */
+        post: operations["save_offer_comparison_api_v1_offer_comparisons_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/offer-comparisons/postings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Comparable Postings */
+        get: operations["list_comparable_postings_api_v1_offer_comparisons_postings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/offer-comparisons/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Offer Comparison Preferences */
+        get: operations["get_offer_comparison_preferences_api_v1_offer_comparisons_preferences_get"];
+        /** Put Offer Comparison Preferences */
+        put: operations["put_offer_comparison_preferences_api_v1_offer_comparisons_preferences_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/offer-comparisons/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview Offer Comparison */
+        post: operations["preview_offer_comparison_api_v1_offer_comparisons_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/offer-comparisons/{scenario_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Offer Comparison */
+        get: operations["read_offer_comparison_api_v1_offer_comparisons__scenario_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3897,6 +4831,92 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/project-handoffs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Handoffs */
+        get: operations["list_handoffs_api_v1_project_handoffs_get"];
+        put?: never;
+        /** Approve Guide */
+        post: operations["approve_guide_api_v1_project_handoffs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/project-handoffs/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview Guide */
+        post: operations["preview_guide_api_v1_project_handoffs_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/project-handoffs/source/{project_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Source */
+        get: operations["read_source_api_v1_project_handoffs_source__project_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/project-handoffs/{handoff_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Handoff */
+        get: operations["read_handoff_api_v1_project_handoffs__handoff_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/project-handoffs/{handoff_id}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Handoff */
+        get: operations["export_handoff_api_v1_project_handoffs__handoff_id__export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects": {
         parameters: {
             query?: never;
@@ -4080,6 +5100,92 @@ export interface paths {
          *     Les captures ne sont pas envoyées au modèle : elles sont montrées dans le Portfolio.
          */
         post: operations["post_submit_api_v1_projects__project_id__submit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/proof-packets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Packets */
+        get: operations["list_packets_api_v1_proof_packets_get"];
+        put?: never;
+        /** Save Packet */
+        post: operations["save_packet_api_v1_proof_packets_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/proof-packets/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview Packet */
+        post: operations["preview_packet_api_v1_proof_packets_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/proof-packets/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Sources */
+        get: operations["list_sources_api_v1_proof_packets_sources_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/proof-packets/{packet_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Packet */
+        get: operations["read_packet_api_v1_proof_packets__packet_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/proof-packets/{packet_id}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Packet */
+        get: operations["export_packet_api_v1_proof_packets__packet_id__export_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4464,6 +5570,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/recruitment-processes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Recruitment Processes */
+        get: operations["list_recruitment_processes_api_v1_recruitment_processes_get"];
+        put?: never;
+        /** Create Recruitment Process */
+        post: operations["create_recruitment_process_api_v1_recruitment_processes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/recruitment-processes/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Recruitment Options */
+        get: operations["recruitment_options_api_v1_recruitment_processes_options_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/recruitment-processes/{process_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Recruitment Process */
+        get: operations["read_recruitment_process_api_v1_recruitment_processes__process_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/recruitment-processes/{process_id}/steps/{kind}/answers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Answer Recruitment Step */
+        post: operations["answer_recruitment_step_api_v1_recruitment_processes__process_id__steps__kind__answers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reminders": {
         parameters: {
             query?: never;
@@ -4593,6 +5768,59 @@ export interface paths {
         get: operations["get_resource_file_api_v1_resources__resource_id__file_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/routines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Routines */
+        get: operations["list_routines_api_v1_routines_get"];
+        put?: never;
+        /** Create Routine */
+        post: operations["create_routine_api_v1_routines_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/routines/{routine_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Routine */
+        patch: operations["update_routine_api_v1_routines__routine_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/routines/{routine_id}/executions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Executions */
+        get: operations["list_executions_api_v1_routines__routine_id__executions_get"];
+        put?: never;
+        /** Execute Routine */
+        post: operations["execute_routine_api_v1_routines__routine_id__executions_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4863,6 +6091,92 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/skill-transfers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Transfers */
+        get: operations["list_transfers_api_v1_skill_transfers_get"];
+        put?: never;
+        /** Create Transfer */
+        post: operations["create_transfer_api_v1_skill_transfers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/skill-transfers/proofs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Proofs */
+        get: operations["list_proofs_api_v1_skill_transfers_proofs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/skill-transfers/{transfer_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Transfer */
+        get: operations["read_transfer_api_v1_skill_transfers__transfer_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/skill-transfers/{transfer_id}/answer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Answer Transfer */
+        post: operations["answer_transfer_api_v1_skill_transfers__transfer_id__answer_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/skill-transfers/{transfer_id}/prepare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Prepare Transfer */
+        post: operations["prepare_transfer_api_v1_skill_transfers__transfer_id__prepare_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/skills": {
         parameters: {
             query?: never;
@@ -4962,6 +6276,74 @@ export interface paths {
         get: operations["get_skill_api_v1_skills__skill_id__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/study-return": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get */
+        get: operations["get_api_v1_study_return_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/study-return/prepare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Prepare */
+        post: operations["prepare_api_v1_study_return_prepare_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/study-return/reminder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Reminder */
+        put: operations["reminder_api_v1_study_return_reminder_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/study-return/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start */
+        post: operations["start_api_v1_study_return_start_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5514,18 +6896,6 @@ export interface components {
             /** Spotted */
             spotted: boolean;
         };
-        /** AnswerIn */
-        AnswerIn: {
-            /** Choice */
-            choice?: number | null;
-            /** Question Id */
-            question_id: string;
-            /**
-             * Text
-             * @default
-             */
-            text: string;
-        };
         /** ApiKeyIn */
         ApiKeyIn: {
             /**
@@ -5555,6 +6925,13 @@ export interface components {
             readable: boolean;
             /** Source */
             source: ("ui" | "env") | null;
+        };
+        /** AppealReading */
+        AppealReading: {
+            /** Comment */
+            comment: string;
+            /** Met */
+            met: boolean;
         };
         /** ApplicationDetail */
         ApplicationDetail: {
@@ -5757,6 +7134,15 @@ export interface components {
             /** Response Rate */
             response_rate: number | null;
         };
+        /** ArchitectureAssumptions */
+        ArchitectureAssumptions: {
+            /** Hourly Cost Cents */
+            hourly_cost_cents: number;
+            /** Replica Capacity Rps */
+            replica_capacity_rps: number;
+            /** Replicas */
+            replicas: number;
+        };
         /**
          * ArtifactInfo
          * @description Une information jointe à un artefact : une fiche proche de celle qui vient d'être créée
@@ -5815,6 +7201,105 @@ export interface components {
              */
             url: string | null;
         };
+        /** AssessmentOut */
+        AssessmentOut: {
+            /**
+             * Assessed At
+             * Format: date-time
+             */
+            assessed_at: string;
+            /** Criteria */
+            criteria: string[];
+            /** Feedback */
+            feedback: string;
+            /** Met */
+            met: boolean[];
+            /**
+             * Verdict
+             * @enum {string}
+             */
+            verdict: "demonstrated" | "needs_review";
+        };
+        /** AtlasEvidenceOut */
+        AtlasEvidenceOut: {
+            /** Expected */
+            expected: string | null;
+            /** Finding */
+            finding: string;
+            /**
+             * Recorded At
+             * Format: date-time
+             */
+            recorded_at: string;
+            reference: components["schemas"]["AtlasReference"];
+            /** Title */
+            title: string;
+        };
+        /** AtlasExerciseOut */
+        AtlasExerciseOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Evidence */
+            evidence: components["schemas"]["AtlasEvidenceOut"][];
+            /** Id */
+            id: string;
+            /** Steps */
+            steps: string[];
+        };
+        /** AtlasHypothesisOut */
+        AtlasHypothesisOut: {
+            /**
+             * Confidence
+             * @enum {string}
+             */
+            confidence: "low" | "medium" | "high" | "mixed";
+            exercise: components["schemas"]["AtlasExerciseOut"] | null;
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** Observations */
+            observations: components["schemas"]["AtlasObservationOut"][];
+        };
+        /** AtlasObservationIn */
+        AtlasObservationIn: {
+            /**
+             * Confidence
+             * @enum {string}
+             */
+            confidence: "low" | "medium" | "high";
+            /** Hypothesis */
+            hypothesis: string;
+            reference: components["schemas"]["AtlasReference"];
+        };
+        /** AtlasObservationOut */
+        AtlasObservationOut: {
+            /**
+             * Confidence
+             * @enum {string}
+             */
+            confidence: "low" | "medium" | "high";
+            evidence: components["schemas"]["AtlasEvidenceOut"];
+            /** Id */
+            id: string;
+        };
+        /** AtlasReference */
+        AtlasReference: {
+            /** Item Id */
+            item_id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "quiz" | "project";
+            /** Resource Id */
+            resource_id: string;
+            /** Source Id */
+            source_id: string;
+        };
         /**
          * AtsCheckOut
          * @description Un contrôle de lisibilité par un ATS ; `detail` : phrase française sans texte du CV.
@@ -5833,7 +7318,7 @@ export interface components {
         /** AttemptCreate */
         AttemptCreate: {
             /** Answers */
-            answers: components["schemas"]["AnswerIn"][];
+            answers: components["schemas"]["app__features__quiz__schemas__AnswerIn"][];
             /** Elapsed Ms */
             elapsed_ms?: number | null;
         };
@@ -5918,6 +7403,114 @@ export interface components {
              * @description Budget hebdomadaire : cinq jours de semaine plus un bloc de week-end (borne haute).
              */
             readonly weekly_budget_minutes: number;
+        };
+        /** BlindCreate */
+        BlindCreate: {
+            /**
+             * First Version Id
+             * Format: uuid
+             */
+            first_version_id: string;
+            /**
+             * Rubric
+             * @enum {string}
+             */
+            rubric: "clarity" | "evidence";
+            /**
+             * Second Version Id
+             * Format: uuid
+             */
+            second_version_id: string;
+        };
+        /** BlindCriterion */
+        BlindCriterion: {
+            /** Instructions */
+            instructions: string;
+            /** Label */
+            label: string;
+        };
+        /** BlindOptions */
+        BlindOptions: {
+            /** Rubrics */
+            rubrics: components["schemas"]["BlindRubric"][];
+            /** Sources */
+            sources: components["schemas"]["BlindSourceOption"][];
+        };
+        /** BlindOut */
+        BlindOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Id */
+            id: string;
+            result: components["schemas"]["BlindResultOut"] | null;
+            rubric: components["schemas"]["BlindRubric"];
+            /**
+             * Stage
+             * @enum {string}
+             */
+            stage: "draft" | "evaluating" | "failed" | "complete";
+        };
+        /** BlindResultOut */
+        BlindResultOut: {
+            /**
+             * Evaluated At
+             * Format: date-time
+             */
+            evaluated_at: string;
+            /** Feedback */
+            feedback: string;
+            /** Scores A */
+            scores_a: number[];
+            /** Scores B */
+            scores_b: number[];
+            source_a: components["schemas"]["BlindSourceLink"];
+            source_b: components["schemas"]["BlindSourceLink"];
+            /**
+             * Verdict
+             * @enum {string}
+             */
+            verdict: "a" | "b" | "tie";
+        };
+        /** BlindRubric */
+        BlindRubric: {
+            /** Criteria */
+            criteria: components["schemas"]["BlindCriterion"][];
+            /**
+             * Id
+             * @enum {string}
+             */
+            id: "clarity" | "evidence";
+            /** Title */
+            title: string;
+        };
+        /** BlindSourceLink */
+        BlindSourceLink: {
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** Url */
+            url: string;
+        };
+        /** BlindSourceOption */
+        BlindSourceOption: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+        };
+        /** BlindStarted */
+        BlindStarted: {
+            /** Session Id */
+            session_id: string;
         };
         /** BlockOut */
         BlockOut: {
@@ -6572,6 +8165,104 @@ export interface components {
              */
             role: "prosecutor" | "defender";
         };
+        /** CommitmentCreate */
+        CommitmentCreate: {
+            /**
+             * Due On
+             * Format: date
+             */
+            due_on: string;
+            /** Indicator */
+            indicator: string;
+            /** Intention */
+            intention: string;
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Target */
+            target: number | string;
+            /** Title */
+            title: string;
+            /** Unit */
+            unit: string;
+            /** Version */
+            version: string;
+        };
+        /** CommitmentOut */
+        CommitmentOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Delta */
+            delta: string | null;
+            /**
+             * Due On
+             * Format: date
+             */
+            due_on: string;
+            /** Id */
+            id: string;
+            /** Indicator */
+            indicator: string;
+            /** Intention */
+            intention: string;
+            /** Note */
+            note: string | null;
+            /** Observed */
+            observed: string | null;
+            /** Reviewed */
+            reviewed: boolean;
+            /** Reviewed At */
+            reviewed_at: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "scheduled" | "due" | "reviewed";
+            /** Target */
+            target: string;
+            /** Title */
+            title: string;
+            /** Unit */
+            unit: string;
+            /** Version */
+            version: string;
+        };
+        /** CommitmentReminder */
+        CommitmentReminder: {
+            /** Delta */
+            delta: string | null;
+            /**
+             * Due On
+             * Format: date
+             */
+            due_on: string;
+            /** Id */
+            id: string;
+            /** Indicator */
+            indicator: string;
+            /** Intention */
+            intention: string;
+            /** Reviewed */
+            reviewed: boolean;
+            /** Title */
+            title: string;
+            /** Unit */
+            unit: string;
+            /** Version */
+            version: string;
+        };
+        /** CommitmentReview */
+        CommitmentReview: {
+            /** Note */
+            note?: string | null;
+            /** Observed */
+            observed: number | string;
+        };
         /**
          * CommitteeDiff
          * @description L'avant et l'après (F19) : les votes, les objections disparues (`objections_resolved`) et les
@@ -7043,6 +8734,80 @@ export interface components {
             /** Weakest Index */
             weakest_index: number;
         };
+        /** DecisionAssumptions */
+        DecisionAssumptions: {
+            architecture_a: components["schemas"]["ArchitectureAssumptions"];
+            architecture_b: components["schemas"]["ArchitectureAssumptions"];
+            /** Duration Minutes */
+            duration_minutes: number;
+            /** Outage Minutes */
+            outage_minutes: number;
+            /** Request Rate */
+            request_rate: number;
+        };
+        /** DecisionComparison */
+        DecisionComparison: {
+            architecture_a: components["schemas"]["DecisionMetrics"];
+            architecture_b: components["schemas"]["DecisionMetrics"];
+            /** Attempted Requests */
+            attempted_requests: number;
+        };
+        /** DecisionMetrics */
+        DecisionMetrics: {
+            /** Cost Cents */
+            cost_cents: number;
+            /** Missed Requests */
+            missed_requests: number;
+            /** Served Basis Points */
+            served_basis_points: number | null;
+            /** Served Requests */
+            served_requests: number;
+        };
+        /** DecisionScenarioCreate */
+        DecisionScenarioCreate: {
+            assumptions: components["schemas"]["DecisionAssumptions"];
+            /**
+             * Critique
+             * @default
+             */
+            critique: string;
+            /** Title */
+            title: string;
+        };
+        /** DecisionScenarioOut */
+        DecisionScenarioOut: {
+            assumptions: components["schemas"]["DecisionAssumptions"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Critique */
+            critique: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            results: components["schemas"]["DecisionComparison"];
+            /** Title */
+            title: string;
+        };
+        /** DecisionScenarioSummary */
+        DecisionScenarioSummary: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+        };
         /**
          * DeleteAccountIn
          * @description La confirmation de « Tout supprimer » : `confirm` doit être exactement `SUPPRIMER`.
@@ -7448,6 +9213,41 @@ export interface components {
             source: "offre" | "dossier" | "cv" | "ecart" | "general";
             /** Unrated */
             unrated: boolean;
+        };
+        /** ExecutionIn */
+        ExecutionIn: {
+            /**
+             * Receipt
+             * Format: uuid
+             */
+            receipt: string;
+        };
+        /** ExecutionOut */
+        ExecutionOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Notices */
+            notices: components["schemas"]["CommitmentReminder"][];
+            /** Result Count */
+            result_count: number;
+            /**
+             * Routine Id
+             * Format: uuid
+             */
+            routine_id: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "manual" | "scheduled";
         };
         /**
          * ExerciseGenerateIn
@@ -8152,6 +9952,86 @@ export interface components {
             /** Session Id */
             session_id: string;
         };
+        /** GradeAppealCreate */
+        GradeAppealCreate: {
+            /** Criterion Index */
+            criterion_index: number;
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /** Reason */
+            reason: string;
+        };
+        /** GradeAppealCriterion */
+        GradeAppealCriterion: {
+            /** Criterion */
+            criterion: string;
+            /** Index */
+            index: number;
+            /** Original Comment */
+            original_comment: string;
+            /** Original Met */
+            original_met: boolean;
+        };
+        /** GradeAppealDecisionIn */
+        GradeAppealDecisionIn: {
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "keep_original" | "accept_second";
+        };
+        /** GradeAppealOut */
+        GradeAppealOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Decided At */
+            decided_at: string | null;
+            /** Decision */
+            decision: ("keep_original" | "accept_second") | null;
+            /** Id */
+            id: string;
+            /** Reason */
+            reason: string;
+            /** Reviewed At */
+            reviewed_at: string | null;
+            second: components["schemas"]["AppealReading"] | null;
+            source: components["schemas"]["GradeAppealSource"];
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "draft" | "reviewing" | "failed" | "ready" | "decided";
+        };
+        /** GradeAppealProject */
+        GradeAppealProject: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+        };
+        /** GradeAppealSource */
+        GradeAppealSource: {
+            criterion: components["schemas"]["GradeAppealCriterion"];
+            project: components["schemas"]["GradeAppealProject"];
+            /** Submission */
+            submission: string;
+            /**
+             * Submitted At
+             * Format: date-time
+             */
+            submitted_at: string;
+        };
+        /** GradeAppealStarted */
+        GradeAppealStarted: {
+            /** Session Id */
+            session_id: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -8371,24 +10251,52 @@ export interface components {
             /** Seed */
             seed?: number | null;
         };
-        /** IncidentEvent */
-        IncidentEvent: {
-            /** Id */
+        /** IncidentNote */
+        IncidentNote: {
+            /** Hypothesis */
+            hypothesis: string;
+            /** Step */
+            step: number;
+        };
+        /** IncidentReplayIn */
+        IncidentReplayIn: {
+            /**
+             * Receipt
+             * Format: uuid
+             */
+            receipt: string;
+            /** Scenario */
+            scenario: string;
+        };
+        /** IncidentReplayOut */
+        IncidentReplayOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
             id: string;
-            /**
-             * Kind
-             * @enum {string}
-             */
-            kind: "sample" | "alert" | "diagnostic";
-            /**
-             * Metric
-             * @enum {string}
-             */
-            metric: "latency" | "queue" | "quota" | "fidelity";
-            /** Minute */
-            minute: number;
-            /** Value */
-            value: number;
+            /** Notes */
+            notes: components["schemas"]["IncidentNote"][];
+            /** Scenario */
+            scenario: string;
+            /** Timeline */
+            timeline: components["schemas"]["app__features__incident_replay__schemas__IncidentEvent"][];
+            /** Title */
+            title: string;
+        };
+        /** IncidentScenarioOut */
+        IncidentScenarioOut: {
+            /** Context */
+            context: string;
+            /** Key */
+            key: string;
+            /** Title */
+            title: string;
         };
         /** IncidentSummary */
         IncidentSummary: {
@@ -8418,7 +10326,7 @@ export interface components {
             alerted: boolean;
             diagnostic: components["schemas"]["DiagnosticView"];
             /** Events */
-            events: components["schemas"]["IncidentEvent"][];
+            events: components["schemas"]["app__features__oncall__schemas__IncidentEvent"][];
             /** Id */
             id: string;
             /** Ide Session Id */
@@ -8660,6 +10568,125 @@ export interface components {
         InventoryOut: {
             /** Files */
             files: components["schemas"]["FileOut"][];
+        };
+        /** InvestigationCreate */
+        InvestigationCreate: {
+            /**
+             * Dataset
+             * @enum {string}
+             */
+            dataset: "deliveries-v1" | "supplies-v1";
+        };
+        /** InvestigationDataset */
+        InvestigationDataset: {
+            /** Brief */
+            brief: string;
+            /**
+             * Key
+             * @enum {string}
+             */
+            key: "deliveries-v1" | "supplies-v1";
+            /** Title */
+            title: string;
+        };
+        /** InvestigationMetrics */
+        InvestigationMetrics: {
+            /** Deliveries */
+            deliveries: number;
+            /** Units */
+            units: number;
+        };
+        /** InvestigationOperations */
+        InvestigationOperations: {
+            /** Operations */
+            operations: ("latest_revision" | "delivered_only" | "declared_identifier" | "positive_units")[];
+        };
+        /** InvestigationOut */
+        InvestigationOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            dataset: components["schemas"]["InvestigationDataset"];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Operations */
+            operations: ("latest_revision" | "delivered_only" | "declared_identifier" | "positive_units")[];
+            preview: components["schemas"]["InvestigationMetrics"];
+            result: components["schemas"]["InvestigationResult"] | null;
+            /** Retained Rows */
+            retained_rows: number[];
+            /** Source Digest */
+            source_digest: string;
+            /** Source Rows */
+            source_rows: components["schemas"]["InvestigationRow"][];
+            /** Trace */
+            trace: components["schemas"]["InvestigationStep"][];
+        };
+        /** InvestigationResult */
+        InvestigationResult: {
+            expected: components["schemas"]["InvestigationMetrics"];
+            /** Integrity Passed */
+            integrity_passed: boolean;
+            /** Matches Pipeline */
+            matches_pipeline: boolean;
+            submission: components["schemas"]["InvestigationSubmission"];
+        };
+        /** InvestigationRow */
+        InvestigationRow: {
+            /** Reference */
+            reference: string;
+            /** Revision */
+            revision: number;
+            /** Source Row */
+            source_row: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "delivered" | "pending" | "cancelled";
+            /** Units */
+            units: number;
+        };
+        /** InvestigationStep */
+        InvestigationStep: {
+            /**
+             * Operation
+             * @enum {string}
+             */
+            operation: "latest_revision" | "delivered_only" | "declared_identifier" | "positive_units";
+            /** Remaining Rows */
+            remaining_rows: number;
+            /** Removed Rows */
+            removed_rows: number[];
+        };
+        /** InvestigationSubmission */
+        InvestigationSubmission: {
+            /** Deliveries */
+            deliveries: number;
+            /** Units */
+            units: number;
+        };
+        /** InvestigationSummary */
+        InvestigationSummary: {
+            /** Completed */
+            completed: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
         };
         /** JournalEntryOut */
         JournalEntryOut: {
@@ -8974,6 +11001,64 @@ export interface components {
             week_rank: number;
             /** Word Count */
             word_count: number;
+        };
+        /** LessonVariantCreate */
+        LessonVariantCreate: {
+            /**
+             * Lesson Id
+             * Format: uuid
+             */
+            lesson_id: string;
+        };
+        /** LessonVariantOut */
+        LessonVariantOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Lesson Id
+             * Format: uuid
+             */
+            lesson_id: string;
+            /** Lesson Title */
+            lesson_title: string;
+            /** Reading Steps */
+            reading_steps: string[];
+            /** Review Markdown */
+            review_markdown: string;
+            /** Revision */
+            revision: string;
+            /** Source Markdown */
+            source_markdown: string;
+        };
+        /** LessonVariantSummary */
+        LessonVariantSummary: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Lesson Id
+             * Format: uuid
+             */
+            lesson_id: string;
+            /** Lesson Title */
+            lesson_title: string;
+            /** Revision */
+            revision: string;
         };
         /**
          * LessonWriteIn
@@ -9442,6 +11527,86 @@ export interface components {
             /** Name */
             name: string | null;
         };
+        /** MeetingExcerpt */
+        MeetingExcerpt: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "decision" | "topic";
+            /** Line */
+            line: number;
+            /** Text */
+            text: string;
+        };
+        /** MeetingModuleIn */
+        MeetingModuleIn: {
+            /** Title */
+            title: string;
+            /** Transcript */
+            transcript: string;
+        };
+        /** MeetingModuleOut */
+        MeetingModuleOut: {
+            /** Excerpts */
+            excerpts: components["schemas"]["MeetingExcerpt"][];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Published At */
+            published_at: string | null;
+            /** Selection */
+            selection: number[];
+            /** Source Digest */
+            source_digest: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "published";
+            /** Steps */
+            steps: components["schemas"]["MeetingStudyStep"][];
+            /** Title */
+            title: string;
+        };
+        /** MeetingModuleSummary */
+        MeetingModuleSummary: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "published";
+            /** Title */
+            title: string;
+        };
+        /** MeetingSelection */
+        MeetingSelection: {
+            /** Lines */
+            lines: number[];
+        };
+        /** MeetingStudyStep */
+        MeetingStudyStep: {
+            /** Criterion */
+            criterion: string;
+            /** Instruction */
+            instruction: string;
+            /** Minutes */
+            minutes: number;
+            /** Source Line */
+            source_line: number;
+        };
         /**
          * MemoryExport
          * @description Toute la mémoire de l'utilisateur en JSON, sans aucun vecteur.
@@ -9678,6 +11843,167 @@ export interface components {
             /** Title */
             title: string;
         };
+        /** MentorCommentCreate */
+        MentorCommentCreate: {
+            /**
+             * Proof Id
+             * Format: uuid
+             */
+            proof_id: string;
+            /** Text */
+            text: string;
+        };
+        /** MentorCommentOut */
+        MentorCommentOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Proof Id
+             * Format: uuid
+             */
+            proof_id: string;
+            /** Text */
+            text: string;
+        };
+        /** MentorCommentReview */
+        MentorCommentReview: {
+            /** Reviewed */
+            reviewed: boolean;
+        };
+        /** MentorOwnedComment */
+        MentorOwnedComment: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Proof Id
+             * Format: uuid
+             */
+            proof_id: string;
+            /** Reviewed */
+            reviewed: boolean;
+            /** Text */
+            text: string;
+        };
+        /** MentorShareCreate */
+        MentorShareCreate: {
+            /**
+             * Confirmed
+             * @constant
+             */
+            confirmed: true;
+            /** Expected Digest */
+            expected_digest: string;
+            /**
+             * Packet Id
+             * Format: uuid
+             */
+            packet_id: string;
+            /** Valid Hours */
+            valid_hours: number;
+        };
+        /** MentorShareDetail */
+        MentorShareDetail: {
+            /** Comments */
+            comments: components["schemas"]["MentorOwnedComment"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Digest */
+            digest: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Packet Id
+             * Format: uuid
+             */
+            packet_id: string;
+            /** Revoked At */
+            revoked_at: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "expired" | "revoked";
+            /** Title */
+            title: string;
+        };
+        /** MentorShareIssued */
+        MentorShareIssued: {
+            share: components["schemas"]["MentorShareOut"];
+            /** Token */
+            token: string;
+        };
+        /** MentorShareOut */
+        MentorShareOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Digest */
+            digest: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Packet Id
+             * Format: uuid
+             */
+            packet_id: string;
+            /** Revoked At */
+            revoked_at: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "expired" | "revoked";
+            /** Title */
+            title: string;
+        };
+        /** MentorSharedWork */
+        MentorSharedWork: {
+            /** Digest */
+            digest: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            manifest: components["schemas"]["ProofPacketManifest"];
+        };
         /**
          * MergeRequest
          * @description Éléments à fondre dans l'élément de l'URL (même type, 20 au plus).
@@ -9699,6 +12025,100 @@ export interface components {
              * @default
              */
             text: string;
+        };
+        /** MissionCreate */
+        MissionCreate: {
+            /**
+             * Posting Id
+             * Format: uuid
+             */
+            posting_id: string;
+            /** Requirement Indices */
+            requirement_indices: number[];
+        };
+        /** MissionCriterionOut */
+        MissionCriterionOut: {
+            /** Index */
+            index: number;
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "not_started" | "in_progress" | "achieved";
+            /** Note */
+            note: string | null;
+            /** Observed */
+            observed: number;
+            /** Required */
+            required: boolean;
+            /** Skills */
+            skills: string[];
+            /**
+             * Target
+             * @constant
+             */
+            target: 2;
+            /** Text */
+            text: string;
+        };
+        /** MissionOut */
+        MissionOut: {
+            /** Company */
+            company: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Criteria */
+            criteria: components["schemas"]["MissionCriterionOut"][];
+            /**
+             * Deadline At
+             * Format: date-time
+             */
+            deadline_at: string;
+            /** Id */
+            id: string;
+            /** Posting Id */
+            posting_id: string;
+            /** Posting Title */
+            posting_title: string | null;
+            /** Revision */
+            revision: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "expired" | "completed";
+            submission: components["schemas"]["MissionSubmissionOut"] | null;
+        };
+        /** MissionProgress */
+        MissionProgress: {
+            /** Note */
+            note?: string | null;
+            /** Observed */
+            observed: number;
+            /** Revision */
+            revision: number;
+        };
+        /** MissionSubmissionOut */
+        MissionSubmissionOut: {
+            /** Artifact */
+            artifact: string;
+            /** Proof Id */
+            proof_id: string;
+            /**
+             * Recorded At
+             * Format: date-time
+             */
+            recorded_at: string;
+        };
+        /** MissionSubmit */
+        MissionSubmit: {
+            /** Artifact */
+            artifact: string;
+            /** Revision */
+            revision: number;
         };
         /**
          * ModelChoice
@@ -10043,6 +12463,119 @@ export interface components {
             /** Text */
             text: string;
         };
+        /** OfferComparisonAssessment */
+        OfferComparisonAssessment: {
+            /** Company */
+            company: string | null;
+            /** Id */
+            id: string;
+            /** Location */
+            location: string | null;
+            /** Missing */
+            missing: ("match" | "work_mode" | "location")[];
+            /** Remote */
+            remote: string | null;
+            scores: components["schemas"]["OfferComparisonScores"];
+            /** Title */
+            title: string | null;
+        };
+        /** OfferComparisonHistoryItem */
+        OfferComparisonHistoryItem: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            first: components["schemas"]["OfferComparisonPosting"];
+            /** Id */
+            id: string;
+            second: components["schemas"]["OfferComparisonPosting"];
+        };
+        /** OfferComparisonPair */
+        OfferComparisonPair: {
+            /**
+             * First Id
+             * Format: uuid
+             */
+            first_id: string;
+            preferences?: components["schemas"]["OfferComparisonPreferences"] | null;
+            /**
+             * Second Id
+             * Format: uuid
+             */
+            second_id: string;
+        };
+        /** OfferComparisonPosting */
+        OfferComparisonPosting: {
+            /** Company */
+            company: string | null;
+            /** Id */
+            id: string;
+            /** Title */
+            title: string | null;
+        };
+        /** OfferComparisonPreferences */
+        OfferComparisonPreferences: {
+            /** Preferred Location */
+            preferred_location?: string | null;
+            /** Preferred Work Mode */
+            preferred_work_mode?: ("remote" | "hybrid" | "onsite") | null;
+            weights?: components["schemas"]["OfferComparisonWeights"];
+        };
+        /** OfferComparisonResult */
+        OfferComparisonResult: {
+            first: components["schemas"]["OfferComparisonAssessment"];
+            /** First Score */
+            first_score: number | null;
+            /** Leader */
+            leader: ("first" | "second" | "tie") | null;
+            preferences: components["schemas"]["OfferComparisonPreferences"];
+            /** Scored Criteria */
+            scored_criteria: ("match" | "work_mode" | "location")[];
+            second: components["schemas"]["OfferComparisonAssessment"];
+            /** Second Score */
+            second_score: number | null;
+            /** Sensitivity */
+            sensitivity: components["schemas"]["OfferWeightSensitivity"][];
+        };
+        /** OfferComparisonSaved */
+        OfferComparisonSaved: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Id */
+            id: string;
+            result: components["schemas"]["OfferComparisonResult"];
+        };
+        /** OfferComparisonScores */
+        OfferComparisonScores: {
+            /** Location */
+            location: number | null;
+            /** Match */
+            match: number | null;
+            /** Work Mode */
+            work_mode: number | null;
+        };
+        /** OfferComparisonWeights */
+        OfferComparisonWeights: {
+            /**
+             * Location
+             * @default 50
+             */
+            location: number;
+            /**
+             * Match
+             * @default 50
+             */
+            match: number;
+            /**
+             * Work Mode
+             * @default 50
+             */
+            work_mode: number;
+        };
         /** OfferItem */
         OfferItem: {
             /** Company */
@@ -10074,6 +12607,26 @@ export interface components {
             title: string | null;
             /** Url */
             url: string;
+        };
+        /** OfferWeightSensitivity */
+        OfferWeightSensitivity: {
+            /**
+             * Criterion
+             * @enum {string}
+             */
+            criterion: "match" | "work_mode" | "location";
+            /** Higher Leader */
+            higher_leader: ("first" | "second" | "tie") | null;
+            /** Higher Margin */
+            higher_margin: number | null;
+            /** Higher Weight */
+            higher_weight: number;
+            /** Lower Leader */
+            lower_leader: ("first" | "second" | "tie") | null;
+            /** Lower Margin */
+            lower_margin: number | null;
+            /** Lower Weight */
+            lower_weight: number;
         };
         /**
          * OffersRubric
@@ -11002,6 +13555,123 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** ProjectHandoffApproval */
+        ProjectHandoffApproval: {
+            /**
+             * Approved
+             * @constant
+             */
+            approved: true;
+            /** Commands */
+            commands: string;
+            /** Expected Digest */
+            expected_digest: string;
+            /** Limitations */
+            limitations: string;
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /** Steps */
+            steps: string;
+        };
+        /** ProjectHandoffDraft */
+        ProjectHandoffDraft: {
+            /** Commands */
+            commands: string;
+            /** Limitations */
+            limitations: string;
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /** Steps */
+            steps: string;
+        };
+        /** ProjectHandoffOut */
+        ProjectHandoffOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Digest */
+            digest: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Markdown */
+            markdown: string;
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /** Project Title */
+            project_title: string;
+            /**
+             * Submitted At
+             * Format: date-time
+             */
+            submitted_at: string;
+        };
+        /** ProjectHandoffPreview */
+        ProjectHandoffPreview: {
+            /** Digest */
+            digest: string;
+            /** Markdown */
+            markdown: string;
+        };
+        /** ProjectHandoffSource */
+        ProjectHandoffSource: {
+            /** Description */
+            description: string | null;
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /** Project Title */
+            project_title: string;
+            /** Repo Url */
+            repo_url: string | null;
+            /**
+             * Submitted At
+             * Format: date-time
+             */
+            submitted_at: string;
+        };
+        /** ProjectHandoffSummary */
+        ProjectHandoffSummary: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Digest */
+            digest: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /** Project Title */
+            project_title: string;
+            /**
+             * Submitted At
+             * Format: date-time
+             */
+            submitted_at: string;
+        };
         /** ProjectOut */
         ProjectOut: {
             brief: components["schemas"]["ProjectBriefOut"] | null;
@@ -11084,6 +13754,163 @@ export interface components {
             finished_at: string;
             /** Run Id */
             run_id: string;
+        };
+        /** ProofOption */
+        ProofOption: {
+            /** At */
+            at: string | null;
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "program" | "lesson" | "study" | "quiz" | "project" | "cv" | "capture" | "ide" | "github" | "system_design" | "contribution" | "feynman";
+            /** Label */
+            label: string;
+            /** Skill Id */
+            skill_id: string;
+            /** Skill Name */
+            skill_name: string;
+        };
+        /** ProofPacketCreate */
+        ProofPacketCreate: {
+            /** Expected Digest */
+            expected_digest: string;
+            /** Sources */
+            sources: components["schemas"]["ProofPacketReference"][];
+            /** Title */
+            title: string;
+        };
+        /** ProofPacketItem */
+        ProofPacketItem: {
+            /** Artifact */
+            artifact: string;
+            /** Artifact Digest */
+            artifact_digest: string;
+            /** Measurements */
+            measurements: components["schemas"]["ProofPacketMeasure"][];
+            /**
+             * Mission Id
+             * Format: uuid
+             */
+            mission_id: string;
+            /**
+             * Proof Id
+             * Format: uuid
+             */
+            proof_id: string;
+            /**
+             * Recorded At
+             * Format: date-time
+             */
+            recorded_at: string;
+            /** Revision */
+            revision: number;
+            /** Title */
+            title: string;
+        };
+        /** ProofPacketManifest */
+        ProofPacketManifest: {
+            /** Procedure */
+            procedure: string[];
+            /** Proofs */
+            proofs: components["schemas"]["ProofPacketItem"][];
+            /**
+             * Schema Version
+             * @default 1
+             * @constant
+             */
+            schema_version: 1;
+            /** Title */
+            title: string;
+        };
+        /** ProofPacketMeasure */
+        ProofPacketMeasure: {
+            /** Index */
+            index: number;
+            /** Label */
+            label: string;
+            /** Observed */
+            observed: number;
+            /** Target */
+            target: number;
+        };
+        /** ProofPacketOut */
+        ProofPacketOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Digest */
+            digest: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            manifest: components["schemas"]["ProofPacketManifest"];
+        };
+        /** ProofPacketPreview */
+        ProofPacketPreview: {
+            /** Digest */
+            digest: string;
+            manifest: components["schemas"]["ProofPacketManifest"];
+        };
+        /** ProofPacketReference */
+        ProofPacketReference: {
+            /**
+             * Mission Id
+             * Format: uuid
+             */
+            mission_id: string;
+            /**
+             * Proof Id
+             * Format: uuid
+             */
+            proof_id: string;
+            /** Revision */
+            revision: number;
+        };
+        /** ProofPacketSelection */
+        ProofPacketSelection: {
+            /** Sources */
+            sources: components["schemas"]["ProofPacketReference"][];
+            /** Title */
+            title: string;
+        };
+        /** ProofPacketSource */
+        ProofPacketSource: {
+            /**
+             * Mission Id
+             * Format: uuid
+             */
+            mission_id: string;
+            /**
+             * Proof Id
+             * Format: uuid
+             */
+            proof_id: string;
+            /** Revision */
+            revision: number;
+            /** Title */
+            title: string;
+        };
+        /** ProofPacketSummary */
+        ProofPacketSummary: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
         };
         /** ProposalOut */
         ProposalOut: {
@@ -11632,6 +14459,108 @@ export interface components {
             /** Score Points */
             score_points: number;
         };
+        /** RecruitmentAnswerIn */
+        RecruitmentAnswerIn: {
+            /** Answer */
+            answer: string;
+        };
+        /** RecruitmentChoice */
+        RecruitmentChoice: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+        };
+        /** RecruitmentCreate */
+        RecruitmentCreate: {
+            /**
+             * Posting Id
+             * Format: uuid
+             */
+            posting_id: string;
+            /** Project Id */
+            project_id?: string | null;
+        };
+        /** RecruitmentCriterion */
+        RecruitmentCriterion: {
+            /** Instructions */
+            instructions: string;
+            /** Label */
+            label: string;
+        };
+        /** RecruitmentGrade */
+        RecruitmentGrade: {
+            /** Feedback */
+            feedback: string;
+            /** Marks */
+            marks: number[];
+        };
+        /** RecruitmentMissingProof */
+        RecruitmentMissingProof: {
+            /** Requirement */
+            requirement: string;
+            /** Skills */
+            skills: string[];
+        };
+        /** RecruitmentOptions */
+        RecruitmentOptions: {
+            /** Postings */
+            postings: components["schemas"]["RecruitmentChoice"][];
+            /** Projects */
+            projects: components["schemas"]["RecruitmentChoice"][];
+        };
+        /** RecruitmentOut */
+        RecruitmentOut: {
+            /** Active Step */
+            active_step: ("project" | "exercise" | "interview") | null;
+            /** Company */
+            company: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Id */
+            id: string;
+            /** Missing Proofs */
+            missing_proofs: components["schemas"]["RecruitmentMissingProof"][];
+            /** Posting Id */
+            posting_id: string;
+            /** Posting Title */
+            posting_title: string;
+            project: components["schemas"]["RecruitmentChoice"] | null;
+            /** Rubric */
+            rubric: components["schemas"]["RecruitmentCriterion"][];
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "ready" | "evaluating" | "failed" | "complete";
+            /** Steps */
+            steps: components["schemas"]["RecruitmentStep"][];
+        };
+        /** RecruitmentStarted */
+        RecruitmentStarted: {
+            /** Session Id */
+            session_id: string;
+        };
+        /** RecruitmentStep */
+        RecruitmentStep: {
+            /** Answer */
+            answer?: string | null;
+            grade?: components["schemas"]["RecruitmentGrade"] | null;
+            /** Graded At */
+            graded_at?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "project" | "exercise" | "interview";
+            /** Prompt */
+            prompt: string;
+            /** Session Id */
+            session_id?: string | null;
+        };
         /**
          * ReindexState
          * @description État de la réindexation de l'utilisateur, tenu en mémoire (perdu au redémarrage).
@@ -12035,6 +14964,40 @@ export interface components {
             queue: number;
             /** Remaining */
             remaining: number;
+        };
+        /** RoutineIn */
+        RoutineIn: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "due_reviews" | "due_transfers" | "missions_ending" | "due_commitments";
+            /** Local Time */
+            local_time: string;
+        };
+        /** RoutineOut */
+        RoutineOut: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "due_reviews" | "due_transfers" | "missions_ending" | "due_commitments";
+            /** Enabled */
+            enabled: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Local Time */
+            local_time: string;
+        };
+        /** RoutinePatch */
+        RoutinePatch: {
+            /** Enabled */
+            enabled?: boolean | null;
+            /** Local Time */
+            local_time?: string | null;
         };
         /** RunCompletedEvent */
         RunCompletedEvent: {
@@ -12454,6 +15417,147 @@ export interface components {
             readonly vision_enabled: boolean;
             weekly_review?: components["schemas"]["WeeklyReview"];
         };
+        /** SharedModuleRef */
+        SharedModuleRef: {
+            /** Id */
+            id: string;
+            /** Program Id */
+            program_id: string;
+            /** Title */
+            title: string;
+        };
+        /** SharedPlacement */
+        SharedPlacement: {
+            /**
+             * From Date
+             * Format: date
+             */
+            from_date: string;
+            /** Minutes */
+            minutes: number;
+            /** Module Id */
+            module_id: string;
+            /** Module Title */
+            module_title: string;
+            /**
+             * Planned Date
+             * Format: date
+             */
+            planned_date: string;
+            /** Program Id */
+            program_id: string;
+            /** Task Id */
+            task_id: string;
+            /** Title */
+            title: string;
+        };
+        /** SharedPrerequisite */
+        SharedPrerequisite: {
+            /** Label */
+            label: string;
+            module: components["schemas"]["SharedModuleRef"];
+            /** References */
+            references: components["schemas"]["SharedModuleRef"][];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "completed" | "planned" | "pending" | "unmatched";
+        };
+        /** SharedTaskRef */
+        SharedTaskRef: {
+            /**
+             * From Date
+             * Format: date
+             */
+            from_date: string;
+            /** Minutes */
+            minutes: number;
+            /** Module Id */
+            module_id: string;
+            /** Module Title */
+            module_title: string;
+            /** Program Id */
+            program_id: string;
+            /** Task Id */
+            task_id: string;
+            /** Title */
+            title: string;
+        };
+        /** SharedWeekAccept */
+        SharedWeekAccept: {
+            /** Confirmed */
+            confirmed: boolean;
+        };
+        /** SharedWeekCreate */
+        SharedWeekCreate: {
+            /** Program Ids */
+            program_ids: string[];
+            /**
+             * Week Start
+             * Format: date
+             */
+            week_start: string;
+        };
+        /** SharedWeekDay */
+        SharedWeekDay: {
+            /** Capacity Minutes */
+            capacity_minutes: number;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Planned Minutes */
+            planned_minutes: number;
+            /** Reserved Minutes */
+            reserved_minutes: number;
+        };
+        /** SharedWeekOption */
+        SharedWeekOption: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+        };
+        /** SharedWeekOut */
+        SharedWeekOut: {
+            /** Accepted At */
+            accepted_at: string | null;
+            /** Cap Minutes */
+            cap_minutes: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Days */
+            days: components["schemas"]["SharedWeekDay"][];
+            /** Id */
+            id: string;
+            /** Issues */
+            issues: ("no_tasks" | "weekly_budget" | "program_budget" | "prerequisites" | "capacity")[];
+            /** Placements */
+            placements: components["schemas"]["SharedPlacement"][];
+            /** Planned Minutes */
+            planned_minutes: number;
+            /** Prerequisites */
+            prerequisites: components["schemas"]["SharedPrerequisite"][];
+            /** Programs */
+            programs: components["schemas"]["SharedWeekOption"][];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "blocked" | "accepted";
+            /** Unplaced */
+            unplaced: components["schemas"]["SharedTaskRef"][];
+            /**
+             * Week Start
+             * Format: date
+             */
+            week_start: string;
+        };
         /** SiteOut */
         SiteOut: {
             /** Candidates */
@@ -12794,6 +15898,83 @@ export interface components {
             vectorize_limit: number;
             /** Vectorize Share */
             vectorize_share: number;
+        };
+        /** StudyReturnCard */
+        StudyReturnCard: {
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /** Front */
+            front: string;
+            /** Id */
+            id: string;
+            /** Skill */
+            skill: string | null;
+        };
+        /** StudyReturnLastBlock */
+        StudyReturnLastBlock: {
+            /**
+             * Ended At
+             * Format: date-time
+             */
+            ended_at: string;
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "guided" | "training";
+            /** Minutes */
+            minutes: number;
+            /** Title */
+            title: string | null;
+        };
+        /** StudyReturnOut */
+        StudyReturnOut: {
+            plan: components["schemas"]["StudyReturnPlan"] | null;
+            /** Reminder Due */
+            reminder_due: boolean;
+            /** Reminder On */
+            reminder_on: string | null;
+        };
+        /** StudyReturnPlan */
+        StudyReturnPlan: {
+            /** Cards */
+            cards: components["schemas"]["StudyReturnCard"][];
+            /** Id */
+            id: string;
+            last_block: components["schemas"]["StudyReturnLastBlock"] | null;
+            /** Minutes */
+            minutes: number;
+            /**
+             * Prepared At
+             * Format: date-time
+             */
+            prepared_at: string;
+            /** Skills */
+            skills: components["schemas"]["StudyReturnSkill"][];
+            /** Training Id */
+            training_id: string | null;
+        };
+        /** StudyReturnReminder */
+        StudyReturnReminder: {
+            /** Day */
+            day: string | null;
+        };
+        /** StudyReturnSkill */
+        StudyReturnSkill: {
+            /** Id */
+            id: string;
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "valide" | "prouve";
+            /** Name */
+            name: string;
         };
         /** StudySelection */
         StudySelection: {
@@ -13529,6 +16710,61 @@ export interface components {
              */
             mode: "socratic" | "feynman" | "direct";
         };
+        /** TransferExerciseOut */
+        TransferExerciseOut: {
+            /** Prompt */
+            prompt: string;
+            /** Title */
+            title: string;
+        };
+        /** TransferIn */
+        TransferIn: {
+            /**
+             * Due On
+             * Format: date
+             */
+            due_on: string;
+            /** Proof Id */
+            proof_id: string;
+            /**
+             * Skill Id
+             * Format: uuid
+             */
+            skill_id: string;
+        };
+        /** TransferOut */
+        TransferOut: {
+            /** Answer */
+            answer?: string | null;
+            assessment?: components["schemas"]["AssessmentOut"] | null;
+            /** Available */
+            available: boolean;
+            /**
+             * Due On
+             * Format: date
+             */
+            due_on: string;
+            exercise?: components["schemas"]["TransferExerciseOut"] | null;
+            /** Id */
+            id: string;
+            proof: components["schemas"]["ProofOption"];
+            /** Retry */
+            retry?: ("prepare" | "answer") | null;
+            /** Session Id */
+            session_id: string | null;
+            /**
+             * Stage
+             * @enum {string}
+             */
+            stage: "scheduled" | "preparing" | "ready" | "grading" | "complete";
+        };
+        /** TransferStarted */
+        TransferStarted: {
+            /** Session Id */
+            session_id: string;
+            /** Transfer Id */
+            transfer_id: string;
+        };
         /**
          * TrendOut
          * @description Une compétence du classement. `delta_share` : points de pourcentage depuis le relevé
@@ -13957,6 +17193,72 @@ export interface components {
              */
             vote: "oui" | "non" | "peut_etre";
         };
+        /** WatchExperimentIn */
+        WatchExperimentIn: {
+            /** Criterion */
+            criterion: string;
+            /** Protocol */
+            protocol: string;
+            /** Sources */
+            sources: [
+                components["schemas"]["WatchSource"],
+                components["schemas"]["WatchSource"]
+            ];
+            /** Title */
+            title: string;
+        };
+        /** WatchExperimentOut */
+        WatchExperimentOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Criterion */
+            criterion: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            observation?: components["schemas"]["WatchObservation"] | null;
+            /** Protocol */
+            protocol: string;
+            /** Sources */
+            sources: [
+                components["schemas"]["WatchSource"],
+                components["schemas"]["WatchSource"]
+            ];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ready" | "completed";
+            /** Title */
+            title: string;
+        };
+        /** WatchObservation */
+        WatchObservation: {
+            /** Measurement */
+            measurement: string;
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "first" | "second" | "inconclusive";
+        };
+        /** WatchSource */
+        WatchSource: {
+            /** Claim */
+            claim: string;
+            /**
+             * Url
+             * Format: uri
+             */
+            url: string;
+            /** Version */
+            version: string;
+        };
         /**
          * WeekCreate
          * @description Une semaine de plus à la fin du programme (52 au plus), écrite à la main ou par Claude :
@@ -14106,6 +17408,51 @@ export interface components {
             render: number;
             /** Zone */
             zone: string;
+        };
+        /** IncidentEvent */
+        app__features__incident_replay__schemas__IncidentEvent: {
+            /** Minute */
+            minute: number;
+            /** Observed */
+            observed: string;
+            /** Title */
+            title: string;
+        };
+        /** IncidentEvent */
+        app__features__oncall__schemas__IncidentEvent: {
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "sample" | "alert" | "diagnostic";
+            /**
+             * Metric
+             * @enum {string}
+             */
+            metric: "latency" | "queue" | "quota" | "fidelity";
+            /** Minute */
+            minute: number;
+            /** Value */
+            value: number;
+        };
+        /** AnswerIn */
+        app__features__quiz__schemas__AnswerIn: {
+            /** Choice */
+            choice?: number | null;
+            /** Question Id */
+            question_id: string;
+            /**
+             * Text
+             * @default
+             */
+            text: string;
+        };
+        /** AnswerIn */
+        app__features__skill_transfer__schemas__AnswerIn: {
+            /** Answer */
+            answer: string;
         };
     };
     responses: never;
@@ -14904,6 +18251,141 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    list_blind_api_v1_blind_assessments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlindOut"][];
+                };
+            };
+        };
+    };
+    create_blind_api_v1_blind_assessments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BlindCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlindOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_blind_options_api_v1_blind_assessments_options_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlindOptions"];
+                };
+            };
+        };
+    };
+    read_blind_api_v1_blind_assessments__assessment_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assessment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlindOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    evaluate_blind_api_v1_blind_assessments__assessment_id__evaluate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assessment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlindStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };
@@ -15811,6 +19293,125 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CompatibleOfferPlan"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_experiments_api_v1_contradictory_watch_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchExperimentOut"][];
+                };
+            };
+        };
+    };
+    create_experiment_api_v1_contradictory_watch_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WatchExperimentIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchExperimentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_experiment_api_v1_contradictory_watch__experiment_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                experiment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchExperimentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_observation_api_v1_contradictory_watch__experiment_id__observations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                experiment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WatchObservation"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchExperimentOut"];
                 };
             };
             /** @description Validation Error */
@@ -16789,6 +20390,416 @@ export interface operations {
             };
         };
     };
+    list_investigations_api_v1_data_investigations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvestigationSummary"][];
+                };
+            };
+        };
+    };
+    create_investigation_api_v1_data_investigations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvestigationCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvestigationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_datasets_api_v1_data_investigations_datasets_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvestigationDataset"][];
+                };
+            };
+        };
+    };
+    read_investigation_api_v1_data_investigations__investigation_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                investigation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvestigationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apply_operations_api_v1_data_investigations__investigation_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                investigation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvestigationOperations"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvestigationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_investigation_api_v1_data_investigations__investigation_id__submit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                investigation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvestigationSubmission"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvestigationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_commitments_api_v1_dated_commitments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommitmentOut"][];
+                };
+            };
+        };
+    };
+    create_api_v1_dated_commitments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommitmentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommitmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_api_v1_dated_commitments__commitment_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                commitment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommitmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    review_api_v1_dated_commitments__commitment_id__review_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                commitment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommitmentReview"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommitmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    compare_api_v1_decision_lab_compare_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionAssumptions"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionComparison"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_scenarios_api_v1_decision_lab_scenarios_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionScenarioSummary"][];
+                };
+            };
+        };
+    };
+    save_scenario_api_v1_decision_lab_scenarios_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionScenarioCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionScenarioOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_scenario_api_v1_decision_lab_scenarios__scenario_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scenario_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionScenarioOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_documents_api_v1_documents_get: {
         parameters: {
             query?: never;
@@ -16911,6 +20922,110 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LearnedStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_hypotheses_api_v1_error_atlas_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AtlasHypothesisOut"][];
+                };
+            };
+        };
+    };
+    list_evidence_api_v1_error_atlas_evidence_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AtlasEvidenceOut"][];
+                };
+            };
+        };
+    };
+    start_exercise_api_v1_error_atlas_hypotheses__hypothesis_id__exercise_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hypothesis_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AtlasExerciseOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_observation_api_v1_error_atlas_observations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AtlasObservationIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AtlasHypothesisOut"];
                 };
             };
             /** @description Validation Error */
@@ -17370,6 +21485,207 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProposalOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_grade_appeals_api_v1_grade_appeals_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GradeAppealOut"][];
+                };
+            };
+        };
+    };
+    create_grade_appeal_api_v1_grade_appeals_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GradeAppealCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GradeAppealOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_appeal_projects_api_v1_grade_appeals_projects_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GradeAppealProject"][];
+                };
+            };
+        };
+    };
+    list_appeal_criteria_api_v1_grade_appeals_projects__project_id__criteria_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GradeAppealCriterion"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_grade_appeal_api_v1_grade_appeals__appeal_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appeal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GradeAppealOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    decide_grade_appeal_api_v1_grade_appeals__appeal_id__decision_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appeal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GradeAppealDecisionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GradeAppealOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    review_grade_appeal_api_v1_grade_appeals__appeal_id__review_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appeal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GradeAppealStarted"];
                 };
             };
             /** @description Validation Error */
@@ -18820,6 +23136,253 @@ export interface operations {
             };
         };
     };
+    list_replays_api_v1_incident_replays_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncidentReplayOut"][];
+                };
+            };
+        };
+    };
+    create_replay_api_v1_incident_replays_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IncidentReplayIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncidentReplayOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_scenarios_api_v1_incident_replays_scenarios_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncidentScenarioOut"][];
+                };
+            };
+        };
+    };
+    read_replay_api_v1_incident_replays__replay_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                replay_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncidentReplayOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    annotate_replay_api_v1_incident_replays__replay_id__notes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                replay_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IncidentNote"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncidentReplayOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_proposals_api_v1_interprogram_planning_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharedWeekOut"][];
+                };
+            };
+        };
+    };
+    create_api_v1_interprogram_planning_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SharedWeekCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharedWeekOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    options_api_v1_interprogram_planning_options_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharedWeekOption"][];
+                };
+            };
+        };
+    };
+    accept_api_v1_interprogram_planning__proposal_id__accept_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                proposal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SharedWeekAccept"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharedWeekOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_interviews_api_v1_interviews_get: {
         parameters: {
             query?: {
@@ -19100,6 +23663,90 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HuntStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_editions_api_v1_lesson_variants_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonVariantSummary"][];
+                };
+            };
+        };
+    };
+    create_edition_api_v1_lesson_variants_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LessonVariantCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonVariantOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_edition_api_v1_lesson_variants__edition_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                edition_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonVariantOut"];
                 };
             };
             /** @description Validation Error */
@@ -20023,6 +24670,160 @@ export interface operations {
             };
         };
     };
+    list_modules_api_v1_meeting_modules_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeetingModuleSummary"][];
+                };
+            };
+        };
+    };
+    prepare_module_api_v1_meeting_modules_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeetingModuleIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeetingModuleOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_module_api_v1_meeting_modules__module_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                module_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeetingModuleOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    publish_module_api_v1_meeting_modules__module_id__publish_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                module_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeetingSelection"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeetingModuleOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_selection_api_v1_meeting_modules__module_id__selection_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                module_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeetingSelection"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeetingModuleOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     export_api_v1_memory_export_get: {
         parameters: {
             query?: never;
@@ -20337,6 +25138,208 @@ export interface operations {
             };
         };
     };
+    shared_work_api_v1_mentor_reviews_shared_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MentorSharedWork"];
+                };
+            };
+        };
+    };
+    write_comment_api_v1_mentor_reviews_shared_comments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MentorCommentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MentorCommentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_shares_api_v1_mentor_reviews_shares_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MentorShareOut"][];
+                };
+            };
+        };
+    };
+    issue_share_api_v1_mentor_reviews_shares_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MentorShareCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MentorShareIssued"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_share_api_v1_mentor_reviews_shares__share_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                share_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MentorShareDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_share_api_v1_mentor_reviews_shares__share_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                share_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_comment_api_v1_mentor_reviews_shares__share_id__comments__comment_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                share_id: string;
+                comment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MentorCommentReview"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MentorOwnedComment"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     claim_api_v1_message_reviews_claim_post: {
         parameters: {
             query?: never;
@@ -20491,6 +25494,161 @@ export interface operations {
             };
         };
     };
+    list_missions_api_v1_missions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MissionOut"][];
+                };
+            };
+        };
+    };
+    start_mission_api_v1_missions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MissionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MissionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_mission_api_v1_missions__mission_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MissionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_criterion_api_v1_missions__mission_id__criteria__index__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mission_id: string;
+                index: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MissionProgress"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MissionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_mission_api_v1_missions__mission_id__submission_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MissionSubmit"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MissionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     patch_module_api_v1_modules__module_id__patch: {
         parameters: {
             query?: never;
@@ -20609,6 +25767,196 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["QuizStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_offer_comparisons_api_v1_offer_comparisons_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfferComparisonHistoryItem"][];
+                };
+            };
+        };
+    };
+    save_offer_comparison_api_v1_offer_comparisons_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OfferComparisonPair"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfferComparisonSaved"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_comparable_postings_api_v1_offer_comparisons_postings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfferComparisonPosting"][];
+                };
+            };
+        };
+    };
+    get_offer_comparison_preferences_api_v1_offer_comparisons_preferences_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfferComparisonPreferences"];
+                };
+            };
+        };
+    };
+    put_offer_comparison_preferences_api_v1_offer_comparisons_preferences_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OfferComparisonPreferences"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfferComparisonPreferences"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_offer_comparison_api_v1_offer_comparisons_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OfferComparisonPair"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfferComparisonResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_offer_comparison_api_v1_offer_comparisons__scenario_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scenario_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfferComparisonSaved"];
                 };
             };
             /** @description Validation Error */
@@ -22283,6 +27631,185 @@ export interface operations {
             };
         };
     };
+    list_handoffs_api_v1_project_handoffs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectHandoffSummary"][];
+                };
+            };
+        };
+    };
+    approve_guide_api_v1_project_handoffs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectHandoffApproval"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectHandoffOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_guide_api_v1_project_handoffs_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectHandoffDraft"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectHandoffPreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_source_api_v1_project_handoffs_source__project_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectHandoffSource"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_handoff_api_v1_project_handoffs__handoff_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                handoff_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectHandoffOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_handoff_api_v1_project_handoffs__handoff_id__export_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                handoff_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/markdown": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_projects_api_v1_projects_get: {
         parameters: {
             query?: {
@@ -22818,6 +28345,174 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    list_packets_api_v1_proof_packets_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProofPacketSummary"][];
+                };
+            };
+        };
+    };
+    save_packet_api_v1_proof_packets_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProofPacketCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProofPacketOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_packet_api_v1_proof_packets_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProofPacketSelection"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProofPacketPreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_sources_api_v1_proof_packets_sources_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProofPacketSource"][];
+                };
+            };
+        };
+    };
+    read_packet_api_v1_proof_packets__packet_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                packet_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProofPacketOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_packet_api_v1_proof_packets__packet_id__export_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                packet_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProofPacketManifest"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };
@@ -23683,6 +29378,146 @@ export interface operations {
             };
         };
     };
+    list_recruitment_processes_api_v1_recruitment_processes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecruitmentOut"][];
+                };
+            };
+        };
+    };
+    create_recruitment_process_api_v1_recruitment_processes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecruitmentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecruitmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recruitment_options_api_v1_recruitment_processes_options_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecruitmentOptions"];
+                };
+            };
+        };
+    };
+    read_recruitment_process_api_v1_recruitment_processes__process_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                process_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecruitmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    answer_recruitment_step_api_v1_recruitment_processes__process_id__steps__kind__answers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                process_id: string;
+                kind: "project" | "exercise" | "interview";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecruitmentAnswerIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecruitmentStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_reminders_api_v1_reminders_get: {
         parameters: {
             query?: {
@@ -23901,6 +29736,160 @@ export interface operations {
                 };
                 content: {
                     "application/pdf": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_routines_api_v1_routines_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineOut"][];
+                };
+            };
+        };
+    };
+    create_routine_api_v1_routines_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoutineIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_routine_api_v1_routines__routine_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                routine_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoutinePatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_executions_api_v1_routines__routine_id__executions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                routine_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExecutionOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    execute_routine_api_v1_routines__routine_id__executions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                routine_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExecutionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExecutionOut"];
                 };
             };
             /** @description Validation Error */
@@ -24500,6 +30489,198 @@ export interface operations {
             };
         };
     };
+    list_transfers_api_v1_skill_transfers_get: {
+        parameters: {
+            query?: {
+                skill_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_transfer_api_v1_skill_transfers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransferIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_proofs_api_v1_skill_transfers_proofs_get: {
+        parameters: {
+            query?: {
+                skill_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProofOption"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_transfer_api_v1_skill_transfers__transfer_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transfer_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    answer_transfer_api_v1_skill_transfers__transfer_id__answer_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transfer_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["app__features__skill_transfer__schemas__AnswerIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    prepare_transfer_api_v1_skill_transfers__transfer_id__prepare_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transfer_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_skill_api_v1_skills_post: {
         parameters: {
             query?: never;
@@ -24644,6 +30825,99 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_api_v1_study_return_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudyReturnOut"];
+                };
+            };
+        };
+    };
+    prepare_api_v1_study_return_prepare_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudyReturnOut"];
+                };
+            };
+        };
+    };
+    reminder_api_v1_study_return_reminder_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudyReturnReminder"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudyReturnOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_api_v1_study_return_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudyReturnOut"];
                 };
             };
         };

@@ -1,0 +1,1 @@
+export { ComparisonDetailPage } from "./ComparisonDetailPage";

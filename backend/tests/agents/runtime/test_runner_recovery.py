@@ -93,12 +93,10 @@ async def test_waiting_session_survives_restart(
     assert probe.counter["after"] == 1
 
 
-async def test_restart_after_claim_resume_asks_again_same_interrupt(
+async def test_restart_after_claim_resume_applies_acknowledged_answer_once(
     make_runner: MakeRunner, db_factory: Factory, user_id: str, probe: Probe
 ):
-    """Réponse acceptée (`claim_resume` : `running`, question effacée), puis arrêt brutal avant
-    que la tâche relancée n'écrive le moindre checkpoint : au redémarrage, la même question est
-    reposée (même id) et aucun nœud terminé n'est rejoué."""
+    """Un arrêt après l'acceptation conserve la réponse et les nœuds déjà terminés."""
     r1 = await make_runner()
     sid = await r1.start(user_id, "step_then_ask", {})
     first = await wait_status(db_factory, user_id, sid, "waiting_user")
@@ -109,13 +107,8 @@ async def test_restart_after_claim_resume_asks_again_same_interrupt(
     await r1.shutdown()
     r2 = await make_runner()
     assert await r2.recover_on_startup() == [sid]
-    row = await wait_status(db_factory, user_id, sid, "waiting_user")
-    await wait_idle(r2, sid)
-    assert row.status == "waiting_user" and row.pending_interrupt is not None
-    assert row.pending_interrupt["interrupt_id"] == first_id
-    assert (probe.counter["A"], probe.counter["after"]) == (1, 0)
-    await r2.resume(user_id, sid, first_id, "oui")
     await wait_status(db_factory, user_id, sid, "completed")
+    await wait_idle(r2, sid)
     assert (probe.counter["A"], probe.counter["after"]) == (1, 1)
 
 

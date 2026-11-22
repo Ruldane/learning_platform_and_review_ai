@@ -27,6 +27,7 @@ NEVER_REACHABLE = (
     "/settings/models",
     "/settings/agents",
 )
+CALENDAR_MCP_PATHS = frozenset({"/calendar/upcoming", "/calendar/proposals"})
 SETTINGS_PATH = "/settings"
 _FORM_MEDIA = ("multipart/form-data", "application/x-www-form-urlencoded")
 
@@ -54,6 +55,8 @@ class RoutePlan:
 
 
 def never_reachable(path: str) -> bool:
+    if path in CALENDAR_MCP_PATHS:
+        return False
     return any(path == base or path.startswith(base + "/") for base in NEVER_REACHABLE)
 
 

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import RedirectResponse
 from starlette.requests import HTTPConnection
 
-from app.core.deps import Db, InterfaceUserDep
+from app.core.deps import CurrentUserDep, Db, InterfaceUserDep
 from app.core.field_paths import FieldPathsRoute
 from app.features.calendar.schemas import (
     CalendarProposalOut,
@@ -78,7 +78,7 @@ async def disconnect(user: InterfaceUserDep, rt: CalendarDep) -> CalendarStatus:
 
 
 @router.post("/proposals", status_code=201)
-async def propose(user: InterfaceUserDep, rt: CalendarDep, body: Selection) -> CalendarProposalOut:
+async def propose(user: CurrentUserDep, rt: CalendarDep, body: Selection) -> CalendarProposalOut:
     return await proposals.prepare(rt, user.id, body)
 
 
@@ -89,7 +89,7 @@ async def confirm(user: InterfaceUserDep, rt: CalendarDep, proposal_id: str) -> 
 
 @router.get("/upcoming")
 async def next_event(
-    user: InterfaceUserDep, rt: CalendarDep, response: Response
+    user: CurrentUserDep, rt: CalendarDep, response: Response
 ) -> UpcomingEvent | None:
     response.headers.update(PRIVATE)
     return await upcoming.next_event(rt, user.id)

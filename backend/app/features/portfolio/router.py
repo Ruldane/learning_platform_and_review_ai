@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Path, Request, Response
 from starlette.requests import HTTPConnection
 
-from app.core.deps import Db, InterfaceUserDep
+from app.core.deps import CurrentUserDep, Db, InterfaceUserDep
 from app.core.errors import AppError
 from app.core.field_paths import FieldPathsRoute
 from app.features.portfolio.schemas import (
@@ -53,13 +53,13 @@ def _html(data: bytes, *, private: bool) -> Response:
 
 
 @router.get("/portfolio")
-async def get_portfolio(user: InterfaceUserDep, db: Db, rt: Runtime) -> SiteOut:
+async def get_portfolio(user: CurrentUserDep, db: Db, rt: Runtime) -> SiteOut:
     return await publication.read(db, user.id, rt.origin())
 
 
 @router.post("/portfolio/drafts", status_code=201)
 async def build_portfolio(
-    body: SelectDraft, user: InterfaceUserDep, rt: Runtime
+    body: SelectDraft, user: CurrentUserDep, rt: Runtime
 ) -> PortfolioDraftOut:
     return await artifacts.build(rt, user.id, body)
 

@@ -1,0 +1,1 @@
+export { WeekDetails } from "./WeekDetails";

@@ -15,6 +15,7 @@ from app.scheduler.jobs import (
     project_briefs,
     reading_stack,
     reminders_due,
+    routines,
     skill_snapshots,
     weekly_review,
 )
@@ -32,5 +33,6 @@ JOBS: list[JobSpec] = [
     JobSpec("lesson_updates", timedelta(minutes=15), lesson_updates.run),
     JobSpec("podcast_daily", timedelta(minutes=15), podcast.run),
     JobSpec("project_briefs", timedelta(minutes=15), project_briefs.run),
+    JobSpec("routines", timedelta(minutes=1), routines.run),
     JobSpec("mcp_housekeeping", timedelta(minutes=10), mcp_housekeeping.run),
 ]

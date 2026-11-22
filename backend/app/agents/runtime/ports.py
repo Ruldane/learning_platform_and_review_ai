@@ -6,6 +6,7 @@ contrat 6). Un port de plus = un champ ici, avec sa valeur « non branché », e
 from dataclasses import dataclass
 
 from app.agents.tools.applications_port import NO_APPLICATIONS, ApplicationStore
+from app.agents.tools.blind_assessment_port import NO_BLIND, BlindAssessmentStore
 from app.agents.tools.boss_port import NO_BOSS, BossReviewPort
 from app.agents.tools.brief_port import NO_BRIEF, BriefStore
 from app.agents.tools.capture_port import NO_CAPTURE, CaptureStore
@@ -17,6 +18,7 @@ from app.agents.tools.cv_review_port import NO_CV_REVIEW, CvReviewStore
 from app.agents.tools.cv_template_port import NO_CV_TEMPLATES, CvTemplateStore
 from app.agents.tools.expert_debate_port import NO_EXPERT_DEBATE, ExpertDebateStore
 from app.agents.tools.gap_port import NO_GAP, GapStore
+from app.agents.tools.grade_appeals_port import NO_APPEALS, GradeAppealsStore
 from app.agents.tools.ide_port import NO_IDE, IdeStore
 from app.agents.tools.interview_port import NO_INTERVIEWS, InterviewStore
 from app.agents.tools.kit_port import NO_KIT, KitStore
@@ -33,7 +35,9 @@ from app.agents.tools.program_port import NO_PROGRAM, ProgramStore
 from app.agents.tools.project_port import NO_PROJECTS, ProjectStore
 from app.agents.tools.quiz_port import NO_QUIZ, QuizStore
 from app.agents.tools.radar_port import NO_RADAR, RadarStore
+from app.agents.tools.recruitment_process_port import NO_RECRUITMENT, RecruitmentStore
 from app.agents.tools.replan_port import NO_REPLAN, ReplanStore
+from app.agents.tools.skill_transfer_port import NO_TRANSFER, SkillTransferStore
 from app.agents.tools.study_port import NO_STUDY, StudyStore
 from app.agents.tools.web_port import NO_WEB, WebGateway
 
@@ -67,6 +71,10 @@ class AgentPorts:
     lesson_hunt: LessonHuntStore = NO_HUNT
     oncall: OncallPort = NO_ONCALL
     paper_lab: PaperLabStore = NO_PAPER_LAB
+    skill_transfer: SkillTransferStore = NO_TRANSFER
+    blind_assessment: BlindAssessmentStore = NO_BLIND
+    recruitment_process: RecruitmentStore = NO_RECRUITMENT
+    grade_appeals: GradeAppealsStore = NO_APPEALS
     lesson_updates: LessonUpdatePort = NO_LESSON_UPDATE
     expert_debates: ExpertDebateStore = NO_EXPERT_DEBATE
     linkedin: LinkedInStore = NO_LINKEDIN

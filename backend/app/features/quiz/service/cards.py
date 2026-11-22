@@ -89,6 +89,10 @@ async def due_skill_names(db: AsyncSession, user_id: str, today: date) -> set[st
     return {norm for norm in map(normalize_skill_name, skills) if norm}
 
 
+async def count_due_cards(db: AsyncSession, user_id: str, today: date) -> int:
+    return await FlashcardRepository(db, user_id).count_due(today)
+
+
 def card_not_found() -> AppError:
     return AppError("card_not_found", "Fiche introuvable.", 404)
 

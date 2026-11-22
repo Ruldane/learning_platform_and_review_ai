@@ -143,6 +143,7 @@ ignore_imports = [
     "app.features.** -> app.features.*.keys_service",
     # Le registre monte les routeurs de toutes les features : c'est son rôle.
     "app.features.registry -> app.features.**",
+    "app.features.registry.workflows -> app.features.**",
 ]
 
 [[tool.importlinter.contracts]]

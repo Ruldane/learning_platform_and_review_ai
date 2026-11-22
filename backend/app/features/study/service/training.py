@@ -1,3 +1,4 @@
+from collections.abc import Awaitable, Callable
 from datetime import datetime
 
 from sqlalchemy.exc import IntegrityError
@@ -24,6 +25,7 @@ from app.features.study.training_schemas import TrainingSessionOut, TrainingStar
 from app.mcp.recorder import ACTIVE
 
 GREETING = "Qu’aimerais-tu travailler aujourd’hui ? Tu peux choisir un sujet ou une leçon."
+TrainingLink = Callable[[AsyncSession, str], Awaitable[None]]
 
 
 def thread_for(study_id: str) -> ConversationThread:
@@ -74,8 +76,16 @@ async def _open_or_replace(repo: StudyRepository, now: datetime) -> StudySession
     return None
 
 
+async def _commit_opening(db: AsyncSession, row: StudySession, link: TrainingLink | None) -> None:
+    if link is not None:
+        await link(db, row.id)
+    if recorder := ACTIVE.get():
+        await recorder.persist_in(db)
+    await db.commit()
+
+
 async def start_training(
-    rt: StudyRuntime, user_id: str, body: TrainingStart
+    rt: StudyRuntime, user_id: str, body: TrainingStart, *, link: TrainingLink | None = None
 ) -> tuple[TrainingSessionOut, bool]:
     async with rt.study_lock(user_id):
         await _settle_kept(rt, user_id)
@@ -84,6 +94,8 @@ async def start_training(
             now = rt.now()
             existing = await _open_or_replace(repo, now)
             if existing is not None:
+                if link is not None:
+                    await _commit_opening(db, existing, link)
                 return await training_out(db, existing), False
             try:
                 row = await repo.add(
@@ -93,16 +105,21 @@ async def start_training(
                     updated_at=now,
                 )
                 await ensure_conversation(db, user_id, thread_for(row.id))
-                if recorder := ACTIVE.get():
-                    await recorder.persist_in(db)
-                await db.commit()
+                await _commit_opening(db, row, link)
             except IntegrityError:
                 await db.rollback()
                 existing = await _open_or_replace(repo, now)
                 if existing is None:
                     raise
+                if link is not None:
+                    await _commit_opening(db, existing, link)
                 return await training_out(db, existing), False
             return await training_out(db, row), True
+
+
+async def start_direct_training(rt: StudyRuntime, user_id: str, link: TrainingLink) -> None:
+    """Ouvre ou reprend un training et rattache son appelant dans la même transaction."""
+    await start_training(rt, user_id, TrainingStart(mode="direct"), link=link)
 
 
 async def talk_to_tutor(

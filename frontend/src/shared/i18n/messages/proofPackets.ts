@@ -1,0 +1,23 @@
+export const proofPackets = {
+  title: "Dossiers de preuves",
+  intro:
+    "Choisis des rendus de missions terminées. L’aperçu fige leurs révisions, leurs mesures et leur texte.",
+  sources: "Rendus approuvés",
+  noSources: "Aucun rendu approuvé.",
+  source: "{title} · révision {revision}",
+  name: "Nom du dossier",
+  preview: "Prévisualiser",
+  previewTitle: "Aperçu du manifeste",
+  digest: "Empreinte SHA-256 du manifeste",
+  artifactDigest: "Empreinte du rendu",
+  identifier: "Identifiant du rendu",
+  measurements: "Mesures enregistrées",
+  measure: "{observed} sur {target}",
+  procedure: "Procédure de vérification",
+  save: "Enregistrer le dossier",
+  saved: "Dossier enregistré.",
+  history: "Dossiers enregistrés",
+  noHistory: "Aucun dossier enregistré.",
+  open: "Consulter",
+  export: "Exporter le manifeste JSON",
+} as const;
