@@ -35,11 +35,12 @@ from tests.support.lessons import (
     PROGRAM_ID,
     FakeLessonStore,
     lesson_markdown,
+    verifier_reply,
 )
 
 PATIENCE_S = 60
 RESOURCES_MARKER = "Tâche : choisir les ressources d'apprentissage"
-NO_CLAIM = json.dumps({"unsupported": []})
+NO_CLAIM = verifier_reply()
 GOOD_LESSON = lesson_markdown(1500, urls=(URLS[0], URLS[1]))
 _SOURCE_ID = re.compile(r"source_id : (\S+) \(note")
 
@@ -61,7 +62,7 @@ def first_four(ids: list[str]) -> list[dict[str, Any]]:
 
 
 def claims(*items: str) -> str:
-    return json.dumps({"unsupported": list(items)})
+    return verifier_reply(*items)
 
 
 class LessonChat(CouncilChat):

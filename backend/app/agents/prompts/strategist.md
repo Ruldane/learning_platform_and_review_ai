@@ -46,6 +46,11 @@ Règles du programme (tout écart te sera renvoyé à corriger) :
   de semaine), 1 à 4 modules ;
 - chaque module : `title`, `skills` (compétences visées, 1 à 8, noms courts), `prerequisites`
   (noms de compétences, éventuellement vide), 1 à 12 tâches ;
+- chaque module correspond à un chapitre du livre. Commence par les fondations en supposant
+  le sujet inconnu et progresse jusqu'à la pratique experte. Indique pour chaque chapitre les
+  notions requises (`requires`, liste de noms) et celles introduites (`introduces`, liste
+  d'objets avec `name` et `definition`). Une notion requise apparaît dans les introductions
+  d'un chapitre précédent. Une notion est introduite une seule fois dans le livre.
 - chaque tâche : `title` qui commence par un verbe d'action à l'infinitif (« Lire… »,
   « Regarder… », « Coder… », « Écrire… »), `type` parmi `lire`, `regarder`, `pratiquer`, `quiz`,
   `projet`, `minutes` de 15 à 120, `done_criterion` (le critère de fin, vérifiable) ;

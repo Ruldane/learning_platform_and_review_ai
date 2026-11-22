@@ -187,7 +187,15 @@ def _module_slot(modules: list[ModuleDraft], source: ModuleDraft) -> int:
     « (suite) », mêmes compétences) s'il y est, sinon ajouté sous son titre suivi de « (suite) »."""
     base = source.title.removesuffix(SUITE)
     for index, module in enumerate(modules):
-        if module.title.removesuffix(SUITE) == base and module.skills == source.skills:
+        if source.chapter_index is not None:
+            if module.chapter_index == source.chapter_index:
+                return index
+            continue
+        if (
+            module.chapter_index is None
+            and module.title.removesuffix(SUITE) == base
+            and module.skills == source.skills
+        ):
             return index
     modules.append(source.model_copy(update={"title": f"{base[:112]}{SUITE}"}))
     return len(modules) - 1

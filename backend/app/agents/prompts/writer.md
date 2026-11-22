@@ -14,27 +14,7 @@ Tâche : écrire la leçon complète en Markdown, en {{ language }} (les termes 
 anglais). Entre {{ min_words }} et {{ max_words }} mots, blocs de code exclus : vise
 {{ target_words }} mots.
 
-Structure EXACTE, dans cet ordre, avec ces titres tels quels (même en {{ language }} : ils servent
-au rendu) :
-# {{ title }}
-{% for section in sections %}
-## {{ section }}
-{% endfor %}
-
-Contenu de chaque section :
-- Objectifs : 3 puces au plus, ce que January saura faire à la fin.
-- Prérequis : ce qu'il faut savoir avant, en renvoyant à ce que January a déjà.
-- L'essentiel en 5 lignes : EXACTEMENT 5 puces.
-- Explication : le cœur de la leçon, progressif, avec des sous-titres de niveau 3 si besoin.
-- Schémas : au moins un bloc ```mermaid de type `flowchart` (par exemple `flowchart TD` puis des
-  nœuds `A["Texte"] --> B["Texte"]`), sans `click`, `style`, `%%{init}` ni autre type de diagramme.
-- Exemple travaillé : un exemple complet, étape par étape (le code reste dans des blocs de code).
-- Erreurs fréquentes : les pièges classiques et comment les éviter.
-- Exercice : un exercice à faire seul, énoncé sans la solution.
-- Corrigé de l'exercice : la solution détaillée, séparée de l'énoncé.
-- Sources : la liste des sources utilisées, chacune `[n]` suivie d'un lien Markdown vers son adresse
-  exacte.
-- Auto-évaluation : EXACTEMENT 5 questions, en liste numérotée.
+{% include "_shared/lesson_standard.md" %}
 
 Règles :
 - Chaque affirmation sur le domaine (définition, chiffre, comportement, recommandation) s'appuie

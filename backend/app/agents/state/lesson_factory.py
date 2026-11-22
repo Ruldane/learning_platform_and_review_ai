@@ -21,6 +21,7 @@ class LessonFactoryState(WebResearchState, total=False):
     words: int  # mots du brouillon, blocs de code exclus
     problems: list[str]  # contrôles déterministes non satisfaits (phrases françaises)
     unsupported: list[str]  # affirmations non sourcées relevées par le Vérificateur
+    scores: dict[str, int]  # notes pédagogiques sur 100, par critère
     published: dict[str, Any]  # `PublishedLesson` en JSON
     failure: str  # raison de l'échec de la leçon
     next_module: str | None  # module dont la leçon vient d'être lancée par la chaîne

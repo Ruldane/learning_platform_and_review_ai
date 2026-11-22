@@ -1,17 +1,17 @@
 // Relais de Tremplin : quand un parcours lancé avec « Claude Code (MCP) » ou « Codex (MCP) »
 // attend son client, lance ce client en arrière-plan pour le jouer, sans geste de January.
-// Jeton : TREMPLIN_MCP_TOKEN (le même que Codex), sinon %APPDATA%\Tremplin\relay.json {"token"}.
+// Jeton : TREMPLIN_MCP_TOKEN, sinon %APPDATA%\Tremplin\relay.json {"token"}.
 // Adresse : TREMPLIN_MCP_URL, sinon http://127.0.0.1:8000/mcp. Journal : identifiants seulement.
 import { spawn } from "node:child_process";
 import { appendFileSync, mkdirSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = dirname(here); // Claude Code y trouve le serveur `tremplin` branché sur ce dossier
 const appDir = join(process.env.APPDATA ?? join(homedir(), ".config"), "Tremplin");
-const POLL_MS = 10_000;
+const POLL_MS = 120_000;
 const MAX_RUNNING = 2;
 const RUN_TIMEOUT_MS = 20 * 60_000;
 const running = new Map(); // session_id -> processus du client
@@ -72,8 +72,7 @@ function claudeServer() {
   return path ? ["--mcp-config", `"${path}"`, "--strict-mcp-config"] : [];
 }
 
-function launch(client, sessionId, stepId) {
-  const prompt = PROMPT.replaceAll("{session_id}", sessionId);
+export function clientCommand(client) {
   const tools = [
     "mcp__tremplin__agents_play_brief",
     "mcp__tremplin__agents_play_submit",
@@ -81,10 +80,14 @@ function launch(client, sessionId, stepId) {
     "WebSearch",
     "WebFetch",
   ].join(",");
-  const [cmd, args] =
-    client === "codex"
-      ? ["codex", ["exec", "--skip-git-repo-check", "--ephemeral", "--search", "-c", "approval_policy=never", "-"]]
-      : ["claude", ["-p", "--allowedTools", tools, "--output-format", "text", ...claudeServer()]];
+  return client === "codex"
+    ? ["codex", ["--search", "exec", "--skip-git-repo-check", "--ephemeral", "-c", "approval_policy=never", "-"]]
+    : ["claude", ["-p", "--allowedTools", tools, "--output-format", "text", ...claudeServer()]];
+}
+
+function launch(client, sessionId, stepId) {
+  const prompt = PROMPT.replaceAll("{session_id}", sessionId);
+  const [cmd, args] = clientCommand(client);
   // Arguments fixes seulement ; la consigne passe par l'entrée standard (aucune mise entre
   // guillemets par le shell de Windows).
   const child = spawn(cmd, args, { cwd: repo, shell: true, windowsHide: true, stdio: ["pipe", "ignore", "ignore"] });
@@ -106,8 +109,8 @@ function launch(client, sessionId, stepId) {
   });
 }
 
-async function tick(cfg) {
-  const out = await call(cfg, "sessions_list_sessions", { status: "waiting_user" });
+export async function tick(cfg, request = call) {
+  const out = await request(cfg, "sessions_list_sessions", { status: "waiting_user" });
   if (out.wait) return out.wait;
   const rows = Array.isArray(out.data) ? out.data : (out.data?.items ?? []);
   for (const row of rows) {
@@ -118,7 +121,7 @@ async function tick(cfg) {
     if ((pausedUntil.get(row.id) ?? 0) > Date.now()) continue;
     // Le relais lit l'étape lui-même avant de payer un client : hors de portée du jeton ou
     // illisible, la session est mise de côté au lieu d'être relancée en boucle.
-    const brief = await call(cfg, "agents_play_brief", { session_id: row.id });
+    const brief = await request(cfg, "agents_play_brief", { session_id: row.id });
     if (brief.wait) return brief.wait;
     if (!brief.data?.step_id) {
       const code = brief.data?.error?.code ?? "sans_etape";
@@ -150,7 +153,6 @@ async function main() {
       try {
         delay = await tick(cfg);
       } catch (err) {
-        delay = 30_000; // Tremplin arrêté ou injoignable : on réessaie calmement
         log(`Tremplin injoignable (${err.cause?.code ?? err.name})`);
       }
     }
@@ -158,4 +160,4 @@ async function main() {
   }
 }
 
-await main();
+if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) await main();

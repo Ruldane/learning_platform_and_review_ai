@@ -117,8 +117,8 @@ async def _write(db: AsyncSession, user_id: str, weekly: int | None, body: Progr
         cap_minutes=budget.cap_minutes,
         session_id=None,
     )
-    await write_rows(db, user_id, program.id, plan, draft)
-    after = plan_snapshot(plan, draft, budget)
+    chapter_indices = await write_rows(db, user_id, program.id, plan, draft)
+    after = plan_snapshot(plan, draft, budget, chapter_indices)
     versions = PlanVersionRepository(db, user_id)
     program.version = await versions.next_version(program.id)
     await versions.add(

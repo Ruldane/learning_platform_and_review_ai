@@ -23,6 +23,7 @@ from app.agents.prompts.loader import render_prompt, untrusted
 from app.agents.registry import get_agent
 from app.agents.runtime.deps import GraphDeps
 from app.agents.runtime.invoke import invoke_agent, message_text, node_timeout
+from app.agents.runtime.played_model import refresh_updated_brief
 from app.agents.state.lesson_factory import LessonFactoryState
 
 AGENT = "writer"
@@ -68,7 +69,7 @@ def make_write(deps: GraphDeps) -> Node:
         )
         model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
         reply = await invoke_agent(
-            model,
+            refresh_updated_brief(model),
             [
                 SystemMessage(prompt),
                 HumanMessage("Corrige la leçon." if previous else "Écris la leçon."),

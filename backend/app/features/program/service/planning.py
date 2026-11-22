@@ -268,7 +268,7 @@ def schedule(draft: PlanDraft, budget: Budget, known: KnownSkills, start: date) 
     qu'il reste des tâches (52 semaines au plus). `start` est le premier jour (un lundi). Une
     semaine sous 60 % du plafond, sauf la dernière, avance ensuite des tâches de la suivante.
     """
-    reduced, skipped = apply_known(draft, known)
+    reduced, skipped = apply_known(draft.with_chapter_indices(), known)
     if not reduced.weeks:
         return ScheduledPlan([], skipped, 0)
     sources = [ensure_week_rules(w, rank) for rank, w in enumerate(reduced.weeks, start=1)]

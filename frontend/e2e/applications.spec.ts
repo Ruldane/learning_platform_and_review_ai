@@ -148,7 +148,8 @@ async function sayItAndCancel(page: Page): Promise<void> {
 
 /** 6. La pastille de la navigation, puis la page Relances : la relance de 7 jours et son brouillon. */
 async function reminderIsDue(page: Page): Promise<Locator> {
-  const nav = page.getByRole("link", { name: "Relances, 1 relance due", exact: true });
+  await page.getByRole("button", { name: "Candidatures, 1 relance due" }).click();
+  const nav = page.getByRole("menuitem", { name: "Relances, 1 relance due", exact: true });
   await expect(nav).toBeVisible();
   await nav.click();
   await expect(page).toHaveURL(/\/candidatures\/relances$/);
@@ -172,7 +173,9 @@ async function copyAndDone(page: Page, reminder: Locator): Promise<void> {
   await reminder.getByRole("button", { name: "Fait" }).click();
   await expect(page.getByText("Relance traitée.")).toBeVisible();
   await expect(page.getByRole("list", { name: "Relances à traiter" })).toHaveCount(0);
-  await expect(page.getByRole("link", { name: /^Relances/ })).toHaveAccessibleName("Relances");
+  await expect(page.getByRole("button", { name: /^Candidatures/ })).toHaveAccessibleName(
+    "Candidatures",
+  );
 }
 
 /** 8. La fiche passe Relancée, et son fil montre la relance. */

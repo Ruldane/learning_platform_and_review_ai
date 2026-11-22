@@ -22,7 +22,7 @@ from app.agents.tools.plan_schema import (
 )
 from app.db.models.program import TaskType
 from tests.e2e.scripted_models import OutOfOrder, Reply
-from tests.support.lessons import lesson_markdown
+from tests.support.lessons import lesson_markdown, verifier_reply
 
 LESSON_WORDS = 1500
 RESOURCES_PICKED = 4
@@ -131,4 +131,4 @@ def write_lesson(messages: Sequence[BaseMessage]) -> str:
     return lesson_markdown(LESSON_WORDS, title=title.group(1).strip(), urls=(urls[0], urls[1]))
 
 
-NO_CLAIM = json.dumps({"unsupported": []})
+NO_CLAIM = verifier_reply()

@@ -1,15 +1,16 @@
 """Convergence du Rédacteur et du Vérificateur (D97 n° 11), rejouée avec les affirmations du cas
 réel anonymisé de la fin de phase 4 : hors des sections de faits, une affirmation n'est pas
 jugée ; après la dernière révision, les phrases encore non sourcées sont retirées par le code,
-sans appel au modèle, ou la leçon échoue avec la raison (faux LLM, faux port, vraie base)."""
+avant une dernière notation, ou la leçon échoue avec la raison (faux LLM, faux port, vraie base)."""
 
+import json
 import logging
 
 import pytest
 
 from app.agents.nodes.verifier import MAX_REVISIONS, check_lesson
 from tests.agents.graphs.lesson_support import MakeLesson, claims
-from tests.support.lessons import MODULE_ID, PROGRAM_ID, TITLE
+from tests.support.lessons import MODULE_ID, PROGRAM_ID, TITLE, verifier_reply
 from tests.support.verifier_case import (
     C_ABSENT,
     C_APPS,
@@ -33,7 +34,7 @@ async def test_last_round_removes_unsupported_sentences_and_publishes(
     c = await make_lesson_runner(writer=[LESSON] * 3, verifier=rounds)
     await c.wait_status("completed")
     assert MAX_REVISIONS == 2 and c.writer_calls == 3
-    assert len(c.prompts_of("verifier")) == 3  # aucun appel de plus pour le retrait
+    assert len(c.prompts_of("verifier")) == 4  # la dernière notation porte sur le texte élagué
     pub = c.store.published[0]
     assert "construire des applications" not in pub.markdown
     assert OBJECTIVE in pub.markdown  # hors périmètre : rien n'est retiré
@@ -52,6 +53,24 @@ async def test_out_of_scope_claims_need_no_revision(make_lesson_runner: MakeLess
     await c.wait_status("completed")
     assert c.writer_calls == 1
     assert c.store.published[0].markdown == LESSON.strip()
+
+
+async def test_pruned_draft_must_pass_the_quality_grades_again(
+    make_lesson_runner: MakeLesson,
+) -> None:
+    rejected = json.loads(verifier_reply())
+    rejected["grades"]["depth"] = {
+        "score": 50,
+        "reason": "Rétablis une explication sourcée du mécanisme.",
+    }
+    rounds = [claims(C_APPS)] * 3 + [json.dumps(rejected)]
+    run = await make_lesson_runner(writer=[LESSON] * 3, verifier=rounds)
+
+    await run.wait_status("completed")
+
+    assert len(run.prompts_of("verifier")) == 4
+    assert run.store.published == []
+    assert "Rétablis une explication sourcée" in run.store.failures[0][1]
 
 
 async def test_earlier_rounds_ask_the_writer_instead_of_removing(

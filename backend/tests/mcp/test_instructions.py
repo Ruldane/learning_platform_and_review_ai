@@ -41,6 +41,12 @@ def test_the_guide_for_agents_repeats_the_instructions_verbatim() -> None:
     assert block == INSTRUCTIONS.strip()
 
 
+def test_the_instructions_send_lessons_to_the_factory() -> None:
+    lesson = next(line for line in INSTRUCTIONS.splitlines() if "Fabrique de leçons" in line)
+    assert "agents_play_brief" in lesson and "Vérificateur" in lesson
+    assert "lessons_write_lesson" not in INSTRUCTIONS
+
+
 def test_claude_code_guide_imports_the_agents_guide() -> None:
     lines = (DOCS / "CLAUDE.md").read_text(encoding="utf-8").splitlines()
     assert lines[0] == "@AGENTS.md"

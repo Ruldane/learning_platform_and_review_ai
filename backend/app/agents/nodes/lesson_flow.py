@@ -60,6 +60,7 @@ def make_publish(deps: GraphDeps) -> Node:
             unsupported=(),
             problems=tuple(state.get("resource_notes", [])),
             revisions=state.get("revisions", 0),
+            scores=state.get("scores", {}),
         )
         picks = [ResourcePick.model_validate(r) for r in state.get("resources", [])]
         done = await deps.ports.lessons.publish(

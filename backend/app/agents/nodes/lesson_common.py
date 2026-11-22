@@ -75,6 +75,8 @@ def module_prompt(brief: ModuleBrief) -> str:
         f"Semaine {brief.week_rank} : {brief.week_theme}",
         f"Objectif de January : {brief.goal_text}",
     ]
+    if brief.chapter_context:
+        lines.append(brief.chapter_context)
     return untrusted("\n".join(lines), "module")
 
 
@@ -91,4 +93,5 @@ def brief_of(state: LessonFactoryState) -> ModuleBrief:
         goal_text=data["goal_text"],
         language=data["language"],
         seed_urls=tuple(data["seed_urls"]),
+        chapter_context=data.get("chapter_context", ""),
     )

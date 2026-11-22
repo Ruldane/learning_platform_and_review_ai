@@ -14,6 +14,7 @@ from markdown_it import MarkdownIt
 from markdown_it.token import Token
 
 from app.agents.nodes.mermaid_rules import mermaid_problems, normalize_mermaid
+from app.agents.nodes.verifier.code_language import python_language_problems
 from app.agents.nodes.verifier.overlap import (
     MAX_QUOTE_WORDS,
     build_index,
@@ -62,10 +63,11 @@ class _Parsed:
     h1: list[str]
     h2: list[str]
     items: dict[str, int]  # éléments de liste de premier niveau, par section (clé repliée)
-    mermaid: list[str]
+    mermaid: list[tuple[str, str]]
     texts: list[str]  # texte courant de chaque bloc (code exclu)
     links: list[str]
     raw_html: list[str]  # HTML brut hors des blocs de code (`html_block`, `html_inline`)
+    code_problems: list[str]
 
 
 def _key(text: str) -> str:
@@ -90,7 +92,7 @@ def _inline_links(token: Token) -> list[str]:
 
 
 def _parse(markdown: str) -> _Parsed:
-    parsed = _Parsed([], [], {}, [], [], [], [])
+    parsed = _Parsed([], [], {}, [], [], [], [], [])
     section = ""
     tokens = _MD.parse(markdown)
     for index, token in enumerate(tokens):
@@ -101,8 +103,14 @@ def _parse(markdown: str) -> _Parsed:
                 section = _key(title)
         elif token.type == "list_item_open" and token.level == 1:
             parsed.items[section] = parsed.items.get(section, 0) + 1
-        elif token.type == "fence" and token.info.strip().lower() == "mermaid":
-            parsed.mermaid.append(token.content)
+        elif token.type == "fence":
+            language = token.info.strip().lower()
+            if language == "mermaid":
+                parsed.mermaid.append((section, token.content))
+            elif language in {"python", "py", "python3"} and token.map:
+                parsed.code_problems.extend(
+                    python_language_problems(token.content, token.map[0] + 2)
+                )
         elif token.type == "html_block":
             parsed.raw_html.append(token.content)
         elif token.type == "inline":
@@ -161,10 +169,10 @@ def _counts(parsed: _Parsed) -> list[str]:
 
 
 def _diagrams(parsed: _Parsed) -> list[str]:
-    if not parsed.mermaid:
+    if not any(section == _key("Schémas") for section, _ in parsed.mermaid):
         return ["Aucun schéma : au moins un bloc ```mermaid (flowchart) dans « Schémas »."]
     problems: list[str] = []
-    for number, code in enumerate(parsed.mermaid, start=1):
+    for number, (_, code) in enumerate(parsed.mermaid, start=1):
         try:
             normalize_mermaid(code)
         except ValueError:
@@ -235,6 +243,7 @@ def check_lesson(
         *_raw_html(parsed),
         *_counts(parsed),
         *_diagrams(parsed),
+        *parsed.code_problems,
         *_length(words),
         *_references(parsed, sources),
         *_quotes_and_copies(parsed, sources),

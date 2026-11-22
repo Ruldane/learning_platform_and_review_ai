@@ -3,6 +3,7 @@ leçons Markdown valides (`lesson_markdown`) pour les tests du Vérificateur et 
 `lesson_factory`. Aucun réseau ni LLM."""
 
 import asyncio
+import json
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from uuid import uuid4
@@ -31,6 +32,15 @@ SOURCE_ONE = (
 )
 SOURCE_TWO = "Le masque causal empêche une position de regarder les positions futures."
 SOURCES = [(1, URL_ONE, SOURCE_ONE), (2, URL_TWO, SOURCE_TWO)]
+
+
+def verifier_reply(*claims: str) -> str:
+    grades = {
+        name: {"score": 90, "reason": "Le chapitre satisfait ce critère."}
+        for name in ("definitions", "depth", "example", "exercise", "continuity")
+    }
+    return json.dumps({"unsupported": list(claims), "grades": grades})
+
 
 _DIAGRAM = 'flowchart TD\n    A["Requête"] --> B["Poids"]\n    B --> C["Somme pondérée"]'
 

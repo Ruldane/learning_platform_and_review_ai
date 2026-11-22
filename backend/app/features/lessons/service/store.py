@@ -26,6 +26,7 @@ from app.db.models.program import Module
 from app.db.models.research import Source
 from app.features.learning.service.goals import owned_goal
 from app.features.lessons.repository import LessonRepository, ResourceRepository
+from app.features.lessons.service.chapter_context import chapter_context
 from app.features.lessons.service.production import ensure_lessons
 from app.features.lessons.service.publishing import Published, finish
 from app.features.lessons.service.resources import upsert_resources
@@ -100,6 +101,7 @@ class AgentLessonStore:
                 goal_text=goal.text,
                 language=settings.lesson_language,
                 seed_urls=seed_urls(module, sources),
+                chapter_context=await chapter_context(db, user_id, loaded, module),
             )
 
     async def _save(

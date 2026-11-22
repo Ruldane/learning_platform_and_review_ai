@@ -5,8 +5,8 @@ numérotée. La leçon et les sources sont des données encadrées, jamais des c
 
 Seules les sections de faits sont jugées : une affirmation située ailleurs (objectif, exercice,
 auto-évaluation…) est écartée (`in_scope`). Après la dernière révision, s'il ne reste que des
-affirmations non sourcées, le code retire lui-même les phrases qui les portent (`prune`, sans
-appel au modèle) puis rejoue les contrôles déterministes (D97 n° 11).
+affirmations non sourcées, le code retire les phrases qui les portent (`prune`), puis rejoue
+les contrôles et note la version élaguée (D97 n° 11, D225).
 
 Rien n'est écrit : un nœud rejoué refait le contrôle, sans effet de bord."""
 
@@ -20,17 +20,21 @@ from app.agents.nodes.lesson_common import (
     Node,
     brief_of,
     lesson_sources,
+    module_prompt,
     sources_prompt,
 )
 from app.agents.nodes.verifier.checks import check_lesson
+from app.agents.nodes.verifier.grades import CRITERIA, MIN_GRADE, LessonGrades
 from app.agents.nodes.verifier.prune import in_scope, prune, still_cited
 from app.agents.prompts.loader import render_prompt, untrusted
 from app.agents.registry import get_agent
 from app.agents.runtime.deps import GraphDeps
 from app.agents.runtime.emit import emit
 from app.agents.runtime.invoke import node_timeout
+from app.agents.runtime.played_model import refresh_updated_brief
 from app.agents.runtime.structured import structured_call
 from app.agents.state.lesson_factory import LessonFactoryState
+from app.agents.tools.lesson_port import ModuleBrief
 
 AGENT = "verifier"
 MAX_REVISIONS = 2  # révisions demandées au Rédacteur au plus : trois écritures en tout
@@ -43,30 +47,42 @@ logger = logging.getLogger(__name__)
 
 class FactReport(BaseModel):
     unsupported: list[str] = Field(default_factory=list, max_length=20)
+    grades: LessonGrades
+
+    def claims(self) -> list[str]:
+        claims = (" ".join(c.split())[:MAX_CLAIM_CHARS] for c in self.unsupported)
+        return [claim for claim in claims if claim]
 
 
 def _numbered(sources: list[LessonSource]) -> list[tuple[int, str, str]]:
     return [(s.number, s.url, s.text) for s in sources]
 
 
-async def _facts(deps: GraphDeps, title: str, draft: str, sources: list[LessonSource]) -> list[str]:
+async def _facts(
+    deps: GraphDeps,
+    brief: ModuleBrief,
+    draft: str,
+    sources: list[LessonSource],
+    *,
+    step: str = "faits",
+) -> FactReport:
     prompt = render_prompt(
         AGENT,
-        title=title,
+        title=brief.title,
+        module=module_prompt(brief),
         sources=sources_prompt(sources),
         lesson=untrusted(draft, "leçon"),
+        min_grade=MIN_GRADE,
     )
     model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
-    report = await structured_call(
-        model,
+    return await structured_call(
+        refresh_updated_brief(model),
         FactReport,
         [SystemMessage(prompt), HumanMessage("Contrôle les faits de cette leçon.")],
         agent=AGENT,
-        step="faits",
+        step=step,
         intent="je contrôle les faits de la leçon",
     )
-    claims = (" ".join(c.split())[:MAX_CLAIM_CHARS] for c in report.unsupported)
-    return [claim for claim in claims if claim]
 
 
 def _converge(
@@ -93,17 +109,37 @@ def _converge(
     return update, pruned.removed
 
 
-def _verdict_text(words: int, problems: list[str], unsupported: list[str], removed: int) -> str:
+async def _review_after_pruning(
+    deps: GraphDeps,
+    brief: ModuleBrief,
+    draft: str,
+    sources: list[LessonSource],
+    unsupported: list[str],
+) -> tuple[LessonFactoryState, int]:
+    update, removed = _converge(draft, brief.title, sources, unsupported)
+    if removed:
+        final = update["draft"]
+        report = await _facts(deps, brief, final, sources, step="faits-apres-retrait")
+        update["scores"] = report.grades.scores()
+        update["problems"] = report.grades.problems()
+        update["unsupported"] = in_scope(final, report.claims())
+    return update, removed
+
+
+def _verdict_text(result: LessonFactoryState, removed: int) -> str:
+    words, problems, unsupported = result["words"], result["problems"], result["unsupported"]
+    scores = result["scores"]
+    grades = [f"- {label} — {scores[name]}/100" for name, label in CRITERIA.items()]
     if not problems and not unsupported:
         after = f" après retrait de {removed} phrase(s) non sourcée(s)" if removed else ""
-        return f"Leçon conforme{after} : {words} mots, structure, liens et faits sourcés vérifiés."
+        return "\n".join([f"Leçon conforme{after} ({words} mots).", *grades])
     lines = [f"Leçon à corriger ({words} mots) :"]
     lines += [f"- {p}" for p in problems[:MAX_PROBLEMS_SHOWN]]
     if len(problems) > MAX_PROBLEMS_SHOWN:
         lines.append(f"- … et {len(problems) - MAX_PROBLEMS_SHOWN} autres problèmes.")
     if unsupported:
         lines.append(f"- {len(unsupported)} affirmation(s) non sourcée(s).")
-    return "\n".join(lines)
+    return "\n".join([*lines, *grades])
 
 
 def make_verify(deps: GraphDeps) -> Node:
@@ -113,27 +149,30 @@ def make_verify(deps: GraphDeps) -> Node:
         draft = state["draft"]
         sources = lesson_sources(state)
         check = check_lesson(draft, title=brief.title, sources=_numbered(sources))
-        claims = await _facts(deps, brief.title, draft, sources)
+        report = await _facts(deps, brief, draft, sources)
+        claims = report.claims()
         unsupported = in_scope(draft, claims)
         revisions = state.get("revisions", 0)
+        problems = [*check.problems, *report.grades.problems()]
         logger.info(
             "Leçon contrôlée : session %s, module %s, %d mots, %d problème(s), "
             "%d non sourcée(s), %d hors périmètre",
             deps.session_id,
             brief.module_id,
             check.words,
-            len(check.problems),
+            len(problems),
             len(unsupported),
             len(claims) - len(unsupported),
         )
         result: LessonFactoryState = {
             "words": check.words,
-            "problems": check.problems,
+            "problems": problems,
             "unsupported": unsupported,
+            "scores": report.grades.scores(),
         }
         removed = 0
-        if revisions >= MAX_REVISIONS and unsupported and not check.problems:
-            update, removed = _converge(draft, brief.title, sources, unsupported)
+        if revisions >= MAX_REVISIONS and unsupported and not problems:
+            update, removed = await _review_after_pruning(deps, brief, draft, sources, unsupported)
             result.update(update)
             logger.info(
                 "Leçon élaguée : session %s, module %s, %d phrase(s) retirée(s), %d problème(s)",
@@ -142,7 +181,7 @@ def make_verify(deps: GraphDeps) -> Node:
                 removed,
                 len(result.get("problems", [])),
             )
-        text = _verdict_text(result["words"], result["problems"], result["unsupported"], removed)
+        text = _verdict_text(result, removed)
         emit(
             "agent.message",
             {"message_id": f"{AGENT}-controle-{revisions}", "text": text},

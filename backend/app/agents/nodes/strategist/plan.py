@@ -25,6 +25,7 @@ from app.agents.registry import get_agent
 from app.agents.runtime.deps import GraphDeps
 from app.agents.runtime.emit import emit
 from app.agents.runtime.invoke import node_timeout
+from app.agents.runtime.played_model import refresh_updated_brief
 from app.agents.runtime.structured import structured_call
 from app.agents.state.program_builder import ProgramState
 from app.agents.tools.plan_schema import PlanDraft
@@ -92,7 +93,7 @@ async def _write(deps: GraphDeps, goal_id: str, prompt: str, revision: int) -> P
         if found is not None:
             messages += [AIMessage(found.model_dump_json()), HumanMessage(_problems_text(problems))]
         found = await structured_call(
-            model,
+            refresh_updated_brief(model),
             PlanDraft,
             messages,
             agent=AGENT,

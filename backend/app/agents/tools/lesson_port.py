@@ -7,7 +7,7 @@ même chose, jamais une leçon ni une ressource de plus.
 """
 
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Protocol
 
 from pydantic import BaseModel, Field
@@ -34,6 +34,7 @@ class ModuleBrief:
     language: str  # langue de la leçon (`lesson_language` des réglages)
     # Pages des praticiens et sources retenues du Conseil liées au module (5 au plus).
     seed_urls: tuple[str, ...]
+    chapter_context: str = ""
 
 
 class ResourcePick(BaseModel):
@@ -61,6 +62,7 @@ class LessonReport:
     unsupported: tuple[str, ...]
     problems: tuple[str, ...]
     revisions: int
+    scores: dict[str, int] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

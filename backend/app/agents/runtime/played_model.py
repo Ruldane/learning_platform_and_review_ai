@@ -20,6 +20,7 @@ class PlayedChat(BaseChatModel):
     role: str
     schema_ref: tuple[str, str] | None = None
     expected_schema: dict[str, Any] | None = None
+    refresh_changed_brief: bool = False
 
     @property
     def _llm_type(self) -> str:
@@ -30,27 +31,43 @@ class PlayedChat(BaseChatModel):
         brief = {"agent": self.role, "messages": rows, "output_schema": self.expected_schema}
         raw = json.dumps(brief, sort_keys=True, ensure_ascii=False).encode()
         key = hashlib.sha256(raw).hexdigest()
-        value = interrupt(
-            {
-                "kind": PLAY_KIND,
-                "question": "Réponse du client MCP en attente.",
-                "brief": {
-                    **brief,
-                    "step_id": str(uuid4()),
-                    "fingerprint": key,
-                    "schema_ref": self.schema_ref,
-                },
-            }
-        )
-        if not isinstance(value, dict) or value.get("fingerprint") != key:
-            raise AppError("played_step_changed", "La demande de cette étape a changé.", 409)
-        message = AIMessage(content=value["response"], id=value["step_id"])
-        return ChatResult(generations=[ChatGeneration(message=message)])
+        while True:
+            value = interrupt(
+                {
+                    "kind": PLAY_KIND,
+                    "question": "Réponse du client MCP en attente.",
+                    "brief": {
+                        **brief,
+                        "step_id": str(uuid4()),
+                        "fingerprint": key,
+                        "schema_ref": self.schema_ref,
+                    },
+                }
+            )
+            if not isinstance(value, dict) or not all(
+                isinstance(value.get(field), str)
+                for field in ("fingerprint", "step_id", "response")
+            ):
+                break
+            if value["fingerprint"] == key:
+                message = AIMessage(content=value["response"], id=value["step_id"])
+                return ChatResult(generations=[ChatGeneration(message=message)])
+            if not self.refresh_changed_brief:
+                break
+            # LangGraph rejoue les anciennes livraisons avant de suspendre au nouveau brief.
+        raise AppError("played_step_changed", "La demande de cette étape a changé.", 409)
 
     async def _agenerate(
         self, messages: list[BaseMessage], *args: Any, **kwargs: Any
     ) -> ChatResult:
         return self._generate(messages)
+
+
+def refresh_updated_brief(model: BaseChatModel) -> BaseChatModel:
+    """Republie le brief d'un appel dont les consignes sont susceptibles d'avoir changé."""
+    if isinstance(model, PlayedChat):
+        return model.model_copy(update={"refresh_changed_brief": True})
+    return model
 
 
 class PlayedModels:

@@ -1,10 +1,10 @@
 # Relais Tremplin
 
-Quand le menu « Qui fait tourner les agents » vaut **Claude Code (MCP)** ou **Codex (MCP)**, un parcours lancé dans Tremplin attend son client. Le relais le voit (toutes les 10 s) et lance ce client en arrière-plan pour jouer la session. Il en lance au plus 2 à la fois, une par session, et arrête un client au bout de 20 min.
+Quand le menu « Qui fait tourner les agents » vaut **Claude Code (MCP)** ou **Codex (MCP)**, un parcours lancé dans Tremplin attend son client. Le relais interroge Tremplin toutes les deux minutes et lance ce client en arrière-plan. Au repos, il consomme au plus 720 des 1 000 appels quotidiens de son jeton. Il lance au plus deux clients à la fois, un par session, et arrête un client au bout de 20 min.
 
 ## Installation (une fois)
 
-1. Le jeton MCP est lu dans `TREMPLIN_MCP_TOKEN`, la variable déjà utilisée par Codex. À défaut, il est lu dans `%APPDATA%\Tremplin\relay.json` : `{"token": "tmcp_…"}`. On crée ce jeton dans Réglages > Accès MCP.
+1. Créer un jeton MCP dédié au relais dans Réglages > Accès MCP. Le relais le lit dans `TREMPLIN_MCP_TOKEN` ou dans le champ `token` de `%APPDATA%\Tremplin\relay.json`.
 2. `node relay/install.mjs` : le relais démarre avec Windows, fenêtre cachée, et tourne tout de suite.
 
 Pour le retirer : `node relay/uninstall.mjs`. Son journal est dans `%APPDATA%\Tremplin\relay.log` et ne contient que des identifiants.

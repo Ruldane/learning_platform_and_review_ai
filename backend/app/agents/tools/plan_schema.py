@@ -6,15 +6,18 @@ semaine compte 1 à 4 modules, un programme 1 à 52 semaines. Le moteur n'import
 """
 
 from collections.abc import Mapping
+from typing import Annotated, Self
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PrivateAttr, StringConstraints, model_validator
 
 from app.agents.runtime.prose import Prose
+from app.core.skills import normalize_skill_name
 from app.db.models.program import TaskType
 from app.db.models.skills import SkillLevel
 
 # Compétences déjà connues de January : clé = `normalize_skill_name`, valeur = niveau.
 KnownSkills = Mapping[str, SkillLevel]
+NotionName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=120)]
 
 
 class TaskDraft(BaseModel):
@@ -24,11 +27,31 @@ class TaskDraft(BaseModel):
     done_criterion: Prose = Field(min_length=3, max_length=200)
 
 
-class ModuleDraft(BaseModel):
+class NotionDraft(BaseModel):
+    name: NotionName
+    definition: Prose = Field(min_length=3, max_length=300)
+
+
+class ChapterOutline(BaseModel):
     title: str = Field(min_length=3, max_length=120)
+    requires: list[NotionName] = Field(default_factory=list, max_length=10)
+    introduces: list[NotionDraft] = Field(default_factory=list, max_length=10)
+
+
+class ModuleDraft(ChapterOutline):
     skills: list[str] = Field(min_length=1, max_length=8)
     prerequisites: list[str] = Field(default_factory=list, max_length=8)
     tasks: list[TaskDraft] = Field(min_length=1, max_length=12)
+    _chapter_index: int | None = PrivateAttr(default=None)
+
+    @property
+    def chapter_index(self) -> int | None:
+        return self._chapter_index
+
+    def with_chapter_index(self, index: int) -> Self:
+        copy = self.model_copy()
+        copy._chapter_index = index
+        return copy
 
 
 class WeekDraft(BaseModel):
@@ -56,3 +79,35 @@ class PlanDraft(BaseModel):
     weeks: list[WeekDraft] = Field(min_length=1, max_length=52)
     skills: list[SkillDraft] = Field(min_length=1, max_length=60)
     edges: list[EdgeDraft] = Field(default_factory=list, max_length=120)
+
+    def with_chapter_indices(self) -> Self:
+        if not any(m.requires or m.introduces for week in self.weeks for m in week.modules):
+            return self
+        weeks: list[WeekDraft] = []
+        index = 0
+        for week in self.weeks:
+            modules = [m.with_chapter_index(index + n) for n, m in enumerate(week.modules)]
+            weeks.append(week.model_copy(update={"modules": modules}))
+            index += len(modules)
+        return self.model_copy(update={"weeks": weeks})
+
+    @model_validator(mode="after")
+    def check_chapter_order(self) -> Self:
+        chapters = [module for week in self.weeks for module in week.modules]
+        introduced: set[str] = set()
+        for rank, chapter in enumerate(chapters, start=1):
+            for index, name in enumerate(chapter.requires, start=1):
+                if normalize_skill_name(name) not in introduced:
+                    raise ValueError(
+                        f"Le chapitre {rank} requiert une notion (position {index}) "
+                        "qui doit être introduite dans un chapitre précédent."
+                    )
+            for index, notion in enumerate(chapter.introduces, start=1):
+                normalized = normalize_skill_name(notion.name)
+                if not normalized or normalized in introduced:
+                    raise ValueError(
+                        f"Le chapitre {rank} doit introduire une notion nouvelle "
+                        f"avec un nom distinct (position {index})."
+                    )
+                introduced.add(normalized)
+        return self

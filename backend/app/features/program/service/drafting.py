@@ -65,12 +65,13 @@ def saved_of(version: PlanVersion) -> DraftSaved:
 
 async def write_rows(
     db: AsyncSession, user_id: str, program_id: str, plan: ScheduledPlan, draft: PlanDraft
-) -> None:
+) -> dict[str, int]:
     """Semaines, modules et tâches du plan rangé ; les modules sautés (déjà acquis) sont gardés
     dans la première semaine, marqués `skipped`, sans tâche."""
     weeks, modules = WeekRepository(db, user_id), ModuleRepository(db, user_id)
     tasks = TaskRepository(db, user_id)
     first_week_id = ""
+    chapter_indices: dict[str, int] = {}
     for week in plan.weeks:
         row = await weeks.add(
             program_id=program_id,
@@ -87,6 +88,8 @@ async def write_rows(
             fields["prerequisites"] = list(module.prerequisites)
             added = await modules.add(week_id=row.id, program_id=program_id, rank=rank, **fields)
             ids.append(added.id)
+            if module.chapter_index is not None:
+                chapter_indices[added.id] = module.chapter_index
         for rank, task in enumerate(week.tasks):
             await tasks.add(
                 module_id=ids[task.module_index],
@@ -99,6 +102,17 @@ async def write_rows(
                 planned_date=task.planned_date,
                 already_known=task.already_known,
             )
+    await _write_skipped(modules, first_week_id, program_id, plan, draft)
+    return chapter_indices
+
+
+async def _write_skipped(
+    modules: ModuleRepository,
+    first_week_id: str,
+    program_id: str,
+    plan: ScheduledPlan,
+    draft: PlanDraft,
+) -> None:
     sources = {m.title: m for w in draft.weeks for m in w.modules}
     count = len(plan.weeks[0].modules) if plan.weeks else 0
     for offset, title in enumerate(plan.skipped_modules):
@@ -114,11 +128,19 @@ async def write_rows(
         )
 
 
-def plan_snapshot(plan: ScheduledPlan, draft: PlanDraft, budget: Budget) -> dict[str, Any]:
+def plan_snapshot(
+    plan: ScheduledPlan, draft: PlanDraft, budget: Budget, chapter_indices: dict[str, int]
+) -> dict[str, Any]:
     """Instantané de D83, plus le budget par jour, les reports et le référentiel du Stratège
     (relu à la validation pour le graphe de compétences)."""
     return {
         **snapshot(plan),
+        "chapters": [
+            chapter.model_dump(mode="json", include={"title", "requires", "introduces"})
+            for week in draft.weeks
+            for chapter in week.modules
+        ],
+        "chapter_indices": chapter_indices,
         "budget": {
             "weekday_minutes": budget.weekday_minutes,
             "weekend_minutes": budget.weekend_minutes,
@@ -182,8 +204,8 @@ async def save_version(
     if not plan.weeks:
         raise nothing_to_plan()
     program, before = await _program_row(db, user_id, goal.goal_id, session_id, start, draft.title)
-    await write_rows(db, user_id, program.id, plan, draft)
-    after = plan_snapshot(plan, draft, budget)
+    chapter_indices = await write_rows(db, user_id, program.id, plan, draft)
+    after = plan_snapshot(plan, draft, budget, chapter_indices)
     number = await versions.next_version(program.id)
     await versions.supersede_pending(program.id)  # la nouvelle proposition remplace l'ancienne
     version = await versions.add(

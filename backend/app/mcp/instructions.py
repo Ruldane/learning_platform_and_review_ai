@@ -20,12 +20,11 @@ INSTRUCTIONS = "\n".join(
         "- Pour jouer un parcours avec ton modèle, lis agents_play_list, démarre avec "
         "agents_play_start puis lis et rends chaque rôle avec agents_play_brief et "
         "agents_play_submit. Quand l'étape attend January, laisse-la décider dans Tremplin.",
-        "- Pour ajouter du contenu (leçon, offre, quiz, projet, programme), écris-le toi-même avec "
-        "les outils *_write_* : aucun agent ne tourne, l'écriture est annulable.",
-        "- Bâtir un programme sans agent : learning_write_goal, program_write_program, puis "
-        "lessons_write_lesson et quiz_write_quiz par module, puis program_validate_program "
-        "(January confirme). learning_create_goal lance le Conseil et la validation lance les "
-        "leçons : cela coûte l'API de January, préfère les outils directs quand elle le demande.",
+        "- Pour une leçon, utilise la Fabrique de leçons. Si tu joues le Rédacteur, "
+        "agents_play_brief contient la norme. Suis la session jusqu'au contrôle du Vérificateur.",
+        "- Pour les offres, quiz, projets et programmes, les outils *_write_* permettent une "
+        "écriture annulable. Pour préparer un programme et ses quiz, utilise learning_write_goal, "
+        "program_write_program et quiz_write_quiz. La validation par January lance la Fabrique.",
         "- IDE : lis l'exercice, les fichiers et la sortie, lance le code, écris des notes, et "
         "propose une correction par une note de type proposal avec base_hash (sha256 du "
         "fichier) ; January l'accepte dans l'interface. N'écris dans ses fichiers que par "

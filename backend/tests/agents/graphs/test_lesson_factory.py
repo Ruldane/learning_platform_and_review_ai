@@ -2,6 +2,7 @@
 ressources, le Rédacteur écrit, le Vérificateur contrôle (deux révisions au plus), la leçon est
 publiée ou en échec, puis la chaîne passe au module suivant (faux LLM, faux port, vraie base)."""
 
+import json
 import logging
 
 import pytest
@@ -27,6 +28,23 @@ from tests.support.lessons import MODULE_ID, PROGRAM_ID, lesson_markdown
 
 END = "<<<FIN_CONTENU_NON_FIABLE>>>"
 BAD = lesson_markdown(900, urls=(URLS[0], URLS[1]))
+
+
+async def test_low_pedagogy_score_requires_revision(make_lesson_runner: MakeLesson) -> None:
+    grades = {
+        name: {"score": 95, "reason": "Le critère est satisfait."}
+        for name in ("definitions", "depth", "example", "exercise", "continuity")
+    }
+    grades["depth"] = {"score": 68, "reason": "Explique le mécanisme de pondération."}
+    rejection = json.dumps({"unsupported": [], "grades": grades})
+    run = await make_lesson_runner(verifier=[rejection])
+
+    await run.wait_status("completed")
+
+    assert run.writer_calls == 2
+    assert "Explique le mécanisme de pondération." in run.prompt_of_writer(2)
+    assert run.store.published[0].report.revisions == 1
+    assert run.store.published[0].report.scores["depth"] == 90
 
 
 async def _verdicts(c: Lesson) -> dict[str, str]:

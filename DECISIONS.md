@@ -2227,3 +2227,55 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
   lire et suivent le même historique d'annulation que la leçon. Le serveur ne télécharge pas le lien.
 - **Raison** : January souhaite préparer les cours par MCP et suivre chaque lecture dans la même
   bibliothèque que les cours issus de la Fabrique de leçons.
+
+## D222
+
+- **Date** : 2026-11-22
+- **Sujet** : Fréquence d’interrogation du relais.
+- **Décision** : un seul tour normal toutes les deux minutes, y compris après une erreur
+  de communication. Le relais suit la durée indiquée par le serveur quand il reçoit une
+  429. La configuration manuelle accepte un jeton MCP dédié.
+- **Raison** : une journée au repos consomme au plus 720 appels sur 1 000. Ce réglage garde
+  le contrôle de quotas sur tous les appels et laisse 280 appels les jours d’activité.
+
+## D223
+
+- **Date** : 2026-11-22
+- **Sujet** : Contrôles pédagogiques de la Fabrique de leçons.
+- **Décision** : le Vérificateur note cinq critères sur 100, avec une justification par
+  critère. Un critère sous 75 impose une révision dans la limite existante. Le rapport publié
+  conserve les notes. Le contrôle déterministe exige un schéma dans sa section et relève le
+  vocabulaire français courant dans les identifiants et commentaires Python balisés.
+- **Raison** : un seuil par critère évite qu’une moyenne masque une lacune. L’analyse lexicale
+  Python distingue le code et les commentaires des textes d’exemple.
+
+## D224
+
+- **Date** : 2026-11-22
+- **Sujet** : Ordre pédagogique des chapitres.
+- **Décision** : le Constructeur déclare les notions introduites et requises par chapitre.
+  Les définitions sont uniques et un prérequis doit être introduit plus tôt. L’instantané
+  du plan conserve la table des matières dans l’ordre du Stratège et associe au chapitre
+  les identifiants des modules de planning qui en découlent. Le brief présente le glossaire
+  utile, le résumé disponible du chapitre précédent et les notions prévues ensuite.
+  Les anciens instantanés restent lisibles avec un contexte de chapitre vide.
+- **Raison** : l’ordre du livre reste stable quand les tâches sont réparties sur le calendrier.
+
+## D225
+
+- **Date** : 2026-11-22
+- **Sujet** : Dernière vérification après un retrait de texte.
+- **Décision** : si l’élagage déterministe de D97 réussit, le Vérificateur relit et note la
+  version élaguée une fois. Une lacune ou une affirmation encore non sourcée cause l’échec.
+- **Raison** : la note publiée doit correspondre au texte que January lira.
+
+## D226
+
+- **Date** : 2026-11-22
+- **Sujet** : Reprise des briefs MCP modifiés pendant la phase 11.
+- **Décision** : le Rédacteur, le Vérificateur et le Constructeur republient le brief si
+  le point de reprise contient une réponse dont l’empreinte correspond à une ancienne version.
+  Le nouveau brief reçoit un nouvel identifiant. La réservation et les contrôles MCP restent
+  ceux des sessions jouées.
+- **Raison** : une mise à jour de la norme ou du schéma de réponse peut rendre un ancien rendu
+  inutilisable alors que la session doit encore être reprise.
