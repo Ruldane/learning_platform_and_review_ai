@@ -593,4 +593,55 @@ Lorsque toutes les phases de développement et leurs recettes seront terminées,
 LangChain conservé dans le [bilan de la phase 11](../bilans/phase-11.md), ajuster la norme si
 besoin avec January et chiffrer la reconstruction des quatre
 programmes. Après son accord sur le coût, reprendre les objectifs et les acquis correspondants,
-produire les sommaires, puis générer et vérifier toutes les leçons avec OpenAI. Voir D227.
+produire les sommaires, puis générer et vérifier toutes les leçons avec le fournisseur choisi par
+January (Claude sur le PC d'origine). Voir D227.
+
+### 8.1 Un programme suit un ordre logique, jamais aléatoire (demande du 2026-11-22)
+
+Constat : le programme LangChain ouvre sur LCEL (semaine 1, livrable « mini-outil en LCEL »).
+Or la documentation officielle de LangChain v1 n'a plus de page LCEL : les anciennes pages
+« LCEL » et « Runnables » redirigent vers l'accueil v1, centré sur les modèles, les messages, les
+outils et `create_agent`. LCEL reste dans `langchain_core`, mais comme couche du dessous. Le
+sommaire suivait donc une façon de faire dépassée, et l'ordre des semaines ne partait pas des
+fondations.
+
+Règles pour tout nouveau programme, et pour la reconstruction des quatre programmes :
+
+- **Graphe des notions d'abord.** Le Stratège liste les notions du domaine avec, pour chacune,
+  les notions qu'elle suppose. Le sommaire est un ordre de ce graphe : aucune semaine n'utilise
+  une notion qui n'a pas été introduite avant. Un contrôle automatique refuse un sommaire qui
+  viole cet ordre et le rend au Stratège avec la notion fautive (prolonge le contrôle des
+  prérequis de la phase 11).
+- **De zéro à expert, comme un livre.** Les premières semaines posent les fondations du domaine
+  (ce qu'est l'objet étudié, son vocabulaire, son fonctionnement), puis la pratique courante,
+  puis les cas avancés et les limites. Chaque semaine dit ce qu'elle suppose et ce qu'elle
+  apporte à la suivante.
+- **À jour de la version actuelle.** Pour une bibliothèque, le sommaire suit la structure de sa
+  documentation officielle de la version en cours, lue au moment de la génération. Une API
+  dépréciée ou devenue secondaire n'ouvre jamais un programme : elle va dans un encadré
+  « lire du code ancien » à l'endroit où elle sert.
+- **Justification visible.** Le sommaire proposé à January montre, pour chaque semaine, la
+  raison de sa place (ce qu'elle débloque) et la source qui fixe l'ordre.
+
+Exemple de sommaire LangChain conforme : (1) modèles de chat, messages, jetons, `invoke`,
+`stream`, `batch` ; (2) prompts et sorties structurées ; (3) outils et appel d'outils ;
+(4) premier agent avec `create_agent` ; (5) RAG ; (6) LangGraph pour les flux à état, boucles
+et validation humaine ; LCEL et Runnables en encadré pour lire et migrer du code existant.
+
+Pilote du 2026-11-22 : le chapitre de la semaine 1 (« Modèles, messages et chaînes LCEL ») a été
+réécrit selon la norme sur la pile jetable `check1` (2 285 mots, 5 sources, code en anglais).
+Sa seconde moitié porte encore sur LCEL : à revoir avec le nouveau sommaire.
+
+## 9. Après la réorganisation de Codex : tester le code sans quitter la leçon
+
+À faire **après** la réorganisation de l'interface et l'ouverture complète du MCP confiées à
+Codex (prompt du 2026-11-22), pas avant.
+
+Depuis une leçon, chaque bloc de code Python a un bouton « Essayer ». Il ouvre l'IDE dans un
+panneau latéral ou une modale, **sans quitter la page de la leçon** : le bloc y est chargé, January
+le modifie et l'exécute dans le bac à sable, voit la sortie, et peut demander de l'aide au
+professeur avec la leçon en contexte. Fermer le panneau ramène exactement au même endroit de la
+leçon. Les règles du bac à sable ne changent pas (aucun réseau, aucun secret, aucun montage de
+l'hôte) ; un exemple qui appelle un modèle passe par la passerelle modèle prévue pour l'IDE
+(phase 14) ou affiche clairement qu'il ne peut pas tourner dans le bac. L'action est exposée par
+MCP comme le reste.
