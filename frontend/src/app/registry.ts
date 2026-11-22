@@ -1,8 +1,10 @@
 import { accountManifest } from "@/features/account/manifest";
 import { applicationsManifest } from "@/features/applications/manifest";
 import { authManifest } from "@/features/auth/manifest";
+import { makeBrainManifest } from "@/features/brain/manifest";
 import { captureManifest } from "@/features/capture/manifest";
 import { conversationsManifest } from "@/features/conversations/manifest";
+import { BrainConversation } from "@/features/conversations/pages/BrainConversation";
 import { LessonConversation } from "@/features/conversations/pages/LessonConversation";
 import { costsManifest } from "@/features/costs/manifest";
 import { cvManifest } from "@/features/cv/manifest";
@@ -46,6 +48,7 @@ export const FEATURES: FeatureManifest[] = [
   applicationsManifest,
   replanManifest,
   memoryManifest,
+  makeBrainManifest(BrainConversation),
   settingsManifest,
   costsManifest,
   accountManifest,

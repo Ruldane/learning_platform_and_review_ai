@@ -54,11 +54,16 @@ describe("TemplatesPage", () => {
   it("creates the template from the profile's CV when its document is known", async () => {
     const { user, state } = setup({
       profiles: [{ ...emptyProfile, source_document_id: "d-profil" }],
+      templates: [[]],
     });
+    await user.selectOptions(
+      await screen.findByRole("combobox", { name: "Qui fait tourner les agents pour ce lancement" }),
+      "codex",
+    );
     await user.click(await screen.findByRole("button", { name: "Utiliser le CV de mon profil" }));
     expect(await screen.findByText("Page du modèle")).toBeInTheDocument();
     expect(state.creates).toHaveLength(1);
-    expect(createSpy).toHaveBeenCalledWith({ name: "Mon CV", documentId: "d-profil" });
+    expect(createSpy).toHaveBeenCalledWith({ name: "Mon CV", documentId: "d-profil" }, "codex");
   });
 
   it("hides « Utiliser le CV de mon profil » without a source document", async () => {

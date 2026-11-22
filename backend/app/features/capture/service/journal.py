@@ -11,7 +11,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import date
 from types import MappingProxyType
-from typing import Any
+from typing import Any, Literal
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -72,6 +72,9 @@ def invalid_cursor() -> AppError:
 
 def _out(row: JournalEntry) -> JournalEntryOut:
     """`data` n'est jamais rendu tel quel (texte du Tuteur, faits du bilan, concepts)."""
+    study_kind: Literal["guided", "training"] = (
+        "training" if row.data.get("kind") == "training" else "guided"
+    )
     return JournalEntryOut(
         id=row.id,
         kind=row.kind,  # type: ignore[arg-type]  # colonne texte, valeurs de JournalKind
@@ -81,6 +84,7 @@ def _out(row: JournalEntry) -> JournalEntryOut:
         links=JournalLinksOut(
             session_id=row.session_id,
             study_session_id=row.study_session_id,
+            study_session_kind=study_kind if row.study_session_id is not None else None,
             quiz_attempt_id=row.quiz_attempt_id,
             memory_item_id=row.memory_item_id,
         ),

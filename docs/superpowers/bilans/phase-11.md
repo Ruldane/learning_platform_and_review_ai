@@ -63,8 +63,52 @@ le rejeu d’un envoi, les budgets et l’annulation MCP. Les plafonds sont cont
 avec les comptes de jetons enregistrés par Tremplin. Une interruption peut laisser une
 estimation de consommation différente du décompte définitif du fournisseur.
 
+## Training et Cerveau
+
+Le training reprend le même fil et accepte les trois modes en cours de séance. Le parcours
+Playwright démarre une séance libre, change de mode, enregistre le bilan et retrouve la séance
+dans le journal. La séance guidée et le training occupent le même créneau. Les tests de clôture
+couvrent les fiches, les preuves de pratique et le rejeu, sans progression dans le planning.
+
+Le relais synchronise les dossiers autorisés avec un jeton de synchronisation distinct.
+Le parcours Playwright importe une note par l’API de synchronisation, l’ouvre depuis la citation
+du Bibliothécaire et constate qu’elle n’est plus utilisée pour répondre après son retrait.
+Les agents utilisent un modèle simulé dans ces deux parcours.
+
+## Planning et écarts d’offre
+
+Le Stratège reçoit la durée du plus grand créneau si une tâche ne peut tenir sur aucune journée.
+Quand la dernière semaine est pleine, la replanification peut proposer une semaine supplémentaire.
+La modification du planning dépend de l’acceptation de cette proposition.
+
+Une compétence « Hors périmètre » peut être ajoutée à un programme validé choisi sur la page de
+l’offre. L’API vérifie le compte propriétaire et l’état du programme demandé. Le passage d’un
+quiz « Je les maîtrise déjà » conserve ses critères de sélection.
+
+## Appairage du relais
+
+Sous Edge, le parcours part de Réglages, vérifie l’activation, le renouvellement puis la
+révocation avec l’API de recette. La réponse du relais local est interposée dans ce parcours.
+Les tests Node exécutent le handler local et vérifient l’enregistrement du jeton. Les tests
+d’API couvrent l’expiration, les portées et l’isolation entre comptes.
+
+## CV ciblé
+
+La recette utilise un CV source actualisé avec un profil fictif. Les corrections proposées
+préservent les faits sur l’IA, les agents et les résultats chiffrés. Les liens du profil
+apparaissent dans l’identité. Les 51 tests de génération, composition et rendu ont passé.
+Une vérification Playwright a imprimé deux versions sous Edge, avec deux et trois colonnes
+de compétences, une page et trois liens cliquables dans chaque PDF.
+
 ## Migration SQLite
 
-Une copie des fichiers SQLite du transfert est passée de la révision `0019` à `0021` dans un
+Une copie des fichiers SQLite du transfert est passée de la révision `0019` à `0025` dans un
 conteneur hors réseau. `PRAGMA quick_check` a réussi avant et après. Les 4 programmes et les
 123 leçons sont présents dans la copie migrée. Le transfert a été monté en lecture seule.
+
+## Recettes avec les données et les clients réels
+
+La recette longue d’un programme joué par un client MCP reste soumise à l’accord de quota
+prévu par le plan directeur. Le CV a été vérifié sur un profil fictif. La reconstruction des
+quatre programmes avec OpenAI est prévue après la phase 43 et la recette finale, avec le
+chiffrage et l’accord de coût de D227.

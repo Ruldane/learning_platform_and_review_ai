@@ -5,7 +5,7 @@ Pour chaque compétence de l'analyse, le rattachement rangé (`job_postings.gap`
 référentiel ; le niveau est celui de `user_skills` pour ce nom, sinon pour le nom du besoin
 lui-même (un besoin sans rattachement entre au référentiel à `save_gap` : s'il est acquis plus
 tard, la ligne le montre). Ensuite :
-- `learnable` faux → `out_of_scope` ;
+- `learnable` faux → `out_of_scope`, sauf ajout accepté dans « Compétences des offres » ;
 - un module non sauté d'un programme validé vise le nom → `in_program`, avec la semaine de sa
   1re tâche ;
 - sinon → `to_add`.
@@ -24,7 +24,7 @@ from app.db.models.postings import GapResult, JobPosting
 from app.db.models.skills import SkillLevel
 from app.features.gap.repository import GapRepository
 from app.features.gap.service.score import GapAction, GapRow
-from app.features.program.service.skill_modules import skill_weeks
+from app.features.program.service.skill_modules import skill_coverage
 from app.features.skills.service import SkillsService
 
 SKILL_MAX = 120
@@ -36,11 +36,13 @@ class GapContext:
 
     levels: dict[str, SkillLevel]  # nom normalisé → niveau
     weeks: dict[str, int]  # nom normalisé → semaine du programme validé
+    offer_weeks: dict[str, int]  # couverture des modules « Compétences des offres »
 
 
 async def load_context(db: AsyncSession, user_id: str) -> GapContext:
     levels = await SkillsService(db, user_id).known_levels()
-    return GapContext(levels, await skill_weeks(db, user_id))
+    coverage = await skill_coverage(db, user_id)
+    return GapContext(levels, coverage.weeks, coverage.offer_weeks)
 
 
 def _first[T](values: dict[str, T], names: Sequence[str]) -> T | None:
@@ -59,9 +61,9 @@ def posting_rows(analysis: PostingAnalysis, gap: GapResult, ctx: GapContext) -> 
         match = known.get(normalize_skill_name(need.name))
         names = [name for name in (match, need.name) if name]
         level = _first(ctx.levels, names)
-        week = _first(ctx.weeks, names) if need.learnable else None
+        week = _first(ctx.weeks if need.learnable else ctx.offer_weeks, names)
         action: GapAction = "in_program" if week is not None else "to_add"
-        if not need.learnable:
+        if not need.learnable and week is None:
             action = "out_of_scope"
         rows.append(GapRow(need.name, need.required, level, action, week))
     return rows

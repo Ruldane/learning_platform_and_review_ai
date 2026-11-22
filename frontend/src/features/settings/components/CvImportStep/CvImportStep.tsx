@@ -1,4 +1,4 @@
-import type { FormEvent } from "react";
+import type { FormEvent, ReactNode } from "react";
 import { t } from "@/shared/i18n/t";
 import { InlineError } from "@/shared/ui/states/InlineError";
 import type { CvDocuments } from "../viewTypes";
@@ -11,6 +11,7 @@ interface CvImportStepProps {
   /** Une clé d'API existe : sans elle, rien ne peut être lu. */
   hasKey: boolean;
   pending: boolean;
+  launchMenu?: ReactNode;
   /** Le refus du serveur (déjà en français) ; les fichiers choisis restent pour réessayer. */
   error: string | null;
   /** Les documents sont partis : le serveur les lit en arrière-plan. */
@@ -67,6 +68,7 @@ export function CvImportStep(props: CvImportStepProps) {
         <p className="text-sm text-muted-foreground">{t("onboarding.cv.notSent")}</p>
       ) : null}
       <SendRow
+        launchMenu={props.launchMenu}
         pending={pending}
         blocked={blocked}
         hasKey={hasKey}

@@ -184,7 +184,10 @@ async def submit_project(
         }
         previous, dropped = await _append(rt, user_id, project_id, entry)
         with inherit_source(
-            user_id, source.played_by if source else None, source.model_provider if source else None
+            user_id,
+            source.played_by if source else None,
+            source.model_provider if source else None,
+            has_origin=source is not None,
         ):
             session_id = await _launch(rt, user_id, project_id, entry, previous, dropped)
     old_keys = [str(key) for item in dropped for key in item.get("screenshots", [])]

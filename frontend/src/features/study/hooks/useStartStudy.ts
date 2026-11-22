@@ -1,12 +1,12 @@
+import { useLaunchSource } from "@/shared/session-ui";
 import { useMutation } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { ApiError, errorMessage } from "@/shared/api/errors";
+import { studySessionPath } from "@/shared/lib/studyRoutes";
 import { startStudy } from "../api";
 import { openSessionIn } from "../toView";
 import type { StudyStart } from "../types";
-
-const sessionPath = (studyId: string) => `/etudier/session/${studyId}`;
 
 /**
  * Départ d'une session : ouvre la session puis va sur sa page. Une session déjà ouverte (409
@@ -15,11 +15,14 @@ const sessionPath = (studyId: string) => `/etudier/session/${studyId}`;
  * donné). Un seul départ à la fois.
  */
 export function useStartStudy(onNoBlock?: () => void) {
+  const launch = useLaunchSource();
   const navigate = useNavigate();
   const sending = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [noBlock, setNoBlock] = useState(false);
-  const mutation = useMutation({ mutationFn: (body: StudyStart) => startStudy(body) });
+  const mutation = useMutation({
+    mutationFn: (body: StudyStart) => startStudy(body, launch.source),
+  });
   const { mutateAsync } = mutation;
 
   const start = async (body: StudyStart): Promise<void> => {
@@ -29,15 +32,17 @@ export function useStartStudy(onNoBlock?: () => void) {
     setNoBlock(false);
     try {
       const started = await mutateAsync(body);
-      void navigate(sessionPath(started.study_session_id));
+      void navigate(studySessionPath(started.study_session_id));
       return; // la page se quitte : le verrou reste posé, un second clic ne rouvre rien
     } catch (failure) {
+      const details = failure instanceof ApiError ? failure.details : null;
       const open =
         failure instanceof ApiError && failure.code === "study_already_open"
-          ? openSessionIn(failure.details)
+          ? openSessionIn(details)
           : null;
       if (open) {
-        void navigate(sessionPath(open));
+        const kind = (details as { kind?: unknown } | null)?.kind;
+        void navigate(studySessionPath(open, kind));
         return;
       }
       if (failure instanceof ApiError && failure.code === "no_block_today") {
@@ -47,5 +52,5 @@ export function useStartStudy(onNoBlock?: () => void) {
     }
     sending.current = false;
   };
-  return { start, pending: mutation.isPending, error, noBlock };
+  return { start, pending: mutation.isPending, error, noBlock, launchMenu: launch.menu };
 }

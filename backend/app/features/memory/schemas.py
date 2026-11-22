@@ -104,10 +104,16 @@ class MemoryWriteOut(BaseModel):
     created_at: datetime
 
 
+class LinkedNoteOut(BaseModel):
+    item_id: str
+    title: str
+
+
 class MemoryItemDetail(MemoryItemOut):
     chunks: list[ChunkOut]
     neighbors: list[NeighborOut]
     writes: list[MemoryWriteOut]
+    linked_notes: list[LinkedNoteOut] = Field(default_factory=list)
 
 
 class MemoryItemCreate(BaseModel):

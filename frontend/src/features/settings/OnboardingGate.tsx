@@ -1,9 +1,11 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { Navigate, useLocation } from "react-router";
 import { errorMessage } from "@/shared/api/errors";
 import { t } from "@/shared/i18n/t";
+import { RunSourceAvailability } from "@/shared/lib/runSource";
 import { ErrorState } from "@/shared/ui/states/ErrorState";
 import { LoadingState } from "@/shared/ui/states/LoadingState";
+import { useApiKeys } from "./hooks/useApiKeys";
 import { useSettings } from "./hooks/useSettings";
 import { WELCOME_PATH } from "./onboarding";
 
@@ -22,6 +24,11 @@ const CONTENT_ID = "contenu";
  */
 export function OnboardingGate({ children }: { children: ReactNode }) {
   const settings = useSettings();
+  const { data: keys } = useApiKeys(false);
+  const keyed = useMemo(
+    () => keys && new Set(keys.filter((key) => key.last4 != null).map((key) => key.provider)),
+    [keys],
+  );
   const { pathname } = useLocation();
   const holder = useRef<HTMLElement>(null);
   const retried = useRef(false);
@@ -34,7 +41,11 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
   }, [ready, pathname]);
 
   if (settings.data) {
-    return ready ? children : <Navigate to={WELCOME_PATH} replace />;
+    return ready ? (
+      <RunSourceAvailability.Provider value={keyed}>{children}</RunSourceAvailability.Provider>
+    ) : (
+      <Navigate to={WELCOME_PATH} replace />
+    );
   }
   const retry = () => {
     retried.current = true;

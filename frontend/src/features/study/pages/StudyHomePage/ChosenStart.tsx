@@ -27,6 +27,7 @@ export function ChosenStart({
   return (
     <>
       <ModePicker value={mode} onChange={onMode} />
+      {starter.launchMenu}
       <ChosenLessonCard chosen={chosen} disabled={starter.pending} onStart={start} />
       {openSessionId ? (
         <div className="flex flex-col gap-2">

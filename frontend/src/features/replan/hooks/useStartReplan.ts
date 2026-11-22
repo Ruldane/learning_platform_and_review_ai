@@ -1,3 +1,4 @@
+import { useLaunchSource } from "@/shared/session-ui";
 import { useMutation } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { ApiError, errorMessage } from "@/shared/api/errors";
@@ -17,10 +18,11 @@ function openSessionOf(details: unknown): string | null {
  * s'affichent. Un seul départ à la fois (verrou posé de façon synchrone).
  */
 export function useStartReplan(programId: string, onSession: (sessionId: string) => void) {
+  const launch = useLaunchSource();
   const sending = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const mutation = useMutation({
-    mutationFn: (body: ReplanRequest) => startReplan(programId, body),
+    mutationFn: (body: ReplanRequest) => startReplan(programId, body, launch.source),
   });
   const { mutateAsync } = mutation;
 
@@ -40,5 +42,5 @@ export function useStartReplan(programId: string, onSession: (sessionId: string)
     }
     sending.current = false;
   };
-  return { start, pending: mutation.isPending, error };
+  return { start, pending: mutation.isPending, error, launchMenu: launch.menu };
 }

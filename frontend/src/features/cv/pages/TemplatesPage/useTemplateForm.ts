@@ -17,7 +17,7 @@ function fileProblem(file: File): string | null {
  * envoyé l'emporte ; sans aucun des deux, le formulaire dit ce qui manque.
  */
 export function useTemplateForm(onCreated: (templateId: string) => void) {
-  const { create, pending, error, visionUnavailable } = useCreateTemplate(onCreated);
+  const { create, pending, error, visionUnavailable, launchMenu } = useCreateTemplate(onCreated);
   const documents = useDocuments();
   const [name, setName] = useState(t("cv.templatesPage.nameDefault"));
   const [file, setFile] = useState<File | null>(null);
@@ -57,6 +57,7 @@ export function useTemplateForm(onCreated: (templateId: string) => void) {
     pending,
     problem: local ?? error,
     visionUnavailable,
+    launchMenu,
     submit,
     createFromProfile,
   };

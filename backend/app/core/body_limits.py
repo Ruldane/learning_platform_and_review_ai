@@ -23,6 +23,10 @@ def add_body_limits(app: FastAPI, prefix: str) -> None:
     """Taille des corps des imports, bornée avant toute analyse (413) ; `prefix` : celui des
     routes de l'API."""
     app.add_middleware(BodySizeLimit, path=f"{prefix}/documents", max_bytes=_UPLOAD_BODY_MAX)
+    app.add_middleware(
+        BodySizeLimit, path=f"{prefix}/brain/sync/folders", max_bytes=_UPLOAD_BODY_MAX
+    )
+    app.add_middleware(BodySizeLimit, path=f"{prefix}/mcp/relay", max_bytes=1024)
     app.add_middleware(  # CV et LinkedIn, 10 Mo chacun (D124)
         BodySizeLimit,
         path=f"{prefix}/profile/import",

@@ -45,6 +45,17 @@ class McpPrefs(UserScopedMixin, Base):
     enabled: Mapped[bool] = mapped_column(default=False)
 
 
+class McpRelayPairing(UserScopedMixin, Base):
+    """Le code temporaire et le dernier jeton dédié au relais de ce compte."""
+
+    __tablename__ = "mcp_relay_pairings"
+    __table_args__ = (UniqueConstraint("user_id"), UniqueConstraint("code_hash"))
+
+    code_hash: Mapped[str | None] = mapped_column(String(64), info={"export": False})
+    code_expires_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    token_id: Mapped[str | None] = mapped_column(String(36))
+
+
 class McpCall(UserScopedMixin, Base):
     """Un appel d'outil (P19) : l'outil, son niveau, le code de résultat (HTTP), la durée et les
     identifiants touchés. **Jamais le contenu** des paramètres ni de la réponse. Un appel refusé

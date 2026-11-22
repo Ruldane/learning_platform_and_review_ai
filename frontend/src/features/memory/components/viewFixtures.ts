@@ -35,6 +35,7 @@ export function detail(overrides: Partial<MemoryItemDetailView> = {}): MemoryIte
     session_id: null,
     chunks: [],
     neighbors: [],
+    linkedNotes: [],
     writes: [],
     ...overrides,
   };

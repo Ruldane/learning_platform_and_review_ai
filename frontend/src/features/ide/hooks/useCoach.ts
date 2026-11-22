@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
+import type { RunSource } from "@/shared/lib/runSource";
 import { isFailedRun } from "../toView";
 import type { RunProgress, TeachIn } from "../types";
 import { useTeach } from "./useTeach";
@@ -27,15 +28,15 @@ export function useCoach(sessionId: string, automatic: boolean, where: Where) {
   });
   const { mutate, mutateAsync } = teach;
   const ask = useCallback(
-    (what: Ask) => {
+    (what: Ask, source?: RunSource) => {
       const { filePath, line } = latest.current.where;
-      mutate({ ...what, file_path: filePath, line });
+      mutate({ ...what, file_path: filePath, line, source });
     },
     [mutate],
   );
   /** Une question tapée : `true` si le professeur la prend (sinon la saisie reste à sa place). */
   const sendQuestion = useCallback(
-    async (question: string, runId: string | null): Promise<boolean> => {
+    async (question: string, runId: string | null, source?: RunSource): Promise<boolean> => {
       const { filePath, line } = latest.current.where;
       try {
         const out = await mutateAsync({
@@ -44,6 +45,7 @@ export function useCoach(sessionId: string, automatic: boolean, where: Where) {
           run_id: runId,
           file_path: filePath,
           line,
+          source,
         });
         return !out.skipped;
       } catch {

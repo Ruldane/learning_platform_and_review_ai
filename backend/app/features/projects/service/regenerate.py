@@ -61,6 +61,7 @@ async def regenerate_drafts(rt: ProjectsRuntime, user_id: str, project_id: str) 
                 user_id,
                 source.played_by if source else None,
                 source.model_provider if source else None,
+                has_origin=source is not None,
             ):
                 session_id = await rt.launcher.start(
                     user_id,

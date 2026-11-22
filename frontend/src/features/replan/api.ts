@@ -1,5 +1,6 @@
 import { api } from "@/shared/api/client";
 import { unwrap } from "@/shared/api/errors";
+import { runSourceHeaders, type RunSource } from "@/shared/lib/runSource";
 import { listSessions } from "@/shared/realtime/sessionApi";
 import type { ReplanRequest } from "./types";
 
@@ -9,9 +10,13 @@ const programPath = (programId: string) => ({ params: { path: { program_id: prog
  * `POST /programs/{id}/replan` (202) : lance la replanification, jamais `POST /sessions` (409
  * `graph_has_route`). 409 `replan_open` (`details.session_id`), 409 `program_not_validated`.
  */
-export async function startReplan(programId: string, body: ReplanRequest) {
+export async function startReplan(programId: string, body: ReplanRequest, source?: RunSource) {
   return unwrap(
-    await api.POST("/programs/{program_id}/replan", { ...programPath(programId), body }),
+    await api.POST("/programs/{program_id}/replan", {
+      ...programPath(programId),
+      body,
+      headers: runSourceHeaders(source),
+    }),
   );
 }
 

@@ -28,12 +28,6 @@ export function TemplateCreateForm({
       className="flex max-w-xl flex-col gap-4"
     >
       <NameField value={form.name} disabled={form.pending} onChange={form.setName} />
-      {profileDocumentId ? (
-        <ProfileCvAction
-          disabled={form.pending}
-          onUse={() => form.createFromProfile(profileDocumentId)}
-        />
-      ) : null}
       <PdfFields
         disabled={form.pending}
         fileChosen={form.file !== null}
@@ -47,6 +41,13 @@ export function TemplateCreateForm({
         <Link to="/reglages/modeles" className="text-sm font-medium underline underline-offset-4">
           {t("cv.templatesPage.settingsLink")}
         </Link>
+      ) : null}
+      {form.launchMenu}
+      {profileDocumentId ? (
+        <ProfileCvAction
+          disabled={form.pending}
+          onUse={() => form.createFromProfile(profileDocumentId)}
+        />
       ) : null}
       <Button
         type="submit"

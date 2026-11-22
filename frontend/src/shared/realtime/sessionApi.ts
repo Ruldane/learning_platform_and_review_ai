@@ -1,6 +1,7 @@
 import { api } from "@/shared/api/client";
 import { unwrap } from "@/shared/api/errors";
 import type { components } from "@/shared/api/schema";
+import { runSourceHeaders, type RunSource } from "@/shared/lib/runSource";
 import type { UserCommand } from "./types";
 
 /** Appels REST des sessions (14.1) : toute action passe par ici, jamais par le WebSocket. */
@@ -8,8 +9,14 @@ export type SessionView = components["schemas"]["SessionView"];
 
 const path = (sessionId: string) => ({ params: { path: { session_id: sessionId } } });
 
-export async function startSession(graph: string, input: Record<string, unknown>): Promise<string> {
-  const created = unwrap(await api.POST("/sessions", { body: { graph, input } }));
+export async function startSession(
+  graph: string,
+  input: Record<string, unknown>,
+  source?: RunSource,
+): Promise<string> {
+  const created = unwrap(
+    await api.POST("/sessions", { body: { graph, input }, headers: runSourceHeaders(source) }),
+  );
   return created.session_id;
 }
 

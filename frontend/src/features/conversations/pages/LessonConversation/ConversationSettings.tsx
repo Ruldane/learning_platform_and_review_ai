@@ -1,14 +1,13 @@
 import { useId } from "react";
 import { t } from "@/shared/i18n/t";
 import type { RunSource } from "@/shared/lib/runSource";
+import { LaunchSourceMenu } from "@/shared/session-ui";
 import type { Conversation } from "../../api";
 
-const SOURCES = ["settings", "codex", "claude-code"] as const satisfies readonly RunSource[];
-export type ConversationSource = (typeof SOURCES)[number];
-
 interface ConversationSettingsProps {
-  source: ConversationSource;
-  onSourceChange: (value: ConversationSource) => void;
+  source: RunSource | undefined;
+  onSourceChange: (value: RunSource | undefined) => void;
+  relay: boolean;
   strong: boolean;
   onStrongChange: (value: boolean) => void;
   usage?: Conversation["usage"];
@@ -26,31 +25,19 @@ function usageText(usage: Conversation["usage"]): string {
 export function ConversationSettings({
   source,
   onSourceChange,
+  relay,
   strong,
   onStrongChange,
   usage,
 }: ConversationSettingsProps) {
   const menu = useId();
-  const relay = source !== "settings";
   return (
     <div className="flex flex-col gap-2 px-3 pb-2 text-sm">
-      <label htmlFor={menu}>{t("session.runSource.label")}</label>
-      <select
-        id={menu}
+      <LaunchSourceMenu
         value={source}
-        aria-describedby={relay ? `${menu}-wait` : undefined}
-        className="rounded-md border border-border bg-background px-2 py-1"
-        onChange={(event) => {
-          const choice = SOURCES.find((value) => value === event.target.value);
-          if (choice) onSourceChange(choice);
-        }}
-      >
-        {SOURCES.map((value) => (
-          <option key={value} value={value}>
-            {t(`session.runSource.options.${value}`)}
-          </option>
-        ))}
-      </select>
+        onChange={onSourceChange}
+        describedBy={relay ? `${menu}-wait` : undefined}
+      />
       {relay ? (
         <p id={`${menu}-wait`} className="text-muted-foreground">
           {t("conversations.relayWait")}

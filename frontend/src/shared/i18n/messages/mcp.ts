@@ -21,6 +21,27 @@ export const mcp = {
       "Allumé : un jeton valide ouvre, depuis cet ordinateur (127.0.0.1) et pour les features cochées, les outils de Tremplin. Claude lit et, en mode écriture, ajoute ou modifie, avec un historique pour annuler. Il ne supprime, n'envoie un message ou n'écrit au profil maître qu'après ton accord. Les clés d'API, la connexion et les réglages des modèles ne sont jamais ouverts.",
     hint: "Un seul geste coupe tout l'accès, jetons compris.",
   },
+  relay: {
+    title: "Relais local",
+    intro:
+      "Connecte le relais installé sur cet ordinateur pour que Claude Code ou Codex reprenne les parcours en attente.",
+    pair: "Connecter le relais",
+    renew: "Renouveler l’appairage",
+    revoke: "Révoquer l’appairage",
+    missing: "Portées manquantes · {features}",
+    refused: "Le relais a refusé le code. Réessaie pour en créer un nouveau.",
+    unavailable:
+      "Appairage indisponible. Vérifie que le relais tourne sur cet ordinateur et réessaie.",
+    state: {
+      unpaired: "Relais à connecter",
+      pending: "Appairage en attente",
+      paired: "Relais connecté",
+      incomplete: "Périmètre incomplet",
+      expired: "Appairage expiré",
+      revoked: "Appairage révoqué",
+      disabled: "Accès MCP coupé",
+    },
+  },
   tokens: {
     title: "Jetons",
     loading: "Chargement des jetons…",

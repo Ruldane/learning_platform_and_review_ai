@@ -35,6 +35,7 @@ from app.features.cv.service.review_data import (
     version_not_found,
 )
 from app.features.cv.service.runtime import CvRuntime
+from app.features.cv.service.targeted_content import TargetedCvContent
 from app.features.cv.service.template import cv_document
 from app.features.cv.service.tighten import LOOSE_MIN_BODY_PT, TIGHTEN_STEPS
 from app.features.postings.service.queries import get_posting
@@ -138,7 +139,7 @@ async def _render(rt: CvRuntime, db: AsyncSession, user_id: str, row: CvVersion)
         rt,
         user_id,
         template,
-        CvContent.model_validate(row.content),
+        TargetedCvContent.model_validate(row.content),
         original=row.original_page_count,
         allow_extra=row.allow_extra_pages,
         min_body_pt=await _min_body(db, user_id, row.review_id),

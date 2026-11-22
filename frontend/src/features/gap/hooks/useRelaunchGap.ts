@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ApiError, errorMessage } from "@/shared/api/errors";
+import { useLaunchSource } from "@/shared/session-ui";
 import { relaunchGap } from "../api";
 import { gapKeys } from "../queryKeys";
 
@@ -9,6 +10,7 @@ import { gapKeys } from "../queryKeys";
  */
 export function useRelaunchGap(postingId: string, onRelaunched: () => void) {
   const client = useQueryClient();
+  const provider = useLaunchSource();
   const refresh = () => {
     void client.invalidateQueries({ queryKey: gapKeys.posting(postingId) });
     void client.invalidateQueries({ queryKey: gapKeys.gap(postingId) });
@@ -16,7 +18,7 @@ export function useRelaunchGap(postingId: string, onRelaunched: () => void) {
     onRelaunched();
   };
   const mutation = useMutation({
-    mutationFn: () => relaunchGap(postingId),
+    mutationFn: () => relaunchGap(postingId, provider.source),
     onSuccess: refresh,
     onError: (failure) => {
       if (failure instanceof ApiError && failure.code === "gap_in_progress") refresh();
@@ -25,6 +27,7 @@ export function useRelaunchGap(postingId: string, onRelaunched: () => void) {
   const failure = mutation.error;
   const quiet = failure instanceof ApiError && failure.code === "gap_in_progress";
   return {
+    providerMenu: provider.menu,
     relaunch: () => mutation.mutate(),
     pending: mutation.isPending,
     error: mutation.isError && !quiet ? errorMessage(failure) : null,

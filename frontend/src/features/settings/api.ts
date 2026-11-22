@@ -1,5 +1,6 @@
 import { api } from "@/shared/api/client";
 import { unwrap } from "@/shared/api/errors";
+import { runSourceHeaders, type RunSource } from "@/shared/lib/runSource";
 import type { UserSettings } from "./types";
 
 /** `GET /settings`. */
@@ -69,12 +70,16 @@ export interface ProfileImport {
  * multipart (le navigateur pose la frontière). 409 `capture_in_progress`, 413 `file_too_large`,
  * 415 `unsupported_file_type`.
  */
-export async function importProfile({ cv, linkedin }: ProfileImport) {
+export async function importProfile({ cv, linkedin }: ProfileImport, source?: RunSource) {
   const form = new FormData();
   form.append("cv", cv);
   if (linkedin) form.append("linkedin", linkedin);
   // Le contrat type un fichier comme une chaîne : le corps réel est le formulaire.
   return unwrap(
-    await api.POST("/profile/import", { body: { cv: "" }, bodySerializer: () => form }),
+    await api.POST("/profile/import", {
+      body: { cv: "" },
+      bodySerializer: () => form,
+      headers: runSourceHeaders(source),
+    }),
   );
 }

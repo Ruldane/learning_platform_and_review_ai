@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useId, type ReactNode } from "react";
 import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 import { InlineError } from "@/shared/ui/states/InlineError";
@@ -10,6 +10,7 @@ interface RetryCardProps {
   help: string;
   actionLabel: string;
   busy: boolean;
+  launchMenu?: ReactNode;
   /** Refus relu (conflit) : une information, pas une erreur. */
   notice: string | null;
   error: string | null;
@@ -18,7 +19,7 @@ interface RetryCardProps {
 
 /** Une étape en échec et le bouton qui la relance, avec le refus ou l'erreur de la relance. */
 export function RetryCard(props: RetryCardProps) {
-  const { title, help, actionLabel, busy, notice, error, onRetry } = props;
+  const { title, help, actionLabel, busy, notice, error, onRetry, launchMenu } = props;
   const helpId = useId();
   return (
     <section
@@ -29,12 +30,8 @@ export function RetryCard(props: RetryCardProps) {
       <p id={helpId} className="text-sm text-muted-foreground">
         {help}
       </p>
-      <Button
-        className="self-start"
-        disabled={busy}
-        aria-describedby={helpId}
-        onClick={onRetry}
-      >
+      {launchMenu}
+      <Button className="self-start" disabled={busy} aria-describedby={helpId} onClick={onRetry}>
         {busy ? t("learning.retry.busy") : actionLabel}
       </Button>
       {notice ? (

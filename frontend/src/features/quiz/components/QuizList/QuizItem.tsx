@@ -1,3 +1,4 @@
+import type { RunSource } from "@/shared/lib/runSource";
 import { t } from "@/shared/i18n/t";
 import { longDay } from "@/shared/lib/format";
 import type { QuizSummaryView } from "../viewTypes";
@@ -7,7 +8,7 @@ import { StateLine } from "./StateLine";
 interface QuizItemProps {
   item: QuizSummaryView;
   pending: boolean;
-  onPrepare: (moduleId: string) => void;
+  onPrepare: (moduleId: string, source?: RunSource) => void;
   onOpen: (quizId: string) => void;
 }
 

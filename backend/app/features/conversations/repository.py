@@ -96,6 +96,7 @@ class TurnRepository(UserScopedRepository[ConversationTurn]):
         running = select(AgentSession.id).where(
             self._owned_session, AgentSession.status == "running"
         )
+
         return await self.session.scalar(
             update(ConversationTurn)
             .where(
@@ -108,4 +109,19 @@ class TurnRepository(UserScopedRepository[ConversationTurn]):
             )
             .values(updated_at=ConversationTurn.updated_at)
             .returning(ConversationTurn)
+        )
+
+    async def cancel_open(self, thread_id: str) -> str | None:
+        sessions = select(ConversationTurn.session_id).where(
+            ConversationTurn.thread_id == thread_id, ConversationTurn.user_id == self.user_id
+        )
+        return await self.session.scalar(
+            update(AgentSession)
+            .where(
+                AgentSession.user_id == self.user_id,
+                AgentSession.id.in_(sessions),
+                AgentSession.status.in_(OPEN_SESSION_STATES),
+            )
+            .values(status="cancelled", pending_interrupt=None)
+            .returning(AgentSession.id)
         )

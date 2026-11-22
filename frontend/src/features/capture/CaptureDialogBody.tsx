@@ -23,15 +23,18 @@ export function CaptureDialogBody({ createSocket }: { createSocket?: SocketFacto
           createSocket={createSocket}
         />
       ) : (
-        <CaptureInput
-          draft={draft}
-          onDraft={setDraft}
-          busy={capture.pending}
-          uploading={capture.uploading}
-          error={capture.error}
-          onSubmit={(source) => void capture.start(source)}
-          onFile={(file) => void capture.start({ kind: "file", file })}
-        />
+        <>
+          {capture.launchMenu}
+          <CaptureInput
+            draft={draft}
+            onDraft={setDraft}
+            busy={capture.pending}
+            uploading={capture.uploading}
+            error={capture.error}
+            onSubmit={(source) => void capture.start(source)}
+            onFile={(file) => void capture.start({ kind: "file", file })}
+          />
+        </>
       )}
     </CommandCapture>
   );

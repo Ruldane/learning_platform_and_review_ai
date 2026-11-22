@@ -1,14 +1,28 @@
-import { useSyncExternalStore } from "react";
+import { createContext, useSyncExternalStore } from "react";
 
 /** Qui fait tourner les agents des parcours lancés depuis l'interface (en-tête `X-Tremplin-Run`). */
-export const RUN_SOURCES = ["settings", "claude-code", "codex", "anthropic", "glm", "openai"] as const;
+export const RUN_SOURCES = [
+  "settings",
+  "claude-code",
+  "codex",
+  "anthropic",
+  "glm",
+  "openai",
+] as const;
 export type RunSource = (typeof RUN_SOURCES)[number];
 
 export const RUN_HEADER = "X-Tremplin-Run";
+export const RunSourceAvailability = createContext<ReadonlySet<string> | undefined>(undefined);
+
+/** Une valeur explicite « settings » remplace aussi le choix global sur cette requête. */
+export function runSourceHeaders(source?: RunSource): Record<string, string> | undefined {
+  return source === undefined ? undefined : { [RUN_HEADER]: source };
+}
+
 const STORAGE_KEY = "tremplin.runSource";
 const listeners = new Set<() => void>();
 
-function isRunSource(value: unknown): value is RunSource {
+export function isRunSource(value: unknown): value is RunSource {
   return typeof value === "string" && (RUN_SOURCES as readonly string[]).includes(value);
 }
 

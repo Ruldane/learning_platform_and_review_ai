@@ -25,6 +25,7 @@ function setup(summary: Summary = summaryOut(), entry: InitialEntry = "/etudier/
   const routes: { path: string; element: ReactElement }[] = [
     { path: "/etudier/session", element: <StudyHomePage /> },
     { path: "/etudier/session/:studyId", element: <p>Session ouverte</p> },
+    { path: "/etudier/training/:studyId", element: <p>Training ouvert</p> },
     { path: "/apprendre/lecons", element: <p>Liste des leçons</p> },
   ];
   const router = createMemoryRouter(routes, { initialEntries: [entry] });
@@ -70,6 +71,21 @@ describe("StudyHomePage", () => {
     const { router, user } = setup();
     await user.click(await screen.findByRole("button", { name: "Commencer mon bloc" }));
     await waitFor(() => expect(router.state.location.pathname).toBe("/etudier/session/st9"));
+  });
+
+  it("reopens the training that is blocking a guided session", async () => {
+    recordPosts(
+      "/study-sessions",
+      409,
+      apiError("study_already_open", "Un training est ouvert.", {
+        study_session_id: "training-1",
+        kind: "training",
+      }),
+    );
+    const { router, user } = setup();
+    await user.click(await screen.findByRole("button", { name: "Commencer mon bloc" }));
+    expect(await screen.findByText("Training ouvert")).toBeVisible();
+    expect(router.state.location.pathname).toBe("/etudier/training/training-1");
   });
 
   it("offers to choose a lesson on no_block_today", async () => {

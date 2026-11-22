@@ -66,7 +66,7 @@ Conserver les tiers du registre de modèles. Les essais réels choisissent le fo
   brancher les deux autres portes. Verrouiller le parcours derrière sa route et son outil MCP.
 - [x] Partager les briques du chat IDE. Ajouter le panneau du professeur au lecteur, lié à la
   leçon et au passage courant. Tester au clavier le retour du focus et la réouverture du fil.
-- [ ] Relier le training au suivi d’étude. Tester les trois modes, leur changement pendant le
+- [x] Relier le training au suivi d’étude. Tester les trois modes, leur changement pendant le
   fil, l’exclusivité avec une séance guidée et l’enregistrement des fiches et preuves sans
   cocher de tâche planifiée.
   Les séances restent dans `study_sessions`. Distinguer bloc guidé et training par leur type et
@@ -74,7 +74,7 @@ Conserver les tiers du registre de modèles. Les essais réels choisissent le fo
   bloc imposés au départ. Son fil reprend l’identifiant de séance. À la fin, déduire les modules
   et fiches des leçons citées au fil, valider leur appartenance et inscrire le temps et le journal
   par le service d’étude. Tester un rejeu de clôture pour chaque effet enregistré.
-- [ ] Relier Cerveau à la mémoire. Tester le remplacement et le retrait des extraits, la
+- [x] Relier Cerveau à la mémoire. Tester le remplacement et le retrait des extraits, la
   reprise après une coupure et l’ignorance des jonctions et dossiers techniques. Réutiliser
   les contrôles d’ingestion, lier chaque fichier à son dossier et réserver la gestion des
   chemins au compte connecté. Le relais envoie les fichiers autorisés sous un jeton distinct.
@@ -82,21 +82,26 @@ Conserver les tiers du registre de modèles. Les essais réels choisissent le fo
   serveur, garder dossier, chemin relatif validé, empreinte et état de sa dernière ingestion.
   Un retrait est traité comme un retrait de document de mémoire afin que ses extraits cessent
   d’apparaître aussi dans les recherches des agents. Relier le chat après ces vérifications.
-- [ ] Déclarer les entrées MCP et ajouter les tests Playwright du professeur, du training et
+- [x] Déclarer les entrées MCP et ajouter les tests Playwright du professeur, du training et
   d’une note retrouvée puis retirée. Vérifier que les liens de sources ouvrent le bon document.
 
 ## 4. Reports de la phase 10b
 
 - [ ] Tester les choix fournisseur par lancement et l’héritage dans les reprises et sessions
   enfants. Conserver le réglage global pour les lancements où l’utilisatrice ne choisit rien.
-- [ ] Couvrir l’expiration et la révocation de l’appairage du relais ainsi que l’affichage
+- [x] Couvrir l’expiration et la révocation de l’appairage du relais ainsi que l’affichage
   d’un jeton au périmètre incomplet. Tester l’appairage depuis Réglages avec Playwright.
-- [ ] Écrire un test pour une tâche trop longue et un autre pour une semaine pleine. Donner
+  Le compte connecté crée un code temporaire à usage unique. Le navigateur le transmet au
+  relais local, qui échange le code contre un jeton dédié et l’enregistre. Le relais local
+  accepte la requête des origines configurées et échange le code auprès de son API configurée.
+  La tentative et le renouvellement apparaissent dans Accès MCP. Seuls le code de l’état et
+  les portées manquantes sont affichés après l’appairage.
+- [x] Écrire un test pour une tâche trop longue et un autre pour une semaine pleine. Donner
   le motif au Stratège dans le premier cas et proposer une semaine supplémentaire dans le
   second. Tester l’application explicite de la proposition.
-- [ ] Tester la sélection « Hors périmètre » et le choix d’un programme propriétaire pour un
+- [x] Tester la sélection « Hors périmètre » et le choix d’un programme propriétaire pour un
   écart d’offre. Garantir l’isolation sur le programme choisi et conserver le flux D220.
-- [ ] Comparer le CV généré à un CV source à jour. Couvrir tous les liens du profil, les faits
+- [x] Comparer le CV généré à un CV source à jour. Couvrir tous les liens du profil, les faits
   pertinents et les compétences en plusieurs colonnes. Vérifier le rendu PDF avec la source
   de test avant un essai réel.
 
@@ -106,4 +111,5 @@ Conserver les tiers du registre de modèles. Les essais réels choisissent le fo
   et avant, les contrats et les parcours Playwright (application et connexion). Contrôler
   aussi le choix OpenAI dans un parcours isolé si le modèle peut être appelé.
 - [ ] Inscrire les décisions dans `DECISIONS.md` et les preuves dans le bilan. Vérifier le
-  diff et l’index, puis créer les commits par chemins et le tag après la recette.
+  diff et l’index, puis créer les commits par chemins et poser le tag après la recette.
+  Les commits et le tag restent locaux jusqu’au prochain jalon de push (D231).

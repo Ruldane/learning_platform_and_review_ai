@@ -1,28 +1,26 @@
 import { useMemo, useState } from "react";
 import { GapTable } from "../../components/GapTable";
 import { MatchScore } from "../../components/MatchScore";
-import { isAddable, MAX_PLAN_SKILLS } from "../../components/viewTypes";
+import { canPlan, isAddable, MAX_PLAN_SKILLS } from "../../components/viewTypes";
 import { usePlanGap } from "../../hooks/usePlanGap";
 import { useValidateGap } from "../../hooks/useValidateGap";
 import { InlineError } from "@/shared/ui/states/InlineError";
+import { useLaunchSource } from "@/shared/session-ui";
 import { toGapRows } from "../../toView";
 import type { GapOut } from "../../types";
 import { PlanResult } from "./PlanResult";
+import { ProgramPicker } from "./ProgramPicker";
 
-/**
- * L'écart prêt : le score (s'il existe), le tableau et « Ajouter au planning ». On ne coche que
- * des compétences qui manquent vraiment, dix au plus ; une case dont la ligne a changé à la
- * relecture est retirée de la sélection d'office.
- */
 export function GapReady({ postingId, gap }: { postingId: string; gap: GapOut }) {
   const [selected, setSelected] = useState<string[]>([]);
-  const planner = usePlanGap(postingId, () => setSelected([]));
-  const validator = useValidateGap(postingId);
+  const [programId, setProgramId] = useState<string>();
+  const provider = useLaunchSource();
+  const planner = usePlanGap(postingId, () => setSelected([]), provider.source);
+  const validator = useValidateGap(postingId, provider.source);
   const rows = useMemo(() => toGapRows(gap.rows), [gap.rows]);
-  const chosen = useMemo(() => {
-    const addable = new Set(rows.filter(isAddable).map((row) => row.skill));
-    return selected.filter((skill) => addable.has(skill));
-  }, [rows, selected]);
+  const available = new Set(rows.filter(canPlan).map((row) => row.skill));
+  const chosen = selected.filter((skill) => available.has(skill));
+  const eligible = new Set(rows.filter(isAddable).map((row) => row.skill));
 
   const toggle = (skill: string) =>
     setSelected((current) => {
@@ -33,12 +31,14 @@ export function GapReady({ postingId, gap }: { postingId: string; gap: GapOut })
   return (
     <div className="flex flex-col gap-4">
       {gap.score === null ? null : <MatchScore score={gap.score} />}
+      <ProgramPicker value={programId} onChange={setProgramId} disabled={planner.pending} />
       <GapTable
         rows={rows}
         selected={chosen}
         onToggle={toggle}
-        onAddToPlan={() => planner.plan(chosen)}
-        onValidate={() => validator.validate(chosen)}
+        launchOptions={provider.menu}
+        onAddToPlan={() => planner.plan(chosen, programId)}
+        onValidate={() => validator.validate(chosen.filter((skill) => eligible.has(skill)))}
         adding={planner.pending || validator.pending}
       />
       {validator.failure ? <InlineError message={validator.failure} /> : null}

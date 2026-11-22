@@ -6,6 +6,7 @@ import { useRun } from "@/shared/realtime/useRun";
 import {
   fetchConversation,
   sendQuestion,
+  type Conversation,
   type ConversationMessage,
   type ConversationTurn,
 } from "../api";
@@ -13,17 +14,22 @@ import {
 const active = (turn: ConversationTurn) =>
   turn.status === "running" || turn.status === "waiting_user" || turn.status === "paused";
 
-function following(turns: ConversationTurn[] | undefined, submitted: string | null): string | null {
+export function following(
+  turns: ConversationTurn[] | undefined,
+  submitted: string | null,
+): string | null {
   const last = turns?.at(-1);
   if (last && active(last)) return last.session_id;
   return turns?.some((turn) => turn.session_id === submitted) ? null : submitted;
 }
 
-function useSend(lessonId: string, started: (sessionId: string) => void) {
+type Submit = (message: ConversationMessage, source: RunSource) => Promise<{ session_id: string }>;
+
+export function useSend(submit: Submit, started: (sessionId: string) => void) {
   const remembered = useRef<{ message: ConversationMessage; source: RunSource }>(null);
   const mutation = useMutation({
     mutationFn: ({ message, source }: NonNullable<typeof remembered.current>) =>
-      sendQuestion(lessonId, message, source),
+      submit(message, source),
   });
   const send = async (
     question: string,
@@ -65,22 +71,43 @@ function useSend(lessonId: string, started: (sessionId: string) => void) {
   return { send, error: mutation.error, pending: mutation.isPending };
 }
 
-export function useConversation(lessonId: string) {
+interface ThreadOptions {
+  key: readonly string[];
+  read: (signal?: AbortSignal) => Promise<Pick<Conversation, "id" | "turns" | "usage"> | null>;
+  submit: Submit;
+  agent: string;
+}
+
+export function useThread({ key, read, submit, agent }: ThreadOptions) {
   const [submitted, setSubmitted] = useState<string | null>(null);
   const thread = useQuery({
-    queryKey: ["conversations", "lesson", lessonId],
-    queryFn: ({ signal }) => fetchConversation(lessonId, signal),
+    queryKey: key,
+    queryFn: ({ signal }) => read(signal),
     refetchInterval: (query) => (following(query.state.data?.turns, submitted) ? 2_000 : false),
   });
   const sessionId = following(thread.data?.turns, submitted);
-  const run = useRun(sessionId, () => void thread.refetch());
-  const sending = useSend(lessonId, (id) => {
+  const refresh = () => void thread.refetch();
+  const streaming = useTurnStream(sessionId, agent, refresh);
+  const sending = useSend(submit, (id) => {
     setSubmitted(id);
-    void thread.refetch();
+    refresh();
   });
-  const partial = run.stream.view.feed.findLast(
-    (item) => item.kind === "turn" && item.agent === "lesson_professor",
-  );
-  const streaming = partial?.kind === "turn" ? partial.text : null;
   return { thread, sending, sessionId, streaming };
+}
+
+export function useConversation(lessonId: string) {
+  return useThread({
+    key: ["conversations", "lesson", lessonId],
+    read: (signal) => fetchConversation(lessonId, signal),
+    submit: (message, source) => sendQuestion(lessonId, message, source),
+    agent: "lesson_professor",
+  });
+}
+
+export function useTurnStream(sessionId: string | null, agent: string, onChange: () => void) {
+  const run = useRun(sessionId, onChange);
+  const partial = run.stream.view.feed.findLast(
+    (item) => item.kind === "turn" && item.agent === agent,
+  );
+  return partial?.kind === "turn" ? partial.text : null;
 }

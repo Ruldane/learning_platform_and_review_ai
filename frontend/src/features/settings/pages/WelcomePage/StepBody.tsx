@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { t } from "@/shared/i18n/t";
 import { AvailabilityFields } from "../../components/AvailabilityFields";
 import { CvImportStep } from "../../components/CvImportStep";
@@ -18,6 +19,7 @@ export interface StepBodyProps {
   documents: CvDocuments;
   onGoToKey: () => void;
   importer: {
+    launchMenu: ReactNode;
     pending: boolean;
     error: string | null;
     imported: boolean;
@@ -51,6 +53,7 @@ export function StepBody(props: StepBodyProps) {
           pending={importer.pending}
           error={importer.error}
           imported={importer.imported}
+          launchMenu={importer.launchMenu}
           onImport={importer.start}
         />
       );

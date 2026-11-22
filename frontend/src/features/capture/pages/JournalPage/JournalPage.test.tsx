@@ -84,6 +84,30 @@ describe("JournalPage", () => {
     await waitFor(() => expect(queries.some((query) => query.get("kind") === "quiz")).toBe(true));
   });
 
+  it("links a training entry to training rather than a guided block", async () => {
+    setup([
+      {
+        entries: [
+          entryOut("t1", {
+            kind: "study_session",
+            links: {
+              session_id: null,
+              study_session_id: "training-1",
+              study_session_kind: "training",
+              quiz_attempt_id: null,
+              memory_item_id: null,
+            },
+          }),
+        ],
+        next_before: null,
+      },
+    ]);
+    expect(await screen.findByRole("link", { name: "Voir la session" })).toHaveAttribute(
+      "href",
+      "/etudier/training/training-1",
+    );
+  });
+
   it("keeps the filter and its focus while the new type loads (revue finale 5, C-m2)", async () => {
     const { user } = setup([
       { entries: [entryOut("e1")], next_before: null },

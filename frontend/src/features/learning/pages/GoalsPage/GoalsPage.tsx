@@ -23,7 +23,7 @@ export function GoalsPage() {
         <h1 className="text-2xl font-semibold">{t("learning.goals.title")}</h1>
         <p className="mt-2 text-muted-foreground">{t("learning.goals.intro")}</p>
       </header>
-      <GoalForm busy={create.pending} onSubmit={create.create} />
+      <GoalForm busy={create.pending} onSubmit={create.create} launchMenu={create.launchMenu} />
       {create.error ? <InlineError message={create.error} /> : null}
       <section aria-labelledby="goals-list-title" className="flex flex-col gap-3">
         <h2 id="goals-list-title" className="text-lg font-semibold">

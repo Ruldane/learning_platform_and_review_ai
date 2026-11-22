@@ -6,6 +6,7 @@ import { useMcpSettings } from "../../hooks/useMcpSettings";
 import { ConfirmationsSection } from "./ConfirmationsSection";
 import { HistorySection } from "./HistorySection";
 import { LevelsSection } from "./LevelsSection";
+import { RelaySection } from "./RelaySection";
 import { SwitchSection } from "./SwitchSection";
 import { TokensSection } from "./TokensSection";
 
@@ -32,6 +33,7 @@ export function McpAccessPage() {
       {settings.data ? (
         <>
           <SwitchSection enabled={settings.data.enabled} />
+          <RelaySection enabled={settings.data.enabled} />
           <TokensSection enabled={settings.data.enabled} />
           <ConfirmationsSection />
           <HistorySection />

@@ -1,3 +1,4 @@
+import type { RunSource } from "@/shared/lib/runSource";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router";
@@ -14,16 +15,18 @@ export function useStartQuiz() {
   const sending = useRef(false);
   const [pendingModuleId, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const mutation = useMutation({ mutationFn: (moduleId: string) => startQuiz(moduleId) });
+  const mutation = useMutation({
+    mutationFn: ({ moduleId, source }: { moduleId: string; source?: RunSource }) => startQuiz(moduleId, source),
+  });
   const { mutateAsync } = mutation;
 
-  const prepare = async (moduleId: string): Promise<void> => {
+  const prepare = async (moduleId: string, source?: RunSource): Promise<void> => {
     if (sending.current) return;
     sending.current = true;
     setPending(moduleId);
     setError(null);
     try {
-      const started = await mutateAsync(moduleId);
+      const started = await mutateAsync({ moduleId, source });
       void queryClient.invalidateQueries({ queryKey: ["quiz", "list"] });
       void navigate(`/etudier/quiz/${started.quiz_id}`);
       return; // la page se quitte : le verrou reste posé

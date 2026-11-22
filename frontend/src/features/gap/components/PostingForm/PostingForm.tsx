@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 import { InlineError } from "@/shared/ui/states/InlineError";
@@ -10,6 +10,7 @@ interface PostingFormProps {
   /** Un envoi est en route : rien n'est modifiable et « Analyser » est grisé. */
   pending: boolean;
   error: FormErrorView | null;
+  launchOptions?: ReactNode;
   onSubmit: (source: PostingSourceView) => void;
 }
 
@@ -18,7 +19,7 @@ interface PostingFormProps {
  * illisible (`posting_unreadable`) bascule sur l'onglet « Texte » avec le message. Un double clic
  * n'envoie qu'une fois : le formulaire reste verrouillé jusqu'à la réponse de la page.
  */
-export function PostingForm({ pending, error, onSubmit }: PostingFormProps) {
+export function PostingForm({ pending, error, launchOptions, onSubmit }: PostingFormProps) {
   const [tab, setTab] = useState<PostingTab>("url");
   const [values, setValues] = useState({ url: "", text: "" });
   const [seen, setSeen] = useState<FormErrorView | null>(null);
@@ -64,6 +65,7 @@ export function PostingForm({ pending, error, onSubmit }: PostingFormProps) {
       {panel("url")}
       {panel("text")}
       {error ? <InlineError message={error.message} /> : null}
+      {launchOptions}
       <Button type="submit" className="self-start" disabled={pending || value === ""}>
         {pending ? t("gap.form.pending") : t("gap.form.submit")}
       </Button>

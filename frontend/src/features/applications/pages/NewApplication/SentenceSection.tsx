@@ -33,6 +33,7 @@ export function SentenceSection({ createSocket }: { createSocket?: SocketFactory
           onText={setText}
           onSubmit={() => !intake.pending && text.trim() !== "" && intake.start(text.trim())}
         >
+          {intake.launchMenu}
           {openSessionId ? (
             <IntakeInProgress
               sessionId={openSessionId}

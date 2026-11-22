@@ -4,6 +4,7 @@ import type { ItemEdit, ItemPatch, MemoryItemDetailView, NewItem } from "../view
 import { ChunkList } from "./ChunkList";
 import { ItemActions } from "./ItemActions";
 import { ItemDetails } from "./ItemDetails";
+import { LinkedNotes } from "./LinkedNotes";
 import { NeighborList } from "./NeighborList";
 import { WriteJournal } from "./WriteJournal";
 
@@ -61,6 +62,7 @@ export function DrawerBody({ item, busy, onClose, onSave, onDelete, onOpenItem }
         onDelete={() => onDelete(item.id)}
       />
       <ChunkList chunks={item.chunks} />
+      <LinkedNotes notes={item.linkedNotes} onOpenItem={onOpenItem} />
       <NeighborList neighbors={item.neighbors} onOpenItem={onOpenItem} />
       <WriteJournal writes={item.writes} />
     </>

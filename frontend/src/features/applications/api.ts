@@ -1,5 +1,6 @@
 import { api } from "@/shared/api/client";
 import { unwrap } from "@/shared/api/errors";
+import { runSourceHeaders, type RunSource } from "@/shared/lib/runSource";
 import type {
   ApplicationIn,
   ApplicationPatch,
@@ -56,8 +57,10 @@ export async function postEvent(applicationId: string, body: EventIn) {
 }
 
 /** `POST /applications/intake` (202) : la saisie en une phrase ; 409 `intake_in_progress`. */
-export async function startIntake(text: string) {
-  return unwrap(await api.POST("/applications/intake", { body: { text } }));
+export async function startIntake(text: string, source?: RunSource) {
+  return unwrap(
+    await api.POST("/applications/intake", { body: { text }, headers: runSourceHeaders(source) }),
+  );
 }
 
 /** `GET /reminders?due=` : les relances dues (`true`) ou toutes (`false`), l'échéance croissante. */
@@ -91,9 +94,12 @@ export async function fetchKit(applicationId: string, signal?: AbortSignal) {
  * `POST /applications/{id}/kit` (202) : lance le kit. 409 `kit_in_progress` (`details.session_id`),
  * `posting_required`, `profile_required` ; 503 `engine_unavailable`.
  */
-export async function startKit(applicationId: string) {
+export async function startKit(applicationId: string, source?: RunSource) {
   return unwrap(
-    await api.POST("/applications/{application_id}/kit", applicationPath(applicationId)),
+    await api.POST("/applications/{application_id}/kit", {
+      ...applicationPath(applicationId),
+      headers: runSourceHeaders(source),
+    }),
   );
 }
 
@@ -131,9 +137,14 @@ export async function fetchInterview(interviewId: string, signal?: AbortSignal) 
  * `POST /applications/{id}/interviews` (202) : un entretien sur une fiche. 409 `interview_in_progress`
  * (`details.interview_id`), `profile_required` ; 404 ; 503 `engine_unavailable`.
  */
-export async function startApplicationInterview(applicationId: string, body: InterviewIn) {
+export async function startApplicationInterview(
+  applicationId: string,
+  body: InterviewIn,
+  source?: RunSource,
+) {
   return unwrap(
     await api.POST("/applications/{application_id}/interviews", {
+      headers: runSourceHeaders(source),
       ...applicationPath(applicationId),
       body,
     }),
@@ -141,8 +152,8 @@ export async function startApplicationInterview(applicationId: string, body: Int
 }
 
 /** `POST /interviews` (202) : un entretien sans fiche, sur une offre (`posting_id`) ou un intitulé (`role`). */
-export async function startFreeInterview(body: FreeInterviewIn) {
-  return unwrap(await api.POST("/interviews", { body }));
+export async function startFreeInterview(body: FreeInterviewIn, source?: RunSource) {
+  return unwrap(await api.POST("/interviews", { body, headers: runSourceHeaders(source) }));
 }
 
 /** `GET /postings` : les offres, la plus récente d'abord (le choix de l'offre d'un entretien libre). */
@@ -168,8 +179,13 @@ export async function fetchCommittee(runId: string, signal?: AbortSignal) {
  * `POST /committee` (202) : juge une version de CV. 404 `version_not_found`, `posting_not_found` ;
  * 409 `version_not_ready`, `committee_in_progress` (`details.run_id`), `profile_required` ; 503.
  */
-export async function startCommittee(cvVersionId: string) {
-  return unwrap(await api.POST("/committee", { body: { cv_version_id: cvVersionId } }));
+export async function startCommittee(cvVersionId: string, source?: RunSource) {
+  return unwrap(
+    await api.POST("/committee", {
+      body: { cv_version_id: cvVersionId },
+      headers: runSourceHeaders(source),
+    }),
+  );
 }
 
 /** `GET /cv/versions?posting_id=` : les versions de CV d'une offre (celles que le comité peut juger : les prêtes). */

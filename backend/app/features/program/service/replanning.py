@@ -223,9 +223,24 @@ def _cap(
     return budget.cap_minutes, option == "push_deadline"
 
 
-def _pack(carried: list[Entry], mine: list[Entry], week: WeekBudget, start: date) -> WeekPacking:
+def _pack(
+    carried: list[Entry], mine: list[Entry], week: WeekBudget, start: date, found: list[_Row]
+) -> WeekPacking:
     try:
         return pack_week(carried, mine, week, start)
+    except NoRoom:
+        end = start + timedelta(days=DAYS)
+        completed = {
+            row.task.type
+            for row in found
+            if row.task.status == "done"
+            and start <= row.task.planned_date < end
+            and row.task.type in ("pratiquer", "quiz")
+        }
+    if not completed:
+        raise PlanningImpossible()
+    try:
+        return pack_week(carried, mine, week, start, completed_kinds=completed)
     except NoRoom:
         raise PlanningImpossible() from None
 
@@ -271,7 +286,7 @@ def repack(
             index += 1
             continue
         mine = queue.entries(own.get(index, []))
-        packing = _pack(carried, mine, week, start)
+        packing = _pack(carried, mine, week, start, found)
         if index >= len(starts) and not any(p.entry not in mine for p in packing.placed):
             raise PlanningImpossible()
         placed += [(p.entry.origin[0], p.day) for p in packing.placed]

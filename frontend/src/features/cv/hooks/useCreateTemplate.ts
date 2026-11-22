@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { errorMessage } from "@/shared/api/errors";
+import { useLaunchSource } from "@/shared/session-ui";
 import { activateTemplate, createTemplate, type TemplateSource } from "../api";
 import { cvErrorMessage, errorCode } from "../errors";
 import { cvKeys } from "../queryKeys";
@@ -14,8 +15,9 @@ const createMessage = (error: unknown): string =>
 /** `POST /cv/templates` : renvoie l'identifiant du modèle créé à `onCreated`. */
 export function useCreateTemplate(onCreated: (templateId: string) => void) {
   const client = useQueryClient();
+  const provider = useLaunchSource();
   const mutation = useMutation({
-    mutationFn: (source: TemplateSource) => createTemplate(source),
+    mutationFn: (source: TemplateSource) => createTemplate(source, provider.source),
     onSuccess: (created) => {
       void client.invalidateQueries({ queryKey: cvKeys.templates });
       onCreated(created.template_id);
@@ -29,6 +31,7 @@ export function useCreateTemplate(onCreated: (templateId: string) => void) {
     },
     pending: mutation.isPending,
     error: mutation.isError ? createMessage(mutation.error) : null,
+    launchMenu: provider.menu,
     /** Un 409 `vision_unavailable` renvoie vers les réglages. */
     visionUnavailable: mutation.isError && errorCode(mutation.error) === "vision_unavailable",
   };

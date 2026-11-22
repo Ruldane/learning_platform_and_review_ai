@@ -39,6 +39,7 @@ export function PostingsPage({ pollMs = ANALYSIS_POLL_MS }: PostingsPageProps) {
         <PostingForm
           pending={create.pending}
           error={create.error}
+          launchOptions={create.providerMenu}
           onSubmit={(source) => {
             setExisting(null);
             create.create(source);

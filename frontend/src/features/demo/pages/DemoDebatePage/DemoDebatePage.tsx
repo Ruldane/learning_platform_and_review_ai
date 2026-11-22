@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useSearchParams } from "react-router";
 import { errorMessage } from "@/shared/api/errors";
 import { t } from "@/shared/i18n/t";
+import type { RunSource } from "@/shared/lib/runSource";
 import type { SocketFactory } from "@/shared/realtime/socket";
 import { useStartSession } from "@/shared/realtime/useSessionActions";
 import { DemoSession } from "./DemoSession";
@@ -22,11 +23,11 @@ export function DemoDebatePage({ createSocket }: { createSocket?: SocketFactory 
   const [error, setError] = useState<string | null>(null);
   const sessionId = params.get(SESSION_PARAM);
 
-  const start = async (topic: string) => {
+  const start = async (topic: string, source?: RunSource) => {
     setPending(true);
     setError(null);
     try {
-      setParams({ [SESSION_PARAM]: await startSession(GRAPH, { topic }) });
+      setParams({ [SESSION_PARAM]: await startSession(GRAPH, { topic }, source) });
     } catch (failure) {
       setError(errorMessage(failure));
     } finally {
@@ -48,7 +49,7 @@ export function DemoDebatePage({ createSocket }: { createSocket?: SocketFactory 
           onRestart={() => setParams({})}
         />
       ) : (
-        <DemoTopicForm pending={pending} error={error} onSubmit={(topic) => void start(topic)} />
+        <DemoTopicForm pending={pending} error={error} onSubmit={(topic, source) => void start(topic, source)} />
       )}
     </div>
   );

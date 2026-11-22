@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { FormEvent } from "react";
+import type { FormEvent, ReactNode } from "react";
 import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 import type { ResearchBenchInput } from "../viewTypes";
@@ -8,12 +8,13 @@ import { parseBench } from "./parseBench";
 
 interface ResearchBenchFormProps {
   onSubmit: (input: ResearchBenchInput) => void;
+  launchMenu?: ReactNode;
   /** Un essai est en cours : le formulaire est verrouillé. */
   busy: boolean;
 }
 
 /** Formulaire d'essai : une requête (2 à 300 caractères) et jusqu'à 5 adresses http(s) en plus. */
-export function ResearchBenchForm({ onSubmit, busy }: ResearchBenchFormProps) {
+export function ResearchBenchForm({ onSubmit, busy, launchMenu }: ResearchBenchFormProps) {
   const [query, setQuery] = useState("");
   const [urls, setUrls] = useState("");
   const [errors, setErrors] = useState<{ query?: string; urls?: string }>({});
@@ -42,6 +43,7 @@ export function ResearchBenchForm({ onSubmit, busy }: ResearchBenchFormProps) {
           setErrors({});
         }}
       />
+      {launchMenu}
       <Button type="submit" disabled={busy} className="self-start">
         {busy ? t("research.bench.busy") : t("research.bench.submit")}
       </Button>

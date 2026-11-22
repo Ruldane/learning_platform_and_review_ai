@@ -50,6 +50,15 @@ def study_already_open(study_id: str) -> AppError:
     )
 
 
+def training_already_open(study_id: str) -> AppError:
+    return AppError(
+        "study_already_open",
+        "Une session training est déjà ouverte : termine-la d'abord.",
+        409,
+        {"study_session_id": study_id, "kind": "training"},
+    )
+
+
 @dataclass(frozen=True)
 class Target:
     lesson_id: str
@@ -84,7 +93,7 @@ async def _settle_kept(rt: StudyRuntime, user_id: str) -> None:
     annulée (revue finale de la phase 5, S-I1). Ordre des verrous : étude, puis programme (F4)."""
     async with rt.session_factory() as db:
         row = await StudyRepository(db, user_id).open_one()
-        if row is None or row.worked_minutes is None:
+        if row is None or row.kind != "guided" or row.worked_minutes is None:
             return
         status = await agent_status(db, user_id, row.session_id)
         dead = row.session_id is None or is_dead(row, status)
@@ -102,11 +111,14 @@ async def _live(db: AsyncSession, user_id: str, now: datetime) -> tuple[str, str
     row = await repo.open_one()
     if row is None:
         return None
+    if row.kind == "training":
+        raise training_already_open(row.id)
     status = await agent_status(db, user_id, row.session_id)
     if row.session_id is None or is_dead(row, status):
         await repo.close_open(row.id, status="cancelled", ended_at=now)
         logger.info("Session d'étude interrompue annulée : étude %s", row.id)
         return None
+    assert row.lesson_id is not None  # cible obligatoire d'une séance guidée
     return row.id, row.lesson_id, row.session_id
 
 

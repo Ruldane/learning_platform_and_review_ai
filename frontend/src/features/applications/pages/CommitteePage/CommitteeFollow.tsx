@@ -37,6 +37,7 @@ export function CommitteeFollow({ postingId, cvVersionId, createSocket }: Commit
       <p role="status" className="sr-only">
         <span key={announcement.count}>{announcement.message}</span>
       </p>
+      {!running ? start.launchMenu : null}
       <CommitteeControls
         versions={versions.data}
         versionsLoading={versions.isPending}

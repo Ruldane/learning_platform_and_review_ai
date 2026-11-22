@@ -62,6 +62,7 @@ export function toItemDetail(item: MemoryItemDetail): MemoryItemDetailView {
       kind,
       score,
     })),
+    linkedNotes: (item.linked_notes ?? []).map(({ item_id, title }) => ({ itemId: item_id, title })),
     writes: item.writes.map(toWrite),
   };
 }

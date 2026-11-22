@@ -1,5 +1,6 @@
 import { api } from "@/shared/api/client";
 import { unwrap } from "@/shared/api/errors";
+import { runSourceHeaders, type RunSource } from "@/shared/lib/runSource";
 import type { GoalInput } from "./types";
 
 const goalPath = (goalId: string) => ({ params: { path: { goal_id: goalId } } });
@@ -15,9 +16,10 @@ export async function fetchGoal(goalId: string, signal?: AbortSignal) {
 }
 
 /** `POST /goals` : enregistre l'objectif et lance le Conseil (D87). */
-export async function createGoal(input: GoalInput) {
+export async function createGoal(input: GoalInput, source?: RunSource) {
   return unwrap(
     await api.POST("/goals", {
+      headers: runSourceHeaders(source),
       body: {
         text: input.text,
         target_role: input.targetRole,
@@ -32,8 +34,13 @@ export async function createGoal(input: GoalInput) {
  * `POST /goals/{id}/council` : relance depuis le début un Conseil dont la dernière session a
  * échoué (409 `council_not_failed` sinon, `goal_already_chosen` si un programme est lancé).
  */
-export async function retryCouncil(goalId: string) {
-  return unwrap(await api.POST("/goals/{goal_id}/council", goalPath(goalId)));
+export async function retryCouncil(goalId: string, source?: RunSource) {
+  return unwrap(
+    await api.POST("/goals/{goal_id}/council", {
+      ...goalPath(goalId),
+      headers: runSourceHeaders(source),
+    }),
+  );
 }
 
 /** `GET /goals/{id}/proposals` : le dernier lot (vide après une relance, jusqu'au premier lot). */

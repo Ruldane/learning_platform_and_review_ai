@@ -34,6 +34,7 @@ export interface MemoryItemDetailView extends MemoryItemRow {
   session_id: string | null;
   chunks: { id: string; ordinal: number; text: string; token_count: number }[];
   neighbors: { item_id: string; title: string; kind: MemoryKindView; score: number }[];
+  linkedNotes: { itemId: string; title: string }[];
   writes: MemoryWriteView[];
 }
 

@@ -1,3 +1,5 @@
+import type { RunSource } from "@/shared/lib/runSource";
+import { useLaunchSource } from "@/shared/session-ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { startApplicationInterview, startFreeInterview } from "../api";
 import { applicationsErrorMessage, errorCode, openInterviewId } from "../errors";
@@ -24,6 +26,7 @@ async function launch(
   applicationId: string | null,
   settings: InterviewSettings,
   target: FreeTarget | null,
+  source?: RunSource,
 ): Promise<Started> {
   const body = {
     mode: settings.mode,
@@ -32,12 +35,15 @@ async function launch(
   };
   try {
     const started = applicationId
-      ? await startApplicationInterview(applicationId, body)
-      : await startFreeInterview({
-          ...body,
-          ...(target && "postingId" in target ? { posting_id: target.postingId } : {}),
-          ...(target && "role" in target ? { role: target.role } : {}),
-        });
+      ? await startApplicationInterview(applicationId, body, source)
+      : await startFreeInterview(
+          {
+            ...body,
+            ...(target && "postingId" in target ? { posting_id: target.postingId } : {}),
+            ...(target && "role" in target ? { role: target.role } : {}),
+          },
+          source,
+        );
     return { interviewId: started.interview_id, resumed: false };
   } catch (error) {
     const open = openInterviewId(error);
@@ -51,15 +57,17 @@ async function launch(
  * `interview_in_progress` n'est pas une panne : on reprend l'entretien ouvert (`resumed`).
  */
 export function useStartInterview(applicationId: string | null) {
+  const provider = useLaunchSource();
   const client = useQueryClient();
   const mutation = useMutation({
     mutationFn: (args: { settings: InterviewSettings; target: FreeTarget | null }) =>
-      launch(applicationId, args.settings, args.target),
+      launch(applicationId, args.settings, args.target, provider.source),
     onSuccess: () =>
       client.invalidateQueries({ queryKey: applicationsKeys.interviews(applicationId) }),
   });
   const { mutateAsync } = mutation;
   return {
+    launchMenu: provider.menu,
     start: (settings: InterviewSettings, target: FreeTarget | null = null) =>
       mutateAsync({ settings, target }).then(
         (started) => started,

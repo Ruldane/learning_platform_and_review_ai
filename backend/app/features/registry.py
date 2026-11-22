@@ -12,6 +12,8 @@ from app.features.applications.router_kit import router as kit_router
 from app.features.applications.router_reminders import router as reminders_router
 from app.features.auth.mcp import MCP as auth_mcp
 from app.features.auth.router import router as auth_router
+from app.features.brain.mcp import MCP as brain_mcp
+from app.features.brain.router import router as brain_router
 from app.features.brief.mcp import MCP as brief_mcp
 from app.features.brief.router import router as brief_router
 from app.features.capture.mcp import MCP as capture_mcp
@@ -33,6 +35,7 @@ from app.features.learning.router import router as learning_router
 from app.features.lessons.mcp import MCP as lessons_mcp
 from app.features.lessons.router import router as lessons_router
 from app.features.mcp.mcp import MCP as mcp_mcp
+from app.features.mcp.relay_router import router as mcp_relay_router
 from app.features.mcp.router import router as mcp_router
 from app.features.memory.mcp import MCP as memory_mcp
 from app.features.memory.router import router as memory_router
@@ -71,6 +74,7 @@ FEATURE_ROUTERS: list[APIRouter] = [
     sessions_play_router,  # avant `sessions_router` : `/sessions/play` avant `/{session_id}`
     sessions_router,
     memory_router,
+    brain_router,
     research_router,
     learning_router,
     program_router,
@@ -97,6 +101,7 @@ FEATURE_ROUTERS: list[APIRouter] = [
     costs_router,
     ide_router,
     mcp_router,
+    mcp_relay_router,
 ]
 
 # Chaque feature déclare ici ses outils MCP (`features/<f>/mcp.py`, `MCP: FeatureMcp`), une
@@ -106,6 +111,7 @@ MCP_FEATURES: list[FeatureMcp] = [
     activity_mcp,
     applications_mcp,
     auth_mcp,
+    brain_mcp,
     brief_mcp,
     capture_mcp,
     conversations_mcp,

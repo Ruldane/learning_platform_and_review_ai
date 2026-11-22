@@ -6,9 +6,10 @@ ou un échec, `review_not_waiting` sinon), aucune de ses versions en rendu (409
 `generation_in_progress`) et sa session doit attendre la question de sortie (409
 `review_not_waiting`). La version est créée (`rendering`, numéro suivant de l'offre, contenu
 composé par le code à partir des modifications **acceptées à cet instant**, `decisions` : la
-décision de chaque modification, `ignored` pour une modification acceptée que la composition n'a
-pas pu placer), puis la question est reprise avec `{"choice": "pdf", "version_id": …}` : le
-parcours rend la version (`render_version`). Une reprise refusée retire la version.
+décision de chaque modification, `ignored` si une modification acceptée ne peut pas être
+appliquée ou ferait perdre un lien ou une preuve de l'expérience), puis la question est reprise
+avec `{"choice": "pdf", "version_id": …}`. Le parcours rend la version (`render_version`).
+Une reprise refusée retire la version.
 
 Journaux : identifiants et nombres ; jamais le nom du fichier ni un texte du CV."""
 
@@ -16,7 +17,6 @@ import logging
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.agents.tools.cv_compose import apply_with_report
 from app.agents.tools.posting_schema import PostingAnalysis
 from app.agents.tools.review_schema import Proposal
 from app.core.errors import AppError
@@ -33,6 +33,7 @@ from app.features.cv.service.review_data import posting_title, review_closed
 from app.features.cv.service.review_store import frozen_base, review_row
 from app.features.cv.service.reviews import settle, waiting_output
 from app.features.cv.service.runtime import CvRuntime
+from app.features.cv.service.targeted_content import compose_targeted_cv
 from app.features.postings.service.queries import get_posting
 
 logger = logging.getLogger(__name__)
@@ -71,22 +72,18 @@ def as_proposal(row: CvModification) -> Proposal:
     )
 
 
-async def _filename(db: AsyncSession, user_id: str, review: CvReview, name: str) -> str:
-    posting = await get_posting(db, user_id, review.posting_id)
-    analysis = PostingAnalysis.model_validate(posting.analysis) if posting.analysis else None
-    company = posting.company or (analysis.company if analysis else None)
-    title = (analysis.title if analysis else None) or posting.title
-    return cv_filename(name, company, posting_title(title))
-
-
 async def _new_version(
     db: AsyncSession, user_id: str, review: CvReview, allow_extra: bool
 ) -> CvVersion:
     """La version figée au clic : contenu composé et décisions de cet instant."""
     profile, base = await frozen_base(db, user_id, review)
+    posting = await get_posting(db, user_id, review.posting_id)
+    analysis = PostingAnalysis.model_validate(posting.analysis) if posting.analysis else None
+    company = posting.company or (analysis.company if analysis else None)
+    title = (analysis.title if analysis else None) or posting.title
     mods = await ModificationRepository(db, user_id).of_review(review.id)
     accepted = [as_proposal(m) for m in mods if m.status == "accepted"]
-    applied = apply_with_report(base, profile, accepted)
+    applied = compose_targeted_cv(base, profile, accepted, analysis)
     decisions = {m.ref: m.status for m in mods} | dict.fromkeys(applied.ignored, "ignored")
     template = await TemplateRepository(db, user_id).get(review.template_id)
     versions = VersionRepository(db, user_id)
@@ -98,7 +95,7 @@ async def _new_version(
         status="rendering",
         content=applied.content.model_dump(mode="json"),
         decisions=decisions,
-        filename=await _filename(db, user_id, review, profile.identity.name),
+        filename=cv_filename(profile.identity.name, company, posting_title(title)),
         original_page_count=template.page_count if template is not None else 1,
         allow_extra_pages=allow_extra,
     )

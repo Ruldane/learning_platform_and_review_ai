@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLaunchSource } from "@/shared/session-ui";
 import { createPosting } from "../api";
 import type { PostingSourceView } from "../components/viewTypes";
 import { postingFormError } from "../postingError";
@@ -11,8 +12,9 @@ import type { PostingCreatedOut } from "../types";
  */
 export function useCreatePosting(onDone: (result: PostingCreatedOut) => void) {
   const client = useQueryClient();
+  const provider = useLaunchSource();
   const mutation = useMutation({
-    mutationFn: (source: PostingSourceView) => createPosting(source),
+    mutationFn: (source: PostingSourceView) => createPosting(source, provider.source),
     onSuccess: (result) => {
       void client.invalidateQueries({ queryKey: gapKeys.postings });
       onDone(result);
@@ -20,6 +22,7 @@ export function useCreatePosting(onDone: (result: PostingCreatedOut) => void) {
   });
   const { mutate, reset } = mutation;
   return {
+    providerMenu: provider.menu,
     create: (source: PostingSourceView) => {
       reset();
       mutate(source);

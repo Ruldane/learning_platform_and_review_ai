@@ -7,6 +7,9 @@ export function useSetMcpEnabled() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (enabled: boolean) => putEnabled(enabled),
-    onSuccess: (settings) => queryClient.setQueryData(mcpKeys.settings, settings),
+    onSuccess: (settings) => {
+      queryClient.setQueryData(mcpKeys.settings, settings);
+      return queryClient.invalidateQueries({ queryKey: mcpKeys.relay });
+    },
   });
 }

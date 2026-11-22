@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router";
 import { t } from "@/shared/i18n/t";
+import { useLaunchSource } from "@/shared/session-ui";
 import { PostingPicker } from "../../components/PostingPicker";
 import { usePostingTitles } from "../../hooks/useVersions";
 
@@ -9,6 +10,7 @@ import { usePostingTitles } from "../../hooks/useVersions";
  */
 export function TemplatePostingPicker() {
   const navigate = useNavigate();
+  const provider = useLaunchSource();
   const postings = usePostingTitles();
   const ready = (postings.data ?? [])
     .filter((posting) => posting.status === "ready")
@@ -23,10 +25,17 @@ export function TemplatePostingPicker() {
       <h2 className="text-lg font-medium">{t("cv.postingPicker.title")}</h2>
       <p className="max-w-prose text-sm text-muted-foreground">{t("cv.postingPicker.hint")}</p>
       {postings.data === undefined ? null : (
-        <PostingPicker
-          postings={ready}
-          onPick={(postingId) => void navigate(`/carriere/cv/revue/nouvelle/${postingId}`)}
-        />
+        <>
+          {ready.length > 0 ? provider.menu : null}
+          <PostingPicker
+            postings={ready}
+            onPick={(postingId) =>
+              void navigate(`/carriere/cv/revue/nouvelle/${postingId}`, {
+                state: { runSource: provider.source },
+              })
+            }
+          />
+        </>
       )}
     </section>
   );

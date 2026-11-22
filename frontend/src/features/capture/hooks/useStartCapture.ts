@@ -1,3 +1,5 @@
+import type { RunSource } from "@/shared/lib/runSource";
+import { useLaunchSource } from "@/shared/session-ui";
 import { useMutation } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { startCapture, uploadFile } from "../api";
@@ -7,13 +9,17 @@ import { captureErrorMessage } from "../errors";
 export type CaptureInput = CaptureSource | { kind: "file"; file: File };
 
 /** Le départ d'une capture : un lien, une note, ou un fichier importé puis capturé par son document. */
-async function launch(input: CaptureInput, onUpload: (uploading: boolean) => void) {
-  if (input.kind === "url") return startCapture({ url: input.url });
-  if (input.kind === "text") return startCapture({ text: input.text });
+async function launch(
+  input: CaptureInput,
+  onUpload: (uploading: boolean) => void,
+  source?: RunSource,
+) {
+  if (input.kind === "url") return startCapture({ url: input.url }, source);
+  if (input.kind === "text") return startCapture({ text: input.text }, source);
   onUpload(true);
   try {
     const document = await uploadFile(input.file);
-    return await startCapture({ document_id: document.id });
+    return await startCapture({ document_id: document.id }, source);
   } finally {
     onUpload(false);
   }
@@ -25,11 +31,12 @@ async function launch(input: CaptureInput, onUpload: (uploading: boolean) => voi
  * dans un texte clair ; un seul départ à la fois (verrou posé de façon synchrone).
  */
 export function useStartCapture(onSession: (sessionId: string) => void) {
+  const provider = useLaunchSource();
   const sending = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const mutation = useMutation({
-    mutationFn: (input: CaptureInput) => launch(input, setUploading),
+    mutationFn: (input: CaptureInput) => launch(input, setUploading, provider.source),
   });
   const { mutateAsync } = mutation;
 
@@ -44,5 +51,5 @@ export function useStartCapture(onSession: (sessionId: string) => void) {
     }
     sending.current = false;
   };
-  return { start, pending: mutation.isPending, uploading, error };
+  return { start, pending: mutation.isPending, uploading, error, launchMenu: provider.menu };
 }

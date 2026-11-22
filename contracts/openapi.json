@@ -2354,6 +2354,33 @@
         "title": "Body_post_template_api_v1_cv_templates_post",
         "type": "object"
       },
+      "Body_sync_file_api_v1_brain_sync_folders__folder_id__files_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          },
+          "path": {
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Path",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "sha256",
+          "file"
+        ],
+        "title": "Body_sync_file_api_v1_brain_sync_folders__folder_id__files_post",
+        "type": "object"
+      },
       "BraveUsageOut": {
         "description": "Requêtes Brave du mois civil UTC (`month` : « AAAA-MM ») pour la clé en vigueur.",
         "properties": {
@@ -3306,6 +3333,59 @@
           "question"
         ],
         "title": "ConversationMessageIn",
+        "type": "object"
+      },
+      "ConversationOut": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "turns": {
+            "items": {
+              "$ref": "#/components/schemas/ConversationTurnOut"
+            },
+            "title": "Turns",
+            "type": "array"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/ConversationUsage"
+          }
+        },
+        "required": [
+          "id",
+          "turns",
+          "usage"
+        ],
+        "title": "ConversationOut",
+        "type": "object"
+      },
+      "ConversationQuestionIn": {
+        "additionalProperties": false,
+        "properties": {
+          "question": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Question",
+            "type": "string"
+          },
+          "request_id": {
+            "format": "uuid",
+            "title": "Request Id",
+            "type": "string"
+          },
+          "strong": {
+            "default": false,
+            "title": "Strong",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "request_id",
+          "question"
+        ],
+        "title": "ConversationQuestionIn",
         "type": "object"
       },
       "ConversationSource": {
@@ -5204,6 +5284,45 @@
         "title": "Experience",
         "type": "object"
       },
+      "FileOut": {
+        "properties": {
+          "document_id": {
+            "title": "Document Id",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "sha256": {
+            "title": "Sha256",
+            "type": "string"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "queued",
+              "processing",
+              "indexed",
+              "error"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "size",
+          "sha256",
+          "document_id",
+          "status"
+        ],
+        "title": "FileOut",
+        "type": "object"
+      },
       "FilesPutIn": {
         "description": "Enregistre les fichiers de la séance. Interface : remplace tous les fichiers. Claude (MCP,\ninterrupteur allumé) : un seul fichier de `files`, les autres sont gardés ; `base_hash` est\nalors obligatoire : le sha256 du contenu actuel de ce fichier (`file_hashes` de la séance ;\ntexte vide pour un nouveau fichier). Il est ignoré pour l'interface. `entry` aussi, pour\nClaude. `base_hashes` (interface, facultatif) : le sha256 de la version de chaque fichier sur\nlaquelle tu as édité ; un fichier que Claude a changé depuis et que l'envoi écraserait donne 409\n`stale_base` (`details.files` : les noms) et rien n'est écrit.",
         "properties": {
@@ -5294,6 +5413,183 @@
           "skill"
         ],
         "title": "FlashcardOut",
+        "type": "object"
+      },
+      "FolderIn": {
+        "properties": {
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "path": {
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Path",
+            "type": "string"
+          },
+          "paused": {
+            "default": false,
+            "title": "Paused",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "path"
+        ],
+        "title": "FolderIn",
+        "type": "object"
+      },
+      "FolderOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "paused": {
+            "title": "Paused",
+            "type": "boolean"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "paused",
+          "revision",
+          "path"
+        ],
+        "title": "FolderOut",
+        "type": "object"
+      },
+      "FolderPatch": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "maxLength": 2048,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path"
+          },
+          "paused": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paused"
+          }
+        },
+        "title": "FolderPatch",
+        "type": "object"
+      },
+      "FolderStatus": {
+        "properties": {
+          "error": {
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Error",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "indexed": {
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Indexed",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "paused": {
+            "title": "Paused",
+            "type": "boolean"
+          },
+          "processing": {
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Processing",
+            "type": "integer"
+          },
+          "queued": {
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Queued",
+            "type": "integer"
+          },
+          "report": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReportOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "total": {
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "paused",
+          "revision",
+          "total",
+          "queued",
+          "processing",
+          "indexed",
+          "error",
+          "report"
+        ],
+        "title": "FolderStatus",
         "type": "object"
       },
       "FollowupOut": {
@@ -5544,6 +5840,26 @@
           "source"
         ],
         "title": "GapRowOut",
+        "type": "object"
+      },
+      "GapSkillsIn": {
+        "properties": {
+          "skills": {
+            "items": {
+              "maxLength": 120,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 10,
+            "minItems": 1,
+            "title": "Skills",
+            "type": "array"
+          }
+        },
+        "required": [
+          "skills"
+        ],
+        "title": "GapSkillsIn",
         "type": "object"
       },
       "GapStarted": {
@@ -6014,6 +6330,75 @@
         "title": "Identity",
         "type": "object"
       },
+      "IgnoredCounts": {
+        "properties": {
+          "binary": {
+            "default": 0,
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Binary",
+            "type": "integer"
+          },
+          "changed": {
+            "default": 0,
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Changed",
+            "type": "integer"
+          },
+          "extension": {
+            "default": 0,
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Extension",
+            "type": "integer"
+          },
+          "link": {
+            "default": 0,
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Link",
+            "type": "integer"
+          },
+          "path": {
+            "default": 0,
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Path",
+            "type": "integer"
+          },
+          "special": {
+            "default": 0,
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Special",
+            "type": "integer"
+          },
+          "technical": {
+            "default": 0,
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Technical",
+            "type": "integer"
+          },
+          "tooLarge": {
+            "default": 0,
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Toolarge",
+            "type": "integer"
+          },
+          "unreadable": {
+            "default": 0,
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Unreadable",
+            "type": "integer"
+          }
+        },
+        "title": "IgnoredCounts",
+        "type": "object"
+      },
       "IndicatorsOut": {
         "description": "Couverture des exigences obligatoires de l'offre (`missing` : leur texte, tel que l'offre\nl'écrit) et contrôles ATS. Aucune garantie de passage n'est promise.",
         "properties": {
@@ -6426,6 +6811,22 @@
         "title": "InterviewStartOut",
         "type": "object"
       },
+      "InventoryOut": {
+        "properties": {
+          "files": {
+            "items": {
+              "$ref": "#/components/schemas/FileOut"
+            },
+            "title": "Files",
+            "type": "array"
+          }
+        },
+        "required": [
+          "files"
+        ],
+        "title": "InventoryOut",
+        "type": "object"
+      },
       "JournalEntryOut": {
         "properties": {
           "created_at": {
@@ -6517,6 +6918,21 @@
               }
             ],
             "title": "Study Session Id"
+          },
+          "study_session_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "guided",
+                  "training"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Study Session Kind"
           }
         },
         "required": [
@@ -6915,9 +7331,9 @@
         },
         "required": [
           "id",
-          "lesson_id",
           "turns",
-          "usage"
+          "usage",
+          "lesson_id"
         ],
         "title": "LessonConversationOut",
         "type": "object"
@@ -7320,6 +7736,24 @@
           "url"
         ],
         "title": "Link",
+        "type": "object"
+      },
+      "LinkedNoteOut": {
+        "properties": {
+          "item_id": {
+            "title": "Item Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_id",
+          "title"
+        ],
+        "title": "LinkedNoteOut",
         "type": "object"
       },
       "MapPoint": {
@@ -8301,6 +8735,13 @@
               }
             ],
             "title": "Level"
+          },
+          "linked_notes": {
+            "items": {
+              "$ref": "#/components/schemas/LinkedNoteOut"
+            },
+            "title": "Linked Notes",
+            "type": "array"
           },
           "neighbors": {
             "items": {
@@ -9889,8 +10330,21 @@
         "type": "object"
       },
       "PlanGapIn": {
-        "description": "« Ajouter au planning » : des noms de lignes `to_add` de l'écart de l'offre.",
+        "description": "Lignes « À ajouter » ou « Hors périmètre » et programme validé choisi.",
         "properties": {
+          "program_id": {
+            "anyOf": [
+              {
+                "maxLength": 36,
+                "minLength": 36,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Program Id"
+          },
           "skills": {
             "items": {
               "maxLength": 120,
@@ -13165,6 +13619,62 @@
         "title": "ReindexState",
         "type": "object"
       },
+      "RelayCode": {
+        "properties": {
+          "code": {
+            "pattern": "^trp_[A-Za-z0-9_-]{43}$",
+            "title": "Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "title": "RelayCode",
+        "type": "object"
+      },
+      "RelayStatus": {
+        "properties": {
+          "missing_features": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing Features",
+            "type": "array"
+          },
+          "state": {
+            "enum": [
+              "unpaired",
+              "pending",
+              "paired",
+              "incomplete",
+              "expired",
+              "revoked",
+              "disabled"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state"
+        ],
+        "title": "RelayStatus",
+        "type": "object"
+      },
+      "RelayToken": {
+        "properties": {
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "title": "RelayToken",
+        "type": "object"
+      },
       "ReminderItem": {
         "properties": {
           "application_id": {
@@ -13347,6 +13857,21 @@
         "title": "RemindersRubric",
         "type": "object"
       },
+      "RemoveIn": {
+        "properties": {
+          "path": {
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "title": "RemoveIn",
+        "type": "object"
+      },
       "ReplanRequest": {
         "properties": {
           "available_minutes": {
@@ -13389,6 +13914,126 @@
           "session_id"
         ],
         "title": "ReplanStarted",
+        "type": "object"
+      },
+      "ReportIn": {
+        "properties": {
+          "added": {
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Added",
+            "type": "integer"
+          },
+          "changed": {
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Changed",
+            "type": "integer"
+          },
+          "errors": {
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Errors",
+            "type": "integer"
+          },
+          "ignored": {
+            "$ref": "#/components/schemas/IgnoredCounts"
+          },
+          "removed": {
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Removed",
+            "type": "integer"
+          },
+          "scanned": {
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Scanned",
+            "type": "integer"
+          },
+          "state": {
+            "enum": [
+              "syncing",
+              "done",
+              "incomplete"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state",
+          "scanned",
+          "added",
+          "changed",
+          "removed",
+          "ignored",
+          "errors"
+        ],
+        "title": "ReportIn",
+        "type": "object"
+      },
+      "ReportOut": {
+        "properties": {
+          "added": {
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Added",
+            "type": "integer"
+          },
+          "changed": {
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Changed",
+            "type": "integer"
+          },
+          "errors": {
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Errors",
+            "type": "integer"
+          },
+          "ignored": {
+            "$ref": "#/components/schemas/IgnoredCounts"
+          },
+          "removed": {
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Removed",
+            "type": "integer"
+          },
+          "reported_at": {
+            "format": "date-time",
+            "title": "Reported At",
+            "type": "string"
+          },
+          "scanned": {
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Scanned",
+            "type": "integer"
+          },
+          "state": {
+            "enum": [
+              "syncing",
+              "done",
+              "incomplete"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state",
+          "scanned",
+          "added",
+          "changed",
+          "removed",
+          "ignored",
+          "errors",
+          "reported_at"
+        ],
+        "title": "ReportOut",
         "type": "object"
       },
       "RequirementIn": {
@@ -16067,6 +16712,19 @@
         "title": "SubmissionOut",
         "type": "object"
       },
+      "SyncTokenOut": {
+        "properties": {
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "title": "SyncTokenOut",
+        "type": "object"
+      },
       "TaskCreate": {
         "properties": {
           "done_criterion": {
@@ -16778,6 +17436,183 @@
           "required_in"
         ],
         "title": "TopMissingOut",
+        "type": "object"
+      },
+      "TrainingCancel": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "const": "cancel",
+            "title": "Action",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "TrainingCancel",
+        "type": "object"
+      },
+      "TrainingFinish": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "const": "finish",
+            "title": "Action",
+            "type": "string"
+          },
+          "worked_minutes": {
+            "anyOf": [
+              {
+                "maximum": 600.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Worked Minutes"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "TrainingFinish",
+        "type": "object"
+      },
+      "TrainingModeUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "const": "mode",
+            "title": "Action",
+            "type": "string"
+          },
+          "mode": {
+            "enum": [
+              "socratic",
+              "feynman",
+              "direct"
+            ],
+            "title": "Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "mode"
+        ],
+        "title": "TrainingModeUpdate",
+        "type": "object"
+      },
+      "TrainingSessionOut": {
+        "properties": {
+          "conversation": {
+            "$ref": "#/components/schemas/ConversationOut"
+          },
+          "ended_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At"
+          },
+          "flashcards_created": {
+            "title": "Flashcards Created",
+            "type": "integer"
+          },
+          "greeting": {
+            "title": "Greeting",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "minutes": {
+            "title": "Minutes",
+            "type": "integer"
+          },
+          "mode": {
+            "enum": [
+              "socratic",
+              "feynman",
+              "direct"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "skills": {
+            "items": {
+              "$ref": "#/components/schemas/SkillLevelOut"
+            },
+            "title": "Skills",
+            "type": "array"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "open",
+              "finished",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          }
+        },
+        "required": [
+          "id",
+          "mode",
+          "status",
+          "started_at",
+          "ended_at",
+          "minutes",
+          "summary",
+          "flashcards_created",
+          "skills",
+          "greeting",
+          "conversation"
+        ],
+        "title": "TrainingSessionOut",
+        "type": "object"
+      },
+      "TrainingStart": {
+        "additionalProperties": false,
+        "properties": {
+          "mode": {
+            "default": "socratic",
+            "enum": [
+              "socratic",
+              "feynman",
+              "direct"
+            ],
+            "title": "Mode",
+            "type": "string"
+          }
+        },
+        "title": "TrainingStart",
         "type": "object"
       },
       "TrendOut": {
@@ -17769,6 +18604,12 @@
         ],
         "title": "ZoneDiffOut",
         "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "BrainSyncBearer": {
+        "scheme": "bearer",
+        "type": "http"
       }
     }
   },
@@ -18932,6 +19773,547 @@
         "summary": "Edit Board",
         "tags": [
           "learning"
+        ]
+      }
+    },
+    "/api/v1/brain/conversation": {
+      "get": {
+        "operationId": "read_conversation_api_v1_brain_conversation_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ConversationOut"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Read Conversation Api V1 Brain Conversation Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Read Conversation",
+        "tags": [
+          "brain"
+        ]
+      }
+    },
+    "/api/v1/brain/conversation/messages": {
+      "post": {
+        "operationId": "message_api_v1_brain_conversation_messages_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConversationQuestionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Message",
+        "tags": [
+          "brain"
+        ]
+      }
+    },
+    "/api/v1/brain/folders": {
+      "get": {
+        "operationId": "list_folders_api_v1_brain_folders_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/FolderOut"
+                  },
+                  "title": "Response List Folders Api V1 Brain Folders Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Folders",
+        "tags": [
+          "brain"
+        ]
+      },
+      "post": {
+        "operationId": "add_folder_api_v1_brain_folders_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FolderIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FolderOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Folder",
+        "tags": [
+          "brain"
+        ]
+      }
+    },
+    "/api/v1/brain/folders/{folder_id}": {
+      "delete": {
+        "operationId": "delete_folder_api_v1_brain_folders__folder_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "folder_id",
+            "required": true,
+            "schema": {
+              "title": "Folder Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Folder",
+        "tags": [
+          "brain"
+        ]
+      },
+      "patch": {
+        "operationId": "patch_folder_api_v1_brain_folders__folder_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "folder_id",
+            "required": true,
+            "schema": {
+              "title": "Folder Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FolderPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FolderOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Patch Folder",
+        "tags": [
+          "brain"
+        ]
+      }
+    },
+    "/api/v1/brain/status": {
+      "get": {
+        "description": "État de synchronisation des dossiers, sans chemins locaux ni fichiers individuels.",
+        "operationId": "status_view_api_v1_brain_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/FolderStatus"
+                  },
+                  "title": "Response Status View Api V1 Brain Status Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Status View",
+        "tags": [
+          "brain"
+        ]
+      }
+    },
+    "/api/v1/brain/sync-token": {
+      "post": {
+        "description": "Crée le jeton du relais et invalide le précédent. La valeur n'est rendue qu'une fois.",
+        "operationId": "create_sync_token_api_v1_brain_sync_token_post",
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncTokenOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Create Sync Token",
+        "tags": [
+          "brain"
+        ]
+      }
+    },
+    "/api/v1/brain/sync/folders": {
+      "get": {
+        "operationId": "sync_folders_api_v1_brain_sync_folders_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/FolderOut"
+                  },
+                  "title": "Response Sync Folders Api V1 Brain Sync Folders Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "BrainSyncBearer": []
+          }
+        ],
+        "summary": "Sync Folders",
+        "tags": [
+          "brain"
+        ]
+      }
+    },
+    "/api/v1/brain/sync/folders/{folder_id}/files": {
+      "post": {
+        "operationId": "sync_file_api_v1_brain_sync_folders__folder_id__files_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "folder_id",
+            "required": true,
+            "schema": {
+              "title": "Folder Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Tremplin-Folder-Revision",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "X-Tremplin-Folder-Revision",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_sync_file_api_v1_brain_sync_folders__folder_id__files_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "BrainSyncBearer": []
+          }
+        ],
+        "summary": "Sync File",
+        "tags": [
+          "brain"
+        ]
+      }
+    },
+    "/api/v1/brain/sync/folders/{folder_id}/inventory": {
+      "get": {
+        "operationId": "sync_inventory_api_v1_brain_sync_folders__folder_id__inventory_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "folder_id",
+            "required": true,
+            "schema": {
+              "title": "Folder Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Tremplin-Folder-Revision",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "X-Tremplin-Folder-Revision",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "BrainSyncBearer": []
+          }
+        ],
+        "summary": "Sync Inventory",
+        "tags": [
+          "brain"
+        ]
+      }
+    },
+    "/api/v1/brain/sync/folders/{folder_id}/remove": {
+      "post": {
+        "operationId": "sync_remove_api_v1_brain_sync_folders__folder_id__remove_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "folder_id",
+            "required": true,
+            "schema": {
+              "title": "Folder Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Tremplin-Folder-Revision",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "X-Tremplin-Folder-Revision",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RemoveIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "BrainSyncBearer": []
+          }
+        ],
+        "summary": "Sync Remove",
+        "tags": [
+          "brain"
+        ]
+      }
+    },
+    "/api/v1/brain/sync/folders/{folder_id}/report": {
+      "post": {
+        "operationId": "sync_report_api_v1_brain_sync_folders__folder_id__report_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "folder_id",
+            "required": true,
+            "schema": {
+              "title": "Folder Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Tremplin-Folder-Revision",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "X-Tremplin-Folder-Revision",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "BrainSyncBearer": []
+          }
+        ],
+        "summary": "Sync Report",
+        "tags": [
+          "brain"
         ]
       }
     },
@@ -22493,6 +23875,105 @@
         ]
       }
     },
+    "/api/v1/mcp/relay/exchange": {
+      "post": {
+        "description": "Échange par le relais local. Le code désigne le compte, indépendamment des cookies.",
+        "operationId": "exchange_pairing_api_v1_mcp_relay_exchange_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RelayCode"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelayToken"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Exchange Pairing",
+        "tags": [
+          "mcp"
+        ]
+      }
+    },
+    "/api/v1/mcp/relay/pairing": {
+      "delete": {
+        "description": "Annule un code en attente et révoque le jeton dédié du relais.",
+        "operationId": "revoke_pairing_api_v1_mcp_relay_pairing_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Revoke Pairing",
+        "tags": [
+          "mcp"
+        ]
+      },
+      "post": {
+        "description": "Démarre l'appairage du relais du compte connecté.",
+        "operationId": "start_pairing_api_v1_mcp_relay_pairing_post",
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelayCode"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Start Pairing",
+        "tags": [
+          "mcp"
+        ]
+      }
+    },
+    "/api/v1/mcp/relay/status": {
+      "get": {
+        "description": "État de l'appairage et portées manquantes du compte connecté.",
+        "operationId": "pairing_status_api_v1_mcp_relay_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelayStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Pairing Status",
+        "tags": [
+          "mcp"
+        ]
+      }
+    },
     "/api/v1/mcp/settings": {
       "get": {
         "description": "L'interrupteur général du MCP (coupé par défaut).",
@@ -23722,7 +25203,7 @@
     },
     "/api/v1/postings/{posting_id}/gap/plan": {
       "post": {
-        "description": "« Ajouter au planning » : lance une replanification du programme validé le plus récent,\najouts seuls (module « Compétences des offres »), proposée à January avant toute écriture.\n422 `gap_skill_unknown` (`details.fields` : `skills.{rang}`, sans valeur) si une compétence\nn'est pas une ligne `to_add` de l'écart ; 409 `no_program` ; 409 `replan_open`\n(`details.session_id`) si une replanification est déjà ouverte.",
+        "description": "Propose les ajouts au programme validé choisi, par défaut le plus récent.\n\n422 `gap_skill_unknown` si une ligne ne peut pas être ajoutée. 404 `program_not_found`,\n409 `program_not_validated`, `no_program` ou `replan_open` suivant le programme.",
         "operationId": "post_gap_plan_api_v1_postings__posting_id__gap_plan_post",
         "parameters": [
           {
@@ -23792,7 +25273,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PlanGapIn"
+                "$ref": "#/components/schemas/GapSkillsIn"
               }
             }
           },
@@ -27240,6 +28721,257 @@
         },
         "summary": "Study Summary",
         "tags": [
+          "study"
+        ]
+      }
+    },
+    "/api/v1/study-sessions/training": {
+      "post": {
+        "operationId": "start_api_v1_study_sessions_training_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrainingStart"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainingSessionOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainingSessionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start",
+        "tags": [
+          "study",
+          "study"
+        ]
+      }
+    },
+    "/api/v1/study-sessions/training/open": {
+      "get": {
+        "operationId": "opened_api_v1_study_sessions_training_open_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/TrainingSessionOut"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Opened Api V1 Study Sessions Training Open Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Opened",
+        "tags": [
+          "study",
+          "study"
+        ]
+      }
+    },
+    "/api/v1/study-sessions/training/{study_session_id}": {
+      "get": {
+        "operationId": "read_api_v1_study_sessions_training__study_session_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Study Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainingSessionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read",
+        "tags": [
+          "study",
+          "study"
+        ]
+      },
+      "patch": {
+        "operationId": "update_api_v1_study_sessions_training__study_session_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Study Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "discriminator": {
+                  "mapping": {
+                    "cancel": "#/components/schemas/TrainingCancel",
+                    "finish": "#/components/schemas/TrainingFinish",
+                    "mode": "#/components/schemas/TrainingModeUpdate"
+                  },
+                  "propertyName": "action"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/TrainingModeUpdate"
+                  },
+                  {
+                    "$ref": "#/components/schemas/TrainingFinish"
+                  },
+                  {
+                    "$ref": "#/components/schemas/TrainingCancel"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainingSessionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update",
+        "tags": [
+          "study",
+          "study"
+        ]
+      }
+    },
+    "/api/v1/study-sessions/training/{study_session_id}/messages": {
+      "post": {
+        "operationId": "message_api_v1_study_sessions_training__study_session_id__messages_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Study Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConversationQuestionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Message",
+        "tags": [
+          "study",
           "study"
         ]
       }

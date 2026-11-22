@@ -2326,3 +2326,56 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
   est demandé pour un tour. Le client joué utilise le même fil et n’appelle aucun modèle d’API.
 - **Raison** : relire le passage réellement sélectionné et maîtriser le coût même après une
   reprise ou lorsque plusieurs réponses sont en cours pour le même compte.
+
+## D231
+
+- **Date** : 2026-11-22
+- **Sujet** : Publication sur GitHub par tranches de vingt phases.
+- **Décision** : garder les commits intermédiaires en local. Pousser après vingt phases terminées
+  et testées à partir de la phase 11, sans compter la phase 12 écartée. Le premier jalon est la
+  phase 31. L’identité Git `Ruldane <l.nizzoli@gmail.com>` reste configurée au niveau du dépôt
+  Tremplin.
+- **Raison** : January souhaite publier le développement par tranches de vingt phases.
+
+## D232
+
+- **Date** : 2026-11-22
+- **Sujet** : Lots de dix phases et vérifications ciblées.
+- **Décision** : remplacer les lots de cinq de D228 par des lots de dix. D231 fixe le push
+  après deux lots complets.
+  Exécuter une revue par phase et une ou deux revues d’ensemble à la fin de chaque lot.
+  Garder les tests ciblés, les contrôles obligatoires et les parcours Playwright concernés.
+  Regrouper les vérifications communes au niveau du lot.
+- **Raison** : consacrer davantage de temps à l’implémentation et limiter les relances de suites.
+
+## D233
+
+- **Date** : 2026-11-22
+- **Sujet** : Suivi d’étude d’une séance training et retrait des sources de Cerveau.
+- **Décision** : partager le créneau ouvert du suivi d’étude entre séances guidées et training.
+  Le bilan training produit des fiches et preuves de pratique à partir des leçons citées
+  et inscrit son temps dans le journal. La clôture ne complète aucune tâche planifiée.
+  Une note synchronisée remplacée ou retirée cesse d’être recherchée. Le Bibliothécaire
+  omet du contexte de ses nouvelles réponses les tours qui ont utilisé cette version.
+- **Raison** : conserver un seul suivi d’étude et respecter les sources disponibles à chaque demande.
+
+## D234
+
+- **Date** : 2026-11-22
+- **Sujet** : Appairage du relais depuis Réglages.
+- **Décision** : le navigateur transmet au relais local un code à usage unique valable deux
+  minutes. Le relais vérifie l’origine et échange le code auprès de son API configurée.
+  Le jeton dédié est valable 30 jours. Un renouvellement révoque le jeton précédent. Les
+  réglages indiquent l’état de l’appairage et ses portées manquantes, sans afficher le jeton.
+- **Raison** : remplacer la copie manuelle des jetons et diagnostiquer les sessions ignorées.
+
+## D235
+
+- **Date** : 2026-11-22
+- **Sujet** : Priorité de la source des agents et préservation des faits dans le CV.
+- **Décision** : un lancement peut choisir le fournisseur près du bouton. Il suit le choix
+  global du navigateur si ce menu est laissé par défaut. Une reprise ou un travail dérivé
+  conserve la source enregistrée par sa session d’origine. Dans le CV ciblé, une coupe qui
+  retirerait un lien ou une preuve forte est omise de la composition. Le gabarit répartit
+  les compétences sur deux ou trois colonnes si le bloc le permet.
+- **Raison** : reproduire le choix d’exécution et conserver les faits utiles du profil source.

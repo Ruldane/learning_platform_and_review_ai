@@ -48,7 +48,7 @@ export function QuizIndexPage({ pollMs }: { pollMs?: number }) {
         <QuizList
           items={quizzes.data}
           pendingModuleId={starter.pendingModuleId}
-          onPrepare={(moduleId) => void starter.prepare(moduleId)}
+          onPrepare={(moduleId, source) => void starter.prepare(moduleId, source)}
           onOpen={(quizId) => void navigate(`/etudier/quiz/${quizId}`)}
         />
       ) : null}

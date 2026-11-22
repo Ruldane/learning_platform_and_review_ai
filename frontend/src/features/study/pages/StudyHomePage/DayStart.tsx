@@ -18,7 +18,12 @@ export function DayStart({
   if ((!block && !openSessionId) || starter.noBlock) return <NoBlockState />;
   return (
     <>
-      {openSessionId ? null : <ModePicker value={mode} onChange={onMode} />}
+      {openSessionId ? null : (
+        <>
+          <ModePicker value={mode} onChange={onMode} />
+          {starter.launchMenu}
+        </>
+      )}
       <BlockCard
         block={block ? toBlockView(block) : null}
         openSessionId={openSessionId}

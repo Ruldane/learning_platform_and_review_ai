@@ -11,9 +11,16 @@
 {% endfor %}
 </ul>
 {% endif %}
+{% if header_links %}
+<ul class="profile-links">
+{% for link, href in header_links %}
+<li>{% if href %}<a href="{{ href }}">{{ link.label }} — {{ link.url }}</a>{% else %}{{ link.label }} — {{ link.url }}{% endif %}</li>
+{% endfor %}
+</ul>
+{% endif %}
 </section>
 {% endmacro %}
-{% macro section(block) %}
+{% macro section(block, skill_columns) %}
 <section class="cv-section section-{{ block.key }}">
 <h2>{{ block.title }}</h2>
 {% for entry in block.entries %}
@@ -32,7 +39,8 @@
 </div>
 {% endfor %}
 {% if block.items %}
-<ul class="items">
+{% set columns = [skill_columns, block.items | length] | min if block.key == 'skills' else 1 %}
+<ul class="items{% if columns > 1 %} skills-columns-{{ columns }}{% endif %}">
 {% for item in block.items %}<li class="line">{{ item.text }}</li>
 {% endfor %}
 </ul>
@@ -56,12 +64,13 @@
 {% endif %}
 <div class="cols">
 {% for column in columns %}
+{% set skill_columns_here = skill_columns[loop.index0] %}
 <div class="col col-{{ loop.index }}">
 {% for block in column %}
 {% if block == "identity" %}
 {{ identity() }}
 {% else %}
-{{ section(block) }}
+{{ section(block, skill_columns_here) }}
 {% endif %}
 {% endfor %}
 </div>

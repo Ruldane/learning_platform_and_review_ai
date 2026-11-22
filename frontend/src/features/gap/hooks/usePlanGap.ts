@@ -1,7 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { ApiError, errorMessage } from "@/shared/api/errors";
+import type { components } from "@/shared/api/schema";
 import { t } from "@/shared/i18n/t";
+import type { RunSource } from "@/shared/lib/runSource";
 import { planGap, programOfSession } from "../api";
 import { gapKeys } from "../queryKeys";
 
@@ -42,14 +44,14 @@ function failureOf(error: unknown): PlanFailure {
  * replanification déjà ouverte (409 `replan_open`) est rendue comme telle, avec son lien. Une
  * compétence qui n'est plus à ajouter (422) fait relire le tableau.
  */
-export function usePlanGap(postingId: string, onPlanned: () => void) {
+export function usePlanGap(postingId: string, onPlanned: () => void, provider?: RunSource) {
   const client = useQueryClient();
   const [outcome, setOutcome] = useState<PlanOutcome | null>(null);
   const [failure, setFailure] = useState<PlanFailure | null>(null);
   const mutation = useMutation({
-    mutationFn: async (skills: string[]): Promise<PlanOutcome> => {
+    mutationFn: async (body: components["schemas"]["PlanGapIn"]): Promise<PlanOutcome> => {
       try {
-        return await outcomeOf("started", (await planGap(postingId, skills)).session_id);
+        return await outcomeOf("started", (await planGap(postingId, body, provider)).session_id);
       } catch (error) {
         const open =
           error instanceof ApiError && error.code === "replan_open"
@@ -73,10 +75,10 @@ export function usePlanGap(postingId: string, onPlanned: () => void) {
   });
   const { mutate } = mutation;
   return {
-    plan: (skills: string[]) => {
+    plan: (skills: string[], programId?: string) => {
       setOutcome(null);
       setFailure(null);
-      mutate(skills);
+      mutate(programId ? { skills, program_id: programId } : { skills });
     },
     pending: mutation.isPending,
     outcome,

@@ -1,5 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { ApiError } from "@/shared/api/errors";
+import type { RunSource } from "@/shared/lib/runSource";
 import { startReview } from "../api";
 
 /** Ce que la page doit faire d'un refus du lancement : son code, et la revue déjà ouverte s'il y en a une. */
@@ -19,9 +20,13 @@ export function refusalOf(error: unknown): StartRefusal {
 }
 
 /** `POST /cv/reviews` : lance la revue d'une offre ; `onStarted` reçoit l'identifiant de la revue. */
-export function useStartReview(postingId: string, onStarted: (reviewId: string) => void) {
+export function useStartReview(
+  postingId: string,
+  onStarted: (reviewId: string) => void,
+  source?: RunSource,
+) {
   const mutation = useMutation({
-    mutationFn: () => startReview(postingId),
+    mutationFn: () => startReview(postingId, source),
     onSuccess: (started) => onStarted(started.review_id),
     // Une revue déjà ouverte pour cette offre : on la reprend.
     onError: (error) => {

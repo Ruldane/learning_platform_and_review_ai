@@ -1,4 +1,5 @@
 from app.db.models.memory import DocumentSourceKind
+from app.features.memory.service.obsidian import split_header
 from app.features.memory.service.sources.base import (
     Extracted,
     ExtractionTools,
@@ -23,4 +24,8 @@ class MarkdownSource:
 
     async def extract(self, source: SourceInput, tools: ExtractionTools) -> Extracted:
         text = decode_text(await read_stored(source, tools))
-        return Extracted(title=_first_h1(text) or stem(source.name), text=text)
+        title = None
+        if source.sync_metadata is not None:
+            _, text = split_header(text)
+            title = source.sync_metadata.get("title")
+        return Extracted(title=title or _first_h1(text) or stem(source.name), text=text)

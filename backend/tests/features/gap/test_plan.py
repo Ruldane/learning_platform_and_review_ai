@@ -16,6 +16,7 @@ from app.db.models.career import CvReview
 from app.features.program.service.programs import load
 from app.features.program.service.runtime import ProgramRuntime
 from app.features.replan.service.store import AgentReplanStore
+from tests.features.gap.conftest import add_program
 from tests.features.lessons.conftest import RecordingLauncher
 from tests.features.postings.conftest import API, analyzed_posting
 from tests.features.replan.conftest import drafted, validated
@@ -92,6 +93,79 @@ async def test_plan_gap_starts_a_gap_replan(client: httpx.AsyncClient, plan: Pla
     again = await client.post(f"{API}/postings/{posting_id}/gap/plan", json=body)
     assert (again.status_code, again.json()["error"]["code"]) == (409, "replan_open")
     assert again.json()["error"]["details"] == {"session_id": r.json()["session_id"]}
+
+
+async def test_explicit_out_of_scope_selection_uses_chosen_program_after_acceptance(
+    client: httpx.AsyncClient, plan: Plan
+) -> None:
+    chosen = await validated(plan.program, plan.user_id)
+    newest = await add_program(plan.app.state.session_factory, plan.user_id, [])
+    posting_id = await analyzed_posting(
+        client,
+        plan.app,
+        skills=[{"name": "Permis B", "required": True, "domain": None, "learnable": False}],
+    )
+    path = f"{API}/postings/{posting_id}/gap"
+    body = {"skills": ["permis b"], "program_id": chosen}
+    before = (await client.get(path)).json()
+    assert before["rows"][0]["action"] == "out_of_scope"
+
+    started = await client.post(f"{path}/plan", json=body)
+    assert started.status_code == 202, started.text
+    assert plan.launcher.started == [
+        ("replan", {"program_id": chosen, "trigger": "gap", "skills": ["Permis B"]})
+    ]
+    assert (await client.get(path)).json() == before
+
+    await _apply(plan, started.json()["session_id"], chosen, "Permis B", "Préparer le permis B")
+    after = (await client.get(path)).json()
+    assert (after["rows"][0]["action"], after["rows"][0]["week"]) == ("in_program", 2)
+    assert after["score"] == before["score"]
+    assert (await client.get(f"{API}/gap/top-missing")).json() == []
+    async with plan.app.state.session_factory() as db:
+        other = await load(db, plan.user_id, newest)
+        assert not other.tasks and not other.modules
+
+
+@pytest.mark.parametrize(
+    ("foreign", "status", "code"),
+    [(True, 404, "program_not_found"), (False, 409, "program_not_validated")],
+)
+async def test_plan_gap_checks_the_explicit_program(
+    client: httpx.AsyncClient, plan: Plan, foreign: bool, status: int, code: str
+) -> None:
+    await validated(plan.program, plan.user_id)
+    chosen = await add_program(
+        plan.app.state.session_factory,
+        "other-gap-owner" if foreign else plan.user_id,
+        [],
+        status="validated" if foreign else "draft",
+    )
+    posting_id = await _posting(client, plan)
+    response = await client.post(
+        f"{API}/postings/{posting_id}/gap/plan",
+        json={"skills": ["LangGraph"], "program_id": chosen},
+    )
+
+    assert response.status_code == status, response.text
+    assert response.json()["error"]["code"] == code and chosen not in response.text
+    assert plan.launcher.started == []
+
+
+async def test_out_of_scope_is_still_unavailable_for_the_acquired_skills_quiz(
+    client: httpx.AsyncClient, plan: Plan
+) -> None:
+    await validated(plan.program, plan.user_id)
+    posting_id = await analyzed_posting(
+        client,
+        plan.app,
+        skills=[{"name": "Permis B", "required": True, "domain": None, "learnable": False}],
+    )
+    response = await client.post(
+        f"{API}/postings/{posting_id}/gap/validate", json={"skills": ["Permis B"]}
+    )
+    assert response.status_code == 422
+    assert response.json()["error"]["details"] == {"fields": ["skills.0"]}
 
 
 async def test_plan_gap_rejects_skill_not_to_add(client: httpx.AsyncClient, plan: Plan) -> None:

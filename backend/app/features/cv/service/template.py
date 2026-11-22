@@ -9,9 +9,11 @@ Une valeur hors type lève `ValueError` (le spec doit avoir passé `template_pro
 import math
 import re
 from collections.abc import Sequence
+from urllib.parse import urlsplit
 
 from app.agents.tools.cv_schema import CvContent, CvSection
 from app.agents.tools.template_schema import ColumnBlock, TemplateSpec
+from app.features.cv.service.targeted_content import TargetedCvContent
 from app.providers.fonts.base import FontFile
 from app.providers.fonts.catalog import (
     DEFAULT_SANS,
@@ -34,6 +36,7 @@ _TITLES = {"plain", "underline", "left_bar", "band"}
 _DATES = {"right", "below", "left"}
 _BULLETS = {"dot", "dash", "none"}
 _POINTS_PER_INCH = 72
+_MM_PER_INCH = 25.4
 _DARK_LUMA = 140  # sous ce seuil, texte blanc sur le fond
 
 
@@ -183,6 +186,35 @@ def _classes(spec: TemplateSpec, band: bool) -> str:
     return " ".join(classes)
 
 
+def _web_href(url: str) -> str | None:
+    """Un lien Web imprimé peut devenir cliquable. Les autres valeurs restent du texte."""
+    url = url.strip()
+    if not url or any(char.isspace() or ord(char) < 32 or char == "\\" for char in url):
+        return None
+    try:
+        parsed = urlsplit(url)
+        if not parsed.scheme and not url.startswith(("/", "#", "?")):
+            url = f"https://{url}"
+            parsed = urlsplit(url)
+            if "." not in (parsed.hostname or ""):
+                return None
+        if parsed.scheme in ("https", "http") and parsed.hostname and parsed.username is None:
+            return url
+    except ValueError:
+        return None
+    return None
+
+
+def _skill_columns(spec: TemplateSpec, rank: int) -> int:
+    _, right, _, left = spec.page.margins_mm
+    left = left if rank == 0 else spec.gap_mm
+    right = right if rank == len(spec.columns) - 1 else spec.gap_mm
+    available_pt = spec.page.width_pt * spec.columns[rank].width_pct / 100
+    available_pt -= (left + right) * _POINTS_PER_INCH / _MM_PER_INCH
+    # Laisse environ sept cadratins par compétence, gouttière de 0,6 em comprise.
+    return max(1, min(3, int(available_pt / (7 * spec.fonts.body_pt))))
+
+
 def cv_document(spec: TemplateSpec, content: CvContent, fonts: Sequence[FontFile]) -> HtmlDocument:
     """Le CV à rendre : `index.html` (ordre du DOM = colonne 1 puis colonne 2, intitulés en
     `<h2>`, coordonnées dans le corps), `base.css`, `cv.css` et les polices jointes ; page à la
@@ -193,11 +225,18 @@ def cv_document(spec: TemplateSpec, content: CvContent, fonts: Sequence[FontFile
     band = spec.header_band is not None and any(column[:1] == ["identity"] for column in columns)
     if band:
         columns = [[block for block in column if block != "identity"] for column in columns]
+    targeted = isinstance(content, TargetedCvContent)
     index = render_template(
         "cv/cv.html.j2",
         csp=CV_CSP,
         content=content,
         columns=columns,
+        header_links=[(link, _web_href(link.url)) for link in content.header_links]
+        if isinstance(content, TargetedCvContent)
+        else [],
+        skill_columns=[
+            _skill_columns(spec, rank) if targeted else 1 for rank in range(len(columns))
+        ],
         band=band,
         classes=_classes(spec, band),
     )

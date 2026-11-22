@@ -2,6 +2,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import { ApiError, errorMessage } from "@/shared/api/errors";
 import { t } from "@/shared/i18n/t";
+import type { RunSource } from "@/shared/lib/runSource";
+import { useLaunchSource } from "@/shared/session-ui";
 import { retryCouncil } from "../api";
 import { learningKeys } from "../queryKeys";
 import { rereadSession, statusIn } from "./rereadSession";
@@ -24,16 +26,19 @@ function conflictNotice(failure: ApiError): string | null {
  */
 export function useRetryCouncil(goalId: string, sessionId: string) {
   const client = useQueryClient();
+  const { menu: launchMenu, source } = useLaunchSource();
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const mutation = useMutation({ mutationFn: () => retryCouncil(goalId) });
+  const mutation = useMutation({
+    mutationFn: (choice: RunSource | undefined) => retryCouncil(goalId, choice),
+  });
   const { mutateAsync } = mutation;
 
   const retry = useCallback(async () => {
     setNotice(null);
     setError(null);
     try {
-      const started = await mutateAsync();
+      const started = await mutateAsync(source);
       // Plus rien de l'ancien lot ni de l'ancien tableau, même un instant.
       await client.resetQueries({ queryKey: learningKeys.proposals(goalId) });
       client.setQueryData(learningKeys.goal(goalId), started.goal);
@@ -47,7 +52,7 @@ export function useRetryCouncil(goalId: string, sessionId: string) {
         rereadSession(sessionId),
       ]);
     }
-  }, [client, goalId, sessionId, mutateAsync]);
+  }, [client, goalId, sessionId, mutateAsync, source]);
 
-  return { retry, pending: mutation.isPending, notice, error };
+  return { retry, launchMenu, pending: mutation.isPending, notice, error };
 }

@@ -10,7 +10,7 @@ Ce fichier guide les agents qui **développent** le dépôt. Un agent qui **pilo
 - `backend/app/agents/` (agents `.md` + nœud `.py`, graphes dans `agents/graphs/registry.py` : `GRAPHS`), `providers/` (ports `base` + implémentations), `mcp/` (moteur MCP), `scheduler/` (`JOBS`), `realtime/`, `db/`, `alembic/`, `scripts/`, `tests/`.
 - `frontend/src/features/<f>/` (mêmes noms que le back), `src/shared/` (api, i18n, realtime, session-ui, ui, lib), `src/app/registry.ts` (liste des manifestes de features), `e2e/` (Playwright).
 - `contracts/openapi.json` ; `sandbox/` (image et lanceur du bac à sable de l'IDE) ; `docs/superpowers/{plans,bilans,recette}` ; `DECISIONS.md`.
-- Les plans sont dans `docs/superpowers/plans/`. Jusqu’à la phase 11, un plan par phase. À partir de la phase 13, un plan par lot de cinq phases, avec une section par phase. Écrire la section avant le code. Le plan directeur §1 fixe l’architecture et le §7 donne les lots (D228).
+- Les plans sont dans `docs/superpowers/plans/`. Pour la reprise, un plan par lot de dix phases, avec une section par phase et un renvoi vers le plan détaillé de la phase 11. Écrire la section avant le code. Le plan directeur §1 fixe l’architecture et le §7 donne les lots (D232).
 
 ## Architecture
 
@@ -76,8 +76,10 @@ Les hooks pre-commit (`.pre-commit-config.yaml`) rejouent ruff, longueur, mypy, 
 ## Façon de travailler
 
 - TDD : un test rouge d'abord, puis le code qui le passe.
+- Tests ciblés sur le comportement changé, l’isolation requise et les parcours Playwright concernés. Une revue par phase, puis une ou deux revues d’ensemble à la fin du lot (D232).
 - Tout choix non tranché par la spec ou tout écart est une décision `Dnnn` en fin de `DECISIONS.md` (Date, Sujet, Décision numérotée, Raison).
 - Commits par chemins explicites (`git add <chemins>`, jamais `-A`), hooks jamais sautés, un hook qui échoue se corrige à la source.
+- Les commits intermédiaires restent en local. Pousser sur GitHub après chaque tranche de vingt phases terminées et testées à partir de la phase 11, en laissant la phase 12 de côté. Utiliser l’identité `Ruldane <l.nizzoli@gmail.com>` configurée pour ce dépôt (D231).
 - Interface accessible : contraste AA, tout au clavier, focus visible et jamais sur `body` après une action, animations coupées par `prefers-reduced-motion`.
 - Un essai réel (vrai modèle, vrai conteneur) se fait sur une pile jetable nommée `learning_career_platform-check<N>-*`, retirée ensuite ; ne jamais toucher aux volumes ni conteneurs réels, ni à ceux d'autres projets.
 

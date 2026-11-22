@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { RunSource } from "@/shared/lib/runSource";
 import { createExercise, fetchExercises, generateExercise } from "../api";
 import { ideKeys } from "../queryKeys";
 import type { ExerciseGenerateIn, ExerciseIn } from "../types";
@@ -22,5 +23,8 @@ export function useCreateExercise() {
 
 /** Fait écrire un exercice par les agents : le résultat porte la session à suivre. */
 export function useGenerateExercise() {
-  return useMutation({ mutationFn: (body: ExerciseGenerateIn) => generateExercise(body) });
+  return useMutation({
+    mutationFn: ({ body, source }: { body: ExerciseGenerateIn; source?: RunSource }) =>
+      generateExercise(body, source),
+  });
 }

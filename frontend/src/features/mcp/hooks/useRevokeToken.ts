@@ -8,7 +8,11 @@ export function useRevokeToken() {
   const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: revokeToken,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: mcpKeys.tokens }),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: mcpKeys.tokens }),
+        queryClient.invalidateQueries({ queryKey: mcpKeys.relay }),
+      ]),
   });
   return useIdAction(mutation.mutateAsync);
 }

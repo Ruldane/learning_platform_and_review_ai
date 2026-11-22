@@ -1,13 +1,12 @@
-import { useId, useState } from "react";
+import { useId } from "react";
 import { errorMessage } from "@/shared/api/errors";
 import { t } from "@/shared/i18n/t";
 import type { LessonPassage } from "@/shared/lib/lessonPassage";
-import { ChatComposer } from "@/shared/ui/ChatComposer";
 import { InlineError } from "@/shared/ui/states/InlineError";
 import { LoadingState } from "@/shared/ui/states/LoadingState";
 import { useConversation } from "../../hooks/useConversation";
+import { ConversationComposer } from "./ConversationComposer";
 import { ConversationHeader } from "./ConversationHeader";
-import { ConversationSettings, type ConversationSource } from "./ConversationSettings";
 import { ConversationTranscript } from "./ConversationTranscript";
 
 interface LessonConversationProps {
@@ -16,34 +15,9 @@ interface LessonConversationProps {
   onClose: () => void;
 }
 
-function useConversationSource(lessonId: string) {
-  const key = `tremplin.conversation.source.${lessonId}`;
-  const [source, setSource] = useState<ConversationSource>(() => {
-    try {
-      const saved = localStorage.getItem(key);
-      return saved === "codex" || saved === "claude-code" ? saved : "settings";
-    } catch {
-      return "settings";
-    }
-  });
-  return [
-    source,
-    (choice: ConversationSource) => {
-      setSource(choice);
-      try {
-        localStorage.setItem(key, choice);
-      } catch {
-        // Le choix reste valable tant que le panneau est ouvert.
-      }
-    },
-  ] as const;
-}
-
 export function LessonConversation({ lessonId, passage, onClose }: LessonConversationProps) {
   const id = useId();
   const { thread, sending, sessionId, streaming } = useConversation(lessonId);
-  const [strong, setStrong] = useState(false);
-  const [source, setSource] = useConversationSource(lessonId);
   return (
     <section
       role="dialog"
@@ -68,22 +42,14 @@ export function LessonConversation({ lessonId, passage, onClose }: LessonConvers
         />
       ) : null}
       {sending.error ? <InlineError message={errorMessage(sending.error)} /> : null}
-      <ChatComposer
+      <ConversationComposer
+        identity={lessonId}
         label={t("conversations.question")}
         placeholder={t("conversations.placeholder")}
         busy={thread.isPending || thread.isError || sending.pending || sessionId !== null}
-        actions={
-          <ConversationSettings
-            source={source}
-            onSourceChange={setSource}
-            strong={strong}
-            onStrongChange={setStrong}
-            usage={thread.data?.usage}
-          />
-        }
-        onSend={(question) =>
-          sending.send(question, passage, source === "settings" && strong, source)
-        }
+        passage={passage}
+        usage={thread.data?.usage}
+        onSend={sending.send}
       />
     </section>
   );

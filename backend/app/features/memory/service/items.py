@@ -1,6 +1,5 @@
-"""Écriture et lecture des éléments de la mémoire : règles d'écriture, dédoublonnage, journal,
-indexation (via `MemoryIndexer`). Le commit appartient à la requête, sauf pour indexer et pour
-supprimer un document (D66)."""
+"""Lecture, écriture et indexation des éléments de la mémoire.
+Le commit appartient à la requête, sauf pour indexer et supprimer un document (D66)."""
 
 from dataclasses import dataclass
 from typing import Any, cast
@@ -27,6 +26,7 @@ from app.features.memory.schemas import (
     NeighborOut,
 )
 from app.features.memory.service.documents import DocumentService
+from app.features.memory.service.linked_notes import linked_notes
 from app.features.memory.service.rules import WriteDraft, clean_tags, resolve_write
 from app.features.memory.service.runtime import MemoryRuntime
 from app.features.memory.service.text import clean_text, content_hash
@@ -111,7 +111,10 @@ class MemoryService:
         `index=False` (le worker indexe après avoir validé sa transaction)."""
         status, meta = resolve_write(draft)
         title, text = _content(draft.title, draft.text)
-        digest = content_hash(draft.kind, title, text)
+        document_id = draft.source_id if draft.sync_metadata is not None else None
+        digest = content_hash(draft.kind, title, text, document_id=document_id)
+        if draft.sync_metadata is not None:
+            meta["sync_metadata"] = draft.sync_metadata
         existing = await self._items.find_by_hash(digest)
         if existing is not None:
             return WriteOutcome(existing, False)
@@ -186,6 +189,7 @@ class MemoryService:
             chunks=[ChunkOut.model_validate(c, from_attributes=True) for c in chunks],
             neighbors=await self._neighbors(item, chunks[0].id if chunks else None),
             writes=[MemoryWriteOut.model_validate(w, from_attributes=True) for w in writes],
+            linked_notes=await linked_notes(self.db, item),
         )
 
     async def _neighbors(self, item: MemoryItem, first_chunk_id: str | None) -> list[NeighborOut]:
@@ -252,7 +256,8 @@ class MemoryService:
         tags = list(item.tags) if patch.tags is None else clean_tags(patch.tags)
         if (title, text, tags) == (item.title, item.text, list(item.tags)):
             return False
-        digest = content_hash(cast(MemoryKind, item.kind), title, text)
+        document_id = item.source_id if "sync_metadata" in item.meta else None
+        digest = content_hash(cast(MemoryKind, item.kind), title, text, document_id=document_id)
         clash = await self._items.find_by_hash(digest)
         if clash is not None and clash.id != item.id:
             raise duplicate()
@@ -273,8 +278,6 @@ class MemoryService:
             session_id=None,
             reason=None,
         )
-
-    # --- suppression ------------------------------------------------------------------------
 
     async def delete(self, item_id: str) -> None:
         """Supprime l'élément, ses fragments (cascade) et ses vecteurs. Une décision en attente

@@ -3,6 +3,7 @@ import { useCallback, useMemo } from "react";
 import { ApiError, errorMessage } from "@/shared/api/errors";
 import { fr } from "@/shared/i18n/fr";
 import { t } from "@/shared/i18n/t";
+import type { RunSource } from "@/shared/lib/runSource";
 import {
   postCancel,
   postCommand,
@@ -94,10 +95,21 @@ export function useSessionActions(sessionId: string): SessionActions {
 export function useStartSession(): (
   graph: string,
   input: Record<string, unknown>,
+  source?: RunSource,
 ) => Promise<string> {
   const { mutateAsync } = useMutation({
-    mutationFn: ({ graph, input }: { graph: string; input: Record<string, unknown> }) =>
-      startSession(graph, input),
+    mutationFn: ({
+      graph,
+      input,
+      source,
+    }: {
+      graph: string;
+      input: Record<string, unknown>;
+      source?: RunSource;
+    }) => startSession(graph, input, source),
   });
-  return useCallback((graph, input) => mutateAsync({ graph, input }), [mutateAsync]);
+  return useCallback(
+    (graph, input, source) => mutateAsync({ graph, input, source }),
+    [mutateAsync],
+  );
 }

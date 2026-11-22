@@ -48,7 +48,7 @@ async def read_row(
     """`(ligne, statut de sa session d'agents)` dans l'ordre sûr ; 404 pour celle d'une autre."""
     repo = StudyRepository(db, user_id)
     first = await repo.get_fresh(study_id)
-    if first is None:
+    if first is None or first.kind != "guided":
         raise study_not_found()
     status = await agent_status(db, user_id, first.session_id)
     row = await repo.get_fresh(study_id)
@@ -94,7 +94,9 @@ async def _open_live(db: AsyncSession, user_id: str) -> str | None:
     proposée à la reprise : l'accueil offre un nouveau départ, qui la range ou l'annule (revue
     finale de la phase 5, revue front I1)."""
     current = await StudyRepository(db, user_id).open_one()
-    if current is None or is_dead(current, await agent_status(db, user_id, current.session_id)):
+    if current is None or current.kind != "guided":
+        return None
+    if is_dead(current, await agent_status(db, user_id, current.session_id)):
         return None
     return current.id
 

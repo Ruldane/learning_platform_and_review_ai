@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useLocation, useNavigate, useParams } from "react-router";
 import { t } from "@/shared/i18n/t";
+import { isRunSource } from "@/shared/lib/runSource";
 import { ErrorState } from "@/shared/ui/states/ErrorState";
 import { LoadingState } from "@/shared/ui/states/LoadingState";
 import { cvErrorMessage } from "../../errors";
@@ -16,9 +17,15 @@ import { ReviewRefusal } from "./ReviewRefusal";
 export function NewReviewPage() {
   const { postingId = "" } = useParams();
   const navigate = useNavigate();
+  const state: unknown = useLocation().state;
+  const source =
+    state !== null && typeof state === "object" && "runSource" in state
+      ? state.runSource
+      : undefined;
   const { start, refusal, error } = useStartReview(
     postingId,
     (reviewId) => void navigate(`/carriere/cv/revues/${reviewId}`, { replace: true }),
+    isRunSource(source) ? source : undefined,
   );
   const launched = useRef(false);
 

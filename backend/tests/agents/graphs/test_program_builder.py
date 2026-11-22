@@ -12,7 +12,7 @@ from app.core.errors import AppError
 from app.features.program.service.budget import Budget
 from tests.agents.graphs.council_models import CouncilModels
 from tests.agents.graphs.program_support import PLAN_REQUEST, Builder, MakeBuilder
-from tests.agents.runtime.runner_helpers import wait_until
+from tests.agents.runtime.runner_helpers import wait_idle, wait_until
 from tests.support.council import GOAL_ID
 from tests.support.program import full_week, module, plan, task, week
 
@@ -89,6 +89,24 @@ async def test_draft_over_budget_is_asked_again_with_problems(
     assert "714 au plus" not in c.prompt_of_call(1)
     assert len(c.plan_prompts()) == 2 and len(c.store.drafts) == 1
     assert [w.theme for w in c.store.drafts[0].draft.weeks] == ["Bases", "Projet"]  # le corrigé
+
+
+async def test_task_longer_than_every_day_is_returned_to_strategist(
+    make_builder_runner: MakeBuilder,
+) -> None:
+    initial = plan([full_week("Bases", [100])]).model_dump_json()
+    corrected = plan([full_week("Bases", [60])]).model_dump_json()
+    c = await make_builder_runner(
+        _models(initial, corrected), prepare=lambda store: setattr(store, "budget", Budget(60, 90))
+    )
+    await wait_idle(c.runner, c.sid)
+
+    assert len(c.plan_prompts()) == 2
+    next_prompt = c.prompt_of_call(2).split(PLAN_REQUEST)[-1]
+    assert "100 minutes" in next_prompt and "90 minutes" in next_prompt
+    await c.wait_question()
+    assert len(c.store.drafts) == 1
+    assert all(task.minutes <= 90 for week in c.store.drafts[0].plan.weeks for task in week.tasks)
 
 
 async def test_third_bad_draft_is_packed_by_rules(make_builder_runner: MakeBuilder) -> None:

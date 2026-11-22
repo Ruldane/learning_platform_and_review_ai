@@ -43,6 +43,7 @@ export function InterviewSetup({ applicationId, onStarted }: InterviewSetupProps
         onChange={form.setSettings}
       />
       <div className="flex flex-col items-start gap-2">
+        {launcher.launchMenu}
         <Button type="submit" disabled={launcher.pending}>
           {t(
             launcher.pending

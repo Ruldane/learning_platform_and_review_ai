@@ -87,12 +87,24 @@ def _without_leading_title(markdown: str) -> str:
     return markdown
 
 
-def lesson_material(markdown: str, passage: str | None, occurrence: int | None) -> str:
-    """Relit le texte sélectionnable, y compris autour d'un passage éloigné du début."""
+def _visible_markdown(markdown: str) -> str:
     parser = _VisibleText()
     parser.feed(_MARKDOWN.render(_without_leading_title(markdown)))
     parser.close()
-    text = "".join(parser.parts).strip()
+    return "".join(parser.parts).strip()
+
+
+def lesson_excerpt(markdown: str, terms: list[str], size: int = 1_400) -> str:
+    """Cadre un passage qui contient un des termes de la question."""
+    text = _visible_markdown(markdown)
+    match = min((at for term in terms if (at := text.lower().find(term)) >= 0), default=0)
+    start = max(0, match - size // 3)
+    return text[start : start + size]
+
+
+def lesson_material(markdown: str, passage: str | None, occurrence: int | None) -> str:
+    """Relit le texte sélectionnable, y compris autour d'un passage éloigné du début."""
+    text = _visible_markdown(markdown)
     if passage is None:
         return text[:MAX_LESSON_CONTEXT]
     flat = " ".join(text.split())

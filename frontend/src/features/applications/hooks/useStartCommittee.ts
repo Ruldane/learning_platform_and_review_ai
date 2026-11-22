@@ -1,3 +1,5 @@
+import type { RunSource } from "@/shared/lib/runSource";
+import { useLaunchSource } from "@/shared/session-ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { startCommittee } from "../api";
 import { applicationsErrorMessage, errorCode, openCommitteeRunId } from "../errors";
@@ -9,9 +11,9 @@ interface Started {
   resumed: boolean;
 }
 
-async function launch(cvVersionId: string): Promise<Started> {
+async function launch(cvVersionId: string, source?: RunSource): Promise<Started> {
   try {
-    return { runId: (await startCommittee(cvVersionId)).run_id, resumed: false };
+    return { runId: (await startCommittee(cvVersionId, source)).run_id, resumed: false };
   } catch (error) {
     const open = openCommitteeRunId(error);
     if (open) return { runId: open, resumed: true };
@@ -24,14 +26,16 @@ async function launch(cvVersionId: string): Promise<Started> {
  * `committee_in_progress` n'est pas une panne : on suit l'exécution ouverte (`resumed`).
  */
 export function useStartCommittee(postingId: string | null) {
+  const provider = useLaunchSource();
   const client = useQueryClient();
   const mutation = useMutation({
-    mutationFn: launch,
+    mutationFn: (cvVersionId: string) => launch(cvVersionId, provider.source),
     onSuccess: () =>
       client.invalidateQueries({ queryKey: applicationsKeys.committees(postingId ?? "") }),
   });
   const { mutateAsync } = mutation;
   return {
+    launchMenu: provider.menu,
     start: (cvVersionId: string) =>
       mutateAsync(cvVersionId).then(
         (started) => started,

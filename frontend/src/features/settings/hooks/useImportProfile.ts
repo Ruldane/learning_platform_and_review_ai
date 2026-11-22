@@ -1,5 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { errorMessage } from "@/shared/api/errors";
+import { useLaunchSource } from "@/shared/session-ui";
 import { importProfile, type ProfileImport } from "../api";
 
 /**
@@ -8,8 +9,9 @@ import { importProfile, type ProfileImport } from "../api";
  * (409 : une lecture est déjà en cours, 413 et 415 : le fichier) ; envoyer de nouveau l'efface.
  */
 export function useImportProfile() {
+  const provider = useLaunchSource();
   const mutation = useMutation({
-    mutationFn: (documents: ProfileImport) => importProfile(documents),
+    mutationFn: (documents: ProfileImport) => importProfile(documents, provider.source),
   });
   const { mutate, reset } = mutation;
   return {
@@ -17,6 +19,7 @@ export function useImportProfile() {
       reset();
       mutate(documents);
     },
+    launchMenu: provider.menu,
     pending: mutation.isPending,
     imported: mutation.isSuccess,
     error: mutation.isError ? errorMessage(mutation.error) : null,

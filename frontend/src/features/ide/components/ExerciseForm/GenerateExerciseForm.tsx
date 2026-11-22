@@ -1,20 +1,23 @@
-import { useId, useState } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 import { fieldClass } from "@/shared/ui/fieldClass";
 import type { GenerateDraft, Level } from "../viewTypes";
+import { GenerateLevelField } from "./GenerateLevelField";
 
 interface GenerateExerciseFormProps {
   pending: boolean;
+  launchMenu?: ReactNode;
   onGenerate: (draft: GenerateDraft) => void;
 }
 
-const LEVELS: readonly Level[] = ["beginner", "intermediate", "advanced"];
-
 /** Faire écrire un exercice par les agents : un sujet et un niveau. */
-export function GenerateExerciseForm({ pending, onGenerate }: GenerateExerciseFormProps) {
+export function GenerateExerciseForm({
+  pending,
+  onGenerate,
+  launchMenu,
+}: GenerateExerciseFormProps) {
   const topicId = useId();
-  const levelId = useId();
   const [topic, setTopic] = useState("");
   const [level, setLevel] = useState<Level>("beginner");
   const ready = topic.trim() !== "";
@@ -41,21 +44,8 @@ export function GenerateExerciseForm({ pending, onGenerate }: GenerateExerciseFo
       <p id={`${topicId}-hint`} className="text-xs text-muted-foreground">
         {t("ide.form.topicHint")}
       </p>
-      <label htmlFor={levelId} className="text-sm font-medium">
-        {t("ide.form.level")}
-      </label>
-      <select
-        id={levelId}
-        value={level}
-        onChange={(event) => setLevel(event.target.value as Level)}
-        className={fieldClass}
-      >
-        {LEVELS.map((value) => (
-          <option key={value} value={value}>
-            {t(`ide.form.levels.${value}`)}
-          </option>
-        ))}
-      </select>
+      <GenerateLevelField level={level} onChange={setLevel} />
+      {launchMenu}
       <Button type="submit" className="self-start" disabled={!ready} aria-disabled={pending}>
         {t("ide.form.generateAction")}
       </Button>

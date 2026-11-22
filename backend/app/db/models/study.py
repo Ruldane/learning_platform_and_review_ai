@@ -3,7 +3,17 @@
 from datetime import date, datetime
 from typing import Any, Literal
 
-from sqlalchemy import Date, ForeignKey, Index, Integer, String, Text, UniqueConstraint, text
+from sqlalchemy import (
+    CheckConstraint,
+    Date,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    text,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, UserScopedMixin, UTCDateTime
@@ -102,19 +112,26 @@ class Flashcard(UserScopedMixin, Base):
 
 
 class StudySession(UserScopedMixin, Base):
-    """Un bloc d'étude guidé par le Tuteur. Une seule session `open` par utilisateur (index
-    unique partiel) : un second « Commencer mon bloc » retombe sur elle."""
+    """Séance guidée ou training, avec un seul créneau ouvert par compte."""
 
     __tablename__ = "study_sessions"
     __table_args__ = (
+        CheckConstraint(
+            "(kind = 'guided' AND lesson_id IS NOT NULL AND module_id IS NOT NULL "
+            "AND program_id IS NOT NULL) OR "
+            "(kind = 'training' AND lesson_id IS NULL AND module_id IS NULL "
+            "AND program_id IS NULL)",
+            name="study_scope",
+        ),
         Index(
             "uq_study_sessions_open", "user_id", unique=True, sqlite_where=text("status = 'open'")
         ),
     )
 
-    lesson_id: Mapped[str] = mapped_column(String(36))
-    module_id: Mapped[str] = mapped_column(String(36))
-    program_id: Mapped[str] = mapped_column(String(36))
+    kind: Mapped[str] = mapped_column(String(16), default="guided", server_default="guided")
+    lesson_id: Mapped[str | None] = mapped_column(String(36))
+    module_id: Mapped[str | None] = mapped_column(String(36))
+    program_id: Mapped[str | None] = mapped_column(String(36))
     mode: Mapped[str] = mapped_column(String(16))
     status: Mapped[str] = mapped_column(String(16), default="open")
     session_id: Mapped[str | None] = mapped_column(String(36), default=None)

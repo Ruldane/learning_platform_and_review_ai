@@ -1,10 +1,17 @@
+from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
 from uuid import NAMESPACE_URL, uuid5
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.runtime.creation import PrepareSession
 from app.agents.runtime.runner import SessionRunner
-from app.agents.tools.conversation_port import CONVERSATION_GRAPH, TURN_TOKEN_LIMIT
+from app.agents.tools.conversation_port import (
+    CONVERSATION_GRAPH,
+    TURN_TOKEN_LIMIT,
+    ConversationPractice,
+    ConversationSource,
+)
 from app.core.clock import local_moment, local_today, user_zone
 from app.core.errors import AppError
 from app.core.played import PLAY_CONTEXT
@@ -15,6 +22,8 @@ from app.features.conversations.lesson_context import lesson_material, lesson_ve
 from app.features.conversations.repository import ConversationRepository, TurnRepository
 from app.features.conversations.schemas import (
     ConversationMessageIn,
+    ConversationOut,
+    ConversationQuestionIn,
     ConversationStarted,
     ConversationTurnOut,
     ConversationUsage,
@@ -24,7 +33,11 @@ from app.features.sessions.service import session_facts
 from app.features.settings.service import SettingsService
 from app.mcp.recorder import ACTIVE
 
+__all__ = ["ConversationOut", "ConversationQuestionIn", "ConversationStarted"]
+
 LESSON_SCOPE = "lesson"
+TRAINING_SCOPE = "training"
+BRAIN_SCOPE = "brain"
 THREAD_TOKEN_LIMIT = 100_000
 DAY_TOKEN_LIMIT = 300_000
 TURN_LIMIT = 100
@@ -54,11 +67,38 @@ class _RepeatedRequest(Exception):
         self.session_id = session_id
 
 
-def _same_request(previous: ConversationTurn, message: ConversationMessageIn) -> str:
+@dataclass(frozen=True)
+class ConversationThread:
+    id: str
+    scope: str
+    subject_id: str
+
+    @classmethod
+    def for_subject(cls, user_id: str, scope: str, subject_id: str) -> "ConversationThread":
+        return cls(_thread_id(user_id, scope, subject_id), scope, subject_id)
+
+
+@dataclass(frozen=True)
+class TurnOptions:
+    lesson_version: str | None = None
+    mode: str | None = None
+
+
+type PrepareTurn = Callable[[AsyncSession], Awaitable[TurnOptions]]
+
+
+def _passage(message: ConversationQuestionIn) -> tuple[str | None, int | None]:
+    if isinstance(message, ConversationMessageIn):
+        return message.passage, message.passage_occurrence
+    return None, None
+
+
+def _same_request(previous: ConversationTurn, message: ConversationQuestionIn) -> str:
+    passage, occurrence = _passage(message)
     if (previous.question, previous.passage, previous.passage_occurrence, previous.strong) != (
         message.question,
-        message.passage,
-        message.passage_occurrence,
+        passage,
+        occurrence,
         message.strong,
     ):
         raise AppError(
@@ -70,10 +110,7 @@ def _same_request(previous: ConversationTurn, message: ConversationMessageIn) ->
 
 
 async def _check_limits(repo: TurnRepository, thread_id: str) -> None:
-    if any(status in OPEN_SESSION_STATES for _, status in await repo.turns(thread_id)):
-        raise AppError(
-            "conversation_busy", "Une réponse est déjà en cours dans cette conversation.", 409
-        )
+    await require_idle_conversation(repo.session, repo.user_id, thread_id)
     usage, reserved = await _usage(repo, thread_id)
     if usage.turns >= usage.turn_limit:
         scope = "turns"
@@ -91,11 +128,50 @@ async def _check_limits(repo: TurnRepository, thread_id: str) -> None:
     )
 
 
+async def require_idle_conversation(db: AsyncSession, user_id: str, thread_id: str) -> None:
+    turns = await TurnRepository(db, user_id).turns(thread_id)
+    if any(status in OPEN_SESSION_STATES for _, status in turns):
+        raise AppError(
+            "conversation_busy", "Une réponse est déjà en cours dans cette conversation.", 409
+        )
+
+
+async def cancel_conversation_turn(db: AsyncSession, user_id: str, thread_id: str) -> str | None:
+    return await TurnRepository(db, user_id).cancel_open(thread_id)
+
+
+async def cited_study_material(
+    db: AsyncSession, user_id: str, thread_id: str
+) -> tuple[set[str], list[ConversationPractice]]:
+    lessons: set[str] = set()
+    cards: list[ConversationPractice] = []
+    for turn, status in await TurnRepository(db, user_id).turns(thread_id):
+        if status != "completed":
+            continue
+        sources = [ConversationSource.model_validate(source) for source in turn.sources]
+        cited = {str(source.id) for source in sources if source.kind == "lesson"}
+        for raw in turn.practice or []:
+            card = ConversationPractice.model_validate(raw)
+            if str(card.lesson_id) in cited:
+                cards.append(card)
+        lessons.update(cited)
+    return lessons, cards
+
+
 async def read_lesson_conversation(
     db: AsyncSession, user_id: str, lesson_id: str
 ) -> LessonConversationOut | None:
     await ready_lesson(db, user_id, lesson_id)
     thread_id = _thread_id(user_id, LESSON_SCOPE, lesson_id)
+    thread = await read_conversation(db, user_id, thread_id)
+    if thread is None:
+        return None
+    return LessonConversationOut.model_validate({**thread.model_dump(), "lesson_id": lesson_id})
+
+
+async def read_conversation(
+    db: AsyncSession, user_id: str, thread_id: str
+) -> ConversationOut | None:
     thread = await ConversationRepository(db, user_id).get(thread_id)
     if thread is None:
         return None
@@ -110,38 +186,42 @@ async def read_lesson_conversation(
         for row, status in await repo.turns(thread_id)
     ]
     usage, _ = await _usage(repo, thread_id)
-    return LessonConversationOut.model_validate(
-        {"id": thread.id, "lesson_id": lesson_id, "turns": turns, "usage": usage}
-    )
+    return ConversationOut.model_validate({"id": thread.id, "turns": turns, "usage": usage})
+
+
+async def ensure_conversation(db: AsyncSession, user_id: str, thread: ConversationThread) -> None:
+    repo = ConversationRepository(db, user_id)
+    if await repo.get(thread.id) is None:
+        await repo.add(id=thread.id, scope=thread.scope, subject_id=thread.subject_id)
 
 
 def _reserve(
-    user_id: str, lesson_id: str, thread_id: str, turn_id: str, message: ConversationMessageIn
+    user_id: str,
+    thread: ConversationThread,
+    turn_id: str,
+    message: ConversationQuestionIn,
+    authorize: PrepareTurn,
 ) -> PrepareSession:
     async def prepare(db: AsyncSession, session_id: str) -> None:
-        threads = ConversationRepository(db, user_id)
         turns = TurnRepository(db, user_id)
-        _, markdown = await ready_lesson(db, user_id, lesson_id)
         request_id = str(message.request_id)
-        if previous := await turns.by_request(thread_id, request_id):
+        if previous := await turns.by_request(thread.id, request_id):
             raise _RepeatedRequest(_same_request(previous, message))
-        version = None
-        if message.passage is not None:
-            lesson_material(markdown, message.passage, message.passage_occurrence)
-            version = lesson_version(markdown)
-        await _check_limits(turns, thread_id)
-        if await threads.get(thread_id) is None:
-            await threads.add(id=thread_id, scope=LESSON_SCOPE, subject_id=lesson_id)
+        options = await authorize(db)
+        await _check_limits(turns, thread.id)
+        await ensure_conversation(db, user_id, thread)
+        passage, occurrence = _passage(message)
         recorder = ACTIVE.get()
         await turns.add(
             id=turn_id,
-            thread_id=thread_id,
+            thread_id=thread.id,
             request_id=request_id,
             session_id=session_id,
             question=message.question,
-            passage=message.passage,
-            passage_occurrence=message.passage_occurrence,
-            lesson_version=version,
+            passage=passage,
+            passage_occurrence=occurrence,
+            lesson_version=options.lesson_version,
+            mode=options.mode,
             strong=message.strong,
             mcp_call_id=recorder.call_id if recorder is not None else None,
         )
@@ -158,9 +238,30 @@ async def ask_lesson_professor(
     lesson_id: str,
     message: ConversationMessageIn,
 ) -> ConversationStarted:
-    thread_id = _thread_id(user_id, LESSON_SCOPE, lesson_id)
-    if previous := await TurnRepository(db, user_id).by_request(thread_id, str(message.request_id)):
-        await ready_lesson(db, user_id, lesson_id)
+    await ready_lesson(db, user_id, lesson_id)
+
+    async def authorize(tx: AsyncSession) -> TurnOptions:
+        _, markdown = await ready_lesson(tx, user_id, lesson_id)
+        if message.passage is None:
+            return TurnOptions()
+        lesson_material(markdown, message.passage, message.passage_occurrence)
+        return TurnOptions(lesson_version=lesson_version(markdown))
+
+    thread = ConversationThread(
+        _thread_id(user_id, LESSON_SCOPE, lesson_id), LESSON_SCOPE, lesson_id
+    )
+    return await submit_turn(runner, db, user_id, thread, message, authorize)
+
+
+async def submit_turn(
+    runner: SessionRunner,
+    db: AsyncSession,
+    user_id: str,
+    thread: ConversationThread,
+    message: ConversationQuestionIn,
+    authorize: PrepareTurn,
+) -> ConversationStarted:
+    if previous := await TurnRepository(db, user_id).by_request(thread.id, str(message.request_id)):
         sid = _same_request(previous, message)
         return await _replayed_start(db, user_id, sid)
     turn_id = new_id()
@@ -168,10 +269,10 @@ async def ask_lesson_professor(
         sid = await runner.start(
             user_id,
             CONVERSATION_GRAPH,
-            {"thread_id": thread_id, "turn_id": turn_id},
-            subject_type=LESSON_SCOPE,
-            subject_id=lesson_id,
-            prepare=_reserve(user_id, lesson_id, thread_id, turn_id, message),
+            {"thread_id": thread.id, "turn_id": turn_id},
+            subject_type=thread.scope,
+            subject_id=thread.subject_id,
+            prepare=_reserve(user_id, thread, turn_id, message, authorize),
         )
     except _RepeatedRequest as repeated:
         return await _replayed_start(db, user_id, repeated.session_id)

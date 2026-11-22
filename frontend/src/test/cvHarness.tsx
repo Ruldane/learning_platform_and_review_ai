@@ -1,5 +1,6 @@
 import { waitFor } from "@testing-library/react";
 import type { ReactElement } from "react";
+import type { Location } from "react-router";
 import { expect } from "vitest";
 import { cvApi } from "./cvApi";
 import { createFakeSocketServer, type FakeSocketServer } from "./fakeSocket";
@@ -24,7 +25,7 @@ const LANDINGS = [
  */
 export function renderCv(
   route: string,
-  path: string,
+  path: string | Partial<Location>,
   makePage: (createSocket: FakeSocketServer["factory"]) => ReactElement,
   api: Parameters<typeof cvApi>[0] = {},
 ) {

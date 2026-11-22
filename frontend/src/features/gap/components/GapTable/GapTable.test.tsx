@@ -52,15 +52,15 @@ describe("GapTable", () => {
     expect(within(rowOf("SAP")).getByText("Hors périmètre")).toBeInTheDocument();
   });
 
-  it("only gives a checkbox to the rows to add", () => {
+  it("gives a checkbox to eligible rows and rows outside the scope", () => {
     setup();
     expect(screen.getAllByRole("checkbox").map((box) => box.getAttribute("aria-label"))).toEqual([
       "Ajouter Docker au planning",
       "Ajouter SQL au planning",
+      "Ajouter SAP au planning",
       "Ajouter Kafka au planning",
     ]);
     expect(within(rowOf("React")).queryByRole("checkbox")).not.toBeInTheDocument();
-    expect(within(rowOf("SAP")).queryByRole("checkbox")).not.toBeInTheDocument();
   });
 
   it("offers no checkbox for a skill already validated or proved", () => {

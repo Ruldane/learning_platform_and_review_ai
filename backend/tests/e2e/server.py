@@ -61,6 +61,7 @@ from app.providers.health import HealthStatus
 from app.providers.search.fake import FakeSearch
 from scripts.fake_oidc import create_fake_oidc_app
 from tests.e2e.applications_script import applications_scripts, script_posting_web
+from tests.e2e.brain_script import brain_scripts
 from tests.e2e.council_script import DEBATERS, council_scripts, script_web
 from tests.e2e.cv_script import cv_scripts, script_company_web
 from tests.e2e.daily_script import daily_scripts, script_daily_web
@@ -142,7 +143,16 @@ def build_app(
         chat_models=ScriptedModels(
             scripts
             or merge_scripts(
-                daily_scripts(), applications_scripts(), council_scripts(), cv_scripts()
+                daily_scripts(),
+                applications_scripts(),
+                council_scripts(),
+                cv_scripts(),
+                brain_scripts(),
+                {
+                    "training_tutor": [
+                        "Une chaîne relie une étape à la suivante. Propose un exemple."
+                    ]
+                },
             ),
             delays=delays,
         ),

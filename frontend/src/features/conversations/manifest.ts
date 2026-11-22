@@ -1,4 +1,8 @@
 import type { FeatureManifest } from "@/shared/lib/feature";
+import { TrainingPage } from "./pages/TrainingPage";
 
-/** Le professeur s’affiche dans le lecteur de leçon. */
-export const conversationsManifest: FeatureManifest = { id: "conversations", routes: [] };
+export const conversationsManifest: FeatureManifest = {
+  id: "conversations",
+  routes: [{ path: "etudier/training/:studyId?", Component: TrainingPage, handle: { wide: true } }],
+  nav: [{ section: "study", labelKey: "training.title", path: "/etudier/training", order: 1.5 }],
+};

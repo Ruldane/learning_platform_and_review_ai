@@ -5,10 +5,10 @@ import { refusal } from "@/test/cvApi";
 import { renderCv } from "@/test/cvHarness";
 import { NewReviewPage } from "./NewReviewPage";
 
-function setup(api: Parameters<typeof renderCv>[3] = {}) {
+function setup(api: Parameters<typeof renderCv>[3] = {}, runSource?: string) {
   return renderCv(
     "/carriere/cv/revue/nouvelle/:postingId",
-    "/carriere/cv/revue/nouvelle/p1",
+    { pathname: "/carriere/cv/revue/nouvelle/p1", state: { runSource } },
     () => <NewReviewPage />,
     api,
   );
@@ -16,9 +16,19 @@ function setup(api: Parameters<typeof renderCv>[3] = {}) {
 
 describe("NewReviewPage", () => {
   it("starts the review once and opens it", async () => {
-    const { state } = setup();
+    const sources: (string | null)[] = [];
+    const { state } = setup(
+      {
+        startReview: (request) => {
+          sources.push(request.headers.get("X-Tremplin-Run"));
+          return HttpResponse.json({ review_id: "rv1", session_id: "r1" }, { status: 202 });
+        },
+      },
+      "codex",
+    );
     expect(await screen.findByText("Page de la revue")).toBeInTheDocument();
     expect(state.starts).toBe(1);
+    expect(sources).toEqual(["codex"]);
   });
 
   it("says to validate the profile first, with the way to do it", async () => {

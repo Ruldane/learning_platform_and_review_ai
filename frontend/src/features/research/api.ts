@@ -1,3 +1,4 @@
+import type { RunSource } from "@/shared/lib/runSource";
 import { startSession } from "@/shared/realtime/sessionApi";
 import type { ResearchBenchInput } from "./components/viewTypes";
 
@@ -5,6 +6,6 @@ import type { ResearchBenchInput } from "./components/viewTypes";
 export const RESEARCH_GRAPH = "web_research";
 
 /** `POST /sessions` du parcours `web_research` : une requête et des adresses à lire en plus. */
-export function startResearch({ query, urls }: ResearchBenchInput): Promise<string> {
-  return startSession(RESEARCH_GRAPH, { query, urls });
+export function startResearch({ query, urls }: ResearchBenchInput, source?: RunSource): Promise<string> {
+  return startSession(RESEARCH_GRAPH, { query, urls }, source);
 }

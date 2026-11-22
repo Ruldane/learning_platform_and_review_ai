@@ -10,6 +10,7 @@ from starlette.requests import HTTPConnection
 from app.core.deps import CurrentUserDep, Db
 from app.features.gap.schemas import (
     GapOut,
+    GapSkillsIn,
     PlanGapIn,
     PlanGapStarted,
     TopMissingOut,
@@ -49,12 +50,12 @@ async def get_gap(posting_id: str, current: CurrentUserDep, db: Db) -> GapOut:
 async def post_gap_plan(
     posting_id: str, body: PlanGapIn, current: CurrentUserDep, rt: ReplanDep
 ) -> PlanGapStarted:
-    """« Ajouter au planning » : lance une replanification du programme validé le plus récent,
-    ajouts seuls (module « Compétences des offres »), proposée à January avant toute écriture.
-    422 `gap_skill_unknown` (`details.fields` : `skills.{rang}`, sans valeur) si une compétence
-    n'est pas une ligne `to_add` de l'écart ; 409 `no_program` ; 409 `replan_open`
-    (`details.session_id`) si une replanification est déjà ouverte."""
-    session_id = await plan_gap(rt, current.id, posting_id, body.skills)
+    """Propose les ajouts au programme validé choisi, par défaut le plus récent.
+
+    422 `gap_skill_unknown` si une ligne ne peut pas être ajoutée. 404 `program_not_found`,
+    409 `program_not_validated`, `no_program` ou `replan_open` suivant le programme.
+    """
+    session_id = await plan_gap(rt, current.id, posting_id, body.skills, program_id=body.program_id)
     return PlanGapStarted(session_id=session_id)
 
 
@@ -75,7 +76,7 @@ def get_quiz_runtime(conn: HTTPConnection) -> QuizRuntime:
 )
 async def post_gap_validate(
     posting_id: str,
-    body: PlanGapIn,
+    body: GapSkillsIn,
     current: CurrentUserDep,
     program: Annotated[ProgramRuntime, Depends(get_program_runtime)],
     quiz: Annotated[QuizRuntime, Depends(get_quiz_runtime)],

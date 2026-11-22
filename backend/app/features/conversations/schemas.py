@@ -10,22 +10,31 @@ MAX_QUESTION = 2_000
 MAX_PASSAGE = 1_000
 
 
-class ConversationMessageIn(BaseModel):
+class ConversationQuestionIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     request_id: UUID
     question: Annotated[str, StringConstraints(min_length=1, max_length=MAX_QUESTION)]
-    passage: Annotated[str, StringConstraints(min_length=1, max_length=MAX_PASSAGE)] | None = None
-    passage_occurrence: Annotated[int, Field(strict=True, ge=0, le=150_000)] | None = None
     strong: Annotated[bool, Field(strict=True)] = False
 
     @model_validator(mode="after")
-    def normalize(self) -> Self:
+    def normalize_question(self) -> Self:
         self.question = self.question.strip()
+        if not self.question:
+            raise ValueError("La question doit contenir du texte.")
+        return self
+
+
+class ConversationMessageIn(ConversationQuestionIn):
+    passage: Annotated[str, StringConstraints(min_length=1, max_length=MAX_PASSAGE)] | None = None
+    passage_occurrence: Annotated[int, Field(strict=True, ge=0, le=150_000)] | None = None
+
+    @model_validator(mode="after")
+    def normalize_passage(self) -> Self:
         if self.passage is not None:
             self.passage = " ".join(self.passage.split())
-        if not self.question or self.passage == "":
-            raise ValueError("La question et le passage éventuel doivent contenir du texte.")
+        if self.passage == "":
+            raise ValueError("Le passage doit contenir du texte.")
         if self.passage_occurrence is not None and self.passage is None:
             raise ValueError("Une occurrence doit désigner un passage.")
         return self
@@ -56,8 +65,11 @@ class ConversationUsage(BaseModel):
     turn_limit: int
 
 
-class LessonConversationOut(BaseModel):
+class ConversationOut(BaseModel):
     id: UUID
-    lesson_id: UUID
     turns: list[ConversationTurnOut]
     usage: ConversationUsage
+
+
+class LessonConversationOut(ConversationOut):
+    lesson_id: UUID

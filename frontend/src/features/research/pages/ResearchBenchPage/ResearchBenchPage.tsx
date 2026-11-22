@@ -28,6 +28,7 @@ export function ResearchBenchPage({ createSocket }: { createSocket?: SocketFacto
       ) : (
         <>
           <ResearchBenchForm
+            launchMenu={run.launchMenu}
             busy={run.start.isPending}
             onSubmit={(input) => run.start.mutate(input)}
           />

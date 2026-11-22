@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRef } from "react";
+import { useLaunchSource } from "@/shared/session-ui";
 import { retryBrief } from "../api";
 import { readableMessage } from "../errors";
 import { projectKeys } from "../queryKeys";
@@ -12,9 +13,10 @@ import type { ProjectOut } from "../types";
  */
 export function useRetryBrief(projectId: string, onRetried?: () => void) {
   const client = useQueryClient();
+  const provider = useLaunchSource();
   const sending = useRef(false);
   const mutation = useMutation({
-    mutationFn: () => retryBrief(projectId),
+    mutationFn: () => retryBrief(projectId, provider.source),
     onSettled: () => client.invalidateQueries({ queryKey: projectKeys.one(projectId) }),
   });
   const { mutateAsync } = mutation;
@@ -30,6 +32,7 @@ export function useRetryBrief(projectId: string, onRetried?: () => void) {
           sending.current = false;
         });
     },
+    launchMenu: provider.menu,
     pending: mutation.isPending,
     error: mutation.isError ? readableMessage(mutation.error) : null,
   };

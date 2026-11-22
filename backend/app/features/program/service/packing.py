@@ -7,6 +7,7 @@ Une semaine rangée trop légère avance ensuite des tâches de la suivante (`pu
 Aucune donnée n'est écrite ici : des fonctions pures, testées sans base.
 """
 
+from collections.abc import Set
 from dataclasses import dataclass, replace
 from datetime import date, timedelta
 
@@ -89,16 +90,23 @@ def _first_index(usable: list[date], cursor: int, entry: Entry) -> int:
     return cursor
 
 
-def pack_week(carried: list[Entry], own: list[Entry], budget: Budget, start: date) -> WeekPacking:
+def pack_week(
+    carried: list[Entry],
+    own: list[Entry],
+    budget: Budget,
+    start: date,
+    *,
+    completed_kinds: Set[TaskType] = frozenset(),
+) -> WeekPacking:
     """Place `carried` (reportées) puis `own` (propres à la semaine) sur sept jours depuis `start`.
 
-    L'ordre est conservé : dès qu'une tâche ne tient plus, toutes les suivantes sont reportées
-    (un chapitre ne passe pas avant celui qui le précède). Le quiz est la dernière tâche de la
-    semaine : les autres tâches ne dépassent pas son jour.
+    Les tâches sont reportées dans l'ordre. Le quiz réservé ferme la semaine.
+    Une pratique ou un quiz déjà fait peut satisfaire sa règle sans réserver une seconde tâche.
     """
     days = week_days(start)
     remaining = {day: budget.day_capacity(day) for day in days}
-    quiz, practice = final_quiz(own), first_practice(own)
+    quiz = None if "quiz" in completed_kinds else final_quiz(own)
+    practice = None if "pratiquer" in completed_kinds else first_practice(own)
     reserved = [entry for entry in (quiz, practice) if entry is not None]
     reserve = sum(entry.task.minutes for entry in reserved)
     if reserve > budget.cap_minutes:

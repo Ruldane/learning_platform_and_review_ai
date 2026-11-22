@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 import { InlineError } from "@/shared/ui/states/InlineError";
@@ -17,6 +17,7 @@ export interface ReplanRequestView {
 
 interface ReplanFormProps {
   busy: boolean;
+  launchMenu?: ReactNode;
   /** Message d'un refus du serveur (brouillon, programme inconnu…). */
   error: string | null;
   onSubmit: (request: ReplanRequestView) => void;
@@ -33,7 +34,7 @@ function minutesOf(hours: string): number | null {
 }
 
 /** Le formulaire de départ : heures disponibles cette semaine et message au Stratège, tous deux facultatifs. */
-export function ReplanForm({ busy, error, onSubmit }: ReplanFormProps) {
+export function ReplanForm({ busy, error, onSubmit, launchMenu }: ReplanFormProps) {
   const [hours, setHours] = useState("");
   const [message, setMessage] = useState("");
   const [invalid, setInvalid] = useState(false);
@@ -52,6 +53,7 @@ export function ReplanForm({ busy, error, onSubmit }: ReplanFormProps) {
       <HoursField value={hours} invalid={invalid} disabled={busy} onChange={setHours} />
       <MessageField value={message} disabled={busy} onChange={setMessage} />
       {error ? <InlineError message={error} /> : null}
+      {launchMenu}
       <Button type="submit" disabled={busy} className="self-start">
         {busy ? t("replan.form.submitting") : t("replan.form.submit")}
       </Button>

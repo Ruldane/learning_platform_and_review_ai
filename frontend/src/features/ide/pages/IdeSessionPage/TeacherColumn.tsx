@@ -26,6 +26,7 @@ export function TeacherColumn({ ws, createSocket }: TeacherColumnProps) {
         busy={chat.busy}
         notice={chat.notice}
         canExplain={chat.canExplain}
+        launchMenu={chat.launchMenu}
         proposalsBusy={proposals.busy}
         onSend={chat.send}
         onHint={chat.hint}

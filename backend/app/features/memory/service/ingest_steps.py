@@ -91,7 +91,13 @@ async def claim(runtime: MemoryRuntime, user_id: str, document_id: str) -> Claim
         await db.commit()
         return Claim(
             SourceInput(
-                doc.id, user_id, doc.name, doc.url, doc.storage_key, tuple(map(str, doc.tags))
+                doc.id,
+                user_id,
+                doc.name,
+                doc.url,
+                doc.storage_key,
+                tuple(map(str, doc.tags)),
+                doc.sync_metadata,
             ),
             doc.source_kind,
         )
@@ -136,10 +142,15 @@ async def _create(
         title=title,
         text=text,
         author=USER_AUTHOR,
-        reason=f"Import du document « {src.name} ».",
+        reason=(
+            "Import d'une note synchronisée."
+            if src.sync_metadata is not None
+            else f"Import du document « {src.name} »."
+        ),
         source_id=src.document_id,
         lang=lang,
         tags=src.tags,
+        sync_metadata=src.sync_metadata,
     )
     outcome = await MemoryService(db, src.user_id, runtime).write(draft, index=False)
     if not outcome.created and outcome.item.source_id != src.document_id:
@@ -152,7 +163,8 @@ async def _refresh(
 ) -> tuple[MemoryItem, bool]:
     """Nouveau contenu pour l'élément du document (page modifiée entre deux lectures). Le
     verrou d'écriture est tenu : aucune insertion concurrente du même hash n'est possible."""
-    digest = content_hash("document", title, text)
+    document_id = src.document_id if src.sync_metadata is not None else None
+    digest = content_hash("document", title, text, document_id=document_id)
     if digest == own.content_hash:
         return own, False
     clash = await MemoryItemRepository(db, src.user_id).find_by_hash(digest)
@@ -165,7 +177,11 @@ async def _refresh(
         action="update",
         author=USER_AUTHOR,
         session_id=None,
-        reason=f"Nouvelle lecture du document « {src.name} ».",
+        reason=(
+            "Nouvelle lecture d'une note synchronisée."
+            if src.sync_metadata is not None
+            else f"Nouvelle lecture du document « {src.name} »."
+        ),
     )
     return own, True
 

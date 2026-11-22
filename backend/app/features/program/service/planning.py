@@ -13,6 +13,7 @@ from app.core.errors import AppError
 from app.core.skills import normalize_skill_name
 from app.db.models.program import TaskType
 from app.features.program.service.budget import Budget
+from app.features.program.service.draft_checks import check_draft
 from app.features.program.service.packing import (
     Entry,
     NoRoom,
@@ -25,17 +26,18 @@ from app.features.program.service.packing import (
     pack_week,
     pull_forward,
 )
-from app.features.program.service.rules import (
-    UNDERLOAD_SHARE,
-    describe,
-    describe_underload,
-    floor_minutes,
-    week_breaks,
-)
-from app.features.program.service.verbs import ACTION_VERBS, has_action_verb, review_subject
+from app.features.program.service.rules import UNDERLOAD_SHARE, describe, week_breaks
+from app.features.program.service.verbs import ACTION_VERBS, review_subject
 
 # Types de l'ordonnancement, verbes d'action et part de sous-charge : réexportés.
-__all__ = ["ACTION_VERBS", "UNDERLOAD_SHARE", "ScheduledPlan", "ScheduledTask", "ScheduledWeek"]
+__all__ = [
+    "ACTION_VERBS",
+    "UNDERLOAD_SHARE",
+    "ScheduledPlan",
+    "ScheduledTask",
+    "ScheduledWeek",
+    "check_draft",
+]
 
 REVIEW_MINUTES = 20
 PRACTICE_MINUTES = 45
@@ -74,28 +76,6 @@ def is_review(task: TaskDraft) -> bool:
 
 def _week_tasks(week: WeekDraft) -> list[TaskDraft]:
     return [task for module in week.modules for task in module.tasks]
-
-
-def check_draft(draft: PlanDraft, budget: Budget) -> list[str]:
-    """Problèmes du brouillon, en français, à rendre au Stratège pour qu'il corrige ; une semaine
-    sous 60 % du plafond en est un, sauf la dernière (D98)."""
-    problems: list[str] = []
-    floor = floor_minutes(budget.cap_minutes)
-    for rank, week in enumerate(draft.weeks, start=1):
-        tasks = _week_tasks(week)
-        pairs = [(task.minutes, task.type) for task in tasks]
-        total, cap = sum(minutes for minutes, _ in pairs), budget.cap_minutes
-        problems += [
-            describe(rule, f"Semaine {rank}", total, cap) for rule in week_breaks(pairs, cap)
-        ]
-        if rank < len(draft.weeks) and total < floor:
-            problems.append(describe_underload(f"Semaine {rank}", total, floor))
-        problems.extend(
-            f"Semaine {rank} : le titre « {task.title} » ne commence pas par un verbe d'action."
-            for task in tasks
-            if not has_action_verb(task.title)
-        )
-    return problems
 
 
 def _review_of(module: ModuleDraft) -> ModuleDraft:
@@ -248,7 +228,7 @@ def _build_week(
 
 def _check_fits(weeks: list[WeekDraft], budget: Budget) -> None:
     """Refuse d'emblée ce qu'aucune semaine ne pourrait contenir (budget trop faible)."""
-    longest = max(budget.weekday_minutes, budget.weekend_minutes)
+    longest = budget.longest_day_minutes
     for week in weeks:
         entries = _entries(week, 0)
         reserved = [e for e in (final_quiz(entries), first_practice(entries)) if e is not None]

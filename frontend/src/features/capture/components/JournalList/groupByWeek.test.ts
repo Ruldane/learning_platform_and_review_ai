@@ -7,7 +7,7 @@ const entry = (id: string, occurredOn: string, kind: JournalEntryView["kind"] = 
   kind,
   text: id,
   occurredOn,
-  studySessionId: null,
+  studySessionPath: null,
   memoryItemId: null,
 });
 

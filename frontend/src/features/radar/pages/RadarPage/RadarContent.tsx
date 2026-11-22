@@ -52,6 +52,7 @@ export function RadarContent({ runId, latest, history, starter, createSocket }: 
         running={running}
         errors={starter.errors}
         onRun={onRun}
+        launchMenu={starter.launchMenu}
       />
       {launched.resumed && view?.status === "running" ? (
         <p role="status" className="text-sm text-muted-foreground">

@@ -21,8 +21,8 @@ MCP = FeatureMcp(
             "GET /memory/items/{item_id}",
             1,
             "memory_get_item",
-            "Un élément de la mémoire : fragments, voisins et journal d'écriture.",
-            untrusted=("title", "text", "chunks[].text"),
+            "Un élément de la mémoire : fragments, voisins, renvois et journal d'écriture.",
+            untrusted=("title", "text", "chunks[].text", "linked_notes[].title"),
         ),
         McpAction(
             "POST /memory/search",

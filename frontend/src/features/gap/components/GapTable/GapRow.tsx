@@ -1,5 +1,5 @@
 import { t } from "@/shared/i18n/t";
-import { isAddable, type GapRowView } from "../viewTypes";
+import { canPlan, isAddable, type GapRowView } from "../viewTypes";
 
 interface GapRowProps {
   row: GapRowView;
@@ -21,15 +21,11 @@ function actionText(row: GapRowView): string {
   return t("gap.table.outOfScope");
 }
 
-/**
- * Une ligne du tableau : seules les compétences « À ajouter » qui manquent vraiment (pas déjà
- * validées ni prouvées) ont une case à cocher.
- */
 export function GapRow({ row, checked, locked, onToggle }: GapRowProps) {
   return (
     <tr className="border-t align-top">
       <td className="w-10 px-2 py-2">
-        {isAddable(row) ? (
+        {canPlan(row) ? (
           <input
             type="checkbox"
             checked={checked}

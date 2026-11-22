@@ -1,3 +1,4 @@
+import { useLaunchSource } from "@/shared/session-ui";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { startIntake } from "../api";
@@ -9,15 +10,17 @@ import { applicationsErrorMessage, openIntakeSessionId } from "../errors";
  * panne : `openSessionId` nomme la session déjà ouverte, à reprendre ou à annuler.
  */
 export function useIntake() {
+  const launch = useLaunchSource();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const mutation = useMutation({
-    mutationFn: (text: string) => startIntake(text),
+    mutationFn: (text: string) => startIntake(text, launch.source),
     onSuccess: (started) => setSessionId(started.session_id),
   });
   const { mutate, reset } = mutation;
   const openSessionId = mutation.isError ? openIntakeSessionId(mutation.error) : null;
   const refused = mutation.isError && openSessionId === null;
   return {
+    launchMenu: launch.menu,
     start: (text: string) => mutate(text),
     sessionId,
     openSessionId,

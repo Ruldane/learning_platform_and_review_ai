@@ -41,14 +41,14 @@ export function DocumentsPage({ createSocket }: { createSocket?: SocketFactory }
           sessionId={learning.sessionId}
           documentName={nameOf(learning.documentId)}
           onFinished={() => actions.finishLearning(learning.documentId)}
-          onRetry={() => learn.mutate(learning.documentId)}
+          onRetry={() => learn.mutate({ documentId: learning.documentId })}
           createSocket={createSocket}
         />
       ))}
       <DocumentsSection
         documents={documents}
         learningIds={actions.learningIds}
-        onMarkLearned={(id) => learn.mutate(id)}
+        onMarkLearned={(documentId, source) => learn.mutate({ documentId, source })}
       />
     </div>
   );

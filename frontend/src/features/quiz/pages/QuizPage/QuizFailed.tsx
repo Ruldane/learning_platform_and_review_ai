@@ -1,3 +1,4 @@
+import { useLaunchSource } from "@/shared/session-ui";
 import { useMutation } from "@tanstack/react-query";
 import { errorMessage } from "@/shared/api/errors";
 import { t } from "@/shared/i18n/t";
@@ -15,8 +16,9 @@ interface QuizFailedProps {
 
 /** La préparation du quiz a échoué : « Relancer la préparation » (le back relance le même quiz). */
 export function QuizFailed({ moduleId, reason, onRelaunched }: QuizFailedProps) {
+  const launch = useLaunchSource();
   const relaunch = useMutation({
-    mutationFn: () => startQuiz(moduleId),
+    mutationFn: () => startQuiz(moduleId, launch.source),
     onSuccess: onRelaunched,
   });
   return (
@@ -24,6 +26,7 @@ export function QuizFailed({ moduleId, reason, onRelaunched }: QuizFailedProps) 
       <h2 className="text-lg font-medium">{t("quiz.page.failedTitle")}</h2>
       {reason ? <p className="text-sm text-muted-foreground">{reason}</p> : null}
       {relaunch.error ? <InlineError message={errorMessage(relaunch.error)} /> : null}
+      {launch.menu}
       <Button disabled={relaunch.isPending} onClick={() => relaunch.mutate()}>
         {t("quiz.page.failedRetry")}
       </Button>

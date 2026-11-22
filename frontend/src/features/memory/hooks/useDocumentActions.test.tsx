@@ -81,7 +81,7 @@ describe("useDocumentActions", () => {
       http.get(`${API}/documents`, () => HttpResponse.json([])),
     );
     const { result } = renderHook(() => useDocumentActions(), { wrapper: createQueryWrapper() });
-    act(() => result.current.learn.mutate("d1"));
+    act(() => result.current.learn.mutate({ documentId: "d1" }));
     await waitFor(() => expect(result.current.learnings).toHaveLength(1));
     expect(result.current.learnings[0]).toEqual({
       documentId: "d1",
@@ -119,7 +119,7 @@ describe("useDocumentActions", () => {
     );
     const { result } = renderHook(() => useDocumentActions(), { wrapper: createQueryWrapper() });
     await waitFor(() => expect(result.current.learnings[0]?.sessionId).toBe("s-old"));
-    act(() => result.current.learn.mutate("d1"));
+    act(() => result.current.learn.mutate({ documentId: "d1" }));
     await waitFor(() => expect(result.current.learnings[0]?.sessionId).toBe("s-new"));
     expect(result.current.learnings).toHaveLength(1);
   });

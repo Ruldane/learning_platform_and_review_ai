@@ -3,6 +3,7 @@ import { agents } from "./messages/agents";
 import { applications } from "./messages/applications";
 import { appMessages } from "./messages/app";
 import { auth } from "./messages/auth";
+import { brain } from "./messages/brain";
 import { capture } from "./messages/capture";
 import { chat } from "./messages/chat";
 import { conversations } from "./messages/conversations";
@@ -27,6 +28,7 @@ import { session } from "./messages/session";
 import { settings } from "./messages/settings";
 import { skills } from "./messages/skills";
 import { study } from "./messages/study";
+import { training } from "./messages/training";
 
 /**
  * Tous les textes de l'interface, en français : agrégat des fichiers `messages/<zone>.ts`.
@@ -36,6 +38,7 @@ import { study } from "./messages/study";
 export const fr = {
   ...appMessages,
   auth,
+  brain,
   account,
   session,
   agents,
@@ -48,6 +51,7 @@ export const fr = {
   lessons,
   learning,
   study,
+  training,
   quiz,
   skills,
   replan,

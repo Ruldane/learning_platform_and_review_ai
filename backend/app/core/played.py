@@ -75,14 +75,16 @@ def as_provider(value: str | None) -> ForcedProvider | None:
 
 
 @contextmanager
-def inherit_source(user_id: str, client: str | None, provider: str | None) -> Iterator[None]:
-    """Rétablit la source d'une session d'origine pour un lancement fait hors de son exécution
-    (leçons après validation, correction d'un quiz…). Une source déjà posée l'emporte."""
-    known_client, known_provider = as_client(client), as_provider(provider)
-    if (known_client is None and known_provider is None) or run_source(user_id) != (None, None):
+def inherit_source(
+    user_id: str, client: str | None, provider: str | None, *, has_origin: bool = True
+) -> Iterator[None]:
+    """Rétablit la source d'origine, y compris « Selon mes réglages », avant le choix HTTP.
+    Le contexte du parcours actif du même compte reste prioritaire."""
+    playing = PLAY_CONTEXT.get()
+    if not has_origin or (playing is not None and playing.user_id == user_id):
         yield
         return
-    flag = PLAY_CONTEXT.set(PlayContext(user_id, known_client, provider=known_provider))
+    flag = PLAY_CONTEXT.set(PlayContext(user_id, as_client(client), provider=as_provider(provider)))
     try:
         yield
     finally:
@@ -91,5 +93,5 @@ def inherit_source(user_id: str, client: str | None, provider: str | None) -> It
 
 @contextmanager
 def inherit_play(user_id: str, client: str | None) -> Iterator[None]:
-    with inherit_source(user_id, client, None):
+    with inherit_source(user_id, client, None, has_origin=as_client(client) is not None):
         yield

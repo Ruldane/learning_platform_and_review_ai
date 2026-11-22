@@ -15,8 +15,9 @@ MCP = FeatureMcp(
             "POST /postings/{posting_id}/gap/plan",
             2,
             "gap_plan_missing_skills",
-            "« Ajouter au planning » : lance une replanification qui ajoute les compétences "
-            "manquantes (`skills`) ; January la valide avant toute écriture.",
+            "Propose d'ajouter des lignes « À ajouter » ou « Hors périmètre » cochées (`skills`) "
+            "au programme validé choisi (`program_id`, le plus récent par défaut). "
+            "January valide la proposition avant toute écriture au calendrier.",
         ),
         McpAction(
             "POST /postings/{posting_id}/gap/validate",

@@ -25,3 +25,16 @@ export async function sendQuestion(lesson: string, body: ConversationMessage, so
     }),
   );
 }
+
+export async function fetchBrainConversation(signal?: AbortSignal) {
+  return unwrap(await api.GET("/brain/conversation", { signal }));
+}
+
+export async function sendBrainQuestion(message: ConversationMessage, source: RunSource) {
+  return unwrap(
+    await api.POST("/brain/conversation/messages", {
+      headers: { [RUN_HEADER]: source },
+      body: { request_id: message.request_id, question: message.question, strong: message.strong },
+    }),
+  );
+}

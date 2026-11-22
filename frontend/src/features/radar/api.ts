@@ -1,5 +1,6 @@
 import { api } from "@/shared/api/client";
 import { unwrap } from "@/shared/api/errors";
+import { runSourceHeaders, type RunSource } from "@/shared/lib/runSource";
 import type { RadarRunIn } from "./types";
 
 /** Le parcours du relevé : ses sessions portent le relevé comme sujet. */
@@ -23,8 +24,8 @@ export async function fetchRun(runId: string, signal?: AbortSignal) {
 }
 
 /** `POST /radar/runs` : 202 `{run_id, session_id}` ; 409 `radar_in_progress` si un relevé tourne. */
-export async function startRun(body: RadarRunIn) {
-  return unwrap(await api.POST("/radar/runs", { body }));
+export async function startRun(body: RadarRunIn, source?: RunSource) {
+  return unwrap(await api.POST("/radar/runs", { body, headers: runSourceHeaders(source) }));
 }
 
 /**

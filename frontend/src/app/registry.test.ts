@@ -36,6 +36,7 @@ describe("registre des features", () => {
     ]);
     expect(groups[2]?.items.map((item) => item.path)).toEqual([
       "/etudier/session",
+      "/etudier/training",
       "/etudier/revisions",
       "/etudier/quiz",
       "/etudier/journal",
@@ -62,6 +63,7 @@ describe("registre des features", () => {
       "/memoire/carte",
       "/memoire/banc",
       "/memoire/documents",
+      "/memoire/cerveau",
     ]);
     expect(groups[7]?.items).toEqual([
       { labelKey: "settings.models.navLabel", path: "/reglages/modeles" },

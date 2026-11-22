@@ -69,6 +69,29 @@ describe("PostingPage", () => {
     expect(await screen.findByText("Objectifs")).toBeInTheDocument();
   });
 
+  it("adds a row outside the scope to the chosen validated program", async () => {
+    const { user, state } = setup({
+      gaps: [gapOut({ rows: [gapRow("SAP", { action: "out_of_scope" })] })],
+      programs: [
+        { id: "draft", title: "Un brouillon", status: "draft" },
+        { id: "training", title: "Systèmes de données", status: "validated" },
+      ],
+    });
+    await user.click(await screen.findByRole("checkbox", { name: "Ajouter SAP au planning" }));
+    await screen.findByRole("option", { name: "Systèmes de données" });
+    expect(screen.queryByRole("option", { name: "Un brouillon" })).toBeNull();
+    await user.selectOptions(screen.getByRole("combobox", { name: "Programme cible" }), "training");
+    const gap = screen.getByRole("region", { name: "Écart avec ton profil" });
+    await user.selectOptions(
+      within(gap).getByRole("combobox", { name: "Qui fait tourner les agents pour ce lancement" }),
+      "openai",
+    );
+    expect(screen.getByRole("button", { name: /^Je les maîtrise déjà/ })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Ajouter au planning (1)" }));
+    await waitFor(() => expect(state.plans).toEqual([{ skills: ["SAP"], program_id: "training" }]));
+    expect(state.planSources).toEqual(["openai"]);
+  });
+
   it("links to the replan already open (409 replan_open)", async () => {
     const { user } = setup({
       plan: () => refusal(409, "replan_open", "Message du serveur.", { session_id: "r1" }),

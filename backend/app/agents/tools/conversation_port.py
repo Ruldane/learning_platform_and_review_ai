@@ -9,6 +9,8 @@ from app.core.errors import AppError
 
 CONVERSATION_GRAPH = "conversation"
 LESSON_PROFESSOR = "lesson_professor"
+TRAINING_TUTOR = "training_tutor"
+BRAIN_LIBRARIAN = "brain_librarian"
 TURN_TOKEN_LIMIT = 12_000
 
 
@@ -19,6 +21,19 @@ class ConversationSource(BaseModel):
     excerpt: str | None
 
 
+class ConversationPractice(BaseModel):
+    lesson_id: UUID
+    front: str
+    back: str
+
+
+@dataclass(frozen=True)
+class ConversationReference:
+    source: ConversationSource
+    material: str
+    primary: bool = False
+
+
 @dataclass(frozen=True)
 class ConversationExchange:
     question: str
@@ -27,12 +42,15 @@ class ConversationExchange:
 
 @dataclass(frozen=True)
 class ConversationContext:
+    agent: str
     question: str
     strong: bool
     history: Sequence[ConversationExchange]
-    material: str
-    source: ConversationSource
+    references: Sequence[ConversationReference]
     used_tokens: int
+    selection: str | None = None
+    mode: str | None = None
+    context_notes: dict[str, str] | None = None
 
 
 class ConversationStore(Protocol):
@@ -49,6 +67,8 @@ class ConversationStore(Protocol):
         *,
         answer: str,
         sources: Sequence[ConversationSource],
+        practice: Sequence[ConversationPractice] = (),
+        context_notes: dict[str, str] | None = None,
     ) -> None: ...
 
 
@@ -71,6 +91,8 @@ class _NoConversation:
         *,
         answer: str,
         sources: Sequence[ConversationSource],
+        practice: Sequence[ConversationPractice] = (),
+        context_notes: dict[str, str] | None = None,
     ) -> None:
         raise _unavailable()
 

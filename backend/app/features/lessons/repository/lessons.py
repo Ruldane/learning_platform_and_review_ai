@@ -1,10 +1,11 @@
 import builtins
 from datetime import datetime
 
-from sqlalchemy import CursorResult, and_, or_, select, update
+from sqlalchemy import ColumnElement, CursorResult, and_, case, func, literal, or_, select, update
 
 from app.db.models.agents import AgentSession
 from app.db.models.lessons import Lesson
+from app.db.models.program import Module, Program
 from app.db.repository import UserScopedRepository
 
 
@@ -13,6 +14,54 @@ class LessonRepository(UserScopedRepository[Lesson]):
     verrou des leçons d'un programme, une requête voit ce que la précédente a commité."""
 
     model = Lesson
+
+    async def ready_for_conversation(
+        self,
+        terms: builtins.list[str],
+        previous: builtins.list[str],
+        limit: int,
+        *,
+        followed_only: bool = False,
+    ) -> builtins.list[Lesson]:
+        """Leçons publiées des programmes de ce compte, d’abord par correspondance textuelle."""
+        score: ColumnElement[int] = literal(0)
+        for term in terms:
+            score = (
+                score
+                + case((func.lower(Lesson.title).contains(term, autoescape=True), 4), else_=0)
+                + case((func.lower(Program.title).contains(term, autoescape=True), 2), else_=0)
+                + case((func.lower(Lesson.markdown).contains(term, autoescape=True), 1), else_=0)
+            )
+        owned = (
+            select(Lesson)
+            .join(Module, Module.id == Lesson.module_id)
+            .join(Program, Program.id == Lesson.program_id)
+            .where(
+                Lesson.user_id == self.user_id,
+                Lesson.status == "ready",
+                Program.user_id == self.user_id,
+                Module.user_id == self.user_id,
+                Module.program_id == Program.id,
+                Module.skipped.is_(False),
+            )
+        )
+        if followed_only:
+            owned = owned.where(Program.status == "validated")
+        if terms:
+            found = (
+                await self.session.scalars(
+                    owned.where(score > 0).order_by(score.desc(), Lesson.id).limit(limit)
+                )
+            ).all()
+            if found:
+                return builtins.list(found)
+        if not previous:
+            return []
+        by_id = {
+            lesson.id: lesson
+            for lesson in await self.session.scalars(owned.where(Lesson.id.in_(previous)))
+        }
+        return [by_id[lesson_id] for lesson_id in previous if lesson_id in by_id][:limit]
 
     async def get_fresh(self, lesson_id: str) -> Lesson | None:
         stmt = (

@@ -1,5 +1,6 @@
 import { api } from "@/shared/api/client";
 import { unwrap } from "@/shared/api/errors";
+import { runSourceHeaders, type RunSource } from "@/shared/lib/runSource";
 import type { DraftKind, ProfileEntryIn, SubmissionView } from "./types";
 
 /** `GET /projects` : tous les projets, dans l'ordre du programme (semaine, rang). */
@@ -79,10 +80,11 @@ export async function addToProfile(projectId: string, entry: ProfileEntryIn) {
  * `POST /projects/{id}/brief` (202 `{session_id}`) : réécrire un énoncé en échec. 409
  * `brief_not_failed`.
  */
-export async function retryBrief(projectId: string) {
+export async function retryBrief(projectId: string, source?: RunSource) {
   return unwrap(
     await api.POST("/projects/{project_id}/brief", {
       params: { path: { project_id: projectId } },
+      headers: runSourceHeaders(source),
     }),
   );
 }

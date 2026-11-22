@@ -89,7 +89,7 @@ def to_document_out(doc: Document) -> DocumentOut:
     )
 
 
-async def _read_upload(file: UploadFile) -> bytes:
+async def read_upload(file: UploadFile) -> bytes:
     """Lecture par blocs ; au-delà de `MAX_UPLOAD_BYTES`, 413 (exactement 20 Mo passe)."""
     blocks: list[bytes] = []
     size = 0
@@ -169,7 +169,7 @@ class DocumentService:
             incoming = _from_text(text, title)
         else:
             assert file is not None
-            data = await _read_upload(file)
+            data = await read_upload(file)
             kind = detect_upload(file.filename, data)
             name = display_name(file.filename)
             incoming = _Incoming(kind, name, source_hash(data), data=data, suffix=SUFFIX_OF[kind])

@@ -1,5 +1,7 @@
 import { api, apiBaseUrl } from "@/shared/api/client";
 import { unwrap } from "@/shared/api/errors";
+import type { components } from "@/shared/api/schema";
+import { runSourceHeaders, type RunSource } from "@/shared/lib/runSource";
 import { fetchSession } from "@/shared/realtime/sessionApi";
 
 const postingPath = (postingId: string) => ({ params: { path: { posting_id: postingId } } });
@@ -13,8 +15,8 @@ export async function fetchPostings(signal?: AbortSignal) {
  * `POST /postings` : 201 offre créée, 200 même lien ou même texte (`created` faux). Erreurs 422
  * `posting_source`, `posting_unreadable`, `posting_too_short`, `invalid_url`, `url_forbidden`.
  */
-export async function createPosting(source: { url: string } | { text: string }) {
-  return unwrap(await api.POST("/postings", { body: source }));
+export async function createPosting(source: { url: string } | { text: string }, provider?: RunSource) {
+  return unwrap(await api.POST("/postings", { body: source, headers: runSourceHeaders(provider) }));
 }
 
 /** `GET /postings/{id}` : l'offre, son analyse et ses doublons ; 404 `posting_not_found`. */
@@ -43,21 +45,34 @@ export async function fetchGap(postingId: string, signal?: AbortSignal) {
 }
 
 /** `POST /postings/{id}/gap` (202) : relance l'analyse ; 409 `gap_in_progress`. */
-export async function relaunchGap(postingId: string) {
-  return unwrap(await api.POST("/postings/{posting_id}/gap", postingPath(postingId)));
+export async function relaunchGap(postingId: string, provider?: RunSource) {
+  return unwrap(await api.POST("/postings/{posting_id}/gap", {
+    ...postingPath(postingId),
+    headers: runSourceHeaders(provider),
+  }));
 }
 
 /**
  * `POST /postings/{id}/gap/plan` (202) : replanification « gap » pour les compétences choisies.
  * 409 `no_program`, 409 `replan_open` (`details.session_id`), 422 `skills.N`.
  */
-export async function planGap(postingId: string, skills: string[]) {
+export async function planGap(
+  postingId: string,
+  body: components["schemas"]["PlanGapIn"],
+  provider?: RunSource,
+) {
   return unwrap(
     await api.POST("/postings/{posting_id}/gap/plan", {
       ...postingPath(postingId),
-      body: { skills },
+      headers: runSourceHeaders(provider),
+      body,
     }),
   );
+}
+
+export async function fetchTargetPrograms(signal?: AbortSignal) {
+  const programs = unwrap(await api.GET("/programs", { signal }));
+  return programs.filter((program) => program.status === "validated");
 }
 
 /**
@@ -102,10 +117,11 @@ export async function programOfSession(sessionId: string): Promise<string | null
  * `POST /postings/{id}/gap/validate` (202) : « Je les maîtrise déjà », un module « Valider mes
  * acquis » et son quiz. 409 `no_program`, 409 `week_full`, 422 `skills.N`.
  */
-export async function validateGap(postingId: string, skills: string[]) {
+export async function validateGap(postingId: string, skills: string[], provider?: RunSource) {
   return unwrap(
     await api.POST("/postings/{posting_id}/gap/validate", {
       ...postingPath(postingId),
+      headers: runSourceHeaders(provider),
       body: { skills },
     }),
   );

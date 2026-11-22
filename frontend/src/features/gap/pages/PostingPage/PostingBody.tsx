@@ -50,6 +50,7 @@ export function PostingBody({ posting, budget, pollMs, onRetry, createSocket }: 
           reason={posting.failure_reason}
           relaunching={relaunch.pending}
           error={relaunch.error}
+          launchOptions={relaunch.providerMenu}
           onRelaunch={relaunch.relaunch}
         />
       );

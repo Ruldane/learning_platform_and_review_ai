@@ -568,24 +568,24 @@ Ordre et dépendances : une phase ne dépend que de phases déjà livrées. Les 
 - **Bout en bout** : Playwright, back lancé avec le faux fournisseur LLM ; 3 parcours (18.2).
 - **Contrôles** : `ruff`, `mypy --strict`, `import-linter`, `check_file_length.py`, `eslint`, `prettier`, `tsc --noEmit`, `export_openapi.py --check`, tous en pre commit.
 
-## 7. Plans par lots à partir de la phase 13
+## 7. Plans par lots à partir de la phase 11
 
-Clore la phase 11 selon son plan. La phase 12 (extension Chrome) reste de côté. Prendre les
-phases suivantes par lots de cinq dans l’ordre de reprise, avec un plan par lot (D228).
+Développer par lots de dix phases avec un plan par lot. Le premier lot commence avec le plan
+détaillé de la phase 11. La phase 12 (extension Chrome) reste de côté. Voir D232.
 
 | Lot | Phases |
 | --- | --- |
-| 1 | 13 à 17 |
-| 2 | 18 à 22 |
-| 3 | 23 à 27 |
-| 4 | 28 à 32 |
-| 5 | 33 à 37 |
-| 6 | 38 à 42 |
-| 7 | 43 |
+| 1 | 11, puis 13 à 21 |
+| 2 | 22 à 31 |
+| 3 | 32 à 41 |
+| 4 | 42 et 43 |
 
 Le plan d’un lot décrit les dépendances, les tâches et les vérifications de chaque phase.
-Les tâches indépendantes peuvent avancer en parallèle. Les tests de chaque fonctionnalité
-restent ciblés et la recette commune du lot inclut Playwright.
+Les tâches indépendantes peuvent avancer en parallèle. Chaque phase a des tests ciblés et une
+revue. En fin de lot, regrouper les contrôles et les parcours Playwright concernés avec une
+ou deux revues d’ensemble.
+Les commits intermédiaires sont locaux. Le push suit chaque tranche de vingt phases terminées
+et testées. Le premier jalon est la phase 31, à la fin du deuxième lot (D231).
 
 ## 8. Reconstruction des programmes après la phase 43
 

@@ -2,7 +2,7 @@
 et à son titre. Aucune source ne journalise un nom de fichier, un lien ni un contenu."""
 
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Any, Protocol
 
 from app.core.errors import AppError
 from app.db.models.memory import DocumentSourceKind
@@ -19,6 +19,7 @@ class SourceInput:
     url: str | None
     storage_key: str | None
     tags: tuple[str, ...] = ()  # étiquettes du document, reprises par son élément (D124)
+    sync_metadata: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)

@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Link, useNavigate } from "react-router";
 import { t } from "@/shared/i18n/t";
 import type { SocketFactory } from "@/shared/realtime/socket";
+import { useLaunchSource } from "@/shared/session-ui";
 import { buttonVariants } from "@/shared/ui/button";
 import { InlineError } from "@/shared/ui/states/InlineError";
 import { DuplicateNotice } from "../../components/DuplicateNotice";
@@ -26,6 +27,7 @@ interface ReadyBlockProps {
  */
 export function ReadyBlock({ posting, pollMs, createSocket }: ReadyBlockProps) {
   const navigate = useNavigate();
+  const provider = useLaunchSource();
   const { distinct, error } = useMarkDistinct(posting.id);
   const cvs = usePostingCvs(posting.id);
   const analysis = useMemo(
@@ -45,8 +47,9 @@ export function ReadyBlock({ posting, pollMs, createSocket }: ReadyBlockProps) {
       <GapSection postingId={posting.id} pollMs={pollMs} createSocket={createSocket} />
       <ApplicationBlock postingId={posting.id} />
       {cvs ? <PostingCvList cvs={cvs} /> : null}
-      <div className="flex flex-wrap gap-2">
-        <Link to={`/carriere/cv/revue/nouvelle/${posting.id}`} className={buttonVariants()}>
+      <div className="flex flex-wrap items-end gap-2">
+        {provider.menu}
+        <Link to={`/carriere/cv/revue/nouvelle/${posting.id}`} state={{ runSource: provider.source }} className={buttonVariants()}>
           {t("gap.posting.reviewCv")}
         </Link>
         {posting.url ? (

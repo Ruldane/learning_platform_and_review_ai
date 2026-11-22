@@ -15,6 +15,7 @@ export function NewBlockStart({ mode }: { mode: StudySessionOut["mode"] }) {
   const starter = useStartStudy(() => void navigate("/etudier/session"));
   return (
     <div className="flex flex-col gap-2">
+      {starter.launchMenu}
       <Button
         variant="outline"
         disabled={starter.pending}

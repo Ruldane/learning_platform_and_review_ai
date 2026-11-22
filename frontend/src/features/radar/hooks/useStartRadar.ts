@@ -1,4 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { RunSource } from "@/shared/lib/runSource";
+import { useLaunchSource } from "@/shared/session-ui";
 import { startRun } from "../api";
 import type { RadarRunRequestView } from "../components/viewTypes";
 import { launchErrors, openRunId } from "../errors";
@@ -12,9 +14,9 @@ export interface StartedRun {
   resumed: boolean;
 }
 
-async function launch(request: RadarRunRequestView): Promise<StartedRun> {
+async function launch(request: RadarRunRequestView, source?: RunSource): Promise<StartedRun> {
   try {
-    const started = await startRun({ role: request.role, zone: request.zone });
+    const started = await startRun({ role: request.role, zone: request.zone }, source);
     return { runId: started.run_id, sessionId: started.session_id, resumed: false };
   } catch (error) {
     const open = openRunId(error);
@@ -30,8 +32,10 @@ async function launch(request: RadarRunRequestView): Promise<StartedRun> {
  */
 export function useStartRadar() {
   const client = useQueryClient();
+  const provider = useLaunchSource();
   const mutation = useMutation({
-    mutationFn: launch,
+    mutationFn: ({ request, source }: { request: RadarRunRequestView; source?: RunSource }) =>
+      launch(request, source),
     // Sans `await` : la page navigue vers le relevé avant que le dernier relevé soit relu.
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: radarKeys.all });
@@ -39,8 +43,9 @@ export function useStartRadar() {
   });
   const { mutateAsync } = mutation;
   return {
+    launchMenu: provider.menu,
     start: (request: RadarRunRequestView) =>
-      mutateAsync(request).then(
+      mutateAsync({ request, source: provider.source }).then(
         (started) => started,
         () => null,
       ),

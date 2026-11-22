@@ -4,6 +4,7 @@ import { http, HttpResponse } from "msw";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { apiBaseUrl } from "@/shared/api/client";
+import { getRunSource, RUN_HEADER, setRunSource } from "@/shared/lib/runSource";
 import { useSessionStore } from "@/shared/realtime/sessionStore";
 import { completed, interrupt, started, tok } from "@/shared/realtime/testEvents";
 import { createFakeSocketServer } from "@/test/fakeSocket";
@@ -91,6 +92,32 @@ describe("DemoDebatePage", () => {
     await waitFor(() => expect(resumed).toEqual([{ interrupt_id: "i1", value: "concret" }]));
     expect(await screen.findByText("Réponse envoyée")).toBeInTheDocument();
   });
+
+  it.each([undefined, "codex", "settings"] as const)(
+    "uses the launch choice %s without changing the global preference",
+    async (source) => {
+      const headers: Array<string | null> = [];
+      server.use(
+        http.post(API, ({ request }) => {
+          headers.push(request.headers.get(RUN_HEADER));
+          return HttpResponse.json({ session_id: "s1" }, { status: 201 });
+        }),
+      );
+      const before = getRunSource();
+      setRunSource("glm");
+      try {
+        const { user } = setup();
+        const menu = screen.getByLabelText("Qui fait tourner les agents pour ce lancement");
+        expect(menu).toHaveDisplayValue("Choix global · API GLM");
+        if (source !== undefined) await user.selectOptions(menu, source);
+        await startDebate(user);
+        await waitFor(() => expect(headers).toEqual([source ?? "glm"]));
+        expect(getRunSource()).toBe("glm");
+      } finally {
+        setRunSource(before);
+      }
+    },
+  );
 
   it("rejoint la session de l'URL après un rechargement, sans formulaire", async () => {
     const { fake } = setup("/demo?session=s1");

@@ -53,6 +53,20 @@ class StudyRepository(UserScopedRepository[StudySession]):
         result = await self.session.execute(stmt)
         return isinstance(result, CursorResult) and result.rowcount == 1
 
+    async def claim_training(self, study_id: str) -> StudySession | None:
+        """Réserve l'écriture avant de relire le tour actif et de fermer la séance."""
+        return await self.session.scalar(
+            update(StudySession)
+            .where(
+                StudySession.user_id == self.user_id,
+                StudySession.id == study_id,
+                StudySession.kind == "training",
+                StudySession.status == "open",
+            )
+            .values(updated_at=StudySession.updated_at)
+            .returning(StudySession)
+        )
+
     async def finished(self) -> builtins.list[tuple[datetime, int]]:
         """`(fin, minutes)` de chaque session terminée (série, heures de la semaine)."""
         stmt = select(StudySession.ended_at, StudySession.minutes).where(
@@ -71,7 +85,7 @@ class StudyReadRepository:
         self.session = session
         self.user_id = user_id
 
-    async def lesson(self, lesson_id: str) -> Lesson | None:
+    async def lesson(self, lesson_id: str | None) -> Lesson | None:
         stmt = (
             select(Lesson)
             .where(Lesson.id == lesson_id, Lesson.user_id == self.user_id)
@@ -79,11 +93,11 @@ class StudyReadRepository:
         )
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
-    async def module(self, module_id: str) -> Module | None:
+    async def module(self, module_id: str | None) -> Module | None:
         stmt = select(Module).where(Module.id == module_id, Module.user_id == self.user_id)
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
-    async def titles(self, lesson_id: str, module_id: str) -> tuple[str, str]:
+    async def titles(self, lesson_id: str | None, module_id: str | None) -> tuple[str, str]:
         """`(titre de la leçon, titre du module)` ; vides s'ils ont disparu."""
         lesson = await self.lesson(lesson_id)
         module = await self.module(module_id)

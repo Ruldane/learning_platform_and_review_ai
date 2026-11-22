@@ -103,6 +103,7 @@ export const topMissing = () => [
 type Reply = (request: Request) => Response | Promise<Response>;
 
 interface PostingsApi {
+  programs?: Record<string, unknown>[];
   /** Lectures successives de la liste ; la dernière se répète. */
   lists?: Record<string, unknown>[][];
   /** Lectures successives de `GET /postings/p1`. */
@@ -132,6 +133,7 @@ type State = ReturnType<typeof newState>;
 const newState = () => ({
   created: [] as unknown[],
   plans: [] as unknown[],
+  planSources: [] as (string | null)[],
   distincts: [] as unknown[],
   applications: [] as unknown[],
   checks: [] as string[],
@@ -176,6 +178,8 @@ function postingRoutes(api: PostingsApi, state: State) {
 function gapRoutes(api: PostingsApi, state: State) {
   const gaps = api.gaps ?? [gapOut()];
   return [
+    http.get(`${API}/programs`, () => HttpResponse.json(api.programs ?? [])),
+    http.get(`${API}/cv/versions`, () => HttpResponse.json([])),
     http.get(`${API}/postings/p1/gap`, () => HttpResponse.json(at(gaps, state.reads.gap++))),
     http.post(`${API}/postings/p1/gap`, ({ request }) => {
       state.relaunched += 1;
@@ -183,6 +187,7 @@ function gapRoutes(api: PostingsApi, state: State) {
     }),
     http.post(`${API}/postings/p1/gap/plan`, async ({ request }) => {
       state.plans.push(await request.clone().json());
+      state.planSources.push(request.headers.get("X-Tremplin-Run"));
       return api.plan?.(request) ?? HttpResponse.json({ session_id: "r1" }, { status: 202 });
     }),
     http.get(`${API}/gap/top-missing`, () => api.top?.() ?? HttpResponse.json(topMissing())),

@@ -41,6 +41,7 @@ export function IdeHomePage({ createSocket }: IdeHomePageProps) {
         notice={actions.notice}
         error={actions.formError}
         onCreate={actions.create}
+        launchMenu={actions.launchMenu}
         onGenerate={({ topic, level }) => actions.generate(topic, level)}
       />
       {actions.generated ? (

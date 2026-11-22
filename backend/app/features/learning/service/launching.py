@@ -122,7 +122,10 @@ async def retry_program(
     action: Literal["choose", "mix"] = "mix" if len(ids) == 2 else "choose"
     choice = Choice(action, tuple(ids), start)
     with inherit_source(
-        user_id, council.played_by if council else None, council.model_provider if council else None
+        user_id,
+        council.played_by if council else None,
+        council.model_provider if council else None,
+        has_origin=council is not None,
     ):
         session_id = await launch_program(
             learning.session_factory, learning.launcher, user_id, goal_id, choice

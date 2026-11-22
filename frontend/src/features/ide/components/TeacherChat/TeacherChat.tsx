@@ -1,4 +1,4 @@
-import { useId, type Ref } from "react";
+import { useId, type ReactNode, type Ref } from "react";
 import { t } from "@/shared/i18n/t";
 import { ChatComposer } from "@/shared/ui/ChatComposer";
 import { ChatThread } from "@/shared/ui/ChatThread";
@@ -16,6 +16,7 @@ interface TeacherChatProps {
   /** Ce qu'il faut dire sous le fil : pourquoi rien n'est parti, ou l'erreur. */
   notice: { tone: "status" | "error"; text: string } | null;
   canExplain: boolean;
+  launchMenu?: ReactNode;
   /** Une décision sur une proposition est en cours. */
   proposalsBusy: boolean;
   onSend: (question: string) => Promise<boolean>;
@@ -58,6 +59,7 @@ export function TeacherChat({
   busy,
   notice,
   canExplain,
+  launchMenu,
   proposalsBusy,
   onSend,
   onHint,
@@ -88,6 +90,7 @@ export function TeacherChat({
       >
         {items.map((item) => renderMessage(item, proposalsBusy, onAccept, onReject))}
       </ChatThread>
+      {launchMenu ? <div className="px-3 py-2">{launchMenu}</div> : null}
       <ChatComposer
         busy={busy}
         label={t("ide.teacher.question")}

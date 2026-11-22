@@ -4,13 +4,14 @@ import { MAX_PLAN_SKILLS } from "../viewTypes";
 
 interface GapActionsProps {
   count: number;
+  validationCount: number;
   adding: boolean;
   onAddToPlan: () => void;
   onValidate?: () => void;
 }
 
 /** Sous le tableau : « Ajouter au planning » et « Je les maîtrise déjà » pour les cases cochées. */
-export function GapActions({ count, adding, onAddToPlan, onValidate }: GapActionsProps) {
+export function GapActions({ count, validationCount, adding, onAddToPlan, onValidate }: GapActionsProps) {
   const label = adding
     ? t("gap.table.adding")
     : count === 0
@@ -22,8 +23,10 @@ export function GapActions({ count, adding, onAddToPlan, onValidate }: GapAction
         {label}
       </Button>
       {onValidate ? (
-        <Button variant="outline" onClick={onValidate} disabled={count === 0 || adding}>
-          {count === 0 ? t("gap.table.validateNone") : t("gap.table.validate", { count })}
+        <Button variant="outline" onClick={onValidate} disabled={validationCount === 0 || adding}>
+          {validationCount === 0
+            ? t("gap.table.validateNone")
+            : t("gap.table.validate", { count: validationCount })}
         </Button>
       ) : null}
       <p className="text-xs text-muted-foreground">

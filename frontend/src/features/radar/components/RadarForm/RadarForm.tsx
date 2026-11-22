@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 import type { RadarRunRequestView } from "../viewTypes";
@@ -15,6 +15,7 @@ interface RadarFormProps {
   onRun: (request: RadarRunRequestView) => void;
   /** Un relevé est en cours : le bouton attend sa fin (un seul relevé à la fois). */
   running: boolean;
+  launchMenu?: ReactNode;
   /** Le refus du serveur sur le poste (409 `radar_role_required`, 422), montré sur le champ. */
   roleError?: string;
   /** Le refus du serveur sur la zone (422), montré sur le champ. */
@@ -35,13 +36,7 @@ function validate(role: string, zone: string): FieldErrors {
   return errors;
 }
 
-/**
- * Lancer un relevé : poste (obligatoire, 2 caractères au moins) et zone (vide ou 2 caractères au
- * moins). Rien ne part tant qu'un champ est refusé ; les erreurs se corrigent en direct après le
- * premier essai. Les valeurs proposées ne sont lues qu'une fois : la page change la `key` du
- * formulaire quand elles arrivent.
- */
-export function RadarForm({ role, zone, onRun, running, roleError, zoneError }: RadarFormProps) {
+function useRadarFields({ role, zone, onRun, running, roleError, zoneError }: RadarFormProps) {
   const [roleValue, setRoleValue] = useState(role);
   const [zoneValue, setZoneValue] = useState(zone);
   const [attempted, setAttempted] = useState(false);
@@ -60,35 +55,43 @@ export function RadarForm({ role, zone, onRun, running, roleError, zoneError }: 
     onRun({ role: trimmedRole, zone: trimmedZone || null });
   };
 
+  return {
+    submit,
+    role: {
+      value: roleValue,
+      error: local.role ?? (roleError === dismissed.role ? undefined : roleError),
+      onChange: (value: string) => {
+        setRoleValue(value);
+        setDismissed((previous) => ({ ...previous, role: roleError }));
+      },
+    },
+    zone: {
+      value: zoneValue,
+      error: local.zone ?? (zoneError === dismissed.zone ? undefined : zoneError),
+      onChange: (value: string) => {
+        setZoneValue(value);
+        setDismissed((previous) => ({ ...previous, zone: zoneError }));
+      },
+    },
+  };
+}
+
+/** Les valeurs proposées ne sont lues qu'une fois : la page change la clé du formulaire. */
+export function RadarForm(props: RadarFormProps) {
+  const { running, launchMenu } = props;
+  const fields = useRadarFields(props);
   return (
     <form
-      onSubmit={submit}
+      onSubmit={fields.submit}
       noValidate
       aria-label={t("radar.form.label")}
       aria-busy={running}
       className="flex flex-col gap-3 rounded-xl border bg-card p-4"
     >
-      <TextField
-        label={t("radar.form.role")}
-        value={roleValue}
-        disabled={running}
-        error={local.role ?? (roleError === dismissed.role ? undefined : roleError)}
-        onChange={(value) => {
-          setRoleValue(value);
-          setDismissed((previous) => ({ ...previous, role: roleError }));
-        }}
-      />
-      <TextField
-        label={t("radar.form.zone")}
-        value={zoneValue}
-        disabled={running}
-        error={local.zone ?? (zoneError === dismissed.zone ? undefined : zoneError)}
-        onChange={(value) => {
-          setZoneValue(value);
-          setDismissed((previous) => ({ ...previous, zone: zoneError }));
-        }}
-      />
+      <TextField label={t("radar.form.role")} disabled={running} {...fields.role} />
+      <TextField label={t("radar.form.zone")} disabled={running} {...fields.zone} />
       <p className="text-xs text-muted-foreground">{t("radar.form.hint")}</p>
+      {running ? null : launchMenu}
       <Button type="submit" className="self-start" aria-disabled={running}>
         {running ? t("radar.form.running") : t("radar.form.run")}
       </Button>

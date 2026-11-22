@@ -103,6 +103,7 @@ export const memory = {
     chunks: "Fragments",
     chunk: "Fragment {n} · {tokens} jetons",
     neighbors: "Éléments proches",
+    linkedNotes: "Notes liées",
     journal: "Journal des écritures",
     journalEmpty: "Aucune écriture enregistrée.",
     noReason: "Aucune raison donnée.",

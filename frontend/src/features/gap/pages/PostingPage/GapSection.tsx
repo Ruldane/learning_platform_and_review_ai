@@ -1,13 +1,12 @@
 import { errorMessage } from "@/shared/api/errors";
 import { t } from "@/shared/i18n/t";
 import type { SocketFactory } from "@/shared/realtime/socket";
-import { Button } from "@/shared/ui/button";
 import { ErrorState } from "@/shared/ui/states/ErrorState";
-import { InlineError } from "@/shared/ui/states/InlineError";
 import { LoadingState } from "@/shared/ui/states/LoadingState";
 import { useGap } from "../../hooks/useGap";
 import { useRelaunchGap } from "../../hooks/useRelaunchGap";
 import { AnalysisRun } from "./AnalysisRun";
+import { GapFailure } from "./GapFailure";
 import { GapReady } from "./GapReady";
 import { WaitingNotice } from "./WaitingNotice";
 
@@ -54,14 +53,7 @@ export function GapSection({ postingId, pollMs, createSocket }: GapSectionProps)
       </>
     );
   } else if (gap.status === "failed") {
-    body = (
-      <div className="flex flex-col items-start gap-2">
-        <InlineError message={relaunch.error ?? t("gap.posting.gapFailed")} />
-        <Button onClick={relaunch.relaunch} disabled={relaunch.pending}>
-          {relaunch.pending ? t("gap.posting.relaunching") : t("gap.posting.relaunch")}
-        </Button>
-      </div>
-    );
+    body = <GapFailure relaunch={relaunch} />;
   } else {
     body = <GapReady postingId={postingId} gap={gap} />;
   }

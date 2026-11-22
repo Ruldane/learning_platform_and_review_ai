@@ -16,6 +16,9 @@ API_PREFIX = "/api/v1"
 NEVER_REACHABLE = (
     "/auth",
     "/account",
+    "/brain/folders",
+    "/brain/sync",
+    "/brain/sync-token",
     "/mcp",
     "/settings/api-keys",
     "/settings/models",

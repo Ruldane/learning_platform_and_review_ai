@@ -56,6 +56,7 @@ class _Pick:
     previous: tuple[str, int, str | None]
     played_by: str | None
     model_provider: str | None
+    has_origin: bool
 
 
 def week_due(rank: int, start: date, today: date) -> bool:
@@ -141,6 +142,7 @@ async def _prepare(
         (lesson.status, lesson.attempts, lesson.failure_reason),
         source.played_by if source else None,
         source.model_provider if source else None,
+        source is not None,
     )
     lesson.status, lesson.attempts = "generating", lesson.attempts + 1
     lesson.failure_reason, lesson.session_id = None, None
@@ -179,7 +181,9 @@ async def ensure_lessons(
             return None
         payload = {"program_id": program_id, "module_id": pick.module_id}
         try:
-            with inherit_source(user_id, pick.played_by, pick.model_provider):
+            with inherit_source(
+                user_id, pick.played_by, pick.model_provider, has_origin=pick.has_origin
+            ):
                 sid = await ctx.launcher.start(
                     user_id, GRAPH, payload, subject_type=SUBJECT, subject_id=program_id
                 )

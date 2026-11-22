@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 import { InlineError } from "@/shared/ui/states/InlineError";
@@ -7,6 +8,7 @@ interface PostingOutcomeProps {
   reason: string | null;
   relaunching: boolean;
   error: string | null;
+  launchOptions?: ReactNode;
   onRelaunch: () => void;
 }
 
@@ -19,6 +21,7 @@ export function PostingOutcome({
   reason,
   relaunching,
   error,
+  launchOptions,
   onRelaunch,
 }: PostingOutcomeProps) {
   const rejected = status === "rejected";
@@ -34,6 +37,7 @@ export function PostingOutcome({
         {reason ?? t(rejected ? "gap.posting.rejectedDefault" : "gap.posting.failedDefault")}
       </p>
       {error ? <InlineError message={error} /> : null}
+      {rejected ? null : launchOptions}
       {rejected ? null : (
         <Button onClick={onRelaunch} disabled={relaunching}>
           {relaunching ? t("gap.posting.relaunching") : t("gap.posting.relaunch")}

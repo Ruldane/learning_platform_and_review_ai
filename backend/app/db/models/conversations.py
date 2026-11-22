@@ -1,6 +1,6 @@
 from typing import Any
 
-from sqlalchemy import ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import JSON, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, UserScopedMixin
@@ -39,6 +39,9 @@ class ConversationTurn(UserScopedMixin, Base):
     passage: Mapped[str | None] = mapped_column(Text)
     passage_occurrence: Mapped[int | None]
     lesson_version: Mapped[str | None] = mapped_column(String(64), default=None)
+    mode: Mapped[str | None] = mapped_column(String(16), default=None)
+    practice: Mapped[list[Any] | None] = mapped_column(default=None)
+    context_notes: Mapped[dict[str, str] | None] = mapped_column(JSON, default=None)
     strong: Mapped[bool]
     answer: Mapped[str | None] = mapped_column(Text, default=None)
     sources: Mapped[list[Any]] = mapped_column(default=list)

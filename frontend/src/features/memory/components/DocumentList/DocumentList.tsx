@@ -1,4 +1,5 @@
 import { t } from "@/shared/i18n/t";
+import type { RunSource } from "@/shared/lib/runSource";
 import { EmptyState } from "@/shared/ui/states/EmptyState";
 import type { DocumentRow } from "../viewTypes";
 import { DocumentListItem } from "./DocumentListItem";
@@ -7,7 +8,7 @@ interface DocumentListProps {
   documents: DocumentRow[];
   /** Documents dont le marquage « déjà appris » est en cours : leur bouton est désactivé. */
   learningIds: string[];
-  onMarkLearned: (id: string) => void;
+  onMarkLearned: (id: string, source?: RunSource) => void;
 }
 
 /** Documents importés : statut, message d'erreur du serveur, et marquage « déjà appris ». */

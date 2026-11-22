@@ -1,5 +1,6 @@
 import { api } from "@/shared/api/client";
 import { unwrap } from "@/shared/api/errors";
+import { runSourceHeaders, type RunSource } from "@/shared/lib/runSource";
 import type { MasterProfileData } from "./types";
 
 const templatePath = (templateId: string) => ({ params: { path: { template_id: templateId } } });
@@ -35,14 +36,18 @@ export interface ProfileImport {
  * `POST /profile/import` (202) : multipart, le navigateur pose la frontière. 409
  * `capture_in_progress`, 413 `file_too_large`, 415 `unsupported_file_type`.
  */
-export async function importProfile({ cv, linkedin, note }: ProfileImport) {
+export async function importProfile({ cv, linkedin, note }: ProfileImport, source?: RunSource) {
   const form = new FormData();
   form.append("cv", cv);
   if (linkedin) form.append("linkedin", linkedin);
   if (note) form.append("note", note);
   // Le contrat type un fichier comme une chaîne : le corps réel est le formulaire.
   return unwrap(
-    await api.POST("/profile/import", { body: { cv: "" }, bodySerializer: () => form }),
+    await api.POST("/profile/import", {
+      body: { cv: "" },
+      bodySerializer: () => form,
+      headers: runSourceHeaders(source),
+    }),
   );
 }
 
@@ -69,12 +74,21 @@ export interface TemplateSource {
  * `POST /cv/templates` (202). 409 `vision_unavailable` et `capture_in_progress`, 413, 415, 422
  * `pdf_unreadable` et `validation_error`, 404 `document_not_found`.
  */
-export async function createTemplate({ name, file, documentId }: TemplateSource) {
+export async function createTemplate(
+  { name, file, documentId }: TemplateSource,
+  source?: RunSource,
+) {
   const form = new FormData();
   form.append("name", name);
   if (file) form.append("file", file);
   if (documentId) form.append("document_id", documentId);
-  return unwrap(await api.POST("/cv/templates", { body: { name }, bodySerializer: () => form }));
+  return unwrap(
+    await api.POST("/cv/templates", {
+      body: { name },
+      bodySerializer: () => form,
+      headers: runSourceHeaders(source),
+    }),
+  );
 }
 
 /** `POST /cv/templates/{id}/activate` (204) : le seul modèle actif ; 409 `template_not_ready`. */
@@ -96,8 +110,13 @@ export async function fetchPostingTitles(signal?: AbortSignal) {
  * `POST /cv/reviews` (202). 404 `posting_not_found` ; 409 `posting_not_ready`, `profile_required`,
  * `template_required`, `review_in_progress` (`details.review_id`) ; 503 `engine_unavailable`.
  */
-export async function startReview(postingId: string) {
-  return unwrap(await api.POST("/cv/reviews", { body: { posting_id: postingId } }));
+export async function startReview(postingId: string, source?: RunSource) {
+  return unwrap(
+    await api.POST("/cv/reviews", {
+      body: { posting_id: postingId },
+      headers: runSourceHeaders(source),
+    }),
+  );
 }
 
 /** `GET /cv/reviews/{id}` : la revue, ses modifications, ses versions ; 404 `review_not_found`. */

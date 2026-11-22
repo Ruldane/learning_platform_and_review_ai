@@ -1,5 +1,6 @@
 import { api } from "@/shared/api/client";
 import { unwrap } from "@/shared/api/errors";
+import { runSourceHeaders, type RunSource } from "@/shared/lib/runSource";
 import type { StudyStart } from "./types";
 
 const studyPath = (studyId: string) => ({ params: { path: { study_session_id: studyId } } });
@@ -20,8 +21,8 @@ export async function fetchStudySession(studyId: string, signal?: AbortSignal) {
  * `POST /study-sessions` : ouvre la session et lance le Tuteur (202) ; 200 si elle est déjà ouverte
  * sur la même leçon. 404 `no_block_today`, 409 `study_already_open` (`details.study_session_id`).
  */
-export async function startStudy(body: StudyStart) {
-  return unwrap(await api.POST("/study-sessions", { body }));
+export async function startStudy(body: StudyStart, source?: RunSource) {
+  return unwrap(await api.POST("/study-sessions", { body, headers: runSourceHeaders(source) }));
 }
 
 /**

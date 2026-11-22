@@ -65,6 +65,8 @@ export const gap = {
     inProgramNoWeek: "Dans ton programme",
     toAdd: "À ajouter",
     outOfScope: "Hors périmètre",
+    targetProgram: "Programme cible",
+    latestProgram: "Dernier programme validé",
     fromReview: "relevé par la revue du CV",
     add: "Ajouter au planning ({count})",
     addNone: "Ajouter au planning",

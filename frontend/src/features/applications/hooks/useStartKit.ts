@@ -1,3 +1,5 @@
+import type { RunSource } from "@/shared/lib/runSource";
+import { useLaunchSource } from "@/shared/session-ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { startKit } from "../api";
 import { applicationsErrorMessage, errorCode, openKitSessionId } from "../errors";
@@ -5,9 +7,12 @@ import { applicationsKeys } from "../queryKeys";
 import type { KitOut } from "../types";
 
 /** Un lancement accepté (202), ou la session que le serveur dit déjà ouverte (409 `kit_in_progress`). */
-async function launch(applicationId: string): Promise<{ sessionId: string; resumed: boolean }> {
+async function launch(
+  applicationId: string,
+  source?: RunSource,
+): Promise<{ sessionId: string; resumed: boolean }> {
   try {
-    return { sessionId: (await startKit(applicationId)).session_id, resumed: false };
+    return { sessionId: (await startKit(applicationId, source)).session_id, resumed: false };
   } catch (error) {
     const open = openKitSessionId(error);
     if (open) return { sessionId: open, resumed: true };
@@ -20,9 +25,10 @@ async function launch(applicationId: string): Promise<{ sessionId: string; resum
  * panne (on suit la session ouverte, `resumed`). Le kit en cache passe tout de suite à « en cours ».
  */
 export function useStartKit(applicationId: string) {
+  const provider = useLaunchSource();
   const client = useQueryClient();
   const mutation = useMutation({
-    mutationFn: () => launch(applicationId),
+    mutationFn: () => launch(applicationId, provider.source),
     onSuccess: ({ sessionId }) => {
       client.setQueryData<KitOut>(applicationsKeys.kit(applicationId), (kit) =>
         kit ? { ...kit, running: true, session_id: sessionId } : kit,
@@ -32,6 +38,7 @@ export function useStartKit(applicationId: string) {
   });
   const { mutateAsync } = mutation;
   return {
+    launchMenu: provider.menu,
     /** Résout à `true` quand une session tourne pour ce kit. */
     start: () =>
       mutateAsync().then(

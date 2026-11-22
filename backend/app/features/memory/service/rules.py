@@ -31,6 +31,7 @@ class WriteDraft:
     lang: str | None = None
     # Capture rapide de January (D108) : l'Archiviste range sa page ou sa note en `document`.
     captured: bool = False
+    sync_metadata: dict[str, Any] | None = None
 
 
 def clean_tags(tags: list[str] | tuple[str, ...]) -> list[str]:

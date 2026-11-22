@@ -103,6 +103,34 @@ h1 {
   font-size: var(--body-pt);
 }
 
+.profile-links {
+  overflow-wrap: anywhere;
+}
+
+.profile-links a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.skills-columns-2,
+.skills-columns-3 {
+  display: grid;
+  column-gap: 0.6em;
+}
+
+.skills-columns-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.skills-columns-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.skills-columns-2 li,
+.skills-columns-3 li {
+  overflow-wrap: anywhere;
+}
+
 .cv-section {
   margin-bottom: var(--gap);
   break-inside: auto;

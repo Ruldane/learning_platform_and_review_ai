@@ -25,5 +25,6 @@ export { webUrl } from "./webUrl";
 export { canAnswer, RunFeed } from "./RunFeed";
 export type { InterruptItem } from "./RunFeed";
 export { RunSourceMenu } from "./RunSourceMenu";
+export { LaunchSourceMenu, useLaunchSource } from "./LaunchSourceMenu";
 export { SideTabs } from "./SideTabs";
 export type { SideTab } from "./SideTabs";

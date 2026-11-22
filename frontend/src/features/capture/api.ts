@@ -1,5 +1,6 @@
 import { api } from "@/shared/api/client";
 import { unwrap } from "@/shared/api/errors";
+import { runSourceHeaders, type RunSource } from "@/shared/lib/runSource";
 import type { CaptureRequest, JournalKind } from "./types";
 
 /**
@@ -7,8 +8,8 @@ import type { CaptureRequest, JournalKind } from "./types";
  * 422 `invalid_input` / `invalid_url` / `url_forbidden`, 404 `document_not_found`, 409
  * `document_failed`. Jamais `POST /sessions` (409 `graph_has_route`).
  */
-export async function startCapture(body: CaptureRequest) {
-  return unwrap(await api.POST("/capture", { body }));
+export async function startCapture(body: CaptureRequest, source?: RunSource) {
+  return unwrap(await api.POST("/capture", { body, headers: runSourceHeaders(source) }));
 }
 
 /**

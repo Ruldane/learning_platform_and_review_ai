@@ -2,6 +2,7 @@
 (gestionnaire commun : chemins et messages seulement)."""
 
 from datetime import date, datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -36,6 +37,7 @@ class CaptureStarted(BaseModel):
 class JournalLinksOut(BaseModel):
     session_id: str | None
     study_session_id: str | None
+    study_session_kind: Literal["guided", "training"] | None = None
     quiz_attempt_id: str | None
     memory_item_id: str | None
 

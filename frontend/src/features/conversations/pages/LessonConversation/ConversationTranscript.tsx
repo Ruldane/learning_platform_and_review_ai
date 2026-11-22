@@ -4,7 +4,7 @@ import { ChatThread } from "@/shared/ui/ChatThread";
 import type { ConversationTurn } from "../../api";
 import { ConversationSources } from "./ConversationSources";
 
-function messages(turn: ConversationTurn, live: string | null) {
+function messages(turn: ConversationTurn, live: string | null, assistant: string) {
   const question = (
     <ChatMessage
       key={`${turn.id}-question`}
@@ -24,7 +24,7 @@ function messages(turn: ConversationTurn, live: string | null) {
           key={`${turn.id}-answer`}
           author="assistant"
           allowLinks={false}
-          label={t("conversations.title")}
+          label={assistant}
           content={answer}
         >
           <ConversationSources sources={turn.sources} />
@@ -37,27 +37,44 @@ interface ConversationTranscriptProps {
   turns: ConversationTurn[];
   sessionId: string | null;
   streaming: string | null;
+  assistant?: string;
+  label?: string;
+  greeting?: string;
+  typing?: string;
+  emptyText?: string;
 }
 
 export function ConversationTranscript({
   turns,
   sessionId,
   streaming,
+  assistant = t("conversations.title"),
+  label = t("conversations.thread"),
+  greeting,
+  typing = t("conversations.typing"),
+  emptyText = t("conversations.empty"),
 }: ConversationTranscriptProps) {
   return (
     <ChatThread
-      label={t("conversations.thread")}
-      emptyText={t("conversations.empty")}
+      label={label}
+      emptyText={emptyText}
       scrollSignal={streaming ?? ""}
       footer={
         sessionId && !streaming ? (
           <p role="status" className="text-sm text-muted-foreground">
-            {t("conversations.typing")}
+            {typing}
           </p>
         ) : null
       }
     >
-      {turns.flatMap((turn) => messages(turn, sessionId === turn.session_id ? streaming : null))}
+      {[
+        ...(greeting
+          ? [<ChatMessage key="greeting" author="assistant" label={assistant} content={greeting} />]
+          : []),
+        ...turns.flatMap((turn) =>
+          messages(turn, sessionId === turn.session_id ? streaming : null, assistant),
+        ),
+      ]}
     </ChatThread>
   );
 }

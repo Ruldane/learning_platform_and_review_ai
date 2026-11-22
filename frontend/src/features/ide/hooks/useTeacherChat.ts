@@ -3,6 +3,7 @@ import { errorMessage } from "@/shared/api/errors";
 import { t } from "@/shared/i18n/t";
 import type { SocketFactory } from "@/shared/realtime/socket";
 import { useRun } from "@/shared/realtime/useRun";
+import { useLaunchSource } from "@/shared/session-ui";
 import { toChatItems } from "../components/chatItems";
 import { ideKeys } from "../queryKeys";
 import type { TeachIn, TeachOut } from "../types";
@@ -56,6 +57,7 @@ function noticeOf(teach: TeachState, failure: string | null): ChatNotice | null 
 export function useTeacherChat(ws: Workspace, createSocket?: SocketFactory) {
   const { coach, runner, notes } = ws;
   const queryClient = useQueryClient();
+  const provider = useLaunchSource();
   const teacherSessionId = coach.teach.data?.session_id ?? null;
   const run = useRun(
     teacherSessionId,
@@ -69,7 +71,7 @@ export function useTeacherChat(ws: Workspace, createSocket?: SocketFactory) {
   const failed = run.stream.status === "failed" || run.stream.status === "cancelled";
   const failure = failed ? (run.stream.view.error?.message ?? t("ide.teacher.failed")) : null;
   const askWith = (what: Parameters<typeof coach.ask>[0]) =>
-    coach.ask({ ...what, run_id: runner.lastRunId });
+    coach.ask({ ...what, run_id: runner.lastRunId }, provider.source);
   const pending = pendingQuestion(coach.teach, notes);
   return {
     items: toChatItems(notes, pending),
@@ -77,7 +79,8 @@ export function useTeacherChat(ws: Workspace, createSocket?: SocketFactory) {
     notice: noticeOf(coach.teach, teacherSessionId ? failure : null),
     busy: coach.teach.isPending || typing,
     canExplain: runner.failedRunId !== null,
-    send: (question: string) => coach.sendQuestion(question, runner.lastRunId),
+    launchMenu: provider.menu,
+    send: (question: string) => coach.sendQuestion(question, runner.lastRunId, provider.source),
     hint: () => askWith({ trigger: "hint" }),
     why: () => askWith({ trigger: "question", question: t("ide.teacher.why") }),
   };

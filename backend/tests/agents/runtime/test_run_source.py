@@ -5,7 +5,7 @@ from langchain_core.language_models import BaseChatModel
 
 from app.agents.runtime.playback import models_for
 from app.agents.runtime.runner import SessionRunner
-from app.core.played import PLAY_CONTEXT, PlayContext, inherit_source, run_source
+from app.core.played import PLAY_CONTEXT, RUN_REQUEST, PlayContext, inherit_source, run_source
 from app.db.models.agents import AgentSession
 from app.providers.llm.base import ModelChoice, Tier
 from app.providers.llm.factory import LlmFactory
@@ -101,3 +101,19 @@ async def test_inherit_source_restores_client_or_provider(user_id: str) -> None:
     with inherit_source(user_id, "codex", None):
         assert run_source(user_id) == ("codex", None)
     assert run_source(user_id) == (None, None)
+
+
+def test_child_outside_the_graph_keeps_origin_despite_request_default() -> None:
+    user_id = "owner"
+    header = RUN_REQUEST.set("openai")
+    try:
+        with inherit_source(user_id, None, "glm"):
+            assert run_source(user_id) == (None, "glm")
+            assert run_source("other") == (None, None)
+        with inherit_source(user_id, None, None):
+            assert run_source(user_id) == (None, None)
+        with inherit_source(user_id, None, None, has_origin=False):
+            assert run_source(user_id) == (None, "openai")
+        assert run_source(user_id) == (None, "openai")
+    finally:
+        RUN_REQUEST.reset(header)

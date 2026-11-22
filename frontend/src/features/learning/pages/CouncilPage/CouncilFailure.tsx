@@ -19,6 +19,7 @@ export function CouncilFailure({ message, retry }: CouncilFailureProps) {
         help={t("learning.retry.councilHelp")}
         actionLabel={t("learning.retry.council")}
         busy={retry.pending}
+        launchMenu={retry.launchMenu}
         notice={retry.notice}
         error={retry.error}
         onRetry={() => void retry.retry()}

@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
+import type { RunSource } from "@/shared/lib/runSource";
 import { markLearned, uploadDocument } from "../api";
 import { memoryKeys } from "../queryKeys";
 import { invalidateMemory } from "./useItemMutations";
@@ -28,8 +29,9 @@ export function useDocumentActions() {
   });
 
   const learn = useMutation({
-    mutationFn: markLearned,
-    onSuccess: ({ session_id: sessionId }, documentId) => start(documentId, sessionId),
+    mutationFn: ({ documentId, source }: { documentId: string; source?: RunSource }) =>
+      markLearned(documentId, source),
+    onSuccess: ({ session_id: sessionId }, { documentId }) => start(documentId, sessionId),
   });
 
   /** L'Archiviste a fini : les acquis, les statistiques, la carte et les documents sont relus. */
@@ -41,7 +43,7 @@ export function useDocumentActions() {
     [finish, queryClient],
   );
 
-  const requesting = learn.isPending ? [learn.variables] : [];
+  const requesting = learn.isPending ? [learn.variables.documentId] : [];
   const running = learnings.filter((entry) => !entry.finished).map((entry) => entry.documentId);
   return {
     upload,

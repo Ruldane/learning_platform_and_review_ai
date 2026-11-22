@@ -1,3 +1,4 @@
+import { useLaunchSource } from "@/shared/session-ui";
 import { useMutation } from "@tanstack/react-query";
 import { useSearchParams } from "react-router";
 import type { SocketFactory } from "@/shared/realtime/socket";
@@ -12,14 +13,15 @@ export const SESSION_PARAM = "session";
  * session (le flux rejoue les événements depuis le début). `createSocket` ne sert qu'aux tests.
  */
 export function useResearchRun(createSocket?: SocketFactory) {
+  const launch = useLaunchSource();
   const [params, setParams] = useSearchParams();
   const sessionId = params.get(SESSION_PARAM);
   const stream = useSessionStream(sessionId, { createSocket });
   const start = useMutation({
-    mutationFn: (input: ResearchBenchInput) => startResearch(input),
+    mutationFn: (input: ResearchBenchInput) => startResearch(input, launch.source),
     onSuccess: (id) => setParams({ [SESSION_PARAM]: id }),
   });
   const restart = () => setParams({});
 
-  return { sessionId, stream, start, restart };
+  return { sessionId, stream, start, restart, launchMenu: launch.menu };
 }

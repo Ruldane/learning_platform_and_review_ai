@@ -2,6 +2,15 @@
 
 from app.mcp.base import FeatureMcp, McpAction, McpGraph
 
+_TRAINING = "/study-sessions/training"
+_TRAINING_SESSION = f"{_TRAINING}/{{study_session_id}}"
+_TURN_CONTENT = (
+    "conversation.turns[].question",
+    "conversation.turns[].answer",
+    "conversation.turns[].sources[].title",
+    "conversation.turns[].sources[].excerpt",
+)
+
 MCP = FeatureMcp(
     feature="study",
     actions=(
@@ -30,6 +39,34 @@ MCP = FeatureMcp(
             "study_update_session",
             "Termine (`finish`) ou abandonne (`cancel`) une session guidée.",
         ),
+        McpAction(
+            f"POST {_TRAINING}",
+            2,
+            "study_start_training",
+            "Ouvre une session training, sans leçon imposée.",
+            untrusted=_TURN_CONTENT,
+        ),
+        McpAction(
+            f"GET {_TRAINING}/open",
+            1,
+            "study_open_training",
+            "Lit la session training ouverte, si elle existe.",
+            untrusted=_TURN_CONTENT,
+        ),
+        McpAction(
+            f"GET {_TRAINING_SESSION}",
+            1,
+            "study_read_training",
+            "Lit le training, ses échanges et ses sources.",
+            untrusted=_TURN_CONTENT,
+        ),
+        McpAction(
+            f"POST {_TRAINING_SESSION}/messages",
+            2,
+            "study_talk_training",
+            "Parle au Tuteur pendant le training avec un identifiant de demande réutilisable.",
+            launches="conversation",
+        ),
     ),
     graphs=(
         McpGraph(
@@ -38,4 +75,9 @@ MCP = FeatureMcp(
             summary="Le Tuteur conduit une session guidée (`study_session_id`).",
         ),
     ),
+    excluded={
+        f"PATCH {_TRAINING_SESSION}": (
+            "L’interface pilote le minuteur, change le mode et clôture le training."
+        ),
+    },
 )

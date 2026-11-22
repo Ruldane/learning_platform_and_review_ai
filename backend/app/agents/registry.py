@@ -3,7 +3,7 @@ de modèle. Le prompt de chaque agent est le fichier `prompts/<nom>.md`. Rempli 
 
 from dataclasses import dataclass
 
-from app.agents.tools.conversation_port import LESSON_PROFESSOR
+from app.agents.tools.conversation_port import BRAIN_LIBRARIAN, LESSON_PROFESSOR, TRAINING_TUTOR
 from app.core.errors import AppError
 from app.providers.llm.base import Tier
 
@@ -42,6 +42,8 @@ AGENTS: dict[str, AgentSpec] = {
         # explications et les propositions ; rédacteur d'exercices : standard
         AgentSpec(name="professor", tier="rapide"),
         AgentSpec(name=LESSON_PROFESSOR, tier="rapide"),
+        AgentSpec(name=TRAINING_TUTOR, tier="rapide"),
+        AgentSpec(name=BRAIN_LIBRARIAN, tier="rapide"),
         AgentSpec(name="exercise_writer", tier="standard"),
     )
 }

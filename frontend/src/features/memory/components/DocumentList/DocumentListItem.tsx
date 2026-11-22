@@ -1,13 +1,15 @@
 import { t } from "@/shared/i18n/t";
 import { memory } from "@/shared/i18n/messages/memory";
-import { Button } from "@/shared/ui/button";
+import type { RunSource } from "@/shared/lib/runSource";
+import { useLaunchSource } from "@/shared/session-ui";
 import { formatDay } from "../formatDate";
 import type { DocumentRow } from "../viewTypes";
+import { MarkLearnedAction } from "./MarkLearnedAction";
 
 interface DocumentListItemProps {
   document: DocumentRow;
   learning: boolean;
-  onMarkLearned: (id: string) => void;
+  onMarkLearned: (id: string, source?: RunSource) => void;
 }
 
 type KnownSource = keyof typeof memory.documents.sourceKind;
@@ -24,6 +26,7 @@ export function DocumentListItem({ document, learning, onMarkLearned }: Document
   // Le back pose `learned` dès le lancement : un échec ou une page rechargée ne laissent que ce
   // drapeau. Tant que rien ne tourne, un document appris reste donc relançable (sans danger : les
   // acquis déjà écrits sont reconnus).
+  const provider = useLaunchSource();
   const canMark = document.status === "indexed";
   const relaunch = document.learned && !learning;
   return (
@@ -51,14 +54,16 @@ export function DocumentListItem({ document, learning, onMarkLearned }: Document
             <span className="text-sm text-muted-foreground">{t("memory.documents.learned")}</span>
           ) : null}
           {canMark ? (
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={learning}
-              onClick={() => onMarkLearned(document.id)}
-            >
-              {t(relaunch ? "memory.documents.relaunch" : "memory.documents.markLearned")}
-            </Button>
+            <MarkLearnedAction
+              learning={learning}
+              relaunch={relaunch}
+              launchMenu={provider.menu}
+              onClick={() =>
+                provider.source === undefined
+                  ? onMarkLearned(document.id)
+                  : onMarkLearned(document.id, provider.source)
+              }
+            />
           ) : null}
         </div>
       </div>

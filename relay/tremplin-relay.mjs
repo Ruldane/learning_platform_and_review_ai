@@ -1,12 +1,14 @@
 // Relais de Tremplin : quand un parcours lancé avec « Claude Code (MCP) » ou « Codex (MCP) »
 // attend son client, lance ce client en arrière-plan pour le jouer, sans geste de January.
-// Jeton : TREMPLIN_MCP_TOKEN, sinon %APPDATA%\Tremplin\relay.json {"token"}.
+// Jeton d'appairage, ou TREMPLIN_MCP_TOKEN et relay.json avant le premier appairage.
 // Adresse : TREMPLIN_MCP_URL, sinon http://127.0.0.1:8000/mcp. Journal : identifiants seulement.
 import { spawn } from "node:child_process";
 import { appendFileSync, mkdirSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { syncBrain } from "./tremplin-brain-sync.mjs";
+import { readPairingToken, startPairingServer } from "./tremplin-relay-pairing.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = dirname(here); // Claude Code y trouve le serveur `tremplin` branché sur ce dossier
@@ -35,7 +37,11 @@ function config() {
     // pas de fichier : variables d'environnement seulement
   }
   const url = process.env.TREMPLIN_MCP_URL ?? saved.url ?? "http://127.0.0.1:8000/mcp";
-  return { url, token: process.env.TREMPLIN_MCP_TOKEN ?? saved.token };
+  return {
+    url,
+    token: readPairingToken(appDir) ?? process.env.TREMPLIN_MCP_TOKEN ?? saved.token,
+    syncToken: process.env.TREMPLIN_BRAIN_SYNC_TOKEN ?? saved.sync_token,
+  };
 }
 
 async function call(cfg, name, args) {
@@ -143,11 +149,20 @@ export async function tick(cfg, request = call) {
 
 async function main() {
   log("relais démarré");
+  startPairingServer(appDir, () => config().url, () => log("appairage local indisponible"));
+  let syncing = false;
   for (;;) {
     const cfg = config();
+    if (cfg.syncToken && !syncing) {
+      syncing = true;
+      void syncBrain(cfg).then(
+        ({ folders, errors }) => log(`synchronisation terminée dossiers ${folders} erreurs ${errors}`),
+        () => log("synchronisation indisponible"),
+      ).finally(() => { syncing = false; });
+    }
     let delay = POLL_MS;
     if (!cfg.token) {
-      log("aucun jeton (TREMPLIN_MCP_TOKEN ou relay.json) : nouvel essai dans une minute");
+      log("aucun jeton : nouvel essai dans une minute");
       delay = 60_000;
     } else {
       try {

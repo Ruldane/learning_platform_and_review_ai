@@ -87,6 +87,7 @@ def _cards(row: StudySession, outcome: StudyOutcome) -> list[NewCard]:
 
 
 async def _module(db: AsyncSession, row: StudySession) -> Module | None:
+    assert row.program_id is not None  # cible obligatoire d'une séance guidée
     loaded = await load(db, row.user_id, row.program_id)
     return next((m for m in loaded.modules if m.id == row.module_id), None)
 
@@ -153,7 +154,7 @@ async def _claim_and_write(
         now = rt.now()
         claimed = await repo.close_open(study_id, status="finished", ended_at=now)
         row = await repo.get_fresh(study_id)
-        if row is None:
+        if row is None or row.kind != "guided" or row.program_id is None:
             raise study_not_found()
         if not claimed:
             done = finished_of(row)
@@ -171,7 +172,7 @@ async def finish_study(
     `session_id` : la session d'agents qui la range (`None` : la route, session déjà morte)."""
     async with rt.session_factory() as db:
         row = await StudyRepository(db, user_id).get_fresh(study_id)
-        if row is None:
+        if row is None or row.kind != "guided" or row.program_id is None:
             raise study_not_found()
         program_id = row.program_id
     # F4 : le verrou du programme AVANT la transaction d'écriture (même ordre qu'`editing`).

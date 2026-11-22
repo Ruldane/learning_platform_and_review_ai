@@ -174,6 +174,7 @@ async def create_attempt(
                 user_id,
                 source.played_by if source else None,
                 source.model_provider if source else None,
+                has_origin=source is not None,
             ):
                 sid = await rt.launcher.start(
                     user_id, GRAPH, payload, subject_type=SUBJECT, subject_id=quiz_id

@@ -34,12 +34,16 @@ class TopMissingOut(BaseModel):
     required_in: int  # dont obligatoire
 
 
-class PlanGapIn(BaseModel):
-    """« Ajouter au planning » : des noms de lignes `to_add` de l'écart de l'offre."""
-
+class GapSkillsIn(BaseModel):
     skills: list[Annotated[str, Field(min_length=1, max_length=120)]] = Field(
         min_length=1, max_length=10
     )
+
+
+class PlanGapIn(GapSkillsIn):
+    """Lignes « À ajouter » ou « Hors périmètre » et programme validé choisi."""
+
+    program_id: Annotated[str, Field(min_length=36, max_length=36)] | None = None
 
 
 class PlanGapStarted(BaseModel):

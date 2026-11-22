@@ -31,6 +31,10 @@ class Budget:
     weekend_minutes: int
 
     @property
+    def longest_day_minutes(self) -> int:
+        return max(self.weekday_minutes, self.weekend_minutes)
+
+    @property
     def weekly_minutes(self) -> int:
         """Cinq jours de semaine plus le samedi."""
         return 5 * self.weekday_minutes + self.weekend_minutes

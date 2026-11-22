@@ -45,6 +45,7 @@ export function KitBody({ applicationId, kit, createSocket }: KitBodyProps) {
       <p role="status" className="sr-only">
         <span key={announcement.count}>{announcement.message}</span>
       </p>
+      {!kit.running ? start.launchMenu : null}
       <KitControls
         applicationId={applicationId}
         pieces={kit.pieces}

@@ -1,5 +1,6 @@
 import { api } from "@/shared/api/client";
 import { unwrap } from "@/shared/api/errors";
+import { runSourceHeaders, type RunSource } from "@/shared/lib/runSource";
 import type { ExerciseGenerateIn, ExerciseIn, RunKind, TeachIn, Preferences } from "./types";
 
 /** `GET /ide/exercises` : mes exercices, les plus récents d'abord. */
@@ -13,8 +14,10 @@ export async function createExercise(body: ExerciseIn) {
 }
 
 /** `POST /ide/exercises/generate` : les agents écrivent l'exercice ; on suit `session_id`. */
-export async function generateExercise(body: ExerciseGenerateIn) {
-  return unwrap(await api.POST("/ide/exercises/generate", { body }));
+export async function generateExercise(body: ExerciseGenerateIn, source?: RunSource) {
+  return unwrap(
+    await api.POST("/ide/exercises/generate", { body, headers: runSourceHeaders(source) }),
+  );
 }
 
 /** `GET /ide/sessions` : mes séances, la plus récente d'abord. */
@@ -58,9 +61,15 @@ export async function fetchRun(runId: string, after: number, signal?: AbortSigna
 }
 
 /** `POST /ide/sessions/{id}/teach` : réveille le professeur (jamais à la frappe). */
-export async function teach(sessionId: string, body: TeachIn) {
+export async function teach(sessionId: string, body: TeachIn, source?: RunSource) {
   const params = { path: { session_id: sessionId } };
-  return unwrap(await api.POST("/ide/sessions/{session_id}/teach", { params, body }));
+  return unwrap(
+    await api.POST("/ide/sessions/{session_id}/teach", {
+      params,
+      body,
+      headers: runSourceHeaders(source),
+    }),
+  );
 }
 
 /** `GET /ide/sessions/{id}/notes` : indices, explications, annotations, propositions, renvois. */

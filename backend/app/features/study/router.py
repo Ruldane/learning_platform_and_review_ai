@@ -4,12 +4,13 @@ heures visibles en permanence, bloc du jour) et `GET /study-sessions/{id}` (écr
 résumé est déclaré avant `/{id}`. Tout est filtré par utilisatrice : la session d'une autre
 donne 404."""
 
-from typing import Annotated, Any
+from typing import Any
 
-from fastapi import APIRouter, Depends, Response, status
-from starlette.requests import HTTPConnection
+from fastapi import APIRouter, Response, status
 
 from app.core.deps import CurrentUserDep, Db, RuntimeDep
+from app.features.study.router_deps import StudyDep
+from app.features.study.router_training import router as training_router
 from app.features.study.schemas import (
     StudySessionOut,
     StudyStart,
@@ -18,18 +19,10 @@ from app.features.study.schemas import (
     StudyUpdate,
 )
 from app.features.study.service import control, sessions, view
-from app.features.study.service.runtime import StudyRuntime
 
 router = APIRouter(tags=["study"])
+router.include_router(training_router)
 
-
-def get_study_runtime(conn: HTTPConnection) -> StudyRuntime:
-    """L'étude ouverte par le lifespan (`app.state.study`)."""
-    runtime: StudyRuntime = conn.app.state.study
-    return runtime
-
-
-StudyDep = Annotated[StudyRuntime, Depends(get_study_runtime)]
 _ALREADY: dict[int | str, dict[str, Any]] = {
     200: {"model": StudyStarted, "description": "Session déjà ouverte sur cette leçon."}
 }

@@ -11,6 +11,7 @@ export function ReplanStart({ programId, onSession }: ReplanStartProps) {
   const replan = useStartReplan(programId, onSession);
   return (
     <ReplanForm
+      launchMenu={replan.launchMenu}
       busy={replan.pending}
       error={replan.error}
       onSubmit={({ availableMinutes, message }) =>

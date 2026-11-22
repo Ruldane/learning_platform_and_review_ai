@@ -4,6 +4,7 @@ export const mcpKeys = {
   features: ["mcp", "features"] as const,
   actions: ["mcp", "actions"] as const,
   tokens: ["mcp", "tokens"] as const,
+  relay: ["mcp", "relay"] as const,
   confirmations: ["mcp", "confirmations"] as const,
   calls: ["mcp", "calls"] as const,
   changes: ["mcp", "changes"] as const,

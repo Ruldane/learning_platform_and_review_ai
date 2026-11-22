@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agents.tools.replan_port import GAP_MODULE_TITLE
 from app.core.skills import normalize_skill_name
 from app.db.models.program import Module
 from app.features.program.repository import ProgramRepository
@@ -17,6 +18,12 @@ class SkillModule:
     module_id: str
     program_id: str
     title: str
+
+
+@dataclass(frozen=True)
+class SkillCoverage:
+    weeks: dict[str, int]
+    offer_weeks: dict[str, int]
 
 
 def _norms(module: Module) -> list[str]:
@@ -48,7 +55,12 @@ async def skill_weeks(db: AsyncSession, user_id: str) -> dict[str, int]:
     programme validé (le plus récent d'abord, puis l'ordre du programme ; le premier module
     gagne). La semaine est celle de la 1re tâche du module (rang de la semaine du programme qui
     contient sa date), sinon celle du module (écart d'une offre, D122)."""
-    weeks: dict[str, int] = {}
+    return (await skill_coverage(db, user_id)).weeks
+
+
+async def skill_coverage(db: AsyncSession, user_id: str) -> SkillCoverage:
+    """Semaines de couverture générale et des ajouts validés dans « Compétences des offres »."""
+    coverage = SkillCoverage({}, {})
     for program in await ProgramRepository(db, user_id).list_recent():
         if program.status != "validated":
             continue
@@ -63,5 +75,7 @@ async def skill_weeks(db: AsyncSession, user_id: str) -> dict[str, int]:
             if number is None:
                 continue
             for norm in _norms(module):
-                weeks.setdefault(norm, number)
-    return weeks
+                coverage.weeks.setdefault(norm, number)
+                if module.title == GAP_MODULE_TITLE:
+                    coverage.offer_weeks.setdefault(norm, number)
+    return coverage

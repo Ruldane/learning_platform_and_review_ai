@@ -1,5 +1,6 @@
 import { api } from "@/shared/api/client";
 import { unwrap } from "@/shared/api/errors";
+import { runSourceHeaders, type RunSource } from "@/shared/lib/runSource";
 
 const quizPath = (quizId: string) => ({ params: { path: { quiz_id: quizId } } });
 
@@ -22,9 +23,12 @@ export async function fetchQuizzes(programId: string, signal?: AbortSignal) {
  * `POST /modules/{id}/quiz` : prépare le quiz du module (202) ; déjà prêt : 200 ; en préparation :
  * la même session ; en échec : relancé. Leçon pas prête : 409 `lesson_not_ready`.
  */
-export async function startQuiz(moduleId: string) {
+export async function startQuiz(moduleId: string, source?: RunSource) {
   return unwrap(
-    await api.POST("/modules/{module_id}/quiz", { params: { path: { module_id: moduleId } } }),
+    await api.POST("/modules/{module_id}/quiz", {
+      params: { path: { module_id: moduleId } },
+      headers: runSourceHeaders(source),
+    }),
   );
 }
 

@@ -125,6 +125,9 @@ function tokenHandlers(
 ) {
   return [
     http.get(`${API}/mcp/settings`, () => HttpResponse.json({ enabled: state.enabled })),
+    http.get(`${API}/mcp/relay/status`, () =>
+      HttpResponse.json({ state: "unpaired", missing_features: [] }),
+    ),
     http.put(`${API}/mcp/settings`, async ({ request }) => {
       const body = (await request.json()) as { enabled: boolean };
       seen.puts.push(body.enabled);

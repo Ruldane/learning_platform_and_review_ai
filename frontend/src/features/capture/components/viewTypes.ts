@@ -19,7 +19,7 @@ export interface JournalEntryView {
   /** Jour de l'entrée, `AAAA-MM-JJ`. */
   occurredOn: string;
   /** Session d'étude liée, pour y revenir ; `null` sinon. */
-  studySessionId: string | null;
+  studySessionPath: string | null;
   /** Élément de mémoire lié ; `null` sinon. */
   memoryItemId: string | null;
 }

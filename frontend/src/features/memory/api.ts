@@ -1,5 +1,6 @@
 import { api, apiBaseUrl } from "@/shared/api/client";
 import { unwrap } from "@/shared/api/errors";
+import { runSourceHeaders, type RunSource } from "@/shared/lib/runSource";
 import type { ItemPatch, ItemsQuery, MemoryKindView, NewItem, UploadInput } from "./types";
 
 /** Lien direct vers l'export JSON : le navigateur le télécharge, aucun appel de l'application. */
@@ -118,10 +119,11 @@ export async function uploadDocument(input: UploadInput) {
 }
 
 /** `POST /documents/{id}/learned` (202) : lance l'Archiviste, renvoie l'identifiant de session. */
-export async function markLearned(documentId: string) {
+export async function markLearned(documentId: string, source?: RunSource) {
   return unwrap(
     await api.POST("/documents/{document_id}/learned", {
       params: { path: { document_id: documentId } },
+      headers: runSourceHeaders(source),
     }),
   );
 }

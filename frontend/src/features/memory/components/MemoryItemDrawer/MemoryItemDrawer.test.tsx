@@ -99,6 +99,15 @@ describe("MemoryItemDrawer", () => {
     expect(onOpenItem).toHaveBeenCalledWith("n1");
   });
 
+  it("opens an Obsidian note linked by the synchronized document", async () => {
+    const onOpenItem = vi.fn();
+    const linkedNotes = [{ itemId: "note-obsidian", title: "Notions du dossier" }];
+    render(<MemoryItemDrawer {...base} item={detail({ linkedNotes })} onOpenItem={onOpenItem} />);
+    expect(screen.getByRole("heading", { name: "Notes liées" })).toBeVisible();
+    await userEvent.setup().click(screen.getByRole("button", { name: "Notions du dossier" }));
+    expect(onOpenItem).toHaveBeenCalledWith("note-obsidian");
+  });
+
   it("edits the item and saves an ItemEdit", async () => {
     const onSave = vi.fn();
     const user = userEvent.setup();

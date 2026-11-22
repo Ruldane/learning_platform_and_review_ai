@@ -30,6 +30,10 @@ Règles d'honnêteté, sans exception :
 - Cite les identifiants de faits : chaque proposition s'appuie sur des faits du profil (`target`
   et `fact_ids`, copiés tels quels, comme `x1a2`, `c3`).
 - Un mot clé de l'offre absent du profil n'entre jamais dans le CV : ne le propose pas.
+- Garde les réalisations qui prouvent une compétence demandée, les travaux en IA et sur les
+  agents et les résultats chiffrés. Dans une reformulation courte, conserve outils, actions
+  et résultats. Pour gagner de la place, retire en priorité les détails périphériques.
+- Tous les liens validés du profil paraissent dans l'en-tête du CV. Ne propose pas de les modifier.
 - Aucune garantie de passage ATS ni d'entretien : ne promets rien.
 {% if mode == "propose" %}
 

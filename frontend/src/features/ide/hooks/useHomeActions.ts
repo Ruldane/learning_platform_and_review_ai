@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { errorMessage } from "@/shared/api/errors";
 import { t } from "@/shared/i18n/t";
+import { useLaunchSource } from "@/shared/session-ui";
 import type { ExerciseDraft } from "../components/viewTypes";
 import { useCreateExercise, useGenerateExercise } from "./useExercises";
 import { useCreateSession } from "./useSessions";
@@ -21,6 +22,7 @@ export function useHomeActions() {
   const navigate = useNavigate();
   const createExercise = useCreateExercise();
   const generate = useGenerateExercise();
+  const provider = useLaunchSource();
   const createSession = useCreateSession();
   const [notice, setNotice] = useState<string | null>(null);
   const [openError, setOpenError] = useState<string | null>(null);
@@ -58,8 +60,9 @@ export function useHomeActions() {
     open,
     generate: (topic: string, level: "beginner" | "intermediate" | "advanced") => {
       setNotice(null);
-      generate.mutate({ topic, level });
+      generate.mutate({ body: { topic, level }, source: provider.source });
     },
+    launchMenu: provider.menu,
     generated: generate.data ?? null,
     creating: createExercise.isPending,
     generating: generate.isPending,

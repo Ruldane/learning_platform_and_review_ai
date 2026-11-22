@@ -1,13 +1,14 @@
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { errorMessage } from "@/shared/api/errors";
+import type { RunSource } from "@/shared/lib/runSource";
 import { validateGap } from "../api";
 
 /** « Je les maîtrise déjà » : prépare le quiz de validation puis ouvre sa page. */
-export function useValidateGap(postingId: string) {
+export function useValidateGap(postingId: string, provider?: RunSource) {
   const navigate = useNavigate();
   const mutation = useMutation({
-    mutationFn: (skills: string[]) => validateGap(postingId, skills),
+    mutationFn: (skills: string[]) => validateGap(postingId, skills, provider),
     onSuccess: (started) => void navigate(`/etudier/quiz/${started.quiz_id}`),
   });
   return {

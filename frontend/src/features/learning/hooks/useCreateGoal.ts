@@ -1,3 +1,4 @@
+import { useLaunchSource } from "@/shared/session-ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { errorMessage } from "@/shared/api/errors";
@@ -13,10 +14,11 @@ export const councilPath = (goalId: string) => `/apprendre/objectifs/${goalId}/c
  * rendu amorce le cache : la page du Conseil s'ouvre sans attendre une seconde lecture.
  */
 export function useCreateGoal() {
+  const launch = useLaunchSource();
   const client = useQueryClient();
   const navigate = useNavigate();
   const mutation = useMutation({
-    mutationFn: (input: GoalInput) => createGoal(input),
+    mutationFn: (input: GoalInput) => createGoal(input, launch.source),
     onSuccess: ({ goal }) => {
       client.setQueryData(learningKeys.goal(goal.id), goal);
       void client.invalidateQueries({ queryKey: learningKeys.goals });
@@ -25,6 +27,7 @@ export function useCreateGoal() {
   });
   return {
     create: mutation.mutate,
+    launchMenu: launch.menu,
     pending: mutation.isPending,
     error: mutation.error ? errorMessage(mutation.error) : null,
   };

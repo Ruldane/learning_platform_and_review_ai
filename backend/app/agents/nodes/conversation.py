@@ -1,3 +1,4 @@
+import re
 from collections.abc import Sequence
 from typing import Any, Protocol, TypedDict
 from uuid import UUID
@@ -10,9 +11,12 @@ from app.agents.runtime.invoke import message_text, node_timeout
 from app.agents.runtime.played_model import refresh_updated_brief
 from app.agents.runtime.speech import CitationEntry, extract_citations, speak
 from app.agents.tools.conversation_port import (
-    LESSON_PROFESSOR,
+    BRAIN_LIBRARIAN,
+    TRAINING_TUTOR,
     TURN_TOKEN_LIMIT,
     ConversationContext,
+    ConversationPractice,
+    ConversationReference,
     ConversationSource,
 )
 from app.core.errors import AppError
@@ -25,6 +29,10 @@ MAX_INPUT_BYTES = 8_800
 MAX_OUTPUT_TOKENS = 2_800
 TOKEN_OVERHEAD = 400
 MIN_OUTPUT_TOKENS = 300
+_REVISION = re.compile(
+    r"^À revoir\s+\[(\d{1,2})]\s*:\s*(.{1,500}?)\s*→\s*(.{1,1000})$",
+    re.MULTILINE,
+)
 
 
 class ConversationState(TypedDict, total=False):
@@ -32,6 +40,8 @@ class ConversationState(TypedDict, total=False):
     turn_id: str
     answer: str
     sources: list[dict[str, Any]]
+    practice: list[dict[str, Any]]
+    context_notes: dict[str, str] | None
     summary: str
 
 
@@ -39,7 +49,7 @@ class Node(Protocol):
     async def __call__(self, state: ConversationState) -> ConversationState: ...
 
 
-async def _memory_sources(deps: GraphDeps, question: str) -> list[ConversationSource]:
+async def _memory_sources(deps: GraphDeps, question: str) -> list[ConversationReference]:
     try:
         memory = await deps.memory.search(
             deps.user_id,
@@ -57,38 +67,51 @@ async def _memory_sources(deps: GraphDeps, question: str) -> list[ConversationSo
             sources[hit.item_id] = ConversationSource(
                 kind="memory", id=UUID(hit.item_id), title=hit.title, excerpt=hit.text[:MAX_EXCERPT]
             )
-    return list(sources.values())
+    return [ConversationReference(source, source.excerpt or "") for source in sources.values()]
 
 
 def _fit(text: str, limit: int) -> str:
     return text.encode()[: max(0, limit)].decode(errors="ignore")
 
 
+def _catalog_text(refs: Sequence[ConversationReference], limit: int) -> str:
+    def render(bodies: list[str]) -> str:
+        return "\n\n".join(
+            f"[{index}] {untrusted(_fit(ref.source.title, 200) + '\n' + body, 'référence')}"
+            for index, (ref, body) in enumerate(zip(refs, bodies, strict=True), 1)
+        )
+
+    bodies = ["" if r.primary else _fit(r.material, 160) for r in refs]
+    local_count = sum(r.primary for r in refs)
+    if not local_count:
+        return render(bodies)
+    room = max(0, limit - len(render(bodies).encode())) // local_count
+    return render(
+        [
+            _fit(ref.material, room) if ref.primary else body
+            for ref, body in zip(refs, bodies, strict=True)
+        ]
+    )
+
+
 def _messages(
-    context: ConversationContext, memory: Sequence[ConversationSource]
+    context: ConversationContext, refs: Sequence[ConversationReference]
 ) -> list[BaseMessage]:
     history = "\n".join(
         f"Question : {turn.question}\nRéponse : {turn.answer}" for turn in context.history
     )
     history = history.encode()[-650:].decode(errors="ignore")
-    other_sources = "\n\n".join(
-        f"[{index}] {untrusted(_fit(f'{source.title}\n{source.excerpt or ""}', 220), 'référence')}"
-        for index, source in enumerate(memory, 2)
-    )
-    selection = untrusted(_fit(context.source.excerpt or "", 1200), "passage sélectionné")
+    selection = untrusted(_fit(context.selection or "", 1200), "passage sélectionné")
     suffix = (
-        f"\n\n{other_sources}\n\n"
-        f"Échanges précédents :\n{untrusted(history, 'conversation')}\n\n"
+        f"\n\nÉchanges précédents :\n{untrusted(history, 'conversation')}\n\n"
         f"Passage sélectionné :\n{selection}\n\n"
         f"Question actuelle :\n{_fit(context.question, 2400)}"
     )
-    system = render_prompt(LESSON_PROFESSOR)
-    prefix = "Références :\n[1] "
-    title = _fit(context.source.title, 250) + "\n"
-    fixed = len((system + prefix + untrusted(title, "référence") + suffix).encode())
-    material = _fit(context.material, MAX_INPUT_BYTES - fixed)
-    lesson = untrusted(title + material, "référence")
-    return [SystemMessage(system), HumanMessage(prefix + lesson + suffix)]
+    system = render_prompt(context.agent, mode=context.mode)
+    prefix = "Références :\n"
+    fixed = len((system + prefix + suffix).encode())
+    catalog = _catalog_text(refs, MAX_INPUT_BYTES - fixed)
+    return [SystemMessage(system), HumanMessage(prefix + catalog + suffix)]
 
 
 def _output_budget(
@@ -104,6 +127,22 @@ def _output_budget(
     return min(MAX_OUTPUT_TOKENS, available)
 
 
+def _practice_of(answer: str, sources: list[ConversationSource]) -> list[dict[str, Any]]:
+    practice = []
+    for match in _REVISION.finditer(answer):
+        raw, front, back = match.groups()
+        index = int(raw) - 1
+        if 0 <= index < len(sources) and sources[index].kind == "lesson":
+            card = ConversationPractice(
+                lesson_id=sources[index].id, front=front.strip(), back=back.strip()
+            )
+            if card.front and card.back:
+                practice.append(card.model_dump(mode="json"))
+        if len(practice) == 3:
+            break
+    return practice
+
+
 def make_reply(deps: GraphDeps) -> Node:
     @node_timeout()
     async def reply(state: ConversationState) -> ConversationState:
@@ -112,12 +151,14 @@ def make_reply(deps: GraphDeps) -> Node:
         )
         if context is None:
             return {}
-        memory = await _memory_sources(deps, context.question)
-        sources = [context.source, *memory]
-        messages = _messages(context, memory)
+        refs = list(context.references)
+        if context.agent != BRAIN_LIBRARIAN:
+            refs.extend(await _memory_sources(deps, context.question))
+        sources = [reference.source for reference in refs]
+        messages = _messages(context, refs)
         max_output = _output_budget(deps, context, messages)
         model = await deps.models.get_chat_model(
-            deps.user_id, "fort" if context.strong else "rapide", agent=LESSON_PROFESSOR
+            deps.user_id, "fort" if context.strong else "rapide", agent=context.agent
         )
         catalog = [
             CitationEntry(
@@ -130,9 +171,9 @@ def make_reply(deps: GraphDeps) -> Node:
         spoken = await speak(
             with_output_limit(refresh_updated_brief(model), max_output),
             messages,
-            agent=LESSON_PROFESSOR,
+            agent=context.agent,
             step="reponse",
-            intent="J'explique la leçon.",
+            intent="Je t'accompagne dans ton étude.",
             catalog=catalog,
             max_words=600,
             retry=False,
@@ -144,6 +185,8 @@ def make_reply(deps: GraphDeps) -> Node:
                 sources[c.index - 1].model_dump(mode="json")
                 for c in extract_citations(answer, catalog)
             ],
+            "practice": _practice_of(answer, sources) if context.agent == TRAINING_TUTOR else [],
+            "context_notes": context.context_notes,
         }
 
     return reply
@@ -159,7 +202,11 @@ def make_save(deps: GraphDeps) -> Node:
                 state["turn_id"],
                 answer=state["answer"],
                 sources=[ConversationSource.model_validate(source) for source in state["sources"]],
+                practice=[
+                    ConversationPractice.model_validate(card) for card in state.get("practice", [])
+                ],
+                context_notes=state.get("context_notes"),
             )
-        return {"summary": "Réponse du Professeur enregistrée."}
+        return {"summary": "Réponse enregistrée."}
 
     return save

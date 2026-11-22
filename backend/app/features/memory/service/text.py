@@ -70,12 +70,13 @@ def chunk_text(
     return chunks
 
 
-def content_hash(kind: MemoryKind, title: str, text: str) -> str:
+def content_hash(kind: MemoryKind, title: str, text: str, *, document_id: str | None = None) -> str:
     """Empreinte anti doublon d'un élément : un acquis se reconnaît à son titre, les autres
     types à leur texte ; casse et espaces ne comptent pas."""
     basis = title if kind == "acquis" else text
     normalized = _SPACES.sub(" ", basis.casefold()).strip()
-    return hashlib.sha256(f"{kind}\n{normalized}".encode()).hexdigest()
+    scope = kind if document_id is None else f"{kind}:{document_id}"
+    return hashlib.sha256(f"{scope}\n{normalized}".encode()).hexdigest()
 
 
 def source_hash(data: bytes) -> str:

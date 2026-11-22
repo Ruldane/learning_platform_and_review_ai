@@ -414,6 +414,201 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/brain/conversation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Conversation */
+        get: operations["read_conversation_api_v1_brain_conversation_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/brain/conversation/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Message */
+        post: operations["message_api_v1_brain_conversation_messages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/brain/folders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Folders */
+        get: operations["list_folders_api_v1_brain_folders_get"];
+        put?: never;
+        /** Add Folder */
+        post: operations["add_folder_api_v1_brain_folders_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/brain/folders/{folder_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Folder */
+        delete: operations["delete_folder_api_v1_brain_folders__folder_id__delete"];
+        options?: never;
+        head?: never;
+        /** Patch Folder */
+        patch: operations["patch_folder_api_v1_brain_folders__folder_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/brain/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Status View
+         * @description État de synchronisation des dossiers, sans chemins locaux ni fichiers individuels.
+         */
+        get: operations["status_view_api_v1_brain_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/brain/sync-token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Sync Token
+         * @description Crée le jeton du relais et invalide le précédent. La valeur n'est rendue qu'une fois.
+         */
+        post: operations["create_sync_token_api_v1_brain_sync_token_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/brain/sync/folders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sync Folders */
+        get: operations["sync_folders_api_v1_brain_sync_folders_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/brain/sync/folders/{folder_id}/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sync File */
+        post: operations["sync_file_api_v1_brain_sync_folders__folder_id__files_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/brain/sync/folders/{folder_id}/inventory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sync Inventory */
+        get: operations["sync_inventory_api_v1_brain_sync_folders__folder_id__inventory_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/brain/sync/folders/{folder_id}/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sync Remove */
+        post: operations["sync_remove_api_v1_brain_sync_folders__folder_id__remove_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/brain/sync/folders/{folder_id}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sync Report */
+        post: operations["sync_report_api_v1_brain_sync_folders__folder_id__report_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/brief/today": {
         parameters: {
             query?: never;
@@ -1694,6 +1889,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/mcp/relay/exchange": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Exchange Pairing
+         * @description Échange par le relais local. Le code désigne le compte, indépendamment des cookies.
+         */
+        post: operations["exchange_pairing_api_v1_mcp_relay_exchange_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/relay/pairing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Pairing
+         * @description Démarre l'appairage du relais du compte connecté.
+         */
+        post: operations["start_pairing_api_v1_mcp_relay_pairing_post"];
+        /**
+         * Revoke Pairing
+         * @description Annule un code en attente et révoque le jeton dédié du relais.
+         */
+        delete: operations["revoke_pairing_api_v1_mcp_relay_pairing_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/relay/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Pairing Status
+         * @description État de l'appairage et portées manquantes du compte connecté.
+         */
+        get: operations["pairing_status_api_v1_mcp_relay_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/mcp/settings": {
         parameters: {
             query?: never;
@@ -2101,11 +2360,10 @@ export interface paths {
         put?: never;
         /**
          * Post Gap Plan
-         * @description « Ajouter au planning » : lance une replanification du programme validé le plus récent,
-         *     ajouts seuls (module « Compétences des offres »), proposée à January avant toute écriture.
-         *     422 `gap_skill_unknown` (`details.fields` : `skills.{rang}`, sans valeur) si une compétence
-         *     n'est pas une ligne `to_add` de l'écart ; 409 `no_program` ; 409 `replan_open`
-         *     (`details.session_id`) si une replanification est déjà ouverte.
+         * @description Propose les ajouts au programme validé choisi, par défaut le plus récent.
+         *
+         *     422 `gap_skill_unknown` si une ligne ne peut pas être ajoutée. 404 `program_not_found`,
+         *     409 `program_not_validated`, `no_program` ou `replan_open` suivant le programme.
          */
         post: operations["post_gap_plan_api_v1_postings__posting_id__gap_plan_post"];
         delete?: never;
@@ -3329,6 +3587,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/study-sessions/training": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start */
+        post: operations["start_api_v1_study_sessions_training_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/study-sessions/training/open": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Opened */
+        get: operations["opened_api_v1_study_sessions_training_open_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/study-sessions/training/{study_session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read */
+        get: operations["read_api_v1_study_sessions_training__study_session_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update */
+        patch: operations["update_api_v1_study_sessions_training__study_session_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/study-sessions/training/{study_session_id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Message */
+        post: operations["message_api_v1_study_sessions_training__study_session_id__messages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/study-sessions/{study_session_id}": {
         parameters: {
             query?: never;
@@ -4199,6 +4526,15 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** Body_sync_file_api_v1_brain_sync_folders__folder_id__files_post */
+        Body_sync_file_api_v1_brain_sync_folders__folder_id__files_post: {
+            /** File */
+            file: string;
+            /** Path */
+            path: string;
+            /** Sha256 */
+            sha256: string;
+        };
         /**
          * BraveUsageOut
          * @description Requêtes Brave du mois civil UTC (`month` : « AAAA-MM ») pour la clé en vigueur.
@@ -4547,6 +4883,32 @@ export interface components {
             passage?: string | null;
             /** Passage Occurrence */
             passage_occurrence?: number | null;
+            /** Question */
+            question: string;
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /**
+             * Strong
+             * @default false
+             */
+            strong: boolean;
+        };
+        /** ConversationOut */
+        ConversationOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Turns */
+            turns: components["schemas"]["ConversationTurnOut"][];
+            usage: components["schemas"]["ConversationUsage"];
+        };
+        /** ConversationQuestionIn */
+        ConversationQuestionIn: {
             /** Question */
             question: string;
             /**
@@ -5262,6 +5624,22 @@ export interface components {
             /** Start */
             start?: string | null;
         };
+        /** FileOut */
+        FileOut: {
+            /** Document Id */
+            document_id: string;
+            /** Path */
+            path: string;
+            /** Sha256 */
+            sha256: string;
+            /** Size */
+            size: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "queued" | "processing" | "indexed" | "error";
+        };
         /**
          * FilesPutIn
          * @description Enregistre les fichiers de la séance. Interface : remplace tous les fichiers. Claude (MCP,
@@ -5296,6 +5674,62 @@ export interface components {
             id: string;
             /** Skill */
             skill: string | null;
+        };
+        /** FolderIn */
+        FolderIn: {
+            /** Name */
+            name: string;
+            /** Path */
+            path: string;
+            /**
+             * Paused
+             * @default false
+             */
+            paused: boolean;
+        };
+        /** FolderOut */
+        FolderOut: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Path */
+            path: string;
+            /** Paused */
+            paused: boolean;
+            /** Revision */
+            revision: number;
+        };
+        /** FolderPatch */
+        FolderPatch: {
+            /** Name */
+            name?: string | null;
+            /** Path */
+            path?: string | null;
+            /** Paused */
+            paused?: boolean | null;
+        };
+        /** FolderStatus */
+        FolderStatus: {
+            /** Error */
+            error: number;
+            /** Id */
+            id: string;
+            /** Indexed */
+            indexed: number;
+            /** Name */
+            name: string;
+            /** Paused */
+            paused: boolean;
+            /** Processing */
+            processing: number;
+            /** Queued */
+            queued: number;
+            report: components["schemas"]["ReportOut"] | null;
+            /** Revision */
+            revision: number;
+            /** Total */
+            total: number;
         };
         /** FollowupOut */
         FollowupOut: {
@@ -5387,6 +5821,11 @@ export interface components {
             source: "posting" | "cv_review";
             /** Week */
             week: number | null;
+        };
+        /** GapSkillsIn */
+        GapSkillsIn: {
+            /** Skills */
+            skills: string[];
         };
         /** GapStarted */
         GapStarted: {
@@ -5556,6 +5995,54 @@ export interface components {
             name: string;
             /** Phone */
             phone?: string | null;
+        };
+        /** IgnoredCounts */
+        IgnoredCounts: {
+            /**
+             * Binary
+             * @default 0
+             */
+            binary: number;
+            /**
+             * Changed
+             * @default 0
+             */
+            changed: number;
+            /**
+             * Extension
+             * @default 0
+             */
+            extension: number;
+            /**
+             * Link
+             * @default 0
+             */
+            link: number;
+            /**
+             * Path
+             * @default 0
+             */
+            path: number;
+            /**
+             * Special
+             * @default 0
+             */
+            special: number;
+            /**
+             * Technical
+             * @default 0
+             */
+            technical: number;
+            /**
+             * Toolarge
+             * @default 0
+             */
+            tooLarge: number;
+            /**
+             * Unreadable
+             * @default 0
+             */
+            unreadable: number;
         };
         /**
          * IndicatorsOut
@@ -5743,6 +6230,11 @@ export interface components {
             /** Session Id */
             session_id: string;
         };
+        /** InventoryOut */
+        InventoryOut: {
+            /** Files */
+            files: components["schemas"]["FileOut"][];
+        };
         /** JournalEntryOut */
         JournalEntryOut: {
             /**
@@ -5776,6 +6268,8 @@ export interface components {
             session_id: string | null;
             /** Study Session Id */
             study_session_id: string | null;
+            /** Study Session Kind */
+            study_session_kind?: ("guided" | "training") | null;
         };
         /**
          * JournalPage
@@ -6095,6 +6589,13 @@ export interface components {
             sources?: ("cv" | "linkedin" | "note" | "january")[];
             /** Url */
             url: string;
+        };
+        /** LinkedNoteOut */
+        LinkedNoteOut: {
+            /** Item Id */
+            item_id: string;
+            /** Title */
+            title: string;
         };
         /** MapPoint */
         MapPoint: {
@@ -6500,6 +7001,8 @@ export interface components {
             lang: string | null;
             /** Level */
             level: ("declare" | "en_cours" | "valide" | "prouve") | null;
+            /** Linked Notes */
+            linked_notes?: components["schemas"]["LinkedNoteOut"][];
             /** Neighbors */
             neighbors: components["schemas"]["NeighborOut"][];
             /** Reason */
@@ -7028,9 +7531,11 @@ export interface components {
         };
         /**
          * PlanGapIn
-         * @description « Ajouter au planning » : des noms de lignes `to_add` de l'écart de l'offre.
+         * @description Lignes « À ajouter » ou « Hors périmètre » et programme validé choisi.
          */
         PlanGapIn: {
+            /** Program Id */
+            program_id?: string | null;
             /** Skills */
             skills: string[];
         };
@@ -8136,6 +8641,26 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** RelayCode */
+        RelayCode: {
+            /** Code */
+            code: string;
+        };
+        /** RelayStatus */
+        RelayStatus: {
+            /** Missing Features */
+            missing_features?: string[];
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "unpaired" | "pending" | "paired" | "incomplete" | "expired" | "revoked" | "disabled";
+        };
+        /** RelayToken */
+        RelayToken: {
+            /** Token */
+            token: string;
+        };
         /** ReminderItem */
         ReminderItem: {
             /** Application Id */
@@ -8219,6 +8744,11 @@ export interface components {
             /** Items */
             items: components["schemas"]["ReminderItem"][];
         };
+        /** RemoveIn */
+        RemoveIn: {
+            /** Path */
+            path: string;
+        };
         /** ReplanRequest */
         ReplanRequest: {
             /** Available Minutes */
@@ -8230,6 +8760,49 @@ export interface components {
         ReplanStarted: {
             /** Session Id */
             session_id: string;
+        };
+        /** ReportIn */
+        ReportIn: {
+            /** Added */
+            added: number;
+            /** Changed */
+            changed: number;
+            /** Errors */
+            errors: number;
+            ignored: components["schemas"]["IgnoredCounts"];
+            /** Removed */
+            removed: number;
+            /** Scanned */
+            scanned: number;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "syncing" | "done" | "incomplete";
+        };
+        /** ReportOut */
+        ReportOut: {
+            /** Added */
+            added: number;
+            /** Changed */
+            changed: number;
+            /** Errors */
+            errors: number;
+            ignored: components["schemas"]["IgnoredCounts"];
+            /** Removed */
+            removed: number;
+            /**
+             * Reported At
+             * Format: date-time
+             */
+            reported_at: string;
+            /** Scanned */
+            scanned: number;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "syncing" | "done" | "incomplete";
         };
         /** RequirementIn */
         RequirementIn: {
@@ -9193,6 +9766,11 @@ export interface components {
             /** Screenshots */
             screenshots: number;
         };
+        /** SyncTokenOut */
+        SyncTokenOut: {
+            /** Token */
+            token: string;
+        };
         /** TaskCreate */
         TaskCreate: {
             /** Done Criterion */
@@ -9476,6 +10054,82 @@ export interface components {
             required_in: number;
             /** Skill */
             skill: string;
+        };
+        /** TrainingCancel */
+        TrainingCancel: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            action: "cancel";
+        };
+        /** TrainingFinish */
+        TrainingFinish: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            action: "finish";
+            /** Worked Minutes */
+            worked_minutes?: number | null;
+        };
+        /** TrainingModeUpdate */
+        TrainingModeUpdate: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            action: "mode";
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "socratic" | "feynman" | "direct";
+        };
+        /** TrainingSessionOut */
+        TrainingSessionOut: {
+            conversation: components["schemas"]["ConversationOut"];
+            /** Ended At */
+            ended_at: string | null;
+            /** Flashcards Created */
+            flashcards_created: number;
+            /** Greeting */
+            greeting: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Minutes */
+            minutes: number;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "socratic" | "feynman" | "direct";
+            /** Skills */
+            skills: components["schemas"]["SkillLevelOut"][];
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "finished" | "cancelled";
+            /** Summary */
+            summary: string | null;
+        };
+        /** TrainingStart */
+        TrainingStart: {
+            /**
+             * Mode
+             * @default socratic
+             * @enum {string}
+             */
+            mode: "socratic" | "feynman" | "direct";
         };
         /**
          * TrendOut
@@ -10756,6 +11410,376 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["BoardOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_conversation_api_v1_brain_conversation_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationOut"] | null;
+                };
+            };
+        };
+    };
+    message_api_v1_brain_conversation_messages_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConversationQuestionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_folders_api_v1_brain_folders_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FolderOut"][];
+                };
+            };
+        };
+    };
+    add_folder_api_v1_brain_folders_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FolderIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FolderOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_folder_api_v1_brain_folders__folder_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                folder_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_folder_api_v1_brain_folders__folder_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                folder_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FolderPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FolderOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    status_view_api_v1_brain_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FolderStatus"][];
+                };
+            };
+        };
+    };
+    create_sync_token_api_v1_brain_sync_token_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncTokenOut"];
+                };
+            };
+        };
+    };
+    sync_folders_api_v1_brain_sync_folders_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FolderOut"][];
+                };
+            };
+        };
+    };
+    sync_file_api_v1_brain_sync_folders__folder_id__files_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Tremplin-Folder-Revision": number;
+            };
+            path: {
+                folder_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_sync_file_api_v1_brain_sync_folders__folder_id__files_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sync_inventory_api_v1_brain_sync_folders__folder_id__inventory_get: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Tremplin-Folder-Revision": number;
+            };
+            path: {
+                folder_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sync_remove_api_v1_brain_sync_folders__folder_id__remove_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Tremplin-Folder-Revision": number;
+            };
+            path: {
+                folder_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RemoveIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sync_report_api_v1_brain_sync_folders__folder_id__report_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Tremplin-Folder-Revision": number;
+            };
+            path: {
+                folder_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -13421,6 +14445,97 @@ export interface operations {
             };
         };
     };
+    exchange_pairing_api_v1_mcp_relay_exchange_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RelayCode"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RelayToken"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_pairing_api_v1_mcp_relay_pairing_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RelayCode"];
+                };
+            };
+        };
+    };
+    revoke_pairing_api_v1_mcp_relay_pairing_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    pairing_status_api_v1_mcp_relay_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RelayStatus"];
+                };
+            };
+        };
+    };
     get_settings_api_v1_mcp_settings_get: {
         parameters: {
             query?: never;
@@ -14367,7 +15482,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PlanGapIn"];
+                "application/json": components["schemas"]["GapSkillsIn"];
             };
         };
         responses: {
@@ -16848,6 +17963,169 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StudySummaryOut"];
+                };
+            };
+        };
+    };
+    start_api_v1_study_sessions_training_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrainingStart"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingSessionOut"];
+                };
+            };
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingSessionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    opened_api_v1_study_sessions_training_open_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingSessionOut"] | null;
+                };
+            };
+        };
+    };
+    read_api_v1_study_sessions_training__study_session_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingSessionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_api_v1_study_sessions_training__study_session_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrainingModeUpdate"] | components["schemas"]["TrainingFinish"] | components["schemas"]["TrainingCancel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingSessionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    message_api_v1_study_sessions_training__study_session_id__messages_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConversationQuestionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

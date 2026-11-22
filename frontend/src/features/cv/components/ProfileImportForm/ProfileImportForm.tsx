@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 import { InlineError } from "@/shared/ui/states/InlineError";
@@ -8,6 +8,7 @@ import { PdfField } from "./PdfField";
 
 interface ProfileImportFormProps {
   pending: boolean;
+  launchMenu?: ReactNode;
   /** Message d'échec de l'envoi, déjà en français. */
   error: string | null;
   onSubmit: (documents: ProfileImportView) => void;
@@ -18,7 +19,12 @@ interface ProfileImportFormProps {
  * LinkedIn en PDF et une note (facultatifs). Un fichier qui n'est pas un PDF, ou de plus de 10 Mo,
  * est refusé tout de suite avec son message ; rien ne part tant que le CV manque.
  */
-export function ProfileImportForm({ pending, error, onSubmit }: ProfileImportFormProps) {
+export function ProfileImportForm({
+  pending,
+  error,
+  onSubmit,
+  launchMenu,
+}: ProfileImportFormProps) {
   const [cv, setCv] = useState<File | null>(null);
   const [linkedin, setLinkedin] = useState<File | null>(null);
   const [note, setNote] = useState("");
@@ -47,6 +53,7 @@ export function ProfileImportForm({ pending, error, onSubmit }: ProfileImportFor
       <PdfField label={t("cv.import.linkedinLabel")} disabled={pending} onPick={setLinkedin} />
       <NoteField value={note} disabled={pending} onChange={setNote} />
       {error ? <InlineError message={error} /> : null}
+      {launchMenu}
       <Button type="submit" className="self-start" disabled={pending || cv === null}>
         {pending ? t("cv.import.pending") : t("cv.import.submit")}
       </Button>

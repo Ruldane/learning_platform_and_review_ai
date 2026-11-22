@@ -34,7 +34,7 @@ class AgentStudyStore:
     async def context(self, user_id: str, study_session_id: str) -> StudyContext:
         async with self._rt.session_factory() as db:
             row = await StudyRepository(db, user_id).get_fresh(study_session_id)
-            if row is None:
+            if row is None or row.kind != "guided":
                 raise study_not_found()
             reads = StudyReadRepository(db, user_id)
             lesson = await reads.lesson(row.lesson_id)

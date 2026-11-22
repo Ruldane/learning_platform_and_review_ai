@@ -38,6 +38,10 @@ export function isAddable(row: GapRowView): boolean {
   return row.action === "to_add" && row.level !== "valide" && row.level !== "prouve";
 }
 
+export function canPlan(row: GapRowView): boolean {
+  return isAddable(row) || row.action === "out_of_scope";
+}
+
 export interface MissingSkillView {
   skill: string;
   /** Nombre d'offres où la compétence manque. */

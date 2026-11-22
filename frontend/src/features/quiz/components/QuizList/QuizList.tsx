@@ -1,3 +1,4 @@
+import type { RunSource } from "@/shared/lib/runSource";
 import { t } from "@/shared/i18n/t";
 import { EmptyState } from "@/shared/ui/states/EmptyState";
 import type { QuizSummaryView } from "../viewTypes";
@@ -5,7 +6,7 @@ import { QuizItem } from "./QuizItem";
 
 interface QuizListProps {
   items: QuizSummaryView[];
-  onPrepare: (moduleId: string) => void;
+  onPrepare: (moduleId: string, source?: RunSource) => void;
   onOpen: (quizId: string) => void;
   /** Le module dont le quiz se prépare : son bouton ne se déclenche pas deux fois. */
   pendingModuleId?: string | null;

@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useId, type ReactNode } from "react";
 import { t } from "@/shared/i18n/t";
 import type { ExerciseDraft, GenerateDraft } from "../viewTypes";
 import { GenerateExerciseForm } from "./GenerateExerciseForm";
@@ -7,6 +7,7 @@ import { ManualExerciseForm } from "./ManualExerciseForm";
 interface ExerciseFormProps {
   creating: boolean;
   generating: boolean;
+  launchMenu?: ReactNode;
   /** Un message de réussite (« Exercice ajouté. »), annoncé sans prendre le focus. */
   notice: string | null;
   /** L'erreur du serveur, en français. */
@@ -21,7 +22,7 @@ interface ExerciseFormProps {
  */
 export function ExerciseForm(props: ExerciseFormProps) {
   const headingId = useId();
-  const { creating, generating, notice, error, onCreate, onGenerate } = props;
+  const { creating, generating, notice, error, onCreate, onGenerate, launchMenu } = props;
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-4">
       <h2 id={headingId} className="text-lg font-medium">
@@ -29,7 +30,11 @@ export function ExerciseForm(props: ExerciseFormProps) {
       </h2>
       <div className="grid gap-6 lg:grid-cols-2">
         <ManualExerciseForm pending={creating} onCreate={onCreate} />
-        <GenerateExerciseForm pending={generating} onGenerate={onGenerate} />
+        <GenerateExerciseForm
+          pending={generating}
+          onGenerate={onGenerate}
+          launchMenu={launchMenu}
+        />
       </div>
       <p role="status" className="text-sm">
         {notice}
