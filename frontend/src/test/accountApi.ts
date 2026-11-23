@@ -8,7 +8,8 @@ interface AccountApiOptions {
    * renvoie jamais la saisie), `down` (500), `wrong-code` (422 d'un autre code), `unavailable`
    * (503 `vector_store_unavailable`, avant toute suppression), `expired` (401) ou `network`.
    */
-  delete?: "ok" | "refused" | "down" | "wrong-code" | "unavailable" | "expired" | "network";
+  delete?:
+    "ok" | "pending" | "refused" | "down" | "wrong-code" | "unavailable" | "expired" | "network";
   /** Tient la réponse de la suppression jusqu'à l'ouverture de la porte. */
   gate?: Promise<void>;
   /** Reçoit « delete » quand la suppression arrive : pour l'ordre des appels. */
@@ -24,6 +25,8 @@ export function accountApi(options: AccountApiOptions = {}) {
       options.order?.push("delete");
       await options.gate;
       switch (options.delete ?? "ok") {
+        case "pending":
+          return new HttpResponse(null, { status: 202, headers: { "Content-Length": "0" } });
         case "refused":
           return HttpResponse.json(
             errorBody("confirmation_required", "La confirmation n'est pas exacte.", {

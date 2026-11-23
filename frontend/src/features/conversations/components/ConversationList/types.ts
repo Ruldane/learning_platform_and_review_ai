@@ -9,6 +9,9 @@ export type ConversationListAction =
 export interface ListProps {
   heading?: "h2" | "h3";
   entries: Entry[];
+  visibleEntries: Entry[];
+  search: string;
+  onSearch: (search: string) => void;
   selected: string | null;
   pending: boolean;
   busy: boolean;

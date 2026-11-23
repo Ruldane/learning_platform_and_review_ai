@@ -145,16 +145,28 @@ def clean_text(text: str) -> str:
 def figures_in(text: str) -> set[str]:
     """Les nombres de `text` (`numbers_in`) et ceux écrits en lettres (« trente pour cent » →
     « 30% », « dizaines »), sous forme canonique."""
-    clean = clean_text(text)
-    found = numbers_in(clean)
-    tokens = normalize_term(clean).split()
-    for rank, token in enumerate(tokens):
+    return {value for _, _, value in figure_spans(clean_text(text))}
+
+
+def figure_spans(clean: str) -> list[tuple[int, int, str]]:
+    """Positions et formes canoniques des nombres dans un texte passé par `clean_text`."""
+    found = [
+        (match.start(), match.end(), value)
+        for match in _NUMBER.finditer(clean)
+        if (value := _canonical(match)) is not None
+    ]
+    words = list(re.finditer(r"(?:[^\W_]|[+#])+", clean))
+    tokens = [normalize_term(word.group()) for word in words]
+    for rank, (word, token) in enumerate(zip(words, tokens, strict=True)):
         figure = NUMBER_WORDS.get(token)
         if figure is None or (token == "cent" and rank and tokens[rank - 1] in ("pour", "per")):
             continue
         after = tokens[rank + 1 : rank + 3]
-        found.add(f"{figure}%" if after in _PERCENT_NEXT or after[:1] == ["percent"] else figure)
-    return found
+        percent_words = 2 if after in _PERCENT_NEXT else int(after[:1] == ["percent"])
+        if percent_words:
+            figure += "%"
+        found.append((word.start(), words[rank + percent_words].end(), figure))
+    return sorted(found)
 
 
 def ratio_families(text: str) -> set[str]:

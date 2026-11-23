@@ -8,13 +8,17 @@ from typing import Any
 import httpx
 import pytest
 
+from app.core.caller import McpIdentity
 from app.core.errors import AppError
 from app.db.models.program import Task
 from app.db.models.study import Flashcard, JournalEntry, StudySession
 from app.features.study.service.store import AgentStudyStore
+from app.mcp.dispatch import internal_request
 from tests.features.study.conftest import Seeded
 from tests.features.study.stub import StubControl
 from tests.features.study.support import count, patch, row, started, study
+from tests.mcp.adapter_support import call
+from tests.mcp.support import LOCAL, Mcp
 from tests.sessions_support import wait_status
 
 
@@ -31,6 +35,63 @@ async def _waiting(client: httpx.AsyncClient, s: Seeded, **body: Any) -> dict[st
 async def _finished(client: httpx.AsyncClient, out: dict[str, Any]) -> dict[str, Any]:
     await wait_status(client, out["session_id"], "completed")
     return await study(client, out["study_session_id"])
+
+
+@pytest.mark.parametrize(
+    ("action", "expected_status", "agent_status", "minutes"),
+    [("finish", "finished", "completed", 5), ("cancel", "cancelled", "cancelled", 0)],
+)
+async def test_mcp_updates_guided_study_only_after_confirmation(
+    client: httpx.AsyncClient,
+    tutored: Seeded,
+    action: str,
+    expected_status: str,
+    agent_status: str,
+    minutes: int,
+) -> None:
+    client.headers.update(LOCAL)
+    mcp = Mcp(client)
+    token = await mcp.token(("study",), "write")
+    out = await _waiting(client, tutored)
+    study_id = out["study_session_id"]
+    envelope, failed = await call(
+        mcp,
+        token,
+        "study_update_session",
+        {"study_session_id": study_id, "action": action, "worked_minutes": 5},
+    )
+
+    assert not failed, envelope
+    pending = envelope["data"]
+    assert pending["status"] == "pending_confirmation"
+    still_open = await row(tutored, study_id)
+    assert still_open.status == "open" and still_open.worked_minutes is None
+    await wait_status(client, out["session_id"], "waiting_user")
+    assert (await client.get("/api/v1/mcp/changes")).json() == []
+
+    result = await client.post(f"/api/v1/mcp/confirmations/{pending['confirmation_id']}/confirm")
+
+    assert result.status_code == 200 and result.json()["status"] == "confirmed", result.text
+    await wait_status(client, out["session_id"], agent_status)
+    done = await study(client, study_id)
+    assert done["status"] == expected_status and done["minutes"] == minutes
+    assert (await client.get("/api/v1/mcp/changes")).json() == []
+
+
+async def test_guided_study_route_rejects_an_unconfirmed_mcp_identity(
+    client: httpx.AsyncClient,
+    tutored: Seeded,
+) -> None:
+    out = await _waiting(client, tutored)
+    study_id = out["study_session_id"]
+    identity = McpIdentity(tutored.user_id, "test-token", "Test", frozenset({"study"}), "write")
+
+    response = await internal_request(
+        tutored.app, identity, "PATCH", f"/study-sessions/{study_id}", {}, {"action": "cancel"}
+    )
+
+    assert response.status == 403 and response.data["error"]["code"] == "mcp_gesture_forbidden"
+    assert (await study(client, study_id))["status"] == "open"
 
 
 async def test_study_port_is_wired_at_startup(

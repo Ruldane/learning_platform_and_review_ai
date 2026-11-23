@@ -12,3 +12,7 @@ export async function fetchPreferences(signal?: AbortSignal) {
 export async function savePreferences(body: LabPreferencesPatch) {
   return unwrap(await api.PATCH("/lab/preferences", { body }));
 }
+
+export async function fetchOverview(signal?: AbortSignal) {
+  return unwrap(await api.GET("/lab/overview", { signal }));
+}

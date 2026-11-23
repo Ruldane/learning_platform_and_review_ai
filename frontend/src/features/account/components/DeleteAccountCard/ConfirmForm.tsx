@@ -12,6 +12,7 @@ export interface DeleteFailure {
 }
 
 interface ConfirmFormProps {
+  consentScope?: string;
   pending: boolean;
   /** Un nouvel objet à chaque échec : le focus passe au message même pour un échec répété. */
   failure: DeleteFailure | null;
@@ -29,13 +30,16 @@ interface ConfirmFormProps {
  * disparaît dès que la saisie change.
  */
 export function ConfirmForm({
+  consentScope,
   pending,
   failure,
   explanationId,
   onDelete,
   onEdit,
 }: ConfirmFormProps) {
-  const [typed, setTyped] = useState("");
+  const [draft, setDraft] = useState({ scope: consentScope, text: "" });
+  if (draft.scope !== consentScope) setDraft({ scope: consentScope, text: "" });
+  const typed = draft.scope === consentScope ? draft.text : "";
   const messageId = useId();
   const messageRef = useFocusOnFailure(failure);
   const exact = typed === t("account.delete.word");
@@ -52,7 +56,7 @@ export function ConfirmForm({
         invalid={failure?.field === true}
         describedBy={failure ? `${explanationId} ${messageId}` : explanationId}
         onChange={(value) => {
-          setTyped(value);
+          setDraft({ scope: consentScope, text: value });
           onEdit();
         }}
       />

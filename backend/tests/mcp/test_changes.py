@@ -57,8 +57,9 @@ async def test_level2_records_insert_update_with_before_after(
     # L'appel journalisé porte le même identifiant que ses changements, et la table des changements
     # de l'interface le montre avec son outil.
     async with db_session_factory() as db:
-        call_ids = {row.id for row in (await db.execute(select(McpCall))).scalars()}
-    assert {inserted[0].call_id, updated[0].call_id} <= call_ids
+        calls = {row.id: row for row in (await db.execute(select(McpCall))).scalars()}
+    assert calls[inserted[0].call_id].ids == {"application_id": app_id}
+    assert calls[updated[0].call_id].ids == {"id": app_id}
     listed = (await amcp.http.get(f"{API}/mcp/changes")).json()
     assert {item["action"] for item in listed} == {"applications_add", "applications_update"}
     assert all("applications" in item["tables"] and item["undone_at"] is None for item in listed)

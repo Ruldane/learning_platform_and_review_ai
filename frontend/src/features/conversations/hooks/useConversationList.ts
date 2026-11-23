@@ -9,9 +9,12 @@ import {
   listThreads,
   renameThread,
   type ConversationSpace,
+  type ConversationSummary,
 } from "../threadsApi";
 
-export const listKey = (scope: ConversationSpace) => ["conversations", scope, "list"] as const;
+import { listKey, useConversationSearch } from "./useConversationSearch";
+
+export { listKey } from "./useConversationSearch";
 export const threadKey = (scope: ConversationSpace, id?: string) =>
   ["conversations", scope, "thread", id ?? "open"] as const;
 
@@ -28,6 +31,17 @@ async function apply(scope: ConversationSpace, action: ConversationListAction) {
   }
 }
 
+function updateList(
+  entries: ConversationSummary[] | undefined,
+  action: ConversationListAction,
+  updated: ConversationSummary | void,
+) {
+  if (updated) return entries?.map((entry) => (entry.id === updated.id ? updated : entry));
+  if (action.kind === "delete") return entries?.filter((entry) => entry.id !== action.id);
+  if (action.kind === "wipe") return [];
+  return entries;
+}
+
 export function useConversationList(
   scope: ConversationSpace,
   onChanged: (action: ConversationListAction) => void,
@@ -35,23 +49,18 @@ export function useConversationList(
   const client = useQueryClient();
   const newRef = useRef<HTMLButtonElement>(null);
   const key = listKey(scope);
-  const list = useQuery({ queryKey: key, queryFn: ({ signal }) => listThreads(scope, signal) });
+  const list = useQuery({
+    queryKey: key,
+    queryFn: ({ signal }) => listThreads(scope, undefined, signal),
+  });
+  const search = useConversationSearch(scope);
   const refresh = () => void client.invalidateQueries({ queryKey: key });
   const change = useMutation({
     mutationFn: (action: ConversationListAction) => apply(scope, action),
     onSuccess: (updated, action) => {
-      if (updated) {
-        client.setQueryData(
-          key,
-          list.data?.map((item) => (item.id === updated.id ? updated : item)),
-        );
-      }
-      if (action.kind === "delete" || action.kind === "wipe") {
-        client.setQueryData(
-          key,
-          action.kind === "wipe" ? [] : list.data?.filter((entry) => entry.id !== action.id),
-        );
-      }
+      client.setQueryData<ConversationSummary[]>(key, (entries) =>
+        updateList(entries, action, updated),
+      );
       onChanged(action);
       refresh();
       if (action.kind !== "rename") {
@@ -64,13 +73,17 @@ export function useConversationList(
   useEffect(() => {
     if (removed) newRef.current?.focus();
   }, [removed, change.submittedAt]);
-  const error = change.error ?? list.error;
+  const error = change.error ?? list.error ?? search.error;
   return {
     refresh,
+    listPending: list.isPending,
     sidebar: {
       newRef,
       entries: list.data ?? [],
-      pending: list.isPending,
+      visibleEntries: search.matches ?? list.data ?? [],
+      search: search.search,
+      onSearch: search.onSearch,
+      pending: list.isPending || search.pending,
       busy: change.isPending,
       error: error ? errorMessage(error) : undefined,
       onAction: change.mutate,

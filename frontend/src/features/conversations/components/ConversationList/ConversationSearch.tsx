@@ -19,6 +19,7 @@ export function ConversationSearch({
         id={id}
         className={fieldClass}
         type="search"
+        maxLength={120}
         value={value}
         onChange={(event) => onChange(event.target.value)}
       />

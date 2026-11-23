@@ -133,3 +133,27 @@ describe("TrainingPage", () => {
     expect(router.state.location.pathname).toContain(STUDY_ID);
   });
 });
+
+it("utilise la recherche du serveur tout en gardant le fil actif", async () => {
+  const current = { id: STUDY_ID, title: "Chaînes et modèles", updated_at: training.started_at };
+  const queries: string[] = [];
+  server.use(
+    http.get(`${API}/open`, () => HttpResponse.json(training)),
+    http.get(`${API}/${STUDY_ID}`, () => HttpResponse.json(training)),
+    http.get(LIST, ({ request }) => {
+      const q = new URL(request.url).searchParams.get("q");
+      if (q) queries.push(q);
+      return HttpResponse.json(q ? [] : [current]);
+    }),
+  );
+  const { user, router } = setup();
+  expect(await screen.findByRole("button", { name: "Ouvrir Chaînes et modèles" })).toBeVisible();
+  const field = screen.getByRole("searchbox", { name: "Rechercher un titre" });
+  await user.type(field, "autre");
+  await waitFor(() => expect(queries).toContain("autre"));
+  expect(await screen.findByText("Aucun titre ne correspond.")).toBeVisible();
+  expect(screen.getByRole("button", { name: "Vider la conversation" })).toBeVisible();
+  expect(router.state.location.pathname).toContain(STUDY_ID);
+  await user.clear(field);
+  expect(await screen.findByRole("button", { name: "Ouvrir Chaînes et modèles" })).toBeVisible();
+});

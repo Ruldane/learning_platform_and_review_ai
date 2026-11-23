@@ -9,9 +9,13 @@ import type { Me } from "./types";
  */
 export const exportUrl = `${apiBaseUrl}/api/v1/account/export`;
 
-/** `POST /account/delete` : 204 ; 422 `confirmation_required` si le mot n'est pas `SUPPRIMER`. */
-export async function postDeleteAccount(confirm: string) {
-  unwrap(await api.POST("/account/delete", { body: { confirm } }));
+/** Efface le compte affiché. Un 202 indique que la purge finale des vecteurs est en attente. */
+export async function postDeleteAccount(confirm: string, expectedUserId: string) {
+  unwrap(
+    await api.POST("/account/delete", {
+      body: { confirm, expected_user_id: expectedUserId },
+    }),
+  );
 }
 
 /**
@@ -27,7 +31,7 @@ export async function fetchMe(signal?: AbortSignal): Promise<Me | null> {
   }
 }
 
-/** Le compte connecté n'est plus celui qui était affiché : rien n'a été envoyé. */
+/** Le compte connecté n'est plus celui qui était affiché : aucune suppression n'a démarré. */
 export class AccountChangedError extends Error {
   constructor() {
     super("account_changed");

@@ -6,8 +6,8 @@ déclare dans le modèle**, là où la colonne naît : `info={"export": False}` 
 (`api_keys.encrypted_key`) ou sur la table (`__table_args__ = {"info": {"export": False}}`,
 `auth_sessions`). Une garde (`unreviewed_secret_columns`) force cette décision pour toute colonne
 dont le nom évoque un secret (limite : un secret rangé dans une colonne JSON n'a pas de nom à
-repérer, seule la revue le voit, D185 n° 10 b). « Tout supprimer » n'exclut rien :
-`all_user_tables`."""
+repérer, seule la revue le voit, D185 n° 10 b). `all_user_tables` recense les tables à effacer et
+la file technique qui termine la purge de l'ancien compte Google."""
 
 import base64
 import re
@@ -92,8 +92,7 @@ def _exported(info: Mapping[Any, Any]) -> bool:
 
 
 def all_user_tables() -> list[Table]:
-    """Toutes les tables qui ont une colonne `user_id`, **sans exception**, dans l'ordre des
-    dépendances : ce que « Tout supprimer » vide (`auth_sessions` comprise)."""
+    """Toutes les tables qui ont une colonne `user_id`, dans l'ordre des dépendances."""
     return [table for table in Base.metadata.sorted_tables if "user_id" in table.c]
 
 

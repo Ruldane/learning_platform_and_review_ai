@@ -18,6 +18,8 @@ export const account = {
   },
   delete: {
     title: "Tout supprimer",
+    identity: "Compte à effacer : {account}",
+    localIdentity: "espace local de cet ordinateur",
     warning: "Cette action est irréversible.",
     scope:
       "Elle efface tout ce que Tremplin garde pour toi : réglages, clés saisies dans " +
@@ -26,7 +28,8 @@ export const account = {
     keep: "Les clés d'API écrites dans le fichier .env ne sont pas touchées.",
     after:
       "Avec un compte Google, ton compte Tremplin disparaît aussi et tu reviens à la page de " +
-      "connexion ; sur cet ordinateur seul, tu reviens au premier lancement.",
+      "connexion. La purge des vecteurs peut se terminer en arrière-plan. En mode local, tu " +
+      "reviens au premier lancement.",
     word: "SUPPRIMER",
     label: "Tape SUPPRIMER pour confirmer",
     submit: "Tout supprimer",
@@ -34,9 +37,11 @@ export const account = {
     confirmationRequired: "Le mot de confirmation n'est pas bon : tape SUPPRIMER, en majuscules.",
     retry: "Tu peux réessayer : la suppression reprend là où elle s'est arrêtée.",
     accountChanged:
-      "Le compte connecté a changé dans un autre onglet : cette page montre maintenant le compte " +
-      "actuel. Rien n'a été supprimé ; vérifie le compte, puis recommence si c'est bien lui.",
+      "Le compte connecté a changé dans un autre onglet. Rien n'a été supprimé. " +
+      "Vérifie le compte affiché avant de recommencer.",
     notStarted: "Rien n'a été supprimé : tu peux réessayer sans risque.",
+    rowsUntouched:
+      "La mémoire vectorielle ne répond pas. Rien n'a été supprimé en base. Tu peux réessayer.",
     waiting: "Suppression en cours… ne ferme pas cette page.",
   },
 } as const;

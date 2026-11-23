@@ -16,6 +16,7 @@ from app.agents.tools.cv_schema import (
     SkillFact,
     assign_fact_ids,
 )
+from app.agents.tools.cv_validator import validate
 from app.agents.tools.template_schema import ColumnSpec
 from app.db.models.career import CvTemplate, MasterProfile
 from app.features.cv.service.templates_store import AgentCvTemplateStore
@@ -33,6 +34,7 @@ from tests.features.cv.reviews_support import (
 from tests.features.cv.templates_support import capture, liberation_spec
 from tests.features.cv.test_generate import generate, pdf_text, rt_of
 from tests.features.lessons.conftest import RecordingLauncher
+from tests.support.cv_review import A
 from tests.support.text_renderer import TextHtmlRenderer
 
 _LINKS = [
@@ -42,6 +44,8 @@ _LINKS = [
 ]
 _AGENTS = "Déployé des agents IA de support avec LangGraph."
 _RESULTS = "Réduit le délai de résolution de 37 % en production."
+_TWO_RESULTS = "Réduction des délais de 25 % et des coûts de 40 %."
+_SWAPPED_RESULTS = "Réduction des délais de 40 % et des coûts de 25 %."
 _LOW_VALUE = "Participation aux réunions hebdomadaires."
 _SKILLS = ["Python", "LangGraph", "Docker", "RAG", "SQL", "Qdrant"]
 
@@ -54,7 +58,9 @@ def _profile() -> MasterProfileData:
                 Experience(
                     company="Studio Fictif",
                     role="Ingénieure IA",
-                    achievements=[Line(text=line) for line in (_AGENTS, _RESULTS, _LOW_VALUE)],
+                    achievements=[
+                        Line(text=line) for line in (_AGENTS, _RESULTS, _LOW_VALUE, _TWO_RESULTS)
+                    ],
                     sources=["cv"],
                 )
             ],
@@ -150,6 +156,36 @@ async def test_targeted_generation_trims_only_lower_value_experience_details(
     assert _AGENTS in pdf and _RESULTS in pdf
     assert _LOW_VALUE not in pdf
     assert version["decisions"] == {"r1": "ignored", "r2": "ignored", "r3": "accepted"}
+
+
+@pytest.mark.parametrize("confirmed", [False, True])
+async def test_pdf_rechecks_numeric_associations_approved_by_the_old_validator(
+    client: httpx.AsyncClient,
+    app: FastAPI,
+    launcher_spy: RecordingLauncher,
+    resume_spy: ResumeSpy,
+    fake_renderer: TextHtmlRenderer,
+    confirmed: bool,
+) -> None:
+    review_id, session_id = await _review(client, app, wide=True)
+    swap = proposal("r1", "rewrite", "x1a4", _SWAPPED_RESULTS, type="impact")
+    verdict = validate(swap, _profile(), A) if confirmed else OK
+    await app.state.career.cv_review.save_proposals(
+        app.state.local_user_id, session_id, review_id, [(swap, verdict)], [], ReviewReport()
+    )
+    await wait_output(rt_of(app), session_id)
+    row = (await mods(client, review_id))["r1"]
+    if confirmed:
+        assert (await decide(client, row["id"], "accepted")).status_code == 409
+    assert (await decide(client, row["id"], "accepted", confirm=confirmed)).status_code == 200
+    version = await generate(client, review_id)
+    pdf = " ".join((await pdf_text(app, client, version["id"])).split())
+    if confirmed:
+        assert _SWAPPED_RESULTS in pdf and _TWO_RESULTS not in pdf
+        assert version["decisions"] == {"r1": "accepted"}
+    else:
+        assert _TWO_RESULTS in pdf and _SWAPPED_RESULTS not in pdf
+        assert version["decisions"] == {"r1": "ignored"}
 
 
 @pytest.mark.parametrize(("wide", "columns"), [(False, 2), (True, 3)])

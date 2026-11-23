@@ -1,11 +1,15 @@
+from collections.abc import AsyncIterator
 from pathlib import Path
 
 import httpx
 import pytest
 from fastapi import FastAPI
+from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic_core import PydanticCustomError
 
 from app.config import Settings, get_settings
-from app.core.errors import AppError
+from app.core.errors import AppError, register_error_handlers
+from app.core.field_paths import FieldPathsRoute
 from app.main import create_app
 
 
@@ -41,7 +45,26 @@ async def test_http_error_is_french_and_forwards_headers(
     assert "GET" in r.headers["allow"]
 
 
-async def test_validation_error_is_french(app: FastAPI, client: httpx.AsyncClient) -> None:
+@pytest.fixture
+def validation_app() -> FastAPI:
+    app = FastAPI()
+    register_error_handlers(app)
+    return app
+
+
+@pytest.fixture
+async def validation_client(validation_app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=validation_app), base_url="http://test"
+    ) as client:
+        yield client
+
+
+async def test_validation_error_is_french(
+    validation_app: FastAPI, validation_client: httpx.AsyncClient
+) -> None:
+    app, client = validation_app, validation_client
+
     @app.get("/api/v1/_v")
     async def v(n: int) -> dict[str, int]:
         return {"n": n}
@@ -53,8 +76,10 @@ async def test_validation_error_is_french(app: FastAPI, client: httpx.AsyncClien
 
 
 async def test_validation_error_never_echoes_the_input(
-    app: FastAPI, client: httpx.AsyncClient
+    validation_app: FastAPI, validation_client: httpx.AsyncClient
 ) -> None:
+    app, client = validation_app, validation_client
+
     @app.post("/api/v1/_vbody")
     async def vbody(body: dict[str, int]) -> dict[str, int]:
         return body
@@ -62,8 +87,63 @@ async def test_validation_error_never_echoes_the_input(
     r = await client.post("/api/v1/_vbody", json={"secret": "SUPERSECRETVALUE1234"})
     assert r.status_code == 422
     assert "SUPERSECRETVALUE1234" not in r.text
+    assert "secret" not in r.text
     (err,) = r.json()["error"]["details"]["errors"]
-    assert set(err) == {"loc", "msg", "type"} and err["loc"] == ["body", "secret"]
+    assert set(err) == {"loc", "msg", "type"} and err["loc"] == ["body"]
+
+
+class ValidationRow(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    score: int
+
+    @field_validator("score", mode="before")
+    @classmethod
+    def _score(cls, value: object) -> object:
+        if isinstance(value, str):
+            raise PydanticCustomError(value, "Private diagnostic: {value}", {"value": value})
+        return value
+
+
+class ValidationBody(BaseModel):
+    rows: list[ValidationRow]
+    scores: dict[str, int]
+
+
+@pytest.mark.parametrize("named", [False, True])
+async def test_validation_paths_only_contain_declared_fields_and_list_indices(
+    validation_app: FastAPI, validation_client: httpx.AsyncClient, named: bool
+) -> None:
+    app, client = validation_app, validation_client
+
+    async def endpoint(body: ValidationBody) -> None:
+        pass
+
+    route = "/api/v1/_validation"
+    app.router.add_api_route(
+        route, endpoint, methods=["POST"], route_class_override=FieldPathsRoute if named else None
+    )
+    response = await client.post(
+        route,
+        json={
+            "rows": [{"score": "raw-value", "raw-extra-key": True}],
+            "scores": {"raw-dict-key": "not an integer", "rows": "still a dict key"},
+        },
+    )
+    assert response.status_code == 422
+    assert "raw-" not in response.text
+    details = response.json()["error"]["details"]
+    if named:
+        assert details["fields"] == ["rows.0.score", "rows.0", "scores"]
+    else:
+        assert [err["loc"] for err in details["errors"]] == [
+            ["body", "rows", 0, "score"],
+            ["body", "rows", 0],
+            ["body", "scores"],
+            ["body", "scores"],
+        ]
+        assert details["errors"][0]["msg"] == "Valeur invalide."
+        assert details["errors"][0]["type"] == "value_error"
+        assert details["errors"][2]["msg"] == "Un entier est attendu."
 
 
 async def test_unhandled_error_is_500_without_trace(

@@ -32,7 +32,11 @@ def google_settings(google_settings: Settings) -> Settings:
 
 
 async def _delete(client: httpx.AsyncClient) -> None:
-    r = await client.post("/api/v1/account/delete", json={"confirm": DELETE_CONFIRMATION})
+    me = (await client.get(ME)).json()["id"]
+    r = await client.post(
+        "/api/v1/account/delete",
+        json={"confirm": DELETE_CONFIRMATION, "expected_user_id": me},
+    )
     assert r.status_code == 204, r.text
 
 

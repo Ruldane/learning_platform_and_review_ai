@@ -3028,3 +3028,57 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
   réglages des modèles restent au niveau 4.
 - **Raison** : laisser le client MCP préparer les opérations du compte et conserver
   la maîtrise des gestes irréversibles dans Tremplin.
+
+## D300
+
+- **Date** : 2026-11-23
+- **Sujet** : Recherche dans les conversations d’Étudier et du Cerveau.
+- **Décision** : le fil actif et son brouillon restent en place pendant une recherche.
+  L’interface, l’API et le MCP filtrent les titres par le même paramètre. La comparaison
+  ignore les accents et la casse.
+- **Raison** : retrouver le même fil quel que soit le client et garder le brouillon en cours.
+
+## D301
+
+- **Date** : 2026-11-23
+- **Sujet** : Disponibilité de la piste audio du Podcast.
+- **Décision** : le Labo lit les prérequis dans le même aperçu que le MCP. La disponibilité
+  de la clé OpenAI pour l’audio est indiquée séparément des modèles du dialogue.
+- **Raison** : expliquer pourquoi un épisode peut fonctionner en texte quand l’écoute
+  demande encore une configuration.
+
+## D302
+
+- **Date** : 2026-11-23
+- **Sujet** : Consentement d’effacement et reprise après panne de l’index.
+- **Décision** : la confirmation est liée à l’identité affichée. Le serveur exige
+  cette identité pour une demande directe en mode Google. Une demande MCP
+  confirmée utilise l’identité du jeton. La transaction de suppression en mode
+  Google garde un travail de purge vectorielle pour l’ancien identifiant. Le
+  démarrage et le planificateur peuvent le reprendre. Si ce travail reste à
+  faire, l’API répond 202. En mode local, le compte garde son identifiant et
+  une purge incomplète est signalée pour un nouvel essai explicite.
+- **Raison** : protéger le compte ouvert dans un autre onglet et terminer la
+  purge même si la session d’origine a disparu.
+
+## D303
+
+- **Date** : 2026-11-23
+- **Sujet** : Confidentialité des réponses de validation et du journal MCP.
+- **Décision** : conserver dans les réponses 422 les chemins attestés par le
+  schéma, dont les indices de listes et les clés fermées, avec des messages
+  français fixes. Le journal conserve les identifiants issus des réponses
+  réussies et ceux créés pour la confirmation et l’annulation. Les entrées
+  antérieures suivent leur durée de conservation de 30 jours.
+- **Raison** : localiser une erreur ou un appel sans conserver le texte transmis.
+
+## D304
+
+- **Date** : 2026-11-23
+- **Sujet** : Association des mesures et des chiffres dans le CV ciblé.
+- **Décision** : vérifier les chiffres et proportions dans leur contexte
+  plutôt que par simple présence dans les faits cités. Une attribution
+  ambiguë requiert une confirmation. La composition du PDF fait la même
+  vérification, y compris pour les propositions acceptées avant la correction,
+  et tient compte des faits explicitement confirmés dans le profil maître.
+- **Raison** : éviter qu’une reformulation inverse les résultats mesurés.

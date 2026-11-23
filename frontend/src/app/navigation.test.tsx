@@ -13,6 +13,7 @@ import { FEATURES } from "./registry";
 import { buildRoutes } from "./router";
 import { buildDestinations } from "./navigation";
 
+const overviewUrl = `${apiBaseUrl}/api/v1/lab/overview`;
 const preferencesUrl = `${apiBaseUrl}/api/v1/lab/preferences`;
 
 function renderAt(path: string) {
@@ -26,6 +27,7 @@ beforeEach(() => {
     ...authApi({ me: camille }).handlers,
     ...settingsApi({ settings: settingsFixture }).handlers,
     http.get(`${apiBaseUrl}/api/v1/health`, () => HttpResponse.json({ status: "ok", checks: {} })),
+    http.get(overviewUrl, () => HttpResponse.json({ sections: [] })),
     http.get(preferencesUrl, () => HttpResponse.json({ pinned: [], tour: "pending" })),
   );
 });
@@ -34,15 +36,19 @@ it("ouvre les rubriques et conserve les liens vers les écrans historiques", asy
   renderAt("/etudier");
   await screen.findByRole("heading", { name: "Étudier" });
   const nav = screen.getByRole("navigation", { name: "Navigation principale" });
-  expect(within(nav).getAllByRole("link").map((link) => link.textContent)).toEqual([
-    "Accueil", "Étudier", "Coder", "Cerveau", "Carrière", "Labo", "Réglages",
-  ]);
+  expect(
+    within(nav)
+      .getAllByRole("link")
+      .map((link) => link.textContent),
+  ).toEqual(["Accueil", "Étudier", "Coder", "Cerveau", "Carrière", "Labo", "Réglages"]);
   const main = screen.getByRole("main");
   expect(within(main).getByRole("link", { name: /Programmes/ })).toHaveAttribute(
-    "href", "/apprendre/programme",
+    "href",
+    "/apprendre/programme",
   );
   expect(within(main).getByRole("link", { name: /Leçons/ })).toHaveAttribute(
-    "href", "/apprendre/lecons",
+    "href",
+    "/apprendre/lecons",
   );
 });
 
@@ -56,11 +62,12 @@ it("affiche puis épingle une expérience du Labo dans le menu", async () => {
   renderAt("/labo");
   await screen.findByRole("heading", { name: "Labo" });
   const main = screen.getByRole("main");
-  expect(within(main).getAllByText("Prête").length).toBeGreaterThan(1);
+  expect((await within(main).findAllByText("Prête")).length).toBeGreaterThan(1);
   await userEvent.click(within(main).getByRole("button", { name: /Épingler.*Astreinte/i }));
   const nav = screen.getByRole("navigation", { name: "Navigation principale" });
   expect(await within(nav).findByRole("link", { name: /Astreinte/i })).toHaveAttribute(
-    "href", "/astreinte",
+    "href",
+    "/astreinte",
   );
 });
 
@@ -85,4 +92,24 @@ it("conserve une destination fonctionnelle pour chaque ancienne entrée", () => 
     const match = matchRoutes(routes, entry.path)?.at(-1)?.route;
     expect(match && (match.index || match.path !== "*"), entry.path).toBeTruthy();
   }
+});
+
+it("annonce le réglage audio du Podcast à partir des mêmes prérequis que le MCP", async () => {
+  server.use(
+    http.get(overviewUrl, () =>
+      HttpResponse.json({
+        sections: [
+          { id: "lab", features: [{ id: "podcast", missing_prerequisites: ["openai_audio"] }] },
+        ],
+      }),
+    ),
+  );
+  renderAt("/labo");
+  const message = await screen.findByText("Pour écouter le podcast, ajoute une clé OpenAI.");
+  const card = message.closest("li");
+  expect(card).not.toBeNull();
+  expect(
+    within(card!).getByRole("link", { name: "Vérifier les modèles et les clés" }),
+  ).toHaveAttribute("href", "/reglages/modeles");
+  expect(within(card!).queryByText("Prête")).toBeNull();
 });

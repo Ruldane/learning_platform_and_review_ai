@@ -1,12 +1,14 @@
 """Couverture fonctionnelle des actions ouvertes par la réorganisation."""
 
 import httpx
+import pytest
 from fastapi import FastAPI
 from sqlalchemy import select
 
 from app.db.models.ide import IdeRun
 from app.db.models.mcp import McpCall
 from app.providers.sandbox.fake import FakeSandbox
+from app.providers.vector.base import VectorStoreUnavailable
 from tests.features.auth.support import CAMILLE, DOMINIQUE
 from tests.features.ide.support import new_session
 from tests.isolation.conftest import Browser
@@ -67,20 +69,38 @@ async def test_overview_lists_features_and_only_tools_available_to_the_token(
     assert features["applications"]["tools"] == []
 
 
-async def test_other_account_cannot_confirm_a_deletion(google_client_factory: Browser) -> None:
+async def test_other_account_cannot_confirm_a_deletion(
+    google_app: FastAPI,
+    google_client_factory: Browser,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     camille = await google_client_factory(CAMILLE)
     dominique = await google_client_factory(DOMINIQUE)
     mcp_a = Mcp(camille)
     token_a = await mcp_a.token(("account",), "write")
     token_b = await Mcp(dominique).token(("account",), "read")
+    camille_id = (await camille.get(f"{API}/auth/me")).json()["id"]
+    index = google_app.state.memory_providers.index
+    delete_user = index.delete_user
+    calls: list[str] = []
+
+    async def fail_final_pass(user_id: str) -> None:
+        calls.append(user_id)
+        if len(calls) == 2:
+            raise VectorStoreUnavailable()
+        await delete_user(user_id)
+
+    monkeypatch.setattr(index, "delete_user", fail_final_pass)
     answer, failed = await call(mcp_a, token_a, "account_delete_data", {"confirm": "SUPPRIMER"})
     assert not failed, answer
     confirmation = answer["data"]["confirmation_id"]
     path = f"{API}/mcp/confirmations/{confirmation}/confirm"
     assert (await dominique.post(path)).status_code == 404
     assert (await camille.get(f"{API}/auth/me")).status_code == 200
+    assert calls == []
     response = await camille.post(path)
     assert response.status_code == 200 and response.json()["status"] == "confirmed"
+    assert calls == [camille_id, camille_id]
     assert (await camille.get(f"{API}/auth/me")).status_code == 401
     export, failed = await call(Mcp(dominique), token_b, "account_export_data", {})
     assert not failed and export["data"]["local_url"] == "/api/v1/account/export"

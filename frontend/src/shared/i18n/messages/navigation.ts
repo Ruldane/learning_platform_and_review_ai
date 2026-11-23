@@ -11,7 +11,7 @@ export const navigation = {
   configure: "À configurer",
   checking: "Vérification…",
   unknown: "État indisponible",
-  modelsRequired: "Configure un fournisseur de modèles pour lancer cette activité.",
+  podcastAudioKey: "Pour écouter le podcast, ajoute une clé OpenAI.",
   modelsLink: "Vérifier les modèles et les clés",
   headings: {
     learn: "Reprends une leçon, révise tes acquis ou construis la suite de ton programme.",
@@ -38,8 +38,10 @@ export const navigation = {
     finish: "Terminer",
     step: "Étape {step} sur {total}",
     home: "L’Accueil te montre le brief du jour, la prochaine leçon, les révisions et les lectures.",
-    learn: "Étudier te donne accès aux programmes et aux leçons. Coder ouvre les exercices et tes projets.",
-    memory: "Le Cerveau retrouve tes notes et tes lectures. Tu peux y poser des questions à partir de tes documents.",
+    learn:
+      "Étudier te donne accès aux programmes et aux leçons. Coder ouvre les exercices et tes projets.",
+    memory:
+      "Le Cerveau retrouve tes notes et tes lectures. Tu peux y poser des questions à partir de tes documents.",
     lab: "Le Labo rassemble les activités complémentaires. Épingle celles que tu veux garder sous la main.",
   },
   features: {
@@ -109,6 +111,7 @@ export const navigation = {
     skills: "Consulte les compétences acquises et celles que tu veux renforcer.",
     study: "Démarre un bloc de travail guidé ou reprends une session en cours.",
     study_return: "Choisis un point de reprise après une pause dans tes études.",
-    surprise_interview: "Choisis quand et comment recevoir des invitations à des entretiens surprises.",
+    surprise_interview:
+      "Choisis quand et comment recevoir des invitations à des entretiens surprises.",
   },
 } as const;

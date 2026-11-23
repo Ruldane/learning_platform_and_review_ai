@@ -8,7 +8,7 @@ from typing import Any
 
 from fastapi import APIRouter, Response, status
 
-from app.core.deps import CurrentUserDep, Db, RuntimeDep
+from app.core.deps import ConfirmedUserDep, CurrentUserDep, Db, RuntimeDep
 from app.features.study.router_deps import StudyDep
 from app.features.study.router_training import router as training_router
 from app.features.study.schemas import (
@@ -66,7 +66,7 @@ async def get_study(study_session_id: str, current: CurrentUserDep, db: Db) -> S
 async def update_study(
     study_session_id: str,
     body: StudyUpdate,
-    current: CurrentUserDep,
+    current: ConfirmedUserDep,
     runtime: RuntimeDep,
     rt: StudyDep,
 ) -> StudySessionOut:

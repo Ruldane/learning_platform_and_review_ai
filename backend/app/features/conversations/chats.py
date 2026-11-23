@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from unicodedata import combining, normalize
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -35,12 +36,16 @@ def _summary(row: Conversation) -> ConversationSummary:
     )
 
 
+def _search_text(text: str) -> str:
+    return "".join(char for char in normalize("NFD", text.casefold()) if not combining(char))
+
+
 async def list_chats(
     db: AsyncSession, user_id: str, scope: ChatScope, query: str = ""
 ) -> list[ConversationSummary]:
-    needle = query.strip().casefold()
+    needle = _search_text(query.strip())
     summaries = [_summary(row) for row in await ConversationRepository(db, user_id).recent(scope)]
-    return [summary for summary in summaries if needle in summary.title.casefold()]
+    return [summary for summary in summaries if needle in _search_text(summary.title)]
 
 
 async def require_chat(

@@ -21,6 +21,7 @@ export function setup(
     defaultOptions: { queries: { retry: false, staleTime: 15_000 } },
   });
   client.setQueryData(["settings"], { onboarding_done: true });
+  client.setQueryData(["auth", "me"], mode === "local" ? localMe : camille);
   client.setQueryData(["goals"], [{ id: "g1" }]);
   const router = createMemoryRouter(
     [

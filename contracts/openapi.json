@@ -5965,6 +5965,18 @@
           "confirm": {
             "title": "Confirm",
             "type": "string"
+          },
+          "expected_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Identifiant du compte affiché, obligatoire en mode Google pour un appel direct. Dans une demande MCP confirmée, l'identité vient du jeton.",
+            "title": "Expected User Id"
           }
         },
         "required": [
@@ -29776,7 +29788,7 @@
   "paths": {
     "/api/v1/account/delete": {
       "post": {
-        "description": "Tout supprimer : annule les sessions en cours, puis efface les vecteurs, les fichiers, les\npoints de reprise et toutes les lignes du compte. `confirm` doit être `SUPPRIMER`, sinon 422\n`confirmation_required`. Rejouable jusqu'au bout si elle est interrompue. Mode local : l'espace\nreste utilisable, vide ; mode Google : le compte et la session disparaissent.",
+        "description": "Tout supprimer : annule les sessions en cours, puis efface les vecteurs, les fichiers, les\npoints de reprise et toutes les lignes du compte. `confirm` doit être `SUPPRIMER`, sinon 422\n`confirmation_required`. L'identité affichée doit correspondre au compte authentifié.\nMode local : l'espace reste utilisable, vide ; mode Google : le compte et la session\ndisparaissent. La dernière purge des vecteurs peut reprendre en arrière-plan (202).",
         "operationId": "delete_account_api_v1_account_delete_post",
         "requestBody": {
           "content": {
@@ -29789,14 +29801,20 @@
           "required": true
         },
         "responses": {
+          "202": {
+            "description": "Compte Google effacé ; la purge des vecteurs reprend en arrière-plan."
+          },
           "204": {
             "description": "Successful Response"
           },
+          "409": {
+            "description": "`account_changed` : l'identité ne correspond plus à la session."
+          },
           "422": {
-            "description": "`confirmation_required` : `details.fields` : `confirm`"
+            "description": "`confirmation_required` : confirme avec SUPPRIMER ; `account_identity_required` : indique l'identité affichée."
           },
           "503": {
-            "description": "`vector_store_unavailable` : Qdrant ne répond pas ; rien n'est supprimé en base, un nouvel appel reprend."
+            "description": "`vector_store_unavailable` : Qdrant ne répond pas avant la suppression des lignes ; `vector_purge_incomplete` : l'espace local est effacé en base, relance la suppression pour retirer les vecteurs restants."
           }
         },
         "summary": "Delete Account",

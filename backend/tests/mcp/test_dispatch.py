@@ -43,6 +43,9 @@ async def test_level1_returns_route_result_in_envelope(
     assert [item["company"] for item in envelope["data"]] == [COMPANY]
     assert "donnee_non_fiable" in envelope["notice"]
     assert detail["data"]["id"] == created["id"]
+    journal = (await amcp.http.get(f"{API}/mcp/calls")).json()
+    read = next(row for row in journal if row["action"] == "applications_get")
+    assert read["ids"] == {"id": created["id"]}
     filtered, _ = await call(amcp, writer, "applications_list", {"status": "to_apply"})
     assert len(filtered["data"]) == 1  # argument de requête
 
@@ -93,6 +96,8 @@ async def test_not_found_is_the_routes_own_answer(amcp: Mcp, writer: str) -> Non
     envelope, is_error = await call(amcp, writer, "applications_get", {"application_id": "nope"})
 
     assert is_error and envelope["data"]["error"]["code"] == "application_not_found"
+    [entry] = (await amcp.http.get(f"{API}/mcp/calls")).json()
+    assert entry["code"] == 404 and entry["ids"] == {}
 
 
 async def test_internal_request_uses_user_of_token_only(

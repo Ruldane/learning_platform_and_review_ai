@@ -209,10 +209,10 @@ def test_label_masks_keys_before_cutting_them() -> None:
 def _slow_router() -> APIRouter:
     router = APIRouter(prefix="/_slow")
 
-    @router.post("/write")
-    async def write() -> dict[str, str]:
+    @router.post("/write/{resource_id}")
+    async def write(resource_id: str) -> dict[str, str]:
         await asyncio.sleep(1)
-        return {"ok": "oui"}
+        return {"resource_id": resource_id}
 
     return router
 
@@ -227,13 +227,15 @@ async def test_a_timeout_on_a_write_says_it_may_have_been_applied(
     app.openapi_schema = None
     monkeypatch.setattr(dispatch, "REQUEST_TIMEOUT_S", 0.05)
     models = {name: item.input_model for name, item in GRAPHS.items()}
-    slow = FeatureMcp("slow", actions=(McpAction("POST /_slow/write", 2, "slow_write"),))
+    slow = FeatureMcp(
+        "slow", actions=(McpAction("POST /_slow/write/{resource_id}", 2, "slow_write"),)
+    )
     install_adapter(app, [slow], models)
     transport = httpx.ASGITransport(app=app, raise_app_exceptions=False)
     async with httpx.AsyncClient(transport=transport, base_url="http://localhost") as http:
         mcp = Mcp(http)
         token = await mcp.token(("slow",), "write")
-        envelope, is_error = await call(mcp, token, "slow_write")
+        envelope, is_error = await call(mcp, token, "slow_write", {"resource_id": "absent"})
 
     assert is_error
     assert envelope["data"]["error"]["code"] == "tool_timeout"

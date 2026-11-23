@@ -90,6 +90,16 @@ test("le Cerveau cite une note synchronisée puis l’écarte après son retrait
   await expect(sidebar.getByRole("button", { name: "Ouvrir Nouvelle conversation" })).toBeVisible();
   await sidebar.getByRole("button", { name: "Ouvrir Calendrier turquoise" }).click();
   await expect(answer).toBeVisible();
+  const search = sidebar.getByRole("searchbox", { name: "Rechercher un titre" });
+  const draft = "Un brouillon conserve sa place.";
+  await field.fill(draft);
+  await search.fill("autre conversation");
+  await expect(sidebar.getByText("Aucun titre ne correspond.")).toBeVisible();
+  await expect(field).toHaveValue(draft);
+  await expect(answer).toBeVisible();
+  await search.clear();
+  await expect(sidebar.getByRole("button", { name: "Ouvrir Calendrier turquoise" })).toBeVisible();
+  await field.clear();
   await page.screenshot({ path: testInfo.outputPath("brain-conversations.png") });
   await sidebar.getByRole("button", { name: "Vider la conversation" }).click();
   await page.getByRole("alertdialog").getByRole("button", { name: "Confirmer" }).click();

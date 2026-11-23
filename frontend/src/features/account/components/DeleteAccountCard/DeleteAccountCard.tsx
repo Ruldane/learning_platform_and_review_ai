@@ -4,6 +4,8 @@ import { ConfirmForm, type DeleteFailure } from "./ConfirmForm";
 import { DeleteExplanation } from "./DeleteExplanation";
 
 interface DeleteAccountCardProps {
+  accountLabel?: string;
+  consentScope?: string;
   pending: boolean;
   /** Un nouvel objet à chaque échec : le focus passe au message même pour un échec répété. */
   failure: DeleteFailure | null;
@@ -13,9 +15,17 @@ interface DeleteAccountCardProps {
 }
 
 /** « Tout supprimer » : ce qui part et ce qui reste, puis le mot à retaper pour confirmer. */
-export function DeleteAccountCard({ pending, failure, onDelete, onEdit }: DeleteAccountCardProps) {
+export function DeleteAccountCard({
+  accountLabel,
+  consentScope = "",
+  pending,
+  failure,
+  onDelete,
+  onEdit,
+}: DeleteAccountCardProps) {
   const titleId = useId();
   const explanationId = useId();
+  const accountId = useId();
   return (
     <section
       aria-labelledby={titleId}
@@ -24,11 +34,17 @@ export function DeleteAccountCard({ pending, failure, onDelete, onEdit }: Delete
       <h2 id={titleId} className="text-lg font-semibold">
         {t("account.delete.title")}
       </h2>
+      {accountLabel && (
+        <p id={accountId} className="text-sm font-medium">
+          {t("account.delete.identity", { account: accountLabel })}
+        </p>
+      )}
       <DeleteExplanation id={explanationId} />
       <ConfirmForm
+        consentScope={consentScope}
         pending={pending}
         failure={failure}
-        explanationId={explanationId}
+        explanationId={accountLabel ? `${accountId} ${explanationId}` : explanationId}
         onDelete={onDelete}
         onEdit={onEdit}
       />

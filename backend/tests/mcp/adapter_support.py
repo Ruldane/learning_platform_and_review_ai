@@ -16,6 +16,7 @@ from app.mcp.registry import Registry
 from tests.mcp.support import Mcp
 
 SECRET_KEY_TEXT = "sk-ant-api03-ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+PROBE_NOTE_ID = "ed5f7fc3-0d0f-5677-9fa4-2b166bc7a656"
 PREFS = frozenset({"style_guide", "study_work_minutes", "study_break_minutes"})
 READABLE = frozenset({"style_guide", "study_work_minutes", "timezone", "onboarding_done"})
 FEATURES = ("applications", "settings", "sessions", "cv", "probe")
@@ -118,7 +119,7 @@ def probe_router() -> APIRouter:
 
     @router.post("/leak")
     async def leak(current: CurrentUserDep) -> dict[str, str]:
-        return {"thread_id": "du texte libre, avec des espaces et des mots", "note_id": "n_1"}
+        return {"thread_id": "texte-libre", "note_id": PROBE_NOTE_ID}
 
     @router.get("/session/{session_id}")
     async def session(session_id: str) -> dict[str, Any]:

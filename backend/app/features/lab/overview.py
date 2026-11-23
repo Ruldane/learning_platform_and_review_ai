@@ -32,11 +32,14 @@ _WITH_MODELS = frozenset(
     {
         "applications",
         "boss",
+        "book",
         "brain",
         "brief",
         "conversations",
+        "contradictory_watch",
         "cv",
         "expert_debates",
+        "future_self",
         "grade_appeals",
         "ide",
         "learning",
@@ -44,6 +47,7 @@ _WITH_MODELS = frozenset(
         "lessons",
         "linkedin_drafts",
         "oncall",
+        "podcast",
         "postings",
         "projects",
         "quiz",
@@ -99,14 +103,18 @@ async def _missing(
     if providers.sandbox is None:
         for feature in ("ide", "code_trial", "oncall"):
             missing[feature].append("sandbox")
-    if not await _models_ready(db, current.id, providers):
+    readable = await _readable_providers(db, current.id, providers)
+    if "openai" not in readable:
+        missing["podcast"].append("openai_audio")
+    settings = await SettingsService(db, current.id).get()
+    choices = (*settings.tiers.values(), *settings.agent_overrides.values())
+    if any(choice.provider not in readable for choice in choices):
         for feature in _WITH_MODELS:
             missing[feature].append("models")
     return missing
 
 
-async def _models_ready(db: AsyncSession, user_id: str, providers: Providers) -> bool:
-    settings = await SettingsService(db, user_id).get()
+async def _readable_providers(db: AsyncSession, user_id: str, providers: Providers) -> set[str]:
     keys = ApiKeyService(
         db,
         user_id,
@@ -115,9 +123,7 @@ async def _models_ready(db: AsyncSession, user_id: str, providers: Providers) ->
         providers.key_providers,
         llm=providers.llm,
     )
-    readable = {key.provider for key in await keys.list() if key.source and key.readable}
-    choices = (*settings.tiers.values(), *settings.agent_overrides.values())
-    return {choice.provider for choice in choices} <= readable
+    return {key.provider for key in await keys.list() if key.source and key.readable}
 
 
 @router.get("/overview", response_model=Overview)

@@ -31,8 +31,7 @@ RETENTION_DAYS = 30  # le journal des appels ne garde que les 30 derniers jours
 
 
 def clean_ids(ids: Mapping[str, Any]) -> dict[str, Any]:
-    """Ne garde que des identifiants (entiers, ou textes courts de lettres, chiffres, `_` et `-`) :
-    un texte libre n'entre jamais dans le journal, même par erreur d'un outil."""
+    """Borne les identifiants et codes issus de l'envoyeur avant leur écriture au journal."""
     kept: dict[str, Any] = {}
     for key, value in list(ids.items())[:_MAX_IDS]:
         if not isinstance(key, str) or not _ID.fullmatch(key):

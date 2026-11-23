@@ -4,6 +4,7 @@ from datetime import timedelta
 
 from app.scheduler.base import JobSpec
 from app.scheduler.jobs import (
+    account_vector_purges,
     ats_refresh,
     book_refresh,
     daily_brief,
@@ -21,6 +22,7 @@ from app.scheduler.jobs import (
 )
 
 JOBS: list[JobSpec] = [
+    JobSpec("account_vector_purges", timedelta(minutes=10), account_vector_purges.run),
     JobSpec("book_refresh", timedelta(seconds=30), book_refresh.run),
     JobSpec("lessons_due", timedelta(minutes=15), lessons_due.run),
     JobSpec("weekly_review", timedelta(minutes=15), weekly_review.run),

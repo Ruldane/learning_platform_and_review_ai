@@ -10,7 +10,10 @@ async function capture(page: Page, name: string) {
   await page.screenshot({ path: join(destination, `${name}.png`), animations: "disabled" });
 }
 
-test("les rubriques, les anciennes adresses et les raccourcis du Labo", async ({ page, request }) => {
+test("les rubriques, les anciennes adresses et les raccourcis du Labo", async ({
+  page,
+  request,
+}) => {
   await finishFirstLaunch(request);
   await page.goto("/");
   const nav = page.getByRole("navigation", { name: "Navigation principale" });
@@ -30,12 +33,18 @@ test("les rubriques, les anciennes adresses et les raccourcis du Labo", async ({
   await page.setViewportSize({ width: 1280, height: 900 });
   await expect(main.getByRole("heading", { name: "Étudier" })).toBeVisible();
   await expect(main.getByRole("link", { name: "Ouvrir Programmes" })).toHaveAttribute(
-    "href", "/apprendre/programme",
+    "href",
+    "/apprendre/programme",
   );
   await capture(page, "etudier");
 
   await nav.getByRole("link", { name: "Labo" }).click();
   await expect(main.getByRole("heading", { name: "Labo", exact: true })).toBeVisible();
+  const podcast = main.locator('li[data-feature="podcast"]');
+  await expect(podcast.getByText("Pour écouter le podcast, ajoute une clé OpenAI.")).toBeVisible();
+  await expect(
+    podcast.getByRole("link", { name: "Vérifier les modèles et les clés" }),
+  ).toHaveAttribute("href", "/reglages/modeles");
   const pin = main.getByRole("button", { name: "Épingler Astreinte" });
   await expect(pin).toBeEnabled();
   await capture(page, "labo");
@@ -51,13 +60,18 @@ test("les rubriques, les anciennes adresses et les raccourcis du Labo", async ({
   const connection = main.getByRole("complementary", { name: "État du relais" });
   await expect(connection.getByRole("status")).not.toHaveText("Vérification du relais…");
   if (process.env.E2E_REORGANISATION_CAPTURES) {
-    await expect(connection.getByRole("status")).toHaveText("Relais de synchronisation à configurer");
+    await expect(connection.getByRole("status")).toHaveText(
+      "Relais de synchronisation à configurer",
+    );
     await expect(connection.getByText(/TREMPLIN_BRAIN_SYNC_TOKEN/)).toBeVisible();
   }
   await capture(page, "cerveau-sans-relais");
 });
 
-test("la carte MCP et les épingles du Labo correspondent aux destinations de l’interface", async ({ page, request }) => {
+test("la carte MCP et les épingles du Labo correspondent aux destinations de l’interface", async ({
+  page,
+  request,
+}) => {
   await finishFirstLaunch(request);
   const overview = await request.get(`${API}/lab/overview`);
   expect(overview.ok()).toBe(true);

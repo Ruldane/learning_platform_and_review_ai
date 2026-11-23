@@ -79,7 +79,8 @@ async def test_the_second_vector_pass_failing_is_a_retryable_503(
     monkeypatch.setattr(index, "delete_user", second_fails)
     response = await delete_account(client)
     assert response.status_code == 503
-    assert response.json()["error"]["code"] == "vector_store_unavailable"
+    assert response.json()["error"]["code"] == "vector_purge_incomplete"
+    assert (await row_counts(db_session, me))["sessions"] == 0
     assert (await delete_account(client)).status_code == 204  # le rejeu finit le travail
 
 

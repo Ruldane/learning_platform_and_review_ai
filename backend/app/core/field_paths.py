@@ -10,17 +10,17 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.routing import APIRoute
 
 from app.core.errors import AppError
+from app.core.validation import ROOTS, validated_location
 
-_ROOTS = ("body", "query", "path", "header", "cookie")
 _WRAPPERS = ("data",)  # `ProfilePutIn.data` : le chemin part du profil lui-même
 
 
-def field_paths(errors: Sequence[Any]) -> list[str]:
+def field_paths(request: Request, errors: Sequence[Any]) -> list[str]:
     """Chemins sans la racine (`body`) ni l'enveloppe `data`, dans l'ordre, sans doublon."""
     paths: list[str] = []
     for error in errors:
-        loc = [str(part) for part in error.get("loc", ())]
-        if loc and loc[0] in _ROOTS and len(loc) > 1:
+        loc = [str(part) for part in validated_location(request, error)]
+        if loc and loc[0] in ROOTS and len(loc) > 1:
             loc = loc[1:]
         if len(loc) > 1 and loc[0] in _WRAPPERS:
             loc = loc[1:]
@@ -30,12 +30,12 @@ def field_paths(errors: Sequence[Any]) -> list[str]:
     return paths
 
 
-def invalid_fields(errors: Sequence[Any]) -> AppError:
+def invalid_fields(request: Request, errors: Sequence[Any]) -> AppError:
     return AppError(
         "validation_error",
         "Requête invalide : vérifie les champs signalés.",
         422,
-        {"fields": field_paths(errors)},
+        {"fields": field_paths(request, errors)},
     )
 
 
@@ -49,6 +49,6 @@ class FieldPathsRoute(APIRoute):
             try:
                 return await handler(request)
             except RequestValidationError as exc:
-                raise invalid_fields(exc.errors()) from None
+                raise invalid_fields(request, exc.errors()) from None
 
         return route

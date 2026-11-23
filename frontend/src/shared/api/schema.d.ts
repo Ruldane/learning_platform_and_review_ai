@@ -17,8 +17,9 @@ export interface paths {
          * Delete Account
          * @description Tout supprimer : annule les sessions en cours, puis efface les vecteurs, les fichiers, les
          *     points de reprise et toutes les lignes du compte. `confirm` doit être `SUPPRIMER`, sinon 422
-         *     `confirmation_required`. Rejouable jusqu'au bout si elle est interrompue. Mode local : l'espace
-         *     reste utilisable, vide ; mode Google : le compte et la session disparaissent.
+         *     `confirmation_required`. L'identité affichée doit correspondre au compte authentifié.
+         *     Mode local : l'espace reste utilisable, vide ; mode Google : le compte et la session
+         *     disparaissent. La dernière purge des vecteurs peut reprendre en arrière-plan (202).
          */
         post: operations["delete_account_api_v1_account_delete_post"];
         delete?: never;
@@ -8987,6 +8988,11 @@ export interface components {
         DeleteAccountIn: {
             /** Confirm */
             confirm: string;
+            /**
+             * Expected User Id
+             * @description Identifiant du compte affiché, obligatoire en mode Google pour un appel direct. Dans une demande MCP confirmée, l'identité vient du jeton.
+             */
+            expected_user_id?: string | null;
         };
         /** DesignCriteria */
         DesignCriteria: {
@@ -17737,6 +17743,13 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Compte Google effacé ; la purge des vecteurs reprend en arrière-plan. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Successful Response */
             204: {
                 headers: {
@@ -17744,14 +17757,21 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `confirmation_required` : `details.fields` : `confirm` */
+            /** @description `account_changed` : l'identité ne correspond plus à la session. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `confirmation_required` : confirme avec SUPPRIMER ; `account_identity_required` : indique l'identité affichée. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            /** @description `vector_store_unavailable` : Qdrant ne répond pas ; rien n'est supprimé en base, un nouvel appel reprend. */
+            /** @description `vector_store_unavailable` : Qdrant ne répond pas avant la suppression des lignes ; `vector_purge_incomplete` : l'espace local est effacé en base, relance la suppression pour retirer les vecteurs restants. */
             503: {
                 headers: {
                     [name: string]: unknown;

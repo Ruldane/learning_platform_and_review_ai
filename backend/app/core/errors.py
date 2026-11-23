@@ -3,11 +3,12 @@ from collections.abc import Mapping
 from typing import Any
 
 from fastapi import FastAPI, Request
-from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
+
+from app.core.validation import public_validation_error
 
 logger = logging.getLogger(__name__)
 
@@ -54,12 +55,9 @@ async def _handle_app_error(_: Request, exc: Exception) -> JSONResponse:
     return _error_response(exc.status_code, exc.code, exc.message, exc.details)
 
 
-async def _handle_validation_error(_: Request, exc: Exception) -> JSONResponse:
+async def _handle_validation_error(request: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, RequestValidationError)
-    # On ne garde que `loc`, `msg` et `type` : `input` recopierait la valeur reçue (clé d'API,
-    # données personnelles) et `ctx` peut contenir des objets non sérialisables.
-    errors = [{key: err[key] for key in ("loc", "msg", "type")} for err in exc.errors()]
-    details = {"errors": jsonable_encoder(errors)}
+    details = {"errors": [public_validation_error(request, error) for error in exc.errors()]}
     return _error_response(422, "validation_error", "Requête invalide.", details)
 
 

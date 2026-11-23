@@ -54,3 +54,10 @@ class AuthSession(UserScopedMixin, Base):
 
     token_hash: Mapped[str] = mapped_column(String(64), unique=True)
     expires_at: Mapped[datetime] = mapped_column(UTCDateTime)
+
+
+class AccountVectorPurge(UserScopedMixin, Base):
+    """Purge finale d'un compte Google supprimé. Sans référence à la ligne du compte."""
+
+    __tablename__ = "account_vector_purges"
+    __table_args__ = (UniqueConstraint("user_id"), {"info": {"export": False}})

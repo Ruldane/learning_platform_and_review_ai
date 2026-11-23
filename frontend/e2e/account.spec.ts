@@ -156,10 +156,8 @@ test("Camille reprend l'espace local, Dominique repart de zéro et supprime tout
 
 // Revue finale de la phase 9 (C-I2) : avant le correctif, l'onglet A (Dominique) envoyait
 // `POST /account/delete` avec le cookie de l'onglet B (Camille) et supprimait Camille (vu sur Edge).
-test("« Tout supprimer » n'efface pas le compte d'un autre onglet", async ({
-  context,
-  page,
-}) => {
+test("« Tout supprimer » n'efface pas le compte d'un autre onglet", async ({ context, page }) => {
+  const other = await context.newPage();
   // Onglet A : Dominique (un compte neuf : son premier lancement est passé) sur Mes données.
   await page.goto(loginUrl(DOMINIQUE));
   await expect(page).toHaveURL(/\/bienvenue$/);
@@ -167,25 +165,27 @@ test("« Tout supprimer » n'efface pas le compte d'un autre onglet", async ({
   await expect(page).toHaveURL(/localhost:\d+\/$/);
   await page.goto("/reglages/donnees");
   await expect(page.getByRole("heading", { name: "Tout supprimer" })).toBeVisible();
-  await page.getByLabel("Tape SUPPRIMER pour confirmer").fill("SUPPRIMER");
+  await expect(page.getByText(`Compte à effacer : ${DOMINIQUE}`)).toBeVisible();
 
-  // Onglet B (même navigateur, donc mêmes cookies) : Dominique se déconnecte, Camille se connecte.
-  const other = await context.newPage();
-  await other.goto("/");
-  await logOut(other);
-  await other.goto(loginUrl(CAMILLE));
-  await expect(other).toHaveURL(/localhost:\d+\/$/);
-  expect(await signedInAs(other)).toBe(CAMILLE);
-
-  // Onglet A, resté sur le compte de Dominique : « Tout supprimer » ne doit jamais effacer Camille.
-  // Le `POST /account/delete` part (ou, une fois le correctif du front fusionné, le front refuse
-  // avant) : on attend sa réponse un court moment, puis que le réseau se calme.
-  const deleted = page
-    .waitForResponse((response) => response.url().endsWith("/account/delete"), { timeout: 5_000 })
-    .catch(() => null);
-  await page.getByRole("button", { name: "Tout supprimer" }).click();
-  await deleted;
-  await page.waitForLoadState("networkidle");
+  // Le cookie change après que le serveur a lu l'identité de Dominique et avant le POST.
+  await page.route(
+    `${API}/auth/me`,
+    async (route) => {
+      const response = await route.fetch();
+      expect((await response.json()).email).toBe(DOMINIQUE);
+      await other.goto(loginUrl(CAMILLE));
+      await expect(other).toHaveURL(/localhost:\d+\/$/);
+      await route.fulfill({ response });
+    },
+    { times: 1 },
+  );
+  const refused = page.waitForResponse((response) => response.url().endsWith("/account/delete"));
+  await deleteEverything(page);
+  expect((await refused).status()).toBe(409);
+  await expect(page.getByTestId("delete-failure")).toContainText("Rien n'a été supprimé");
+  await expect(page.getByText(`Compte à effacer : ${CAMILLE}`)).toBeVisible();
+  await expect(page.getByLabel("Tape SUPPRIMER pour confirmer")).toHaveValue("");
+  await expect(page.getByRole("button", { name: "Tout supprimer" })).toBeDisabled();
 
   // Camille est toujours connectée, et ses données sont intactes.
   expect(await signedInAs(other)).toBe(CAMILLE);

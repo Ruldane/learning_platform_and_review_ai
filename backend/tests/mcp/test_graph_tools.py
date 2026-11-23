@@ -4,6 +4,7 @@ validée par le `input_model` du graphe, puis suivre la session ; jamais un grap
 import asyncio
 import json
 from collections.abc import Iterator
+from uuid import uuid4
 
 import pytest
 
@@ -64,7 +65,24 @@ async def test_graph_launch_has_no_undoable_changes_but_is_in_the_journal(
 
     assert (await amcp.http.get(f"{API}/mcp/changes")).json() == []  # annuler = annuler la session
     calls = (await amcp.http.get(f"{API}/mcp/calls")).json()
-    assert "graph_with_topic" in {item["action"] for item in calls}
+    launch = next(item for item in calls if item["action"] == "graph_with_topic")
+    assert launch["ids"] == {"session_id": launched["data"]["session_id"]}
+
+
+async def test_session_journal_omits_user_supplied_subject_id(amcp: Mcp, writer: str) -> None:
+    subject_id = str(uuid4())
+    started = await amcp.http.post(
+        f"{API}/sessions",
+        json={"graph": "with_topic", "input": {"topic": "Test"}, "subject_id": subject_id},
+    )
+    assert started.status_code == 202, started.text
+    session_id = started.json()["session_id"]
+
+    done = await settled(amcp, writer, session_id)
+
+    assert done["subject_id"] == subject_id
+    entries = (await amcp.http.get(f"{API}/mcp/calls")).json()
+    assert entries and all(entry["ids"] == {"id": session_id} for entry in entries)
 
 
 async def test_graph_outside_allowlist_refused(amcp: Mcp, writer: str, adapter: Registry) -> None:

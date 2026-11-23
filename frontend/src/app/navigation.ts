@@ -6,12 +6,48 @@ import type { NavGroup, NavItem } from "./buildNav";
 
 const SECTIONS = [
   { section: "home", path: "/", labelKey: "nav.home", icon: Home, color: "var(--section-home)" },
-  { section: "learn", path: "/etudier", labelKey: "navigation.learn", icon: BookOpen, color: "var(--section-learn)" },
-  { section: "code", path: "/coder", labelKey: "navigation.code", icon: Code2, color: "var(--section-study)" },
-  { section: "memory", path: "/cerveau", labelKey: "navigation.memory", icon: Brain, color: "var(--section-memory)" },
-  { section: "career", path: "/carriere", labelKey: "nav.career", icon: Briefcase, color: "var(--section-career)" },
-  { section: "lab", path: "/labo", labelKey: "navigation.lab", icon: FlaskConical, color: "var(--section-skills)" },
-  { section: "settings", path: "/reglages", labelKey: "nav.settings", icon: Settings, color: "var(--section-settings)" },
+  {
+    section: "learn",
+    path: "/etudier",
+    labelKey: "navigation.learn",
+    icon: BookOpen,
+    color: "var(--section-learn)",
+  },
+  {
+    section: "code",
+    path: "/coder",
+    labelKey: "navigation.code",
+    icon: Code2,
+    color: "var(--section-study)",
+  },
+  {
+    section: "memory",
+    path: "/cerveau",
+    labelKey: "navigation.memory",
+    icon: Brain,
+    color: "var(--section-memory)",
+  },
+  {
+    section: "career",
+    path: "/carriere",
+    labelKey: "nav.career",
+    icon: Briefcase,
+    color: "var(--section-career)",
+  },
+  {
+    section: "lab",
+    path: "/labo",
+    labelKey: "navigation.lab",
+    icon: FlaskConical,
+    color: "var(--section-skills)",
+  },
+  {
+    section: "settings",
+    path: "/reglages",
+    labelKey: "nav.settings",
+    icon: Settings,
+    color: "var(--section-settings)",
+  },
 ] as const;
 
 export type Section = (typeof SECTIONS)[number]["section"];
@@ -23,7 +59,6 @@ export interface Destination extends NavItem {
   id: Feature;
   section: Section;
   description: MessageKey;
-  modelsRequired: boolean;
   settingsArea?: SettingsArea;
 }
 
@@ -76,16 +111,14 @@ const AREAS: Record<string, SettingsArea> = {
   "/reglages/entretien-surprise": "profile",
 };
 
-const NEEDS_MODELS = new Set<Feature>([
-  "book", "contradictory_watch", "expert_debates", "future_self", "podcast", "recruitment_process",
-]);
-
 const DESTINATIONS: Record<string, readonly NavEntry[]> = {
   demo: [{ section: "lab", path: "/demo", labelKey: "demo.title", order: 100 }],
 };
 
 export function descriptionKey(id: string): MessageKey | undefined {
-  return Object.hasOwn(navigation.features, id) ? `navigation.features.${id as Feature}` : undefined;
+  return Object.hasOwn(navigation.features, id)
+    ? `navigation.features.${id as Feature}`
+    : undefined;
 }
 
 function destinations(feature: FeatureManifest): Destination[] {
@@ -95,7 +128,7 @@ function destinations(feature: FeatureManifest): Destination[] {
   return (feature.nav ?? DESTINATIONS[id] ?? []).map((entry) => {
     const section = PRIMARY[id] ?? "lab";
     const settingsArea = section === "settings" ? (AREAS[entry.path] ?? "advanced") : undefined;
-    return { ...entry, id, section, description, settingsArea, modelsRequired: NEEDS_MODELS.has(id) };
+    return { ...entry, id, section, description, settingsArea };
   });
 }
 

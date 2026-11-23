@@ -4,7 +4,8 @@ pas un agent. Une proposition ne devient jamais un fait : tout ce que dit son te
 
 Règles, dans l'ordre (chacune ajoute une raison, jamais le texte du CV) :
 0. aucun fait du profil ne l'appuie → « à confirmer » ;
-1. un nombre (« 30 % », « 1 000 », « 1,5 », « trente ») que les faits cités ne disent pas ;
+1. un nombre (« 30 % », « 1 000 », « 1,5 », « trente ») absent des faits cités ou rattaché à
+   une mesure que les faits ne permettent pas d'identifier ;
 2. une proportion (« moitié », « tiers », « x2 ») sans chiffre de la même famille dans les faits ;
 3. un outil du lexique, de l'offre (outils, mots clés) ou un nom propre, absent des faits cités et
    des compétences : terme de l'offre → « écart » (il n'entre jamais dans le CV), autre → « à
@@ -31,6 +32,7 @@ from app.agents.tools.cv_lexicon import (
     figures_in,
     ratio_families,
 )
+from app.agents.tools.cv_numeric_claims import numeric_claims_supported
 from app.agents.tools.cv_schema import MasterProfileData, facts_of
 from app.agents.tools.cv_validator_facts import FOREIGN, is_structured, unbacked
 from app.agents.tools.posting_schema import PostingAnalysis, normalize_term
@@ -41,6 +43,7 @@ VerdictStatus = Literal["ok", "to_confirm", "to_gap"]
 NO_FACT = "Aucun fait de ton profil n'appuie cette modification"
 NUMBER = "Chiffre absent de ton profil"
 RATIO = "Proportion sans chiffre dans ton profil"
+NUMERIC_ASSOCIATION = "Lien entre un chiffre et sa mesure à confirmer"
 TOOL = "Outil absent de ton profil"
 NAME = "Nom propre absent de ton profil"
 TITLE = "Titre absent de ton profil"
@@ -69,7 +72,7 @@ def _padded(text: str) -> str:
     return f" {normalize_term(text, plural=True)} "
 
 
-def _cited(p: Proposal, facts: dict[str, str]) -> list[str]:
+def cited_facts(p: Proposal, facts: dict[str, str]) -> list[str]:
     """Le texte des faits que la proposition cite (`target` d'abord), sans doublon."""
     ids = dict.fromkeys(fact for fact in (p.target, *p.fact_ids) if fact)
     return [facts[fact] for fact in ids if fact in facts]
@@ -208,15 +211,18 @@ def validate(p: Proposal, profile: MasterProfileData, analysis: PostingAnalysis)
     pas quand le profil entier l'ignore)."""
     if p.action in ("remove", "move"):
         return Verdict("ok", [], [])
-    cited = _cited(p, facts_of(profile))
+    facts = facts_of(profile)
+    cited = cited_facts(p, facts)
     after = clean_text(p.after)
     reference = clean_text(" ".join(cited))
-    own = clean_text(facts_of(profile).get(p.target or "", ""))  # le fait visé seul (I-1)
+    own = clean_text(facts.get(p.target or "", ""))  # le fait visé seul (I-1)
     blocks: list[str] = [] if cited else [NO_FACT]
     if figures_in(after) - figures_in(reference):
         blocks.append(NUMBER)
     if _unbacked_ratios(after, reference):
         blocks.append(RATIO)
+    if NUMBER not in blocks and RATIO not in blocks and not numeric_claims_supported(after, cited):
+        blocks.append(NUMERIC_ASSOCIATION)
     gap, tools = _term_findings(after, _padded(reference), profile, analysis)
     if tools:
         blocks.append(TOOL)

@@ -12,7 +12,7 @@ export function BrainConversation() {
   const { requested, select } = useBrainSelection();
   const [revision, clear] = useState(0);
   const heading = useRef<HTMLHeadingElement>(null);
-  const { sidebar, refresh } = useConversationList("brain", (action) => {
+  const { sidebar, refresh, listPending } = useConversationList("brain", (action) => {
     if (action.kind === "clear") {
       clear((current) => current + 1);
       heading.current?.focus();
@@ -43,7 +43,7 @@ export function BrainConversation() {
           onCreate={() => create.mutate()}
           onSelect={select}
         />
-        {sidebar.pending ? null : (
+        {listPending ? null : (
           <BrainThread key={`${id}:${revision}`} id={id} onSubmitted={refresh} />
         )}
       </div>

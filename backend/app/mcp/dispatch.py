@@ -131,9 +131,9 @@ class McpDispatcher:
         if tool.level == 3:
             return await self._pend(identity, tool, request)
         if tool.level == 2 and tool.graph is None:
-            return await self._recorded(identity, tool, request, arguments)
+            return await self._recorded(identity, tool, request)
         response = await self._send(identity, request, artifact=tool.artifact)
-        return self._result(tool, arguments, response)
+        return self._result(tool, response)
 
     @staticmethod
     def _request(tool: ToolSpec, arguments: Mapping[str, Any]) -> ToolRequest:
@@ -168,7 +168,7 @@ class McpDispatcher:
         )  # fmt: skip
 
     async def _recorded(
-        self, identity: McpIdentity, tool: ToolSpec, request: ToolRequest, arguments: dict[str, Any]
+        self, identity: McpIdentity, tool: ToolSpec, request: ToolRequest
     ) -> ToolResult:
         """Niveau 2 : la requête sous un `ChangeRecorder` ; l'historique n'est gardé que si elle a
         réussi, sous l'identifiant de l'appel (celui de la ligne du journal)."""
@@ -184,12 +184,11 @@ class McpDispatcher:
             except Exception as exc:  # une panne d'historique ne défait pas l'appel déjà fait
                 logger.error("MCP : historique de l'appel impossible (%s)", type(exc).__name__)
                 why = "failed"
-        return self._result(tool, arguments, response, call_id, why)
+        return self._result(tool, response, call_id, why)
 
     def _result(
         self,
         tool: ToolSpec,
-        arguments: Mapping[str, Any],
         response: InternalResponse,
         call_id: str | None = None,
         no_history: str | None = None,
@@ -197,14 +196,14 @@ class McpDispatcher:
         """`no_history` : un appel de niveau 2 réussi sans historique le dit (`notice`, journal)."""
         data = response.data
         if response.status == 504 and tool.level >= 2:  # la route a pu écrire (M7)
-            return timed_out(data, arguments, call_id)
+            return timed_out(data, call_id)
         if response.status == 422:
             data = translate_validation(data, tool)
         elif response.status < 400:
             data = fence_sessions(
                 filter_fields(data, tool.response_fields), self._registry.graph_untrusted
             )
-        ids = result_ids(arguments, data)
+        ids = result_ids(data) if 200 <= response.status < 300 else {}
         notice = None
         if no_history is not None:
             ids["history"] = "none"
@@ -286,4 +285,4 @@ class McpDispatcher:
         response = await self._send(
             identity, stored.request, confirmed=True, artifact=tool.artifact
         )
-        return self._result(tool, {}, response)
+        return self._result(tool, response)

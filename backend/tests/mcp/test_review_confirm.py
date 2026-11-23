@@ -3,6 +3,7 @@
 
 from datetime import UTC, datetime, timedelta
 from typing import Any
+from uuid import uuid4
 
 import httpx
 from fastapi import FastAPI
@@ -16,7 +17,7 @@ from app.features.mcp.service.confirmation_support import purge_closed_confirmat
 from app.mcp.base import PrecheckInput, Verdict
 from app.mcp.limits import Limits
 from tests.agents.graphs_for_tests import TEST_GRAPHS
-from tests.mcp.adapter_support import FEATURES, add_probe, call, declarations
+from tests.mcp.adapter_support import FEATURES, PROBE_NOTE_ID, add_probe, call, declarations
 from tests.mcp.support import API, Mcp
 from tests.mcp.test_confirmations import NOTE, events, make_application, pend
 
@@ -45,7 +46,23 @@ async def test_confirmation_journal_keeps_identifiers_only(
     async with db_session_factory() as db:
         stmt = select(McpCall).where(McpCall.action == "probe_leak:confirm")
         row = (await db.execute(stmt)).scalar_one()
-    assert row.ids == {"note_id": "n_1"}  # le texte libre de `thread_id` n'entre pas
+    assert row.ids == {"note_id": PROBE_NOTE_ID}
+
+
+async def test_failed_confirmation_journals_only_the_pending_request_id(
+    amcp: Mcp, writer: str
+) -> None:
+    pending = await pend(amcp, writer, str(uuid4()))
+
+    confirm_id = pending["confirmation_id"]
+    failed = await amcp.http.post(f"{API}/mcp/confirmations/{confirm_id}/confirm")
+
+    assert failed.status_code == 200 and failed.json()["status"] == "failed"
+    entries = (await amcp.http.get(f"{API}/mcp/calls")).json()
+    calls = {entry["action"]: entry for entry in entries}
+    assert calls["applications_event"]["ids"] == {"confirmation_id": confirm_id}
+    assert calls["applications_event:confirm"]["code"] == 404
+    assert calls["applications_event:confirm"]["ids"] == {}
 
 
 # --- M6 : la demande est revérifiée à la confirmation -----------------------------------------

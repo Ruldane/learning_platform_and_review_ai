@@ -83,6 +83,48 @@ def test_number_of_another_uncited_fact_does_not_count() -> None:
     assert validate(cited, p, A).status == "ok"
 
 
+@pytest.mark.parametrize(
+    ("after", "status"),
+    [
+        ("Réduction des délais de 40 % et des coûts de 25 %", "to_confirm"),
+        ("Coûts en baisse de 25 %, délais raccourcis de 40 %", "to_confirm"),
+        ("Coûts en baisse de 40 %, délais raccourcis de 25 %", "ok"),
+        ("Réduction des délais de 25 %", "ok"),
+        ("Réduction des délais de 40 % et coûts réduits d'un quart", "to_confirm"),
+        ("Réduction des délais d'un quart et baisse des coûts de 40 %", "ok"),
+        ("Délais : 25 %, 40 %", "to_confirm"),
+    ],
+)
+def test_figures_stay_attached_to_their_measures(after: str, status: str) -> None:
+    source = "Réduction des délais de 25 % et des coûts de 40 %"
+    assert validate(rewrite("x1a1", after), profile(line=source), A).status == status
+
+
+@pytest.mark.parametrize(
+    ("fact", "after"),
+    [
+        ("25 % de coûts en moins", "25 % de coûts en plus"),
+        ("Coûts : -25 %", "Coûts : +25 %"),
+        ("Budget de 12 k€", "Budget de 12 000 $"),
+    ],
+)
+def test_numeric_association_keeps_the_direction_and_currency(fact: str, after: str) -> None:
+    assert validate(rewrite("x1a1", after), profile(line=fact), A).status == "to_confirm"
+
+
+@pytest.mark.parametrize(
+    ("fact", "after", "status"),
+    [
+        ("Passage de 10 à 5 jours", "Passé de 10 à 5 jours", "ok"),
+        ("Passage de 10 à 5 jours", "Passé de 5 à 10 jours", "to_confirm"),
+        ("Délais entre 10 et 15 jours", "Délais compris entre 10 et 15 jours", "ok"),
+        ("Passage de 10 à 5 jours", "Passé de 10 à 5 mois", "to_confirm"),
+    ],
+)
+def test_ordered_numeric_endpoints_keep_their_roles(fact: str, after: str, status: str) -> None:
+    assert validate(rewrite("x1a1", after), profile(line=fact), A).status == status
+
+
 # --- proportions ---
 
 

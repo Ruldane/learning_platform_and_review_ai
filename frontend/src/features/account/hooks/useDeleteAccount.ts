@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient, type QueryClient } from "@tanstack/react-query";
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useNavigate } from "react-router";
+import { ApiError } from "@/shared/api/errors";
 import { forgetAccount } from "@/shared/lib/forgetAccount";
 import { AccountChangedError, fetchMe, postDeleteAccount } from "../api";
 import { accountKeys } from "../queryKeys";
@@ -9,23 +10,39 @@ import { GOOGLE_MODE, type Me } from "../types";
 /** Où mène « Tout supprimer » en mode local : le premier lancement (réglages vides). */
 const WELCOME_PATH = "/bienvenue";
 
-/**
- * L'identité lue à neuf, jamais dans le cache : le cookie est partagé par tous les onglets, le
- * compte a pu changer. Si ce n'est plus celui qui est affiché, rien n'est envoyé : `me` relu est
- * déjà celui du compte actuel, il ne reste plus rien de l'ancien à l'écran.
- */
-async function readCurrentMe(queryClient: QueryClient): Promise<Me | null> {
-  const shown = queryClient.getQueryData<Me | null>(accountKeys.me);
-  const me = await queryClient.fetchQuery({
+function readCurrentMe(queryClient: QueryClient): Promise<Me | null> {
+  return queryClient.fetchQuery({
     queryKey: accountKeys.me,
     queryFn: ({ signal }) => fetchMe(signal),
     staleTime: 0,
   });
-  if (shown && me?.id !== shown.id) {
+}
+
+interface Consent {
+  confirm: string;
+  account: Me;
+}
+
+async function deleteWithConsent(
+  queryClient: QueryClient,
+  { confirm, account }: Consent,
+  onSend: () => void,
+) {
+  const me = await readCurrentMe(queryClient);
+  if (me?.id !== account.id) {
     forgetAccount(queryClient);
     throw new AccountChangedError();
   }
-  return me;
+  onSend();
+  try {
+    await postDeleteAccount(confirm, account.id);
+  } catch (error) {
+    if (!(error instanceof ApiError) || error.code !== "account_changed") throw error;
+    forgetAccount(queryClient);
+    await readCurrentMe(queryClient).catch(() => undefined);
+    throw new AccountChangedError();
+  }
+  return account;
 }
 
 /**
@@ -40,47 +57,51 @@ async function readCurrentMe(queryClient: QueryClient): Promise<Me | null> {
  * - mode local : l'identité reste (même utilisateur), retour au premier lancement, qui sait que
  *   les données viennent d'être supprimées (`state.deleted`).
  *
- * `submit` ne lance qu'une suppression à la fois, même si deux validations arrivent dans le même
- * instant (une ref, pas l'état de rendu). `started()` dit si la suppression est partie vers le
- * serveur : faux quand le mode n'a pas pu être lu, donc que rien n'a été envoyé.
+ * `submit` garde l'identité affichée avec le mot de confirmation. Le serveur la contrôle aussi,
+ * car un autre onglet peut changer le cookie après la lecture de `me`.
  */
-export function useDeleteAccount() {
+export function useDeleteAccount(account: Me | null | undefined) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const running = useRef(false);
   const sent = useRef(false);
-  const mutation = useMutation({
-    mutationFn: async (confirm: string) => {
+  const [consentRevision, setConsentRevision] = useState(0);
+  const { mutate, reset, isPending, error, variables } = useMutation({
+    mutationFn: async (consent: Consent) => {
       sent.current = false;
       try {
-        const me = await readCurrentMe(queryClient);
-        sent.current = true;
-        await postDeleteAccount(confirm);
-        return me?.auth_mode === GOOGLE_MODE;
+        return await deleteWithConsent(queryClient, consent, () => {
+          sent.current = true;
+        });
+      } catch (error) {
+        if (error instanceof AccountChangedError) setConsentRevision((value) => value + 1);
+        throw error;
       } finally {
         running.current = false;
       }
     },
-    onSuccess: (closedSession) => {
+    onSuccess: (deleted) => {
+      if (queryClient.getQueryData<Me | null>(accountKeys.me)?.id !== deleted.id) return;
       forgetAccount(queryClient);
-      if (closedSession) {
+      if (deleted.auth_mode === GOOGLE_MODE) {
         queryClient.setQueryData(accountKeys.me, null);
       } else {
         void navigate(WELCOME_PATH, { replace: true, state: { deleted: true } });
       }
     },
   });
-  const { mutate, reset, isPending, error } = mutation;
   // Stable : `DataPage` en fait la dépendance de l'objet d'échec (un neuf prendrait le focus).
   const started = useCallback(() => sent.current, []);
   return {
     isPending,
-    error,
+    error:
+      error instanceof AccountChangedError || variables?.account.id === account?.id ? error : null,
+    consentRevision,
     started,
     submit: (confirm: string) => {
-      if (running.current) return;
+      if (running.current || !account) return;
       running.current = true;
-      mutate(confirm);
+      mutate({ confirm, account });
     },
     /** Efface l'échec affiché ; sans effet pendant l'envoi. */
     reset: () => {

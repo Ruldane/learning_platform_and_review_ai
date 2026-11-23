@@ -1,7 +1,7 @@
 import { screen, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { apiBaseUrl } from "@/shared/api/client";
-import { localMe } from "@/test/authApi";
+import { camille, localMe } from "@/test/authApi";
 import { confirmAndDelete, setup } from "./dataPageTestkit";
 
 describe("DataPage", () => {
@@ -18,7 +18,7 @@ describe("DataPage", () => {
     const { user, deleteBodies, router, client } = setup("local");
     await confirmAndDelete(user);
     await screen.findByText("Premier lancement");
-    expect(deleteBodies).toEqual([{ confirm: "SUPPRIMER" }]);
+    expect(deleteBodies).toEqual([{ confirm: "SUPPRIMER", expected_user_id: localMe.id }]);
     expect(router.state.location.pathname).toBe("/bienvenue");
     // Les réglages et le reste seront relus à neuf ; l'identité locale reste.
     expect(client.getQueryData(["settings"])).toBeUndefined();
@@ -30,11 +30,18 @@ describe("DataPage", () => {
     const { user, deleteBodies, client, router } = setup("google");
     await confirmAndDelete(user);
     await waitFor(() => expect(client.getQueryData(["auth", "me"])).toBeNull());
-    expect(deleteBodies).toEqual([{ confirm: "SUPPRIMER" }]);
+    expect(deleteBodies).toEqual([{ confirm: "SUPPRIMER", expected_user_id: camille.id }]);
     expect(client.getQueryData(["settings"])).toBeUndefined();
     // La porte de la coquille mène à /connexion dès que `me` est vide ; ici, aucune porte :
     // la page n'ordonne aucune navigation elle-même.
     expect(router.state.location.pathname).toBe("/reglages/donnees");
+  });
+
+  it("closes the Google session when only the final vector purge remains", async () => {
+    const { user, client } = setup("google", { delete: "pending" });
+    await confirmAndDelete(user);
+    await waitFor(() => expect(client.getQueryData(["auth", "me"])).toBeNull());
+    expect(client.getQueryData(["settings"])).toBeUndefined();
   });
 
   it("422 shows field error", async () => {

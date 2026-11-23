@@ -62,6 +62,7 @@ class MemoryIndexer:
         self._index = index
         self._locks: dict[str, asyncio.Lock] = {}
         self._reindexing: set[str] = set()
+        self._retired_users: set[str] = set()
         self._writers = _Writers()
 
     def lock(self, user_id: str) -> asyncio.Lock:
@@ -173,8 +174,17 @@ class MemoryIndexer:
         l'utilisateur ne couvre que ces appels : jamais d'attente de SQLite sous ce verrou.
         Lève `EmbeddingsUnavailable` ou `VectorStoreUnavailable`."""
         async with self.lock(user_id):
+            if user_id in self._retired_users:
+                return
             await self._index.delete_items(user_id, [item_id])
             await self._index.index(chunks)
+
+    async def purge_retired_user(self, user_id: str) -> None:
+        """Ferme définitivement l'indexation d'un compte Google effacé. Attend une écriture
+        éventuelle sous le verrou, puis efface ses vecteurs. Un compte recréé a un autre id."""
+        self._retired_users.add(user_id)
+        async with self.lock(user_id):
+            await self._index.delete_user(user_id)
 
     async def unindex(self, user_id: str, item_ids: Sequence[str]) -> None:
         """Retire les vecteurs ; une panne du magasin est journalisée et avalée (les vecteurs

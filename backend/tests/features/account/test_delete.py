@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.models.accounts import User
 from app.db.models.agents import AgentSession
 from app.db.models.learning import Goal
+from app.features.account.schemas import DELETE_CONFIRMATION
 from app.features.ledger.service.ledger import scheduled_user_ids
 from app.providers.vector.base import VectorStoreUnavailable
 from tests.features.account.conftest import GoogleApp
@@ -192,7 +193,9 @@ async def test_google_mode_delete_removes_user_and_clears_cookie(google_app: Goo
     act_as(app, CAMILLE)
     client.cookies.set("tremplin_session", "jeton-de-camille")
 
-    response = await delete_account(client)
+    response = await client.post(
+        DELETE, json={"confirm": DELETE_CONFIRMATION, "expected_user_id": CAMILLE}
+    )
 
     assert response.status_code == 204
     cookie = response.headers["set-cookie"]

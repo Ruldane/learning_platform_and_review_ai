@@ -64,6 +64,7 @@ def get_account_runtime(conn: HTTPConnection) -> AccountRuntime:
         session_factory=state.session_factory,
         storage=memory.storage,
         index=memory.index,
+        indexer=state.memory.indexer,
         runtime=runtime,
         locks=locks,
     )
@@ -112,11 +113,22 @@ async def export_account(current: CurrentUserDep, db: Db, rt: AccountDep) -> Res
     status_code=204,
     response_class=Response,
     responses={
-        422: {"description": "`confirmation_required` : `details.fields` : `confirm`"},
+        202: {
+            "description": "Compte Google effacé ; la purge des vecteurs reprend en arrière-plan."
+        },
+        409: {"description": "`account_changed` : l'identité ne correspond plus à la session."},
+        422: {
+            "description": (
+                "`confirmation_required` : confirme avec SUPPRIMER ; "
+                "`account_identity_required` : indique l'identité affichée."
+            )
+        },
         503: {
             "description": (
-                "`vector_store_unavailable` : Qdrant ne répond pas ; rien n'est supprimé en base,"
-                " un nouvel appel reprend."
+                "`vector_store_unavailable` : Qdrant ne répond pas avant la suppression "
+                "des lignes ; "
+                "`vector_purge_incomplete` : l'espace local est effacé en base, "
+                "relance la suppression pour retirer les vecteurs restants."
             )
         },
     },
@@ -126,8 +138,9 @@ async def delete_account(
 ) -> Response:
     """Tout supprimer : annule les sessions en cours, puis efface les vecteurs, les fichiers, les
     points de reprise et toutes les lignes du compte. `confirm` doit être `SUPPRIMER`, sinon 422
-    `confirmation_required`. Rejouable jusqu'au bout si elle est interrompue. Mode local : l'espace
-    reste utilisable, vide ; mode Google : le compte et la session disparaissent."""
+    `confirmation_required`. L'identité affichée doit correspondre au compte authentifié.
+    Mode local : l'espace reste utilisable, vide ; mode Google : le compte et la session
+    disparaissent. La dernière purge des vecteurs peut reprendre en arrière-plan (202)."""
     if body.confirm != DELETE_CONFIRMATION:
         raise AppError(
             "confirmation_required",
@@ -136,8 +149,17 @@ async def delete_account(
             {"fields": ["confirm"]},
         )
     auth_mode = request.app.state.settings.auth_mode
-    await erase_account(rt, current.id, auth_mode=auth_mode)
-    response = Response(status_code=204)
+    if body.expected_user_id is not None and body.expected_user_id != current.id:
+        raise AppError("account_changed", "Le compte connecté a changé.", 409)
+    if body.expected_user_id is None and auth_mode == "google" and MCP_IDENTITY.get() is None:
+        raise AppError(
+            "account_identity_required",
+            "Indique le compte affiché pour confirmer sa suppression.",
+            422,
+            {"fields": ["expected_user_id"]},
+        )
+    complete = await erase_account(rt, current.id, auth_mode=auth_mode)
+    response = Response(status_code=204 if complete else 202)
     if auth_mode == "google":
         clear_session_cookie(response)  # la session a disparu avec le compte
     return response

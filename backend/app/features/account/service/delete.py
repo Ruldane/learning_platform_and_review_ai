@@ -6,8 +6,9 @@ sessions, enfin les lignes de **toutes** les tables à `user_id` (`all_user_tabl
 transaction, enfants d'abord. L'annulation est reprise juste avant la lecture des fils : aucune
 session ne survit au compte. Chaque étape est idempotente et la base ne change qu'à la fin : un
 appel interrompu (Qdrant en panne, disque verrouillé) se refait entier, et rien n'est supprimé en
-base tant que les vecteurs, les fichiers et les points de reprise ne le sont pas. Les vecteurs
-sont rappelés **après** les lignes : un `indexer.push` en vol ne laisse rien dans l'index.
+base tant que les vecteurs, les fichiers et les points de reprise ne le sont pas. Une dernière
+purge retire les vecteurs éventuels d'un `indexer.push` en vol. Pour un compte Google, la
+transaction inscrit cette purge sous l'ancien identifiant, pour pouvoir la reprendre sans session.
 Après `ROUNDS` tours d'annulation sans y arriver : 503 `account_busy`, avant toute écriture.
 
 Même verrou par compte que l'export : les deux ne se croisent pas. Les journaux ne portent que
@@ -23,10 +24,12 @@ from sqlalchemy.engine import CursorResult
 
 from app.core.errors import AppError
 from app.db.base import Base
-from app.features.account.repository import AccountRepository
+from app.db.models.accounts import AccountVectorPurge
+from app.features.account.repository import AccountRepository, queue_vector_purge
 from app.features.account.service.export import export_lock
 from app.features.account.service.runtime import AccountRuntime
 from app.features.account.service.tables import all_user_tables
+from app.features.account.service.vector_purges import finish_vector_purge
 from app.providers.vector.base import VectorStoreUnavailable
 
 logger = logging.getLogger(__name__)
@@ -66,10 +69,16 @@ async def _cancel_open_sessions(rt: AccountRuntime, user_id: str) -> int:
     )
 
 
-async def _delete_vectors(rt: AccountRuntime, user_id: str) -> None:
+async def _delete_vectors(rt: AccountRuntime, user_id: str, *, rows_deleted: bool = False) -> None:
     try:
         await rt.index.delete_user(user_id)
     except VectorStoreUnavailable:
+        if rows_deleted:
+            raise AppError(
+                "vector_purge_incomplete",
+                "Tes données sont effacées en base. La purge des vecteurs reste à terminer.",
+                503,
+            ) from None
         raise AppError(
             "vector_store_unavailable",
             "La base vectorielle est indisponible : rien n'est supprimé en base, réessaie.",
@@ -95,21 +104,25 @@ async def _delete_rows(rt: AccountRuntime, user_id: str, *, keep_user: bool) -> 
     tables = tuple(
         table
         for table in reversed(all_user_tables())  # les enfants avant leurs parents
-        if not (keep_user and table.name == "users")
+        if table.name != AccountVectorPurge.__tablename__
+        and not (keep_user and table.name == "users")
     )
     rows = 0
     async with rt.session_factory() as db, db.begin():
         for table in tables:
             result = await db.execute(delete(table).where(table.c.user_id == user_id))
             rows += max(cast(CursorResult[Any], result).rowcount, 0)
+        if not keep_user:
+            await queue_vector_purge(db, user_id)
     return len(tables), rows
 
 
 async def delete_account(
     rt: AccountRuntime, user_id: str, *, auth_mode: Literal["local", "google"]
-) -> None:
+) -> bool:
     """Efface tout ce que `user_id` a posé. Mode local : la ligne `users` reste (l'application
-    continue, vide) ; mode Google : elle part aussi, avec les sessions de connexion."""
+    continue, vide) ; mode Google : elle part aussi, avec les sessions de connexion.
+    Renvoie faux si seule la purge finale des vecteurs d'un compte Google reste en attente."""
     started = time.monotonic()
     async with export_lock(rt.locks, user_id), rt.runtime.refusing_starts(user_id):
         cancelled = await _cancel_open_sessions(rt, user_id)
@@ -119,9 +132,11 @@ async def delete_account(
         threads = await _session_ids(rt, user_id)
         await rt.runtime.delete_threads(threads)
         tables, rows = await _delete_rows(rt, user_id, keep_user=auth_mode == "local")
-        # Un `indexer.push` en vol a pu insérer des vecteurs entre le premier effacement et les
-        # lignes : l'élément a disparu, un second passage les retire (idempotent, 503 rejouable).
-        await _delete_vectors(rt, user_id)
+        complete = True
+        if auth_mode == "google":
+            complete = await finish_vector_purge(rt.session_factory, rt.indexer, user_id)
+        else:
+            await _delete_vectors(rt, user_id, rows_deleted=True)
     logger.info(
         "Tout supprimer : user=%s sessions_cancelled=%d threads=%d files=%d tables=%d rows=%d"
         " duration_ms=%d",
@@ -133,3 +148,4 @@ async def delete_account(
         rows,
         round((time.monotonic() - started) * 1000),
     )
+    return complete

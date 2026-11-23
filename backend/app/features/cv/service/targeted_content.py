@@ -6,7 +6,9 @@ from pydantic import Field
 
 from app.agents.tools.cv_compose import Applied, apply_with_report, base_content
 from app.agents.tools.cv_lexicon import figures_in
-from app.agents.tools.cv_schema import CvContent, Link, MasterProfileData
+from app.agents.tools.cv_numeric_claims import numeric_claims_supported
+from app.agents.tools.cv_schema import CvContent, Link, MasterProfileData, facts_of
+from app.agents.tools.cv_validator import cited_facts
 from app.agents.tools.posting_schema import PostingAnalysis, contains_term
 from app.agents.tools.review_schema import Proposal
 
@@ -88,6 +90,7 @@ def compose_targeted_cv(
     analysis: PostingAnalysis | None,
     *,
     portfolio: str | None = None,
+    latest_profile: MasterProfileData | None = None,
 ) -> Applied:
     """Garde les preuves du CV et déplace ses liens dans l'en-tête de la version ciblée."""
     sections = [section for section in base.sections if section.key != "links"]
@@ -98,9 +101,15 @@ def compose_targeted_cv(
         if section.key not in present
     ]
     evidence, terms = _evidence(profile), _offer_terms(analysis)
+    frozen_facts = facts_of(profile)
+    current_facts = facts_of(latest_profile) if latest_profile is not None else {}
     kept, ignored = [], []
     for proposal in accepted:
-        if proposal.section == "links" or _loses_experience(proposal, evidence, terms):
+        if (
+            proposal.section == "links"
+            or _loses_experience(proposal, evidence, terms)
+            or not _keeps_numeric_associations(proposal, frozen_facts, current_facts)
+        ):
             ignored.append(proposal.ref)
         else:
             kept.append(proposal)
@@ -110,3 +119,15 @@ def compose_targeted_cv(
         links.append(Link(label="Portfolio", url=portfolio, sources=["january"]))
     content = TargetedCvContent(**applied.content.model_dump(), header_links=links)
     return Applied(content, [*ignored, *applied.ignored])
+
+
+def _keeps_numeric_associations(
+    proposal: Proposal, frozen: dict[str, str], current: dict[str, str]
+) -> bool:
+    if proposal.action in ("remove", "move"):
+        return True
+    # Une confirmation manuelle écrit le texte dans le fait correspondant du profil validé.
+    confirmed = current.get(proposal.target or "")
+    return numeric_claims_supported(proposal.after, cited_facts(proposal, frozen)) or (
+        confirmed is not None and numeric_claims_supported(proposal.after, [confirmed])
+    )

@@ -17,12 +17,14 @@ import logging
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agents.tools.cv_schema import MasterProfileData
 from app.agents.tools.posting_schema import PostingAnalysis
 from app.agents.tools.review_schema import Proposal
 from app.core.errors import AppError
 from app.db.models.career import CvModification, CvReview, CvVersion
 from app.features.cv.repository import (
     ModificationRepository,
+    ProfileRepository,
     TemplateRepository,
     VersionRepository,
 )
@@ -89,7 +91,15 @@ async def _new_version(
     mods = await ModificationRepository(db, user_id).of_review(review.id)
     accepted = [as_proposal(m) for m in mods if m.status == "accepted"]
     portfolio = await approved_link(db, user_id, "cv", portfolio_origin)
-    applied = compose_targeted_cv(base, profile, accepted, analysis, portfolio=portfolio)
+    latest = await ProfileRepository(db, user_id).latest("validated")
+    latest_profile = (
+        MasterProfileData.model_validate(latest.data)
+        if latest is not None and latest.version > review.profile_version
+        else None
+    )
+    applied = compose_targeted_cv(
+        base, profile, accepted, analysis, portfolio=portfolio, latest_profile=latest_profile
+    )
     decisions = {m.ref: m.status for m in mods} | dict.fromkeys(applied.ignored, "ignored")
     template = await TemplateRepository(db, user_id).get(review.template_id)
     versions = VersionRepository(db, user_id)

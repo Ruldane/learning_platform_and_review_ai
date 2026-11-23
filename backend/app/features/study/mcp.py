@@ -35,9 +35,10 @@ MCP = FeatureMcp(
         ),
         McpAction(
             "PATCH /study-sessions/{study_session_id}",
-            2,
+            3,
             "study_update_session",
-            "Termine (`finish`) ou abandonne (`cancel`) une session guidée.",
+            "Termine (`finish`) ou abandonne (`cancel`) une session guidée. "
+            "À confirmer dans Tremplin.",
         ),
         McpAction(
             f"POST {_TRAINING}",

@@ -7,8 +7,11 @@ filtre pourtant sur `user_id`, toujours."""
 from collections.abc import AsyncGenerator, Sequence
 from typing import Any
 
-from sqlalchemy import Column, Select, Table, select
+from sqlalchemy import Column, Select, Table, delete, select
+from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.db.models.accounts import AccountVectorPurge
 
 
 class AccountRepository:
@@ -47,3 +50,23 @@ class AccountRepository:
         lit par lots (`batches`)."""
         result = await self.session.execute(self._select(table, columns))
         return [dict(row) for row in result.mappings()]
+
+
+async def queue_vector_purge(db: AsyncSession, user_id: str) -> None:
+    await db.execute(
+        insert(AccountVectorPurge)
+        .values(user_id=user_id)
+        .on_conflict_do_nothing(index_elements=[AccountVectorPurge.user_id])
+    )
+
+
+async def complete_vector_purge(db: AsyncSession, user_id: str) -> None:
+    await db.execute(delete(AccountVectorPurge).where(AccountVectorPurge.user_id == user_id))
+
+
+async def pending_vector_purges(db: AsyncSession) -> list[str]:
+    """File de travail du planificateur, indépendante des comptes et sans contenu utilisateur."""
+    result = await db.scalars(
+        select(AccountVectorPurge.user_id).order_by(AccountVectorPurge.created_at)
+    )
+    return list(result)

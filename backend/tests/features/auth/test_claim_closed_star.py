@@ -17,7 +17,11 @@ async def test_first_account_without_an_offer_closes_the_claim(
     local_id = await seed_local_space(db_session_factory)
     back = await sign_in(google_client, google, CAMILLE)
     assert back.headers["location"] == f"{FRONT}/"
-    r = await google_client.post("/api/v1/account/delete", json={"confirm": DELETE_CONFIRMATION})
+    me = (await google_client.get("/api/v1/auth/me")).json()["id"]
+    r = await google_client.post(
+        "/api/v1/account/delete",
+        json={"confirm": DELETE_CONFIRMATION, "expected_user_id": me},
+    )
     assert r.status_code == 204
     async with db_session_factory() as db:
         row = (

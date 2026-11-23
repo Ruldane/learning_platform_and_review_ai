@@ -38,7 +38,7 @@ async def test_brain_keeps_legacy_thread_and_erases_only_chosen_chat(
     path = f"{LIST}/brain/{first['id']}"
     renamed = await client.patch(path, json={"title": "Céleste et %"})
     assert renamed.json()["title"] == "Céleste et %"
-    found = await client.get(f"{LIST}/brain", params={"q": "CÉLESTE"})
+    found = await client.get(f"{LIST}/brain", params={"q": "  CELESTE  "})
     assert [item["id"] for item in found.json()] == [first["id"]]
     literal = await client.get(f"{LIST}/brain", params={"q": "%"})
     assert [item["id"] for item in literal.json()] == [first["id"]]

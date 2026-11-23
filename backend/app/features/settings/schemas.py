@@ -5,6 +5,7 @@ from pydantic import AfterValidator, BaseModel, Field, computed_field, field_val
 from app.agents.registry import AGENTS
 from app.core.clock import DEFAULT_ZONE, Weekday, is_zone
 from app.core.domains import normalize_domain
+from app.core.validation import KnownMappingKeys
 from app.features.settings.delays import validated_delays
 from app.providers.llm.base import TIERS, ModelChoice, Tier
 from app.providers.llm.model_defaults import DEFAULT_TIERS, supports_vision
@@ -103,7 +104,10 @@ class UserSettings(BaseModel):
     preferred_domains: DomainList = Field(default_factory=lambda: list(DEFAULT_PREFERRED_DOMAINS))
     excluded_domains: DomainList = Field(default_factory=lambda: list(DEFAULT_EXCLUDED_DOMAINS))
     tiers: dict[Tier, ModelChoice] = Field(default_factory=lambda: dict(DEFAULT_TIERS))
-    agent_overrides: dict[str, ModelChoice] = Field(default_factory=dict)
+    agent_overrides: Annotated[
+        dict[str, ModelChoice],
+        KnownMappingKeys(frozenset(name for name in AGENTS if is_overridable(name))),
+    ] = Field(default_factory=dict)
     search_provider_order: Annotated[
         list[SearchProviderName],
         Field(min_length=1, max_length=2),

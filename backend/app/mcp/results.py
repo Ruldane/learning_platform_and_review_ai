@@ -3,6 +3,7 @@ champs (`response_fields`), rendre une 422 lisible avec les noms d'arguments de 
 les identifiants pour le journal, et poster un formulaire sans fichier."""
 
 import json
+import re
 from collections.abc import Mapping
 from dataclasses import dataclass
 from email.message import Message
@@ -130,19 +131,36 @@ def field_path(parts: list[str], inverse: Mapping[str, str]) -> str:
     return clip(".".join([first, *parts[1:]]), 80)
 
 
-def result_ids(arguments: Mapping[str, Any], data: Any) -> dict[str, Any]:
-    """Les identifiants touchés (arguments et réponse) pour le journal ; le journal les filtre."""
-    ids: dict[str, Any] = {
-        key: value for key, value in arguments.items() if key == "id" or key.endswith("_id")
+_RESOURCE_ID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[45][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")
+_UNVERIFIED_IDS = frozenset({"ref_id", "request_id", "source_id", "subject_id"})
+_CREATED_RESOURCES = ("application", "goal", "posting")
+
+
+def result_ids(data: Any) -> dict[str, str]:
+    """Identifiants Tremplin d'une réponse réussie, UUID4 ou UUID5 pour les conversations.
+
+    Les références libres et les clés d'idempotence peuvent venir de la saisie. Les sous-objets
+    des réponses de création nommées portent l'identifiant de la ressource créée.
+    """
+    if not isinstance(data, dict):
+        return {}
+    ids = {
+        key: value
+        for key, value in data.items()
+        if (key == "id" or key.endswith("_id"))
+        and key not in _UNVERIFIED_IDS
+        and isinstance(value, str)
+        and _RESOURCE_ID.fullmatch(value)
     }
-    if isinstance(data, dict):
-        for key, value in data.items():
-            if (key == "id" or key.endswith("_id")) and isinstance(value, str | int):
-                ids.setdefault(key, value)
+    for resource in _CREATED_RESOURCES:
+        created = data.get(resource)
+        resource_id = created.get("id") if isinstance(created, dict) else None
+        if isinstance(resource_id, str) and _RESOURCE_ID.fullmatch(resource_id):
+            ids[f"{resource}_id"] = resource_id
     return ids
 
 
-def timed_out(data: Any, arguments: Mapping[str, Any], call_id: str | None) -> ToolResult:
+def timed_out(data: Any, call_id: str | None) -> ToolResult:
     """Délai dépassé sur une écriture : la route a pu valider ses écritures avant de répondre.
     Claude le lit (`notice`) avant de relancer, le journal le garde (`outcome: timeout`) ; rien
     n'a été enregistré pour l'annulation."""
@@ -153,7 +171,7 @@ def timed_out(data: Any, arguments: Mapping[str, Any], call_id: str | None) -> T
     return ToolResult(
         data=data,
         code=504,
-        ids={**result_ids(arguments, data), "outcome": "timeout"},
+        ids={"outcome": "timeout"},
         call_id=call_id,
         notice=notice,
     )
