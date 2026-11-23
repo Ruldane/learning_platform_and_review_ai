@@ -28,3 +28,21 @@ test("Codex receives search as a global option", () => {
   assert.ok(args.includes("--ephemeral"));
   assert.equal(args.at(-1), "-");
 });
+
+test("Claude Code plays on Sonnet by default", () => {
+  const [command, args] = clientCommand("claude-code", {});
+  assert.equal(command, "claude");
+  const at = args.indexOf("--model");
+  assert.ok(at >= 0);
+  assert.equal(args[at + 1], "sonnet");
+});
+
+test("TREMPLIN_RELAY_CLAUDE_MODEL picks another model", () => {
+  const [, args] = clientCommand("claude-code", { TREMPLIN_RELAY_CLAUDE_MODEL: "haiku" });
+  assert.equal(args[args.indexOf("--model") + 1], "haiku");
+});
+
+test("an unsafe model name falls back to Sonnet", () => {
+  const [, args] = clientCommand("claude-code", { TREMPLIN_RELAY_CLAUDE_MODEL: "x & del" });
+  assert.equal(args[args.indexOf("--model") + 1], "sonnet");
+});

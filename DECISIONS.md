@@ -3150,3 +3150,14 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
 - **Raison** : D220 prévoyait un module sans leçon, mais la production ne regardait que
   `skipped`. Elle a donc écrit une leçon « Valider mes acquis : Anglais courant » en semaine 1
   du programme LangChain, hors sujet dans un parcours qui va des bases à l'expertise.
+
+## D310
+
+- **Date** : 2026-11-23
+- **Sujet** : le relais joue les étapes sur Sonnet
+- **Décision** : le relais lance `claude -p --model <modèle>`, `sonnet` par défaut. La variable
+  `TREMPLIN_RELAY_CLAUDE_MODEL` en choisit un autre ; un nom hors de `[A-Za-z0-9._-]` retombe sur
+  `sonnet`, car la ligne de commande passe par le shell de Windows. Codex ne change pas.
+- **Raison** : sans `--model`, chaque étape jouée (Scout, Vérificateur) prenait le modèle par
+  défaut de Claude Code, le plus cher, et une leçon en lance plusieurs. Ces rôles n'ont pas
+  besoin de ce modèle ; la rédaction reste faite par la session principale.

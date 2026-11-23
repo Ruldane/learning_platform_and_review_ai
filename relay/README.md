@@ -17,6 +17,7 @@ Pour le retirer : `node relay/uninstall.mjs`. Son journal est dans `%APPDATA%\Tr
 
 - `TREMPLIN_MCP_URL` : l'adresse du serveur MCP, `http://127.0.0.1:8000/mcp` par défaut.
 - `TREMPLIN_RELAY_ORIGINS` : les origines exactes de l’interface autorisées à appairer ce relais, séparées par des virgules. Les valeurs par défaut sont `http://localhost:5173` et `http://127.0.0.1:5173`. Utiliser une origine `localhost` ou `127.0.0.1` pour un autre port local.
+- `TREMPLIN_RELAY_CLAUDE_MODEL` : le modèle de Claude Code pour les étapes jouées, `sonnet` par défaut (lettres, chiffres, `.`, `_` et `-` seulement ; sinon `sonnet`).
 - `TREMPLIN_RELAY_MCP_CONFIG` : une configuration MCP pour Claude Code, quand la pile visée n'est pas celle qui y est branchée (pile de recette).
 
 Claude Code est lancé depuis la racine du dépôt, là où le serveur `tremplin` est branché. Il ne reçoit que les outils de jeu (`agents_play_brief`, `agents_play_submit`, `sessions_get_session`) et la recherche web. La consigne envoyée au client est dans `prompt.md`.

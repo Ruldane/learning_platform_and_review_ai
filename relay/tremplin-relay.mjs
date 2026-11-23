@@ -78,7 +78,16 @@ function claudeServer() {
   return path ? ["--mcp-config", `"${path}"`, "--strict-mcp-config"] : [];
 }
 
-export function clientCommand(client) {
+// Modèle du relais : Sonnet par défaut (moins de crédit que le modèle par défaut de Claude Code).
+// Le shell de Windows lit la ligne de commande : un nom de modèle sûr seulement.
+const SAFE_MODEL = /^[A-Za-z0-9._-]+$/;
+
+export function claudeModel(env = process.env) {
+  const model = env.TREMPLIN_RELAY_CLAUDE_MODEL;
+  return model && SAFE_MODEL.test(model) ? model : "sonnet";
+}
+
+export function clientCommand(client, env = process.env) {
   const tools = [
     "mcp__tremplin__agents_play_brief",
     "mcp__tremplin__agents_play_submit",
@@ -88,7 +97,7 @@ export function clientCommand(client) {
   ].join(",");
   return client === "codex"
     ? ["codex", ["--search", "exec", "--skip-git-repo-check", "--ephemeral", "-c", "approval_policy=never", "-"]]
-    : ["claude", ["-p", "--allowedTools", tools, "--output-format", "text", ...claudeServer()]];
+    : ["claude", ["-p", "--model", claudeModel(env), "--allowedTools", tools, "--output-format", "text", ...claudeServer()]];
 }
 
 function launch(client, sessionId, stepId) {
