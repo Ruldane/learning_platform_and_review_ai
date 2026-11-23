@@ -223,6 +223,8 @@ def _build_week(
         modules=modules,
         tasks=tasks_out,
         load_minutes=sum(t.minutes for t in tasks_out),
+        stage=week.stage,
+        rationale=week.rationale,
     )
 
 

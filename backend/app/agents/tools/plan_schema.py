@@ -6,11 +6,19 @@ semaine compte 1 à 4 modules, un programme 1 à 52 semaines. Le moteur n'import
 """
 
 from collections.abc import Mapping
-from typing import Annotated, Self
+from typing import Annotated, Literal, Self
+from urllib.parse import urlsplit
 
-from pydantic import BaseModel, Field, PrivateAttr, StringConstraints, model_validator
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    Field,
+    PrivateAttr,
+    StringConstraints,
+    model_validator,
+)
 
-from app.agents.runtime.prose import Prose
+from app.agents.runtime.prose import Prose, ShortenToMax
 from app.core.skills import normalize_skill_name
 from app.db.models.program import TaskType
 from app.db.models.skills import SkillLevel
@@ -18,6 +26,22 @@ from app.db.models.skills import SkillLevel
 # Compétences déjà connues de January : clé = `normalize_skill_name`, valeur = niveau.
 KnownSkills = Mapping[str, SkillLevel]
 NotionName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=120)]
+Stage = Literal["fondations", "pratique", "avance"]
+MAX_OFFICIAL_URLS = 3
+MAX_LEGACY = 5
+
+
+def _http_url(value: str) -> str:
+    """Adresse http(s) avec un hôte ; le message ne nomme jamais la valeur reçue (D303)."""
+    parts = urlsplit(value.strip())
+    if parts.scheme not in {"http", "https"} or not parts.hostname:
+        raise ValueError("Une page officielle doit avoir une adresse http ou https.")
+    return value.strip()
+
+
+OfficialUrl = Annotated[str, StringConstraints(max_length=500), AfterValidator(_http_url)]
+Rationale = Annotated[str, Field(min_length=3, max_length=300), ShortenToMax()]
+LegacyName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=120)]
 
 
 class TaskDraft(BaseModel):
@@ -42,6 +66,10 @@ class ModuleDraft(ChapterOutline):
     skills: list[str] = Field(min_length=1, max_length=8)
     prerequisites: list[str] = Field(default_factory=list, max_length=8)
     tasks: list[TaskDraft] = Field(min_length=1, max_length=12)
+    # Pages de la documentation officielle du chapitre, et API dépréciées ou devenues secondaires
+    # à ne montrer que dans l'encadré « Lire du code ancien » (obligatoires pour le Stratège).
+    official_urls: list[OfficialUrl] = Field(default_factory=list, max_length=MAX_OFFICIAL_URLS)
+    legacy: list[LegacyName] = Field(default_factory=list, max_length=MAX_LEGACY)
     _chapter_index: int | None = PrivateAttr(default=None)
 
     @property
@@ -58,6 +86,10 @@ class WeekDraft(BaseModel):
     theme: str = Field(min_length=3, max_length=120)
     objective: Prose = Field(min_length=3, max_length=300)
     deliverable: Prose = Field(min_length=3, max_length=300)
+    # Étape du livre et raison de cette place : facultatives ici (écriture directe, MCP),
+    # obligatoires pour le Stratège.
+    stage: Stage | None = None
+    rationale: Rationale | None = None
     modules: list[ModuleDraft] = Field(min_length=1, max_length=4)
 
 

@@ -14,6 +14,14 @@ from app.agents.tools.lesson_port import ModuleBrief
 
 MAX_LESSON_SOURCES = 8  # les mieux notées, pour garder un prompt de taille raisonnable
 LANGUAGES = {"fr": "français", "en": "anglais"}  # nom de la langue des leçons, pour les prompts
+# Consigne de l'application, hors de l'encadré non fiable : les noms des API anciennes (sortie du
+# Stratège) restent dans la fiche, la règle qui les concerne n'en fait pas partie.
+LEGACY_RULE = (
+    "Règle sur les API anciennes de la fiche : présente-les seulement dans un encadré « Lire du "
+    "code ancien » (une citation Markdown, lignes commençant par `>`) de la section "
+    "d'explication, pour qu'on sache les reconnaître dans du code existant ; jamais comme la "
+    "façon recommandée, et sans exemple à écrire avec elles."
+)
 SOURCE_CHARS = 6000  # texte lu rendu au Rédacteur et au Vérificateur, par source
 
 
@@ -87,7 +95,10 @@ def module_prompt(brief: ModuleBrief) -> str:
     ]
     if brief.chapter_context:
         lines.append(brief.chapter_context)
-    return untrusted("\n".join(lines), "module")
+    if brief.legacy:
+        lines.append(f"API anciennes du chapitre : {', '.join(brief.legacy)}")
+    block = untrusted("\n".join(lines), "module")
+    return f"{block}\n\n{LEGACY_RULE}" if brief.legacy else block
 
 
 def brief_of(state: LessonFactoryState) -> ModuleBrief:
@@ -104,4 +115,5 @@ def brief_of(state: LessonFactoryState) -> ModuleBrief:
         language=data["language"],
         seed_urls=tuple(data["seed_urls"]),
         chapter_context=data.get("chapter_context", ""),
+        legacy=tuple(data.get("legacy", ())),
     )

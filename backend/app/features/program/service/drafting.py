@@ -80,12 +80,16 @@ async def write_rows(
             objective=week.objective,
             deliverable=week.deliverable,
             start_date=week.start_date,
+            stage=week.stage,
+            rationale=week.rationale,
         )
         first_week_id = first_week_id or row.id
         ids: list[str] = []
         for rank, module in enumerate(week.modules):
-            fields = {"title": module.title, "skills": list(module.skills)}
+            fields: dict[str, Any] = {"title": module.title, "skills": list(module.skills)}
             fields["prerequisites"] = list(module.prerequisites)
+            fields["official_urls"] = list(module.official_urls)
+            fields["legacy"] = list(module.legacy)
             added = await modules.add(week_id=row.id, program_id=program_id, rank=rank, **fields)
             ids.append(added.id)
             if module.chapter_index is not None:
@@ -124,6 +128,8 @@ async def _write_skipped(
             title=title,
             skills=list(source.skills) if source else [],
             prerequisites=list(source.prerequisites) if source else [],
+            official_urls=list(source.official_urls) if source else [],
+            legacy=list(source.legacy) if source else [],
             skipped=True,
         )
 

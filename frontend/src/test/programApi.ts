@@ -27,6 +27,8 @@ export const moduleOut = (over: Record<string, unknown> = {}) => ({
   lesson_id: "l1",
   lesson_status: "ready",
   resources_count: 3,
+  official_urls: [],
+  legacy: [],
   tasks: [
     taskOut(),
     taskOut({ id: "t2", title: "Pratiquer les boucles", type: "pratiquer", minutes: 90 }),
@@ -48,6 +50,8 @@ export const weekOut = (over: Record<string, unknown> = {}) => ({
   objective: "Écrire un script de 50 lignes sans aide.",
   deliverable: "Un script qui trie un fichier CSV.",
   start_date: "2026-11-16",
+  stage: null,
+  rationale: null,
   load_minutes: 180,
   load_hours: 3,
   modules: [moduleOut()],

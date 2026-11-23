@@ -14,6 +14,16 @@ const BUDGET = { weekday: 120, weekend: 240 };
 const program = (over: Record<string, unknown> = {}) => programOut(over) as unknown as ProgramOut;
 
 describe("toWeekViews", () => {
+  it("carries the stage and the reason of each week, or null when the program has none", () => {
+    const withStage = weekOut({ stage: "avance", rationale: "Le sujet suppose tout le reste." });
+    const [first, second] = toWeekViews(
+      program({ weeks: [withStage, weekOut({ id: "w2", rank: 2, start_date: "2026-11-23" })] }),
+      BUDGET,
+    );
+    expect(first).toMatchObject({ stage: "avance", rationale: "Le sujet suppose tout le reste." });
+    expect(second).toMatchObject({ stage: null, rationale: null });
+  });
+
   it("builds seven days from Monday, with the weekday, Saturday and Sunday capacities", () => {
     const [week] = toWeekViews(program(), BUDGET);
     expect(week?.days.map((day) => day.date)).toEqual([

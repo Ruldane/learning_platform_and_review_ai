@@ -35,6 +35,9 @@ class ModuleBrief:
     # Pages des praticiens et sources retenues du Conseil liées au module (5 au plus).
     seed_urls: tuple[str, ...]
     chapter_context: str = ""
+    # API dépréciées ou devenues secondaires du chapitre : à ne montrer que dans l'encadré
+    # « Lire du code ancien », jamais comme la façon recommandée.
+    legacy: tuple[str, ...] = ()
 
 
 class ResourcePick(BaseModel):

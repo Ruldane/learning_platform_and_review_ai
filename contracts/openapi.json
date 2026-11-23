@@ -15146,6 +15146,14 @@
             "title": "Id",
             "type": "string"
           },
+          "legacy": {
+            "description": "API anciennes à ne montrer que dans l'encadré « Lire du code ancien ».",
+            "items": {
+              "type": "string"
+            },
+            "title": "Legacy",
+            "type": "array"
+          },
           "lesson_id": {
             "anyOf": [
               {
@@ -15173,6 +15181,14 @@
               }
             ],
             "title": "Lesson Status"
+          },
+          "official_urls": {
+            "description": "Pages de la documentation officielle du chapitre (3 au plus).",
+            "items": {
+              "type": "string"
+            },
+            "title": "Official Urls",
+            "type": "array"
           },
           "prerequisites": {
             "items": {
@@ -15222,6 +15238,8 @@
           "lesson_id",
           "lesson_status",
           "resources_count",
+          "official_urls",
+          "legacy",
           "tasks"
         ],
         "title": "ModuleOut",
@@ -29428,6 +29446,35 @@
             "title": "Rank",
             "type": "integer"
           },
+          "rationale": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pourquoi cette semaine arrive à cette place, si le Stratège l'a donnée.",
+            "title": "Rationale"
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "enum": [
+                  "fondations",
+                  "pratique",
+                  "avance"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Étape du livre (fondations, pratique courante, avancé), si le Stratège l'a donnée.",
+            "title": "Stage"
+          },
           "start_date": {
             "format": "date",
             "title": "Start Date",
@@ -29445,6 +29492,8 @@
           "objective",
           "deliverable",
           "start_date",
+          "stage",
+          "rationale",
           "load_minutes",
           "load_hours",
           "modules"

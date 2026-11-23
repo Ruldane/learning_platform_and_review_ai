@@ -2,7 +2,7 @@
 tâches, avancement, dernière différence), modifications de January, validation."""
 
 from datetime import date
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, StringConstraints, model_validator
 
@@ -73,6 +73,12 @@ class ModuleOut(BaseModel):
     lesson_id: str | None
     lesson_status: LessonStatus | None
     resources_count: int
+    official_urls: list[str] = Field(
+        description="Pages de la documentation officielle du chapitre (3 au plus)."
+    )
+    legacy: list[str] = Field(
+        description="API anciennes à ne montrer que dans l'encadré « Lire du code ancien »."
+    )
     tasks: list[TaskOut]
 
 
@@ -87,6 +93,13 @@ class WeekOut(BaseModel):
     objective: str
     deliverable: str
     start_date: date
+    stage: Literal["fondations", "pratique", "avance"] | None = Field(
+        description="Étape du livre (fondations, pratique courante, avancé), si le Stratège l'a "
+        "donnée."
+    )
+    rationale: str | None = Field(
+        description="Pourquoi cette semaine arrive à cette place, si le Stratège l'a donnée."
+    )
     load_minutes: int = Field(
         description="Minutes des tâches planifiées du lundi au dimanche de cette semaine, "
         "quel que soit leur module (règle des 85 %)."

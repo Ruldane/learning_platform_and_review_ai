@@ -13,6 +13,36 @@ describe("WeekHeader", () => {
     expect(screen.getByText("Un script qui trie un fichier CSV.")).toBeInTheDocument();
   });
 
+  it("shows the stage and the reason of the week when the program gives them", () => {
+    render(
+      <WeekHeader
+        week={makeWeek({
+          stage: "pratique",
+          rationale: "Les outils viennent après les messages.",
+        })}
+      />,
+    );
+    expect(screen.getByText("Étape")).toBeInTheDocument();
+    expect(screen.getByText("Pratique courante")).toBeInTheDocument();
+    expect(
+      screen.getByText("Pourquoi maintenant : Les outils viennent après les messages."),
+    ).toBeInTheDocument();
+  });
+
+  it.each([
+    ["fondations", "Fondations"],
+    ["avance", "Avancé"],
+  ] as const)("names the %s stage", (stage, label) => {
+    render(<WeekHeader week={makeWeek({ stage })} />);
+    expect(screen.getByText(label)).toBeInTheDocument();
+  });
+
+  it("shows neither stage nor reason when the program has none", () => {
+    render(<WeekHeader week={makeWeek()} />);
+    expect(screen.queryByText("Étape")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Pourquoi maintenant/)).not.toBeInTheDocument();
+  });
+
   it("shows the load against 85 %", () => {
     render(<WeekHeader week={makeWeek()} />);
     expect(screen.getByText(/11 h 54/)).toBeInTheDocument();

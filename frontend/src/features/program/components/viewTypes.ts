@@ -27,11 +27,18 @@ export interface DayView {
   tasks: TaskView[];
 }
 
+/** Étape du livre où se place une semaine. */
+export type WeekStage = "fondations" | "pratique" | "avance";
+
 export interface WeekView {
   rank: number;
   theme: string;
   objective: string;
   deliverable: string;
+  /** Étape du livre, `null` si le programme ne la donne pas. */
+  stage: WeekStage | null;
+  /** Pourquoi la semaine arrive à cette place, `null` si le programme ne la donne pas. */
+  rationale: string | null;
   /** Lundi de la semaine, `AAAA-MM-JJ`. */
   startDate: string;
   /** Charge planifiée, en minutes. */

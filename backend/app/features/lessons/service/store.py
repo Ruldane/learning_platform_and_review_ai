@@ -56,8 +56,9 @@ def _words(text: str) -> set[str]:
 
 
 def seed_urls(module: Module, sources: Sequence[Source]) -> tuple[str, ...]:
-    """Pages retenues et praticiens du Conseil, ceux qui parlent du module d'abord (mots du
-    titre et des compétences dans leur titre ou leur résumé), puis par note ; 5 au plus."""
+    """Pages officielles du module en tête, puis pages retenues et praticiens du Conseil, ceux
+    qui parlent du module d'abord (mots du titre et des compétences dans leur titre ou leur
+    résumé), puis par note ; sans doublon, 5 au plus."""
     wanted = _words(" ".join([module.title, *map(str, module.skills)]))
     usable = [s for s in sources if s.kind == "person" or s.verdict == "kept"]
 
@@ -66,6 +67,9 @@ def seed_urls(module: Module, sources: Sequence[Source]) -> tuple[str, ...]:
         return (-len(wanted & found), -(source.score or 0))
 
     seeds: list[str] = []
+    for url in (str(u) for u in module.official_urls):
+        if url not in seeds:
+            seeds.append(url)
     for source in sorted(usable, key=rank):
         if source.url not in seeds:
             seeds.append(source.url)
@@ -140,6 +144,7 @@ class AgentLessonStore:
                 language=settings.lesson_language,
                 seed_urls=seed_urls(module, sources),
                 chapter_context=await chapter_context(db, user_id, loaded, module),
+                legacy=tuple(str(n) for n in module.legacy),
             )
 
     async def _save(

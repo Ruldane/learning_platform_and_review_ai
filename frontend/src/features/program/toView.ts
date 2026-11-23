@@ -59,6 +59,8 @@ export function toWeekViews(program: ProgramOut, budget: DayBudget): WeekView[] 
       theme: week.theme,
       objective: week.objective,
       deliverable: week.deliverable,
+      stage: week.stage ?? null,
+      rationale: week.rationale ?? null,
       startDate: week.start_date,
       loadMinutes: days.reduce((sum, day) => sum + day.tasks.reduce((s, x) => s + x.minutes, 0), 0),
       capMinutes: program.cap_minutes,

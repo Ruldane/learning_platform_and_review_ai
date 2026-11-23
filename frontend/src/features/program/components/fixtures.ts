@@ -63,6 +63,8 @@ export function makeWeek(overrides: Partial<WeekView> = {}): WeekView {
     theme: "Premiers pas en Python",
     objective: "Écrire un script de 50 lignes sans aide.",
     deliverable: "Un script qui trie un fichier CSV.",
+    stage: null,
+    rationale: null,
     startDate: "2026-11-16",
     loadMinutes: 690,
     capMinutes: 714,

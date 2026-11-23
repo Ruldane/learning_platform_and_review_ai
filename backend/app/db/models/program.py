@@ -45,6 +45,9 @@ class Week(UserScopedMixin, Base):
     objective: Mapped[str] = mapped_column(Text)
     deliverable: Mapped[str] = mapped_column(Text)
     start_date: Mapped[date] = mapped_column(Date)
+    # Étape du livre (`fondations`, `pratique`, `avance`) et raison de la place de la semaine.
+    stage: Mapped[str | None] = mapped_column(String(16), default=None)
+    rationale: Mapped[str | None] = mapped_column(Text, default=None)
 
 
 class Module(UserScopedMixin, Base):
@@ -63,6 +66,10 @@ class Module(UserScopedMixin, Base):
     skipped: Mapped[bool] = mapped_column(default=False)
     # « validation » : module « Valider mes acquis » (quiz sans leçon) ; sinon nul.
     kind: Mapped[str | None] = mapped_column(String(16), default=None)
+    # Pages de la documentation officielle (en tête des adresses de départ de la leçon) et API
+    # anciennes (à ne montrer que dans l'encadré « Lire du code ancien »).
+    official_urls: Mapped[list[Any]] = mapped_column(default=list, server_default="[]")
+    legacy: Mapped[list[Any]] = mapped_column(default=list, server_default="[]")
 
 
 class Task(UserScopedMixin, Base):

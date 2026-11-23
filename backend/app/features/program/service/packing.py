@@ -163,6 +163,8 @@ class ScheduledWeek:
     modules: list[ModuleDraft]
     tasks: list[ScheduledTask]
     load_minutes: int
+    stage: str | None = None
+    rationale: str | None = None
 
 
 @dataclass(frozen=True)

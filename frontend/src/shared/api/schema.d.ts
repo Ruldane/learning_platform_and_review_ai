@@ -12439,10 +12439,20 @@ export interface components {
         ModuleOut: {
             /** Id */
             id: string;
+            /**
+             * Legacy
+             * @description API anciennes à ne montrer que dans l'encadré « Lire du code ancien ».
+             */
+            legacy: string[];
             /** Lesson Id */
             lesson_id: string | null;
             /** Lesson Status */
             lesson_status: ("pending" | "generating" | "ready" | "failed") | null;
+            /**
+             * Official Urls
+             * @description Pages de la documentation officielle du chapitre (3 au plus).
+             */
+            official_urls: string[];
             /** Prerequisites */
             prerequisites: string[];
             /** Rank */
@@ -17588,6 +17598,16 @@ export interface components {
             objective: string;
             /** Rank */
             rank: number;
+            /**
+             * Rationale
+             * @description Pourquoi cette semaine arrive à cette place, si le Stratège l'a donnée.
+             */
+            rationale: string | null;
+            /**
+             * Stage
+             * @description Étape du livre (fondations, pratique courante, avancé), si le Stratège l'a donnée.
+             */
+            stage: ("fondations" | "pratique" | "avance") | null;
             /**
              * Start Date
              * Format: date

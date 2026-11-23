@@ -194,6 +194,8 @@ async def _modules_out(db: AsyncSession, user_id: str, loaded: Loaded) -> dict[s
             lesson_id=lessons[module.id][0] if module.id in lessons else None,
             lesson_status=lessons[module.id][1] if module.id in lessons else None,  # type: ignore[arg-type]
             resources_count=counts.get(module.id, 0),
+            official_urls=[str(u) for u in module.official_urls],
+            legacy=[str(n) for n in module.legacy],
             tasks=[task_out(t) for t in loaded.tasks_of_module(module.id)],
         )
         for module in loaded.modules
@@ -209,6 +211,8 @@ def _week_out(loaded: Loaded, week: Week, modules: dict[str, ModuleOut]) -> Week
         objective=week.objective,
         deliverable=week.deliverable,
         start_date=week.start_date,
+        stage=week.stage,  # type: ignore[arg-type]  # colonne texte, valeurs de Stage
+        rationale=week.rationale,
         load_minutes=load_minutes,
         load_hours=round(load_minutes / 30) / 2,
         modules=[modules[m.id] for m in loaded.modules if m.week_id == week.id],

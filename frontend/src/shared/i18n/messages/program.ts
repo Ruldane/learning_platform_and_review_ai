@@ -88,6 +88,13 @@ export const program = {
     title: "Semaine {rank} : {theme}",
     objective: "Objectif",
     deliverable: "Livrable",
+    stage: {
+      label: "Étape",
+      fondations: "Fondations",
+      pratique: "Pratique courante",
+      avance: "Avancé",
+    },
+    rationale: "Pourquoi maintenant : {text}",
     load: "Charge",
     loadValue: "{load} / {cap} (85 %)",
     overCap: "Au-delà du plafond de la semaine.",
