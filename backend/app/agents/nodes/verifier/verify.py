@@ -11,6 +11,7 @@ les contrôles et note la version élaguée (D97 n° 11, D225).
 Rien n'est écrit : un nœud rejoué refait le contrôle, sans effet de bord."""
 
 import logging
+from typing import cast
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
@@ -41,6 +42,7 @@ MAX_REVISIONS = 2  # révisions demandées au Rédacteur au plus : trois écritu
 VERIFY_TIMEOUT_S = 240
 MAX_CLAIM_CHARS = 300
 MAX_PROBLEMS_SHOWN = 6
+REVERTED = "Cette révision est moins bonne que la précédente : je repars de la meilleure version."
 
 logger = logging.getLogger(__name__)
 
@@ -154,37 +156,68 @@ def _verdict_text(result: LessonFactoryState, removed: int, *, show_details: boo
     return "\n".join([*lines, *grades])
 
 
+def draft_rank(*, problems: list[str], unsupported: list[str], scores: dict[str, int]) -> list[int]:
+    """Rang d'une version, plus petit = meilleure (D305) : les problèmes de contrôle d'abord
+    (les affirmations non sourcées peuvent encore être retirées), puis ces affirmations, puis la
+    plus basse des notes."""
+    return [len(problems), len(unsupported), -min(scores.values(), default=0)]
+
+
+def _keep_best(state: LessonFactoryState, result: LessonFactoryState) -> bool:
+    """Garde la meilleure version contrôlée dans `best` ; si la nouvelle est moins bonne, l'état
+    revient à la meilleure (brouillon, contrôles, notes) et la révision suivante en part. Rend
+    `True` dans ce cas."""
+    rank = draft_rank(
+        problems=result["problems"], unsupported=result["unsupported"], scores=result["scores"]
+    )
+    best = state.get("best")
+    if best is not None and rank > best["rank"]:
+        result.update(cast(LessonFactoryState, {k: v for k, v in best.items() if k != "rank"}))
+        return True
+    result["best"] = {"rank": rank, "draft": state["draft"], **result}
+    return False
+
+
+async def _check(
+    deps: GraphDeps, brief: ModuleBrief, draft: str, sources: list[LessonSource]
+) -> LessonFactoryState:
+    """Contrôles déterministes et contrôle des faits d'une version, journalisés en nombres."""
+    check = check_lesson(draft, title=brief.title, sources=_numbered(sources))
+    report = await _facts(deps, brief, draft, sources)
+    claims = report.claims()
+    unsupported = in_scope(draft, claims)
+    problems = [*check.problems, *report.grades.problems()]
+    logger.info(
+        "Leçon contrôlée : session %s, module %s, %d mots, %d problème(s), "
+        "%d non sourcée(s), %d hors périmètre",
+        deps.session_id,
+        brief.module_id,
+        check.words,
+        len(problems),
+        len(unsupported),
+        len(claims) - len(unsupported),
+    )
+    return {
+        "words": check.words,
+        "problems": problems,
+        "unsupported": unsupported,
+        "scores": report.grades.scores(),
+        "check_categories": list(check.categories),
+    }
+
+
 def make_verify(deps: GraphDeps) -> Node:
     @node_timeout(VERIFY_TIMEOUT_S)
     async def verify(state: LessonFactoryState) -> LessonFactoryState:
         brief = brief_of(state)
         draft = state["draft"]
         sources = lesson_sources(state)
-        check = check_lesson(draft, title=brief.title, sources=_numbered(sources))
-        report = await _facts(deps, brief, draft, sources)
-        claims = report.claims()
-        unsupported = in_scope(draft, claims)
         revisions = state.get("revisions", 0)
-        problems = [*check.problems, *report.grades.problems()]
-        logger.info(
-            "Leçon contrôlée : session %s, module %s, %d mots, %d problème(s), "
-            "%d non sourcée(s), %d hors périmètre",
-            deps.session_id,
-            brief.module_id,
-            check.words,
-            len(problems),
-            len(unsupported),
-            len(claims) - len(unsupported),
-        )
-        result: LessonFactoryState = {
-            "words": check.words,
-            "problems": problems,
-            "unsupported": unsupported,
-            "scores": report.grades.scores(),
-            "check_categories": list(check.categories),
-        }
+        result = await _check(deps, brief, draft, sources)
         removed = 0
-        if revisions >= MAX_REVISIONS and unsupported and not problems:
+        reverted = _keep_best(state, result)
+        draft, unsupported = result.get("draft", draft), result["unsupported"]
+        if revisions >= MAX_REVISIONS and unsupported and not result["problems"]:
             update, removed = await _review_after_pruning(deps, brief, draft, sources, unsupported)
             result.update(update)
             logger.info(
@@ -195,6 +228,8 @@ def make_verify(deps: GraphDeps) -> Node:
                 len(result.get("problems", [])),
             )
         text = _verdict_text(result, removed, show_details=not state.get("verification", False))
+        if reverted:
+            text = f"{REVERTED}\n{text}"
         emit(
             "agent.message",
             {"message_id": f"{AGENT}-controle-{revisions}", "text": text},

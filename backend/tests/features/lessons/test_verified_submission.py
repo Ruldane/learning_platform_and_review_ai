@@ -197,7 +197,8 @@ async def test_refusal_keeps_the_published_version_and_exposes_a_reason(
     assert denied["verification_session_id"] is None
     reason = denied.pop("verification_failure_reason")
     assert "2 révision(s)" in reason and "Exemple travaillé (60/100)" in reason
-    assert "Structure du chapitre" in reason and "SECRET-DU-TEXTE" not in reason
+    # La dernière révision casse la structure : on revient à la meilleure version (D305).
+    assert "Structure du chapitre" not in reason and "SECRET-DU-TEXTE" not in reason
     before.pop("verification_failure_reason")
     assert denied == before
     assert await lesson_memory(app) == []

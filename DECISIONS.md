@@ -3082,3 +3082,16 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
   vérification, y compris pour les propositions acceptées avant la correction,
   et tient compte des faits explicitement confirmés dans le profil maître.
 - **Raison** : éviter qu’une reformulation inverse les résultats mesurés.
+
+## D305
+
+- **Date** : 2026-11-23
+- **Sujet** : Révisions du Rédacteur et place de chaque semaine d'un programme.
+- **Décision** : le Vérificateur garde la meilleure version contrôlée ; une révision moins
+  bonne est écartée et la suivante repart de la meilleure. La consigne de révision donne la
+  longueur de départ, la borne et les critères déjà réussis, et demande une correction ciblée.
+  Chaque semaine d'un programme peut porter son étape et sa justification, chaque module ses
+  pages officielles (placées en tête des sources de la leçon) et ses API anciennes (encadré
+  « Lire du code ancien »). Ces champs restent facultatifs pour l'écriture directe.
+- **Raison** : le pilote du 22/11 a vu deux révisions faire baisser les notes et dépasser
+  2 500 mots, faute de source officielle.

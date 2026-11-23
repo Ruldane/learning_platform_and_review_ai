@@ -19,6 +19,7 @@ from app.agents.nodes.lesson_common import (
     sources_prompt,
 )
 from app.agents.nodes.verifier.checks import MAX_WORDS, MIN_WORDS, SECTIONS
+from app.agents.nodes.verifier.grades import CRITERIA, MIN_GRADE
 from app.agents.prompts.loader import render_prompt, untrusted
 from app.agents.registry import get_agent
 from app.agents.runtime.deps import GraphDeps
@@ -47,6 +48,16 @@ def _checks(state: LessonFactoryState) -> str:
     return untrusted("\n".join(lines), "contrôles du Vérificateur")
 
 
+def _kept(state: LessonFactoryState) -> str:
+    """Critères déjà réussis par la version à réviser, à préserver (D305)."""
+    scores = state.get("scores", {})
+    return ", ".join(
+        f"{label} ({scores[name]}/100)"
+        for name, label in CRITERIA.items()
+        if scores.get(name, 0) >= MIN_GRADE
+    )
+
+
 def make_write(deps: GraphDeps) -> Node:
     @node_timeout(WRITE_TIMEOUT_S)
     async def write(state: LessonFactoryState) -> LessonFactoryState:
@@ -66,6 +77,8 @@ def make_write(deps: GraphDeps) -> Node:
             previous=untrusted(previous, "version précédente") if previous else "",
             revision=revision,
             checks=_checks(state) if previous else "",
+            previous_words=state.get("words", 0),
+            kept=_kept(state) if previous else "",
         )
         model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
         reply = await invoke_agent(

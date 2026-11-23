@@ -25,6 +25,7 @@ class LessonFactoryState(WebResearchState, total=False):
     check_categories: list[str]  # catégories publiques, sans extrait du brouillon
     unsupported: list[str]  # affirmations non sourcées relevées par le Vérificateur
     scores: dict[str, int]  # notes pédagogiques sur 100, par critère
+    best: dict[str, Any]  # meilleure version contrôlée, son rang et ses contrôles (D305)
     published: dict[str, Any]  # `PublishedLesson` en JSON
     failure: str  # raison de l'échec de la leçon
     next_module: str | None  # module dont la leçon vient d'être lancée par la chaîne
