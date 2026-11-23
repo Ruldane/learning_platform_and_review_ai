@@ -11,10 +11,21 @@ MCP = FeatureMcp(
             "Lit la proposition de profil et les affirmations à corriger.",
             untrusted=("text.headline", "text.about", "text.skills", "claims[].term"),
         ),
+        McpAction(
+            "POST /linkedin-drafts",
+            2,
+            "linkedin_drafts_start_draft",
+            "Prépare un brouillon de profil LinkedIn.",
+            launches="linkedin_draft",
+            untrusted=("text.headline", "text.about", "text.skills", "claims[].term"),
+        ),
+        McpAction(
+            "PUT /linkedin-drafts/{draft_id}",
+            2,
+            "linkedin_drafts_update_draft",
+            "Retouche les textes du brouillon de profil LinkedIn.",
+            untrusted=("text.headline", "text.about", "text.skills", "claims[].term"),
+        ),
     ),
-    excluded={
-        "POST /linkedin-drafts": "La rédaction est lancée sur la page du profil LinkedIn.",
-        "PUT /linkedin-drafts/{draft_id}": "La correction se fait dans l’interface.",
-    },
     graphs=(McpGraph(GRAPH, follow_only=True),),
 )

@@ -18,17 +18,17 @@ import httpx
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.core.caller import MCP_IDENTITY, McpIdentity
+from app.core.caller import MCP_CONFIRMED, MCP_IDENTITY, McpIdentity
 from app.db.base import new_id
 from app.mcp.arguments import ArgumentError, ToolRequest, build_request, check_arguments
-from app.mcp.base import PrecheckInput, Verdict
-from app.mcp.confirm import ConfirmationPort, StoredRequest, summarize
-from app.mcp.envelope import fence
+from app.mcp.confirm import ConfirmationPort, StoredRequest, check_before_confirmation, summarize
 from app.mcp.played import PlayLauncher
 from app.mcp.recorder import ChangeRecorder, install_recorder_events
 from app.mcp.registry import Registry
 from app.mcp.results import (
     InternalResponse,
+    artifact_response,
+    fence_sessions,
     filter_fields,
     form_fields,
     internal_error,
@@ -45,7 +45,6 @@ from app.mcp.tools import ToolResult, ToolSpec
 logger = logging.getLogger(__name__)
 
 REQUEST_TIMEOUT_S = 90.0
-PRECHECK_TIMEOUT_S = 60.0
 _BAD_PATH_CHARS = ("..", "?", "#", "%", "\\", "\x00")
 _NO_HISTORY = {
     "overflow": "Trop de lignes touchées pour garder l'historique",
@@ -63,12 +62,18 @@ async def internal_request(
     body: Any,
     *,
     form: bool = False,
+    confirmed: bool = False,
+    artifact: bool = False,
 ) -> InternalResponse:
     """Envoie la requête à l'application, sous `identity` (le propriétaire du jeton, jamais un
     autre), sans cookie ni en-tête d'authentification. `path` : sans `/api/v1`. Les routes de
     niveau 4 (connexion, compte, MCP, clés, modèles) ne sont jamais atteintes, quelle que soit la
     demande."""
-    if not path.startswith("/") or never_reachable(path) or any(c in path for c in _BAD_PATH_CHARS):
+    if (
+        not path.startswith("/")
+        or never_reachable(path, method)
+        or any(c in path for c in _BAD_PATH_CHARS)
+    ):
         return internal_error(403, "route_not_reachable", "Cette route n'est pas ouverte au MCP.")
     options: dict[str, Any] = {"params": dict(params) or None}
     if form:
@@ -76,6 +81,7 @@ async def internal_request(
     elif body is not None:
         options["json"] = body
     token = MCP_IDENTITY.set(identity)
+    confirmation = MCP_CONFIRMED.set(confirmed)
     try:
         transport = httpx.ASGITransport(app=app, raise_app_exceptions=False)
         async with httpx.AsyncClient(transport=transport, base_url="http://localhost") as http:
@@ -84,7 +90,11 @@ async def internal_request(
     except TimeoutError:
         return internal_error(504, "tool_timeout", "La route a mis trop de temps à répondre.")
     finally:
+        MCP_CONFIRMED.reset(confirmation)
         MCP_IDENTITY.reset(token)
+    if artifact and 200 <= response.status_code < 300:
+        local_url = response.request.url.raw_path.decode() if method == "GET" else None
+        return InternalResponse(response.status_code, artifact_response(response, local_url))
     return InternalResponse(response.status_code, read_response(response))
 
 
@@ -111,6 +121,8 @@ class McpDispatcher:
     ) -> ToolResult:
         try:
             check_arguments(tool.input_schema, arguments)
+            if tool.manual_url:
+                return ToolResult(data={"local_url": tool.manual_url})
             request = self._request(tool, arguments)
             self._routes.ensure_declared(tool, request)
         except ArgumentError as exc:
@@ -120,7 +132,7 @@ class McpDispatcher:
             return await self._pend(identity, tool, request)
         if tool.level == 2 and tool.graph is None:
             return await self._recorded(identity, tool, request, arguments)
-        response = await self._send(identity, request)
+        response = await self._send(identity, request, artifact=tool.artifact)
         return self._result(tool, arguments, response)
 
     @staticmethod
@@ -132,7 +144,14 @@ class McpDispatcher:
             raise ArgumentError("Outil sans route.")
         return build_request(tool.plan, arguments)
 
-    async def _send(self, identity: McpIdentity, request: ToolRequest) -> InternalResponse:
+    async def _send(
+        self,
+        identity: McpIdentity,
+        request: ToolRequest,
+        *,
+        confirmed: bool = False,
+        artifact: bool = False,
+    ) -> InternalResponse:
         """La requête ; avec `merge_from`, le corps est la lecture actuelle dont seuls les champs
         listés changent (lue maintenant, jamais gardée)."""
         body = request.body
@@ -145,7 +164,7 @@ class McpDispatcher:
             body = {**base.data, **(body or {})}
         return await internal_request(
             self._app, identity, request.method, request.path, request.params, body,
-            form=request.form,
+            form=request.form, confirmed=confirmed, artifact=artifact,
         )  # fmt: skip
 
     async def _recorded(
@@ -182,7 +201,9 @@ class McpDispatcher:
         if response.status == 422:
             data = translate_validation(data, tool)
         elif response.status < 400:
-            data = self._fence_sessions(filter_fields(data, tool.response_fields))
+            data = fence_sessions(
+                filter_fields(data, tool.response_fields), self._registry.graph_untrusted
+            )
         ids = result_ids(arguments, data)
         notice = None
         if no_history is not None:
@@ -199,16 +220,6 @@ class McpDispatcher:
             notice=notice,
         )
 
-    def _fence_sessions(self, data: Any) -> Any:
-        """Le résultat d'une session d'un graphe qui lit le web est rendu comme donnée non fiable
-        quand Claude suit la session (`McpGraph.untrusted`)."""
-        paths = self._registry.graph_untrusted
-        if isinstance(data, list):
-            return [self._fence_sessions(item) for item in data]
-        if isinstance(data, dict) and isinstance(data.get("graph"), str) and data["graph"] in paths:
-            return fence(data, paths[data["graph"]])
-        return data
-
     async def _pend(
         self, identity: McpIdentity, tool: ToolSpec, request: ToolRequest
     ) -> ToolResult:
@@ -216,7 +227,7 @@ class McpDispatcher:
         rangés dans une demande « À confirmer »."""
         port = self._confirmations(identity.user_id)
         await port.ensure_room(identity)  # le plafond d'abord : le contrôle peut coûter un modèle
-        verdict = await self._precheck(identity, tool, request)
+        verdict = await check_before_confirmation(identity, tool, request)
         stored = StoredRequest(
             tool.name,
             request,
@@ -251,39 +262,28 @@ class McpDispatcher:
             return None
         return label_of(read.data, reader) if read.status == 200 else None
 
-    @staticmethod
-    async def _precheck(
-        identity: McpIdentity, tool: ToolSpec, request: ToolRequest
-    ) -> dict[str, Any] | None:
-        if tool.precheck is None:
-            return None
-        asked = PrecheckInput(
-            user_id=identity.user_id,
-            method=request.method,
-            path=request.path,
-            params=request.params,
-            body=request.body,
-        )
-        try:
-            verdict = await asyncio.wait_for(tool.precheck(asked), PRECHECK_TIMEOUT_S)
-        except Exception as exc:  # jamais un blocage silencieux : la demande dit qu'il manque
-            logger.error("MCP : contrôle préalable impossible (%s)", type(exc).__name__)
-            verdict = Verdict(ok=False, reasons=("Le contrôle préalable n'a pas pu se faire.",))
-        return {"ok": verdict.ok, "reasons": list(verdict.reasons), "summary": verdict.summary}
-
     async def recheck(self, identity: McpIdentity, stored: StoredRequest) -> dict[str, Any] | None:
         """Rejoue le contrôle préalable d'une demande en attente (`None` : l'outil n'en a plus)."""
         tool = self._registry.get(stored.tool)
         if tool is None:
             return None
-        return await self._precheck(identity, tool, stored.request)
+        return await check_before_confirmation(identity, tool, stored.request)
 
     async def run_stored(self, identity: McpIdentity, stored: StoredRequest) -> ToolResult:
         """Exécute une demande confirmée, sous l'identité enregistrée (jamais d'historique : une
         action de niveau 3 ne s'annule pas)."""
         tool = self._registry.get(stored.tool)
-        if tool is None:
+        if tool is None or tool.level != 3 or not tool.available_to(identity):
             data = {"error": {"code": "unknown_tool", "message": "Outil retiré depuis."}}
             return ToolResult(data=data, code=404)
-        response = await self._send(identity, stored.request)
+        try:
+            if tool.route is None or stored.request.method != tool.route[0]:
+                raise ArgumentError("Cette demande ne correspond plus à l’outil.")
+            self._routes.ensure_declared(tool, stored.request)
+        except ArgumentError as exc:
+            data = {"error": {"code": "invalid_arguments", "message": exc.message}}
+            return ToolResult(data=data, code=422)
+        response = await self._send(
+            identity, stored.request, confirmed=True, artifact=tool.artifact
+        )
         return self._result(tool, {}, response)

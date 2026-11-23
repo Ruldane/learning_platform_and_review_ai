@@ -192,17 +192,18 @@ class ConfirmationService:
         elapsed = round((time.monotonic() - started) * 1000)
         async with self._factory() as db:
             status = "failed" if result.is_error else "confirmed"
-            await self._repo(db).transition(
+            retained = await self._repo(db).transition(
                 confirmation_id, "confirmed", status, now, result_code=result.code
             )
-            await CallRepository(db, self._user_id).record(
-                claimed.token_id,
-                f"{claimed.action}:confirm"[:80],
-                3,
-                result.code,
-                elapsed,
-                clean_ids(result.ids),
-            )
+            if retained:
+                await CallRepository(db, self._user_id).record(
+                    claimed.token_id,
+                    f"{claimed.action}:confirm"[:80],
+                    3,
+                    result.code,
+                    elapsed,
+                    clean_ids(result.ids),
+                )
             await db.commit()
         return result
 

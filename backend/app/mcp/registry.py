@@ -1,7 +1,7 @@
 """Le registre des outils MCP (phase 10, P11, P13) : assemblé au démarrage depuis les déclarations
 des features (`FeatureMcp`) et l'OpenAPI de l'application. Liste blanche : une route non déclarée
 n'a pas d'outil. Toute déclaration qui ne colle pas à l'application fait **échouer le démarrage**
-(`McpConfigError`) : route absente, route de niveau 4 (connexion, compte, MCP, clés, modèles),
+(`McpConfigError`) : route absente, route de niveau 4 (connexion, accès MCP, clés, modèles),
 niveau 1 sur une route qui écrit, effet externe sous le niveau 3, nom en double, graphe inconnu."""
 
 import re
@@ -20,9 +20,10 @@ from app.mcp.schema import (
     build_route_tool,
     describe,
     never_reachable,
+    operation,
     split_route,
 )
-from app.mcp.tools import ToolSpec
+from app.mcp.tools import TREMPLIN_OVERVIEW, ToolSpec
 
 _NAME = re.compile(r"[a-z0-9_]{1,64}")
 GRAPH_PREFIX = "graph_"
@@ -56,7 +57,7 @@ class Registry:
         self.graph_features: dict[str, str] = {}
 
     def list_for(self, identity: McpIdentity) -> list[ToolSpec]:
-        return [tool for tool in self._tools.values() if tool.feature in identity.features]
+        return [tool for tool in self._tools.values() if tool.in_scope(identity)]
 
     def get(self, name: str) -> ToolSpec | None:
         return self._tools.get(name)
@@ -92,7 +93,11 @@ def _check_action(feature: str, action: McpAction) -> tuple[str, str]:
     method, path = split_route(action.route)
     if not _NAME.fullmatch(action.name):
         raise McpConfigError(f"nom d'outil invalide : « {action.name} » ([a-z0-9_], 64 au plus)")
-    if never_reachable(path):
+    if action.name == TREMPLIN_OVERVIEW and (
+        feature != "lab" or action.route != "GET /lab/overview" or action.level != 1
+    ):
+        raise McpConfigError("L'aperçu commun pointe uniquement vers la lecture de la carte.")
+    if never_reachable(path, method):
         raise McpConfigError(f"{action.route} : route de niveau 4, jamais exposée au MCP")
     if method == "DELETE" and action.level < 3:
         raise McpConfigError(
@@ -116,7 +121,12 @@ def _check_action(feature: str, action: McpAction) -> tuple[str, str]:
                 f"{action.route} : response_fields ne rend jamais {', '.join(sorted(leaked))} "
                 "(niveau 4)"
             )
-    if action.level == 1 and method != "GET" and action.route not in READ_ONLY_POSTS:
+    if (
+        action.level == 1
+        and method != "GET"
+        and action.route not in READ_ONLY_POSTS
+        and action.manual_url is None
+    ):
         raise McpConfigError(f"{action.route} écrit : il ne peut pas être de niveau 1")
     if action.side_effects == "external" and action.level < 3:
         raise McpConfigError(f"{action.name} : un effet externe est de niveau 3 (P14)")
@@ -125,6 +135,18 @@ def _check_action(feature: str, action: McpAction) -> tuple[str, str]:
 
 def _action_tool(feature: str, action: McpAction, openapi: Mapping[str, Any]) -> ToolSpec:
     method, path = _check_action(feature, action)
+    if action.manual_url:
+        op = operation(openapi, method, path)
+        return ToolSpec(
+            name=action.name,
+            feature=feature,
+            level=1,
+            route=(method, path),
+            description=describe(op, action.summary),
+            summary=action.summary,
+            input_schema={"type": "object", "properties": {}, "additionalProperties": False},
+            manual_url=action.manual_url,
+        )
     schema, plan, op = build_route_tool(
         openapi,
         action.route,
@@ -150,6 +172,8 @@ def _action_tool(feature: str, action: McpAction, openapi: Mapping[str, Any]) ->
         plan=plan,
         response_fields=action.response_fields,
         launches=action.launches,
+        artifact=action.artifact,
+        bucket=action.bucket,
     )
 
 

@@ -1,9 +1,8 @@
 from app.features.surprise_interview.preferences import FEATURE
-from app.mcp.base import FeatureMcp, McpAction
+from app.mcp.base import FeatureMcp, McpAction, McpExclusion
 
 _ROOT = "/surprise-interviews"
 _INVITATION = _ROOT + "/{invitation_id}"
-_CONSENT = "Le consentement à l’entretien et l’association du jeton se règlent dans l’interface."
 
 MCP = FeatureMcp(
     feature=FEATURE,
@@ -42,5 +41,8 @@ MCP = FeatureMcp(
             "La réponse ne peut pas être annulée. Nod seul.",
         ),
     ),
-    excluded={f"GET {_ROOT}/settings": _CONSENT, f"PUT {_ROOT}/settings": _CONSENT},
+    excluded={
+        f"GET {_ROOT}/settings": McpExclusion.INTEGRATION_TOKEN,
+        f"PUT {_ROOT}/settings": McpExclusion.INTEGRATION_TOKEN,
+    },
 )

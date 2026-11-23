@@ -7,7 +7,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, Response, status
 from starlette.requests import HTTPConnection
 
-from app.core.caller import JanuaryOnly
+from app.core.caller import ConfirmedGesture
 from app.core.deps import CurrentUserDep, Db
 from app.features.quiz.schemas import (
     AttemptCreate,
@@ -134,7 +134,7 @@ async def get_quiz(quiz_id: str, current: CurrentUserDep, db: Db) -> QuizOut:
     "/quizzes/{quiz_id}/attempts",
     response_model=AttemptStarted,
     status_code=status.HTTP_202_ACCEPTED,
-    dependencies=[JanuaryOnly],  # geste de January : jamais fait à sa place par le MCP
+    dependencies=[ConfirmedGesture],
 )
 async def create_attempt(
     quiz_id: str, body: AttemptCreate, current: CurrentUserDep, rt: QuizDep
@@ -155,7 +155,9 @@ async def due_cards(current: CurrentUserDep, db: Db, rt: QuizDep) -> DueQueue:
     return await cards.due_queue(rt, db, current.id)
 
 
-@router.post("/flashcards/{card_id}/review", response_model=ReviewOut, dependencies=[JanuaryOnly])
+@router.post(
+    "/flashcards/{card_id}/review", response_model=ReviewOut, dependencies=[ConfirmedGesture]
+)
 async def review_card(
     card_id: str, body: ReviewIn, current: CurrentUserDep, rt: QuizDep
 ) -> ReviewOut:

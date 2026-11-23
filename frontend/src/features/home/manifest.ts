@@ -1,3 +1,4 @@
+import { createElement, type ComponentType } from "react";
 import type { FeatureManifest } from "@/shared/lib/feature";
 import { BackgroundNotices } from "./BackgroundNotices";
 import { HomePage } from "./pages/HomePage";
@@ -13,3 +14,10 @@ export const homeManifest: FeatureManifest = {
   nav: [{ section: "home", labelKey: "nav.home", path: "/", order: 1 }],
   shell: { overlay: BackgroundNotices },
 };
+
+export function makeHomeManifest(Guide: ComponentType): FeatureManifest {
+  return {
+    ...homeManifest,
+    routes: [{ index: true, element: createElement(HomePage, { Guide }), handle: { wide: true } }],
+  };
+}

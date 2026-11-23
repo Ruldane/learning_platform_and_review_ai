@@ -113,6 +113,7 @@ def render_table(features: Iterable[FeatureMcp]) -> str:
             if action.launches:
                 played_by.setdefault(action.launches, []).append(action.name)
     excluded = ["== Exclus (feature | route | motif)"]
+    alternatives = ["== Équivalents (feature | route | outil)"]
     for feature in ordered:
         for action in sorted(feature.actions, key=lambda a: a.route):
             effects = _effects(action.side_effects, action.precheck is not None)
@@ -133,7 +134,9 @@ def render_table(features: Iterable[FeatureMcp]) -> str:
             graphs.append(f"{feature.feature} | {graph.level} | {graph.graph} | {launch}")
         for key, reason in sorted(feature.excluded.items()):
             excluded.append(f"{feature.feature} | {key} | {reason}")
-    return "\n".join([*tools, "", *graphs, "", *excluded])
+        for key, tool in sorted(feature.alternatives.items()):
+            alternatives.append(f"{feature.feature} | {key} | {tool}")
+    return "\n".join([*tools, "", *graphs, "", *excluded, "", *alternatives])
 
 
 def main() -> None:

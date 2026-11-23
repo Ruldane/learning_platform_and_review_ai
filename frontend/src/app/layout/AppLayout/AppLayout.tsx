@@ -1,17 +1,17 @@
-import { Outlet, useMatches } from "react-router";
+import { useMatches } from "react-router";
 import { t } from "@/shared/i18n/t";
-import { cn } from "@/shared/lib/utils";
-import { buildNav } from "../../buildNav";
+import { buildDestinations, navigationGroups } from "../../navigation";
 import { FEATURES } from "../../registry";
 import { HealthStatus } from "../HealthStatus";
 import { InfoPanel } from "../InfoPanel";
 import { ShellGates } from "../ShellGates";
 import { ShellSlots } from "../Shell";
-import { Topbar } from "../Topbar";
-import { TopNav } from "../TopNav";
 import { useNarrowScreen } from "../TopNav/useNarrowScreen";
+import { MainContent } from "./MainContent";
+import { NavigationTopbar } from "./NavigationTopbar";
 
-const NAV_GROUPS = buildNav(FEATURES);
+const DESTINATIONS = buildDestinations(FEATURES);
+const NAV_GROUPS = navigationGroups(DESTINATIONS);
 
 type PageFlag = "wide" | "bare";
 
@@ -46,20 +46,11 @@ export function AppLayout() {
         >
           {t("app.skipToContent")}
         </a>
-        <Topbar menus={bare ? null : <TopNav groups={NAV_GROUPS} />} />
+        <NavigationTopbar bare={bare} groups={NAV_GROUPS} cards={DESTINATIONS} />
         {bare || !narrow ? null : panel}
         <div className="flex flex-1 items-stretch">
           {bare || narrow ? null : panel}
-          <main
-            id="contenu"
-            tabIndex={-1}
-            className={cn(
-              "mx-auto w-full min-w-0 flex-1 px-6 py-8 focus:outline-none",
-              wide ? "max-w-7xl" : "max-w-4xl",
-            )}
-          >
-            <Outlet />
-          </main>
+          <MainContent wide={wide} />
         </div>
         <ShellSlots slot="overlay" />
       </div>

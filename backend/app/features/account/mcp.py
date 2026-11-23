@@ -1,13 +1,23 @@
-"""Déclaration MCP de `account` : niveau 4, rien n'est exposé (export et suppression du compte)."""
+"""Demande de suppression du compte et lien local vers son archive."""
 
-from app.mcp.base import FeatureMcp
-
-_WHY = (
-    "Compte et ses données (export complet, suppression totale) : niveau 4, jamais exposé au "
-    "MCP ; January le fait elle-même depuis l'interface."
-)
+from app.mcp.base import FeatureMcp, McpAction
 
 MCP = FeatureMcp(
     feature="account",
-    excluded={route: _WHY for route in ("GET /account/export", "POST /account/delete")},
+    actions=(
+        McpAction(
+            "GET /account/export",
+            1,
+            "account_export_data",
+            "Donne le lien local pour télécharger l’archive de ses données.",
+            artifact=True,
+        ),
+        McpAction(
+            "POST /account/delete",
+            3,
+            "account_delete_data",
+            "Efface toutes les données du compte. Demande à confirmer dans Tremplin.",
+            side_effects="external",
+        ),
+    ),
 )

@@ -57,6 +57,21 @@ async function openPage() {
 }
 
 describe("ModelsAndKeysPage", () => {
+  it("repère les niveaux affectés à un fournisseur sans clé et propose celui qui en a une", async () => {
+    const backend = mockBackend({
+      settings: { ...settingsFixture, tiers: modelsFixture.presets.all_openai },
+      models: {
+        ...modelsFixture,
+        providers: modelsFixture.providers.map((provider) =>
+          ({ ...provider, has_key: provider.name === "anthropic" })),
+      },
+    });
+    const user = await openPage();
+    expect(screen.getByText(/clé exploitable.*OpenAI/)).toBeVisible();
+    await user.click(screen.getByRole("button", { name: /Appliquer le préréglage Tout Haiku/ }));
+    expect(backend.puts[0]?.tiers).toEqual(modelsFixture.presets.all_haiku);
+  });
+
   it("affiche le chargement puis les clés, les préréglages et les niveaux", async () => {
     mockBackend();
     renderPage();

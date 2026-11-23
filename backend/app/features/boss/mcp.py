@@ -15,10 +15,19 @@ MCP = FeatureMcp(
                 "attempt.grade.rubric.maintenance.feedback",
             ),
         ),
+        McpAction(
+            "POST /boss/programs/{program_id}",
+            3,
+            "boss_start_program_boss",
+            "Démarre le chronomètre du Boss. Demande à confirmer.",
+        ),
+        McpAction(
+            "POST /boss/programs/{program_id}/submit",
+            3,
+            "boss_submit_program_boss",
+            "Remet le défi du Boss pour évaluation. Demande à confirmer.",
+            launches="boss_review",
+        ),
     ),
     graphs=(McpGraph(BOSS_GRAPH, follow_only=True),),
-    excluded={
-        "POST /boss/programs/{program_id}": "Démarrage du chronomètre par l’utilisatrice.",
-        "POST /boss/programs/{program_id}/submit": "Remise chronométrée de l’utilisatrice.",
-    },
 )

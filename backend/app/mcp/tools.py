@@ -13,6 +13,8 @@ from app.mcp.base import Level, PrecheckInput, Verdict
 from app.mcp.limits import RateLimiter
 from app.mcp.schema import RoutePlan
 
+TREMPLIN_OVERVIEW = "tremplin_overview"
+
 
 @dataclass(frozen=True)
 class ToolSpec:
@@ -37,6 +39,14 @@ class ToolSpec:
     plan: RoutePlan | None = None
     response_fields: frozenset[str] | None = None
     launches: str | None = None
+    artifact: bool = False
+    manual_url: str | None = None
+
+    def in_scope(self, identity: McpIdentity) -> bool:
+        return self.name == TREMPLIN_OVERVIEW or self.feature in identity.features
+
+    def available_to(self, identity: McpIdentity) -> bool:
+        return self.in_scope(identity) and (self.level == 1 or identity.mode == "write")
 
 
 @dataclass(frozen=True)

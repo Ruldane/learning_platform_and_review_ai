@@ -49,13 +49,23 @@ export async function sendClassroomMessage(
   );
 }
 
-export async function fetchBrainConversation(signal?: AbortSignal) {
-  return unwrap(await api.GET("/brain/conversation", { signal }));
+export async function fetchBrainConversation(id: string | null, signal?: AbortSignal) {
+  return unwrap(
+    await api.GET("/brain/conversation", {
+      params: { query: { conversation_id: id ?? undefined } },
+      signal,
+    }),
+  );
 }
 
-export async function sendBrainQuestion(message: ConversationMessage, source: RunSource) {
+export async function sendBrainQuestion(
+  id: string | null,
+  message: ConversationMessage,
+  source: RunSource,
+) {
   return unwrap(
     await api.POST("/brain/conversation/messages", {
+      params: { query: { conversation_id: id ?? undefined } },
       headers: { [RUN_HEADER]: source },
       body: { request_id: message.request_id, question: message.question, strong: message.strong },
     }),

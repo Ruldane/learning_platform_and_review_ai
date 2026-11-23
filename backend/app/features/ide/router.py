@@ -2,8 +2,8 @@
 préférences et consommation. Surface posée par 10.P ; 10.A2 remplit les exercices, les séances, les
 exécutions et les notes ; 10.A3 remplit `exercises/generate`, `teach` (barrière de coût du
 professeur), `preferences` et `usage`. Au nom de l'utilisatrice courante (404 sur l'objet
-d'une autre) ; `accept`, `reject` et `PUT preferences` sont des gestes de l'interface (exclus du
-MCP) ; `PUT files` est aussi celui de Claude, sous l'interrupteur de January (10.X)."""
+d'une autre). Les décisions sur les propositions exigent une confirmation. Les droits MCP
+se règlent dans l’interface."""
 
 from typing import Annotated, Any
 
@@ -233,13 +233,13 @@ async def add_note(session_id: Id, body: NoteIn, ide: Ide) -> NoteOut:
 @router.post("/notes/{note_id}/accept", response_model=IdeSessionOut, responses=_ACCEPT_ERRORS)
 async def accept_note(note_id: Id, ide: Ide) -> IdeSessionOut:
     """Applique une proposition au fichier si celui-ci n'a pas changé (sinon 409 `note_stale`).
-    Geste de l'interface, jamais du MCP."""
+    Un appel MCP exige une confirmation dans Tremplin."""
     return await ide.accept_note(note_id)
 
 
 @router.post("/notes/{note_id}/reject", response_model=NoteOut, responses=_ACCEPT_ERRORS)
 async def reject_note(note_id: Id, ide: Ide) -> NoteOut:
-    """Refuse une proposition. Geste de l'interface, jamais du MCP."""
+    """Refuse une proposition. Un appel MCP exige une confirmation dans Tremplin."""
     return await ide.reject_note(note_id)
 
 

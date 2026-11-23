@@ -125,7 +125,9 @@ async def choose_link(
         return result
 
 
-async def public_document(rt: PortfolioRuntime, slug: str, host: str) -> bytes:
+async def public_document(
+    rt: PortfolioRuntime, slug: str, host: str, *, owner: str | None = None
+) -> bytes:
     origin = rt.origin()
     if not matches_public_host(origin, host):
         raise missing()
@@ -134,6 +136,8 @@ async def public_document(rt: PortfolioRuntime, slug: str, host: str) -> bytes:
     except SecretUnreadable:
         raise missing() from None
     if purpose != "portfolio" or not separator or len(user_id) != 36:
+        raise missing()
+    if owner is not None and owner != user_id:
         raise missing()
     async with rt.factory() as db:
         site = await Sites(db, user_id).for_owner()

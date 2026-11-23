@@ -3,7 +3,7 @@ modèles par niveau, surcharges par agent). `PUT /settings` brut porte aussi les
 exposé que par l'action `settings_update_preferences`, qui lit l'objet (`merge_from`), ne change
 que `PREFERENCE_FIELDS` (`body_fields`) et réécrit le tout."""
 
-from app.mcp.base import FeatureMcp, McpAction
+from app.mcp.base import FeatureMcp, McpAction, McpExclusion
 
 # Niveau 4 : jamais écrits par le MCP.
 PROTECTED_FIELDS = frozenset({"tiers", "agent_overrides"})
@@ -61,11 +61,11 @@ MCP = FeatureMcp(
         ),
     ),
     excluded={
-        "GET /settings/api-keys": _SECRETS,
-        "POST /settings/api-keys": _SECRETS,
-        "DELETE /settings/api-keys/{provider}": _SECRETS,
-        "POST /settings/api-keys/{provider}/test": _SECRETS,
-        "GET /settings/models": _SECRETS,
-        "GET /settings/agents": _SECRETS,
+        "GET /settings/api-keys": McpExclusion.MODEL_SETTINGS,
+        "POST /settings/api-keys": McpExclusion.MODEL_SETTINGS,
+        "DELETE /settings/api-keys/{provider}": McpExclusion.MODEL_SETTINGS,
+        "POST /settings/api-keys/{provider}/test": McpExclusion.MODEL_SETTINGS,
+        "GET /settings/models": McpExclusion.MODEL_SETTINGS,
+        "GET /settings/agents": McpExclusion.MODEL_SETTINGS,
     },
 )

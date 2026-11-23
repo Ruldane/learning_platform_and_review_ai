@@ -1,9 +1,21 @@
-from app.mcp.base import FeatureMcp
+from app.mcp.base import FeatureMcp, McpAction
 
 MCP = FeatureMcp(
     feature="voice",
-    excluded={
-        "POST /voice/transcriptions": "Enregistrement envoyé depuis l’interface.",
-        "POST /voice/speech": "Lecture audio demandée depuis l’interface par l’utilisatrice.",
-    },
+    actions=(
+        McpAction(
+            "POST /voice/transcriptions",
+            1,
+            "voice_open_recording",
+            "Indique où enregistrer et transcrire une réponse depuis un microphone.",
+            manual_url="/etudier",
+        ),
+        McpAction(
+            "POST /voice/speech",
+            1,
+            "voice_open_playback",
+            "Indique où écouter une réponse avec le lecteur de Tremplin.",
+            manual_url="/etudier",
+        ),
+    ),
 )

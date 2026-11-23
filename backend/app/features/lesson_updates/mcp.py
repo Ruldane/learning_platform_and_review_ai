@@ -18,9 +18,12 @@ MCP = FeatureMcp(
                 "[].changes[].after",
             ),
         ),
+        McpAction(
+            "POST /lessons/{lesson_id}/updates/{update_id}/accept",
+            3,
+            "lesson_updates_accept_lesson_update",
+            "Applique la correction proposée à la leçon. Demande à confirmer.",
+        ),
     ),
-    excluded={
-        f"POST {_ROOT}/{{update_id}}/accept": "L’utilisatrice confirme la retouche dans la leçon."
-    },
     graphs=(McpGraph(GRAPH, follow_only=True),),
 )

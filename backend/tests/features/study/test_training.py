@@ -56,3 +56,15 @@ async def test_training_and_guided_share_the_open_session_slot(
     assert (await client.get(f"{TRAINING}/open")).json()["id"] == opened.json()["id"]
     assert (await client.get(f"{STUDY}/summary")).json()["open_session_id"] is None
     assert (await client.get(f"{STUDY}/{opened.json()['id']}")).status_code == 404
+
+
+async def test_independent_training_leaves_guided_study_available(
+    client: httpx.AsyncClient, app: FastAPI
+) -> None:
+    seeded = await seed(app)
+    training = await client.post(TRAINING, json={"new_conversation": True})
+    guided = await client.post(STUDY, json={"lesson_id": seeded.lessons[0]})
+    assert guided.status_code == 202, guided.text
+    next_chat = await client.post(TRAINING, json={"new_conversation": True})
+    assert next_chat.status_code == 202, next_chat.text
+    assert next_chat.json()["id"] != training.json()["id"]

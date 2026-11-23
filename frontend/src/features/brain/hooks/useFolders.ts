@@ -5,12 +5,15 @@ import {
   deleteFolder,
   fetchFolders,
   fetchFolderStatus,
+  fetchRelayStatus,
   type Folder,
+  type FolderPatch,
 } from "../api";
 
 const KEYS = {
   folders: ["brain", "folders"],
   status: ["brain", "status"],
+  relay: ["brain", "relay"],
 } as const;
 
 export function useFolders(afterRemove: () => void) {
@@ -22,6 +25,11 @@ export function useFolders(afterRemove: () => void) {
   const status = useQuery({
     queryKey: KEYS.status,
     queryFn: ({ signal }) => fetchFolderStatus(signal),
+    refetchInterval: 5_000,
+  });
+  const relay = useQuery({
+    queryKey: KEYS.relay,
+    queryFn: ({ signal }) => fetchRelayStatus(signal),
     refetchInterval: 5_000,
   });
   const update = (folder: Folder) => {
@@ -37,6 +45,13 @@ export function useFolders(afterRemove: () => void) {
     mutationFn: (folder: Folder) => changeFolder(folder.id, { paused: !folder.paused }),
     onSuccess: update,
   });
+  const filter = useMutation({
+    mutationFn: ({ id, patch }: { id: string; patch: FolderPatch }) => changeFolder(id, patch),
+    onSuccess: (folder) => {
+      update(folder);
+      void client.invalidateQueries({ queryKey: ["memory"] });
+    },
+  });
   const remove = useMutation({
     mutationFn: deleteFolder,
     onSuccess: (_, id) => {
@@ -48,5 +63,6 @@ export function useFolders(afterRemove: () => void) {
       void client.invalidateQueries({ queryKey: ["memory"] });
     },
   });
-  return { folders, status, add, toggle, remove };
+  return { folders, status, relay, add, toggle, filter, remove,
+    refreshRelay: () => void client.invalidateQueries({ queryKey: KEYS.relay }) };
 }

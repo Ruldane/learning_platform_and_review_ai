@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Path
 from starlette.requests import HTTPConnection
 
-from app.core.deps import CurrentUserDep, Db, InterfaceUserDep
+from app.core.deps import ConfirmedUserDep, CurrentUserDep, Db
 from app.core.field_paths import FieldPathsRoute
 from app.features.lesson_updates.schemas import UpdateAccepted, UpdateView
 from app.features.lesson_updates.service.actions import accept_update, list_updates
@@ -30,6 +30,6 @@ async def get_updates(lesson_id: Id, db: Db, user: CurrentUserDep) -> list[Updat
 
 @router.post("/{update_id}/accept", status_code=202)
 async def approve_update(
-    lesson_id: Id, update_id: Id, rt: Runtime, user: InterfaceUserDep
+    lesson_id: Id, update_id: Id, rt: Runtime, user: ConfirmedUserDep
 ) -> UpdateAccepted:
     return await accept_update(rt, user.id, lesson_id, update_id)

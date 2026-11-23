@@ -1,28 +1,30 @@
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from typing import Final
 from uuid import NAMESPACE_URL, uuid5
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.runtime.creation import PrepareSession
 from app.agents.runtime.runner import SessionRunner
-from app.agents.tools.conversation_port import (
-    CONVERSATION_GRAPH,
-    TURN_TOKEN_LIMIT,
-    ConversationPractice,
-    ConversationSource,
-)
+from app.agents.tools.conversation_port import CONVERSATION_GRAPH, TURN_TOKEN_LIMIT
 from app.agents.tools.feynman_port import FEYNMAN_SCOPES
 from app.core.clock import local_moment, local_today, user_zone
 from app.core.errors import AppError
 from app.core.played import PLAY_CONTEXT
 from app.db.base import new_id
 from app.db.models.agents import OPEN_SESSION_STATES
-from app.db.models.conversations import ConversationTurn
+from app.db.models.conversations import Conversation, ConversationTurn
+from app.features.conversations.chats import CHAT_SCOPES, conversation_busy
+from app.features.conversations.chats import checked_lesson_ids as checked_lesson_ids
+from app.features.conversations.chats import cited_study_material as cited_study_material
+from app.features.conversations.chats import preferred_chat as preferred_chat
+from app.features.conversations.chats import require_chat as require_chat
 from app.features.conversations.feynman_schemas import FeynmanData
 from app.features.conversations.lesson_context import lesson_material, lesson_version, ready_lesson
 from app.features.conversations.repository import ConversationRepository, TurnRepository
 from app.features.conversations.schemas import (
+    MAX_TITLE,
     ConversationMessageIn,
     ConversationOut,
     ConversationQuestionIn,
@@ -38,8 +40,8 @@ from app.mcp.recorder import ACTIVE
 __all__ = ["ConversationOut", "ConversationQuestionIn", "ConversationStarted"]
 
 LESSON_SCOPE = "lesson"
-TRAINING_SCOPE = "training"
-BRAIN_SCOPE = "brain"
+TRAINING_SCOPE: Final = "training"
+BRAIN_SCOPE: Final = "brain"
 THREAD_TOKEN_LIMIT = 100_000
 DAY_TOKEN_LIMIT = 300_000
 TURN_LIMIT = 100
@@ -85,6 +87,7 @@ class TurnOptions:
     lesson_version: str | None = None
     mode: str | None = None
     feynman: FeynmanData | None = None
+    lesson_ids: list[str] | None = None
 
 
 type PrepareTurn = Callable[[AsyncSession], Awaitable[TurnOptions]]
@@ -134,31 +137,11 @@ async def _check_limits(repo: TurnRepository, thread_id: str) -> None:
 async def require_idle_conversation(db: AsyncSession, user_id: str, thread_id: str) -> None:
     turns = await TurnRepository(db, user_id).turns(thread_id)
     if any(status in OPEN_SESSION_STATES for _, status in turns):
-        raise AppError(
-            "conversation_busy", "Une réponse est déjà en cours dans cette conversation.", 409
-        )
+        raise conversation_busy()
 
 
 async def cancel_conversation_turn(db: AsyncSession, user_id: str, thread_id: str) -> str | None:
     return await TurnRepository(db, user_id).cancel_open(thread_id)
-
-
-async def cited_study_material(
-    db: AsyncSession, user_id: str, thread_id: str
-) -> tuple[set[str], list[ConversationPractice]]:
-    lessons: set[str] = set()
-    cards: list[ConversationPractice] = []
-    for turn, status in await TurnRepository(db, user_id).turns(thread_id):
-        if status != "completed":
-            continue
-        sources = [ConversationSource.model_validate(source) for source in turn.sources]
-        cited = {str(source.id) for source in sources if source.kind == "lesson"}
-        for raw in turn.practice or []:
-            card = ConversationPractice.model_validate(raw)
-            if str(card.lesson_id) in cited:
-                cards.append(card)
-        lessons.update(cited)
-    return lessons, cards
 
 
 async def read_lesson_conversation(
@@ -192,10 +175,14 @@ async def read_conversation(
     return ConversationOut.model_validate({"id": thread.id, "turns": turns, "usage": usage})
 
 
-async def ensure_conversation(db: AsyncSession, user_id: str, thread: ConversationThread) -> None:
+async def ensure_conversation(
+    db: AsyncSession, user_id: str, thread: ConversationThread
+) -> Conversation:
     repo = ConversationRepository(db, user_id)
-    if await repo.get(thread.id) is None:
-        await repo.add(id=thread.id, scope=thread.scope, subject_id=thread.subject_id)
+    row = await repo.get(thread.id)
+    if row is None:
+        return await repo.add(id=thread.id, scope=thread.scope, subject_id=thread.subject_id)
+    return row
 
 
 def _reserve(
@@ -212,10 +199,10 @@ def _reserve(
             raise _RepeatedRequest(_same_request(previous, message))
         options = await authorize(db)
         await _check_limits(turns, thread.id)
-        await ensure_conversation(db, user_id, thread)
+        row = await ensure_conversation(db, user_id, thread)
         passage, occurrence = _passage(message)
         recorder = ACTIVE.get()
-        await turns.add(
+        turn = await turns.add(
             id=turn_id,
             thread_id=thread.id,
             request_id=request_id,
@@ -225,10 +212,15 @@ def _reserve(
             passage_occurrence=occurrence,
             lesson_version=options.lesson_version,
             mode=options.mode,
+            lesson_ids=options.lesson_ids,
             feynman=options.feynman.model_dump(mode="json") if options.feynman else None,
             strong=message.strong,
             mcp_call_id=recorder.call_id if recorder is not None else None,
         )
+        if row.scope in CHAT_SCOPES:
+            row.updated_at = turn.created_at
+            if row.title is None:
+                row.title = " ".join(message.question.split())[:MAX_TITLE]
         if recorder is not None:
             await recorder.persist_in(db)
 

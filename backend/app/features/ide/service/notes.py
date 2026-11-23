@@ -4,7 +4,7 @@ tiré de l'appelant, change. Une proposition remplace une plage de lignes d'un f
 l'empreinte (sha256) du fichier qu'elle a lu : elle ne s'applique que si le fichier n'a pas
 changé. `accept` et `reject` sont des gestes de l'interface (exclus du MCP)."""
 
-from app.core.caller import Caller
+from app.core.caller import MCP_CONFIRMED, Caller
 from app.db.models.ide import IdeNote, IdeSession, NoteAuthor
 from app.features.ide.hashing import is_file_hash
 from app.features.ide.repository import NoteRepository
@@ -145,9 +145,8 @@ async def sweep_stale(ctx: IdeContext, session: IdeSession) -> None:
 
 
 def _gesture_of_january(ctx: IdeContext) -> None:
-    """Accepter ou refuser écrit dans les fichiers : jamais sous identité MCP (défense en
-    profondeur : la déclaration MCP exclut déjà ces routes)."""
-    if ctx.caller.kind == "mcp":
+    """Une proposition se décide dans l'interface ou après une confirmation MCP."""
+    if ctx.caller.kind == "mcp" and not MCP_CONFIRMED.get():
         raise mcp_gesture_forbidden()
 
 

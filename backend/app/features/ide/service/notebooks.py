@@ -14,11 +14,6 @@ from app.features.ide.service.context import IdeContext, file_hash
 from app.providers.sandbox.base import check_file_name
 
 
-def _require_interface(ctx: IdeContext) -> None:
-    if ctx.caller.kind != "app":
-        raise AppError("interface_only", "Le notebook est réservé à l’interface.", 403)
-
-
 def _path(path: str) -> None:
     try:
         check_file_name(path)
@@ -36,7 +31,6 @@ def _read(project: IdeSession, path: str) -> Notebook:
 
 
 async def get(ctx: IdeContext, session_id: str, path: str) -> NotebookView:
-    _require_interface(ctx)
     project = await sessions.get(ctx, session_id)
     _path(path)
     book = _read(project, path)
@@ -49,7 +43,7 @@ async def get(ctx: IdeContext, session_id: str, path: str) -> NotebookView:
         if exc.code != "sandbox_unavailable":
             raise
         return NotebookView(path=path, cells=book.cells(), files_version=project.files_version)
-    if result.status != "running":
+    if ctx.caller.kind == "app" and result.status != "running":
         project = await sessions.get(ctx, session_id)
         book = _read(project, path)
     return NotebookView(
@@ -61,7 +55,6 @@ async def get(ctx: IdeContext, session_id: str, path: str) -> NotebookView:
 
 
 async def save(ctx: IdeContext, session_id: str, draft: NotebookPut) -> NotebookView:
-    _require_interface(ctx)
     project = await sessions.get(ctx, session_id)
     _path(draft.path)
     book = Notebook.parse(str(project.files.get(draft.path, "")))
@@ -72,7 +65,6 @@ async def save(ctx: IdeContext, session_id: str, draft: NotebookPut) -> Notebook
 
 
 async def start(ctx: IdeContext, session_id: str, draft: NotebookRunIn) -> TerminalStarted:
-    _require_interface(ctx)
     project = await sessions.get(ctx, session_id)
     _path(draft.path)
     book = _read(project, draft.path)
@@ -140,8 +132,8 @@ async def _store_output(ctx: IdeContext, run_id: str) -> None:
 
 
 async def progress(ctx: IdeContext, run_id: str, after: int) -> RunProgress:
-    _require_interface(ctx)
-    result = await runs.progress(ctx, run_id, after, kind="notebook")
-    if result.status != "running":
+    persist = ctx.caller.kind == "app"
+    result = await runs.progress(ctx, run_id, after, kind="notebook", persist=persist)
+    if persist and result.status != "running":
         await _store_output(ctx, run_id)
     return result

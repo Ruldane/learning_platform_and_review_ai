@@ -11,7 +11,7 @@ from app.core.errors import AppError
 from app.db.base import utcnow
 from app.db.models.brain import BrainFile, BrainFolder
 from app.db.models.memory import Document
-from app.features.brain.paths import relative_path
+from app.features.brain.paths import path_excluded, relative_path
 from app.features.brain.repository import FileRepository, FolderRepository, SyncTokenRepository
 from app.features.brain.schemas import FileOut, InventoryOut, ReportIn, ReportOut, SyncTokenOut
 from app.features.brain.service.folders import owned_folder
@@ -59,6 +59,10 @@ async def _check_token(db: AsyncSession, identity: SyncIdentity) -> None:
         raise _denied()
 
 
+async def record_contact(db: AsyncSession, identity: SyncIdentity) -> None:
+    await SyncTokenRepository(db, identity.user_id).record_contact(identity.digest)
+
+
 async def _scope(
     db: AsyncSession,
     identity: SyncIdentity,
@@ -70,6 +74,7 @@ async def _scope(
     if write:
         await FolderRepository(db, identity.user_id).begin_write()
         await _check_token(db, identity)
+        await record_contact(db, identity)
     row = await owned_folder(db, identity.user_id, folder_id)
     if row.revision != revision:
         raise AppError("brain_revision_conflict", "La configuration du dossier a changé.", 409)
@@ -123,7 +128,11 @@ async def ingest_file(
             "brain_digest_mismatch", "L'empreinte reçue ne correspond pas au fichier.", 422
         )
     draft = prepare_sync_document(path, data)
-    await _scope(db, identity, folder_id, revision, write=True)
+    folder = await _scope(db, identity, folder_id, revision, write=True)
+    if path_excluded(path, folder.excluded_directories, folder.excluded_extensions):
+        raise AppError(
+            "brain_path_excluded", "Cette note correspond aux exclusions du dossier.", 422
+        )
     user_id = identity.user_id
     repo = FileRepository(db, user_id)
     before = await repo.by_path(folder_id, path)

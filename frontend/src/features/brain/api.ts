@@ -6,6 +6,7 @@ export type Folder = components["schemas"]["FolderOut"];
 export type FolderIn = components["schemas"]["FolderIn"];
 export type FolderPatch = components["schemas"]["FolderPatch"];
 export type FolderStatus = components["schemas"]["FolderStatus"];
+export type RelayStatus = components["schemas"]["BrainRelayStatus"];
 
 const ref = (id: string) => ({ path: { folder_id: id } });
 
@@ -15,6 +16,10 @@ export async function fetchFolders(signal?: AbortSignal) {
 
 export async function fetchFolderStatus(signal?: AbortSignal) {
   return unwrap(await api.GET("/brain/status", { signal }));
+}
+
+export async function fetchRelayStatus(signal?: AbortSignal) {
+  return unwrap(await api.GET("/brain/relay", { signal }));
 }
 
 export async function addFolder(body: FolderIn) {

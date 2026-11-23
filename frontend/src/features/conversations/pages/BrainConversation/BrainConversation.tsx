@@ -1,47 +1,51 @@
+import { useMutation } from "@tanstack/react-query";
+import { useRef, useState } from "react";
 import { errorMessage } from "@/shared/api/errors";
 import { t } from "@/shared/i18n/t";
-import { InlineError } from "@/shared/ui/states/InlineError";
-import { LoadingState } from "@/shared/ui/states/LoadingState";
-import { fetchBrainConversation, sendBrainQuestion } from "../../api";
-import { useThread } from "../../hooks/useConversation";
-import { ConversationComposer } from "../LessonConversation/ConversationComposer";
-import { ConversationTranscript } from "../LessonConversation/ConversationTranscript";
+import { ConversationList } from "../../components/ConversationList";
+import { useConversationList } from "../../hooks/useConversationList";
+import { createBrainThread } from "../../threadsApi";
+import { BrainThread } from "./BrainThread";
+import { useBrainSelection } from "./useBrainSelection";
 
 export function BrainConversation() {
-  const { thread, sessionId, streaming, sending } = useThread({
-    key: ["conversations", "brain"],
-    read: fetchBrainConversation,
-    submit: sendBrainQuestion,
-    agent: "brain_librarian",
+  const { requested, select } = useBrainSelection();
+  const [revision, clear] = useState(0);
+  const heading = useRef<HTMLHeadingElement>(null);
+  const { sidebar, refresh } = useConversationList("brain", (action) => {
+    if (action.kind === "clear") {
+      clear((current) => current + 1);
+      heading.current?.focus();
+    }
+    if (action.kind === "delete" || action.kind === "wipe") select(null);
   });
+  const create = useMutation({
+    mutationFn: createBrainThread,
+    onSuccess: (thread) => {
+      refresh();
+      select(thread.id);
+      heading.current?.focus();
+    },
+  });
+  const id = requested ?? sidebar.entries[0]?.id ?? null;
   return (
-    <section className="flex max-w-3xl flex-col gap-3">
-      <h2 className="text-lg font-semibold">{t("brain.chat.title")}</h2>
-      <div className="flex h-[min(44rem,72dvh)] min-h-[24rem] flex-col rounded-xl border border-border">
-        {thread.isPending ? <LoadingState label={t("conversations.loading")} /> : null}
-        {thread.isError ? (
-          <InlineError message={errorMessage(thread.error)} onRetry={() => void thread.refetch()} />
-        ) : null}
-        {!thread.isPending && !thread.isError ? (
-          <ConversationTranscript
-            turns={thread.data?.turns ?? []}
-            sessionId={sessionId}
-            streaming={streaming}
-            assistant={t("brain.chat.librarian")}
-            label={t("brain.chat.thread")}
-            emptyText={t("brain.chat.empty")}
-            typing={t("brain.chat.typing")}
-          />
-        ) : null}
-        {sending.error ? <InlineError message={errorMessage(sending.error)} /> : null}
-        <ConversationComposer
-          identity="brain"
-          label={t("brain.chat.question")}
-          placeholder={t("brain.chat.placeholder")}
-          busy={thread.isPending || thread.isError || sending.pending || sessionId !== null}
-          usage={thread.data?.usage}
-          onSend={sending.send}
+    <section className="flex flex-col gap-3" aria-labelledby="brain-thread-heading">
+      <h2 ref={heading} id="brain-thread-heading" tabIndex={-1} className="text-lg font-semibold">
+        {t("brain.chat.title")}
+      </h2>
+      <div className="grid items-start gap-4 lg:grid-cols-[14rem_minmax(0,1fr)]">
+        <ConversationList
+          {...sidebar}
+          heading="h3"
+          selected={id}
+          busy={sidebar.busy || create.isPending}
+          error={create.error ? errorMessage(create.error) : sidebar.error}
+          onCreate={() => create.mutate()}
+          onSelect={select}
         />
+        {sidebar.pending ? null : (
+          <BrainThread key={`${id}:${revision}`} id={id} onSubmitted={refresh} />
+        )}
       </div>
     </section>
   );

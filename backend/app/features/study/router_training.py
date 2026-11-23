@@ -2,7 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Response
 
-from app.core.deps import CurrentUserDep, Db, RuntimeDep
+from app.core.deps import ConfirmedUserDep, CurrentUserDep, Db, RuntimeDep
 from app.features.conversations.service import ConversationQuestionIn, ConversationStarted
 from app.features.study.router_deps import StudyDep
 from app.features.study.service.training import (
@@ -13,7 +13,12 @@ from app.features.study.service.training import (
     training_row,
 )
 from app.features.study.service.training_end import update_training
-from app.features.study.training_schemas import TrainingSessionOut, TrainingStart, TrainingUpdate
+from app.features.study.training_schemas import (
+    TrainingContextUpdate,
+    TrainingSessionOut,
+    TrainingStart,
+    TrainingUpdate,
+)
 
 router = APIRouter(prefix="/study-sessions/training", tags=["study"])
 
@@ -53,6 +58,17 @@ async def message(
 async def update(
     study_session_id: UUID,
     body: TrainingUpdate,
+    user: ConfirmedUserDep,
+    rt: StudyDep,
+    runtime: RuntimeDep,
+) -> TrainingSessionOut:
+    return await update_training(runtime.runner, rt, user.id, str(study_session_id), body)
+
+
+@router.patch("/{study_session_id}/context")
+async def update_context(
+    study_session_id: UUID,
+    body: TrainingContextUpdate,
     user: CurrentUserDep,
     rt: StudyDep,
     runtime: RuntimeDep,

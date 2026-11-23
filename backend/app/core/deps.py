@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import HTTPConnection
 
 from app.agents.runtime.handle import AgentRuntime
-from app.core.caller import MCP_IDENTITY
+from app.core.caller import MCP_IDENTITY, require_confirmed_gesture
 from app.core.errors import AppError
 from app.core.providers import Providers, PublishingProviders
 from app.core.security import Cipher
@@ -59,7 +59,7 @@ async def get_current_user(conn: HTTPConnection) -> CurrentUser:
     unique)."""
     identity = MCP_IDENTITY.get()
     if identity is not None:
-        if never_reachable(conn.url.path.removeprefix(API_PREFIX)):  # défense en profondeur
+        if never_reachable(conn.url.path.removeprefix(API_PREFIX), conn.scope.get("method")):
             raise AppError("interface_only", "Cette action est réservée à l'interface.", 403)
         return CurrentUser(id=identity.user_id, email=None)
     authenticator: Authenticator = conn.app.state.authenticator
@@ -78,6 +78,14 @@ async def get_interface_user(conn: HTTPConnection) -> CurrentUser:
 
 CurrentUserDep = Annotated[CurrentUser, Depends(get_current_user)]
 InterfaceUserDep = Annotated[CurrentUser, Depends(get_interface_user)]
+
+
+def get_confirmed_user(user: CurrentUserDep) -> CurrentUser:
+    require_confirmed_gesture()
+    return user
+
+
+ConfirmedUserDep = Annotated[CurrentUser, Depends(get_confirmed_user)]
 
 
 def get_providers(conn: HTTPConnection) -> Providers:

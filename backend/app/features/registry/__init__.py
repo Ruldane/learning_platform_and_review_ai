@@ -52,6 +52,8 @@ from app.features.health.mcp import MCP as health_mcp
 from app.features.health.router import router as health_router
 from app.features.ide.mcp import MCP as ide_mcp
 from app.features.ide.router import router as ide_router
+from app.features.lab.mcp import MCP as lab_mcp
+from app.features.lab.router import router as lab_router
 from app.features.learning.mcp import MCP as learning_mcp
 from app.features.learning.router import router as learning_router
 from app.features.lesson_hunt.mcp import MCP as lesson_hunt_mcp
@@ -120,6 +122,7 @@ FEATURE_ROUTERS: list[APIRouter] = [
     calendar_router,
     keys_router,
     health_router,
+    lab_router,
     sessions_play_router,  # avant `sessions_router` : `/sessions/play` avant `/{session_id}`
     sessions_router,
     memory_router,
@@ -204,6 +207,7 @@ MCP_FEATURES: list[FeatureMcp] = [
     ghost_mcp,
     health_mcp,
     ide_mcp,
+    lab_mcp,
     learning_mcp,
     lesson_hunt_mcp,
     lesson_updates_mcp,

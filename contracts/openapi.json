@@ -3302,6 +3302,37 @@
         "title": "BossRubric",
         "type": "object"
       },
+      "BrainRelayStatus": {
+        "properties": {
+          "last_contact": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Contact"
+          },
+          "state": {
+            "enum": [
+              "unconfigured",
+              "waiting",
+              "connected",
+              "offline"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state"
+        ],
+        "title": "BrainRelayStatus",
+        "type": "object"
+      },
       "BraveUsageOut": {
         "description": "Requêtes Brave du mois civil UTC (`month` : « AAAA-MM ») pour la clé en vigueur.",
         "properties": {
@@ -5028,6 +5059,22 @@
         "title": "ConversationQuestionIn",
         "type": "object"
       },
+      "ConversationRename": {
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "ConversationRename",
+        "type": "object"
+      },
       "ConversationSource": {
         "properties": {
           "excerpt": {
@@ -5080,6 +5127,31 @@
           "session_id"
         ],
         "title": "ConversationStarted",
+        "type": "object"
+      },
+      "ConversationSummary": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "updated_at"
+        ],
+        "title": "ConversationSummary",
         "type": "object"
       },
       "ConversationTurnOut": {
@@ -8049,6 +8121,25 @@
       },
       "FolderIn": {
         "properties": {
+          "excluded_directories": {
+            "items": {
+              "maxLength": 300,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 40,
+            "title": "Excluded Directories",
+            "type": "array"
+          },
+          "excluded_extensions": {
+            "items": {
+              "pattern": "^\\.[a-zA-Z0-9]{1,16}$",
+              "type": "string"
+            },
+            "maxItems": 40,
+            "title": "Excluded Extensions",
+            "type": "array"
+          },
           "name": {
             "maxLength": 200,
             "minLength": 1,
@@ -8076,6 +8167,20 @@
       },
       "FolderOut": {
         "properties": {
+          "excluded_directories": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Excluded Directories",
+            "type": "array"
+          },
+          "excluded_extensions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Excluded Extensions",
+            "type": "array"
+          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -8109,6 +8214,39 @@
       },
       "FolderPatch": {
         "properties": {
+          "excluded_directories": {
+            "anyOf": [
+              {
+                "items": {
+                  "maxLength": 300,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "maxItems": 40,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Excluded Directories"
+          },
+          "excluded_extensions": {
+            "anyOf": [
+              {
+                "items": {
+                  "pattern": "^\\.[a-zA-Z0-9]{1,16}$",
+                  "type": "string"
+                },
+                "maxItems": 40,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Excluded Extensions"
+          },
           "name": {
             "anyOf": [
               {
@@ -9870,6 +10008,13 @@
             "title": "Changed",
             "type": "integer"
           },
+          "excluded": {
+            "default": 0,
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Excluded",
+            "type": "integer"
+          },
           "extension": {
             "default": 0,
             "maximum": 2147483647.0,
@@ -11524,6 +11669,67 @@
           "session_id"
         ],
         "title": "KitStartOut",
+        "type": "object"
+      },
+      "LabPreferences": {
+        "properties": {
+          "pinned": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Pinned",
+            "type": "array"
+          },
+          "tour": {
+            "default": "pending",
+            "enum": [
+              "pending",
+              "done",
+              "disabled"
+            ],
+            "title": "Tour",
+            "type": "string"
+          }
+        },
+        "title": "LabPreferences",
+        "type": "object"
+      },
+      "LabPreferencesPatch": {
+        "additionalProperties": false,
+        "properties": {
+          "pinned": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 32,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pinned"
+          },
+          "tour": {
+            "anyOf": [
+              {
+                "enum": [
+                  "pending",
+                  "done",
+                  "disabled"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tour"
+          }
+        },
+        "title": "LabPreferencesPatch",
         "type": "object"
       },
       "Language": {
@@ -16372,6 +16578,105 @@
           "session_id"
         ],
         "title": "OncallReviewStarted",
+        "type": "object"
+      },
+      "Overview": {
+        "properties": {
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/OverviewSection"
+            },
+            "title": "Sections",
+            "type": "array"
+          }
+        },
+        "required": [
+          "sections"
+        ],
+        "title": "Overview",
+        "type": "object"
+      },
+      "OverviewFeature": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "missing_prerequisites": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing Prerequisites",
+            "type": "array"
+          },
+          "tools": {
+            "items": {
+              "$ref": "#/components/schemas/OverviewTool"
+            },
+            "title": "Tools",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "tools",
+          "missing_prerequisites"
+        ],
+        "title": "OverviewFeature",
+        "type": "object"
+      },
+      "OverviewSection": {
+        "properties": {
+          "features": {
+            "items": {
+              "$ref": "#/components/schemas/OverviewFeature"
+            },
+            "title": "Features",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "local_url": {
+            "title": "Local Url",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "local_url",
+          "features"
+        ],
+        "title": "OverviewSection",
+        "type": "object"
+      },
+      "OverviewTool": {
+        "properties": {
+          "level": {
+            "enum": [
+              1,
+              2,
+              3
+            ],
+            "title": "Level",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "level"
+        ],
+        "title": "OverviewTool",
         "type": "object"
       },
       "PaperLabCreate": {
@@ -27513,6 +27818,31 @@
         "title": "TrainingFinish",
         "type": "object"
       },
+      "TrainingLessonsUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "const": "lessons",
+            "title": "Action",
+            "type": "string"
+          },
+          "lesson_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 8,
+            "title": "Lesson Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "action",
+          "lesson_ids"
+        ],
+        "title": "TrainingLessonsUpdate",
+        "type": "object"
+      },
       "TrainingModeUpdate": {
         "additionalProperties": false,
         "properties": {
@@ -27567,6 +27897,14 @@
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "lesson_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Lesson Ids",
+            "type": "array"
           },
           "minutes": {
             "title": "Minutes",
@@ -27625,7 +27963,8 @@
           "flashcards_created",
           "skills",
           "greeting",
-          "conversation"
+          "conversation",
+          "lesson_ids"
         ],
         "title": "TrainingSessionOut",
         "type": "object"
@@ -27633,6 +27972,15 @@
       "TrainingStart": {
         "additionalProperties": false,
         "properties": {
+          "lesson_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 8,
+            "title": "Lesson Ids",
+            "type": "array"
+          },
           "mode": {
             "default": "socratic",
             "enum": [
@@ -27642,6 +27990,11 @@
             ],
             "title": "Mode",
             "type": "string"
+          },
+          "new_conversation": {
+            "default": false,
+            "title": "New Conversation",
+            "type": "boolean"
           }
         },
         "title": "TrainingStart",
@@ -30882,6 +31235,25 @@
     "/api/v1/brain/conversation": {
       "get": {
         "operationId": "read_conversation_api_v1_brain_conversation_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "conversation_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Conversation Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -30900,6 +31272,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "Read Conversation",
@@ -30911,6 +31293,25 @@
     "/api/v1/brain/conversation/messages": {
       "post": {
         "operationId": "message_api_v1_brain_conversation_messages_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "conversation_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Conversation Id"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -30944,6 +31345,27 @@
           }
         },
         "summary": "Message",
+        "tags": [
+          "brain"
+        ]
+      }
+    },
+    "/api/v1/brain/conversations": {
+      "post": {
+        "operationId": "create_conversation_api_v1_brain_conversations_post",
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Create Conversation",
         "tags": [
           "brain"
         ]
@@ -31093,6 +31515,27 @@
           }
         },
         "summary": "Patch Folder",
+        "tags": [
+          "brain"
+        ]
+      }
+    },
+    "/api/v1/brain/relay": {
+      "get": {
+        "operationId": "relay_status_api_v1_brain_relay_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrainRelayStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Relay Status",
         "tags": [
           "brain"
         ]
@@ -32510,6 +32953,266 @@
           }
         },
         "summary": "Accept Explanation",
+        "tags": [
+          "conversations"
+        ]
+      }
+    },
+    "/api/v1/conversations/{scope}": {
+      "delete": {
+        "operationId": "wipe_conversations_api_v1_conversations__scope__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "scope",
+            "required": true,
+            "schema": {
+              "enum": [
+                "brain",
+                "training"
+              ],
+              "title": "Scope",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Wipe Conversations",
+        "tags": [
+          "conversations"
+        ]
+      },
+      "get": {
+        "operationId": "list_conversations_api_v1_conversations__scope__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "scope",
+            "required": true,
+            "schema": {
+              "enum": [
+                "brain",
+                "training"
+              ],
+              "title": "Scope",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 120,
+              "title": "Q",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConversationSummary"
+                  },
+                  "title": "Response List Conversations Api V1 Conversations  Scope  Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Conversations",
+        "tags": [
+          "conversations"
+        ]
+      }
+    },
+    "/api/v1/conversations/{scope}/{conversation_id}": {
+      "delete": {
+        "operationId": "delete_conversation_api_v1_conversations__scope___conversation_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "scope",
+            "required": true,
+            "schema": {
+              "enum": [
+                "brain",
+                "training"
+              ],
+              "title": "Scope",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Conversation",
+        "tags": [
+          "conversations"
+        ]
+      },
+      "patch": {
+        "operationId": "rename_conversation_api_v1_conversations__scope___conversation_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "scope",
+            "required": true,
+            "schema": {
+              "enum": [
+                "brain",
+                "training"
+              ],
+              "title": "Scope",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConversationRename"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Rename Conversation",
+        "tags": [
+          "conversations"
+        ]
+      }
+    },
+    "/api/v1/conversations/{scope}/{conversation_id}/messages": {
+      "delete": {
+        "operationId": "clear_conversation_api_v1_conversations__scope___conversation_id__messages_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "scope",
+            "required": true,
+            "schema": {
+              "enum": [
+                "brain",
+                "training"
+              ],
+              "title": "Scope",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Clear Conversation",
         "tags": [
           "conversations"
         ]
@@ -35638,7 +36341,7 @@
     },
     "/api/v1/ide/notes/{note_id}/accept": {
       "post": {
-        "description": "Applique une proposition au fichier si celui-ci n'a pas changé (sinon 409 `note_stale`).\nGeste de l'interface, jamais du MCP.",
+        "description": "Applique une proposition au fichier si celui-ci n'a pas changé (sinon 409 `note_stale`).\nUn appel MCP exige une confirmation dans Tremplin.",
         "operationId": "accept_note_api_v1_ide_notes__note_id__accept_post",
         "parameters": [
           {
@@ -35689,7 +36392,7 @@
     },
     "/api/v1/ide/notes/{note_id}/reject": {
       "post": {
-        "description": "Refuse une proposition. Geste de l'interface, jamais du MCP.",
+        "description": "Refuse une proposition. Un appel MCP exige une confirmation dans Tremplin.",
         "operationId": "reject_note_api_v1_ide_notes__note_id__reject_post",
         "parameters": [
           {
@@ -37911,6 +38614,88 @@
         "summary": "Read Journal",
         "tags": [
           "capture"
+        ]
+      }
+    },
+    "/api/v1/lab/overview": {
+      "get": {
+        "description": "Les rubriques, leurs activités, les outils du jeton et les prérequis manquants.",
+        "operationId": "overview_api_v1_lab_overview_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Overview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Overview",
+        "tags": [
+          "lab"
+        ]
+      }
+    },
+    "/api/v1/lab/preferences": {
+      "get": {
+        "operationId": "read_api_v1_lab_preferences_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabPreferences"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Read",
+        "tags": [
+          "lab"
+        ]
+      },
+      "patch": {
+        "operationId": "change_api_v1_lab_preferences_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LabPreferencesPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabPreferences"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change",
+        "tags": [
+          "lab"
         ]
       }
     },
@@ -48361,6 +49146,7 @@
                   "mapping": {
                     "cancel": "#/components/schemas/TrainingCancel",
                     "finish": "#/components/schemas/TrainingFinish",
+                    "lessons": "#/components/schemas/TrainingLessonsUpdate",
                     "mode": "#/components/schemas/TrainingModeUpdate"
                   },
                   "propertyName": "action"
@@ -48368,6 +49154,9 @@
                 "oneOf": [
                   {
                     "$ref": "#/components/schemas/TrainingModeUpdate"
+                  },
+                  {
+                    "$ref": "#/components/schemas/TrainingLessonsUpdate"
                   },
                   {
                     "$ref": "#/components/schemas/TrainingFinish"
@@ -48405,6 +49194,75 @@
           }
         },
         "summary": "Update",
+        "tags": [
+          "study",
+          "study"
+        ]
+      }
+    },
+    "/api/v1/study-sessions/training/{study_session_id}/context": {
+      "patch": {
+        "operationId": "update_context_api_v1_study_sessions_training__study_session_id__context_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Study Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "discriminator": {
+                  "mapping": {
+                    "lessons": "#/components/schemas/TrainingLessonsUpdate",
+                    "mode": "#/components/schemas/TrainingModeUpdate"
+                  },
+                  "propertyName": "action"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/TrainingModeUpdate"
+                  },
+                  {
+                    "$ref": "#/components/schemas/TrainingLessonsUpdate"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainingSessionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Context",
         "tags": [
           "study",
           "study"

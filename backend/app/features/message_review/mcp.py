@@ -1,9 +1,8 @@
 from app.features.message_review.preferences import FEATURE
-from app.mcp.base import FeatureMcp, McpAction
+from app.mcp.base import FeatureMcp, McpAction, McpExclusion
 
 _ROOT = "/message-reviews"
 _ANSWER = _ROOT + "/{challenge_id}/answer"
-_CONSENT = "L'interface gère le consentement, la discussion privée et le jeton Nod associé."
 
 MCP = FeatureMcp(
     feature=FEATURE,
@@ -30,5 +29,8 @@ MCP = FeatureMcp(
             "défi. Réussi : ok. À revoir : fail. Ne jamais choisir l'avis à sa place. Nod seul.",
         ),
     ),
-    excluded={f"GET {_ROOT}/settings": _CONSENT, f"PUT {_ROOT}/settings": _CONSENT},
+    excluded={
+        f"GET {_ROOT}/settings": McpExclusion.INTEGRATION_TOKEN,
+        f"PUT {_ROOT}/settings": McpExclusion.INTEGRATION_TOKEN,
+    },
 )

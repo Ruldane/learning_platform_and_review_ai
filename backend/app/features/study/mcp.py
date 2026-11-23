@@ -43,7 +43,7 @@ MCP = FeatureMcp(
             f"POST {_TRAINING}",
             2,
             "study_start_training",
-            "Ouvre une session training, sans leçon imposée.",
+            "Ouvre ou reprend un training. new_conversation crée un fil indépendant.",
             untrusted=_TURN_CONTENT,
         ),
         McpAction(
@@ -61,10 +61,25 @@ MCP = FeatureMcp(
             untrusted=_TURN_CONTENT,
         ),
         McpAction(
+            f"PATCH {_TRAINING_SESSION}/context",
+            2,
+            "study_update_training_context",
+            "Change le mode ou les leçons sélectionnées d’un training.",
+            untrusted=_TURN_CONTENT,
+        ),
+        McpAction(
+            f"PATCH {_TRAINING_SESSION}",
+            3,
+            "study_update_training",
+            "Termine ou abandonne une session training. À confirmer dans Tremplin.",
+            untrusted=_TURN_CONTENT,
+        ),
+        McpAction(
             f"POST {_TRAINING_SESSION}/messages",
             2,
             "study_talk_training",
-            "Parle au Tuteur pendant le training avec un identifiant de demande réutilisable.",
+            "Parle au Tuteur dans le fil, même après le bilan. "
+            "Réutilise le même identifiant de demande pour rejouer un envoi.",
             launches="conversation",
         ),
     ),
@@ -75,9 +90,4 @@ MCP = FeatureMcp(
             summary="Le Tuteur conduit une session guidée (`study_session_id`).",
         ),
     ),
-    excluded={
-        f"PATCH {_TRAINING_SESSION}": (
-            "L’interface pilote le minuteur, change le mode et clôture le training."
-        ),
-    },
 )

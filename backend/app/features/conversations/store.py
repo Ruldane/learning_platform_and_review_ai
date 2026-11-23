@@ -31,28 +31,17 @@ from app.features.conversations.feynman_source import material
 from app.features.conversations.lesson_context import (
     lesson_excerpt,
     lesson_material,
-    lesson_version,
     ready_lesson,
-    stale_passage,
+    require_current_version,
 )
 from app.features.conversations.repository import ConversationRepository, TurnRepository
 from app.features.conversations.service import BRAIN_SCOPE, LESSON_SCOPE, TRAINING_SCOPE
+from app.features.conversations.training_context import selected_refs
 from app.features.lessons.service.conversation import lesson_terms, search_published
 from app.mcp.recorder import ChangeRecorder
 
 MAX_HISTORY = 4
 MAX_HISTORY_FIELD = 800
-
-
-def _check_version(markdown: str, turn: ConversationTurn) -> None:
-    if turn.lesson_version is not None and turn.lesson_version != lesson_version(markdown):
-        if turn.mode == CLASSROOM_SCOPE and turn.passage is None:
-            raise AppError(
-                "classroom_lesson_changed",
-                "La leçon a changé pendant la réponse. Tu peux renvoyer ton explication.",
-                409,
-            )
-        raise stale_passage()
 
 
 async def _owned_turn(
@@ -76,7 +65,7 @@ async def _lesson_refs(
     turn: ConversationTurn,
 ) -> list[ConversationReference]:
     title, markdown = await ready_lesson(db, thread.user_id, thread.subject_id)
-    _check_version(markdown, turn)
+    require_current_version(markdown, turn)
     source = ConversationSource(
         kind="lesson", id=UUID(thread.subject_id), title=title, excerpt=turn.passage
     )
@@ -225,7 +214,12 @@ class AgentConversationStore:
             elif thread.scope == CLASSROOM_SCOPE:
                 agent, refs = TRAINING_TUTOR, await _lesson_refs(db, thread, turn)
             elif thread.scope == TRAINING_SCOPE:
-                agent, refs = TRAINING_TUTOR, await _published_refs(db, turn, history)
+                agent = TRAINING_TUTOR
+                refs = (
+                    await selected_refs(db, turn)
+                    if turn.lesson_ids
+                    else await _published_refs(db, turn, history)
+                )
             elif thread.scope == BRAIN_SCOPE:
                 agent = BRAIN_LIBRARIAN
                 history, refs, notes = await _brain_context(db, turn, history)
@@ -269,7 +263,7 @@ class AgentConversationStore:
             if turn.lesson_version is not None:
                 thread, _ = await _owned_turn(repo, session_id, thread_id, turn_id)
                 _, markdown = await ready_lesson(db, user_id, thread.subject_id)
-                _check_version(markdown, turn)
+                require_current_version(markdown, turn)
             if (
                 context_notes
                 and await active_note_versions(db, user_id, context_notes) != context_notes

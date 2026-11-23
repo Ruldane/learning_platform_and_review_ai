@@ -115,9 +115,13 @@ def unprotected(routes: list[tuple[str, str]], declared: dict[str, McpAction]) -
         if not any(path == p or path.startswith(p + "/") for p in SECRET_PREFIXES):
             continue
         key = f"{method} {path}"
-        if never_reachable(path):
+        if never_reachable(path, method):
             continue
         action = declared.get(key)
+        if key == "GET /account/export" and action and action.artifact and action.level == 1:
+            continue
+        if key == "POST /account/delete" and action and action.level == 3:
+            continue
         complete = action is None or (
             action.response_fields is not None and (method == "GET" or action.body_fields)
         )  # fmt: skip

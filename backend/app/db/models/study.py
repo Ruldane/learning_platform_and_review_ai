@@ -114,7 +114,7 @@ class Flashcard(UserScopedMixin, Base):
 
 
 class StudySession(UserScopedMixin, Base):
-    """Séance guidée ou training, avec un seul créneau ouvert par compte."""
+    """Séance guidée ou session de training."""
 
     __tablename__ = "study_sessions"
     __table_args__ = (
@@ -126,11 +126,15 @@ class StudySession(UserScopedMixin, Base):
             name="study_scope",
         ),
         Index(
-            "uq_study_sessions_open", "user_id", unique=True, sqlite_where=text("status = 'open'")
+            "uq_study_sessions_open",
+            "user_id",
+            unique=True,
+            sqlite_where=text("status = 'open' AND independent IS 0"),
         ),
     )
 
     kind: Mapped[str] = mapped_column(String(16), default="guided", server_default="guided")
+    independent: Mapped[bool] = mapped_column(default=False, server_default="0")
     lesson_id: Mapped[str | None] = mapped_column(String(36))
     module_id: Mapped[str | None] = mapped_column(String(36))
     program_id: Mapped[str | None] = mapped_column(String(36))

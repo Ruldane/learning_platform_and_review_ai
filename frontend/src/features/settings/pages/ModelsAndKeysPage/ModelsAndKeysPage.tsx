@@ -15,6 +15,7 @@ import { useTierActions } from "../../hooks/useTierActions";
 import { RunSourceSlot } from "../../RunSourceSlot";
 import { readPresets, readTiers } from "../../tierChoices";
 import { AdvancedMode } from "./AdvancedMode";
+import { MissingProviderWarning } from "./MissingProviderWarning";
 
 /** Réglages > Modèles et clés : clés API par fournisseur, préréglages et modèle par niveau. */
 export function ModelsAndKeysPage() {
@@ -41,6 +42,7 @@ export function ModelsAndKeysPage() {
   }
 
   const presets = readPresets(models.data.presets);
+  const tiers = readTiers(settings.data.tiers);
   return (
     <div className="flex flex-col gap-8">
       <header>
@@ -48,10 +50,12 @@ export function ModelsAndKeysPage() {
         <p className="mt-2 text-muted-foreground">{t("settings.models.intro")}</p>
       </header>
       {error ? <InlineError message={error} /> : null}
+      <MissingProviderWarning providers={models.data.providers} current={tiers} presets={presets}
+        busy={tierActions.pending} onApply={(name) => tierActions.applyPreset(presets, name)} />
       <RunSourceSlot detailed />
       <KeysSection entries={keys.data} {...keyActions} />
       <TiersSection
-        tiers={readTiers(settings.data.tiers)}
+        tiers={tiers}
         presets={presets}
         providers={models.data.providers}
         visionEnabled={settings.data.vision_enabled !== false}

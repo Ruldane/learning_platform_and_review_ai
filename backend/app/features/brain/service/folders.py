@@ -1,13 +1,14 @@
 """Gestion des racines déclarées par le compte et bilan public sans les chemins."""
 
 from collections import Counter
+from collections.abc import Callable
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
 from app.db.models.brain import BrainFolder
-from app.features.brain.paths import root_path
+from app.features.brain.paths import path_excluded, root_path
 from app.features.brain.repository import FileRepository, FolderRepository
 from app.features.brain.schemas import FolderIn, FolderOut, FolderPatch, FolderStatus
 from app.features.memory.service.runtime import MemoryRuntime
@@ -34,17 +35,25 @@ def _exists() -> AppError:
 
 
 async def create_folder(db: AsyncSession, user_id: str, body: FolderIn) -> FolderOut:
-    path = root_path(body.path)
+    values = body.model_dump()
+    values["path"] = root_path(body.path)
     try:
-        row = await FolderRepository(db, user_id).add(name=body.name, path=path, paused=body.paused)
+        row = await FolderRepository(db, user_id).add(**values)
     except IntegrityError:
         raise _exists() from None
     return FolderOut.model_validate(row)
 
 
-async def _retire_folder(db: AsyncSession, user_id: str, folder_id: str) -> list[RemovedDocument]:
+async def _retire_folder(
+    db: AsyncSession,
+    user_id: str,
+    folder_id: str,
+    recent_exclusion: Callable[[str], bool] | None = None,
+) -> list[RemovedDocument]:
     removed = []
-    for _, doc in await FileRepository(db, user_id).inventory(folder_id):
+    for entry, doc in await FileRepository(db, user_id).inventory(folder_id):
+        if recent_exclusion is not None and not recent_exclusion(entry.path):
+            continue
         if result := await retire_sync_document(db, user_id, doc.id):
             removed.append(result)
     return removed
@@ -62,10 +71,28 @@ async def patch_folder(
     path = root_path(body.path) if body.path is not None else row.path
     name = body.name if body.name is not None else row.name
     paused = body.paused if body.paused is not None else row.paused
-    if (path, name, paused) == (row.path, row.name, row.paused):
+    directories = (
+        row.excluded_directories if body.excluded_directories is None else body.excluded_directories
+    )
+    extensions = (
+        row.excluded_extensions if body.excluded_extensions is None else body.excluded_extensions
+    )
+    filters_changed = (directories, extensions) != (
+        row.excluded_directories,
+        row.excluded_extensions,
+    )
+    if (path, name, paused) == (row.path, row.name, row.paused) and not filters_changed:
         return FolderOut.model_validate(row)
-    removed = await _retire_folder(db, user_id, folder_id) if path != row.path else []
+    removed = []
+    if path != row.path or filters_changed:
+        match = (
+            None
+            if path != row.path
+            else lambda value: path_excluded(value, directories, extensions)
+        )
+        removed = await _retire_folder(db, user_id, folder_id, match)
     row.path, row.name, row.paused, row.report = path, name, paused, None
+    row.excluded_directories, row.excluded_extensions = directories, extensions
     row.revision += 1
     try:
         await db.commit()

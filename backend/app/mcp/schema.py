@@ -11,23 +11,32 @@ from dataclasses import dataclass
 from typing import Any, Literal
 
 API_PREFIX = "/api/v1"
-# Routes que le MCP n'atteint jamais, quelle que soit la déclaration (niveau 4) : connexion,
-# compte et ses données, le MCP lui-même, clés d'API, modèles par niveau, surcharges par agent.
+# Espaces sensibles. Seules les paires méthode et chemin de _SCOPED_ACCESS les ouvrent.
 NEVER_REACHABLE = (
     "/auth",
     "/account",
-    "/calendar",
-    "/brain/folders",
+    "/calendar/callback",
     "/brain/sync",
     "/brain/sync-token",
-    "/ide/terminals",
-    "/ide/notebook-runs",
     "/mcp",
     "/settings/api-keys",
     "/settings/models",
     "/settings/agents",
+    "/mentor-reviews/shared",
+    "/message-reviews/settings",
+    "/surprise-interviews/settings",
 )
-CALENDAR_MCP_PATHS = frozenset({"/calendar/upcoming", "/calendar/proposals"})
+_SCOPED_ACCESS = frozenset(
+    {
+        ("GET", "/account/export"),
+        ("POST", "/account/delete"),
+        ("GET", "/calendar/connection"),
+        ("DELETE", "/calendar/connection"),
+        ("GET", "/ide/preferences"),
+        ("GET", "/mentor-reviews/shares"),
+    }
+)
+_PROTECTED = frozenset({"/calendar/connection", "/ide/preferences", "/mentor-reviews/shares"})
 SETTINGS_PATH = "/settings"
 _FORM_MEDIA = ("multipart/form-data", "application/x-www-form-urlencoded")
 
@@ -54,9 +63,11 @@ class RoutePlan:
     merge_fields: frozenset[str] | None = None
 
 
-def never_reachable(path: str) -> bool:
-    if path in CALENDAR_MCP_PATHS:
+def never_reachable(path: str, method: str | None = None) -> bool:
+    if (method, path) in _SCOPED_ACCESS:
         return False
+    if path in _PROTECTED:
+        return True
     return any(path == base or path.startswith(base + "/") for base in NEVER_REACHABLE)
 
 

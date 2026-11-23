@@ -156,6 +156,27 @@ MCP = FeatureMcp(
             "Marque une relance faite (`done`), reportée de 3 jours (`postpone`) ou ignorée "
             "(`ignore`) ; rien n'est envoyé.",
         ),
+        McpAction(
+            "GET /applications/{application_id}/kit.zip",
+            1,
+            "applications_get_kit_archive",
+            "Lit les métadonnées de l’archive. Le texte se lit avec applications_get_kit.",
+            artifact=True,
+        ),
+        McpAction(
+            "GET /interviews/{interview_id}/design",
+            1,
+            "applications_read_interview_design",
+            "Lit le tableau d’architecture de cet entretien.",
+            untrusted=("board.scene",),
+        ),
+        McpAction(
+            "GET /system-design",
+            1,
+            "applications_read_current_design",
+            "Lit le tableau d’architecture de l’entretien en cours.",
+            untrusted=("board.scene",),
+        ),
     ),
     graphs=(
         McpGraph(
@@ -180,9 +201,4 @@ MCP = FeatureMcp(
             summary="Comité de recrutement simulé (`run_id` d'une exécution déjà créée).",
         ),
     ),
-    excluded={
-        "GET /applications/{application_id}/kit.zip": _FILE,
-        "GET /system-design": "Le tableau d’architecture est réservé à l’interface.",
-        "GET /interviews/{interview_id}/design": "Le tableau privé reste dans l’interface.",
-    },
 )

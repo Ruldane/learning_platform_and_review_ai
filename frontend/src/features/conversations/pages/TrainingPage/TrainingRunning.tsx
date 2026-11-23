@@ -33,6 +33,7 @@ export function TrainingRunning({
     onSubmitted,
     restoreFocus: () => thread.current?.querySelector("textarea")?.focus(),
   });
+  const open = session.status === "open";
   const busy = pilot.send.pending || sessionId !== null;
   return (
     <section
@@ -40,7 +41,7 @@ export function TrainingRunning({
       onKeyDownCapture={pilot.activity}
       onPointerDownCapture={pilot.activity}
     >
-      {pilot.phase && (
+      {open && pilot.phase && (
         <ConcentrationPanel
           phase={pilot.phase}
           busy={busy || saving}
@@ -50,14 +51,14 @@ export function TrainingRunning({
           onContinue={pilot.close}
         />
       )}
-      <div ref={thread} className={pilot.paused ? "hidden" : "flex flex-col gap-3"}>
-        <TrainingControls mode={session.mode} saving={saving} busy={busy} onChange={onChange} />
+      <div ref={thread} className={open && pilot.paused ? "hidden" : "flex flex-col gap-3"}>
+        <TrainingControls session={session} saving={saving} busy={busy} onChange={onChange} />
         <TrainingConversation
           session={session}
           sessionId={sessionId}
           streaming={streaming}
           initialText={initialText}
-          busy={busy || saving || pilot.paused}
+          busy={busy || saving || (open && pilot.paused)}
           error={pilot.send.error}
           onSend={pilot.submit}
         />

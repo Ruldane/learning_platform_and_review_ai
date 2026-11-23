@@ -1,4 +1,4 @@
-from app.mcp.base import FeatureMcp, McpAction
+from app.mcp.base import FeatureMcp, McpAction, McpExclusion
 
 MCP = FeatureMcp(
     feature="mentor_reviews",
@@ -24,11 +24,16 @@ MCP = FeatureMcp(
             "Marque un commentaire du compte comme traité ou à relire.",
             untrusted=("text",),
         ),
+        McpAction(
+            "DELETE /mentor-reviews/shares/{share_id}",
+            3,
+            "mentor_reviews_revoke_mentor_share",
+            "Retire l’accès du mentor au dossier partagé. Demande à confirmer.",
+        ),
     ),
     excluded={
-        "POST /mentor-reviews/shares": "Consentement et lien réservés à l’interface.",
-        "DELETE /mentor-reviews/shares/{share_id}": "Retrait depuis l’interface du propriétaire.",
-        "GET /mentor-reviews/shared": "Canal invité protégé par un jeton de partage dédié.",
-        "POST /mentor-reviews/shared/comments": "Canal invité à jeton de partage dédié.",
+        "POST /mentor-reviews/shares": McpExclusion.SHARING_TOKEN,
+        "GET /mentor-reviews/shared": McpExclusion.SHARING_TOKEN,
+        "POST /mentor-reviews/shared/comments": McpExclusion.SHARING_TOKEN,
     },
 )

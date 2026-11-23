@@ -45,8 +45,13 @@ MCP = FeatureMcp(
             "Relit le manifeste privé enregistré et son empreinte.",
             untrusted=_TEXT,
         ),
+        McpAction(
+            "GET /proof-packets/{packet_id}/export",
+            1,
+            "proof_packets_get_export_file",
+            "Lit les métadonnées du dossier de preuves et donne le lien local.",
+            artifact=True,
+            untrusted=("text",),
+        ),
     ),
-    excluded={
-        "GET /proof-packets/{packet_id}/export": "Téléchargement privé réservé à l’interface.",
-    },
 )

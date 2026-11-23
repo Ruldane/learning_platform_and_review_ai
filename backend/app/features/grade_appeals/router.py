@@ -2,7 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Request, Response
 
-from app.core.caller import JanuaryOnly
+from app.core.caller import ConfirmedGesture
 from app.core.deps import CurrentUserDep, Db
 from app.core.field_paths import FieldPathsRoute
 from app.features.grade_appeals.schemas import (
@@ -64,7 +64,7 @@ async def review_grade_appeal(
     return await workflow.review(request.app.state.launcher, user.id, str(appeal_id))
 
 
-@router.post("/{appeal_id}/decision", dependencies=[JanuaryOnly])
+@router.post("/{appeal_id}/decision", dependencies=[ConfirmedGesture])
 async def decide_grade_appeal(
     appeal_id: UUID, body: GradeAppealDecisionIn, db: Db, user: CurrentUserDep
 ) -> GradeAppealOut:

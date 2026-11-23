@@ -11,11 +11,6 @@ from app.features.ide.service.errors import run_not_found, sandbox_unavailable
 from app.providers.sandbox.base import MAX_INPUT_CHUNK_BYTES, CodeSandbox, UnknownRun
 
 
-def _require_interface(ctx: IdeContext) -> None:
-    if ctx.caller.kind != "app":
-        raise AppError("interface_only", "Le terminal est réservé à l’interface.", 403)
-
-
 def _sandbox(ctx: IdeContext) -> CodeSandbox:
     if ctx.sandbox is None:
         raise sandbox_unavailable()
@@ -23,7 +18,6 @@ def _sandbox(ctx: IdeContext) -> CodeSandbox:
 
 
 async def _owned(ctx: IdeContext, run_id: str) -> IdeRun:
-    _require_interface(ctx)
     found = await RunRepository(ctx.db, ctx.user_id).get_fresh(run_id)
     if found is None or found.kind != "terminal":
         raise run_not_found()
@@ -35,14 +29,14 @@ def _closed() -> AppError:
 
 
 async def start(ctx: IdeContext, session_id: str) -> TerminalStarted:
-    _require_interface(ctx)
     run = await runs.start(ctx, session_id, "terminal", None)
     return TerminalStarted(id=run.id)
 
 
 async def read(ctx: IdeContext, run_id: str, offset: int) -> RunProgress:
-    _require_interface(ctx)
-    return await runs.progress(ctx, run_id, offset, kind="terminal")
+    return await runs.progress(
+        ctx, run_id, offset, kind="terminal", persist=ctx.caller.kind == "app"
+    )
 
 
 async def send(ctx: IdeContext, run_id: str, text: str) -> None:

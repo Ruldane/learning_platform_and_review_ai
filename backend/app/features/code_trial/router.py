@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Path, Request
 
-from app.core.deps import CurrentUserDep, Db, InterfaceUserDep
+from app.core.deps import ConfirmedUserDep, CurrentUserDep, Db
 from app.core.errors import AppError
 from app.core.field_paths import FieldPathsRoute
 from app.features.code_trial.schemas import TrialOpened, TrialVerdict, TrialView
@@ -38,6 +38,6 @@ async def get_trial(session_id: Id, trial_id: Id, db: Db, user: CurrentUserDep) 
 
 @router.put("/{trial_id}/verdict")
 async def decide_trial(
-    session_id: Id, trial_id: Id, body: TrialVerdict, db: Db, user: InterfaceUserDep
+    session_id: Id, trial_id: Id, body: TrialVerdict, db: Db, user: ConfirmedUserDep
 ) -> TrialView:
     return await save_verdict(db, user.id, session_id, trial_id, body)

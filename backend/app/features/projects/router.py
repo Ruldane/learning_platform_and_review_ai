@@ -22,7 +22,7 @@ from fastapi import (
 from starlette.exceptions import HTTPException
 from starlette.requests import HTTPConnection
 
-from app.core.caller import JanuaryOnly
+from app.core.caller import ConfirmedGesture
 from app.core.deps import CurrentUserDep, Db
 from app.core.field_paths import FieldPathsRoute
 from app.features.projects.github_schemas import GithubClaimIn, GithubClaimOut, GithubProofOut
@@ -166,7 +166,7 @@ async def get_github_proofs(
     return await list_github_proofs(db, current.id, project_id)
 
 
-@router.post("/{project_id}/github-claims", status_code=201, dependencies=[JanuaryOnly])
+@router.post("/{project_id}/github-claims", status_code=201, dependencies=[ConfirmedGesture])
 async def make_github_claim(
     project_id: ProjectId,
     body: GithubClaimIn,
@@ -183,7 +183,7 @@ async def make_github_claim(
     response_model=SessionStarted,
     status_code=status.HTTP_202_ACCEPTED,
     responses=_SUBMIT_ERRORS,
-    dependencies=[JanuaryOnly],  # geste de January : jamais fait à sa place par le MCP
+    dependencies=[ConfirmedGesture],
 )
 async def post_submit(
     project_id: ProjectId,

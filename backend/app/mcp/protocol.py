@@ -107,13 +107,8 @@ def _discover() -> dict[str, Any]:
     }
 
 
-def _allowed_by_scope(tool: ToolSpec, identity: McpIdentity) -> bool:
-    """Feature dans le périmètre du jeton ; mode `write` pour tout sauf une lecture."""
-    return tool.feature in identity.features and (tool.level == 1 or identity.mode == "write")
-
-
 def _tools_list(identity: McpIdentity, tools: ToolRegistry) -> dict[str, Any]:
-    listed = [tool for tool in tools.list_for(identity) if _allowed_by_scope(tool, identity)]
+    listed = [tool for tool in tools.list_for(identity) if tool.available_to(identity)]
     return {
         "resultType": "complete",
         "tools": [
@@ -134,7 +129,7 @@ def _tools_list(identity: McpIdentity, tools: ToolRegistry) -> dict[str, Any]:
 
 
 def _authorize(tool: ToolSpec, identity: McpIdentity) -> None:
-    if tool.feature not in identity.features:
+    if not tool.in_scope(identity):
         raise AppError(
             "feature_not_allowed",
             f"Ce jeton n'ouvre pas la feature « {tool.feature} ».",

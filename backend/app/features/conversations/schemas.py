@@ -1,4 +1,5 @@
-from typing import Annotated, Self
+from datetime import datetime
+from typing import Annotated, Literal, Self
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
@@ -8,6 +9,22 @@ from app.db.models.agents import SessionStatus
 
 MAX_QUESTION = 2_000
 MAX_PASSAGE = 1_000
+MAX_TITLE = 120
+ChatScope = Literal["brain", "training"]
+
+
+class ConversationSummary(BaseModel):
+    id: UUID
+    title: str
+    updated_at: datetime
+
+
+class ConversationRename(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    title: Annotated[
+        str, StringConstraints(strip_whitespace=True, min_length=1, max_length=MAX_TITLE)
+    ]
 
 
 class ConversationQuestionIn(BaseModel):

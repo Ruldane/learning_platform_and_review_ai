@@ -1,4 +1,5 @@
 import { t } from "@/shared/i18n/t";
+import { formatMinutes } from "@/shared/lib/format";
 import type { FolderStatus } from "../../api";
 
 const REASONS = [
@@ -11,15 +12,24 @@ const REASONS = [
   "special",
   "unreadable",
   "changed",
+  "excluded",
 ] as const;
 
 export function ImportReport({ status }: { status?: FolderStatus }) {
   if (!status) return <p className="text-sm text-muted-foreground">{t("brain.waiting")}</p>;
   const { indexed, total, queued, processing, error, report } = status;
+  const known = Math.max(total, report?.scanned ?? 0);
+  const pending = Math.max(queued + processing, known - indexed - error);
   return (
     <div className="grid gap-1 text-sm">
-      <p>{t("brain.indexed", { indexed, total })}</p>
+      {known > 0 ? (
+        <>
+          <p>{t("brain.indexed", { indexed, total: known })}</p>
+          <progress aria-label={t("brain.progress")} value={indexed} max={known} className="h-2 w-full accent-primary" />
+        </>
+      ) : <p>{t(report ? "brain.noEligibleFiles" : "brain.waiting")}</p>}
       {queued || processing ? <p>{t("brain.pending", { count: queued + processing })}</p> : null}
+      {pending && !status.paused ? <p>{t("brain.estimate", { time: formatMinutes(Math.max(1, Math.ceil(pending / 6))) })}</p> : null}
       {error ? <p>{t("brain.errors", { count: error })}</p> : null}
       {report ? (
         <details className="rounded-md bg-muted p-2">

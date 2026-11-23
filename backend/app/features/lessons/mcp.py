@@ -53,6 +53,20 @@ MCP = FeatureMcp(
             launches="lesson_factory",
             untrusted=_LESSON_RESOURCE_TEXT,
         ),
+        McpAction(
+            "GET /lessons/{lesson_id}/pdf",
+            1,
+            "lessons_get_lesson_pdf",
+            "Lit les métadonnées du PDF. Le texte se lit avec lessons_get_lesson.",
+            artifact=True,
+        ),
+        McpAction(
+            "GET /resources/{resource_id}/file",
+            1,
+            "lessons_get_resource_file",
+            "Lit les métadonnées du fichier tiers téléchargé et donne le lien local.",
+            artifact=True,
+        ),
     ),
     graphs=(
         McpGraph(
@@ -62,13 +76,4 @@ MCP = FeatureMcp(
             untrusted=("result",),
         ),
     ),
-    excluded={
-        "GET /lessons/{lesson_id}/pdf": (
-            "Réponse en PDF, pas du JSON : le MCP lit la leçon par `lessons_get_lesson`."
-        ),
-        "GET /resources/{resource_id}/file": (
-            "Copie locale d'un PDF tiers en fichier binaire, pas du JSON ; la fiche de la "
-            "ressource se lit par `lessons_list_resources`."
-        ),
-    },
 )

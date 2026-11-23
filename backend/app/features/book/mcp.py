@@ -15,6 +15,12 @@ MCP = FeatureMcp(
             "Prépare une édition du programme en arrière-plan. Produit deux fichiers, à confirmer.",
             side_effects="external",
         ),
+        McpAction(
+            "GET /programs/{program_id}/book/{format}",
+            1,
+            "book_get_edition_file",
+            "Lit les métadonnées du livre et donne son lien local.",
+            artifact=True,
+        ),
     ),
-    excluded={f"GET {_BOOK}/{{format}}": "Téléchargement PDF ou EPUB binaire."},
 )

@@ -59,8 +59,11 @@ MCP = FeatureMcp(
             "Relit le résultat figé d’une comparaison d’offres.",
             untrusted=_SAVED,
         ),
+        McpAction(
+            "PUT /offer-comparisons/preferences",
+            3,
+            "offer_comparison_set_comparison_preferences",
+            "Modifie les critères personnels de comparaison. Demande à confirmer.",
+        ),
     ),
-    excluded={
-        "PUT /offer-comparisons/preferences": "Choix personnel des critères par défaut du compte.",
-    },
 )

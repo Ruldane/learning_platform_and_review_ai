@@ -1,6 +1,6 @@
 import { screen, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { renderRoutes } from "@/test/renderRoutes";
 import { server } from "@/test/server";
 import { BrainPage } from "./BrainPage";
@@ -13,6 +13,19 @@ function setup() {
 }
 
 describe("BrainPage", () => {
+  beforeEach(() => {
+    server.use(http.get(`${base}/relay`, () => HttpResponse.json({ state: "unconfigured" })));
+  });
+
+  it("explains an unconfigured relay on an empty account", async () => {
+    server.use(http.get(`${base}/folders`, () => HttpResponse.json([])));
+    server.use(http.get(`${base}/status`, () => HttpResponse.json([])));
+    setup();
+    expect(await screen.findByText("Relais de synchronisation à configurer")).toBeVisible();
+    const connection = screen.getByRole("complementary", { name: "État du relais" });
+    expect(within(connection).getByText(/TREMPLIN_BRAIN_SYNC_TOKEN/)).toBeVisible();
+  });
+
   it("registers a folder, shows import counts, and can pause the sync", async () => {
     server.use(http.get(`${base}/folders`, () => HttpResponse.json([])));
     server.use(

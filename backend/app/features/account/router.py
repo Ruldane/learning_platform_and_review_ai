@@ -11,7 +11,8 @@ from starlette.background import BackgroundTask
 from starlette.requests import HTTPConnection
 
 from app.agents.runtime.handle import AgentRuntime
-from app.core.deps import CurrentUserDep, Db
+from app.core.caller import MCP_IDENTITY
+from app.core.deps import ConfirmedUserDep, CurrentUserDep, Db
 from app.core.errors import AppError
 from app.core.field_paths import FieldPathsRoute
 from app.core.providers import MemoryProviders
@@ -79,6 +80,11 @@ async def export_account(current: CurrentUserDep, db: Db, rt: AccountDep) -> Res
     caractères) ; ni vecteurs ni points de reprise des agents (recalculables)."""
     now = datetime.now(UTC)
     filename = export_filename(now, await user_export_zone(db, current.id))
+    if MCP_IDENTITY.get() is not None:
+        return Response(
+            media_type="application/zip",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
     async with export_lock(rt.locks, current.id):
         archive = await build_export(db, rt.storage, current.id, now)
     try:
@@ -116,7 +122,7 @@ async def export_account(current: CurrentUserDep, db: Db, rt: AccountDep) -> Res
     },
 )
 async def delete_account(
-    request: Request, body: DeleteAccountIn, current: CurrentUserDep, rt: AccountDep
+    request: Request, body: DeleteAccountIn, current: ConfirmedUserDep, rt: AccountDep
 ) -> Response:
     """Tout supprimer : annule les sessions en cours, puis efface les vecteurs, les fichiers, les
     points de reprise et toutes les lignes du compte. `confirm` doit être `SUPPRIMER`, sinon 422

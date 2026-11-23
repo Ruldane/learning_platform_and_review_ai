@@ -2,8 +2,9 @@
 
 import builtins
 from collections import Counter, defaultdict
+from datetime import datetime, timedelta
 
-from sqlalchemy import ColumnElement, Select, and_, func, select, update
+from sqlalchemy import ColumnElement, Select, and_, func, or_, select, update
 from sqlalchemy.dialects.sqlite import insert
 
 from app.db.base import utcnow
@@ -80,6 +81,21 @@ class SyncTokenRepository(UserScopedRepository[BrainSyncToken]):
         await self.session.execute(
             stmt.on_conflict_do_update(
                 index_elements=[BrainSyncToken.user_id],
-                set_={"token_hash": digest, "updated_at": utcnow()},
+                set_={"token_hash": digest, "updated_at": utcnow(), "last_contact": None},
             )
         )
+
+    async def contact(self) -> tuple[datetime | None] | None:
+        stmt = select(BrainSyncToken.last_contact).where(BrainSyncToken.user_id == self.user_id)
+        row = (await self.session.execute(stmt)).one_or_none()
+        return None if row is None else (row[0],)
+
+    async def record_contact(self, digest: str) -> None:
+        now = utcnow()
+        last_contact = BrainSyncToken.last_contact
+        stmt = update(BrainSyncToken).where(
+            BrainSyncToken.user_id == self.user_id,
+            BrainSyncToken.token_hash == digest,
+            or_(last_contact.is_(None), last_contact < now - timedelta(minutes=1)),
+        )
+        await self.session.execute(stmt.values(last_contact=now, updated_at=now))

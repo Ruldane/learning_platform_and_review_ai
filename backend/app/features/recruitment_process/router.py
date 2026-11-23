@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Request, Response
 
 from app.agents.tools.recruitment_process_port import RecruitmentKind
-from app.core.caller import JanuaryOnly
+from app.core.caller import ConfirmedGesture
 from app.core.deps import CurrentUserDep, Db
 from app.core.field_paths import FieldPathsRoute
 from app.features.recruitment_process.schemas import (
@@ -51,7 +51,7 @@ async def read_recruitment_process(
     return await steps.read(db, user.id, str(process_id))
 
 
-@router.post("/{process_id}/steps/{kind}/answers", status_code=202, dependencies=[JanuaryOnly])
+@router.post("/{process_id}/steps/{kind}/answers", status_code=202, dependencies=[ConfirmedGesture])
 async def answer_recruitment_step(
     process_id: UUID,
     kind: RecruitmentKind,

@@ -5,7 +5,9 @@ from html.parser import HTMLParser
 from markdown_it import MarkdownIt
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agents.tools.conversation_port import CLASSROOM_SCOPE
 from app.core.errors import AppError
+from app.db.models.conversations import ConversationTurn
 from app.features.lessons.service.lessons import get_lesson
 
 _MARKDOWN = MarkdownIt("commonmark", {"html": False}).enable(["table", "strikethrough"])
@@ -68,6 +70,17 @@ def stale_passage() -> AppError:
         "Ce passage a changé. Sélectionne de nouveau le texte dans la leçon.",
         409,
     )
+
+
+def require_current_version(markdown: str, turn: ConversationTurn) -> None:
+    if turn.lesson_version is not None and turn.lesson_version != lesson_version(markdown):
+        if turn.mode == CLASSROOM_SCOPE and turn.passage is None:
+            raise AppError(
+                "classroom_lesson_changed",
+                "La leçon a changé pendant la réponse. Tu peux renvoyer ton explication.",
+                409,
+            )
+        raise stale_passage()
 
 
 def _without_leading_title(markdown: str) -> str:

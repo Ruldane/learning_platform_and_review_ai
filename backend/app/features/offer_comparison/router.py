@@ -2,7 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter
 
-from app.core.caller import JanuaryOnly
+from app.core.caller import ConfirmedGesture
 from app.core.deps import CurrentUserDep, Db
 from app.core.field_paths import FieldPathsRoute
 from app.features.offer_comparison import service
@@ -32,7 +32,7 @@ async def get_offer_comparison_preferences(
     return await service.get_preferences(db, user.id)
 
 
-@router.put("/preferences", dependencies=[JanuaryOnly])
+@router.put("/preferences", dependencies=[ConfirmedGesture])
 async def put_offer_comparison_preferences(
     body: OfferComparisonPreferences, db: Db, user: CurrentUserDep
 ) -> OfferComparisonPreferences:

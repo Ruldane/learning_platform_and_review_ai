@@ -148,10 +148,9 @@ async function sayItAndCancel(page: Page): Promise<void> {
 
 /** 6. La pastille de la navigation, puis la page Relances : la relance de 7 jours et son brouillon. */
 async function reminderIsDue(page: Page): Promise<Locator> {
-  await page.getByRole("button", { name: "Candidatures, 1 relance due" }).click();
-  const nav = page.getByRole("menuitem", { name: "Relances, 1 relance due", exact: true });
-  await expect(nav).toBeVisible();
-  await nav.click();
+  const menu = page.getByRole("navigation", { name: "Navigation principale" });
+  await menu.getByRole("link", { name: "Carrière, 1 relance due" }).click();
+  await page.getByRole("link", { name: "Ouvrir Relances", exact: true }).click();
   await expect(page).toHaveURL(/\/candidatures\/relances$/);
 
   const list = page.getByRole("list", { name: "Relances à traiter" });
@@ -173,9 +172,8 @@ async function copyAndDone(page: Page, reminder: Locator): Promise<void> {
   await reminder.getByRole("button", { name: "Fait" }).click();
   await expect(page.getByText("Relance traitée.")).toBeVisible();
   await expect(page.getByRole("list", { name: "Relances à traiter" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: /^Candidatures/ })).toHaveAccessibleName(
-    "Candidatures",
-  );
+  await expect(page.getByRole("navigation", { name: "Navigation principale" })
+    .getByRole("link", { name: /^Carrière/ })).toHaveAccessibleName("Carrière");
 }
 
 /** 8. La fiche passe Relancée, et son fil montre la relance. */

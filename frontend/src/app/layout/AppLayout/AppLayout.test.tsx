@@ -56,9 +56,9 @@ describe("AppLayout", () => {
     const panel = screen.getByRole("complementary", { name: "Repères et informations" });
     expect(within(panel).getByRole("link", { name: "Tremplin" })).toHaveAttribute("href", "/");
     const nav = within(banner).getByRole("navigation", { name: "Navigation principale" });
-    expect(within(nav).getByRole("button", { name: "Apprendre" })).toHaveAttribute(
-      "aria-haspopup",
-      "true",
+    expect(within(nav).getByRole("link", { name: "Étudier" })).toHaveAttribute(
+      "href",
+      "/etudier",
     );
     expect(within(nav).getByRole("link", { name: "Accueil" })).toHaveAttribute(
       "aria-current",

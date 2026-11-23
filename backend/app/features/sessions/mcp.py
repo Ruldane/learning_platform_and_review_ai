@@ -70,14 +70,8 @@ MCP = FeatureMcp(
         ),
     ),
     graphs=(McpGraph("demo_debate", play_only=True),),
-    excluded={
-        "POST /sessions": (
-            "Lancement brut d'un parcours par son nom : remplacé par un outil par graphe "
-            "(`McpGraph`), dont l'entrée est validée par le modèle d'entrée du parcours."
-        ),
-        "WS /sessions/{session_id}/stream": (
-            "WebSocket de diffusion des événements : le MCP suit une session par "
-            "`sessions_get_session`, il n'ouvre pas de flux."
-        ),
+    alternatives={
+        "POST /sessions": "agents_play_start",
+        "WS /sessions/{session_id}/stream": "sessions_get_session",
     },
 )

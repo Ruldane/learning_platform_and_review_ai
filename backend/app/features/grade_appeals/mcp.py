@@ -56,9 +56,12 @@ MCP = FeatureMcp(
             side_effects="external",
             launches=APPEAL_GRAPH,
         ),
+        McpAction(
+            "POST /grade-appeals/{appeal_id}/decision",
+            3,
+            "grade_appeals_decide_appeal",
+            "Enregistre la décision de recours. Demande à confirmer.",
+        ),
     ),
     graphs=(McpGraph(APPEAL_GRAPH, follow_only=True),),
-    excluded={
-        "POST /grade-appeals/{appeal_id}/decision": "Décision personnelle et finale de January.",
-    },
 )

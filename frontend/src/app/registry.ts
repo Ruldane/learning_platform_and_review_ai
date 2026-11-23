@@ -28,9 +28,10 @@ import { gapManifest } from "@/features/gap/manifest";
 import { IdeGhostPanel } from "@/features/ghost/pages/IdeGhostPanel";
 import { QuizGhostPanel } from "@/features/ghost/pages/QuizGhostPanel";
 import { healthManifest } from "@/features/health/manifest";
-import { homeManifest } from "@/features/home/manifest";
+import { makeHomeManifest } from "@/features/home/manifest";
 import { makeIdeManifest } from "@/features/ide/manifest";
 import { incidentReplayManifest } from "@/features/incident_replay/manifest";
+import { makeLabManifest } from "@/features/lab/manifest";
 import { interprogramPlanningManifest } from "@/features/interprogram_planning/manifest";
 import { learningManifest } from "@/features/learning/manifest";
 import { lessonHuntManifest } from "@/features/lesson_hunt/manifest";
@@ -70,11 +71,14 @@ import { studyReturnManifest } from "@/features/study_return/manifest";
 import { studyManifest } from "@/features/study/manifest";
 import { surpriseInterviewManifest } from "@/features/surprise_interview/manifest";
 import type { FeatureManifest } from "@/shared/lib/feature";
+import { LabPage } from "./pages/NavigationPage/LabPage";
+import { Tour } from "./pages/NavigationPage/Tour";
 
 /** Liste des features : ajouter une feature = un dossier + une ligne ici. */
 export const FEATURES: FeatureManifest[] = [
   authManifest,
-  homeManifest,
+  makeHomeManifest(Tour),
+  makeLabManifest(LabPage),
   healthManifest,
   learningManifest,
   programManifest,

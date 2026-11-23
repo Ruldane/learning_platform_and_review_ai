@@ -19,6 +19,7 @@ export interface NavGroup {
   /** Jeton de couleur de la section (voir `NAV_SECTIONS`). */
   color: string;
   items: NavItem[];
+  landing?: NavItem;
 }
 
 /**

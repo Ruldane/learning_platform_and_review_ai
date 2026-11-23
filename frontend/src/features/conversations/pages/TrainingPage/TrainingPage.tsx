@@ -1,52 +1,54 @@
-import { Navigate, useParams, useSearchParams } from "react-router";
-import { errorMessage } from "@/shared/api/errors";
+import { useRef, useState } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import { t } from "@/shared/i18n/t";
-import { ErrorState } from "@/shared/ui/states/ErrorState";
-import { InlineError } from "@/shared/ui/states/InlineError";
-import { LoadingState } from "@/shared/ui/states/LoadingState";
-import { trainingPath, useTraining } from "../../hooks/useTraining";
-import { trainingSkillId, useTrainingTopic } from "../../hooks/useTrainingTopic";
-import { TrainingResult } from "./TrainingResult";
-import { TrainingRunning } from "./TrainingRunning";
-import { TrainingStart } from "./TrainingStart";
+import { ConversationList } from "../../components/ConversationList";
+import { useConversationList } from "../../hooks/useConversationList";
+import { newTrainingPath, trainingPath } from "../../hooks/useTraining";
+import { trainingSkillId } from "../../hooks/useTrainingTopic";
+import { TrainingPanel } from "./TrainingPanel";
 
 export function TrainingPage() {
   const { studyId } = useParams();
   const [params] = useSearchParams();
+  const navigate = useNavigate();
+  const [revision, clear] = useState(0);
+  const heading = useRef<HTMLHeadingElement>(null);
   const skillId = trainingSkillId(params.get("competence"));
-  const subject = useTrainingTopic(skillId);
-  const topic = subject.data ?? "";
-  const { query, launch, change, sessionId, submitted, refresh } = useTraining(studyId, skillId);
-  if (query.isPending || (skillId && subject.isPending)) {
-    return <LoadingState label={t("training.loading")} />;
-  }
-  if (query.isError && !query.data)
-    return <ErrorState message={errorMessage(query.error)} onRetry={refresh} />;
-
-  const session = query.data;
-  if (session && !studyId) return <Navigate replace to={trainingPath(session.id, skillId)} />;
-  const error = launch.error ?? change.error ?? query.error;
+  const fresh = !studyId && params.has("nouvelle");
+  const start = () => {
+    void navigate(newTrainingPath(skillId));
+    heading.current?.focus();
+  };
+  const select = (id: string) => {
+    void navigate(trainingPath(id));
+    heading.current?.focus();
+  };
+  const { sidebar } = useConversationList("training", (action) => {
+    if (action.kind === "clear") {
+      clear((current) => current + 1);
+      heading.current?.focus();
+    }
+    if (action.kind === "delete" || action.kind === "wipe") start();
+  });
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold">{t("training.title")}</h1>
-      {topic && <p>{t("training.topic", { topic })}</p>}
-      {error ? <InlineError message={errorMessage(error)} /> : null}
-      {!session ? (
-        <TrainingStart busy={launch.isPending} onStart={(mode) => launch.mutate(mode)} />
-      ) : null}
-      {session && session.status !== "open" ? <TrainingResult session={session} /> : null}
-      {session?.status === "open" ? (
-        <TrainingRunning
-          key={session.id}
-          session={session}
-          sessionId={sessionId}
-          saving={change.isPending}
-          initialText={topic ? t("training.topicQuestion", { topic }) : ""}
-          onChange={(body) => change.mutate(body)}
-          onSubmitted={submitted}
-          onRefresh={refresh}
+      <h1 tabIndex={-1} ref={heading} className="text-2xl font-semibold">
+        {t("training.title")}
+      </h1>
+      <div className="grid items-start gap-4 lg:grid-cols-[14rem_minmax(0,1fr)]">
+        <ConversationList
+          {...sidebar}
+          selected={studyId ?? null}
+          onCreate={start}
+          onSelect={select}
         />
-      ) : null}
+        <TrainingPanel
+          key={`${studyId ?? (fresh ? "new" : "open")}:${revision}`}
+          studyId={studyId}
+          skillId={skillId}
+          fresh={fresh}
+        />
+      </div>
     </div>
   );
 }

@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Path
 from starlette.requests import HTTPConnection
 
-from app.core.deps import CurrentUserDep, Db, InterfaceUserDep
+from app.core.deps import CurrentUserDep, Db
 from app.core.field_paths import FieldPathsRoute
 from app.features.cv.service.runtime import CvRuntime
 from app.features.linkedin_drafts.schemas import LinkedInDraftOut, LinkedInEdit, LinkedInStart
@@ -27,12 +27,12 @@ async def get_latest(current: CurrentUserDep, db: Db) -> LinkedInDraftOut | None
 
 
 @router.post("", status_code=202)
-async def launch(body: LinkedInStart, user: InterfaceUserDep, rt: Runtime) -> LinkedInDraftOut:
+async def launch(body: LinkedInStart, user: CurrentUserDep, rt: Runtime) -> LinkedInDraftOut:
     return await actions.start(rt, user.id, body)
 
 
 @router.put("/{draft_id}")
 async def save(
-    draft_id: DraftId, body: LinkedInEdit, user: InterfaceUserDep, db: Db
+    draft_id: DraftId, body: LinkedInEdit, user: CurrentUserDep, db: Db
 ) -> LinkedInDraftOut:
     return await actions.edit(db, user.id, draft_id, body)

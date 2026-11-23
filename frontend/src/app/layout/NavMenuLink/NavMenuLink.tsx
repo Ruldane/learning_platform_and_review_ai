@@ -1,13 +1,18 @@
 import type { LucideIcon } from "lucide-react";
 import { Link } from "react-router";
 import { cn } from "@/shared/lib/utils";
+import { t } from "@/shared/i18n/t";
 import type { NavItem } from "../../buildNav";
 import { NavItemLabel } from "../NavItemLabel";
+import { SumBadges } from "../SumBadges";
+import { SumLabel } from "../SumLabel";
 import { ACTIVE_TINT, IDLE_TINT, sectionVars } from "../sectionTint";
 
 interface NavMenuLinkProps {
   item: NavItem;
   active: boolean;
+  current?: "page" | "location";
+  badgeItems?: NavItem[];
   /** La couleur de la section de l'entrée : teinte et liseré quand elle est active. */
   color: string;
   /** Appelé au clic, pour refermer le menu qui contient le lien (même sur la page courante). */
@@ -22,6 +27,8 @@ interface NavMenuLinkProps {
 export function NavMenuLink({
   item,
   active,
+  current,
+  badgeItems,
   color,
   onNavigate,
   role,
@@ -31,7 +38,7 @@ export function NavMenuLink({
     <Link
       to={item.path}
       role={role}
-      aria-current={active ? "page" : undefined}
+      aria-current={current ?? (active ? "page" : undefined)}
       data-active={active ? "true" : undefined}
       onClick={onNavigate}
       style={sectionVars(color)}
@@ -41,7 +48,11 @@ export function NavMenuLink({
       )}
     >
       {Icon ? <Icon aria-hidden="true" className="size-4" /> : null}
-      <NavItemLabel item={item} />
+      {badgeItems ? (
+        <SumBadges items={badgeItems}>
+          {(parts) => <SumLabel name={t(item.labelKey)} parts={parts} />}
+        </SumBadges>
+      ) : <NavItemLabel item={item} />}
     </Link>
   );
 }

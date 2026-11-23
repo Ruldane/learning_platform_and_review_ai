@@ -1,10 +1,12 @@
 from typing import Annotated, Any
+from urllib.parse import urlsplit
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Request, Response
 from starlette.requests import HTTPConnection
 
-from app.core.deps import CurrentUserDep, Db, InterfaceUserDep
+from app.core.caller import MCP_IDENTITY
+from app.core.deps import ConfirmedUserDep, CurrentUserDep, Db
 from app.core.errors import AppError
 from app.core.field_paths import FieldPathsRoute
 from app.features.portfolio.schemas import (
@@ -65,13 +67,13 @@ async def build_portfolio(
 
 
 @router.get("/portfolio/drafts/{draft_id}/preview", response_class=Response, responses=_HTML)
-async def preview(draft_id: UUID, user: InterfaceUserDep, db: Db, rt: Runtime) -> Response:
+async def preview(draft_id: UUID, user: CurrentUserDep, db: Db, rt: Runtime) -> Response:
     row = await artifacts.require_draft(db, user.id, str(draft_id))
     return _html(await artifacts.document(rt, row), private=True)
 
 
 @router.get("/portfolio/drafts/{draft_id}/zip", response_class=Response, responses=_ZIP)
-async def download(draft_id: UUID, user: InterfaceUserDep, db: Db, rt: Runtime) -> Response:
+async def download(draft_id: UUID, user: CurrentUserDep, db: Db, rt: Runtime) -> Response:
     row = await artifacts.require_draft(db, user.id, str(draft_id))
     return Response(
         await artifacts.document(rt, row, zipped=True),
@@ -85,26 +87,30 @@ async def download(draft_id: UUID, user: InterfaceUserDep, db: Db, rt: Runtime) 
 
 
 @router.post("/portfolio/publish")
-async def publish(body: PublicationApproval, user: InterfaceUserDep, rt: Runtime) -> PublicationOut:
+async def publish(body: PublicationApproval, user: ConfirmedUserDep, rt: Runtime) -> PublicationOut:
     return await publication.publish(rt, user.id, body)
 
 
 @router.post("/portfolio/withdraw", status_code=200)
-async def withdraw(body: WithdrawalApproval, user: InterfaceUserDep, rt: Runtime) -> None:
+async def withdraw(body: WithdrawalApproval, user: ConfirmedUserDep, rt: Runtime) -> None:
     await publication.withdraw(rt, user.id, body)
 
 
 @router.put("/portfolio/links/{target}")
 async def choose_link(
-    target: LinkTarget, body: LinkChoice, user: InterfaceUserDep, rt: Runtime
+    target: LinkTarget, body: LinkChoice, user: ConfirmedUserDep, rt: Runtime
 ) -> PublicationOut:
     return await publication.choose_link(rt, user.id, target, body)
 
 
 @router.get("/public/portfolios/{slug}", response_class=Response, responses=_HTML)
 async def public_portfolio(slug: Slug, request: Request, rt: Runtime) -> Response:
+    identity = MCP_IDENTITY.get()
+    host = request.url.netloc if identity is None else urlsplit(rt.origin() or "").netloc
     try:
-        data = await publication.public_document(rt, slug, request.url.netloc)
+        data = await publication.public_document(
+            rt, slug, host, owner=identity.user_id if identity is not None else None
+        )
     except AppError as error:
         if error.status_code != 404:
             raise

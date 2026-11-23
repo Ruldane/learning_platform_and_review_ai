@@ -8,9 +8,10 @@ from tests.mcp.support import LOCAL, Mcp
 def test_calendar_consent_and_sync_routes_remain_private() -> None:
     assert not never_reachable("/calendar/upcoming")
     assert not never_reachable("/calendar/proposals")
-    assert never_reachable("/calendar/connection")
+    assert never_reachable("/calendar/connection", "POST")
+    assert not never_reachable("/calendar/connection", "GET")
     assert never_reachable("/calendar/callback")
-    assert never_reachable("/calendar/proposals/{proposal_id}/confirm")
+    assert not never_reachable("/calendar/proposals/{proposal_id}/confirm", "POST")
 
 
 async def test_read_scope_can_reopen_local_calendar_and_portfolio(

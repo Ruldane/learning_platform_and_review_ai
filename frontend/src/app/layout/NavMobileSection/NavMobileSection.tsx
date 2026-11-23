@@ -12,14 +12,16 @@ interface NavMobileSectionProps {
 /** Une section dans le panneau « Menu » : un lien direct (une page) ou un titre et ses pages. */
 export function NavMobileSection({ group, current, onClose }: NavMobileSectionProps) {
   const Icon = group.icon;
-  const [single] = group.items;
-  if (group.items.length === 1 && single) {
+  const single = group.landing ?? (group.items.length === 1 ? group.items[0] : undefined);
+  if (single) {
     return (
       <NavMenuLink
         item={single}
         color={group.color}
         icon={Icon}
-        active={current?.path === single.path}
+        badgeItems={group.landing ? group.items : undefined}
+        active={current?.section === group.section}
+        current={current?.path === single.path ? "page" : current?.section === group.section ? "location" : undefined}
         onNavigate={onClose}
       />
     );

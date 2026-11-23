@@ -1,17 +1,97 @@
 from datetime import datetime
 
-from sqlalchemy import and_, case, func, select, update
+from sqlalchemy import Select, and_, case, delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.tools.conversation_port import CONVERSATION_GRAPH
 from app.agents.tools.expert_debate_port import EXPERT_GRAPH
 from app.db.models.agents import OPEN_SESSION_STATES, AgentSession, LlmCall
 from app.db.models.conversations import Conversation, ConversationTurn
+from app.db.models.mcp import McpChange
+from app.db.models.study import StudySession
 from app.db.repository import UserScopedRepository
 
 
 class ConversationRepository(UserScopedRepository[Conversation]):
     model = Conversation
+
+    async def by_scope(self, scope: str, thread_id: str) -> Conversation | None:
+        found = await self.session.execute(self._scoped(scope).where(Conversation.id == thread_id))
+        return found.scalar_one_or_none()
+
+    def _scoped(self, scope: str) -> Select[Conversation]:
+        return select(Conversation).where(
+            Conversation.user_id == self.user_id, Conversation.scope == scope
+        )
+
+    async def recent(self, scope: str) -> list[Conversation]:
+        return list(
+            await self.session.scalars(
+                self._scoped(scope).order_by(Conversation.updated_at.desc(), Conversation.id.desc())
+            )
+        )
+
+    async def preferred(self, scope: str, legacy_id: str) -> Conversation | None:
+        found = await self.session.execute(
+            self._scoped(scope)
+            .order_by(
+                (Conversation.id == legacy_id).desc(),
+                Conversation.updated_at.desc(),
+                Conversation.id.desc(),
+            )
+            .limit(1)
+        )
+        return found.scalar_one_or_none()
+
+    async def claim(self, scope: str, thread_id: str | None = None) -> list[Conversation]:
+        """Prend le verrou d'écriture SQLite avant de relire les tours du périmètre."""
+        stmt = update(Conversation).where(
+            Conversation.user_id == self.user_id, Conversation.scope == scope
+        )
+        if thread_id is not None:
+            stmt = stmt.where(Conversation.id == thread_id)
+        return list(
+            await self.session.scalars(
+                stmt.values(updated_at=Conversation.updated_at).returning(Conversation)
+            )
+        )
+
+    async def cancel_erased_training(self, ids: list[str], now: datetime) -> None:
+        await self.session.execute(
+            update(StudySession)
+            .where(
+                StudySession.user_id == self.user_id,
+                StudySession.id.in_(ids),
+                StudySession.kind == "training",
+                StudySession.status == "open",
+            )
+            .values(status="cancelled", ended_at=now)
+        )
+
+    async def erase_chat_snapshots(self, thread_ids: list[str], session_ids: list[str]) -> None:
+        # Retire l'appel entier pour que l'annulation ne rejoue jamais une partie de l'écriture.
+        snapshots = select(McpChange.call_id).where(
+            McpChange.user_id == self.user_id,
+            (
+                (McpChange.table_name == "conversations") & McpChange.row_id.in_(thread_ids)
+                | (McpChange.table_name == "sessions") & McpChange.row_id.in_(session_ids)
+                | (McpChange.table_name == "session_events")
+                & (
+                    McpChange.before["session_id"].as_string().in_(session_ids)
+                    | McpChange.after["session_id"].as_string().in_(session_ids)
+                )
+                | (McpChange.table_name == "conversation_turns")
+                & (
+                    McpChange.before["thread_id"].as_string().in_(thread_ids)
+                    | McpChange.after["thread_id"].as_string().in_(thread_ids)
+                )
+            ),
+        )
+        await self.session.execute(
+            delete(McpChange).where(
+                McpChange.user_id == self.user_id, McpChange.call_id.in_(snapshots)
+            )
+        )
 
 
 class TurnRepository(UserScopedRepository[ConversationTurn]):
@@ -153,4 +233,12 @@ class TurnRepository(UserScopedRepository[ConversationTurn]):
             )
             .values(status="cancelled", pending_interrupt=None)
             .returning(AgentSession.id)
+        )
+
+    async def erase_sessions(self, ids: list[str]) -> None:
+        # Les événements et les échanges sont effacés par les clés étrangères.
+        await self.session.execute(
+            delete(AgentSession).where(
+                AgentSession.user_id == self.user_id, AgentSession.id.in_(ids)
+            )
         )

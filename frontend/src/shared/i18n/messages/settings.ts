@@ -10,6 +10,12 @@ export const settings = {
       description: "Le serveur ne propose aucun fournisseur de modèles pour le moment.",
     },
     loading: "Chargement des réglages…",
+    readiness: {
+      title: "Disponibilité des fournisseurs",
+      missing: "Fournisseurs choisis pour tes niveaux de modèles sans clé exploitable : {providers}.",
+      apply: "Appliquer le préréglage {preset}",
+      addKey: "Ajoute une clé ci-dessous pour retrouver l’accès à un fournisseur de modèles.",
+    },
   },
   fields: {
     range: "Entre {min} et {max}.",

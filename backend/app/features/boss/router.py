@@ -4,7 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Path, Request
 
-from app.core.deps import CurrentUserDep, Db, InterfaceUserDep
+from app.core.deps import ConfirmedUserDep, CurrentUserDep, Db
 from app.features.boss.schemas import BossAttemptOut, BossProgramOut, BossReviewStarted
 from app.features.boss.service import DEFAULT_CLOCK, BossService, Clock
 from app.features.boss.service.submission import launch_review
@@ -29,13 +29,13 @@ async def get_boss(
 
 @router.post("/{program_id}", status_code=201)
 async def start_boss(
-    program_id: ProgramId, db: Db, user: InterfaceUserDep, clock: BossClock
+    program_id: ProgramId, db: Db, user: ConfirmedUserDep, clock: BossClock
 ) -> BossAttemptOut:
     return await BossService(db, user.id, clock).start(program_id)
 
 
 @router.post("/{program_id}/submit", status_code=202)
 async def submit_boss(
-    program_id: ProgramId, request: Request, user: InterfaceUserDep, clock: BossClock
+    program_id: ProgramId, request: Request, user: ConfirmedUserDep, clock: BossClock
 ) -> BossReviewStarted:
     return await launch_review(request.app.state.launcher, user.id, program_id, clock)

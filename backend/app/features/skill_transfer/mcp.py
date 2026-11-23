@@ -1,6 +1,6 @@
 """Un client MCP autorisé peut relire et programmer un contrôle."""
 
-from app.mcp.base import FeatureMcp, McpAction
+from app.mcp.base import FeatureMcp, McpAction, McpGraph
 
 _VIEW = frozenset({"id", "proof", "due_on", "available", "stage", "exercise", "assessment"})
 _CONTENT = (
@@ -46,10 +46,20 @@ MCP = FeatureMcp(
             response_fields=_VIEW,
             untrusted=_CONTENT,
         ),
+        McpAction(
+            "POST /skill-transfers/{transfer_id}/prepare",
+            3,
+            "skill_transfer_prepare_transfer",
+            "Prépare le contrôle de transfert. Demande à confirmer.",
+            launches="skill_transfer",
+        ),
+        McpAction(
+            "POST /skill-transfers/{transfer_id}/answer",
+            3,
+            "skill_transfer_submit_transfer_answer",
+            "Remet la réponse au contrôle de transfert. Demande à confirmer.",
+            launches="skill_transfer",
+        ),
     ),
-    excluded={
-        "POST /skill-transfers/{transfer_id}/prepare": "Préparation à la demande dans l’interface.",
-        "POST /skill-transfers/{transfer_id}/answer": "Réponse personnelle de January.",
-        "graph:skill_transfer": "Lancé par POST /skill-transfers/{transfer_id}/prepare ou /answer.",
-    },
+    graphs=(McpGraph("skill_transfer", follow_only=True),),
 )

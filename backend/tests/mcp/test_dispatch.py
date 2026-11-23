@@ -130,8 +130,9 @@ async def test_identity_is_reset_even_when_the_route_fails(app: FastAPI, adapter
         ("GET", "/mcp/settings"),
         ("PUT", "/mcp/settings"),
         ("POST", "/mcp/tokens"),
-        ("GET", "/account/export"),
-        ("POST", "/account/delete"),
+        ("GET", "/account/credentials"),
+        ("GET", "/account/delete"),
+        ("POST", "/calendar/connection"),
         ("GET", "/settings/api-keys"),
         ("GET", "/settings/models"),
         ("GET", "/settings/agents"),
@@ -238,10 +239,10 @@ async def test_level_4_routes_refuse_an_mcp_identity_even_if_reached(
     client: httpx.AsyncClient,
 ) -> None:
     """Défense en profondeur : `get_current_user` refuse une identité MCP sur les routes de
-    connexion, de compte, du MCP, des clés et des modèles, même si le registre se trompait."""
+    connexion, du MCP, des clés et des modèles, même si le registre se trompait."""
     token = MCP_IDENTITY.set(local())
     try:
-        for path in ("/auth/me", "/account/export", "/settings/api-keys", "/settings/models"):
+        for path in ("/auth/me", "/settings/api-keys", "/settings/models"):
             response = await client.get(f"{API}{path}")
             assert response.status_code == 403, (path, response.text)
             assert response.json()["error"]["code"] == "interface_only"

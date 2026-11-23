@@ -6,9 +6,10 @@ from fastapi import APIRouter, Depends, File, Form, Header, Request, Response, U
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.core.caller import MCP_IDENTITY
-from app.core.deps import CurrentUserDep, Db, InterfaceUserDep
+from app.core.deps import ConfirmedUserDep, CurrentUserDep, Db, InterfaceUserDep
 from app.features.brain.router_chat import router as chat_router
 from app.features.brain.schemas import (
+    BrainRelayStatus,
     Digest,
     FileOut,
     FolderIn,
@@ -21,7 +22,7 @@ from app.features.brain.schemas import (
     ReportIn,
     SyncTokenOut,
 )
-from app.features.brain.service import folders, sync
+from app.features.brain.service import connection, folders, sync
 from app.features.memory.service.documents import read_upload
 from app.features.memory.service.runtime import MemoryRuntime
 
@@ -58,19 +59,19 @@ async def status_view(db: Db, current: CurrentUserDep) -> list[FolderStatus]:
 
 
 @router.get("/folders", response_model=list[FolderOut])
-async def list_folders(db: Db, current: InterfaceUserDep) -> list[FolderOut]:
+async def list_folders(db: Db, current: CurrentUserDep) -> list[FolderOut]:
     return await folders.folders(db, current.id)
 
 
 @router.post("/folders", response_model=FolderOut, status_code=status.HTTP_201_CREATED)
-async def add_folder(db: Db, current: InterfaceUserDep, body: FolderIn) -> FolderOut:
+async def add_folder(db: Db, current: ConfirmedUserDep, body: FolderIn) -> FolderOut:
     return await folders.create_folder(db, current.id, body)
 
 
 @router.patch("/folders/{folder_id}", response_model=FolderOut)
 async def patch_folder(
     db: Db,
-    current: InterfaceUserDep,
+    current: ConfirmedUserDep,
     runtime: MemoryDep,
     folder_id: str,
     body: FolderPatch,
@@ -80,9 +81,14 @@ async def patch_folder(
 
 @router.delete("/folders/{folder_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_folder(
-    db: Db, current: InterfaceUserDep, runtime: MemoryDep, folder_id: str
+    db: Db, current: ConfirmedUserDep, runtime: MemoryDep, folder_id: str
 ) -> None:
     await folders.remove_folder(db, runtime, current.id, folder_id)
+
+
+@router.get("/relay", response_model=BrainRelayStatus)
+async def relay_status(db: Db, current: CurrentUserDep) -> BrainRelayStatus:
+    return await connection(db, current.id)
 
 
 @router.post("/sync-token", response_model=SyncTokenOut, status_code=status.HTTP_201_CREATED)
@@ -94,6 +100,7 @@ async def create_sync_token(db: Db, current: InterfaceUserDep, response: Respons
 
 @router.get("/sync/folders", response_model=list[FolderOut])
 async def sync_folders(db: Db, identity: SyncUser) -> list[FolderOut]:
+    await sync.record_contact(db, identity)
     return await folders.folders(db, identity.user_id)
 
 

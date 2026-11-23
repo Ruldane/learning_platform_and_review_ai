@@ -164,6 +164,27 @@ MCP = FeatureMcp(
             "cv_get_version",
             "Une version du CV ciblé et son statut.",
         ),
+        McpAction(
+            "GET /cv/templates/{template_id}/pages/{kind}/{number}",
+            1,
+            "cv_get_template_page",
+            "Lit les métadonnées de l’image d’une page de gabarit et donne son lien local.",
+            artifact=True,
+        ),
+        McpAction(
+            "GET /cv/versions/{version_id}/pages/{number}",
+            1,
+            "cv_get_version_page",
+            "Lit les métadonnées de l’image d’une page du CV et donne son lien local.",
+            artifact=True,
+        ),
+        McpAction(
+            "GET /cv/versions/{version_id}/pdf",
+            1,
+            "cv_get_version_pdf",
+            "Lit les métadonnées du PDF du CV et donne son lien local.",
+            artifact=True,
+        ),
     ),
     graphs=(
         McpGraph(
@@ -198,17 +219,4 @@ MCP = FeatureMcp(
             launches="cv_capture",
         ),
     ),
-    excluded={
-        "GET /cv/templates/{template_id}/pages/{kind}/{number}": (
-            "Image PNG d'une page, pas du JSON : le MCP lit le gabarit par `cv_get_template`."
-        ),
-        "GET /cv/versions/{version_id}/pdf": (
-            "Téléchargement du PDF (binaire, pas du JSON) : January le télécharge depuis "
-            "l'interface ; le MCP lit la version par `cv_get_version`."
-        ),
-        "GET /cv/versions/{version_id}/pages/{number}": (
-            "Image PNG d'une page de version, pas du JSON : le MCP lit la version par "
-            "`cv_get_version`."
-        ),
-    },
 )

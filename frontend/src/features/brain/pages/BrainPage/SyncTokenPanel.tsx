@@ -6,24 +6,20 @@ import { Button } from "@/shared/ui/button";
 import { InlineError } from "@/shared/ui/states/InlineError";
 import { issueSyncToken } from "../../api";
 
-export function SyncTokenPanel() {
-  const [copied, setCopied] = useState(false);
-  const [copyError, setCopyError] = useState(false);
+export function SyncTokenPanel({ onIssued }: { onIssued: () => void }) {
+  const [copyState, setCopyState] = useState<"ready" | "copied" | "error">("ready");
   const issue = useMutation({
     mutationFn: issueSyncToken,
-    onMutate: () => {
-      setCopied(false);
-      setCopyError(false);
-    },
+    onSuccess: onIssued,
+    onMutate: () => setCopyState("ready"),
   });
   const token = issue.data?.token;
   const copy = async (value: string) => {
     try {
       await navigator.clipboard.writeText(value);
-      setCopied(true);
-      setCopyError(false);
+      setCopyState("copied");
     } catch {
-      setCopyError(true);
+      setCopyState("error");
     }
   };
   return (
@@ -43,12 +39,12 @@ export function SyncTokenPanel() {
           {t("brain.issue")}
         </Button>
         {issue.error ? <InlineError message={errorMessage(issue.error)} /> : null}
-        {copyError ? <InlineError message={t("brain.copyError")} /> : null}
+        {copyState === "error" ? <InlineError message={t("brain.copyError")} /> : null}
         {token ? (
           <div className="flex flex-wrap items-center gap-3">
             <code className="break-all rounded bg-muted p-2 text-sm">{token}</code>
             <Button type="button" variant="outline" onClick={() => void copy(token)}>
-              {t(copied ? "brain.copied" : "brain.copy")}
+              {t(copyState === "copied" ? "brain.copied" : "brain.copy")}
             </Button>
           </div>
         ) : null}

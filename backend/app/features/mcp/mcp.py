@@ -1,16 +1,11 @@
 """Déclaration MCP de `mcp` : niveau 4, rien n'est exposé (le MCP ne se gère pas lui-même)."""
 
-from app.mcp.base import FeatureMcp
-
-_WHY = (
-    "Réglages, jetons, confirmations, journal et annulations du MCP : niveau 4, jamais exposé "
-    "au MCP (un jeton ne peut ni se créer, ni se confirmer, ni élargir ses droits)."
-)
+from app.mcp.base import FeatureMcp, McpExclusion
 
 MCP = FeatureMcp(
     feature="mcp",
     excluded={
-        route: _WHY
+        route: McpExclusion.MCP_ADMIN
         for route in (
             "GET /mcp/settings",
             "PUT /mcp/settings",

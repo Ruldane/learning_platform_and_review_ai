@@ -2,11 +2,11 @@ import { useState } from "react";
 import { useLocation } from "react-router";
 import { t } from "@/shared/i18n/t";
 import type { NavSection } from "@/shared/lib/feature";
-import type { NavGroup } from "../../buildNav";
+import type { NavGroup, NavItem } from "../../buildNav";
 import { currentNav } from "../../navActive";
-import { NavMenuLink } from "../NavMenuLink";
 import { NavMobileMenu } from "../NavMobileMenu";
-import { NavSectionMenu } from "../NavSectionMenu";
+import { NavGroupEntry } from "./NavGroupEntry";
+import { PinnedLinks } from "./PinnedLinks";
 import { useNarrowScreen } from "./useNarrowScreen";
 
 type OpenMenu = NavSection | "menu" | null;
@@ -17,7 +17,7 @@ type OpenMenu = NavSection | "menu" | null;
  * la fois, refermé après navigation), centrés dans la barre. Sous 1024 px, un panneau « Menu »
  * prend le relais.
  */
-export function TopNav({ groups }: { groups: NavGroup[] }) {
+export function TopNav({ groups, pins = [] }: { groups: NavGroup[]; pins?: NavItem[] }) {
   const { pathname } = useLocation();
   const narrow = useNarrowScreen();
   const current = currentNav(groups, pathname);
@@ -36,34 +36,20 @@ export function TopNav({ groups }: { groups: NavGroup[] }) {
         <NavMobileMenu
           groups={groups}
           current={current}
+          pins={pins}
+          pathname={pathname}
           open={openMenu === "menu"}
           onOpenChange={(open) => setOpenMenu(open ? "menu" : null)}
         />
       ) : (
-        <ul className="flex flex-wrap items-center justify-center gap-x-1 gap-y-1">
-          {groups.map((group) => {
-            const [single] = group.items;
-            return (
-              <li key={group.section}>
-                {group.items.length === 1 && single ? (
-                  <NavMenuLink
-                    item={single}
-                    color={group.color}
-                    icon={group.icon}
-                    active={current?.path === single.path}
-                  />
-                ) : (
-                  <NavSectionMenu
-                    group={group}
-                    current={current}
-                    open={openMenu === group.section}
-                    onOpenChange={(open) => setOpenMenu(open ? group.section : null)}
-                  />
-                )}
-              </li>
-            );
-          })}
-        </ul>
+        <><ul className="flex flex-wrap items-center justify-center gap-x-1 gap-y-1">
+          {groups.map((group) => (
+            <li key={group.section}>
+              <NavGroupEntry group={group} current={current} open={openMenu === group.section}
+                onOpenChange={(open) => setOpenMenu(open ? group.section : null)} />
+            </li>
+          ))}
+        </ul><PinnedLinks items={pins} pathname={pathname} /></>
       )}
     </nav>
   );

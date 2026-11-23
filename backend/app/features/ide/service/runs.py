@@ -162,7 +162,12 @@ async def start(
 
 
 async def progress(
-    ctx: IdeContext, run_id: str, after: int, *, kind: SandboxKind | None = None
+    ctx: IdeContext,
+    run_id: str,
+    after: int,
+    *,
+    kind: SandboxKind | None = None,
+    persist: bool = True,
 ) -> RunProgress:
     """La sortie depuis l'octet `after`. Fin vue = tout figé (sortie complète, signature)."""
     run = await RunRepository(ctx.db, ctx.user_id).get_fresh(run_id)
@@ -171,16 +176,8 @@ async def progress(
         raise run_not_found()
     if run.status == "running":
         live = await _poll(ctx, run.id, after)
-        if live is not None and live.result is None:
-            return RunProgress(
-                id=run.id,
-                status="running",
-                output=_clean(live.output),
-                next_offset=live.next_offset,
-                exit_code=None,
-                duration_ms=None,
-                truncated=False,
-            )
+        if not persist or (live is not None and live.result is None):
+            return _live_progress(run.id, live, after)
         await _settle_with(ctx, run, live)
     text, end = _chunk(run.output, after)
     return RunProgress(
@@ -191,6 +188,29 @@ async def progress(
         exit_code=run.exit_code,
         duration_ms=run.duration_ms,
         truncated=run.truncated,
+    )
+
+
+def _live_progress(run_id: str, live: SandboxProgress | None, after: int) -> RunProgress:
+    if live is None:
+        return RunProgress(
+            id=run_id,
+            status="error",
+            output="",
+            next_offset=after,
+            exit_code=None,
+            duration_ms=None,
+            truncated=False,
+        )
+    result = live.result
+    return RunProgress(
+        id=run_id,
+        status=result.status if result else "running",
+        output=_clean(live.output),
+        next_offset=live.next_offset,
+        exit_code=result.exit_code if result else None,
+        duration_ms=result.duration_ms if result else None,
+        truncated=result.truncated if result else False,
     )
 
 

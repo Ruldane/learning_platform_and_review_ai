@@ -86,8 +86,9 @@ describe("AppLayout, panneau de gauche", () => {
     renderAt("/reglages/couts");
     await screen.findByRole("complementary", PANEL);
     const nav = screen.getByRole("navigation", { name: "Navigation principale" });
-    const settings = within(nav).getByRole("button", { name: "Réglages" });
+    const settings = within(nav).getByRole("link", { name: "Réglages" });
     expect(settings).toHaveAttribute("data-active", "true");
+    expect(settings).toHaveAttribute("aria-current", "location");
     expect(settings.style.getPropertyValue("--section-color")).toBe("var(--section-settings)");
     expect(settings.className).toContain("border-[var(--section-color)]");
   });

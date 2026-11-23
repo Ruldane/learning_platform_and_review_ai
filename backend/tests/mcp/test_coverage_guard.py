@@ -12,8 +12,16 @@ from app.agents.graphs.registry import GRAPHS
 from app.features.registry import FEATURE_ROUTERS, MCP_FEATURES
 from app.features.settings.mcp import PREFERENCE_FIELDS, PROTECTED_FIELDS
 from app.features.settings.schemas import UserSettings
-from app.mcp.base import NEVER_EXPOSED_FEATURES, READ_ONLY_POSTS, McpAction, untrusted_paths_valid
+from app.mcp.base import (
+    NEVER_EXPOSED_FEATURES,
+    READ_ONLY_POSTS,
+    McpAction,
+    McpExclusion,
+    untrusted_paths_valid,
+)
 from app.mcp.registry import SETTINGS_LEVEL_4_FIELDS
+from app.mcp.schema import never_reachable
+from app.mcp.tools import TREMPLIN_OVERVIEW
 from scripts.mcp_levels import RouteInfo, iter_routes, main, render_table
 
 ROUTES = iter_routes(FEATURE_ROUTERS)
@@ -28,8 +36,8 @@ PLAY_ACTIONS = [
 ]
 PLAY_BY_ROUTE = {action.route: action for _, action in PLAY_ACTIONS}
 EXCLUDED = {key: why for feature in MCP_FEATURES for key, why in feature.excluded.items()}
+ALTERNATIVES = {key: tool for feature in MCP_FEATURES for key, tool in feature.alternatives.items()}
 
-GRAPH_PREFIX = "graph:"
 # Écrivent (ou peuvent écrire) au profil maître : niveau 3 et contrôle préalable.
 PROFILE_WRITES = frozenset(
     {
@@ -54,7 +62,6 @@ KNOWN_EXTERNAL = frozenset(
         "POST /projects/{project_id}/profile-entry",
     }
 )
-# Du texte venu du web : la réponse doit le déclarer `untrusted`.
 WEB_TEXT_ROUTES = frozenset(
     {
         "POST /postings",
@@ -83,10 +90,6 @@ SETTINGS_SECRETS = (
 )
 
 
-def _is_route_key(key: str) -> bool:
-    return not key.startswith(GRAPH_PREFIX)
-
-
 def _route(key: str) -> RouteInfo:
     return next(route for route in ROUTES if route.key == key)
 
@@ -109,6 +112,7 @@ def test_every_route_declared_or_excluded() -> None:
         if route.key not in ACTION_BY_ROUTE
         and route.key not in EXCLUDED
         and route.key not in PLAY_BY_ROUTE
+        and route.key not in ALTERNATIVES
     ]
     assert missing == []
 
@@ -117,37 +121,28 @@ def test_no_stale_declaration() -> None:
     declared = [action.route for _, action in ACTIONS]
     assert [key for key, n in Counter(declared).items() if n > 1] == []
     assert [key for key in declared if key not in KEYS] == []
-    assert [key for key in EXCLUDED if _is_route_key(key) and key not in KEYS] == []
-    assert [key for key in EXCLUDED if key in ACTION_BY_ROUTE] == []
+    assert set(EXCLUDED) | set(ALTERNATIVES) <= KEYS
+    assert not set(EXCLUDED) & (ACTION_BY_ROUTE.keys() | PLAY_BY_ROUTE.keys() | ALTERNATIVES.keys())
     for feature, action in ACTIONS:
         assert _route(action.route).feature == feature, action.route
     for feature in MCP_FEATURES:
-        for key in feature.excluded:
-            if _is_route_key(key):
-                assert _route(key).feature == feature.feature, key
+        for key in feature.excluded.keys() | feature.alternatives.keys():
+            assert _route(key).feature == feature.feature, key
     declared_graphs = {g.graph for feature in MCP_FEATURES for g in feature.graphs}
     assert declared_graphs <= set(GRAPHS)
-    excluded_graphs = {k.removeprefix(GRAPH_PREFIX) for k in EXCLUDED if not _is_route_key(k)}
-    assert excluded_graphs <= set(GRAPHS)
-    assert not declared_graphs & excluded_graphs
 
 
-def test_every_graph_declared_or_excluded() -> None:
+def test_every_graph_declared() -> None:
     declared = {g.graph for feature in MCP_FEATURES for g in feature.graphs}
-    excluded = {k.removeprefix(GRAPH_PREFIX) for k in EXCLUDED if not _is_route_key(k)}
-    assert sorted(set(GRAPHS) - declared - excluded) == []
+    assert sorted(set(GRAPHS) - declared) == []
 
 
-def test_excluded_graphs_say_who_launches_them() -> None:
-    """Un graphe exclu dit pourquoi : démo interne, ou la route (existante) qui seule le lance."""
-    for key, why in EXCLUDED.items():
-        if _is_route_key(key):
-            continue
-        names_a_route = any(route in why for route in KEYS if route != "WS")
-        names_a_route = names_a_route or any(
-            route.path in why and route.method in why for route in ROUTES
-        )
-        assert "démo interne" in why or names_a_route, key
+def test_transport_alternatives_are_declared_session_tools() -> None:
+    assert ALTERNATIVES == {
+        "POST /sessions": "agents_play_start",
+        "WS /sessions/{session_id}/stream": "sessions_get_session",
+    }
+    assert set(ALTERNATIVES.values()) <= {action.name for _, action in ACTIONS}
 
 
 def test_read_routes_are_level_1() -> None:
@@ -158,7 +153,7 @@ def test_read_routes_are_level_1() -> None:
 
 def test_write_routes_are_level_2_or_3() -> None:
     for _, action in ACTIONS:
-        if action.route.startswith("GET ") or action.route in READ_ONLY_POSTS:
+        if action.route.startswith("GET ") or action.route in READ_ONLY_POSTS or action.manual_url:
             continue
         assert action.level in (2, 3), action.route
     for route in READ_ONLY_POSTS:
@@ -207,14 +202,15 @@ def test_settings_put_only_through_the_preferences_action() -> None:
     assert set(UserSettings.model_fields) == PREFERENCE_FIELDS | PROTECTED_FIELDS
 
 
-def test_exclusions_have_a_real_reason() -> None:
+def test_exclusions_only_cover_protected_level_4_routes() -> None:
     assert EXCLUDED
     for key, why in EXCLUDED.items():
-        assert len(why) >= 20, key
-        assert "todo" not in why.lower() and "fixme" not in why.lower(), key
+        route = _route(key)
+        assert isinstance(why, McpExclusion), key
+        assert never_reachable(route.path, route.method), key
 
 
-def test_upload_and_stream_routes_are_excluded() -> None:
+def test_files_use_metadata_or_text_and_streams_have_an_equivalent_tool() -> None:
     risky = [route for route in ROUTES if route.upload or route.binary]
     assert {route.key for route in risky} >= {
         "POST /documents",
@@ -226,10 +222,13 @@ def test_upload_and_stream_routes_are_excluded() -> None:
     }
     for route in risky:
         action = ACTION_BY_ROUTE.get(route.key) or PLAY_BY_ROUTE.get(route.key)
-        if action is not None:
-            assert action.encoding == "form" and route.key not in EXCLUDED, route.key
-        else:
-            assert route.key in EXCLUDED, route.key
+        if route.key in EXCLUDED or route.key in ALTERNATIVES:
+            continue
+        assert action is not None, route.key
+        if route.upload:
+            assert action.encoding == "form", route.key
+        if route.binary:
+            assert action.artifact or action.manual_url, route.key
 
 
 def test_text_variants_of_uploads_are_declared() -> None:
@@ -237,9 +236,9 @@ def test_text_variants_of_uploads_are_declared() -> None:
     assert "POST /capture" in ACTION_BY_ROUTE
 
 
-def test_ide_code_writes_are_excluded() -> None:
+def test_ide_gestures_require_confirmation_and_rights_stay_in_the_interface() -> None:
     for key in IDE_CODE_WRITES:
-        assert key in FEATURES["ide"].excluded and key not in ACTION_BY_ROUTE
+        assert ACTION_BY_ROUTE[key].level == 3
     # `PUT files` est l'écriture de Claude (10.X) : niveau 2, un fichier, jamais le fichier d'entrée
     write = ACTION_BY_ROUTE["PUT /ide/sessions/{session_id}/files"]
     assert (write.level, write.name) == (2, "ide_write_file")
@@ -267,8 +266,8 @@ def test_tool_names_unique_valid_and_short() -> None:
         prefix = (
             "agents_play_" if feature == "sessions" and "/play" in action.route else f"{feature}_"
         )
-        assert action.name.startswith(prefix), action.name
-        assert action.name.count("_") >= 2, action.name  # <feature>_<verbe>_<objet>
+        if action.name != TREMPLIN_OVERVIEW:
+            assert action.name.removeprefix(prefix) not in {action.name, ""}, action.name
 
 
 def test_untrusted_paths_are_valid_and_web_text_is_fenced() -> None:

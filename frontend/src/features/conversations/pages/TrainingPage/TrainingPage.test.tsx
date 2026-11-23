@@ -1,12 +1,13 @@
 import { screen, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { renderRoutes } from "@/test/renderRoutes";
 import { server } from "@/test/server";
 import { TrainingPage } from "./TrainingPage";
 
 const API = "http://localhost:8000/api/v1/study-sessions/training";
 const STUDY_ID = "10ccb9f9-40e1-4243-8dd5-78189a93278f";
+const LIST = "http://localhost:8000/api/v1/conversations/training";
 const greeting = "Que veux-tu travailler aujourd’hui ?";
 const training = {
   id: STUDY_ID,
@@ -41,6 +42,7 @@ function setup() {
 }
 
 describe("TrainingPage", () => {
+  beforeEach(() => server.use(http.get(LIST, () => HttpResponse.json([]))));
   it("starts without a lesson, keeps the same training while changing modes and shows the result", async () => {
     let mode = "socratic";
     const changes: unknown[] = [];
@@ -92,5 +94,42 @@ describe("TrainingPage", () => {
     expect(await screen.findByText(greeting)).toBeVisible();
     expect(screen.getByRole("combobox", { name: "Mode d’apprentissage" })).toHaveValue("direct");
     expect(screen.queryByRole("button", { name: "Commencer le training" })).toBeNull();
+  });
+  it("starts an independent conversation from the sidebar while an older one stays open", async () => {
+    const nextId = "20ccb9f9-40e1-4243-8dd5-78189a93278f";
+    const previous = { id: STUDY_ID, title: "Chaînes et modèles", updated_at: training.started_at };
+    let created = false;
+    server.use(
+      http.get(LIST, () =>
+        HttpResponse.json(
+          created
+            ? [{ ...previous, id: nextId, title: "Nouvelle conversation" }, previous]
+            : [previous],
+        ),
+      ),
+      http.get(`${API}/open`, () => HttpResponse.json(training)),
+      http.get(`${API}/:id`, ({ params }) =>
+        HttpResponse.json({
+          ...training,
+          id: params.id,
+          mode: params.id === STUDY_ID ? "direct" : "socratic",
+        }),
+      ),
+      http.post(API, async ({ request }) => {
+        expect(await request.json()).toMatchObject({ new_conversation: true, mode: "socratic" });
+        created = true;
+        return HttpResponse.json({ ...training, id: nextId }, { status: 202 });
+      }),
+    );
+    const { user, router } = setup();
+    expect(await screen.findByText(greeting)).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Nouvelle conversation" }));
+    await user.click(await screen.findByRole("button", { name: "Commencer le training" }));
+    await waitFor(() => expect(router.state.location.pathname).toContain(nextId));
+    await user.click(await screen.findByRole("button", { name: "Ouvrir Chaînes et modèles" }));
+    await waitFor(() =>
+      expect(screen.getByRole("combobox", { name: "Mode d’apprentissage" })).toHaveValue("direct"),
+    );
+    expect(router.state.location.pathname).toContain(STUDY_ID);
   });
 });

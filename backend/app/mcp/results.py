@@ -5,11 +5,13 @@ les identifiants pour le journal, et poster un formulaire sans fichier."""
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass
+from email.message import Message
 from typing import Any
 
 import httpx
 
 from app.mcp.arguments import clip
+from app.mcp.envelope import fence
 from app.mcp.tools import ToolResult, ToolSpec
 
 
@@ -43,6 +45,28 @@ def read_response(response: httpx.Response) -> Any:
     return {"content_type": content_type.split(";")[0], "size": len(response.content)}
 
 
+_TEXT_MEDIA = {"application/json", "text/calendar", "text/markdown", "text/plain"}
+_FILE_TEXT_BYTES = 30_000
+
+
+def artifact_response(response: httpx.Response, local_url: str | None) -> dict[str, Any]:
+    """Métadonnées et texte disponible sans diffuser le contenu binaire ni une redirection."""
+    media = response.headers.get("content-type", "").split(";")[0]
+    disposition = Message()
+    disposition["Content-Disposition"] = response.headers.get("content-disposition", "")
+    metadata: dict[str, Any] = {"content_type": media}
+    if local_url:
+        metadata["local_url"] = local_url
+    if filename := disposition.get_filename():
+        metadata["filename"] = clip(filename.replace("\\", "/").rsplit("/", 1)[-1], 180)
+    if response.content:
+        metadata["size"] = len(response.content)
+    if media in _TEXT_MEDIA:
+        metadata["text"] = response.content[:_FILE_TEXT_BYTES].decode("utf-8", errors="replace")
+        metadata["truncated"] = len(response.content) > _FILE_TEXT_BYTES
+    return metadata
+
+
 def filter_fields(data: Any, fields: frozenset[str] | None) -> Any:
     """`response_fields` : seules ces clés de l'objet racine (de chaque objet d'une liste)."""
     if fields is None:
@@ -51,6 +75,15 @@ def filter_fields(data: Any, fields: frozenset[str] | None) -> Any:
         return {key: value for key, value in data.items() if key in fields}
     if isinstance(data, list):
         return [filter_fields(item, fields) for item in data]
+    return data
+
+
+def fence_sessions(data: Any, paths: Mapping[str, tuple[str, ...]]) -> Any:
+    """Entoure les résultats des graphes qui lisent des sources non fiables."""
+    if isinstance(data, list):
+        return [fence_sessions(item, paths) for item in data]
+    if isinstance(data, dict) and isinstance(data.get("graph"), str) and data["graph"] in paths:
+        return fence(data, paths[data["graph"]])
     return data
 
 

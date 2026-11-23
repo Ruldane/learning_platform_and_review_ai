@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Response
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from app.core.deps import CurrentUserDep, Db, InterfaceUserDep
+from app.core.deps import ConfirmedUserDep, CurrentUserDep, Db, InterfaceUserDep
 from app.core.field_paths import FieldPathsRoute
 from app.features.mentor_reviews import service
 from app.features.mentor_reviews.schemas import (
@@ -64,7 +64,7 @@ async def mark_comment(
 
 
 @router.delete("/shares/{share_id}", status_code=204)
-async def revoke_share(share_id: UUID, db: Db, user: InterfaceUserDep) -> None:
+async def revoke_share(share_id: UUID, db: Db, user: ConfirmedUserDep) -> None:
     await service.revoke(db, user.id, str(share_id))
 
 

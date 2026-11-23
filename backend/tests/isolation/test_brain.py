@@ -12,6 +12,27 @@ from tests.features.brain.test_sync import (
 from tests.isolation.conftest import Browser
 
 
+async def test_relay_status_and_filtered_folders_are_isolated(
+    google_client_factory: Browser,
+) -> None:
+    owner = await google_client_factory("january@example.com")
+    other = await google_client_factory("autre@example.com")
+    assert (await owner.get(f"{BRAIN}/relay")).json()["state"] == "unconfigured"
+    folder, token = await configure(owner)
+    assert (await owner.get(f"{BRAIN}/relay")).json()["state"] == "waiting"
+    path = f"{BRAIN}/folders/{folder['id']}"
+    patch = {"excluded_directories": ["Archives/"], "excluded_extensions": [".TXT"]}
+    configured = await owner.patch(path, json=patch)
+    assert configured.status_code == 200
+    assert configured.json()["excluded_directories"] == ["Archives"]
+    assert (await other.patch(path, json=patch)).status_code == 404
+    assert (await owner.get(SYNC, headers=auth(token))).json()[0]["excluded_extensions"] == [".txt"]
+    assert (await owner.get(f"{BRAIN}/relay")).json()["state"] == "connected"
+    assert (await other.get(f"{BRAIN}/relay")).json()["state"] == "unconfigured"
+    attempt = await upload(owner, configured.json(), token, FIRST, "archives/secret.md")
+    assert attempt.json()["error"]["code"] == "brain_path_excluded"
+
+
 async def test_sync_token_is_scoped_rotated_and_receives_no_stale_folder_writes(
     google_client_factory: Browser,
 ) -> None:

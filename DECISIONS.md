@@ -2980,3 +2980,51 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
   recette, les limites et les étapes ajoutées. L’export Markdown porte
   l’empreinte de l’aperçu approuvé.
 - **Raison** : rendre le document de reprise traçable jusqu’au rendu.
+
+## D296
+
+- **Date** : 2026-11-23
+- **Sujet** : Conversations du Cerveau et d’Étudier.
+- **Décision** : conserver les identifiants des fils existants et les classer par
+  activité. Les sessions training créées depuis la liste peuvent rester ouvertes en
+  parallèle. Les anciens points d’entrée conservent leur créneau de reprise. Le mode
+  et les leçons choisies sont enregistrés par fil. Une sélection limite les sources
+  pédagogiques du tour aux leçons choisies, avec au plus huit leçons par fil.
+  Le bilan d’étude reste acquis et le fil peut être repris. Le vidage conserve le
+  titre et les réglages. La suppression efface les échanges et
+  leurs points de reprise, et garde les références pédagogiques déjà enregistrées.
+- **Raison** : reprendre plusieurs sujets sans perdre le contexte d’un sujet ou les
+  acquis des sessions terminées.
+
+## D297
+
+- **Date** : 2026-11-23
+- **Sujet** : Navigation commune et préférences du Labo.
+- **Décision** : proposer Accueil, Étudier, Coder, Cerveau et Carrière, puis Labo et
+  Réglages. Les liens existants restent utilisables. Les favoris du Labo sont des
+  raccourcis par compte. La visite guidée peut être relancée ou désactivée et respecte
+  la préférence de réduction des animations.
+- **Raison** : retrouver les usages quotidiens et conserver l’accès aux écrans spécialisés.
+
+## D298
+
+- **Date** : 2026-11-23
+- **Sujet** : Disponibilité du relais Cerveau et exclusions.
+- **Décision** : détecter un relais actif par un contact valide pendant les dix dernières
+  minutes. Indiquer la progression et une estimation calculée à dix secondes par
+  fichier restant. Les exclusions par racine comparent les dossiers relatifs et les
+  extensions sans tenir compte de la casse. Les copies indexées sont retirées lors de
+  la synchronisation suivante.
+- **Raison** : rendre l’état de l’index compréhensible et limiter les documents traités.
+
+## D299
+
+- **Date** : 2026-11-23
+- **Sujet** : Gestes personnels, fichiers et données du compte par MCP.
+- **Décision** : ouvrir les gestes personnels et les suppressions au niveau 3, avec
+  exécution sous l’identité du jeton après confirmation dans l’interface. L’export
+  du compte renvoie un lien local au niveau 1. Les documents binaires passent par
+  des métadonnées de téléchargement. Les accès aux secrets, les connexions et les
+  réglages des modèles restent au niveau 4.
+- **Raison** : laisser le client MCP préparer les opérations du compte et conserver
+  la maîtrise des gestes irréversibles dans Tremplin.

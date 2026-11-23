@@ -16,16 +16,28 @@ déclarée avec `body_fields` est permise même si sa feature a des champs sensi
 import re
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
+from enum import StrEnum
 from typing import Any, Literal
 
 Level = Literal[1, 2, 3]
 
-# Niveau 4 : jamais exposé au MCP (connexion, compte et ses données, le MCP lui-même).
-NEVER_EXPOSED_FEATURES = frozenset({"auth", "account", "mcp"})
+# Niveau 4 : jamais exposé au MCP (connexion et administration de l'accès MCP).
+NEVER_EXPOSED_FEATURES = frozenset({"auth", "mcp"})
 
 # Des POST qui ne font que lire (recherche) : seuls à pouvoir être de niveau 1 sans être un GET,
 # sinon un jeton en lecture seule ne pourrait pas chercher dans la mémoire.
 READ_ONLY_POSTS = frozenset({"POST /memory/search"})
+
+
+class McpExclusion(StrEnum):
+    AUTH = "Niveau 4 — authentification et sessions de connexion."
+    MCP_ADMIN = "Niveau 4 — jetons, appairage, droits et confirmations MCP."
+    MODEL_SETTINGS = "Niveau 4 — clés d’API et choix des modèles."
+    BRAIN_SYNC = "Niveau 4 — jeton et canal protégé du relais Cerveau."
+    CALENDAR_OAUTH = "Niveau 4 — consentement OAuth et connexion Agenda."
+    IDE_RIGHTS = "Niveau 4 — modification des droits d’écriture et plafonds du jeton."
+    SHARING_TOKEN = "Niveau 4 — émission ou usage des accès invités du mentor."
+    INTEGRATION_TOKEN = "Niveau 4 — consentement et appairage du jeton de l’intégration."
 
 
 # Grammaire des chemins `untrusted` : chemins pointés dans `data` de la réponse JSON (la racine est
@@ -93,6 +105,9 @@ class McpAction:
     response_fields: frozenset[str] | None = None
     encoding: Literal["json", "form"] = "json"
     launches: str | None = None
+    artifact: bool = False
+    bucket: Literal["code_run"] | None = None
+    manual_url: str | None = None
 
     def __post_init__(self) -> None:
         if self.side_effects == "external" and self.level == 2:
@@ -103,6 +118,10 @@ class McpAction:
             raise ValueError("merge_from est une route GET et exige body_fields")
         if not untrusted_paths_valid(self.untrusted):
             raise ValueError("chemin untrusted hors grammaire")
+        if self.manual_url and (
+            self.level != 1 or not re.fullmatch(r"/[a-z0-9][a-z0-9/-]*", self.manual_url)
+        ):
+            raise ValueError("un lien vers une page Tremplin est une lecture")
 
 
 @dataclass(frozen=True)
@@ -128,13 +147,13 @@ class McpGraph:
 
 @dataclass(frozen=True)
 class FeatureMcp:
-    """La déclaration d'une feature : ses actions, ses graphes, et ses routes exclues avec le motif
-    (`"POST /ide/notes/{note_id}/accept" -> "geste réservé à l'interface"`, chemins réels) ; un
-    graphe exclu a pour clé `"graph:<nom>"` (`"graph:cv_review" -> motif`)."""
+    """Les actions, les graphes, les routes protégées et les équivalents de transport."""
 
     feature: str
     actions: tuple[McpAction, ...] = ()
     graphs: tuple[McpGraph, ...] = ()
-    excluded: Mapping[str, str] = field(default_factory=dict)
+    excluded: Mapping[str, McpExclusion] = field(default_factory=dict)
     # Ces routes ne peuvent être appelées que sous le contexte de modèle joué.
     play_actions: tuple[McpAction, ...] = ()
+    # Une opération de transport représentée par un outil équivalent.
+    alternatives: Mapping[str, str] = field(default_factory=dict)

@@ -38,8 +38,13 @@ MCP = FeatureMcp(
             "Relit un guide approuvé du compte.",
             untrusted=("project_title", "markdown"),
         ),
+        McpAction(
+            "GET /project-handoffs/{handoff_id}/export",
+            1,
+            "project_handoffs_get_export_text",
+            "Lit le Markdown du guide de reprise et donne son lien local.",
+            artifact=True,
+            untrusted=("text",),
+        ),
     ),
-    excluded={
-        "GET /project-handoffs/{handoff_id}/export": "Téléchargement privé réservé à l’interface.",
-    },
 )

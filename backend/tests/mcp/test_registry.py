@@ -94,7 +94,7 @@ def test_external_side_effect_action_cannot_be_level_2(app: FastAPI) -> None:
         ("auth", McpAction("GET /health", 1, "auth_health"), "n'expose jamais"),
         ("x", McpAction("GET /auth/me", 1, "x_me"), "niveau 4"),
         ("x", McpAction("GET /mcp/settings", 1, "x_mcp"), "niveau 4"),
-        ("x", McpAction("GET /account/export", 1, "x_export"), "niveau 4"),
+        ("x", McpAction("GET /account/credentials", 1, "x_export"), "niveau 4"),
         ("x", McpAction("GET /settings/api-keys", 1, "x_keys"), "niveau 4"),
         ("x", McpAction("GET /settings/models", 1, "x_models"), "niveau 4"),
         ("x", McpAction("GET /settings/agents", 1, "x_agents"), "niveau 4"),

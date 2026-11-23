@@ -1,9 +1,10 @@
+from datetime import datetime
 from typing import Any
 
-from sqlalchemy import ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import JSON, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db.base import Base, UserScopedMixin
+from app.db.base import Base, UserScopedMixin, UTCDateTime
 
 
 class BrainFolder(UserScopedMixin, Base):
@@ -16,6 +17,8 @@ class BrainFolder(UserScopedMixin, Base):
     path: Mapped[str] = mapped_column(Text, info={"export": False})
     paused: Mapped[bool] = mapped_column(default=False)
     revision: Mapped[int] = mapped_column(Integer, default=1)
+    excluded_directories: Mapped[list[str]] = mapped_column(JSON, default=list)
+    excluded_extensions: Mapped[list[str]] = mapped_column(JSON, default=list)
     report: Mapped[dict[str, Any] | None] = mapped_column(default=None)
 
 
@@ -43,3 +46,4 @@ class BrainSyncToken(UserScopedMixin, Base):
     __table_args__ = (UniqueConstraint("user_id"), {"info": {"export": False}})
 
     token_hash: Mapped[str] = mapped_column(String(64))
+    last_contact: Mapped[datetime | None] = mapped_column(UTCDateTime, default=None)

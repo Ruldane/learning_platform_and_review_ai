@@ -552,6 +552,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/brain/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Conversation */
+        post: operations["create_conversation_api_v1_brain_conversations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/brain/folders": {
         parameters: {
             query?: never;
@@ -586,6 +603,23 @@ export interface paths {
         head?: never;
         /** Patch Folder */
         patch: operations["patch_folder_api_v1_brain_folders__folder_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/brain/relay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Relay Status */
+        get: operations["relay_status_api_v1_brain_relay_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/brain/status": {
@@ -1102,6 +1136,59 @@ export interface paths {
         /** Accept Explanation */
         post: operations["accept_explanation_api_v1_conversations_explain__turn_id__accept_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conversations/{scope}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Conversations */
+        get: operations["list_conversations_api_v1_conversations__scope__get"];
+        put?: never;
+        post?: never;
+        /** Wipe Conversations */
+        delete: operations["wipe_conversations_api_v1_conversations__scope__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conversations/{scope}/{conversation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Conversation */
+        delete: operations["delete_conversation_api_v1_conversations__scope___conversation_id__delete"];
+        options?: never;
+        head?: never;
+        /** Rename Conversation */
+        patch: operations["rename_conversation_api_v1_conversations__scope___conversation_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/conversations/{scope}/{conversation_id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Clear Conversation */
+        delete: operations["clear_conversation_api_v1_conversations__scope___conversation_id__messages_delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2227,7 +2314,7 @@ export interface paths {
         /**
          * Accept Note
          * @description Applique une proposition au fichier si celui-ci n'a pas changé (sinon 409 `note_stale`).
-         *     Geste de l'interface, jamais du MCP.
+         *     Un appel MCP exige une confirmation dans Tremplin.
          */
         post: operations["accept_note_api_v1_ide_notes__note_id__accept_post"];
         delete?: never;
@@ -2247,7 +2334,7 @@ export interface paths {
         put?: never;
         /**
          * Reject Note
-         * @description Refuse une proposition. Geste de l'interface, jamais du MCP.
+         * @description Refuse une proposition. Un appel MCP exige une confirmation dans Tremplin.
          */
         post: operations["reject_note_api_v1_ide_notes__note_id__reject_post"];
         delete?: never;
@@ -2866,6 +2953,44 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lab/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Overview
+         * @description Les rubriques, leurs activités, les outils du jeton et les prérequis manquants.
+         */
+        get: operations["overview_api_v1_lab_overview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lab/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read */
+        get: operations["read_api_v1_lab_preferences_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Change */
+        patch: operations["change_api_v1_lab_preferences_patch"];
         trace?: never;
     };
     "/api/v1/lesson-hunts": {
@@ -6445,6 +6570,23 @@ export interface paths {
         patch: operations["update_api_v1_study_sessions_training__study_session_id__patch"];
         trace?: never;
     };
+    "/api/v1/study-sessions/training/{study_session_id}/context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Context */
+        patch: operations["update_context_api_v1_study_sessions_training__study_session_id__context_patch"];
+        trace?: never;
+    };
     "/api/v1/study-sessions/training/{study_session_id}/messages": {
         parameters: {
             query?: never;
@@ -7820,6 +7962,16 @@ export interface components {
             maintenance: components["schemas"]["BossCriterion"];
             readability: components["schemas"]["BossCriterion"];
         };
+        /** BrainRelayStatus */
+        BrainRelayStatus: {
+            /** Last Contact */
+            last_contact?: string | null;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "unconfigured" | "waiting" | "connected" | "offline";
+        };
         /**
          * BraveUsageOut
          * @description Requêtes Brave du mois civil UTC (`month` : « AAAA-MM ») pour la clé en vigueur.
@@ -8469,6 +8621,11 @@ export interface components {
              */
             strong: boolean;
         };
+        /** ConversationRename */
+        ConversationRename: {
+            /** Title */
+            title: string;
+        };
         /** ConversationSource */
         ConversationSource: {
             /** Excerpt */
@@ -8493,6 +8650,21 @@ export interface components {
              * Format: uuid
              */
             session_id: string;
+        };
+        /** ConversationSummary */
+        ConversationSummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** ConversationTurnOut */
         ConversationTurnOut: {
@@ -9604,6 +9776,10 @@ export interface components {
         };
         /** FolderIn */
         FolderIn: {
+            /** Excluded Directories */
+            excluded_directories?: string[];
+            /** Excluded Extensions */
+            excluded_extensions?: string[];
             /** Name */
             name: string;
             /** Path */
@@ -9616,6 +9792,10 @@ export interface components {
         };
         /** FolderOut */
         FolderOut: {
+            /** Excluded Directories */
+            excluded_directories?: string[];
+            /** Excluded Extensions */
+            excluded_extensions?: string[];
             /** Id */
             id: string;
             /** Name */
@@ -9629,6 +9809,10 @@ export interface components {
         };
         /** FolderPatch */
         FolderPatch: {
+            /** Excluded Directories */
+            excluded_directories?: string[] | null;
+            /** Excluded Extensions */
+            excluded_extensions?: string[] | null;
             /** Name */
             name?: string | null;
             /** Path */
@@ -10208,6 +10392,11 @@ export interface components {
              * @default 0
              */
             changed: number;
+            /**
+             * Excluded
+             * @default 0
+             */
+            excluded: number;
             /**
              * Extension
              * @default 0
@@ -10841,6 +11030,24 @@ export interface components {
         KitStartOut: {
             /** Session Id */
             session_id: string;
+        };
+        /** LabPreferences */
+        LabPreferences: {
+            /** Pinned */
+            pinned?: string[];
+            /**
+             * Tour
+             * @default pending
+             * @enum {string}
+             */
+            tour: "pending" | "done" | "disabled";
+        };
+        /** LabPreferencesPatch */
+        LabPreferencesPatch: {
+            /** Pinned */
+            pinned?: string[] | null;
+            /** Tour */
+            tour?: ("pending" | "done" | "disabled") | null;
         };
         /** Language */
         Language: {
@@ -12648,6 +12855,41 @@ export interface components {
         OncallReviewStarted: {
             /** Session Id */
             session_id: string;
+        };
+        /** Overview */
+        Overview: {
+            /** Sections */
+            sections: components["schemas"]["OverviewSection"][];
+        };
+        /** OverviewFeature */
+        OverviewFeature: {
+            /** Id */
+            id: string;
+            /** Missing Prerequisites */
+            missing_prerequisites: string[];
+            /** Tools */
+            tools: components["schemas"]["OverviewTool"][];
+        };
+        /** OverviewSection */
+        OverviewSection: {
+            /** Features */
+            features: components["schemas"]["OverviewFeature"][];
+            /** Id */
+            id: string;
+            /** Local Url */
+            local_url: string;
+            /** Title */
+            title: string;
+        };
+        /** OverviewTool */
+        OverviewTool: {
+            /**
+             * Level
+             * @enum {integer}
+             */
+            level: 1 | 2 | 3;
+            /** Name */
+            name: string;
         };
         /** PaperLabCreate */
         PaperLabCreate: {
@@ -16652,6 +16894,16 @@ export interface components {
             /** Worked Minutes */
             worked_minutes?: number | null;
         };
+        /** TrainingLessonsUpdate */
+        TrainingLessonsUpdate: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            action: "lessons";
+            /** Lesson Ids */
+            lesson_ids: string[];
+        };
         /** TrainingModeUpdate */
         TrainingModeUpdate: {
             /**
@@ -16679,6 +16931,8 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Lesson Ids */
+            lesson_ids: string[];
             /** Minutes */
             minutes: number;
             /**
@@ -16703,12 +16957,19 @@ export interface components {
         };
         /** TrainingStart */
         TrainingStart: {
+            /** Lesson Ids */
+            lesson_ids?: string[];
             /**
              * Mode
              * @default socratic
              * @enum {string}
              */
             mode: "socratic" | "feynman" | "direct";
+            /**
+             * New Conversation
+             * @default false
+             */
+            new_conversation: boolean;
         };
         /** TransferExerciseOut */
         TransferExerciseOut: {
@@ -18519,7 +18780,9 @@ export interface operations {
     };
     read_conversation_api_v1_brain_conversation_get: {
         parameters: {
-            query?: never;
+            query?: {
+                conversation_id?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -18535,11 +18798,22 @@ export interface operations {
                     "application/json": components["schemas"]["ConversationOut"] | null;
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     message_api_v1_brain_conversation_messages_post: {
         parameters: {
-            query?: never;
+            query?: {
+                conversation_id?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -18566,6 +18840,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_conversation_api_v1_brain_conversations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationOut"];
                 };
             };
         };
@@ -18683,6 +18977,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    relay_status_api_v1_brain_relay_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BrainRelayStatus"];
                 };
             };
         };
@@ -19691,6 +20005,164 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["FeynmanSaved"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_conversations_api_v1_conversations__scope__get: {
+        parameters: {
+            query?: {
+                q?: string;
+            };
+            header?: never;
+            path: {
+                scope: "brain" | "training";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationSummary"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    wipe_conversations_api_v1_conversations__scope__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scope: "brain" | "training";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_conversation_api_v1_conversations__scope___conversation_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scope: "brain" | "training";
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rename_conversation_api_v1_conversations__scope___conversation_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scope: "brain" | "training";
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConversationRename"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    clear_conversation_api_v1_conversations__scope___conversation_id__messages_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scope: "brain" | "training";
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -23564,6 +24036,79 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["JournalPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    overview_api_v1_lab_overview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Overview"];
+                };
+            };
+        };
+    };
+    read_api_v1_lab_preferences_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabPreferences"];
+                };
+            };
+        };
+    };
+    change_api_v1_lab_preferences_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LabPreferencesPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabPreferences"];
                 };
             };
             /** @description Validation Error */
@@ -31088,7 +31633,42 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TrainingModeUpdate"] | components["schemas"]["TrainingFinish"] | components["schemas"]["TrainingCancel"];
+                "application/json": components["schemas"]["TrainingModeUpdate"] | components["schemas"]["TrainingLessonsUpdate"] | components["schemas"]["TrainingFinish"] | components["schemas"]["TrainingCancel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingSessionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_context_api_v1_study_sessions_training__study_session_id__context_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrainingModeUpdate"] | components["schemas"]["TrainingLessonsUpdate"];
             };
         };
         responses: {

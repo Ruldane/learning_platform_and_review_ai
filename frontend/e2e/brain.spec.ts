@@ -47,7 +47,7 @@ test.beforeEach(({ request }) => finishFirstLaunch(request));
 test("le Cerveau cite une note synchronisée puis l’écarte après son retrait", async ({
   page,
   request,
-}) => {
+}, testInfo) => {
   const { endpoint, headers } = await syncNote(request);
   const question = "Calendrier turquoise";
   await page.goto("/memoire/cerveau");
@@ -62,7 +62,10 @@ test("le Cerveau cite une note synchronisée puis l’écarte après son retrait
   await expect(page).toHaveURL(/\/memoire\?item=[0-9a-f-]+$/);
   await expect(page.getByRole("dialog").getByRole("heading", { name: title })).toBeVisible();
   await expect(
-    page.getByRole("dialog").getByText(/Le calendrier turquoise indique le code/).first(),
+    page
+      .getByRole("dialog")
+      .getByText(/Le calendrier turquoise indique le code/)
+      .first(),
   ).toBeVisible();
 
   const removed = await request.post(`${endpoint}/remove`, { headers, data: { path: filename } });
@@ -78,4 +81,18 @@ test("le Cerveau cite une note synchronisée puis l’écarte après son retrait
     .filter({ hasText: "Je ne retrouve plus la note du calendrier." });
   await expect(answer).toBeVisible();
   await expect(answer.getByRole("link", { name: title })).toHaveCount(0);
+
+  const sidebar = page.getByRole("complementary", { name: "Conversations" });
+  await expect(sidebar.getByRole("button", { name: "Ouvrir Calendrier turquoise" })).toBeVisible();
+  await sidebar.getByRole("button", { name: "Nouvelle conversation", exact: true }).click();
+  await expect(page).toHaveURL(/conversation=[0-9a-f-]+$/);
+  await expect(answer).toHaveCount(0);
+  await expect(sidebar.getByRole("button", { name: "Ouvrir Nouvelle conversation" })).toBeVisible();
+  await sidebar.getByRole("button", { name: "Ouvrir Calendrier turquoise" }).click();
+  await expect(answer).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("brain-conversations.png") });
+  await sidebar.getByRole("button", { name: "Vider la conversation" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Confirmer" }).click();
+  await expect(answer).toHaveCount(0);
+  await expect(sidebar.getByRole("button", { name: "Ouvrir Calendrier turquoise" })).toBeVisible();
 });

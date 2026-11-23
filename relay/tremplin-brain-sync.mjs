@@ -87,7 +87,7 @@ async function retryImports(send, root, files, inventory, attempts, read, report
 async function syncFolder(send, folder, scan, read, attempts, now) {
   const report = { state: "incomplete", scanned: 0, added: 0, changed: 0, removed: 0, ignored: {}, errors: 0 };
   try {
-    const scanned = await scan(folder.path);
+    const scanned = await scan(folder.path, folder);
     report.scanned = scanned.inventory.size;
     report.ignored = scanned.ignored;
     if (scanned.complete) {

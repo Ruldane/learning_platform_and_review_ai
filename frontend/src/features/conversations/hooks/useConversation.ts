@@ -76,9 +76,10 @@ interface ThreadOptions {
   read: (signal?: AbortSignal) => Promise<Pick<Conversation, "id" | "turns" | "usage"> | null>;
   submit: Submit;
   agent: string;
+  onSubmitted?: () => void;
 }
 
-export function useThread({ key, read, submit, agent }: ThreadOptions) {
+export function useThread({ key, read, submit, agent, onSubmitted }: ThreadOptions) {
   const [submitted, setSubmitted] = useState<string | null>(null);
   const thread = useQuery({
     queryKey: key,
@@ -90,6 +91,7 @@ export function useThread({ key, read, submit, agent }: ThreadOptions) {
   const streaming = useTurnStream(sessionId, agent, refresh);
   const sending = useSend(submit, (id) => {
     setSubmitted(id);
+    onSubmitted?.();
     refresh();
   });
   return { thread, sending, sessionId, streaming };

@@ -89,6 +89,12 @@ docker compose -p learning_career_platform exec -T backend alembic current
 docker compose -p learning_career_platform exec -T backend alembic heads
 ```
 
+À partir de la réorganisation des conversations, la migration attribue un titre
+aux anciens fils du Cerveau et d’Étudier à partir du premier message. Elle
+conserve leurs identifiants et les données pédagogiques déjà enregistrées.
+Après restauration, vérifier un ancien fil dans chacun des deux écrans et
+ouvrir une fiche de révision avant de retirer la sauvegarde.
+
 Le backend applique `alembic upgrade head` à son démarrage. La révision
 courante doit correspondre à la tête de l’image. Vérifier l’API à
 `http://localhost:8000/api/v1/health`, ou sur le port configuré, puis ouvrir

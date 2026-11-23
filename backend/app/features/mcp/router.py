@@ -6,6 +6,7 @@ Ces routes sont **de l'interface** : la feature `mcp` n'est jamais exposée au M
 jeton MCP n'ouvre jamais `/api/v1` (refusé ici en 403) et `get_interface_user` refuse même un appel
 porté par une identité MCP."""
 
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Path, Query, Request, Response
@@ -128,7 +129,15 @@ async def confirm(
 ) -> McpConfirmationOut:
     """Exécute la demande, une seule fois ; expirée, refusée ou déjà traitée : 409."""
     service = _confirmations(request, current.id)
-    await service.confirm(confirmation_id)
+    summary = await service.get(confirmation_id)
+    result = await service.confirm(confirmation_id)
+    if summary.action == "account_delete_data":
+        return summary.model_copy(
+            update={
+                "status": "failed" if result.is_error else "confirmed",
+                "decided_at": datetime.now(UTC),
+            }
+        )
     return await service.get(confirmation_id)
 
 

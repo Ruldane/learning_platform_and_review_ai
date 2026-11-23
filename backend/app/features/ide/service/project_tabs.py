@@ -58,8 +58,6 @@ def current(project: IdeSession, rename: tuple[str, str] | None = None) -> Proje
 
 async def save(ctx: IdeContext, session_id: str, draft: ProjectTabsState) -> ProjectTabsState:
     project = await sessions.get(ctx, session_id)
-    if ctx.caller.kind != "app":
-        raise AppError("interface_only", "Les onglets se règlent dans l’interface.", 403)
     proposed = ProjectTabs(tuple(draft.open_paths), draft.active_path)
     state = restore(project.files, project.entry, proposed).to_state()
     stmt = (

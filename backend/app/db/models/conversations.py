@@ -7,7 +7,7 @@ from app.db.base import Base, UserScopedMixin
 
 
 class Conversation(UserScopedMixin, Base):
-    """Un fil par compte, porte et sujet. Les tours survivent aux redémarrages."""
+    """Un fil de conversation, rattaché à son sujet et à son compte."""
 
     __tablename__ = "conversations"
     __table_args__ = (
@@ -16,6 +16,8 @@ class Conversation(UserScopedMixin, Base):
 
     scope: Mapped[str] = mapped_column(String(24))
     subject_id: Mapped[str] = mapped_column(String(36))
+    title: Mapped[str | None] = mapped_column(String(120), default=None)
+    lesson_ids: Mapped[list[str]] = mapped_column(JSON, default=list, server_default="[]")
 
 
 class ConversationTurn(UserScopedMixin, Base):
@@ -40,6 +42,7 @@ class ConversationTurn(UserScopedMixin, Base):
     passage_occurrence: Mapped[int | None]
     lesson_version: Mapped[str | None] = mapped_column(String(64), default=None)
     mode: Mapped[str | None] = mapped_column(String(16), default=None)
+    lesson_ids: Mapped[list[str] | None] = mapped_column(JSON, default=None)
     practice: Mapped[list[Any] | None] = mapped_column(default=None)
     context_notes: Mapped[dict[str, str] | None] = mapped_column(JSON, default=None)
     classmates: Mapped[list[Any] | None] = mapped_column(JSON, default=None)

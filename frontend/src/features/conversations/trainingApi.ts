@@ -5,6 +5,7 @@ import { RUN_HEADER, type RunSource } from "@/shared/lib/runSource";
 import type { ConversationMessage } from "./api";
 
 export type TrainingSession = components["schemas"]["TrainingSessionOut"];
+export type TrainingStart = components["schemas"]["TrainingStart"];
 export type TrainingMode = TrainingSession["mode"];
 export type TrainingChange =
   paths["/api/v1/study-sessions/training/{study_session_id}"]["patch"]["requestBody"]["content"]["application/json"];
@@ -19,8 +20,8 @@ export async function fetchTraining(id: string | undefined, signal?: AbortSignal
       );
 }
 
-export async function startTraining(mode: TrainingMode) {
-  return unwrap(await api.POST("/study-sessions/training", { body: { mode } }));
+export async function startTraining(body: TrainingStart) {
+  return unwrap(await api.POST("/study-sessions/training", { body }));
 }
 
 export async function changeTraining(id: string, body: TrainingChange) {
@@ -41,4 +42,19 @@ export async function sendTrainingQuestion(
       body: { request_id: message.request_id, question: message.question, strong: message.strong },
     }),
   );
+}
+
+export async function listTrainingLessons(signal?: AbortSignal) {
+  const programs = unwrap(await api.GET("/programs", { signal }));
+  const catalogue = await Promise.all(
+    programs.map(async ({ id }) =>
+      unwrap(
+        await api.GET("/programs/{program_id}/lessons", {
+          params: { path: { program_id: id } },
+          signal,
+        }),
+      ),
+    ),
+  );
+  return catalogue.flat().filter(({ status }) => status === "ready");
 }

@@ -8,11 +8,15 @@ from app.agents.tools.conversation_port import TRAINING_TUTOR
 from app.agents.tools.study_port import StudyFinished
 from app.core.errors import AppError
 from app.core.skills import evidence
+from app.db.base import utcnow
 from app.db.models.study import StudySession
 from app.features.capture.service.journal import JournalLinks, add_entry
 from app.features.conversations.service import (
+    TRAINING_SCOPE,
     cancel_conversation_turn,
+    checked_lesson_ids,
     cited_study_material,
+    require_chat,
     require_idle_conversation,
 )
 from app.features.memory.service.skill_levels import reflect_skill_levels
@@ -26,10 +30,12 @@ from app.features.study.service.training import training_out, training_row
 from app.features.study.training_schemas import (
     TrainingCancel,
     TrainingFinish,
+    TrainingLessonsUpdate,
     TrainingModeUpdate,
     TrainingSessionOut,
     TrainingUpdate,
 )
+from app.mcp.recorder import ACTIVE
 
 logger = logging.getLogger(__name__)
 
@@ -84,21 +90,30 @@ async def _apply(
 ) -> tuple[StudyFinished | None, str | None]:
     async with rt.session_factory() as db:
         repo = StudyRepository(db, user_id)
-        row = await repo.claim_training(study_id)
+        row = await repo.claim_training(
+            study_id, include_closed=isinstance(body, (TrainingModeUpdate, TrainingLessonsUpdate))
+        )
         if row is None:
             closed = await training_row(db, user_id, study_id)
-            if isinstance(body, TrainingModeUpdate):
+            if isinstance(body, (TrainingModeUpdate, TrainingLessonsUpdate)):
                 raise AppError("training_closed", "Cette session training est terminée.", 409)
             return finished_of(closed) if isinstance(body, TrainingFinish) else None, None
         result, cancelled = None, None
-        if isinstance(body, TrainingModeUpdate):
-            row.mode = body.mode
+        if isinstance(body, (TrainingModeUpdate, TrainingLessonsUpdate)):
+            thread = await require_chat(db, user_id, TRAINING_SCOPE, study_id)
+            if isinstance(body, TrainingModeUpdate):
+                row.mode = body.mode
+            else:
+                thread.lesson_ids = await checked_lesson_ids(db, user_id, body.lesson_ids)
+            thread.updated_at = utcnow()
         elif isinstance(body, TrainingCancel):
             cancelled = await cancel_conversation_turn(db, user_id, row.id)
             row.status, row.ended_at = "cancelled", rt.now()
         else:
             await require_idle_conversation(db, user_id, row.id)
             result = await _followup(rt, db, row, body)
+        if recorder := ACTIVE.get():
+            await recorder.persist_in(db)
         await db.commit()
         return result, cancelled
 

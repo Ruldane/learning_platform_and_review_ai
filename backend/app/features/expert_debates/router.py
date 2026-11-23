@@ -2,7 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter
 
-from app.core.deps import CurrentUserDep, Db, InterfaceUserDep, RuntimeDep
+from app.core.deps import ConfirmedUserDep, CurrentUserDep, Db, RuntimeDep
 from app.features.conversations.service import ConversationQuestionIn
 from app.features.expert_debates.schemas import (
     ExpertDebateOut,
@@ -22,7 +22,7 @@ async def list_debates(db: Db, user: CurrentUserDep) -> list[ExpertDebateSummary
 
 @router.post("", status_code=202)
 async def open_debate(
-    body: ConversationQuestionIn, db: Db, user: InterfaceUserDep, runtime: RuntimeDep
+    body: ConversationQuestionIn, db: Db, user: CurrentUserDep, runtime: RuntimeDep
 ) -> ExpertDebateStarted:
     return await start_debate(runtime.runner, db, user.id, body)
 
@@ -34,6 +34,6 @@ async def get_debate(debate_id: UUID, db: Db, user: CurrentUserDep) -> ExpertDeb
 
 @router.put("/{debate_id}/judgment")
 async def put_judgment(
-    debate_id: UUID, body: ExpertJudgmentIn, db: Db, user: InterfaceUserDep
+    debate_id: UUID, body: ExpertJudgmentIn, db: Db, user: ConfirmedUserDep
 ) -> ExpertDebateOut:
     return await ExpertDebates(db, user.id).judge(debate_id, body.text)

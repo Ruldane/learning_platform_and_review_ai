@@ -1,6 +1,6 @@
 """Le MCP relit le prochain créneau et prépare une proposition sur consentement."""
 
-from app.mcp.base import FeatureMcp, McpAction
+from app.mcp.base import FeatureMcp, McpAction, McpExclusion
 
 MCP = FeatureMcp(
     feature="calendar",
@@ -19,15 +19,31 @@ MCP = FeatureMcp(
             untrusted=("title",),
             side_effects="external",
         ),
+        McpAction(
+            "GET /calendar/connection",
+            1,
+            "calendar_read_connection",
+            "Lit l’état du consentement Agenda du compte.",
+        ),
+        McpAction(
+            "DELETE /calendar/connection",
+            3,
+            "calendar_disconnect_agenda",
+            "Retire l’accès à Google Agenda. Demande à confirmer.",
+            side_effects="external",
+        ),
+        McpAction(
+            "POST /calendar/proposals/{proposal_id}/confirm",
+            3,
+            "calendar_confirm_proposal",
+            "Inscrit le créneau proposé dans Google Agenda après consentement. "
+            "Demande à confirmer.",
+            side_effects="external",
+            untrusted=("title",),
+        ),
     ),
     excluded={
-        route: "Accès Agenda personnel, réservé au consentement explicite dans l’interface."
-        for route in (
-            "GET /calendar/connection",
-            "POST /calendar/connection",
-            "GET /calendar/callback",
-            "DELETE /calendar/connection",
-            "POST /calendar/proposals/{proposal_id}/confirm",
-        )
+        "POST /calendar/connection": McpExclusion.CALENDAR_OAUTH,
+        "GET /calendar/callback": McpExclusion.CALENDAR_OAUTH,
     },
 )

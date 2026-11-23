@@ -1,17 +1,57 @@
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 
-from app.core.deps import CurrentUserDep, Db, RuntimeDep
+from app.core.deps import ConfirmedUserDep, CurrentUserDep, Db, RuntimeDep
+from app.features.conversations.chats import erase_chat, list_chats, rename_chat
 from app.features.conversations.classroom import ask_classroom, read_classroom
 from app.features.conversations.schemas import (
+    ChatScope,
     ConversationMessageIn,
+    ConversationRename,
     ConversationStarted,
+    ConversationSummary,
     LessonConversationOut,
 )
 from app.features.conversations.service import ask_lesson_professor, read_lesson_conversation
 
 router = APIRouter(tags=["conversations"])
+
+
+@router.get("/conversations/{scope}")
+async def list_conversations(
+    scope: ChatScope, db: Db, user: CurrentUserDep, q: Annotated[str, Query(max_length=120)] = ""
+) -> list[ConversationSummary]:
+    return await list_chats(db, user.id, scope, q)
+
+
+@router.patch("/conversations/{scope}/{conversation_id}")
+async def rename_conversation(
+    scope: ChatScope, conversation_id: UUID, body: ConversationRename, db: Db, user: CurrentUserDep
+) -> ConversationSummary:
+    return await rename_chat(db, user.id, scope, str(conversation_id), body.title)
+
+
+@router.delete("/conversations/{scope}/{conversation_id}/messages", status_code=204)
+async def clear_conversation(
+    scope: ChatScope, conversation_id: UUID, db: Db, user: ConfirmedUserDep, runtime: RuntimeDep
+) -> None:
+    await erase_chat(runtime.runner, db, user.id, scope, str(conversation_id), keep_thread=True)
+
+
+@router.delete("/conversations/{scope}/{conversation_id}", status_code=204)
+async def delete_conversation(
+    scope: ChatScope, conversation_id: UUID, db: Db, user: ConfirmedUserDep, runtime: RuntimeDep
+) -> None:
+    await erase_chat(runtime.runner, db, user.id, scope, str(conversation_id))
+
+
+@router.delete("/conversations/{scope}", status_code=204)
+async def wipe_conversations(
+    scope: ChatScope, db: Db, user: ConfirmedUserDep, runtime: RuntimeDep
+) -> None:
+    await erase_chat(runtime.runner, db, user.id, scope)
 
 
 @router.get("/lessons/{lesson_id}/conversation")

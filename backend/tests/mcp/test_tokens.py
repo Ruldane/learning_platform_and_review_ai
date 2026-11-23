@@ -57,7 +57,6 @@ async def test_expiry_choices(mcp: Mcp, days: int) -> None:
     [
         (["mcp"], 422),
         (["postings", "auth"], 422),
-        (["account"], 422),
         (["Pos tings"], 422),
         (["../etc"], 422),
         ([], 422),

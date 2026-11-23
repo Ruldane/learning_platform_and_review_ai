@@ -188,10 +188,15 @@ async function visit(result, directories, absolute, path, name) {
   }
   await checkDirectories(directories);
   const stat = await lstat(absolute, STAT_OPTIONS);
+  const excluded = stat.isDirectory()
+    ? result.exclusions.directories.has(path.toLowerCase())
+    : stat.isFile() && result.exclusions.extensions.has(extname(path).toLowerCase());
   if (stat.isSymbolicLink() || (stat.isFile() && stat.nlink !== 1n)) {
     result.ignored.link += 1;
   } else if (TECHNICAL.has(name.toLowerCase())) {
     result.ignored.technical += 1;
+  } else if (excluded) {
+    result.ignored.excluded += 1;
   } else if (stat.isDirectory()) {
     await walk(result, [...directories, { absolute, stat }], path);
   } else if (stat.isFile()) {
@@ -233,12 +238,16 @@ async function walk(result, directories, prefix) {
 
 // Les sous-arbres techniques ignorés comptent pour une entrée. Un parcours incomplet ne rend
 // jamais les fichiers manquants supprimables. Les signatures seules filtrent PDF et DOCX ici.
-export async function scanSyncFiles(root) {
+export async function scanSyncFiles(root, { excluded_directories = [], excluded_extensions = [] } = {}) {
   const directories = await rootDirectories(root);
   const result = {
     inventory: new Map(),
+    exclusions: {
+      directories: new Set(excluded_directories.map((path) => path.toLowerCase())),
+      extensions: new Set(excluded_extensions.map((extension) => extension.toLowerCase())),
+    },
     ignored: { technical: 0, link: 0, extension: 0, binary: 0, tooLarge: 0,
-      path: 0, special: 0, unreadable: 0, changed: 0 },
+      path: 0, special: 0, unreadable: 0, changed: 0, excluded: 0 },
     complete: true,
   };
   try {
@@ -247,7 +256,7 @@ export async function scanSyncFiles(root) {
     markIncomplete(result, error);
   }
   const ordered = [...result.inventory.keys()].sort().map((path) => [path, result.inventory.get(path)]);
-  return { ...result, inventory: new Map(ordered) };
+  return { inventory: new Map(ordered), ignored: result.ignored, complete: result.complete };
 }
 
 export function diffSyncFiles(previous, scan) {

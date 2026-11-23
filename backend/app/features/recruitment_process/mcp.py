@@ -1,4 +1,4 @@
-from app.mcp.base import FeatureMcp, McpAction
+from app.mcp.base import FeatureMcp, McpAction, McpGraph
 
 _ANSWER = "POST /recruitment-processes/{process_id}/steps/{kind}/answers"
 _TEXT = (
@@ -43,9 +43,13 @@ MCP = FeatureMcp(
             "Prépare une répétition privée à partir d’une offre analysée.",
             untrusted=_TEXT,
         ),
+        McpAction(
+            "POST /recruitment-processes/{process_id}/steps/{kind}/answers",
+            3,
+            "recruitment_process_submit_step_answer",
+            "Remet une réponse de la répétition d’entretien. Demande à confirmer.",
+            launches="recruitment_process",
+        ),
     ),
-    excluded={
-        _ANSWER: "Réponse personnelle de January à une étape.",
-        "graph:recruitment_process": f"Lancé par {_ANSWER}.",
-    },
+    graphs=(McpGraph("recruitment_process", follow_only=True),),
 )

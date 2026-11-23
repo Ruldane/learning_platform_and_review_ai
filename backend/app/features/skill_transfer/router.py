@@ -6,7 +6,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request, Response
 
-from app.core.caller import JanuaryOnly
+from app.core.caller import ConfirmedGesture
 from app.core.deps import CurrentUserDep, Db
 from app.core.field_paths import FieldPathsRoute
 from app.features.skill_transfer.schemas import (
@@ -59,14 +59,14 @@ async def read_transfer(
     return await transfers.read(db, current.id, str(transfer_id), now)
 
 
-@router.post("/{transfer_id}/prepare", status_code=202, dependencies=[JanuaryOnly])
+@router.post("/{transfer_id}/prepare", status_code=202, dependencies=[ConfirmedGesture])
 async def prepare_transfer(
     transfer_id: UUID, request: Request, current: CurrentUserDep, now: Now
 ) -> TransferStarted:
     return await transfers.launch(request.app.state.launcher, current.id, str(transfer_id), now)
 
 
-@router.post("/{transfer_id}/answer", status_code=202, dependencies=[JanuaryOnly])
+@router.post("/{transfer_id}/answer", status_code=202, dependencies=[ConfirmedGesture])
 async def answer_transfer(
     transfer_id: UUID, body: AnswerIn, request: Request, current: CurrentUserDep, now: Now
 ) -> TransferStarted:

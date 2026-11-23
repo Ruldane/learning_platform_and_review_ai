@@ -44,15 +44,23 @@ def root_path(path: str) -> str:
     return str(root)
 
 
-def relative_path(path: str) -> str:
+def relative_path(path: str, *, allow_technical: bool = False) -> str:
     if (
         "\\" in path
         or ":" in path
         or _CONTROL.search(path)
         or any(
-            not part or part in (".", "..") or part.lower() in _TECHNICAL
+            not part or part in (".", "..") or (not allow_technical and part.lower() in _TECHNICAL)
             for part in path.split("/")
         )
     ):
         raise AppError("brain_path_invalid", "Le chemin relatif de la note est refusé.", 422)
     return path
+
+
+def path_excluded(path: str, directories: list[str], extensions: list[str]) -> bool:
+    """Les chemins sont relatifs à la racine du relais et comparés sans casse."""
+    normalized = path.lower()
+    return any(normalized.startswith(f"{directory.lower()}/") for directory in directories) or (
+        PurePosixPath(normalized).suffix in extensions
+    )

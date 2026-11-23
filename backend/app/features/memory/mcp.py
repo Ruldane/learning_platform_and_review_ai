@@ -104,6 +104,16 @@ MCP = FeatureMcp(
             "« Déjà appris » : l'Archiviste crée des acquis déclarés à partir du document.",
             launches="learned_document",
         ),
+        McpAction(
+            "POST /documents",
+            3,
+            "memory_add_link_document",
+            "Importe un lien comme document. Demande à confirmer avant l’analyse et l’indexation.",
+            encoding="form",
+            body_fields=frozenset({"url"}),
+            side_effects="external",
+            untrusted=("document.name", "document.url"),
+        ),
     ),
     graphs=(
         McpGraph(
@@ -111,10 +121,4 @@ MCP = FeatureMcp(
             summary="L'Archiviste lit un document indexé (`document_id`) et crée ses acquis.",
         ),
     ),
-    excluded={
-        "POST /documents": (
-            "Téléversement d'un fichier (multipart, `UploadFile`) : le MCP n'envoie pas de "
-            "fichier ; la variante texte `POST /documents/text` le remplace."
-        ),
-    },
 )

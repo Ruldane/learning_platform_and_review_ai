@@ -47,7 +47,7 @@ async def test_claude_cannot_review_a_card(client: httpx.AsyncClient, seeded: Se
     assert done.status_code == 200, done.text
 
 
-async def test_quiz_gestures_are_not_tools(client: httpx.AsyncClient, app) -> None:  # type: ignore[no-untyped-def]
-    names = {tool.name for tool in app.state.mcp_registry.all()}
-    assert {"quiz_submit_attempt", "quiz_review_card"}.isdisjoint(names)
-    assert {"quiz_get_attempt", "quiz_list_due_cards", "quiz_write_quiz"} <= names
+async def test_quiz_gestures_are_confirmation_tools(client: httpx.AsyncClient, app) -> None:  # type: ignore[no-untyped-def]
+    levels = {tool.name: tool.level for tool in app.state.mcp_registry.all()}
+    assert levels["quiz_submit_attempt"] == levels["quiz_rate_flashcard"] == 3
+    assert {"quiz_get_attempt", "quiz_list_due_cards", "quiz_write_quiz"} <= levels.keys()

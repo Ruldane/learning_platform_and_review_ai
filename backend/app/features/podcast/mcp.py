@@ -25,9 +25,15 @@ MCP = FeatureMcp(
             "Vérifie les trois choix soumis et donne les explications.",
             untrusted=("corrections[].explanation",),
         ),
+        McpAction(
+            "GET /podcast/{episode_id}/audio",
+            1,
+            "podcast_get_episode_audio",
+            "Lit les métadonnées de l’épisode audio et donne son lien local.",
+            artifact=True,
+        ),
     ),
     graphs=(
         McpGraph("podcast", follow_only=True, summary="Écrit et met en voix l’épisode du matin."),
     ),
-    excluded={"GET /podcast/{episode_id}/audio": "Flux binaire lu par le lecteur audio."},
 )

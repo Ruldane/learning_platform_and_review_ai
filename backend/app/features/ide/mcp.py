@@ -4,19 +4,7 @@
 correction est une proposition qu'elle accepte dans l'interface. Il ne déclenche pas le professeur
 interne (coût d'API : Claude écrit lui-même ses notes et ses exercices)."""
 
-from app.mcp.base import FeatureMcp, McpAction, McpGraph
-
-_GESTURE = (
-    "Geste de January dans l'interface : jamais d'écriture directe dans son code par ce geste "
-    "(une correction est une proposition qu'elle accepte ou refuse ; Claude écrit un fichier par "
-    "`ide_write_file`, seulement si elle a allumé l'interrupteur)."
-)
-_COST = (
-    "Coût d'API : Claude écrit lui-même ses notes (`ide_add_note`) et ses exercices "
-    "(`ide_create_exercise`) au lieu de déclencher le professeur interne."
-)
-_TERMINAL = "Terminal interactif du bac, réservé à l’interface."
-_NOTEBOOK = "Édition des cellules et exécution interactive réservées à l’interface."
+from app.mcp.base import FeatureMcp, McpAction, McpExclusion, McpGraph
 
 MCP = FeatureMcp(
     feature="ide",
@@ -61,6 +49,7 @@ MCP = FeatureMcp(
             2,
             "ide_start_run",
             "Exécute ou vérifie le code d'une séance dans le bac à sable (sans réseau).",
+            bucket="code_run",
         ),
         McpAction(
             "GET /ide/runs/{run_id}",
@@ -138,6 +127,79 @@ MCP = FeatureMcp(
             "Supprime un fichier du projet : demande à confirmer.",
             untrusted=("exercise_statement",),
         ),
+        McpAction(
+            "POST /ide/notes/{note_id}/accept",
+            3,
+            "ide_accept_note",
+            "Applique la correction proposée dans la note. Demande à confirmer.",
+        ),
+        McpAction(
+            "POST /ide/notes/{note_id}/reject",
+            3,
+            "ide_reject_note",
+            "Refuse la correction proposée dans la note. Demande à confirmer.",
+        ),
+        McpAction(
+            "PUT /ide/sessions/{session_id}/tabs",
+            2,
+            "ide_save_project_tabs",
+            "Mémorise les onglets ouverts et le fichier sélectionné.",
+        ),
+        McpAction(
+            "POST /ide/sessions/{session_id}/terminal",
+            2,
+            "ide_open_terminal",
+            "Ouvre le terminal dans le bac à sable sans réseau.",
+            bucket="code_run",
+        ),
+        McpAction(
+            "GET /ide/terminals/{run_id}",
+            1,
+            "ide_read_terminal",
+            "Lit la sortie du terminal dans le bac à sable.",
+            untrusted=("output",),
+        ),
+        McpAction(
+            "POST /ide/terminals/{run_id}/input",
+            2,
+            "ide_write_terminal_input",
+            "Envoie du texte au terminal du bac à sable sans réseau.",
+            bucket="code_run",
+        ),
+        McpAction(
+            "DELETE /ide/terminals/{run_id}",
+            3,
+            "ide_close_terminal",
+            "Ferme le terminal. Demande à confirmer.",
+            side_effects="external",
+        ),
+        McpAction(
+            "GET /ide/sessions/{session_id}/notebook",
+            1,
+            "ide_read_notebook",
+            "Lit les cellules du notebook de la séance.",
+            untrusted=("cells[].source", "cells[].output"),
+        ),
+        McpAction(
+            "PUT /ide/sessions/{session_id}/notebook",
+            2,
+            "ide_save_notebook",
+            "Enregistre les cellules du notebook si l’écriture MCP est autorisée.",
+        ),
+        McpAction(
+            "POST /ide/sessions/{session_id}/notebook/run",
+            2,
+            "ide_run_notebook_cell",
+            "Exécute une cellule du notebook dans le bac à sable.",
+            bucket="code_run",
+        ),
+        McpAction(
+            "GET /ide/notebook-runs/{run_id}",
+            1,
+            "ide_read_notebook_run",
+            "Lit la sortie de l’exécution d’une cellule du notebook.",
+            untrusted=("output",),
+        ),
     ),
     graphs=(McpGraph("ide_teacher", follow_only=True), McpGraph("ide_exercise", follow_only=True)),
     play_actions=(
@@ -149,23 +211,6 @@ MCP = FeatureMcp(
         ),
     ),
     excluded={
-        "POST /ide/notes/{note_id}/accept": _GESTURE,
-        "POST /ide/notes/{note_id}/reject": _GESTURE,
-        "POST /ide/sessions/{session_id}/teach": _COST,
-        "POST /ide/exercises/generate": _COST,
-        "PUT /ide/sessions/{session_id}/tabs": "Onglets et fichier sélectionné dans l’interface.",
-        "POST /ide/sessions/{session_id}/terminal": _TERMINAL,
-        "GET /ide/terminals/{run_id}": _TERMINAL,
-        "POST /ide/terminals/{run_id}/input": _TERMINAL,
-        "DELETE /ide/terminals/{run_id}": _TERMINAL,
-        "GET /ide/sessions/{session_id}/notebook": _NOTEBOOK,
-        "PUT /ide/sessions/{session_id}/notebook": _NOTEBOOK,
-        "POST /ide/sessions/{session_id}/notebook/run": _NOTEBOOK,
-        "GET /ide/notebook-runs/{run_id}": _NOTEBOOK,
-        "PUT /ide/preferences": (
-            "Préférences de l'IDE (mode du professeur, plafonds de coût, interrupteur d'écriture "
-            "de Claude) : réservées à January dans l'interface, un agent ne règle ni son budget ni "
-            "ses propres droits."
-        ),
+        "PUT /ide/preferences": McpExclusion.IDE_RIGHTS,
     },
 )

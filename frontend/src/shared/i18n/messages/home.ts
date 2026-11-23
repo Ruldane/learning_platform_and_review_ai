@@ -9,8 +9,10 @@ export const home = {
   },
   brief: {
     title: "Ton brief du jour",
+    subtitle: "Retrouve la prochaine leçon, les révisions à faire et les nouveautés à lire aujourd’hui.",
     preparedAt: "Préparé à {time}",
   },
+  readingEmpty: "Aucune nouveauté à lire.",
   block: {
     title: "Ton bloc du jour",
     empty: "Rien de prévu aujourd'hui.",

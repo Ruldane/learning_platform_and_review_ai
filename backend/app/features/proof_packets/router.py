@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Response
 from starlette.requests import HTTPConnection
 
-from app.core.deps import CurrentUserDep, Db, InterfaceUserDep
+from app.core.deps import CurrentUserDep, Db
 from app.core.field_paths import FieldPathsRoute
 from app.features.missions.service import MissionRuntime
 from app.features.proof_packets import service, sources
@@ -70,7 +70,7 @@ async def read_packet(packet_id: UUID, user: CurrentUserDep, db: Db) -> ProofPac
 
 
 @router.get("/{packet_id}/export", response_model=ProofPacketManifest)
-async def export_packet(packet_id: UUID, user: InterfaceUserDep, db: Db) -> Response:
+async def export_packet(packet_id: UUID, user: CurrentUserDep, db: Db) -> Response:
     return Response(
         await service.export(db, user.id, str(packet_id)),
         media_type="application/json",

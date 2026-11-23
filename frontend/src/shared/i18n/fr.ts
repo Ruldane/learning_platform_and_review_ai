@@ -48,6 +48,7 @@ import { skillTransfer } from "./messages/skillTransfer";
 import { mcp } from "./messages/mcp";
 import { mentorReviews } from "./messages/mentorReviews";
 import { memory } from "./messages/memory";
+import { navigation } from "./messages/navigation";
 import { messageReview } from "./messages/messageReview";
 import { mobile } from "./messages/mobile";
 import { onboarding } from "./messages/onboarding";
@@ -83,6 +84,7 @@ import { training } from "./messages/training";
  */
 export const fr = {
   ...appMessages,
+  navigation,
   systemDesign,
   auth,
   brain,

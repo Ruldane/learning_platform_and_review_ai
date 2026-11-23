@@ -3,18 +3,24 @@ qu'elle partirait, son résumé neutre, l'aperçu complet que January lit avant 
 (`preview_fields`) et le port que l'envoyeur utilise pour la ranger. La vie de la demande (état,
 expiration, confirmation, refus) est dans `features/mcp/service/confirmations.py`."""
 
+import asyncio
 import json
+import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any, Literal, Protocol
 
 from app.core.caller import McpIdentity
 from app.mcp.arguments import ToolRequest, clip
+from app.mcp.base import PrecheckInput, Verdict
 from app.mcp.envelope import scrub_text
 from app.mcp.tools import ToolSpec
 
+logger = logging.getLogger(__name__)
+
 CONFIRMATION_TTL = timedelta(hours=24)
 MAX_PENDING_PER_TOKEN = 20
+PRECHECK_TIMEOUT_S = 60.0
 _PREVIEW = 60
 _PREVIEW_FIELDS = 6
 FIELD_PREVIEW_MAX = 500  # caractères montrés par champ
@@ -165,3 +171,23 @@ def summarize(tool: ToolSpec, request: ToolRequest) -> str:
     if parts:
         text += " — " + " ; ".join(parts)
     return text[:1000]
+
+
+async def check_before_confirmation(
+    identity: McpIdentity, tool: ToolSpec, request: ToolRequest
+) -> dict[str, Any] | None:
+    if tool.precheck is None:
+        return None
+    asked = PrecheckInput(
+        user_id=identity.user_id,
+        method=request.method,
+        path=request.path,
+        params=request.params,
+        body=request.body,
+    )
+    try:
+        verdict = await asyncio.wait_for(tool.precheck(asked), PRECHECK_TIMEOUT_S)
+    except Exception as exc:
+        logger.error("MCP : contrôle préalable impossible (%s)", type(exc).__name__)
+        verdict = Verdict(ok=False, reasons=("Le contrôle préalable n'a pas pu se faire.",))
+    return {"ok": verdict.ok, "reasons": list(verdict.reasons), "summary": verdict.summary}

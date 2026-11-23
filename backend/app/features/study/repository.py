@@ -34,10 +34,27 @@ class StudyRepository(UserScopedRepository[StudySession]):
         """La session `open` de l'utilisateur (une au plus, index unique partiel)."""
         stmt = (
             select(StudySession)
-            .where(StudySession.user_id == self.user_id, StudySession.status == "open")
+            .where(
+                StudySession.user_id == self.user_id,
+                StudySession.status == "open",
+                StudySession.independent.is_(False),
+            )
             .execution_options(populate_existing=True)
         )
         return (await self.session.execute(stmt)).scalar_one_or_none()
+
+    async def recent_independent_training(self) -> StudySession | None:
+        return await self.session.scalar(
+            select(StudySession)
+            .where(
+                StudySession.user_id == self.user_id,
+                StudySession.kind == "training",
+                StudySession.status == "open",
+                StudySession.independent.is_(True),
+            )
+            .order_by(StudySession.created_at.desc(), StudySession.id.desc())
+            .limit(1)
+        )
 
     async def close_open(self, study_id: str, **values: Any) -> bool:
         """Transition depuis `open` (fin ou abandon) ; vrai si c'est cet appel qui l'a faite."""
@@ -53,18 +70,19 @@ class StudyRepository(UserScopedRepository[StudySession]):
         result = await self.session.execute(stmt)
         return isinstance(result, CursorResult) and result.rowcount == 1
 
-    async def claim_training(self, study_id: str) -> StudySession | None:
-        """Réserve l'écriture avant de relire le tour actif et de fermer la séance."""
+    async def claim_training(
+        self, study_id: str, *, include_closed: bool = False
+    ) -> StudySession | None:
+        """Réserve la séance avant une modification du contexte ou une transition d'état."""
+        stmt = update(StudySession).where(
+            StudySession.user_id == self.user_id,
+            StudySession.id == study_id,
+            StudySession.kind == "training",
+        )
+        if not include_closed:
+            stmt = stmt.where(StudySession.status == "open")
         return await self.session.scalar(
-            update(StudySession)
-            .where(
-                StudySession.user_id == self.user_id,
-                StudySession.id == study_id,
-                StudySession.kind == "training",
-                StudySession.status == "open",
-            )
-            .values(updated_at=StudySession.updated_at)
-            .returning(StudySession)
+            stmt.values(updated_at=StudySession.updated_at).returning(StudySession)
         )
 
     async def finished(self) -> builtins.list[tuple[datetime, int]]:

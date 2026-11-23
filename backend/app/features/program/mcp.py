@@ -75,6 +75,21 @@ MCP = FeatureMcp(
             "Écriture directe, aucun agent : retouche le titre, les compétences ou les prérequis "
             "d'un module.",
         ),
+        McpAction(
+            "GET /programs/{program_id}/export.ics",
+            1,
+            "program_get_calendar_file",
+            "Lit le calendrier du programme et donne le lien local du fichier.",
+            artifact=True,
+            untrusted=("text",),
+        ),
+        McpAction(
+            "GET /programs/{program_id}/export.pdf",
+            1,
+            "program_get_program_pdf",
+            "Lit les métadonnées du PDF du programme et donne son lien local.",
+            artifact=True,
+        ),
     ),
     graphs=(
         McpGraph(
@@ -83,8 +98,4 @@ MCP = FeatureMcp(
             "choisis (`proposal_ids`).",
         ),
     ),
-    excluded={
-        "GET /programs/{program_id}/export.ics": _FILE,
-        "GET /programs/{program_id}/export.pdf": _FILE,
-    },
 )

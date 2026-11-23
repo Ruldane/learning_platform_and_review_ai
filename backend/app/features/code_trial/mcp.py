@@ -35,9 +35,12 @@ MCP = FeatureMcp(
             side_effects="external",
             launches=GRAPH,
         ),
+        McpAction(
+            "PUT /ide/sessions/{session_id}/code-trials/{trial_id}/verdict",
+            3,
+            "code_trial_judge_code_trial",
+            "Enregistre le verdict personnel sur l’essai. Demande à confirmer.",
+        ),
     ),
-    excluded={
-        f"PUT {_ROOT}/{{trial_id}}/verdict": "Le verdict est un geste personnel dans l’interface."
-    },
     graphs=(McpGraph(GRAPH, follow_only=True),),
 )

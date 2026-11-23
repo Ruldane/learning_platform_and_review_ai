@@ -28,6 +28,19 @@ function fingerprint(text) {
   return { size: Buffer.byteLength(text), sha256: createHash("sha256").update(text).digest("hex") };
 }
 
+test("skips excluded subtrees and file extensions using the configured rules", async (t) => {
+  const { root } = await fixture(t);
+  await mkdir(join(root, "Archives"));
+  await writeFile(join(root, "Archives", "ancienne.md"), "Fichier fictif");
+  await writeFile(join(root, "PJ.TXT"), "Fichier fictif");
+  await writeFile(join(root, "note.md"), "Fichier fictif");
+  const scan = await scanSyncFiles(root, {
+    excluded_directories: ["archives"], excluded_extensions: [".txt"],
+  });
+  assert.deepEqual([...scan.inventory.keys()], ["note.md"]);
+  assert.equal(scan.ignored.excluded, 2);
+});
+
 test("orders permitted documents by POSIX path and reports why others were skipped", async (t) => {
   const { root } = await fixture(t);
   await mkdir(join(root, "Pages"));

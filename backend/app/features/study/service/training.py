@@ -5,7 +5,6 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.runtime.runner import SessionRunner
-from app.core.errors import AppError
 from app.db.models.study import StudySession
 from app.features.conversations.service import (
     TRAINING_SCOPE,
@@ -13,8 +12,10 @@ from app.features.conversations.service import (
     ConversationStarted,
     ConversationThread,
     TurnOptions,
+    checked_lesson_ids,
     ensure_conversation,
     read_conversation,
+    require_chat,
     submit_turn,
 )
 from app.features.study.repository import StudyRepository
@@ -43,6 +44,7 @@ async def training_out(db: AsyncSession, row: StudySession) -> TrainingSessionOu
     conversation = await read_conversation(db, row.user_id, row.id)
     if conversation is None:
         raise study_not_found()
+    thread = await require_chat(db, row.user_id, TRAINING_SCOPE, row.id)
     done = finished_of(row)
     return TrainingSessionOut.model_validate(
         {
@@ -57,13 +59,17 @@ async def training_out(db: AsyncSession, row: StudySession) -> TrainingSessionOu
             "skills": [{"name": name, "level": level} for name, level in done.skills],
             "greeting": GREETING,
             "conversation": conversation,
+            "lesson_ids": thread.lesson_ids,
         }
     )
 
 
 async def open_training(db: AsyncSession, user_id: str) -> TrainingSessionOut | None:
-    row = await StudyRepository(db, user_id).open_one()
-    return await training_out(db, row) if row is not None and row.kind == TRAINING_SCOPE else None
+    repo = StudyRepository(db, user_id)
+    row = await repo.open_one()
+    if row is None or row.kind != TRAINING_SCOPE:
+        row = await repo.recent_independent_training()
+    return await training_out(db, row) if row is not None else None
 
 
 async def _open_or_replace(repo: StudyRepository, now: datetime) -> StudySession | None:
@@ -84,28 +90,42 @@ async def _commit_opening(db: AsyncSession, row: StudySession, link: TrainingLin
     await db.commit()
 
 
+async def _insert_training(
+    repo: StudyRepository, body: TrainingStart, now: datetime, link: TrainingLink | None
+) -> StudySession:
+    db, user_id = repo.session, repo.user_id
+    lesson_ids = await checked_lesson_ids(db, user_id, body.lesson_ids)
+    row = await repo.add(
+        kind=TRAINING_SCOPE,
+        independent=body.new_conversation,
+        mode=body.mode,
+        created_at=now,
+        updated_at=now,
+    )
+    thread = await ensure_conversation(db, user_id, thread_for(row.id))
+    thread.lesson_ids = lesson_ids
+    await _commit_opening(db, row, link)
+    return row
+
+
 async def start_training(
     rt: StudyRuntime, user_id: str, body: TrainingStart, *, link: TrainingLink | None = None
 ) -> tuple[TrainingSessionOut, bool]:
     async with rt.study_lock(user_id):
-        await _settle_kept(rt, user_id)
+        if not body.new_conversation:
+            await _settle_kept(rt, user_id)
         async with rt.session_factory() as db:
             repo = StudyRepository(db, user_id)
             now = rt.now()
+            if body.new_conversation:
+                return await training_out(db, await _insert_training(repo, body, now, link)), True
             existing = await _open_or_replace(repo, now)
             if existing is not None:
                 if link is not None:
                     await _commit_opening(db, existing, link)
                 return await training_out(db, existing), False
             try:
-                row = await repo.add(
-                    kind=TRAINING_SCOPE,
-                    mode=body.mode,
-                    created_at=now,
-                    updated_at=now,
-                )
-                await ensure_conversation(db, user_id, thread_for(row.id))
-                await _commit_opening(db, row, link)
+                row = await _insert_training(repo, body, now, link)
             except IntegrityError:
                 await db.rollback()
                 existing = await _open_or_replace(repo, now)
@@ -130,11 +150,11 @@ async def talk_to_tutor(
     body: ConversationQuestionIn,
 ) -> ConversationStarted:
     await training_row(db, user_id, study_id)
+    await require_chat(db, user_id, TRAINING_SCOPE, study_id)
 
     async def authorize(tx: AsyncSession) -> TurnOptions:
         row = await training_row(tx, user_id, study_id)
-        if row.status != "open":
-            raise AppError("training_closed", "Cette session training est terminée.", 409)
-        return TurnOptions(mode=row.mode)
+        thread = await require_chat(tx, user_id, TRAINING_SCOPE, study_id)
+        return TurnOptions(mode=row.mode, lesson_ids=thread.lesson_ids)
 
     return await submit_turn(runner, db, user_id, thread_for(study_id), body, authorize)

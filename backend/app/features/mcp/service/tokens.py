@@ -1,7 +1,7 @@
 """Les jetons d'accès au MCP (phase 10, P16) : créés, limités à certaines features (lecture seule
 par défaut), expirant après 1, 7, 30 ou 90 jours, révocables. Seul le SHA-256 est gardé ; la valeur
-n'est rendue qu'à la création. Jamais journalisée. La feature `mcp` elle-même, `auth` et `account`
-ne s'ouvrent jamais (niveau 4)."""
+n'est rendue qu'à la création. Jamais journalisée. Les features `mcp` et `auth`
+restent réservées à l'interface (niveau 4)."""
 
 import re
 from datetime import UTC, datetime, timedelta

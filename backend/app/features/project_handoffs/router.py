@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Response
 from starlette.requests import HTTPConnection
 
-from app.core.deps import CurrentUserDep, Db, InterfaceUserDep
+from app.core.deps import CurrentUserDep, Db
 from app.core.field_paths import FieldPathsRoute
 from app.features.project_handoffs import service
 from app.features.project_handoffs.schemas import (
@@ -76,7 +76,7 @@ async def read_handoff(handoff_id: UUID, user: CurrentUserDep, db: Db) -> Projec
     response_class=Response,
     responses={200: {"content": {_EXPORT_MEDIA: {"schema": {"type": "string"}}}}},
 )
-async def export_handoff(handoff_id: UUID, user: InterfaceUserDep, db: Db) -> Response:
+async def export_handoff(handoff_id: UUID, user: CurrentUserDep, db: Db) -> Response:
     guide = await service.read(db, user.id, handoff_id)
     return Response(
         guide.markdown,

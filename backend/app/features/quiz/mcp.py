@@ -61,11 +61,19 @@ MCP = FeatureMcp(
             "quiz_update_question",
             "Écriture directe, aucun agent : retouche une question d'un quiz prêt sans tentative.",
         ),
+        McpAction(
+            "POST /flashcards/{card_id}/review",
+            3,
+            "quiz_rate_flashcard",
+            "Enregistre la note personnelle de la fiche. Demande à confirmer.",
+        ),
+        McpAction(
+            "POST /quizzes/{quiz_id}/attempts",
+            3,
+            "quiz_submit_attempt",
+            "Enregistre les réponses au quiz pour notation. Demande à confirmer.",
+        ),
     ),
-    excluded={
-        "POST /quizzes/{quiz_id}/attempts": _GESTURE,
-        "POST /flashcards/{card_id}/review": _GESTURE,
-    },
     graphs=(
         McpGraph(
             "quiz",

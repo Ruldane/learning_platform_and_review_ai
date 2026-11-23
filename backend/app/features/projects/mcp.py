@@ -1,8 +1,7 @@
 """Déclaration MCP de `projects` : le Portfolio des mini projets preuves.
 
-Le rendu d'un projet (`POST /projects/{id}/submit`) est un geste de January : exclu du MCP, et la
-route refuse tout appelant MCP (10.R). L'entrée au profil maître est de niveau 3, avec un contrôle
-préalable des chiffres."""
+Le rendu d'un projet exige une confirmation dans Tremplin. L'entrée au profil maître exige
+également un contrôle préalable des chiffres."""
 
 from pydantic import ValidationError
 
@@ -101,6 +100,27 @@ MCP = FeatureMcp(
             "Écriture directe, aucun agent : retouche l'énoncé d'un projet qui n'a pas encore "
             "de rendu.",
         ),
+        McpAction(
+            "POST /projects/{project_id}/github-claims",
+            3,
+            "projects_start_github_claim",
+            "Prépare le défi de vérification GitHub. Demande à confirmer.",
+        ),
+        McpAction(
+            "POST /projects/{project_id}/submit",
+            3,
+            "projects_submit_project",
+            "Remet le projet à partir d’un lien ou d’un texte. Demande à confirmer.",
+            encoding="form",
+            launches="project_review",
+        ),
+        McpAction(
+            "GET /projects/{project_id}/screenshots/{number}",
+            1,
+            "projects_get_project_screenshot",
+            "Lit les métadonnées d’une capture et donne son lien local.",
+            artifact=True,
+        ),
     ),
     graphs=(
         McpGraph(
@@ -113,15 +133,4 @@ MCP = FeatureMcp(
             untrusted=("result",),
         ),
     ),
-    excluded={
-        "POST /projects/{project_id}/github-claims": "Défi de profil à réaliser dans l’interface.",
-        "POST /projects/{project_id}/submit": (
-            "Geste de January : son rendu, jamais fait à sa place (il lance l'évaluation et peut "
-            "valider le projet). Claude écrit l'énoncé, retouche les brouillons et suit "
-            "l'évaluation."
-        ),
-        "GET /projects/{project_id}/screenshots/{number}": (
-            "Image d'une capture (binaire, pas du JSON) : visible dans le Portfolio de l'interface."
-        ),
-    },
 )

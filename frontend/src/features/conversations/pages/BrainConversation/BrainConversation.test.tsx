@@ -12,6 +12,9 @@ describe("BrainConversation", () => {
     const question = "Où sont mes notes sur la recherche ?";
     let asked = false;
     server.use(
+      http.get("http://localhost:8000/api/v1/conversations/brain", () => HttpResponse.json([])),
+    );
+    server.use(
       http.get(url, () =>
         HttpResponse.json(
           asked

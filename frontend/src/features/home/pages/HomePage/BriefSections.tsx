@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { t } from "@/shared/i18n/t";
 import { useCaptureRequest } from "@/shared/lib/captureRequest";
@@ -27,7 +28,7 @@ const applicationPath = (applicationId: string) => `/candidatures/${applicationI
  * (bloc, révisions, relances, offres, avancement, ressource, conseil). Sans programme validé
  * (`week` vide), le bloc et l'avancement laissent la place à « Commence par un objectif ».
  */
-export function BriefSections({ brief }: { brief: BriefView }) {
+export function BriefSections({ brief, guide }: { brief: BriefView; guide?: ReactNode }) {
   const navigate = useNavigate();
   const requestCapture = useCaptureRequest((state) => state.request);
   const down = (name: string) => brief.unavailable.includes(name);
@@ -36,6 +37,7 @@ export function BriefSections({ brief }: { brief: BriefView }) {
   return (
     <div className="flex flex-col gap-4">
       <BriefHeader day={brief.day} generatedAt={brief.generatedAt} />
+      {guide}
       <QuickActions
         onStart={() => void navigate(STUDY_SESSION)}
         onReview={() => void navigate(REVIEWS)}
@@ -61,6 +63,7 @@ export function BriefSections({ brief }: { brief: BriefView }) {
         unavailable={down("reviews")}
         onReview={() => void navigate(REVIEWS)}
       />
+      <ReadingBriefLink count={brief.readingUnread} />
       <RemindersCard
         due={brief.reminders.due}
         items={brief.reminders.items}
@@ -68,7 +71,6 @@ export function BriefSections({ brief }: { brief: BriefView }) {
         onOpen={(applicationId) => void navigate(applicationPath(applicationId))}
       />
       <OffersCard items={brief.offers} unavailable={down("offers")} />
-      <ReadingBriefLink count={brief.readingUnread} />
       {noProgram ? null : <WeekCard week={brief.week} unavailable={down("week")} />}
       <ResourceCard resource={brief.resource} />
       <AdviceCard sentences={brief.advice.sentences} status={brief.advice.status} />

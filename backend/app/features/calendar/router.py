@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import RedirectResponse
 from starlette.requests import HTTPConnection
 
-from app.core.deps import CurrentUserDep, Db, InterfaceUserDep
+from app.core.deps import ConfirmedUserDep, CurrentUserDep, Db, InterfaceUserDep
 from app.core.field_paths import FieldPathsRoute
 from app.features.calendar.schemas import (
     CalendarProposalOut,
@@ -30,7 +30,7 @@ PRIVATE = {"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"}
 
 
 @router.get("/connection")
-async def connection(user: InterfaceUserDep, db: Db, rt: CalendarDep) -> CalendarStatus:
+async def connection(user: CurrentUserDep, db: Db, rt: CalendarDep) -> CalendarStatus:
     return await oauth.status(rt, db, user.id)
 
 
@@ -73,7 +73,7 @@ async def callback(request: Request, user: InterfaceUserDep, rt: CalendarDep) ->
 
 
 @router.delete("/connection")
-async def disconnect(user: InterfaceUserDep, rt: CalendarDep) -> CalendarStatus:
+async def disconnect(user: ConfirmedUserDep, rt: CalendarDep) -> CalendarStatus:
     return await oauth.disconnect(rt, user.id)
 
 
@@ -83,7 +83,7 @@ async def propose(user: CurrentUserDep, rt: CalendarDep, body: Selection) -> Cal
 
 
 @router.post("/proposals/{proposal_id}/confirm")
-async def confirm(user: InterfaceUserDep, rt: CalendarDep, proposal_id: str) -> CalendarProposalOut:
+async def confirm(user: ConfirmedUserDep, rt: CalendarDep, proposal_id: str) -> CalendarProposalOut:
     return await proposals.confirm(rt, user.id, proposal_id)
 
 

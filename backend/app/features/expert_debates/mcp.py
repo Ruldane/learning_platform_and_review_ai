@@ -24,10 +24,27 @@ MCP = FeatureMcp(
                 "speeches[].citations[].url",
             ),
         ),
+        McpAction(
+            "POST /expert-debates",
+            2,
+            "expert_debates_start_debate",
+            "Pose une question au débat et lance le parcours.",
+            launches="expert_debate",
+            untrusted=("question",),
+        ),
+        McpAction(
+            "PUT /expert-debates/{debate_id}/judgment",
+            3,
+            "expert_debates_judge_debate",
+            "Enregistre le jugement personnel sur le débat. Demande à confirmer.",
+            untrusted=(
+                "question",
+                "judgment",
+                "speeches[].text",
+                "speeches[].citations[].title",
+                "speeches[].citations[].url",
+            ),
+        ),
     ),
     graphs=(McpGraph(EXPERT_GRAPH, follow_only=True),),
-    excluded={
-        "POST /expert-debates": "Question posée dans l’interface, puis recherche et modèles.",
-        "PUT /expert-debates/{debate_id}/judgment": "Jugement personnel de l’utilisatrice.",
-    },
 )
