@@ -78,6 +78,9 @@ class Settings(BaseSettings):
     # corps d'un appel du serveur MCP, en octets (P10).
     sandbox_spool_dir: Path = Path("/spool")
     mcp_body_limit: int = Field(default=1_000_000, ge=1_000)
+    # Limites du jour du serveur MCP, par jeton (P17, D311) : 0 coupe la limite.
+    mcp_writes_per_day: int = Field(default=100, ge=0)
+    mcp_calls_per_day: int = Field(default=1_000, ge=0)
 
     @field_validator("portfolio_public_origin")
     @classmethod

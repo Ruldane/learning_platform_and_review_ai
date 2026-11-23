@@ -62,6 +62,45 @@ async def test_writes_per_minute_and_per_day() -> None:
     assert "100 écritures par jour" in (await refused(wide, 2, T0 + timedelta(seconds=101))).message
 
 
+async def test_daily_limits_can_be_switched_off() -> None:
+    """D311 : `None` coupe une limite du jour ; celles de la minute restent."""
+    limiter = RateLimiter(
+        Limits(
+            calls_per_minute=10_000,
+            writes_per_minute=10_000,
+            calls_per_day=None,
+            writes_per_day=None,
+        )
+    )
+    for i in range(1_500):
+        await limiter.check(identity(), 2, T0 + timedelta(seconds=i))
+
+    minute = RateLimiter(Limits(writes_per_day=None))
+    for i in range(10):
+        await minute.check(identity(), 2, T0 + timedelta(seconds=i))
+    error = await refused(minute, 2, T0 + timedelta(seconds=11))
+    assert "10 écritures par minute" in error.message
+
+
+def test_daily_limits_from_settings_zero_means_none() -> None:
+    assert Limits.with_daily(writes_per_day=0, calls_per_day=0) == Limits(
+        writes_per_day=None, calls_per_day=None
+    )
+    assert Limits.with_daily(writes_per_day=100, calls_per_day=1_000) == Limits()
+    assert Limits.with_daily(writes_per_day=500, calls_per_day=0).writes_per_day == 500
+
+
+def test_settings_daily_mcp_limits_default_and_off() -> None:
+    from app.config import Settings
+
+    default = Settings(_env_file=None)  # type: ignore[call-arg]
+    assert (default.mcp_writes_per_day, default.mcp_calls_per_day) == (100, 1_000)
+    off = Settings(_env_file=None, mcp_writes_per_day=0, mcp_calls_per_day=0)  # type: ignore[call-arg]
+    assert (off.mcp_writes_per_day, off.mcp_calls_per_day) == (0, 0)
+    with pytest.raises(ValueError):
+        Settings(_env_file=None, mcp_writes_per_day=-1)  # type: ignore[call-arg]
+
+
 async def test_level3_daily_request_cap() -> None:
     limiter = RateLimiter()
     for i in range(20):

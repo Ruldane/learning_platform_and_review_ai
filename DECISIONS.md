@@ -3161,3 +3161,16 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
 - **Raison** : sans `--model`, chaque étape jouée (Scout, Vérificateur) prenait le modèle par
   défaut de Claude Code, le plus cher, et une leçon en lance plusieurs. Ces rôles n'ont pas
   besoin de ce modèle ; la rédaction reste faite par la session principale.
+
+## D311
+
+- **Date** : 2026-11-23
+- **Sujet** : limites du jour du serveur MCP réglables
+- **Décision** : les limites du jour par jeton (100 écritures, 1 000 appels, P17) se règlent par
+  `MCP_WRITES_PER_DAY` et `MCP_CALLS_PER_DAY` ; 0 coupe la limite (`Limits.with_daily`, champ à
+  `None`). Les valeurs par défaut ne changent pas. Les limites de la minute (10 écritures, 60
+  appels), les 20 demandes à confirmer par jour et les 2 exécutions de code par minute restent
+  fixes. `docker-compose.yml` transmet les deux variables depuis `.env` ou le shell.
+- **Raison** : January réécrit ses leçons et ses programmes par le MCP en longues séances ; les
+  100 écritures du jour, partagées avec les clients du relais, coupent le travail en plein milieu.
+  Les limites de la minute suffisent à freiner un client qui boucle.

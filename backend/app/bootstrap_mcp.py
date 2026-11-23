@@ -115,5 +115,9 @@ def compose_mcp(app: FastAPI) -> None:
     """Monte `POST /mcp` (`GET` et `DELETE` répondent 405), construit les outils déclarés par les
     features (`MCP_FEATURES`) et pose la porte."""
     models = {name: spec.input_model for name, spec in GRAPHS.items()}
-    install_adapter(app, MCP_FEATURES, models)
+    settings: Settings = app.state.settings
+    limits = Limits.with_daily(
+        writes_per_day=settings.mcp_writes_per_day, calls_per_day=settings.mcp_calls_per_day
+    )
+    install_adapter(app, MCP_FEATURES, models, limits)
     app.add_route(_MCP_PATH, mcp_endpoint, methods=["POST", "GET", "DELETE"], name="mcp")

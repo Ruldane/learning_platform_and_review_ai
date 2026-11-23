@@ -22,15 +22,22 @@ CODE_RUN_BUCKET = "code_run"
 
 @dataclass(frozen=True)
 class Limits:
-    """Valeurs de départ (P17), réglables en les passant à `RateLimiter`."""
+    """Valeurs de départ (P17), réglables en les passant à `RateLimiter`. Les limites du jour
+    d'appels et d'écritures valent `None` quand elles sont coupées (D311)."""
 
     calls_per_minute: int = 60
     writes_per_minute: int = 10
-    calls_per_day: int = 1_000
-    writes_per_day: int = 100
+    calls_per_day: int | None = 1_000
+    writes_per_day: int | None = 100
     confirmations_per_day: int = 20
     code_runs_per_minute: int = 2
     requests_per_minute: int = 600  # toute requête authentifiée (plafond grossier)
+
+    @classmethod
+    def with_daily(cls, *, writes_per_day: int, calls_per_day: int) -> "Limits":
+        """Les limites de départ avec celles du jour réglées (`MCP_WRITES_PER_DAY`,
+        `MCP_CALLS_PER_DAY`) : 0 coupe la limite."""
+        return cls(writes_per_day=writes_per_day or None, calls_per_day=calls_per_day or None)
 
 
 @dataclass(frozen=True)
@@ -61,15 +68,13 @@ class RateLimiter:
 
     def _rules(self, level: Level, bucket: str | None) -> list[_Rule]:
         lim = self._limits
-        rules = [
-            _Rule("calls", MINUTE, lim.calls_per_minute, "appels"),
-            _Rule("calls", DAY, lim.calls_per_day, "appels"),
-        ]
+        rules = [_Rule("calls", MINUTE, lim.calls_per_minute, "appels")]
+        if lim.calls_per_day is not None:
+            rules.append(_Rule("calls", DAY, lim.calls_per_day, "appels"))
         if level >= 2:
-            rules += [
-                _Rule("writes", MINUTE, lim.writes_per_minute, "écritures"),
-                _Rule("writes", DAY, lim.writes_per_day, "écritures"),
-            ]
+            rules.append(_Rule("writes", MINUTE, lim.writes_per_minute, "écritures"))
+            if lim.writes_per_day is not None:
+                rules.append(_Rule("writes", DAY, lim.writes_per_day, "écritures"))
         if level == 3:
             rules.append(_Rule("confirm", DAY, lim.confirmations_per_day, "demandes à confirmer"))
         if bucket == CODE_RUN_BUCKET:

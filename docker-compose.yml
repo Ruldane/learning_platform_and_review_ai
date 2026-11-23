@@ -40,6 +40,10 @@ services:
       ALLOWED_EMAILS: ${ALLOWED_EMAILS:-}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:${FRONTEND_PORT:-5173}}
       GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:${BACKEND_PORT:-8000}/api/v1/auth/google/callback}
+      # Limites du jour du serveur MCP, par jeton (D311) : 0 coupe la limite. Surchargeables depuis
+      # .env ou le shell, par exemple `MCP_WRITES_PER_DAY=0 docker compose up -d --no-build backend`.
+      MCP_WRITES_PER_DAY: ${MCP_WRITES_PER_DAY:-100}
+      MCP_CALLS_PER_DAY: ${MCP_CALLS_PER_DAY:-1000}
     volumes:
       - app_data:/data
       # Volume d'échange avec le bac à sable (10.A1) : le back y dépose les travaux et en lit la
