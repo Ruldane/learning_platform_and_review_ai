@@ -12470,6 +12470,16 @@ export interface components {
         };
         /** ModulePatch */
         ModulePatch: {
+            /**
+             * Legacy
+             * @description API dépréciées, montrées seulement dans l'encadré « Lire du code ancien ».
+             */
+            legacy?: string[] | null;
+            /**
+             * Official Urls
+             * @description Pages de la documentation officielle.
+             */
+            official_urls?: string[] | null;
             /** Prerequisites */
             prerequisites?: string[] | null;
             /** Skills */
@@ -12479,8 +12489,28 @@ export interface components {
         };
         /** ModuleWrite */
         ModuleWrite: {
+            /**
+             * Introduces
+             * @description Notions nouvelles de ce chapitre.
+             */
+            introduces?: components["schemas"]["NotionWrite"][];
+            /**
+             * Legacy
+             * @description API dépréciées, montrées seulement dans l'encadré « Lire du code ancien ».
+             */
+            legacy?: string[];
+            /**
+             * Official Urls
+             * @description Pages de la documentation officielle.
+             */
+            official_urls?: string[];
             /** Prerequisites */
             prerequisites?: string[];
+            /**
+             * Requires
+             * @description Notions introduites par un chapitre précédent, dont celui-ci a besoin.
+             */
+            requires?: string[];
             /** Skills */
             skills: string[];
             /** Tasks */
@@ -12670,6 +12700,16 @@ export interface components {
             files_version: number;
             /** Path */
             path: string;
+        };
+        /**
+         * NotionWrite
+         * @description Une notion introduite par un chapitre, avec sa définition courte.
+         */
+        NotionWrite: {
+            /** Definition */
+            definition: string;
+            /** Name */
+            name: string;
         };
         /** OAuthLink */
         OAuthLink: {
@@ -17622,6 +17662,16 @@ export interface components {
             deliverable?: string | null;
             /** Objective */
             objective?: string | null;
+            /**
+             * Rationale
+             * @description Pourquoi cette semaine arrive à cette place.
+             */
+            rationale?: string | null;
+            /**
+             * Stage
+             * @description Étape du livre.
+             */
+            stage?: ("fondations" | "pratique" | "avance") | null;
             /** Theme */
             theme?: string | null;
         };
@@ -17651,6 +17701,16 @@ export interface components {
             modules: components["schemas"]["ModuleWrite"][];
             /** Objective */
             objective: string;
+            /**
+             * Rationale
+             * @description Pourquoi cette semaine arrive à cette place.
+             */
+            rationale?: string | null;
+            /**
+             * Stage
+             * @description Étape du livre : les étapes ne reculent jamais.
+             */
+            stage?: ("fondations" | "pratique" | "avance") | null;
             /** Theme */
             theme: string;
         };

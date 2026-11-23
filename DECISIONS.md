@@ -3104,3 +3104,17 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
   vérifie que la borne contient toujours toutes les features déclarées.
 - **Raison** : après la réorganisation, 75 features exposent des outils ; « Tout cocher »
   dépassait l'ancienne borne de 40 et la création répondait 422.
+
+## D307
+
+- **Date** : 2026-11-23
+- **Sujet** : Programmes existants remis « de zéro à expert » sans les réécrire.
+- **Décision** : l'écriture directe d'un programme (`POST /programs/direct`) et les retouches de
+  semaine et de module (`PATCH /weeks/{id}`, `PATCH /modules/{id}`) acceptent les champs du livre :
+  `stage` et `rationale` pour la semaine, `official_urls` et `legacy` pour le module, et, à
+  l'écriture directe, `requires` et `introduces`. Une notion requise avant d'être introduite rend
+  422 `plan_invalid`, sans la nommer (D303). Les schémas d'écriture directe passent dans
+  `features/program/write_schemas.py`, réexportés par `schemas.py`.
+- **Raison** : January veut garder ses quatre programmes et leurs leçons, mis à jour sur place.
+  Claude (par le MCP) joue le Stratège et le Rédacteur ; il lui faut les mêmes champs que le
+  Stratège pour appliquer le plan sans recréer de programme.

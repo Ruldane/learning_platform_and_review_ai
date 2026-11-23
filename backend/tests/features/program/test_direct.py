@@ -156,3 +156,22 @@ async def test_week_and_module_writes_are_isolated_between_users(
     act_as(app, drafted.user_id)
     program = await view(client, drafted.program_id)
     assert len(program["weeks"]) == 2 and program["weeks"][0]["theme"] == "Bases"
+
+
+async def test_patch_week_and_module_carry_the_book_fields(
+    client: httpx.AsyncClient, drafted: Seed
+) -> None:
+    """Un programme existant se remet « de zéro à expert » sans être réécrit : étape et raison de
+    la semaine, pages officielles et encadré « code ancien » du module."""
+    week = {"stage": "fondations", "rationale": "Le socle de tout le reste."}
+    r = await client.patch(f"{API}/weeks/{drafted.weeks[0]}", json=week)
+    assert r.status_code == 200, r.text
+    assert (r.json()["stage"], r.json()["rationale"]) == ("fondations", week["rationale"])
+
+    url = "https://numpy.org/doc/stable/user/absolute_beginners.html"
+    module = {"official_urls": [url], "legacy": ["numpy.matrix"]}
+    r = await client.patch(f"{API}/modules/{drafted.modules[0]}", json=module)
+    assert r.status_code == 200, r.text
+    assert (r.json()["official_urls"], r.json()["legacy"]) == ([url], ["numpy.matrix"])
+    r = await client.patch(f"{API}/weeks/{drafted.weeks[0]}", json={"stage": "expert"})
+    assert r.status_code == 422, r.text

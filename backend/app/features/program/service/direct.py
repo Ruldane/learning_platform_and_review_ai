@@ -12,6 +12,7 @@ du verrou des programmes) : un objectif n'a qu'un programme (409 `program_exists
 import logging
 from datetime import date
 
+from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.tools.plan_schema import PlanDraft
@@ -78,7 +79,10 @@ def _draft_of(body: ProgramWrite) -> PlanDraft:
         data["skills"] = [
             {"name": name, "domain": DEFAULT_DOMAIN} for name in list(names)[:MAX_SKILLS]
         ]
-    return PlanDraft.model_validate(data)
+    try:
+        return PlanDraft.model_validate(data)
+    except ValidationError as exc:  # l'ordre des notions : messages sans la valeur reçue (D303)
+        raise plan_invalid([str(error["msg"]) for error in exc.errors()]) from None
 
 
 async def write_program(rt: ProgramRuntime, user_id: str, body: ProgramWrite) -> ProgramOut:

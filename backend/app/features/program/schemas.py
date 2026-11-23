@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field, StringConstraints, model_validator
 
 from app.db.models.lessons import LessonStatus
 from app.db.models.program import ProgramStatus, TaskStatus, TaskType
+from app.features.program.write_schemas import ProgramWrite, Stage, TaskWrite, Url, WeekWrite
 
 # Les types littéraux sont réexportés : un router n'importe pas `app.db` (contrat 1b).
 __all__ = [
@@ -209,10 +210,14 @@ class WeekPatch(BaseModel):
     theme: _Theme | None = None
     objective: _Text | None = None
     deliverable: _Text | None = None
+    stage: Stage | None = Field(default=None, description="Étape du livre.")
+    rationale: _Text | None = Field(
+        default=None, description="Pourquoi cette semaine arrive à cette place."
+    )
 
     @model_validator(mode="after")
     def _something(self) -> "WeekPatch":
-        if self.theme is None and self.objective is None and self.deliverable is None:
+        if not self.model_dump(exclude_none=True):
             raise ValueError("rien à changer")
         return self
 
@@ -231,62 +236,17 @@ class ModulePatch(BaseModel):
     title: _Title | None = None
     skills: list[_Skill] | None = Field(default=None, min_length=1, max_length=8)
     prerequisites: list[_Skill] | None = Field(default=None, max_length=8)
+    official_urls: list[Url] | None = Field(
+        default=None, max_length=3, description="Pages de la documentation officielle."
+    )
+    legacy: list[_Skill] | None = Field(
+        default=None,
+        max_length=5,
+        description="API dépréciées, montrées seulement dans l'encadré « Lire du code ancien ».",
+    )
 
     @model_validator(mode="after")
     def _something(self) -> "ModulePatch":
-        if self.title is None and self.skills is None and self.prerequisites is None:
+        if not self.model_dump(exclude_none=True):
             raise ValueError("rien à changer")
         return self
-
-
-class TaskWrite(BaseModel):
-    """Une tâche d'un programme écrit en direct : les champs et les bornes de `TaskDraft`. Son jour
-    est choisi par l'application, comme pour le Stratège."""
-
-    title: _Title
-    type: TaskType
-    minutes: _Minutes
-    done_criterion: _Criterion
-
-
-class ModuleWrite(BaseModel):
-    title: _Title
-    skills: list[_Skill] = Field(min_length=1, max_length=8)
-    prerequisites: list[_Skill] = Field(default_factory=list, max_length=8)
-    tasks: list[TaskWrite] = Field(min_length=1, max_length=12)
-
-
-class WeekWrite(BaseModel):
-    theme: _Theme
-    objective: _Text
-    deliverable: _Text
-    modules: list[ModuleWrite] = Field(min_length=1, max_length=4)
-
-
-class SkillWrite(BaseModel):
-    """Une compétence du référentiel, avec son domaine (facultatif : celles des modules sont
-    créées sans domaine à la validation)."""
-
-    name: _Skill
-    domain: _Skill
-    synonyms: list[_Skill] = Field(default_factory=list, max_length=5)
-
-
-class EdgeWrite(BaseModel):
-    """`before` précède `after` (noms de compétences)."""
-
-    before: _Skill
-    after: _Skill
-
-
-class ProgramWrite(BaseModel):
-    """Un programme complet écrit en un appel, sans agent (semaines, modules, tâches : les champs
-    et les bornes du Stratège, 1 à 52 semaines). L'application range les tâches sur le calendrier
-    selon les règles du Stratège ; le programme entre en brouillon, « à valider »."""
-
-    goal_id: _Id
-    title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=200)]
-    start_date: date | None = None
-    weeks: list[WeekWrite] = Field(min_length=1, max_length=52)
-    skills: list[SkillWrite] = Field(default_factory=list, max_length=60)
-    edges: list[EdgeWrite] = Field(default_factory=list, max_length=120)

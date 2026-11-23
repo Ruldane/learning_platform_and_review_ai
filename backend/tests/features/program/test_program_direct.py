@@ -261,3 +261,38 @@ async def test_direct_program_breaking_the_rules_is_422_with_the_problems(
     ]
     assert (await client.get(f"{API}/programs")).json() == []
     await assert_no_agent(app)
+
+
+async def test_direct_program_keeps_the_book_fields(client: httpx.AsyncClient) -> None:
+    """Écrit en direct, un programme garde l'étape et la raison de chaque semaine, les pages
+    officielles et l'encadré « code ancien » de chaque chapitre, et l'ordre de ses notions."""
+    body = program_body(await new_goal(client))
+    first, second = body["weeks"]
+    first |= {"stage": "fondations", "rationale": "Le socle de tout le reste."}
+    second |= {"stage": "pratique", "rationale": "On applique la régression aux arbres."}
+    first["modules"][0] |= {
+        "official_urls": ["https://scikit-learn.org/stable/modules/linear_model.html"],
+        "legacy": ["sklearn.cross_validation"],
+        "introduces": [{"name": "régression", "definition": "Prédire une valeur continue."}],
+    }
+    second["modules"][0] |= {"requires": ["régression"]}
+    r = await client.post(f"{API}/programs/direct", json=body)
+    assert r.status_code == 201, r.text
+    weeks = r.json()["weeks"]
+    assert [(w["stage"], w["rationale"]) for w in weeks] == [
+        ("fondations", "Le socle de tout le reste."),
+        ("pratique", "On applique la régression aux arbres."),
+    ]
+    module = weeks[0]["modules"][0]
+    assert module["official_urls"] == ["https://scikit-learn.org/stable/modules/linear_model.html"]
+    assert module["legacy"] == ["sklearn.cross_validation"]
+
+
+async def test_direct_program_refuses_a_notion_used_before_it_is_introduced(
+    client: httpx.AsyncClient,
+) -> None:
+    body = program_body(await new_goal(client))
+    body["weeks"][0]["modules"][0]["requires"] = ["régression"]
+    r = await client.post(f"{API}/programs/direct", json=body)
+    assert r.status_code == 422, r.text
+    assert "régression" not in r.text  # une 422 ne renvoie jamais l'entrée reçue

@@ -147,7 +147,7 @@ async def patch_module(
         module: Module | None = await ModuleRepository(db, user_id).get(module_id)
         if module is None:
             raise module_not_found()
-        for name, value in patch.model_dump(exclude_none=True).items():
+        for name, value in patch.model_dump(mode="json", exclude_none=True).items():
             setattr(module, name, list(value) if isinstance(value, list) else value)
         await db.commit()
         out = await _module_view(db, user_id, program_id, module_id)

@@ -15247,6 +15247,43 @@
       },
       "ModulePatch": {
         "properties": {
+          "legacy": {
+            "anyOf": [
+              {
+                "items": {
+                  "maxLength": 120,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                "maxItems": 5,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "API dépréciées, montrées seulement dans l'encadré « Lire du code ancien ».",
+            "title": "Legacy"
+          },
+          "official_urls": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uri",
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "maxItems": 3,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pages de la documentation officielle.",
+            "title": "Official Urls"
+          },
           "prerequisites": {
             "anyOf": [
               {
@@ -15301,6 +15338,38 @@
       },
       "ModuleWrite": {
         "properties": {
+          "introduces": {
+            "description": "Notions nouvelles de ce chapitre.",
+            "items": {
+              "$ref": "#/components/schemas/NotionWrite"
+            },
+            "maxItems": 10,
+            "title": "Introduces",
+            "type": "array"
+          },
+          "legacy": {
+            "description": "API dépréciées, montrées seulement dans l'encadré « Lire du code ancien ».",
+            "items": {
+              "maxLength": 120,
+              "minLength": 2,
+              "type": "string"
+            },
+            "maxItems": 5,
+            "title": "Legacy",
+            "type": "array"
+          },
+          "official_urls": {
+            "description": "Pages de la documentation officielle.",
+            "items": {
+              "format": "uri",
+              "maxLength": 500,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 3,
+            "title": "Official Urls",
+            "type": "array"
+          },
           "prerequisites": {
             "items": {
               "maxLength": 120,
@@ -15309,6 +15378,17 @@
             },
             "maxItems": 8,
             "title": "Prerequisites",
+            "type": "array"
+          },
+          "requires": {
+            "description": "Notions introduites par un chapitre précédent, dont celui-ci a besoin.",
+            "items": {
+              "maxLength": 120,
+              "minLength": 2,
+              "type": "string"
+            },
+            "maxItems": 10,
+            "title": "Requires",
             "type": "array"
           },
           "skills": {
@@ -15894,6 +15974,29 @@
           "cells"
         ],
         "title": "NotebookView",
+        "type": "object"
+      },
+      "NotionWrite": {
+        "description": "Une notion introduite par un chapitre, avec sa définition courte.",
+        "properties": {
+          "definition": {
+            "maxLength": 300,
+            "minLength": 3,
+            "title": "Definition",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "definition"
+        ],
+        "title": "NotionWrite",
         "type": "object"
       },
       "OAuthLink": {
@@ -29529,6 +29632,37 @@
             ],
             "title": "Objective"
           },
+          "rationale": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "minLength": 3,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pourquoi cette semaine arrive à cette place.",
+            "title": "Rationale"
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "enum": [
+                  "fondations",
+                  "pratique",
+                  "avance"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Étape du livre.",
+            "title": "Stage"
+          },
           "theme": {
             "anyOf": [
               {
@@ -29607,6 +29741,37 @@
             "minLength": 3,
             "title": "Objective",
             "type": "string"
+          },
+          "rationale": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "minLength": 3,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pourquoi cette semaine arrive à cette place.",
+            "title": "Rationale"
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "enum": [
+                  "fondations",
+                  "pratique",
+                  "avance"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Étape du livre : les étapes ne reculent jamais.",
+            "title": "Stage"
           },
           "theme": {
             "maxLength": 120,
