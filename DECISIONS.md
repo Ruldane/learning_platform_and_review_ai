@@ -3095,3 +3095,12 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
   « Lire du code ancien »). Ces champs restent facultatifs pour l'écriture directe.
 - **Raison** : le pilote du 22/11 a vu deux révisions faire baisser les notes et dépasser
   2 500 mots, faute de source officielle.
+
+## D306
+
+- **Date** : 2026-11-23
+- **Sujet** : Nombre de features d'un jeton MCP.
+- **Décision** : un jeton peut ouvrir jusqu'à 120 features (`MAX_TOKEN_FEATURES`). Un test
+  vérifie que la borne contient toujours toutes les features déclarées.
+- **Raison** : après la réorganisation, 75 features exposent des outils ; « Tout cocher »
+  dépassait l'ancienne borne de 40 et la création répondait 422.

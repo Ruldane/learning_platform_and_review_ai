@@ -13121,7 +13121,7 @@
             "items": {
               "type": "string"
             },
-            "maxItems": 40,
+            "maxItems": 120,
             "minItems": 1,
             "title": "Features",
             "type": "array"

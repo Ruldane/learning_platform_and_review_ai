@@ -64,12 +64,16 @@ class McpActionOut(BaseModel):
     untrusted: list[str]
 
 
+# « Tout cocher » ouvre toutes les features (75 au 23/11) ; marge pour les suivantes (D306).
+MAX_TOKEN_FEATURES = 120
+
+
 class McpTokenCreateIn(BaseModel):
     """Crée un jeton : limité à certaines features, lecture seule par défaut, 30 jours par
     défaut (1, 7, 30 ou 90)."""
 
     label: str = Field(min_length=1, max_length=LABEL_MAX)
-    features: list[str] = Field(min_length=1, max_length=40)
+    features: list[str] = Field(min_length=1, max_length=MAX_TOKEN_FEATURES)
     mode: McpMode = "read"
     expires_in_days: ExpiryDays = 30
 
