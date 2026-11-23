@@ -11927,6 +11927,14 @@
             "description": "Motif du dernier échec de vérification d'une écriture directe.",
             "title": "Verification Failure Reason"
           },
+          "verification_feedback": {
+            "description": "Remarques du dernier contrôle refusé d'une écriture directe : notes motivées sous le minimum et affirmations non sourcées (D308). Vide sinon.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Verification Feedback",
+            "type": "array"
+          },
           "verification_session_id": {
             "anyOf": [
               {

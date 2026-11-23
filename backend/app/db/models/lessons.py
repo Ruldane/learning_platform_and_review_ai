@@ -1,6 +1,6 @@
 from typing import Any, Literal
 
-from sqlalchemy import ForeignKey, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import JSON, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, UserScopedMixin
@@ -44,6 +44,8 @@ class Lesson(UserScopedMixin, Base):
         String(36), default=None, info={"undo_pending_session": True}
     )
     verification_failure_reason: Mapped[str | None] = mapped_column(String(300), default=None)
+    # Remarques du dernier contrôle refusé (notes motivées, affirmations non sourcées) : D308.
+    verification_feedback: Mapped[list[str] | None] = mapped_column(JSON, default=None)
     verification_draft: Mapped[dict[str, Any] | None] = mapped_column(default=None)
 
 

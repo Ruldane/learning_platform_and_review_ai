@@ -11143,6 +11143,11 @@ export interface components {
              */
             verification_failure_reason?: string | null;
             /**
+             * Verification Feedback
+             * @description Remarques du dernier contrôle refusé d'une écriture directe : notes motivées sous le minimum et affirmations non sourcées (D308). Vide sinon.
+             */
+            verification_feedback?: string[];
+            /**
              * Verification Session Id
              * @description Session de vérification d'une écriture directe en cours.
              */

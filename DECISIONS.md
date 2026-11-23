@@ -3118,3 +3118,20 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
 - **Raison** : January veut garder ses quatre programmes et leurs leçons, mis à jour sur place.
   Claude (par le MCP) joue le Stratège et le Rédacteur ; il lui faut les mêmes champs que le
   Stratège pour appliquer le plan sans recréer de programme.
+
+## D308
+
+- **Date** : 2026-11-23
+- **Sujet** : Remarques du Vérificateur sur une soumission de leçon refusée.
+- **Décision** : une écriture directe refusée (`POST /modules/{id}/lesson`, `PATCH /lessons/{id}`)
+  garde, en plus du motif court par catégorie de D229, les remarques du dernier contrôle de la
+  meilleure version (D305) : problèmes de contrôle, dont les notes sous 75 avec leur raison, puis
+  affirmations non sourcées (30 au plus, 600 caractères chacune). Elles sont rangées dans
+  `lessons.verification_feedback` (migration 0075) et rendues par `GET /lessons/{id}`
+  (`LessonOut.verification_feedback`, donc `lessons_get_lesson` pour le MCP). Une nouvelle
+  soumission ou une publication les efface. Les messages de la session et les journaux restent
+  sans détail, comme avant.
+- **Raison** : avec les seules notes, l'autrice d'une soumission ne sait pas quoi corriger. Deux
+  essais de la leçon de la semaine 1 du programme LangChain ont échoué de peu (68 et 72 sur 100),
+  à environ 0,40 $ d'API chacun. Les remarques ne sont lues que par la propriétaire de la leçon,
+  qui a écrit le texte soumis.

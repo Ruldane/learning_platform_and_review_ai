@@ -17,6 +17,8 @@ from app.agents.tools.lesson_port import MAX_SEED_URLS, LessonReport, ResourcePi
 
 MAX_QUERY_CHARS = 300
 MAX_REASON_CHARS = 300
+MAX_FEEDBACK = 30  # problèmes de contrôle (dont 5 notes) et 20 affirmations au plus
+MAX_FEEDBACK_CHARS = 600
 PUBLISH_TIMEOUT_S = 300  # le port range la leçon, copie des PDF et rend le PDF de la leçon
 NO_SOURCE = "Aucune source fiable (note de 60 ou plus) n'a été trouvée pour ce module."
 logger = logging.getLogger(__name__)
@@ -139,18 +141,27 @@ def _remaining_checks(state: LessonFactoryState) -> list[str]:
     return items or ["contrôles du chapitre"]
 
 
+def feedback_of(state: LessonFactoryState) -> list[str]:
+    """Remarques du dernier contrôle d'une soumission (D308) : problèmes (dont les notes
+    motivées), puis affirmations non sourcées, bornées en nombre et en longueur."""
+    remarks = [*state.get("problems", []), *state.get("unsupported", [])]
+    return [remark[:MAX_FEEDBACK_CHARS] for remark in remarks[:MAX_FEEDBACK]]
+
+
 def make_fail_lesson(deps: GraphDeps) -> Node:
     @node_timeout()
     async def fail_lesson(state: LessonFactoryState) -> LessonFactoryState:
         """Leçon en échec, avec sa raison (idempotent) : la chaîne continue quand même."""
         brief = brief_of(state)
         reason = _reason(state)
+        verification = state.get("verification", False)
         await deps.ports.lessons.fail(
             deps.user_id,
             deps.session_id,
             brief.module_id,
             reason,
-            verification=state.get("verification", False),
+            verification=verification,
+            feedback=feedback_of(state) if verification else (),
         )
         logger.info("Leçon en échec : session %s, module %s", deps.session_id, brief.module_id)
         emit(

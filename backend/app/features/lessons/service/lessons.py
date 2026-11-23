@@ -130,6 +130,7 @@ async def get_lesson(db: AsyncSession, user_id: str, lesson_id: str) -> LessonOu
             "program_id": lesson.program_id,
             "markdown": lesson.markdown,
             "resources": [to_out(row) for row in resources],
+            "verification_feedback": lesson.verification_feedback or [],
         }
     )
 

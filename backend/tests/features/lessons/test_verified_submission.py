@@ -199,9 +199,20 @@ async def test_refusal_keeps_the_published_version_and_exposes_a_reason(
     assert "2 révision(s)" in reason and "Exemple travaillé (60/100)" in reason
     # La dernière révision casse la structure : on revient à la meilleure version (D305).
     assert "Structure du chapitre" not in reason and "SECRET-DU-TEXTE" not in reason
+    # Les remarques du Vérificateur sur la meilleure version, pour réviser à coup sûr (D308).
+    feedback = denied.pop("verification_feedback")
+    assert any("Un exemple trop bref." in item for item in feedback), feedback
+    assert "SECRET-DU-TEXTE" not in json.dumps(feedback)
     before.pop("verification_failure_reason")
+    assert before.pop("verification_feedback") == []
     assert denied == before
     assert await lesson_memory(app) == []
+
+    # Une nouvelle soumission efface les remarques de la précédente.
+    again = await client.patch(path, json={"title": TITLE, "markdown": DRAFT})
+    assert again.status_code == 202, again.text
+    assert again.json()["verification_feedback"] == []
+    await wait_session(client, again.json()["verification_session_id"])
 
 
 async def test_restart_recovers_the_draft_committed_with_its_session(

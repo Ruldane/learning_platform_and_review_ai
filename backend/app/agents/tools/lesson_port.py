@@ -114,8 +114,10 @@ class LessonStore(Protocol):
         reason: str,
         *,
         verification: bool = False,
+        feedback: Sequence[str] = (),
     ) -> None:
-        """Marque la leçon du module en échec, avec une raison lisible ; idempotent."""
+        """Marque la leçon du module en échec, avec une raison lisible ; idempotent. Pour une
+        soumission (`verification`), `feedback` garde les remarques détaillées du contrôle."""
         ...
 
     async def next_module(
@@ -161,6 +163,7 @@ class _NoLessons:
         reason: str,
         *,
         verification: bool = False,
+        feedback: Sequence[str] = (),
     ) -> None:
         raise lessons_unavailable()
 

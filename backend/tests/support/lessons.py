@@ -202,6 +202,7 @@ class FakeLessonStore:
         reason: str,
         *,
         verification: bool = False,
+        feedback: Sequence[str] = (),
     ) -> None:
         await self.brief(user_id, module_id)
         self.fail_calls += 1

@@ -145,7 +145,7 @@ def _reserve(
         lesson.verification_draft = (
             {**draft, "mcp_call_id": recorder.call_id} if recorder else draft
         )
-        lesson.verification_failure_reason = None
+        lesson.verification_failure_reason, lesson.verification_feedback = None, None
         if recorder is not None:
             await recorder.persist_in(db)
 

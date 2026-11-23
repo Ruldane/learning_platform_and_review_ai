@@ -86,6 +86,7 @@ async def save_submission(
         lesson.status, lesson.report, lesson.failure_reason = "ready", asdict(report), None
         lesson.session_id, lesson.pdf_key = sid, pdf_key
         lesson.verification_session_id, lesson.verification_draft = None, None
+        lesson.verification_feedback = None
         if recorder is not None:
             await recorder.extend_in(db, keep_latest=frozenset({"pdf_key"}))
 
@@ -154,7 +155,12 @@ async def prepare_pdf(
 
 
 async def fail_submission(
-    db: AsyncSession, user_id: str, session_id: str, module_id: str, reason: str
+    db: AsyncSession,
+    user_id: str,
+    session_id: str,
+    module_id: str,
+    reason: str,
+    feedback: Sequence[str] = (),
 ) -> None:
     repo = LessonRepository(db, user_id)
     lesson = await repo.claim_verification(module_id, session_id)
@@ -170,5 +176,6 @@ async def fail_submission(
         raise verification_revoked()
     lesson.verification_session_id, lesson.verification_draft = None, None
     lesson.verification_failure_reason = reason
+    lesson.verification_feedback = list(feedback)
     if lesson.status != "ready":
         lesson.status, lesson.failure_reason = "failed", reason

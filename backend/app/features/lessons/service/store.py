@@ -255,13 +255,14 @@ class AgentLessonStore:
         reason: str,
         *,
         verification: bool = False,
+        feedback: Sequence[str] = (),
     ) -> None:
         async with self._rt.session_factory() as db:
             program_id = await program_of_module(db, user_id, module_id)
         async with self._rt.lessons_lock(user_id, program_id), self._rt.session_factory() as db:
             if verification:
                 await fail_submission(
-                    db, user_id, session_id, module_id, reason.strip()[:MAX_FAILURE]
+                    db, user_id, session_id, module_id, reason.strip()[:MAX_FAILURE], feedback
                 )
                 await db.commit()
                 return

@@ -88,6 +88,11 @@ class LessonOut(LessonSummaryOut):
     markdown: str
     failure_reason: str | None
     resources: list[ResourceOut]
+    verification_feedback: list[str] = Field(
+        default_factory=list,
+        description="Remarques du dernier contrôle refusé d'une écriture directe : notes "
+        "motivées sous le minimum et affirmations non sourcées (D308). Vide sinon.",
+    )
 
 
 class ResourcePatch(BaseModel):
