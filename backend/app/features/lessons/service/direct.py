@@ -27,6 +27,7 @@ from app.features.lessons.service.resources import attach_resources
 from app.features.lessons.service.runtime import LessonsRuntime
 from app.features.lessons.service.status import GRAPH, SUBJECT, open_lesson_sessions
 from app.features.lessons.service.versions import RevisionGuard
+from app.features.program.service.module_kinds import has_lesson
 from app.features.program.service.programs import load, program_of_module
 from app.mcp.recorder import ACTIVE
 
@@ -49,6 +50,14 @@ def lesson_not_ready() -> AppError:
 
 def module_skipped() -> AppError:
     return AppError("module_skipped", "Ce module est sauté : il n'a pas de leçon.", 409)
+
+
+def module_without_lesson() -> AppError:
+    return AppError(
+        "module_without_lesson",
+        "Ce module valide des acquis par un quiz : il n'a pas de leçon.",
+        409,
+    )
 
 
 def _draft(
@@ -176,6 +185,8 @@ async def write_lesson(
             module = next(m for m in loaded.modules if m.id == module_id)
             if module.skipped:
                 raise module_skipped()
+            if not has_lesson(module):
+                raise module_without_lesson()
             lesson = await LessonRepository(db, user_id).by_module(module_id)
             if lesson is not None and lesson.status == "ready":
                 raise lesson_exists()

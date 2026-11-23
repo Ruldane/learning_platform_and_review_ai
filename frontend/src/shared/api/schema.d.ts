@@ -26372,7 +26372,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `lesson_exists`, `lesson_generating` ou `module_skipped` */
+            /** @description `lesson_exists`, `lesson_generating`, `module_skipped` ou `module_without_lesson` */
             409: {
                 headers: {
                     [name: string]: unknown;

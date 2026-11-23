@@ -3135,3 +3135,18 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
   essais de la leçon de la semaine 1 du programme LangChain ont échoué de peu (68 et 72 sur 100),
   à environ 0,40 $ d'API chacun. Les remarques ne sont lues que par la propriétaire de la leçon,
   qui a écrit le texte soumis.
+
+## D309
+
+- **Date** : 2026-11-23
+- **Sujet** : pas de leçon pour un module « Valider mes acquis »
+- **Décision** : un module de validation (D220, `kind = "validation"`) ne reçoit jamais de leçon.
+  La production n'en crée pas et ne lance rien pour lui (`has_lesson` dans
+  `program/service/module_kinds.py`, qui écarte aussi les modules sautés). Une écriture directe
+  (`POST /modules/{id}/lesson`, `lessons_write_lesson`) répond 409 `module_without_lesson`. La
+  migration 0076 retire les leçons déjà écrites pour ces modules, avec leurs ressources, chasses,
+  propositions de mise à jour et variantes. Une leçon déjà citée par une séance d'étude ou un
+  épisode de podcast est gardée. Le module et son quiz restent.
+- **Raison** : D220 prévoyait un module sans leçon, mais la production ne regardait que
+  `skipped`. Elle a donc écrit une leçon « Valider mes acquis : Anglais courant » en semaine 1
+  du programme LangChain, hors sujet dans un parcours qui va des bases à l'expertise.

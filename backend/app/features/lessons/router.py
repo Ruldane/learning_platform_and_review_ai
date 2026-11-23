@@ -74,7 +74,10 @@ async def get_lesson(lesson_id: str, current: CurrentUserDep, db: Db) -> LessonO
     status_code=status.HTTP_202_ACCEPTED,
     responses={
         404: {"description": "`module_not_found`"},
-        409: {"description": "`lesson_exists`, `lesson_generating` ou `module_skipped`"},
+        409: {
+            "description": "`lesson_exists`, `lesson_generating`, `module_skipped`"
+            " ou `module_without_lesson`"
+        },
     },
 )
 async def write_lesson(

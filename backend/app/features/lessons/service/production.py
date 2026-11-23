@@ -28,6 +28,7 @@ from app.db.models.lessons import MAX_LESSON_ATTEMPTS, Lesson
 from app.features.lessons.repository import LessonRepository
 from app.features.lessons.service.runtime import Launcher
 from app.features.lessons.service.status import GRAPH, INTERRUPTED, SUBJECT
+from app.features.program.service.module_kinds import has_lesson
 from app.features.program.service.programs import Loaded, list_validated_programs, load
 from app.features.sessions.service import list_open_sessions, session_facts
 
@@ -67,7 +68,7 @@ def week_due(rank: int, start: date, today: date) -> bool:
 def _missing_lessons(db: AsyncSession, user_id: str, loaded: Loaded, have: set[str]) -> int:
     """Une leçon `pending` pour chaque module planifié qui n'en a pas (liste des leçons) ;
     rend le nombre de leçons ajoutées (zéro hors de la première passe après la validation)."""
-    missing = [m for m in loaded.modules if not m.skipped and m.id not in have]
+    missing = [m for m in loaded.modules if has_lesson(m) and m.id not in have]
     for module in missing:
         db.add(
             Lesson(
@@ -102,7 +103,7 @@ def _first_due(loaded: Loaded, lessons: dict[str, Lesson], today: date) -> Lesso
     for index, module in enumerate(loaded.modules):
         week = weeks.get(module.week_id)
         lesson = lessons.get(module.id)
-        if module.skipped or week is None or lesson is None:
+        if not has_lesson(module) or week is None or lesson is None:
             continue
         if lesson.status not in ("pending", "failed") or lesson.attempts >= MAX_ATTEMPTS:
             continue

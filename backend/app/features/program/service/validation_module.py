@@ -10,13 +10,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.program import Week
 from app.features.program.repository import ModuleRepository
+from app.features.program.service.module_kinds import VALIDATION_KIND
 from app.features.program.service.programs import load
 from app.features.program.service.runtime import ProgramRuntime
 from app.features.program.service.structure import MAX_MODULES_PER_WEEK, week_full
 
 logger = logging.getLogger(__name__)
 
-VALIDATION_KIND = "validation"
+__all__ = ["VALIDATION_BRIEF", "VALIDATION_KIND", "add_validation_module", "is_validation_module"]
+
 _TITLE = "Valider mes acquis : "
 
 
