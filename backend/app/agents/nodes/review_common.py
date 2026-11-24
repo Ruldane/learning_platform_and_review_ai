@@ -31,7 +31,7 @@ MAX_POSTING_CHARS = 30_000  # comme l'Analyste
 MAX_UPDATE_CHARS = 500  # résumé d'une mise à jour ATS rendu au modèle
 PREFIX = {"ats_reader": "a", "recruiter": "r"}
 AGENT_OF = {prefix: agent for agent, prefix in PREFIX.items()}
-LABEL = {"ats_reader": "Lecteur ATS", "recruiter": "Recruteur"}
+LABEL = {"ats_reader": "ATS Reader", "recruiter": "Recruiter"}
 
 logger = logging.getLogger(__name__)
 

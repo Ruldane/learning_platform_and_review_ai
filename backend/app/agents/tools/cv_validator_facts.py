@@ -16,7 +16,7 @@ import re
 from app.agents.tools.posting_schema import normalize_term
 from app.agents.tools.review_schema import Proposal
 
-FOREIGN = "Intitulé absent de ton profil"
+FOREIGN = "Wording missing from the corresponding fact in your profile"
 
 _STRUCTURED = re.compile(r"^[xfpctlk]\d+$")
 # Un lien ou un nom de domaine (« github.com/nom », « https://… », « www.… », « node.js »).

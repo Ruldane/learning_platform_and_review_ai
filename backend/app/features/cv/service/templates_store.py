@@ -51,11 +51,11 @@ MAX_REASON_CHARS = 300
 
 
 def pass_not_found() -> AppError:
-    return AppError("template_pass_not_found", "Passe du modèle introuvable.", 404)
+    return AppError("template_pass_not_found", "Template rendering pass not found.", 404)
 
 
 def capture_over() -> AppError:
-    return AppError("template_not_capturing", "La capture de ce modèle est terminée.", 409)
+    return AppError("template_not_capturing", "Recreating this template has finished.", 409)
 
 
 class AgentCvTemplateStore:

@@ -23,22 +23,20 @@ logger = logging.getLogger(__name__)
 
 MAX_PROFILE_FILE_BYTES = 10 * 1024 * 1024
 READ_BLOCK = 1024 * 1024
-TOO_LARGE_MESSAGE = "Fichier trop volumineux : 10 Mo au maximum."
+TOO_LARGE_MESSAGE = "The file exceeds the 10 MB limit."
 
 
 def capture_in_progress(session_id: str) -> AppError:
     return AppError(
         "capture_in_progress",
-        "Une capture de ton profil est déjà en cours.",
+        "A profile import is already in progress.",
         409,
         {"session_id": session_id},
     )
 
 
 def pdf_only() -> AppError:
-    return AppError(
-        "unsupported_file_type", "Type de fichier non pris en charge : PDF uniquement.", 415
-    )
+    return AppError("unsupported_file_type", "Upload a PDF file.", 415)
 
 
 def pdf_too_large() -> AppError:
@@ -79,7 +77,7 @@ async def _validate_stored(rt: CvRuntime, user_id: str, stored: list[tuple[str, 
     for document_id, _ in stored:
         source = await document_file(rt.memory, user_id, document_id)
         if source is None:
-            raise AppError("document_not_found", "Document introuvable.", 404)
+            raise AppError("document_not_found", "Document not found.", 404)
         if source.source_kind != "pdf":
             raise pdf_only()
         if len(source.data) > MAX_PROFILE_FILE_BYTES:
@@ -106,11 +104,11 @@ async def start_import(
     linkedin_document_id: str | None = None,
 ) -> ProfileImportStarted:
     if cv is None and cv_document_id is None:
-        raise AppError("validation_error", "Requête invalide.", 422, {"fields": ["cv"]})
+        raise AppError("validation_error", "Provide a CV.", 422, {"fields": ["cv"]})
     if (cv is not None and cv_document_id is not None) or (linkedin and linkedin_document_id):
         raise AppError(
             "validation_error",
-            "Indique une seule source par document.",
+            "Choose one source per document.",
             422,
             {"fields": ["cv", "cv_document_id", "linkedin", "linkedin_document_id"]},
         )

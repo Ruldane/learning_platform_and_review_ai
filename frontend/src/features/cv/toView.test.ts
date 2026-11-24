@@ -75,24 +75,24 @@ describe("errors", () => {
     details: { fields: ["identity.name", "experiences.0.role"] },
   });
 
-  it("gives a known refusal its own French text", () => {
+  it("uses the interface copy for known errors", () => {
     expect(cvErrorMessage(conflict)).toBe(
-      "Le profil a changé : recharge pour voir sa dernière version.",
+      "Your profile has changed: reload to see its latest version.",
     );
     expect(
       cvErrorMessage(new ApiError({ code: "profile_draft_pending", message: "x", status: 409 })),
     ).toBe(
-      "Un brouillon de ton profil attend ta validation : valide-le avant de confirmer ce fait.",
+      "A draft of your profile is waiting for approval: approve it before confirming this fact.",
     );
     expect(
-      cvErrorMessage(new ApiError({ code: "autre", message: "Le message du back.", status: 400 })),
-    ).toBe("Le message du back.");
+      cvErrorMessage(new ApiError({ code: "other", message: "Server message.", status: 400 })),
+    ).toBe("Server message.");
   });
 
   it("names the fields of a 422 without any value, and nothing for a 409", () => {
     expect(profileSaveError(invalid).fields).toEqual({
-      "identity.name": "Ce champ est à corriger.",
-      "experiences.0.role": "Ce champ est à corriger.",
+      "identity.name": "This field needs fixing.",
+      "experiences.0.role": "This field needs fixing.",
     });
     expect(profileSaveError(conflict).fields).toEqual({});
   });

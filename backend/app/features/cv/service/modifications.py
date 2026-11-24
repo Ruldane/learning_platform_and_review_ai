@@ -47,8 +47,7 @@ EDITABLE = ("rewrite", "add")
 def confirmation_required() -> AppError:
     return AppError(
         "confirmation_required",
-        "Cette modification cite un fait absent de ton profil : confirme qu'il est vrai pour "
-        "l'accepter.",
+        "Confirm that the fact missing from your profile is true before accepting this edit.",
         409,
     )
 
@@ -56,8 +55,8 @@ def confirmation_required() -> AppError:
 def keyword_not_in_profile() -> AppError:
     return AppError(
         "keyword_not_in_profile",
-        "Ce texte cite un mot clé de l'offre absent de ton profil : il ne peut pas entrer dans le "
-        "CV (il reste dans l'écart).",
+        "This edit contains a posting keyword missing from your profile. "
+        "It stays in the skill gap.",
         422,
         {"fields": ["after"]},
     )

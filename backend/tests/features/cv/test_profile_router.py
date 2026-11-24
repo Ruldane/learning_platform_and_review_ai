@@ -86,6 +86,7 @@ async def test_put_profile_conflict_and_ids_kept(client: httpx.AsyncClient) -> N
     first = (await put(client, profile_data(), None)).json()
     stale = await put(client, profile_data(), None)
     assert stale.status_code == 409 and stale.json()["error"]["code"] == "profile_conflict"
+    assert stale.json()["error"]["message"] == "Your profile has changed. Reload it before saving."
     edited = first["data"]
     edited["experiences"][0]["role"] = "Ingénieure IA"
     edited["skills"].append({"id": "", "name": "Qdrant"})
@@ -188,10 +189,12 @@ async def test_import_rejects_non_pdf(
         r = await client.post(f"{API}/profile/import", files=files)
         assert r.status_code == 415
         error = r.json()["error"]
-        assert error["code"] == "unsupported_file_type" and "PDF uniquement" in error["message"]
+        assert error["code"] == "unsupported_file_type"
+        assert error["message"] == "Upload a PDF file."
     big = {"cv": ("cv.pdf", b"%PDF-" + b"0" * (10 * 1024 * 1024), "application/pdf")}
     r = await client.post(f"{API}/profile/import", files=big)
-    assert r.status_code == 413 and "10 Mo" in r.json()["error"]["message"]
+    assert r.status_code == 413
+    assert r.json()["error"]["message"] == "The file exceeds the 10 MB limit."
     missing = await client.post(f"{API}/profile/import", data={"note": NOTE})
     assert missing.status_code == 422 and missing.json()["error"]["details"]["fields"] == ["cv"]
     assert launcher_spy.started == []

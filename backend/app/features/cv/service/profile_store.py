@@ -34,11 +34,11 @@ HIDDEN_LINE_MAX = 200
 
 
 def document_not_found() -> AppError:
-    return AppError("document_not_found", "Document introuvable.", 404)
+    return AppError("document_not_found", "Document not found.", 404)
 
 
 def not_a_pdf() -> AppError:
-    return AppError("profile_source_invalid", "Le profil maître se tire d'un PDF seulement.", 422)
+    return AppError("profile_source_invalid", "Import the master profile from a PDF.", 422)
 
 
 def _kind(file: StoredFile) -> SourceKind:

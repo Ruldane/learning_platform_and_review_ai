@@ -39,7 +39,7 @@ REFLECT_REASON = "Profil maître validé : January déclare ces compétences."
 def profile_conflict() -> AppError:
     return AppError(
         "profile_conflict",
-        "Le profil a changé depuis ta lecture : recharge-le avant de valider.",
+        "Your profile has changed. Reload it before saving.",
         409,
     )
 

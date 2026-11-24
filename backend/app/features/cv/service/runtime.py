@@ -46,7 +46,7 @@ class _NoResumer:
     """Valeur par défaut (tests du port, démarrages sans moteur) : moteur indisponible."""
 
     async def resume(self, user_id: str, session_id: str, interrupt_id: str, value: Any) -> None:
-        raise AppError("engine_unavailable", "Le moteur d'agents n'est pas prêt.", 503)
+        raise AppError("engine_unavailable", "The agent service isn't ready yet.", 503)
 
 
 @dataclass

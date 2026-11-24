@@ -205,6 +205,9 @@ async def test_delete_archives_unless_a_review_uses_it(
         await db.commit()
     r = await client.delete(f"{TEMPLATES}/{used}")
     assert (r.status_code, r.json()["error"]["code"]) == (409, "template_in_use")
+    assert r.json()["error"]["message"] == (
+        "Finish the review using this template before deleting it."
+    )
     other = (await post(client)).json()["template_id"]
     r = await client.delete(f"{TEMPLATES}/{other}")  # sa capture tourne encore
     assert (r.status_code, r.json()["error"]["code"]) == (409, "capture_in_progress")

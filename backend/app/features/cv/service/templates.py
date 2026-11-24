@@ -33,7 +33,7 @@ INTERRUPTED = "La capture du modèle s'est arrêtée avant la fin : relance-la."
 def capture_in_progress(session_id: str) -> AppError:
     return AppError(
         "capture_in_progress",
-        "Une capture de modèle de CV est déjà en cours.",
+        "A CV template is already being recreated.",
         409,
         {"session_id": session_id},
     )
@@ -41,18 +41,18 @@ def capture_in_progress(session_id: str) -> AppError:
 
 def template_not_ready() -> AppError:
     return AppError(
-        "template_not_ready", "Ce modèle n'est pas prêt : termine d'abord sa capture.", 409
+        "template_not_ready", "Finish recreating this CV template before using it.", 409
     )
 
 
 def template_in_use() -> AppError:
     return AppError(
-        "template_in_use", "Une revue en cours emploie ce modèle : termine-la d'abord.", 409
+        "template_in_use", "Finish the review using this template before deleting it.", 409
     )
 
 
 def page_not_found() -> AppError:
-    return AppError("template_page_not_found", "Page du modèle introuvable.", 404)
+    return AppError("template_page_not_found", "Template page not found.", 404)
 
 
 async def _open_captures(db: AsyncSession, user_id: str) -> dict[str, list[str]]:
