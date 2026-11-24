@@ -12,7 +12,7 @@ from app.agents.tools.ide_port import TeachInputs
 from app.providers.llm.base import CACHE_PREFIX_KEY
 
 AGENT = "professor"
-FREE_STATEMENT = "(séance libre : pas d'énoncé)"
+FREE_STATEMENT = "(free session with no exercise statement)"
 TRIGGERS = {
     "run_error": "son code vient d'échouer",
     "question": "elle pose une question",

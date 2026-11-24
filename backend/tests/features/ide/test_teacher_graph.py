@@ -205,7 +205,7 @@ async def test_each_call_logs_only_session_model_tokens(
     ours = [r for r in caplog.records if r.name.startswith("app.agents.nodes.professor")]
     [record] = ours
     message = record.getMessage()
-    assert sid in message and "modele-fort" in message and "jetons" in message
+    assert sid in message and "modele-fort" in message and "tokens" in message
     secrets = [MAIN[:30], QUESTION, answer, "line_3 = 3", "ZeroDivisionError"]
     for entry in caplog.records:
         if entry.name.startswith("app."):  # (aiosqlite journalise ses paramètres en DEBUG)

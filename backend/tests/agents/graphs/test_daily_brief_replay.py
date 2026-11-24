@@ -51,7 +51,7 @@ async def test_rubrics_already_stored_are_skipped(
     assert run.models.calls == [] and brief_web.searches == [] and brief_web.reads == []
     assert brief_store.resource_saves == 0 and brief_store.advice_saves == 0
     [done] = await run.events("run.completed")
-    assert done["summary"] == "Brief du jour prêt."
+    assert done["summary"] == "Your daily brief is ready."
 
 
 async def test_replay_with_only_the_advice_missing(

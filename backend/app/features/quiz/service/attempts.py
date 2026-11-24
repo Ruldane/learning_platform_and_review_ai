@@ -27,9 +27,9 @@ from app.features.quiz.service.runtime import GRAPH, SUBJECT, QuizRuntime
 from app.features.quiz.service.scoring import passed
 from app.features.quiz.service.shuffle import choice_order
 from app.features.quiz.service.status import (
-    DRAFT_REASON,
     attempt_shown,
     interrupted,
+    is_draft_reason,
     open_sessions,
     read_with_sessions,
 )
@@ -117,7 +117,7 @@ async def _insert(
     quiz = await owned_quiz(db, user_id, quiz_id)
     open_ids = await open_sessions(db, user_id, quiz_id)
     quiz = await owned_quiz(db, user_id, quiz_id)
-    if quiz.status == "generating" and quiz.failure_reason == DRAFT_REASON:
+    if quiz.status == "generating" and is_draft_reason(quiz.failure_reason):
         raise quiz_incomplete()
     if quiz.status != "ready":
         raise AppError("quiz_not_ready", "This quiz is not ready yet.", 409)

@@ -34,7 +34,7 @@ from app.providers.sandbox.base import (
 logger = logging.getLogger(__name__)
 
 JOB_TIMEOUT_S = 10  # durée réelle demandée au bac (il plafonne à 15)
-PROOF_LABEL = "Exercice réussi : "
+PROOF_LABEL = "Completed exercise "
 RECENT_RUNS = 20
 
 

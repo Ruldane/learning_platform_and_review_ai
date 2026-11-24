@@ -43,15 +43,15 @@ async def test_radar_reads_extracts_and_finalizes(
         "url": f"/career/radar/{RUN_ID}",
     }
     assert await run.said() == [
-        "10 pages lues : 10 offres, 0 bloquée.",
-        "15 pages lues : 12 offres, 3 bloquées.",
-        "12 offres lues, 3 bloquées, 12 analysées.",
-        "Seulement 12 offres lisibles : classement indicatif.",
+        "Processed 10 pages. 10 pages read, 0 blocked.",
+        "Processed 15 pages. 12 pages read, 3 blocked.",
+        "12 postings read, 3 pages blocked, 12 postings analyzed.",
+        "The ranking is based on a small sample of 12 readable postings.",
     ]
     [done] = await run.events("run.completed")
     assert done["summary"] == (
-        "12 offres lues, 3 bloquées, 12 analysées. "
-        "Seulement 12 offres lisibles : classement indicatif."
+        "12 postings read, 3 pages blocked, 12 postings analyzed. "
+        "The ranking is based on a small sample of 12 readable postings."
     )
     assert radar_store.queries == 12 and radar_store.finalize_calls == 1
 
@@ -90,7 +90,7 @@ async def test_stops_at_fifty_readable(
     assert len(analyst_prompts(models)) == 10
     assert radar_store.summary == RadarSummary(50, 0, 0, 50, False)
     [done] = await run.events("run.completed")
-    assert done["summary"] == "50 offres lues, 0 bloquée, 50 analysées."
+    assert done["summary"] == "50 postings read, 0 pages blocked, 50 postings analyzed."
 
 
 async def test_extraction_is_limited_to_fifty_pages(
@@ -114,7 +114,7 @@ async def test_stops_at_sixty_reads(radar_runner: MakeRadar, radar_store: FakeRa
     assert radar_store.fresh_reads == 60 and radar_store.repeat_reads == 0
     assert radar_store.summary == RadarSummary(15, 45, 0, 15, True)
     assert len(analyst_prompts(models)) == 3
-    assert (await run.said())[-2] == "15 offres lues, 45 bloquées, 15 analysées."
+    assert (await run.said())[-2] == "15 postings read, 45 pages blocked, 15 postings analyzed."
 
 
 async def test_all_blocked_still_reports_counts(
@@ -128,7 +128,8 @@ async def test_all_blocked_still_reports_counts(
     assert (await run.types())[-1] == "run.completed"
     [done] = await run.events("run.completed")
     assert done["summary"] == (
-        "0 offre lue, 12 bloquées, 0 analysée. Aucune offre lisible : pas de classement cette fois."
+        "0 postings read, 12 pages blocked, 0 postings analyzed. "
+        "The scan needs readable postings to rank skills."
     )
 
 
@@ -194,9 +195,9 @@ async def test_not_a_posting_counted_apart(
     assert radar_store.failed == ["r3", "r4", "r5"]
     [done] = await run.events("run.completed")
     assert done["summary"].startswith(
-        "4 offres lues, 0 bloquée, 1 page n'était pas une offre, 1 analysée."
+        "4 postings read, 0 pages blocked, 1 page without a posting, 1 posting analyzed."
     )
-    assert "Seulement 4 offres lisibles" in done["summary"]
+    assert "a small sample of 4 readable postings" in done["summary"]
     assert radar_store.saved["r2"].is_job_posting is False
     assert radar_store.saved["r2"].skills == [] and radar_store.saved["r2"].tools == []
 

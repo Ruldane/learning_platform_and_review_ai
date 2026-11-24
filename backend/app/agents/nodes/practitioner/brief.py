@@ -26,8 +26,8 @@ from app.core.errors import AppError
 __all__ = ["ASK", "SUMMARY", "make_close", "make_load", "make_save", "make_write"]
 
 AGENT = "practitioner"
-ASK = "Écris l'énoncé du projet."
-SUMMARY = "Énoncé du projet prêt."
+ASK = "Write the project brief."
+SUMMARY = "The project brief is ready."
 NONE = "(aucun)"
 BUDGET_S = 100.0  # plus court que `node_timeout` (120 s) : un dépassement est rangé par le port
 LANGUAGES = {"fr": "français", "en": "anglais"}

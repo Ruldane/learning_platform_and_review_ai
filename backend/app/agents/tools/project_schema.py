@@ -59,7 +59,7 @@ __all__ = [
 
 DRAFT_KINDS: tuple[DraftKind, ...] = ("cv_line", "profile_entry", "linkedin_post", "readme_plan")
 LINKEDIN_WORDS = (80, 200)  # mots du post LinkedIn, comptés par le code
-NOT_ASSESSED = "Critère non évalué."
+NOT_ASSESSED = "This criterion wasn't assessed."
 _LINE = 600  # taille d'une ligne de fait du profil (`Line.text`)
 _DESCRIPTION = 4_800  # 8 lignes de 600 : la description de 4 000 caractères tient en entier
 _MAX_LINES = 8  # `Project.achievements`

@@ -137,5 +137,5 @@ GRAPHS: dict[str, GraphSpec] = {
 def get_graph(name: str) -> GraphSpec:
     spec = GRAPHS.get(name)
     if spec is None:
-        raise AppError("unknown_graph", f"Parcours inconnu : {name}", 404, {"graph": name})
+        raise AppError("unknown_graph", f"Unknown workflow: {name}", 404, {"graph": name})
     return spec

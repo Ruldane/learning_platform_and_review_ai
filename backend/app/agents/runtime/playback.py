@@ -30,7 +30,7 @@ def models_for(row: AgentSession, usual: ChatModelSource) -> ChatModelSource:
         return PlayedModels(row.played_by)
     provider = as_provider(row.model_provider)
     if row.model_provider is not None and provider is None:
-        raise AppError("unknown_model_provider", "Fournisseur du parcours inconnu.", 409)
+        raise AppError("unknown_model_provider", "Unknown provider for this workflow.", 409)
     # Toujours posé : le menu d'une requête plus tardive (réponse, reprise) ne change pas la
     # source d'un parcours déjà lancé.
     PLAY_CONTEXT.set(PlayContext(row.user_id, None, provider=provider))

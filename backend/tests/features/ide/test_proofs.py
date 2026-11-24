@@ -64,7 +64,7 @@ async def test_check_pass_marks_session_passed_and_adds_proof_capped_en_cours(
     level, evidence = await level_of(app, skill_id) or ("", [])
     assert level == "in_progress"  # la compétence n'avait aucun niveau : créée à « en cours »
     assert [(e["kind"], e["ref_id"]) for e in evidence] == [("ide", session["id"])]
-    assert evidence[0]["label"].startswith("Exercice réussi") and evidence[0]["at"]
+    assert evidence[0]["label"].startswith("Completed exercise") and evidence[0]["at"]
 
 
 async def test_check_uses_the_exercise_topic_then_its_title(

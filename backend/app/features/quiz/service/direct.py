@@ -28,7 +28,7 @@ from app.features.quiz.schemas import (
 from app.features.quiz.service.completeness import quiz_complete
 from app.features.quiz.service.quizzes import get_quiz, owned_quiz
 from app.features.quiz.service.runtime import QuizRuntime
-from app.features.quiz.service.status import DRAFT_REASON, open_sessions
+from app.features.quiz.service.status import DRAFT_REASON, is_draft_reason, open_sessions
 
 logger = logging.getLogger(__name__)
 
@@ -114,7 +114,7 @@ async def create_quiz(rt: QuizRuntime, user_id: str, body: QuizWriteIn) -> QuizO
         repo = QuizRepository(db, user_id)
         quiz = await repo.by_module(body.module_id)
         if quiz is not None:
-            if quiz.status == "ready" or quiz.failure_reason == DRAFT_REASON:
+            if quiz.status == "ready" or is_draft_reason(quiz.failure_reason):
                 raise quiz_exists()
             if await _busy(db, user_id, quiz):
                 raise quiz_generating()
@@ -143,7 +143,7 @@ def _settle(quiz: Quiz, questions: list[QuizQuestion]) -> None:
 async def _editable(db: AsyncSession, user_id: str, quiz_id: str) -> Quiz:
     """The user's quiz whose questions may change: ready and without attempts."""
     quiz = await owned_quiz(db, user_id, quiz_id)
-    if quiz.status != "ready" and quiz.failure_reason != DRAFT_REASON:
+    if quiz.status != "ready" and not is_draft_reason(quiz.failure_reason):
         raise AppError("quiz_not_ready", "This quiz is not ready: write it first.", 409)
     if await AttemptRepository(db, user_id).for_quizzes([quiz_id]):
         raise quiz_has_attempts()
@@ -224,7 +224,7 @@ async def patch_quiz(rt: QuizRuntime, user_id: str, quiz_id: str, patch: QuizPat
     """Changes the title of a ready quiz."""
     async with rt.session_factory() as db:
         quiz = await owned_quiz(db, user_id, quiz_id)
-        if quiz.status != "ready" and quiz.failure_reason != DRAFT_REASON:
+        if quiz.status != "ready" and not is_draft_reason(quiz.failure_reason):
             raise AppError("quiz_not_ready", "This quiz is not ready: write it first.", 409)
         quiz.title = patch.title
         await db.commit()

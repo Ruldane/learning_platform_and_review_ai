@@ -40,7 +40,7 @@ async def test_brief_graph_two_calls(
     assert len(run.models.calls) == 2 and run.calls("scout") == 1 and run.calls("moderator") == 1
     assert brief_web.searches == [(TOPIC, None, "month")] and brief_web.reads == [found.url]
     [done] = await run.events("run.completed")
-    assert done["summary"] == "Brief du jour prêt."
+    assert done["summary"] == "Your daily brief is ready."
     assert (await run.types())[-1] == "run.completed"
 
 
@@ -186,7 +186,7 @@ async def test_both_rubrics_empty_still_completes(
     assert brief_store.resource is None and brief_store.advice is None
     assert brief_store.resource_saved and brief_store.advice_saved
     [done] = await run.events("run.completed")
-    assert done["summary"] == "Brief du jour prêt."
+    assert done["summary"] == "Your daily brief is ready."
 
 
 @pytest.mark.parametrize("slow", ["scout", "moderator"])

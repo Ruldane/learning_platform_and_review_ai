@@ -17,12 +17,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.features.quiz.service.runtime import GRAPH, SUBJECT
 from app.features.sessions.service import list_open_sessions, list_open_sessions_by_subject
 
-QUIZ_INTERRUPTED = "La préparation du quiz s'est arrêtée avant la fin : relance-la."
+QUIZ_INTERRUPTED = "Quiz preparation stopped early. Restart it to continue."
 # Un quiz écrit à la main qui n'a pas encore les bornes de l'Examinateur (`quiz_gaps`) reste « en
 # préparation » : `generating`, sans session, avec cette raison ; ce n'est pas une préparation
 # interrompue.
-DRAFT_REASON = "En cours d'écriture : il manque des questions avant de pouvoir répondre au quiz."
+DRAFT_REASON = "This draft needs more questions before you can take the quiz."
+_LEGACY_DRAFT_REASON = (
+    "En cours d'écriture : il manque des questions avant de pouvoir répondre au quiz."
+)
 LIVE = {"generating", "grading"}
+
+
+def is_draft_reason(reason: str | None) -> bool:
+    return reason in {DRAFT_REASON, _LEGACY_DRAFT_REASON}
 
 
 async def open_sessions(db: AsyncSession, user_id: str, quiz_id: str) -> list[str]:
@@ -42,7 +49,7 @@ def interrupted(
 ) -> bool:
     """Quiz `generating` ou tentative `grading` dont la session rangée n'est plus ouverte
     (terminée sans le port, échouée, annulée), ou quiz `generating` sans session rangée."""
-    if status not in LIVE or reason == DRAFT_REASON:
+    if status not in LIVE or is_draft_reason(reason):
         return False
     if session_id is None:
         return status == "generating"
@@ -71,7 +78,7 @@ def quiz_shown(
     """`(statut, raison)` du quiz à montrer."""
     if interrupted(status, session_id, open_ids, reason):
         return "failed", QUIZ_INTERRUPTED
-    return status, reason
+    return status, DRAFT_REASON if is_draft_reason(reason) else reason
 
 
 def attempt_shown(status: str, session_id: str | None, open_ids: list[str]) -> str:

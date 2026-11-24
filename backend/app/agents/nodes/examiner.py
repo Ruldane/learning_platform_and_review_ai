@@ -38,7 +38,7 @@ from app.agents.tools.quiz_port import (
 
 MAX_QUIZ_ASKS = 3  # une demande + deux re-demandes avec les problèmes de `quiz_problems`
 MAX_GRADE_ASKS = 2  # une demande + une re-demande si des questions restent sans note
-MISSING_FEEDBACK = "Réponse non évaluée : relis la correction."
+MISSING_FEEDBACK = "This answer wasn't graded. Review the explanation."
 WRITE_REQUEST = "Écris le quiz du module."
 GRADE_REQUEST = "Note les réponses ouvertes."
 LESSON_CHARS = 20_000  # une leçon de 2 500 mots tient en entier

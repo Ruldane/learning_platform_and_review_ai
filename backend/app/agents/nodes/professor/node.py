@@ -24,24 +24,24 @@ from app.agents.tools.ide_schema import TeacherNote
 
 __all__ = ["AGENT", "SUMMARY_SAVED", "SUMMARY_STALE", "make_teach"]
 
-SUMMARY_SAVED = "Note du professeur rangée."
-SUMMARY_STALE = "Le code a changé pendant la réponse : repose la question."
-SUMMARY_NONE = "Rien à dire : le code est réussi."
+SUMMARY_SAVED = "Professor's note saved."
+SUMMARY_STALE = "Your code changed while the professor was replying. Ask your question again."
+SUMMARY_NONE = "Your code passed its checks."
 INTENTS = {
-    "hint": "j'écris un indice",
-    "annotation": "j'annote la marge",
-    "explanation": "j'explique",
-    "proposal": "j'explique ou je propose",
+    "hint": "Writing a hint",
+    "annotation": "Annotating the code",
+    "explanation": "Preparing an explanation",
+    "proposal": "Preparing an explanation or proposed fix",
 }
 
 logger = logging.getLogger(__name__)
 
 
 async def _log_usage(deps: GraphDeps, ide_session_id: str) -> None:
-    """Une ligne par appel : la séance de code, le modèle et les jetons (rien d'autre)."""
+    """Log one line per call with the IDE session ID, model, and token count."""
     async with deps.session_factory() as db:
         model, tokens = await LlmCallRepository(db, deps.user_id).usage_of_session(deps.session_id)
-    logger.info("Professeur : séance %s, modèle %s, %d jetons", ide_session_id, model, tokens)
+    logger.info("Professor session %s, model %s, %d tokens", ide_session_id, model, tokens)
 
 
 def make_teach(deps: GraphDeps) -> Node:

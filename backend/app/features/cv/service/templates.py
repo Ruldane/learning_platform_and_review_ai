@@ -27,7 +27,7 @@ from app.features.sessions.service import list_open_sessions_by_subject
 
 logger = logging.getLogger(__name__)
 
-INTERRUPTED = "La capture du modèle s'est arrêtée avant la fin : relance-la."
+INTERRUPTED = "Template capture stopped early. Restart it to continue."
 
 
 def capture_in_progress(session_id: str) -> AppError:

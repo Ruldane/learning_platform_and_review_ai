@@ -225,7 +225,7 @@ async def test_template_follows_a_failed_session(
     await end_sessions(app, "failed")  # panne du modèle, plafond, délai de nœud
     t = (await client.get(f"{TEMPLATES}/{template_id}")).json()
     assert t["status"] == "failed"
-    assert t["failure_reason"] == "La capture du modèle s'est arrêtée avant la fin : relance-la."
+    assert t["failure_reason"] == "Template capture stopped early. Restart it to continue."
     assert (await post(client)).status_code == 202  # plus aucune capture en cours
 
 

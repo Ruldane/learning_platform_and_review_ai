@@ -25,7 +25,7 @@ from app.agents.state.daily_brief import DailyBriefState, Node
 
 __all__ = ["SUMMARY", "DailyBriefInput", "build"]
 
-SUMMARY = "Brief du jour prêt."
+SUMMARY = "Your daily brief is ready."
 
 logger = logging.getLogger(__name__)
 

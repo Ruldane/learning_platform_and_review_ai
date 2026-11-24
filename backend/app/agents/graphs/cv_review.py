@@ -39,7 +39,7 @@ from app.core.errors import AppError
 
 __all__ = ["NOT_A_POSTING", "CvReviewInput", "build"]
 
-NOT_A_POSTING = "Le texte de cette offre ne ressemble pas à une offre d'emploi : revue impossible."
+NOT_A_POSTING = "The CV review needs a job posting. The supplied text doesn't look like one."
 
 logger = logging.getLogger(__name__)
 

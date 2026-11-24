@@ -52,8 +52,8 @@ AUTOMATIC: frozenset[str] = frozenset({"run_error", "idle"})
 IDLE_DELAY = timedelta(seconds=30)
 MAX_LEVEL = 3
 COMPLIMENT_KEY = "compliment"
-COMPLIMENT = "Bravo : tes tests passent. Relis ton code une dernière fois, tu peux en être fière."
-REFERENCE = "Même erreur au même endroit : relis ma note précédente, elle s'applique encore."
+COMPLIMENT = "Your tests pass. Read through your code one more time before finishing."
+REFERENCE = "The same error occurred here. The previous note still applies."
 
 PROFESSOR = Caller(kind="app", label=PROFESSOR_LABEL)
 JANUARY = Caller(kind="app", label="app")  # l'interface : l'auteur des notes est alors `user`

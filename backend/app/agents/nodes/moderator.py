@@ -36,7 +36,7 @@ from app.agents.tools.council_port import FramingQuestion, GoalBrief
 MAX_FRAMING_QUESTIONS = 5
 MAX_ANSWER_CHARS = 2000
 MAX_QUERY_CHARS = 300
-FRAMING_PROMPT = "Réponds aux questions de cadrage (facultatif), puis lance la recherche."
+FRAMING_PROMPT = "Answer any of these questions, then start the research."
 GO = {"value": "go", "label": "Lancer la recherche"}
 
 

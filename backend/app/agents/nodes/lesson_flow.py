@@ -20,7 +20,7 @@ MAX_REASON_CHARS = 300
 MAX_FEEDBACK = 30  # problèmes de contrôle (dont 5 notes) et 20 affirmations au plus
 MAX_FEEDBACK_CHARS = 600
 PUBLISH_TIMEOUT_S = 300  # le port range la leçon, copie des PDF et rend le PDF de la leçon
-NO_SOURCE = "Aucune source fiable (note de 60 ou plus) n'a été trouvée pour ce module."
+NO_SOURCE = "No sources for this module met the minimum score of 60."
 logger = logging.getLogger(__name__)
 
 

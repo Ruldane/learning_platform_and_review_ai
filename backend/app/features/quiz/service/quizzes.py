@@ -29,9 +29,9 @@ from app.features.quiz.service.runtime import GRAPH, SUBJECT, QuizRuntime
 from app.features.quiz.service.scoring import passed
 from app.features.quiz.service.shuffle import choice_order, question_order
 from app.features.quiz.service.status import (
-    DRAFT_REASON,
     attempt_shown,
     interrupted,
+    is_draft_reason,
     open_sessions,
     open_sessions_by_quiz,
     quiz_shown,
@@ -80,7 +80,7 @@ async def _prepare(db: AsyncSession, user_id: str, module_id: str) -> QuizStarte
             return QuizStarted(quiz_id=found.id, session_id=found.session_id, status="ready")
         if found.status == "generating" and found.session_id in open_ids:
             return QuizStarted(quiz_id=found.id, session_id=found.session_id, status="generating")
-        if found.status == "generating" and found.failure_reason == DRAFT_REASON:
+        if found.status == "generating" and is_draft_reason(found.failure_reason):
             raise quiz_draft()
     if await ready_markdown(db, user_id, module_id) is None and not await is_validation_module(
         db, user_id, module_id
@@ -230,7 +230,7 @@ async def get_quiz(db: AsyncSession, user_id: str, quiz_id: str) -> QuizOut:
         lambda r: [(r[0].status, r[0].session_id)] + [(a.status, a.session_id) for a in r[1]],
     )
     status, reason = quiz_shown(quiz.status, quiz.session_id, quiz.failure_reason, open_ids)
-    shown_questions = status == "ready" or reason == DRAFT_REASON  # un brouillon se relit
+    shown_questions = status == "ready" or is_draft_reason(reason)
     questions = await QuestionRepository(db, user_id).for_quiz(quiz_id) if shown_questions else []
     summaries = [
         AttemptSummaryOut.model_validate(

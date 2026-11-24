@@ -12,7 +12,7 @@ from app.agents.tools.ide_port import TeachInputs
 from app.agents.tools.ide_schema import TeacherNote
 
 MAX_CODE_LINES = 3  # mode guide : un bloc de code plus long est retiré
-REMOVED = "(code retiré : décris la démarche avec tes mots.)"
+REMOVED = "(Code removed. Describe the approach in your own words.)"
 _FENCE = re.compile(r"```[^\n]*\n(.*?)(?:```|\Z)", re.DOTALL)
 _INDENTED = re.compile(r"(?:^(?: {4}|\t)\S.*\n?){4,}", re.MULTILINE)  # plus de MAX_CODE_LINES
 

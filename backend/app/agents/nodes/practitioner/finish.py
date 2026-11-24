@@ -15,7 +15,7 @@ from app.agents.state.project_review import Node, ProjectReviewState
 __all__ = ["announce", "make_save"]
 
 AGENT = "practitioner"
-NOT_SAVED = "Projet validé : ses brouillons existent déjà, rien de nouveau n'a été rangé."
+NOT_SAVED = "The project is approved. Its drafts are available."
 
 logger = logging.getLogger(__name__)
 

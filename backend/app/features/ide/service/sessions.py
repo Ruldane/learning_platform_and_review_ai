@@ -33,7 +33,7 @@ from app.providers.sandbox.base import MAX_FILES, MAX_TOTAL_BYTES, check_file_na
 logger = logging.getLogger(__name__)
 
 DEFAULT_ENTRY = "main.py"
-FREE_TITLE = "Séance libre"
+FREE_TITLE = "Free session"
 
 
 @dataclass(frozen=True)

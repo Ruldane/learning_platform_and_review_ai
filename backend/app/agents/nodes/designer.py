@@ -33,17 +33,14 @@ from app.agents.tools.vision import MAX_IMAGES, image_message
 from app.core.errors import AppError
 
 AGENT = "designer"
-SAMPLE_REQUEST = "Recopie le contenu de ce CV, tel quel."
-DRAFT_REQUEST = "Décris le design de ce CV."
-FIX_REQUEST = "Corrige la description pour rapprocher le rendu de l'original."
+SAMPLE_REQUEST = "Transcribe the contents of this CV verbatim."
+DRAFT_REQUEST = "Describe this CV's design."
+FIX_REQUEST = "Revise the description so the render better matches the original."
 MAX_SAMPLE_ASKS = 2  # une demande, puis une re-demande avec les textes absents du CV
 MAX_SPEC_ASKS = 3  # une demande, puis deux re-demandes avec les défauts
 VISION_TIMEOUT_S = 600  # sorties structurées avec images, et leurs re-demandes
-NO_SAMPLE = (
-    "Ton CV est une image (scanné) et ton profil maître n'est pas encore validé : valide-le, "
-    "puis relance la capture du modèle."
-)
-NO_SPEC = "Le Maquettiste n'a pas su décrire le design de ce CV. Recommence la capture."
+NO_SAMPLE = "For a scanned CV, approve your master profile and then restart template capture."
+NO_SPEC = "The Layout Designer couldn't describe this CV. Restart template capture."
 STRUCTURED_INVALID = "structured_output_invalid"  # code de `structured_call` après ses essais
 
 logger = logging.getLogger(__name__)
@@ -81,7 +78,7 @@ async def _copy(deps: GraphDeps, view: OriginalView) -> tuple[CvContent, int]:
             messages,
             agent=AGENT,
             step=f"contenu-{ask}",
-            intent="je recopie le contenu de ton CV" if ask == 1 else "je recopie mieux",
+            intent="Transcribing your CV" if ask == 1 else "Correcting the transcription",
         )
         invented = invented_lines(found, view.original_text)
         if not invented or ask == MAX_SAMPLE_ASKS:
@@ -127,7 +124,7 @@ async def ask_spec(
             messages,
             agent=AGENT,
             step=f"{step}-{ask}",
-            intent="je décris le design de ton CV" if ask == 1 else "je corrige la description",
+            intent="Describing your CV's design" if ask == 1 else "Revising the description",
         )
         problems = template_problems(found, fonts)
         if not problems:
