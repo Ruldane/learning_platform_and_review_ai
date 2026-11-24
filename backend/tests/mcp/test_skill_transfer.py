@@ -1,4 +1,4 @@
-"""Lecture et programmation par délégation, avec annulation de la programmation."""
+"""Skill transfer tools preserve read, schedule, and confirmation permissions."""
 
 from datetime import UTC, datetime, timedelta
 
@@ -12,7 +12,12 @@ from tests.mcp.support import API, Mcp
 from tests.mcp.test_direct_write import undo_last
 
 
-async def test_mcp_can_read_and_schedule_but_cannot_prepare_or_answer(
+async def transfer_tools(claude: Mcp, token: str) -> set[str]:
+    tools = (await claude.rpc(token, "tools/list")).json()["result"]["tools"]
+    return {tool["name"] for tool in tools if tool["name"].startswith("skill_transfer_")}
+
+
+async def test_mcp_can_read_and_schedule_with_confirmation_for_prepare_and_answer(
     app: FastAPI, claude: Mcp, db_session: AsyncSession
 ) -> None:
     now = datetime.now(UTC)
@@ -25,15 +30,19 @@ async def test_mcp_can_read_and_schedule_but_cannot_prepare_or_answer(
 
     reader = await claude.token(("skill_transfer",), "read")
     writer = await claude.token(("skill_transfer",), "write")
-    readable = (await claude.rpc(reader, "tools/list")).json()["result"]["tools"]
-    writable = (await claude.rpc(writer, "tools/list")).json()["result"]["tools"]
-    assert "skill_transfer_schedule" not in {tool["name"] for tool in readable}
-    assert {tool["name"] for tool in writable if tool["name"].startswith("skill_transfer_")} == {
+    read_names = {
         "skill_transfer_list_proofs",
         "skill_transfer_list",
         "skill_transfer_read",
-        "skill_transfer_schedule",
     }
+    confirm_names = {"skill_transfer_prepare_transfer", "skill_transfer_submit_transfer_answer"}
+    assert await transfer_tools(claude, reader) == read_names
+    assert await transfer_tools(claude, writer) == (
+        read_names | confirm_names | {"skill_transfer_schedule"}
+    )
+    for name in confirm_names:
+        tool = app.state.mcp_registry.get(name)
+        assert tool and tool.level == 3
     result, failed = await call(
         claude, reader, "skill_transfer_list_proofs", {"skill_id": skill_id}
     )

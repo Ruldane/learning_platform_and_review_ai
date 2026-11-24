@@ -40,7 +40,7 @@ async def test_played_council_retries_then_waits_for_january(claude: Mcp, app: F
     assert error and "questions" in str(refusal["data"]["error"]["details"])
     second = await next_step()
     assert second["step_id"] != first["step_id"]
-    assert "pas valide" in second["messages"][-1]["content"]
+    assert second["messages"][-1]["content"].startswith("Your previous reply is invalid")
     _, stale = await call(claude, token, "agents_play_submit", submit)
     assert stale
     _, error = await call(
