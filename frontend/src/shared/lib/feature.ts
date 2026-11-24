@@ -47,6 +47,8 @@ export interface FeatureManifest {
   /** Previous route patterns mapped to their current absolute paths. */
   legacyRoutes?: Record<string, string>;
   publicRoutes?: RouteObject[];
+  /** Previous public paths redirect without mounting the application layout. */
+  legacyPublicRoutes?: Record<string, string>;
   nav?: NavEntry[];
   shell?: FeatureShell;
 }

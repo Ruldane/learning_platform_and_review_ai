@@ -17,6 +17,7 @@ const features: FeatureManifest[] = [
     id: "public",
     routes: [],
     publicRoutes: [{ path: "/ouverte", element: <h1>Page ouverte</h1> }],
+    legacyPublicRoutes: { "/ancienne": "/ouverte" },
   },
 ];
 
@@ -30,7 +31,7 @@ function renderAt(path: string, me: typeof camille | null = camille) {
   );
   const router = createMemoryRouter(buildRoutes(features), { initialEntries: [path] });
   render(<RouterProvider router={router} />, { wrapper: createQueryWrapper() });
-  return { auth };
+  return { auth, router };
 }
 
 describe("buildRoutes", () => {
@@ -46,12 +47,23 @@ describe("buildRoutes", () => {
   });
 
   it("public routes render without layout or gates", async () => {
-    // Sans session : la porte renverrait vers `/connexion`, mais une route publique ne la traverse
+    // Sans session : la porte renverrait vers `/login`, mais une route publique ne la traverse
     // pas.
     const { auth } = renderAt("/ouverte", null);
     expect(await screen.findByRole("heading", { name: "Page ouverte" })).toBeInTheDocument();
     expect(screen.queryByRole("navigation")).toBeNull();
     expect(screen.queryByRole("banner")).toBeNull();
+    expect(auth.meCalls).toBe(0);
+  });
+
+  it("redirects previous public routes and preserves the query and fragment", async () => {
+    const { auth, router } = renderAt("/ancienne?error=expired#continue", null);
+    expect(await screen.findByRole("heading", { name: "Page ouverte" })).toBeInTheDocument();
+    expect(router.state.location).toMatchObject({
+      pathname: "/ouverte",
+      search: "?error=expired",
+      hash: "#continue",
+    });
     expect(auth.meCalls).toBe(0);
   });
 });

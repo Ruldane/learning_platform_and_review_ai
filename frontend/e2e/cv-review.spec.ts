@@ -136,7 +136,7 @@ async function finish(page: Page): Promise<void> {
   await expect(group.getByText("Prête").first()).toBeVisible();
 }
 
-// Le premier lancement est fait avant la première page (la porte mène sinon à /bienvenue).
+// Le premier lancement est fait avant la première page (la porte mène sinon à /welcome).
 test.beforeEach(({ request }) => finishFirstLaunch(request));
 
 test("un CV est revu face à une offre jusqu'à son PDF", async ({ page, request }) => {

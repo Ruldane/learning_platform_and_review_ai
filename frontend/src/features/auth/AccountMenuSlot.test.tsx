@@ -29,14 +29,14 @@ describe("AccountMenuSlot", () => {
     );
   });
 
-  it("logout returns to /connexion", async () => {
+  it("logout returns to /login", async () => {
     const api = authApi({ me: camille });
     server.use(...api.handlers);
     const { user, visited } = renderAuth("/", <AccountMenuSlot />);
     await user.click(await screen.findByRole("button", { name: "Sign out" }));
     await waitFor(() => expect(screen.getByRole("heading", { name: "Sign in" })).toHaveFocus());
     expect(api.logoutCalls).toBe(1);
-    expect(visited).toEqual(["/", "/connexion"]);
+    expect(visited).toEqual(["/", "/login"]);
   });
 
   it("logout clears what the account had read, but not the session state", async () => {

@@ -13,8 +13,8 @@ function sendsBackToLogin(error: unknown): error is ApiError {
 }
 
 /**
- * `/connexion/reprise` (publique) : le choix de la toute première connexion Google. Réussi, on
- * ouvre l'application ; un témoin expiré (409 `claim_expired`) renvoie à `/connexion` avec son
+ * `/login/claim` (publique) : le choix de la toute première connexion Google. Réussi, on
+ * ouvre l'application ; un témoin expiré (409 `claim_expired`) renvoie à `/login` avec son
  * message ; toute autre erreur reste ici, sous les boutons.
  */
 export function ClaimPage() {
@@ -25,7 +25,7 @@ export function ClaimPage() {
       onSuccess: () => void navigate("/", { replace: true }),
       onError: (error) => {
         if (sendsBackToLogin(error))
-          void navigate(`/connexion?erreur=${error.code}`, { replace: true });
+          void navigate(`/login?error=${error.code}`, { replace: true });
       },
     });
   const failed = claim.isError && !sendsBackToLogin(claim.error);

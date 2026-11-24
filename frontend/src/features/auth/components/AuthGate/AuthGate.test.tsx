@@ -16,7 +16,7 @@ function renderGate(status: GateStatus, onRetry = vi.fn(), message?: string) {
           </AuthGate>
         ),
       },
-      { path: "/connexion", element: <p>Page de connexion</p> },
+      { path: "/login", element: <p>Page de connexion</p> },
     ],
     { initialEntries: ["/"] },
   );
@@ -31,7 +31,7 @@ describe("AuthGate", () => {
     expect(screen.queryByRole("status")).toBeNull();
   });
 
-  it("replaces the page by /connexion when there is no session", () => {
+  it("replaces the page by /login when there is no session", () => {
     const { router } = renderGate("signedOut");
     expect(screen.getByText("Page de connexion")).toBeInTheDocument();
     expect(screen.queryByText("Contenu protégé")).toBeNull();

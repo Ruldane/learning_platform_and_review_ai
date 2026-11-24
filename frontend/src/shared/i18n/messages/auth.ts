@@ -10,7 +10,7 @@ export const auth = {
     google: "Sign in with Google",
     privacy: "Tremplin only receives your email address and name from Google.",
   },
-  // Un message par code de `/connexion?erreur=<code>` ; `unknown` sert à tout autre code.
+  // Un message par code de `/login?error=<code>` ; `unknown` sert à tout autre code.
   errors: {
     access_denied: "Sign-in cancelled.",
     state_invalid: "The sign-in expired, start again.",

@@ -43,8 +43,8 @@ def _destination(settings: Settings, outcome: CallbackOutcome) -> str:
     if outcome.kind == "signed_in":
         return f"{front}/"
     if outcome.kind == "claim":
-        return f"{front}/connexion/reprise"
-    return f"{front}/connexion?erreur={outcome.error}"
+        return f"{front}/login/claim"
+    return f"{front}/login?error={outcome.error}"
 
 
 @router.get(
@@ -86,8 +86,8 @@ async def google_login(request: Request, login_hint: str | None = None) -> Redir
     status_code=302,
     responses={
         302: {
-            "description": "Redirection vers le front : `/` (connectée), `/connexion/reprise` "
-            "(choix de la reprise) ou `/connexion?erreur=<code>` (échec, rien n'est créé)"
+            "description": "Redirects to `/` after sign-in, `/login/claim` to choose whether "
+            "to claim existing data, or `/login?error=<code>` if sign-in fails."
         },
         **_NO_GOOGLE,
     },

@@ -60,13 +60,13 @@ describe("PostingsPage", () => {
       create: () => refusal(422, "posting_unreadable", "Server message.", { fields: ["url"] }),
     });
     await screen.findByRole("list", { name: POSTINGS });
-    await user.type(linkField(), "https://example.org/jobs/connexion");
+    await user.type(linkField(), "https://example.org/jobs/login");
     await user.click(screen.getByRole("button", { name: ANALYZE }));
     const message = await screen.findByRole("alert");
     expect(message).toHaveTextContent("Paste the posting text instead.");
     expect(screen.getByRole("tab", { name: "Text" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("textbox", { name: "Posting text" })).toBeVisible();
-    expect(screen.queryByText("https://example.org/jobs/connexion")).toBeNull();
+    expect(screen.queryByText("https://example.org/jobs/login")).toBeNull();
   });
 
   it.each([

@@ -14,7 +14,7 @@ export function MobilePage() {
       {!offline ? <Link to="/" className="self-start underline">{t("mobile.home")}</Link> : null}
       {offline ? <p role="status">{t("mobile.offline")}</p> : null}
       {loading ? <p role="status">{t("mobile.loading")}</p> : null}
-      {withoutAccount ? <Link to="/connexion" className="underline">{t("mobile.login")}</Link> : null}
+      {withoutAccount ? <Link to="/login" className="underline">{t("mobile.login")}</Link> : null}
       {error && !withoutAccount ? <InlineError message={errorMessage(error)} /> : null}
       {snapshot ? <MobileStudy key={snapshot.owner} snapshot={snapshot} pinned={pinned} offline={offline} /> : null}
       {offline && !snapshot ? <p>{t("mobile.unprepared")}</p> : null}

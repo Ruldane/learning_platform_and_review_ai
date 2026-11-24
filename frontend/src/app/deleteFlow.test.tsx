@@ -15,7 +15,7 @@ import { createQueryWrapper } from "@/test/queryWrapper";
 import { server } from "@/test/server";
 
 describe("« Tout supprimer » avec la porte du premier lancement", () => {
-  it("local mode: the real gate re-reads the settings and lands on /bienvenue with the notice", async () => {
+  it("returns to the welcome page with a notice after local account deletion", async () => {
     const api = onboardingApi({ settings: settingsFixture });
     server.use(
       // La suppression remet les réglages à zéro : le back les recrée au prochain `GET`.
@@ -40,7 +40,7 @@ describe("« Tout supprimer » avec la porte du premier lancement", () => {
           ),
           children: [
             { path: "reglages/donnees", element: <DataPage /> },
-            { path: "bienvenue", element: <WelcomePage /> },
+            { path: "welcome", element: <WelcomePage /> },
           ],
         },
       ],
@@ -59,7 +59,7 @@ describe("« Tout supprimer » avec la porte du premier lancement", () => {
     expect(
       await screen.findByRole("heading", { level: 1, name: "Les services de Tremplin" }),
     ).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe("/bienvenue");
+    expect(router.state.location.pathname).toBe("/welcome");
     expect(
       screen.getByText("Tes données ont été supprimées : Tremplin repart de zéro."),
     ).toBeVisible();

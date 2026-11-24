@@ -51,6 +51,6 @@ describe("App", () => {
     expect(
       await screen.findByRole("heading", { level: 1, name: "Les services de Tremplin" }),
     ).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe("/bienvenue");
+    expect(router.state.location.pathname).toBe("/welcome");
   });
 });

@@ -137,7 +137,7 @@ async function checkLessons(page: Page, request: APIRequestContext): Promise<voi
   }
 }
 
-// Le premier lancement est fait avant la première page (la porte mène sinon à /bienvenue).
+// Le premier lancement est fait avant la première page (la porte mène sinon à /welcome).
 test.beforeEach(({ request }) => finishFirstLaunch(request));
 
 test("un objectif mène à un programme validé avec ses leçons", async ({ page, request }) => {

@@ -18,14 +18,14 @@ describe("« Tout supprimer » avec la porte de connexion", () => {
     expect(AUTH_SCOPE).toBe(authKeys.me[0]);
   });
 
-  it("a 401 during the deletion leads once to /connexion, through the gate", async () => {
+  it("a 401 during the deletion leads once to /login, through the gate", async () => {
     server.use(...accountApi({ delete: "expired" }).handlers, ...authApi({ me: camille }).handlers);
     const client = new QueryClient({
       defaultOptions: { queries: { retry: false, staleTime: 15_000 } },
     });
     const router = createMemoryRouter(
       [
-        { path: "/connexion", element: <p>Connexion</p> },
+        { path: "/login", element: <p>Connexion</p> },
         {
           path: "/",
           element: (
@@ -48,6 +48,6 @@ describe("« Tout supprimer » avec la porte de connexion", () => {
     await user.type(await screen.findByLabelText("Tape SUPPRIMER pour confirmer"), "SUPPRIMER");
     await user.click(screen.getByRole("button", { name: "Tout supprimer" }));
     expect(await screen.findByText("Connexion")).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe("/connexion");
+    expect(router.state.location.pathname).toBe("/login");
   });
 });

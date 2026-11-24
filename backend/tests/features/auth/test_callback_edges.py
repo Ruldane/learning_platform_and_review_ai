@@ -117,7 +117,7 @@ async def test_a_claim_outcome_sets_the_claim_cookie(
 
     monkeypatch.setattr("app.features.auth.router.finish_login", claim)
     r = await come_back(google_client, code="c", state="s")
-    assert r.headers["location"] == f"{FRONT}/connexion/reprise"
+    assert r.headers["location"] == f"{FRONT}/login/claim"
     cookie = (set_cookie(r, "tremplin_claim") or "").lower()
     assert "path=/api/v1/auth/google" in cookie and "max-age=600" in cookie
     assert "httponly" in cookie and set_cookie(r, "tremplin_session") is None

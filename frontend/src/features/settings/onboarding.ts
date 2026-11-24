@@ -13,7 +13,8 @@ export type OnboardingAvailability = Pick<
 export const STEP_COUNT = 5;
 
 /** L'adresse du premier lancement : la porte n'y renvoie pas, la page est hors de la navigation. */
-export const WELCOME_PATH = "/bienvenue";
+export const WELCOME_PATH = "/welcome";
+export const LEGACY_WELCOME_PATH = "/bienvenue";
 
 /**
  * Corps du `PUT /settings` qui termine le premier lancement : tous les réglages lus sont repris

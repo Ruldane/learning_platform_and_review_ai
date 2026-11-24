@@ -5,16 +5,19 @@ import { LoginPage } from "./pages/LoginPage";
 import { SessionGate } from "./SessionGate";
 
 /**
- * La connexion (SPEC 17.1) : `/connexion` et `/connexion/reprise` sont publiques (hors de la mise
- * en page, sans porte) ; `gate` ferme toute la mise en page tant qu'il n'y a pas de session ;
- * `topbar` montre le compte connecté, en mode Google seulement. Première de `FEATURES`.
+ * Public sign-in and account claim routes (SPEC 17.1). The session gate protects the app layout.
+ * In Google mode, the top bar shows the signed-in account.
  */
 export const authManifest: FeatureManifest = {
   id: "auth",
   routes: [],
   publicRoutes: [
-    { path: "/connexion", Component: LoginPage },
-    { path: "/connexion/reprise", Component: ClaimPage },
+    { path: "/login", Component: LoginPage },
+    { path: "/login/claim", Component: ClaimPage },
   ],
+  legacyPublicRoutes: {
+    "/connexion": "/login",
+    "/connexion/reprise": "/login/claim",
+  },
   shell: { gate: SessionGate, topbar: AccountMenuSlot },
 };

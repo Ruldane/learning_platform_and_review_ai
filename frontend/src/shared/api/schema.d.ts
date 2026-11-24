@@ -18521,7 +18521,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Redirection vers le front : `/` (connectée), `/connexion/reprise` (choix de la reprise) ou `/connexion?erreur=<code>` (échec, rien n'est créé) */
+            /** @description Redirects to `/` after sign-in, `/login/claim` to choose whether to claim existing data, or `/login?error=<code>` if sign-in fails. */
             302: {
                 headers: {
                     [name: string]: unknown;

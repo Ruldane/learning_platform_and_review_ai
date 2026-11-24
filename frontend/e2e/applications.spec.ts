@@ -251,7 +251,7 @@ async function keyboardDrag(page: Page): Promise<void> {
   await expect(interviewColumn.getByRole("listitem")).toHaveCount(0);
 }
 
-// Le premier lancement est fait avant la première page (la porte mène sinon à /bienvenue).
+// Le premier lancement est fait avant la première page (la porte mène sinon à /welcome).
 test.beforeEach(({ request }) => finishFirstLaunch(request));
 
 test("une candidature suit son cycle, du doublon à la relance", async ({ page, context }) => {

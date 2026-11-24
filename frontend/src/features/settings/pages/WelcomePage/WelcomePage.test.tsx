@@ -58,7 +58,7 @@ describe("WelcomePage", () => {
     const { router } = setup();
     await title(TITLES[0]!);
     expect(screen.queryByText(DELETED)).toBeNull();
-    await router.navigate("/bienvenue", { state: { deleted: true }, replace: true });
+    await router.navigate("/welcome", { state: { deleted: true }, replace: true });
     expect(await screen.findByText(DELETED)).toBeVisible();
   });
 

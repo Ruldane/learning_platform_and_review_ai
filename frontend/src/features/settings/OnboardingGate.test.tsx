@@ -37,7 +37,7 @@ function setup(over: Parameters<typeof onboardingApi>[0], at = "/") {
             ),
           },
           { path: "apprendre", element: <p>Apprendre</p> },
-          { path: "bienvenue", element: <WelcomePage /> },
+          { path: "welcome", element: <WelcomePage /> },
         ],
       },
     ],
@@ -61,16 +61,16 @@ function setup(over: Parameters<typeof onboardingApi>[0], at = "/") {
 }
 
 describe("OnboardingGate", () => {
-  it("gate sends a new account to /bienvenue", async () => {
+  it("gate sends a new account to /welcome", async () => {
     const { router, visited } = setup({ settings: fresh }, "/apprendre");
     expect(
       await screen.findByRole("heading", { level: 1, name: "Les services de Tremplin" }),
     ).toBeInTheDocument();
     expect(screen.queryByText("Apprendre")).toBeNull();
-    expect(router.state.location.pathname).toBe("/bienvenue");
+    expect(router.state.location.pathname).toBe("/welcome");
     // Un remplacement : « précédent » ne ramène pas à une porte qui renverrait aussitôt.
     expect(router.state.historyAction).toBe("REPLACE");
-    expect(visited).toEqual(["/apprendre", "/bienvenue"]);
+    expect(visited).toEqual(["/apprendre", "/welcome"]);
   });
 
   it("gate lets an onboarded account through", async () => {
@@ -80,10 +80,10 @@ describe("OnboardingGate", () => {
     expect(visited).toEqual(["/apprendre"]);
   });
 
-  it("does not send a new account away from /bienvenue, nor loop", async () => {
-    const { visited } = setup({ settings: fresh }, "/bienvenue");
+  it("does not send a new account away from /welcome, nor loop", async () => {
+    const { visited } = setup({ settings: fresh }, "/welcome");
     await screen.findByRole("heading", { level: 1, name: "Les services de Tremplin" });
-    expect(visited).toEqual(["/bienvenue"]);
+    expect(visited).toEqual(["/welcome"]);
   });
 
   it("keeps the layout away while the settings are read", async () => {
@@ -105,7 +105,7 @@ describe("OnboardingGate", () => {
     expect(reads.settings).toBe(2);
   });
 
-  it("after a retry that leads to /bienvenue, the focus is the title of the step", async () => {
+  it("after a retry that leads to /welcome, the focus is the title of the step", async () => {
     const { user, router } = setup({ settings: fresh, settingsFailures: 1 });
     await user.click(await screen.findByRole("button", { name: "Réessayer" }));
     const title = await screen.findByRole("heading", {
@@ -113,7 +113,7 @@ describe("OnboardingGate", () => {
       name: "Les services de Tremplin",
     });
     await waitFor(() => expect(title).toHaveFocus());
-    expect(router.state.location.pathname).toBe("/bienvenue");
+    expect(router.state.location.pathname).toBe("/welcome");
   });
 
   it("a failed re-read, with the settings already there, never closes the app", async () => {
@@ -133,13 +133,13 @@ describe("OnboardingGate", () => {
     expect(router.state.location.pathname).toBe("/");
   });
 
-  it("lets an onboarded account open /bienvenue by hand, without sending it away", async () => {
-    const { router, visited } = setup({ settings: settingsFixture }, "/bienvenue");
+  it("lets an onboarded account open /welcome by hand, without sending it away", async () => {
+    const { router, visited } = setup({ settings: settingsFixture }, "/welcome");
     expect(
       await screen.findByRole("heading", { level: 1, name: "Les services de Tremplin" }),
     ).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe("/bienvenue");
-    expect(visited).toEqual(["/bienvenue"]);
+    expect(router.state.location.pathname).toBe("/welcome");
+    expect(visited).toEqual(["/welcome"]);
   });
 
   it("does not take the focus when the gate simply opens", async () => {

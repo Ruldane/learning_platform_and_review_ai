@@ -34,13 +34,13 @@ describe("SessionGate", () => {
     expect(await screen.findByText("Chemin : /")).toBeInTheDocument();
   });
 
-  it("gate redirects to /connexion on 401", async () => {
+  it("gate redirects to /login on 401", async () => {
     const api401 = authApi({ me: null });
     server.use(...api401.handlers);
     const { visited } = renderAuth("/");
     await waitFor(() => expect(screen.getByRole("heading", { name: "Sign in" })).toHaveFocus());
     expect(screen.queryByText("Chemin : /")).toBeNull();
-    expect(visited).toEqual(["/", "/connexion"]);
+    expect(visited).toEqual(["/", "/login"]);
   });
 
   it("gate shows a retryable error when me fails for another reason", async () => {
@@ -54,7 +54,7 @@ describe("SessionGate", () => {
     expect(await screen.findByText("Chemin : /")).toBeInTheDocument();
   });
 
-  it("a 401 mid-session leads once to /connexion", async () => {
+  it("a 401 mid-session leads once to /login", async () => {
     const session = authApi({ me: camille });
     server.use(
       ...session.handlers,
@@ -67,7 +67,7 @@ describe("SessionGate", () => {
     await settle();
     // Une seule redirection malgré deux 401 : la porte ne relit pas `me` (il répondrait 401, donc
     // émettrait de nouveau) et la page de connexion ne renvoie pas vers la porte.
-    expect(visited).toEqual(["/", "/connexion"]);
+    expect(visited).toEqual(["/", "/login"]);
     expect(session.meCalls).toBe(1);
     expect(screen.getByRole("link", { name: "Sign in with Google" })).toBeInTheDocument();
   });
@@ -86,7 +86,7 @@ describe("SessionGate", () => {
     await screen.findByRole("heading", { name: "Sign in" });
     await client.refetchQueries({ queryKey: ["auth", "me"] });
     await settle();
-    expect(visited).toEqual(["/", "/connexion"]);
+    expect(visited).toEqual(["/", "/login"]);
   });
 
   it("ignores other 401 codes: only auth_required opens the login", async () => {
@@ -150,7 +150,7 @@ describe("SessionGate", () => {
       expect(client.getQueryData(["settings"])).toEqual({ of: "camille" });
     });
 
-    it("leads to /connexion when the session ended in the other tab", async () => {
+    it("leads to /login when the session ended in the other tab", async () => {
       server.use(...authApi({ me: camille }).handlers);
       const { client, visited } = renderAuth("/");
       await screen.findByText("Chemin : /");
@@ -159,7 +159,7 @@ describe("SessionGate", () => {
       show();
       await screen.findByRole("heading", { name: "Sign in" });
       expect(client.getQueryData(["settings"])).toBeUndefined();
-      expect(visited).toEqual(["/", "/connexion"]);
+      expect(visited).toEqual(["/", "/login"]);
     });
   });
 });

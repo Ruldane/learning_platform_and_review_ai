@@ -26,8 +26,8 @@ export function setup(
   const router = createMemoryRouter(
     [
       { path: "/reglages/donnees", element: <DataPage /> },
-      { path: "/bienvenue", element: <p>Premier lancement</p> },
-      { path: "/connexion", element: <p>Connexion</p> },
+      { path: "/welcome", element: <p>Premier lancement</p> },
+      { path: "/login", element: <p>Connexion</p> },
     ],
     { initialEntries: ["/reglages/donnees"] },
   );

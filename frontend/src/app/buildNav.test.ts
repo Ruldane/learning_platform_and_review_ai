@@ -43,7 +43,7 @@ describe("buildNav", () => {
   it("buildNav ignores publicRoutes", () => {
     expect(
       buildNav([
-        { id: "auth", routes: [], publicRoutes: [{ path: "/connexion", element: null }] },
+        { id: "auth", routes: [], publicRoutes: [{ path: "/login", element: null }] },
         {
           id: "home",
           routes: [],

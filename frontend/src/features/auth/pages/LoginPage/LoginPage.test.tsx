@@ -20,13 +20,19 @@ const MESSAGES: [string, string][] = [
 describe("LoginPage", () => {
   it.each(MESSAGES)("login error messages by code: %s", async (code, message) => {
     server.use(...authApi({ me: null }).handlers);
-    renderAuth(`/connexion?erreur=${code}`);
+    renderAuth(`/login?error=${code}`);
     expect(await screen.findByRole("alert")).toHaveTextContent(message);
+  });
+
+  it("shows a callback error passed with the previous query key", async () => {
+    server.use(...authApi({ me: null }).handlers);
+    renderAuth("/login?erreur=access_denied");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Sign-in cancelled.");
   });
 
   it("login error messages by code: an unknown code gets the general message, never shown", async () => {
     server.use(...authApi({ me: null }).handlers);
-    renderAuth("/connexion?erreur=%3Cb%3Ecode_inventé%3C%2Fb%3E");
+    renderAuth("/login?error=%3Cb%3Ecode_inventé%3C%2Fb%3E");
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("Sign-in failed, try again.");
     expect(alert).not.toHaveTextContent("inventé");
@@ -34,13 +40,13 @@ describe("LoginPage", () => {
 
   it("login error messages by code: no code, no message; inherited keys are unknown", async () => {
     server.use(...authApi({ me: null }).handlers);
-    renderAuth("/connexion?erreur=constructor");
+    renderAuth("/login?error=constructor");
     expect(await screen.findByRole("alert")).toHaveTextContent("Sign-in failed");
   });
 
   it("shows the Google link and no alert without an error code", async () => {
     server.use(...authApi({ me: null }).handlers);
-    renderAuth("/connexion");
+    renderAuth("/login");
     const link = await screen.findByRole("link", { name: "Sign in with Google" });
     expect(link).toHaveAttribute("href", "http://localhost:8000/api/v1/auth/google/login");
     expect(screen.queryByRole("alert")).toBeNull();
@@ -51,22 +57,22 @@ describe("LoginPage", () => {
 
   it("sends the local mode back to the app", async () => {
     server.use(...authApi({ me: localMe }).handlers);
-    renderAuth("/connexion");
+    renderAuth("/login");
     expect(await screen.findByText("Chemin : /")).toBeInTheDocument();
   });
 
   it("does not bounce a Google account back to the gate: it keeps showing the card", async () => {
     server.use(...authApi({ me: camille }).handlers);
-    const { visited } = renderAuth("/connexion");
+    const { visited } = renderAuth("/login");
     expect(
       await screen.findByRole("link", { name: "Sign in with Google" }),
     ).toBeInTheDocument();
-    expect(visited).toEqual(["/connexion"]);
+    expect(visited).toEqual(["/login"]);
   });
 
   it("offers a retry when the server cannot say which mode it runs", async () => {
     server.use(...authApi({ me: camille, meFails: true }).handlers);
-    renderAuth("/connexion");
+    renderAuth("/login");
     expect(await screen.findByRole("button", { name: "Retry" })).toBeInTheDocument();
   });
 
@@ -80,7 +86,7 @@ describe("LoginPage", () => {
           : HttpResponse.json(authRequired, { status: 401 });
       }),
     );
-    const { user } = renderAuth("/connexion");
+    const { user } = renderAuth("/login");
     const retry = await screen.findByRole("button", { name: "Retry" });
     await user.click(retry);
     const title = await screen.findByRole("heading", { name: "Sign in" });

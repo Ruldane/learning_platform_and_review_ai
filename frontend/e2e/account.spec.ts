@@ -34,10 +34,10 @@ function loginUrl(email?: string): string {
   return `${API}/auth/google/login${email ? `?login_hint=${encodeURIComponent(email)}` : ""}`;
 }
 
-/** Quitte l'application par le menu du compte : la porte mène à `/connexion`. */
+/** Quitte l'application par le menu du compte : la porte mène à `/login`. */
 async function logOut(page: Page): Promise<void> {
   await page.getByRole("button", { name: "Se déconnecter" }).click();
-  await expect(page).toHaveURL(/\/connexion$/);
+  await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByRole("link", { name: "Se connecter avec Google" })).toBeVisible();
 }
 
@@ -104,16 +104,16 @@ test("Camille reprend l'espace local, Dominique repart de zéro et supprime tout
 }) => {
   // (1) Sans session, l'application mène à la connexion ; le faux fournisseur connecte Camille.
   await page.goto("/");
-  await expect(page).toHaveURL(/\/connexion$/);
+  await expect(page).toHaveURL(/\/login$/);
   await page.getByRole("link", { name: "Se connecter avec Google" }).click();
 
   // La première connexion d'un compte nommé propose l'espace local ; Camille le reprend.
-  await expect(page).toHaveURL(/\/connexion\/reprise$/);
+  await expect(page).toHaveURL(/\/login\/claim$/);
   await expect(page.getByRole("heading", { name: "Reprendre tes données ?" })).toBeVisible();
   await page.getByRole("button", { name: "Reprendre les données de cet ordinateur" }).click();
 
   // Le premier lancement est à faire (le compte repris n'a jamais fini l'accueil).
-  await expect(page).toHaveURL(/\/bienvenue$/);
+  await expect(page).toHaveURL(/\/welcome$/);
   await walkThroughWelcome(page);
   expect(await signedInAs(page)).toBe(CAMILLE);
 
@@ -126,7 +126,7 @@ test("Camille reprend l'espace local, Dominique repart de zéro et supprime tout
   await page.goto("/");
   await logOut(page);
   await page.goto(loginUrl(DOMINIQUE));
-  await expect(page).toHaveURL(/\/bienvenue$/);
+  await expect(page).toHaveURL(/\/welcome$/);
   await expect(page.getByRole("heading", { name: "Reprendre tes données ?" })).toHaveCount(0);
   expect(await signedInAs(page)).toBe(DOMINIQUE);
 
@@ -143,7 +143,7 @@ test("Camille reprend l'espace local, Dominique repart de zéro et supprime tout
   await page.goto("/reglages/donnees");
   await exportData(page);
   await deleteEverything(page);
-  await expect(page).toHaveURL(/\/connexion$/);
+  await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByRole("link", { name: "Se connecter avec Google" })).toBeVisible();
   expect(await signedInAs(page)).toBeNull();
 
@@ -160,7 +160,7 @@ test("« Tout supprimer » n'efface pas le compte d'un autre onglet", async ({ c
   const other = await context.newPage();
   // Onglet A : Dominique (un compte neuf : son premier lancement est passé) sur Mes données.
   await page.goto(loginUrl(DOMINIQUE));
-  await expect(page).toHaveURL(/\/bienvenue$/);
+  await expect(page).toHaveURL(/\/welcome$/);
   await page.getByRole("button", { name: "Passer l'accueil" }).click();
   await expect(page).toHaveURL(/localhost:\d+\/$/);
   await page.goto("/reglages/donnees");

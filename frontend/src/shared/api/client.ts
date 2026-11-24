@@ -15,7 +15,7 @@ type WithoutPrefix<P> = {
 
 /**
  * Toute réponse en échec devient une `ApiError` ; une panne réseau aussi. Un 401 `auth_required`
- * prévient en plus la porte de connexion (`authEvents`), qui mène à `/connexion`.
+ * prévient en plus la porte de connexion (`authEvents`), qui mène à `/login`.
  */
 const errorMiddleware: Middleware = {
   async onResponse({ response }) {

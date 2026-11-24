@@ -74,7 +74,7 @@ async function expectAdvice(page: Page): Promise<void> {
   await expect(page.getByText("Le conseil se réunit…")).toHaveCount(0);
 }
 
-// Le premier lancement est fait avant la première page (la porte mène sinon à /bienvenue).
+// Le premier lancement est fait avant la première page (la porte mène sinon à /welcome).
 test.beforeEach(({ request }) => finishFirstLaunch(request));
 
 test("le brief du jour existe à l'ouverture, sept rubriques et un seul conseil", async ({

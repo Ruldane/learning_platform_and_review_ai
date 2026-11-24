@@ -53,11 +53,11 @@ export function setup(over: Partial<Parameters<typeof onboardingApi>[0]> = {}, s
         children: [
           { index: true, element: <p>Accueil de Tremplin</p> },
           { path: "reglages", element: <p>Réglages</p> },
-          { path: "bienvenue", element: <WelcomePage /> },
+          { path: "welcome", element: <WelcomePage /> },
         ],
       },
     ],
-    { initialEntries: [{ pathname: "/bienvenue", state }] },
+    { initialEntries: [{ pathname: "/welcome", state }] },
   );
   const Wrapper = createQueryWrapper(client);
   render(

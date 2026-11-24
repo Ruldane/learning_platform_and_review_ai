@@ -4,7 +4,7 @@ import { OnboardingGate } from "./OnboardingGate";
 
 describe("settingsManifest", () => {
   it("le premier lancement est une page nue : sans navigation latérale (handle bare)", () => {
-    const welcome = settingsManifest.routes.find((route) => route.path === "bienvenue");
+    const welcome = settingsManifest.routes.find((route) => route.path === "welcome");
     expect(welcome?.handle).toEqual({ bare: true });
   });
 
@@ -48,14 +48,14 @@ describe("settingsManifest", () => {
       "reglages/disponibilite",
       "reglages/etude",
       "reglages/style",
-      "bienvenue",
+      "welcome",
     ]);
   });
 
   it("puts the first launch behind a gate, and out of the navigation", () => {
     expect(settingsManifest.shell?.gate).toBe(OnboardingGate);
-    // /bienvenue est une route, jamais une entrée de navigation.
-    expect(settingsManifest.nav?.map((entry) => entry.path)).not.toContain("/bienvenue");
+    // /welcome est une route, jamais une entrée de navigation.
+    expect(settingsManifest.nav?.map((entry) => entry.path)).not.toContain("/welcome");
     expect(settingsManifest.publicRoutes).toBeUndefined();
   });
 });

@@ -19,7 +19,7 @@ describe("DataPage", () => {
     await confirmAndDelete(user);
     await screen.findByText("Premier lancement");
     expect(deleteBodies).toEqual([{ confirm: "SUPPRIMER", expected_user_id: localMe.id }]);
-    expect(router.state.location.pathname).toBe("/bienvenue");
+    expect(router.state.location.pathname).toBe("/welcome");
     // Les réglages et le reste seront relus à neuf ; l'identité locale reste.
     expect(client.getQueryData(["settings"])).toBeUndefined();
     expect(client.getQueryData(["goals"])).toBeUndefined();
@@ -32,7 +32,7 @@ describe("DataPage", () => {
     await waitFor(() => expect(client.getQueryData(["auth", "me"])).toBeNull());
     expect(deleteBodies).toEqual([{ confirm: "SUPPRIMER", expected_user_id: camille.id }]);
     expect(client.getQueryData(["settings"])).toBeUndefined();
-    // La porte de la coquille mène à /connexion dès que `me` est vide ; ici, aucune porte :
+    // La porte de la coquille mène à /login dès que `me` est vide ; ici, aucune porte :
     // la page n'ordonne aucune navigation elle-même.
     expect(router.state.location.pathname).toBe("/reglages/donnees");
   });

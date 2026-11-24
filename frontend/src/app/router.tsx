@@ -44,18 +44,27 @@ function LegacyRedirect({ destination }: { destination: string }) {
   return <Navigate to={{ pathname, search, hash }} state={state} replace />;
 }
 
-function featureRoutes(feature: FeatureManifest): RouteObject[] {
-  const redirects = Object.entries(feature.legacyRoutes ?? {}).map(([path, destination]) => ({
+function redirectRoutes(routes: Record<string, string> = {}): RouteObject[] {
+  return Object.entries(routes).map(([path, destination]) => ({
     path,
     element: <LegacyRedirect destination={destination} />,
   }));
-  return [...feature.routes.map((route) => withDescription(route, feature)), ...redirects];
+}
+
+function featureRoutes(feature: FeatureManifest): RouteObject[] {
+  return [
+    ...feature.routes.map((route) => withDescription(route, feature)),
+    ...redirectRoutes(feature.legacyRoutes),
+  ];
 }
 
 /** Mount public routes first, then the pages and redirects protected by the app layout. */
 export function buildRoutes(features: FeatureManifest[]): RouteObject[] {
   return [
-    ...features.flatMap((feature) => feature.publicRoutes ?? []),
+    ...features.flatMap((feature) => [
+      ...(feature.publicRoutes ?? []),
+      ...redirectRoutes(feature.legacyPublicRoutes),
+    ]),
     {
       path: "/",
       Component: AppLayout,

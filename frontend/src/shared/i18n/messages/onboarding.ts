@@ -1,4 +1,4 @@
-/** Textes du premier lancement (`/bienvenue`, SPEC 15.5 et 17.3). */
+/** Textes du premier lancement (`/welcome`, SPEC 15.5 et 17.3). */
 export const onboarding = {
   gate: {
     checking: "Preparing your space…",

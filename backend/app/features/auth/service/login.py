@@ -1,6 +1,6 @@
 """Connexion Google, du départ au retour (P5, P6, P10) : le témoin `tremplin_oauth` garde `state`,
 vérificateur PKCE et `nonce` (chiffrés, 10 minutes) ; au retour, rien n'est créé tant que tout
-n'est pas contrôlé. Chaque échec devient un code (`/connexion?erreur=<code>`).
+n'est pas contrôlé. Chaque échec devient un code (`/login?error=<code>`).
 
 Ni code d'autorisation, ni `state`, ni vérificateur, ni jeton, ni e-mail, ni `sub`, ni `login_hint`
 ne sont journalisés : seuls des identifiants et des codes d'erreur le sont (SPEC 17.2)."""
@@ -111,7 +111,7 @@ async def finish_login(
     """Le retour de Google. Rien n'est écrit tant que le `state`, le jeton d'identité, l'adresse
     vérifiée et `ALLOWED_EMAILS` ne sont pas tous passés. Une exception inattendue (course sur
     une contrainte d'unicité, oubli futur) ne devient jamais une 500 : elle est journalisée par
-    sa classe, la transaction est défaite et la personne revient à `/connexion`."""
+    sa classe, la transaction est défaite et la personne revient à `/login`."""
     if _too_long(code, state, error):
         return _failed("state_invalid")
     if error:

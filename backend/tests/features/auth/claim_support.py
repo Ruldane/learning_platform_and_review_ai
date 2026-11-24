@@ -61,7 +61,7 @@ async def offered(
 ) -> httpx.Response:
     """Une connexion qui doit aboutir au choix de la reprise (et rien d'autre)."""
     r = await sign_in(client, google, email, **identity)
-    assert r.headers["location"].endswith("/connexion/reprise"), r.headers["location"]
+    assert r.headers["location"].endswith("/login/claim"), r.headers["location"]
     assert set_cookie(r, "tremplin_claim") and not set_cookie(r, "tremplin_session")
     return r
 
