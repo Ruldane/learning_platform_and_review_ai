@@ -4,7 +4,7 @@
  * qu'ils reçoivent. `types.ts` vérifie à la compilation que les types générés les satisfont.
  */
 
-export const TIERS = ["rapide", "standard", "fort", "vision"] as const;
+export const TIERS = ["fast", "standard", "strong", "vision"] as const;
 export type Tier = (typeof TIERS)[number];
 
 export const PRESET_NAMES = ["all_haiku", "haiku_sonnet_strong", "all_glm", "all_openai"] as const;

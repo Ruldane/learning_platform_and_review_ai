@@ -122,7 +122,7 @@ async def test_learned_document_sends_document_as_untrusted_and_known_titles(
     assert prompt.count("<<<FIN_CONTENU_NON_FIABLE>>>") == prompt.count("<<<CONTENU_NON_FIABLE")
     assert '<<<CONTENU_NON_FIABLE source="document">>>' in prompt
     assert "Parle de l'attention." in prompt and "- Rust — declared" in prompt
-    assert get_agent("archivist").tier == "rapide"
+    assert get_agent("archivist").tier == "fast"
 
 
 async def test_learned_document_replay_does_not_duplicate_acquis(

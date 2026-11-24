@@ -60,7 +60,7 @@ def test_exchange_reads_the_codes_from_an_old_checkpoint() -> None:
 
 
 def test_registries() -> None:
-    assert AGENTS["interviewer"].tier == "fort"
+    assert AGENTS["interviewer"].tier == "strong"
     assert GRAPHS["interview"].input_model is InterviewInput
     assert ROUTE_ONLY["interview"] == "POST /applications/{id}/interviews"
     assert NO_PORTS.interviews is NO_INTERVIEWS

@@ -129,7 +129,7 @@ async def test_plain_reads_never_write(
     d'écriture de la base : `get()` seul n'écrit rien."""
     db_session.add(a_key("u1"))
     await db_session.commit()
-    await SettingsModelReader(db_session_factory).get_model_choice("u1", "fort", None)
+    await SettingsModelReader(db_session_factory).get_model_choice("u1", "strong", None)
     async with db_session_factory() as other:
         await SettingsService(other, "u1").get()
         await other.commit()

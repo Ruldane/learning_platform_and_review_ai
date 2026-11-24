@@ -128,9 +128,9 @@ export const settings = {
     providerLabel: "Provider ({tier})",
     modelLabel: "Model ({tier})",
     noKeyOption: "{label} (no key)",
-    rapide: { label: "Fast", usage: "Search, extraction, moderation" },
+    fast: { label: "Fast", usage: "Search, extraction, moderation" },
     standard: { label: "Standard", usage: "Debate, proofreading, quizzes, tutoring" },
-    fort: { label: "Strong", usage: "Planning, lesson writing, interviews" },
+    strong: { label: "Strong", usage: "Planning, lesson writing, interviews" },
     vision: { label: "Vision", usage: "CV design capture" },
   },
   presets: {

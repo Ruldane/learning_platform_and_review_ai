@@ -140,7 +140,7 @@ async def test_read_node_is_capped_by_pages_per_run_and_session_cap(
 
 
 def test_scout_is_a_fast_agent_with_a_prompt_and_the_graph_is_registered() -> None:
-    assert get_agent("scout").tier == "rapide"
+    assert get_agent("scout").tier == "fast"
     assert get_graph("web_research").input_model is WebResearchInput
 
 

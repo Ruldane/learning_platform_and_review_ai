@@ -26,9 +26,9 @@ PresetName = Literal["all_haiku", "haiku_sonnet_strong", "all_glm", "all_openai"
 
 def _tiers(provider: str, fast: str, strong: str, vision: str) -> dict[Tier, ModelChoice]:
     return {
-        "rapide": ModelChoice(provider=provider, model=fast),
+        "fast": ModelChoice(provider=provider, model=fast),
         "standard": ModelChoice(provider=provider, model=fast),
-        "fort": ModelChoice(provider=provider, model=strong),
+        "strong": ModelChoice(provider=provider, model=strong),
         "vision": ModelChoice(provider=provider, model=vision),
     }
 

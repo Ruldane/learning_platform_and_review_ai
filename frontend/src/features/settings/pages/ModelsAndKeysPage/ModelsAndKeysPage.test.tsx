@@ -194,7 +194,7 @@ describe("ModelsAndKeysPage", () => {
     );
     expect(backend.puts[0]!.tiers).toEqual({
       ...settingsFixture.tiers,
-      rapide: { provider: "anthropic", model: "claude-sonnet-5-5" },
+      fast: { provider: "anthropic", model: "claude-sonnet-5-5" },
     });
   });
 

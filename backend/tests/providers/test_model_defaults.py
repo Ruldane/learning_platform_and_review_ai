@@ -15,8 +15,8 @@ def test_presets_cover_all_tiers() -> None:
     assert set(md.PRESETS) == {"all_haiku", "haiku_sonnet_strong", "all_glm", "all_openai"}
     for preset in md.PRESETS.values():
         assert set(preset) == set(TIERS)
-    assert md.PRESETS["haiku_sonnet_strong"]["fort"].model == md.ANTHROPIC_STRONG
-    assert md.PRESETS["haiku_sonnet_strong"]["rapide"].model == md.ANTHROPIC_FAST
+    assert md.PRESETS["haiku_sonnet_strong"]["strong"].model == md.ANTHROPIC_STRONG
+    assert md.PRESETS["haiku_sonnet_strong"]["fast"].model == md.ANTHROPIC_FAST
 
 
 def test_every_preset_has_a_vision_capable_vision_tier() -> None:

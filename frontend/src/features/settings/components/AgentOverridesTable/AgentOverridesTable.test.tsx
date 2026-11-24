@@ -8,9 +8,9 @@ const providers: ProviderOption[] = [
   { name: "openai", label: "OpenAI", has_key: true, models: ["gpt-6-luna"] },
 ];
 const haiku = { provider: "anthropic", model: "claude-haiku-5-5" };
-const tiers: TierChoices = { rapide: haiku, standard: haiku, fort: haiku, vision: haiku };
+const tiers: TierChoices = { fast: haiku, standard: haiku, strong: haiku, vision: haiku };
 const agents = [
-  { name: "scout", tier: "rapide" as const },
+  { name: "scout", tier: "fast" as const },
   { name: "tutor", tier: "standard" as const },
   { name: "ghost_agent", tier: null },
 ];

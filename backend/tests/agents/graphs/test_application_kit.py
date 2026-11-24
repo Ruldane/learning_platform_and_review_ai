@@ -253,6 +253,6 @@ def test_graph_is_registered_and_route_only() -> None:
     spec = get_graph("application_kit")
     assert spec.input_model is ApplicationKitInput
     assert ROUTE_ONLY["application_kit"] == "POST /applications/{id}/kit"
-    assert AGENTS["tracker"].tier == "rapide" and AGENTS["scout"].tier == "rapide"
+    assert AGENTS["tracker"].tier == "fast" and AGENTS["scout"].tier == "fast"
     with pytest.raises(ValueError):
         ApplicationKitInput.model_validate({"application_id": "court"})

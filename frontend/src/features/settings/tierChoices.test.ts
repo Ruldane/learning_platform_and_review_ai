@@ -8,9 +8,9 @@ describe("readTiers", () => {
   });
 
   it("complète un niveau absent par un choix vide plutôt que de planter", () => {
-    const tiers = readTiers({ rapide: { provider: "glm", model: "x" } });
-    expect(tiers.fort).toEqual({ provider: "", model: "" });
-    expect(tiers.rapide).toEqual({ provider: "glm", model: "x" });
+    const tiers = readTiers({ fast: { provider: "glm", model: "x" } });
+    expect(tiers.strong).toEqual({ provider: "", model: "" });
+    expect(tiers.fast).toEqual({ provider: "glm", model: "x" });
   });
 });
 
@@ -23,6 +23,6 @@ describe("readPresets", () => {
       "all_glm",
       "all_openai",
     ]);
-    expect(presets.haiku_sonnet_strong.fort.model).toBe("claude-sonnet-5-5");
+    expect(presets.haiku_sonnet_strong.strong.model).toBe("claude-sonnet-5-5");
   });
 });

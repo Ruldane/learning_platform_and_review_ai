@@ -49,7 +49,7 @@ def _prompt(today: date = TODAY) -> str:
 
 async def _read(today: date = TODAY) -> str:
     models = ScriptedModels(applications_scripts())
-    model = await models.get_chat_model("u1", "rapide", agent="tracker")
+    model = await models.get_chat_model("u1", "fast", agent="tracker")
     reply = await model.ainvoke([SystemMessage(_prompt(today)), HumanMessage(INTAKE_REQUEST)])
     return str(reply.content)
 
@@ -97,7 +97,7 @@ def test_the_sentence_matches_the_manual_application_but_not_the_posting_ones() 
 
 async def test_the_queue_serves_every_sentence_and_retry_of_the_journey() -> None:
     models = ScriptedModels(applications_scripts())
-    model = await models.get_chat_model("u1", "rapide", agent="tracker")
+    model = await models.get_chat_model("u1", "fast", agent="tracker")
     messages = [SystemMessage(_prompt()), HumanMessage(INTAKE_REQUEST)]
 
     for _ in range(applications_script.LONG):

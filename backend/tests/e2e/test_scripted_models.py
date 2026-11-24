@@ -16,7 +16,7 @@ def _echo(messages: Sequence[BaseMessage]) -> str:
 async def test_scripted_models_serve_each_agent_in_order() -> None:
     models = ScriptedModels({"moderator": ["un", _echo], "scout": ["plan"]})
     moderator = await models.get_chat_model("u1", "standard", agent="moderator")
-    scout = await models.get_chat_model("u1", "rapide", agent="scout")
+    scout = await models.get_chat_model("u1", "fast", agent="scout")
 
     first = await moderator.ainvoke([HumanMessage("question")])
     plan = await scout.ainvoke([HumanMessage("cherche")])
@@ -31,7 +31,7 @@ async def test_scripted_models_serve_each_agent_in_order() -> None:
 
 async def test_streamed_call_takes_one_reply() -> None:
     models = ScriptedModels({"writer": ["# Titre\n\nCorps de la leçon.", "suite"]})
-    writer = await models.get_chat_model("u1", "fort", agent="writer")
+    writer = await models.get_chat_model("u1", "strong", agent="writer")
 
     chunks = [chunk async for chunk in writer.astream([HumanMessage("Écris la leçon.")])]
 
@@ -54,7 +54,7 @@ async def test_exhausted_queue_names_the_agent_not_the_messages() -> None:
 
 async def test_unknown_agent_has_an_empty_queue() -> None:
     models = ScriptedModels({})
-    archivist = await models.get_chat_model("u1", "rapide", agent="archivist")
+    archivist = await models.get_chat_model("u1", "fast", agent="archivist")
 
     with pytest.raises(RuntimeError, match="archivist"):
         await archivist.ainvoke([HumanMessage("x")])
@@ -62,8 +62,8 @@ async def test_unknown_agent_has_an_empty_queue() -> None:
 
 async def test_delay_applies_to_the_listed_agents_only() -> None:
     models = ScriptedModels({"strategist": ["a"], "scribe": ["b"]}, delays={"strategist": 0.05})
-    strategist = await models.get_chat_model("u1", "fort", agent="strategist")
-    scribe = await models.get_chat_model("u1", "rapide", agent="scribe")
+    strategist = await models.get_chat_model("u1", "strong", agent="strategist")
+    scribe = await models.get_chat_model("u1", "fast", agent="scribe")
 
     assert (await scribe.ainvoke([HumanMessage("x")])).content == "b"
     assert (await strategist.ainvoke([HumanMessage("x")])).content == "a"

@@ -161,7 +161,7 @@ async def test_binome_run_error_is_a_margin_annotation_on_the_light_tier(
     [note] = (await client.get(f"{API}/sessions/{sid}/notes")).json()
     assert note["kind"] == "annotation" and note["file_path"] == "main.py"
     assert note["line_start"] == 3  # le dernier cadre de la trace (TRACE : ligne 7 puis 3)
-    assert models.calls[0].tier == "rapide"
+    assert models.calls[0].tier == "fast"
     assert "ZeroDivisionError" in str(models.received[0][1].content)
 
 

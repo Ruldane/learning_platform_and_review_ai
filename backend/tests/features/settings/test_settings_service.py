@@ -146,11 +146,11 @@ async def test_agent_override_wins(
     await service.replace(s.model_copy(update={"agent_overrides": {"strategist": glm}}))
     await db_session.commit()
     reader = SettingsModelReader(db_session_factory)
-    assert (await reader.get_model_choice("u1", "fort", "strategist")).provider == "glm"
-    assert (await reader.get_model_choice("u1", "fort", None)).provider == "anthropic"
-    assert (await reader.get_model_choice("u1", "fort", "autre")).provider == "anthropic"
+    assert (await reader.get_model_choice("u1", "strong", "strategist")).provider == "glm"
+    assert (await reader.get_model_choice("u1", "strong", None)).provider == "anthropic"
+    assert (await reader.get_model_choice("u1", "strong", "autre")).provider == "anthropic"
     # Un autre utilisateur n'est pas affecté par la surcharge.
-    assert (await reader.get_model_choice("u2", "fort", "strategist")).provider == "anthropic"
+    assert (await reader.get_model_choice("u2", "strong", "strategist")).provider == "anthropic"
 
 
 async def test_run_reader_gives_the_engine_the_stored_settings(

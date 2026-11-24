@@ -20,7 +20,7 @@ from app.providers.llm.limits import with_output_limit
 DAILY_CAP = 10_000
 MAX_REQUEST_BYTES = 16_384
 MAX_REPLY_BYTES = 16_384
-_OPENAI_TIERS: tuple[Tier, ...] = ("rapide", "standard", "fort")
+_OPENAI_TIERS: tuple[Tier, ...] = ("fast", "standard", "strong")
 _MESSAGES = {"system": SystemMessage, "user": HumanMessage, "assistant": AIMessage}
 
 

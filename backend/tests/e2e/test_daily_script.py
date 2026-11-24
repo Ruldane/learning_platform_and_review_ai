@@ -61,7 +61,7 @@ def _pages(*numbers: int) -> list[PostingPage]:
 
 
 async def _ask(models: ScriptedModels, agent: str, system: str, request: str) -> str:
-    model = await models.get_chat_model("u1", "rapide", agent=agent)
+    model = await models.get_chat_model("u1", "fast", agent=agent)
     reply = await model.ainvoke([SystemMessage(system), HumanMessage(request)])
     return str(reply.content)
 

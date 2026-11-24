@@ -5,12 +5,12 @@ import type { PresetMap, ProviderOption, TierChoices } from "../viewTypes";
 import { TiersSection } from "./TiersSection";
 
 const haiku = { provider: "anthropic", model: "claude-haiku-5-5" };
-const tiers: TierChoices = { rapide: haiku, standard: haiku, fort: haiku, vision: haiku };
+const tiers: TierChoices = { fast: haiku, standard: haiku, strong: haiku, vision: haiku };
 const glm = { provider: "glm", model: "glm-5.3" };
 const presets: PresetMap = {
   all_haiku: tiers,
   haiku_sonnet_strong: tiers,
-  all_glm: { rapide: glm, standard: glm, fort: glm, vision: glm },
+  all_glm: { fast: glm, standard: glm, strong: glm, vision: glm },
   all_openai: tiers,
 };
 const providers: ProviderOption[] = [

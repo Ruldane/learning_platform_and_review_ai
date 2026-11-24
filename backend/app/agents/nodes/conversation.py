@@ -174,7 +174,7 @@ async def _classroom_reply(deps: GraphDeps, context: ConversationContext) -> Con
     refs = context.references
     catalog = [CitationEntry(i, ref.source.title) for i, ref in enumerate(refs, 1)]
     model = await deps.models.get_chat_model(
-        deps.user_id, "fort" if context.strong else "rapide", agent=TRAINING_TUTOR
+        deps.user_id, "strong" if context.strong else "fast", agent=TRAINING_TUTOR
     )
     history = list(context.history)
     replies = []
@@ -244,7 +244,7 @@ def make_reply(deps: GraphDeps) -> Node:
         messages = _messages(context, refs)
         max_output = _output_budget(deps, context, messages)
         model = await deps.models.get_chat_model(
-            deps.user_id, "fort" if context.strong else "rapide", agent=context.agent
+            deps.user_id, "strong" if context.strong else "fast", agent=context.agent
         )
         catalog = [
             CitationEntry(

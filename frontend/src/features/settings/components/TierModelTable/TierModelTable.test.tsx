@@ -13,7 +13,7 @@ const providers: ProviderOption[] = [
   },
 ];
 const choice = { provider: "anthropic", model: "claude-haiku-5-5" };
-const tiers: TierChoices = { rapide: choice, standard: choice, fort: choice, vision: choice };
+const tiers: TierChoices = { fast: choice, standard: choice, strong: choice, vision: choice };
 
 describe("TierModelTable", () => {
   it("shows the four tiers and their uses", () => {
@@ -35,7 +35,7 @@ describe("TierModelTable", () => {
       screen.getByRole("combobox", { name: "Model (Strong)" }),
       "claude-sonnet-5-5",
     );
-    expect(onChange).toHaveBeenCalledWith("fort", {
+    expect(onChange).toHaveBeenCalledWith("strong", {
       provider: "anthropic",
       model: "claude-sonnet-5-5",
     });

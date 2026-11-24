@@ -24,7 +24,7 @@ def test_registries_return_registered_entries(monkeypatch: pytest.MonkeyPatch) -
     class Input(BaseModel):
         topic: str
 
-    agent = AgentSpec(name="demo", tier="rapide")
+    agent = AgentSpec(name="demo", tier="fast")
     graph = GraphSpec(name="g", input_model=Input, build=lambda deps: None)  # type: ignore[arg-type, return-value]
     monkeypatch.setitem(AGENTS, "demo", agent)
     monkeypatch.setitem(GRAPHS, "g", graph)

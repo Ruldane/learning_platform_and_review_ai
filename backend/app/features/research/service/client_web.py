@@ -69,7 +69,7 @@ class ClientWeb:
             f"Domaines privilégiés : {', '.join(prefs.preferred)}\n"
             f"Domaines exclus : {', '.join(prefs.excluded)}"
         )
-        model = await self.models.get_chat_model(self.user_id, "rapide", agent="scout")
+        model = await self.models.get_chat_model(self.user_id, "fast", agent="scout")
         result = await structured_call(
             model,
             SearchSources,
@@ -94,7 +94,7 @@ class ClientWeb:
 
     async def read(self, url: str) -> CachedPage:
         public_link(url)
-        model = await self.models.get_chat_model(self.user_id, "rapide", agent="scout")
+        model = await self.models.get_chat_model(self.user_id, "fast", agent="scout")
         result = await structured_call(
             model,
             ReadSource,

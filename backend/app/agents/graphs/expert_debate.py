@@ -101,7 +101,7 @@ def make_speech(deps: GraphDeps, role: ExpertRole) -> ExpertNode:
             "expert_debate",
             DEBATE_REQUEST,
             _prompt(role, draft.question, sources, speeches),
-            tier="fort" if draft.strong else None,
+            tier="strong" if draft.strong else None,
         )
         cap = min(TURN_TOKEN_LIMIT, deps.settings.session_token_cap)
         estimated = sum(len(message_text(message).encode()) for message in messages)

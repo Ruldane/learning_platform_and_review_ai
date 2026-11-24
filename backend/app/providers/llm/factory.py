@@ -1,5 +1,4 @@
-"""Fabrique de modèles de chat : l'unique point d'instanciation des LLM (aucun agent ne
-construit de modèle ailleurs)."""
+"""Construct chat models for agents through a single factory."""
 
 from collections.abc import Mapping
 
@@ -20,12 +19,6 @@ from app.providers.llm.base import (
 from app.providers.llm.forcing import forced_choice
 
 _SETTINGS_PLACE = "Settings > Models and keys"
-_TIER_LABELS: dict[Tier, str] = {
-    "rapide": "fast",
-    "standard": "standard",
-    "fort": "strong",
-    "vision": "vision",
-}
 
 
 class LlmFactory:
@@ -38,8 +31,7 @@ class LlmFactory:
         *,
         call_deadline_s: float = LLM_CALL_DEADLINE_S,
     ) -> None:
-        """`call_deadline_s` : échéance totale de chaque appel des modèles construits (voir
-        `base.LLM_CALL_DEADLINE_S`), lue de la configuration par la composition."""
+        """Set the total deadline for each call made by a model built here."""
         self._choices = choices
         self._keys = keys
         self._providers = providers
@@ -47,8 +39,7 @@ class LlmFactory:
         self._call_deadline_s = call_deadline_s
 
     async def resolve(self, user_id: str, tier: Tier, agent: str | None = None) -> ModelChoice:
-        """Fournisseur et modèle retenus : surcharge de l'agent si elle existe, sinon le niveau ;
-        un fournisseur forcé pour le parcours en cours (`run_source`) l'emporte."""
+        """Use the agent override or tier choice, then apply any provider forced for this run."""
         choice = await self._choices.get_model_choice(user_id, tier, agent)
         provider = run_source(user_id)[1]
         return choice if provider is None else forced_choice(choice, provider, tier)
@@ -67,7 +58,7 @@ class LlmFactory:
             )
         key = await self._read_key(user_id, tier, provider)
         model = provider.build(choice.model, key, base_url=self._base_urls.get(provider.name))
-        # Modèle neuf à chaque appel : l'échéance s'ajoute à ses métadonnées sans rien partager.
+        # Each call builds a fresh model with its own metadata and deadline.
         model.metadata = {**(model.metadata or {}), CALL_DEADLINE_KEY: self._call_deadline_s}
         return model
 
@@ -85,7 +76,7 @@ class LlmFactory:
         if not key:
             raise AppError(
                 "llm_key_missing",
-                f"No {provider.label} API key is configured for the {_TIER_LABELS[tier]} tier. "
+                f"No {provider.label} API key is configured for the {tier} tier. "
                 f"Add one in {_SETTINGS_PLACE}.",
                 400,
                 {"provider": provider.name, "tier": tier},

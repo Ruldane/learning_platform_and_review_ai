@@ -162,8 +162,8 @@ async def test_ask_user_has_no_side_effect_before_interrupt(
 
 
 def test_agents_and_graph_are_registered():
-    assert get_agent("demo_proponent").tier == "rapide"
-    assert get_agent("demo_critic").tier == "rapide"
+    assert get_agent("demo_proponent").tier == "fast"
+    assert get_agent("demo_critic").tier == "fast"
     assert get_graph("demo_debate") is GRAPHS["demo_debate"]
     assert GRAPHS["demo_debate"].input_model is DemoDebateInput
     assert {"demo_proponent", "demo_critic"} <= set(AGENTS)

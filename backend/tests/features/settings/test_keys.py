@@ -251,7 +251,7 @@ async def test_db_key_reader_follows_the_same_priority(
 async def test_models_endpoint_lists_presets(client: httpx.AsyncClient) -> None:
     body = (await client.get("/api/v1/settings/models")).json()
     assert set(body["presets"]) == {"all_haiku", "haiku_sonnet_strong", "all_glm", "all_openai"}
-    assert body["presets"]["all_glm"]["fort"]["provider"] == "glm"
+    assert body["presets"]["all_glm"]["strong"]["provider"] == "glm"
     assert body["providers"] == [
         {"name": "fake", "label": "Faux fournisseur", "has_key": False, "models": None}
     ]

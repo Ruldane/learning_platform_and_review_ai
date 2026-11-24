@@ -26,8 +26,8 @@ CALL_DEADLINE_KEY = "tremplin_call_deadline_s"
 # l'ignorent. Le texte marqué doit rester identique d'un appel à l'autre (octet pour octet).
 CACHE_PREFIX_KEY = "tremplin_cache_prefix"
 
-Tier = Literal["rapide", "standard", "fort", "vision"]
-TIERS: tuple[Tier, ...] = ("rapide", "standard", "fort", "vision")
+Tier = Literal["fast", "standard", "strong", "vision"]
+TIERS: tuple[Tier, ...] = ("fast", "standard", "strong", "vision")
 
 
 class ModelChoice(BaseModel):

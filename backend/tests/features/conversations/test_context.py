@@ -80,7 +80,7 @@ async def test_follow_up_remembers_history_and_resolves_owned_memory_item(
             "excerpt": "On garde les détails.",
         },
     ]
-    assert [model for model, _ in professor_models.built] == ["rapide", "fort"]
+    assert [model for model, _ in professor_models.built] == ["fast", "strong"]
     second_prompt = str(professor_models.received[1][-1].content)
     assert "Première question." in second_prompt and "Premier éclairage" in second_prompt
     assert "Note vérifiée" in second_prompt and "Note étrangère" not in second_prompt

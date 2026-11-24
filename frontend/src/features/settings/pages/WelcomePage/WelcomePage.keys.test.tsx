@@ -181,7 +181,7 @@ describe("WelcomePage, key and CV steps", () => {
     await screen.findByText("Accueil de Tremplin");
     const last = puts.at(-1)!;
     expect(last.onboarding_done).toBe(true);
-    expect((last.tiers as Record<string, { provider: string }>).fort!.provider).toBe("glm");
+    expect((last.tiers as Record<string, { provider: string }>).strong!.provider).toBe("glm");
   });
 
   it("says why when the models cannot be moved, and stays on the step", async () => {

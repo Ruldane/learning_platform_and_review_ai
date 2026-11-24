@@ -99,7 +99,7 @@ def make_assessment(deps: GraphDeps, *, final: bool) -> FeynmanNode:
                 "conversation_budget_reached", "This conversation has reached its budget.", 429
             )
         model = await deps.models.get_chat_model(
-            deps.user_id, "fort" if context.strong else "rapide", agent=TRAINING_TUTOR
+            deps.user_id, "strong" if context.strong else "fast", agent=TRAINING_TUTOR
         )
         assessment = await structured_call(
             with_output_limit(model, min(room, 850)),

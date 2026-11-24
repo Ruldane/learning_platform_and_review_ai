@@ -165,7 +165,7 @@ def _two_questions(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
 
 def _speak(deps: GraphDeps) -> Any:
     async def speak(state: State) -> State:
-        model = await deps.models.get_chat_model(deps.user_id, "rapide", agent="demo")
+        model = await deps.models.get_chat_model(deps.user_id, "fast", agent="demo")
         reply = await invoke_agent(
             model,
             [HumanMessage(f"Parle de {state.get('topic', 'rien')}")],
@@ -215,7 +215,7 @@ class Verdict(BaseModel):
 
 def _structured(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
     async def judge(state: State) -> State:
-        model = await deps.models.get_chat_model(deps.user_id, "rapide", agent="demo")
+        model = await deps.models.get_chat_model(deps.user_id, "fast", agent="demo")
         verdict = await structured_call(
             model, Verdict, [HumanMessage("Juge")], agent="demo", step="juge", intent="Je juge"
         )

@@ -9,9 +9,9 @@ const EMPTY_CHOICE: ModelChoice = { provider: "", model: "" };
 export function readTiers(raw: RawChoices): TierChoices {
   const pick = (tier: (typeof TIERS)[number]) => raw?.[tier] ?? EMPTY_CHOICE;
   return {
-    rapide: pick("rapide"),
+    fast: pick("fast"),
     standard: pick("standard"),
-    fort: pick("fort"),
+    strong: pick("strong"),
     vision: pick("vision"),
   };
 }

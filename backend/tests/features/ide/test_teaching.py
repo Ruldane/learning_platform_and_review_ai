@@ -146,8 +146,8 @@ async def test_hint_uses_light_tier_explanation_uses_strong(
     asked = (await teach(client, sid, "question", question="Pourquoi cette erreur ?")).json()
     await wait_done(client, asked["session_id"])
     assert [(c.tier, c.agent) for c in models.calls] == [
-        ("rapide", "professor"),
-        ("fort", "professor"),
+        ("fast", "professor"),
+        ("strong", "professor"),
     ]
 
 

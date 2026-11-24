@@ -172,9 +172,9 @@ async def test_unknown_tier_is_422_without_echoing_the_key(client: httpx.AsyncCl
 async def test_known_tier_with_a_bad_value_still_names_its_path(
     client: httpx.AsyncClient,
 ) -> None:
-    r = await put(client, tiers={"rapide": {"provider": "", "model": "m"}})
+    r = await put(client, tiers={"fast": {"provider": "", "model": "m"}})
     assert r.status_code == 422
-    assert r.json()["error"]["details"] == {"fields": ["tiers.rapide.provider"]}
+    assert r.json()["error"]["details"] == {"fields": ["tiers.fast.provider"]}
 
 
 async def test_override_never_logged(
@@ -230,13 +230,13 @@ async def test_agent_override_used_by_next_session(
     providers.llm["anthropic"] = AnthropicFake(["réponse un", "réponse deux", "réponse trois"])
     providers.llm["glm"] = GlmFake(["réponse glm"])
     providers.env_keys.update({"anthropic": "cle-a", "glm": "cle-g"})
-    await journaled_call(providers, db_session_factory, user, "fort", "strategist")
+    await journaled_call(providers, db_session_factory, user, "strong", "strategist")
     assert await logged_models(client) == [("anthropic", "claude-haiku-5-5")]
     r = await put(client, agent_overrides={"strategist": GLM})
     assert r.status_code == 200
     # La session suivante : l'agent surchargé suit son modèle, quel que soit le niveau demandé.
-    await journaled_call(providers, db_session_factory, user, "fort", "strategist")
-    await journaled_call(providers, db_session_factory, user, "fort", "writer")
+    await journaled_call(providers, db_session_factory, user, "strong", "strategist")
+    await journaled_call(providers, db_session_factory, user, "strong", "writer")
     assert await logged_models(client) == [
         ("anthropic", "claude-haiku-5-5"),
         ("glm", "glm-5.3-flash"),
@@ -255,11 +255,11 @@ async def test_tier_switch_visible_in_llm_calls(
     providers.llm["anthropic"] = AnthropicFake(["réponse un"])
     providers.llm["glm"] = GlmFake(["réponse deux"])
     providers.env_keys.update({"anthropic": "cle-a", "glm": "cle-g"})
-    await journaled_call(providers, db_session_factory, user, "fort", None)
+    await journaled_call(providers, db_session_factory, user, "strong", None)
     current = (await client.get(API)).json()
-    tiers = current["tiers"] | {"fort": {"provider": "glm", "model": "glm-5.3-pro"}}
+    tiers = current["tiers"] | {"strong": {"provider": "glm", "model": "glm-5.3-pro"}}
     assert (await put(client, tiers=tiers)).status_code == 200
-    await journaled_call(providers, db_session_factory, user, "fort", None)
+    await journaled_call(providers, db_session_factory, user, "strong", None)
     stmt = select(LlmCall.provider, LlmCall.model).order_by(LlmCall.created_at)
     rows = [tuple(row) for row in (await db_session.execute(stmt)).all()]
     assert rows == [("anthropic", "claude-haiku-5-5"), ("glm", "glm-5.3-pro")]

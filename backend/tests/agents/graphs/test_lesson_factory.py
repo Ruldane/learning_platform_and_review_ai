@@ -252,5 +252,5 @@ async def test_logs_never_contain_lesson_content(
 
 
 def test_registered_agents_and_graph() -> None:
-    assert (AGENTS["writer"].tier, AGENTS["verifier"].tier) == ("fort", "standard")
+    assert (AGENTS["writer"].tier, AGENTS["verifier"].tier) == ("strong", "standard")
     assert "lesson_factory" in GRAPHS

@@ -25,7 +25,7 @@ describe("TierModelSelect", () => {
   it("uses a text field when the provider has no model list", () => {
     render(
       <TierModelSelect
-        tier="fort"
+        tier="strong"
         value={{ provider: "glm", model: "x" }}
         providers={[glm]}
         onChange={vi.fn()}
@@ -37,7 +37,7 @@ describe("TierModelSelect", () => {
   it("shows the provider's model list when available", () => {
     render(
       <TierModelSelect
-        tier="rapide"
+        tier="fast"
         value={{ provider: "anthropic", model: "claude-haiku-5-5" }}
         providers={[anthropic, glm]}
         onChange={vi.fn()}
@@ -52,7 +52,7 @@ describe("TierModelSelect", () => {
   it("keeps the current model visible if it is missing from the list", () => {
     render(
       <TierModelSelect
-        tier="rapide"
+        tier="fast"
         value={{ provider: "anthropic", model: "claude-ancien" }}
         providers={[anthropic]}
         onChange={vi.fn()}
@@ -64,7 +64,7 @@ describe("TierModelSelect", () => {
   it("labels a provider with no key and keeps it selectable", () => {
     render(
       <TierModelSelect
-        tier="fort"
+        tier="strong"
         value={{ provider: "anthropic", model: "claude-haiku-5-5" }}
         providers={[anthropic, openai]}
         onChange={vi.fn()}
@@ -79,7 +79,7 @@ describe("TierModelSelect", () => {
     const onChange = vi.fn();
     render(
       <TierModelSelect
-        tier="fort"
+        tier="strong"
         value={{ provider: "anthropic", model: "claude-sonnet-5-5" }}
         providers={[anthropic, openai]}
         onChange={onChange}
@@ -94,7 +94,7 @@ describe("TierModelSelect", () => {
     const onChange = vi.fn();
     render(
       <TierModelSelect
-        tier="fort"
+        tier="strong"
         value={{ provider: "anthropic", model: "claude-haiku-5-5" }}
         providers={[anthropic]}
         onChange={onChange}
@@ -112,7 +112,7 @@ describe("TierModelSelect", () => {
     const onChange = vi.fn();
     render(
       <TierModelSelect
-        tier="fort"
+        tier="strong"
         value={{ provider: "anthropic", model: "claude-sonnet-5-5" }}
         providers={[anthropic, glm]}
         onChange={onChange}
@@ -134,7 +134,7 @@ describe("TierModelSelect", () => {
     const onChange = vi.fn();
     render(
       <TierModelSelect
-        tier="fort"
+        tier="strong"
         value={{ provider: "glm", model: "x" }}
         providers={[glm]}
         onChange={onChange}
@@ -152,7 +152,7 @@ describe("TierModelSelect", () => {
     const onChange = vi.fn();
     render(
       <TierModelSelect
-        tier="fort"
+        tier="strong"
         value={{ provider: "glm", model: "x" }}
         providers={[glm]}
         onChange={onChange}
@@ -166,7 +166,7 @@ describe("TierModelSelect", () => {
   it("disables the fields while saving", () => {
     render(
       <TierModelSelect
-        tier="fort"
+        tier="strong"
         value={{ provider: "anthropic", model: "claude-haiku-5-5" }}
         providers={[anthropic]}
         disabled

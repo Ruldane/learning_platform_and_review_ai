@@ -6984,7 +6984,7 @@ export interface components {
              * Tier
              * @enum {string}
              */
-            tier: "rapide" | "standard" | "fort" | "vision";
+            tier: "fast" | "standard" | "strong" | "vision";
         };
         /** AgentStartedEvent */
         AgentStartedEvent: {

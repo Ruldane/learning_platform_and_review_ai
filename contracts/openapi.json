@@ -296,9 +296,9 @@
           },
           "tier": {
             "enum": [
-              "rapide",
+              "fast",
               "standard",
-              "fort",
+              "strong",
               "vision"
             ],
             "title": "Tier",
@@ -14931,9 +14931,9 @@
               },
               "propertyNames": {
                 "enum": [
-                  "rapide",
+                  "fast",
                   "standard",
-                  "fort",
+                  "strong",
                   "vision"
                 ]
               },
@@ -24488,9 +24488,9 @@
             },
             "propertyNames": {
               "enum": [
-                "rapide",
+                "fast",
                 "standard",
-                "fort",
+                "strong",
                 "vision"
               ]
             },
@@ -28892,9 +28892,9 @@
             },
             "propertyNames": {
               "enum": [
-                "rapide",
+                "fast",
                 "standard",
-                "fort",
+                "strong",
                 "vision"
               ]
             },

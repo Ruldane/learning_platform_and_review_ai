@@ -215,7 +215,7 @@ def test_graph_is_registered_with_its_own_route() -> None:
     spec = get_graph("application_intake")
     assert spec.input_model is ApplicationIntakeInput
     assert ROUTE_ONLY["application_intake"] == "POST /applications/intake"
-    assert AGENTS["tracker"].tier == "rapide"
+    assert AGENTS["tracker"].tier == "fast"
     for text in ("", "x" * 1001):
         with pytest.raises(ValueError):
             ApplicationIntakeInput.model_validate({"text": text})

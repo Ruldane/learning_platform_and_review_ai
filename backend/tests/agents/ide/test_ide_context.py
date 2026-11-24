@@ -87,13 +87,13 @@ def test_focus_follows_the_error_then_the_entry() -> None:
 @pytest.mark.parametrize(
     ("trigger", "style", "tier", "kinds"),
     [
-        ("hint", "guide", "rapide", ("hint",)),
-        ("hint", "pair", "rapide", ("hint",)),
-        ("run_error", "guide", "rapide", ("hint",)),
-        ("run_error", "pair", "rapide", ("annotation",)),
-        ("idle", "pair", "rapide", ("annotation",)),
-        ("question", "guide", "fort", ("explanation",)),
-        ("question", "pair", "fort", ("explanation", "proposal")),
+        ("hint", "guide", "fast", ("hint",)),
+        ("hint", "pair", "fast", ("hint",)),
+        ("run_error", "guide", "fast", ("hint",)),
+        ("run_error", "pair", "fast", ("annotation",)),
+        ("idle", "pair", "fast", ("annotation",)),
+        ("question", "guide", "strong", ("explanation",)),
+        ("question", "pair", "strong", ("explanation", "proposal")),
     ],
 )
 def test_plan_tier_follows_the_kind_of_note(
@@ -133,12 +133,12 @@ def test_guide_style_drops_replacement_even_if_a_plan_allowed_a_proposal() -> No
     raw = TeacherNote(
         kind="proposal", path="main.py", start_line=5, text="Voici.", replacement="x = 1"
     )
-    note, base_hash = finish(raw, Plan(("proposal",), "fort"), guide, ctx, 1)
+    note, base_hash = finish(raw, Plan(("proposal",), "strong"), guide, ctx, 1)
     assert note.replacement is None and note.kind == "proposal" and base_hash == ctx.base_hash
     pair = inputs(style="pair")
     note, _ = finish(
         raw,
-        Plan(("proposal",), "fort"),
+        Plan(("proposal",), "strong"),
         pair,
         build_context(pair, file_path="main.py", cursor_line=5),
         1,
