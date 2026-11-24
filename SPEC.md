@@ -249,245 +249,320 @@ The Memory page shows what agents know about January.
 
 ## 5. CV Review (F4)
 
-Deux agents relisent le CV face à une offre précise, proposent des modifications justifiées, puis régénèrent le PDF dans le design d'origine si January le demande.
+Two agents review a CV against a specific posting. They propose changes with reasons and
+regenerate the PDF in the original design at January's request.
 
-### 5.1 Profil maître (une seule fois)
+### 5.1 Master profile (one-time setup)
 
-- January importe son CV en PDF, l'export PDF de son profil LinkedIn (ou un copier coller), et un texte libre sur ce qu'elle sait faire et ce qu'elle vise.
-- L'Archiviste en tire un **profil maître** structuré en JSON : identité, titre, résumé, expériences avec réalisations, formation, compétences, projets, langues, liens.
-- January relit et corrige ce profil dans un formulaire.
-- Le profil maître est la seule source de faits. Tout CV ciblé en est un sous ensemble reformulé.
+- January imports her CV PDF, a LinkedIn profile PDF or pasted profile text, and a free-text
+  description of her skills and goals.
+- The Archivist creates a structured JSON **master profile** with identity, title, summary,
+  experience and achievements, education, skills, projects, languages, and links.
+- January reviews and edits the profile in a form.
+- Tailored CVs select and rephrase facts from the master profile as their sole factual source.
 
-### 5.2 Capture du design (une fois par design)
+### 5.2 Design capture (once per design)
 
-1. Le back end extrait du PDF les blocs de texte avec position, police, taille et couleur, ainsi qu'une image de chaque page.
-2. Le Maquettiste, un agent avec un modèle de vision, produit un template HTML et CSS qui reproduit la mise en page : colonnes, marges, couleurs, hiérarchie.
-3. Le template est rendu en PDF, puis comparé à l'original. L'écran montre les deux côte à côte avec un score de ressemblance. Trois passes de correction automatique au maximum.
-4. January valide, ou demande un ajustement en langage naturel (exemple : la colonne de gauche est trop large).
+1. The backend extracts text blocks with their position, font, size, and color, plus an image
+   of each page.
+2. The Layout Designer uses a vision model to make an HTML and CSS template with the same
+   columns, margins, colors, and hierarchy.
+3. Render the template to PDF and compare it with the original. The app shows them side by
+   side with a similarity score. Automatic corrections run for up to three passes.
+4. January approves the result or asks for an adjustment in natural language, such as
+   “The left column is too wide.”
 
-- **Polices.** Si la police d'origine est libre, elle est téléchargée dans le dossier du template. Sinon, la plus proche est utilisée et l'écart est signalé.
-- **Limite assumée.** Le rendu est fidèle, pas identique au pixel près.
+- **Fonts.** Save the original font in the template folder if it is freely available. Otherwise
+  use the closest substitute and report the change.
+- **Rendering.** The template aims for visual fidelity within rendering tolerances.
 
-### 5.3 Revue ciblée sur une offre
+### 5.3 Review against a posting
 
-L'entrée est un lien vers l'offre ou son texte collé. Si le lien ne peut pas être lu (connexion requise, page vide), l'application le dit tout de suite et demande le texte. Aucune analyse ne démarre sur une offre devinée.
+January enters a posting URL or pastes the text. If the link requires sign-in or the page is
+empty, the app immediately asks for the posting text before starting the analysis.
 
-1. **Analyse de l'offre.** Intitulé, niveau, exigences obligatoires et souhaitées, mots clés dans leur formulation exacte, critères éliminatoires (années d'expérience, lieu, langue), outils.
-2. **Recherche entreprise.** Produit, stack, actualité, valeurs, processus de recrutement, et logiciel de recrutement utilisé quand l'adresse de candidature le révèle.
-3. **Contrôle doublon.** Vérification dans le suivi de candidatures (section 6).
-4. **Lecture machine**, par le Lecteur ATS. Il extrait le texte du PDF comme le ferait un parseur, puis vérifie l'ordre de lecture, les intitulés de sections, la présence des mots clés et leurs variantes.
-5. **Lecture humaine**, par le Recruteur. Clarté du premier écran, adéquation du titre, réalisations chiffrées, ordre de pertinence, signaux d'alerte, longueur.
-6. **Confrontation.** Les deux agents arbitrent leurs désaccords en deux tours visibles au maximum (densité de mots clés contre lisibilité).
-7. **Propositions.** Chaque modification indique : section, avant, après, raison, type, et le fait du profil maître sur lequel elle s'appuie. January accepte ou refuse chacune, ou tout d'un coup.
-8. **Sortie au choix.** Soit un rapport « quoi modifier », soit le CV généré en PDF avec le template et les modifications acceptées.
-9. **Contrôle final.** Le PDF généré est relu par le Lecteur ATS. Le nombre de pages reste celui de l'original, sauf accord.
+1. **Posting analysis.** Extract title, seniority, required and preferred qualifications,
+   verbatim keywords, screening criteria such as experience, location, and language, and tools.
+2. **Company research.** Find the product, stack, news, values, hiring process, and the hiring
+   platform if the application URL identifies it.
+3. **Duplicate check.** Check application tracking (section 6).
+4. **Machine reading.** The ATS Reader extracts the PDF text as a parser would and checks
+   reading order, section headings, keywords, and their variants.
+5. **Human reading.** The Recruiter checks first-screen clarity, title fit, quantified
+   achievements, order of relevance, red flags, and length.
+6. **Debate.** The two agents resolve disagreements, such as keyword density and readability,
+   in up to two visible rounds.
+7. **Suggestions.** Each change names the section, before and after text, reason, type, and
+   supporting fact from the master profile. January can approve or refuse them singly or in bulk.
+8. **Output.** January can view a report on what to change or generate a CV PDF with the template
+   and approved changes.
+9. **Final check.** The ATS Reader reviews the generated PDF. Changes to the original page
+   count require approval.
 
-Le fichier est nommé `CV_<Nom>_<Entreprise>_<Poste>.pdf`, versionné, et lié à la candidature.
+The PDF uses `CV_<Name>_<Company>_<Role>.pdf`. Its version is saved and linked to the application.
 
-**Deux indicateurs affichés, avant et après**
+**Before and after indicators**
 
-| Indicateur | Calcul |
+| Indicator | Calculation |
 | --- | --- |
-| Couverture des exigences | Part des exigences obligatoires de l'offre couvertes par un fait réel du CV |
-| Lisibilité machine | Liste de contrôles réussis : texte sélectionnable, ordre de lecture, intitulés standards, coordonnées dans le corps, tailles de police |
+| Requirement coverage | Share of mandatory qualifications supported by a real CV fact |
+| Machine readability | Passed checks for text, reading order, headings, contacts, and fonts |
 
-Ces indicateurs sont internes à l'application. L'écran précise qu'il n'existe pas de score ATS universel.
+The checks cover selectable text, standard section headings, contact details in the body, and
+font sizes. The screen explains that the app's indicators do not represent a universal ATS score.
 
-### 5.4 Ce que les agents savent des logiciels de recrutement
+### 5.4 Applicant tracking system knowledge
 
-Les agents partent d'une base de connaissances datée, rafraîchie par une recherche web tous les 30 jours. Point de départ, tiré de l'[enquête de Huntr](https://huntr.co/blog/how-applicant-tracking-systems-work) :
+Agents use a dated knowledge base refreshed by web research every 30 days. The initial
+findings come from [Huntr's survey](https://huntr.co/blog/how-applicant-tracking-systems-work).
 
-- Un ATS est surtout une base de candidatures avec un moteur de recherche. D'après cette enquête, aucun grand ATS ne rejette seul un CV sur son contenu.
-- Le vrai filtre automatique, ce sont les questions éliminatoires du formulaire. Le Kit de candidature (F16) les repère et prépare des réponses exactes.
-- Les mots clés servent à la recherche et au classement par les recruteurs. Certains ATS ajoutent un classement par IA.
-- Côté forme : coordonnées hors en tête et pied de page, polices standards de 10 points ou plus, fichier PDF ou Word.
+- An ATS primarily stores and searches applications. Huntr reported that none of the major
+  systems studied automatically rejected a CV based on its content alone.
+- Screening questions can filter applications automatically. The Application Kit (F16)
+  identifies them and drafts accurate answers.
+- Recruiters use keywords for search and ranking. Some systems include AI ranking.
+- Keep contact details in the body, use standard fonts of 10 points or larger, and use
+  a PDF or Word file.
 
-**Règles appliquées par les agents**
+**Agent rules**
 
-- Reprendre les termes exacts de l'offre partout où ils sont vrais pour January.
-- Intitulés de sections standards, ordre chronologique inversé, dates homogènes, aucun texte dans une image.
-- Jamais de texte caché ni de bourrage de mots clés.
-- Aucune garantie de passage n'est affichée, seulement les contrôles réussis.
+- Use the posting's exact words where they accurately describe January.
+- Use standard headings, reverse chronological order, and consistent dates. Keep text out of
+  images.
+- Avoid hidden text and keyword stuffing.
+- Report the checks the CV passes. The app makes no guarantee of passing a hiring screen.
 
-### 5.5 Garde fous
+### 5.5 Safeguards
 
-- Un nœud validateur compare chaque phrase proposée au profil maître. Tout outil, chiffre ou titre absent du profil bloque la modification, qui passe en « à confirmer ».
-- Si January confirme un fait nouveau, il est d'abord ajouté au profil maître.
-- Un mot clé de l'offre que January ne maîtrise pas n'entre pas dans le CV. Il part vers l'analyse d'écart (F8).
+- A validation node checks every proposed sentence against the master profile. A tool, figure,
+  or title missing from the profile sends the change to **To confirm**.
+- Once January confirms a new fact, it is added to the master profile first.
+- Send posting keywords for skills January lacks to skill gap assessment (F8).
 
-## 6. Suivi de candidatures (F5)
+## 6. Application tracking (F5)
 
-L'onglet Candidatures tient le registre de chaque offre, propose les relances au bon moment et bloque les doublons.
+Applications records each posting, suggests timely follow-ups, and prevents duplicates.
 
-### 6.1 Fiche candidature
+### 6.1 Application record
 
-- **Champs.** Entreprise, poste, lien de l'offre, copie figée du texte de l'offre, canal, date de candidature, statut, version du CV envoyé, lettre, contacts (nom, rôle, lien), notes, prochaine action et sa date.
-- **Statuts.** À postuler, Postulée, Relancée, Entretien, Offre, Refus, Sans réponse, Retirée.
-- **Vues.** Kanban par statut, tableau triable, et fil chronologique des événements sur chaque fiche.
-- La copie du texte de l'offre est prise à la création, car les annonces disparaissent.
+- **Fields.** Company, role, posting URL, posting text snapshot, channel, application date,
+  status, submitted CV version, letter, contacts (name, role, link), notes, and next action
+  with its date.
+- **Statuses.** To apply, Applied, Followed up, Interview, Offer, Rejected, No answer, Withdrawn.
+- **Views.** Kanban by status, sortable table, and an event timeline on each record.
+- Copy the posting text on creation to keep it available if the listing disappears.
 
-**Trois façons de créer une fiche**
+**Ways to create an application**
 
-1. Automatiquement, quand un CV est généré pour une offre. La fiche naît au statut À postuler, et le bouton « J'ai postulé » fixe la date.
-2. À la main, par un formulaire.
-3. En langage naturel : « j'ai postulé hier chez X pour le poste Y ». L'Assistant de suivi crée la fiche et la montre pour confirmation.
+1. Generating a CV for a posting creates an application in **To apply**. The **I applied**
+   button records the date.
+2. January can create a record through a form.
+3. The tracking assistant can create a record from a message such as “I applied to X yesterday
+   for role Y” and show it for confirmation.
 
-### 6.2 Relances
+### 6.2 Follow-ups
 
-| Déclencheur | Suggestion |
+| Trigger | Suggestion |
 | --- | --- |
-| 7 jours après la candidature, sans réponse | Message LinkedIn au recruteur ou au responsable du poste |
-| 14 jours, sans réponse | Relance par email |
-| 21 jours, sans réponse | Proposer de classer la fiche en Sans réponse |
-| Lendemain d'un entretien | Message de remerciement |
-| 7 jours après un entretien, sans réponse | Demande de nouvelles |
+| 7 days after applying, without a reply | LinkedIn message to the recruiter or hiring manager |
+| 14 days after applying, without a reply | Follow-up email |
+| 21 days after applying, without a reply | Move the record to No answer |
+| Day after an interview | Thank-you message |
+| 7 days after an interview, without a reply | Ask for an update |
 
-- Les délais sont modifiables dans les réglages.
-- Chaque relance affiche qui contacter, un brouillon prêt à copier, et trois boutons : Fait, Reporter de 3 jours, Ignorer.
-- Sans contact enregistré, la relance propose un lien de recherche LinkedIn pré rempli (entreprise et rôle).
-- L'application n'envoie jamais rien elle même. January copie et envoie.
-- Les relances dues remontent dans le Brief du matin (F17) et en pastille sur l'onglet.
+- January can change the delays in Settings.
+- Each follow-up shows who to contact and a draft to copy. January can mark it done, snooze
+  it for three days, or dismiss it.
+- With no saved contact, offer a LinkedIn search link prefilled with the company and role.
+- January copies and sends the draft herself.
+- Due follow-ups appear in the Morning Brief (F17) and in a badge on the tab.
 
-### 6.3 Alerte doublon
+### 6.3 Duplicate alerts
 
-Le contrôle se déclenche dès qu'une offre entre dans l'application, quel que soit l'écran.
+Adding a posting from any screen triggers the duplicate check.
 
-| Niveau | Condition |
+| Confidence | Condition |
 | --- | --- |
-| Certain | Même lien, après normalisation de l'adresse |
-| Probable | Même entreprise et intitulé similaire à 85 % ou plus |
-| Possible | Même entreprise et texte d'offre très proche selon la recherche vectorielle |
+| Certain | Same normalized URL |
+| Probable | Same company and title similarity of at least 85% |
+| Possible | Same company and high vector similarity of the posting text |
 
-- Message type : « Attention, tu as déjà postulé chez X pour le poste Y le 3 novembre (statut : Postulée). »
-- Choix proposés : ouvrir la fiche existante, confirmer que c'est un autre poste, annuler.
-- Une candidature chez la même entreprise pour un autre poste dans les 30 jours déclenche une simple information.
+- An alert can say “You applied to X for role Y on November 3 (Applied).”
+- January can open the existing record, confirm this is a different role, or cancel.
+- An application to the same company for a different role in the past 30 days shows a notice.
 
-### 6.4 Indicateurs
+### 6.4 Indicators
 
-L'onglet affiche le nombre de candidatures par statut, le taux de réponse, le délai moyen de réponse et le nombre de relances dues.
+The tab shows application counts by status, the response rate, average response time, and
+the number of follow-ups due.
 
-## 7. Les six features validées (F8 à F13)
+### 6.5 Chat about job postings
 
-Ces six features relient l'apprentissage et la recherche d'emploi : ce qui manque pour une offre devient du programme, et ce qui est appris devient une preuve sur le CV.
+**Ask about offers** opens a dialog from `/career/postings`. The old address
+`/carriere/offres` redirects there. January can create and revisit several saved chats. The
+assistant answers from her saved Tremplin postings, application history, contacts, and skill
+gaps. It can explain when an offer was added, whether she applied, whom she has saved as a
+contact, and what to learn to improve her fit. [Offers chat design][offers-chat-design]
 
-### F8. Analyse d'écart
+[offers-chat-design]: docs/superpowers/specs/2026-11-24-offers-chat-design.md
 
-- **Déclencheur.** Toute offre ajoutée, ou à la demande sur un poste cible.
-- **Fonctionnement.** L'Analyste extrait les compétences de l'offre, les rattache au référentiel de compétences, puis les compare aux acquis.
-- **Sortie.** Un tableau par compétence : exigée ou souhaitée, niveau actuel, action proposée (déjà au programme en semaine N, à ajouter, hors périmètre).
-- **Score de match** de 0 à 100. Une exigence obligatoire pèse 2, une souhaitée pèse 1. Un acquis `valide` ou `prouve` compte 1, `declare` 0,6, `en_cours` 0,3, absent 0.
-- Le bouton « Ajouter au planning » lance une replanification (F13), toujours soumise à validation.
-- Une vue agrégée montre les 10 compétences qui manquent le plus souvent sur l'ensemble des offres.
+## 7. Approved learning and career features (F8 to F13)
 
-### F9. Validation des acquis
+Skill gaps inform the learning plan, and completed work supplies evidence for the CV.
 
-- L'Examinateur génère un quiz par module : 8 à 12 questions qui mêlent QCM, réponse courte, lecture de code et « explique avec tes mots ».
-- Les réponses ouvertes sont notées avec une grille, et chaque erreur reçoit une explication.
-- À 80 % ou plus, l'acquis passe à `valide`. En dessous, des tâches de révision ciblées sont ajoutées, avec un nouvel essai 2 jours plus tard.
-- **Révisions espacées.** Des fiches sont créées depuis les leçons et les erreurs de quiz. Intervalles de 1, 3, 7, 16 puis 35 jours. Une erreur ramène la fiche à 1 jour.
-- La file de révision du jour est plafonnée à 15 minutes.
-- Un acquis `valide` dont les fiches échouent deux fois de suite redescend à `en_cours`.
+### F8. Skill gap assessment
 
-### F10. Simulateur d'entretien
+- **Trigger.** An added posting or a request to assess a target role.
+- **Analysis.** The Analyst extracts skills, maps them to the skill catalog, and compares
+  them with January's current skills.
+- **Result.** A table shows whether each skill is required or preferred, its current level,
+  and the proposed action. A skill may already be in a program week, be added, or be out of scope.
+- **Match score.** The score runs from 0 to 100. Required qualifications weigh 2 and preferred
+  ones weigh 1. A `validated` or `proven` skill counts as 1, `declared` as 0.6, `in_progress`
+  as 0.3, and a missing skill as 0.
+- Adding a skill to the schedule starts replanning (F13), which requires approval.
+- An overview shows the ten skills most often missing across postings.
 
-- Lancé depuis une candidature, ou librement sur un poste.
-- **Modes.** Comportemental, technique, étude de cas, mixte. Durée de 15, 30 ou 45 minutes. En français ou en anglais.
-- L'Intervieweur pose une question à la fois et relance selon les réponses. Il s'appuie sur l'offre, le dossier entreprise, la version du CV envoyée et les écarts connus.
-- Échange par écrit dans le MVP.
-- **Débrief.** Note par critère (clarté, structure, profondeur technique, adéquation au poste), 3 points forts, 3 points à corriger, et une version améliorée de la réponse la plus faible.
-- Les questions ratées deviennent des fiches de révision. Le débrief est rattaché à la candidature.
+### F9. Skill validation
 
-### F11. Projets preuves
+- The Examiner makes a quiz of 8 to 12 questions per module. It mixes multiple choice, short
+  answers, code reading, and explanations in January's own words.
+- Grade open answers with a rubric and explain each mistake.
+- A score of at least 80% moves the skill to `validated`. Lower scores add targeted review
+  tasks and a retake two days later.
+- **Spaced review.** Lessons and quiz mistakes supply flashcards. Intervals are 1, 3, 7, 16,
+  and 35 days. A mistake resets a card to one day.
+- The daily review queue is capped at 15 minutes.
+- A `validated` skill returns to `in_progress` after two consecutive failed flashcard reviews.
 
-- Chaque module se termine par un mini projet de 3 à 6 heures : contexte, objectif, contraintes, critères d'acceptation.
-- January soumet un lien de dépôt, ou une description avec captures.
-- Le Praticien évalue le rendu contre les critères et donne un retour écrit.
-- À la validation, l'acquis passe à `prouve` et quatre brouillons sont générés : une ligne de CV, une entrée de projet pour le profil maître, un post LinkedIn, un plan de README.
-- Rien n'entre dans le profil maître sans validation.
-- Un écran Portfolio liste les projets et leur statut.
+### F10. Mock interview
 
-### F12. Radar du marché
+- Start from an application or enter a role directly.
+- **Modes.** Behavioral, technical, case study, and mixed. Choose 15, 30, or 45 minutes.
+  Practice in English by default or choose French.
+- The Interviewer asks one question at a time and follows up on answers. It uses the posting,
+  company dossier, submitted CV version, and known gaps.
+- MVP interviews use text.
+- **Debrief.** Scores cover clarity, structure, technical depth, and role fit. Include three
+  strengths, three improvements, and a better version of the weakest answer.
+- Missed questions become flashcards. The debrief is linked to the application.
 
-- Chaque semaine, et à la demande, l'Éclaireur collecte 30 à 50 offres publiques pour le poste et la zone visés.
-- L'Analyste en extrait compétences, outils, niveau, télétravail, et salaire quand il est affiché.
-- **Sortie.** Classement des compétences par fréquence, évolution depuis le dernier relevé, et alertes du type « demandée dans 60 % des offres, absente de ton programme ».
-- Les offres dont le score de match atteint 70 remontent dans le Brief du matin.
-- Le rapport indique toujours combien d'offres ont réellement été lues. Les sites qui bloquent la lecture sont comptés à part.
+### F11. Proof projects
 
-### F13. Replanification adaptative
+- Each module ends with a three- to six-hour project with context, goal, constraints,
+  and acceptance criteria.
+- January submits a repository URL or a description with screenshots.
+- The Practitioner assesses the submission against the criteria and gives written feedback.
+- Approval moves the skill to `proven` and creates four drafts for a CV line, a master profile
+  project, a LinkedIn post, and a README outline.
+- January approves entries to the master profile.
+- Portfolio lists projects with their status.
 
-- **Bilan hebdomadaire** le dimanche à 18 h, heure réglable : heures prévues et faites, tâches terminées, résultats de quiz.
-- Le Stratège propose un nouveau plan. Les tâches en retard sont redistribuées sans jamais dépasser le budget hebdomadaire.
-- Plus de 30 % de retard deux semaines de suite : deux options sont présentées, réduire le périmètre ou repousser l'échéance.
-- En avance : avancer la suite, ou approfondir.
-- **Autres déclencheurs.** Ajout depuis l'analyse d'écart, ou message du type « cette semaine je n'ai que 5 heures ».
-- Chaque proposition montre l'avant et l'après, attend une validation, et l'historique des versions du plan est conservé.
+### F12. Market radar
 
-## 8. Six nouvelles features (F14 à F19)
+- Every week and on demand, the Scout gathers 30 to 50 public postings for the target role
+  and region.
+- The Analyst extracts skills, tools, seniority, remote options, and any listed salary.
+- **Result.** Rank skills by frequency, show changes since the last run, and flag gaps such
+  as “Requested in 60% of postings and missing from your program.”
+- Postings with a match score of at least 70 appear in the Morning Brief.
+- Report how many postings were read and count inaccessible sites separately.
 
-Ces six ajouts rendent la plateforme vivante au quotidien : un tuteur pendant l'étude, une page d'accueil qui bouge chaque matin, et un comité qui juge le CV avant les vrais recruteurs.
+### F13. Adaptive replanning
 
-### F14. Session d'étude guidée
+- **Weekly review.** Sunday at 6 p.m. by default, with a configurable time. It covers planned
+  and recorded hours, completed tasks, and quiz scores.
+- The Strategist proposes a new plan that redistributes overdue tasks within the weekly budget.
+- When progress is more than 30% behind for two weeks, suggest reducing scope or moving the
+  deadline.
+- When ahead of schedule, suggest bringing tasks forward or exploring a topic in more depth.
+- **Other triggers.** A skill gap added to the plan or a message such as “I only have five
+  hours this week.”
+- Each proposal shows the old and new plan, waits for approval, and keeps version history.
 
-- Le bouton « Commencer mon bloc » ouvre la session du jour avec un minuteur. Cycles de 50 minutes de travail et 10 de pause par défaut, réglables.
-- Le Tuteur mène le bloc : objectif, leçon section par section, une question de compréhension après chaque section, l'exercice, puis 3 questions finales.
-- **Trois modes.** Socratique (il questionne pour faire trouver), Feynman (January explique, il cherche les trous), Direct (il répond).
-- Le bouton « Je bloque » donne trois niveaux d'indices avant la solution.
-- Le Tuteur connaît la leçon, ses sources et la mémoire. Il peut dessiner au tableau.
-- **Fin de session.** Résumé, temps enregistré, tâches cochées, acquis mis à jour, fiches créées depuis les erreurs, une ligne dans le journal.
-- La série de jours consécutifs et les heures de la semaine sont visibles en permanence.
+## 8. Daily learning and career features (F14 to F19)
 
-### F15. Carte de compétences vivante
+These features support daily work with a tutor during study, a home page refreshed each morning,
+and a hiring panel that evaluates a CV before submission.
 
-- Un graphe où chaque nœud est une compétence et chaque lien un prérequis. La couleur indique le niveau de maîtrise, la taille la demande du marché (F12).
-- Le référentiel est créé par le Stratège à la création du programme, puis enrichi par les offres et le Radar.
-- Un clic sur un nœud montre les preuves (leçons, quiz, projets, lignes de CV), les offres qui l'exigent et la prochaine action.
-- **Trois vues.** Graphe, radar par domaine, courbe de progression avec un relevé par semaine.
-- **Comparaison.** Moi aujourd'hui, le poste cible, ou une offre précise.
-- C'est la référence unique lue par F4, F8, F12 et F13.
+### F14. Guided study session
 
-### F16. Kit de candidature
+- Start the day's block with a timer. The default is 50 minutes of work and 10 minutes of rest.
+  Both are configurable.
+- The Tutor leads January through the goal, lesson sections with a comprehension question
+  after each one, the exercise, and three final questions.
+- **Modes.** Socratic asks questions to guide discovery. In Feynman, January explains and
+  the Tutor looks for gaps. Direct gives answers.
+- The stuck control offers three levels of hints before revealing the solution.
+- The Tutor reads the lesson, sources, and memory and can draw on the whiteboard.
+- **End of session.** Summarize the block, log time, check off tasks, update skills, make
+  flashcards from mistakes, and add a journal entry.
+- The current streak and weekly hours stay visible.
 
-Pour une offre, un clic génère en parallèle sept pièces, chacune affichée dès qu'elle est prête.
+### F15. Skill map
 
-| Pièce | Détail |
+- Nodes represent skills and edges represent prerequisites. Color shows mastery and size
+  shows market demand (F12).
+- The Strategist creates the catalog with the program. Postings and Market Radar extend it.
+- Click a node to see lesson, quiz, project, and CV evidence, postings that require the skill,
+  and the next action.
+- **Views.** Prerequisite graph, radar chart by domain, and progress chart with weekly data.
+- **Comparison.** Current skills, a target role, or a specific posting.
+- F4, F8, F12, and F13 read the same catalog.
+
+### F16. Application kit
+
+For a posting, one click generates seven items in parallel and displays each as it is ready.
+
+| Item | Details |
 | --- | --- |
-| CV ciblé | Parcours de la section 5 |
-| Lettre de motivation | 250 à 350 mots, dans la langue de l'offre |
-| Messages LinkedIn | Une version courte pour l'invitation, une version longue pour le message |
-| Emails de relance | Brouillons pour 7 et 14 jours |
-| Réponses au formulaire | Questions éliminatoires repérées, réponses tirées du profil maître uniquement |
-| Dossier entreprise | Une page sourcée : activité, produit, stack, actualité des 6 derniers mois, culture, processus d'entretien, 5 questions à poser, points de vigilance |
-| Pitch de 60 secondes | « Parle moi de toi » adapté au poste |
+| Tailored CV | Section 5 workflow |
+| Cover letter | 250 to 350 words in the posting's language |
+| LinkedIn messages | Short invitation and longer message |
+| Follow-up emails | Drafts for days 7 and 14 |
+| Form answers | Flag screening questions and answer from the master profile only |
+| Company dossier | One page of cited research |
+| 60-second pitch | A role-specific answer to “Tell me about yourself” |
 
-- Tout est modifiable avant usage, enregistré sur la fiche candidature, et exportable en une archive.
-- Un **guide de style personnel**, saisi en texte libre dans les réglages, s'applique à tous les textes écrits au nom de January.
-- Les prétentions salariales ne sont jamais remplies par un agent.
+- The dossier covers business, product, stack, six months of news, culture, the interview
+  process, five questions to ask, and points to watch.
+- January can edit all items before use. The application record stores them and can export
+  them as one archive.
+- A free-text **personal style guide** in Settings informs drafts written on January's behalf.
+- January supplies salary expectations herself.
 
-### F17. Brief du matin
+### F17. Morning Brief
 
-- Généré chaque jour à 7 h, heure réglable, et à l'ouverture de l'application s'il date de la veille.
-- **Contenu.** Bloc d'étude du jour, fiches à réviser, relances dues, nouvelles offres du Radar, avancement de la semaine, une ressource ou actualité sourcée du domaine visé, et deux phrases du conseil sur la priorité du jour.
-- La page d'accueil est ce brief, avec quatre actions rapides : Commencer mon bloc, Réviser, Ajouter une offre, Capturer.
-- Un fil d'activité montre ce que les agents ont fait en tâche de fond : leçons générées, relevé du Radar, écritures en mémoire.
+- Generate it daily at 7 a.m. by default, and on app open if the brief is from yesterday.
+- **Contents.** Today's study block, due flashcards and follow-ups, new Radar postings, weekly
+  progress, one cited resource or news item, and two sentences from the Council on today's priority.
+- The brief is the home page, with quick actions to start studying, review, add a posting,
+  and capture an item.
+- The activity feed shows background work such as generated lessons, Radar updates, and
+  memory writes.
 
-### F18. Capture rapide
+### F18. Quick capture
 
-- Un champ global, ouvert par Ctrl K ou Cmd K, accepte un lien, un texte, un fichier ou une note du type « j'ai appris X aujourd'hui ».
-- L'Archiviste lit, résume en 5 lignes, extrait les concepts, les relie aux modules du programme, et range le tout en mémoire.
-- Si la capture couvre une tâche planifiée, il propose de la cocher. Il propose aussi des fiches de révision.
-- Si un lien ne peut pas être lu, l'application le dit tout de suite et demande le texte.
-- Le **journal d'apprentissage** réunit captures, sessions et quiz dans un fil chronologique consultable, avec un résumé hebdomadaire.
+- Open the global field with Ctrl+K or Cmd+K. Enter a link, text, file, or a note such as
+  “I learned X today.”
+- The Archivist reads it, summarizes it in five lines, extracts concepts, links them to program
+  modules, and stores the result in memory.
+- If the capture covers a planned task, suggest marking it done. Suggest flashcards as well.
+- If a link cannot be read, ask for the text immediately.
+- The **learning journal** lists captures, sessions, and quizzes chronologically with a
+  weekly summary.
 
-### F19. Comité de recrutement simulé
+### F19. Simulated hiring panel
 
-- **Entrée.** Une version du CV et une offre.
-- **Quatre personas.** Le filtre machine (quelles recherches de recruteur feraient remonter ce CV), la recruteuse RH, le manager du poste, le futur collègue.
-- Chacun donne sa première impression, puis le comité débat en direct pendant deux tours, puis vote : entretien oui, non ou peut être, avec son objection principale.
-- **Sortie.** Verdict, objections classées, et les 3 changements qui feraient basculer un vote.
-- Relancer le comité après correction montre l'avant et l'après.
-- Les personas s'adaptent à l'entreprise grâce au dossier entreprise (startup ou grand groupe).
-- L'écran précise qu'il s'agit d'une simulation et non d'une prédiction.
+- **Input.** A CV version and a posting.
+- **Roles.** An ATS reader checking what recruiter searches find the CV, an HR recruiter,
+  the hiring manager, and a prospective teammate.
+- Each gives a first impression. After two live debate rounds, each votes yes, no, or maybe
+  on an interview and names their main objection.
+- **Result.** Verdict, ranked objections, and three changes that could change a vote.
+- Running the panel again after changes shows both results.
+- The company dossier adapts the roles to the organization, such as a startup or large enterprise.
+- The screen labels the result as a simulation.
 
 ## 9. Agents et orchestration
 
