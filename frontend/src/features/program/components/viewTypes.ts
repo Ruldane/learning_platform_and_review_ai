@@ -28,7 +28,7 @@ export interface DayView {
 }
 
 /** Étape du livre où se place une semaine. */
-export type WeekStage = "fondations" | "pratique" | "avance";
+export type WeekStage = "foundations" | "practice" | "advanced";
 
 export interface WeekView {
   rank: number;

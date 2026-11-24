@@ -17699,14 +17699,14 @@ export interface components {
             rank: number;
             /**
              * Rationale
-             * @description Pourquoi cette semaine arrive à cette place, si le Stratège l'a donnée.
+             * @description Why the Strategist placed the week at this point in the program.
              */
             rationale: string | null;
             /**
              * Stage
-             * @description Étape du livre (fondations, pratique courante, avancé), si le Stratège l'a donnée.
+             * @description Stage in the book, if the Strategist provided it.
              */
-            stage: ("fondations" | "pratique" | "avance") | null;
+            stage: ("foundations" | "practice" | "advanced") | null;
             /**
              * Start Date
              * Format: date
@@ -17728,9 +17728,9 @@ export interface components {
             rationale?: string | null;
             /**
              * Stage
-             * @description Étape du livre.
+             * @description Stage in the book.
              */
-            stage?: ("fondations" | "pratique" | "avance") | null;
+            stage?: ("foundations" | "practice" | "advanced") | null;
             /** Theme */
             theme?: string | null;
         };
@@ -17762,14 +17762,14 @@ export interface components {
             objective: string;
             /**
              * Rationale
-             * @description Pourquoi cette semaine arrive à cette place.
+             * @description Why the week appears at this point in the program.
              */
             rationale?: string | null;
             /**
              * Stage
-             * @description Étape du livre : les étapes ne reculent jamais.
+             * @description Stage in the book. Weeks follow the stages in order.
              */
-            stage?: ("fondations" | "pratique" | "avance") | null;
+            stage?: ("foundations" | "practice" | "advanced") | null;
             /** Theme */
             theme: string;
         };

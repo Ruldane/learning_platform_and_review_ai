@@ -3,11 +3,11 @@
 chapitre. Tous facultatifs ; donnés, ils suivent les règles du Stratège (`PlanDraft`)."""
 
 from datetime import date
-from typing import Annotated, Literal
+from typing import Annotated
 
 from pydantic import AnyHttpUrl, BaseModel, Field, StringConstraints
 
-from app.db.models.program import TaskType
+from app.db.models.program import Stage, TaskType
 
 _Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=120)]
 _Criterion = Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=200)]
@@ -18,7 +18,6 @@ _Text = Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, ma
 _Skill = Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=120)]
 _Url = Annotated[AnyHttpUrl, Field(max_length=500)]
 Url = _Url
-Stage = Literal["fondations", "pratique", "avance"]
 
 
 class TaskWrite(BaseModel):
@@ -66,10 +65,10 @@ class WeekWrite(BaseModel):
     objective: _Text
     deliverable: _Text
     stage: Stage | None = Field(
-        default=None, description="Étape du livre : les étapes ne reculent jamais."
+        default=None, description="Stage in the book. Weeks follow the stages in order."
     )
     rationale: _Text | None = Field(
-        default=None, description="Pourquoi cette semaine arrive à cette place."
+        default=None, description="Why the week appears at this point in the program."
     )
     modules: list[ModuleWrite] = Field(min_length=1, max_length=4)
 

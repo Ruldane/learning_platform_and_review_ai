@@ -1,10 +1,11 @@
 """Migration 0074 : étape et justification des semaines, pages officielles et API anciennes."""
 
+import json
 from pathlib import Path
 
 from alembic.config import Config
+from sqlalchemy import Connection, Engine, inspect, text
 from sqlalchemy import create_engine as create_sync_engine
-from sqlalchemy import inspect, text
 
 from alembic import command
 
@@ -18,8 +19,28 @@ def _config(db_file: Path) -> Config:
     return cfg
 
 
-def _insert(conn: object, sql: str) -> None:
-    conn.execute(text(sql))  # type: ignore[attr-defined]
+def _insert(conn: Connection, sql: str) -> None:
+    conn.execute(text(sql))
+
+
+def _seed_week(conn: Connection) -> None:
+    _insert(
+        conn,
+        "INSERT INTO goals (id, user_id, created_at, updated_at, text, framing, status)"
+        f" VALUES ('g1', 'u1', {NOW}, {NOW}, 'But', '{{}}', 'chosen')",
+    )
+    _insert(
+        conn,
+        "INSERT INTO programs (id, user_id, created_at, updated_at, goal_id, title,"
+        " version, status, start_date, weekly_minutes, cap_minutes) VALUES"
+        f" ('p1', 'u1', {NOW}, {NOW}, 'g1', 'P', 1, 'draft', '2026-11-23', 840, 714)",
+    )
+    _insert(
+        conn,
+        "INSERT INTO weeks (id, user_id, created_at, updated_at, program_id, rank, theme,"
+        f" objective, deliverable, start_date) VALUES ('w1', 'u1', {NOW}, {NOW}, 'p1', 1,"
+        " 'Bases', 'Savoir', 'Un dépôt', '2026-11-23')",
+    )
 
 
 def test_migration_0074_adds_the_columns_with_empty_defaults(tmp_path: Path) -> None:
@@ -29,23 +50,7 @@ def test_migration_0074_adds_the_columns_with_empty_defaults(tmp_path: Path) -> 
     engine = create_sync_engine(f"sqlite:///{db_file.as_posix()}")
     try:
         with engine.begin() as conn:
-            _insert(
-                conn,
-                "INSERT INTO goals (id, user_id, created_at, updated_at, text, framing, status)"
-                f" VALUES ('g1', 'u1', {NOW}, {NOW}, 'But', '{{}}', 'chosen')",
-            )
-            _insert(
-                conn,
-                "INSERT INTO programs (id, user_id, created_at, updated_at, goal_id, title,"
-                " version, status, start_date, weekly_minutes, cap_minutes) VALUES"
-                f" ('p1', 'u1', {NOW}, {NOW}, 'g1', 'P', 1, 'draft', '2026-11-23', 840, 714)",
-            )
-            _insert(
-                conn,
-                "INSERT INTO weeks (id, user_id, created_at, updated_at, program_id, rank, theme,"
-                f" objective, deliverable, start_date) VALUES ('w1', 'u1', {NOW}, {NOW}, 'p1', 1,"
-                " 'Bases', 'Savoir', 'Un dépôt', '2026-11-23')",
-            )
+            _seed_week(conn)
             _insert(
                 conn,
                 "INSERT INTO modules (id, user_id, created_at, updated_at, week_id, program_id,"
@@ -69,5 +74,46 @@ def test_migration_0074_adds_the_columns_with_empty_defaults(tmp_path: Path) -> 
         assert "legacy" not in {c["name"] for c in inspect(engine).get_columns("modules")}
         with engine.connect() as conn:
             assert conn.execute(text("SELECT count(*) FROM modules")).scalar_one() == 1
+    finally:
+        engine.dispose()
+
+
+def _stages(engine: Engine) -> tuple[str, str, str, str]:
+    with engine.connect() as conn:
+        stage, rationale = conn.execute(
+            text("SELECT stage, rationale FROM weeks WHERE id='w1'")
+        ).one()
+        before, after = conn.execute(
+            text('SELECT "before", "after" FROM mcp_changes WHERE id = :id'), {"id": "change1"}
+        ).one()
+        return stage, rationale, json.loads(before)["stage"], json.loads(after)["stage"]
+
+
+def test_program_stage_codes_preserve_the_rationale_and_undo(tmp_path: Path) -> None:
+    db_file = tmp_path / "app.db"
+    cfg = _config(db_file)
+    command.upgrade(cfg, "0082")
+    engine = create_sync_engine(f"sqlite:///{db_file.as_posix()}")
+    try:
+        with engine.begin() as conn:
+            _seed_week(conn)
+            conn.execute(text("UPDATE weeks SET stage='avance', rationale='Étape finale.'"))
+            conn.execute(
+                text(
+                    "INSERT INTO mcp_changes (id, user_id, created_at, updated_at, call_id, "
+                    'table_name, row_id, op, "before", "after") VALUES '
+                    f"('change1', 'u1', {NOW}, {NOW}, 'call1', 'weeks', 'w1', 'update', "
+                    ":before, :after)"
+                ),
+                {
+                    "before": json.dumps({"stage": "pratique"}),
+                    "after": json.dumps({"stage": "avance"}),
+                },
+            )
+        original = _stages(engine)
+        command.upgrade(cfg, "0083")
+        assert _stages(engine) == ("advanced", "Étape finale.", "practice", "advanced")
+        command.downgrade(cfg, "0082")
+        assert _stages(engine) == original
     finally:
         engine.dispose()

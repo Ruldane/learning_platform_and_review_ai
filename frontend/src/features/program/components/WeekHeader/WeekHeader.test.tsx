@@ -17,7 +17,7 @@ describe("WeekHeader", () => {
     render(
       <WeekHeader
         week={makeWeek({
-          stage: "pratique",
+          stage: "practice",
           rationale: "Les outils viennent après les messages.",
         })}
       />,
@@ -30,8 +30,8 @@ describe("WeekHeader", () => {
   });
 
   it.each([
-    ["fondations", "Foundations"],
-    ["avance", "Advanced"],
+    ["foundations", "Foundations"],
+    ["advanced", "Advanced"],
   ] as const)("names the %s stage", (stage, label) => {
     render(<WeekHeader week={makeWeek({ stage })} />);
     expect(screen.getByText(label)).toBeInTheDocument();

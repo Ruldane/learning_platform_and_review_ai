@@ -6,7 +6,7 @@ semaine compte 1 à 4 modules, un programme 1 à 52 semaines. Le moteur n'import
 """
 
 from collections.abc import Mapping
-from typing import Annotated, Literal, Self
+from typing import Annotated, Self
 from urllib.parse import urlsplit
 
 from pydantic import (
@@ -15,18 +15,19 @@ from pydantic import (
     Field,
     PrivateAttr,
     StringConstraints,
+    field_validator,
     model_validator,
 )
 
 from app.agents.runtime.prose import Prose, ShortenToMax
 from app.core.skills import normalize_skill_name
-from app.db.models.program import TaskType
+from app.db.models.program import Stage, TaskType
 from app.db.models.skills import SkillLevel
 
 # Compétences déjà connues de January : clé = `normalize_skill_name`, valeur = niveau.
 KnownSkills = Mapping[str, SkillLevel]
 NotionName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=120)]
-Stage = Literal["fondations", "pratique", "avance"]
+_LEGACY_STAGES = {"fondations": "foundations", "pratique": "practice", "avance": "advanced"}
 MAX_OFFICIAL_URLS = 3
 MAX_LEGACY = 5
 
@@ -91,6 +92,11 @@ class WeekDraft(BaseModel):
     stage: Stage | None = None
     rationale: Rationale | None = None
     modules: list[ModuleDraft] = Field(min_length=1, max_length=4)
+
+    @field_validator("stage", mode="before")
+    @classmethod
+    def read_checkpoint_stage(cls, value: object) -> object:
+        return _LEGACY_STAGES.get(value, value) if isinstance(value, str) else value
 
 
 class SkillDraft(BaseModel):

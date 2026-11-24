@@ -268,8 +268,8 @@ async def test_direct_program_keeps_the_book_fields(client: httpx.AsyncClient) -
     officielles et l'encadré « code ancien » de chaque chapitre, et l'ordre de ses notions."""
     body = program_body(await new_goal(client))
     first, second = body["weeks"]
-    first |= {"stage": "fondations", "rationale": "Le socle de tout le reste."}
-    second |= {"stage": "pratique", "rationale": "On applique la régression aux arbres."}
+    first |= {"stage": "foundations", "rationale": "Le socle de tout le reste."}
+    second |= {"stage": "practice", "rationale": "On applique la régression aux arbres."}
     first["modules"][0] |= {
         "official_urls": ["https://scikit-learn.org/stable/modules/linear_model.html"],
         "legacy": ["sklearn.cross_validation"],
@@ -280,8 +280,8 @@ async def test_direct_program_keeps_the_book_fields(client: httpx.AsyncClient) -
     assert r.status_code == 201, r.text
     weeks = r.json()["weeks"]
     assert [(w["stage"], w["rationale"]) for w in weeks] == [
-        ("fondations", "Le socle de tout le reste."),
-        ("pratique", "On applique la régression aux arbres."),
+        ("foundations", "Le socle de tout le reste."),
+        ("practice", "On applique la régression aux arbres."),
     ]
     module = weeks[0]["modules"][0]
     assert module["official_urls"] == ["https://scikit-learn.org/stable/modules/linear_model.html"]

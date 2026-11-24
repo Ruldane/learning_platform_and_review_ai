@@ -2,13 +2,13 @@
 tâches, avancement, dernière différence), modifications de January, validation."""
 
 from datetime import date
-from typing import Annotated, Literal
+from typing import Annotated
 
 from pydantic import BaseModel, Field, StringConstraints, model_validator
 
 from app.db.models.lessons import LessonStatus
-from app.db.models.program import ProgramStatus, TaskStatus, TaskType
-from app.features.program.write_schemas import ProgramWrite, Stage, TaskWrite, Url, WeekWrite
+from app.db.models.program import ProgramStatus, Stage, TaskStatus, TaskType
+from app.features.program.write_schemas import ProgramWrite, TaskWrite, Url, WeekWrite
 
 # Les types littéraux sont réexportés : un router n'importe pas `app.db` (contrat 1b).
 __all__ = [
@@ -94,12 +94,9 @@ class WeekOut(BaseModel):
     objective: str
     deliverable: str
     start_date: date
-    stage: Literal["fondations", "pratique", "avance"] | None = Field(
-        description="Étape du livre (fondations, pratique courante, avancé), si le Stratège l'a "
-        "donnée."
-    )
+    stage: Stage | None = Field(description="Stage in the book, if the Strategist provided it.")
     rationale: str | None = Field(
-        description="Pourquoi cette semaine arrive à cette place, si le Stratège l'a donnée."
+        description="Why the Strategist placed the week at this point in the program."
     )
     load_minutes: int = Field(
         description="Minutes des tâches planifiées du lundi au dimanche de cette semaine, "
@@ -210,7 +207,7 @@ class WeekPatch(BaseModel):
     theme: _Theme | None = None
     objective: _Text | None = None
     deliverable: _Text | None = None
-    stage: Stage | None = Field(default=None, description="Étape du livre.")
+    stage: Stage | None = Field(default=None, description="Stage in the book.")
     rationale: _Text | None = Field(
         default=None, description="Pourquoi cette semaine arrive à cette place."
     )

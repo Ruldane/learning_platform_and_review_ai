@@ -43,11 +43,11 @@ def test_the_new_fields_are_optional() -> None:
     assert week.modules[0].official_urls == [] and week.modules[0].legacy == []
 
 
-def test_stage_and_rationale_are_kept() -> None:
+def test_legacy_stage_is_normalized_and_the_rationale_is_kept() -> None:
     draft = PlanDraft.model_validate(
         plan(stage="pratique", rationale="Les outils viennent après les messages.")
     )
-    assert draft.weeks[0].stage == "pratique"
+    assert draft.weeks[0].stage == "practice"
     assert draft.weeks[0].rationale == "Les outils viennent après les messages."
 
 

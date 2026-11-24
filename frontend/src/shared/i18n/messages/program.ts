@@ -90,9 +90,9 @@ export const program = {
     deliverable: "Deliverable",
     stage: {
       label: "Stage",
-      fondations: "Foundations",
-      pratique: "Everyday practice",
-      avance: "Advanced",
+      foundations: "Foundations",
+      practice: "Everyday practice",
+      advanced: "Advanced",
     },
     rationale: "Why now: {text}",
     load: "Load",

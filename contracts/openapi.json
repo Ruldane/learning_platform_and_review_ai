@@ -29575,16 +29575,16 @@
                 "type": "null"
               }
             ],
-            "description": "Pourquoi cette semaine arrive à cette place, si le Stratège l'a donnée.",
+            "description": "Why the Strategist placed the week at this point in the program.",
             "title": "Rationale"
           },
           "stage": {
             "anyOf": [
               {
                 "enum": [
-                  "fondations",
-                  "pratique",
-                  "avance"
+                  "foundations",
+                  "practice",
+                  "advanced"
                 ],
                 "type": "string"
               },
@@ -29592,7 +29592,7 @@
                 "type": "null"
               }
             ],
-            "description": "Étape du livre (fondations, pratique courante, avancé), si le Stratège l'a donnée.",
+            "description": "Stage in the book, if the Strategist provided it.",
             "title": "Stage"
           },
           "start_date": {
@@ -29667,9 +29667,9 @@
             "anyOf": [
               {
                 "enum": [
-                  "fondations",
-                  "pratique",
-                  "avance"
+                  "foundations",
+                  "practice",
+                  "advanced"
                 ],
                 "type": "string"
               },
@@ -29677,7 +29677,7 @@
                 "type": "null"
               }
             ],
-            "description": "Étape du livre.",
+            "description": "Stage in the book.",
             "title": "Stage"
           },
           "theme": {
@@ -29770,16 +29770,16 @@
                 "type": "null"
               }
             ],
-            "description": "Pourquoi cette semaine arrive à cette place.",
+            "description": "Why the week appears at this point in the program.",
             "title": "Rationale"
           },
           "stage": {
             "anyOf": [
               {
                 "enum": [
-                  "fondations",
-                  "pratique",
-                  "avance"
+                  "foundations",
+                  "practice",
+                  "advanced"
                 ],
                 "type": "string"
               },
@@ -29787,7 +29787,7 @@
                 "type": "null"
               }
             ],
-            "description": "Étape du livre : les étapes ne reculent jamais.",
+            "description": "Stage in the book. Weeks follow the stages in order.",
             "title": "Stage"
           },
           "theme": {
