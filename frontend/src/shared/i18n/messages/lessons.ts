@@ -74,13 +74,13 @@ export const lessons = {
     markToRead: "Mark “{title}” as to read",
     type: {
       documentation: "Official documentation",
-      cours: "Course",
+      course: "Course",
       video: "Video",
       article: "Article",
-      depot: "Repository",
-      papier: "Paper",
+      repository: "Repository",
+      paper: "Paper",
     },
-    level: { debutant: "Beginner", intermediaire: "Intermediate", avance: "Advanced" },
+    level: { beginner: "Beginner", intermediate: "Intermediate", advanced: "Advanced" },
   },
   library: {
     title: "Library",

@@ -152,7 +152,7 @@ async def repository_resources(
     db: AsyncSession, user_id: str, program_id: str
 ) -> tuple[tuple[str, str], ...]:
     """Links of studied repositories, with their module, for contribution suggestions."""
-    filter_ = ResourceFilter(program_id=program_id, type="depot")
+    filter_ = ResourceFilter(program_id=program_id, type="repository")
     rows = await ResourceRepository(db, user_id).filtered(filter_)
     return tuple((row.module_id, row.url) for row in rows)
 

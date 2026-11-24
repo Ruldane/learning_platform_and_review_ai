@@ -11,7 +11,7 @@ const RESOURCE: ResourceView = {
   type: "documentation",
   lang: "en",
   durationMinutes: 45,
-  level: "debutant",
+  level: "beginner",
   author: "Python Software Foundation",
   date: "2025-10-01",
   reason: "La référence, à jour.",

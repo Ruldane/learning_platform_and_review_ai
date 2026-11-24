@@ -45,7 +45,7 @@ async def seed_contribution(request: Request, current: CurrentUserDep) -> dict[s
                 program_id=draft.program_id,
                 module_id=program.modules[0].id,
                 title="Bibliothèque fictive",
-                type="depot",
+                type="repository",
                 url=f"https://github.com/{REPOSITORY}",
                 url_hash="recette-contribution",
             )

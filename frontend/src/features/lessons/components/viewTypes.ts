@@ -9,8 +9,14 @@ export interface LessonView {
   pdfUrl: string | null;
 }
 
-export type ResourceType = "documentation" | "cours" | "video" | "article" | "depot" | "papier";
-export type ResourceLevel = "debutant" | "intermediaire" | "avance";
+export type ResourceType =
+  | "documentation"
+  | "course"
+  | "video"
+  | "article"
+  | "repository"
+  | "paper";
+export type ResourceLevel = "beginner" | "intermediate" | "advanced";
 export type ResourceStatus = "to_read" | "read";
 
 export interface ResourceView {

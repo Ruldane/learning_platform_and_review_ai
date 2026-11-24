@@ -10,13 +10,15 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Protocol
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.agents.runtime.prose import Prose
 from app.core.errors import AppError
 from app.db.models.lessons import ResourceLevel, ResourceType
 
 MAX_SEED_URLS = 5
+_LEGACY_TYPES = {"cours": "course", "depot": "repository", "papier": "paper"}
+_LEGACY_LEVELS = {"debutant": "beginner", "intermediaire": "intermediate", "avance": "advanced"}
 
 
 @dataclass(frozen=True)
@@ -49,6 +51,16 @@ class ResourcePick(BaseModel):
     duration_minutes: int = Field(ge=1, le=600)
     level: ResourceLevel
     reason: Prose = Field(min_length=5, max_length=200)
+
+    @field_validator("type", mode="before")
+    @classmethod
+    def read_checkpoint_type(cls, value: object) -> object:
+        return _LEGACY_TYPES.get(value, value) if isinstance(value, str) else value
+
+    @field_validator("level", mode="before")
+    @classmethod
+    def read_checkpoint_level(cls, value: object) -> object:
+        return _LEGACY_LEVELS.get(value, value) if isinstance(value, str) else value
 
 
 class ResourcePicks(BaseModel):

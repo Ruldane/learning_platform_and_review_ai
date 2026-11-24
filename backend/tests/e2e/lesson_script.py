@@ -106,13 +106,13 @@ def program_plan() -> str:
 def pick_resources(messages: Sequence[BaseMessage]) -> str:
     """Les 4 premières sources candidates du prompt (identifiants créés par la base)."""
     ids = _SOURCE_ID.findall(prompt_of(messages))[:RESOURCES_PICKED]
-    kinds = ["documentation", "article", "cours", "depot"]
+    kinds = ["documentation", "article", "course", "repository"]
     picks = [
         {
             "source_id": sid,
             "type": kind,
             "duration_minutes": 30,
-            "level": "debutant",
+            "level": "beginner",
             "reason": "Explique clairement le sujet du module.",
         }
         for sid, kind in zip(ids, kinds, strict=False)

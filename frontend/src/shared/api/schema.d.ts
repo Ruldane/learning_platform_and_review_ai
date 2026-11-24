@@ -15137,7 +15137,7 @@ export interface components {
             /** Lang */
             lang: string | null;
             /** Level */
-            level: ("debutant" | "intermediaire" | "avance") | null;
+            level: ("beginner" | "intermediate" | "advanced") | null;
             /** Module Id */
             module_id: string;
             /** Note */
@@ -15159,7 +15159,7 @@ export interface components {
              * Type
              * @enum {string}
              */
-            type: "documentation" | "cours" | "video" | "article" | "depot" | "papier";
+            type: "documentation" | "course" | "video" | "article" | "repository" | "paper";
             /** Url */
             url: string;
         };
@@ -15185,7 +15185,7 @@ export interface components {
             /** Lang */
             lang?: string | null;
             /** Level */
-            level?: ("debutant" | "intermediaire" | "avance") | null;
+            level?: ("beginner" | "intermediate" | "advanced") | null;
             /** Reason */
             reason: string;
             /** Title */
@@ -15194,7 +15194,7 @@ export interface components {
              * Type
              * @enum {string}
              */
-            type: "documentation" | "cours" | "video" | "article" | "depot" | "papier";
+            type: "documentation" | "course" | "video" | "article" | "repository" | "paper";
             /**
              * Url
              * Format: uri
@@ -30443,7 +30443,7 @@ export interface operations {
         parameters: {
             query?: {
                 program_id?: string | null;
-                type?: ("documentation" | "cours" | "video" | "article" | "depot" | "papier") | null;
+                type?: ("documentation" | "course" | "video" | "article" | "repository" | "paper") | null;
                 lang?: string | null;
                 status?: ("to_read" | "read") | null;
             };

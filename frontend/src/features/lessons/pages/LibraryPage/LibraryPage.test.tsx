@@ -79,7 +79,7 @@ describe("LibraryPage", () => {
   it("offers to clear the filters when none matches", async () => {
     const { user } = setup([]);
     await screen.findByText("No resources yet");
-    await user.selectOptions(screen.getByLabelText("Type"), "papier");
+    await user.selectOptions(screen.getByLabelText("Type"), "paper");
     expect(await screen.findByText("No matching resources")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Clear filters" }));
     expect(await screen.findByText("No resources yet")).toBeInTheDocument();

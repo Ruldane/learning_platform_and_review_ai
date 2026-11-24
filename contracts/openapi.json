@@ -22846,9 +22846,9 @@
             "anyOf": [
               {
                 "enum": [
-                  "debutant",
-                  "intermediaire",
-                  "avance"
+                  "beginner",
+                  "intermediate",
+                  "advanced"
                 ],
                 "type": "string"
               },
@@ -22907,11 +22907,11 @@
           "type": {
             "enum": [
               "documentation",
-              "cours",
+              "course",
               "video",
               "article",
-              "depot",
-              "papier"
+              "repository",
+              "paper"
             ],
             "title": "Type",
             "type": "string"
@@ -23019,9 +23019,9 @@
             "anyOf": [
               {
                 "enum": [
-                  "debutant",
-                  "intermediaire",
-                  "avance"
+                  "beginner",
+                  "intermediate",
+                  "advanced"
                 ],
                 "type": "string"
               },
@@ -23046,11 +23046,11 @@
           "type": {
             "enum": [
               "documentation",
-              "cours",
+              "course",
               "video",
               "article",
-              "depot",
-              "papier"
+              "repository",
+              "paper"
             ],
             "title": "Type",
             "type": "string"
@@ -47369,11 +47369,11 @@
                 {
                   "enum": [
                     "documentation",
-                    "cours",
+                    "course",
                     "video",
                     "article",
-                    "depot",
-                    "papier"
+                    "repository",
+                    "paper"
                   ],
                   "type": "string"
                 },

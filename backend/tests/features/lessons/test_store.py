@@ -64,7 +64,7 @@ def picks(sources: list[Source]) -> list[ResourcePick]:
             source_id=s.id,
             type="article",
             duration_minutes=20,
-            level="debutant",
+            level="beginner",
             reason="Explique clairement la notion.",
         )
         for s in sources

@@ -52,7 +52,7 @@ def pick(source_id: str, kind: str = "article") -> dict[str, Any]:
         "source_id": source_id,
         "type": kind,
         "duration_minutes": 30,
-        "level": "debutant",
+        "level": "beginner",
         "reason": "Explique bien le sujet du module.",
     }
 
