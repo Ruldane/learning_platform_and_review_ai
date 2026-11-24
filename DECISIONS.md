@@ -7837,147 +7837,618 @@ pagination by `before = next_before`, 50 entries per page.
 
 ## D148
 
-- **Date** : 2026-11-15
-- **Sujet** : Correctifs d'ouverture du front laissés par la phase 6 (7.11)
-- **Décision** :
-  1. La carte « Tu valides ? » du Maquettiste (`cv_template`) n'est plus rendue quand le modèle est `ready` ou la session terminée (`run.over`) ; les autres questions gardent la carte commune.
-  2. `gap_terms` s'affiche sous le libellé « À appuyer par un fait ou à acquérir » (sens arrêté en 7.0 : mots clés de l'offre que les faits cités ne portent pas).
-  3. « Voir le rapport » place le focus sur le titre de la section Rapport (`tabIndex=-1`), y compris au second clic (clé de l'adresse).
-  4. Le titre de l'offre n'apparaît que dans le h1 de la page ; la fiche d'analyse accepte `showTitle={false}`.
-  5. Les chemins d'un 422 du profil sont ramenés aux lignes affichées : le serveur voit la liste sans lignes vides, le formulaire retrouve la j-ième ligne non vide du brouillon envoyé.
-  6. `useEditing` et `EditField` comparent le texte proposé et le texte saisi après `trim()` des deux (une seule fonction, `isUnchanged`).
-- **Raison** : ce sont les mineurs front parqués du bilan de la phase 6 ; aucun ne change le contrat. Le remappage se fait côté front parce que le nettoyage des lignes vides (`cleanProfile`) est un choix du formulaire, et que le serveur ne doit pas connaître les lignes retirées.
+- **Date** 2026-11-15
+- **Subject** Front-end opening fixes left over from phase 6 (7.11)
+- **Decision**
+  1. The Layout designer's “Do you approve?” card (`cv_template`) is no longer rendered when the
+     template is `ready` or the session is over (`run.over`); the other questions keep the common
+     card.
+  2. `gap_terms` is displayed under the label “To back with a fact or to acquire” (meaning
+     settled in 7.0: posting keywords that the cited facts do not carry).
+  3. “View the report” puts the focus on the title of the Report section (`tabIndex=-1`),
+     including on a second click (address key).
+  4. The posting's title appears only in the page's h1; the analysis sheet accepts
+     `showTitle={false}`.
+  5. The paths of a profile 422 are brought back to the displayed lines: the server sees the list
+     without empty lines, the form finds the j-th non-empty line of the draft sent.
+  6. `useEditing` and `EditField` compare the proposed text and the typed text after `trim()` of
+     both (a single function, `isUnchanged`).
+- **Reason** these are the front-end minor items parked from the phase 6 report; none changes the
+  contract. The remapping is done on the front-end side because cleaning the empty lines
+  (`cleanProfile`) is a choice of the form, and the server must not know the removed lines.
 
 ## D149
 
-- **Date** : 2026-11-15
-- **Sujet** : Phase 7, tâche 7.12 : composants présentationnels des candidatures (front)
-- **Décision** :
-  1. **Composants** (`features/applications/components`, un dossier chacun, aucun appel d'API) : `StatusBadge`, `ApplicationCard`, `KanbanBoard`, `ApplicationTable`, `EventTimeline`, `ReminderCard`, `StatsBar`, `ContactList` ; `DuplicateAlert` dans `shared/ui` (partagé : les pages de 7.13 l'affichent à l'entrée d'une offre). Les types de vue (`ApplicationView`, `ReminderView`, `EventView`, `StatsView`, `ContactView`, `StatusView`) vivent dans `components/viewTypes.ts` (une règle de découpage interdit aux composants d'importer la feature) et sont ré-exportés par `features/applications/types.ts` ; les pages (7.13) convertissent les réponses du serveur vers ces types, `schema.d.ts` n'est importé nulle part ici. Textes dans `shared/i18n/messages/applications.ts`.
-  2. **Tableau de suivi** : huit colonnes dans l'ordre de `STATUS_ORDER`, chacune nommée « Statut, n » (le compte). Une carte se déplace à la souris, au clavier (poignée dnd-kit : espace, flèches gauche et droite, Échap) **et** par le menu « Déplacer vers… » (un bouton par carte ; Entrée ou espace ouvre, flèches, début, fin, Échap, Tab ; le statut courant n'est pas proposé). Un déplacement par le menu est annoncé dans une zone vocale (`role="status"`, `aria-live="polite"`) : « « Titre » déplacée vers Offre. » ; ceux du glisser-déposer le sont par les annonces françaises de dnd-kit. Le focus revient au bouton de la carte dans sa nouvelle colonne. `onMove(id, status)` n'est jamais appelé pour la colonne où la carte se trouve déjà.
-  3. **Tableau** : six colonnes ; un clic sur l'en-tête trie en croissant, un second inverse, `aria-sort` (`ascending`, `descending`, `none`) sur la cellule d'en-tête, le bouton portant le nom « Trier par … ». Les statuts se trient dans l'ordre du tableau de suivi (pas par ordre alphabétique) ; une date absente reste toujours en fin de liste, dans les deux sens ; sans clic, l'ordre reçu est gardé.
-  4. **Relance** (`ReminderCard`) : qui contacter (nom et rôle) ou, sans contact, le lien « Chercher sur LinkedIn » (nouvel onglet, `rel="noopener noreferrer"`, annoncé dans le nom accessible ; une adresse qui n'est pas http ou https n'est jamais rendue en lien) ; le brouillon dans un bloc à retours à la ligne conservés ; quatre boutons **Copier**, **Fait**, **Reporter de 3 jours**, **Ignorer** (`close_21` : « Classer en Sans réponse » à la place de Fait) ; la mention « Rien n'est envoyé par l'application : copie et envoie toi-même. » reste toujours visible. `onCopy(draft)` peut renvoyer une promesse : le composant confirme (« Brouillon copié. ») ou signale l'échec dans une zone vocale ; la copie dans le presse-papiers est faite par la page.
-  5. **Alerte de doublon** (`DuplicateAlert`) : le `message` du serveur pour l'alerte la plus forte (certain, probable, possible, information), les autres listées avec leur niveau écrit en toutes lettres (jamais la couleur seule), les trois choix de la SPEC 6.3 (ouvrir la fiche existante, « C'est un autre poste », annuler) ; si la plus forte est une information, simple note (`role="note"`) sans aucun choix ; sans alerte, rien n'est rendu.
-  6. **Agents** : couleurs `manager` (#0060f0) et `colleague` (#a000f0), contraste d'au moins 4,5:1 sur le fond blanc cassé et sur le blanc (test), 21 slugs réservés ; noms : `tracker` « Assistant de suivi », `manager` « Manager », `colleague` « Futur collègue ».
-  7. **Contacts** : édition de dix contacts au plus (bouton d'ajout désactivé et dit à la dixième), nom obligatoire (champ marqué invalide), rôle et adresse facultatifs (vides = `null`).
-- **Raison** : SPEC 6.1 à 6.4, F16, 15.4 (une couleur par agent) ; accessibilité de la phase 7 (déplacement au clavier annoncé, `aria-sort`, niveau de doublon en texte, contraste testé) ; D34 (types de vue indépendants du contrat), D148 ; plan de la phase 7 (tâche 7.12).
+- **Date** 2026-11-15
+- **Subject** Phase 7, task 7.12: presentational components for applications (front end)
+- **Decision**
+  1. **Components** (`features/applications/components`, one folder each, no API call):
+     `StatusBadge`, `ApplicationCard`, `KanbanBoard`, `ApplicationTable`, `EventTimeline`,
+     `ReminderCard`, `StatsBar`, `ContactList`; `DuplicateAlert` in `shared/ui` (shared: the pages
+     of 7.13 display it when a posting is entered). The view types (`ApplicationView`,
+     `ReminderView`, `EventView`, `StatsView`, `ContactView`, `StatusView`) live in
+     `components/viewTypes.ts` (a layering rule forbids components from importing the feature) and
+     are re-exported by `features/applications/types.ts`; the pages (7.13) convert the server's
+     responses to these types, `schema.d.ts` is imported nowhere here. Texts in
+     `shared/i18n/messages/applications.ts`.
+  2. **Tracking board**: eight columns in the order of `STATUS_ORDER`, each named “Status, n”
+     (the count). A card moves with the mouse, with the keyboard (dnd-kit handle: space, left and
+     right arrows, Escape) **and** through the “Move to…” menu (one button per card; Enter or
+     space opens, arrows, Home, End, Escape, Tab; the current status is not offered). A move through
+     the menu is announced in a live region (`role="status"`, `aria-live="polite"`): ““Title”
+     moved to Offer.”; those of drag and drop are announced by dnd-kit's announcements. The focus
+     returns to the card's button in its new column. `onMove(id, status)` is never called for the
+     column where the card already is.
+  3. **Table**: six columns; a click on the header sorts ascending, a second reverses, `aria-sort`
+     (`ascending`, `descending`, `none`) on the header cell, the button carrying the name “Sort by
+     …”. Statuses sort in the tracking board's order (not alphabetical); a missing date always
+     stays at the end of the list, in both directions; without a click, the order received is kept.
+  4. **Follow-up** (`ReminderCard`): whom to contact (name and role) or, without a contact, the
+     “Search on LinkedIn” link (new tab, `rel="noopener noreferrer"`, announced in the
+     accessible name; an address that is not http or https is never rendered as a link); the draft
+     in a block that keeps line breaks; four buttons **Copy**, **Done**, **Postpone 3 days**,
+     **Ignore** (`close_21`: “Mark as No answer” instead of Done); the notice “Nothing is sent
+     by the application: copy it and send it yourself.” always stays visible. `onCopy(draft)` may
+     return a promise: the component confirms (“Draft copied.”) or reports the failure in a live
+     region; the copy to the clipboard is done by the page.
+  5. **Duplicate alert** (`DuplicateAlert`): the server's `message` for the strongest alert
+     (certain, probable, possible, information), the others listed with their level written out
+     (never color alone), the three choices of SPEC 6.3 (open the existing record, “It's a
+     different role”, cancel); if the strongest is an information item, a simple note
+     (`role="note"`) without any choice; without an alert, nothing is rendered.
+  6. **Agents**: colors `manager` (#0060f0) and `colleague` (#a000f0), contrast of at least 4.5:1 on
+     the off-white background and on white (test), 21 reserved slugs; names: `tracker` “Tracking
+     assistant”, `manager` “Manager”, `colleague` “Future colleague”.
+  7. **Contacts**: editing of ten contacts at most (add button disabled and saying so at the tenth),
+     name required (field marked invalid), role and address optional (empty = `null`).
+- **Reason** SPEC 6.1 to 6.4, F16, 15.4 (one color per agent); accessibility of phase 7 (keyboard
+  move announced, `aria-sort`, duplicate level as text, contrast tested); D34 (view types
+  independent of the contract), D148; phase 7 plan (task 7.12).
 
 ## D150
 
-- **Date** : 2026-11-15
-- **Sujet** : Phase 7, tâche 7.13 : pages des candidatures, relances et alerte doublon (front)
-- **Décision** :
-  1. **Routes** (feature `applications`, `manifest.ts`) : `/candidatures` (suivi, ordre 1, pleine largeur) avec la fiche en tiroir comme **route enfant** `/candidatures/:applicationId` (le suivi reste monté dessous), `/candidatures/relances` (ordre 2), `/candidatures/nouvelle`. Les pages du kit, de l'entretien et du comité (7.14 à 7.16) s'ajoutent en routes sœurs sous `/candidatures/:applicationId/{kit,entretien,comite}` (`urls.ts` les nomme déjà, les liens du tiroir y mènent).
-  2. **Suivi** : bascule Tableau de suivi / Tableau (deux boutons `aria-pressed`) et `StatsBar`. Un déplacement (menu ou glisser-déposer) envoie `POST /applications/{id}/events` (`{kind: "status", status}`, daté d'aujourd'hui par le serveur) ; la liste est **mise à jour tout de suite** (le composant n'a pas d'état optimiste) et **revient en arrière** si le serveur refuse, avec le message du serveur dans une alerte ; tout est relu ensuite (`invalidateQueries` sur le préfixe de la feature).
-  3. **Tiroir** (boîte de dialogue modale Radix : focus gardé, Échap, focus rendu à l'ouvreur) : champs modifiables et contacts enregistrés d'un coup par `PATCH` (seulement ce qui a changé, `null` efface ; entreprise ou poste vide et contact sans nom refusés côté page, avant l'envoi), « J'ai postulé » (statut `applied`, date du jour par défaut), changement de statut daté (date d'entretien pour Entretien, le statut actuel non proposé), note, version du CV envoyée (lien vers la page des versions), relances en attente de la fiche (mêmes boutons que la page des relances), fil, liens Kit, Entretien, Comité. Une zone vocale dit « Statut changé : … », « Note ajoutée. », « Fiche enregistrée. ». Les informations « même entreprise » reçues à la création sont transmises à la fiche par l'état de navigation (`state.info`) et rendues en note.
-  4. **Relances** : `GET /reminders?due=true`, `ReminderCard` pour chacune ; Copier écrit dans le presse-papiers (`navigator.clipboard`, sinon « Copie impossible » : la page ne crée aucun envoi) ; Fait, Reporter de 3 jours, Ignorer (`PATCH /reminders/{id}`). Pour `close_21` le bouton « Classer en Sans réponse » passe d'abord la fiche à `no_answer` (événement de statut) **puis** marque la relance faite ; un `reminder_closed` ou `reminder_not_found` à ce second temps est un succès (le changement de statut l'a déjà refermée). Une relance traitée est annoncée (« Relance traitée. ») et le focus revient sur le titre de la page.
-  5. **Pastille de navigation** : `NavEntry.useBadge?: () => number | undefined` (un hook, appelé par le composant `NavBadge` de l'entrée) et `NavEntry.badgeLabel?: (count) => string` (le texte lu : « 3 relances dues », « 1 relance due ») ; la pastille n'apparaît que pour un nombre > 0, son chiffre est `aria-hidden` et le texte s'ajoute au nom du lien en `sr-only`. Le compte vient de `GET /applications/stats` (`due_reminders`), requête partagée avec le tableau, relue toutes les 5 minutes et après chaque écriture.
-  6. **Nouvelle fiche** : formulaire manuel (`POST /applications` ; 409 `application_duplicate` → `DuplicateAlert` : Ouvrir navigue vers la fiche, « C'est un autre poste » renvoie la création avec `distinct_from` = les fiches de l'alerte, Annuler ferme ; la date de candidature n'est envoyée que pour une fiche déjà postulée) et « En une phrase » (`POST /applications/intake`, session suivie par `useRun` et `RunFeed`, la fiche s'ouvre à l'`artifact.ready` de genre `application`). **Écart au plan** : la question `application_confirm` n'est pas rendue par `InterruptCard` mais par une carte propre (`ConfirmationCard`, présentationnelle) : `InterruptCard` ne préremplit pas les champs (`InterruptField.value`), les montre tous en zones de texte (le statut et le canal seraient des codes `applied`, `linkedin`) et son bouton « Répondre » enverrait `{answers}`, que cette question refuse ; la carte propre garde les champs et les options du serveur (créer, autre poste, ouvrir, annuler : jamais « Créer » avec une alerte), montre le statut et le canal en français, la date vide comme « aujourd'hui », exige les champs obligatoires pour les issues qui écrivent, et répond `{choice, fields}` (l'option seule pour ouvrir et annuler). Un 409 `intake_in_progress` n'est pas une panne : la page propose de reprendre la session ouverte (`details.session_id`) ou de l'annuler.
-  7. **Page d'une offre** (`features/gap`, par son propre `api.ts`) : `GET /applications/check?posting_id=` ; fiche existante → « Ouvrir la candidature » ; sinon alerte de doublon partagée pour les fiches proches (les informations seules sont une note) et « Créer la candidature » (caché tant qu'une alerte demande un choix, de retour après Annuler) ; « C'est un autre poste » crée avec `distinct_from` ; 409 `application_exists` ouvre la fiche que l'offre a déjà.
-  8. **Remontée** : `useRun` va dans `shared/realtime/useRun.ts` et `RunFeed` (avec `canAnswer`) dans `shared/session-ui/RunFeed/`, sans changement de comportement ; `cv` les importe de là. La règle de découpage de `session-ui` autorise ces deux imports (`realtime/useRun` pour le type `Run`, `realtime/feedHelpers` pour `isAwaitingAnswer`), pour eux seuls.
-  9. **Mineurs de la revue 7.12 corrigés** : (1) `moved(id)` appelé aussi après un glisser-déposer au clavier (focus rendu à la poignée, au bouton « Déplacer » pour le menu, rien pour la souris et le doigt) ; (2) poignée `touch-none` ; (3) l'attente de focus s'arrête si la carte est relue dans une autre colonne (déplacement refusé), donc un rafraîchissement ultérieur ne vole plus le focus ; la page annonce le refus (point 2) ; (4) l'entreprise entre dans le nom de la poignée et du bouton « Déplacer » ; (5) test du tri numérique des relances (une fiche à 10) ; (6) `OpenApplicationButton` et `describeNextAction` partagés par la carte et la ligne du tableau (une seule clé de texte) ; (7) l'état de copie de `ReminderCard` est celui d'une relance (remis à zéro si `reminder.id` change) ; (8) test des quatre niveaux de `DuplicateAlert`.
-  10. **Tests** : harnais `test/applicationsApi.ts` (routes MSW **en mémoire** : une écriture change les lectures suivantes) et `test/applicationsHarness.tsx` (les vraies routes du manifeste, tiroir enfant compris) ; `renderRoutes` accepte des `RouteObject`.
-  11. **Round 1 de la revue** : la question de confirmation reposée garde les valeurs que January avait envoyées (avant le brouillon du serveur) et dit pourquoi en une ligne (« La date ne peut pas être dans le futur… » quand le client la reconnaît, sinon un message général ; le serveur ne donne aucune raison) ; le champ date de la carte est borné à aujourd'hui ; un rôle de contact sans nom est refusé par la carte (champ du nom invalide, issues qui écrivent désactivées) ; le formulaire du tiroir n'est plus remonté à chaque relecture de la fiche : ses retouches non enregistrées sont gardées, les champs non touchés prennent leur nouvelle valeur (`rebase`) ; le focus est rendu une seconde fois à la carte quand le serveur refuse et qu'elle revient dans sa colonne (seulement si le focus est tombé sur la page) ; l'entrée de navigation la plus précise est active sous ses sous-routes (le suivi reste actif tiroir ouvert) ; la règle `session-ui` n'autorise de `useRun` que le type (`@typescript-eslint/no-restricted-imports`, `allowTypeImports`) ; le texte de reconnexion de `RunFeed` est `session.reconnecting` (même texte).
-- **Raison** : SPEC 6.1 à 6.4, 9.4, 15.1 ; accessibilité de la phase 7 (déplacement au clavier annoncé et focus rendu, annonces vocales, pastille lue en toutes lettres, doublon dit en texte) ; D34 (types de vue indépendants du contrat), D141 (forme de la question et de la réponse de la confirmation), D148, D149. Le déplacement optimiste vient de ce que `KanbanBoard` n'a pas d'état : sans lui la carte resterait dans sa colonne le temps de la réponse. La carte de confirmation propre évite d'élargir `InterruptCard` (partagé par six parcours) pour une seule question.
-
+- **Date** 2026-11-15
+- **Subject** Phase 7, task 7.13: application pages, follow-ups and duplicate alert (front end)
+- **Decision**
+  1. **Routes** (feature `applications`, `manifest.ts`): `/candidatures` (tracking, order 1, full
+     width) with the record in a drawer as a **child route** `/candidatures/:applicationId` (the
+     tracking stays mounted underneath), `/candidatures/relances` (order 2),
+     `/candidatures/nouvelle`. The pages of the kit, the interview and the committee (7.14 to 7.16)
+     are added as sibling routes under `/candidatures/:applicationId/{kit,entretien,comite}`
+     (`urls.ts` already names them, the drawer's links lead there).
+  2. **Tracking**: toggle Tracking board / Table (two `aria-pressed` buttons) and `StatsBar`. A move
+     (menu or drag and drop) sends `POST /applications/{id}/events` (`{kind: "status", status}`,
+     dated today by the server); the list is **updated immediately** (the component has no
+     optimistic state) and **rolls back** if the server refuses, with the server's message in an
+     alert; everything is then reread (`invalidateQueries` on the feature's prefix).
+  3. **Drawer** (Radix modal dialog: focus kept, Escape, focus returned to the opener): editable
+     fields and contacts saved at once by `PATCH` (only what changed, `null` clears; an empty
+     company or position and a contact without a name refused on the page side, before sending),
+     “I applied” (status `applied`, today's date by default), dated status change (interview
+     date for Interview, the current status not offered), note, CV version sent (link to the
+     versions page), the record's pending follow-ups (same buttons as the follow-ups page), thread,
+     links Kit, Interview, Committee. A live region says “Status changed: …”, “Note
+     added.”, “Record saved.”. The “same company” information items received at creation
+     are passed to the record through the navigation state (`state.info`) and rendered as a note.
+  4. **Follow-ups**: `GET /reminders?due=true`, `ReminderCard` for each; Copy writes to the
+     clipboard (`navigator.clipboard`, otherwise “Can't copy”: the page creates no sending);
+     Done, Postpone 3 days, Ignore (`PATCH /reminders/{id}`). For `close_21` the button “Mark as
+     No answer” first sets the record to `no_answer` (status event) **then** marks the follow-up
+     done; a `reminder_closed` or `reminder_not_found` at this second step is a success (the status
+     change has already closed it). A handled follow-up is announced (“Follow-up handled.”) and
+     the focus returns to the page title.
+  5. **Navigation badge**: `NavEntry.useBadge?: () => number | undefined` (a hook, called by the
+     entry's `NavBadge` component) and `NavEntry.badgeLabel?: (count) => string` (the text read out:
+     “3 follow-ups due”, “1 follow-up due”); the badge appears only for a number > 0, its
+     digit is `aria-hidden` and the text is added to the link's name in `sr-only`. The count comes
+     from `GET /applications/stats` (`due_reminders`), a query shared with the board, reread every 5
+     minutes and after each write.
+  6. **New record**: manual form (`POST /applications`; 409 `application_duplicate` →
+     `DuplicateAlert`: Open navigates to the record, “It's a different role” sends the creation
+     again with `distinct_from` = the alert's records, Cancel closes; the application date is sent
+     only for a record already applied) and “In one sentence” (`POST /applications/intake`,
+     session followed by `useRun` and `RunFeed`, the record opens at the `artifact.ready` of kind
+     `application`). **Deviation from the plan**: the `application_confirm` question is not rendered
+     by `InterruptCard` but by a card of its own (`ConfirmationCard`, presentational):
+     `InterruptCard` does not prefill the fields (`InterruptField.value`), shows them all as text
+     areas (status and channel would be codes `applied`, `linkedin`) and its “Answer” button
+     would send `{answers}`, which this question refuses; the own card keeps the server's fields and
+     options (create, other position, open, cancel: never “Create” with an alert), shows the
+     status and the channel in French, the empty date as “today”, requires the required fields
+     for the outcomes that write, and answers `{choice, fields}` (the option alone for open and
+     cancel). A 409 `intake_in_progress` is not a failure: the page offers to resume the open
+     session (`details.session_id`) or to cancel it.
+  7. **A posting's page** (`features/gap`, through its own `api.ts`):
+     `GET /applications/check?posting_id=`; existing record → “Open the application”;
+     otherwise the shared duplicate alert for close records (information items alone are a note) and
+     “Create the application” (hidden while an alert asks for a choice, back after Cancel);
+     “It's a different role” creates with `distinct_from`; 409 `application_exists` opens the
+     record that the posting already has.
+  8. **Lifting**: `useRun` goes into `shared/realtime/useRun.ts` and `RunFeed` (with `canAnswer`)
+     into `shared/session-ui/RunFeed/`, with no change of behavior; `cv` imports them from there.
+     The layering rule of `session-ui` allows these two imports (`realtime/useRun` for the `Run`
+     type, `realtime/feedHelpers` for `isAwaitingAnswer`), for them alone.
+  9. **Minor items of review 7.12 fixed**: (1) `moved(id)` also called after a keyboard drag and
+     drop (focus returned to the handle, to the “Move” button for the menu, nothing for mouse
+     and finger); (2) handle `touch-none`; (3) the focus wait stops if the card is reread in another
+     column (move refused), so a later refresh no longer steals the focus; the page announces the
+     refusal (point 2); (4) the company enters the name of the handle and of the “Move” button;
+     (5) test of the numeric sort of the follow-ups (a record at 10); (6) `OpenApplicationButton`
+     and `describeNextAction` shared by the card and the table row (a single text key); (7)
+     `ReminderCard`'s copy state is that of one follow-up (reset if `reminder.id` changes); (8) test
+     of the four levels of `DuplicateAlert`.
+  10. **Tests**: harness `test/applicationsApi.ts` (**in-memory** MSW routes: a write changes the
+     following reads) and `test/applicationsHarness.tsx` (the manifest's real routes, child drawer
+     included); `renderRoutes` accepts `RouteObject`s.
+  11. **Round 1 of the review**: the confirmation question asked again keeps the values January had
+     sent (before the server's draft) and says why in one line (“The date cannot be in the
+     future…” when the client recognizes it, otherwise a general message; the server gives no
+     reason); the card's date field is bounded to today; a contact role without a name is refused by
+     the card (name field invalid, writing outcomes disabled); the drawer's form is no longer
+     remounted on each reread of the record: its unsaved edits are kept, the untouched fields take
+     their new value (`rebase`); the focus is returned a second time to the card when the server
+     refuses and it comes back to its column (only if the focus fell on the page); the most specific
+     navigation entry is active under its sub-routes (tracking stays active with the drawer open);
+     the `session-ui` rule allows only the type of `useRun`
+     (`@typescript-eslint/no-restricted-imports`, `allowTypeImports`); `RunFeed`'s reconnection text
+     is `session.reconnecting` (same text).
+- **Reason** SPEC 6.1 to 6.4, 9.4, 15.1; accessibility of phase 7 (keyboard move announced and focus
+  returned, live announcements, badge read out in full, duplicate stated in text); D34 (view types
+  independent of the contract), D141 (shape of the confirmation's question and answer), D148, D149.
+  The optimistic move comes from `KanbanBoard` having no state: without it the card would stay in
+  its column while waiting for the response. The own confirmation card avoids widening
+  `InterruptCard` (shared by six graphs) for a single question.
 
 ## D151
 
-- **Date** : 2026-11-15
-- **Sujet** : Phase 7, tâche 7.14 : page du kit de candidature (front)
-- **Décision** :
-  1. **Route et lecture** : `/candidatures/:applicationId/kit` (route sœur du suivi, déjà liée par le tiroir). Le kit vient **toujours** de `GET /applications/{id}/kit` (sept pièces, `pending` pour celles pas encore rangées). Le flux de la session ne fait que dire quand relire : chaque `artifact.ready` de genre `kit_item` et chaque changement d'état de la session (dont sa fin) invalident la lecture ; un `artifact.ready` perdu au redémarrage du back est rattrapé par la lecture de fin de session. Tant que le serveur dit « en cours », la page relit aussi toute seule toutes les 10 secondes. Une pièce en échec n'émet aucun `artifact.ready` : elle apparaît à la lecture suivante.
-  2. **Lancer, relancer, reprendre** : « Générer le kit » (202 `session_id`, suivi par `useRun` + `RunFeed`) devient « Relancer le kit » dès qu'une pièce existe, avec la phrase « Les pièces que tu as modifiées sont gardées telles quelles ; les autres sont refaites » (le serveur garde les pièces `edited`). Un 409 `kit_in_progress` n'est pas une panne : la page suit la session de `details.session_id` et le dit. `posting_required` et `profile_required` sont dits en toutes lettres (avec un lien vers le profil pour le second) et le bouton reste. La session suivie est gardée jusqu'à la fin de la page (la fin de session arrive après que le serveur a cessé de dire « en cours »). « Annuler le kit » tant que la session n'est pas finie. Au lancement le kit en cache passe tout de suite à « en cours » ; le focus passe à la note « Le kit se prépare » (le bouton activé disparaît).
-  3. **Une pièce** (`components/KitPiece`, présentationnelle) : titre, statut **en toutes lettres** avec icône (Prête, À vérifier, Échec, En préparation… ou Pas encore produite), « Modifiée par toi », nombre de mots, texte modifiable dont l'**enregistrement est explicite** (bouton « Enregistrer : {pièce} », inactif sans changement, focus gardé dans le texte après l'enregistrement, résultat lu dans une zone vocale : « La pièce est prête » ou « reste à vérifier » d'après la pièce relue par le serveur), bouton **Copier** par texte (`navigator.clipboard`, « Copie impossible » sinon ; l'application n'envoie rien). Les retouches non enregistrées ne sont jamais écrasées par une relecture du kit (la page le dit si le texte du serveur a changé entre-temps). Une pièce pas encore arrivée n'a pas de champ (le serveur répondrait 404 `kit_item_not_found`) ; une pièce en échec montre son motif et un champ vide : January peut l'écrire elle-même. Une modification n'est jamais bloquée par un kit en cours.
-  4. **Honnêteté d'une pièce « à vérifier »** : chaque raison est dite, pas seulement les termes. Termes absents du profil (`flags`) : « Absent de ton profil : … » avec le conseil de les retirer s'ils sont faux. **Pièce à vérifier sans aucun terme** (constat de 7.7, D144) : réponses salariales laissées à January (`salary_fields`), réponses « À compléter » (comptées dans le texte), dossier dont le code a retiré les sections sans source, sinon une phrase générale. Les réponses de formulaire sont **une zone par question** ; la réponse salariale laissée par le code est une zone **vide marquée « À remplir par toi »** (le marqueur est la description accessible du champ), « À compléter » pour une réponse que le profil n'appuie pas ; à l'enregistrement, une zone vide redevient le marqueur que le serveur connaît. Message LinkedIn et relances sont **deux zones** (invitation et message ; relance à 7 jours et à 14 jours), copiables séparément, rejointes par une ligne `---` à l'enregistrement. Le dossier d'entreprise liste ses **sources** dans l'ordre de leur numéro `[n]`, en liens qui s'ouvrent dans un nouvel onglet (`target="_blank"`, `rel="noopener noreferrer"`, « (s'ouvre dans un nouvel onglet) » lu aux lecteurs d'écran) ; une adresse qui n'est ni http ni https reste du texte.
-  5. **Archive** : « Télécharger l'archive » (`GET /applications/{id}/kit.zip`, lien `download`) dès qu'une pièce est prête ou à vérifier, avec la phrase qui dit ce qu'elle contient (les pièces, le PDF du CV, un LISEZMOI qui nomme ce qui reste à vérifier).
-  6. **Accessibilité** : zone vocale (`role="status"`) qui annonce chaque pièce arrivée (« Lettre de motivation : prête. », « … : à vérifier. », « … : en échec. », jamais la première lecture ni une pièce de January) et la fin du kit (« Le kit est terminé : N prête(s), N à vérifier, N en échec. ») ; progression « N pièces sur 7 sont arrivées » ; tout est atteignable et utilisable au clavier (champs, boutons et liens natifs) ; aucune annonce ne déplace le focus.
-  7. **Round 1 de la revue** : après un enregistrement, le focus revient au texte que January modifiait (pas au premier champ) et le brouillon enregistré reste affiché jusqu'à ce que la lecture du kit rapporte le nouveau texte (le champ ne repasse pas par l'ancien) ; sur une relance, « N pièces sur 7 sont arrivées » ne compte que les pièces refaites depuis le lancement (celles dont `updated_at` a changé) et celles que January a modifiées et que le serveur garde ; la zone vocale change de contenu à chaque annonce, même identique (un compteur en clé) ; le marqueur « À remplir par toi » n'est plus doublé en `placeholder` ; les pièces sont des titres de niveau 2 (sources : 3) ; `copyToClipboard` est dans `features/applications/clipboard.ts` ; une pièce enregistrée vide dit « Cette pièce est vide » ; les champs ont `maxLength` 20 000 (limite de `KitPatch.content`), et le total d'une pièce à deux textes ou plus qui la dépasse désactive Enregistrer avec une alerte ; la phrase de fin de kit utilise des pluriels (« 3 pièces prêtes, 0 pièces à vérifier… »).
-  8. **Tests** : harnais `test/kitApi.ts` (routes MSW en mémoire : une pièce qui arrive ou une modification change la lecture suivante) ; la page est testée avec le faux socket (apparition progressive, fin de session sans `artifact.ready`, session déjà ouverte à l'arrivée, 409, refus, modification, copie, archive, relance, annulation, 404, panne).
-- **Raison** : SPEC 1, 6.4, F16, 18.3 (rien d'inventé, rien envoyé, ce qui n'est pas dans le profil est dit), accessibilité de la phase 7 ; D143 (contrat du kit), D144 (pièce « à vérifier » sans terme), D141, D150. La lecture du kit comme seule source de vérité vient de ce que `artifact.ready` peut se perdre (D142) et que les pièces en échec n'en émettent pas.
+- **Date** 2026-11-15
+- **Subject** Phase 7, task 7.14: application kit page (front end)
+- **Decision**
+  1. **Route and reading**: `/candidatures/:applicationId/kit` (sibling route of the tracking,
+     already linked by the drawer). The kit **always** comes from `GET /applications/{id}/kit`
+     (seven pieces, `pending` for those not yet stored). The session's stream only says when to
+     reread: each `artifact.ready` of kind `kit_item` and each state change of the session (its end
+     included) invalidate the read; an `artifact.ready` lost at a back-end restart is caught by the
+     read at the end of the session. As long as the server says “running”, the page also rereads
+     on its own every 10 seconds. A failed piece emits no `artifact.ready`: it appears at the next
+     read.
+  2. **Launch, relaunch, resume**: “Generate the kit” (202 `session_id`, followed by `useRun` +
+     `RunFeed`) becomes “Regenerate the kit” as soon as a piece exists, with the sentence
+     “Pieces you edited are kept as they are; the others are redone” (the server keeps the
+     `edited` pieces). A 409 `kit_in_progress` is not a failure: the page follows the session of
+     `details.session_id` and says so. `posting_required` and `profile_required` are stated in full
+     (with a link to the profile for the second) and the button stays. The followed session is kept
+     until the page ends (the end of the session arrives after the server has stopped saying
+     “running”). “Cancel the kit” as long as the session is not finished. At launch the
+     cached kit goes straight to “running”; the focus moves to the note “The kit is being
+     prepared” (the enabled button disappears).
+  3. **A piece** (`components/KitPiece`, presentational): title, status **written out** with an icon
+     (Ready, To check, Failed, Preparing… or Not produced yet), “Edited by you”, word count,
+     editable text whose **saving is explicit** (button “Save: {piece}”, inactive without a
+     change, focus kept in the text after saving, result read in a live region: “The piece is
+     ready” or “stays to check” according to the piece reread by the server), a **Copy**
+     button per text (`navigator.clipboard`, “Can't copy” otherwise; the application sends
+     nothing). Unsaved edits are never overwritten by a reread of the kit (the page says so if the
+     server's text has changed in the meantime). A piece not yet arrived has no field (the server
+     would answer 404 `kit_item_not_found`); a failed piece shows its reason and an empty field:
+     January can write it herself. An edit is never blocked by a running kit.
+  4. **Honesty of a “to check” piece**: each reason is stated, not only the terms. Terms absent
+     from the profile (`flags`): “Not in your profile: …” with the advice to remove them if
+     they are false. **A piece to check with no term at all** (finding of 7.7, D144): salary answers
+     left to January (`salary_fields`), “To complete” answers (counted in the text), a dossier
+     whose sections without a source were removed by the code, otherwise a general sentence. The
+     form answers are **one area per question**; the salary answer left by the code is an **empty
+     area marked “To fill in yourself”** (the marker is the field's accessible description),
+     “To complete” for an answer that the profile does not back; at saving, an empty area
+     becomes the marker again that the server knows. The LinkedIn message and the follow-ups are
+     **two areas** (invitation and message; follow-up at 7 days and at 14 days), copyable
+     separately, joined by a `---` line at saving. The company dossier lists its **sources** in the
+     order of their number `[n]`, as links that open in a new tab (`target="_blank"`,
+     `rel="noopener noreferrer"`, “(opens in a new tab)” read to screen readers); an address
+     that is neither http nor https stays text.
+  5. **Archive**: “Download the archive” (`GET /applications/{id}/kit.zip`, `download` link) as
+     soon as a piece is ready or to check, with the sentence that says what it contains (the pieces,
+     the CV's PDF, a LISEZMOI that names what remains to check).
+  6. **Accessibility**: live region (`role="status"`) that announces each piece arrived (“Cover
+     letter: ready.”, “…: to check.”, “…: failed.”, never the first read nor a piece
+     of January's) and the end of the kit (“The kit is finished: N ready, N to check, N
+     failed.”); progress “N pieces out of 7 have arrived”; everything is reachable and usable
+     by keyboard (native fields, buttons and links); no announcement moves the focus.
+  7. **Round 1 of the review**: after saving, the focus returns to the text January was editing (not
+     the first field) and the saved draft stays displayed until the kit's read reports the new text
+     (the field does not go back through the old one); on a relaunch, “N pieces out of 7 have
+     arrived” counts only the pieces redone since the launch (those whose `updated_at` changed)
+     and those that January edited and the server keeps; the live region changes content at each
+     announcement, even an identical one (a counter as key); the marker “To fill in yourself” is
+     no longer doubled as a `placeholder`; the pieces are level-2 headings (sources: 3);
+     `copyToClipboard` is in `features/applications/clipboard.ts`; a piece saved empty says “This
+     piece is empty”; the fields have `maxLength` 20,000 (limit of `KitPatch.content`), and the
+     total of a piece with two or more texts that exceeds it disables Save with an alert; the
+     end-of-kit sentence uses plurals (“3 pieces ready, 0 pieces to check…”).
+  8. **Tests**: harness `test/kitApi.ts` (in-memory MSW routes: a piece that arrives or an edit
+     changes the next read); the page is tested with the fake socket (progressive appearance, end of
+     session without `artifact.ready`, session already open on arrival, 409, refusal, edit, copy,
+     archive, relaunch, cancellation, 404, failure).
+- **Reason** SPEC 1, 6.4, F16, 18.3 (nothing invented, nothing sent, what is not in the profile is
+  stated), accessibility of phase 7; D143 (kit contract), D144 (“to check” piece without a
+  term), D141, D150. Reading the kit as the single source of truth comes from `artifact.ready` being
+  able to get lost (D142) and failed pieces emitting none.
 
 ## D152
 
-- **Date** : 2026-11-15
-- **Sujet** : Phase 7, tâche 7.15 : pages de l'entretien blanc (front)
-- **Décision** :
-  1. **Routes** : `/candidatures/:applicationId/entretien` (depuis une fiche, déjà liée par le tiroir) et `/candidatures/entretien` (entretien libre, avec une entrée « Entretien blanc » dans la section Candidatures de la navigation, ordre 3). Les deux pages montrent le même contenu (`InterviewHub`) ; seule la page d'une fiche a l'en-tête de la fiche et le lien de retour vers elle. Une fiche inconnue (404) est dite en clair avec un retour au suivi.
-  2. **Réglages** : formule (comportemental, technique, étude de cas, mixte), durée (15, 30 ou 45 minutes, avec « 4, 7 ou 10 questions principales » lu avec le choix) et langue (français, anglais), en boutons radio natifs dans des groupes nommés (flèches du clavier). Défaut : mixte, 30 minutes, français. Entretien libre : en plus, une offre analysée à choisir dans la liste de `GET /postings` (les offres prêtes) **ou** un intitulé de poste ; sans offre analysée seul le champ de l'intitulé est proposé ; sans l'un ni l'autre rien n'est envoyé et le formulaire le dit (le back répondrait 422). 409 `profile_required` : message et lien vers le profil ; 409 `interview_in_progress` n'est pas une panne : on reprend l'entretien ouvert (`details.interview_id`) et on le dit ; 503 `engine_unavailable` : message en clair, les réglages sont gardés.
-  3. **Suivre l'entretien** : la page arrive sur l'entretien `running` de la liste (`GET /interviews`, filtrée par fiche, ou sans fiche) sans repasser par les réglages ; sinon réglages et entretiens passés. Le lancement (202 `{interview_id, session_id}`) fait suivre l'entretien : `GET /interviews/{id}` donne la session, `useRun` + `RunFeed` le fil. Le fil ne fait que dire quand relire l'entretien (chaque changement d'état, chaque nouvelle question) ; l'état et le résultat viennent toujours de la lecture, qui se refait aussi toute seule toutes les 5 secondes tant que l'entretien est `running` (une session morte passe à `failed` à la lecture, D129).
-  4. **Une question à la fois** : la question de l'intervieweur est la bulle du fil (`agent.message` `interviewer-q<n>`, `-relance` pour une relance) ; la question à répondre (`interview_answer`) est une carte propre (`InterviewQuestionCard`, présentationnelle) : titre « Question n sur N » (ou « Relance sur la question n sur N »), champ de réponse **écrite** (`FreeTextAnswer` en zone de texte : Entrée va à la ligne, Ctrl+Entrée envoie ; 4 000 caractères au plus) et « Terminer l'entretien » (l'option `stop` du serveur, avec sa phrase d'explication). Réponse : `{answers: {answer: texte}}` ; terminer : `"stop"`. Le payload ne porte pas le rang de la question : la page le lit dans le dernier message de l'intervieweur avant la question (une question reposée après une réponse illisible garde son rang) et le total vient de la durée (4, 7 ou 10). Une fois répondue la carte se replie : « Réponse envoyée » et ce que January a écrit (ou « Tu as terminé l'entretien »). `FreeTextAnswer` gagne trois propriétés facultatives (`multiline`, `maxLength`, `label`) : sans elles rien ne change pour les autres parcours.
-  5. **Accessibilité** : le focus arrive dans la zone de réponse de chaque nouvelle question ; une zone vocale (`role="status"`) annonce le rang et le texte de chaque question (« Question 2 sur 7. … », « Relance sur la question 2. … ») et, à la fin de la session, que le débrief s'écrit ; à l'arrivée du résultat le titre « Débrief de l'entretien » reçoit le focus ; tout se fait au clavier (champs, boutons, liens et boutons radio natifs). Les notes sont toujours dites en toutes lettres (« 4 sur 5 ») avec une barre `aria-hidden` : jamais la couleur seule ; « À revoir », « À vérifier » et « Non notée » sont des textes.
-  6. **Débrief** (`DebriefView`, présentationnel) : les quatre notes sur 5 (clarté, structure, profondeur technique, adéquation au poste), les trois points forts, les trois points à corriger, la réponse améliorée (avec la question la plus faible qu'elle reprend), les fiches de révision (« N fiches de révision ont été créées, à revoir demain », avec le lien « Ouvrir mes révisions » vers `/etudier/revisions` ; « Aucune nouvelle fiche… » sans lien quand `cards_created` vaut 0, car il ne compte que les fiches nouvelles) et chaque question avec la réponse de January, la relance, sa note et, pour les questions de note 2 au plus, « À revoir » et les points qu'une bonne réponse aurait donnés. **Réponse améliorée « à vérifier »** quand `flags` n'est pas vide, avec ses termes (« Ces termes ne sont pas dans ton profil : … ») ; sans `flags`, rien n'est marqué. Les réponses que le modèle n'a pas pu noter (`unrated`) sont dites (« La réponse à la question 2 n'a pas pu être notée : elle ne compte pas dans les notes ») et marquées « Non notée » : leur note interne n'est jamais montrée.
-  7. **Les autres issues** : `stopped` (arrêté avant toute réponse) : une phrase, ni notes ni lien ; `debrief_failed` : les réponses gardées sont montrées **sans notes**, avec « Le débrief n'a pas pu être écrit… » et sans lien vers les révisions ; `failed` : « L'entretien s'est arrêté sans résultat ».
-  8. **Entretiens passés** (`InterviewList`) : sur la page de la fiche, ceux de la fiche ; sur la page libre, ceux sans fiche (`application_id` nul) ; le plus récent d'abord, chacun avec sa date, ses réglages, son état en toutes lettres et la moyenne de ses notes ; un bouton ouvre son débrief, « Retour aux réglages » en revient.
-  9. **Tests** : harnais `test/interviewApi.ts` (routes MSW en mémoire : un lancement range un entretien `running`, `finish` le termine) ; les pages sont testées avec le faux socket (une question à la fois, relance, question reposée, réponse, arrêt, fin, reprise à l'arrivée, 409, profil requis, entretien libre sur offre et sur intitulé, entretiens passés, quatre issues du débrief). Pour que la page puisse partager son montage de test (`interviewTestkit.tsx`), les fichiers `*Testkit.tsx` comptent comme des fichiers de test pour la règle de frontières (`eslint.config.js`).
-  10. **Round 1 de la revue** : l'entretien en cours trouvé à l'arrivée est **suivi pour de bon** (figé dès qu'on le voit, avec une liste des entretiens refermés qui évite de le reprendre tant que la liste le dit encore « en cours ») : sa fin ne le fait plus disparaître, le débrief reste ; un 409 `interview_in_progress` dont l'entretien est d'une autre candidature (ou libre, depuis une fiche) le dit (« Un entretien est déjà en cours sur une autre candidature ») avec un lien vers sa page ; « le débrief s'écrit » apparaît dès que « Terminer l'entretien » ou la réponse à la dernière question principale est envoyé (effacé si une relance arrive) ; un entretien libre sur une offre est nommé par l'offre (« Offre : Acme, Data engineer », tirée de `GET /postings`, lu seulement sur la page libre) ; trois clés de texte inutilisées retirées.
-- **Raison** : SPEC F10 (entretien blanc, fiches de révision), F16, 18.3 (rien d'inventé : une réponse améliorée qui cite des termes hors profil est marquée à vérifier), accessibilité de la phase 7 ; D145 (graphe de l'entretien et forme de la question), D146 (contrat des entretiens et statuts), D150 et D151 (session suivie par `useRun` + `RunFeed`, lecture comme seule source de vérité). La carte propre évite d'élargir `InterruptCard` (partagé par six parcours) : sa zone de texte à deux lignes et son bouton « Répondre » ne conviennent pas à une réponse écrite de 4 000 caractères avec une option de fin.
+- **Date** 2026-11-15
+- **Subject** Phase 7, task 7.15: mock interview pages (front end)
+- **Decision**
+  1. **Routes**: `/candidatures/:applicationId/entretien` (from a record, already linked by the
+     drawer) and `/candidatures/entretien` (free interview, with a “Practice interview” entry in
+     the Applications section of the navigation, order 3). Both pages show the same content
+     (`InterviewHub`); only a record's page has the record's header and the link back to it. An
+     unknown record (404) is stated plainly with a return to the tracking.
+  2. **Settings**: format (behavioral, technical, case study, mixed), duration (15, 30 or 45
+     minutes, with “4, 7 or 10 main questions” read with the choice) and language (French,
+     English), as native radio buttons in named groups (keyboard arrows). Default: mixed, 30
+     minutes, French. Free interview: in addition, an analyzed posting to choose from the list of
+     `GET /postings` (the ready postings) **or** a job title; without an analyzed posting only the
+     title field is offered; with neither, nothing is sent and the form says so (the back end would
+     answer 422). 409 `profile_required`: message and link to the profile; 409
+     `interview_in_progress` is not a failure: the open interview is resumed
+     (`details.interview_id`) and it says so; 503 `engine_unavailable`: plain message, the settings
+     are kept.
+  3. **Following the interview**: the page arrives on the `running` interview of the list
+     (`GET /interviews`, filtered by record, or without a record) without going back through the
+     settings; otherwise settings and past interviews. The launch (202 `{interview_id, session_id}`)
+     makes the interview followed: `GET /interviews/{id}` gives the session, `useRun` + `RunFeed`
+     the thread. The thread only says when to reread the interview (each state change, each new
+     question); the state and the result always come from the read, which also redoes itself every 5
+     seconds as long as the interview is `running` (a dead session goes to `failed` at read time,
+     D129).
+  4. **One question at a time**: the interviewer's question is the thread's bubble (`agent.message`
+     `interviewer-q<n>`, `-relance` for a follow-up); the question to answer (`interview_answer`) is
+     a card of its own (`InterviewQuestionCard`, presentational): title “Question n of N” (or
+     “Follow-up on question n of N”), **written** answer field (`FreeTextAnswer` as a text area:
+     Enter goes to the next line, Ctrl+Enter sends; 4,000 characters at most) and “End the
+     interview” (the server's `stop` option, with its explanatory sentence). Answer:
+     `{answers: {answer: text}}`; ending: `"stop"`. The payload does not carry the question's rank:
+     the page reads it in the interviewer's last message before the question (a question asked again
+     after an unreadable answer keeps its rank) and the total comes from the duration (4, 7 or 10).
+     Once answered, the card folds: “Answer sent” and what January wrote (or “You ended the
+     interview”). `FreeTextAnswer` gains three optional properties (`multiline`, `maxLength`,
+     `label`): without them nothing changes for the other graphs.
+  5. **Accessibility**: the focus arrives in the answer area of each new question; a live region
+     (`role="status"`) announces the rank and the text of each question (“Question 2 of 7. …”,
+     “Follow-up on question 2. …”) and, at the end of the session, that the debrief is being
+     written; when the result arrives the title “Interview debrief” receives the focus;
+     everything is done by keyboard (native fields, buttons, links and radio buttons). The grades
+     are always written out (“4 out of 5”) with an `aria-hidden` bar: never color alone; “To
+     review”, “To check” and “Not rated” are texts.
+  6. **Debrief** (`DebriefView`, presentational): the four grades out of 5 (clarity, structure,
+     technical depth, fit for the position), the three strengths, the three points to fix, the
+     improved answer (with the weakest question it takes up), the review cards (“N review cards
+     were created, to review tomorrow”, with the link “Open my reviews” to
+     `/etudier/revisions`; “No new review cards were created.” without a link when
+     `cards_created` is 0, since it counts only new cards) and each question with January's answer,
+     the follow-up, its grade and, for questions graded 2 at most, “To review” and the points a
+     good answer would have given. **Improved answer “to check”** when `flags` is not empty,
+     with its terms (“These terms are not in your profile: …”); without `flags`, nothing is
+     marked. The answers that the model could not grade (`unrated`) are stated (“The answer to
+     question 2 could not be graded: it does not count in the grades”) and marked “Not rated”:
+     their internal grade is never shown.
+  7. **The other outcomes**: `stopped` (stopped before any answer): one sentence, no grades or link;
+     `debrief_failed`: the answers kept are shown **without grades**, with “The debrief couldn't
+     be written…” and without a link to the reviews; `failed`: “The interview stopped with no
+     result”.
+  8. **Past interviews** (`InterviewList`): on the record's page, those of the record; on the free
+     page, those without a record (`application_id` null); most recent first, each with its date,
+     its settings, its state written out and the average of its grades; a button opens its debrief,
+     “Back to settings” returns from it.
+  9. **Tests**: harness `test/interviewApi.ts` (in-memory MSW routes: a launch stores a `running`
+     interview, `finish` ends it); the pages are tested with the fake socket (one question at a
+     time, follow-up, question asked again, answer, stop, end, resume on arrival, 409, profile
+     required, free interview on a posting and on a title, past interviews, four outcomes of the
+     debrief). So that the page can share its test mount (`interviewTestkit.tsx`), the
+     `*Testkit.tsx` files count as test files for the boundaries rule (`eslint.config.js`).
+  10. **Round 1 of the review**: the running interview found on arrival is **really followed**
+     (frozen as soon as it is seen, with a list of closed interviews that avoids resuming it while
+     the list still says “running”): its end no longer makes it disappear, the debrief stays; a
+     409 `interview_in_progress` whose interview belongs to another application (or is free, from a
+     record) says so (“An interview is already running on another application”) with a link to
+     its page; “the debrief is being written” appears as soon as “End the interview” or the
+     answer to the last main question is sent (cleared if a follow-up arrives); a free interview on
+     a posting is named by the posting (“Posting: Acme, Data engineer”, taken from
+     `GET /postings`, read only on the free page); three unused text keys removed.
+- **Reason** SPEC F10 (mock interview, review cards), F16, 18.3 (nothing invented: an improved
+  answer that cites terms outside the profile is marked to check), accessibility of phase 7; D145
+  (interview graph and shape of the question), D146 (interviews contract and statuses), D150 and
+  D151 (session followed by `useRun` + `RunFeed`, reading as the single source of truth). The own
+  card avoids widening `InterruptCard` (shared by six graphs): its two-line text area and its
+  “Answer” button do not suit a 4,000-character written answer with an end option.
 
 ## D153
 
-- **Date** : 2026-11-15
-- **Sujet** : Phase 7, tâche 7.16 : page du comité de recrutement simulé (front)
-- **Décision** :
-  1. **Route** : `/candidatures/:applicationId/comite` (déjà liée par le tiroir). Le comité juge **la version de CV d'une offre** : la page lit la fiche (`posting_id`, `cv_version_id`) ; une fiche inconnue (404) est dite en clair avec un retour au suivi ; une fiche sans offre liée dit que le comité a besoin de l'offre (aucune commande). Les versions prêtes viennent de `GET /cv/versions?posting_id=` (la feature `applications` a sa propre lecture : une feature n'importe pas une autre) et seules les versions `ready` sont proposées (`version_not_ready` sinon) ; la version envoyée avec la fiche est proposée en premier si elle est prête, sinon la plus récente. Sans version prête : une phrase et le lien vers les versions du CV.
-  2. **Mise en page du Conseil (15.2)** : fil du débat à gauche (40 %, `useRun` + `RunFeed`, les bulles des quatre personas et du Modérateur), onglets à droite (60 %). Les onglets ARIA du Conseil (tableau, sources, propositions) deviennent **`SideTabs`** (`shared/session-ui`, onglets et panneaux donnés en paramètres : rôles `tablist`/`tab`/`tabpanel`, flèches, Début, Fin, panneau monté à sa première ouverture) ; `CouncilTabs` (feature `learning`) n'en est plus qu'un habillage, sans changement de comportement (ses tests restent verts). Onglets du comité : **Votes**, **Verdict** (onglet d'arrivée), **Avant / après**.
-  3. **Bandeau permanent** « Simulation, pas une prédiction. » (`role="note"`), dans l'en-tête de la page, présent dans tous les états (sans comité, en délibération, résultat, échec, sans offre).
-  4. **Votes** : les quatre votes dans l'ordre du comité (Lecteur ATS, Recruteur, Manager, Futur collègue), chacun avec le vote **écrit** (« Oui », « Non », « Peut-être », un signe décoratif `aria-hidden` en plus), l'objection principale et la raison ; la couleur de l'agent n'est qu'un filet, jamais le seul signal. **Verdict** : le mot, la règle (au moins 3 voix sur 4, sinon « le comité ne tranche pas »), le décompte des voix en mots, les objections classées (rang = ordre du serveur, avec qui les soulève), les **trois** changements ; un changement `needs_skill` porte l'étiquette **« À acquérir »**, les termes concernés et le texte du serveur (« ne l'écris pas dans ton CV ») : jamais une ligne à ajouter au CV. **Avant / après** : tableau persona par persona (avant, après, évolution écrite « Plus favorable / Moins favorable / Inchangé »), objections levées, nouvelles objections ; `previous` nul : « premier comité pour cette offre ». Les résultats n'existent qu'à `done` : avant (ou après un `failed`/`stopped`) chaque onglet dit où en est le comité.
-  5. **Suivre une exécution** : celle que January vient de lancer (ou de reprendre après un 409 `committee_in_progress`, `details.run_id`, dit « tu le suis ici »), sinon la plus récente de `GET /committee?posting_id=`. L'état et les résultats viennent toujours de `GET /committee/{id}` (relu aussi toutes les 5 s tant que `running`) ; le fil ne fait que dire quand relire (chaque changement d'état de la session). Un statut `failed` ou `stopped` est dit en toutes lettres.
-  6. **Relancer** : « Lancer le comité » (premier comité de l'offre) puis « Relancer le comité » (après une nouvelle version : le choix de la version est gardé, la page dit « Dernier comité : version n du CV » et « Une version plus récente du CV existe : relance le comité… » quand c'est le cas) ; grisé pendant un lancement et tant que le comité délibère. Refus dits en clair : 409 `version_not_ready`, `profile_required` (avec le lien vers le profil), 404 `version_not_found`, 503 `engine_unavailable` (le choix est gardé). La phrase du 409 `profile_required` ne parle plus du seul kit (« puis réessaie »).
-  7. **Accessibilité** : onglets au clavier ; zone vocale (`role="status"`) qui annonce « Le comité délibère. » et « Le comité a rendu son verdict : Oui. » (ou l'arrêt), jamais une exécution déjà finie à l'arrivée ; au lancement, le focus passe à la note « Le comité délibère… » (le bouton se grise), à l'arrivée du verdict sous les yeux de January le titre « Verdict du comité » reçoit le focus si le focus s'est perdu (jamais volé à un autre champ).
-  8. **Tests** : harnais `test/committeeApi.ts` (routes MSW en mémoire : un lancement range une exécution `running`, `finish` la termine avec son avant / après) ; la page est testée avec le faux socket (fil des personas, résultats d'une exécution passée, lancement, fin en direct, annonce, focus, comité déjà en cours, relance après une nouvelle version, refus, absence de version, d'offre, échec, arrêt).
-- **Raison** : SPEC F19 (comité simulé : quatre personas, verdict, trois changements, avant / après), 15.2 (mise en page du Conseil), 18.3 (rien d'inventé : une compétence absente du profil est « à acquérir », jamais à écrire), accessibilité de la phase 7 ; D147 (contrat et règles du comité : majorité absolue, `needs_skill`, `previous`), D150 à D152 (session suivie par `useRun` + `RunFeed`, lecture comme seule source de vérité). Généraliser les onglets du Conseil plutôt que les recopier garde un seul composant d'onglets ARIA pour les parcours à deux colonnes.
+- **Date** 2026-11-15
+- **Subject** Phase 7, task 7.16: simulated hiring committee page (front end)
+- **Decision**
+  1. **Route**: `/candidatures/:applicationId/comite` (already linked by the drawer). The committee
+     judges **a posting's CV version**: the page reads the record (`posting_id`, `cv_version_id`);
+     an unknown record (404) is stated plainly with a return to the tracking; a record without a
+     linked posting says that the committee needs the posting (no command). The ready versions come
+     from `GET /cv/versions?posting_id=` (the `applications` feature has its own read: a feature
+     does not import another) and only `ready` versions are offered (`version_not_ready` otherwise);
+     the version sent with the record is offered first if it is ready, otherwise the most recent.
+     Without a ready version: one sentence and the link to the CV versions.
+  2. **Council layout (15.2)**: debate thread on the left (40%, `useRun` + `RunFeed`, the bubbles of
+     the four personas and the Moderator), tabs on the right (60%). The Council's ARIA tabs (board,
+     sources, proposals) become **`SideTabs`** (`shared/session-ui`, tabs and panels given as
+     parameters: roles `tablist`/`tab`/`tabpanel`, arrows, Home, End, panel mounted at its first
+     opening); `CouncilTabs` (feature `learning`) is now only a wrapper, with no change of behavior
+     (its tests stay green). Committee tabs: **Votes**, **Verdict** (landing tab), **Before /
+     after**.
+  3. **Permanent banner** “Simulation, not a prediction.” (`role="note"`), in the page header,
+     present in every state (no committee, deliberating, result, failure, no posting).
+  4. **Votes**: the four votes in the committee's order (ATS reader, Recruiter, Manager, Future
+     colleague), each with the vote **written out** (“Yes”, “No”, “Maybe”, a decorative
+     `aria-hidden` sign in addition), the main objection and the reason; the agent's color is only a
+     rule line, never the only signal. **Verdict**: the word, the rule (at least 3 votes out of 4,
+     otherwise “the committee does not decide”), the vote count in words, the ranked objections
+     (rank = the server's order, with who raises them), the **three** changes; a `needs_skill`
+     change carries the label **“To acquire”**, the terms concerned and the server's text (“do
+     not write it in your CV”): never a line to add to the CV. **Before / after**: table persona
+     by persona (before, after, evolution written out “More favorable / Less favorable /
+     Unchanged”), objections lifted, new objections; `previous` null: “first committee for this
+     posting”. The results exist only at `done`: before (or after a `failed`/`stopped`) each tab
+     says where the committee stands.
+  5. **Following a run**: the one January has just launched (or resumed after a 409
+     `committee_in_progress`, `details.run_id`, says “you're following it here”), otherwise the
+     most recent of `GET /committee?posting_id=`. The state and results always come from
+     `GET /committee/{id}` (also reread every 5 s while `running`); the thread only says when to
+     reread (each state change of the session). A `failed` or `stopped` status is written out in
+     full.
+  6. **Relaunching**: “Start the committee” (the posting's first committee) then “Restart the
+     committee” (after a new version: the choice of version is kept, the page says “Last
+     committee: CV version n” and “A more recent CV version exists: restart the committee…”
+     when that is the case); greyed out during a launch and while the committee deliberates.
+     Refusals stated plainly: 409 `version_not_ready`, `profile_required` (with the link to the
+     profile), 404 `version_not_found`, 503 `engine_unavailable` (the choice is kept). The sentence
+     of the 409 `profile_required` no longer speaks of the kit alone (“then try again”).
+  7. **Accessibility**: tabs by keyboard; live region (`role="status"`) that announces “The
+     committee is deliberating.” and “The committee has given its verdict: Yes.” (or the
+     stop), never a run already finished on arrival; at launch, the focus moves to the note “The
+     committee is deliberating…” (the button greys out), when the verdict arrives before
+     January's eyes the title “Committee verdict” receives the focus if the focus was lost
+     (never stolen from another field).
+  8. **Tests**: harness `test/committeeApi.ts` (in-memory MSW routes: a launch stores a `running`
+     run, `finish` ends it with its before / after); the page is tested with the fake socket
+     (personas' thread, results of a past run, launch, live end, announcement, focus, committee
+     already running, relaunch after a new version, refusal, absence of version, of posting,
+     failure, stop).
+- **Reason** SPEC F19 (simulated committee: four personas, verdict, three changes, before / after),
+  15.2 (Council layout), 18.3 (nothing invented: a skill absent from the profile is “to
+  acquire”, never to write), accessibility of phase 7; D147 (committee contract and rules:
+  absolute majority, `needs_skill`, `previous`), D150 to D152 (session followed by `useRun` +
+  `RunFeed`, reading as the single source of truth). Generalizing the Council's tabs rather than
+  copying them keeps a single ARIA tabs component for the two-column graphs.
 
 ## D154
 
-- **Date** : 2026-11-15
-- **Sujet** : Phase 7, tâche 7.17 : parcours Playwright n° 3, « une candidature suit son cycle, du doublon à la relance » (`frontend/e2e/applications.spec.ts`, `backend/tests/e2e/applications_script.py`)
-- **Décision** : (1) Le parcours tient en un test de neuf étapes, dans le navigateur, sans horloge truquée : offre fictive collée en texte, fiche créée depuis la page de l'offre ; « J'ai postulé » à une date 8 jours avant aujourd'hui (le délai de la relance de 7 jours vient de cette date, due depuis la veille) ; la même offre recollée **par son lien**, sur sa page : alerte « Attention, tu as déjà postulé chez Société Fictive pour le poste … le <date> (statut : Postulée) » avec la date, sans bouton « Créer la candidature » ; fiche manuelle « Société Fictive / Développeuse IA (H/F) » (préflight P11) ; phrase « j'ai postulé hier chez Société Fictive pour le poste Développeuse IA » : la carte de confirmation montre l'alerte et offre « C'est un autre poste », « Ouvrir la fiche existante » et « Annuler » (jamais « Créer la fiche », D141 réserve 1), « Annuler » ne crée rien (« Rien n'a été créé. ») ; la pastille de la navigation vaut 1 et la page Relances montre la relance de 7 jours avec son brouillon ; « Copier » (le presse-papiers contient le brouillon) puis « Fait » ; la fiche passe Relancée et son fil montre la relance ; enfin le **glisser-déposer au clavier** de dnd-kit, jamais joué dans un vrai navigateur (D150) : poignée, espace, flèche droite, espace, la carte tombe dans « Entretien », l'annonce de dnd-kit le dit, le focus reste sur la poignée, la page relue la montre à sa place ; même geste en sens inverse, elle revient en « Relancée » (il vient après la relance : un déplacement avant elle aurait fait changer le statut dont dépend la relance). (2) **Script** (`applications_script.py`) : l'Assistant de suivi rend la lecture de la phrase (entreprise et poste recopiés, statut `applied`, jour de « hier » **lu dans le prompt** par une expression sur la ligne « hier : … (AAAA-MM-JJ) » : il suit l'horloge du serveur) ; l'Analyste ne répond que pour les offres du parcours (la ligne « Référence interne : parcours n° 3 » est dans le prompt, sinon `OutOfOrder` passe la main à l'Analyste du CV : le serveur réunit les files avec `merge_scripts(applications_scripts(), council_scripts(), cv_scripts())`, le parcours n° 3 en premier) ; la page du lien (`POSTING_URL`, web factice) a le texte de l'offre fictive plus cette ligne. (3) **Offre du n° 3 distincte de celle du n° 2** : une offre déjà là de même empreinte de texte est rendue telle quelle par `POST /postings` (200, même si elle a été lue d'un lien), donc l'offre collée par le n° 3 porte une ligne de référence et la page du lien une autre ; l'Analyste du n° 3 donne un autre intitulé (« Ingénieure IA appliquée », même entreprise) : sans cela, la fiche du n° 2 (créée par la revue, « AI Product Engineer ») serait un doublon « probable » de celle du n° 3 et passerait avant elle dans l'alerte, selon l'ordre de jeu. Les deux parcours se jouent dans les deux ordres ; la création depuis l'offre accepte l'alerte « possible » que la fiche du n° 2 peut lever (texte voisin, même entreprise) en confirmant « C'est un autre poste ». (4) **Test Python** (`test_applications_script.py`) : la lecture passe la vraie validation (`reading_schema` : jour de January, mots de la phrase ; `IntakeDraft`), le jour de « hier » suit celui du prompt, un poste inventé est refusé, le titre de la phrase ressemble à celui de la fiche manuelle (≥ `PROBABLE_TITLE`) et à aucun des intitulés des offres, la file couvre les relectures de `structured_call`, la page du lien est une offre que l'Analyste lit sans problème (`analysis_problems`), et l'Analyste distingue les offres du n° 3 de celles du CV. (5) **Exécution sur ce poste** (Windows, `pnpm` et le Chromium livré de Playwright bloqués) : `node node_modules/@playwright/test/cli.js test` avec une configuration temporaire (jamais commitée) qui reprend la vraie et pose `channel: "msedge"`, et un back lancé comme `e2e:docker` (conteneur `tremplin-e2e-backend`, image du back, dépôt monté sur `/repo`). Côté clavier, le test attend l'annonce de dnd-kit entre chaque touche (« au-dessus de la colonne … ») : dnd-kit n'écoute les flèches qu'au tour de boucle qui suit l'espace, ce qu'un utilisateur ne dépasse jamais mais qu'une suite de touches de Playwright dépasse. La pastille a pour nom accessible « Relances , 1 relance due » (une espace avant la virgule dans le calcul du nom, sans effet pour un lecteur d'écran) : le test la reconnaît avec `\s*`.
-- **Raison** : SPEC 18.2 (parcours n° 3), 6.2 et 6.3 (relances, doublons), F5 (création en une phrase), accessibilité de la phase 7 (glisser-déposer au clavier, annonces) ; D135 (méthode des parcours : serveur de bout en bout, modèles scriptés, `merge_scripts`), D138 à D141, D150 (pages des candidatures). Le parcours détecte une régression de la chaîne offre, fiche, alerte de doublon, phrase, relance et suivi sans clé ni service externe, en douze secondes une fois le serveur lancé.
+- **Date** 2026-11-15
+- **Subject** Phase 7, task 7.17: Playwright journey no. 3, “an application follows its cycle,
+  from the duplicate to the follow-up” (`frontend/e2e/applications.spec.ts`,
+  `backend/tests/e2e/applications_script.py`)
+- **Decision**
+  1. The journey fits in one test of nine steps, in the browser, with no faked clock: fictional
+     posting pasted as text, record created from the posting's page; “I applied” at a date 8
+     days before today (the 7-day follow-up's delay comes from this date, due since the day before);
+     the same posting pasted again **by its link**, on its page: alert “Careful, you already
+     applied at Société Fictive for the position … on <date> (status: Applied)” with the date,
+     with no “Create the application” button; manual record “Société Fictive / Développeuse
+     IA (H/F)” (preflight P11); sentence “j'ai postulé hier chez Société Fictive pour le
+     poste Développeuse IA”: the confirmation card shows the alert and offers “It's a different
+     role”, “Open the existing application” and “Cancel” (never “Create application”,
+     D141 reservation 1), “Cancel” creates nothing (“Nothing was created.”); the navigation
+     badge is 1 and the Follow-ups page shows the 7-day follow-up with its draft; “Copy” (the
+     clipboard contains the draft) then “Done”; the record goes to Followed up and its thread
+     shows the follow-up; finally dnd-kit's **keyboard drag and drop**, never played in a real
+     browser (D150): handle, space, right arrow, space, the card drops into “Interview”,
+     dnd-kit's announcement says so, the focus stays on the handle, the page reread shows it in its
+     place; the same gesture in the other direction, it goes back to “Followed up” (it comes
+     after the follow-up: a move before it would have changed the status that the follow-up depends
+     on).
+  2. **Script** (`applications_script.py`): the Tracking assistant returns the reading of the
+     sentence (company and position copied, status `applied`, the day of “yesterday” **read in
+     the prompt** by an expression on the line “hier : … (AAAA-MM-JJ)”: it follows the
+     server's clock); the Analyst answers only for the journey's postings (the line “Référence
+     interne : parcours n° 3” is in the prompt, otherwise `OutOfOrder` hands over to the CV's
+     Analyst: the server merges the queues with `merge_scripts(applications_scripts(),
+     council_scripts(), cv_scripts())`, journey no. 3 first); the link's page (`POSTING_URL`, fake
+     web) has the fictional posting's text plus this line.
+  3. **Posting of no. 3 distinct from that of no. 2**: a posting already there with the same text
+     fingerprint is returned as is by `POST /postings` (200, even if it was read from a link), so
+     the posting pasted by no. 3 carries a reference line and the link's page another; the Analyst
+     of no. 3 gives another title (“Ingénieure IA appliquée”, same company): without this, the
+     record of no. 2 (created by the review, “AI Product Engineer”) would be a “probable”
+     duplicate of that of no. 3 and would come before it in the alert, depending on the playing
+     order. The two journeys play in both orders; creation from the posting accepts the
+     “possible” alert that no. 2's record may raise (neighboring text, same company) by
+     confirming “It's a different role”.
+  4. **Python test** (`test_applications_script.py`): the reading passes the real validation
+     (`reading_schema`: January's day, words of the sentence; `IntakeDraft`), the day of
+     “yesterday” follows that of the prompt, an invented position is refused, the sentence's
+     title resembles that of the manual record (≥ `PROBABLE_TITLE`) and none of the postings'
+     titles, the queue covers the rereads of `structured_call`, the link's page is a posting that
+     the Analyst reads without a problem (`analysis_problems`), and the Analyst distinguishes the
+     postings of no. 3 from those of the CV.
+  5. **Run on this workstation** (Windows, `pnpm` and Playwright's shipped Chromium blocked):
+     `node node_modules/@playwright/test/cli.js test` with a temporary configuration (never
+     committed) that takes up the real one and sets `channel: "msedge"`, and a back end launched
+     like `e2e:docker` (container `tremplin-e2e-backend`, back-end image, repository mounted on
+     `/repo`). On the keyboard side, the test waits for dnd-kit's announcement between each key
+     (“over column …”): dnd-kit listens to the arrows only at the loop turn that follows the
+     space, which a user never outpaces but a series of Playwright keys does. The badge has the
+     accessible name “Follow-ups , 1 follow-up due” (a space before the comma in the name
+     computation, no effect for a screen reader): the test recognizes it with `\s*`.
+- **Reason** SPEC 18.2 (journey no. 3), 6.2 and 6.3 (follow-ups, duplicates), F5 (creation in one
+  sentence), accessibility of phase 7 (keyboard drag and drop, announcements); D135 (journey method:
+  end-to-end server, scripted models, `merge_scripts`), D138 to D141, D150 (application pages). The
+  journey detects a regression in the chain posting, record, duplicate alert, sentence, follow-up
+  and tracking without a key or an external service, in twelve seconds once the server is launched.
 
 ## D155
 
-- **Date** : 2026-11-15
-- **Sujet** : Phase 7 : revue finale, correctifs (back et front)
-- **Décision** :
-  1. **Une fiche sans offre reçoit son offre (I1, back)** : `PATCH /applications/{id}` accepte `posting_text` (60 000 caractères au plus ; un texte vide l'efface) : une fiche saisie à la main ou en une phrase peut avoir son kit (le 409 `posting_required` n'est plus une impasse). Quand l'offre est collée plus tard et qu'une version de CV est prête, l'adoption (`adopt_versions`, D139) **relie** la fiche sans offre qui lui ressemble au lieu d'en créer une seconde (`service/adopt_link.py`, mêmes règles que `matching.match` : même lien = certain, même entreprise et intitulé à 85 % = probable ; jamais une fiche confirmée « autre poste », jamais une fiche déjà liée à une autre offre). La fiche prend `posting_id`, le texte figé et le lien s'ils manquent, et sa version suit la version prête (« À postuler ») ou la fige (déjà postulée, événement `version`). Une offre qui ressemble à une autre fiche déjà liée, ou « possible », ne reçoit **aucune fiche créée** par l'adoption : l'alerte de la page de l'offre reste le chemin (SPEC 6.3). Contrat régénéré (`openapi.json`, `schema.d.ts`).
-  2. **Les changements du comité et les noms propres (I2, back)** : `committee_changes` ne passe plus sous silence les noms propres. Seuls les mots de section d'un CV (Compétences, Expériences, Formation, Projets, Langues, Résumé, Profil et leurs formes anglaises, `SECTION_WORDS`) ne sont pas des noms. Un employeur ou une école que le profil ne dit pas (« Mets en avant ton expérience chez Capgemini ») devient `needs_skill` avec `terms`, mais avec le gabarit « À vérifier : ton profil ne dit pas X. Ne l'écris pas dans ton CV. » (« À acquérir » reste pour les outils, chiffres et titres, et passe avant si les deux sont présents). Le front écrit l'étiquette « À vérifier » (au lieu de « À acquérir ») pour ce gabarit et ne répète pas la ligne des termes.
-  3. **Dossier repris (M2, back)** : le dossier de moins de 30 jours repris par le kit est revérifié par le code (`check_dossier`, fonction pure, sans page relue) : un texte déjà vidé (« Non trouvé dans les sources lues. ») le garde en « à vérifier » au lieu de « prêt », une actualité devenue plus vieille que 6 mois est retirée ; `meta` porte `emptied` et `dropped` comme à la production.
-  4. **« Même entreprise depuis 30 jours » par la phrase (M4, back et front)** : le port de la saisie en une phrase gagne `intake_info` (les simples informations, lues avec le brouillon confirmé, avant l'écriture) ; la session les ajoute à son message de fin (« Pour info : … ») et à l'`artifact.ready` (`info` : fiche, entreprise, intitulé, statut, message ; champ nouveau de `ArtifactReadyPayload`, vide par défaut et alors non écrit dans la charge, pour que les autres artefacts gardent leur forme). `IntakeRun` les passe à la fiche ouverte (même état de navigation que la création à la main, 7.13) : le tiroir les montre en note, sans choix.
-  5. **Front** : le suivi, les indicateurs et le badge relisent leurs données après une création par la phrase (`IntakeRun`) ou depuis la page d'une offre (`useCreateFromPosting`, préfixe `["applications"]`) ; les dates de « J'ai postulé », du changement de statut et de la création à la main ont `max` = aujourd'hui et le formulaire refuse une date future (« Cette date est dans le futur. », la date d'entretien reste libre) ; une note de débrief que le modèle n'a pas rendue est « non noté » (barre vide, absente de la moyenne), jamais « 0 sur 5 » ; la note « tu le suis ici » du kit et du comité disparaît quand l'exécution reprise est finie ; le tiroir d'une fiche sans offre propose « Ajouter le texte de l'offre » (zone de texte, `PATCH posting_text`) et le message du 409 `posting_required` y renvoie.
-  6. **Hors de ce lot** (gardés pour plus tard) : M1 (version envoyée dans le kit relancé), M3 (séparateur des relances), M5 (votes journalisés), M6 (suppression d'une offre pendant un comité), M7 (verrou de la fiche entreprise), M8 (date future d'un événement côté back) ; mineurs front 3, 4, 5 (hors étiquette), 6, 7, 9 à 12.
-- **Raison** : revue finale de la phase 7 (back et front). SPEC 6.3 et Review Focus n° 1 (une même offre qui revient par un autre chemin ne crée pas deux fiches), SPEC 1 et 18.3 (rien d'inventé : un employeur ou une école absents du profil ne sont jamais un conseil à écrire), F16 (un dossier « prêt » est complet), 6.3 (l'information « même entreprise » à tout écran), honnêteté d'un score manquant ; D139 (adoption), D141 (saisie en une phrase), D142 (dossier), D147 (comité), D150 à D154.
+- **Date** 2026-11-15
+- **Subject** Phase 7: final review, fixes (back end and front end)
+- **Decision**
+  1. **A record without a posting receives its posting (I1, back)**: `PATCH /applications/{id}`
+     accepts `posting_text` (60,000 characters at most; an empty text clears it): a record entered
+     by hand or in one sentence can have its kit (the 409 `posting_required` is no longer a dead
+     end). When the posting is pasted later and a CV version is ready, the adoption
+     (`adopt_versions`, D139) **links** the record without a posting that resembles it instead of
+     creating a second one (`service/adopt_link.py`, same rules as `matching.match`: same link =
+     certain, same company and title at 85% = probable; never a record confirmed “other
+     position”, never a record already linked to another posting). The record takes `posting_id`,
+     the frozen text and the link if they are missing, and its version follows the ready version
+     (“To apply”) or freezes it (already applied, `version` event). A posting that resembles
+     another already-linked record, or a “possible” one, gets **no record created** by the
+     adoption: the alert on the posting's page remains the path (SPEC 6.3). Contract regenerated
+     (`openapi.json`, `schema.d.ts`).
+  2. **Committee changes and proper names (I2, back)**: `committee_changes` no longer lets proper
+     names pass in silence. Only the section words of a CV (Compétences, Expériences, Formation,
+     Projets, Langues, Résumé, Profil and their English forms, `SECTION_WORDS`) are not names. An
+     employer or a school that the profile does not state (“Mets en avant ton expérience chez
+     Capgemini”) becomes `needs_skill` with `terms`, but with the template “To check: your
+     profile does not state X. Do not write it in your CV.” (“To acquire” stays for tools,
+     numbers and titles, and takes precedence if both are present). The front end writes the label
+     “To check” (instead of “To acquire”) for this template and does not repeat the terms
+     line.
+  3. **Reused dossier (M2, back)**: the dossier under 30 days reused by the kit is rechecked by the
+     code (`check_dossier`, pure function, no page reread): a text already emptied (“Not found in
+     the sources read.”) keeps it “to check” instead of “ready”, a news item that has
+     become older than 6 months is removed; `meta` carries `emptied` and `dropped` as at production.
+  4. **“Same company for 30 days” through the sentence (M4, back and front)**: the one-sentence
+     entry port gains `intake_info` (the simple information items, read with the confirmed draft,
+     before the write); the session adds them to its end message (“For your information: …”)
+     and to the `artifact.ready` (`info`: record, company, title, status, message; new field of
+     `ArtifactReadyPayload`, empty by default and then not written in the payload, so that the other
+     artifacts keep their shape). `IntakeRun` passes them to the opened record (same navigation
+     state as manual creation, 7.13): the drawer shows them as a note, without a choice.
+  5. **Front end**: the tracking, the indicators and the badge reread their data after a creation
+     through the sentence (`IntakeRun`) or from a posting's page (`useCreateFromPosting`, prefix
+     `["applications"]`); the dates of “I applied”, of the status change and of manual creation
+     have `max` = today and the form refuses a future date (“This date is in the future.”, the
+     interview date stays free); a debrief grade that the model did not return is “not rated”
+     (empty bar, absent from the average), never “0 out of 5”; the “you're following it
+     here” note of the kit and the committee disappears when the resumed run is finished; the
+     drawer of a record without a posting offers “Add the posting text” (text area,
+     `PATCH posting_text`) and the message of the 409 `posting_required` points there.
+  6. **Outside this batch** (kept for later): M1 (version sent in the relaunched kit), M3 (separator
+     of the follow-ups), M5 (votes logged), M6 (deletion of a posting during a committee), M7 (lock
+     of the company record), M8 (future date of an event on the back-end side); front-end minor
+     items 3, 4, 5 (outside the label), 6, 7, 9 to 12.
+- **Reason** final review of phase 7 (back end and front end). SPEC 6.3 and Review Focus no. 1 (the
+  same posting coming back by another path does not create two records), SPEC 1 and 18.3 (nothing
+  invented: an employer or a school absent from the profile is never advice to write), F16 (a
+  “ready” dossier is complete), 6.3 (the “same company” information on every screen),
+  honesty of a missing score; D139 (adoption), D141 (one-sentence entry), D142 (dossier), D147
+  (committee), D150 to D154.
 
 ## D156
 
-- **Date** : 2026-11-16
-- **Sujet** : Phase 8, tâche 8.0 : correctifs d'ouverture des candidatures (back)
-- **Décision** :
-  1. **M1 : la pièce `cv` du kit relancé lit la version envoyée.** `KitContext.cv_version` est la version figée de la fiche (`cv_version_id` quand un événement `version` existe), sinon la version prête la plus récente de l'offre ; une fiche postulée avec la version n° 2 garde n° 2 quand la n° 3 devient prête.
-  2. **M3 : une seule découpe des relances.** `split_followups(text) -> (courriel de 7 jours, courriel de 14 jours)` et `split_parts` vivent dans `agents/tools/kit_schema.py` ; une ligne de trois tirets ou plus, seule (espaces permis), sépare ; des tirets collés à du texte, non. Le graphe (`join_parts`), les comptes de mots et les textes relus (`kit_items`) et les brouillons de relance (`drafts.kit_followup`) appellent les mêmes fonctions.
-  3. **M5 : les votes du comité ne sont plus journalisés.** Le journal des votes dit la session et leur nombre ; le verdict (résultat du comité) reste journalisé à part.
-  4. **M6 : suppression d'une offre refusée tant qu'un comité ou un entretien `running` la cite.** 409 `posting_has_running_work` (`details.kind` : `committee` ou `interview`), vérifié dans `delete_posting` sous le verrou des revues, avec les autres refus ; description de la route mise à jour (contrat régénéré).
-  5. **M7 : un seul verrou pour la fiche entreprise.** `company_lock(KeyLocks, user, company_key)` ; la revue de CV (`save_company`, qui n'avait aucun verrou) et le dossier du kit (`save_dossier`, verrou global « kit-dossier ») prennent le même, un `KeyLocks` partagé par `CvRuntime` et `ApplicationsRuntime` (`bootstrap_career`).
-  6. **M8 : un événement ne se date pas dans le futur.** `POST /applications/{id}/events` : `on` plus tard qu'aujourd'hui (fuseau de January) est une 422 qui nomme `on`, sans écho ; la date d'entretien reste libre.
-  7. **Mineurs de la revérification** : `target_of` décide sur les hits certains avant les probables (une fiche liée ailleurs, certaine, n'est jamais doublée par une probable sans offre) ; relier une fiche déjà postulée écrit « Version N du CV liée à la fiche. » (le passage à « Postulée » écrit toujours « envoyée ») ; `intake_info` enveloppé (information vide et journal du type de l'erreur, la fiche se crée) ; `SECTION_WORDS` complété (Certifications, Intérêts, Loisirs, Bénévolat, Publications et formes anglaises) ; `matching.match` : une clé d'entreprise vide (nom sans lettre latine) ne désigne aucune entreprise, donc jamais « probable », « possible » ni information (le même lien reste « certain ») ; docstring d'`adopt.py` complétée (lien des fiches sans offre).
-  8. **Reste ouvert** : la vérification de la suppression (point 4) ne tient pas les verrous du comité ni de l'entretien (ils sont dans `applications`, que `postings` n'importe pas) : une fenêtre étroite subsiste entre le lancement d'un comité et la suppression simultanée de son offre.
-- **Raison** : mineurs de la revue finale de la phase 7 (D155 n° 6 : M1, M3, M5, M6, M7, M8) et de sa revérification, avant d'ouvrir la phase 8. SPEC 17.2 (aucun contenu dans les journaux), 6.3 (une même offre ne crée pas deux fiches), 6.1 (la version envoyée), SPEC 1 et 18.3 (rien d'inventé) ; D139, D142, D147, D155.
+- **Date** 2026-11-16
+- **Subject** Phase 8, task 8.0: opening fixes for applications (back end)
+- **Decision**
+  1. **M1: the relaunched kit's `cv` piece reads the version sent.** `KitContext.cv_version` is the
+     record's frozen version (`cv_version_id` when a `version` event exists), otherwise the
+     posting's most recent ready version; a record applied with version no. 2 keeps no. 2 when no. 3
+     becomes ready.
+  2. **M3: a single split of the follow-ups.** `split_followups(text) -> (7-day email, 14-day
+     email)` and `split_parts` live in `agents/tools/kit_schema.py`; a line of three or more dashes,
+     alone (spaces allowed), separates; dashes stuck to text do not. The graph (`join_parts`), the
+     word counts and the reread texts (`kit_items`) and the follow-up drafts (`drafts.kit_followup`)
+     call the same functions.
+  3. **M5: the committee's votes are no longer logged.** The votes log says the session and their
+     number; the verdict (the committee's result) stays logged separately.
+  4. **M6: deletion of a posting refused as long as a `running` committee or interview cites it.**
+     409 `posting_has_running_work` (`details.kind`: `committee` or `interview`), checked in
+     `delete_posting` under the reviews lock, with the other refusals; route description updated
+     (contract regenerated).
+  5. **M7: a single lock for the company record.** `company_lock(KeyLocks, user, company_key)`; the
+     CV review (`save_company`, which had no lock) and the kit's dossier (`save_dossier`, global
+     lock “kit-dossier”) take the same one, a `KeyLocks` shared by `CvRuntime` and
+     `ApplicationsRuntime` (`bootstrap_career`).
+  6. **M8: an event is not dated in the future.** `POST /applications/{id}/events`: `on` later than
+     today (January's time zone) is a 422 that names `on`, with no echo; the interview date stays
+     free.
+  7. **Minor items of the recheck**: `target_of` decides on the certain hits before the probable
+     ones (a record linked elsewhere, certain, is never doubled by a probable one without a
+     posting); linking an already applied record writes “CV version N linked to the record.”
+     (the switch to “Applied” always writes “sent”); `intake_info` wrapped (empty
+     information and a log of the error's type, the record is created); `SECTION_WORDS` completed
+     (Certifications, Interests, Hobbies, Volunteering, Publications and English forms);
+     `matching.match`: an empty company key (a name without a Latin letter) designates no company,
+     so never “probable”, “possible” nor information (the same link stays “certain”);
+     docstring of `adopt.py` completed (link of the records without a posting).
+  8. **Still open**: the check of the deletion (point 4) does not hold the committee's or the
+     interview's locks (they are in `applications`, which `postings` does not import): a narrow
+     window remains between the launch of a committee and the simultaneous deletion of its posting.
+- **Reason** minor items of the phase 7 final review (D155 no. 6: M1, M3, M5, M6, M7, M8) and of its
+  recheck, before opening phase 8. SPEC 17.2 (no content in the logs), 6.3 (the same posting does
+  not create two records), 6.1 (the version sent), SPEC 1 and 18.3 (nothing invented); D139, D142,
+  D147, D155.
 
 ## D157
 
-- **Date** : 2026-11-16
-- **Sujet** : Phase 8, tâche 8.1 : tables du quotidien, périodes et règles pures (back)
-- **Décision** :
-  1. **Quatre tables, migration `0013`** : `projects` (unique `(user_id, module_id)`, `module_id` et `program_id` sans clé étrangère : le projet survit à une replanification, P1), `radar_runs` (index `(user_id, created_at)`, `role_norm` et `zone_norm` pour comparer au relevé précédent, `blocked_domains` jamais journalisé, P5 à P7), `briefs` (unique `(user_id, day)`, jour local, P12), `jobs` (registre persistant des passages, unique `(user_id, name, period)`, index `(user_id, name, started_at)`, `attempts` à 1 à la création d'une ligne, P13). Les statuts sont des textes de 16 caractères au plus (types `Literal` dans `db/models/daily.py`, partagés avec `app.agents`, contrat 6). Retour arrière : les quatre tables sont supprimées.
-  2. **Périodes (P13)** : `day_period` « 2026-11-16 », `week_period` « 2026-W47 » (semaine ISO du jour local, année ISO au changement d'année), `brief_moment` = `local_moment` en UTC (règle de `zoneinfo` aux changements d'heure), `is_stale` = démarré **il y a plus de** 30 minutes (strictement) ; `RADAR_WEEKDAY = "monday"`, `RADAR_TIME = "06:00"`, `ATS_EVERY_DAYS = 30`, `MAX_ATTEMPTS = 3`. Le module n'importe que `core.clock`.
-  3. **Classement et évolution (P6, P7)** : seules comptent les offres lues (`read == "ok"`) **et analysées** (`skills` est une liste, même vide ; une offre lue mais non analysée n'entre pas au dénominateur). Une compétence compte une fois par offre (nom normalisé), s'affiche sous sa forme la plus fréquente ; part arrondie à 0,01 **en entiers** (,5 vers le haut, sans flottant) ; tri par compte décroissant puis nom normalisé ; ex æquo au même rang (1, 2, 2, 4). Évolution : écart de part en points entiers, rang gagné = ancien − nouveau, `new` pour une compétence absente avant, sans relevé précédent tout à `None` et `new` faux.
-  4. **Alerte (P8)** : au moins 10 offres analysées, part ≥ 0,5, compétence absente de `in_program` (noms normalisés, synonymes compris, fournis par l'appelant) et de niveau inférieur à `valide` (`declare`, `en_cours` ou aucun), 5 au plus dans l'ordre du classement ; message « Demandée dans 62 % des offres, absente de ton programme. ».
-  5. **Score et salaire (P6, P9)** : `posting_score` = `match_score` sur des lignes `GapRow(..., "to_add", None)`, niveaux lus par nom normalisé, une ligne par compétence (requise si une des formes l'est), aucune compétence : 0. `salary_shown` garde le salaire si chacun de ses nombres (suite de chiffres entière : 45 n'est pas 450) figure dans le texte ; un salaire sans aucun chiffre est écarté. `enrich_names` : part ≥ 0,3, 15 au plus ; `low_sample` : moins de 30 offres lisibles.
-  6. **Brief (P9, P11, P12)** : `brief_day` = jour local ; `brief_due` = l'heure du brief du jour local est passée ; `new_offers` : score ≥ 70 (le seuil du brief, `MIN_OFFER_SCORE`, égale `radar.HIGH_MATCH`, un test le garde : le brief n'importe pas le radar), lien ni montré ni déjà saisi, une fois par lien (meilleur score), tri score décroissant puis titre, 5 au plus ; `advice_numbers` : les valeurs absolues des faits connus, en chiffres.
-  7. **Projets (P2, P3)** : `submission_problems` ne renvoie que des noms de champs (un 422 ne répète jamais la saisie) : ni lien ni description → `repo_url` et `description` ; lien non http(s) ou sans hôte ou avec espace → `repo_url` ; description de plus de 4 000 caractères → `description` ; plus de 5 captures → `screenshots`. `verdict` : un résultat par index de 1 à `criteria`, tous `met is True`, sinon `to_redo` (manquant, double, hors bornes, sans index, aucun critère). `week_started` : `today >= week_start`.
-  8. **`JournalKind` gagne `"project"`** (la ligne `project` du journal, P3) : l'énumération de `GET /journal` s'élargit, donc le contrat et `schema.d.ts` sont régénérés ; côté front, le filtre et les libellés du journal acceptent le type (aucune ligne n'est écrite avant 8.10).
-  9. **Modules purs** : aucun n'importe la base ; seul `radar.service.rules` importe une autre feature (`gap.service.score`).
-- **Raison** : P6 à P9 et P13 : les règles du quotidien sont du code testable sans base ni modèle (classement, évolution, alertes, score, échéances, verdict), au même titre que les règles des phases précédentes ; le registre `jobs` rend les rattrapages et les reprises vérifiables. SPEC 1 et 18.3 (rien d'inventé : le salaire n'est gardé que s'il est dans l'offre), 13.2, 13.3, 13.5, 13.6 ; D98 (temps local), D118 (score de match), D139.
+- **Date** 2026-11-16
+- **Subject** Phase 8, task 8.1: daily tables, periods and pure rules (back end)
+- **Decision**
+  1. **Four tables, migration `0013`**: `projects` (unique `(user_id, module_id)`, `module_id` and
+     `program_id` without a foreign key: the project survives a replan, P1), `radar_runs` (index
+     `(user_id, created_at)`, `role_norm` and `zone_norm` to compare with the previous scan,
+     `blocked_domains` never logged, P5 to P7), `briefs` (unique `(user_id, day)`, local day, P12),
+     `jobs` (persistent registry of runs, unique `(user_id, name, period)`, index
+     `(user_id, name, started_at)`, `attempts` at 1 at the creation of a row, P13). The statuses are
+     texts of 16 characters at most (`Literal` types in `db/models/daily.py`, shared with
+     `app.agents`, contract 6). Rollback: the four tables are dropped.
+  2. **Periods (P13)**: `day_period` “2026-11-16”, `week_period` “2026-W47” (ISO week of the
+     local day, ISO year at the year change), `brief_moment` = `local_moment` in UTC (rule of
+     `zoneinfo` at clock changes), `is_stale` = started **more than** 30 minutes ago (strictly);
+     `RADAR_WEEKDAY = "monday"`, `RADAR_TIME = "06:00"`, `ATS_EVERY_DAYS = 30`, `MAX_ATTEMPTS = 3`.
+     The module imports only `core.clock`.
+  3. **Ranking and evolution (P6, P7)**: only postings that were read (`read == "ok"`) **and
+     analyzed** count (`skills` is a list, even empty; a posting read but not analyzed does not
+     enter the denominator). A skill counts once per posting (normalized name), displays under its
+     most frequent form; share rounded to 0.01 **in integers** (.5 rounds up, no floating point);
+     sorted by decreasing count then normalized name; ties at the same rank (1, 2, 2, 4). Evolution:
+     share difference in whole points, rank gained = old − new, `new` for a skill absent before,
+     without a previous scan everything `None` and `new` false.
+  4. **Alert (P8)**: at least 10 analyzed postings, share ≥ 0.5, skill absent from `in_program`
+     (normalized names, synonyms included, supplied by the caller) and of a level below `valide`
+     (`declare`, `en_cours` or none), 5 at most in ranking order; message “Asked for in 62% of
+     postings, absent from your program.”.
+  5. **Score and salary (P6, P9)**: `posting_score` = `match_score` on rows `GapRow(..., "to_add",
+     None)`, levels read by normalized name, one row per skill (required if one of the forms is), no
+     skill: 0. `salary_shown` keeps the salary if each of its numbers (a whole run of digits: 45 is
+     not 450) appears in the text; a salary with no digit is dropped. `enrich_names`: share ≥ 0.3,
+     15 at most; `low_sample`: fewer than 30 readable postings.
+  6. **Brief (P9, P11, P12)**: `brief_day` = local day; `brief_due` = the brief time of the local
+     day has passed; `new_offers`: score ≥ 70 (the brief's threshold, `MIN_OFFER_SCORE`, equals
+     `radar.HIGH_MATCH`, a test guards it: the brief does not import the radar), link neither shown
+     nor already entered, once per link (best score), sorted by decreasing score then title, 5 at
+     most; `advice_numbers`: the absolute values of the known facts, in digits.
+  7. **Projects (P2, P3)**: `submission_problems` returns only field names (a 422 never repeats the
+     input): neither link nor description → `repo_url` and `description`; link not http(s) or
+     without a host or with a space → `repo_url`; description of more than 4,000 characters →
+     `description`; more than 5 screenshots → `screenshots`. `verdict`: one result per index from
+     1 to `criteria`, all `met is True`, otherwise `to_redo` (missing, duplicate, out of bounds,
+     without index, no criterion). `week_started`: `today >= week_start`.
+  8. **`JournalKind` gains `"project"`** (the `project` line of the journal, P3): the enumeration of
+     `GET /journal` widens, so the contract and `schema.d.ts` are regenerated; on the front-end
+     side, the journal's filter and labels accept the type (no row is written before 8.10).
+  9. **Pure modules**: none imports the database; only `radar.service.rules` imports another feature
+     (`gap.service.score`).
+- **Reason** P6 to P9 and P13: the daily rules are code testable without a database or a model
+  (ranking, evolution, alerts, score, due dates, verdict), like the rules of the previous phases;
+  the `jobs` registry makes catch-ups and resumes verifiable. SPEC 1 and 18.3 (nothing invented: the
+  salary is kept only if it is in the posting), 13.2, 13.3, 13.5, 13.6; D98 (local time), D118
+  (match score), D139.
 
 ## D158
 
