@@ -5933,212 +5933,1907 @@ pagination by `before = next_before`, 50 entries per page.
 
 ## D121
 
-- **Date** : 2026-11-13
-- **Sujet** : Phase 6, tâche 6.5 : l'Analyste et le parcours `gap_analysis` (analyse d'une offre, rattachement au référentiel, écart)
-- **Décision** : (1) **L'Analyste** (`analyst`, niveau rapide, prompt `analyst.md` à deux modes `analyze` / `match`) analyse l'offre (SPEC 5.3 étape 1) pour l'écart et la revue : **une analyse par offre, partagée, la première écrite gagne** (`GapStore.save_analysis` : `UPDATE … WHERE analysis IS NULL`, une offre déjà analysée est relue, `first` faux, et la suite du parcours lit l'analyse en base). Une offre déjà analysée n'est jamais réanalysée (`load` → `match`, aucun appel). Preflight G7 : la branche `analyze` de `cv_review` est inatteignable (6.14 refuse une offre non prête), le partage vaut donc entre `gap_analysis` et ses relances. (2) **Mots clés gardés seulement s'ils figurent tels quels dans l'offre** (`keyword_problems`, `contains_term`) ; avec eux, **chaque exigence obligatoire doit nommer au moins une compétence** (`requirement_problems`, revue 6.2 m3 : sinon elle n'est jamais couverte). Les problèmes sont renvoyés au modèle, **deux re-demandes au plus** (`MAX_ANALYZE_ASKS` = 3, comme l'Examinateur) ; ensuite les mots clés encore absents sont retirés, une exigence restée sans compétence est gardée (journalisé : nombres seulement). Une compétence nommée par une exigence obligatoire doit aussi figurer dans `skills` (revue 6.5, m5 : l'écart et la couverture parlent de la même liste). Les re-demandes ne citent que des rangs (« le mot clé n° 5 », « l'exigence n° 3 ») ; les extraits de l'offre suivent dans l'encadrement `untrusted(…, "offre:citations")` (m2). La **meilleure réponse** est gardée : une offre reconnue le reste (un « pas une offre » venu d'une re-demande est ignoré), puis la réponse qui a le moins de problèmes, la plus récente à égalité (m1). Un texte qui n'est pas une offre (`is_job_posting` faux, y compris une offre incomplète réduite à un titre) n'est jamais redemandé : `reject` (statut `rejected`, raison `NOT_A_POSTING`, annoncée), aucun écart. Un texte **trop court** est refusé sans appel au modèle (`TOO_SHORT`), avec la même borne que la route : `MIN_POSTING_CHARS`, `MIN_POSTING_WORDS` et `enough_text` vivent désormais dans `posting_schema` (`features/postings/service/rules.py` les réexporte) ; une offre de plus de 30 000 caractères est tronquée pour l'Analyste, et la troncature est journalisée en nombres (m6). Une liste trop longue (plus de 40 exigences) est refusée par le schéma et redemandée par `structured_call` ; le texte d'une exigence et d'un critère éliminatoire est de la prose (`Prose`, raccourci, D97). (3) **Le rattachement au référentiel est demandé au modèle, le calcul des lignes, des actions et du score au code** : le rattachement se fait sur le **référentiel existant** (revue 6.5, I2) : `known_skills` rend des `KnownSkill(name, level)` dans l'ordre `prouve`, `valide`, `en_cours`, `declare`, puis sans niveau (`ordered_known`, plafond de 300 qui écarte d'abord les noms sans niveau), et le prompt montre le niveau en demandant la notion de même sens au niveau le plus haut ; les compétences de l'offre **n'entrent au référentiel qu'après**, par `save_gap`, et seulement les besoins restés sans rattachement (sinon chaque besoin trouverait son propre homonyme sans niveau). Le modèle répond par **identifiants** (I3) : besoins `n1`, `n2`… (avec « obligatoire » / « souhaitée » à côté), compétences du référentiel `k1`, `k2`… ; un identifiant suivi d'une annotation est lu (« n3 (obligatoire) »), un nom rendu à la place d'un identifiant est cherché au référentiel (niveau final retiré). `SkillMatches.items` sont des `NeedMatch{need, known}` (identifiants) ; le résultat rangé reste un `SkillMatch{need, known}` par besoin, dont `known` va jusqu'à 120 caractères, le plafond de `skills.name` (I1). Une compétence hors du référentiel devient `None`, jamais inventée ; la première compétence reconnue pour un besoin gagne ; un besoin laissé sans rattachement dont le nom figure tel quel au référentiel lui est rattaché ; sans besoin ou sans référentiel, aucun appel. `save_gap` range `job_postings.gap` = `{session_id, matches}` (G25, `gap_result`), idempotent par session ; le port calcule les lignes (niveaux, semaine du programme, `learnable` faux → `out_of_scope`) et `match_score`. `GapSaved` gagne `missing_required` (écart au plan) pour l'annonce « Score de match : 62/100. 4 compétences manquent, dont 2 obligatoires. ». (4) **Doublons probables et possibles calculés après l'analyse** (entreprise et titre connus), par le port, rendus dans `AnalysisSaved.duplicates` (`DuplicateHit` défini ici), **aussi quand `first` est faux** (recalculés ou relus : un rejeu les annonce encore, m4) ; le plus sûr puis le plus ancien est annoncé (« Offre proche d'une offre déjà ajoutée le 03/11. », date de `created_at`, que 6.6 rend dans le fuseau de January, m7). Puis `artifact.ready` `{artifact_id: posting_id, kind: "posting_gap", title, url: "/carriere/offres/{id}"}`. (5) **« Hors périmètre » = non apprenable** : `learnable` faux pour un diplôme, une nationalité, un permis, des années d'expérience (consigne du prompt). (6) **Moteur** : port `AgentPorts.gap` (`NO_GAP` par défaut, l'implémentation `AgentGapStore` et sa ligne de composition viennent en 6.6), graphe dans `GRAPHS`, agent dans `AGENTS`, `ROUTE_ONLY["gap_analysis"] = "POST /postings"` (le parcours générique `POST /sessions` le refuse, 409 `graph_has_route`). Aucun point d'arrêt ; `analyze` (600 s, sous `LLM_CALL_DEADLINE_S`, D115 n° 17), `match` et les écritures (300 s) ont leur `node_timeout`. Le texte de l'offre n'entre pas dans l'état du graphe (`analyze` le relit par le port) ; l'offre, les besoins et le référentiel sont encadrés par `untrusted` (`offre`, `offre:competences`, `referentiel`) ; les journaux ne portent que des identifiants et des nombres.
-- **Raison** : SPEC 5.3 (étape 1), F8, 9.4 (rejeu exact), 17.2, 17.4, 18.3 ; plan de la phase 6 (tâche 6.5, Review Focus n° 2) ; preflight (G7, G25, P4, P20 à P22) ; revue 6.2 (m3) ; D97 (prose raccourcie), D115 n° 17 (échéance d'appel), D118 (types partagés, `match_score`). Un nom de compétence inventé par le modèle ferait apparaître un acquis fictif dans l'écart ; un mot clé reformulé ne serait jamais retrouvé dans le CV.
+- **Date** 2026-11-13
+- **Subject** Phase 6, task 6.5: the Analyst and the `gap_analysis` graph (posting analysis,
+  matching to the skill base, gap)
+- **Decision**
+  1. **The Analyst** (`analyst`, fast tier, prompt `analyst.md` with two modes `analyze` / `match`)
+     analyzes the posting (SPEC 5.3 step 1) for the gap and the review: **one analysis per posting,
+     shared, the first one written wins** (`GapStore.save_analysis`: `UPDATE … WHERE analysis
+     IS NULL`; an already analyzed posting is reread with `first` false, and the rest of the graph
+     reads the analysis from the database). An already analyzed posting is never reanalyzed (`load`
+     → `match`, no call). Preflight G7: the `analyze` branch of `cv_review` is unreachable (6.14
+     refuses a posting that is not ready), so the sharing applies between `gap_analysis` and its
+     relaunches.
+  2. **Keywords are kept only if they appear verbatim in the posting** (`keyword_problems`,
+     `contains_term`); with them, **each required requirement must name at least one skill**
+     (`requirement_problems`, review 6.2 m3: otherwise it is never covered). The problems are sent
+     back to the model, **at most two new requests** (`MAX_ANALYZE_ASKS` = 3, like the Examiner);
+     after that the keywords still absent are removed, and a requirement left without a skill is
+     kept (logged: numbers only). A skill named by a required requirement must also appear in
+     `skills` (review 6.5, m5: the gap and the coverage speak of the same list). The new requests
+     only cite ranks (“keyword no. 5”, “requirement no. 3”); the excerpts of the posting
+     follow inside the `untrusted(…, "offre:citations")` frame (m2). The **best answer** is kept:
+     a posting that was recognized stays recognized (a “not a posting” coming from a new request
+     is ignored), then the answer with the fewest problems, the most recent on a tie (m1). A text
+     that is not a posting (`is_job_posting` false, including an incomplete posting reduced to a
+     title) is never asked again: `reject` (status `rejected`, reason `NOT_A_POSTING`, announced),
+     no gap. A text that is **too short** is refused without calling the model (`TOO_SHORT`), with
+     the same bound as the route: `MIN_POSTING_CHARS`, `MIN_POSTING_WORDS` and `enough_text` now
+     live in `posting_schema` (`features/postings/service/rules.py` re-exports them); a posting of
+     more than 30,000 characters is truncated for the Analyst, and the truncation is logged as
+     numbers (m6). A list that is too long (more than 40 requirements) is refused by the schema and
+     asked again by `structured_call`; the text of a requirement and of an eliminatory criterion is
+     prose (`Prose`, shortened, D97).
+  3. **The model is asked for the matching to the skill base; the code computes the rows, the
+     actions and the score**: the matching is done against the **existing skill base** (review 6.5,
+     I2): `known_skills` returns `KnownSkill(name, level)` in the order `prouve`, `valide`,
+     `en_cours`, `declare`, then without level (`ordered_known`, a cap of 300 that drops the names
+     without level first), and the prompt shows the level while asking for the notion of the same
+     meaning at the highest level; the posting's skills **enter the skill base only afterwards**,
+     through `save_gap`, and only the needs left without a match (otherwise each need would find its
+     own homonym without level). The model answers with **identifiers** (I3): needs `n1`, `n2`…
+     (with “required” / “desired” next to them), skill-base skills `k1`, `k2`…; an
+     identifier followed by an annotation is read (“n3 (required)”), a name returned instead of
+     an identifier is looked up in the skill base (trailing level removed). `SkillMatches.items` are
+     `NeedMatch{need, known}` (identifiers); the stored result stays one `SkillMatch{need, known}`
+     per need, whose `known` goes up to 120 characters, the cap of `skills.name` (I1). A skill
+     outside the skill base becomes `None`, never invented; the first skill recognized for a need
+     wins; a need left without a match whose name appears verbatim in the skill base is attached to
+     it; with no need or no skill base, no call. `save_gap` stores `job_postings.gap` =
+     `{session_id, matches}` (G25, `gap_result`), idempotent per session; the port computes the rows
+     (levels, program week, `learnable` false → `out_of_scope`) and `match_score`. `GapSaved`
+     gains `missing_required` (gap to the plan) for the announcement “Match score: 62/100. 4
+     skills are missing, including 2 required.”
+  4. **Probable and possible duplicates computed after the analysis** (company and title known), by
+     the port, returned in `AnalysisSaved.duplicates` (`DuplicateHit` defined here), **also when
+     `first` is false** (recomputed or reread: a replay still announces them, m4); the surest then
+     the oldest is announced (“Similar to a posting you added on 03/11.”, date of `created_at`,
+     which 6.6 renders in January's time zone, m7). Then `artifact.ready` `{artifact_id: posting_id,
+     kind: "posting_gap", title, url: "/carriere/offres/{id}"}`.
+  5. **“Out of scope” = not learnable**: `learnable` false for a degree, a nationality, a
+     license, years of experience (instruction of the prompt).
+  6. **Engine**: port `AgentPorts.gap` (`NO_GAP` by default; the `AgentGapStore` implementation and
+     its composition line come in 6.6), graph in `GRAPHS`, agent in `AGENTS`,
+     `ROUTE_ONLY["gap_analysis"] = "POST /postings"` (the generic `POST /sessions` graph refuses it,
+     409 `graph_has_route`). No breakpoint; `analyze` (600 s, under `LLM_CALL_DEADLINE_S`, D115 no.
+     17), `match` and the writes (300 s) have their `node_timeout`. The text of the posting does not
+     enter the graph state (`analyze` rereads it through the port); the posting, the needs and the
+     skill base are framed by `untrusted` (`offre`, `offre:competences`, `referentiel`); logs carry
+     only identifiers and numbers.
+- **Reason** SPEC 5.3 (step 1), F8, 9.4 (exact replay), 17.2, 17.4, 18.3; phase 6 plan (task 6.5,
+  Review Focus no. 2); preflight (G7, G25, P4, P20 to P22); review 6.2 (m3); D97 (shortened prose),
+  D115 no. 17 (call deadline), D118 (shared types, `match_score`). A skill name invented by the
+  model would make a fictitious achievement appear in the gap; a reworded keyword would never be
+  found in the CV.
 
 ## D122
 
-- **Date** : 2026-11-13
-- **Sujet** : Phase 6, tâche 6.6 : features back `postings` et `gap` (offre par lien ou texte collé, doublons à trois niveaux, port `AgentGapStore`, tableau d'écarts)
-- **Décision** : (1) **`POST /postings` lit le lien dans la requête**, pas dans une tâche d'agent : `posting_url_key` (paramètres de suivi retirés ; `invalid_url` / `url_forbidden` rendus en 422 au message fixe, `details.fields` seul, clé de plus de 2 048 caractères refusée), puis `reading.read` de la recherche web (cache 7 jours, aucune transaction pendant la lecture, D66). Page illisible ou trop courte (`enough_text`) → **422 `posting_unreadable`** « Impossible de lire cette offre depuis le lien. Colle son texte. » : aucune offre devinée (SPEC 5.3). Texte collé trop court → 422 `posting_too_short` ; zéro ou deux sources → 422 `posting_source`. Une 422 ne recopie jamais l'entrée ; les journaux ne portent que des identifiants (jamais lien, texte ni entreprise, SPEC 17.2). (2) **Idempotent sur le lien normalisé et sur l'empreinte du texte** (sha256 du texte NFC, blancs réduits) : même source → **200**, `created` faux, l'offre existante — c'est le doublon « certain ». Deux envois simultanés de la même source attendent l'un l'autre (verrou par source, propre au processus) ; l'index unique (`uq_job_postings_url`, et `uq_job_postings_text` partiel `WHERE url_norm IS NULL`, G24) rattrape le reste : `IntegrityError` → la perdante relit la gagnante. Une offre déjà là mais **refusée, en échec, interrompue ou analysée sans écart** est **relancée** (200, `session_id` de la nouvelle session) au lieu d'être rendue telle quelle. (3) **Doublons probable et possible calculés après l'analyse** (`save_analysis`, G35) : même entreprise (`company_key`) et titres proches (`PROBABLE_TITLE`), ou même entreprise et élément de mémoire `offre` de l'autre offre parmi les 5 premiers résultats de la recherche avec un score ≥ `POSSIBLE_COSINE` ; rangés **des deux côtés** (niveau, offre, score), relus à l'affichage (offre supprimée écartée, titre, entreprise et date de l'autre offre, **date dans le fuseau de January**, aussi pour l'annonce de l'Analyste) ; recherche indisponible → aucun doublon possible, sans erreur ; « offres distinctes » (`POST /postings/{id}/distinct`) les retire des deux côtés et les exclut ensuite. Le front montre `DuplicateNotice` une fois l'analyse prête (relecture de 3 s). (4) **Tableau d'écarts recalculé à chaque lecture** (`gap_rows`) : rattachements rangés (`gap` = `{session_id, matches}`) × niveaux actuels de `user_skills` (nom rattaché, sinon nom du besoin : un besoin sans rattachement entre au référentiel à `save_gap` et sa ligne suit son niveau s'il est appris ensuite) ; `learnable` faux → `out_of_scope` ; module non sauté d'un programme validé (le plus récent d'abord) qui vise le nom → `in_program` avec la semaine de sa 1re tâche ; sinon `to_add`. Les mots clés envoyés vers l'écart par une revue de CV (`cv_reviews.keywords_to_gap`, G3) s'ajoutent avec `source="cv_review"` (`GapRowOut.source`), action `to_add`, hors du score. `GET /gap/top-missing` : 10 au plus, `required_in` compris (G4), lignes hors périmètre exclues. (5) **Le texte de l'offre est figé à l'ajout** (copie lue ou collée, 60 000 caractères au plus) ; l'élément de mémoire `offre` (titre — entreprise, texte figé ; auteur `analyst`) est écrit par `save_analysis` puis indexé, retiré avec l'offre sauf s'il sert à une autre offre de même contenu. (6) **Port `AgentGapStore`** : `save_analysis` ne touche pas au référentiel et rend les doublons même au rejeu ; `save_gap` est sans effet pour une même session et ajoute, **dans la même transaction que l'écart**, les besoins restés sans rattachement au référentiel, sans niveau, avec le domaine de l'offre ou **`Autres`** par défaut (P20, celui que la carte montre) ; `known_skills` = référentiel existant ordonné par `ordered_known`. (7) **Statut montré** (motif de D91 et D101) : une offre `analyzing` dont la session `gap_analysis` n'est plus ouverte se lit `failed` (« L'analyse de l'offre s'est arrêtée avant la fin : relance-la. »), avec `gap_session_id` ; l'écart se lit `pending` tant que la session tourne, `failed` pour une offre refusée ou un écart jamais rangé ; la base n'est corrigée qu'à la relance (sous le verrou de l'offre). Un lancement qui échoue passe l'offre en `failed` en base. `POST /postings/{id}/gap` relance (202) sauf session en cours (409 `gap_in_progress`). `DELETE /postings/{id}` : 409 `review_in_progress` si une revue de CV tourne. (8) Composition dans **`app/bootstrap_career.py`** (`CareerRuntimes`, `career_runtimes`, `app.state.career`), ajouté au contrat 5 (G17) ; `agent_ports(..., gap=...)`.
-- **Révision (revue finale de la phase 6)** : (a) **supprimer une offre est sûr** (BR-I1, BC-I1, BC-M4) : `DELETE /postings/{id}` rend 409 `review_in_progress` tant qu'une revue de CV de l'offre est lancée **ou proposée** (`OPEN_REVIEW_STATUSES`, partagé avec la feature `cv`), 409 `analysis_in_progress` (« Une analyse de cette offre est en cours : réessaie dans un instant. ») tant qu'une session `gap_analysis` de l'offre est ouverte ; sinon les lignes partent (revues, modifications, versions en cascade), la transaction est validée, PUIS les PDF et les images des pages des versions (catégorie `cv_versions`) sont effacés du stockage, comme `MemoryService.delete` (un échec d'effacement n'est journalisé que par son type). Test de cascade (lignes et fichiers) et des deux 409, documentés dans l'OpenAPI. (b) **Un besoin non apprenable** (`learnable` faux : « Permis B », « Bac+5 ») n'entre jamais au référentiel des compétences (`_add_unmatched`, 6.6 m1). (c) **Un lien dont la route est dans le fragment** (`#/offre/42`, `#!/…`) n'est jamais lu à la racine du site : refus `posting_unreadable` (« colle son texte »), sans recopier l'adresse (6.6 m4).
-- **Raison** : SPEC 5.3, F8, 14.2, 17.2, 17.4 ; plan de la phase 6 (tâche 6.6) ; preflight (P5, P20, P23 à P28, G3, G4, G17, G24, G25, G35) ; D66 (aucune transaction pendant un appel réseau), D91 et D101 (statut montré sans écriture), D118, D121 ; revues 6.2 (m6 a) et 6.5 (I2, m7).
+- **Date** 2026-11-13
+- **Subject** Phase 6, task 6.6: back-end features `postings` and `gap` (posting by link or pasted
+  text, three-level duplicates, `AgentGapStore` port, gap table)
+- **Decision**
+  1. **`POST /postings` reads the link in the request**, not in an agent task: `posting_url_key`
+     (tracking parameters removed; `invalid_url` / `url_forbidden` returned as 422 with a fixed
+     message, `details.fields` only, a key of more than 2,048 characters refused), then
+     `reading.read` of the web search (7-day cache, no transaction during the read, D66). An
+     unreadable or too short page (`enough_text`) → **422 `posting_unreadable`** “Couldn't read
+     this posting from the link. Paste its text.”: no posting is guessed (SPEC 5.3). Pasted text
+     too short → 422 `posting_too_short`; zero or two sources → 422 `posting_source`. A 422
+     never copies the input; logs carry only identifiers (never a link, a text or a company, SPEC
+     17.2).
+  2. **Idempotent on the normalized link and on the text fingerprint** (sha256 of the NFC text,
+     whitespace collapsed): same source → **200**, `created` false, the existing posting — this
+     is the “certain” duplicate. Two simultaneous sends of the same source wait for each other
+     (a per-source lock, local to the process); the unique index (`uq_job_postings_url`, and the
+     partial `uq_job_postings_text` `WHERE url_norm IS NULL`, G24) catches the rest:
+     `IntegrityError` → the loser rereads the winner. A posting that is already there but
+     **refused, failed, interrupted or analyzed without a gap** is **relaunched** (200, `session_id`
+     of the new session) instead of being returned as is.
+  3. **Probable and possible duplicates computed after the analysis** (`save_analysis`, G35): same
+     company (`company_key`) and close titles (`PROBABLE_TITLE`), or same company and the `offre`
+     memory item of the other posting among the top 5 search results with a score ≥
+     `POSSIBLE_COSINE`; stored **on both sides** (level, posting, score), reread at display time (a
+     deleted posting is dropped; title, company and date of the other posting, **date in January's
+     time zone**, also for the Analyst's announcement); search unavailable → no possible
+     duplicate, no error; “distinct postings” (`POST /postings/{id}/distinct`) removes them on
+     both sides and excludes them afterwards. The front end shows `DuplicateNotice` once the
+     analysis is ready (3 s reread).
+  4. **Gap table recomputed on every read** (`gap_rows`): stored matches (`gap` =
+     `{session_id, matches}`) × current levels of `user_skills` (matched name, otherwise the need's
+     name: a need without a match enters the skill base at `save_gap` and its row follows its level
+     if it is learned afterwards); `learnable` false → `out_of_scope`; a non-skipped module of a
+     validated program (the most recent first) that targets the name → `in_program` with the week
+     of its first task; otherwise `to_add`. The keywords sent to the gap by a CV review
+     (`cv_reviews.keywords_to_gap`, G3) are added with `source="cv_review"` (`GapRowOut.source`),
+     action `to_add`, outside the score. `GET /gap/top-missing`: at most 10, `required_in` included
+     (G4), out-of-scope rows excluded.
+  5. **The posting text is frozen when added** (copy read or pasted, 60,000 characters at most); the
+     `offre` memory item (title — company, frozen text; author `analyst`) is written by
+     `save_analysis` then indexed, and removed with the posting unless it serves another posting of
+     the same content.
+  6. **`AgentGapStore` port**: `save_analysis` does not touch the skill base and returns the
+     duplicates even on replay; `save_gap` has no effect for the same session and adds, **in the
+     same transaction as the gap**, the needs left without a match to the skill base, without level,
+     with the posting's domain or **`Autres`** (“Other”) by default (P20, the one the map
+     shows); `known_skills` = existing skill base ordered by `ordered_known`.
+  7. **Status shown** (pattern of D91 and D101): a posting `analyzing` whose `gap_analysis` session
+     is no longer open reads `failed` (“Posting analysis stopped. Restart the analysis.”), with
+     `gap_session_id`; the gap reads `pending` while the session runs, `failed` for a refused
+     posting or a gap that was never stored; the database is corrected only on relaunch (under the
+     posting's lock). A launch that fails sets the posting to `failed` in the database.
+     `POST /postings/{id}/gap` relaunches (202) unless a session is running (409 `gap_in_progress`).
+     `DELETE /postings/{id}`: 409 `review_in_progress` if a CV review is running.
+  8. Composition in **`app/bootstrap_career.py`** (`CareerRuntimes`, `career_runtimes`,
+     `app.state.career`), added to contract 5 (G17); `agent_ports(..., gap=...)`.
+- **Revision (final review of phase 6)** (a) **Deleting a posting is safe** (BR-I1, BC-I1, BC-M4):
+  `DELETE /postings/{id}` returns 409 `review_in_progress` as long as a CV review of the posting is
+  launched **or proposed** (`OPEN_REVIEW_STATUSES`, shared with the `cv` feature), and 409
+  `analysis_in_progress` (“An analysis of this posting is in progress: try again in a moment.”)
+  as long as a `gap_analysis` session of the posting is open; otherwise the rows go (reviews,
+  modifications, versions in cascade), the transaction is committed, THEN the PDFs and page images
+  of the versions (category `cv_versions`) are erased from storage, like `MemoryService.delete` (an
+  erase failure is logged only by its type). Cascade test (rows and files) and of the two 409s,
+  documented in the OpenAPI. (b) **A need that is not learnable** (`learnable` false: “Permis
+  B”, “Bac+5”) never enters the skill base (`_add_unmatched`, 6.6 m1). (c) **A link whose
+  route is in the fragment** (`#/offre/42`, `#!/…`) is never read at the site root: refusal
+  `posting_unreadable` (“paste its text”), without copying the address (6.6 m4).
+- **Reason** SPEC 5.3, F8, 14.2, 17.2, 17.4; phase 6 plan (task 6.6); preflight (P5, P20, P23 to
+  P28, G3, G4, G17, G24, G25, G35); D66 (no transaction during a network call), D91 and D101 (status
+  shown without a write), D118, D121; reviews 6.2 (m6 a) and 6.5 (I2, m7).
 
 ## D123
 
-- **Date** : 2026-11-14
-- **Sujet** : Phase 6, tâche 6.7 : « Ajouter au planning » (déclencheur `gap` de la replanification), offres d'une compétence, comparaison de la carte à une offre
-- **Décision** : (1) **« Ajouter au planning » (F8) = une replanification au déclencheur `gap`**, ajouts seuls, validée par January : `POST /postings/{id}/gap/plan {skills}` (1 à 10 noms) → **202 `{session_id}`** (`PlanGapStarted`). Chaque nom doit être une ligne `to_add` de l'écart recalculé (`gap_rows`, casse et accents ignorés, doublons fusionnés, lignes `cv_review` comprises) : sinon **422 `gap_skill_unknown`**, `details.fields` = `skills.{rang}`, jamais la valeur ; une ligne déjà `in_program` ou `out_of_scope` est refusée de même. Le programme visé est le **programme validé le plus récent** ; aucun → **409 `no_program`** (« Aucun programme validé : crée d'abord ton programme. ») ; une replanification déjà ouverte → **409 `replan_open`** existant (`details.session_id`, preflight G11 : `replan_in_progress` n'existe pas). `start_gap_replan(rt, user_id, program_id, skills) -> session_id` partage le lancement de `start_replan` (verrou de lancement, 404, 409 `program_not_validated`). `ReplanTrigger` gagne `gap` ; `ReplanInput.skills` (10 au plus, 120 caractères chacun) accompagne `gap` et lui seul (422 `invalid_input` sinon). (2) **Droits du Stratège avec `gap`** (preflight G12) : `ask_option` est sauté (`route_start`) ; le schéma est `ReplanAdds` ; un retrait proposé est ignoré, jamais appliqué ni redemandé (D105 (2) : le schéma n'a pas de `drop`) ; chaque ajout est placé dans le module cible **`m0`**, quel que soit le module rendu ; **un ajout qui ne nomme aucune compétence de la liste** (en mots entiers, dans son titre ou son critère de fin, casse et accents ignorés : `skills_named`) **est redemandé une fois**, en ne citant que des rangs (« n° 2 »), **puis retiré**. La liste des compétences, tirée des offres par l'Analyste, est encadrée par `untrusted(…, "competences des offres")` (17.4) ; le prompt a son bloc `{% if trigger == "gap" %}`. `ask_accept` est gardé : rien n'est écrit sans l'accord de January. Le port refait ces contrôles (défense en profondeur) d'après l'entrée de la session (`trigger`, `skills`) : retraits ignorés, ajouts forcés dans `m0`, ajouts sans compétence ignorés (journal : leur nombre). Le motif de la version (`reason`) est « Compétences des offres ». (3) **Module « Compétences des offres », en fin de programme, créé une fois** : tant qu'il n'existe pas, `m0` vise un id provisoire (`NEW_GAP_MODULE`) ; la proposition ajoute aux lignes rangées un module vide de ce nom **à la fin de la dernière semaine** (`with_gap_module`), si bien que le rangement (`repack`) place l'ajout dans cette semaine (ou la semaine en cours si elle est passée, des semaines « Suite » si elle est pleine) et que l'instantané et la différence le montrent sous ce module ; **rien n'est écrit avant l'acceptation** (une proposition refusée ne crée aucun module). À l'acceptation (`_write_changes`), le module est **créé à la fin de la dernière semaine du programme** (rang suivant), ou **retrouvé** (même titre, non sauté : un titre de module ne se modifie pas) et réutilisé ; il reçoit les compétences nommées par les ajouts acceptés (`gap_skills` de `snapshot.changes`), dédoublonnées : la ligne de l'écart passe alors `in_program`, avec la semaine de sa 1re tâche. Raison : un module existant a déjà son objectif ; y glisser une compétence d'offre fausserait sa couverture. Le rangement place un ajout d'après la semaine de son module **même vide** (`_own` lit les modules des lignes, plus seulement ceux qui ont des tâches). (4) **Offres d'une compétence (F15, renvoyé à la phase 6 par la phase 5)** : `SkillDetailOut.postings` liste les offres **prêtes** (`status = ready`, analysées) dont l'analyse cite la compétence, sous le nom du besoin, sous le nom du référentiel auquel l'Analyste l'a rattachée, ou sous un synonyme de la compétence ; **10 au plus, les plus récentes d'abord** ; `PostingRefOut.url` = `/carriere/offres/{id}` (page de 6.17), `title` = titre de l'analyse. (5) **Comparaison à une offre** : `GET /skills/compare?target=posting&posting_id=…` rend la même forme que `target=goal` (`CompareTarget = Literal["goal", "posting"]`) : une ligne par compétence **apprenable** de l'offre (le nom rattaché au référentiel, sinon celui du besoin, que `save_gap` a mis au référentiel), dans l'ordre de l'analyse, cible `valide`, `coverage` comme pour l'objectif ; libellé « Titre — Entreprise » (120 caractères). `posting_id` absent → **422 `posting_id_required`** (`details.fields: ["posting_id"]`) ; offre d'une autre ou absente → 404 `posting_not_found` ; offre pas encore analysée ou refusée → 404 `no_compare_target`. Les lignes hors périmètre (permis, diplôme) n'y entrent pas, comme dans `GET /gap/top-missing`.
-- **Révision (revue finale de la phase 6)** : **le message de fin du déclencheur `gap` dit ce qui s'est passé** (6.7 M7) : une replanification `gap` sans aucun ajout rend « Aucune tâche n'a pu être ajoutée pour ces compétences : ton plan n'a pas changé. Relance « Ajouter au planning » pour une nouvelle proposition. » (`GAP_EMPTY_TEXT`) ; « Rien à changer : ton plan tient tel quel » reste propre aux autres déclencheurs.
-- **Raison** : SPEC F8 (« Ajouter au planning »), F13 (replanification validée par January), F15 (carte : offres d'une compétence, comparaison à une offre précise), 9.4, 17.2, 17.4 ; plan de la phase 6 (tâche 6.7, Décision du plan sur le module) ; preflight (P23, P27, P29, P30, G11, G12, G18) ; D105 (droits par schéma), D106 (versions, acceptation), D107 (carte), D122 (lignes de l'écart).
+- **Date** 2026-11-14
+- **Subject** Phase 6, task 6.7: “Add to schedule” (the `gap` trigger of replanning), postings
+  of a skill, comparing the map with a posting
+- **Decision**
+  1. **“Add to schedule” (F8) = a replan with the `gap` trigger**, additions only, validated by
+     January: `POST /postings/{id}/gap/plan {skills}` (1 to 10 names) → **202 `{session_id}`**
+     (`PlanGapStarted`). Each name must be a `to_add` row of the recomputed gap (`gap_rows`, case
+     and accents ignored, duplicates merged, `cv_review` rows included): otherwise **422
+     `gap_skill_unknown`**, `details.fields` = `skills.{rank}`, never the value; a row that is
+     already `in_program` or `out_of_scope` is refused the same way. The target program is the
+     **most recent validated program**; none → **409 `no_program`** (“No validated program:
+     create your program first.”); a replan that is already open → the existing **409
+     `replan_open`** (`details.session_id`, preflight G11: `replan_in_progress` does not exist).
+     `start_gap_replan(rt, user_id, program_id, skills) -> session_id` shares the launch of
+     `start_replan` (launch lock, 404, 409 `program_not_validated`). `ReplanTrigger` gains `gap`;
+     `ReplanInput.skills` (10 at most, 120 characters each) goes with `gap` and with it alone (422
+     `invalid_input` otherwise).
+  2. **Strategist's rights with `gap`** (preflight G12): `ask_option` is skipped (`route_start`);
+     the schema is `ReplanAdds`; a proposed removal is ignored, never applied nor asked again (D105
+     (2): the schema has no `drop`); each addition is placed in the target module **`m0`**, whatever
+     module is returned; **an addition that names no skill of the list** (in whole words, in its
+     title or its completion criterion, case and accents ignored: `skills_named`) **is asked again
+     once**, citing only ranks (“no. 2”), **then removed**. The list of skills, drawn from the
+     postings by the Analyst, is framed by `untrusted(…, "competences des offres")` (17.4); the
+     prompt has its `{% if trigger == "gap" %}` block. `ask_accept` is kept: nothing is written
+     without January's agreement. The port redoes these checks (defense in depth) from the session's
+     input (`trigger`, `skills`): removals ignored, additions forced into `m0`, additions without a
+     skill ignored (log: their number). The version's reason (`reason`) is “Skills from job
+     postings”.
+  3. **Module “Skills from job postings”, at the end of the program, created once**: as long as
+     it does not exist, `m0` points to a provisional id (`NEW_GAP_MODULE`); the proposal adds to the
+     stored rows an empty module of that name **at the end of the last week** (`with_gap_module`),
+     so that the repacking (`repack`) places the addition in that week (or in the current week if it
+     has passed, in “Continued” weeks if it is full) and the snapshot and the diff show it under
+     that module; **nothing is written before acceptance** (a refused proposal creates no module).
+     On acceptance (`_write_changes`), the module is **created at the end of the program's last
+     week** (next rank), or **found again** (same title, not skipped: a module title cannot be
+     modified) and reused; it receives the skills named by the accepted additions (`gap_skills` of
+     `snapshot.changes`), deduplicated: the gap row then becomes `in_program`, with the week of its
+     first task. Reason: an existing module already has its objective; slipping a posting skill into
+     it would falsify its coverage. The repacking places an addition according to the week of its
+     module **even if empty** (`_own` reads the modules of the rows, no longer only those that have
+     tasks).
+  4. **Postings of a skill (F15, handed to phase 6 by phase 5)**: `SkillDetailOut.postings` lists
+     the **ready** postings (`status = ready`, analyzed) whose analysis cites the skill, under the
+     need's name, under the skill-base name to which the Analyst matched it, or under a synonym of
+     the skill; **10 at most, the most recent first**; `PostingRefOut.url` = `/carriere/offres/{id}`
+     (page of 6.17), `title` = title of the analysis.
+  5. **Comparison with a posting**: `GET /skills/compare?target=posting&posting_id=…` returns the
+     same shape as `target=goal` (`CompareTarget = Literal["goal", "posting"]`): one row per
+     **learnable** skill of the posting (the name matched to the skill base, otherwise the need's
+     name, which `save_gap` put in the skill base), in the order of the analysis, target `valide`,
+     `coverage` as for the goal; label “Title — Company” (120 characters). `posting_id`
+     missing → **422 `posting_id_required`** (`details.fields: ["posting_id"]`); posting of
+     another user or missing → 404 `posting_not_found`; posting not yet analyzed or refused →
+     404 `no_compare_target`. Out-of-scope rows (license, degree) do not enter it, as in
+     `GET /gap/top-missing`.
+- **Revision (final review of phase 6)** **The end message of the `gap` trigger says what happened**
+  (6.7 M7): a `gap` replan with no addition returns “No task could be added for these skills: your
+  plan has not changed. Relaunch “Add to schedule” for a new proposal.” (`GAP_EMPTY_TEXT`);
+  “Nothing to change: your plan stands as it is” remains specific to the other triggers.
+- **Reason** SPEC F8 (“Add to schedule”), F13 (replanning validated by January), F15 (map:
+  postings of a skill, comparison with a specific posting), 9.4, 17.2, 17.4; phase 6 plan (task 6.7,
+  plan decision on the module); preflight (P23, P27, P29, P30, G11, G12, G18); D105 (rights by
+  schema), D106 (versions, acceptance), D107 (map), D122 (gap rows).
 
 ## D124
 
-- **Date** : 2026-11-14
-- **Sujet** : Phase 6, tâche 6.8 : profil maître versionné (Archiviste en mode `profile`, parcours `cv_capture`, routes du profil)
-- **Décision** : (1) **Profil maître versionné, jamais écrasé** : chaque écriture ajoute une ligne `master_profile` au numéro suivant (unique `(user_id, version)`) : un **brouillon** (`draft`, source `archivist`) tiré des documents par l'Archiviste, ou une **version validée** (`validated`, source `january`) par `PUT /profile` (corps `{data, base_version}` ; **409 `profile_conflict`** si `base_version` n'est pas le plus grand numéro, ou si une autre version s'écrit entre-temps). `GET /profile` rend la dernière version validée, le brouillon **seulement s'il est plus récent**, et la capture ouverte (`session_id`) ; `GET /profile/versions` les liste, la plus récente d'abord. **Ids des faits** : le brouillon reprend l'id d'un fait de la dernière version validée au même texte normalisé (rôle et entreprise, diplôme et école, nom, lien, texte ; réalisation ou détail sous le même parent apparié) ; une version de January garde les ids déjà attribués (un fait modifié garde le sien) et efface les ids inconnus ; tout id neuf est numéroté **au-dessus de tout numéro pris par une version passée** (`profile_merge`, puis `assign_fact_ids`) : un id libéré n'est jamais réattribué, les modifications des revues restent justes. Un fait de la version de January sans source reçoit `january`. Une nouvelle version à la fois par utilisatrice (verrou du processus). (2) **L'extraction retire toute ligne dont un chiffre n'est dans aucun document, et le dit** : `cv_lexicon.numbers_in` (preflight G19, réutilisé en 6.12) canonise « 30 % » = « 30% », « 1 000 » = « 1 000 » (insécables) = « 1000 », « 12 k€ » = « 12 000 € », « 2,50 » = « 2.5 » (un pourcentage reste distinct du nombre nu, « 5 Mo » et « 12 km » ne sont pas des multiplicateurs) ; une réalisation, un détail, le titre ou le résumé dont un nombre manque à toutes les sources (note comprise) est retiré, et la description d'un projet dans ce cas est effacée ; un fait dont le texte principal n'apparaît dans aucun document est rattaché à la note **seulement si la note le porte**, selon la même règle que les documents, sinon il est retiré (arbitrage de la revue 6.8, contre la lettre du brief : la note n'est pas une source fourre-tout, la garantie de ne rien inventer prime). Le texte retiré est rangé dans `dropped` (montré à January seule, preflight G5) avec les **lignes de texte invisible** des PDF (preflight G6 ; champ `ProfileSources.hidden` ajouté au port, avec une valeur par défaut), et l'annonce le compte : « Profil maître prêt à relire : 4 expériences, 18 compétences. 1 ligne retirée : chiffre introuvable dans tes documents. » (puis faits introuvables, texte invisible). Aucun texte lisible → échec `profile_no_text` sans appel au modèle. (3) **Les sources d'un fait sont posées par le code** : les ids et les `sources` rendus par le modèle sont effacés ; `sources` = documents (`cv`, `linkedin`) où le texte principal apparaît, en mots entiers après normalisation (accents, casse, ponctuation ; un texte de six mots et plus y figure si 80 % de ses mots de trois lettres et plus y sont, pour un résumé coupé en lignes, **et tous ses nombres et tous ses noms** (sigles, noms propres, outils : `named_terms`) : « 15 ans » face à « cinq ans », ou un « Kubernetes » ajouté, ne passent pas ; tout texte comparé doit garder ses nombres ; un projet est cherché par son nom et par chacun des noms de sa description ; un lien est cherché sans `https://` ni `www.`) ; le **titre et le résumé** (`SourcedLine`) sont tagués comme les autres faits (un résumé tiré de LinkedIn seul n'entre pas dans `in_cv`, report de la revue 6.2). (4) **Valider le profil déclare ses compétences** : `PUT /profile` monte chaque compétence du profil à `declare` **au moins** (`raise_levels`, jamais de baisse) avec la preuve `evidence("cv", id de la version, "Profil maître", maintenant)`, dans la même transaction que la version, puis **reflète les niveaux dans les acquis de la mémoire** hors du verrou (D6, `reflect_skill_levels`, auteur `user` ; une panne est journalisée par son type et rattrapée par la validation suivante). (5) **CV et LinkedIn rangés comme documents de la mémoire** : `POST /profile/import` (multipart : `cv` PDF obligatoire, `linkedin` PDF facultatif, 10 Mo chacun, `note` ≤ 4 000) passe par l'envoi de la mémoire (`DocumentService.create`, doublon : le document existant) avec les **étiquettes `cv` et `linkedin`** : colonne `documents.tags` (migration 0009), reprise par l'élément `document` à l'ingestion et ajoutée à un document déjà importé ; puis lance `cv_capture` (mode `profile`, sujet `master_profile`) → **202 `{session_id, document_ids}`** ; **409 `capture_in_progress`** (`details.session_id`) si une capture du profil est ouverte ; hors PDF → **415 `unsupported_file_type`** « PDF uniquement », plus de 10 Mo → **413 `file_too_large`** « 10 Mo au maximum » (codes existants, preflight G30 ; corps borné à 21 Mo avant analyse). Les sources sont relues **par le fichier du document et sa mise en page** (`PdfLayoutExtractor`), pas par les fragments indexés : aucune course avec l'indexation, texte complet, blocs invisibles écartés (preflight G6) ; chaque source est coupée à 40 000 caractères, CV d'abord, puis LinkedIn, puis la note, chacune encadrée par `untrusted(…, "cv" | "linkedin" | "note")` (17.4). Une page tournée qui porte du texte est refusée par la mise en page avec un message propre : « Une page de ce PDF est tournée : exporte-le de nouveau sans rotation, puis réessaie. » (code de sortie 5 du worker). Parcours `cv_capture` : `START -> load_sources -> extract -> check -> save_draft -> announce -> END`, Archiviste (rapide), `structured_call(MasterProfileData)` ; `save_draft` est idempotent par session (rejeu : le numéro déjà écrit) ; `artifact.ready` `{kind: "master_profile", url: "/carriere/profil"}` ; lancé par sa route seulement (`ROUTE_ONLY`) ; le mode `design` est refusé à l'entrée jusqu'au Maquettiste (6.9). (6) **Aucune donnée du profil dans les journaux ni les erreurs** : journaux limités aux identifiants (utilisatrice, session, version, document) et aux nombres ; les routes du profil rendent leurs 422 avec `details.fields` en chemins relatifs au profil (« experiences.2.role », `FieldPathsRoute`), sans valeur ni message de pydantic ; routeurs en paquet `features/cv/router/` (preflight G16) ; composition dans `app.bootstrap_career` (`CvRuntime`, `AgentProfileStore`, preflight G17).
-- **Révision (revue finale de la phase 6)** : (a) **les faits que January a saisis ou confirmés survivent à un réimport** (BC-I2) : `save_draft` (`merge_draft`) reporte, avec leur id, chaque fait de la dernière version validée dont `sources` contient `january` (compétence, langue, lien, projet, formation, expérience, titre ou résumé si le brouillon n'en a pas) que le brouillon ne reprend pas ; sous un parent apparié qui porte `january`, les lignes de l'ancienne version absentes du brouillon (un fait confirmé en revue y est une ligne) sont reportées et le parent du brouillon prend `january`. Un fait venu du CV et absent du nouvel import n'est jamais reporté. (b) **Une réalisation ou un détail sans nombre** que les documents ne disent ni mot pour mot ni à 80 % (règle de `appears`, note comprise) est retiré et annoncé comme un fait introuvable (`untraced_lines`, 6.8 M3). (c) **« 1,000 » et « 1.000 » sont mille, pas un** (`numbers_in`, 6.8 M1) : un groupe de trois chiffres après un point ou une virgule, derrière un à trois chiffres sans zéro de tête, est un séparateur de milliers (« 0,125 » et « 1,5 » restent décimaux). (d) **Un nom d'une ou deux lettres** (« C », « Go ») n'est « trouvé » que tel qu'il est écrit, avec sa casse, hors élision (« C'est »), hors unité (« 10 Go ») et hors suite d'un autre nom (« C++ ») (BA-M2).
-- **Révision (re-revue de la vague de corrections, I-3)** : **un fait que January a confirmé en revue ne revient pas en double à un réimport.** Un fait de January (`sources` contient `january`) réécrit en revue n'a plus le texte du CV, donc aucune clé stricte ne l'apparie au brouillon : avant de le reporter, `merge_draft` cherche dans le brouillon un équivalent non apparié à une clé lâche (expérience : entreprise ; formation : école ; langue : nom ; lien : libellé ; compétence : premier mot significatif, sans casse ni accent). Trouvé, **la version de January remplace celle du brouillon, sous l'id de January** (réalisations et détails du brouillon que la version de January n'a pas : ajoutés sans doublon) ; sinon le fait est reporté comme avant. Une langue appariée par son nom garde aussi le niveau de January. Sonde épinglée : « Lead Développeuse » / « Développeuse » et « Python (expert) » / « Python » → un seul de chaque, texte de January gardé (`test_profile_merge.py`).
-- **Révision 2 (dernière re-revue de la phase 6, I-C)** : **la clé lâche ne remplace plus un fait qui n'en est pas l'équivalent.** Un fait de January n'en remplace un du brouillon que si celui-ci est le seul candidat de même clé lâche non apparié **et** si tous ses mots significatifs (sans casse ni accent, mots outils et nombres exclus) figurent dans le texte de January (« Python » dans « Python (expert) », « Développeuse » dans « Lead Développeuse ») ; le remplaçant garde les sources du brouillon et ses lignes absentes. Sinon les deux faits sont gardés, celui de January sous son id, celui du brouillon tel quel : un doublon que January efface vaut mieux qu'un fait du nouveau CV perdu (« Gestion d'équipe » / « Gestion de projet », « Adobe Illustrator » / « Adobe Photoshop », promotion dans la même entreprise, deux postes chez une même entreprise). Lecture du « seul candidat » : on compte les candidats **équivalents** (sous-ensemble de mots), pas toutes les expériences de l'entreprise, sinon deux postes chez Acme dans un autre ordre laisseraient un doublon. **Niveau de langue** (`_keep_levels`) : le niveau de January ne reste que si le nouveau CV n'en dit pas ; un niveau écrit par le CV l'emporte (le niveau d'avant la confirmation n'est pas conservé). Les projets renommés restent un doublon possible (mineur, repoussé).
-- **Précision (7.0, D137)** : `_carry_lines` ramène aussi les lignes que January avait **retirées de son CV** : sous un parent apparié qui porte `january`, toute ligne de la version validée absente du brouillon revient, qu'elle ait été confirmée en revue ou supprimée à la main ; January les retire de nouveau au besoin.
-- **Raison** : SPEC 5.1, 9.4, 14.2, 17.2, 17.4, 18.3 ; plan de la phase 6 (tâche 6.8) ; preflight (P6, P12, P22, P25 à P27, P31 à P34, G5, G6, G16, G17, G19, G30) ; D118 (tables, ids des faits), D119 (mise en page, revue 6.3 : page tournée), D121 (port idempotent par session), D131 (formulaire du profil, chemins des 422).
+- **Date** 2026-11-14
+- **Subject** Phase 6, task 6.8: versioned master profile (Archivist in `profile` mode, `cv_capture`
+  graph, profile routes)
+- **Decision**
+  1. **Versioned master profile, never overwritten**: each write adds a `master_profile` row at the
+     next number (unique `(user_id, version)`): a **draft** (`draft`, source `archivist`) drawn from
+     the documents by the Archivist, or a **validated version** (`validated`, source `january`)
+     through `PUT /profile` (body `{data, base_version}`; **409 `profile_conflict`** if
+     `base_version` is not the highest number, or if another version is written in the meantime).
+     `GET /profile` returns the latest validated version, the draft **only if it is more recent**,
+     and the open capture (`session_id`); `GET /profile/versions` lists them, the most recent first.
+     **Fact ids**: the draft takes over the id of a fact of the latest validated version with the
+     same normalized text (role and company, degree and school, name, link, text; achievement or
+     detail under the same matched parent); a version by January keeps the ids already assigned (a
+     modified fact keeps its own) and erases unknown ids; any new id is numbered **above any number
+     taken by a past version** (`profile_merge`, then `assign_fact_ids`): a freed id is never
+     reassigned, so the modifications of the reviews stay correct. A fact of January's version
+     without a source receives `january`. One new version at a time per user (process lock).
+  2. **The extraction removes any line with a figure that is in no document, and says so**:
+     `cv_lexicon.numbers_in` (preflight G19, reused in 6.12) canonizes “30 %” = “30%”, “1
+     000” = “1 000” (non-breaking) = “1000”, “12 k€” = “12 000 €”, “2,50”
+     = “2.5” (a percentage stays distinct from the bare number, “5 Mo” and “12 km” are
+     not multipliers); an achievement, a detail, the title or the summary with a number missing from
+     every source (note included) is removed, and the description of a project in that case is
+     erased; a fact whose main text appears in no document is attached to the note **only if the
+     note carries it**, by the same rule as the documents, otherwise it is removed (arbitration of
+     review 6.8, against the letter of the brief: the note is not a catch-all source, the guarantee
+     of inventing nothing comes first). The removed text is stored in `dropped` (shown to January
+     alone, preflight G5) together with the **invisible-text lines** of the PDFs (preflight G6;
+     field `ProfileSources.hidden` added to the port, with a default value), and the announcement
+     counts them: “Master profile ready to review: 4 experiences, 18 skills. 1 line removed:
+     figure not found in your documents.” (then facts not found, invisible text). No readable text
+     → failure `profile_no_text` without calling the model.
+  3. **A fact's sources are set by the code**: the ids and `sources` returned by the model are
+     erased; `sources` = documents (`cv`, `linkedin`) where the main text appears, in whole words
+     after normalization (accents, case, punctuation; a text of six words or more is there if 80% of
+     its words of three letters or more are there, for a summary cut into lines, **and all its
+     numbers and all its names** (acronyms, proper nouns, tools: `named_terms`): “15 years”
+     against “five years”, or an added “Kubernetes”, do not pass; any compared text must
+     keep its numbers; a project is searched by its name and by each of the names in its
+     description; a link is searched without `https://` or `www.`); the **title and the summary**
+     (`SourcedLine`) are tagged like the other facts (a summary taken from LinkedIn alone does not
+     enter `in_cv`, carried over from review 6.2).
+  4. **Validating the profile declares its skills**: `PUT /profile` raises each skill of the profile
+     to `declare` **at least** (`raise_levels`, never a decrease) with the evidence
+     `evidence("cv", version id, "Profil maître", now)` (“Master profile”), in the same
+     transaction as the version, then **reflects the levels in the memory's achievements** outside
+     the lock (D6, `reflect_skill_levels`, author `user`; a failure is logged by its type and caught
+     up by the next validation).
+  5. **CV and LinkedIn stored as memory documents**: `POST /profile/import` (multipart: `cv` PDF
+     required, `linkedin` PDF optional, 10 MB each, `note` ≤ 4,000) goes through the memory upload
+     (`DocumentService.create`, duplicate: the existing document) with the **tags `cv` and
+     `linkedin`**: column `documents.tags` (migration 0009), taken over by the `document` item at
+     ingestion and added to an already imported document; then launches `cv_capture` (mode
+     `profile`, subject `master_profile`) → **202 `{session_id, document_ids}`**; **409
+     `capture_in_progress`** (`details.session_id`) if a profile capture is open; non-PDF → **415
+     `unsupported_file_type`** “PDF only”, more than 10 MB → **413 `file_too_large`** “10 MB
+     at most” (existing codes, preflight G30; body bounded to 21 MB before analysis). The sources
+     are reread **from the document's file and its layout** (`PdfLayoutExtractor`), not from the
+     indexed fragments: no race with indexing, full text, invisible blocks discarded (preflight G6);
+     each source is cut at 40,000 characters, CV first, then LinkedIn, then the note, each framed by
+     `untrusted(…, "cv" | "linkedin" | "note")` (17.4). A rotated page that carries text is
+     refused by the layout with its own message: “A page of this PDF is rotated: export it again
+     without rotation, then try again.” (exit code 5 of the worker). Graph `cv_capture`:
+     `START -> load_sources -> extract -> check -> save_draft -> announce -> END`, Archivist (fast),
+     `structured_call(MasterProfileData)`; `save_draft` is idempotent per session (replay: the
+     number already written); `artifact.ready` `{kind: "master_profile", url: "/carriere/profil"}`;
+     launched by its route only (`ROUTE_ONLY`); the `design` mode is refused at entry until the
+     Layout designer (6.9).
+  6. **No profile data in logs or errors**: logs limited to identifiers (user, session, version,
+     document) and numbers; the profile routes return their 422s with `details.fields` as paths
+     relative to the profile (“experiences.2.role”, `FieldPathsRoute`), without value or
+     pydantic message; routers in a package `features/cv/router/` (preflight G16); composition in
+     `app.bootstrap_career` (`CvRuntime`, `AgentProfileStore`, preflight G17).
+- **Revision (final review of phase 6)** (a) **Facts that January entered or confirmed survive a
+  reimport** (BC-I2): `save_draft` (`merge_draft`) carries over, with their id, each fact of the
+  latest validated version whose `sources` contains `january` (skill, language, link, project,
+  education, experience, title or summary if the draft has none) that the draft does not take over;
+  under a matched parent that carries `january`, the lines of the old version absent from the draft
+  (a fact confirmed in review is a line there) are carried over and the draft's parent takes
+  `january`. A fact that came from the CV and is absent from the new import is never carried over.
+  (b) **An achievement or a detail without a number** that the documents say neither word for word
+  nor at 80% (rule of `appears`, note included) is removed and announced as a fact not found
+  (`untraced_lines`, 6.8 M3). (c) **“1,000” and “1.000” are one thousand, not one**
+  (`numbers_in`, 6.8 M1): a group of three digits after a period or a comma, behind one to three
+  digits without a leading zero, is a thousands separator (“0,125” and “1,5” stay decimal).
+  (d) **A name of one or two letters** (“C”, “Go”) is “found” only as written, with its
+  case, outside an elision (“C'est”), outside a unit (“10 Go”) and outside the continuation
+  of another name (“C++”) (BA-M2).
+- **Revision (re-review of the batch of corrections, I-3)** **A fact that January confirmed in
+  review does not come back as a duplicate at a reimport.** A January fact (`sources` contains
+  `january`) rewritten in review no longer has the CV's text, so no strict key matches it with the
+  draft: before carrying it over, `merge_draft` looks in the draft for an unmatched equivalent under
+  a loose key (experience: company; education: school; language: name; link: label; skill: first
+  significant word, without case or accent). If found, **January's version replaces the draft's,
+  under January's id** (achievements and details of the draft that January's version does not have:
+  added without duplicates); otherwise the fact is carried over as before. A language matched by its
+  name also keeps January's level. Pinned probe: “Lead Développeuse” / “Développeuse” and
+  “Python (expert)” / “Python” → only one of each, January's text kept
+  (`test_profile_merge.py`).
+- **Revision 2 (last re-review of phase 6, I-C)** **The loose key no longer replaces a fact that is
+  not its equivalent.** A January fact replaces one from the draft only if the latter is the only
+  unmatched candidate with the same loose key **and** if all its significant words (without case or
+  accent, stop words and numbers excluded) appear in January's text (“Python” in “Python
+  (expert)”, “Développeuse” in “Lead Développeuse”); the replacement keeps the draft's
+  sources and its missing lines. Otherwise both facts are kept, January's under its id, the draft's
+  as is: a duplicate that January erases is better than a fact of the new CV lost (“Gestion
+  d'équipe” / “Gestion de projet”, “Adobe Illustrator” / “Adobe Photoshop”, a
+  promotion in the same company, two positions at the same company). Reading of “the only
+  candidate”: we count the **equivalent** candidates (subset of words), not all the company's
+  experiences, otherwise two positions at Acme in a different order would leave a duplicate.
+  **Language level** (`_keep_levels`): January's level stays only if the new CV does not state one;
+  a level written by the CV wins (the level from before the confirmation is not kept). Renamed
+  projects remain a possible duplicate (minor, postponed).
+- **Clarification (7.0, D137)** `_carry_lines` also brings back the lines that January had **removed
+  from her CV**: under a matched parent that carries `january`, any line of the validated version
+  absent from the draft comes back, whether it was confirmed in review or deleted by hand; January
+  removes them again if needed.
+- **Reason** SPEC 5.1, 9.4, 14.2, 17.2, 17.4, 18.3; phase 6 plan (task 6.8); preflight (P6, P12,
+  P22, P25 to P27, P31 to P34, G5, G6, G16, G17, G19, G30); D118 (tables, fact ids), D119 (layout,
+  review 6.3: rotated page), D121 (idempotent port per session), D131 (profile form, 422 paths).
 
 ## D125
 
-- **Date** : 2026-11-14
-- **Sujet** : Phase 6, tâche 6.9 : le Maquettiste (vision) et le parcours `cv_capture` en mode `design`
-- **Décision** : (1) **Le Maquettiste (`designer`, niveau `vision`) recopie le contenu tel quel, décrit le design, puis le corrige d'après le score et ses zones.** Il voit les pages : `tools/vision.image_message(text, images)` envoie un texte puis des blocs d'image PNG en base64 sous la forme **commune** de LangChain 1.x (`{"type": "image", "base64": …, "mime_type": "image/png"}`, doc « Messages » vérifiée par context7 ; `ChatOpenAI`, donc GLM par `base_url`, la convertit en `image_url` `data:`, vérifié sur le paquet installé), `MAX_IMAGES` = 4 au plus (les premières gardées). `sample` : CV au texte sélectionnable → `structured_call(CvContent)` sur les images et les blocs (`untrusted(…, "cv")`) ; un texte absent du texte visible du PDF est **redemandé une fois** (le modèle reçoit la liste) **puis retiré** (une section au titre inventé part avec son contenu, une entrée ou une section vidée aussi) ; la comparaison ne normalise que la forme (NFKC, casse, espaces et retours à la ligne, tirets et apostrophes typographiques), jamais un mot ; les `fact_ids` sont effacés (une démonstration ne s'adosse à aucun fait). `draft` : `TemplateSpec` sur les images, les blocs, la page et les polices citables (familles du catalogue, jamais le nom lu dans le PDF) ; les défauts de `template_problems` sont rendus au modèle **deux fois au plus**, puis la capture échoue lisiblement (`template_spec_invalid` 502 « Le Maquettiste n'a pas su décrire le design de ce CV. Recommence la capture. », gabarit en `failed`) : `cv_document` exige une description sans défaut. `fix` : depuis la description courante, la passe rangée (`read_pass`), les écarts de `describe` **seulement sous `TARGET_SCORE`** (présentés comme des indices : le décalage vertical n'est pas fiable quand le contenu diffère, report de la revue 6.4), les images d'origine et du rendu entrelacées page à page (4 au plus, légendées) et la consigne de January (`untrusted(…, "consigne de January")`) ; sans description valable après deux re-demandes, ou sur une sortie structurée invalide (`structured_output_invalid`, revue 6.9 I2), la description courante est gardée (`stalled`), January en est avertie et la question est posée sans nouveau rendu. (2) **Trois passes automatiques au plus, puis la question à January quel que soit le score** : `START -> prepare -> sample -> draft -> render -> (score ≥ 85, passe 3 ou ajustement ? ask_validate : fix -> render)` ; question `cv_template` « Le modèle ressemble à ton CV à 87 %. Tu valides ? », options `validate` « Valider », `adjust` « Ajuster », `restart` « Recommencer la capture », champ `{id: "instruction", label: "Ce qu'il faut changer", max_length: 500}` (preflight G9 : `id`, pas `name`) ; réponses admises : `"validate"`, `"restart"`, `{"answers": {"instruction": …}}` (D44) ou `{"action": …, "instruction": …}` ; une consigne vide, un `"adjust"` sans consigne ou une forme inconnue reposent la question sans aucune écriture ; la consigne est coupée à 500 caractères plutôt que refusée. Valider → `finish(ready)` (la passe gardée, la meilleure, devient le gabarit ; D125, révision, actif si aucun autre ne l'est), `artifact.ready {artifact_id: "modele-{id}", kind: "cv_template", url: "/carriere/cv/modeles/{id}"}` ; Recommencer → `finish(failed, « Capture abandonnée. »)`, le front propose une nouvelle capture ; Ajuster → une correction et un rendu, puis la question revient aussitôt (même sous 85 %). **Cinq ajustements au plus**, hors des trois passes automatiques (décision du plan : la consigne humaine corrige ce que le score ne voit pas, mais une boucle sans fin coûte en vision) : au cinquième, seules « Valider » et « Recommencer la capture » restent, sans champ. Chaque passe rendue est annoncée (« Passe 2 : le rendu ressemble à ton CV à 88 %. »). (3) **Chaque passe est rangée et jamais rendue deux fois** : port `CvTemplateStore` (`AgentPorts.cv_templates`, défaut `NO_CV_TEMPLATES` 503 `cv_templates_unavailable`) : `prepare` idempotent par gabarit (relu par chaque nœud qui montre les images : **les images ne passent jamais par l'état**, les checkpoints SQLite, écrits en entier à chaque étape, restent légers), `render_pass` idempotent par `(gabarit, passe)`, `finish` idempotent ; **`read_pass` ajouté au port du plan** : relecture d'une passe rangée sans rendu, d'où `fix` tire les images du rendu (sans lui, `fix` rappellerait `render_pass` et le compte d'appels du rejeu ne prouverait rien, preflight G34). Avec `durability="sync"` (D46), un arrêt après le rendu de la passe 2 ne rappelle jamais `render_pass(2)` : le test compte les **appels au port** (`{1: 1, 2: 1}`, puis la passe 3 seulement). **Délais** (preflight G27, écart assumé aux 120 s de SPEC 9.6, comme `DOC_WAIT_S` de D108) : `render` = `HTML_RENDER_TIMEOUT_S + LAYOUT_TIMEOUT_S + 30` = 135 s ; `prepare` = `LAYOUT_TIMEOUT_S + 4 × FONT_TIMEOUT_S + 30` = 150 s (mise en page, deux polices en deux graisses) ; `sample`, `draft`, `fix` = 600 s (sorties structurées avec images et re-demandes). (4) **CV scanné : contenu de démonstration tiré du profil validé** (`sample_fallback`), sans appel au modèle pour le contenu ; sans profil validé, échec lisible `design_no_sample` 422 « Ton CV est une image (scanné) et ton profil maître n'est pas encore validé : valide-le, puis relance la capture du modèle. », le gabarit passe d'abord en `failed` ; tout autre échec de la session (panne du modèle, délai d'un nœud, rendu impossible, sortie structurée invalide hors de `fix`) est rattrapé à la lecture par la feature (D126 : un gabarit `capturing` sans session ouverte passe en `failed`), seul mécanisme retenu (revue 6.9, I1) : jamais « en capture » pour toujours. (5) **L'interruption est seule dans son nœud** : `ask_validate(state)` ne reçoit ni port ni modèle ; il construit la question depuis l'état, appelle `interrupt()` et analyse la réponse (pur) ; `finish` est dans `apply_answer`. Entrée `CvCaptureInput` : `mode: "design"` exige `template_id` (1 à 36 caractères), `document_ids` inutile ; aiguillage par `mode` dès `START`. Journaux : identifiants (session, gabarit) et nombres (pages, passe, score, défauts, textes retirés) ; jamais un texte, une image, une police du CV ni le texte d'un défaut (il peut citer une police).
-- **Révision (revue 6.10, essai réel 6.11)** : **le gabarit garde la meilleure des passes, pas la dernière** (scores 69, 78, 69 : la passe 2, à 78 %). Règle unique `keeps_pass(adjusted, score, kept_score)` (`cv_template_port.py`), partagée par le port réel, le faux et le graphe : une passe automatique ne remplace la passe gardée que si son score est supérieur ou égal (à égalité, la plus récente) ; une passe d'ajustement (`adjusted=True`, argument de `render_pass`) remplace toujours, car la consigne de January corrige ce que le score ne voit pas. Toutes les passes restent dans `pass_log` ; seules les colonnes de la passe courante (spec, HTML, CSS, score, images, contenu) suivent la passe gardée. L'état du graphe porte `kept_pass` et `kept_score` : la question `cv_template` et le message final disent le score de la passe gardée, et une passe moins bonne est annoncée « Je garde la passe 2 (78 %). ». `fix` repart toujours de la dernière description (inchangé).
-- **Révision (revue finale de la phase 6)** : (a) **« Ajuster » repart de la passe gardée** (6.10 N1) : après 69, 78, 69, la correction lit la passe 2 (`read_pass(kept_pass)`) et sa description (`kept_spec`, gardée dans l'état avec `kept_pass` et `kept_score`), jamais la passe 3 ; un checkpoint d'avant `kept_spec` repart de la dernière passe. (b) **`ask_validate` lit `kept_score` avec une valeur par défaut** (score de la dernière passe) pour un ancien checkpoint (6.10 N2). (c) **Les textes tirés du CV que la re-demande du Maquettiste renvoie au modèle sont encadrés** `untrusted(…, "cv:textes à recopier")` (BA-M3, 17.4).
-- **Raison** : SPEC 5.2, 9.4, 9.6, 17.2, 17.4, 18.3 ; plan de la phase 6 (tâche 6.9) ; preflight (P7, P13, P16, P22, P31, P35, P36, G9, G27, G34) ; D46 (`durability="sync"`, reprise), D118 (le modèle ne produit jamais de HTML ni de CSS), D120 (score et `describe`), D124 (parcours `cv_capture`).
+- **Date** 2026-11-14
+- **Subject** Phase 6, task 6.9: the Layout designer (vision) and the `cv_capture` graph in `design`
+  mode
+- **Decision**
+  1. **The Layout designer (`designer`, `vision` tier) copies the content as is, describes the
+     design, then corrects it from the score and its zones.** It sees the pages:
+     `tools/vision.image_message(text, images)` sends a text then PNG image blocks in base64 in the
+     **common** LangChain 1.x form (`{"type": "image", "base64": …, "mime_type": "image/png"}`,
+     “Messages” doc checked through context7; `ChatOpenAI`, hence GLM through `base_url`,
+     converts it to a `data:` `image_url`, checked on the installed package), `MAX_IMAGES` = 4 at
+     most (the first ones kept). `sample`: a CV with selectable text →
+     `structured_call(CvContent)` on the images and the blocks (`untrusted(…, "cv")`); a text
+     absent from the visible text of the PDF is **asked again once** (the model receives the list)
+     **then removed** (a section with an invented title leaves with its content, an entry or a
+     section that is emptied too); the comparison normalizes only the form (NFKC, case, spaces and
+     line breaks, typographic dashes and apostrophes), never a word; the `fact_ids` are erased (a
+     demonstration is backed by no fact). `draft`: `TemplateSpec` on the images, the blocks, the
+     page and the citable fonts (families of the catalog, never the name read in the PDF); the
+     defects of `template_problems` are returned to the model **at most twice**, then the capture
+     fails readably (`template_spec_invalid` 502 “The Layout designer couldn't describe this CV's
+     design. Restart the capture.”, template set to `failed`): `cv_document` requires a
+     description with no defect. `fix`: from the current description, the stored pass (`read_pass`),
+     the gaps of `describe` **only below `TARGET_SCORE`** (presented as hints: the vertical shift is
+     not reliable when the content differs, carried over from review 6.4), the original and rendered
+     images interleaved page by page (4 at most, captioned) and January's instruction
+     (`untrusted(…, "consigne de January")`); with no valid description after two new requests, or
+     on an invalid structured output (`structured_output_invalid`, review 6.9 I2), the current
+     description is kept (`stalled`), January is warned and the question is asked without a new
+     render.
+  2. **Three automatic passes at most, then the question to January whatever the score**:
+     `START -> prepare -> sample -> draft -> render -> (score ≥ 85, pass 3 or
+     adjustment ? ask_validate : fix -> render)`; question `cv_template` “The template looks like
+     your CV at 87%. Do you approve?”, options `validate` “Approve”, `adjust` “Adjust”,
+     `restart` “Restart the capture”, field `{id: "instruction", label:
+     "What to change", max_length: 500}` (preflight G9: `id`, not `name`); accepted answers:
+     `"validate"`, `"restart"`, `{"answers": {"instruction": …}}` (D44) or
+     `{"action": …, "instruction": …}`; an empty instruction, an `"adjust"` without instruction
+     or an unknown shape asks the question again with no write; the instruction is cut at 500
+     characters rather than refused. Approve → `finish(ready)` (the kept pass, the best one,
+     becomes the template; D125, revision; active if no other is), `artifact.ready {artifact_id:
+     "modele-{id}", kind: "cv_template", url: "/carriere/cv/modeles/{id}"}`; Restart →
+     `finish(failed, “Capture abandoned.”)`, the front end offers a new capture; Adjust → one
+     correction and one render, then the question comes back right away (even under 85%). **Five
+     adjustments at most**, apart from the three automatic passes (plan decision: the human
+     instruction corrects what the score does not see, but an endless loop costs in vision): at the
+     fifth, only “Approve” and “Restart the capture” remain, with no field. Each rendered
+     pass is announced (“Pass 2: the render looks like your CV at 88%.”).
+  3. **Each pass is stored and never rendered twice**: port `CvTemplateStore`
+     (`AgentPorts.cv_templates`, default `NO_CV_TEMPLATES` 503 `cv_templates_unavailable`):
+     `prepare` idempotent per template (reread by each node that shows the images: **the images
+     never go through the state**, the SQLite checkpoints, written in full at each step, stay
+     light), `render_pass` idempotent per `(template, pass)`, `finish` idempotent; **`read_pass`
+     added to the plan's port**: rereading a stored pass without rendering, from which `fix` takes
+     the render's images (without it, `fix` would call `render_pass` again and the replay's call
+     count would prove nothing, preflight G34). With `durability="sync"` (D46), a stop after the
+     render of pass 2 never calls `render_pass(2)` again: the test counts the **calls to the port**
+     (`{1: 1, 2: 1}`, then pass 3 only). **Timeouts** (preflight G27, accepted deviation from SPEC
+     9.6's 120 s, like `DOC_WAIT_S` of D108): `render` = `HTML_RENDER_TIMEOUT_S
+     + LAYOUT_TIMEOUT_S + 30` = 135 s; `prepare` = `LAYOUT_TIMEOUT_S + 4 × FONT_TIMEOUT_S + 30` =
+     150 s (layout, two fonts in two weights); `sample`, `draft`, `fix` = 600 s (structured outputs
+     with images and new requests).
+  4. **Scanned CV: demonstration content drawn from the validated profile** (`sample_fallback`),
+     with no model call for the content; with no validated profile, readable failure
+     `design_no_sample` 422 “Your CV is an image (scanned) and your master profile is not yet
+     approved: approve it, then restart the template capture.”, the template first goes to
+     `failed`; any other failure of the session (model outage, node timeout, render impossible,
+     invalid structured output outside `fix`) is caught on reading by the feature (D126: a
+     `capturing` template with no open session goes to `failed`), the only mechanism retained
+     (review 6.9, I1): never “capturing” forever.
+  5. **The interruption is alone in its node**: `ask_validate(state)` receives neither a port nor a
+     model; it builds the question from the state, calls `interrupt()` and parses the answer (pure);
+     `finish` is in `apply_answer`. Input `CvCaptureInput`: `mode: "design"` requires `template_id`
+     (1 to 36 characters), `document_ids` useless; routing by `mode` from `START`. Logs: identifiers
+     (session, template) and numbers (pages, pass, score, defects, removed texts); never a text, an
+     image, a font of the CV nor the text of a defect (it may cite a font).
+- **Revision (review 6.10, real trial 6.11)** **The template keeps the best of the passes, not the
+  last** (scores 69, 78, 69: pass 2, at 78%). Single rule `keeps_pass(adjusted, score, kept_score)`
+  (`cv_template_port.py`), shared by the real port, the fake and the graph: an automatic pass
+  replaces the kept pass only if its score is greater than or equal (on a tie, the most recent); an
+  adjustment pass (`adjusted=True`, argument of `render_pass`) always replaces, because January's
+  instruction corrects what the score does not see. All the passes stay in `pass_log`; only the
+  columns of the current pass (spec, HTML, CSS, score, images, content) follow the kept pass. The
+  graph state carries `kept_pass` and `kept_score`: the `cv_template` question and the final message
+  say the score of the kept pass, and a worse pass is announced “I keep pass 2 (78%).”. `fix`
+  always starts again from the last description (unchanged).
+- **Revision (final review of phase 6)** (a) **“Adjust” starts again from the kept pass** (6.10
+  N1): after 69, 78, 69, the correction reads pass 2 (`read_pass(kept_pass)`) and its description
+  (`kept_spec`, kept in the state with `kept_pass` and `kept_score`), never pass 3; a checkpoint
+  from before `kept_spec` starts again from the last pass. (b) **`ask_validate` reads `kept_score`
+  with a default value** (score of the last pass) for an old checkpoint (6.10 N2). (c) **The texts
+  drawn from the CV that the Layout designer's new request sends back to the model are framed**
+  `untrusted(…, "cv:textes à recopier")` (BA-M3, 17.4).
+- **Reason** SPEC 5.2, 9.4, 9.6, 17.2, 17.4, 18.3; phase 6 plan (task 6.9); preflight (P7, P13, P16,
+  P22, P31, P35, P36, G9, G27, G34); D46 (`durability="sync"`, resumption), D118 (the model never
+  produces HTML or CSS), D120 (score and `describe`), D124 (`cv_capture` graph).
 
 ## D126
 
-- **Date** : 2026-11-14
-- **Sujet** : Phase 6, tâche 6.10 : gabarits de CV (routes `/cv/templates`), port réel du Maquettiste (`AgentCvTemplateStore`), images des pages, polices et écarts
-- **Décision** : (1) **Un gabarit = un CV d'origine, ses images, sa description, son HTML et son CSS écrits par le code, son score et ses passes ; un seul actif.** `POST /cv/templates` (multipart : `file` PDF de 10 Mo au plus **ou** `document_id` d'un CV importé, `name` de 1 à 120 caractères) → 202 `{template_id, session_id}` ; le PDF envoyé est **toujours rangé comme document de la mémoire** (étiquette `cv`, `document_id` jamais vide : 6.14 le relit, preflight G26). La mise en page est extraite **à la création, avant tout rangement ni lancement** : 422 `pdf_unreadable` avec le message de `PdfUnreadable` (protégé, endommagé, plus de 4 pages), 415 `unsupported_file_type`, 413 `file_too_large` « 10 Mo au maximum » (G30, `BodySizeLimit` sur `/cv/templates`), 422 `validation_error` `details.fields = ["file", "document_id"]` sans source ou avec les deux, 404 `document_not_found`. Une capture de gabarit à la fois : 409 `capture_in_progress` « Une capture de modèle de CV est déjà en cours. » `{session_id}` (session `cv_capture` ouverte au sujet `cv_template`). `GET /cv/templates` (non archivés, le plus récent d'abord), `GET /cv/templates/{id}` (`TemplateOut` : `fonts`, `font_gaps`, `zones` de la passe courante, `session_id`, `failure_reason`), `GET /cv/templates/{id}/pages/{original|render}/{n}` (PNG, `no-store`, n depuis 1, 404 pour toute autre sorte ou tout autre numéro), `POST …/activate` → 204 (409 `template_not_ready` hors `ready` ; l'ancien actif est désactivé avant, index unique partiel), `DELETE` → 204 statut `archived` (idempotent, images, polices et document gardés ; 409 `template_in_use` si une revue `running` ou `proposed` l'emploie, 409 `capture_in_progress` si sa capture tourne). **Migration 0010** : `cv_templates.prepared` (JSON : géométrie des pages — cadres des blocs visibles, sans texte —, blocs résumés, texte visible, rôles des polices, fichiers de polices rangés) et `cv_templates.pass_log` (une entrée par passe : numéro, score, ressemblance, clés des images du rendu), écart assumé au schéma de D118 : sans eux, `prepare` ne pourrait pas être une relecture ni `read_pass` relire une passe. (2) **Vision désactivée → 409 lisible** `vision_unavailable` « La capture du design demande un modèle qui lit les images. Active-le dans les réglages. » (11.2) : `supports_vision` sur le réglage propre du Maquettiste (`agent_overrides["designer"]`) s'il existe, sinon le niveau `vision` (preflight G13, étendu au réglage par agent : c'est le modèle qui sera appelé). (3) **Polices libres téléchargées une fois et réutilisées ; un écart de police est toujours dit, sans le nom lu dans le PDF.** Texte = police la plus employée en caractères, titres = celle du plus grand texte plus grand que le corps hors du nom (plus grand texte de la première page), à défaut celle du texte ; `choose_font` ; les fichiers d'une famille (400 et 700) sont rangés dans le stockage (catégorie `cv_fonts`, **suffixe du fichier reçu** : Google sert du TrueType complet à notre agent utilisateur, donc `.ttf`, pas `.woff2` comme l'écrivait le plan) et repris d'un autre gabarit de l'utilisateur. `FontUnavailable` → Liberation Sans de l'image de Gotenberg, **Liberation Serif pour une famille à empattement** (plus fidèle que le plan, qui ne citait que Sans), sans fichier joint. Phrases : « La police du texte n'est pas libre : remplacée par Carlito, très proche. » (« très proche » pour les substituts aux métriques compatibles : Liberation, Carlito, Caladea ; « proche » sinon), « La police des titres n'a pas d'équivalent connu : remplacée par Liberation Sans. », « La police du texte n'a pas pu être chargée : remplacée par Liberation Sans. » ; deux rôles au même sort font une phrase (« du texte et des titres ») ; CV scanné : « Les polices d'un CV scanné ne se lisent pas : le modèle emploie Liberation Sans. ». Les écarts de substitution sont posés à la création, ceux de chargement par `prepare`. Le Maquettiste peut citer les familles chargées puis Liberation Sans et Liberation Serif (toujours présentes dans l'image) ; ses blocs résumés portent la famille libre, jamais le nom lu dans le PDF. (4) **Port réel (`AgentCvTemplateStore`)** : `prepare` résout les polices une seule fois puis n'est qu'une relecture (aucune extraction, aucun rendu, aucun téléchargement : `sample`, `draft` et `fix` le rappellent, D125) ; `render_pass` idempotent par `(gabarit, passe)` (passe dans `pass_log` : relue) : `cv_document`, `html_to_pdf`, extraction du rendu, `similarity` sur la géométrie gardée et les images d'origine, images rangées, puis la passe devient la **passe courante** (spec, HTML, CSS, score, `score_detail`, images du rendu, contenu de démonstration) ; `read_pass` relit une passe rangée (404 `template_pass_not_found` sinon) ; `finish(ready)` garde la passe gardée, **la meilleure des passes** (D125, révision : `keeps_pass` ; un ajustement remplace toujours ; c'est le score de celle-là que January a vu et valide), active le gabarit si aucun autre ne l'est ; un gabarit prêt ou archivé ne change plus ; `sample_fallback` tire un contenu sans `fact_ids` du profil validé. Branché dans `bootstrap_career` (`CareerRuntimes.cv_templates`, `career_runtimes(..., publishing=)`) et `bootstrap_agents.agent_ports(cv_templates=)`. (5) **Le statut suit l'issue de la session** : un gabarit `capturing` dont la session n'est plus ouverte (panne du modèle, plafond de tokens, délai de nœud, annulation, lancement raté) passe en `failed` « La capture du modèle s'est arrêtée avant la fin : relance-la. » à la lecture suivante (liste, détail, création, activation, archivage), sessions lues avant les gabarits (D97 n° 9) et sous le verrou des gabarits de l'utilisateur, qui couvre aussi la création jusqu'à l'écriture de `session_id` ; une session terminée ne reprend jamais (`TERMINAL`), la correction est donc sûre. Journaux : identifiants et nombres ; jamais le nom du gabarit, un nom de fichier, un texte du CV ni une police (même du catalogue, qui trahirait celle du PDF).
-- **Révision (revue 6.10)** : (a) **le fournisseur Google Fonts ne journalise plus la famille** (I1 : « Police indisponible (motif) », « Police chargée (n fichiers) ») ; test avec `httpx.MockTransport`. (b) **Le Maquettiste ne se voit proposer que des polices disponibles** (M1) : `prepare` ramène les polices choisies et la colonne « police » des blocs résumés aux familles réellement présentes (`offered_choices`, `offered_summary`), le repli Liberation Sans ou Serif sinon. (c) **Un gabarit `failed` est figé** (M2) : `render_pass` et `finish(ready)` y rendent 409 `template_not_capturing` « La capture de ce modèle est terminée. » ; `finish(failed)` redit reste sans effet.
-- **Raison** : SPEC 5.2, 11.2, 13.5, 14.2, 17.2, 17.4 ; plan de la phase 6 (tâche 6.10) ; preflight (P7, P13, P17, P26, P27, P33, P35, P37, P47, G13, G14, G16, G17, G25, G26, G30) ; D119 (mise en page, polices libres), D120 (score), D124 (documents rangés, capture), D125 (port du Maquettiste, `read_pass`, `prepare` rappelé).
+- **Date** 2026-11-14
+- **Subject** Phase 6, task 6.10: CV templates (routes `/cv/templates`), real port of the Layout
+  designer (`AgentCvTemplateStore`), page images, fonts and gaps
+- **Decision**
+  1. **A template = an original CV, its images, its description, its HTML and CSS written by the
+     code, its score and its passes; only one active.** `POST /cv/templates` (multipart: `file` PDF
+     of 10 MB at most **or** `document_id` of an imported CV, `name` of 1 to 120 characters) → 202
+     `{template_id, session_id}`; the PDF sent is **always stored as a memory document** (tag `cv`,
+     `document_id` never empty: 6.14 rereads it, preflight G26). The layout is extracted **at
+     creation, before any storing or launch**: 422 `pdf_unreadable` with the message of
+     `PdfUnreadable` (protected, damaged, more than 4 pages), 415 `unsupported_file_type`, 413
+     `file_too_large` “10 MB at most” (G30, `BodySizeLimit` on `/cv/templates`), 422
+     `validation_error` `details.fields = ["file", "document_id"]` with no source or with both, 404
+     `document_not_found`. One template capture at a time: 409 `capture_in_progress` “A CV
+     template capture is already in progress.” `{session_id}` (open `cv_capture` session on
+     subject `cv_template`). `GET /cv/templates` (non-archived, most recent first),
+     `GET /cv/templates/{id}` (`TemplateOut`: `fonts`, `font_gaps`, `zones` of the current pass,
+     `session_id`, `failure_reason`), `GET /cv/templates/{id}/pages/{original|render}/{n}` (PNG,
+     `no-store`, n from 1, 404 for any other kind or number), `POST …/activate` → 204 (409
+     `template_not_ready` unless `ready`; the old active one is deactivated first, partial unique
+     index), `DELETE` → 204 status `archived` (idempotent, images, fonts and document kept; 409
+     `template_in_use` if a `running` or `proposed` review uses it, 409 `capture_in_progress` if its
+     capture is running). **Migration 0010**: `cv_templates.prepared` (JSON: page geometry —
+     frames of the visible blocks, without text —, summarized blocks, visible text, font roles,
+     stored font files) and `cv_templates.pass_log` (one entry per pass: number, score, similarity,
+     keys of the render's images), a deviation accepted from D118's schema: without them, `prepare`
+     could not be a reread nor `read_pass` reread a pass.
+  2. **Vision disabled → readable 409** `vision_unavailable` “Design capture needs a model that
+     reads images. Turn it on in settings.” (11.2): `supports_vision` on the Layout designer's own
+     setting (`agent_overrides["designer"]`) if it exists, otherwise the `vision` tier (preflight
+     G13, extended to the per-agent setting: it is the model that will be called).
+  3. **Free fonts downloaded once and reused; a font gap is always stated, without the name read in
+     the PDF.** Text = the font most used in characters, titles = that of the largest text larger
+     than the body outside the name (largest text of the first page), failing that that of the text;
+     `choose_font`; the files of a family (400 and 700) are stored in storage (category `cv_fonts`,
+     **suffix of the received file**: Google serves full TrueType to our user agent, so `.ttf`, not
+     `.woff2` as the plan wrote) and taken over from another template of the user. `FontUnavailable`
+     → Liberation Sans from the Gotenberg image, **Liberation Serif for a serif family** (more
+     faithful than the plan, which cited only Sans), with no attached file. Sentences: “The text
+     font is not free: replaced by Carlito, very close.” (“very close” for substitutes with
+     compatible metrics: Liberation, Carlito, Caladea; “close” otherwise), “The title font has
+     no known equivalent: replaced by Liberation Sans.”, “The text font could not be loaded:
+     replaced by Liberation Sans.”; two roles with the same fate make one sentence (“of the text
+     and the titles”); scanned CV: “The fonts of a scanned CV cannot be read: the template uses
+     Liberation Sans.”. Substitution gaps are set at creation, loading gaps by `prepare`. The
+     Layout designer may cite the loaded families then Liberation Sans and Liberation Serif (always
+     present in the image); its summarized blocks carry the free family, never the name read in the
+     PDF.
+  4. **Real port (`AgentCvTemplateStore`)**: `prepare` resolves the fonts only once then is only a
+     reread (no extraction, no render, no download: `sample`, `draft` and `fix` call it again,
+     D125); `render_pass` idempotent per `(template, pass)` (pass in `pass_log`: reread):
+     `cv_document`, `html_to_pdf`, extraction of the render, `similarity` on the kept geometry and
+     the original images, images stored, then the pass becomes the **current pass** (spec, HTML,
+     CSS, score, `score_detail`, render images, demonstration content); `read_pass` rereads a stored
+     pass (404 `template_pass_not_found` otherwise); `finish(ready)` keeps the kept pass, **the best
+     of the passes** (D125, revision: `keeps_pass`; an adjustment always replaces; it is that one's
+     score that January saw and approves), activates the template if no other is; a ready or
+     archived template no longer changes; `sample_fallback` draws content without `fact_ids` from
+     the validated profile. Wired in `bootstrap_career` (`CareerRuntimes.cv_templates`,
+     `career_runtimes(..., publishing=)`) and `bootstrap_agents.agent_ports(cv_templates=)`.
+  5. **The status follows the session's outcome**: a `capturing` template whose session is no longer
+     open (model outage, token cap, node timeout, cancellation, failed launch) goes to `failed`
+     “Template capture stopped early. Restart it to continue.” at the next read (list, detail,
+     creation, activation, archiving), sessions read before the templates (D97 no. 9) and under the
+     lock of the user's templates, which also covers creation until `session_id` is written; a
+     finished session never resumes (`TERMINAL`), so the correction is safe. Logs: identifiers and
+     numbers; never the template's name, a file name, a text of the CV nor a font (even from the
+     catalog, which would betray that of the PDF).
+- **Revision (review 6.10)** (a) **The Google Fonts provider no longer logs the family** (I1:
+  “Font unavailable (reason)”, “Font loaded (n files)”); test with `httpx.MockTransport`.
+  (b) **The Layout designer is offered only available fonts** (M1): `prepare` brings the chosen
+  fonts and the “font” column of the summarized blocks back to the families actually present
+  (`offered_choices`, `offered_summary`), falling back to Liberation Sans or Serif otherwise. (c)
+  **A `failed` template is frozen** (M2): `render_pass` and `finish(ready)` return 409
+  `template_not_capturing` “This template's capture is over.”; a repeated `finish(failed)` stays
+  without effect.
+- **Reason** SPEC 5.2, 11.2, 13.5, 14.2, 17.2, 17.4; phase 6 plan (task 6.10); preflight (P7, P13,
+  P17, P26, P27, P33, P35, P37, P47, G13, G14, G16, G17, G25, G26, G30); D119 (layout, free fonts),
+  D120 (score), D124 (stored documents, capture), D125 (Layout designer's port, `read_pass`,
+  `prepare` called again).
 
 ## D127
 
-- **Date** : 2026-11-14
-- **Sujet** : Phase 6, tâche 6.11 : essai réel en milieu de phase (profil, design, offre, écart) avec GLM 5.3 flash sous Docker (`scripts/check_phase6 --part capture`)
-- **Décision** : (1) **Script** `scripts/check_phase6` (partie `capture`, six étapes : profil, design, offre par texte, lien illisible, écart, journaux ; `revue` et `tout` viennent en 6.20), même forme que `check_phase5` (asynchrone, `httpx.AsyncClient`, relançable : profil validé et modèle prêt relus, offre déjà ajoutée rendue en 200). Écart au plan (preflight G23) : le conteneur du back n'a ni les scripts (`.dockerignore`) ni la CLI `docker`, donc le script tourne **hors du conteneur** (même image, réseau de la pile, `--api http://backend:8000`) et lit les journaux dans `--logs-file` (`-` : entrée standard, `docker compose logs --no-color backend | …`), lus au lancement : la vérification couvre les passages précédents, un second passage couvre le premier ; sans journaux l'étape échoue (jamais sautée). Le test (`tests/scripts/test_check_phase6.py`) joue les six étapes sur l'application réelle avec l'Archiviste, le Maquettiste et l'Analyste scriptés, le rendu lisible (`TextHtmlRenderer`) et les journaux de l'application (`caplog`). (2) **Essai réel, sans correctif du back** (profil 17 s, design 37 s, offre 22 s, le reste instantané) : *profil* : brouillon en 7 s, 2 expériences, 5 compétences, 0 ligne retirée, 0,0019 $ (3 320 tokens) ; *design* : question en 37 s, 3 passes, ressemblance 69 % (passes 69, 78, 69), un écart de police dit (Helvetica → Liberation Sans), 0,0086 $ (14 398 tokens) ; deuxième capture (`--fresh`) 27 s, 68, 72, 77 puis 77 %, 0,0083 $ ; *offre* : analyse en 22 s, titre « AI Product Engineer (H/F) », 15 mots clés gardés, tous dans le texte, 0,0050 $ (7 249 tokens) ; *écart* : score 29, 12 lignes dont 6 à ajouter, 3 compétences qui manquent le plus souvent. Aucune sortie structurée refusée, aucune re-demande, aucun avertissement ni erreur dans les journaux ; 1 023 lignes relues, ni nom, ni email, ni téléphone, ni entreprise, ni phrase de l'offre. (3) **Essai 1** : étape « lien illisible » en échec (HTTP 201 au lieu de 422) : `https://example.org/` est une page **lisible** (« Example Domain », assez de texte), l'offre est créée puis refusée par l'Analyste (`rejected`, « ne ressemble pas à une offre ») : comportement voulu (D121), c'est l'attente du plan qui était fausse. Le lien illisible du contrôle devient `https://example.invalid/` (comme `check_phase5`), 422 `posting_unreadable` sans écho ; l'offre refusée de l'essai a été supprimée. (4) **Doublons** (sonde réelle, embeddings Ollama) : même texte → 200, `created` faux, aucune offre de plus ; même entreprise, autre poste (Data Engineer) → 201, aucun doublon ; même offre au titre et à une ligne réécrits → 201 et doublon « possible » (seuil 0,90 du meilleur fragment) : le seuil sépare bien un autre poste d'une offre reformulée. (5) **Filtre des nombres** : 4 imports réels du CV fictif (dont 3 avec une note qui dit « 5 ans » ou « dix ans »), 0 ligne retirée à tort : GLM recopie « cinq ans » du CV ; le filtre ne compare que des chiffres (`numbers_in`), un « 5 ans » écrit par le modèle face à « cinq ans » serait retiré (voulu, jamais observé). (6) **Défaut vu, non corrigé** : le gabarit garde la **dernière** passe, pas la meilleure (69, 78, 69 : la passe 2 était meilleure ; January voit le score réel du rendu qu'elle valide, donc ni mensonge ni échec). La garder demanderait de ranger spec, contenu et HTML de chaque passe dans `pass_log` et de passer la passe choisie à `finish` (port, graphe, faux, tests) : laissé à la revue de la phase.
-- **Révision (revue finale de la phase 6)** : **le contrôle des journaux de `check_phase6` cherche aussi les noms de police et les noms de fichier** (BR-M1, 17.2) : « Helvetica » (police du CV fictif), « Liberation Sans » et « Arimo » (substituts libres), « CV_Camille » (nom de fichier `CV_…`).
-- **Raison** : SPEC 5.2, 5.5, 6.3, 17.2 ; plan de la phase 6 (tâche 6.11) ; preflight G23 ; D116 (forme du contrôle), D121 (Analyste), D122 (doublons), D125 et D126 (Maquettiste, gabarits).
+- **Date** 2026-11-14
+- **Subject** Phase 6, task 6.11: real trial in mid-phase (profile, design, posting, gap) with GLM
+  5.3 flash under Docker (`scripts/check_phase6 --part capture`)
+- **Decision**
+  1. **Script** `scripts/check_phase6` (part `capture`, six steps: profile, design, posting by text,
+     unreadable link, gap, logs; `revue` and `tout` come in 6.20), same form as `check_phase5`
+     (asynchronous, `httpx.AsyncClient`, rerunnable: validated profile and ready template reread, an
+     already added posting returned as 200). Deviation from the plan (preflight G23): the back-end
+     container has neither the scripts (`.dockerignore`) nor the `docker` CLI, so the script runs
+     **outside the container** (same image, the stack's network, `--api http://backend:8000`) and
+     reads the logs in `--logs-file` (`-`: standard input, `docker compose logs --no-color
+     backend | …`), read at launch: the check covers the previous runs, a second run covers the
+     first; without logs the step fails (never skipped). The test
+     (`tests/scripts/test_check_phase6.py`) plays the six steps on the real application with the
+     Archivist, the Layout designer and the Analyst scripted, the render readable
+     (`TextHtmlRenderer`) and the application's logs (`caplog`).
+  2. **Real trial, no back-end fix** (profile 17 s, design 37 s, posting 22 s, the rest instant):
+     *profile*: draft in 7 s, 2 experiences, 5 skills, 0 lines removed, $0.0019 (3,320 tokens);
+     *design*: question in 37 s, 3 passes, similarity 69% (passes 69, 78, 69), one font gap stated
+     (Helvetica → Liberation Sans), $0.0086 (14,398 tokens); second capture (`--fresh`) 27 s, 68,
+     72, 77 then 77%, $0.0083; *posting*: analysis in 22 s, title “AI Product Engineer (H/F)”,
+     15 keywords kept, all in the text, $0.0050 (7,249 tokens); *gap*: score 29, 12 rows including 6
+     to add, 3 skills missing most often. No structured output refused, no new request, no warning
+     or error in the logs; 1,023 lines reread, no name, no email, no phone, no company, no sentence
+     of the posting.
+  3. **Trial 1**: “unreadable link” step failed (HTTP 201 instead of 422):
+     `https://example.org/` is a **readable** page (“Example Domain”, enough text), the posting
+     is created then refused by the Analyst (`rejected`, “does not look like a posting”):
+     intended behavior (D121), it was the plan's expectation that was wrong. The unreadable link of
+     the check becomes `https://example.invalid/` (like `check_phase5`), 422 `posting_unreadable`
+     with no echo; the trial's refused posting was deleted.
+  4. **Duplicates** (real probe, Ollama embeddings): same text → 200, `created` false, no extra
+     posting; same company, other position (Data Engineer) → 201, no duplicate; same posting with
+     title and one line rewritten → 201 and “possible” duplicate (threshold 0.90 of the best
+     fragment): the threshold does separate another position from a reworded posting.
+  5. **Number filter**: 4 real imports of the fictional CV (3 of them with a note that says “5
+     ans” or “dix ans”), 0 lines wrongly removed: GLM copies “cinq ans” from the CV; the
+     filter compares only digits (`numbers_in`), a “5 ans” written by the model against “cinq
+     ans” would be removed (intended, never observed).
+  6. **Defect seen, not fixed**: the template keeps the **last** pass, not the best (69, 78, 69:
+     pass 2 was better; January sees the real score of the render she approves, so neither a lie nor
+     a failure). Keeping the best would require storing the spec, content and HTML of each pass in
+     `pass_log` and passing the chosen pass to `finish` (port, graph, fake, tests): left to the
+     phase review.
+- **Revision (final review of phase 6)** **The log check of `check_phase6` also looks for font names
+  and file names** (BR-M1, 17.2): “Helvetica” (font of the fictional CV), “Liberation Sans”
+  and “Arimo” (free substitutes), “CV_Camille” (file name `CV_…`).
+- **Reason** SPEC 5.2, 5.5, 6.3, 17.2; phase 6 plan (task 6.11); preflight G23; D116 (form of the
+  check), D121 (Analyst), D122 (duplicates), D125 and D126 (Layout designer, templates).
 
 ## D128
 
-- **Date** : 2026-11-14
-- **Sujet** : Phase 6, tâche 6.12 : validateur des modifications de CV contre le profil maître et composition du CV ciblé (`review_schema`, `cv_validator`, `cv_lexicon`, `cv_tech_terms`, `cv_compose`, `cv_compose_ops`)
-- **Décision** : (1) **Le validateur est du code, pas un agent** : `validate(proposition, profil, analyse)` rend un `Verdict(status, blocks, gap_terms)`, `status` valant `ok`, `to_confirm` ou `to_gap`. Le texte de référence est celui des faits cités (`target` et `fact_ids` connus du profil). Règles : (0) aucun fait connu cité → « Aucun fait de ton profil n'appuie cette modification » ; (1) un nombre de `after` que les faits ne disent pas → « Chiffre absent de ton profil », en **formes normalisées** (`numbers_in` : « 30 % » = « 30% » = « 30 pour cent », « 1 000 » = « 1000 », « 1,5 » = « 1.5 », « 12 k€ » = « 12 000 € ») **et chiffres écrits en lettres** (« trente », « cinq » = « 5 », « dizaines » est un ordre de grandeur à part), après NFKC (chiffres pleine chasse, espaces insécables) et retrait des caractères invisibles (espace de largeur nulle) ; un pourcentage reste distinct d'un nombre nu ; (2) un mot de proportion (« moitié », « tiers », « quart », « double », « triple », « x2 », « ×3 », « 2x ») → « Proportion sans chiffre dans ton profil » sauf si les faits disent le même mot ou un chiffre de sa famille (moitié 50 %, tiers 33 %, quart 25 %, double 100 ou 200 %) : « un tiers » n'est donc pas « 30 % » ; (3) un outil du lexique (`TECH_TERMS`, 253 noms écrits dans le code, sans les mots courants : « go », « r », « c », « net », « word », « notion »), un outil ou un mot clé de l'offre (variantes comprises), sans casse ni accent, mots entiers, pluriel simple, absent des faits cités **et** des compétences du profil : terme de l'offre → `to_gap`, autre → « Outil absent de ton profil » ; (4) un mot de titre (`TITLE_WORDS` : lead, senior, principal, head, manager, directeur, chef, responsable…) ou l'intitulé de l'offre (sans « (H/F) ») absent des rôles, du titre et de l'accroche du profil → « Titre absent de ton profil » ; en plus, un mot capitalisé hors début de phrase et hors sigle qu'**aucun** texte du profil ne contient (un outil ou une entreprise que la liste ne connaît pas) → « Nom propre absent de ton profil » (début de phrase non exempté pour une compétence, une langue ou un lien). `remove` et `move` n'écrivent aucun texte : toujours `ok`. **`blocks` est fait de phrases fixes** : jamais le texte du CV, jamais un terme (les termes de l'offre partent dans `gap_terms`, tels que l'offre les écrit). (2) **« À confirmer » ne s'accepte jamais d'un clic groupé** (6.14 `test_bulk_accept_skips_to_confirm`, case « Je confirme que c'est vrai » de D132). (3) **Un mot clé de l'offre absent du profil n'entre jamais dans le CV** : `to_gap` l'emporte sur `to_confirm` (la proposition n'est pas gardée, ses termes partent vers l'écart) et garde toutes les raisons. Une réécriture qui ajoute un outil de l'offre absent du profil va à l'écart, jamais dans le CV. (4) **Le CV ciblé est composé par le code, jamais par le modèle** : `base_content(profil, ordre)` reprend les faits du CV d'origine (`in_cv`) dans l'ordre des sections du gabarit, sans section vide, chaque ligne avec son `fact_id` ; `apply_modifications(base, profil, acceptées)` applique dans l'ordre remove, rewrite, add, move (à l'intérieur d'un genre, l'ordre reçu) sans toucher à `base`. `rewrite` remplace le texte de la ligne (ou le titre de l'entrée pour `x1`, l'accroche pour `t1`) et pose `fact_ids = [target, faits cités connus]` ; `add` place le fait à son rang du profil, crée au besoin la section à sa place habituelle et, pour une réalisation, l'entrée de son parent avec ses seuls faits propres (rôle, entreprise, dates) ; `move` place la section avant celle de `after`. Une cible absente du contenu ou du profil, un texte vide, un `add` d'un fait déjà présent sont **ignorés et comptés** : `apply_with_report` rend les références ignorées (journal : deux nombres). Le module ne juge pas : le tri `ok` / confirmé se fait avant (6.14). (5) **Identifiants de faits sans borne** (écart au plan, arbitrage de revue) : `FACT_ID = ^[xfcplkts]\d+([ad]\d+)?$` au lieu de `\d{1,2}` (les numéros ne sont jamais réemployés : « c100 » existe) ; `ref` reste `^[ar]\d{1,2}$` ; les éléments de `fact_ids` suivent le même motif (refusés et redemandés) ; test sur les identifiants réels de `facts_of`. (6) **Écarts au plan** : `TECH_TERMS` vit dans `cv_tech_terms.py` (réexporté par `cv_lexicon`, 300 lignes) ; les opérations de composition dans `cv_compose_ops.py` ; `cv_lexicon` gagne `figures_in`, `ratio_families`, `clean_text`, `NUMBER_WORDS`, `RATIO_WORDS`, `RATIO_NUMBERS`, `TITLE_WORDS` ; `proposal_problems` signale aussi un `rewrite` ou un `remove` d'un fait absent du CV, un fait d'une autre section que `section`, un `target` ou un texte manquant, un `move` sans section cible valable. **Limites connues** : le lexique est fini (un outil inconnu en minuscules et non cité par l'offre ne se repère pas) ; les homoglyphes (lettre cyrillique pour latine) ne sont pas traités ; l'accroche (`CvContent.headline`, texte seul) ne porte pas de `fact_id`.
-- **Révision (revue 6.12)** : (a) **les approximations en lettres sont des chiffres** : « vingtaine », « trentaine », « quarantaine », « cinquantaine », « soixantaine », « quinzaine », « douzaine », « dizaines », « centaines », « milliers », « dozens », « hundreds », « thousands », « zéro » : « une trentaine de clients » face à « 32 clients » passe en « à confirmer ». (b) **verbes de proportion et formes anglaises** : doublé, doubler, triplé, décuplé (x10), quintuplé (x5), doubled, tripled, halved, twice, thrice, tenfold, fourfold, « divisé par deux » (moitié), « par trois » (tiers), « par quatre » (quart), « moitié moins », « x10 ». (c) **arbitrage du contrôleur : les termes ambigus ne sont un outil que sous leur forme de produit** : `AMBIGUOUS_TERMS` (vue, vite, spring, rest, swift, hive, consul, sketch, unity, oracle, tableau, flask, helm, angular, react, rails, spark, rust, ruby, dart, scala, julia, elixir, bash, soap, slack, excel, windows, poetry, sentry, confluence, workday, cypress, puppet, vault, envoy, mocha, jest, babel, yarn, presto, llama, sap, transformers, cucumber…, sous-ensemble de `TECH_TERMS`) comptent comme outil seulement capitalisés hors début de phrase ou en sigle (« Vue », « Spring », « REST »), ou suivis d'un qualificatif propre au terme (« vue.js », « spring boot », « rest api ») ; jamais en minuscules (« vue d'ensemble », « en vue de », « plus vite », « tableaux de bord »). Un terme ambigu que l'offre nomme reste un terme de l'offre (écart). (d) **mineurs** : `heads()` saute un fait sans identifiant (plus de `KeyError` sur un profil non numéroté) ; le début de phrase n'est plus exempté après « : » ni « ; » (« Stack : Streamlit » → nom propre absent) ; `TITLE_WORDS` gagne director, chief, staff, owner, consultant ; le lieu d'une expérience compte comme texte connu ; le libellé de l'écart dit « absent des faits cités et de tes compétences ».
-- **Révision 2 (re-revue 6.12)** : **`AMBIGUOUS_TERMS` ne garde que les mots courants** du français ou de l'anglais : vue, vite, spring, rest, swift, hive, consul, sketch, unity, unreal, oracle, tableau, soap, vault, rust, transformers, rails (17 ; la liste de la révision 1, trop large, laissait passer en `ok` des outils réels écrits en minuscules : « scripts bash », « sous excel », « en react », « jobs spark », « postes windows », « sur slack », « via helm », « avec jest », « avec sap »). Retirés : react, angular, bash, excel, spark, windows, slack, helm, sap, ruby, scala, jest, mocha, babel, yarn, cypress, cucumber, puppet, confluence, workday, envoy, sentry, llama, presto, poetry, dart, julia, elixir, flask : en minuscules, ils sont signalés comme outil absent. Les tests « vue d'ensemble », « en vue de », « plus vite » et « tableaux de bord » restent verts.
-- **Révision (revue finale de la phase 6)** : **un fait structuré ne se réécrit pas sans son mot** (BA-C1, critique d'honnêteté) : pour une cible `x`, `f`, `p`, `t`, `c`, `l` ou `k` (intitulé d'expérience, de diplôme, de projet, titre, compétence, langue et niveau, lien), chaque mot significatif de `after` (hors mots outils et nombres, sans casse ni accent, pluriel simple près ; le féminin n'est pas le masculin, sauf si les deux sont au profil) doit figurer dans les faits cités ou dans les rôles et titres du profil, et chaque lien ou nom de domaine écrit garde l'URL exacte du fait ; sinon « à confirmer » avec le bloc fixe « Intitulé absent de ton profil » (`cv_validator_facts`). Sondes épinglées : « Développeuse » → « Ingénieure IA », « Licence » → « Master » ou « Doctorat », « B2 » → « C1 » ou « courant », une autre URL, « Python (expert) » ; la reformulation identique reste `ok`. Aussi : « 1,000 » ne vaut plus « 1 » (voir D124 c).
-- **Révision (re-revue de la vague de corrections, I-1 et I-2)** : (I-1) **citer un fait voisin ne lève plus le contrôle des faits structurés** : pour une cible structurée, `after` est comparé au texte du **fait visé seul** et aux rôles et titres du profil ; les autres faits cités (`fact_ids`) ne lèvent que les règles des chiffres, des outils et des proportions, jamais celle des mots structurés ; l'URL d'un lien vient du fait visé seul. Sondes épinglées : « Anglais — B2 » → « Anglais — C1 » en citant « Espagnol — C1 », « Licence » → « Master » en citant « Master gestion », « Python (expert) » en citant une réalisation qui dit « experts », le lien GitHub avec l'URL du lien LinkedIn : tous « à confirmer » (`Intitulé absent de ton profil`). (I-2) **confirmer une langue ou un lien réécrit les bons champs** (`with_fact`, `profile_facts.py`) : le texte confirmé est coupé sur « — » ; une langue écrit `name` et `level`, un lien `label` et `url` (l'URL doit être http(s) avec un hôte, sinon le 422 habituel, message fixe, sans écho) ; un texte sans séparateur garde l'ancien niveau, et pour un lien l'ancienne URL s'il ne contient aucun jeton d'URL (une URL seule remplace l'URL). (m-2) `_short_name_in` : « & » et « - » après un nom court l'excluent (« R&D », « C-level », « Go-to-market »).
-- **Révision 2 (dernière re-revue de la phase 6, I-A, I-B, hors diff)** : (I-A) **les rôles et titres du profil ne comptent que pour réécrire le titre (`t…`)** : pour une expérience, un diplôme, un projet, une compétence, une langue ou un lien, `after` est comparé au seul texte du fait visé (un autre rôle « Lead Développeuse Senior » ne lève plus « Lead » ni « Senior » sur une autre expérience, une compétence ou une langue). (I-B) **confirmer une langue n'écrit jamais l'ancien niveau à côté d'un texte neuf** : séparateurs reconnus « — », « - », « – », « : » et « Nom (niveau) » (nom à gauche, niveau à droite) ; sans séparateur, le texte entier est le nom et le niveau est effacé. **Même défaut pour une expérience ou une formation** (`_split_company`) : « Rôle — Entreprise » écrit le rôle et l'entreprise (le texte qui finit par l'entreprise connue la garde ; un texte sans « — » ne change que le rôle, l'entreprise étant obligatoire). Une URL mal formée (« http://[::1 ») donne le 422 habituel, jamais une 500.
-- **Raison** : SPEC 1, 5.5, 18.3 ; plan de la phase 6 (tâche 6.12, revue par tâche) ; D117 à D127 (types du profil, `numbers_in`) ; D132 (confirmation une par une).
+- **Date** 2026-11-14
+- **Subject** Phase 6, task 6.12: validator of CV changes against the master profile and composition
+  of the targeted CV (`review_schema`, `cv_validator`, `cv_lexicon`, `cv_tech_terms`, `cv_compose`,
+  `cv_compose_ops`)
+- **Decision**
+  1. **The validator is code, not an agent**: `validate(proposal, profile, analysis)` returns a
+     `Verdict(status, blocks, gap_terms)`, with `status` being `ok`, `to_confirm` or `to_gap`. The
+     reference text is that of the cited facts (`target` and `fact_ids` known to the profile).
+     Rules: (0) no known fact cited → “Your profile has no evidence for this change”; (1) a
+     number in `after` that the facts do not state → “Number missing from your profile”, in
+     **normalized forms** (`numbers_in`: “30 %” = “30%” = “30 pour cent”, “1 000” =
+     “1000”, “1,5” = “1.5”, “12 k€” = “12 000 €”) **and numbers written in
+     words** (“trente”, “cinq” = “5”, “dizaines” is an order of magnitude of its
+     own), after NFKC (full-width digits, non-breaking spaces) and removal of invisible characters
+     (zero-width space); a percentage stays distinct from a bare number; (2) a proportion word
+     (“moitié”, “tiers”, “quart”, “double”, “triple”, “x2”, “×3”,
+     “2x”; half, third, quarter, double, triple) → “Proportion with no supporting number in
+     your profile” unless the facts state the same word or a number of its family (moitié 50%,
+     tiers 33%, quart 25%, double 100 or 200%): “un tiers” is therefore not “30%”; (3) a
+     tool of the lexicon (`TECH_TERMS`, 253 names written in the code, without the common words:
+     “go”, “r”, “c”, “net”, “word”, “notion”), a tool or a keyword of the
+     posting (variants included), without case or accent, whole words, simple plural, absent from
+     the cited facts **and** from the profile's skills: a posting term → `to_gap`, any other →
+     “Tool missing from your profile”; (4) a title word (`TITLE_WORDS`: lead, senior, principal,
+     head, manager, directeur, chef, responsable…) or the posting's job title (without
+     “(H/F)”) absent from the profile's roles, title and tagline → “Title missing from your
+     profile”; in addition, a capitalized word outside the start of a sentence and outside an
+     acronym that **no** text of the profile contains (a tool or a company that the list does not
+     know) → “Proper name missing from your profile” (sentence start not exempted for a skill,
+     a language or a link). `remove` and `move` write no text: always `ok`. **`blocks` is made of
+     fixed sentences**: never the CV's text, never a term (the posting's terms go in `gap_terms`, as
+     the posting writes them).
+  2. **“To confirm” is never accepted by a grouped click** (6.14
+     `test_bulk_accept_skips_to_confirm`, the “I confirm this is true” checkbox of D132).
+  3. **A posting keyword absent from the profile never enters the CV**: `to_gap` wins over
+     `to_confirm` (the proposal is not kept, its terms go to the gap) and keeps all the reasons. A
+     rewrite that adds a posting tool absent from the profile goes to the gap, never into the CV.
+  4. **The targeted CV is composed by the code, never by the model**: `base_content(profile, order)`
+     takes the facts of the original CV (`in_cv`) in the order of the template's sections, with no
+     empty section, each line with its `fact_id`; `apply_modifications(base, profile, accepted)`
+     applies in the order remove, rewrite, add, move (within a kind, the order received) without
+     touching `base`. `rewrite` replaces the text of the line (or the entry's title for `x1`, the
+     tagline for `t1`) and sets `fact_ids = [target, known cited facts]`; `add` places the fact at
+     its rank in the profile, creates the section at its usual place if needed and, for an
+     achievement, the entry of its parent with its own facts only (role, company, dates); `move`
+     places the section before that of `after`. A target absent from the content or the profile, an
+     empty text, an `add` of a fact already present are **ignored and counted**: `apply_with_report`
+     returns the ignored references (log: two numbers). The module does not judge: the `ok` /
+     confirmed sorting happens before (6.14).
+  5. **Fact identifiers without a bound** (deviation from the plan, review arbitration):
+     `FACT_ID = ^[xfcplkts]\d+([ad]\d+)?$` instead of `\d{1,2}` (numbers are never reused:
+     “c100” exists); `ref` stays `^[ar]\d{1,2}$`; the elements of `fact_ids` follow the same
+     pattern (refused and asked again); test on the real identifiers of `facts_of`.
+  6. **Deviations from the plan**: `TECH_TERMS` lives in `cv_tech_terms.py` (re-exported by
+     `cv_lexicon`, 300 lines); the composition operations in `cv_compose_ops.py`; `cv_lexicon` gains
+     `figures_in`, `ratio_families`, `clean_text`, `NUMBER_WORDS`, `RATIO_WORDS`, `RATIO_NUMBERS`,
+     `TITLE_WORDS`; `proposal_problems` also flags a `rewrite` or a `remove` of a fact absent from
+     the CV, a fact of a section other than `section`, a missing `target` or text, a `move` without
+     a valid target section. **Known limits**: the lexicon is finite (an unknown tool in lowercase
+     and not cited by the posting is not detected); homoglyphs (a Cyrillic letter for a Latin one)
+     are not handled; the tagline (`CvContent.headline`, text only) carries no `fact_id`.
+- **Revision (review 6.12)** (a) **Approximations in words are numbers**: “vingtaine”,
+  “trentaine”, “quarantaine”, “cinquantaine”, “soixantaine”, “quinzaine”,
+  “douzaine”, “dizaines”, “centaines”, “milliers”, “dozens”, “hundreds”,
+  “thousands”, “zéro”: “une trentaine de clients” against “32 clients” goes to
+  “to confirm”. (b) **Proportion verbs and English forms**: doublé, doubler, triplé, décuplé
+  (x10), quintuplé (x5), doubled, tripled, halved, twice, thrice, tenfold, fourfold, “divisé par
+  deux” (moitié), “par trois” (tiers), “par quatre” (quart), “moitié moins”,
+  “x10”. (c) **Controller's arbitration: ambiguous terms are a tool only in their product
+  form**: `AMBIGUOUS_TERMS` (vue, vite, spring, rest, swift, hive, consul, sketch, unity, oracle,
+  tableau, flask, helm, angular, react, rails, spark, rust, ruby, dart, scala, julia, elixir, bash,
+  soap, slack, excel, windows, poetry, sentry, confluence, workday, cypress, puppet, vault, envoy,
+  mocha, jest, babel, yarn, presto, llama, sap, transformers, cucumber…, a subset of `TECH_TERMS`)
+  count as a tool only when capitalized outside the start of a sentence or as an acronym (“Vue”,
+  “Spring”, “REST”), or followed by a qualifier specific to the term (“vue.js”,
+  “spring boot”, “rest api”); never in lowercase (“vue d'ensemble”, “en vue de”,
+  “plus vite”, “tableaux de bord”). An ambiguous term that the posting names stays a posting
+  term (gap). (d) **Minor**: `heads()` skips a fact without an identifier (no more `KeyError` on an
+  unnumbered profile); the start of a sentence is no longer exempted after “:” or “;”
+  (“Stack : Streamlit” → proper name missing); `TITLE_WORDS` gains director, chief, staff,
+  owner, consultant; the place of an experience counts as known text; the gap's label says “absent
+  from the cited facts and from your skills”.
+- **Revision 2 (re-review 6.12)** **`AMBIGUOUS_TERMS` keeps only the common words** of French or
+  English: vue, vite, spring, rest, swift, hive, consul, sketch, unity, unreal, oracle, tableau,
+  soap, vault, rust, transformers, rails (17; the list of revision 1, too wide, let real tools
+  written in lowercase through as `ok`: “scripts bash”, “sous excel”, “en react”,
+  “jobs spark”, “postes windows”, “sur slack”, “via helm”, “avec jest”, “avec
+  sap”). Removed: react, angular, bash, excel, spark, windows, slack, helm, sap, ruby, scala,
+  jest, mocha, babel, yarn, cypress, cucumber, puppet, confluence, workday, envoy, sentry, llama,
+  presto, poetry, dart, julia, elixir, flask: in lowercase, they are flagged as a tool missing. The
+  tests “vue d'ensemble”, “en vue de”, “plus vite” and “tableaux de bord” stay
+  green.
+- **Revision (final review of phase 6)** **A structured fact is not rewritten without its word**
+  (BA-C1, honesty critique): for a target `x`, `f`, `p`, `t`, `c`, `l` or `k` (title of an
+  experience, degree, project, title, skill, language and level, link), each significant word of
+  `after` (outside stop words and numbers, without case or accent, to within a simple plural; the
+  feminine is not the masculine, unless both are in the profile) must appear in the cited facts or
+  in the profile's roles and titles, and each written link or domain name keeps the fact's exact
+  URL; otherwise “to confirm” with the fixed block “Heading missing from your profile”
+  (`cv_validator_facts`). Pinned probes: “Développeuse” → “Ingénieure IA”, “Licence”
+  → “Master” or “Doctorat”, “B2” → “C1” or “courant”, another URL, “Python
+  (expert)”; an identical rewording stays `ok`. Also: “1,000” is no longer worth “1” (see
+  D124 c).
+- **Revision (re-review of the batch of corrections, I-1 and I-2)** (I-1) **Citing a neighboring
+  fact no longer lifts the check on structured facts**: for a structured target, `after` is compared
+  with the text of the **targeted fact alone** and with the profile's roles and titles; the other
+  cited facts (`fact_ids`) lift only the rules on numbers, tools and proportions, never that of
+  structured words; a link's URL comes from the targeted fact alone. Pinned probes: “Anglais —
+  B2” → “Anglais — C1” citing “Espagnol — C1”, “Licence” → “Master” citing
+  “Master gestion”, “Python (expert)” citing an achievement that says “experts”, the
+  GitHub link with the LinkedIn link's URL: all “to confirm” (`Heading missing from
+  your profile`). (I-2) **Confirming a language or a link rewrites the right fields** (`with_fact`,
+  `profile_facts.py`): the confirmed text is split on “—”; a language writes `name` and
+  `level`, a link `label` and `url` (the URL must be http(s) with a host, otherwise the usual 422,
+  fixed message, no echo); a text without a separator keeps the old level, and for a link the old
+  URL if it contains no URL token (a lone URL replaces the URL). (m-2) `_short_name_in`: “&” and
+  “-” after a short name exclude it (“R&D”, “C-level”, “Go-to-market”).
+- **Revision 2 (last re-review of phase 6, I-A, I-B, outside the diff)** (I-A) **The profile's roles
+  and titles count only for rewriting the title (`t…`)**: for an experience, a degree, a project,
+  a skill, a language or a link, `after` is compared with the text of the targeted fact alone
+  (another role “Lead Développeuse Senior” no longer lifts “Lead” or “Senior” on
+  another experience, a skill or a language). (I-B) **Confirming a language never writes the old
+  level next to a new text**: recognized separators “—”, “-”, “–”, “:” and
+  “Name (level)” (name on the left, level on the right); without a separator, the whole text is
+  the name and the level is erased. **Same defect for an experience or an education**
+  (`_split_company`): “Role — Company” writes the role and the company (a text that ends with
+  the known company keeps it; a text without “—” changes only the role, the company being
+  required). A malformed URL (“http://[::1”) gives the usual 422, never a 500.
+- **Reason** SPEC 1, 5.5, 18.3; phase 6 plan (task 6.12, per-task review); D117 to D127 (profile
+  types, `numbers_in`); D132 (confirmation one by one).
 
 ## D129
 
-- **Date** : 2026-11-14
-- **Sujet** : Phase 6, tâche 6.13 : le Lecteur ATS, le Recruteur, la fiche entreprise de l'Éclaireur et le parcours `cv_review`
-- **Décision** : (1) **Le Lecteur ATS (`ats_reader`, niveau standard) et le Recruteur (`recruiter`, niveau standard) proposent chacun, puis se confrontent en deux tours au plus.** Le Lecteur ATS vise les mots clés de l'offre, les intitulés et l'ordre (sortie `AtsReading` : `ProposalList` + `notes`, six au plus, pour `ats_notes` du rapport) ; le Recruteur vise l'impact, la clarté et la longueur (`RecruiterReading` : `ProposalList` + `strengths` et `risks`, cinq au plus) ; ces champs de texte à lire sont raccourcis, jamais refusés (`ShortenToMax`, D97), écart au plan qui ne donnait que `ProposalList` : sans eux, le rapport n'aurait ni notes ATS, ni forces, ni risques, ou un appel de plus. Le contexte commun (`_shared/cv_review.md`) rend l'offre, son analyse, la fiche entreprise, les indicateurs avant, les faits du profil **avec leurs identifiants** (marqués « hors du CV ») et le CV d'origine (chaque ligne avec ses faits, sans coordonnées), **tous dans `untrusted(…)`** (`offre`, `offre:analyse`, `fiche entreprise`, `offre:exigences non couvertes`, `profil`, `cv`) ; consignes « n'ajoute aucun fait », « cite les identifiants de faits », « aucune garantie de passage ATS ». Les défauts de `proposal_problems` et une référence qui n'a pas la lettre de l'agent (`a` / `r`) sont renvoyés au modèle deux fois au plus (phrases faites de références et d'identifiants, jamais d'un texte), puis seules les propositions sans défaut restent (première d'une référence en double). **Confrontation** : tour 1, chaque agent prend position (`Confrontation`) sur les propositions de l'autre : `keep`, `drop` (contestée), `amend` (texte remplacé, contestée) ; tour 2, **seules les propositions contestées reviennent, à leur auteur**, avec l'objection : il maintient, retire ou reformule (écart de lecture assumé : « prendre position sur les propositions de l'autre » deux fois de suite ne ferait que répéter le tour 1) ; **une proposition n'est retirée que sur `drop` des deux côtés** (au tour 2, voir la révision : le `drop` de l'auteur suffit), sinon elle reste et January tranche ; aucun tour 2 sans contestation, jamais de tour 3. Une position sur une référence inconnue (jamais recopiée : texte libre), en double, un `amend` sans texte ou sur `remove` / `move` est redemandée deux fois puis ignorée (`keep`) ; une sortie structurée invalide vaut « tout garder ». Les propositions jugées sont encadrées (`propositions`) : leur texte vient d'un modèle qui a lu l'offre. Le débat est publié dans le fil (`agent.message` « Tour 1 : mes positions… », « Tour 2 : je réponds aux objections… »). (2) **Toute proposition passe le validateur, un mot clé absent part vers l'écart** : `validate` (D128) sur le texte final (amendements compris) ; `to_gap` → retirée, termes ajoutés à `gap_terms` (sans doublon, forme de l'offre) ; `ok` → `proposed`, `to_confirm` → `to_confirm` avec ses `blocks`. `save` : `save_proposals` (idempotent par `(revue, référence)`) avec le rapport (`ReviewReport` : ATS, notes, résumé de la fiche, forces, risques, critères éliminatoires de l'analyse), puis « 9 modifications proposées, 2 à confirmer. 1 mot clé de l'offre part vers l'écart. » (singulier et pluriel accordés). (3) **Fiche entreprise de l'Éclaireur gardée 30 jours ; ATS détecté par le domaine des liens** : `ReviewContext.company_brief` n'est rendue que si elle a moins de 30 jours (`BRIEF_MAX_AGE_DAYS`) → reprise sans recherche ni écriture ; sinon `web_search` du nom, trois pages lues au plus (`page_agent_text`, encadrées), `CompanyBrief` (Éclaireur, mode `company` de `scout.md`, offre encadrée), `save_company` (idempotent par entreprise et session). Entreprise inconnue → étape sautée, « Entreprise inconnue : je passe la fiche entreprise. » ; recherche refusée (plafond, moteur absent) ou sortie invalide → « Je n'ai pas pu préparer la fiche entreprise : la revue continue sans elle. », rien de rangé. ATS = `detect_ats(liens de l'offre + lien de candidature + pages lues)`. `detect_ats` et `ATS_HOSTS` déménagent dans `app/agents/tools/ats_hosts.py`, et les indicateurs (`Indicators`, `Coverage`, `AtsCheck`, `coverage`) dans `app/agents/tools/cv_indicators.py` (le moteur n'importe aucune feature, contrat 6) ; `features/postings/service/rules.py` et `features/cv/service/indicators.py` les réexportent, sans changement de comportement. `ReviewContext` gagne `company_ats` (ATS lu lors de la fiche reprise) et `VersionOutcome` `original_page_count` (la phrase « dépasse 1 page » cite le nombre de pages de l'original) : écarts au plan. (4) **Base de connaissance ATS datée dans un prompt partagé** : `_shared/ats_base.md`, en-tête « Mise à jour : 2026-11-13 », règles générales et notes par ATS, incluse par le seul Lecteur ATS ; rafraîchissement à 30 jours en phase 8. (5) **Sortie en boucle derrière une interruption seule dans son nœud** : `ask_output(state)` ne reçoit ni port ni modèle, appelle `interrupt()` (kind `cv_output`, « Que veux-tu maintenant ? », options `report` « Voir le rapport », `pdf` « Générer le PDF », `finish` « Terminer ») et analyse la réponse : `"report"`, `"finish"`, `{"choice": …}`, `{"choice": "pdf", "version_id": …}` (version créée par la route, 6.14) ; « pdf » sans version ou une forme inconnue repose la question sans écriture. `apply_output` : rapport → `artifact.ready` `{artifact_id: "rapport-{id}", kind: "cv_report", url: "/carriere/cv/revues/{id}#rapport"}` ; PDF → `render_version` (idempotent) puis `artifact.ready` `{artifact_id: version_id, kind: "cv_pdf", url: "/api/v1/cv/versions/{id}/pdf"}`, ou « Le CV ciblé dépasse 1 page : retire une ligne ou autorise une page de plus. », ou « Le PDF n'a pas pu être généré… » ; puis la question revient ; `finish` → `close` (idempotent) → fin, résumé « Revue terminée… ». (6) **Moteur** : port `AgentPorts.cv_review` (`NO_CV_REVIEW` 503 `cv_review_unavailable` ; l'implémentation `AgentCvReviewStore`, sa ligne de composition et `ROUTE_ONLY["cv_review"]` viennent en 6.14), graphe dans `GRAPHS`, agents dans `AGENTS`. `START -> load -> (analyse ? company : analyze -> save_analysis -> company)` avec les nœuds de l'Analyste (6.5 ; un texte qui n'est pas une offre → `posting_not_a_job` 422) `-> ats_reader -> recruiter -> confront_1 -> confront_2 -> validate -> save -> ask_output -> apply_output -> (finish ? close -> END : ask_output)`. Chaque nœud asynchrone a son `node_timeout` (propositions et confrontation 600 s, fiche 300 s, rendu 450 s : rendu, extraction et trois resserrements de 6.14) ; aucune écriture hors de `save_company`, `save_proposals`, `render_version` et `close`, toutes idempotentes ; le contexte (profil, CV, offre) est relu par le port à chaque nœud, jamais gardé dans l'état ; un redémarrage à la question laisse la même question en attente (`save_proposals` appelé une fois), un arrêt pendant le rendu ne rend jamais deux fois. Journaux : identifiants et nombres seulement (jamais une entreprise, une adresse, un texte du CV ni un terme de l'offre).
-- **Révision (revue finale de la phase 6)** : (a) **un délai de la confrontation ne perd plus les propositions payées** (6.13 m1) : chaque agent a son délai (`STANCE_TIMEOUT_S` = 420 s, demandes et nouveaux essais compris) ; au-delà, ses positions valent `{}` (tout garder), les propositions obtenues restent et la revue continue ; le nœud garde `2 × 420 + 60` s. (b) **« Aucune garantie de passage de l'ATS » est imposée par le code** (6.13 m6) : `ats_notes`, `strengths` et `risks` passent par `without_promises` (`review_notes`) : une phrase qui promet un passage, une acceptation ou un résultat certain (« passera », « garanti », « sera retenu », « 100 % » avec le passage, et leurs formes anglaises) est retirée, une note vidée aussi ; « Aucune garantie de passage » reste.
-- **Raison** : SPEC 1, 5.3, 5.5, 9.4, 17.2, 17.4, 18.3 ; plan de la phase 6 (tâche 6.13, Review Focus n° 2 et n° 4) ; D46 (`durability="sync"`), D97 (prose raccourcie), D118 (ATS par domaine), D121 (analyse partagée), D125 (interruption seule, rejeu compté au port), D128 (validateur).
-- **Révision (revue 6.13)** : au tour 2, **l'auteur qui dit `drop` retire sa proposition, quelle que soit l'objection** (il renonce à la sienne ; la règle « `drop` des deux côtés » ne tenait pas après un `amend` de l'autre agent et le fil annonçait « je retire » alors que la proposition restait sous le texte de l'autre). Le texte d'origine reste dans `contested` (`original`) : le tour 2 montre à l'auteur son texte et l'amendement ; son `keep` **restaure son texte d'origine**, son `amend` pose son nouveau texte, **son silence laisse l'amendement de l'autre agent** (qui repasse par le validateur, D128 ; January tranche). Le verbe du fil dit ce qui arrive (« je retire », « je maintiens mon texte d'origine », « je reformule », « sans réponse, l'amendement de l'autre agent reste » ; un auteur muet ne « maintient » jamais rien : « sans réponse, la proposition reste »). Le prompt du tour 2 le dit : `keep` restaure le texte d'origine, il n'accepte pas l'amendement.
+- **Date** 2026-11-14
+- **Subject** Phase 6, task 6.13: the ATS reader, the Recruiter, the Scout's company sheet and the
+  `cv_review` graph
+- **Decision**
+  1. **The ATS reader (`ats_reader`, standard tier) and the Recruiter (`recruiter`, standard tier)
+     each make proposals, then confront each other in two rounds at most.** The ATS reader targets
+     the posting's keywords, titles and order (output `AtsReading`: `ProposalList` + `notes`, six at
+     most, for the report's `ats_notes`); the Recruiter targets impact, clarity and length
+     (`RecruiterReading`: `ProposalList` + `strengths` and `risks`, five at most); these text fields
+     to be read are shortened, never refused (`ShortenToMax`, D97), a deviation from the plan, which
+     gave only `ProposalList`: without them, the report would have no ATS notes, no strengths, no
+     risks, or one more call. The common context (`_shared/cv_review.md`) returns the posting, its
+     analysis, the company sheet, the before indicators, the profile's facts **with their
+     identifiers** (marked “outside the CV”) and the original CV (each line with its facts,
+     without contact details), **all inside `untrusted(…)`** (`offre`, `offre:analyse`,
+     `fiche entreprise`, `offre:exigences non couvertes`, `profil`, `cv`); instructions “add no
+     fact”, “cite the fact identifiers”, “no guarantee of passing the ATS”. The defects of
+     `proposal_problems` and a reference that lacks the agent's letter (`a` / `r`) are sent back to
+     the model at most twice (sentences made of references and identifiers, never of a text), then
+     only the proposals without a defect remain (the first of a duplicated reference).
+     **Confrontation**: round 1, each agent takes a stance (`Confrontation`) on the other's
+     proposals: `keep`, `drop` (contested), `amend` (text replaced, contested); round 2, **only the
+     contested proposals come back, to their author**, with the objection: the author maintains,
+     withdraws or rewords (deliberate reading deviation: “take a stance on the other's
+     proposals” twice in a row would only repeat round 1); **a proposal is withdrawn only on
+     `drop` from both sides** (in round 2, see the revision: the author's `drop` is enough),
+     otherwise it stays and January decides; no round 2 without a contest, never a round 3. A stance
+     on an unknown reference (never copied: free text), a duplicate one, an `amend` without text or
+     on `remove` / `move` is asked again twice then ignored (`keep`); an invalid structured output
+     means “keep everything”. The judged proposals are framed (`propositions`): their text comes
+     from a model that read the posting. The debate is published in the thread (`agent.message`
+     “Round 1: my stances…”, “Round 2: I answer the objections…”).
+  2. **Every proposal goes through the validator, an absent keyword goes to the gap**: `validate`
+     (D128) on the final text (amendments included); `to_gap` → withdrawn, terms added to
+     `gap_terms` (without duplicates, in the posting's form); `ok` → `proposed`, `to_confirm` →
+     `to_confirm` with its `blocks`. `save`: `save_proposals` (idempotent per `(review, reference)`)
+     with the report (`ReviewReport`: ATS, notes, summary of the sheet, strengths, risks,
+     eliminatory criteria of the analysis), then “9 changes proposed, 2 to confirm. 1 posting
+     keyword goes to the gap.” (singular and plural agreed).
+  3. **Company sheet from the Scout kept 30 days; ATS detected from the links' domain**:
+     `ReviewContext.company_brief` is returned only if it is less than 30 days old
+     (`BRIEF_MAX_AGE_DAYS`) → reused with no search or write; otherwise `web_search` of the name,
+     three pages read at most (`page_agent_text`, framed), `CompanyBrief` (Scout, `company` mode of
+     `scout.md`, posting framed), `save_company` (idempotent per company and session). Unknown
+     company → step skipped, “Unknown company: I'm skipping the company sheet.”; search
+     refused (cap, engine absent) or invalid output → “I couldn't prepare the company sheet: the
+     review continues without it.”, nothing stored. ATS = `detect_ats(posting links
+     + application link + pages read)`. `detect_ats` and `ATS_HOSTS` move to
+     `app/agents/tools/ats_hosts.py`, and the indicators (`Indicators`, `Coverage`, `AtsCheck`,
+     `coverage`) to `app/agents/tools/cv_indicators.py` (the engine imports no feature, contract 6);
+     `features/postings/service/rules.py` and `features/cv/service/indicators.py` re-export them,
+     with no change of behavior. `ReviewContext` gains `company_ats` (ATS read during the reused
+     sheet) and `VersionOutcome` `original_page_count` (the sentence “exceeds 1 page” cites the
+     original's page count): deviations from the plan.
+  4. **Dated ATS knowledge base in a shared prompt**: `_shared/ats_base.md`, header “Updated:
+     2026-11-13”, general rules and notes per ATS, included only by the ATS reader; refresh at 30
+     days in phase 8.
+  5. **Looping output behind an interruption alone in its node**: `ask_output(state)` receives
+     neither a port nor a model, calls `interrupt()` (kind `cv_output`, “What do you want now?”,
+     options `report` “View the report”, `pdf` “Generate the PDF”, `finish` “Finish”)
+     and parses the answer: `"report"`, `"finish"`, `{"choice": …}`,
+     `{"choice": "pdf", "version_id": …}` (version created by the route, 6.14); “pdf” without
+     a version or an unknown shape asks the question again with no write. `apply_output`: report →
+     `artifact.ready` `{artifact_id: "rapport-{id}", kind: "cv_report", url:
+     "/carriere/cv/revues/{id}#rapport"}`; PDF → `render_version` (idempotent) then
+     `artifact.ready` `{artifact_id: version_id,
+     kind: "cv_pdf", url: "/api/v1/cv/versions/{id}/pdf"}`, or “The targeted CV exceeds 1 page:
+     remove a line or allow one more page.”, or “The PDF could not be generated…”; then the
+     question comes back; `finish` → `close` (idempotent) → end, summary “Review
+     finished…”.
+  6. **Engine**: port `AgentPorts.cv_review` (`NO_CV_REVIEW` 503 `cv_review_unavailable`; the
+     `AgentCvReviewStore` implementation, its composition line and `ROUTE_ONLY["cv_review"]` come in
+     6.14), graph in `GRAPHS`, agents in `AGENTS`. `START -> load -> (analysis
+     ? company : analyze -> save_analysis -> company)` with the Analyst's nodes (6.5; a text that is
+     not a posting → `posting_not_a_job` 422) `-> ats_reader -> recruiter
+     -> confront_1 -> confront_2 -> validate -> save -> ask_output -> apply_output
+     -> (finish ? close -> END : ask_output)`. Each asynchronous node has its `node_timeout`
+     (proposals and confrontation 600 s, sheet 300 s, render 450 s: render, extraction and the three
+     tightenings of 6.14); no write outside `save_company`, `save_proposals`, `render_version` and
+     `close`, all idempotent; the context (profile, CV, posting) is reread by the port at each node,
+     never kept in the state; a restart at the question leaves the same question pending
+     (`save_proposals` called once), a stop during the render never renders twice. Logs: identifiers
+     and numbers only (never a company, an address, a text of the CV nor a term of the posting).
+- **Revision (final review of phase 6)** (a) **A confrontation timeout no longer loses the proposals
+  already paid for** (6.13 m1): each agent has its own timeout (`STANCE_TIMEOUT_S` = 420 s, requests
+  and new attempts included); beyond it, its stances are `{}` (keep everything), the proposals
+  obtained stay and the review continues; the node keeps `2 × 420 + 60` s. (b) **“No guarantee of
+  passing the ATS” is enforced by the code** (6.13 m6): `ats_notes`, `strengths` and `risks` go
+  through `without_promises` (`review_notes`): a sentence that promises a pass, an acceptance or a
+  certain result (“passera”, “garanti”, “sera retenu”, “100 %” with the pass, and
+  their English forms) is removed, a note that is emptied too; “No guarantee of passing” stays.
+- **Reason** SPEC 1, 5.3, 5.5, 9.4, 17.2, 17.4, 18.3; phase 6 plan (task 6.13, Review Focus no. 2
+  and no. 4); D46 (`durability="sync"`), D97 (shortened prose), D118 (ATS by domain), D121 (shared
+  analysis), D125 (interruption alone, replay counted at the port), D128 (validator).
+- **Revision (review 6.13)** In round 2, **the author who says `drop` withdraws their proposal,
+  whatever the objection** (they give up their own; the rule “`drop` from both sides” did not
+  hold after an `amend` by the other agent and the thread announced “I withdraw” while the
+  proposal stayed under the other's text). The original text stays in `contested` (`original`):
+  round 2 shows the author their text and the amendment; their `keep` **restores their original
+  text**, their `amend` sets their new text, **their silence leaves the other agent's amendment**
+  (which goes through the validator again, D128; January decides). The thread's verb says what
+  happens (“I withdraw it”, “I stand by my original text”, “I rephrase it”, “no
+  answer, the other agent's amendment stands”; a silent author never “stands by” anything:
+  “no answer, the proposal stands”). The round 2 prompt says so: `keep` restores the original
+  text, it does not accept the amendment.
 
 ## D130
 
-- **Date** : 2026-11-14
-- **Sujet** : Phase 6, tâche 6.14 : revues de CV, décisions de January, génération du CV ciblé et versions (routes `/cv/reviews`, `/cv/modifications`, `/cv/versions`), port réel du parcours `cv_review` (`AgentCvReviewStore`)
-- **Décision** : (1) **Une version par clic sur « Générer », décisions figées au clic, une seule en rendu à la fois.** `POST /cv/reviews/{id}/generate {allow_extra_pages = false}` → 202 `{version_id}`, sous le verrou des revues de l'utilisatrice : 409 `review_closed` si la revue n'est plus proposée, 409 `generation_in_progress` (`details.version_id`) si une version de la revue est `rendering`, 409 `review_not_waiting` si la session n'attend pas la question de sortie (`waiting_user`, `pending_interrupt.kind = "cv_output"`). La version est créée `rendering` au numéro suivant **de l'offre**, avec son contenu **composé au clic** (`base_content` du profil figé dans l'ordre des sections du gabarit figé, puis `apply_with_report` des seules modifications `accepted` à cet instant) et `decisions` (`ref` → statut ; `ignored` pour une modification acceptée que la composition n'a pas su placer : jamais montrée comme appliquée) ; puis la question est reprise avec `{"choice": "pdf", "version_id": …}` par le lanceur (`SessionLauncher.resume`, ajouté : même garde « moteur non lié / serveur en arrêt » que `start` ; `CvRuntime.resumer`, faux en test) ; une reprise refusée (`stale_interrupt`…) retire la version et rend `review_not_waiting`. Le parcours appelle `render_version` (`cv/service/generate.py`) : version déjà rendue (`ready`, `pages_exceeded`, `failed`) relue, jamais rendue deux fois ; la ligne est relue avant l'écriture (la première écrite gagne) ; une décision prise pendant le rendu ne change pas le PDF. PDF et images des pages rangés (`FileStorage`, catégorie `cv_versions`) ; `GET /cv/versions?posting_id=` (la plus récente d'abord), `GET /cv/versions/{id}`, `GET /cv/versions/{id}/pdf` (`attachment; filename="CV_<Nom>_<Entreprise>_<Poste>.pdf"`, nom ASCII de `cv_filename`, titre de l'offre sans « (H/F) », `no-store` ; 404 `version_not_ready` hors `ready`), `GET /cv/versions/{id}/pages/{n}` (PNG, 404 `version_page_not_found`). (2) **Nombre de pages de l'original gardé par trois paliers de resserrement, sinon January choisit** : rendu, puis `TIGHTEN_STEPS` un à un (chacun part du précédent, re-rendu) tant que le PDF dépasse `original_page_count` (pages du gabarit) ; plancher du corps `MIN_BODY_PT` si l'original passait `font_sizes`, 8 pt sinon (G20) ; encore trop long : `pages_exceeded` (rien de rangé ; la phrase « dépasse » est dite par le parcours) ; `allow_extra_pages` : aucun palier. Rendu impossible (`RenderFailed`, `PdfUnreadable`) : `failed` « Le PDF n'a pas pu être généré : réessaie dans un instant. ». (3) **Confirmer une modification « à confirmer » ajoute le fait au profil maître** : `PATCH /cv/modifications/{id} {status, after?, confirm?}` ; `accepted` d'une modification qui a des `blocks` (ou le statut `to_confirm`) exige `confirm: true` (sinon 409 `confirmation_required`) ; le fait visé est réécrit avec le texte de la modification dans une **nouvelle version validée** (`save_profile` : source `january`, ids gardés, compétences déclarées ; titre, résumé, ligne ; intitulé d'expérience → rôle sans « — Entreprise », de formation → diplôme ; projet, compétence, langue, lien ; `january` ajouté aux sources) ; puis `blocks` est vidé (refusée puis reprise, elle ne redemande plus) ; un fait disparu du profil → 409 `fact_not_found`. La revue garde **sa** version figée du profil. **Texte réécrit** (`after`, réécriture ou ajout seulement, sinon 422 `fields: ["after"]`) : revalidé par `validate` contre le profil figé ; « à confirmer » sans `confirm` → rangé `to_confirm` (200) ; un mot clé de l'offre absent du profil → **422 `keyword_not_in_profile`** sans écho, rien de changé (le plan ne disait rien de ce cas : ce texte ne peut jamais entrer dans le CV). **En groupe** (`PATCH /cv/reviews/{id}/modifications {ids ≤ 50, status}` → `{updated, skipped}`) : une modification « à confirmer » (statut ou `blocks`) n'est jamais acceptée, elle revient dans `skipped` avec les identifiants inconnus (D128 n° 2). (4) **Indicateurs avant et après** : avant, calculés au lancement et rangés dans `cv_reviews.before` : couverture des exigences obligatoires par **toutes** les lignes du CV d'origine (`backed_only=False`) et contrôles ATS du **PDF d'origine** (document du gabarit relu, lu avec les intitulés copiés par le Maquettiste, `sample_content`) ; aucun contrôle si le document n'est plus lisible. Après, sur la version rendue : couverture des seules lignes adossées à un fait et `ats_checks` du PDF rendu (`VersionOut.indicators`). (5) **« Terminer » ferme la revue : un nouveau PDF demande une nouvelle revue** (décision du plan : la génération passe par l'interruption de sortie, qui n'existe plus après la fin) ; `close` (idempotent) → `done` ; ensuite décisions et génération → 409 `review_closed`. **Lancement** `POST /cv/reviews {posting_id}` → 202 `{review_id, session_id}` : 404 `posting_not_found`, 409 `posting_not_ready` (offre non `ready` ou sans analyse), `profile_required` (aucun profil validé), `template_required` (aucun gabarit actif prêt), `review_in_progress` (`details.review_id` : revue `running` ou `proposed` sur l'offre) ; la version du profil validé et le gabarit actif sont figés dans la revue ; session `cv_review` au sujet `cv_review` (`ROUTE_ONLY["cv_review"] = "POST /cv/reviews"`) ; lancement raté → revue `failed`. **Le statut suit l'issue de la session** (comme D126 n° 5) : une revue `running` ou `proposed` dont la session n'est plus ouverte passe en `failed` à la lecture suivante (liste, détail, décisions, génération, versions), ses versions `rendering` aussi, sous le verrou des revues, sessions lues avant les revues ; une revue en échec ne bloque pas la suivante. `GET /cv/reviews?posting_id=`, `GET /cv/reviews/{id}` → `CvReviewOut` (`before` ; `modifications` avec `before` = texte visé du CV d'origine, `blocks`, `fact_ids`, `author` ; `gap_terms`, `report`, `versions`, `waiting_output`) ; nommé `CvReviewOut` pour ne pas heurter `ReviewOut` du quiz dans le contrat. (6) **Port réel `AgentCvReviewStore`** (ligne `cv_review` d'`agent_ports`, composé par `app.bootstrap_career`) : `context` relit l'offre, le profil **à la version figée**, `base_content` dans l'ordre des sections du gabarit figé (colonnes, sans l'identité), les indicateurs avant, l'entreprise (`posting.company`, sinon l'analyse) et sa fiche **seulement si elle a moins de 30 jours** (`company_ats` toujours) ; `save_company` réécrit la fiche par clé `company_key` (idempotent) et rattache la revue de la session (`company_id`) ; `save_proposals` : `(revue, référence)` unique, `to_gap` jamais rangée, `proposed` / `to_confirm` avec `blocks`, `before` calculé, auteur `ats_reader` / `recruiter`, `gap_terms` sans doublon, rapport posé une fois, revue → `proposed` ; rejoué, rien de plus. (7) **Les candidatures (lien version ↔ candidature) arrivent en phase 7.** Journaux : identifiants, nombres, codes et durée ; jamais le nom du fichier, un nom, une entreprise, un texte du CV ou de l'offre (`test_review_data_never_logged`).
-- **Écarts au plan** : routeurs dans le paquet `features/cv/router/` (`reviews.py`, `versions.py`, preflight G16) et non `router_reviews.py` ; fichiers en plus : `service/review_data.py` (erreurs, indicateurs, vues), `service/generate_start.py` (le clic), `service/versions.py` (lectures), `service/profile_facts.py` (fait confirmé au profil) ; champs ajoutés : `ModificationOut.fact_ids`, `VersionOut.review_id`, `posting_id`, `allow_extra_pages`, `decisions`, `CvReviewOut.created_at` (le front montre les faits d'appui et l'état des décisions d'une version) ; `SessionFacts.pending` (question en attente, lecture pour les autres features) ; `SessionLauncher.resume`.
-- **Révision (revue finale de la phase 6)** : **une version restée `rendering` ne bloque plus « Générer »** (6.14 M-1) : le rendu ne tourne que session `running` ; si la session attend la question de sortie alors qu'une version de la revue est `rendering` (processus mort entre l'enregistrement de la version et la reprise), `_checked` la règle en `failed` (« Le PDF n'a pas pu être généré : réessaie dans un instant. ») au lieu de répondre 409 `generation_in_progress` pour toujours. Voir aussi D122 (a) : la suppression d'une offre efface les fichiers des versions.
-- **Raison** : SPEC 1, 5.3, 5.5, 9.4, 14.2, 17.2, 18.3 ; plan de la phase 6 (tâche 6.14, Review Focus n° 1, n° 4 et n° 5) ; D118 (tables, nom de fichier), D120 (paliers de resserrement), D126 n° 5 (statut qui suit la session), D128 (validateur, confirmation une par une), D129 (parcours `cv_review`, port, sortie en boucle).
-- **Révision (revue 6.14)** : (a) **confirmer un fait est refusé tant qu'un brouillon du profil attend sa validation** (I-1, arbitrage du contrôleur) : `confirm_fact` rend 409 `profile_draft_pending` « Un brouillon de ton profil attend ta validation : valide-le avant de confirmer ce fait. » quand une version plus récente que la dernière validée existe (un brouillon de l'Archiviste) ; rien n'est écrit (la modification reste « à confirmer »), documenté dans les réponses de `PATCH /cv/modifications/{id}` ; la confirmation redevient possible une fois le brouillon validé (`PUT /profile`). Sans cela, la nouvelle version validée passait au-dessus du brouillon et `GET /profile` le masquait. (b) **Le test de génération figée mord** (I-2) : il lit le texte du PDF de v1 (« avec Python » présent bien que la décision soit refusée pendant le rendu) ; essai de mutation de `render_version` recomposant depuis les décisions actuelles : le test échoue, retour au code d'origine. (c) **Un `after` fait d'espaces → 422** `fields: ["after"]` (validateur de `ModificationPatch`, jamais d'écho). (d) **`ProfileStateOut.source_document_id`** (`str | None`) : le CV (document étiqueté `cv`) du dernier import, lu dans les `document_ids` des brouillons de l'Archiviste (CV d'abord), `None` sans import ou si le document n'est plus dans la mémoire ; le front s'en sert pour « Utiliser le CV de mon profil » (capture d'un gabarit par `document_id`).
+- **Date** 2026-11-14
+- **Subject** Phase 6, task 6.14: CV reviews, January's decisions, generation of the targeted CV and
+  versions (routes `/cv/reviews`, `/cv/modifications`, `/cv/versions`), real port of the `cv_review`
+  graph (`AgentCvReviewStore`)
+- **Decision**
+  1. **One version per click on “Generate”, decisions frozen at the click, only one rendering at
+     a time.** `POST /cv/reviews/{id}/generate {allow_extra_pages = false}` → 202 `{version_id}`,
+     under the user's reviews lock: 409 `review_closed` if the review is no longer proposed, 409
+     `generation_in_progress` (`details.version_id`) if a version of the review is `rendering`, 409
+     `review_not_waiting` if the session is not waiting at the output question (`waiting_user`,
+     `pending_interrupt.kind = "cv_output"`). The version is created `rendering` at the next number
+     **of the posting**, with its content **composed at the click** (`base_content` of the frozen
+     profile in the order of the frozen template's sections, then `apply_with_report` of only the
+     modifications `accepted` at that moment) and `decisions` (`ref` → status; `ignored` for an
+     accepted modification that the composition could not place: never shown as applied); then the
+     question is resumed with `{"choice": "pdf", "version_id": …}` by the launcher
+     (`SessionLauncher.resume`, added: same “engine not bound / server shutting down” guard as
+     `start`; `CvRuntime.resumer`, fake in tests); a refused resume (`stale_interrupt`…) removes
+     the version and returns `review_not_waiting`. The graph calls `render_version`
+     (`cv/service/generate.py`): an already rendered version (`ready`, `pages_exceeded`, `failed`)
+     is reread, never rendered twice; the row is reread before the write (the first written wins); a
+     decision taken during the render does not change the PDF. PDF and page images stored
+     (`FileStorage`, category `cv_versions`); `GET /cv/versions?posting_id=` (most recent first),
+     `GET /cv/versions/{id}`, `GET /cv/versions/{id}/pdf`
+     (`attachment; filename="CV_<Name>_<Company>_<Position>.pdf"`, ASCII name from `cv_filename`,
+     posting title without “(H/F)”, `no-store`; 404 `version_not_ready` unless `ready`),
+     `GET /cv/versions/{id}/pages/{n}` (PNG, 404 `version_page_not_found`).
+  2. **The original's page count kept by three tightening steps, otherwise January chooses**:
+     render, then `TIGHTEN_STEPS` one by one (each starts from the previous one, re-rendered) as
+     long as the PDF exceeds `original_page_count` (pages of the template); body floor `MIN_BODY_PT`
+     if the original went through `font_sizes`, 8 pt otherwise (G20); still too long:
+     `pages_exceeded` (nothing stored; the “exceeds” sentence is said by the graph);
+     `allow_extra_pages`: no step. Render impossible (`RenderFailed`, `PdfUnreadable`): `failed`
+     “The PDF could not be generated: try again in a moment.”.
+  3. **Confirming a “to confirm” modification adds the fact to the master profile**:
+     `PATCH /cv/modifications/{id} {status, after?, confirm?}`; `accepted` of a modification that
+     has `blocks` (or the status `to_confirm`) requires `confirm: true` (otherwise 409
+     `confirmation_required`); the targeted fact is rewritten with the modification's text in a
+     **new validated version** (`save_profile`: source `january`, ids kept, skills declared; title,
+     summary, line; experience title → role without “— Company”, education → degree;
+     project, skill, language, link; `january` added to the sources); then `blocks` is emptied
+     (refused then taken back, it no longer asks again); a fact gone from the profile → 409
+     `fact_not_found`. The review keeps **its** frozen version of the profile. **Rewritten text**
+     (`after`, rewrite or add only, otherwise 422 `fields: ["after"]`): revalidated by `validate`
+     against the frozen profile; “to confirm” without `confirm` → stored `to_confirm` (200); a
+     posting keyword absent from the profile → **422 `keyword_not_in_profile`** with no echo,
+     nothing changed (the plan said nothing about this case: this text can never enter the CV). **In
+     a group** (`PATCH /cv/reviews/{id}/modifications {ids ≤ 50, status}` →
+     `{updated, skipped}`): a “to confirm” modification (status or `blocks`) is never accepted,
+     it comes back in `skipped` with the unknown identifiers (D128 no. 2).
+  4. **Before and after indicators**: before, computed at launch and stored in `cv_reviews.before`:
+     coverage of the required requirements by **all** the lines of the original CV
+     (`backed_only=False`) and ATS checks of the **original PDF** (the template's document reread,
+     read with the titles copied by the Layout designer, `sample_content`); no check if the document
+     is no longer readable. After, on the rendered version: coverage of only the lines backed by a
+     fact and `ats_checks` of the rendered PDF (`VersionOut.indicators`).
+  5. **“Finish” closes the review: a new PDF requires a new review** (plan decision: generation
+     goes through the output interruption, which no longer exists after the end); `close`
+     (idempotent) → `done`; afterwards decisions and generation → 409 `review_closed`.
+     **Launch** `POST /cv/reviews {posting_id}` → 202 `{review_id, session_id}`: 404
+     `posting_not_found`, 409 `posting_not_ready` (posting not `ready` or without analysis),
+     `profile_required` (no validated profile), `template_required` (no active ready template),
+     `review_in_progress` (`details.review_id`: review `running` or `proposed` on the posting); the
+     validated profile's version and the active template are frozen in the review; session
+     `cv_review` on subject `cv_review` (`ROUTE_ONLY["cv_review"] = "POST /cv/reviews"`); a failed
+     launch → review `failed`. **The status follows the session's outcome** (like D126 no. 5): a
+     `running` or `proposed` review whose session is no longer open goes to `failed` at the next
+     read (list, detail, decisions, generation, versions), its `rendering` versions too, under the
+     reviews lock, sessions read before the reviews; a failed review does not block the next one.
+     `GET /cv/reviews?posting_id=`, `GET /cv/reviews/{id}` → `CvReviewOut` (`before`;
+     `modifications` with `before` = targeted text of the original CV, `blocks`, `fact_ids`,
+     `author`; `gap_terms`, `report`, `versions`, `waiting_output`); named `CvReviewOut` so as not
+     to clash with the quiz's `ReviewOut` in the contract.
+  6. **Real port `AgentCvReviewStore`** (`cv_review` line of `agent_ports`, composed by
+     `app.bootstrap_career`): `context` rereads the posting, the profile **at the frozen version**,
+     `base_content` in the order of the frozen template's sections (columns, without the identity),
+     the before indicators, the company (`posting.company`, otherwise the analysis) and its sheet
+     **only if it is less than 30 days old** (`company_ats` always); `save_company` rewrites the
+     sheet by key `company_key` (idempotent) and attaches the session's review (`company_id`);
+     `save_proposals`: `(review, reference)` unique, `to_gap` never stored, `proposed` /
+     `to_confirm` with `blocks`, `before` computed, author `ats_reader` / `recruiter`, `gap_terms`
+     without duplicates, report set once, review → `proposed`; replayed, nothing more.
+  7. **Applications (version ↔ application link) arrive in phase 7.** Logs: identifiers, numbers,
+     codes and duration; never the file name, a name, a company, a text of the CV or of the posting
+     (`test_review_data_never_logged`).
+- **Deviations from the plan** routers in the package `features/cv/router/` (`reviews.py`,
+  `versions.py`, preflight G16) and not `router_reviews.py`; extra files: `service/review_data.py`
+  (errors, indicators, views), `service/generate_start.py` (the click), `service/versions.py`
+  (reads), `service/profile_facts.py` (fact confirmed into the profile); fields added:
+  `ModificationOut.fact_ids`, `VersionOut.review_id`, `posting_id`, `allow_extra_pages`,
+  `decisions`, `CvReviewOut.created_at` (the front end shows the supporting facts and the state of a
+  version's decisions); `SessionFacts.pending` (pending question, read for the other features);
+  `SessionLauncher.resume`.
+- **Revision (final review of phase 6)** **A version left `rendering` no longer blocks
+  “Generate”** (6.14 M-1): the render runs only while the session is `running`; if the session
+  waits at the output question while a version of the review is `rendering` (process died between
+  saving the version and the resume), `_checked` sets it to `failed` (“The PDF could not be
+  generated: try again in a moment.”) instead of answering 409 `generation_in_progress` forever.
+  See also D122 (a): deleting a posting erases the versions' files.
+- **Reason** SPEC 1, 5.3, 5.5, 9.4, 14.2, 17.2, 18.3; phase 6 plan (task 6.14, Review Focus no. 1,
+  no. 4 and no. 5); D118 (tables, file name), D120 (tightening steps), D126 no. 5 (status that
+  follows the session), D128 (validator, confirmation one by one), D129 (`cv_review` graph, port,
+  looping output).
+- **Revision (review 6.14)** (a) **Confirming a fact is refused while a draft of the profile awaits
+  its validation** (I-1, controller's arbitration): `confirm_fact` returns 409
+  `profile_draft_pending` “A draft of your profile is waiting for your approval: approve it before
+  confirming this fact.” when a version more recent than the last validated one exists (an
+  Archivist draft); nothing is written (the modification stays “to confirm”), documented in the
+  responses of `PATCH /cv/modifications/{id}`; confirmation becomes possible again once the draft is
+  validated (`PUT /profile`). Without this, the new validated version went above the draft and
+  `GET /profile` hid it. (b) **The frozen-generation test bites** (I-2): it reads the text of v1's
+  PDF (“avec Python” present although the decision is refused during the render); mutation trial
+  of `render_version` recomposing from the current decisions: the test fails, back to the original
+  code. (c) **An `after` made of spaces → 422** `fields: ["after"]` (validator of
+  `ModificationPatch`, never an echo). (d) **`ProfileStateOut.source_document_id`** (`str | None`):
+  the CV (document tagged `cv`) of the last import, read from the `document_ids` of the Archivist's
+  drafts (CV first), `None` without an import or if the document is no longer in memory; the front
+  end uses it for “Use the CV from my profile” (capture of a template by `document_id`).
 
 ## D131
 
-- **Date** : 2026-11-13
-- **Sujet** : Phase 6, tâche 6.15 : composants front des offres, de l'écart et du profil maître (features front `gap/` et `cv/`, composants présentationnels)
-- **Décision** : (1) La feature front `gap/` porte les écrans « Offres » et « Écarts » (exception assumée à « mêmes noms des deux côtés », comme `home` : le back a deux features, `postings` et `gap`) ; `cv/` porte le profil maître et, plus tard, la revue et les gabarits. (2) « Maquettiste » remplace « Designer » partout dans l'interface (`messages/agents.ts`) ; la clé d'agent `designer` ne change pas. (3) Les sources d'un fait du profil (« CV », « LinkedIn », « Note », « Toi ») sont visibles en badges sur chaque ligne du formulaire ; une ligne ajoutée à la main porte la source « Toi » et un identifiant vide (attribué par le code à l'enregistrement). (4) Les types de vue vivent dans `features/<f>/components/viewTypes.ts` (D34, G1), pas dans `types.ts` ; `SkillLevelView` est défini localement dans `gap/`. (5) Le formulaire du profil renvoie le profil complet, nettoie les valeurs facultatives blanches (`null`) et les lignes vides, et laisse l'API refuser le reste : les erreurs 422 sont posées sous le champ par leur chemin (`details.fields`), sans jamais afficher la valeur.
-- **Raison** : composants testables sans API, branchés par `toView.ts` en 6.17 et 6.18 ; l'utilisatrice voit d'où vient chaque fait avant de le valider.
+- **Date** 2026-11-13
+- **Subject** Phase 6, task 6.15: front-end components for postings, the gap and the master profile
+  (front-end features `gap/` and `cv/`, presentational components)
+- **Decision**
+  1. The front-end feature `gap/` carries the “Postings” and “Gaps” screens (accepted
+     exception to “same names on both sides”, like `home`: the back end has two features,
+     `postings` and `gap`); `cv/` carries the master profile and, later, the review and the
+     templates.
+  2. “Layout designer” replaces “Designer” everywhere in the interface
+     (`messages/agents.ts`; the French label was “Maquettiste”); the agent key `designer` does
+     not change.
+  3. The sources of a profile fact (“CV”, “LinkedIn”, “Note”, “You”) are visible as
+     badges on each line of the form; a line added by hand carries the source “You” and an empty
+     identifier (assigned by the code on save).
+  4. The view types live in `features/<f>/components/viewTypes.ts` (D34, G1), not in `types.ts`;
+     `SkillLevelView` is defined locally in `gap/`.
+  5. The profile form returns the full profile, cleans the blank optional values (`null`) and the
+     empty lines, and lets the API refuse the rest: the 422 errors are placed under the field by
+     their path (`details.fields`), never showing the value.
+- **Reason** components testable without the API, wired by `toView.ts` in 6.17 and 6.18; the user
+  sees where each fact comes from before approving it.
 
 ## D132
 
-- **Date** : 2026-11-13
-- **Sujet** : Phase 6, tâche 6.16 : composants front du CV, comparaison, revue, aperçu (`frontend/src/features/cv/components/` : TemplateCompare, FontGapNotice, ModificationCard, ReviewDiff, CoverageGauge, AtsChecklist, IndicatorsCompare, PdfPreview, VersionList, ReviewReportView)
-- **Décision** : (1) L'aperçu du PDF se fait par les images des pages (`GET /cv/versions/{id}/pages/{n}`), sans lecteur PDF embarqué : aucun script tiers, rendu identique partout ; le PDF se télécharge par un lien. (2) Le diff n'utilise jamais la couleur seule : retrait barré (`<del>`), ajout souligné (`<ins>`), et un mot caché pour les lecteurs d'écran (« ajouté », « retiré ») ; l'état d'une modification, le verdict d'un contrôle et l'écart de page sont toujours écrits. (3) Une modification « à confirmer » demande une case « Je confirme que c'est vrai », cochée une par une ; seule cette case active « Accepter » (et « Enregistrer et accepter » après « Modifier ») ; la confirmation vaut pour le texte affiché et se refait si le texte change ; « Tout accepter » laisse ces modifications et dit combien en restent. (4) La comparaison du gabarit a deux modes (G28) : côte à côte par défaut, et superposition avec un curseur (`input type="range"`, clavier natif) ; les zones qui diffèrent sont dites en phrases (écart de plus de 5 points d'encre, 4 phrases au plus). (5) Chaque modification affiche les faits du profil maître sur lesquels elle s'appuie (G2, F4) ; les types de vue vivent dans `components/viewTypes.ts` (D34, G1) ; les textes du CV ciblé sont dans `messages/cvReview.ts`, étalés dans la zone `cv`. (6) Aucun outil axe n'existe dans le dépôt : l'accessibilité est vérifiée par rôles, noms accessibles et clavier (comme en 6.15).
-- **Raison** : composants testables sans API, branchés par `toView.ts` en 6.18 ; l'utilisatrice voit pourquoi une ligne change, sur quel fait elle repose, et ne valide jamais un fait absent de son profil d'un simple clic.
+- **Date** 2026-11-13
+- **Subject** Phase 6, task 6.16: front-end components for the CV, comparison, review, preview
+  (`frontend/src/features/cv/components/`: TemplateCompare, FontGapNotice, ModificationCard,
+  ReviewDiff, CoverageGauge, AtsChecklist, IndicatorsCompare, PdfPreview, VersionList,
+  ReviewReportView)
+- **Decision**
+  1. The PDF preview uses the page images (`GET /cv/versions/{id}/pages/{n}`), with no embedded PDF
+     reader: no third-party script, identical rendering everywhere; the PDF is downloaded through a
+     link.
+  2. The diff never uses color alone: removal struck through (`<del>`), addition underlined
+     (`<ins>`), and a hidden word for screen readers (“added”, “removed”); the state of a
+     modification, the verdict of a check and the page gap are always written out.
+  3. A “to confirm” modification asks for an “I confirm this is true” checkbox, ticked one
+     by one; only this checkbox enables “Accept” (and “Save and accept” after “Edit”);
+     the confirmation applies to the displayed text and is redone if the text changes; “Accept
+     all” leaves these modifications and says how many remain.
+  4. The template comparison has two modes (G28): side by side by default, and overlay with a slider
+     (`input type="range"`, native keyboard); the zones that differ are described in sentences (gap
+     of more than 5 points of ink, 4 sentences at most).
+  5. Each modification shows the master-profile facts it relies on (G2, F4); the view types live in
+     `components/viewTypes.ts` (D34, G1); the targeted CV's texts are in `messages/cvReview.ts`,
+     spread into the `cv` zone.
+  6. No axe tool exists in the repository: accessibility is checked by roles, accessible names and
+     keyboard (as in 6.15).
+- **Reason** components testable without the API, wired by `toView.ts` in 6.18; the user sees why a
+  line changes and which fact it rests on, and never approves a fact absent from her profile with a
+  simple click.
 
 ## D133
 
-- **Date** : 2026-11-14
-- **Sujet** : Phase 6, tâche 6.17 : front des offres et des écarts (`frontend/src/features/gap/` : pages `PostingsPage`, `PostingPage`, `GapOverviewPage` ; `frontend/src/features/skills/` : comparaison à une offre)
-- **Décision** : (1) Chemins `/carriere/offres`, `/carriere/offres/:postingId` et `/carriere/ecarts` ; section « Carrière » de la navigation (15.1) : Offres en 3e position et Écarts en 4e (G29), après le profil et le CV de 6.18. (2) Une offre en cours d'analyse est suivie par le fil de sa session et relue toutes les 3 s, 40 fois au plus (comme les quiz) ; au-delà, la page le dit et propose de continuer. Les doublons « probable » et « possible » sont montrés dès que l'analyse est prête, avec cette relecture (G35). (3) « Ajouter au planning » ne propose que les compétences qui manquent vraiment : une ligne `to_add` déjà validée ou prouvée n'a pas de case (« Déjà acquise »). Dix compétences au plus par envoi. Le lien vers la replanification vient du sujet de la session renvoyée ; une replanification déjà ouverte (409 `replan_open`) est rendue avec le même lien ; 409 `no_program` mène à la création d'un objectif ; 422 `gap_skill_unknown` fait relire le tableau. (4) Le même lien ou le même texte (réponse 200) n'ajoute rien à la liste : avis « déjà ajoutée » et lien vers l'offre. La suppression d'une offre se confirme dans la page (jamais `window.confirm`) ; 409 `review_in_progress` est dit en clair. (5) La comparaison des compétences accepte « Une offre » comme cible (`target=posting`) ; seules les offres prêtes et titrées sont proposées ; une offre sans écart rangé (404 `no_compare_target`) est dite en clair.
-- **Raison** : parcours complet de l'ajout d'une offre à son ajout au planning, sans impasse (état vide avec action, erreur avec « Réessayer »), et sans proposer d'apprendre ce qui est déjà acquis ; SPEC F8, F15, 15.4 ; preflight (P28, P30, P43, P44, G11, G29, G35) ; D122 (lignes de l'écart), D123 (ajout au planning, comparaison à une offre), D131 (composants).
+- **Date** 2026-11-14
+- **Subject** Phase 6, task 6.17: front end for postings and gaps (`frontend/src/features/gap/`:
+  pages `PostingsPage`, `PostingPage`, `GapOverviewPage`; `frontend/src/features/skills/`:
+  comparison with a posting)
+- **Decision**
+  1. Paths `/carriere/offres`, `/carriere/offres/:postingId` and `/carriere/ecarts`; “Career”
+     section of the navigation (15.1): Postings in 3rd position and Gaps in 4th (G29), after the
+     profile and the CV of 6.18.
+  2. A posting being analyzed is followed through its session's thread and reread every 3 s, 40
+     times at most (like the quizzes); beyond that, the page says so and offers to continue. The
+     “probable” and “possible” duplicates are shown as soon as the analysis is ready, with
+     this reread (G35).
+  3. “Add to schedule” offers only the skills that are really missing: a `to_add` row already
+     validated or proven has no checkbox (“Already acquired”). Ten skills at most per send. The
+     link to the replan comes from the subject of the returned session; a replan that is already
+     open (409 `replan_open`) is rendered with the same link; 409 `no_program` leads to the creation
+     of a goal; 422 `gap_skill_unknown` makes the table reread.
+  4. The same link or the same text (200 response) adds nothing to the list: an “already added”
+     notice and a link to the posting. Deleting a posting is confirmed in the page (never
+     `window.confirm`); 409 `review_in_progress` is stated plainly.
+  5. The skill comparison accepts “A posting” as a target (`target=posting`); only ready, titled
+     postings are offered; a posting without a stored gap (404 `no_compare_target`) is stated
+     plainly.
+- **Reason** complete path from adding a posting to adding it to the schedule, without a dead end
+  (empty state with an action, error with “Retry”), and without offering to learn what is
+  already acquired; SPEC F8, F15, 15.4; preflight (P28, P30, P43, P44, G11, G29, G35); D122 (gap
+  rows), D123 (add to schedule, comparison with a posting), D131 (components).
 
 ## D134
 
-- **Date** : 2026-11-14
-- **Sujet** : Phase 6, tâche 6.18 : front du CV, profil maître, modèles, revue et versions (`frontend/src/features/cv/` : pages `ProfilePage`, `TemplatesPage`, `TemplatePage`, `NewReviewPage`, `ReviewPage`, `VersionsPage`)
-- **Décision** : (1) Chemins : `/carriere/profil` (profil maître), `/carriere/cv` (modèles de CV), `/carriere/cv/modeles/:templateId`, `/carriere/cv/revue/nouvelle/:postingId` (lance la revue), `/carriere/cv/revues/:reviewId` et `/carriere/cv/versions`. Navigation « Carrière » : Profil 1, CV 2, Offres 3, Écarts 4 (G29). (2) La revue se lit en une page : fil des agents, indicateurs avant et après, modifications à décider, rapport (ancre `#rapport`), puis la sortie et l'aperçu de la dernière version. La question `cv_output` ouverte est rendue dans la section « Sortie » (trois boutons), pas dans le fil. (3) « Générer le PDF » passe toujours par `POST /cv/reviews/{id}/generate` (un seul appel au double clic, boutons grisés pendant le rendu), jamais par la reprise générique de la session, qui reposerait la question ; « Voir le rapport » et « Terminer » passent par la reprise. (4) Une consigne d'ajustement du gabarit part en `{answers: {instruction}}` (500 caractères au plus) ; « Ajuster » sans consigne n'envoie rien ; « Valider » et « Recommencer » ne deviennent jamais un ajustement parce qu'une consigne est saisie. (5) « Tout accepter » n'envoie que les modifications `proposed` ; une modification « à confirmer » n'est jamais acceptée en groupe. Le refus 409 `profile_draft_pending` de la confirmation d'un fait se lit en français, avec un lien vers le profil. (6) Le formulaire du profil garde les sources du titre et du résumé et envoie `base_version` (la dernière version relue) ; un 409 `profile_conflict` propose de recharger sans effacer la saisie. (7) La nouvelle revue laisse le back vérifier le profil validé, le modèle actif et l'offre analysée : chaque refus 409 a son texte et son action ; une revue déjà ouverte pour l'offre est reprise.
-- **Raison** : une page de revue où l'on lit, décide et génère sans naviguer ; la décision d'un fait ne passe jamais d'un clic quand il est « à confirmer » ; aucune étape n'envoie deux fois un PDF ni une réponse qui repose la question ; le profil maître reste la seule source des faits et garde l'origine de chaque ligne.
+- **Date** 2026-11-14
+- **Subject** Phase 6, task 6.18: front end for the CV, master profile, templates, review and
+  versions (`frontend/src/features/cv/`: pages `ProfilePage`, `TemplatesPage`, `TemplatePage`,
+  `NewReviewPage`, `ReviewPage`, `VersionsPage`)
+- **Decision**
+  1. Paths: `/carriere/profil` (master profile), `/carriere/cv` (CV templates),
+     `/carriere/cv/modeles/:templateId`, `/carriere/cv/revue/nouvelle/:postingId` (launches the
+     review), `/carriere/cv/revues/:reviewId` and `/carriere/cv/versions`. “Career” navigation:
+     Profile 1, CV 2, Postings 3, Gaps 4 (G29).
+  2. The review reads as one page: the agents' thread, before and after indicators, modifications to
+     decide, report (anchor `#rapport`), then the output and the preview of the latest version. The
+     open `cv_output` question is rendered in the “Output” section (three buttons), not in the
+     thread.
+  3. “Generate the PDF” always goes through `POST /cv/reviews/{id}/generate` (a single call on
+     double click, buttons greyed out during the render), never through the session's generic
+     resume, which would ask the question again; “View the report” and “Finish” go through
+     the resume.
+  4. A template adjustment instruction is sent as `{answers: {instruction}}` (500 characters at
+     most); “Adjust” without an instruction sends nothing; “Approve” and “Restart” never
+     become an adjustment because an instruction is typed.
+  5. “Accept all” sends only the `proposed` modifications; a “to confirm” modification is
+     never accepted in a group. The refusal 409 `profile_draft_pending` when confirming a fact reads
+     in plain language, with a link to the profile.
+  6. The profile form keeps the sources of the title and the summary and sends `base_version` (the
+     last version reread); a 409 `profile_conflict` offers to reload without erasing what was typed.
+  7. The new review lets the back end check the validated profile, the active template and the
+     analyzed posting: each 409 refusal has its text and its action; a review that is already open
+     for the posting is resumed.
+- **Reason** a review page where one reads, decides and generates without navigating; a fact's
+  decision never goes through in one click when it is “to confirm”; no step sends a PDF twice
+  nor an answer that asks the question again; the master profile stays the only source of facts and
+  keeps the origin of each line.
 
 ## D135
 
-- **Date** : 2026-11-14
-- **Sujet** : Phase 6, tâche 6.19 : parcours Playwright n° 2, revue complète d'un CV (`frontend/e2e/cv-review.spec.ts`, `frontend/e2e/support/sampleCv.ts`, `backend/tests/e2e/cv_script.py`)
-- **Décision** : (1) Le parcours n° 2 tient en un test, de bout en bout dans le navigateur : profil (dépôt du PDF, brouillon relu, « Valider mon profil »), modèle (même PDF, trois passes visibles, « Valider »), offre (texte collé, score de match, tableau d'écarts), « Revoir mon CV pour cette offre » (fil des agents, trois modifications, un mot clé vers l'écart), « Tout accepter » (la modification « à confirmer » reste), confirmation cochée, « Générer le PDF » (aperçu « 1 page, comme ton CV d'origine »), téléchargement (`CV_Camille_Exemple_Societe_Fictive_AI_Product_Engineer.pdf`, `%PDF`, une ligne acceptée et la ligne confirmée dans le texte, jamais la ligne partie vers l'écart), « Terminer » puis la version dans « Versions ». (2) Il tourne sur le serveur de bout en bout du parcours n° 1, augmenté : modèles scriptés des six agents du CV (`cv_scripts()`), web factice de la fiche entreprise, polices factices, mise en page locale, rendu PDF **textuel** (`TextHtmlRenderer`, `tests/support/text_renderer.py` : le texte visible du HTML écrit par `sample_pdf.make_pdf`, relisible par l'extracteur réel). Aucun réseau ni LLM ; Gotenberg réel reste l'affaire de 6.20. (3) Chaque réponse scriptée reconnaît son appel à la demande de l'agent (le marqueur le plus bas du prompt, `dispatch`) : le nombre d'appels d'un agent peut varier (rattachement des compétences selon le référentiel, passes de correction du Maquettiste selon le score) sans décaler les suivants ; les propositions citent les faits du profil (x1a1, x1a2, x2a1, x2a2) et un test Python (`test_cv_script.py`) vérifie leurs verdicts par le vrai validateur (deux « ok », un « à confirmer » pour « 40 % » absent du profil, une ligne qui cite RAG, mot clé de l'offre absent du profil, vers l'écart), que le profil scripté survit au contrôle de l'Archiviste sur le texte réellement extrait du CV, et que la copie du Maquettiste est fidèle. (4) L'Éclaireur est partagé par le Conseil (recherche) et la fiche entreprise : `merge_scripts` garde **une file par scénario** et, pour un appel, prend la réponse suivante du scénario qui l'attend (`OutOfOrder`, sous-classe de `RuntimeError` levée par `expect` et `dispatch`) ; les deux parcours se jouent seuls ou ensemble, dans n'importe quel ordre, et un scénario décalé échoue toujours (l'union de dictionnaires du brief aurait remplacé la file du Conseil). (5) Le CV fictif existe en Python (`scripts/sample_cv.py`) et en TypeScript (`sampleCv.ts`, écrit octet pour octet comme lui) : les deux ont la même empreinte SHA-256, vérifiée par un test de chaque côté (le test Python et la première ligne du parcours), donc ils ne peuvent pas diverger sans qu'un des deux échoue. L'offre fictive est de même copiée dans `samplePosting.ts`. (6) Vite est lancé par `node node_modules/vite/bin/vite.js` (au lieu de `pnpm exec vite`) dans `playwright.config.ts` : même commande, sans dépendre de `pnpm`, bloqué sur ce poste ; `e2e:docker` n'est pas touché.
-- **Raison** : SPEC 18.2 (parcours n° 2), 18.3 (critère « aucun fait absent du profil maître » : le chiffre inventé n'est jamais accepté d'un clic et le mot clé absent n'entre jamais dans le PDF) ; D116 n° 6 (serveur de bout en bout, modèles scriptés) ; D130 (« Générer le PDF » par la route de génération) ; D134 (front de la revue). Le parcours détecte une régression de la chaîne profil, modèle, offre, revue, PDF, versions sans clé ni service externe, en moins de trente secondes une fois le serveur lancé.
+- **Date** 2026-11-14
+- **Subject** Phase 6, task 6.19: Playwright journey no. 2, complete review of a CV
+  (`frontend/e2e/cv-review.spec.ts`, `frontend/e2e/support/sampleCv.ts`,
+  `backend/tests/e2e/cv_script.py`)
+- **Decision**
+  1. Journey no. 2 fits in one test, end to end in the browser: profile (PDF drop, draft reread,
+     “Validate my profile”), template (same PDF, three visible passes, “Approve”), posting
+     (pasted text, match score, gap table), “Review my CV for this posting” (agents' thread,
+     three modifications, one keyword to the gap), “Accept all” (the “to confirm”
+     modification stays), confirmation ticked, “Generate the PDF” (preview “1 page, like your
+     original CV”), download (`CV_Camille_Exemple_Societe_Fictive_AI_Product_Engineer.pdf`,
+     `%PDF`, an accepted line and the confirmed line in the text, never the line that went to the
+     gap), “Finish” then the version in “Versions”.
+  2. It runs on journey no. 1's end-to-end server, extended: scripted models for the six CV agents
+     (`cv_scripts()`), fake web for the company sheet, fake fonts, local layout, **textual** PDF
+     render (`TextHtmlRenderer`, `tests/support/text_renderer.py`: the visible text of the HTML
+     written by `sample_pdf.make_pdf`, rereadable by the real extractor). No network and no LLM; the
+     real Gotenberg remains the business of 6.20.
+  3. Each scripted answer recognizes its call from the agent's request (the lowest marker of the
+     prompt, `dispatch`): the number of calls of an agent can vary (skill matching according to the
+     skill base, the Layout designer's correction passes according to the score) without shifting
+     the following ones; the proposals cite the profile's facts (x1a1, x1a2, x2a1, x2a2) and a
+     Python test (`test_cv_script.py`) checks their verdicts with the real validator (two “ok”,
+     one “to confirm” for “40 %” absent from the profile, one line that cites RAG, a posting
+     keyword absent from the profile, to the gap), that the scripted profile survives the
+     Archivist's check on the text actually extracted from the CV, and that the Layout designer's
+     copy is faithful.
+  4. The Scout is shared by the Council (search) and the company sheet: `merge_scripts` keeps **one
+     queue per scenario** and, for a call, takes the next answer of the scenario that awaits it
+     (`OutOfOrder`, subclass of `RuntimeError` raised by `expect` and `dispatch`); the two journeys
+     play alone or together, in any order, and a shifted scenario always fails (the brief's
+     dictionary union would have replaced the Council's queue).
+  5. The fictional CV exists in Python (`scripts/sample_cv.py`) and in TypeScript (`sampleCv.ts`,
+     written byte for byte like it): both have the same SHA-256 fingerprint, checked by a test on
+     each side (the Python test and the first line of the journey), so they cannot diverge without
+     one of them failing. The fictional posting is likewise copied in `samplePosting.ts`.
+  6. Vite is launched by `node node_modules/vite/bin/vite.js` (instead of `pnpm exec vite`) in
+     `playwright.config.ts`: same command, without depending on `pnpm`, which is blocked on this
+     workstation; `e2e:docker` is not touched.
+- **Reason** SPEC 18.2 (journey no. 2), 18.3 (criterion “no fact absent from the master
+  profile”: the invented figure is never accepted with a click and the absent keyword never enters
+  the PDF); D116 no. 6 (end-to-end server, scripted models); D130 (“Generate the PDF” through
+  the generation route); D134 (review front end). The journey detects a regression in the chain
+  profile, template, posting, review, PDF, versions without a key or an external service, in under
+  thirty seconds once the server is launched.
 
 ## D136
 
-- **Date** : 2026-11-14
-- **Sujet** : Phase 6, tâche 6.20 : contrôle de fin de phase (GLM-5.3-flash réel, Gotenberg, SearXNG, Ollama et Qdrant réels, script `check_phase6`, parcours n° 1 et n° 2), corrections de la revue finale et des deux rounds résiduels
-- **Décision** : (1) **Script** `scripts/check_phase6` : parties `capture` (6 étapes, 6.11), `revue` (profil, design et offre relus comme préalables, puis les étapes 7 à 12 : 9 lignes) et `tout` (12 lignes). Étapes 7 à 12 : `revue` (question `cv_output` en 15 min au plus, au moins 3 modifications, faits cités, aucune modification acceptée avec un terme de l'écart absent de tout le profil), `décisions` (groupe « accepted » : les « à confirmer » sont exactement les sautées ; une refusée), `génération` (version prête, nom `CV_<Nom>_<Entreprise>_<Poste>.pdf`, pages comme l'original par pdfplumber, texte sélectionnable, 5 contrôles ATS, couverture après ≥ avant, décisions figées, `Content-Disposition`), `double génération` (un 202 et un 409), `terminer` (revue `done`, puis 409 `review_closed`), `journaux`. **Relançable** : profil, modèle et offre sont réutilisés, une revue ouverte est reprise (409 `review_in_progress`), une revue close laisse place à une nouvelle revue sur la même offre. Les règles pures sont dans `phase6_review_rules.py`. (2) **Lancement dans un conteneur éphémère** : `scripts/` est exclu de l'image du back par `.dockerignore` (`ModuleNotFoundError: scripts`), donc `docker compose exec backend python -m scripts.check_phase6` ne peut pas marcher ; le script tourne dans un conteneur jetable de l'image du back, sur le réseau de la pile, dépôt monté, `--api http://backend:8000 --part tout --logs-file -`, journaux du back en entrée standard ; délai total par défaut porté de 1 800 à 3 600 s. (3) **Essais réels** : essai préliminaire en échec à l'étape 7 (règle des termes de l'écart trop stricte : « agents » et « support », que le résumé du profil porte, étaient à l'écart ; la règle est restreinte aux termes absents de tout le profil), puis **2 essais `--part tout` : 12 étapes sur 12 chacun**, sans avertissement. Durées 85 s et 95 s, revue 79 s et 90 s ; **coût de la revue ≈ 0,018 $ (26 739 tokens) puis ≈ 0,023 $ (35 880 tokens)** ; 16 puis 14 modifications (6 puis 3 « à confirmer »), 3 termes vers l'écart ; **version prête en 1 s, 1 page comme l'original, 5 contrôles ATS sur 5**, couverture des exigences obligatoires **40 % → 40 %** (RAG et 3 ans ne sont pas au profil : normal), une décision acceptée mais non placée rendue `ignored` au second essai ; **202 et 409** en double génération ; journaux du back relus (511 puis 888 lignes) sans nom, email, téléphone, entreprise, phrase de l'offre, police ni nom de fichier `CV_`, sans WARNING ni Traceback. Coûts de la capture (6.11) : profil ≈ 0,002 $, design ≈ 0,008 $ (trois passes de 27 à 37 s, ressemblance de 69 à 77 %), offre ≈ 0,005 $. (4) **Variabilité du modèle** : pour la même offre et le même profil, l'écart est passé de 12 lignes (6 à ajouter) à 15 (9 à ajouter) entre deux analyses réelles ; il se recalcule au lancement, rien d'anormal. (5) **Navigateur** : parcours n° 1 (1,6 min) et n° 2 (19,7 s) réussis ; les 9 pages Carrière sur la vraie pile à 1 024 px sans défilement horizontal, sans erreur de console ni de réponse HTTP ; **PDF de la version 6 vu** : 200, `application/pdf`, 14 490 octets, 1 page (nombre de pages de l'original), nom conforme, design reconnaissable. Reste vu et parqué : la carte « Tu valides ? » reste affichée, champs grisés, sur la page d'un modèle prêt. (6) **Poste** : Windows Device Guard bloque `pnpm.exe` et le Chromium livré avec Playwright ; les hooks du front passent par `node frontend/scripts/run-tool.mjs` (D134) et Playwright a tourné avec Edge par un fichier de config temporaire ; la config commitée garde Chromium. (7) **Revue finale** (5 zones, Opus high) : 1 Critical (BA-C1 : une réécriture d'un fait structuré passait `ok`) et 4 Important distincts, 6 relevés (la suppression d'une offre, relevée dans trois zones : elle cascadait une revue proposée sous sa session et laissait les PDF sur le disque ; le ré-import qui effaçait les faits de January ; les décisions « ignorées » montrées comme acceptées ; le modèle activé jamais affiché), corrigés dans a8ac392 avec 16 points back et 9 points front. **Re-revue back non approuvée** (contournement par fait voisin, confirmation de langue ou de lien corrompant le profil, doublon au ré-import) : correctif résiduel 850fe91. **Re-revue résiduelle non approuvée** (titres du profil levant le contrôle de tout fait, langue sans séparateur, ré-import qui perd des faits) : tour 2 853e611, dernier tour ciblé. **Re-revue du tour 2** : les 6 points corrigés, aucun contournement ; restent I-D et I-E, parqués. (8) **Parqués, sans faille d'honnêteté** (bilan, « Phase 7 — correctifs d'ouverture, tâche 7.0 ») : I-D (le fait de January qui remplace un brouillon perd les dates, le lieu et l'URL du nouveau CV), I-E (autre tiret que « — » à la confirmation d'une expérience), libellé de `gap_terms` (termes du profil non portés par les faits cités rangés « vers l'écart »), carte « Tu valides ? », mineurs des re-revues. (9) **Vérifications réelles encore dues** (reportées de D116) : passage à `valide` par un quiz réussi (nouvel essai le 15/11), tâches cochées (dès le 16/11), `check_phase5` relancé le dimanche 22/11. (10) **Hors phase** : candidatures et lien version ↔ candidature, information « même entreprise depuis 30 jours » : phase 7 ; rafraîchissement de la base ATS tous les 30 jours : phase 8. Tests : back 3 869, front 1 609, parcours n° 1 et n° 2.
-- **Raison** : SPEC 18.2 et 18.3 (contrôle de fin de phase, essai réel, critère « aucun fait absent du profil maître ») ; D116 (méthode du contrôle, vérifications reportées), D127 (essai réel de la capture), D130 (génération et versions), D134 (hooks par `node`), D135 (parcours n° 2) ; revues finales et re-revues de `.superpowers/sdd/2026-11-13-07-phase-6-cv/`.
+- **Date** 2026-11-14
+- **Subject** Phase 6, task 6.20: end-of-phase check (real GLM-5.3-flash, Gotenberg, SearXNG, Ollama
+  and Qdrant, script `check_phase6`, journeys no. 1 and no. 2), corrections from the final review
+  and the two residual rounds
+- **Decision**
+  1. **Script** `scripts/check_phase6`: parts `capture` (6 steps, 6.11), `revue` (profile, design
+     and posting reread as prerequisites, then steps 7 to 12: 9 lines) and `tout` (12 lines). Steps
+     7 to 12: `revue` (`cv_output` question in 15 min at most, at least 3 modifications, facts
+     cited, no modification accepted with a gap term absent from the whole profile), `décisions`
+     (group “accepted”: the “to confirm” ones are exactly the skipped ones; one refused),
+     `génération` (version ready, name `CV_<Name>_<Company>_<Position>.pdf`, pages like the
+     original by pdfplumber, selectable text, 5 ATS checks, coverage after ≥ before, decisions
+     frozen, `Content-Disposition`), `double génération` (one 202 and one 409), `terminer` (review
+     `done`, then 409 `review_closed`), `journaux`. **Rerunnable**: profile, template and posting
+     are reused, an open review is resumed (409 `review_in_progress`), a closed review leaves room
+     for a new review on the same posting. The pure rules are in `phase6_review_rules.py`.
+  2. **Launch in an ephemeral container**: `scripts/` is excluded from the back-end image by
+     `.dockerignore` (`ModuleNotFoundError: scripts`), so `docker compose exec backend
+     python -m scripts.check_phase6` cannot work; the script runs in a disposable container of the
+     back-end image, on the stack's network, repository mounted, `--api http://backend:8000
+     --part tout --logs-file -`, the back end's logs on standard input; default total timeout raised
+     from 1,800 to 3,600 s.
+  3. **Real trials**: a preliminary trial failed at step 7 (gap-terms rule too strict: “agents”
+     and “support”, which the profile's summary carries, were in the gap; the rule is restricted
+     to terms absent from the whole profile), then **2 trials `--part tout`: 12 steps out of 12
+     each**, with no warning. Durations 85 s and 95 s, review 79 s and 90 s; **review cost ≈
+     $0.018 (26,739 tokens) then ≈ $0.023 (35,880 tokens)**; 16 then 14 modifications (6 then 3
+     “to confirm”), 3 terms to the gap; **version ready in 1 s, 1 page like the original, 5 ATS
+     checks out of 5**, coverage of the required requirements **40% → 40%** (RAG and 3 years are
+     not in the profile: normal), an accepted but unplaced decision returned `ignored` in the second
+     trial; **202 and 409** on double generation; back-end logs reread (511 then 888 lines) with no
+     name, email, phone, company, sentence of the posting, font or `CV_` file name, with no WARNING
+     or Traceback. Capture costs (6.11): profile ≈ $0.002, design ≈ $0.008 (three passes of 27
+     to 37 s, similarity from 69 to 77%), posting ≈ $0.005.
+  4. **Model variability**: for the same posting and the same profile, the gap went from 12 rows (6
+     to add) to 15 (9 to add) between two real analyses; it is recomputed at launch, nothing
+     abnormal.
+  5. **Browser**: journey no. 1 (1.6 min) and no. 2 (19.7 s) passed; the 9 Career pages on the real
+     stack at 1,024 px with no horizontal scroll, no console error nor HTTP response error; **PDF of
+     version 6 seen**: 200, `application/pdf`, 14,490 bytes, 1 page (the original's page count),
+     conforming name, recognizable design. Seen and parked: the “Do you approve?” card stays
+     displayed, fields greyed out, on the page of a ready template.
+  6. **Workstation**: Windows Device Guard blocks `pnpm.exe` and the Chromium shipped with
+     Playwright; the front-end hooks go through `node frontend/scripts/run-tool.mjs` (D134) and
+     Playwright ran with Edge through a temporary config file; the committed config keeps Chromium.
+  7. **Final review** (5 zones, Opus high): 1 Critical (BA-C1: a rewrite of a structured fact passed
+     `ok`) and 4 distinct Important, 6 noted (the deletion of a posting, noted in three zones: it
+     cascaded a proposed review under its session and left the PDFs on disk; the reimport that
+     erased January's facts; the “ignored” decisions shown as accepted; the active template
+     never displayed), fixed in a8ac392 with 16 back-end points and 9 front-end points. **Back-end
+     re-review not approved** (bypass through a neighboring fact, language or link confirmation
+     corrupting the profile, duplicate on reimport): residual fix 850fe91. **Residual re-review not
+     approved** (profile titles lifting the check of any fact, language without a separator,
+     reimport that loses facts): round 2 853e611, last targeted round. **Round 2 re-review**: the 6
+     points fixed, no bypass; I-D and I-E remain, parked.
+  8. **Parked, with no honesty flaw** (report, “Phase 7 — opening fixes, task 7.0”): I-D
+     (January's fact that replaces a draft loses the new CV's dates, place and URL), I-E (a dash
+     other than “—” when confirming an experience), the label of `gap_terms` (profile terms
+     not carried by the cited facts filed “to the gap”), the “Do you approve?” card, minor
+     items of the re-reviews.
+  9. **Real checks still due** (carried over from D116): passing to `valide` through a passed quiz
+     (new trial on 15/11), ticked tasks (from 16/11), `check_phase5` rerun on Sunday 22/11.
+  10. **Out of phase**: applications and the version ↔ application link, the “same company for
+     30 days” information: phase 7; refreshing the ATS base every 30 days: phase 8. Tests: back
+     end 3,869, front end 1,609, journeys no. 1 and no. 2.
+- **Reason** SPEC 18.2 and 18.3 (end-of-phase check, real trial, criterion “no fact absent from
+  the master profile”); D116 (method of the check, deferred checks), D127 (real trial of the
+  capture), D130 (generation and versions), D134 (hooks through `node`), D135 (journey no. 2); final
+  reviews and re-reviews of `.superpowers/sdd/2026-11-13-07-phase-6-cv/`.
 
 ## D137
 
-- **Date** : 2026-11-15
-- **Sujet** : Phase 7, tâche 7.0 : correctifs d'ouverture du profil, des liens, des nombres et de la suppression d'une offre (restes de la phase 6)
-- **Décision** : (1) **Ré-import (I-D)** : quand un fait de January remplace l'équivalent du brouillon (`_carried`, clé lâche, D124 révision 2), il prend ceux des champs non textuels que le brouillon renseigne : début, fin et lieu d'une expérience, début et fin d'une formation, **URL d'un lien** (le cas qui perdait l'URL du nouveau CV), catégorie d'une compétence (ajout accepté, la catégorie n'est pas un fait validé) ; un champ que le brouillon ne dit pas garde la valeur de January. **Un champ renseigné par le brouillon écrase aussi une date, un lieu ou une URL que January avait corrigés à la main** (même précédent que le niveau de langue, D124 révision 2 : le nouveau CV l'emporte ; un ancien CV ré-importé rétablit donc une date périmée, January la corrige de nouveau). Un projet n'a pas de clé lâche (la clé lâche est le nom) : le même nom l'apparie par la clé stricte et le brouillon, donc l'URL du projet du nouveau CV, l'emporte déjà sans ce correctif ; le test `test_replacement_takes_new_project_url` épingle ce cas qui marchait, `test_replacement_takes_new_link_url` celui qui était cassé. (2) **Séparateur rôle / entreprise (I-E)** : « — » coupe toujours, au **dernier** « — » du texte (« Développeuse - IA — Autre SA » donne le rôle « Développeuse - IA »). Un « – » ou « - » **entouré d'espaces** ne coupe que si ce qui le suit est l'entreprise (ou l'école) **actuelle**, à la normalisation des clés près (`plain` : sans casse ni accent) : seul l'intitulé change. Sinon **422 `ambiguous_separator`** (« Pour changer d'entreprise ou d'école, écris « Intitulé — Entreprise » avec un tiret long. », `details.fields` seul, sans écho) : « Développeuse - IA générative » ou « Master Informatique - Parcours IA » seraient lus comme une entreprise ou une école nouvelle. **Raison : une confirmation ne réécrit jamais une entreprise ou une école d'après une lecture devinée.** Un trait d'union collé aux mots (« Data-scientist ») n'est jamais un séparateur. Un **texte sans séparateur** garde le comportement d'avant : seul le rôle (ou le diplôme) change, l'entreprise (ou l'école) reste, car le champ est obligatoire ; ce n'est pas un 422. Un texte qui finit par « — » et l'entreprise connue la garde, comme avant. Liens : « Libellé — URL » coupe toujours ; « Libellé - URL » (« – » ou « - » espacé) coupe quand ce qui suit ressemble à une URL ; « Portfolio - Design » reste un changement de libellé seul, sans 422. (3) **Langue** : « Nom (niveau) » est lu avant le deux-points quand le nom, devant la parenthèse, n'a pas de séparateur (« Anglais (TOEIC: 950) » donne « Anglais » et « TOEIC: 950 ») ; « Anglais : C1 (courant) » se coupe toujours au deux-points. (4) **URL** : `<`, `>` et `"` sont refusés n'importe où dans l'URL d'un lien confirmé (422 `after`, sans écho). (5) **Nombres** : un seul groupe « 1,500 » (virgule, trois chiffres) suivi d'un multiplicateur (« k », « M ») ou d'une devise (« € », « $ », « £ ») est un décimal français : « 1,500 M€ » vaut « 1,5 M€ » (un million et demi) ; « 1,000 » sans unité reste mille (D124 c, D136). (6) **Liens du validateur** : le schéma est ajouté (`https`) avant la comparaison, le schéma et l'hôte sont comparés sans casse, la fin de l'URL avec sa casse (« /Camille » n'est pas « /camille », « http » n'est pas « https »). (7) **Suppression d'une offre** : le verrou des revues de l'utilisatrice (`CvRuntime.review_lock`, celui de la création, des décisions et de « Générer ») est pris **avant** la vérification des revues et de l'analyse et gardé jusqu'au commit ; une revue créée sous ce verrou pendant la suppression est vue (409 `review_in_progress`) et rien ne part en cascade. Le verrou vient de la route (`CvRuntime`, importé par le router de `postings` : un service d'une autre feature, permis par le contrat 2) ; les 8 contrats d'import-linter sont inchangés. Les fichiers des versions sont retirés après le commit, hors du verrou. (8) **`gap_terms`** : aucun changement de calcul ; **sens arrêté** : « mots clés de l'offre que les faits cités ne portent pas : à appuyer par un fait ou à acquérir » (ils peuvent figurer ailleurs dans le profil). Description du contrat (`CvReviewOut`), docstring du validateur, commentaire de l'état et en-tête du nœud réécrits ; `phase6_review_rules.py` inchangé (sa règle vise les termes absents de tout le profil). Le libellé du front change en 7.11 (« À appuyer ou à acquérir »). (9) **Reste parqué** : renommage d'un projet au ré-import, description d'un projet confirmé, collisions de clé lâche, filtre des promesses, version restée `rendering`, revue `running` d'une session morte, mineurs du front.
-- **Raison** : SPEC 1, 5.5, 18.3 (honnêteté : un fait de January ne perd pas ses dates, une confirmation ne corrompt pas le profil) ; D124 (ré-import, clé lâche), D130 (verrou des revues), D136 (parqués de la phase 6, bilan « Phase 7 — correctifs d'ouverture ») ; plan de la phase 7 (tâche 7.0).
+- **Date** 2026-11-15
+- **Subject** Phase 7, task 7.0: opening fixes for the profile, links, numbers and posting deletion
+  (leftovers from phase 6)
+- **Decision**
+  1. **Reimport (I-D)**: when a January fact replaces the draft's equivalent (`_carried`, loose key,
+     D124 revision 2), it takes those of the non-text fields that the draft fills in: start, end and
+     place of an experience, start and end of an education, **URL of a link** (the case that lost
+     the new CV's URL), category of a skill (accepted addition, the category is not a validated
+     fact); a field that the draft does not state keeps January's value. **A field filled in by the
+     draft also overwrites a date, a place or a URL that January had corrected by hand** (same
+     precedent as the language level, D124 revision 2: the new CV wins; an old CV reimported
+     therefore restores an outdated date, and January corrects it again). A project has no loose key
+     (the loose key is the name): the same name matches it by the strict key and the draft, hence
+     the new CV's project URL, wins already without this fix; the test
+     `test_replacement_takes_new_project_url` pins this case that worked,
+     `test_replacement_takes_new_link_url` the one that was broken.
+  2. **Role / company separator (I-E)**: “—” always splits, at the **last** “—” of the
+     text (“Développeuse - IA — Autre SA” gives the role “Développeuse - IA”). A
+     “–” or “-” **surrounded by spaces** splits only if what follows it is the **current**
+     company (or school), up to the normalization of keys (`plain`: without case or accent): only
+     the title changes. Otherwise **422 `ambiguous_separator`** (“To change company or school,
+     write “Title — Company” with a long dash.”, `details.fields` only, no echo):
+     “Développeuse - IA générative” or “Master Informatique - Parcours IA” would be read
+     as a new company or school. **Reason: a confirmation never rewrites a company or a school from
+     a guessed reading.** A hyphen attached to words (“Data-scientist”) is never a separator. A
+     **text without a separator** keeps the earlier behavior: only the role (or the degree) changes,
+     the company (or school) stays, because the field is required; it is not a 422. A text that ends
+     with “—” and the known company keeps it, as before. Links: “Label — URL” always
+     splits; “Label - URL” (“–” or spaced “-”) splits when what follows looks like a
+     URL; “Portfolio - Design” stays a label change alone, with no 422.
+  3. **Language**: “Name (level)” is read before the colon when the name, in front of the
+     parenthesis, has no separator (“Anglais (TOEIC: 950)” gives “Anglais” and “TOEIC:
+     950”); “Anglais : C1 (courant)” always splits at the colon.
+  4. **URL**: `<`, `>` and `"` are refused anywhere in the URL of a confirmed link (422 `after`, no
+     echo).
+  5. **Numbers**: a single group “1,500” (comma, three digits) followed by a multiplier
+     (“k”, “M”) or a currency (“€”, “$”, “£”) is a French decimal: “1,500
+     M€” is worth “1,5 M€” (one and a half million); “1,000” without a unit stays one
+     thousand (D124 c, D136).
+  6. **Validator's links**: the scheme is added (`https`) before the comparison, the scheme and host
+     are compared without case, the end of the URL with its case (“/Camille” is not
+     “/camille”, “http” is not “https”).
+  7. **Deleting a posting**: the user's reviews lock (`CvRuntime.review_lock`, that of creation,
+     decisions and “Generate”) is taken **before** the check of the reviews and the analysis and
+     kept until the commit; a review created under this lock during the deletion is seen (409
+     `review_in_progress`) and nothing cascades. The lock comes from the route (`CvRuntime`,
+     imported by the `postings` router: a service of another feature, allowed by contract 2); the 8
+     import-linter contracts are unchanged. The versions' files are removed after the commit,
+     outside the lock.
+  8. **`gap_terms`**: no change of computation; **meaning settled**: “posting keywords that the
+     cited facts do not carry: to be backed by a fact or to be acquired” (they may appear
+     elsewhere in the profile). Contract description (`CvReviewOut`), validator docstring, state
+     comment and node header rewritten; `phase6_review_rules.py` unchanged (its rule targets terms
+     absent from the whole profile). The front-end label changes in 7.11 (“To back or to
+     acquire”).
+  9. **Still parked**: renaming of a project at reimport, description of a confirmed project,
+     loose-key collisions, filter of promises, version left `rendering`, `running` review of a dead
+     session, front-end minor items.
+- **Reason** SPEC 1, 5.5, 18.3 (honesty: a January fact does not lose its dates, a confirmation does
+  not corrupt the profile); D124 (reimport, loose key), D130 (reviews lock), D136 (parked items of
+  phase 6, report “Phase 7 — opening fixes”); phase 7 plan (task 7.0).
 
 ## D138
 
-- **Date** : 2026-11-15
-- **Sujet** : Phase 7, tâche 7.1 : tables des candidatures, règles pures, contrôle des faits d'un texte (`text_claims`), question salariale
-- **Décision** : (1) **Tables** (migration `0011`, `down_revision = "0010"`) : `applications`, `application_events`, `contacts`, `reminders`, `kit_items`, `interviews`, `committee_runs`, avec les types partagés avec les agents (`ApplicationStatus`, `Channel`, `EventKind`, `ReminderKind`, `ReminderStatus`, `KitKind`, `KitStatus`, `InterviewMode`, `RunStatus`) déclarés dans `db/models/applications.py` (contrat 6). `posting_id`, `cv_version_id` et les références d'`interviews` et de `committee_runs` n'ont **pas de clé étrangère** (comme `cv_versions`) : la fiche garde sa copie figée de l'offre, un entretien survit à sa fiche ; les enfants d'une fiche (fil, contacts, relances, pièces) sont supprimés avec elle (cascade). `reminders` : unique `(application_id, kind, anchor_on)` (jamais deux relances du même type pour la même ancre) et index `(due_on, status)` ; `kit_items` : unique `(application_id, kind)`. `companies` gagne `dossier`, `dossier_sources`, `dossier_at` ; `flashcards.source` passe de 8 à 16 caractères (`batch_alter_table`) et `CardSource` gagne `"interview"`. (2) **Règles pures** (`features/applications/service`, aucune importation de la base) : `rules.py` (`ApplicationView`, `STATUS_ORDER`, `STATUS_LABELS`, `ANSWERED`, `WAITING`, `on_status` : `applied_on` posée une fois, `interview_on` si January n'en a pas donné, `answered_on` à la première entrée dans `ANSWERED`, jamais de date effacée au retour à « À postuler » ; `stats` : taux = répondues / postulées, `None` sans candidature postulée, délai moyen arrondi à 0,1), `schedule.py` (`expected_reminders` : en attente, trois relances aux délais de January à partir de la date de candidature ; en entretien, remerciement à J+1 et demande de nouvelles à J+7 ; sinon aucune, donc une réponse retire les relances en attente ; `validated_delays` : trois entiers strictement croissants de 1 à 90, sinon `(7, 14, 21)`), `matching.py` (`match` : lien égal = certain, même entreprise et titres à 0,85 = probable, même entreprise et offre « possible » = possible, même entreprise dans les 30 derniers jours (candidature ou création) = info ; un seul niveau par fiche ; la fiche de la même offre et les couples confirmés « autre poste » (dans les deux sens) sont écartés ; `alert_message` : date en toutes lettres, année si elle diffère, statut en français). `Incoming` porte en plus `distinct_from` (défaut vide) pour le sens « l'offre entrante a déjà confirmé cette fiche ». Les clés de lien, d'entreprise et la ressemblance des titres sont celles des offres (`postings.service.rules`), pas dupliquées. (3) **Réglages** : `reminder_delays_days` est validé par `validated_delays` (validateur de champ de `UserSettings`), qui vit dans la feature `settings` (`settings/delays.py`, réexporté par `settings.service` avec `DEFAULT_DELAYS`) ; `applications.service.schedule` l'importe de `settings.service` : un seul sens, `settings` n'importe jamais `applications` ; une écriture invalide est refusée (422, sans écho de la valeur), une valeur stockée invalide retombe sur `[7, 14, 21]` par le mécanisme existant de `SettingsService`, sans toucher aux autres champs. (4) **`text_claims`** (`agents/tools/text_claims.py`, `text_claims_mask.py`, `text_claims_names.py` ; du code, jamais un agent ; revue 7.1, tour 1 : sens dangereux = faux négatif, mieux vaut trop signaler) : rend les **nombres** (chiffres et lettres, `figures_in`) et **proportions** (`ratio_families` : « doublé », « moitié », « x3 ») absents des textes des faits du profil (titres, lignes, réalisations, résumé, détails de formation, compétences, langues, titre d'en-tête ; jamais les liens) et des **années** de leurs dates de début et de fin : jamais les chiffres d'un téléphone, d'un email ou d'un lien (ces coordonnées sont masquées dans le texte avant lecture), jamais les mois (un jour attaché à un mois, « le 12 novembre », « November 12, », « March 5th », est masqué ; « septembre 12 projets », « March 5 clients » et le verbe « may » ne le sont pas ; une année est comparée aux années du profil) ; les **outils** du lexique, sans casse (terme ambigu seulement sous sa forme de produit) ; les **mots de titre** seulement quand le texte se les attribue (formules `SELF_CUES` de `text_claims_mask.py` : « en tant que », « en qualité de », « je suis », « j'étais », « j'ai été / occupé / exercé », « étant », « ayant été », « comme », « mon poste / rôle / expérience (de) », « as », « I am / I'm / I was / I've been », « worked / served / working as », « my role / position / job / experience (as) » ; dans les 6 mots suivants, même proposition, en minuscules comme en capitales) ; les **noms propres** : mots en capitales de 2 lettres ou plus (sauf `ACRONYMS`, liste courte : CV, IA, AI, RH, HR, IT, PDF, CDI, CDD, PME, ESN, OK, FR, EN, UE, EU, PS), mots capitalisés hors début de phrase, mot qui suit « chez, at, pour, for, avec, with, rejoint, joined » même en début de phrase, mot qui ouvre une phrase suivi de « m'/me/nous/a/ont/est/était/has/was… » (« Capgemini m'a confié ») ; un saut de ligne ouvre une phrase ; formules d'adresse et destinataires génériques (Madame, Monsieur, Dear, Hiring, Recruiter, Recruteur, Recruteuse, Équipe, Team, Bonjour, Hello…) ne sont pas des noms, ni le nom en casse de titre qui suit une salutation **sur la même ligne** (« Bonjour Julie », « Madame Martin ») : après une virgule ou un saut de ligne la règle de début de phrase s'applique, et un mot en capitales n'est jamais passé (« Madame, puis IBM sur la ligne suivante »). **`allowed`** ne contient que des **expressions entières** (entreprise, intitulé exact de l'offre sans « (H/F) », nom d'un contact) ; une expression n'est retirée du texte que là où il la **cite**, dans tous les contrôles : (1) juste après « chez, at, pour, for, avec, with, rejoindre, rejoint, join, joined, aupres, bonjour, hello, dear, madame, monsieur » (entreprise, contact) ; (2) comme l'offre de l'autre : un mot de l'offre (poste, offre, rôle, candidature, opportunité, position, role, opening, job) dans les 6 mots d'avant, lui-même précédé de « votre, vos, ce, cette, le, la, l', your, this, the », sans formule d'attribution dans la fenêtre ni mot de January (« mon, ma, mes, my, actuel(le), current, précédent(e), previous, j', je, I ») entre ce mot de l'offre et l'expression, ou « the X role » (déterminant avant, mot de l'offre juste après). « chez », « pour », « avec »… ne retirent donc jamais un intitulé qui ne les suit pas immédiatement, et un mot de l'offre qui précède une formule d'attribution ne l'emporte pas : « en tant que Lead Data », « Pour Société Fictive je suis Lead Data Engineer », « Dans mon poste actuel de Lead Data Engineer » restent lus. Les outils et mots clés de l'offre n'y ont pas leur place ; aucun nombre ne vient jamais d'`allowed`. Sans doublon, dans l'ordre du texte, chaque terme tel que le texte l'écrit (un nombre sous sa forme canonique). Le validateur des modifications gagne deux fonctions publiques (`product_forms`, `capitalized_names`, comportement inchangé) et le lexique `number_spans` (`numbers_in` en dérive, inchangé). Faux positifs connus et acceptés : un humain les lève (« excel » en anglais, un nom propre de destinataire non passé dans `allowed`, une année absente du profil). (5) **`salary.is_salary_question`** : lecture large, sans casse ni accent (salaire, rémunération, prétentions, package, TJM, taux journalier, salary, compensation, expected pay, pay range…) : un faux positif laisse une réponse vide, un faux négatif écrirait un chiffre inventé ; la réponse vide est imposée par le code (7.5).
-- **Raison** : SPEC 1, 6.1 à 6.4, 18.3 (honnêteté : aucun texte au nom de January ne contient un fait que son profil ne dit pas ; aucune prétention salariale écrite par un agent) ; D118 (clés de lien et d'entreprise, titres proches), D121 (offres « possibles »), D137 (lecture des nombres et des liens du validateur) ; plan de la phase 7 (tâche 7.1).
+- **Date** 2026-11-15
+- **Subject** Phase 7, task 7.1: application tables, pure rules, check of the facts in a text
+  (`text_claims`), salary question
+- **Decision**
+  1. **Tables** (migration `0011`, `down_revision = "0010"`): `applications`, `application_events`,
+     `contacts`, `reminders`, `kit_items`, `interviews`, `committee_runs`, with the types shared
+     with the agents (`ApplicationStatus`, `Channel`, `EventKind`, `ReminderKind`, `ReminderStatus`,
+     `KitKind`, `KitStatus`, `InterviewMode`, `RunStatus`) declared in `db/models/applications.py`
+     (contract 6). `posting_id`, `cv_version_id` and the references of `interviews` and
+     `committee_runs` have **no foreign key** (like `cv_versions`): the record keeps its frozen copy
+     of the posting, an interview survives its record; the children of a record (thread, contacts,
+     reminders, items) are deleted with it (cascade). `reminders`: unique `(application_id, kind,
+     anchor_on)` (never two reminders of the same type for the same anchor) and index
+     `(due_on, status)`; `kit_items`: unique `(application_id, kind)`. `companies` gains `dossier`,
+     `dossier_sources`, `dossier_at`; `flashcards.source` goes from 8 to 16 characters
+     (`batch_alter_table`) and `CardSource` gains `"interview"`.
+  2. **Pure rules** (`features/applications/service`, no import of the database): `rules.py`
+     (`ApplicationView`, `STATUS_ORDER`, `STATUS_LABELS`, `ANSWERED`, `WAITING`, `on_status`:
+     `applied_on` set once, `interview_on` if January has not given one, `answered_on` at the first
+     entry into `ANSWERED`, no date ever erased on returning to “To apply”; `stats`: rate =
+     answered / applied, `None` with no applied application, average delay rounded to 0.1),
+     `schedule.py` (`expected_reminders`: waiting, three reminders at January's delays from the
+     application date; interviewing, thank-you at D+1 and request for news at D+7; otherwise none,
+     so an answer removes the pending reminders; `validated_delays`: three strictly increasing
+     integers from 1 to 90, otherwise `(7, 14, 21)`), `matching.py` (`match`: equal link = certain,
+     same company and titles at 0.85 = probable, same company and “possible” posting = possible,
+     same company in the last 30 days (application or creation) = info; one level per record; the
+     record of the same posting and the pairs confirmed as “other position” (in both directions)
+     are dropped; `alert_message`: date written out, year if it differs, status in French).
+     `Incoming` also carries `distinct_from` (default empty) for the sense “the incoming posting
+     has already confirmed this record”. The link and company keys and the title similarity are
+     those of the postings (`postings.service.rules`), not duplicated.
+  3. **Settings**: `reminder_delays_days` is validated by `validated_delays` (field validator of
+     `UserSettings`), which lives in the `settings` feature (`settings/delays.py`, re-exported by
+     `settings.service` with `DEFAULT_DELAYS`); `applications.service.schedule` imports it from
+     `settings.service`: one direction only, `settings` never imports `applications`; an invalid
+     write is refused (422, no echo of the value), an invalid stored value falls back to
+     `[7, 14, 21]` through `SettingsService`'s existing mechanism, without touching the other
+     fields.
+  4. **`text_claims`** (`agents/tools/text_claims.py`, `text_claims_mask.py`,
+     `text_claims_names.py`; code, never an agent; review 7.1, round 1: the dangerous direction is a
+     false negative, better to flag too much): returns the **numbers** (digits and letters,
+     `figures_in`) and **proportions** (`ratio_families`: “doublé”, “moitié”, “x3”)
+     absent from the texts of the profile's facts (titles, lines, achievements, summary, education
+     details, skills, languages, header title; never the links) and the **years** of their start and
+     end dates: never the digits of a phone number, an email or a link (these contact details are
+     masked in the text before reading), never the months (a day attached to a month, “le 12
+     novembre”, “November 12,”, “March 5th”, is masked; “septembre 12 projets”,
+     “March 5 clients” and the verb “may” are not; a year is compared with the profile's
+     years); the lexicon's **tools**, without case (an ambiguous term only in its product form);
+     **title words** only when the text attributes them to the author (formulas `SELF_CUES` of
+     `text_claims_mask.py`: “en tant que”, “en qualité de”, “je suis”, “j'étais”,
+     “j'ai été / occupé / exercé”, “étant”, “ayant été”, “comme”, “mon
+     poste / rôle / expérience (de)”, “as”, “I am / I'm / I was / I've been”, “worked
+     / served / working as”, “my role / position / job / experience (as)”; in the following 6
+     words, same clause, in lowercase as in capitals); **proper names**: words in capitals of 2
+     letters or more (except `ACRONYMS`, a short list: CV, IA, AI, RH, HR, IT, PDF, CDI, CDD, PME,
+     ESN, OK, FR, EN, UE, EU, PS), capitalized words outside the start of a sentence, a word that
+     follows “chez, at, pour, for, avec, with, rejoint, joined” even at the start of a sentence,
+     a word that opens a sentence followed by “m'/me/nous/a/ont/est/était/has/was…”
+     (“Capgemini m'a confié”); a line break opens a sentence; forms of address and generic
+     recipients (Madame, Monsieur, Dear, Hiring, Recruiter, Recruteur, Recruteuse, Équipe, Team,
+     Bonjour, Hello…) are not names, nor is the title-case name that follows a greeting **on the
+     same line** (“Bonjour Julie”, “Madame Martin”): after a comma or a line break the
+     sentence-start rule applies, and a word in capitals is never passed (“Madame, then IBM on the
+     next line”). **`allowed`** contains only **whole expressions** (company, exact title of the
+     posting without “(H/F)”, a contact's name); an expression is removed from the text only
+     where it **cites** it, in all the checks: (1) right after “chez, at, pour, for, avec, with,
+     rejoindre, rejoint, join, joined, aupres, bonjour, hello, dear, madame, monsieur” (company,
+     contact); (2) as the other party's posting: a word of the posting (poste, offre, rôle,
+     candidature, opportunité, position, role, opening, job) within the 6 words before, itself
+     preceded by “votre, vos, ce, cette, le, la, l', your, this, the”, with no attribution
+     formula in the window nor a word of January's (“mon, ma, mes, my, actuel(le), current,
+     précédent(e), previous, j', je, I”) between this posting word and the expression, or “the
+     X role” (determiner before, posting word right after). “chez”, “pour”, “avec”…
+     therefore never remove a title that does not immediately follow them, and a posting word that
+     precedes an attribution formula does not win: “en tant que Lead Data”, “Pour Société
+     Fictive je suis Lead Data Engineer”, “Dans mon poste actuel de Lead Data Engineer” are
+     still read. The posting's tools and keywords have no place there; no number ever comes from
+     `allowed`. Without duplicates, in the order of the text, each term as the text writes it (a
+     number in its canonical form). The modifications validator gains two public functions
+     (`product_forms`, `capitalized_names`, behavior unchanged) and the lexicon `number_spans`
+     (`numbers_in` derives from it, unchanged). Known and accepted false positives: a human lifts
+     them (“excel” in English, a recipient's proper name not passed in `allowed`, a year absent
+     from the profile).
+  5. **`salary.is_salary_question`**: wide reading, without case or accent (salaire, rémunération,
+     prétentions, package, TJM, taux journalier, salary, compensation, expected pay, pay range…):
+     a false positive leaves an empty answer, a false negative would write an invented figure; the
+     empty answer is enforced by the code (7.5).
+- **Reason** SPEC 1, 6.1 to 6.4, 18.3 (honesty: no text in January's name contains a fact that her
+  profile does not state; no salary expectation written by an agent); D118 (link and company keys,
+  close titles), D121 (“possible” postings), D137 (reading of the validator's numbers and
+  links); phase 7 plan (task 7.1).
 
 ## D139
 
-- **Date** : 2026-11-15
-- **Sujet** : Phase 7, tâche 7.2 : fiches de candidature, fil, contacts, doublons, adoption des versions de CV, indicateurs (contrat)
-- **Décision** : (1) **Routes** (sous `/api/v1`, au nom de l'utilisatrice courante, `FieldPathsRoute` : une 422 rend `details.fields`, jamais la valeur) : `GET /applications?status=&posting_id=` (création décroissante, adopte d'abord les versions), `POST /applications` (201 `CreatedOut {application: ApplicationDetail, info}` ; 409 `application_duplicate` avec `details.alerts` = les fiches existantes, jamais l'entrée ; 409 `application_exists` avec `details.application_id` ; 404 `posting_not_found`), `GET /applications/check?posting_id=|url=` (`CheckOut {own, alerts, info}` ; exactement une entrée, sinon 422 `fields: ["posting_id", "url"]` ; `url` : le niveau « certain » seulement, `own` est alors vide), `GET /applications/stats` (`ApplicationStatsOut`, adopte d'abord), `GET` et `PATCH /applications/{id}`, `POST /applications/{id}/events`. `check` et `stats` sont déclarées avant `{id}`. (2) **Statut** : par `POST /events {kind: "status"}` seulement ; `PATCH` refuse tout champ inconnu, donc `status` (422 `fields: ["status"]`, `extra="forbid"`). Un changement de statut applique `on_status` (7.1) au jour `on` (défaut : aujourd'hui, fuseau de January), pose `interview_on` s'il est donné, écrit l'événement `status` (`status_from`, `status_to`, texte facultatif) ; le même statut n'ajoute rien. L'événement d'un autre jour que le jour courant est daté de midi (heure de January) : le fil est trié par date, un statut daté du 3 novembre précède donc la ligne `created` du 15. (3) **Création** sous le verrou des candidatures (`ApplicationsRuntime.locks`, un par utilisatrice) : fiche de la même offre : 409 `application_exists` ; puis `match` (7.1), sur l'entreprise, l'intitulé et le lien **tels que la fiche sera écrite** (la saisie de January pour une offre pas encore analysée compte ; de l'offre, seuls l'identifiant et ses offres « possibles » sont lus) : une alerte certain, probable ou possible que `distinct_from` ne couvre pas : 409 ; sinon la fiche, l'événement `created`, les contacts (10 au plus) et `distinct_from` posé dans les deux sens **avec l'identifiant de la fiche et celui de son offre** (le contrôle `check?posting_id=` de la nouvelle offre se tait aussi, `Incoming.posting_id in app.distinct_from`) ; les `info` (même entreprise, 30 jours) partent dans la réponse 201. Avec `posting_id`, l'entreprise, l'intitulé, le lien et le texte figé viennent de l'offre (colonnes, sinon analyse) ; ce que January a saisi ne sert que là où l'offre ne dit rien ; sans `posting_id` ou sans entreprise ni intitulé connus : 422 `fields: ["company", "title"]` (ceux qui manquent). Statut de départ : `on_status` pose `applied_on` (le jour, sauf date donnée), `answered_on`. Liens `http` ou `https` seulement (champs `str` validés, 2 000 caractères ; une URL refusée : 422 `url`), clé `posting_url_key`. (4) **Version de CV (6.1 n° 1)** : `adopt_versions(db, user_id)` crée la fiche `to_apply` d'une offre qui a une version `ready` et aucune fiche (**quel que soit son statut : « Retirée » compte, il n'y a pas de suppression de fiche**), fait suivre la version prête la plus récente aux fiches `to_apply` jamais postulées (`applied_on` vide : revenir à « À postuler » ne rend pas la fiche suiveuse), est idempotente, tourne sous le verrou dans sa propre transaction (`adopt(rt, user_id)`) en tête de `GET /applications` et `GET /applications/stats`. À la **première sortie de « À postuler »** vers tout statut sauf « Retirée » (ou au premier « Postulée » d'une fiche sans date de candidature), et à la création directe à un tel statut, la fiche fige la version prête la plus récente de son offre (événement `version`, `ref_id` = version) : « la version envoyée » est celle du jour où January quitte « À postuler » ; une nouvelle version ne la remplace plus. Une fiche « Retirée » ne fige rien et ne suit plus. `cv` n'importe pas `applications` : la lecture se fait par `cv.service.versions.ready_versions_by_posting` et `version_numbers` (lecture seule, `VersionRepository.ready_latest` et `numbers`). (5) **Contrôle** : `Incoming` construit depuis l'offre (lien normalisé, entreprise de l'offre ou de l'analyse, intitulé, offres « possibles » de `posting.duplicates`) ; `alerts` = certain, probable, possible ; `info` à part ; message de `alert_message` (date de candidature ou de création, statut en français). (6) **Offre supprimée** : refus 409 `posting_has_application` (`details.application_id`) tant qu'une fiche cite l'offre ; requête `PostingRepository.application_id` sur le modèle `Application` seul (aucun import de feature), vérifiée sous le verrou des revues (D137 n° 7), avant les revues et l'analyse. `postings.service.queries` gagne `postings_by_ids` (lecture seule). (7) **Journaux** : identifiants, statuts et nombres ; `test_application_data_never_logged` (entreprise, intitulé, contact, note, lien, texte d'offre, phrase du fil). (8) **Structure** : `_add_body_limits` sort de `main.py` dans `core/body_limits.py` (`add_body_limits(app, prefix)`, mêmes plafonds, `main.py` : 298 → 265 lignes) ; `FieldPathsRoute`, `field_paths` et `invalid_fields` passent dans `core/field_paths.py` (partagés avec les candidatures ; `cv/router/fields.py` les réexporte, rien ne change côté CV) ; 8 contrats d'import-linter inchangés, `ApplicationsRuntime` (`session_factory`, `launcher`, `now`, `locks`) ajouté à `CareerRuntimes.applications`. (9) **Écarts au plan** : le schéma des indicateurs s'appelle `ApplicationStatsOut` (`StatsOut` est déjà celui de la mémoire : le contrat aurait renommé les deux) ; les liens sont des `str` validés (pas `HttpUrl`, qui réécrit l'adresse) ; `CreatedOut.application` est un `ApplicationDetail` ; `ReminderOut` n'a ici que `id`, `application_id`, `kind`, `due_on`, `status` (7.3 l'enrichit) ; `ApplicationOut.due_reminders` compte les relances `pending` dont l'échéance est atteinte (vide jusqu'en 7.3). Tests : 51 nouveaux dans `tests/features/applications` (fiches, fil, doublons, adoption, contrôle, indicateurs, journaux) et 1 dans `tests/features/postings/test_delete.py` ; back 4 058 au total (un passage complet : 4 057 verts, le seul échec est un délai de `test_web_research_replay_does_not_duplicate_sources` sous charge, qui passe seul).
-- **Raison** : SPEC 6.1 à 6.4, 17.2 (journaux), 18.3 ; D118 (clés de lien et d'entreprise), D121 (offres « possibles »), D137 n° 7 (verrou des revues), D138 (tables et règles pures) ; plan de la phase 7 (tâche 7.2).
+- **Date** 2026-11-15
+- **Subject** Phase 7, task 7.2: application records, thread, contacts, duplicates, adoption of CV
+  versions, indicators (contract)
+- **Decision**
+  1. **Routes** (under `/api/v1`, in the current user's name, `FieldPathsRoute`: a 422 returns
+     `details.fields`, never the value): `GET /applications?status=&posting_id=` (creation
+     descending, adopts the versions first), `POST /applications` (201 `CreatedOut {application:
+     ApplicationDetail, info}`; 409 `application_duplicate` with `details.alerts` = the existing
+     records, never the input; 409 `application_exists` with `details.application_id`; 404
+     `posting_not_found`), `GET /applications/check?posting_id=|url=` (`CheckOut {own, alerts,
+     info}`; exactly one input, otherwise 422 `fields: ["posting_id", "url"]`; `url`: the
+     “certain” level only, `own` is then empty), `GET /applications/stats`
+     (`ApplicationStatsOut`, adopts first), `GET` and `PATCH /applications/{id}`,
+     `POST /applications/{id}/events`. `check` and `stats` are declared before `{id}`.
+  2. **Status**: through `POST /events {kind: "status"}` only; `PATCH` refuses any unknown field,
+     hence `status` (422 `fields: ["status"]`, `extra="forbid"`). A status change applies
+     `on_status` (7.1) on the day `on` (default: today, January's time zone), sets `interview_on` if
+     given, writes the `status` event (`status_from`, `status_to`, optional text); the same status
+     adds nothing. The event of a day other than the current day is dated at noon (January's time):
+     the thread is sorted by date, so a status dated November 3 precedes the `created` line of the
+     15th.
+  3. **Creation** under the applications lock (`ApplicationsRuntime.locks`, one per user): record of
+     the same posting: 409 `application_exists`; then `match` (7.1), on the company, title and link
+     **as the record will be written** (January's input for a posting not yet analyzed counts; of
+     the posting, only the identifier and its “possible” postings are read): a certain, probable
+     or possible alert that `distinct_from` does not cover: 409; otherwise the record, the `created`
+     event, the contacts (10 at most) and `distinct_from` set in both directions **with the record's
+     identifier and that of its posting** (the `check?posting_id=` check of the new posting also
+     stays quiet, `Incoming.posting_id in app.distinct_from`); the `info` items (same company, 30
+     days) go in the 201 response. With `posting_id`, the company, title, link and frozen text come
+     from the posting (columns, otherwise analysis); what January entered serves only where the
+     posting says nothing; without `posting_id` or without a known company and title: 422
+     `fields: ["company", "title"]` (those that are missing). Starting status: `on_status` sets
+     `applied_on` (the day, unless a date is given), `answered_on`. `http` or `https` links only
+     (validated `str` fields, 2,000 characters; a refused URL: 422 `url`), key `posting_url_key`.
+  4. **CV version (6.1 no. 1)**: `adopt_versions(db, user_id)` creates the `to_apply` record of a
+     posting that has a `ready` version and no record (**whatever its status: “Withdrawn”
+     counts, there is no record deletion**), makes the most recent ready version follow the
+     `to_apply` records never applied (`applied_on` empty: going back to “To apply” does not
+     make the record a follower again), is idempotent, runs under the lock in its own transaction
+     (`adopt(rt, user_id)`) at the head of `GET /applications` and `GET /applications/stats`. At the
+     **first exit from “To apply”** to any status except “Withdrawn” (or at the first
+     “Applied” of a record without an application date), and at direct creation at such a
+     status, the record freezes the most recent ready version of its posting (`version` event,
+     `ref_id` = version): “the version sent” is that of the day January leaves “To apply”; a
+     new version no longer replaces it. A “Withdrawn” record freezes nothing and no longer
+     follows. `cv` does not import `applications`: the read goes through
+     `cv.service.versions.ready_versions_by_posting` and `version_numbers` (read-only,
+     `VersionRepository.ready_latest` and `numbers`).
+  5. **Check**: `Incoming` built from the posting (normalized link, company of the posting or the
+     analysis, title, “possible” postings of `posting.duplicates`); `alerts` = certain,
+     probable, possible; `info` apart; message from `alert_message` (application or creation date,
+     status in French).
+  6. **Posting deleted**: refusal 409 `posting_has_application` (`details.application_id`) as long
+     as a record cites the posting; query `PostingRepository.application_id` on the `Application`
+     model alone (no feature import), checked under the reviews lock (D137 no. 7), before the
+     reviews and the analysis. `postings.service.queries` gains `postings_by_ids` (read-only).
+  7. **Logs**: identifiers, statuses and numbers; `test_application_data_never_logged` (company,
+     title, contact, note, link, posting text, thread sentence).
+  8. **Structure**: `_add_body_limits` leaves `main.py` for `core/body_limits.py`
+     (`add_body_limits(app, prefix)`, same caps, `main.py`: 298 → 265 lines); `FieldPathsRoute`,
+     `field_paths` and `invalid_fields` move into `core/field_paths.py` (shared with the
+     applications; `cv/router/fields.py` re-exports them, nothing changes on the CV side); 8
+     import-linter contracts unchanged, `ApplicationsRuntime` (`session_factory`, `launcher`, `now`,
+     `locks`) added to `CareerRuntimes.applications`.
+  9. **Deviations from the plan**: the indicators schema is named `ApplicationStatsOut` (`StatsOut`
+     is already the memory's: the contract would have renamed both); links are validated `str` (not
+     `HttpUrl`, which rewrites the address); `CreatedOut.application` is an `ApplicationDetail`;
+     `ReminderOut` has here only `id`, `application_id`, `kind`, `due_on`, `status` (7.3 enriches
+     it); `ApplicationOut.due_reminders` counts the `pending` reminders whose due date is reached
+     (empty until 7.3). Tests: 51 new ones in `tests/features/applications` (records, thread,
+     duplicates, adoption, check, indicators, logs) and 1 in
+     `tests/features/postings/test_delete.py`; back end 4,058 in all (one full run: 4,057 green, the
+     only failure is a timeout of `test_web_research_replay_does_not_duplicate_sources` under load,
+     which passes alone).
+- **Reason** SPEC 6.1 to 6.4, 17.2 (logs), 18.3; D118 (link and company keys), D121 (“possible”
+  postings), D137 no. 7 (reviews lock), D138 (tables and pure rules); phase 7 plan (task 7.2).
 
 ## D140
 
-- **Date** : 2026-11-15
-- **Sujet** : Phase 7, tâche 7.3 : relances suggérées (synchronisation, brouillons fixes), `GET /reminders`, `PATCH /reminders/{id}`, tâche planifiée `reminders_due`, version de CV figée une seule fois (contrat)
-- **Décision** : (1) **Routes** (`router_reminders.py`, sous `/api/v1`, ligne `reminders_router` dans `FEATURE_ROUTERS`, `FieldPathsRoute`) : `GET /reminders?due=true|false` (synchronise d'abord ; `due=true`, défaut : en attente et échéance au plus aujourd'hui chez January ; `due=false` : toutes, à venir, faites et ignorées ; échéance croissante), `PATCH /reminders/{id} {action: "done"|"postpone"|"ignore"}` (404 `reminder_not_found`, 409 `reminder_closed` pour une relance déjà faite ou ignorée, 422 sans écho pour une action inconnue). `ReminderOut` : `id`, `application_id`, `kind`, `due_on`, `status`, `company`, `title`, `contact` (`ContactOut | null`), `linkedin_search_url`, `channel` (`linkedin | email | none`), `draft` ; `ApplicationDetail.reminders` renvoie le même objet complet. (2) **Synchronisation** (`reminder_sync.py`, `sync_reminders(db, user_id, today, delays, *, application_id=None)`) : attendues (`expected_reminders`, 7.1) moins existantes : créées « en attente » ; en attente et plus attendues (réponse, ancre changée) : supprimées (la suppression re-vérifie `status = 'pending'` : jamais une relance faite ou ignorée, même si une autre requête vient de la clore) ; faites et ignorées jamais touchées ni recréées (l'ancre y est déjà) ; une relance en attente encore attendue et **non reportée** prend l'échéance que donnent les délais des réglages (même ancre : la contrainte d'unicité n'est pas touchée), de sorte qu'un changement des délais déplace les relances en attente (test 7.1 `test_changed_delays_move_pending_only`) ; une relance **reportée** par January garde la sienne : colonne `reminders.postponed` (booléen, faux par défaut, migration `0012`, `batch_alter_table`), posée par « Reporter », jamais remise à faux. Création : `INSERT … ON CONFLICT DO NOTHING` sur `(fiche, type, ancre)`, donc jamais de doublon ; toutes les écritures de relances et de fiches qui la déclenchent se font **sous le verrou des candidatures** (création, événement, actions de relance, liste, tâche planifiée et, depuis le tour 1, `PATCH /applications/{id}` : `update_locked`, dans sa propre transaction validée avant de rendre le verrou). Appelée à chaque écriture qui change le statut ou les dates d'une fiche pour que `due_reminders` (`ApplicationOut`, `ApplicationStatsOut`) soit juste sans passage préalable par la liste, par `GET /reminders` et par la tâche planifiée ; `today` ne sert qu'au journal (les échéances n'en dépendent pas). Limite connue : une relance en attente dont l'ancre change est supprimée puis recréée sous la nouvelle ancre (un report est alors perdu). (3) **Actions** (sous le verrou des candidatures) : `done` : statut `done`, `done_at`, événement `reminder` (texte fixe, `ref_id` = relance) ; `linkedin_7` ou `email_14` faite sur une fiche « Postulée » : « Relancée » (par `events.change_status`, donc avec son événement `status`) ; `close_21` faite sur une fiche en attente de réponse : « Sans réponse » ; `thanks` et `news_7` ne changent aucun statut ; `postpone` : `due_on = max(due_on, aujourd'hui) + 3`, reste en attente, aucun événement ; `ignore` : `ignored`, événement `reminder`. La synchronisation repasse après l'action (les relances d'attente d'une fiche classée disparaissent aussitôt). (4) **Brouillons** (`drafts.py`, `draft_for`) : gabarits fixes, aucun appel LLM, français et anglais (langue de l'offre, `analysis.language`, défaut `fr` ; une langue autre que `en` donne `fr`) ; seuls l'entreprise, le poste, les dates (en toutes lettres) et le prénom du contact y figurent, une date absente est omise, aucune forme genrée ; `close_21` est une proposition à January (« Veux-tu classer cette fiche en « Sans réponse » ? »), toujours en français. Quand la pièce `followups` du kit est `ready` (jamais `to_check` ni `failed`), son texte remplace le gabarit de `linkedin_7` (partie avant la première ligne `---`) et de `email_14` (partie après) : **convention de contenu que 7.5 doit respecter** (`content` = courriel de 7 jours, une ligne `---`, courriel de 14 jours ; le texte modifié à la main par January reste la source). Contact : celui dont le rôle dit recrutement (`recrut…`, `recruit…`, `talent`, `RH`, `HR`), sinon le premier ; sans contact, `linkedin_search_url` = `https://www.linkedin.com/search/results/people/?keywords=` + « entreprise poste » encodé (`quote`), sauf `close_21` ; canal : `linkedin_7` LinkedIn, `email_14` email, `close_21` « none », `thanks` et `news_7` LinkedIn si le contact a un lien LinkedIn, sinon email. Le lien n'est jamais journalisé. (5) **Tâche planifiée** `reminders_due` (`scheduler/jobs/reminders_due.py`, toutes les heures, `at_startup=True`) : ne fait que déballer `JobContext.applications` (champ ajouté, composé par `scheduler_context`) et lire `applications.now()` ; `run_reminders(rt, now)` (écart au plan : le premier argument est l'`ApplicationsRuntime`, dont le verrou sert à `adopt`) lit les comptes (`repository.user_ids`, seule lecture sans `user_id` des candidatures, comme D18, D75 et D91), puis par compte : `adopt` (fiches des offres qui ont une version prête), `sync_user` ; une panne chez l'un n'arrête pas les autres. (6) **Version de CV figée une seule fois** (correctif de D139 n° 4, revue 7.2) : `freeze_version` ne fait rien si la fiche a déjà un événement `version`, et `adopt_versions` ne fait plus suivre une fiche qui en a un (`EventRepository.version_frozen`) : Postulée (V1), retour à « À postuler », V2 prête, Postulée de nouveau : la version envoyée reste V1 ; le docstring d'`adopt.py` dit la règle (première sortie de « À postuler » vers tout statut sauf « Retirée »). Une fiche sortie de « À postuler » sans version prête n'a rien de figé et peut encore suivre. (7) **Journaux** : identifiants, jour, nombres et codes (`test_reminder_data_never_logged` : entreprise, intitulé, contact, brouillon, lien de recherche). (8) **Contrat** : `contracts/openapi.json` et `frontend/src/shared/api/schema.d.ts` régénérés (`postponed` n'est pas exposé ; le tour 1 ne change pas le contrat). Tests : `test_drafts.py`, `test_reminders_router.py`, `test_reminders_logs.py`, `tests/scheduler/test_reminders_due.py`, et `test_version_not_refrozen_after_back_to_to_apply`.
-- **Raison** : SPEC 1 (rien n'est envoyé), 6.2, 17.2, 18.3 (aucun fait inventé) ; D138 (échéances), D139 (fiches, adoption, version envoyée), D91 (tâche planifiée, contrat 8) ; plan de la phase 7 (tâche 7.3).
+- **Date** 2026-11-15
+- **Subject** Phase 7, task 7.3: suggested reminders (synchronization, fixed drafts),
+  `GET /reminders`, `PATCH /reminders/{id}`, scheduled job `reminders_due`, CV version frozen only
+  once (contract)
+- **Decision**
+  1. **Routes** (`router_reminders.py`, under `/api/v1`, line `reminders_router` in
+     `FEATURE_ROUTERS`, `FieldPathsRoute`): `GET /reminders?due=true|false` (synchronizes first;
+     `due=true`, default: pending and due date at most today in January's time zone; `due=false`:
+     all, upcoming, done and ignored; ascending due date), `PATCH /reminders/{id}
+     {action: "done"|"postpone"|"ignore"}` (404 `reminder_not_found`, 409 `reminder_closed` for a
+     reminder already done or ignored, 422 with no echo for an unknown action). `ReminderOut`: `id`,
+     `application_id`, `kind`, `due_on`, `status`, `company`, `title`, `contact`
+     (`ContactOut | null`), `linkedin_search_url`, `channel` (`linkedin | email | none`), `draft`;
+     `ApplicationDetail.reminders` returns the same full object.
+  2. **Synchronization** (`reminder_sync.py`, `sync_reminders(db, user_id,
+     today, delays, *, application_id=None)`): expected (`expected_reminders`, 7.1) minus existing:
+     created “pending”; pending and no longer expected (answer, anchor changed): deleted (the
+     deletion rechecks `status = 'pending'`: never a reminder done or ignored, even if another
+     request has just closed it); done and ignored ones never touched nor recreated (the anchor is
+     already there); a pending reminder still expected and **not postponed** takes the due date that
+     the settings' delays give (same anchor: the uniqueness constraint is not touched), so that a
+     change of the delays moves the pending reminders (7.1 test
+     `test_changed_delays_move_pending_only`); a reminder **postponed** by January keeps its own:
+     column `reminders.postponed` (boolean, false by default, migration `0012`,
+     `batch_alter_table`), set by “Postpone”, never set back to false. Creation:
+     `INSERT … ON CONFLICT DO NOTHING` on `(record, kind, anchor)`, hence never a duplicate; all
+     the writes of reminders and of the records that trigger them happen **under the applications
+     lock** (creation, event, reminder actions, list, scheduled job and, since round 1,
+     `PATCH /applications/{id}`: `update_locked`, in its own transaction committed before releasing
+     the lock). Called at every write that changes a record's status or dates so that
+     `due_reminders` (`ApplicationOut`, `ApplicationStatsOut`) is right without a prior pass through
+     the list, through `GET /reminders` and through the scheduled job; `today` serves only the log
+     (the due dates do not depend on it). Known limit: a pending reminder whose anchor changes is
+     deleted then recreated under the new anchor (a postponement is then lost).
+  3. **Actions** (under the applications lock): `done`: status `done`, `done_at`, `reminder` event
+     (fixed text, `ref_id` = reminder); `linkedin_7` or `email_14` done on an “Applied” record:
+     “Followed up” (through `events.change_status`, hence with its `status` event); `close_21`
+     done on a record awaiting an answer: “No answer”; `thanks` and `news_7` change no status;
+     `postpone`: `due_on = max(due_on, today) + 3`, stays pending, no event; `ignore`: `ignored`,
+     `reminder` event. The synchronization runs again after the action (the waiting reminders of a
+     closed record disappear right away).
+  4. **Drafts** (`drafts.py`, `draft_for`): fixed templates, no LLM call, French and English
+     (language of the posting, `analysis.language`, default `fr`; a language other than `en` gives
+     `fr`); only the company, the position, the dates (written out) and the contact's first name
+     appear in them, a missing date is omitted, no gendered form; `close_21` is a proposal to
+     January (“Do you want to file this record under “No answer”?”), always in French. When
+     the `followups` item of the kit is `ready` (never `to_check` or `failed`), its text replaces
+     the template of `linkedin_7` (part before the first `---` line) and of `email_14` (part after):
+     **content convention that 7.5 must respect** (`content` = 7-day email, a `---` line, 14-day
+     email; the text edited by hand by January remains the source). Contact: the one whose role says
+     recruiting (`recrut…`, `recruit…`, `talent`, `RH`, `HR`), otherwise the first; without a
+     contact, `linkedin_search_url` = `https://www.linkedin.com/search/results/people/?keywords=` +
+     “company position” encoded (`quote`), except `close_21`; channel: `linkedin_7` LinkedIn,
+     `email_14` email, `close_21` “none”, `thanks` and `news_7` LinkedIn if the contact has a
+     LinkedIn link, otherwise email. The link is never logged.
+  5. **Scheduled job** `reminders_due` (`scheduler/jobs/reminders_due.py`, every hour,
+     `at_startup=True`): only unwraps `JobContext.applications` (field added, composed by
+     `scheduler_context`) and reads `applications.now()`; `run_reminders(rt, now)` (deviation from
+     the plan: the first argument is the `ApplicationsRuntime`, whose lock serves `adopt`) reads the
+     accounts (`repository.user_ids`, the only read without `user_id` of the applications, like D18,
+     D75 and D91), then per account: `adopt` (records of the postings that have a ready version),
+     `sync_user`; a failure for one does not stop the others.
+  6. **CV version frozen only once** (fix of D139 no. 4, review 7.2): `freeze_version` does nothing
+     if the record already has a `version` event, and `adopt_versions` no longer makes a record
+     follow if it has one (`EventRepository.version_frozen`): Applied (V1), back to “To apply”,
+     V2 ready, Applied again: the version sent stays V1; the docstring of `adopt.py` states the rule
+     (first exit from “To apply” to any status except “Withdrawn”). A record that left “To
+     apply” without a ready version has nothing frozen and can still follow.
+  7. **Logs**: identifiers, day, numbers and codes (`test_reminder_data_never_logged`: company,
+     title, contact, draft, search link).
+  8. **Contract**: `contracts/openapi.json` and `frontend/src/shared/api/schema.d.ts` regenerated
+     (`postponed` is not exposed; round 1 does not change the contract). Tests: `test_drafts.py`,
+     `test_reminders_router.py`, `test_reminders_logs.py`, `tests/scheduler/test_reminders_due.py`,
+     and `test_version_not_refrozen_after_back_to_to_apply`.
+- **Reason** SPEC 1 (nothing is sent), 6.2, 17.2, 18.3 (no invented fact); D138 (due dates), D139
+  (records, adoption, version sent), D91 (scheduled job, contract 8); phase 7 plan (task 7.3).
 
 ## D141
 
-- **Date** : 2026-11-15
-- **Sujet** : Phase 7, tâche 7.4 : Assistant de suivi (`tracker`, rapide) et parcours `application_intake`, `POST /applications/intake` (contrat)
-- **Décision** : (1) **Agent** : `tracker` (rapide, prompt `prompts/tracker.md`, nœuds `agents/nodes/tracker/`) lit la phrase de January (« j'ai postulé hier chez X pour le poste Y ») et rend un `IntakeDraft` (`company`, `title`, `status` « applied » par défaut, `applied_on`, `channel`, `contact_name`, `contact_role`, `notes` ≤ 500) par `structured_call` ; la phrase est toujours dans `untrusted(…, "phrase de January")`, le prompt reçoit le jour de January (fuseau de ses réglages, par le port) et les 14 derniers jours avec leur nom (« hier », « avant-hier », « lundi 9 novembre 2026 (2026-11-09) ») pour résoudre « hier » ou « lundi dernier ». Un champ facultatif vide vaut « absent ». (2) **Vérifié par le code** (schéma dérivé `reading_schema(today, text)`, refus renvoyé au modèle par les 2 nouveaux essais de `structured_call`, sans recopier la valeur) : `applied_on` dans le futur refusé ; `company` et `title` doivent être faits de mots de la phrase (accents et casse ignorés), sinon refus « rien inventé ». Entreprise ou poste restés vides (le modèle les laisse vides quand la phrase ne les dit pas) : `run.failed` `intake_incomplete`, « Je n'ai pas trouvé l'entreprise ou le poste dans ta phrase. » ; une sortie jamais valable après les essais : `run.failed` `intake_unreadable` (« reformule-la avec l'entreprise, le poste et la date »). (3) **Parcours** (`graphs/application_intake.py`, entrée `{text: 1 à 1 000}`, ligne dans `GRAPHS` et `ROUTE_ONLY["application_intake"] = "POST /applications/intake"`) : `load` (port : jour et langue) → `parse` → `alerts` (port, lecture) → `ask` → `save` → `announce` → END, ou `ask` → `leave` → END. `ask_confirm` = `interrupt()` seul (signature `(state)`, aucun port ni modèle), la réponse est relue par une fonction pure ; réponse invalide (option hors question, champ rejeté, date future, forme inconnue) : même question reposée, rien écrit. **Charge de la question** (`kind = "application_confirm"`, à rendre par 7.13) : `question` = « Je crée cette fiche ? » suivie, s'il y a une alerte, du message de la plus forte (« Je crée cette fiche ? Attention, tu as déjà postulé chez … le 3 novembre (statut : Postulée). ») ; `options` : sans alerte `create` « Créer la fiche » et `cancel` « Annuler » ; avec une alerte `distinct` « C'est un autre poste », `open` « Ouvrir la fiche existante », `cancel` ; `fields` (`InterruptField`, qui gagne `value: str | null`, valeur pré remplie, défaut `null`, donc compatible avec les événements stockés) : `company`, `title`, `status` (valeur de `ApplicationStatus`), `applied_on` (AAAA-MM-JJ ou vide), `channel` (valeur de `Channel` ou vide), `contact_name`, `contact_role`, `notes`, chacun avec `required` et `max_length`. **Réponse** (`ResumeRequest.value`) : `{"choice": <option>, "fields": {id: texte}}` (`fields` facultatif : les champs envoyés remplacent ceux du brouillon, l'ensemble est revalidé comme `IntakeDraft`) ou l'option seule (`"cancel"`). Écart au plan : avec une alerte, l'option `create` n'est pas offerte (la route refuse une fiche qui ressemble sans « autre poste », une 409 ferait échouer la session) ; la réponse `create` y est une réponse invalide (question reposée). `save` : `create`, `distinct` (→ `distinct_from` = fiches de l'alerte) ; `open` : `artifact.ready` de la fiche existante (la plus forte), rien créé ; `cancel` : « Rien n'a été créé. ». `artifact.ready` : `kind = "application"`, `artifact_id` = fiche, `url = "/candidatures/<id>"`, `title` « Candidature chez <entreprise> » (« Fiche existante » pour `open`). (4) **Port** (`agents/tools/applications_port.py`, `AgentPorts.applications`, `NO_APPLICATIONS`, `bootstrap_agents.agent_ports(applications=…)`, composé par `bootstrap_career` : `CareerRuntimes.application_store`, faux `tests/support/applications.py`) : `intake_context` (jour de January, langue d'interface `User.language`), `intake_alerts` (`match` de 7.1 sur les fiches, **sans** les informations « même entreprise dans les 30 jours » qui ne bloquent rien ; entreprise et intitulé seuls comptent, la fiche en préparation n'a ni lien ni offre), `save_intake` (`AgentApplicationStore`, `features/applications/service/agent_store.py`) qui passe par `create_application` (même verrou, mêmes doublons, même fil, mêmes relances que la route) ; **idempotent par session** : la session est rangée dans `ref_id` de l'événement `created` de la fiche (`EventRepository.created_by`), une création rejouée relit cette fiche sous le verrou, avant tout contrôle de doublon. Sans date, une fiche « Postulée » prend aujourd'hui (règle de `on_status`, D138). Une phrase n'a pas d'identité : après un « autre poste », une troisième phrase identique alerte encore sur les deux fiches (comme la route sans offre) ; le couple fiche-fiche confirmé reste inscrit dans les deux sens. (5) **Route** `POST /applications/intake {text: 1 à 1 000, blancs retirés}` → 202 `{session_id}` (session `application_intake`, `subject_type` `application_intake`, `subject_id` = l'utilisatrice), sous un verrou de l'utilisatrice ; une session d'intake ouverte (en cours, en attente de réponse ou en pause) : 409 `intake_in_progress` (`details.session_id`), 422 `fields: ["text"]` sans écho de la phrase ; `POST /sessions` avec ce parcours : 409 `graph_has_route`. (6) **Journaux** : identifiants, nombres et statut seulement (`test_intake_text_never_logged`, `test_intake_data_never_logged` : phrase, entreprise, intitulé, contact, note). (7) **Contrat** : `contracts/openapi.json` et `frontend/src/shared/api/schema.d.ts` régénérés (route, `IntakeIn`, `IntakeOut`, `InterruptField.value`). Tests : `tests/agents/graphs/test_application_intake.py` et `_answers.py`, `tests/features/applications/test_agent_store.py` et `test_intake_router.py`.
-- **Raison** : SPEC 1 (honnêteté : rien d'inventé, humain dans la boucle), 6.1, 6.3 (alerte à l'entrée, quel que soit l'écran), 9.4 (`interrupt()` seul, écritures idempotentes), 17.2, 17.4 ; Review Focus n° 1 et n° 4 de la phase 7 ; D139 (création), D140 ; plan de la phase 7 (tâche 7.4).
+- **Date** 2026-11-15
+- **Subject** Phase 7, task 7.4: Tracking assistant (`tracker`, fast) and the `application_intake`
+  graph, `POST /applications/intake` (contract)
+- **Decision**
+  1. **Agent**: `tracker` (fast, prompt `prompts/tracker.md`, nodes `agents/nodes/tracker/`) reads
+     January's sentence (“j'ai postulé hier chez X pour le poste Y”) and returns an
+     `IntakeDraft` (`company`, `title`, `status` “applied” by default, `applied_on`, `channel`,
+     `contact_name`, `contact_role`, `notes` ≤ 500) through `structured_call`; the sentence is
+     always inside `untrusted(…, "phrase de January")`, the prompt receives January's day (time
+     zone of her settings, through the port) and the last 14 days with their names (“hier”,
+     “avant-hier”, “lundi 9 novembre 2026 (2026-11-09)”) to resolve “yesterday” or
+     “last Monday”. An empty optional field means “absent”.
+  2. **Checked by the code** (derived schema `reading_schema(today, text)`, refusal sent back to the
+     model by the 2 new attempts of `structured_call`, without copying the value): `applied_on` in
+     the future refused; `company` and `title` must be made of words of the sentence (accents and
+     case ignored), otherwise refusal “nothing invented”. Company or position left empty (the
+     model leaves them empty when the sentence does not say them): `run.failed` `intake_incomplete`,
+     “I couldn't find the company or the position in your sentence.”; an output never valid
+     after the attempts: `run.failed` `intake_unreadable` (“rephrase it with the company, the
+     position and the date”).
+  3. **Graph** (`graphs/application_intake.py`, input `{text: 1 to 1,000}`, line in `GRAPHS` and
+     `ROUTE_ONLY["application_intake"] = "POST /applications/intake"`): `load` (port: day and
+     language) → `parse` → `alerts` (port, read) → `ask` → `save` → `announce` → END, or
+     `ask` → `leave` → END. `ask_confirm` = `interrupt()` alone (signature `(state)`, no port or
+     model), the answer is reread by a pure function; invalid answer (option outside the question,
+     rejected field, future date, unknown shape): same question asked again, nothing written.
+     **Question payload** (`kind = "application_confirm"`, to be rendered by 7.13): `question` =
+     “Create this application?” followed, if there is an alert, by the message of the strongest
+     one (“Create this application? Careful, you already applied at … on November 3 (status:
+     Applied).”); `options`: without an alert `create` “Create application” and `cancel`
+     “Cancel”; with an alert `distinct` “It's a different role”, `open` “Open the existing
+     application”, `cancel`; `fields` (`InterruptField`, which gains `value: str | null`,
+     prefilled value, default `null`, hence compatible with the stored events): `company`, `title`,
+     `status` (value of `ApplicationStatus`), `applied_on` (YYYY-MM-DD or empty), `channel` (value
+     of `Channel` or empty), `contact_name`, `contact_role`, `notes`, each with `required` and
+     `max_length`. **Answer** (`ResumeRequest.value`): `{"choice": <option>, "fields": {id: text}}`
+     (`fields` optional: the fields sent replace those of the draft, the whole is revalidated as
+     `IntakeDraft`) or the option alone (`"cancel"`). Deviation from the plan: with an alert, the
+     `create` option is not offered (the route refuses a record that looks alike without “other
+     position”, a 409 would fail the session); the `create` answer is an invalid answer there
+     (question asked again). `save`: `create`, `distinct` (→ `distinct_from` = the alert's
+     records); `open`: `artifact.ready` of the existing record (the strongest), nothing created;
+     `cancel`: “Nothing was created.”. `artifact.ready`: `kind = "application"`, `artifact_id` =
+     record, `url = "/candidatures/<id>"`, `title` “Application at <company>” (“Existing
+     record” for `open`).
+  4. **Port** (`agents/tools/applications_port.py`, `AgentPorts.applications`, `NO_APPLICATIONS`,
+     `bootstrap_agents.agent_ports(applications=…)`, composed by `bootstrap_career`:
+     `CareerRuntimes.application_store`, fake `tests/support/applications.py`): `intake_context`
+     (January's day, interface language `User.language`), `intake_alerts` (7.1's `match` on the
+     records, **without** the “same company within 30 days” information items, which block
+     nothing; only company and title count, the record being prepared has no link or posting),
+     `save_intake` (`AgentApplicationStore`, `features/applications/service/agent_store.py`) which
+     goes through `create_application` (same lock, same duplicates, same thread, same reminders as
+     the route); **idempotent per session**: the session is stored in `ref_id` of the record's
+     `created` event (`EventRepository.created_by`), a replayed creation rereads that record under
+     the lock, before any duplicate check. Without a date, an “Applied” record takes today (rule
+     of `on_status`, D138). A sentence has no identity: after an “other position”, a third
+     identical sentence still alerts on the two records (like the route without a posting); the
+     confirmed record-record pair stays recorded in both directions.
+  5. **Route** `POST /applications/intake {text: 1 to 1,000, whitespace stripped}` → 202
+     `{session_id}` (session `application_intake`, `subject_type` `application_intake`, `subject_id`
+     = the user), under a user lock; an open intake session (running, awaiting an answer or paused):
+     409 `intake_in_progress` (`details.session_id`), 422 `fields: ["text"]` with no echo of the
+     sentence; `POST /sessions` with this graph: 409 `graph_has_route`.
+  6. **Logs**: identifiers, numbers and status only (`test_intake_text_never_logged`,
+     `test_intake_data_never_logged`: sentence, company, title, contact, note).
+  7. **Contract**: `contracts/openapi.json` and `frontend/src/shared/api/schema.d.ts` regenerated
+     (route, `IntakeIn`, `IntakeOut`, `InterruptField.value`). Tests:
+     `tests/agents/graphs/test_application_intake.py` and `_answers.py`,
+     `tests/features/applications/test_agent_store.py` and `test_intake_router.py`.
+- **Reason** SPEC 1 (honesty: nothing invented, human in the loop), 6.1, 6.3 (alert at entry,
+  whatever the screen), 9.4 (`interrupt()` alone, idempotent writes), 17.2, 17.4; Review Focus no. 1
+  and no. 4 of phase 7; D139 (creation), D140; phase 7 plan (task 7.4).
 
 ## D142
 
-- **Date** : 2026-11-15
-- **Sujet** : Phase 7, tâche 7.5 : kit de candidature, parcours `application_kit` (sept pièces en parallèle, contrôle des faits par le code)
-- **Décision** : (1) **Parcours** (`graphs/application_kit.py`, entrée `{application_id}`, ligne dans `GRAPHS`, `ROUTE_ONLY["application_kit"] = "POST /applications/{id}/kit"` ; route et port réel en 7.6) : `load` (port `KitStore.context`, lecture seule) → une branche par pièce non gardée, dans le même super pas → `close` → END. Les pièces que January a modifiées (`KitContext.keep`) n'ont aucune branche : jamais refaites ; toutes gardées : `load → close`. Chaque branche relit le contexte (comme `cv_review`) ; l'état ne garde que `application_id`, `keep` et `outcomes` (pièce → statut, fusion des dicts). `close` : `run.completed` avec le compte (« Kit de candidature : 7 pièce(s), dont 7 prête(s), 0 à vérifier, 0 en échec. »). (2) **Pièces** : `cv` (sans modèle : version prête la plus récente, `ready`, « CV ciblé : version n° N », `meta.version_id` ; aucune : `to_check`, « Lance la revue de CV de cette offre pour obtenir ton CV ciblé. ») ; `letter`, `linkedin`, `followups`, `form_answers`, `pitch` (Assistant de suivi, `tracker`, rapide, `prompts/tracker.md` par mode, `_shared/kit.md`) ; `company_brief` (Éclaireur, mode `dossier`). Contenus rangés : `followups` = courriel de 7 jours, une ligne `---`, courriel de 14 jours (convention de 7.3) ; `linkedin` = invitation, une ligne `---`, message ; `form_answers` = `### question` puis réponse. Le profil, l'offre, la fiche (entreprise, intitulé exact, contact) et le guide de style (`deps.settings.style_guide` ; écart au plan : pas de champ `style_guide` dans `KitContext`) sont chacun encadrés par `untrusted`. Le poste est nommé « à votre poste de <intitulé> » / « your <intitulé> role ». (3) **Honnêteté, par le code** (`nodes/tracker/honesty.py`) : `text_claims(texte, profil, allowed=[entreprise, intitulé exact, contact])` sur chaque partie (invitation et message compris) ; `allowed` ne contient que des expressions entières, jamais un outil ni un terme de l'offre (7.1). Des claims, ou des mots hors bornes (lettre 250 à 350, pitch 130 à 170, message LinkedIn 150 au plus, chaque relance 120 au plus, comptés aux blancs) : **un seul** nouvel essai, avec les termes nommés (« N'écris rien qui ne soit pas dans le profil : 5, Kubernetes. ») et les longueurs ; ce qui reste après l'essai : `to_check`, `meta.flags` = les termes, `meta.words` = le compte (un entier, ou un compte par partie pour `followups`) ; un second essai illisible garde le premier, à vérifier. `meta.language` = langue de l'offre. `form_answers` : `is_salary_question` → réponse **vidée par le code**, `meta.salary = true`, « À remplir par toi » ; réponse sans `fact_ids` valide (absent du profil) → vidée, « À compléter » ; les faits invalides sont retirés des `fact_ids` ; `meta.items` = `{question, answer, fact_ids, state}` ; une réponse vidée rend la pièce `to_check` ; le contrôle des faits porte sur les réponses restantes, avec le même seul nouvel essai. (4) **Dossier** (`nodes/scout/dossier.py`, `tools/kit_dossier.py`) : un dossier de moins de 30 jours (`KitContext.company_dossier` et ses pages `company_dossier_sources`) est repris sans recherche, sans modèle et sans écriture ; sinon deux `web_search`, quatre `web_read` au plus (pages privilégiées d'abord), `CompanyDossier` demandé sur les pages lues, numérotées `[n]`. Le Vérificateur est tenu par le code : une citation `[n]` sans page lue est retirée ; un texte (activité, produit, culture, processus) sans citation valide est vidé (« Non trouvé dans les sources lues. », pièce `to_check`) ; une technologie, un point de vigilance ou une actualité sans citation valide est retiré ; une actualité sans date, future ou de plus de 183 jours est retirée (le jour vient de `KitContext.today`, fuseau de January), de même que celle dont toutes les pages citées ont une date connue (`PageRead.date`) de plus de 183 jours, quelle que soit la date écrite par le modèle ; la taille (`size`) est rendue comme « Taille estimée : … (estimation non sourcée) », omise si `inconnu` ; une question réduite à rien par le retrait des citations n'est pas rendue ; les cinq questions gardent leur nombre. Aucune page lue, ou aucun texte sourcé : `to_check`, « Aucune source lisible : dossier non produit. », `companies` intact. Sinon `save_dossier` (idempotent par session) puis la pièce en Markdown avec la liste des sources. (5) **Événements** : chaque pièce rangée (`ready` ou `to_check`) émet `artifact.ready` (`kind = "kit_item"`, `artifact_id` = id de la pièce, titre de la pièce, sans `url`) dès qu'elle est rangée ; une pièce en échec (`AppError` de l'agent, ou délai de la pièce dépassé : 240 s, 360 s pour le dossier) est rangée `failed` (`meta.error`, `meta.code`), dite par `agent.message`, non annoncée, et n'arrête pas les autres ; le plafond de tokens de la session (`token_cap_reached`) n'est pas un échec de pièce : il remonte et fait échouer la session. (6) **Port** (`agents/tools/kit_port.py`, `AgentPorts.kit`, `NO_KIT`, `bootstrap_agents.agent_ports(kit=…)`, faux `tests/support/kit.py`) : `context`, `save_piece` (idempotent par fiche, pièce et session : un nœud rejoué ne range pas une seconde ligne), `save_dossier`. `KitContext` gagne, au plan, `today`, `contact`, `company_dossier_sources`. Aucune route, aucun changement du contrat OpenAPI. (7) **Journaux** : identifiants, nombres et statuts seulement. Tests : `tests/agents/graphs/test_application_kit.py`, `_dossier.py`, `_form.py` ; `tests/agents/nodes/test_kit_pieces.py`, `test_dossier.py`.
-- **Raison** : SPEC 1 (honnêteté : aucun fait inventé, humain dans la boucle), 6.4, 9.4 (écritures idempotentes), 17.2, 17.4, 18.3 ; D77 (recherche web), D141 ; Review Focus de la phase 7 ; plan de la phase 7 (tâche 7.5).
+- **Date** 2026-11-15
+- **Subject** Phase 7, task 7.5: application kit, `application_kit` graph (seven items in parallel,
+  fact check by the code)
+- **Decision**
+  1. **Graph** (`graphs/application_kit.py`, input `{application_id}`, line in `GRAPHS`,
+     `ROUTE_ONLY["application_kit"] = "POST /applications/{id}/kit"`; route and real port in 7.6):
+     `load` (port `KitStore.context`, read-only) → one branch per unguarded item, in the same
+     super-step → `close` → END. The items that January edited (`KitContext.keep`) have no
+     branch: never redone; all kept: `load → close`. Each branch rereads the context (like
+     `cv_review`); the state keeps only `application_id`, `keep` and `outcomes` (item → status,
+     dict merge). `close`: `run.completed` with the count (“Application kit: 7 item(s), including
+     7 ready, 0 to check, 0 failed.”).
+  2. **Items**: `cv` (no model: most recent ready version, `ready`, “Targeted CV: version no.
+     N”, `meta.version_id`; none: `to_check`, “Start this posting's CV review to get your
+     targeted CV.”); `letter`, `linkedin`, `followups`, `form_answers`, `pitch` (Tracking
+     assistant, `tracker`, fast, `prompts/tracker.md` per mode, `_shared/kit.md`); `company_brief`
+     (Scout, `dossier` mode). Stored contents: `followups` = 7-day email, a `---` line, 14-day email
+     (convention of 7.3); `linkedin` = invitation, a `---` line, message; `form_answers` =
+     `### question` then answer. The profile, the posting, the record (company, exact title,
+     contact) and the style guide (`deps.settings.style_guide`; deviation from the plan: no
+     `style_guide` field in `KitContext`) are each framed by `untrusted`. The position is named
+     “à votre poste de <title>” / “your <title> role”.
+  3. **Honesty, by the code** (`nodes/tracker/honesty.py`): `text_claims(text, profile,
+     allowed=[company, exact title, contact])` on each part (invitation and message included);
+     `allowed` contains only whole expressions, never a tool or a posting term (7.1). On claims, or
+     words out of bounds (letter 250 to 350, pitch 130 to 170, LinkedIn message 150 at most, each
+     follow-up 120 at most, counted at whitespace): **a single** new attempt, with the named terms
+     (“Write nothing that is not in the profile: 5, Kubernetes.”) and the lengths; what remains
+     after the attempt: `to_check`, `meta.flags` = the terms, `meta.words` = the count (an integer,
+     or a count per part for `followups`); a second unreadable attempt keeps the first, to check.
+     `meta.language` = language of the posting. `form_answers`: `is_salary_question` → answer
+     **emptied by the code**, `meta.salary = true`, “To fill in yourself”; answer without a
+     valid `fact_ids` (absent from the profile) → emptied, “To complete”; invalid facts are
+     removed from `fact_ids`; `meta.items` = `{question, answer, fact_ids, state}`; an emptied
+     answer makes the item `to_check`; the fact check covers the remaining answers, with the same
+     single new attempt.
+  4. **Dossier** (`nodes/scout/dossier.py`, `tools/kit_dossier.py`): a dossier less than 30 days old
+     (`KitContext.company_dossier` and its pages `company_dossier_sources`) is reused without
+     search, without a model and without a write; otherwise two `web_search`, four `web_read` at
+     most (preferred pages first), `CompanyDossier` requested on the pages read, numbered `[n]`. The
+     Verifier is held by the code: a citation `[n]` without a page read is removed; a text
+     (activity, product, culture, process) without a valid citation is emptied (“Not found in the
+     sources read.”, item `to_check`); a technology, a point of vigilance or a news item without a
+     valid citation is removed; a news item with no date, future, or more than 183 days old is
+     removed (the day comes from `KitContext.today`, January's time zone), as well as one all of
+     whose cited pages have a known date (`PageRead.date`) more than 183 days old, whatever date the
+     model wrote; the size (`size`) is rendered as “Estimated size: … (unsourced estimate)”,
+     omitted if `inconnu`; a question reduced to nothing by the removal of citations is not
+     rendered; the five questions keep their number. No page read, or no sourced text: `to_check`,
+     “No readable source: dossier not produced.”, `companies` untouched. Otherwise
+     `save_dossier` (idempotent per session) then the item as Markdown with the list of sources.
+  5. **Events**: each stored item (`ready` or `to_check`) emits `artifact.ready`
+     (`kind = "kit_item"`, `artifact_id` = item id, item title, no `url`) as soon as it is stored; a
+     failed item (`AppError` from the agent, or the item's timeout exceeded: 240 s, 360 s for the
+     dossier) is stored `failed` (`meta.error`, `meta.code`), reported by `agent.message`, not
+     announced, and stops no other; the session's token cap (`token_cap_reached`) is not an item
+     failure: it bubbles up and fails the session.
+  6. **Port** (`agents/tools/kit_port.py`, `AgentPorts.kit`, `NO_KIT`,
+     `bootstrap_agents.agent_ports(kit=…)`, fake `tests/support/kit.py`): `context`, `save_piece`
+     (idempotent per record, item and session: a replayed node does not store a second row),
+     `save_dossier`. `KitContext` gains, per the plan, `today`, `contact`,
+     `company_dossier_sources`. No route, no change of the OpenAPI contract.
+  7. **Logs**: identifiers, numbers and statuses only. Tests:
+     `tests/agents/graphs/test_application_kit.py`, `_dossier.py`, `_form.py`;
+     `tests/agents/nodes/test_kit_pieces.py`, `test_dossier.py`.
+- **Reason** SPEC 1 (honesty: no invented fact, human in the loop), 6.4, 9.4 (idempotent writes),
+  17.2, 17.4, 18.3; D77 (web search), D141; Review Focus of phase 7; phase 7 plan (task 7.5).
 
 ## D143
 
-- **Date** : 2026-11-15
-- **Sujet** : Phase 7, tâche 7.6 : kit de candidature, port réel, routes et archive (contrat)
-- **Décision** : (1) **Routes** (`router_kit.py`, `schemas_kit.py`) : `POST /applications/{id}/kit` → 202 `{session_id}` (parcours `application_kit`, sujet `application_kit` = la fiche) ; 409 `kit_in_progress` (`details.session_id`), 409 `posting_required` (ni offre liée ni texte figé), 409 `profile_required` (aucun profil validé), 404 `application_not_found` ; `GET /applications/{id}/kit` → `KitOut {session_id, running, items}` (toujours les sept pièces dans l'ordre fixe de F16, `pending` pour celles pas encore rangées) ; `PATCH /applications/{id}/kit/{kind}` `{content ≤ 20 000}` → `KitItemOut` (`edited = true`, 404 `kit_item_not_found` si la pièce n'est pas rangée) ; `GET /applications/{id}/kit.zip` → `application/zip`, `Content-Disposition: attachment; filename="Kit_<Entreprise>_<Poste>.zip"` (ASCII, `cv.service.naming.kit_filename`). `KitItemOut` : `id, kind, status, content, flags, salary_fields, words, error, sources, edited, updated_at` (`id` = `artifact_id` de l'événement `artifact.ready` ; `error` = motif d'une pièce en échec ; `sources` = `KitSourceOut {rank, url, title}`, `rank` = n de la citation `[n]`, rangées avec la pièce `company_brief`). Une 422 nomme les champs, jamais le texte. (2) **Fil de la fiche** : événement `kit` au lancement (« Kit de candidature lancé. », `ref_id` = session) et à la fin (« Kit de candidature terminé : … », écrit dans la transaction de la septième pièce rangée, une seule fois par session ; une session qui échoue ou s'annule avant ne l'écrit pas). (3) **Modification** : le texte de January remplace la pièce (`edited`, jamais refaite : `KitContext.keep`). Une pièce « à vérifier » (ou en échec, qu'elle remplit) est relue par `text_claims` avec les mêmes expressions permises (entreprise, intitulé exact, contact) : `flags` mis à jour, « prête » si aucun terme ne reste et aucune réponse de formulaire n'est à remplir ou à compléter ; texte vide : toujours « à vérifier » ; une pièce prête reste prête (non relue). Relues : lettre, LinkedIn, relances, réponses du formulaire (jamais les questions, ni la réponse à une question salariale : la prétention est celle de January), pitch ; ni le CV ni le dossier. Les mots sont recomptés, sans effet sur le statut. (4) **Port réel** (`service/kit_store.py`, `AgentKitStore`, `CareerRuntimes.kit_store`, `agent_ports(kit=…)`) : `context` lit la fiche (entreprise et intitulé exacts, contact), l'analyse de l'offre liée (sinon une analyse minimale de la copie figée : entreprise, intitulé, langue d'après les mots courants, aucune exigence inventée), le profil validé (`cv.service.versions.validated_profile`), le dossier de `companies` s'il a moins de 30 jours **avec ses pages dans l'ordre rangé** (`[n]` = rang + 1, jamais retriées), la version de CV prête la plus récente, les pièces modifiées (`keep`, dans l'ordre fixe) et le jour de January. `save_piece` : un verrou **par fiche** (`rt.locks`, clé `kit:<fiche>`) sérialise les sept branches parallèles ; la ligne `(fiche, pièce)` est unique ; une ligne de la même session ou une pièce modifiée depuis n'est jamais réécrite ; une nouvelle session remplace la ligne (même id). `save_dossier` : sous un verrou de l'utilisatrice, la fiche entreprise est créée au besoin, les colonnes `dossier*` seules sont écrites, l'identifiant de la session est rangé avec le dossier (rejeu sans effet). Le dossier garde ses pages dans le `meta` de la pièce (`source_refs`) : un dossier refait plus tard pour une autre fiche ne change pas celles déjà montrées. Le guide de style n'est pas lu par le port : il vient des réglages du moteur (D142). (5) **Archive** (`service/kit_zip.py`) : un fichier Markdown par pièce rangée `ready` ou `to_check` (`01_cv.md` … `07_pitch.md`, ordre de F16), le PDF de la version prête de la pièce `cv` sous son nom `CV_…pdf` (relu par `cv.service.versions.version_pdf`), `LISEZMOI.txt` (pièces « à vérifier » avec leurs termes, pièces omises : absentes ou en échec avec leur motif, PDF non joint) ; rien n'est envoyé par l'application. (6) **Journaux** : identifiants, statuts, nombres ; jamais une pièce, l'entreprise, l'intitulé, le contact, une adresse ni le nom du fichier. Contrat régénéré (`contracts/openapi.json`, `schema.d.ts`). Tests : `tests/features/applications/test_kit_{store,router,zip}.py`, `tests/agents/graphs/test_application_kit_real_store.py`.
-- **Raison** : SPEC 1 (honnêteté : le texte de January est relu par le code, rien n'est inventé), 6.4, F16, 9.4 (écritures idempotentes, sept branches en parallèle), 17.2 ; D139 (verrous des candidatures), D141, D142 ; plan de la phase 7 (tâche 7.6).
+- **Date** 2026-11-15
+- **Subject** Phase 7, task 7.6: application kit, real port, routes and archive (contract)
+- **Decision**
+  1. **Routes** (`router_kit.py`, `schemas_kit.py`): `POST /applications/{id}/kit` → 202
+     `{session_id}` (graph `application_kit`, subject `application_kit` = the record); 409
+     `kit_in_progress` (`details.session_id`), 409 `posting_required` (neither a linked posting nor
+     frozen text), 409 `profile_required` (no validated profile), 404 `application_not_found`;
+     `GET /applications/{id}/kit` → `KitOut {session_id, running, items}` (always the seven items
+     in F16's fixed order, `pending` for those not yet stored);
+     `PATCH /applications/{id}/kit/{kind}` `{content ≤ 20,000}` → `KitItemOut` (`edited = true`,
+     404 `kit_item_not_found` if the item is not stored); `GET /applications/{id}/kit.zip` →
+     `application/zip`, `Content-Disposition: attachment; filename="Kit_<Company>_<Position>.zip"`
+     (ASCII, `cv.service.naming.kit_filename`). `KitItemOut`: `id, kind, status, content,
+     flags, salary_fields, words, error, sources, edited, updated_at` (`id` = `artifact_id` of the
+     `artifact.ready` event; `error` = reason for a failed item; `sources` =
+     `KitSourceOut {rank, url, title}`, `rank` = n of the citation `[n]`, stored with the
+     `company_brief` item). A 422 names the fields, never the text.
+  2. **Record thread**: `kit` event at launch (“Application kit started.”, `ref_id` = session)
+     and at the end (“Application kit finished: …”, written in the transaction of the seventh
+     stored item, once per session; a session that fails or is cancelled before does not write it).
+  3. **Editing**: January's text replaces the item (`edited`, never redone: `KitContext.keep`). A
+     “to check” item (or a failed one, which it fills in) is reread by `text_claims` with the
+     same allowed expressions (company, exact title, contact): `flags` updated, “ready” if no
+     term remains and no form answer is left to fill in or to complete; empty text: always “to
+     check”; a ready item stays ready (not reread). Reread: letter, LinkedIn, follow-ups, form
+     answers (never the questions, nor the answer to a salary question: the expectation is
+     January's), pitch; neither the CV nor the dossier. The words are recounted, with no effect on
+     the status.
+  4. **Real port** (`service/kit_store.py`, `AgentKitStore`, `CareerRuntimes.kit_store`,
+     `agent_ports(kit=…)`): `context` reads the record (exact company and title, contact), the
+     analysis of the linked posting (otherwise a minimal analysis of the frozen copy: company,
+     title, language from common words, no invented requirement), the validated profile
+     (`cv.service.versions.validated_profile`), the `companies` dossier if it is less than 30 days
+     old **with its pages in the stored order** (`[n]` = rank + 1, never re-sorted), the most recent
+     ready CV version, the edited items (`keep`, in the fixed order) and January's day.
+     `save_piece`: a lock **per record** (`rt.locks`, key `kit:<record>`) serializes the seven
+     parallel branches; the row `(record, item)` is unique; a row of the same session or an item
+     edited since is never rewritten; a new session replaces the row (same id). `save_dossier`:
+     under a user lock, the company record is created if needed, only the `dossier*` columns are
+     written, the session's identifier is stored with the dossier (replay with no effect). The
+     dossier keeps its pages in the item's `meta` (`source_refs`): a dossier redone later for
+     another record does not change those already shown. The style guide is not read by the port: it
+     comes from the engine's settings (D142).
+  5. **Archive** (`service/kit_zip.py`): one Markdown file per stored item `ready` or `to_check`
+     (`01_cv.md` … `07_pitch.md`, F16's order), the PDF of the ready version of the `cv` item
+     under its name `CV_…pdf` (reread by `cv.service.versions.version_pdf`), `LISEZMOI.txt` (“to
+     check” items with their terms, omitted items: absent or failed with their reason, PDF not
+     attached); nothing is sent by the application.
+  6. **Logs**: identifiers, statuses, numbers; never an item, the company, the title, the contact,
+     an address nor the file name. Contract regenerated (`contracts/openapi.json`, `schema.d.ts`).
+     Tests: `tests/features/applications/test_kit_{store,router,zip}.py`,
+     `tests/agents/graphs/test_application_kit_real_store.py`.
+- **Reason** SPEC 1 (honesty: January's text is reread by the code, nothing is invented), 6.4, F16,
+  9.4 (idempotent writes, seven parallel branches), 17.2; D139 (applications locks), D141, D142;
+  phase 7 plan (task 7.6).
 
 ## D144
 
-- **Date** : 2026-11-15
-- **Sujet** : Phase 7, tâche 7.7 : essai réel en milieu de phase (GLM 5.3 flash, pile Docker), script `check_phase7`, parties `suivi` et `kit`
-- **Décision** : (1) **Script** `scripts/check_phase7.py` (+ `scripts/phase7_*.py`), même forme que `check_phase6` : une ligne par étape, aucune donnée imprimée, journaux du back lus sur l'entrée standard ; lancé dans le conteneur jetable `learning_career_platform-check7` de l'image du back, sur le réseau `learning_career_platform_default`, `scripts/` monté en lecture seule (`MSYS_NO_PATHCONV=1` sous Git Bash). (2) **Suivi**, deux passages verts (5 s et 4 s) : fiche depuis l'offre (relue, version n° 6 reliée), doublons (même lien 409 certain, « (H/F) » 409 probable, autre poste : information), une phrase (question en 2 s, 1 appel, 0,0008 $, champs justes : LinkedIn, postulée la veille), relance `linkedin_7` à 8 jours avec brouillon de 55 mots, reportée puis faite (fiche Relancée), indicateurs, journaux sans donnée. (3) **Kit**, deux passages verts : n° 1 en 36 s, 9 appels, 0,0145 $, 7 pièces dont 2 à vérifier (`form_answers` : question de salaire laissée vide, « À remplir par toi » ; `company_brief` : sections sans source vidées par le code), lettre de 316 mots, dossier de 4 sources, archive de 9 fichiers ; n° 2 en 13 s, 8 appels, 0,0095 $ (dossier repris, moins de 30 jours), 1 pièce à vérifier (`form_answers`), lettre de 280 mots. Aucune pièce signalée pour un fait absent du profil. (4) **Aucun correctif** du back. Notés pour la suite : la page du kit (7.14) dit pourquoi une pièce est à vérifier quand elle n'a aucun terme (salaire à remplir, sections sans source retirées) ; un dossier repris passe `ready` alors que sa production était `to_check` (sections vidées) : statut à aligner à la revue finale.
-- **Raison** : processus allégé (essai réel GLM dès le milieu de phase) ; SPEC 1, 6.4, F16, 17.2 ; D141 à D143 ; plan de la phase 7 (tâche 7.7).
+- **Date** 2026-11-15
+- **Subject** Phase 7, task 7.7: real trial in mid-phase (GLM 5.3 flash, Docker stack), script
+  `check_phase7`, parts `suivi` and `kit`
+- **Decision**
+  1. **Script** `scripts/check_phase7.py` (+ `scripts/phase7_*.py`), same form as `check_phase6`:
+     one line per step, no data printed, back-end logs read on standard input; run in the disposable
+     container `learning_career_platform-check7` of the back-end image, on the network
+     `learning_career_platform_default`, `scripts/` mounted read-only (`MSYS_NO_PATHCONV=1` under
+     Git Bash).
+  2. **Tracking**, two green runs (5 s and 4 s): record from the posting (reread, version no. 6
+     linked), duplicates (same link 409 certain, “(H/F)” 409 probable, other position:
+     information), one sentence (question in 2 s, 1 call, $0.0008, right fields: LinkedIn, applied
+     the day before), `linkedin_7` reminder at 8 days with a 55-word draft, postponed then done
+     (record Followed up), indicators, logs with no data.
+  3. **Kit**, two green runs: no. 1 in 36 s, 9 calls, $0.0145, 7 items including 2 to check
+     (`form_answers`: salary question left empty, “To fill in yourself”; `company_brief`:
+     sections without a source emptied by the code), 316-word letter, dossier of 4 sources, archive
+     of 9 files; no. 2 in 13 s, 8 calls, $0.0095 (dossier reused, under 30 days), 1 item to check
+     (`form_answers`), 280-word letter. No item flagged for a fact absent from the profile.
+  4. **No back-end fix.** Noted for later: the kit page (7.14) says why an item is to be checked
+     when it has no term (salary to fill in, sections without a source removed); a reused dossier
+     goes `ready` although its production was `to_check` (sections emptied): status to align at the
+     final review.
+- **Reason** lightened process (real GLM trial from mid-phase); SPEC 1, 6.4, F16, 17.2; D141 to
+  D143; phase 7 plan (task 7.7).
 
 ## D145
 
-- **Date** : 2026-11-15
-- **Sujet** : Phase 7, tâche 7.8 : Intervieweur et parcours `interview` (entretien blanc, débrief, fiches de révision)
-- **Décision** : (1) **Agent** `interviewer` (niveau fort), prompt `prompts/interviewer.md` à trois tâches (`plan`, `turn`, `debrief`) ; tout ce qui vient de l'offre, du dossier, du CV, des écarts, du profil, de l'intitulé et des réponses de January est encadré par `untrusted`. (2) **Parcours** `interview` (`ROUTE_ONLY["interview"] = "POST /applications/{id}/interviews"`, entrée `{interview_id}`) : `load` (port) → `plan` (exactement `QUESTIONS_BY_DURATION[durée]` questions, 4, 7 ou 10, toutes différentes, redemandé sinon) → `ask` (`interrupt()` seul et pur) → `turn` (note interne 1 à 5, une relance au plus par question, la relance repasse par `ask` et sa réponse complète le même échange) → … → `debrief` → `save` → fin. Question : `kind = "interview_answer"`, `question` = le texte posé (question ou relance), un champ `answer` (4 000 caractères), une option `stop` « Terminer l'entretien » ; réponse `{"answers": {"answer": texte}}` ou `"stop"` (ou `{"action": "stop"}`) ; réponse illisible : même question reposée sans appel au modèle. Les questions et relances sont aussi publiées par `agent.message` (`interviewer-q<n>`, `interviewer-q<n>-relance`). (3) **Ce que le code décide** : la réponse la plus faible est celle de la note interne la plus basse (la plus ancienne en cas d'égalité), les questions ratées celles de note 2 au plus : le modèle écrit, il ne choisit pas (`weakest_index` et `missed` sont remplacés par ceux du code) ; `expected` (points attendus, 1 à 4 par question ratée) doit couvrir chaque question ratée, sinon le débrief est renvoyé au modèle. `text_claims` sur `improved_answer` (`allowed` = intitulé du poste et nom de l'entreprise seulement) : les termes que le profil ne dit pas partent en `flags`, la réponse est montrée « à vérifier » et jamais réécrite. Une fiche de révision par question ratée (recto la question raccourcie à 300, verso les points `- …`). (4) **Arrêt** : `stop` avant toute réponse → `save_result(exchanges=[], debrief=None, …)` (entretien arrêté, ni débrief, ni fiche, aucun appel au modèle) ; après au moins une réponse → débrief sur les questions répondues seulement (une relance restée sans réponse laisse la question répondue). (5) **Port** `InterviewStore` (`context`, `save_result` idempotent par session ; `debrief: Debrief | None`, `None` = arrêté ; `Exchange` défini dans `interview_schema`) avec `NO_INTERVIEWS` (503 `interview_unavailable`) et `FakeInterviewStore` ; champ `AgentPorts.interviews` et paramètre `interviews` d'`agent_ports` (port réel : 7.9). (6) **Reprises** : le plan, la question en cours (`current`, `follow_up_open`) et les échanges vivent dans l'état du checkpointer jusqu'à `save` : un redémarrage pendant l'attente repose la même question sans aucun appel au modèle ; une seconde réponse à la même question est refusée par le runner (409, question périmée) et ne compte pas ; `save` rejoué relit l'issue de sa session. Un modèle muet ou trop lent à un tour (codes récupérables, D115) donne la note neutre 3 sans relance, marquée `Exchange.unrated` et listée dans `Debrief.unrated` (« n réponse(s) n'ont pas pu être notées ») ; elle ne remplace jamais la note déjà donnée à la première réponse d'une question ; une panne du plan fait échouer la session. **Tour 1** : un débrief qui échoue (illisible après les nouveaux essais, panne passagère, lenteur au-delà de 270 s : mêmes codes récupérables ; pas `token_cap_reached`, qui arrête la session) ne perd pas les réponses : `save_result(exchanges non vides, debrief=None, flags=[], cards=[])`, session terminée avec « tes réponses sont gardées, mais l'entretien reste sans notes ni fiches ». **Contrat pour 7.9** : `debrief=None` avec `exchanges=[]` = entretien `stopped` ; `debrief=None` avec des échanges = entretien `debrief_failed` (réponses rangées, ni débrief, ni fiche, ni événement de débrief sur la fiche). (7) **Contrat** inchangé (`export_openapi --check` propre) ; journaux : identifiants et nombres seulement.
-- **Raison** : SPEC 1 (honnêteté : la réponse améliorée est écrite au nom de January, relue par le code), F10, 9.4 (interruption seule dans son nœud, écriture idempotente), 17.2, 17.4 ; D141 à D144 ; plan de la phase 7 (tâche 7.8).
+- **Date** 2026-11-15
+- **Subject** Phase 7, task 7.8: Interviewer and the `interview` graph (mock interview, debrief,
+  review cards)
+- **Decision**
+  1. **Agent** `interviewer` (strong tier), prompt `prompts/interviewer.md` with three tasks
+     (`plan`, `turn`, `debrief`); everything that comes from the posting, the dossier, the CV, the
+     gaps, the profile, the title and January's answers is framed by `untrusted`.
+  2. **Graph** `interview` (`ROUTE_ONLY["interview"] = "POST /applications/{id}/interviews"`, input
+     `{interview_id}`): `load` (port) → `plan` (exactly `QUESTIONS_BY_DURATION[duration]`
+     questions, 4, 7 or 10, all different, asked again otherwise) → `ask` (`interrupt()` alone and
+     pure) → `turn` (internal grade 1 to 5, one follow-up at most per question, the follow-up goes
+     back through `ask` and its answer completes the same exchange) → … → `debrief` → `save`
+     → end. Question: `kind = "interview_answer"`, `question` = the text asked (question or
+     follow-up), a field `answer` (4,000 characters), an option `stop` “End the interview”;
+     answer `{"answers": {"answer": text}}` or `"stop"` (or `{"action": "stop"}`); unreadable
+     answer: same question asked again with no model call. The questions and follow-ups are also
+     published by `agent.message` (`interviewer-q<n>`, `interviewer-q<n>-relance`).
+  3. **What the code decides**: the weakest answer is the one with the lowest internal grade (the
+     oldest on a tie), the missed questions those graded 2 at most: the model writes, it does not
+     choose (`weakest_index` and `missed` are replaced by the code's); `expected` (expected points,
+     1 to 4 per missed question) must cover each missed question, otherwise the debrief is sent back
+     to the model. `text_claims` on `improved_answer` (`allowed` = position title and company name
+     only): the terms that the profile does not state go to `flags`, the answer is shown “to
+     check” and never rewritten. One review card per missed question (front: the question
+     shortened to 300, back: the points `- …`).
+  4. **Stop**: `stop` before any answer → `save_result(exchanges=[], debrief=None, …)`
+     (interview stopped, no debrief, no card, no model call); after at least one answer → debrief
+     on the answered questions only (a follow-up left unanswered leaves the question answered).
+  5. **Port** `InterviewStore` (`context`, `save_result` idempotent per session;
+     `debrief: Debrief | None`, `None` = stopped; `Exchange` defined in `interview_schema`) with
+     `NO_INTERVIEWS` (503 `interview_unavailable`) and `FakeInterviewStore`; field
+     `AgentPorts.interviews` and parameter `interviews` of `agent_ports` (real port: 7.9).
+  6. **Resumes**: the plan, the current question (`current`, `follow_up_open`) and the exchanges
+     live in the checkpointer's state until `save`: a restart during the wait asks the same question
+     again with no model call; a second answer to the same question is refused by the runner (409,
+     stale question) and does not count; a replayed `save` rereads its session's outcome. A silent
+     or too slow model at a turn (recoverable codes, D115) gives the neutral grade 3 with no
+     follow-up, marked `Exchange.unrated` and listed in `Debrief.unrated` (“n answer(s) could not
+     be graded”); it never replaces the grade already given to the first answer of a question; a
+     failure of the plan fails the session. **Round 1**: a debrief that fails (unreadable after the
+     new attempts, passing outage, slowness beyond 270 s: same recoverable codes; not
+     `token_cap_reached`, which stops the session) does not lose the answers: `save_result(non-empty
+     exchanges, debrief=None, flags=[], cards=[])`, session finished with “your answers are kept,
+     but the interview stays without grades or cards”. **Contract for 7.9**: `debrief=None` with
+     `exchanges=[]` = interview `stopped`; `debrief=None` with exchanges = interview
+     `debrief_failed` (answers stored, no debrief, no card, no debrief event on the record).
+  7. **Contract** unchanged (`export_openapi --check` clean); logs: identifiers and numbers only.
+- **Reason** SPEC 1 (honesty: the improved answer is written in January's name, reread by the code),
+  F10, 9.4 (interruption alone in its node, idempotent write), 17.2, 17.4; D141 to D144; phase 7
+  plan (task 7.8).
 
 ## D146
 
-- **Date** : 2026-11-15
-- **Sujet** : Phase 7, tâche 7.9 : entretiens blancs, port réel, routes et fiches de révision (contrat)
-- **Décision** : (1) **Routes** (`router_interviews.py`, `schemas_interviews.py`) : `POST /applications/{id}/interviews` (`InterviewIn` : `mode`, `duration_min` 15, 30 ou 45, `language` `fr` par défaut) et `POST /interviews` (`InterviewIn` + `posting_id` ou `role`, l'un ou l'autre, ni les deux ni aucun : 422 `fields: ["posting_id", "role"]` ; tour 1), 202 `{interview_id, session_id}` ; `GET /interviews?application_id=` (le plus récent d'abord ; 404 `application_not_found` pour une fiche inconnue sans entretien, un entretien survivant à sa fiche) ; `GET /interviews/{id}` (`InterviewOut` : `id`, `application_id`, `posting_id`, `role`, `mode`, `duration_min`, `language`, `session_id`, `status`, `exchanges`, `debrief`, `flags`, `cards_created`, `created_at` ; `flags` et `cards_created` toujours présents, jamais facultatifs dans le contrat). Un entretien ou une fiche d'une autre utilisatrice : 404 (`interview_not_found`, `application_not_found`, `posting_not_found`). Une 422 nomme les champs, jamais la valeur. (2) **Un seul entretien ouvert** par utilisatrice : 409 `interview_in_progress` (`details.interview_id`), 409 `profile_required` (aucun profil validé), 503 `engine_unavailable` (l'entretien rangé passe alors en `failed`). Lancement sous un verrou par utilisatrice : l'entretien est rangé `running` avant le parcours (qui le relit), sa session posée juste après. (3) **Statuts** : `running`, `done`, `stopped`, `debrief_failed`, `failed` (`InterviewStatus`, colonne `status` String(16)). Le statut suit la session (D129 n° 5, comme les revues de CV) : un `running` dont la session n'est plus ouverte passe en `failed` à la lecture suivante (liste ou détail), sous le verrou, sessions lues avant les entretiens ; les trois autres statuts sont posés par le port et ne changent plus. (4) **Port réel** `AgentInterviewStore` (`service/interview_store.py`, branché par `bootstrap_career` et `agent_ports(..., interviews=...)`) : `context` assemble `InterviewContext` (réglage de l'entretien ; fiche : intitulé exact, copie figée du texte de l'offre ou texte de l'offre liée, analyse (celle de l'offre, sinon minimale), version de CV envoyée (sinon la plus récente prête de l'offre) ; entretien libre : l'offre seule ou l'intitulé seul ; dossier de l'entreprise de moins de 30 jours ; écarts = besoins de l'offre sans compétence connue ; profil validé) ; `save_result` est idempotent par session (un entretien qui n'est plus `running` n'est jamais réécrit) : `debrief=None` sans échange = `stopped`, avec des échanges = `debrief_failed` (réponses gardées, ni fiche, ni événement) ; sinon `done` : échanges, débrief, `flags` et `cards_created` rangés dans la colonne `debrief` (aucune migration), fiches par `quiz.service.cards.add_cards` (source `interview`, `source_id` = entretien, dues demain, jamais de compétence) et, si l'entretien a une fiche encore présente, l'événement `interview` du fil (`ref_id` = entretien), le tout dans la même transaction ; un entretien libre n'écrit rien au fil. (5) **Contrat** modifié : `contracts/openapi.json` et `schema.d.ts` régénérés ; journaux : identifiants, statuts et nombres seulement.
-- **Raison** : SPEC F10 (entretien blanc, fiches de révision), 6.4, 9.4 (écriture idempotente), 17.2 ; D129 (statut qui suit la session), D139 (verrous), D143, D145 ; plan de la phase 7 (tâche 7.9).
+- **Date** 2026-11-15
+- **Subject** Phase 7, task 7.9: mock interviews, real port, routes and review cards (contract)
+- **Decision**
+  1. **Routes** (`router_interviews.py`, `schemas_interviews.py`):
+     `POST /applications/{id}/interviews` (`InterviewIn`: `mode`, `duration_min` 15, 30 or 45,
+     `language` `fr` by default) and `POST /interviews` (`InterviewIn` + `posting_id` or `role`, one
+     or the other, not both and not neither: 422 `fields: ["posting_id", "role"]`; round 1), 202
+     `{interview_id, session_id}`; `GET /interviews?application_id=` (most recent first; 404
+     `application_not_found` for an unknown record with no interview, an interview survives its
+     record); `GET /interviews/{id}` (`InterviewOut`: `id`, `application_id`, `posting_id`, `role`,
+     `mode`, `duration_min`, `language`, `session_id`, `status`, `exchanges`, `debrief`, `flags`,
+     `cards_created`, `created_at`; `flags` and `cards_created` always present, never optional in
+     the contract). An interview or a record of another user: 404 (`interview_not_found`,
+     `application_not_found`, `posting_not_found`). A 422 names the fields, never the value.
+  2. **One open interview** per user: 409 `interview_in_progress` (`details.interview_id`), 409
+     `profile_required` (no validated profile), 503 `engine_unavailable` (the stored interview then
+     goes to `failed`). Launch under a per-user lock: the interview is stored `running` before the
+     graph (which rereads it), its session set right after.
+  3. **Statuses**: `running`, `done`, `stopped`, `debrief_failed`, `failed` (`InterviewStatus`,
+     column `status` String(16)). The status follows the session (D129 no. 5, like the CV reviews):
+     a `running` one whose session is no longer open goes to `failed` at the next read (list or
+     detail), under the lock, sessions read before the interviews; the other three statuses are set
+     by the port and no longer change.
+  4. **Real port** `AgentInterviewStore` (`service/interview_store.py`, wired by `bootstrap_career`
+     and `agent_ports(..., interviews=...)`): `context` assembles `InterviewContext` (interview
+     setting; record: exact title, frozen copy of the posting text or text of the linked posting,
+     analysis (that of the posting, otherwise minimal), CV version sent (otherwise the posting's
+     most recent ready one); free interview: the posting alone or the title alone; dossier of the
+     company under 30 days; gaps = the posting's needs without a known skill; validated profile);
+     `save_result` is idempotent per session (an interview that is no longer `running` is never
+     rewritten): `debrief=None` without exchange = `stopped`, with exchanges = `debrief_failed`
+     (answers kept, no card, no event); otherwise `done`: exchanges, debrief, `flags` and
+     `cards_created` stored in the `debrief` column (no migration), cards through
+     `quiz.service.cards.add_cards` (source `interview`, `source_id` = interview, due tomorrow,
+     never a skill) and, if the interview has a record still present, the `interview` event of the
+     thread (`ref_id` = interview), all in the same transaction; a free interview writes nothing to
+     the thread.
+  5. **Contract** modified: `contracts/openapi.json` and `schema.d.ts` regenerated; logs:
+     identifiers, statuses and numbers only.
+- **Reason** SPEC F10 (mock interview, review cards), 6.4, 9.4 (idempotent write), 17.2; D129
+  (status that follows the session), D139 (locks), D143, D145; phase 7 plan (task 7.9).
 
 ## D147
 
-- **Date** : 2026-11-15
-- **Sujet** : Phase 7, tâche 7.10 : comité de recrutement simulé (`hiring_committee`), port et routes (contrat)
-- **Décision** : (1) **Agents** : `manager` et `colleague` (niveau standard), variantes de prompt du Recruteur (`prompts/manager.md`, `colleague.md` incluent le bloc commun `_shared/recruiter_view.md`, que `recruiter.md` inclut aussi) ; `ats_reader.md`, `recruiter.md` et `moderator.md` gagnent un mode `committee` ; le tronc `_shared/committee.md` règle les trois étapes (impression, débat, vote) et adapte le ton à la taille de l'entreprise (`startup`, `pme`, `grand_groupe`, `inconnu`, lue dans le dossier de moins de 30 jours). CV, offre, dossier, termes de l'offre, paroles et votes sont encadrés par `untrusted`. (2) **Parcours** `hiring_committee` (`ROUTE_ONLY["hiring_committee"] = "POST /committee"`, entrée `{run_id}`, aucun `interrupt()`) : `load` → `impressions` → `round_1` → `round_2` → `votes` → `synthesis` → `save` → fin. **17 appels au plus** (le plafond compte les tours de modèle ; les nouveaux essais de `structured_call` sur une réponse illisible peuvent s'y ajouter, le coût restant borné par le plafond de tokens de la session) : 4 impressions (en parallèle ; chaque persona ne voit que le CV et l'offre, sans le dossier ni les autres), 4 prises de parole au tour 1 et 4 au tour 2 (`speak`, 150 mots au plus coupés par le code), 4 votes (sortie structurée `Vote`, en parallèle), 1 synthèse. (3) **P9** : l'ordre de parole est fixé par le code (`speaking_order` : celui des personas au tour 1, décalé d'un rang au tour 2) ; le Modérateur ne parle qu'à la synthèse. Pour tenir le budget, la règle « répondre nommément à un autre dès le tour 2 » (règles du débat du Conseil) n'est pas redemandée au modèle : le prompt désigne à qui répondre (le dernier à avoir parlé), et une règle non tenue est acceptée puis journalisée (identifiants et code de règle seulement). (4) **P10** : le verdict est la majorité des quatre votes **calculée par le code** (`majority_verdict` : plus de la moitié sur la même réponse, donc 3 sur 4 au moins) ; égalité 2-2 ou aucune majorité (2-1-1…) : `peut_etre`. Le modèle reçoit le verdict, il ne le choisit pas (un `verdict` de sa réponse est ignoré) ; il classe les objections (1 à 6 ; `persona` et `personas` sont des `Literal` : un identifiant inconnu est refusé et renvoyé au modèle par la sortie structurée, le code ne fait que remettre les personas d'une objection dans l'ordre du comité, sans doublon) et écrit exactement 3 changements. (5) **Honnêteté** : `committee_changes` relit chaque changement par `text_claims(text, profile, allowed=…)` avec `allowed` = l'entreprise et l'intitulé exact seulement (jamais un terme ou un nombre de l'offre) ; un outil, un chiffre ou un titre que le profil ne dit pas passe le changement en `needs_skill = true` avec ses `terms`, et son texte devient « À acquérir : X. Ton profil ne le dit pas : ne l'écris pas dans ton CV. » (jamais « ajoute X ») ; les noms propres sont ignorés (un changement est une consigne sur le CV, « la section Compétences ») ; les identifiants de faits inconnus du profil sont retirés. (6) **Reprises** : `durability="sync"` ne rejoue jamais un nœud terminé, donc jamais un vote donné ; un arrêt pendant un tour refait ce tour seulement (aucune écriture avant `save`) ; `save` est idempotent par session (port). (7) **Routes** (`router_committee.py`, `schemas_committee.py`) : `POST /committee` `{cv_version_id}` → 202 `{run_id, session_id}` ; 404 `version_not_found` (version inconnue ou d'une autre utilisatrice), 404 `posting_not_found`, 409 `version_not_ready` (statut autre que `ready`), 409 `committee_in_progress` (`details.run_id`, un seul comité ouvert par offre), 409 `profile_required` (profil maître validé exigé : il relit les changements), 503 `engine_unavailable` (l'exécution passe alors en `failed`) ; `GET /committee?posting_id=` → `list[CommitteeRunOut]` (récent d'abord) ; `GET /committee/{id}` → `CommitteeRunOut` (`id`, `cv_version_id`, `posting_id`, `application_id`, `session_id`, `status` `running`/`done`/`failed`, `votes` `{persona, vote, objection, reason}`, `verdict`, `objections` `{text, personas}`, `changes` `{text, persona, fact_ids, needs_skill, terms}`, `previous`, `created_at`) ; 404 `committee_not_found`. Une 422 nomme les champs, jamais la valeur. Le statut suit la session (D129 n° 5) : une exécution `running` sans session ouverte passe en `failed` à la lecture, sous le verrou des comités de l'utilisatrice. (8) **Avant et après (F19)** : `previous_id` = la dernière exécution `done` de la même offre, fixée au lancement ; `previous` = `CommitteeDiff {previous_id, votes [{persona, before, after}], objections_resolved, objections_new}` calculé à la lecture par `committee_diff` (pur : objections normalisées, ressemblance de 0,85 au moins = même objection), seulement pour une exécution `done` ; une exécution en échec n'est jamais « l'avant ». (9) **Port réel** `AgentCommitteeStore` (`service/committee_store.py`, `CareerRuntimes.committee_store`, `agent_ports(committee=…)`) : `context` assemble `CommitteeContext` (CV de la version sans nom ni coordonnées, texte et analyse de l'offre ou analyse minimale, entreprise et intitulé de la fiche de l'offre si elle existe, dossier de moins de 30 jours par `kit_store.dossier_of` et sa `size`, `ats_terms` calculés par le code : mots clés et outils de l'offre écrits ou non dans le CV, profil validé) ; `save_result` est idempotent par session (une exécution qui n'est plus `running` n'est jamais réécrite) et ajoute l'événement `committee` au fil de la fiche de l'offre si elle existe, dans la même transaction. `AtsTermsView` n'existait pas dans la revue de CV : défini ici (`found`, `missing`). (10) **Contrat** modifié : `contracts/openapi.json` et `schema.d.ts` régénérés ; journaux : identifiants, statuts, verdict et nombres seulement. L'écran (7.16) doit dire qu'il s'agit d'une simulation et non d'une prédiction, et réserver une couleur à `manager` et `colleague` (`agentColors.ts`).
-- **Raison** : SPEC F19 (comité de recrutement simulé, avant et après), 1 (honnêteté : aucun terme absent du profil n'est conseillé comme « ajoute »), 9.3 (règles du débat), 9.4 (écriture idempotente), 17.2, 17.4 ; D129 (statut qui suit la session), D139 (verrous), D143, D145, D146 ; plan de la phase 7 (tâche 7.10, rulings P9 et P10).
+- **Date** 2026-11-15
+- **Subject** Phase 7, task 7.10: simulated hiring committee (`hiring_committee`), port and routes
+  (contract)
+- **Decision**
+  1. **Agents**: `manager` and `colleague` (standard tier), prompt variants of the Recruiter
+     (`prompts/manager.md`, `colleague.md` include the common block `_shared/recruiter_view.md`,
+     which `recruiter.md` also includes); `ats_reader.md`, `recruiter.md` and `moderator.md` gain a
+     `committee` mode; the trunk `_shared/committee.md` sets the three steps (impression, debate,
+     vote) and adapts the tone to the company's size (`startup`, `pme`, `grand_groupe`, `inconnu`,
+     read in the dossier under 30 days). CV, posting, dossier, posting terms, speeches and votes are
+     framed by `untrusted`.
+  2. **Graph** `hiring_committee` (`ROUTE_ONLY["hiring_committee"] = "POST /committee"`, input
+     `{run_id}`, no `interrupt()`): `load` → `impressions` → `round_1` → `round_2` → `votes`
+     → `synthesis` → `save` → end. **17 calls at most** (the cap counts the model turns; the
+     new attempts of `structured_call` on an unreadable answer may add to it, the cost staying
+     bounded by the session's token cap): 4 impressions (in parallel; each persona sees only the CV
+     and the posting, without the dossier or the others), 4 speaking turns in round 1 and 4 in round
+     2 (`speak`, 150 words at most cut by the code), 4 votes (structured output `Vote`, in
+     parallel), 1 synthesis.
+  3. **P9**: the speaking order is set by the code (`speaking_order`: that of the personas in round
+     1, shifted by one rank in round 2); the Moderator speaks only at the synthesis. To hold the
+     budget, the rule “answer another by name from round 2” (the Council's debate rules) is not
+     asked of the model again: the prompt names whom to answer (the last to have spoken), and a rule
+     not held is accepted then logged (identifiers and rule code only).
+  4. **P10**: the verdict is the majority of the four votes **computed by the code**
+     (`majority_verdict`: more than half on the same answer, so 3 out of 4 at least); a 2-2 tie or
+     no majority (2-1-1…): `peut_etre` (“maybe”). The model receives the verdict, it does not
+     choose it (a `verdict` in its answer is ignored); it ranks the objections (1 to 6; `persona`
+     and `personas` are `Literal`s: an unknown identifier is refused and sent back to the model by
+     the structured output, the code only puts an objection's personas back in the committee's
+     order, without duplicates) and writes exactly 3 changes.
+  5. **Honesty**: `committee_changes` rereads each change with `text_claims(text, profile,
+     allowed=…)` with `allowed` = the company and the exact title only (never a term or a number
+     from the posting); a tool, a number or a title that the profile does not state sets the change
+     to `needs_skill = true` with its `terms`, and its text becomes “To acquire: X. Your profile
+     does not say it: do not write it in your CV.” (never “add X”); proper names are ignored
+     (a change is an instruction on the CV, “the Skills section”); fact identifiers unknown to
+     the profile are removed.
+  6. **Resumes**: `durability="sync"` never replays a finished node, hence never a vote already
+     given; a stop during a round redoes that round only (no write before `save`); `save` is
+     idempotent per session (port).
+  7. **Routes** (`router_committee.py`, `schemas_committee.py`): `POST /committee` `{cv_version_id}`
+     → 202 `{run_id, session_id}`; 404 `version_not_found` (unknown version or another user's),
+     404 `posting_not_found`, 409 `version_not_ready` (status other than `ready`), 409
+     `committee_in_progress` (`details.run_id`, only one open committee per posting), 409
+     `profile_required` (validated master profile required: it rereads the changes), 503
+     `engine_unavailable` (the run then goes to `failed`); `GET /committee?posting_id=` →
+     `list[CommitteeRunOut]` (recent first); `GET /committee/{id}` → `CommitteeRunOut` (`id`,
+     `cv_version_id`, `posting_id`, `application_id`, `session_id`, `status`
+     `running`/`done`/`failed`, `votes` `{persona, vote, objection, reason}`, `verdict`,
+     `objections` `{text, personas}`, `changes` `{text, persona, fact_ids, needs_skill, terms}`,
+     `previous`, `created_at`); 404 `committee_not_found`. A 422 names the fields, never the value.
+     The status follows the session (D129 no. 5): a `running` run without an open session goes to
+     `failed` at read time, under the lock of the user's committees.
+  8. **Before and after (F19)**: `previous_id` = the last `done` run of the same posting, set at
+     launch; `previous` = `CommitteeDiff {previous_id, votes [{persona, before,
+     after}], objections_resolved, objections_new}` computed at read time by `committee_diff` (pure:
+     normalized objections, similarity of 0.85 at least = same objection), only for a `done` run; a
+     failed run is never “the before”.
+  9. **Real port** `AgentCommitteeStore` (`service/committee_store.py`,
+     `CareerRuntimes.committee_store`, `agent_ports(committee=…)`): `context` assembles
+     `CommitteeContext` (CV of the version without name or contact details, text and analysis of the
+     posting or minimal analysis, company and title of the posting's record if it exists, dossier
+     under 30 days through `kit_store.dossier_of` and its `size`, `ats_terms` computed by the code:
+     keywords and tools of the posting, written or not in the CV, validated profile); `save_result`
+     is idempotent per session (a run that is no longer `running` is never rewritten) and adds the
+     `committee` event to the thread of the posting's record if it exists, in the same transaction.
+     `AtsTermsView` did not exist in the CV review: defined here (`found`, `missing`).
+  10. **Contract** modified: `contracts/openapi.json` and `schema.d.ts` regenerated; logs:
+     identifiers, statuses, verdict and numbers only. The screen (7.16) must say that it is a
+     simulation and not a prediction, and reserve a color for `manager` and `colleague`
+     (`agentColors.ts`).
+- **Reason** SPEC F19 (simulated hiring committee, before and after), 1 (honesty: no term absent
+  from the profile is advised as “add”), 9.3 (debate rules), 9.4 (idempotent write), 17.2, 17.4;
+  D129 (status that follows the session), D139 (locks), D143, D145, D146; phase 7 plan (task 7.10,
+  rulings P9 and P10).
 
 ## D148
 
