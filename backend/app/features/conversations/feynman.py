@@ -32,7 +32,7 @@ from app.features.skills.service import SkillsService
 
 
 def _missing() -> AppError:
-    return AppError("feynman_not_found", "Explication introuvable.", 404)
+    return AppError("feynman_not_found", "Explanation not found.", 404)
 
 
 async def _check_source(db: AsyncSession, user: str, subject_id: str, scope: str) -> None:

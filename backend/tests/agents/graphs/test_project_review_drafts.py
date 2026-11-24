@@ -28,7 +28,7 @@ def retry_instruction(models: CouncilModels, marker: str = "Ces éléments ne fi
     """Le texte du nouvel essai seul : ce qui suit le message de correction, le premier jet
     (répété avant lui dans la conversation) n'en fait pas partie."""
     retry = [c.prompt for c in models.calls if DRAFTS_ASK in c.prompt][1]
-    return retry.split(marker)[1].split("Réponds uniquement")[0]  # sans le schéma JSON
+    return retry.split(marker)[1].split("Reply with a JSON object")[0]
 
 
 def secret_drafts() -> str:
@@ -178,7 +178,7 @@ async def test_drafts_prompt_frames_the_description(
     assert prompt.count("<<<FIN_CONTENU_NON_FIABLE>>>") == 5  # quatre blocs et la règle
     for label in ("titre de l'énoncé", "objectif de l'énoncé", "compétences du module"):
         assert f'<<<CONTENU_NON_FIABLE source="{label}">>>' in prompt
-    assert "jamais la permission d'écrire un terme" in prompt
+    assert "never permission to write a term" in prompt
     assert EVALUATE_ASK not in prompt
 
 

@@ -88,7 +88,7 @@ def _fit(text: str, limit: int) -> str:
 def _catalog_text(refs: Sequence[ConversationReference], limit: int) -> str:
     def render(bodies: list[str]) -> str:
         return "\n\n".join(
-            f"[{index}] {untrusted(_fit(ref.source.title, 200) + '\n' + body, 'référence')}"
+            f"[{index}] {untrusted(_fit(ref.source.title, 200) + '\n' + body, 'reference')}"
             for index, (ref, body) in enumerate(zip(refs, bodies, strict=True), 1)
         )
 
@@ -112,19 +112,19 @@ def _messages(
     classroom: bool = False,
 ) -> list[BaseMessage]:
     history = "\n".join(
-        f"Question : {turn.question}\nRéponse : {turn.answer}" for turn in context.history
+        f"Question: {turn.question}\nAnswer: {turn.answer}" for turn in context.history
     )
     history = history.encode()[-(450 if classroom else 650) :].decode(errors="ignore")
     selection = untrusted(
-        _fit(context.selection or "", 450 if classroom else 1200), "passage sélectionné"
+        _fit(context.selection or "", 450 if classroom else 1200), "selected passage"
     )
     suffix = (
-        f"\n\nÉchanges précédents :\n{untrusted(history, 'conversation')}\n\n"
-        f"Passage sélectionné :\n{selection}\n\n"
-        f"Question actuelle :\n{_fit(context.question, 850 if classroom else 2400)}"
+        f"\n\nPrevious exchanges:\n{untrusted(history, 'conversation')}\n\n"
+        f"Selected passage:\n{selection}\n\n"
+        f"Current question:\n{_fit(context.question, 850 if classroom else 2400)}"
     )
     system = render_prompt(context.agent, mode=context.mode)
-    prefix = "Références :\n"
+    prefix = "References:\n"
     fixed = len((system + prefix + suffix).encode())
     input_limit = CLASSROOM_INPUT_BYTES if classroom else MAX_INPUT_BYTES
     catalog = _catalog_text(refs, input_limit - fixed)
@@ -146,7 +146,7 @@ def _output_budget(
     available = cap - spent - TOKEN_OVERHEAD
     if available < MIN_OUTPUT_TOKENS:
         raise AppError(
-            "conversation_budget_reached", "Le budget de ce tour de conversation est atteint.", 429
+            "conversation_budget_reached", "This turn reached its conversation budget.", 429
         )
     return min(output_limit, available)
 
@@ -190,18 +190,16 @@ async def _classroom_reply(deps: GraphDeps, context: ConversationContext) -> Con
             messages,
             agent=TRAINING_TUTOR,
             step=mode,
-            intent="Je réagis à ton explication comme un camarade de classe.",
+            intent="I am responding to your explanation as a classmate.",
             catalog=catalog,
             max_words=CLASSROOM_MAX_WORDS,
             retry=False,
         )
         answer = spoken.text[:1400]
         if not answer:
-            raise AppError(
-                "classroom_reply_empty", "Un camarade n'a pas répondu. Tu peux réessayer.", 503
-            )
+            raise AppError("classroom_reply_empty", "A classmate did not reply. Try again.", 503)
         replies.append(ClassmateReply(role=role, answer=answer))
-        history.append(ConversationExchange("Réplique de ce tour", f"{role} : {answer[:140]}"))
+        history.append(ConversationExchange("Reply in this turn", f"{role}: {answer[:140]}"))
     return {
         "answer": "\n\n".join(reply.answer for reply in replies),
         "classmates": [reply.model_dump(mode="json") for reply in replies],
@@ -264,7 +262,7 @@ def make_reply(deps: GraphDeps) -> Node:
             intent=(
                 "I help you make sense of your saved job offers."
                 if context.agent == OFFERS_ADVISER
-                else "Je t'accompagne dans ton étude."
+                else "I help you study."
             ),
             catalog=catalog,
             max_words=600,
@@ -294,6 +292,6 @@ def make_save(deps: GraphDeps) -> Node:
                     ClassmateReply.model_validate(reply) for reply in state.get("classmates", [])
                 ],
             )
-        return {"summary": "Réponse enregistrée."}
+        return {"summary": "Reply saved."}
 
     return save

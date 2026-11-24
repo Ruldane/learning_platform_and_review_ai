@@ -31,7 +31,7 @@ async def test_app_error_is_rendered(app: FastAPI, client: httpx.AsyncClient) ->
     }
 
 
-async def test_http_error_is_french_and_forwards_headers(
+async def test_http_error_is_english_and_forwards_headers(
     app: FastAPI, client: httpx.AsyncClient
 ) -> None:
     @app.get("/api/v1/_get_only")
@@ -41,7 +41,7 @@ async def test_http_error_is_french_and_forwards_headers(
     r = await client.post("/api/v1/_get_only")
     assert r.status_code == 405
     assert r.json()["error"]["code"] == "http_error"
-    assert r.json()["error"]["message"] == "Méthode non autorisée."
+    assert r.json()["error"]["message"] == "Method not allowed."
     assert "GET" in r.headers["allow"]
 
 
@@ -60,7 +60,7 @@ async def validation_client(validation_app: FastAPI) -> AsyncIterator[httpx.Asyn
         yield client
 
 
-async def test_validation_error_is_french(
+async def test_validation_error_is_english(
     validation_app: FastAPI, validation_client: httpx.AsyncClient
 ) -> None:
     app, client = validation_app, validation_client
@@ -72,7 +72,7 @@ async def test_validation_error_is_french(
     r = await client.get("/api/v1/_v?n=abc")
     assert r.status_code == 422
     assert r.json()["error"]["code"] == "validation_error"
-    assert r.json()["error"]["message"] == "Requête invalide."
+    assert r.json()["error"]["message"] == "Invalid request."
 
 
 async def test_validation_error_never_echoes_the_input(
@@ -172,7 +172,7 @@ async def test_unhandled_error_keeps_cors_headers(
     assert r.json()["error"]["code"] == "internal_error"
     assert "secret interne" not in r.text
     assert r.headers.get("access-control-allow-origin") == "http://localhost:5173"
-    assert any(rec.getMessage() == "Erreur non gérée" for rec in caplog.records)
+    assert any(rec.getMessage() == "Unhandled error" for rec in caplog.records)
 
 
 async def test_cors_allows_front_origin_only(client: httpx.AsyncClient) -> None:

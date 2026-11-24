@@ -39,7 +39,7 @@ async def test_ollama_without_model_explains(http: httpx.AsyncClient) -> None:
     respx.get(f"{OLLAMA}/api/tags").respond(json={"models": []})
     s = await OllamaProbe(OLLAMA, "bge-m3", http).check()
     assert not s.ok and "bge-m3" in s.detail
-    assert s.detail == "Le modèle bge-m3 est en cours de téléchargement."
+    assert s.detail == "Downloading bge-m3."
 
 
 @respx.mock
@@ -68,8 +68,7 @@ async def test_searxng_json_disabled_is_explained(http: httpx.AsyncClient) -> No
     s = await SearxngProbe(SEARXNG, http).check()
     assert not s.ok and "JSON" in s.detail
     assert s.detail == (
-        "Le format JSON est peut-être désactivé dans SearXNG, "
-        "ou la requête a été bloquée par son limiteur."
+        "SearXNG may have JSON output disabled or may have rate-limited the request."
     )
 
 

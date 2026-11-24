@@ -47,11 +47,11 @@ class ClaimIdentity:
 
 
 def _expired() -> AppError:
-    return AppError("claim_expired", "Le choix a expiré : reconnecte-toi avec Google.", 409)
+    return AppError("claim_expired", "This choice expired. Sign in with Google again.", 409)
 
 
 def _taken() -> AppError:
-    return AppError("local_already_claimed", "L'espace local a déjà un propriétaire.", 409)
+    return AppError("local_already_claimed", "The local workspace already has an owner.", 409)
 
 
 def seal_identity(cipher: Cipher, identity: ClaimIdentity) -> str:

@@ -1,7 +1,7 @@
 """Erreurs d'appel LLM : lesquelles valent la peine d'être retentées, et leur message lisible.
 
 Un seul endroit traduit les erreurs des fournisseurs (SDK Anthropic et OpenAI, httpx) en messages
-français : jamais le message brut du SDK ni le corps de réponse (une clé masquée y figure parfois).
+anglais : jamais le message brut du SDK ni le corps de réponse (une clé masquée y figure parfois).
 """
 
 from collections.abc import Mapping
@@ -17,11 +17,11 @@ _TRANSIENT_STATUSES = frozenset({408, 409, 429})
 # Messages par code d'erreur du corps de réponse (`{"error": {"code": ...}}`), par fournisseur.
 PROVIDER_ERROR_CODES: Mapping[str, Mapping[str, str]] = {
     "glm": {  # Z.ai, codes renvoyés avec un statut 429
-        "1113": "Crédit Z.ai insuffisant pour ce modèle.",
-        "1305": "Service Z.ai surchargé, réessaie plus tard.",
+        "1113": "Insufficient Z.ai credit for this model.",
+        "1305": "Z.ai is overloaded. Try again later.",
     },
     "openai": {
-        "insufficient_quota": "Crédit OpenAI épuisé : recharge le compte ou change de modèle.",
+        "insufficient_quota": "OpenAI credit is exhausted. Top up the account or change models.",
     },
 }
 # Crédit épuisé : un nouvel essai échouerait de même, inutile d'attendre.
@@ -100,23 +100,23 @@ def is_transient(exc: BaseException) -> bool:
 def _by_status(status: int, label: str, known: str | None, code: str | None) -> AppError:
     details = {"provider": label, "status": status}
     if status in (401, 403):
-        message = f"Clé refusée par {label} : vérifie-la dans les réglages des modèles."
+        message = f"{label} rejected the API key. Check it in Settings > Models and keys."
         return AppError("llm_key_rejected", message, 502, details)
     if status == 429:
         if code in _OVERLOAD_CODES:  # surcharge passagère, pas une limite : D115 n° 17
-            message = known or f"{label} est surchargé, réessaie plus tard."
+            message = known or f"{label} is overloaded. Try again later."
             return AppError("llm_unavailable", message, 502, details)
         if code in _CREDIT_CODES:
-            message = known or f"Crédit épuisé chez {label}."
+            message = known or f"{label} credit is exhausted."
             return AppError("llm_credit_exhausted", message, 502, details)
-        message = known or f"Limite de requêtes ou crédit épuisé chez {label}, réessaie plus tard."
+        message = known or (
+            f"{label}'s request limit or credit limit was reached. Try again later."
+        )
         return AppError("llm_rate_limited", message, 502, details)
     if status >= 500:
-        message = (
-            known or f"{label} est indisponible pour le moment ({status}), réessaie plus tard."
-        )
+        message = known or f"{label} is unavailable ({status}). Try again later."
         return AppError("llm_unavailable", message, 502, details)
-    message = known or f"{label} a refusé la requête ({status})."
+    message = known or f"{label} rejected the request ({status})."
     return AppError("llm_request_rejected", message, 502, details)
 
 
@@ -130,10 +130,10 @@ def describe_provider_error(
     et le code d'erreur servent à choisir un message connu.
     """
     if isinstance(exc, _TIMEOUTS):  # avant la connexion : les délais du SDK en sont un cas
-        message = f"{label} n'a pas répondu à temps, réessaie plus tard."
+        message = f"{label} did not respond in time. Try again later."
         return AppError("llm_timeout", message, 504, {"provider": label})
     if isinstance(exc, _CONNECTION):
-        message = f"Impossible de joindre {label}. Vérifie ta connexion."
+        message = f"Could not reach {label}. Check your connection."
         return AppError("llm_unavailable", message, 502, {"provider": label})
     status = _status(exc)
     if status is None:

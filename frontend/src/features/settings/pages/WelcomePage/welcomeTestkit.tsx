@@ -28,13 +28,13 @@ export const withEnvKey = apiKeysFixture.map((key) => ({
 }));
 
 export const TITLES = [
-  "Les services de Tremplin",
-  "Ce qui sort de ta machine",
-  "Ta clé d'API",
-  "Ton CV",
-  "Ton temps disponible",
+  "Tremplin's services",
+  "What leaves your machine",
+  "Your API key",
+  "Your CV",
+  "Your available time",
 ];
-export const WEEKDAY = "Minutes par jour, du lundi au vendredi";
+export const WEEKDAY = "Minutes per day, Monday to Friday";
 
 /** La page derrière la porte du premier lancement, avec un accueil et une page de réglages. */
 export function setup(over: Partial<Parameters<typeof onboardingApi>[0]> = {}, state?: unknown) {
@@ -70,11 +70,11 @@ export function setup(over: Partial<Parameters<typeof onboardingApi>[0]> = {}, s
 
 type User = ReturnType<typeof setup>["user"];
 export const title = (name: string) => screen.findByRole("heading", { level: 1, name });
-export const next = (name: string | RegExp = /^(Suivant|Plus tard|Passer|Terminer)$/) =>
+export const next = (name: string | RegExp = /^(Next|Later|Skip|Finish)$/) =>
   screen.getByRole("button", { name });
-export const skipAll = () => screen.getByRole("button", { name: "Passer l'accueil" });
+export const skipAll = () => screen.getByRole("button", { name: "Skip the welcome" });
 export const field = (label: string) => screen.getByLabelText(label);
-export const finish = () => screen.getByRole("button", { name: "Terminer" });
+export const finish = () => screen.getByRole("button", { name: "Finish" });
 
 /** Avance jusqu'à l'étape `step` (à partir de 1) par le bouton qui avance. */
 export async function goTo(user: User, step: number) {

@@ -60,8 +60,8 @@ describe("LessonConversation", () => {
       ),
     );
     const { user, close } = setup();
-    const panel = screen.getByRole("dialog", { name: "Professeur" });
-    expect(within(panel).getByRole("heading", { name: "Professeur" })).toHaveFocus();
+    const panel = screen.getByRole("dialog", { name: "Professor" });
+    expect(within(panel).getByRole("heading", { name: "Professor" })).toHaveFocus();
     expect(await within(panel).findByText("contenu")).toBeVisible();
     expect(within(panel).getByText("Que représente la valeur ?")).toBeVisible();
     expect(within(panel).queryByRole("link", { name: "Lien produit par le modèle" })).toBeNull();
@@ -83,11 +83,11 @@ describe("LessonConversation", () => {
       }),
     );
     const { user } = setup();
-    const input = await screen.findByRole("textbox", { name: "Ta question" });
+    const input = await screen.findByRole("textbox", { name: "Your question" });
     await user.type(input, "Comment ?{Enter}");
     await screen.findByRole("alert");
     expect(input).toHaveValue("Comment ?");
-    await user.click(screen.getByRole("button", { name: "Envoyer" }));
+    await user.click(screen.getByRole("button", { name: "Send" }));
     await waitFor(() => expect(incoming).toHaveLength(2));
     expect(incoming[0]).toMatchObject({
       question: "Comment ?",

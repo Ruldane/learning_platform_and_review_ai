@@ -159,7 +159,7 @@ async def export_ics(program_id: str, current: CurrentUserDep, db: Db) -> Respon
     return Response(
         content=body,
         media_type=f"{ICS_MEDIA_TYPE}; charset=utf-8",
-        headers={"Content-Disposition": 'attachment; filename="programme.ics"'},
+        headers={"Content-Disposition": 'attachment; filename="program.ics"'},
     )
 
 
@@ -178,5 +178,5 @@ async def export_pdf(
     return Response(
         content=body,
         media_type=PDF_MEDIA_TYPE,
-        headers={"Content-Disposition": 'attachment; filename="programme.pdf"'},
+        headers={"Content-Disposition": 'attachment; filename="program.pdf"'},
     )

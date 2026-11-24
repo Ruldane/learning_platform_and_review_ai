@@ -127,7 +127,7 @@ async def test_find_active_session_picks_latest_open_session_of_the_subject(
 async def test_get_unknown_session_returns_404(client: httpx.AsyncClient):
     r = await client.get(f"{API}/{new_id()}")
     assert r.status_code == 404 and r.json()["error"]["code"] == "session_not_found"
-    assert r.json()["error"]["message"] == "Session introuvable."
+    assert r.json()["error"]["message"] == "Session not found."
 
 
 async def test_failed_session_exposes_its_error(client: httpx.AsyncClient):

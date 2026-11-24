@@ -16,12 +16,12 @@ async def test_ics_has_one_all_day_event_per_task(
     r = await client.get(f"{API}/programs/{draft_program.program_id}/export.ics")
     assert r.status_code == 200
     assert r.headers["content-type"].startswith("text/calendar")
-    assert 'filename="programme.ics"' in r.headers["content-disposition"]
+    assert 'filename="program.ics"' in r.headers["content-disposition"]
     cal = Calendar.from_ical(r.content)
     events = cal.walk("VEVENT")
     tasks = tasks_of(program)
     assert len(events) == len(tasks) == 12
-    assert str(cal["PRODID"]) == "-//Tremplin//Programme//FR"
+    assert str(cal["PRODID"]) == "-//Tremplin//Program//EN"
     assert str(cal["X-WR-CALNAME"]) == "Parcours données"
     first = next(e for e in events if str(e["SUMMARY"]) == "Lire le chapitre 1")
     task = next(t for t in tasks if t["title"] == "Lire le chapitre 1")
@@ -30,5 +30,9 @@ async def test_ics_has_one_all_day_event_per_task(
     assert isinstance(start, date) and start.isoformat() == task["planned_date"]
     assert b"DTSTART;VALUE=DATE:" in r.content
     description = str(first["DESCRIPTION"])
-    assert "120 min" in description and "Module Bases" in description
-    assert "Notes prises" in description
+    assert description.splitlines() == [
+        "Type: Read",
+        "Duration: 120 min",
+        "Completion criterion: Notes prises",
+        "Module: Module Bases",
+    ]

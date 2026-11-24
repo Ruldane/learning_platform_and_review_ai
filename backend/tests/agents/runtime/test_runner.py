@@ -174,7 +174,7 @@ async def test_missing_key_fails_session_readably(
     await wait_idle(runner, sid)
     ev = (await all_events(db_factory, user_id, sid))[-1]
     assert ev.type == "run.failed" and ev.payload.code == "llm_key_missing"  # type: ignore[union-attr]
-    assert "Aucune clé" in ev.payload.message  # type: ignore[union-attr]
+    assert "is configured for the fast tier" in ev.payload.message  # type: ignore[union-attr]
     assert row.error == ev.payload.model_dump()
     assert not runner.is_active(sid)
 
@@ -192,7 +192,7 @@ async def test_unexpected_error_fails_with_a_generic_french_message(
     ev = (await all_events(db_factory, user_id, sid))[-1]
     assert ev.payload.model_dump() == {
         "code": "internal_error",
-        "message": "Une erreur inattendue a interrompu la session.",
+        "message": "An unexpected error interrupted the session.",
     }
     assert sid in caplog.text and SECRET not in caplog.text
 

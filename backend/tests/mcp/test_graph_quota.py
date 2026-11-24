@@ -64,7 +64,7 @@ async def test_graph_tool_is_refused_over_the_limit_and_nothing_starts(quota_mcp
     envelope, is_error = await call(quota_mcp, token, "graph_with_topic", {"topic": "SECRET-42"})
 
     assert is_error and _quota_error(envelope)
-    assert "2 lancements de parcours par jour" in envelope["data"]["error"]["message"]
+    assert "2 workflow launches in a rolling 24-hour period" in envelope["data"]["error"]["message"]
     assert "SECRET-42" not in json.dumps(envelope)
     assert await _sessions(quota_mcp) == 2  # rien n'a été lancé
 

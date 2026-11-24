@@ -13,7 +13,7 @@ async def test_launcher_unbound_is_engine_unavailable() -> None:
     with pytest.raises(AppError) as e:
         await SessionLauncher().start("u", "demo_debate", {"topic": "abc"})
     assert e.value.code == "engine_unavailable" and e.value.status_code == 503
-    assert e.value.message == "Le moteur d'agents n'est pas prêt."
+    assert e.value.message == "The agent engine is not ready."
 
 
 async def test_launcher_starts_session_with_subject(

@@ -10294,7 +10294,7 @@ export interface components {
         };
         /**
          * HealthStatus
-         * @description État d'un service. `detail` est en français et ne contient jamais de secret.
+         * @description Service health. The detail is in English and never contains a secret.
          */
         HealthStatus: {
             /** Detail */

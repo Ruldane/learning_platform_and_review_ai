@@ -99,7 +99,7 @@ async def test_classmates_and_lesson_sources_persist_on_reentry(
     assert (await client.get(base + "/conversation")).json() is None
     assert [step for step, _ in scripted_classroom] == [f"classroom_{role}" for role in ROLES] * 2
     assert all("Texte." in prompt for _, prompt in scripted_classroom)
-    assert "Tu découvres le sujet" in scripted_classroom[0][1]
-    assert "niveau comparable" in scripted_classroom[1][1]
-    assert "cas limite" in scripted_classroom[2][1]
+    assert "You are discovering the topic" in scripted_classroom[0][1]
+    assert "You have a comparable level" in scripted_classroom[1][1]
+    assert "Propose an edge case" in scripted_classroom[2][1]
     assert explanation["question"] in scripted_classroom[3][1]

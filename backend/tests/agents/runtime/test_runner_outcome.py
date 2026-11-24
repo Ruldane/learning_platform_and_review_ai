@@ -234,7 +234,7 @@ async def test_a_provider_failure_reaches_the_user_as_a_readable_run_failed(
     assert len(failed) == 1
     payload = failed[0].payload.model_dump()
     assert payload["code"] == "llm_key_rejected"
-    assert payload["message"].startswith("Clé refusée par OpenAI")
+    assert payload["message"].startswith("OpenAI rejected the API key")
     row = await get_session(db_factory, user_id, sid)
     assert row.status == "failed" and row.error == payload
     assert SECRET not in str(payload) and SECRET not in caplog.text

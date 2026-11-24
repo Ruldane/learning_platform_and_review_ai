@@ -31,10 +31,11 @@ describe("agentColors", () => {
   });
 
   it("reserves all the slugs of the roadmap", () => {
-    expect(Object.keys(AGENT_COLORS)).toHaveLength(27);
+    expect(Object.keys(AGENT_COLORS)).toHaveLength(32);
     expect(agentIdentity("oncall_reviewer").name).toBe("Operations lead");
     expect(Object.keys(AGENT_COLORS)).toContain("demo_critic");
     expect(Object.keys(AGENT_COLORS)).toContain("ats_reader");
+    expect(agentIdentity("offers_adviser").name).toBe("Offers assistant");
   });
 
   it("every color reaches AA contrast on the off-white background", () => {

@@ -15,7 +15,7 @@ from app.core.errors import AppError
 
 logger = logging.getLogger(__name__)
 
-ENGINE_UNAVAILABLE = "Le moteur d'agents n'est pas prêt."
+ENGINE_UNAVAILABLE = "The agent engine is not ready."
 
 
 def engine_unavailable() -> AppError:

@@ -39,7 +39,8 @@ async def test_missing_key_is_readable_error(factory_with: FactoryWith) -> None:
     f = factory_with(tiers={"fort": ("fake", "m")}, keys={})
     with pytest.raises(AppError) as e:
         await f.get_chat_model("u1", "fort")
-    assert e.value.code == "llm_key_missing" and "« fort »" in e.value.message
+    assert e.value.code == "llm_key_missing" and "strong tier" in e.value.message
+    assert "Settings > Models and keys" in e.value.message
     assert e.value.details == {"provider": "fake", "tier": "fort"}
 
 

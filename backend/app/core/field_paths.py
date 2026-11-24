@@ -33,7 +33,7 @@ def field_paths(request: Request, errors: Sequence[Any]) -> list[str]:
 def invalid_fields(request: Request, errors: Sequence[Any]) -> AppError:
     return AppError(
         "validation_error",
-        "Requête invalide : vérifie les champs signalés.",
+        "Invalid request. Check the highlighted fields.",
         422,
         {"fields": field_paths(request, errors)},
     )

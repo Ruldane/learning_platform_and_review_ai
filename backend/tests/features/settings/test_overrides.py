@@ -24,7 +24,7 @@ GLM = {"provider": "glm", "model": "glm-5.3-flash"}
 EXPECTED_422 = {
     "error": {
         "code": "validation_error",
-        "message": "Requête invalide : vérifie les champs signalés.",
+        "message": "Invalid request. Check the highlighted fields.",
         "details": {"fields": ["agent_overrides"]},
     }
 }

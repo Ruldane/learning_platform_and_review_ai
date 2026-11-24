@@ -28,7 +28,7 @@ def _oidc(request: Request) -> OidcProvider:
     """La connexion Google de l'application ; mode local : 404 `google_auth_disabled`."""
     oidc = get_providers(request).oidc
     if oidc is None:
-        raise AppError("google_auth_disabled", "La connexion Google n'est pas activée.", 404)
+        raise AppError("google_auth_disabled", "Google sign-in is disabled.", 404)
     return oidc
 
 

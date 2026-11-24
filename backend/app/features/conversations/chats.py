@@ -19,7 +19,7 @@ CHAT_SCOPES = frozenset({"brain", "training", "offers"})
 
 
 def conversation_not_found() -> AppError:
-    return AppError("conversation_not_found", "Conversation introuvable.", 404)
+    return AppError("conversation_not_found", "Conversation not found.", 404)
 
 
 def conversation_busy() -> AppError:
@@ -31,7 +31,7 @@ def conversation_busy() -> AppError:
 def _summary(row: Conversation) -> ConversationSummary:
     return ConversationSummary(
         id=UUID(row.id),
-        title=row.title or ("New chat" if row.scope == "offers" else "Nouvelle conversation"),
+        title=row.title or ("New chat" if row.scope == "offers" else "New conversation"),
         updated_at=row.updated_at,
     )
 

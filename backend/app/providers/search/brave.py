@@ -148,14 +148,14 @@ def _error_code(response: httpx.Response) -> str | None:
 def _test_message(response: httpx.Response) -> KeyTestResult:
     status = response.status_code
     if status == 200:
-        return KeyTestResult(ok=True, message="Clé valide.")
+        return KeyTestResult(ok=True, message="API key is valid.")
     if status in (401, 403) or _error_code(response) in _INVALID_TOKEN_CODES:
-        return KeyTestResult(ok=False, message=f"Clé refusée par {_LABEL}.")
+        return KeyTestResult(ok=False, message=f"{_LABEL} rejected the API key.")
     if status == 429:
         return KeyTestResult(
-            ok=False, message=f"Limite de requêtes atteinte chez {_LABEL}, réessaie plus tard."
+            ok=False, message=f"{_LABEL}'s request limit was reached. Try again later."
         )
-    return KeyTestResult(ok=False, message=f"{_LABEL} a répondu par une erreur ({status}).")
+    return KeyTestResult(ok=False, message=f"{_LABEL} returned an error ({status}).")
 
 
 class BraveKeyProvider:
@@ -171,7 +171,7 @@ class BraveKeyProvider:
     async def test_key(self, api_key: str) -> KeyTestResult:
         headers = _headers(api_key)
         if headers is None:
-            return KeyTestResult(ok=False, message="La clé contient des caractères invalides.")
+            return KeyTestResult(ok=False, message="The API key contains invalid characters.")
         try:
             response = await self._http.get(
                 BRAVE_SEARCH_URL,
@@ -182,6 +182,6 @@ class BraveKeyProvider:
         except httpx.HTTPError as exc:
             logger.info("Test de la clé Brave : injoignable (%s)", type(exc).__name__)
             return KeyTestResult(
-                ok=False, message=f"Impossible de joindre {_LABEL}. Vérifie ta connexion."
+                ok=False, message=f"Could not reach {_LABEL}. Check your connection."
             )
         return _test_message(response)

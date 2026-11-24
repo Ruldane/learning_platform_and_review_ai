@@ -66,13 +66,13 @@ describe("BrainConversation", () => {
       "/memoire/cerveau",
     );
 
-    const input = await screen.findByRole("textbox", { name: "Ta question au Cerveau" });
+    const input = await screen.findByRole("textbox", { name: "Your question for the Brain" });
     await user.selectOptions(
-      screen.getByRole("combobox", { name: "Qui fait tourner les agents pour ce lancement" }),
+      screen.getByRole("combobox", { name: "Who runs the agents for this launch" }),
       "openai",
     );
     await user.type(input, `${question}{Enter}`);
-    const thread = screen.getByRole("log", { name: "Conversation avec le bibliothécaire" });
+    const thread = screen.getByRole("log", { name: "Conversation with the librarian" });
     expect(await within(thread).findByText("Voici ton document sur la recherche.")).toBeVisible();
     await user.click(within(thread).getByRole("link", { name: "Recherche locale" }));
     expect(router.state.location.search).toBe("?item=note-1");

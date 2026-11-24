@@ -41,8 +41,8 @@ logger = logging.getLogger(__name__)
 
 STOPPING_CODE = "server_stopping"  # reconnu par `SessionLauncher`
 ACCOUNT_DELETING_CODE = "account_deleting"
-_STOPPING = "Le serveur s'arrête : réessaie dans un instant."
-_DELETING = "Le compte est en cours de suppression : aucune session ne démarre."
+_STOPPING = "The server is shutting down. Try again in a moment."
+_DELETING = "Sessions cannot start while the account is being deleted."
 
 
 @dataclass(eq=False)
@@ -143,9 +143,7 @@ class SessionRunner:
             await self._settle(session_id)
             self._launch(user_id, session_id, command)
             if problem:
-                raise AppError(
-                    "played_output_invalid", "Réponse invalide.", 422, {"reason": problem}
-                )
+                raise AppError("played_output_invalid", "Invalid reply.", 422, {"reason": problem})
 
     async def recover_on_startup(self) -> list[str]:
         """Relance les sessions `running` qu'un arrêt a interrompues (dernier checkpoint : aucun

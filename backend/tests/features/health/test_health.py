@@ -40,7 +40,7 @@ async def test_database_failure_makes_the_report_down() -> None:
         raise OSError("disque absent")
 
     r = await HealthService([DatabaseCheck(broken)]).run()  # type: ignore[arg-type]
-    assert r.status == "down" and r.checks["db"].detail == "Erreur : OSError"
+    assert r.status == "down" and r.checks["db"].detail == "Error: OSError"
 
 
 # --- clés LLM ---------------------------------------------------------------------------------
@@ -91,7 +91,7 @@ async def test_llm_check_without_any_key(
     check = make_check(db_session_factory, cipher, llm, {})
     status = await check.check()
     assert not status.ok and check.name == "llm"
-    assert status.detail == "Anthropic : aucune clé ; OpenAI : aucune clé"
+    assert status.detail == "Anthropic: no key; OpenAI: no key"
 
 
 async def test_llm_check_with_ui_key(
@@ -103,7 +103,7 @@ async def test_llm_check_with_ui_key(
     await store_key(db_session, cipher, llm)
     status = await make_check(db_session_factory, cipher, llm, {}).check()
     assert status.ok
-    assert status.detail == "Anthropic : aucune clé ; OpenAI : clé présente"
+    assert status.detail == "Anthropic: no key; OpenAI: key present"
     assert "0123456789" not in status.detail
 
 
@@ -112,7 +112,7 @@ async def test_llm_check_with_env_key(
 ) -> None:
     check = make_check(db_session_factory, cipher, llm, {"anthropic": "env-key-0001"})
     status = await check.check()
-    assert status.ok and "Anthropic : clé présente" in status.detail
+    assert status.ok and "Anthropic: key present" in status.detail
 
 
 async def test_llm_check_unreadable_key_does_not_count(
@@ -124,7 +124,7 @@ async def test_llm_check_unreadable_key_does_not_count(
     await store_key(db_session, cipher, llm)
     other = Cipher(Fernet.generate_key())
     status = await make_check(db_session_factory, other, llm, {}).check()
-    assert not status.ok and "OpenAI : clé illisible" in status.detail
+    assert not status.ok and "OpenAI: key unreadable" in status.detail
 
 
 async def test_llm_check_scopes_keys_to_the_user(
@@ -141,7 +141,7 @@ async def test_llm_check_without_user(
     db_session_factory: Factory, cipher: Cipher, llm: dict[str, FakeLlmProvider]
 ) -> None:
     status = await make_check(db_session_factory, cipher, llm, {}, user_id=None).check()
-    assert not status.ok and status.detail == "Aucun utilisateur local."
+    assert not status.ok and status.detail == "No local user."
 
 
 # --- route ------------------------------------------------------------------------------------
@@ -169,7 +169,7 @@ async def test_health_route_never_leaks_exception_messages(
 ) -> None:
     override_checks([ok("db"), RaisingCheck("qdrant", RuntimeError("clé sk-ant-0000 http://x"))])
     text = (await client.get(HEALTH)).text
-    assert "sk-ant" not in text and "Erreur : RuntimeError" in text
+    assert "sk-ant" not in text and "Error: RuntimeError" in text
 
 
 async def test_health_route_needs_no_session_in_google_mode(
@@ -191,7 +191,6 @@ async def test_health_route_needs_no_session_in_google_mode(
 async def test_real_wiring_reports_the_seven_checks(
     settings: Settings, db_engine: object, tmp_path: Path
 ) -> None:
-    (tmp_path / "heartbeat").write_text("x")  # le lanceur du bac à sable bat (10.A1)
     configured = settings.model_copy(
         update={"anthropic_api_key": "env-key-for-health-0001", "sandbox_spool_dir": tmp_path}
     )
@@ -204,6 +203,7 @@ async def test_real_wiring_reports_the_seven_checks(
         mock.get(url__startswith="http://searxng:8080/search").respond(json={"results": []})
         mock.get("http://gotenberg:3000/health").respond(200)
         async with LifespanManager(app):
+            (tmp_path / "heartbeat").write_text("x")
             transport = httpx.ASGITransport(app=app)
             async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
                 body = (await client.get(HEALTH)).json()
@@ -232,5 +232,5 @@ async def test_real_wiring_unreachable_services_are_degraded(
             async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
                 body = (await client.get(HEALTH)).json()
     assert body["status"] == "degraded"
-    assert body["checks"]["qdrant"]["detail"] == "Erreur : ConnectError"
+    assert body["checks"]["qdrant"]["detail"] == "Error: ConnectError"
     assert body["checks"]["db"]["ok"] is True

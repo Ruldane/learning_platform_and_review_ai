@@ -19,7 +19,7 @@ export const refusedFieldsResponse = (...fields: string[]) =>
     {
       error: {
         code: "validation_error",
-        message: "Requête invalide : vérifie les champs signalés.",
+        message: "Invalid request. Check the highlighted fields.",
         details: { fields },
       },
     },

@@ -42,7 +42,7 @@ const response: components["schemas"]["LessonConversationOut"] = {
   },
 };
 
-it("rend les trois rôles et retrouve la source de la leçon après être revenu", async () => {
+it("shows all three roles and keeps the lesson source on return", async () => {
   let sent = false;
   server.use(
     http.get(endpoint, () => HttpResponse.json(sent ? response : null)),
@@ -59,12 +59,12 @@ it("rend les trois rôles et retrouve la source de la leçon après être revenu
     ],
     classroom,
   );
-  const input = await screen.findByRole("textbox", { name: "Ton explication" });
+  const input = await screen.findByRole("textbox", { name: "Your explanation" });
   await user.type(input, explanation + "{Enter}");
-  const thread = screen.getByRole("log", { name: "Discussion de classe" });
-  expect(await within(thread).findByText("Camarade débutant")).toBeVisible();
-  expect(within(thread).getByText("Camarade de ton niveau")).toBeVisible();
-  expect(within(thread).getByText("Camarade avancé")).toBeVisible();
+  const thread = screen.getByRole("log", { name: "Class discussion" });
+  expect(await within(thread).findByText("Beginner classmate")).toBeVisible();
+  expect(within(thread).getByText("Classmate at your level")).toBeVisible();
+  expect(within(thread).getByText("Advanced classmate")).toBeVisible();
   await user.click(within(thread).getByRole("link", { name: "Les chaînes" }));
   expect(router.state.location.pathname).toBe(lesson);
   await user.click(screen.getByRole("link", { name: "Reprendre la classe" }));

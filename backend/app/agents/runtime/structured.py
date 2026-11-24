@@ -21,13 +21,13 @@ from app.core.errors import AppError
 logger = logging.getLogger(__name__)
 
 _INSTRUCTIONS = (
-    "Réponds uniquement par un objet JSON conforme à ce schéma JSON, sans texte autour ni "
-    "balises de code :\n{schema}"
+    "Reply with a JSON object that matches this schema. Omit surrounding text and code fences.\n"
+    "{schema}"
 )
-_EMPTY = "La réponse était vide."
+_EMPTY = "The reply was empty."
 _RETRY = (
-    "Ta réponse précédente n'est pas valide : {problem}\n"
-    "Réponds de nouveau, uniquement par un objet JSON conforme au schéma."
+    "Your previous reply is invalid: {problem}\n"
+    "Send a new reply containing only a JSON object that matches the schema."
 )
 
 
@@ -48,7 +48,7 @@ def extract_json_object(text: str) -> dict[str, Any] | None:
 def _validation_problem(exc: ValidationError) -> str:
     """Champs fautifs et motifs de pydantic, sans les valeurs reçues."""
     return "; ".join(
-        f"{'.'.join(str(p) for p in e['loc']) or '(racine)'} : {e['msg']}" for e in exc.errors()
+        f"{'.'.join(str(p) for p in e['loc']) or '(root)'}: {e['msg']}" for e in exc.errors()
     )
 
 
@@ -59,7 +59,7 @@ def parse_reply[T: BaseModel](schema: type[T], reply: AIMessage) -> tuple[T | No
         return None, _EMPTY
     data = extract_json_object(text)
     if data is None:
-        return None, "aucun objet JSON trouvé dans la réponse."
+        return None, "No JSON object found in the reply."
     try:
         return schema.model_validate(data), ""
     except ValidationError as exc:
@@ -112,7 +112,7 @@ async def structured_call[T: BaseModel](
             conversation.append(HumanMessage(_RETRY.format(problem=problem)))
     raise AppError(
         "structured_output_invalid",
-        f"La réponse de l'agent {agent} n'a pas le format attendu après {attempts} essais.",
+        f"The {agent} agent's reply had the wrong format after {attempts} attempts.",
         502,
         {"agent": agent, "attempts": attempts},
     )

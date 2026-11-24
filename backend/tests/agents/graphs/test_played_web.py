@@ -29,7 +29,7 @@ async def test_played_web_uses_client_sources(make_web_runner: MakeWeb, user_id:
         await web.runner.submit_step(user_id, sid, brief["step_id"], json.dumps(value))
 
     await answer("SearchPlan", {"queries": [{"text": "attention", "lang": "fr"}]})
-    with pytest.raises(AppError, match="Réponse invalide"):
+    with pytest.raises(AppError, match="Invalid reply"):
         await answer("SearchSources", {"sources": [{"url": "file:///tmp"}]})
     await answer("SearchSources", {"sources": [{"url": u, "title": "Doc"} for u in [URL_A, URL_B]]})
     for url in [URL_A, URL_B]:

@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 PULL_TIMEOUT = httpx.Timeout(10.0, read=120.0)  # le flux d'un gros fichier peut se faire attendre
 RETRY_AFTER_FAILURE_S = 30.0  # premier délai ; double à chaque échec de suite
 MAX_RETRY_DELAY_S = 300.0
-DOWN_DETAIL = "Ollama ne répond pas."
+DOWN_DETAIL = "Ollama is not responding."
 
 
 class _PullFailed(Exception):
@@ -72,9 +72,7 @@ class OllamaPullWatcher:
     async def progress(self) -> EmbeddingProgressData:
         try:
             if await self._present():
-                return self._data(
-                    present=True, percent=100, detail=f"Le modèle {self._model} est prêt."
-                )
+                return self._data(present=True, percent=100, detail=f"{self._model} is ready.")
         except (httpx.HTTPError, ValueError, AttributeError, TypeError, RecursionError):
             return self._data(present=False, percent=None, detail=DOWN_DETAIL)
         return self._missing()
@@ -105,15 +103,15 @@ class OllamaPullWatcher:
             return self._data(
                 present=False,
                 percent=99,
-                detail=f"Téléchargement de {self._model} terminé, vérification en cours.",
+                detail=f"{self._model} has downloaded. Verifying it now.",
             )
         return self._data(
             present=False,
             percent=None,
             detail=(
-                f"Le téléchargement de {self._model} a échoué ; nouvel essai dans "
-                f"{math.ceil(remaining)} s. Vérifie qu'Ollama tourne "
-                "(`docker compose ps ollama`) et qu'il reste de la place sur le disque."
+                f"The {self._model} download failed. Retrying in {math.ceil(remaining)} s. "
+                "Check that Ollama is running (`docker compose ps ollama`) "
+                "and that the disk has free space."
             ),
         )
 
@@ -126,11 +124,11 @@ class OllamaPullWatcher:
 
     def _running(self) -> EmbeddingProgressData:
         percent = self._percent()
-        suffix = f" ({percent} %)" if percent is not None else ""
+        suffix = f" ({percent}%)" if percent is not None else ""
         return self._data(
             present=False,
             percent=percent,
-            detail=f"Téléchargement de {self._model} en cours{suffix}.",
+            detail=f"Downloading {self._model}{suffix}.",
         )
 
     def _read(self, line: str) -> bool:

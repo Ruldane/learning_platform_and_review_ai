@@ -12,8 +12,8 @@ describe("WelcomePage without its gate", () => {
     server.use(...api.handlers);
     const { user } = renderRoutes([{ path: "/bienvenue", element: <WelcomePage /> }], "/bienvenue");
     expect(await screen.findByRole("alert")).toHaveTextContent("Le serveur a échoué.");
-    expect(screen.queryByRole("button", { name: "Passer l'accueil" })).toBeNull();
-    await user.click(screen.getByRole("button", { name: "Réessayer" }));
+    expect(screen.queryByRole("button", { name: "Skip the welcome" })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Retry" }));
     const heading = await screen.findByRole("heading", { level: 1, name: TITLES[0]! });
     await waitFor(() => expect(heading).toHaveFocus());
   });

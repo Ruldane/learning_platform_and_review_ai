@@ -124,7 +124,7 @@ async def test_brief_then_review_run_through_the_real_engine(live: Live) -> None
     assert {SKILLS[0]} <= {n["name"] for n in levels["nodes"] if n["level"] == "prouve"}
     feed = (await live.client.get("/api/v1/activity")).json()
     titles = [i["title"] for i in feed["items"] if i["kind"] == "project"]
-    assert titles == ["Projet validé : Une API de suivi de lecture"]
+    assert titles == ["Project approved: Une API de suivi de lecture"]
     journal = (await live.client.get("/api/v1/journal", params={"kind": "project"})).json()
     assert len(journal["entries"]) == 1
 

@@ -24,7 +24,7 @@ async def test_anthropic_test_key_refused_on_401(mock: respx.MockRouter) -> None
     )
     result = await AnthropicProvider().test_key(KEY)
     assert not result.ok
-    assert result.message == "Clé refusée par Anthropic."
+    assert result.message == "Anthropic rejected the API key."
     assert KEY not in result.message
 
 
@@ -60,7 +60,7 @@ async def test_openai_test_key_refused_on_401(mock: respx.MockRouter) -> None:
     )
     result = await OpenAIProvider().test_key(KEY)
     assert not result.ok
-    assert result.message == "Clé refusée par OpenAI."
+    assert result.message == "OpenAI rejected the API key."
     assert KEY not in result.message
 
 
@@ -91,7 +91,7 @@ async def test_glm_test_key_and_list_models_use_free_models_endpoint(
     chat = mock.post("https://exemple.test/v4/chat/completions")
     provider = GlmProvider(base_url="https://exemple.test/v4/")
     result = await provider.test_key(KEY)
-    assert result.ok and result.message == "Clé valide."
+    assert result.ok and result.message == "API key is valid."
     assert await provider.list_models(KEY) == ["glm-4.5", "glm-5.3-flash"]
     assert route.calls.last.request.headers["authorization"] == f"Bearer {KEY}"
     assert not chat.called
@@ -103,18 +103,18 @@ async def test_glm_test_key_refused_on_401(mock: respx.MockRouter) -> None:
     )
     result = await GlmProvider().test_key(KEY)
     assert not result.ok
-    assert result.message == "Clé refusée par GLM (Z.ai)."
+    assert result.message == "GLM (Z.ai) rejected the API key."
     assert KEY not in result.message
 
 
 @pytest.mark.parametrize(
     ("code", "message"),
     [
-        ("1113", "Crédit Z.ai insuffisant pour ce modèle."),
-        ("1305", "Service Z.ai surchargé, réessaie plus tard."),
+        ("1113", "Insufficient Z.ai credit for this model."),
+        ("1305", "Z.ai is overloaded. Try again later."),
         (
             "9999",
-            "Limite de requêtes ou crédit épuisé chez GLM (Z.ai), réessaie plus tard.",
+            "GLM (Z.ai)'s request limit or credit limit was reached. Try again later.",
         ),
     ],
 )
@@ -143,7 +143,7 @@ async def test_429_without_known_code_is_readable(
     result = await provider.test_key(KEY)
     assert not result.ok
     assert result.message == (
-        f"Limite de requêtes ou crédit épuisé chez {provider.label}, réessaie plus tard."
+        f"{provider.label}'s request limit or credit limit was reached. Try again later."
     )
 
 
@@ -165,7 +165,7 @@ async def test_test_key_with_invalid_characters_does_not_raise(
 ) -> None:
     result = await provider_cls().test_key(bad_key)
     assert not result.ok
-    assert result.message == "La clé contient des caractères invalides."
+    assert result.message == "The API key contains invalid characters."
     assert bad_key not in result.message
     assert not mock.calls
 

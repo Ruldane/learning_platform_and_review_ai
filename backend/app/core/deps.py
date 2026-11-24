@@ -60,7 +60,7 @@ async def get_current_user(conn: HTTPConnection) -> CurrentUser:
     identity = MCP_IDENTITY.get()
     if identity is not None:
         if never_reachable(conn.url.path.removeprefix(API_PREFIX), conn.scope.get("method")):
-            raise AppError("interface_only", "Cette action est réservée à l'interface.", 403)
+            raise AppError("interface_only", "This action is only available in the app.", 403)
         return CurrentUser(id=identity.user_id, email=None)
     authenticator: Authenticator = conn.app.state.authenticator
     return await authenticator.authenticate(conn)
@@ -71,7 +71,7 @@ async def get_interface_user(conn: HTTPConnection) -> CurrentUser:
     est refusé (403). Pour les routes de gestion de l'accès MCP (jetons, interrupteur,
     confirmations) : un jeton ne se gère jamais lui-même."""
     if MCP_IDENTITY.get() is not None:
-        raise AppError("interface_only", "Cette action est réservée à l'interface.", 403)
+        raise AppError("interface_only", "This action is only available in the app.", 403)
     authenticator: Authenticator = conn.app.state.authenticator
     return await authenticator.authenticate(conn)
 

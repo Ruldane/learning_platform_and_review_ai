@@ -142,7 +142,7 @@ async def test_activity_event_on_pass(
     await check(client, session["id"])
     [item] = (await client.get("/api/v1/activity")).json()["items"]
     assert item["id"] == f"ide:{session['id']}:passed" and item["kind"] == "project"
-    assert item["title"] == "Exercice de code réussi : Boucles"
+    assert item["title"] == "Coding exercise passed: Boucles"
     assert item["link"] == f"/code/{session['id']}"
     await check(client, session["id"])  # un second passage n'ajoute rien
     assert len((await client.get("/api/v1/activity")).json()["items"]) == 1

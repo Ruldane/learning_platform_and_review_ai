@@ -90,7 +90,7 @@ async def call_with_retries(
             if last:
                 raise AppError(
                     "llm_empty_reply",
-                    f"L'agent {agent} a renvoyé une réponse vide.",
+                    f"The {agent} agent returned an empty reply.",
                     502,
                     {"agent": agent},
                 )
@@ -111,7 +111,7 @@ def _readable(exc: Exception, model: BaseChatModel, agent: str) -> AppError | No
     exception. Journal : agent, fournisseur et type d'exception, jamais son texte."""
     metadata = model.metadata or {}
     provider = metadata.get("tremplin_provider")
-    label = metadata.get("tremplin_provider_label") or "le fournisseur"
+    label = metadata.get("tremplin_provider_label") or "The provider"
     described = describe_provider_error(exc, provider=provider, label=str(label))
     if described is not None:
         logger.warning(
@@ -161,7 +161,7 @@ def node_timeout(seconds: float = NODE_TIMEOUT_S) -> Callable[[F], F]:
                     raise  # un délai levé par le nœud lui-même, pas notre plafond
                 raise AppError(
                     "node_timeout",
-                    f"L'étape {func.__name__} a dépassé {seconds:g} secondes.",
+                    f"The {func.__name__} step exceeded {seconds:g} seconds.",
                     504,
                     {"node": func.__name__, "seconds": seconds},
                 ) from None

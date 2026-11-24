@@ -69,7 +69,7 @@ async def test_builder_retries_and_keeps_human_validation(make_builder_runner: M
     run = await make_builder_runner(models=PlayedModels())
     assert await _brief(run) == control.prompt_of_call(1)
     await run.resume("{}")
-    assert "Ta réponse précédente n'est pas valide" in await _brief(run)
+    assert "Your previous reply is invalid" in await _brief(run)
     await run.resume(GOOD_PLAN)
     assert (await _pending(run))["kind"] == "validate_program"
     assert len(await run.events("artifact.ready")) == 1

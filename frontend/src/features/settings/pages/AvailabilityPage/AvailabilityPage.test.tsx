@@ -24,33 +24,41 @@ function setup(put?: Parameters<typeof settingsApi>[0]["put"], gate?: Promise<vo
   return { ...api, ...view };
 }
 
-const weekday = () => screen.getByLabelText("Minutes par jour, du lundi au vendredi");
+const TITLE = "Availability and pace";
+const SAVED = "Settings saved.";
+const SECOND_FOLLOW_UP = "Second follow-up";
+const WEEKEND_MIN = "Weekend block, minimum (minutes)";
+const WEEKEND_MAX = "Weekend block, maximum (minutes)";
+const LESSON_LANGUAGE = "Lesson language";
+const DEBATE_ROUNDS = "Debate rounds";
+const SESSION_CAP = "Cap per session (tokens)";
+const weekday = () => screen.getByLabelText("Minutes per day, Monday to Friday");
 const delay = (name: string) => screen.getByLabelText(name);
-const save = () => screen.getByRole("button", { name: "Enregistrer" });
+const save = () => screen.getByRole("button", { name: "Save" });
 
 describe("AvailabilityPage", () => {
   it("availability saves and shows weekly budget", async () => {
     const { puts, user } = setup();
-    await screen.findByRole("heading", { level: 1, name: "Disponibilité et rythme" });
+    await screen.findByRole("heading", { level: 1, name: TITLE });
     expect(weekday()).toHaveValue(120);
-    expect(screen.getByText("Budget hebdomadaire : 14 h")).toBeInTheDocument();
+    expect(screen.getByText("Weekly budget: 14 h")).toBeInTheDocument();
 
     await user.clear(weekday());
     await user.type(weekday(), "90");
-    expect(screen.getByText("Budget hebdomadaire : 11 h 30")).toBeInTheDocument();
-    await user.clear(screen.getByLabelText("Bloc du week-end, maximum (minutes)"));
-    await user.type(screen.getByLabelText("Bloc du week-end, maximum (minutes)"), "300");
-    expect(screen.getByText("Budget hebdomadaire : 12 h 30")).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText("Heure du brief"), { target: { value: "06:45" } });
-    await user.clear(screen.getByLabelText("Tours de débat"));
-    await user.type(screen.getByLabelText("Tours de débat"), "4");
-    await user.clear(screen.getByLabelText("Plafond par session (jetons)"));
-    await user.type(screen.getByLabelText("Plafond par session (jetons)"), "200000");
-    await user.selectOptions(screen.getByLabelText("Langue des leçons"), "en");
+    expect(screen.getByText("Weekly budget: 11 h 30")).toBeInTheDocument();
+    await user.clear(screen.getByLabelText(WEEKEND_MAX));
+    await user.type(screen.getByLabelText(WEEKEND_MAX), "300");
+    expect(screen.getByText("Weekly budget: 12 h 30")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Brief time"), { target: { value: "06:45" } });
+    await user.clear(screen.getByLabelText(DEBATE_ROUNDS));
+    await user.type(screen.getByLabelText(DEBATE_ROUNDS), "4");
+    await user.clear(screen.getByLabelText(SESSION_CAP));
+    await user.type(screen.getByLabelText(SESSION_CAP), "200000");
+    await user.selectOptions(screen.getByLabelText(LESSON_LANGUAGE), "en");
     expect(puts).toEqual([]); // rien n'est enregistré avant le bouton
     await user.click(save());
 
-    expect(await screen.findByText("Réglages enregistrés.")).toBeInTheDocument();
+    expect(await screen.findByText(SAVED)).toBeInTheDocument();
     expect(puts).toHaveLength(1);
     expect(puts[0]).toMatchObject({
       availability: {
@@ -75,55 +83,57 @@ describe("AvailabilityPage", () => {
 
   it("delays must increase", async () => {
     const { puts, user } = setup();
-    await screen.findByRole("heading", { level: 1, name: "Disponibilité et rythme" });
-    await user.clear(delay("Deuxième relance"));
-    await user.type(delay("Deuxième relance"), "7");
-    expect(delay("Deuxième relance")).toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByText(/^Erreur : .*strictement croissants/)).toHaveClass("text-destructive");
+    await screen.findByRole("heading", { level: 1, name: TITLE });
+    await user.clear(delay(SECOND_FOLLOW_UP));
+    await user.type(delay(SECOND_FOLLOW_UP), "7");
+    expect(delay(SECOND_FOLLOW_UP)).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByText(/^Error: Three strictly increasing numbers of days/)).toHaveClass(
+      "text-destructive",
+    );
     expect(save()).toHaveAttribute("aria-disabled", "true");
 
-    await user.clear(delay("Deuxième relance"));
-    await user.type(delay("Deuxième relance"), "30");
+    await user.clear(delay(SECOND_FOLLOW_UP));
+    await user.type(delay(SECOND_FOLLOW_UP), "30");
     expect(save()).toHaveAttribute("aria-disabled", "true"); // 7, 30, 21 : pas croissant
-    await user.clear(delay("Troisième relance"));
-    await user.type(delay("Troisième relance"), "45");
-    expect(delay("Deuxième relance")).toHaveAttribute("aria-invalid", "false");
+    await user.clear(delay("Third follow-up"));
+    await user.type(delay("Third follow-up"), "45");
+    expect(delay(SECOND_FOLLOW_UP)).toHaveAttribute("aria-invalid", "false");
     await user.click(save());
-    await screen.findByText("Réglages enregistrés.");
+    await screen.findByText(SAVED);
     expect(puts[0]).toMatchObject({ reminder_delays_days: [7, 30, 45] });
   });
 
   it("blocks the save while a duration or the weekend block is out of order", async () => {
     const { puts, user } = setup();
-    await screen.findByRole("heading", { level: 1, name: "Disponibilité et rythme" });
-    await user.clear(screen.getByLabelText("Bloc du week-end, minimum (minutes)"));
-    await user.type(screen.getByLabelText("Bloc du week-end, minimum (minutes)"), "500");
-    expect(screen.getByText(/doit rester inférieur ou égal à son maximum/)).toBeVisible();
+    await screen.findByRole("heading", { level: 1, name: TITLE });
+    await user.clear(screen.getByLabelText(WEEKEND_MIN));
+    await user.type(screen.getByLabelText(WEEKEND_MIN), "500");
+    expect(screen.getByText(/weekend minimum must stay less than or equal/)).toBeVisible();
     expect(save()).toHaveAttribute("aria-disabled", "true");
     await user.clear(weekday());
     await user.type(weekday(), "1500");
     expect(weekday()).toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByText("Budget hebdomadaire : corrige les durées ci-dessus.")).toBeVisible();
+    expect(screen.getByText("Weekly budget: fix the durations above.")).toBeVisible();
     expect(puts).toEqual([]);
   });
 
   it("422 field error attached without echo", async () => {
     const { user } = setup(() => refusedFieldsResponse("availability.weekday_minutes"));
-    await screen.findByRole("heading", { level: 1, name: "Disponibilité et rythme" });
+    await screen.findByRole("heading", { level: 1, name: TITLE });
     await user.clear(weekday());
     await user.type(weekday(), "777");
     await user.click(save());
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Requête invalide");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Invalid request.");
     expect(weekday()).toHaveAttribute("aria-invalid", "true");
     expect(
-      screen.getByText("Erreur : Le serveur a refusé cette valeur : vérifie-la."),
+      screen.getByText("Error: The server refused this value: check it."),
     ).toBeInTheDocument();
     // la valeur refusée n'est écrite nulle part dans la page (seulement dans le champ qu'on a
     // saisi)
     expect(document.body).not.toHaveTextContent("777");
     expect(weekday()).toHaveValue(777);
-    expect(screen.getByLabelText("Tours de débat")).toHaveAttribute("aria-invalid", "false");
+    expect(screen.getByLabelText(DEBATE_ROUNDS)).toHaveAttribute("aria-invalid", "false");
     // corriger le champ efface le refus
     await user.clear(weekday());
     await user.type(weekday(), "100");
@@ -138,7 +148,7 @@ describe("AvailabilityPage", () => {
         { status: 500 },
       ),
     );
-    await screen.findByRole("heading", { level: 1, name: "Disponibilité et rythme" });
+    await screen.findByRole("heading", { level: 1, name: TITLE });
     await user.clear(weekday());
     await user.type(weekday(), "45");
     await user.click(save());
@@ -149,33 +159,33 @@ describe("AvailabilityPage", () => {
 
   it("keeps the focus on the save button after saving, a refusal and when blocked", async () => {
     const { user } = setup();
-    await screen.findByRole("heading", { level: 1, name: "Disponibilité et rythme" });
+    await screen.findByRole("heading", { level: 1, name: TITLE });
     await user.click(save()); // rien à enregistrer : bloqué, le focus reste sur le bouton
     expect(save()).toHaveFocus();
-    expect(save()).toHaveAccessibleDescription("Rien à enregistrer.");
+    expect(save()).toHaveAccessibleDescription("Nothing to save.");
     await user.clear(weekday());
     await user.type(weekday(), "99");
     await user.click(save());
-    await screen.findByText("Réglages enregistrés.");
+    await screen.findByText(SAVED);
     expect(save()).toHaveFocus();
     await user.clear(weekday());
     await user.type(weekday(), "1500");
     await user.click(save());
     expect(save()).toHaveFocus();
-    expect(save()).toHaveAccessibleDescription("Corrige les champs signalés avant d'enregistrer.");
+    expect(save()).toHaveAccessibleDescription("Fix the flagged fields before saving.");
   });
 
   it("keeps what is typed while the save is running", async () => {
     const held = closedGate();
     const { user, puts } = setup(undefined, held.promise);
-    await screen.findByRole("heading", { level: 1, name: "Disponibilité et rythme" });
+    await screen.findByRole("heading", { level: 1, name: TITLE });
     await user.clear(weekday());
     await user.type(weekday(), "90");
     await user.click(save());
     await waitFor(() => expect(puts).toHaveLength(1)); // l'envoi est en cours, tenu par la porte
     await user.type(weekday(), "5"); // pendant l'envoi : 905
     held.open();
-    await screen.findByText("Modifications non enregistrées.");
+    await screen.findByText("Unsaved changes.");
     expect(puts[0]).toMatchObject({ availability: { weekday_minutes: 90 } });
     expect(weekday()).toHaveValue(905);
   });
@@ -187,6 +197,6 @@ describe("AvailabilityPage", () => {
       [{ path: "/reglages/disponibilite", element: <AvailabilityPage /> }],
       "/reglages/disponibilite",
     );
-    expect(await screen.findByLabelText("Langue des leçons")).toHaveValue("nl");
+    expect(await screen.findByLabelText(LESSON_LANGUAGE)).toHaveValue("nl");
   });
 });

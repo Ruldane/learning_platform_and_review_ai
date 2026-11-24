@@ -34,8 +34,8 @@ describe("WelcomePage, finishing and leaving a step", () => {
     });
     await title(TITLES[0]!);
     await user.click(skipAll());
-    expect(await screen.findByRole("alert")).toHaveTextContent("Requête invalide");
-    await user.click(next("Suivant"));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Invalid request.");
+    await user.click(next("Next"));
     await title(TITLES[1]!);
     expect(screen.queryByRole("alert")).toBeNull();
 
@@ -50,8 +50,8 @@ describe("WelcomePage, finishing and leaving a step", () => {
     });
     await goTo(user, 2);
     await user.click(skipAll());
-    expect(await screen.findByRole("alert")).toHaveTextContent("Requête invalide");
-    await user.click(screen.getByRole("button", { name: "Précédent" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Invalid request.");
+    await user.click(screen.getByRole("button", { name: "Previous" }));
     await title(TITLES[0]!);
     expect(screen.queryByRole("alert")).toBeNull();
   });
@@ -71,7 +71,7 @@ describe("WelcomePage, finishing and leaving a step", () => {
         ?.getObserversCount() ?? 0;
     expect(observers()).toBe(1);
     expect(health()).toBe(1);
-    await user.click(next("Suivant"));
+    await user.click(next("Next"));
     await title(TITLES[1]!);
     expect(observers()).toBe(0);
     expect(health()).toBe(0);

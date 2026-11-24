@@ -129,7 +129,7 @@ async def test_claim_without_cookie_is_409(
     for choice in ("take_local", "fresh"):
         r = await choose(google_client, choice)
         assert error_code(r) == "claim_expired"
-        assert r.json()["error"]["message"] == "Le choix a expiré : reconnecte-toi avec Google."
+        assert r.json()["error"]["message"] == "This choice expired. Sign in with Google again."
     assert await count_users() == 1 and set_cookie(r, "tremplin_session") is None
 
 

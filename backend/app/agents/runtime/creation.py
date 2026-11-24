@@ -22,7 +22,7 @@ def validated_input(model: type[BaseModel], input: dict[str, Any]) -> dict[str, 
     except ValidationError as exc:
         fields = [".".join(str(part) for part in error["loc"]) for error in exc.errors()]
         raise AppError(
-            "invalid_input", "L'entrée du parcours est invalide.", 422, {"fields": fields}
+            "invalid_input", "The workflow input is invalid.", 422, {"fields": fields}
         ) from None
 
 

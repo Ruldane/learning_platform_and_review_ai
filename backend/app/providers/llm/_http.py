@@ -13,7 +13,7 @@ from app.core.errors import AppError
 from app.providers.llm.base import KeyTestResult
 
 _TIMEOUT = httpx.Timeout(15.0)
-_INVALID_KEY = "La clé contient des caractères invalides."
+_INVALID_KEY = "The API key contains invalid characters."
 
 
 def _headers_are_valid(headers: dict[str, str]) -> bool:
@@ -31,14 +31,14 @@ def _provider_error_code(response: httpx.Response) -> str | None:
 
 
 def _error_message(label: str, response: httpx.Response, code_messages: Mapping[str, str]) -> str:
-    """Message français d'un échec : rien du corps de la réponse n'est recopié (la clé y figure
+    """Message anglais d'un échec : rien du corps de la réponse n'est recopié (la clé y figure
     parfois), seul son code d'erreur sert à choisir un message connu."""
     code = _provider_error_code(response)
     if code is not None and code in code_messages:
         return code_messages[code]
     if response.status_code == 429:
-        return f"Limite de requêtes ou crédit épuisé chez {label}, réessaie plus tard."
-    return f"{label} a répondu par une erreur ({response.status_code})."
+        return f"{label}'s request limit or credit limit was reached. Try again later."
+    return f"{label} returned an error ({response.status_code})."
 
 
 async def check_key(
@@ -59,20 +59,18 @@ async def check_key(
         async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
             response = await client.request(method, url, headers=headers, json=body)
     except (httpx.HTTPError, httpx.InvalidURL, UnicodeError, ValueError):
-        return KeyTestResult(
-            ok=False, message=f"Impossible de joindre {label}. Vérifie ta connexion."
-        )
+        return KeyTestResult(ok=False, message=f"Could not reach {label}. Check your connection.")
     if response.status_code in (401, 403):
-        return KeyTestResult(ok=False, message=f"Clé refusée par {label}.")
+        return KeyTestResult(ok=False, message=f"{label} rejected the API key.")
     if not response.is_success:
         return KeyTestResult(ok=False, message=_error_message(label, response, code_messages or {}))
-    return KeyTestResult(ok=True, message="Clé valide.")
+    return KeyTestResult(ok=True, message="API key is valid.")
 
 
 def _unavailable(label: str) -> AppError:
     return AppError(
         "llm_models_unavailable",
-        f"Impossible de récupérer la liste des modèles {label}.",
+        f"Could not retrieve the model list from {label}.",
         502,
         {"provider": label},
     )
@@ -84,7 +82,7 @@ async def get_model_page(
     """Une page de `GET /models` : (identifiants, curseur suivant ou `None`).
 
     Toute erreur (clé invalide, réseau, statut, corps inattendu) devient une `AppError`
-    française qui ne contient jamais la clé.
+    en anglais qui ne contient jamais la clé.
     """
     if not _headers_are_valid(headers):
         raise _unavailable(label)

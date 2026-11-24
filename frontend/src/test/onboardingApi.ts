@@ -78,7 +78,7 @@ function keyHandlers(
     }),
     http.post(`${API}/settings/api-keys/:provider/test`, ({ params }) => {
       tested.push(String(params.provider));
-      return HttpResponse.json(options.keyTest ?? { ok: true, message: "Clé valide." });
+      return HttpResponse.json(options.keyTest ?? { ok: true, message: "API key is valid." });
     }),
   ];
 }

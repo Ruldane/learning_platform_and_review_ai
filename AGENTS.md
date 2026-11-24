@@ -29,7 +29,8 @@ Ce fichier guide les agents qui **développent** le dépôt. Un agent qui **pilo
 
 - Ne jamais lire, afficher, copier ni committer `.env`.
 - Une clé d'API n'est jamais renvoyée (4 derniers caractères) ni journalisée.
-- Erreurs : `{"error": {"code", "message", "details"}}`, message en français. Une 422 ne renvoie jamais l'entrée reçue.
+- Erreurs : `{"error": {"code", "message", "details"}}`, message en anglais.
+  Une 422 ne renvoie jamais l'entrée reçue.
 - Les journaux ne portent que des identifiants, nombres, codes et durées : jamais un texte de l'utilisatrice, un e-mail, un lien ni un contenu d'appel MCP.
 - Aucun appel réel à un modèle ou au réseau dans les tests : faux fournisseurs et modèles scriptés. Une requête HTTP n'attend jamais un travail d'agent (elle rend un `session_id`).
 - Le bac à sable de l'IDE ne reçoit jamais de socket Docker, de réseau, de montage de l'hôte ni de secret. Un agent ou Claude ne modifie jamais le code de l'utilisatrice sans qu'elle accepte (la correction est une proposition).

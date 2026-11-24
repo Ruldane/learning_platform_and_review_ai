@@ -19,7 +19,13 @@ from app.providers.llm.base import (
 )
 from app.providers.llm.forcing import forced_choice
 
-_SETTINGS_PLACE = "Réglages > Modèles et clés"
+_SETTINGS_PLACE = "Settings > Models and keys"
+_TIER_LABELS: dict[Tier, str] = {
+    "rapide": "fast",
+    "standard": "standard",
+    "fort": "strong",
+    "vision": "vision",
+}
 
 
 class LlmFactory:
@@ -55,7 +61,7 @@ class LlmFactory:
         if provider is None:
             raise AppError(
                 "llm_provider_unknown",
-                f"Le fournisseur « {choice.provider} » n'est pas pris en charge.",
+                f"The provider {choice.provider} is unsupported.",
                 400,
                 {"provider": choice.provider},
             )
@@ -71,16 +77,16 @@ class LlmFactory:
         except SecretUnreadable as exc:
             raise AppError(
                 "llm_key_unreadable",
-                f"La clé {provider.label} enregistrée ne peut plus être lue. "
-                f"Ressaisis-la dans {_SETTINGS_PLACE}.",
+                f"The saved {provider.label} API key could not be read. "
+                f"Enter it again in {_SETTINGS_PLACE}.",
                 400,
                 {"provider": provider.name},
             ) from exc
         if not key:
             raise AppError(
                 "llm_key_missing",
-                f"Aucune clé {provider.label} n'est configurée pour le niveau « {tier} ». "
-                f"Ajoute-la dans {_SETTINGS_PLACE}.",
+                f"No {provider.label} API key is configured for the {_TIER_LABELS[tier]} tier. "
+                f"Add one in {_SETTINGS_PLACE}.",
                 400,
                 {"provider": provider.name, "tier": tier},
             )

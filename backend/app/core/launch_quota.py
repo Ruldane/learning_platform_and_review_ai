@@ -25,7 +25,7 @@ class LaunchQuota:
 
     def reserve(self, user_id: str, now: datetime | None = None) -> datetime:
         """Compte un lancement de plus ; rend son instant (pour `release`). Au-delà du plafond :
-        `mcp_graph_quota` (429), message en français, sans aucun contenu ; rien n'est compté."""
+        `mcp_graph_quota` (429), sans aucun contenu ; rien n'est compté."""
         moment = now or datetime.now(UTC)
         launches = self._launches.setdefault(user_id, deque())
         while launches and launches[0] <= moment - _WINDOW:
@@ -33,9 +33,8 @@ class LaunchQuota:
         if len(launches) >= self.limit:
             raise AppError(
                 "mcp_graph_quota",
-                f"Limite atteinte : {self.limit} lancements de parcours par jour (24 h "
-                "glissantes). Réessaie plus tard, ou demande à January de le lancer depuis "
-                "l'application.",
+                f"The limit of {self.limit} workflow launches in a rolling 24-hour period "
+                "has been reached. Try again later or ask January to start it in the app.",
                 429,
                 {"limit": self.limit, "window": "day"},
             )

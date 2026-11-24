@@ -55,7 +55,7 @@ async def test_brave_key_test_reports_ok_and_refusal(
     caplog.set_level(logging.DEBUG)
     await client.post(KEYS, json={"provider": "brave", "key": BRAVE_KEY})
     refused = await client.post(f"{KEYS}/brave/test")
-    assert refused.json() == {"ok": False, "message": "Clé refusée par Brave Search."}
+    assert refused.json() == {"ok": False, "message": "Brave Search rejected the API key."}
     assert (await _brave(client))["last_test_ok"] is False
     await client.post(KEYS, json={"provider": "brave", "key": VALID_BRAVE_KEY})
     assert (await client.post(f"{KEYS}/brave/test")).json()["ok"] is True
@@ -91,4 +91,4 @@ async def test_brave_key_isolated_between_users(client: httpx.AsyncClient, app: 
     act_as(app, "autre-utilisateur")
     assert (await _brave(client))["source"] is None
     tested = await client.post(f"{KEYS}/brave/test")
-    assert tested.json()["ok"] is False and "Aucune clé" in tested.json()["message"]
+    assert tested.json() == {"ok": False, "message": "No key saved for Brave Search."}

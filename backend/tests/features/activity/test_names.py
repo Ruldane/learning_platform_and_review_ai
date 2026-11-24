@@ -19,7 +19,6 @@ FRONT_AGENTS = (
     / "agents.ts"
 )
 ENTRY = re.compile(r'^\s+(\w+): \{ name: "([^"]+)"', re.MULTILINE)
-ARTICLE = re.compile(r"^(Le |La |L')")
 
 
 def test_every_engine_agent_has_a_name() -> None:
@@ -33,4 +32,4 @@ def test_names_match_the_front_list() -> None:
     assert front, "agents.ts illisible"
     assert set(AGENT_NAMES) == set(front)
     for slug, name in front.items():
-        assert ARTICLE.sub("", AGENT_NAMES[slug]) == name, slug
+        assert AGENT_NAMES[slug] == name, slug

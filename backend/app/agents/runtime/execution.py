@@ -48,10 +48,10 @@ from app.core.errors import AppError
 logger = logging.getLogger(__name__)
 
 STREAM_MODES: list[StreamMode] = ["custom", "messages", "updates"]
-INTERNAL_ERROR = "Une erreur inattendue a interrompu la session."
+INTERNAL_ERROR = "An unexpected error interrupted the session."
 NOT_WRITTEN = {
     "code": "outcome_not_written",
-    "message": "La fin de la session n'a pas pu être enregistrée : elle est marquée en échec.",
+    "message": "The session outcome could not be saved. The session was marked as failed.",
 }
 # Attente avant chaque nouvel essai d'écriture de l'issue (deux nouveaux essais).
 OUTCOME_RETRY_DELAYS_S = (0.05, 0.25)

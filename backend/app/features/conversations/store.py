@@ -170,7 +170,7 @@ class AgentConversationStore:
             if turn.answer is not None:
                 return None
             if thread.scope not in FEYNMAN_SCOPES or turn.feynman is None:
-                raise AppError("feynman_not_found", "Explication introuvable.", 404)
+                raise AppError("feynman_not_found", "Explanation not found.", 404)
             data = FeynmanData.model_validate(turn.feynman)
             text = await material(db, user_id, data.source, turn.lesson_version)
             title = data.source.path or data.source.title

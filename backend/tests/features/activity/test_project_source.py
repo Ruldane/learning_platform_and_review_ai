@@ -56,13 +56,13 @@ async def test_validated_and_to_redo_projects_are_in_the_feed(env: Env) -> None:
     page = await _page(env)
     assert [item.kind for item in page.items] == ["project", "project"]
     redo_item, done_item = page.items
-    assert redo_item.title == "Projet à reprendre : Un tableau de bord"
+    assert redo_item.title == "Project needs revision: Un tableau de bord"
     assert redo_item.link == f"/competences/portfolio/{redo}" and redo_item.at == hours(3)
     assert (
         redo_item.id == f"project:{redo}:to_redo:s-{hours(3).isoformat()}"
         and redo_item.detail is None
     )
-    assert done_item.title == "Projet validé : Une API de suivi"
+    assert done_item.title == "Project approved: Une API de suivi"
     assert done_item.link == f"/competences/portfolio/{done}" and done_item.at == hours(2)
     assert done_item.id == f"project:{done}:validated"
     dumped = page.model_dump_json()
@@ -121,8 +121,8 @@ async def test_project_events_are_per_user(env: Env) -> None:
     await add_project(env, hours(2), user=OTHER, title="Celui de l'autre")
     mine = await _page(env)
     theirs = await _page(env, user=OTHER)
-    assert [item.title for item in mine.items] == ["Projet validé : Une API de suivi"]
-    assert [item.title for item in theirs.items] == ["Projet validé : Celui de l'autre"]
+    assert [item.title for item in mine.items] == ["Project approved: Une API de suivi"]
+    assert [item.title for item in theirs.items] == ["Project approved: Celui de l'autre"]
 
 
 async def test_project_source_never_logs_texts(env: Env, caplog: pytest.LogCaptureFixture) -> None:

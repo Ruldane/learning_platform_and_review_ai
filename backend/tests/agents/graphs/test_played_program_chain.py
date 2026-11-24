@@ -51,10 +51,10 @@ async def test_builder_from_brief_to_approved_program(
         PLAY_CONTEXT.reset(flag)
     first = (await pending(run))["brief"]
     assert prompt(first) == control.prompt_of_call(1)
-    with pytest.raises(AppError, match="Réponse invalide"):
+    with pytest.raises(AppError, match="Invalid reply"):
         await submit(run, first, "{}")
     retry = (await pending(run))["brief"]
-    assert "Ta réponse précédente n'est pas valide" in prompt(retry)
+    assert "Your previous reply is invalid" in prompt(retry)
     await submit(run, retry, GOOD_PLAN)
     assert (await pending(run))["kind"] == "validate_program"
     assert len(await run.events("artifact.ready")) == 1
@@ -84,7 +84,7 @@ async def test_council_from_brief_to_chosen_proposal(
             if (
                 skip_during_speech
                 and not sent_command
-                and "Tour en cours : 2\n" in text
+                and "Current round: 2\n" in text
                 and "À toi de parler." in text
             ):
                 await run.post_message("", "to_proposals")

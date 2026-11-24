@@ -27,4 +27,9 @@ export const agents = {
   code_prosecutor: { name: "Prosecutor", role: "Questions the project's design" },
   code_defender: { name: "Defender", role: "Defends the design choices" },
   oncall_reviewer: { name: "Operations lead", role: "Grades the incident report" },
+  lesson_professor: { name: "Lesson tutor", role: "Answers questions about the lesson" },
+  training_tutor: { name: "Training tutor", role: "Guides your practice" },
+  brain_librarian: { name: "Knowledge librarian", role: "Finds answers in your saved knowledge" },
+  podcast_host: { name: "Podcast host", role: "Turns study material into an episode" },
+  offers_adviser: { name: "Offers assistant", role: "Answers questions about saved offers" },
 } as const;

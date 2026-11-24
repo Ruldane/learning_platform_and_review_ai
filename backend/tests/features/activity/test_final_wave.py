@@ -13,13 +13,13 @@ from tests.features.study.conftest import seed
 async def test_radar_title_counts_postings_not_pages(env: Env) -> None:
     await add_run(env, hours(1), read_count=21, not_postings=8, blocked_count=3)
     [item] = (await _page(env)).items
-    assert item.title == "Relevé du radar : 13 offres lues, 3 bloquées"
+    assert item.title == "Radar scan: 13 offers read, 3 blocked"
 
 
 async def test_failed_pass_with_attempts_left_promises_a_retry(env: Env) -> None:
     await add_job(env, hours(1), attempts=2)
     [item] = (await _page(env)).items
-    assert item.title.endswith("nouvel essai au prochain passage.")
+    assert item.title.endswith("Will retry on the next run.")
 
 
 async def test_abandoned_or_exhausted_pass_promises_no_retry(env: Env) -> None:
@@ -27,8 +27,8 @@ async def test_abandoned_or_exhausted_pass_promises_no_retry(env: Env) -> None:
     await add_job(env, hours(2), period="2026-W47", attempts=1, code="abandoned")
     page = await _page(env)
     assert [item.title for item in page.items] == [
-        "Un passage planifié a échoué (brief du matin) : abandonné, aucun nouvel essai.",
-        "Un passage planifié a échoué (brief du matin) : abandonné, aucun nouvel essai.",
+        "Scheduled run failed (morning brief). No further attempts.",
+        "Scheduled run failed (morning brief). No further attempts.",
     ]
 
 

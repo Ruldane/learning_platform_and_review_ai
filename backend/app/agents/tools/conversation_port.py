@@ -103,7 +103,7 @@ class ConversationStore(Protocol):
 
 
 def _unavailable() -> AppError:
-    return AppError("conversation_unavailable", "La conversation est indisponible.", 503)
+    return AppError("conversation_unavailable", "The conversation is unavailable.", 503)
 
 
 class _NoConversation:

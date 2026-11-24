@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 
 class HealthStatus(BaseModel):
-    """État d'un service. `detail` est en français et ne contient jamais de secret."""
+    """Service health. The detail is in English and never contains a secret."""
 
     ok: bool
     detail: str
@@ -22,8 +22,8 @@ class HealthCheck(Protocol):
 
 
 def available() -> HealthStatus:
-    return HealthStatus(ok=True, detail="Disponible")
+    return HealthStatus(ok=True, detail="Available")
 
 
 def unexpected_status(response: httpx.Response) -> HealthStatus:
-    return HealthStatus(ok=False, detail=f"Réponse inattendue : HTTP {response.status_code}")
+    return HealthStatus(ok=False, detail=f"Unexpected response (HTTP {response.status_code})")

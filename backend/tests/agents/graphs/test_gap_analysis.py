@@ -42,7 +42,7 @@ def between_untrusted_markers(prompt: str, start: str = START) -> str:
 def reask(prompt: str) -> str:
     """La re-demande seule : des règles jusqu'aux consignes de format de `structured_call`."""
     tail = prompt.split("Ton analyse ne respecte pas les règles", 1)[1]
-    return tail.split("Réponds uniquement par un objet JSON", 1)[0]
+    return tail.split("Reply with a JSON object", 1)[0]
 
 
 async def test_gap_analysis_analyzes_matches_and_saves(
@@ -256,7 +256,7 @@ async def test_long_requirement_list_is_capped_not_failed(
     )
     await run.wait_status("completed")
     asks = run.prompts(ANALYZE_REQUEST)
-    refused = "Ta réponse précédente n'est pas valide : requirements : List should have at most 40"
+    refused = "Your previous reply is invalid: requirements: List should have at most 40"
     assert len(asks) == 2 and refused in asks[1] and refused not in asks[0]
     assert len(gap_store.analysis[POSTING_ID].requirements) == 40
 
