@@ -3119,125 +3119,1213 @@ subject, decision, and reason. Historical entries describe the project at the ti
 
 ## D83
 
-- **Date** : 2026-11-12
-- **Sujet** : Phase 4, tâche 4.2 : tables de l'apprentissage, budget et règles de planification
-- **Décision** : (1) **13 tables** en migration `0005` (`goals`, `boards`, `proposals`, `programs`, `weeks`, `modules`, `tasks`, `plan_versions`, `lessons`, `resources`, `skills`, `skill_edges`, `user_skills`), modèles dans `db/models/{learning,program,lessons,skills}.py` (types `Literal` partagés avec `app.agents`, contrat 6). Suppression d'un objectif en cascade jusqu'aux tâches, leçons, ressources et versions (test) ; `proposals.board_id` passe à `NULL` si le tableau disparaît. Les identifiants de session (`council_session_id`, `session_id`) ne sont pas des clés étrangères : les données survivent à la session. Idempotence au rejeu : `boards(user_id, scribe_key)` (« session:step » du Scribe), `proposals(session_id, batch, rank)`, `plan_versions(user_id, session_id, revision)` (Stratège), `lessons.module_id` unique (une leçon par module), `resources(module_id, url_hash)` ; `modules.skipped` garde les sujets sautés, `tasks.already_known` marque les révisions d'acquis, `resources.note` est la fiche de lecture, `lessons.attempts` borne les relances. Index `tasks(user_id, planned_date)` (`ix_tasks_user_planned`, SPEC 13.6 : le calendrier lit par utilisateur et par date) et `tasks(program_id)`. La migration est écrite à la main par petites fonctions (une table = un appel `_create`) pour tenir 300 lignes ; `test_migrations_match_models` la compare aux modèles. (2) **Budget** : semaine = cinq jours de semaine + le samedi (borne haute du bloc de week-end, 120 × 5 + 240 = 840 min), dimanche libre ; plafond = `weekly × 85 // 100` en entiers (714 ; pas d'erreur flottante). Avec un objectif chiffré, `weekday` et `weekend` sont mis à l'échelle (arrondi par défaut) par `objectif / budget_hebdomadaire` — dans les deux sens, y compris au-delà des disponibilités déclarées (le brief le demande ; à revoir si January veut que l'objectif ne dépasse jamais ses disponibilités). `budget_for` prend un `AvailabilityLike` (protocole) : le contrat 2 interdit à une feature d'importer le schéma d'une autre. (3) **Acquis** : un module n'est concerné que si TOUTES ses compétences sont connues (clés `normalize_skill_name`) ; toutes `valide` ou `prouve` : module sauté (titre rendu) ; sinon : une seule tâche « Réviser : {titre} » (`lire`, 20 min, critère fixe), reconnue comme « déjà acquise » par `is_review` (titre, type, durée et critère) puisque `TaskDraft` n'a pas de champ pour cela et que le schéma du Stratège reste inchangé. Une semaine dont tous les modules sont sautés disparaît ; si rien ne reste, `schedule` rend un plan vide (à la couche service de dire « tout est déjà acquis »). (4) **85 % tenus par construction** : `pack_week` réserve d'abord la pratique (première pratique de la semaine) et le quiz (dernier quiz), puis place les autres tâches dans l'ordre sans dépasser `cap − réserve` ni la capacité d'un jour ; ce qui ne tient pas est reporté en tête de la semaine suivante, et des semaines « Suite : {thème} » (objectif et livrable suffixés « (suite) », avec leur propre pratique et leur propre quiz) sont ajoutées tant qu'il reste des tâches ; au-delà de 52 semaines, ou si une tâche dépasse le plus long jour, ou si pratique + quiz dépassent le plafond : `PlanningImpossible` (422 `planning_impossible`, message du brief pour le budget trop faible). Écarts avec l'algorithme du brief, tous dans le sens de la règle « le quiz ferme la semaine » : (a) le quiz est réservé sur le dernier jour qui a la place (samedi d'abord) **avant** de placer les autres tâches, qui ne dépassent pas ce jour ; (b) la place de la pratique est réservée au premier jour qui l'accueille, pour qu'un jour fragmenté ne la laisse jamais sans place ; (c) dès qu'une tâche est reportée, toutes les suivantes le sont aussi (un chapitre ne passe pas avant celui qui le précède). Chaque `ScheduledWeek` est autonome : ses modules sont ceux qui ont une tâche placée cette semaine-là (`module_index` y renvoie), un module coupé reparaît dans la semaine suivante avec le suffixe « (suite) » ; toute tâche tombe donc dans les sept jours de sa semaine. (5) Pratique (45 min) et quiz (20 min) ajoutés dans le dernier module s'ils manquent, les quiz de chaque module passent après ses autres tâches. (6) « Verbe d'action » : premier mot en -er, -ir, -re, -oir ou dans `ACTION_VERBS` (impératifs usuels) ; faux positifs connus (« chapitre »), assumés pour une règle sans dictionnaire. `check_draft` rend des phrases françaises (semaine au-delà du plafond, pratique ou quiz absents, titre sans verbe d'action). (7) Début du programme au prochain lundi (`next_monday`, aujourd'hui si lundi). (8) `snapshot` / `diff_plans` : forme JSON identique pour un `ScheduledPlan` et pour `ProgramRows` (lignes de la base, défini dans `diff.py`) ; clé d'une tâche « {module} / {tâche} » (un doublon reçoit « (2) »), `PlanDiff.to_json()` pour `plan_versions.diff`. (9) Nouveaux fichiers hors liste du brief : `service/verbs.py` (verbes d'action) ; les dataclasses `Scheduled*` vivent dans `packing.py` et `planning.py` les réexporte (`__all__`), pour tenir 300 lignes.
-- **Raison** : SPEC 3.4 (disponibilité, 85 %, acquis, pratique et quiz chaque semaine), 13 (schéma), 13.6 (index) ; D5, D81 (types partagés avec le moteur), plan directeur §1 (extensibilité) ; revue de la phase 3 (idempotence au rejeu).
+- **Date** 2026-11-12
+- **Subject** Phase 4, task 4.2: learning tables, budget, and planning rules
+- **Decision**
+  1. **13 tables** in migration `0005` (`goals`, `boards`, `proposals`, `programs`, `weeks`,
+     `modules`, `tasks`, `plan_versions`, `lessons`, `resources`, `skills`, `skill_edges`,
+     `user_skills`), models in `db/models/{learning,program,lessons,skills}.py` (`Literal` types
+     shared with `app.agents`, contract 6). Deleting a goal cascades down to the tasks, lessons,
+     resources, and versions (test); `proposals.board_id` becomes `NULL` if the board disappears.
+     The session identifiers (`council_session_id`, `session_id`) are not foreign keys: the data
+     survives the session. Idempotence on replay: `boards(user_id, scribe_key)` (the Scribe's
+     “session:step”), `proposals(session_id, batch, rank)`, `plan_versions(user_id,
+     session_id, revision)` (Strategist), `lessons.module_id` unique (one lesson per module),
+     `resources(module_id, url_hash)`; `modules.skipped` keeps the skipped topics,
+     `tasks.already_known` marks the reviews of acquired skills, `resources.note` is the reading
+     note, `lessons.attempts` bounds the retries. Index `tasks(user_id, planned_date)`
+     (`ix_tasks_user_planned`, SPEC 13.6: the calendar reads by user and by date) and
+     `tasks(program_id)`. The migration is written by hand in small functions (one table = one
+     `_create` call) to stay within 300 lines; `test_migrations_match_models` compares it with the
+     models.
+  2. **Budget**: week = five weekdays + Saturday (upper bound of the weekend block, 120 × 5 + 240 =
+     840 min), Sunday free; cap = `weekly × 85 // 100` in integers (714; no floating-point error).
+     With a numeric goal, `weekday` and `weekend` are scaled (rounded down) by
+     `goal / weekly_budget` — in both directions, including beyond the declared availability (the
+     brief asks for it; to revisit if January wants the goal never to exceed her availability).
+     `budget_for` takes an `AvailabilityLike` (protocol): contract 2 forbids a feature from
+     importing another's schema.
+  3. **Acquired skills**: a module is concerned only if ALL its skills are known (keys
+     `normalize_skill_name`); all `valide` or `prouve`: module skipped (title returned); otherwise:
+     a single task “Review: {title}” (`lire`, 20 min, fixed criterion), recognized as “already
+     acquired” by `is_review` (title, type, duration, and criterion) since `TaskDraft` has no field
+     for that and the Strategist's schema stays unchanged. A week whose modules are all skipped
+     disappears; if nothing remains, `schedule` returns an empty plan (it is up to the service layer
+     to say “everything is already acquired”).
+  4. **85% held by construction**: `pack_week` first reserves the practice (the week's first
+     practice) and the quiz (the last quiz), then places the other tasks in order without exceeding
+     `cap − reserve` or a day's capacity; what does not fit is carried over to the top of the
+     following week, and “Continued: {theme}” weeks (goal and deliverable suffixed “(continued)”,
+     with their own practice and quiz) are added as long as tasks remain; beyond 52 weeks, or if a
+     task exceeds the longest day, or if practice + quiz exceed the cap: `PlanningImpossible` (422
+     `planning_impossible`, the brief's message for a budget that is too low). Deviations from the
+     brief's algorithm, all in the direction of the rule “the quiz closes the week”: (a) the quiz is
+     reserved on the last day that has room (Saturday first) **before** placing the other tasks,
+     which do not go past that day; (b) the practice's room is reserved on the first day that can
+     take it, so that a fragmented day never leaves it without room; (c) as soon as a task is
+     carried over, all the following ones are too (a chapter does not go ahead of the one that
+     precedes it). Each `ScheduledWeek` is self-contained: its modules are those that have a task
+     placed that week (`module_index` refers to it), a split module reappears in the following week
+     with the suffix “(continued)”; every task therefore falls within the seven days of its week.
+  5. Practice (45 min) and quiz (20 min) added in the last module if they are missing, each module's
+     quizzes go after its other tasks.
+  6. “Action verb”: first word ending in -er, -ir, -re, -oir or in `ACTION_VERBS` (usual
+     imperatives); known false positives (“chapitre”), accepted for a rule without a dictionary.
+     `check_draft` returns French sentences (week above the cap, practice or quiz missing, title
+     without an action verb).
+  7. Program start on the next Monday (`next_monday`, today if Monday).
+  8. `snapshot` / `diff_plans`: identical JSON shape for a `ScheduledPlan` and for `ProgramRows`
+     (database rows, defined in `diff.py`); a task's key “{module} / {task}” (a duplicate receives
+     “(2)”), `PlanDiff.to_json()` for `plan_versions.diff`.
+  9. New files outside the brief's list: `service/verbs.py` (action verbs); the `Scheduled*`
+     dataclasses live in `packing.py` and `planning.py` re-exports them (`__all__`), to stay within
+     300 lines.
+- **Reason** SPEC 3.4 (availability, 85%, acquired skills, practice and quiz every week), 13
+  (schema), 13.6 (index); D5, D81 (types shared with the engine), master plan §1 (extensibility);
+  phase 3 review (idempotence on replay).
 
 ## D94
 
-- **Date** : 2026-11-12
-- **Sujet** : Phase 4, tâche 4.13 : composants présentationnels du programme (`features/program/components`) et du lecteur de leçon (`features/lessons/components`), sans API ni `schema.d.ts` ; dépendances `@dnd-kit/core`, `react-markdown`, `remark-gfm`.
-- **Décision** : (1) **Déplacement d'une tâche** : deux chemins équivalents. Glisser-déposer `@dnd-kit/core` (souris, et clavier : espace pour prendre, flèches gauche/droite pour changer de jour par un `coordinateGetter` maison, espace pour déposer, Échap pour annuler ; annonces et consigne en français) et un menu « Déplacer vers… » sur chaque carte (`role="menu"`, flèches, Début/Fin, Échap, retour du focus), qui reste le chemin accessible de référence. Les deux ne font qu'appeler `onMoveTask(taskId, date)` ; le composant ne modifie rien lui-même. En lecture seule (`editable=false`), ni poignée ni menu. (2) **Dépassement d'un jour** : signalé en toutes lettres (« Jour chargé : 150 / 120 min », icône d'alerte, bordure) sans jamais bloquer le déplacement ; seule la semaine est bornée à 85 % (D88). L'entête de semaine dit aussi en texte si la charge passe le plafond (« 11 h 30 / 11 h 54 (85 %) »). (3) **Liste et ajout** : tâches par semaine puis module ; formulaire d'ajout (titre, type, durée entière de 15 à 120, critère de fin, jour choisi dans les jours des semaines) avec erreurs en ligne ; un refus du serveur s'affiche sous le formulaire (`addError`), la saisie est gardée si `onAdd` rejette. (4) **Lecteur de leçon** : `react-markdown` + `remark-gfm` ; HTML brut ignoré (`skipHtml`), `urlTransform` en liste blanche http(s) seulement (`javascript:`, `data:`, relatifs et ancres tombent : le texte reste, sans lien), liens ouverts avec `noopener noreferrer nofollow`, images jamais chargées (la description seule s'affiche : aucune connexion vers un site tiers). Les blocs `mermaid` passent par `MermaidSvg` (4.11, `securityLevel: "strict"`), jamais par un `<pre>`. (5) **Lecture** : colonne de 72 caractères (`max-w-[72ch]`), corps 18 px, sommaire (titres 2 et 3, ancres uniques sans accents), barre de progression de lecture (écoute le défilement en capture, valeur en `aria-valuenow`), temps de lecture estimé à 200 mots par minute, « Télécharger le PDF » seulement si `pdfUrl`. Transitions de 150-200 ms coupées par `motion-reduce`.
-- **Raison** : un chemin clavier et un menu garantissent que la planification reste faisable sans souris (WCAG 2.1.1) ; ne pas bloquer le jour respecte la règle « seule la semaine est bornée » ; le contenu des leçons vient d'agents et de pages web (SPEC 17.2) : rien n'est exécuté ni chargé à distance depuis le Markdown.
+- **Date** 2026-11-12
+- **Subject** Phase 4, task 4.13: presentational components of the program
+  (`features/program/components`) and the lesson reader (`features/lessons/components`), without API
+  or `schema.d.ts`; dependencies `@dnd-kit/core`, `react-markdown`, `remark-gfm`.
+- **Decision**
+  1. **Moving a task**: two equivalent paths. Drag and drop with `@dnd-kit/core` (mouse, and
+     keyboard: space to pick up, left/right arrows to change day through a home-made
+     `coordinateGetter`, space to drop, Escape to cancel; announcements and instructions in French)
+     and a “Move to…” menu on each card (`role="menu"`, arrows, Home/End, Escape, focus return),
+     which remains the reference accessible path. Both only call `onMoveTask(taskId, date)`; the
+     component modifies nothing itself. In read-only mode (`editable=false`), neither handle nor
+     menu.
+  2. **Exceeding a day**: flagged in full words (“Busy day: 150 / 120 min”, alert icon, border)
+     without ever blocking the move; only the week is bounded to 85% (D88). The week header also
+     says in text whether the load passes the cap (“11 h 30 / 11 h 54 (85%)”).
+  3. **List and add**: tasks by week then module; add form (title, type, integer duration from 15 to
+     120, completion criterion, day chosen among the days of the weeks) with inline errors; a
+     refusal from the server is displayed under the form (`addError`), the input is kept if `onAdd`
+     rejects.
+  4. **Lesson reader**: `react-markdown` + `remark-gfm`; raw HTML ignored (`skipHtml`),
+     `urlTransform` as a whitelist of http(s) only (`javascript:`, `data:`, relative links, and
+     anchors drop: the text stays, without a link), links opened with
+     `noopener noreferrer nofollow`, images never loaded (only the description is displayed: no
+     connection to a third-party site). `mermaid` blocks go through `MermaidSvg` (4.11,
+     `securityLevel: "strict"`), never through a `<pre>`.
+  5. **Reading**: column of 72 characters (`max-w-[72ch]`), 18 px body, table of contents (headings
+     2 and 3, unique anchors without accents), reading progress bar (listens to scrolling in
+     capture, value in `aria-valuenow`), reading time estimated at 200 words per minute, “Download
+     the PDF” only if `pdfUrl`. Transitions of 150-200 ms turned off by `motion-reduce`.
+- **Reason** A keyboard path and a menu guarantee that planning stays doable without a mouse (WCAG
+  2.1.1); not blocking the day respects the rule “only the week is bounded”; the lessons' content
+  comes from agents and web pages (SPEC 17.2): nothing is executed or loaded remotely from the
+  Markdown.
 
 ## D84
 
-- **Date** : 2026-11-12
-- **Sujet** : Phase 4, tâche 4.3 : Conseil d'apprentissage (1) : port `CouncilStore`, cadrage du Modérateur, recherche et praticiens de l'Éclaireur
-- **Décision** : (1) **Port `CouncilStore`** (`agents/tools/council_port.py`, contrat 6) : `goal`, `save_framing` (écrase), `save_board` (idempotent par session et pas), `save_minutes`, `save_proposals` (idempotent par session et lot, rend le lot déjà écrit), `attach_board`, `record_choice`, `start_program` ; types `GoalBrief`, `FramingQuestion`, `ProposalDraft` (bornes de 3.1 ; compétences de 1 à 120 caractères, compromis de 1 à 300), `ProposalRef`, `Choice`. `NO_COUNCIL` lève `council_unavailable` (503) ; champ `AgentPorts.council`, **pas encore branché dans `bootstrap.agent_ports`** : l'implémentation de la feature `learning` arrive avec la tâche qui l'écrit (un Conseil lancé d'ici là échoue lisiblement au nœud `context`). `BoardKind` vient de `runtime/payloads.py`. `FakeCouncilStore` (`tests/support/council.py`) : en mémoire, idempotent comme le contrat ; `framing_saved` ne garde que les écritures qui changent quelque chose. (2) **L'Éclaireur entre dans le Conseil nœud pour nœud** : `CouncilState` hérite de `WebResearchState`, `plan`, `search`, `read`, `judge`, `remember` sont ajoutés tels quels au graphe ; rejeu et points de contrôle identiques à `web_research` (D82 : `judge` rejoué sans rappel au modèle). Graphe partiel : `START → context → frame → ask_framing → apply_framing → plan → search → read → judge → remember → spot_people → END` (4.4 remplace END par le débat) ; entrée `LearningCouncilInput(goal_id)` (36 caractères). (3) **Cadrage** : `context` lit l'objectif par le port puis la mémoire (`load_memory_context`, objectif = texte du but ; une mémoire indisponible fait échouer la session, comme ailleurs) ; `frame` appelle `structured_call(FramingPlan)` (5 questions au plus : 7 → schéma refusé, nouvel essai), ids `q1`… imposés par le code ; `ask_framing` ne fait **que** `interrupt()` (`kind` `framing`, question fixe, option `go`, `fields` `{id, label}`), arrêt obligatoire même sans question, et se contente d'analyser la réponse (pur) : `{"answers": {id: texte}}` (ids inconnus et réponses vides ignorés, réponses **coupées** à 2 000 caractères plutôt que refusées : la saisie de January n'est jamais perdue) ; `"go"` ou toute autre forme = aucune réponse. `apply_framing` enregistre questions et réponses (le port écrase : rejoué, il réécrit la même chose ; testé par un arrêt du back en plein nœud puis une reprise) et construit la demande de l'Éclaireur : texte de l'objectif, poste visé, réponses dans l'ordre des questions, séparés par « ; », sur une ligne, 300 caractères au plus ; `urls` = []. Docstring d'`InterruptField` alignée sur la forme `{"answers": …}` (description OpenAPI régénérée, `schema.d.ts` aussi). (4) **Praticiens** (`nodes/scout/people.py`, `spot_people`) : le modèle ne voit que les pages **retenues** (titre, auteur, adresse, chaque page encadrée par `untrusted()`), et la demande de January ; 10 au plus (`PeopleFound`, `urls` de 1 à 3). Une personne n'est gardée que si une de ses adresses est une page lue ou un résultat de la session (comparaison tolérante : espaces, `/` final, casse) ; l'adresse enregistrée est celle de la session, jamais celle du modèle ; `where` = domaines de ces adresses ; doublons de nom écartés. Chaque personne : `WebGateway.add_person` puis `source.found` (`kind` `person`, `title` = nom, `role`, `url`, `verdict` `kept`, `score` nul). Sans page retenue : aucun appel au modèle ; sortie invalide après les essais : aucun praticien, la session continue (journal : code et session). « 5 à 10 » visés par le prompt, jamais forcés. (5) **Stockage** : `research/service/people.record_person(db, user_id, session_id, person) -> Source` (commit à l'appelant), ligne `sources` `kind` `person`, `title` = nom, `author` = rôle, `summary` = « ; ».join(where), `status` `ok`, `verdict` `kept`, `score` nul ; unique par `(session, url_hash)` avec **`url_hash` = empreinte de « person », de l'adresse normalisée et du nom** (en minuscules) : une personne ne prend jamais la ligne de la page de même adresse, deux praticiens d'une même page ont chacun la leur, et `count_pages` ne compte pas les personnes. `AgentWebGateway.add_person` écrit sous le verrou de la session. **`spot_people` rejoué** (correction de la relecture, sur le modèle de `WebGateway.verdicts` en D82) : avant d'appeler le modèle, le nœud lit par le port les praticiens déjà enregistrés pour la session (`WebGateway.people(user_id, session_id) -> list[(source_id, PersonFound)]`, lecture filtrée par utilisateur et session, ordre d'enregistrement ; service `session_people`, `person_of`) ; s'il y en a, il les réémet tels quels (`source.found` identique) et les rend, sans appel au modèle ni ligne de plus : jamais plus de 10 en tout. Contrepartie assumée : un arrêt entre deux `add_person` garde seulement les personnes déjà écrites (une ou plusieurs), plutôt que de rappeler le modèle au risque d'un autre ensemble ; testé par un arrêt du runner juste après le premier `add_person` puis `recover_on_startup` avec une autre réponse prévue pour le modèle (non rappelé, une seule ligne, même `source_id`). `person_key` attend une adresse déjà normalisée (une seule normalisation dans `record_person`). Comparaison des adresses du modèle : schéma et hôte en minuscules, sans `/` final ni fragment, chemin et requête sensibles à la casse. `FakeCouncilStore` vérifie l'utilisateur à chaque écriture (objectif, ou propriétaire de la proposition pour `attach_board`) : un oubli du filtre utilisateur échoue en 404. (6) **Textes de January** (objectif, poste, réponses) non encadrés dans les prompts (comme les remarques de D53 §5) mais jamais journalisés (testé : ni l'objectif, ni les réponses, ni les questions, ni un nom ou une adresse de praticien dans les journaux `app`). Prompts : `moderator.md` (mode `frame` ; `round` et `review` en 4.4), `_shared/council.md` (règles 9.3, souhaits de January qui ne changent pas les règles, mémoire citable, inclusion de `_shared/untrusted.md`), mode `people` de `scout.md`. Agent `moderator` (niveau rapide).
-- **Raison** : SPEC 3.1 et 3.2 (cadrage après la mémoire, 5 questions, point d'arrêt obligatoire), 9.3, 9.4 (aucun effet avant `interrupt()`, nœud rejoué sans double écriture), 10.3 (5 à 10 praticiens, informations professionnelles publiques, jamais inventés), 17.2 (journaux), 17.4 (contenu non fiable) ; D68, D77, D82, plan directeur §1 (un port de plus = un champ).
+- **Date** 2026-11-12
+- **Subject** Phase 4, task 4.3: Learning Council (1): `CouncilStore` port, Moderator framing, Scout
+  search and practitioners
+- **Decision**
+  1. **`CouncilStore` port** (`agents/tools/council_port.py`, contract 6): `goal`, `save_framing`
+     (overwrites), `save_board` (idempotent by session and step), `save_minutes`, `save_proposals`
+     (idempotent by session and batch, returns the batch already written), `attach_board`,
+     `record_choice`, `start_program`; types `GoalBrief`, `FramingQuestion`, `ProposalDraft` (bounds
+     from 3.1; skills from 1 to 120 characters, trade-off from 1 to 300), `ProposalRef`, `Choice`.
+     `NO_COUNCIL` raises `council_unavailable` (503); field `AgentPorts.council`, **not yet wired in
+     `bootstrap.agent_ports`**: the `learning` feature's implementation arrives with the task that
+     writes it (a Council launched until then fails readably at the `context` node). `BoardKind`
+     comes from `runtime/payloads.py`. `FakeCouncilStore` (`tests/support/council.py`): in memory,
+     idempotent like the contract; `framing_saved` keeps only the writes that change something.
+  2. **The Scout enters the Council node for node**: `CouncilState` inherits from
+     `WebResearchState`, `plan`, `search`, `read`, `judge`, `remember` are added as is to the graph;
+     replay and checkpoints identical to `web_research` (D82: `judge` replayed without calling the
+     model again). Partial graph: `START → context → frame → ask_framing → apply_framing
+     → plan → search → read → judge → remember → spot_people → END` (4.4 replaces END with the
+     debate); input `LearningCouncilInput(goal_id)` (36 characters).
+  3. **Framing**: `context` reads the goal through the port then the memory (`load_memory_context`,
+     goal = the goal's text; an unavailable memory makes the session fail, as elsewhere); `frame`
+     calls `structured_call(FramingPlan)` (5 questions at most: 7 → schema refused, retry), ids
+     `q1`… imposed by the code; `ask_framing` does **only** `interrupt()` (`kind` `framing`, fixed
+     question, option `go`, `fields` `{id, label}`), a mandatory stop even without a question, and
+     merely parses the answer (pure): `{"answers": {id: text}}` (unknown ids and empty answers
+     ignored, answers **cut** to 2,000 characters rather than refused: January's input is never
+     lost); `"go"` or any other shape = no answer. `apply_framing` records questions and answers
+     (the port overwrites: replayed, it rewrites the same thing; tested by a backend stop in the
+     middle of the node then a resume) and builds the Scout's request: goal text, target job,
+     answers in the order of the questions, separated by “; ”, on one line, 300 characters at most;
+     `urls` = []. `InterruptField`'s docstring aligned with the `{"answers": …}` shape (OpenAPI
+     description regenerated, `schema.d.ts` too).
+  4. **Practitioners** (`nodes/scout/people.py`, `spot_people`): the model sees only the
+     **retained** pages (title, author, address, each page framed by `untrusted()`), and January's
+     request; 10 at most (`PeopleFound`, `urls` from 1 to 3). A person is kept only if one of their
+     addresses is a page read or a result of the session (tolerant comparison: spaces, trailing `/`,
+     case); the recorded address is the session's, never the model's; `where` = the domains of those
+     addresses; duplicate names dropped. Each person: `WebGateway.add_person` then `source.found`
+     (`kind` `person`, `title` = name, `role`, `url`, `verdict` `kept`, `score` null). Without a
+     retained page: no model call; invalid output after the retries: no practitioner, the session
+     continues (log: code and session). “5 to 10” aimed for by the prompt, never forced.
+  5. **Storage**: `research/service/people.record_person(db, user_id, session_id, person) -> Source`
+     (commit left to the caller), `sources` row `kind` `person`, `title` = name, `author` = role,
+     `summary` = “; ”.join(where), `status` `ok`, `verdict` `kept`, `score` null; unique by
+     `(session, url_hash)` with **`url_hash` = fingerprint of “person”, the normalized address, and
+     the name** (lowercase): a person never takes the row of the page with the same address, two
+     practitioners from the same page each have their own, and `count_pages` does not count people.
+     `AgentWebGateway.add_person` writes under the session's lock. **`spot_people` replayed** (fix
+     from the re-read, modeled on `WebGateway.verdicts` in D82): before calling the model, the node
+     reads through the port the practitioners already recorded for the session
+     (`WebGateway.people(user_id, session_id) -> list[(source_id, PersonFound)]`, read filtered by
+     user and session, recording order; service `session_people`, `person_of`); if there are any, it
+     re-emits them as is (identical `source.found`) and returns them, without a model call or an
+     extra row: never more than 10 in total. Accepted counterpart: a stop between two `add_person`
+     calls keeps only the people already written (one or several), rather than calling the model
+     again at the risk of another set; tested by a runner stop right after the first `add_person`
+     then `recover_on_startup` with another scripted reply for the model (not called again, a single
+     row, same `source_id`). `person_key` expects an already normalized address (a single
+     normalization in `record_person`). Comparison of the model's addresses: scheme and host
+     lowercase, without trailing `/` or fragment, path and query case-sensitive. `FakeCouncilStore`
+     checks the user on every write (goal, or the proposal's owner for `attach_board`): an omitted
+     user filter fails with 404.
+  6. **January's texts** (goal, job, answers) not framed in the prompts (like the remarks of D53 §5)
+     but never logged (tested: neither the goal, nor the answers, nor the questions, nor a
+     practitioner's name or address in the `app` logs). Prompts: `moderator.md` (`frame` mode;
+     `round` and `review` in 4.4), `_shared/council.md` (rules 9.3, January's wishes that do not
+     change the rules, citable memory, inclusion of `_shared/untrusted.md`), `people` mode of
+     `scout.md`. Agent `moderator` (fast tier).
+- **Reason** SPEC 3.1 and 3.2 (framing after memory, 5 questions, mandatory stopping point), 9.3,
+  9.4 (no effect before `interrupt()`, replayed node without double writes), 10.3 (5 to 10
+  practitioners, public professional information, never invented), 17.2 (logs), 17.4 (untrusted
+  content); D68, D77, D82, master plan §1 (one more port = one field).
 
 ## D93
 
-- **Date** : 2026-11-12
-- **Sujet** : Phase 4, tâche 4.12 : composants du Conseil, citations, questions à champs et commandes (front)
-- **Décision** : (1) **Citations** : `CitationChips` (`shared/session-ui`) affiche les sources d'un message d'agent en pastilles numérotées sous le texte de `AgentBubble` (tour fini seulement ; `AgentTurn.citations` est typé `Citation[]`). Page web http(s) → lien `_blank` `noopener noreferrer` ; élément de mémoire → `/memoire?item={id}` (`_blank` aussi, pour ne pas quitter le débat en cours) ; adresse d'un autre schéma (`javascript:`, `data:`) ou citation sans cible → pastille sans lien. Nom accessible « Source {n} : {titre} ». La validation http(s) est partagée avec `SourceCard` (`webUrl.ts`). (2) **Questions à champs** : `InterruptCard` gère `fields` (réutilisable par le Comité) : un champ par question, étiquette = question, `maxLength` du champ, `required` natif ; « Répondre » envoie `{ answers: { id: texte } }` (champs vides omis, textes rognés) et reste inactif tant que tout est vide ou qu'un champ obligatoire manque ; les options restent des boutons qui envoient leur valeur seule (« Lancer la recherche » = « go » sans réponse ; « Valider le programme » = « validate »). `onAnswer` prend un `unknown`. Sans champ ni option, le champ libre est inchangé. (3) **Commandes du débat** : `postCommand` (`shared/realtime/sessionApi.ts`) envoie `{ text: "", command }` par REST ; `SessionActions.sendCommand` renvoie `true` si acceptée et expose l'erreur française (409 session close…) ; l'événement `user.message` n'est pas ingéré en local, il arrive par le flux (comme `sendMessage`). `FeedItem` « user » porte `command` (`null` pour un message libre) ; `UserMessageBubble` l'affiche « Commande : Plus court » (textes dans `session.commands`, réutilisés par la barre de commandes). (4) **Praticiens** : `SourceView.kind` (`page` / `person`) et `role` ; `sourcesFromEvents` met les `person` dans `SourcesViewModel.people` (hors `kept`/`rejected`/`unreadable`), montrés sauf si écartés ou illisibles, sans note ; un événement stocké sans `kind` est une page. `SourcesPanel` affiche le bloc « Praticiens repérés » (nom en lien, rôle, « Publie sur {site} »). (5) **Composants du Conseil** (`features/learning/components`, présentationnels, types de vue locaux sans import de l'API) : `CouncilStageBar` (`aria-current="step"`, étapes passées « terminée » pour les lecteurs d'écran, « Tour n / N » pendant le débat), `DebateCommandBar` (quatre commandes ; Pause et Annuler restent dans `SessionControls`), `ProposalCards`, `CouncilTabs`. (6) **Cartes de propositions** : triées par rang ; rubriques alignées d'une carte à l'autre par une grille commune (`subgrid`, six lignes) ; « Choisir » (nom accessible « Choisir « {nom} » ») ; « Mélanger » = deux cases à cocher au plus (la troisième est désactivée) puis « Mélanger ces deux parcours », `onMix` reçoit les identifiants dans l'ordre des cartes, pas des clics ; une case cochée dont la carte disparaît (autre lot) est oubliée ; « Demander un autre tour » ; « Voir au tableau » seulement si la proposition a un tableau et reste actif même quand `canChoose` est faux ou `busy` est vrai ; carte choisie : « Parcours choisi » à la place du bouton. `canChoose` faux ou `busy` vrai désactive choisir, mélanger, cocher et relancer ; un texte explique pourquoi. (7) **Onglets** : `CouncilTabs` suit le motif ARIA des onglets (activation au focus, flèches avec retour au bout, Début, Fin, un seul onglet dans l'ordre de tabulation). Un panneau n'est monté qu'à sa première ouverture, puis reste monté (masqué) : le tableau garde son état et ses modifications non envoyées quand January change d'onglet, et Excalidraw n'est jamais monté dans un conteneur de taille nulle.
-- **Raison** : SPEC 3.1 à 3.3 (cadrage à questions, commandes permanentes, propositions et mélange, tableau, sources et praticiens), 9.3 (citations numérotées), 9.5, 10.3 (praticiens), 14.1 (actions par REST, jamais le WebSocket), 15 (accessibilité : clavier, `prefers-reduced-motion` déjà couvert par les animations `motion-safe`, pas de `window.confirm`) ; D9 (composants de session partagés), D34 (présentationnels), D60 (textes centralisés), D82 (contrat de 4.1), D92 (tableau).
+- **Date** 2026-11-12
+- **Subject** Phase 4, task 4.12: Council components, citations, field questions, and commands
+  (front end)
+- **Decision**
+  1. **Citations**: `CitationChips` (`shared/session-ui`) displays an agent message's sources as
+     numbered badges under `AgentBubble`'s text (finished turn only; `AgentTurn.citations` is typed
+     `Citation[]`). Web page http(s) → `_blank` `noopener noreferrer` link; memory item →
+     `/memoire?item={id}` (`_blank` too, so as not to leave the debate in progress); address with
+     another scheme (`javascript:`, `data:`) or citation without a target → badge without a link.
+     Accessible name “Source {n}: {title}”. The http(s) validation is shared with `SourceCard`
+     (`webUrl.ts`).
+  2. **Field questions**: `InterruptCard` handles `fields` (reusable by the Committee): one field
+     per question, label = the question, the field's `maxLength`, native `required`; “Answer” sends
+     `{ answers: { id: text } }` (empty fields omitted, texts trimmed) and stays inactive as long as
+     everything is empty or a required field is missing; the options remain buttons that send their
+     value alone (“Start the search” = “go” with no answer; “Validate the program” = “validate”).
+     `onAnswer` takes an `unknown`. Without a field or option, the free field is unchanged.
+  3. **Debate commands**: `postCommand` (`shared/realtime/sessionApi.ts`) sends
+     `{ text: "", command }` through REST; `SessionActions.sendCommand` returns `true` if accepted
+     and exposes the French error (409 session closed…); the `user.message` event is not ingested
+     locally, it arrives through the stream (like `sendMessage`). The “user” `FeedItem` carries
+     `command` (`null` for a free message); `UserMessageBubble` displays it as “Command: Shorter”
+     (texts in `session.commands`, reused by the command bar).
+  4. **Practitioners**: `SourceView.kind` (`page` / `person`) and `role`; `sourcesFromEvents` puts
+     the `person` entries in `SourcesViewModel.people` (outside `kept`/`rejected`/`unreadable`),
+     shown unless discarded or unreadable, without a score; a stored event without `kind` is a page.
+     `SourcesPanel` displays the “Practitioners spotted” block (name as a link, role, “Publishes on
+     {site}”).
+  5. **Council components** (`features/learning/components`, presentational, local view types
+     without API import): `CouncilStageBar` (`aria-current="step"`, past stages “completed” for
+     screen readers, “Round n / N” during the debate), `DebateCommandBar` (four commands; Pause and
+     Cancel stay in `SessionControls`), `ProposalCards`, `CouncilTabs`.
+  6. **Proposal cards**: sorted by rank; sections aligned from one card to another by a common grid
+     (`subgrid`, six rows); “Choose” (accessible name “Choose “{name}””); “Mix” = two checkboxes at
+     most (the third is disabled) then “Mix these two paths”, `onMix` receives the identifiers in
+     the order of the cards, not of the clicks; a checked box whose card disappears (another batch)
+     is forgotten; “Ask for another round”; “See on the board” only if the proposal has a board and
+     stays active even when `canChoose` is false or `busy` is true; chosen card: “Chosen path” in
+     place of the button. `canChoose` false or `busy` true disables choosing, mixing, checking, and
+     relaunching; a text explains why.
+  7. **Tabs**: `CouncilTabs` follows the ARIA tabs pattern (activation on focus, arrows with
+     wraparound, Home, End, a single tab in the tab order). A panel is mounted only at its first
+     opening, then stays mounted (hidden): the board keeps its state and unsent modifications when
+     January changes tab, and Excalidraw is never mounted in a zero-size container.
+- **Reason** SPEC 3.1 to 3.3 (framing with questions, permanent commands, proposals and mix, board,
+  sources and practitioners), 9.3 (numbered citations), 9.5, 10.3 (practitioners), 14.1 (actions
+  through REST, never the WebSocket), 15 (accessibility: keyboard, `prefers-reduced-motion` already
+  covered by the `motion-safe` animations, no `window.confirm`); D9 (shared session components), D34
+  (presentational), D60 (centralized texts), D82 (4.1's contract), D92 (board).
 
 ## D85
 
-- **Date** : 2026-11-12
-- **Sujet** : Phase 4, tâche 4.4 : Conseil d'apprentissage (2) : débat, tableau du Scribe, propositions du Stratège et choix du parcours
-- **Décision** : (1) **Un nœud `turn` commun aux quatre débatteurs** (`nodes/debate_turn.py`, comme `demo_turn`, D53 §3) : une exécution = une prise de parole = un point de contrôle ; l'orateur est `order[turn_index]` ; un prompt par débatteur (`strategist.md`, `practitioner.md`, `skeptic.md`, mode `debate` de `scout.md`), tous sur `_shared/council.md` (qui inclut `_shared/untrusted.md`) et sur la consigne commune `_shared/debate.md` (objectif et cadrage, tour en cours, catalogue numéroté, tous les tours précédents, messages de January, angle, plafond de mots). Agents `strategist` (fort), `practitioner` (standard), `skeptic` (standard), `scribe` (rapide). Constantes et matériel communs dans `nodes/council_rules.py` (`DEBATERS`, `NAMES`, `MAX_WORDS` 150, `SHORT_WORDS` 80, `MAX_ROUNDS` 8, catalogue, tours, lecture des entrées) ; `RoundPlan`, `RoundReview`, `make_round_start`, `make_round_end` vivent dans `nodes/moderator_rounds.py`, réexportés par `nodes/moderator.py` (300 lignes par fichier). (2) **Nombre de tours** (arbitrage SPEC 3.1, étapes 3 et 4) : le tour 1 (positions, étape `positions`) **plus** `debate_rounds` tours suivants (étapes `tour-2`…), soit `rounds_target = 1 + debate_rounds` au départ, 8 au plus ; le Modérateur ouvre chaque tour (`round_start` : `structured_call(RoundPlan)`, les quatre débatteurs une fois chacun, étape `ordre-n`, puis `agent.message` « Tour n : Stratège, … » suivi de la question du tour) et le ferme (`round_end` : du tour 2 à l'avant-dernier, `RoundReview`, étape `bilan-n` ; `stable` → fin du débat, résumé publié). (3) **Règles 9.3 tenues par le code** avec **une seule nouvelle demande** : `speak` gagne `revise(texte) -> correction | None` (D82 étendu) : la seconde demande n'est pas diffusée en tokens et son texte remplace le premier **sous le même `message_id`** (la bulle est corrigée, jamais doublée) ; contrôles : dès le tour 2, nommer un autre débatteur (`names_other_debater` : nom avec majuscule, « le Sceptique » et non l'adjectif, son propre nom exclu) ; Sceptique : une ligne qui commence par « Objection : » ; premier orateur d'un tour qui suit un message de January : la nommer. Encore non tenue : la prise de parole est acceptée et l'écart journalisé (codes de règle, session, agent, tour). 150 mots (80 si « Plus court ») imposés par `cap_words`. (4) **Entrées de January** : lues en **début et en fin de tour** (`round_start`, `round_end`) depuis `last_input_seq` : textes → `notes` (tous) et `round_notes` (à traiter au tour suivant, en priorité ; remplacées en fin de tour, complétées en début de tour) ; `another_round` → un tour de plus (8 au plus) ; `to_proposals` → fin du débat ; `more_concrete` / `shorter` → angle **du tour suivant seulement** (le dernier gagne ; un réglage qui durerait n'aurait pas de bouton pour revenir en arrière). `to_proposals` est aussi regardé (sans être consommé) **avant chaque prise de parole dès le tour 2** : l'orateur en cours finit, les suivants ne parlent pas. Le tour 1 a toujours lieu (positions de tous et carte du domaine), même si « Passer aux propositions » arrive pendant la recherche. Les messages de January restent non encadrés (ses souhaits, D53 §5, D84) mais jamais journalisés. (5) **Catalogue de citations** construit une fois, au premier `round_start` : sources retenues (titre et résumé de l'Éclaireur, adresse), puis éléments de la mémoire proches de l'objectif (`memory_search`, 8, hors `source` déjà présentes ; mémoire indisponible → catalogue des seules sources, journalisé), numérotés de 1 à n pour tout le débat ; dans les prompts, numéro hors cadre, titre et résumé encadrés par `untrusted()` ; chaque prise de parole d'un autre agent relue est encadrée aussi (17.4). (6) **Scribe** (`nodes/scribe.py`) : `draw(deps, state, kind, step, brief)` → `structured_call(BoardDraft)`, balise de code retirée, `mermaid_problems` (`nodes/mermaid_rules.py` : grammaire stricte, puis **réémission** par `normalize_mermaid`, seule version enregistrée et publiée, voir (11f) ; 80 lignes, 40 nœuds, libellés de 80 caractères) ; refusé → une nouvelle demande avec les problèmes ; encore refusé ou sortie invalide → **aucun tableau, le Conseil continue** (journal : type, session, étape). Sinon `save_board` (idempotent par session et étape) puis `board.update {mermaid, step, board_id, kind, title}`. Numéros d'étape tirés de `board_step` de l'état d'entrée (un nœud rejoué réécrit les mêmes étapes ; une étape refusée reste consommée) : carte du domaine après le tour 1, prérequis en fin de débat, une frise par proposition (`attach_board`) puis la comparaison du lot (`proposal_boards`, 300 s). Compte rendu (`minutes`) : `speak` 200 mots, cité, `save_minutes`, gardé dans l'état pour le Stratège. (7) **Propositions par lot** (`nodes/strategist/propose.py`) : `ProposalSet` (2 à 3 `ProposalDraft`), lot = `batch + 1` de l'état d'entrée, `save_proposals` (idempotent par session et lot ; rejoué, le nœud relit le lot écrit, voir (11c)), `proposal.ready` par proposition ; l'état garde ids, rangs et noms du port, complétés des détails. Le Stratège part du compte rendu (encadré), des messages de January, de l'objectif et du cadrage. (8) **Choix** (`nodes/council_choice.py`) : `ask_choice` ne fait **qu'**`interrupt()` (`choose_path`, question et option fixes) puis analyse la réponse (pur) : `parse_choice` — `"another_round"` ou `{"action": "another_round"}` ; `choose` : un id du **dernier** lot ; `mix` : deux ids distincts du lot ; `start_date` facultative (ISO) ; toute autre forme → `choice` nul → **la question est reposée** (nouvelle interruption, même charge). Nouveau tour → `rounds_target = round + 1`, `stop` levé, retour à `round_start`, puis nouveau compte rendu, nouveau lot, nouvelles frises ; au plafond de 8 tours, l'option « autre tour » disparaît et une telle réponse repose la question. `finalize` : `record_choice` puis `start_program` (idempotents, port) : **le Conseil lance lui-même `program_builder`**, quel que soit le chemin de la réponse ; résumé (« Parcours choisi : … » ou « Mélange de … ») en `agent.message` du Modérateur et en `run.completed`. (9) Graphe complet : `… spot_people → round_start → turn ⟲ → round_end` ; `round_start` sans nouveau tour → `prerequisites` ; `round_end` : tour 1 → `domain_map` → (suite) ; arrêt ou dernier tour → `prerequisites`, sinon `round_start` ; `prerequisites → minutes → propose → proposal_boards → ask_choice → route_choice` (`another_round` → `round_start`, invalide → `ask_choice`, choisi → `finalize` → END). État : `round_notes`, `board_step`, `minutes` ajoutés à `CouncilState`. Contrat OpenAPI inchangé. (10) **Tests** : faux modèles par agent (`tests/agents/graphs/council_models.py` : script commun puis règles par agent et marqueur, réponses par défaut conformes, ids `fake-<n>` pour retrouver le prompt d'un message, crochets d'appel et blocage d'un appel pour simuler un arrêt du back) ; `make_web_runner` règle `debate_rounds` et le plafond de tokens ; `FakeCouncilStore.choices` devient la liste des choix enregistrés, plus `programs_started` et `board_kinds` ; les tests de 4.3 vont désormais jusqu'au choix du parcours. (11) **Correctifs de la revue** : (a) `mermaid_problems` contrôle chaque **instruction** (morceaux d'une ligne séparés par `;`, hors guillemets) comme une ligne : `click` refusé en tête d'instruction (`A-->B; click A …`), et `url(` (espaces et casse tolérés) refusé **partout** dans le code, libellés compris ; les libellés d'arête sans délimiteurs (`A -- texte --> B`, `==`, `-.`) ne comptent plus comme des nœuds ; API inchangée (réutilisée par `markdown_to_html` en 4.8). (b) Au retour du choix (« autre tour »), `round_start` ignore `another_round` et `to_proposals` envoyés pendant l'attente (la réponse règle déjà le nombre de tours) ; textes et angle restent lus ; `choice` est remis à nul. (c) **Port** : `CouncilStore.saved_proposals(user_id, session_id, *, batch) -> list[SavedProposal(ref, draft)]` (vide si le lot n'existe pas) ; `propose` le lit d'abord : rejoué, il réémet le lot enregistré, noms et détails ensemble, **sans rappeler le Stratège** (comme `judge`, D82, et `spot_people`, D84) ; sinon le Stratège rédige et `save_proposals` enregistre. (d) L'Éclaireur reçoit en débat les praticiens qu'il a repérés (nom, rôle, sites, encadrés) et ne doit citer qu'eux. (e) `scout/people._url_key` rend `None` pour une adresse mal formée (`http://[abc`, `ValueError` de `urlsplit`) : l'adresse est ignorée, la personne écartée si elle n'en a pas d'autre connue. (f) **Mermaid : grammaire stricte puis réémission** (rounds 2 et 3 de la revue ; le filtrage par expressions régulières du texte brut est abandonné : un `"` collé à un identifiant, que Mermaid 12.3 lit comme un caractère de l'identifiant, faisait passer `A --> B"; click A "https://…"; C"` pour un libellé, et `<br style=background:image-set(…)>` chargeait une image). `nodes/mermaid_grammar.py` (arbre et décodage des libellés : `nodes/mermaid_tree.py`) analyse le code ligne par ligne (instructions séparées par `;` hors libellés) et n'admet que : en-tête `flowchart|graph` + `TD|TB|BT|LR|RL` ; `subgraph <id> ["libellé"]`, `end`, `direction <dir>` ; chaînes de groupes de nœuds (`A & B`) reliés par `-->`, `---`, `-.->`, `-.-`, `==>`, `===`, libellé `|…|` ou forme `-- texte -->` (`-. … .->`, `== … ==>`) ; nœud = identifiant `[A-Za-z][A-Za-z0-9_]{0,63}` (jamais `subgraph`, `end`, `direction`) + au plus une forme `[…]`, `(…)`, `([…])`, `[[…]]`, `[(…)]`, `((…))`, `{…}`, `{{…}}`, `>…]` ; libellé entre guillemets, ou nu sans `"[](){}|` ; commentaires `%%` ignorés, `%%{` refusé ; tout le reste (`click`, `style`, `classDef`, `:::`, `@{…}`, `accTitle`, caractère inattendu) est refusé avec la ligne et le motif. Les libellés sont décodés (entités Mermaid `#…;`, `<br>`/`<br/>` → saut de ligne, blancs réduits) ; un caractère de contrôle ou de format invisible (dans le code ou issu d'une entité) est refusé. `mermaid_problems` garde son API ; **`normalize_mermaid(code) -> str`** (`ValueError` si refusé) réémet depuis l'arbre : identifiants renumérotés `n1`, `n2`… (ordre de première apparition, plus aucun identifiant du modèle), forme et dernier libellé du nœud à sa première apparition, libellés toujours entre guillemets et échappés par **nos** entités (`#` → `#35;`, `&` → `#amp;`, `"` → `#quot;`, `<` → `#lt;`, `>` → `#gt;`, `` ` `` → `#96;`, `%` → `#37;`, `|` → `#124;`, `:` → `#58;` ; sans `:` ni la règle `style…:…#…;` de Mermaid ni les icônes `fa:` ne jouent), `<br>` seul HTML produit, une instruction par ligne, `subgraph` indentés. La réémission est idempotente. **Seule la version normalisée sort** : le Scribe la publie dans `board.update` et l'enregistre par `save_board` (et 4.8 la reprendra pour le PDF) ; le Mermaid brut ne sert qu'à la nouvelle demande au modèle. Plus de faux refus pour `x < y`, `List<String>`, `JavaScript: …`, `href`, `url()` (affichés tels quels). Essai réel : sorties normalisées rendues par le Mermaid 12.3 du front (jsdom, `strict`) : aucun `<a>`, `href`, `<img>`, `<script>`, attribut `on*` ni `style` venant d'un libellé ; les deux contournements bruts, rendus en témoins, donnent bien `<a href>` et `<br style=…image-set…>`. Prompt du Scribe aligné sur la grammaire. **Round 4 (temps et formes)** : l'analyse est synchrone dans la boucle d'événements, elle doit être linéaire. Les arêtes à texte (`-- texte -->`) étaient lues par une expression régulière à quantificateurs qui se recouvrent (`A -- ` suivi de 3000 espaces : 28 s, toute la boucle bloquée). Les arêtes vivent maintenant dans `nodes/mermaid_edges.py`, sans retour arrière : quantificateurs possessifs, fin d'arête cherchée seulement au début d'une suite de `-`, `.` ou `=` (lookbehind), texte entre guillemets lu avant la fin ; toutes les expressions de la grammaire sont possessives. Bornes avant analyse : 8000 caractères par schéma (`MAX_CODE_CHARS`), 400 par ligne (`MAX_LINE_CHARS`) ; libellés de 80 caractères comme avant. Test de temps (`test_mermaid_speed.py`) : chaque entrée pathologique (ouvrants d'arête, libellés ouverts, `|`, `<`, suivis d'espaces, `-`, `.`, `=`, `#1`, `<br`, `&`, `;`…) à la taille maximale admise (une ligne de 400, un tableau de 6000) en moins de 50 ms (meilleur de trois mesures), et chaque expression régulière des trois modules sur 5000 caractères répétés ; l'ancienne expression met 1 s sur un tableau de 6000 bornée à 400 par ligne, la borne seule ne suffisait donc pas. Formes admises en plus : arêtes longues (2 à 8 traits ou signes `=`, 1 à 4 points), pointe double `<-->`, `<-.->`, `<==>`, texte d'arête avec `-`, `.` ou `=` isolés (`pré-requis`, `v1.2`), commentaire `%%` en fin de ligne (`%%{` toujours refusé). **Libellé vide** (`A[""]`, `A["<br>"]`, blancs) : compté comme absent, le nœud ou le sous-graphe affiche son identifiant d'origine (Mermaid et Pele refusent `n1[""]`) ; on remplace plutôt que refuser, pour ne pas coûter une nouvelle demande au Scribe. Le banc de la re-relecture 3 (353 sorties dans Mermaid 12.3 strict et Pele) repasse sans danger ni erreur. **À reprendre ailleurs** : 4.6 implémente `save_board` en **upsert** par `(session, étape)` (le dernier écrit gagne, pour rester aligné sur le dernier `board.update` d'un Scribe rejoué) et `saved_proposals` ; 4.14 fait suivre le bouton « Demander un autre tour » des `options` de l'interruption `choose_path` (vide au plafond de 8 tours). Limites connues : `turn`, `round_start`, `round_end` et le Scribe rejoués rappellent le modèle (aucune écriture en double) ; une commande `another_round` ou `to_proposals` envoyée entre la reprise « autre tour » et le début du tour est ignorée elle aussi.
-- **Raison** : SPEC 3.1 (tour 1 puis tours suivants réglables, 2 à 3 propositions, choix, mélange ou retour au débat), 3.2 (commandes permanentes, message injecté au tour suivant, point d'arrêt n° 2), 3.3 (Mermaid `flowchart`, quatre types de schémas, chaque état enregistré), 9.3 (règles du débat), 9.4 (aucun effet avant `interrupt()`, rejeu sans double écriture), 9.6 (sorties structurées, 120 s par nœud), 17.2 (journaux : identifiants), 17.4 (contenu non fiable) ; D53, D57, D82, D84.
+- **Date** 2026-11-12
+- **Subject** Phase 4, task 4.4: Learning Council (2): debate, Scribe's board, Strategist's
+  proposals, and path choice
+- **Decision**
+  1. **A common `turn` node for the four debaters** (`nodes/debate_turn.py`, like `demo_turn`, D53
+     §3): one execution = one speaking turn = one checkpoint; the speaker is `order[turn_index]`;
+     one prompt per debater (`strategist.md`, `practitioner.md`, `skeptic.md`, `debate` mode of
+     `scout.md`), all on `_shared/council.md` (which includes `_shared/untrusted.md`) and on the
+     common instruction `_shared/debate.md` (goal and framing, current round, numbered catalog, all
+     the previous turns, January's messages, angle, word cap). Agents `strategist` (strong),
+     `practitioner` (standard), `skeptic` (standard), `scribe` (fast). Common constants and material
+     in `nodes/council_rules.py` (`DEBATERS`, `NAMES`, `MAX_WORDS` 150, `SHORT_WORDS` 80,
+     `MAX_ROUNDS` 8, catalog, turns, input reading); `RoundPlan`, `RoundReview`, `make_round_start`,
+     `make_round_end` live in `nodes/moderator_rounds.py`, re-exported by `nodes/moderator.py` (300
+     lines per file).
+  2. **Number of rounds** (SPEC 3.1 arbitration, steps 3 and 4): round 1 (positions, stage
+     `positions`) **plus** `debate_rounds` following rounds (stages `tour-2`…), that is
+     `rounds_target = 1 + debate_rounds` at the start, 8 at most; the Moderator opens each round
+     (`round_start`: `structured_call(RoundPlan)`, the four debaters once each, stage `ordre-n`,
+     then `agent.message` “Round n: Strategist, …” followed by the round's question) and closes it
+     (`round_end`: from round 2 to the second-to-last, `RoundReview`, stage `bilan-n`; `stable` →
+     end of the debate, summary published).
+  3. **Rules 9.3 held by the code** with **a single new request**: `speak` gains
+     `revise(text) -> correction | None` (D82 extended): the second request is not streamed in
+     tokens and its text replaces the first **under the same `message_id`** (the bubble is
+     corrected, never doubled); checks: from round 2, name another debater (`names_other_debater`:
+     name with a capital, “le Sceptique” and not the adjective, its own name excluded); Skeptic: a
+     line that begins with “Objection:”; first speaker of a round that follows a January message:
+     name it. Still not met: the speaking turn is accepted and the deviation logged (rule codes,
+     session, agent, round). 150 words (80 if “Shorter”) enforced by `cap_words`.
+  4. **January's inputs**: read at the **start and end of the round** (`round_start`, `round_end`)
+     from `last_input_seq`: texts → `notes` (all) and `round_notes` (to handle in the next round,
+     with priority; replaced at the end of the round, completed at the start of the round);
+     `another_round` → one more round (8 at most); `to_proposals` → end of the debate;
+     `more_concrete` / `shorter` → angle **for the next round only** (the last one wins; a setting
+     that lasted would have no button to go back). `to_proposals` is also looked at (without being
+     consumed) **before each speaking turn from round 2**: the current speaker finishes, the
+     following ones do not speak. Round 1 always happens (positions of all and the domain map), even
+     if “Move on to proposals” arrives during the search. January's messages stay unframed (her
+     wishes, D53 §5, D84) but are never logged.
+  5. **Citation catalog** built once, at the first `round_start`: retained sources (title and
+     summary from the Scout, address), then memory items close to the goal (`memory_search`, 8,
+     excluding `source` items already present; memory unavailable → catalog of the sources alone,
+     logged), numbered from 1 to n for the whole debate; in the prompts, number outside the frame,
+     title and summary framed by `untrusted()`; each speaking turn by another agent that is re-read
+     is also framed (17.4).
+  6. **Scribe** (`nodes/scribe.py`): `draw(deps, state, kind, step, brief)` →
+     `structured_call(BoardDraft)`, code fence removed, `mermaid_problems`
+     (`nodes/mermaid_rules.py`: strict grammar, then **re-emission** by `normalize_mermaid`, the
+     only version recorded and published, see (11f); 80 lines, 40 nodes, labels of 80 characters);
+     refused → a new request with the problems; still refused or invalid output → **no board, the
+     Council continues** (log: type, session, stage). Otherwise `save_board` (idempotent by session
+     and stage) then `board.update {mermaid, step, board_id, kind, title}`. Stage numbers drawn from
+     `board_step` of the input state (a replayed node rewrites the same stages; a refused stage
+     remains consumed): domain map after round 1, prerequisites at the end of the debate, one
+     timeline per proposal (`attach_board`) then the batch's comparison (`proposal_boards`, 300 s).
+     Minutes (`minutes`): `speak` 200 words, cited, `save_minutes`, kept in the state for the
+     Strategist.
+  7. **Proposals by batch** (`nodes/strategist/propose.py`): `ProposalSet` (2 to 3 `ProposalDraft`),
+     batch = `batch + 1` of the input state, `save_proposals` (idempotent by session and batch;
+     replayed, the node re-reads the written batch, see (11c)), `proposal.ready` per proposal; the
+     state keeps ids, ranks, and names from the port, completed with the details. The Strategist
+     starts from the minutes (framed), January's messages, the goal, and the framing.
+  8. **Choice** (`nodes/council_choice.py`): `ask_choice` does **only** `interrupt()`
+     (`choose_path`, fixed question and option) then parses the answer (pure): `parse_choice` —
+     `"another_round"` or `{"action": "another_round"}`; `choose`: an id from the **last** batch;
+     `mix`: two distinct ids from the batch; `start_date` optional (ISO); any other shape → `choice`
+     null → **the question is asked again** (new interrupt, same payload). New round →
+     `rounds_target = round + 1`, `stop` raised, back to `round_start`, then new minutes, new batch,
+     new timelines; at the cap of 8 rounds, the “another round” option disappears and such an answer
+     asks the question again. `finalize`: `record_choice` then `start_program` (idempotent, port):
+     **the Council itself launches `program_builder`**, whatever the answer's path; summary (“Chosen
+     path: …” or “Mix of …”) as the Moderator's `agent.message` and in `run.completed`.
+  9. Complete graph: `… spot_people → round_start → turn ⟲ → round_end`; `round_start` without a new
+     round → `prerequisites`; `round_end`: round 1 → `domain_map` → (continued); stop or last round
+     → `prerequisites`, otherwise `round_start`; `prerequisites → minutes
+     → propose → proposal_boards → ask_choice → route_choice` (`another_round` → `round_start`,
+     invalid → `ask_choice`, chosen → `finalize` → END). State: `round_notes`, `board_step`,
+     `minutes` added to `CouncilState`. OpenAPI contract unchanged.
+  10. **Tests**: fake models per agent (`tests/agents/graphs/council_models.py`: common script then
+     rules per agent and marker, compliant default replies, ids `fake-<n>` to find a message's
+     prompt, call hooks and blocking of a call to simulate a backend stop); `make_web_runner` sets
+     `debate_rounds` and the token cap; `FakeCouncilStore.choices` becomes the list of recorded
+     choices, plus `programs_started` and `board_kinds`; 4.3's tests now go as far as the path
+     choice.
+  11. **Review fixes**: (a) `mermaid_problems` checks each **statement** (pieces of a line separated
+     by `;`, outside quotes) like a line: `click` refused at the start of a statement
+     (`A-->B; click A …`), and `url(` (spaces and case tolerated) refused **everywhere** in the
+     code, labels included; edge labels without delimiters (`A -- text --> B`, `==`, `-.`) no longer
+     count as nodes; API unchanged (reused by `markdown_to_html` in 4.8). (b) On return from the
+     choice (“another round”), `round_start` ignores `another_round` and `to_proposals` sent during
+     the wait (the answer already sets the number of rounds); texts and angle are still read;
+     `choice` is reset to null. (c) **Port**: `CouncilStore.saved_proposals(user_id,
+     session_id, *, batch) -> list[SavedProposal(ref, draft)]` (empty if the batch does not exist);
+     `propose` reads it first: replayed, it re-emits the written batch, names and details together,
+     **without calling the Strategist again** (like `judge`, D82, and `spot_people`, D84); otherwise
+     the Strategist writes and `save_proposals` records. (d) In the debate the Scout receives the
+     practitioners it spotted (name, role, sites, framed) and must cite only them. (e)
+     `scout/people._url_key` returns `None` for a malformed address (`http://[abc`, `ValueError`
+     from `urlsplit`): the address is ignored, the person discarded if they have no other known
+     address. (f) **Mermaid: strict grammar then re-emission** (rounds 2 and 3 of the review;
+     filtering raw text by regular expressions is abandoned: a `"` glued to an identifier, which
+     Mermaid 12.3 reads as a character of the identifier, made `A --> B"; click A "https://…"; C"`
+     pass as a label, and `<br style=background:image-set(…)>` loaded an image).
+     `nodes/mermaid_grammar.py` (tree and label decoding: `nodes/mermaid_tree.py`) parses the code
+     line by line (statements separated by `;` outside labels) and admits only: header
+     `flowchart|graph` + `TD|TB|BT|LR|RL`; `subgraph <id> ["label"]`, `end`, `direction <dir>`;
+     chains of node groups (`A & B`) linked by `-->`, `---`, `-.->`, `-.-`, `==>`, `===`, label
+     `|…|` or form `-- text -->` (`-. … .->`, `== … ==>`); node = identifier
+     `[A-Za-z][A-Za-z0-9_]{0,63}` (never `subgraph`, `end`, `direction`) + at most one shape `[…]`,
+     `(…)`, `([…])`, `[[…]]`, `[(…)]`, `((…))`, `{…}`, `{{…}}`, `>…]`; label in quotes, or bare
+     without `"[](){}|`; `%%` comments ignored, `%%{` refused; everything else (`click`, `style`,
+     `classDef`, `:::`, `@{…}`, `accTitle`, unexpected character) is refused with the line and the
+     reason. Labels are decoded (Mermaid entities `#…;`, `<br>`/`<br/>` → line break, whitespace
+     collapsed); an invisible control or format character (in the code or coming from an entity) is
+     refused. `mermaid_problems` keeps its API; **`normalize_mermaid(code) -> str`** (`ValueError`
+     if refused) re-emits from the tree: identifiers renumbered `n1`, `n2`… (order of first
+     appearance, no more identifiers from the model), the node's shape and last label at its first
+     appearance, labels always in quotes and escaped by **our** entities (`#` → `#35;`, `&` →
+     `#amp;`, `"` → `#quot;`, `<` → `#lt;`, `>` → `#gt;`, the backtick → `#96;`, `%` → `#37;`, `|` →
+     `#124;`, `:` → `#58;`; without `:`, neither Mermaid's `style…:…#…;` rule nor the `fa:` icons
+     play), `<br>` the only HTML produced, one statement per line, `subgraph` indented. The
+     re-emission is idempotent. **Only the normalized version leaves**: the Scribe publishes it in
+     `board.update` and records it through `save_board` (and 4.8 will reuse it for the PDF); the raw
+     Mermaid serves only for the new request to the model. No more false refusals for `x < y`,
+     `List<String>`, `JavaScript: …`, `href`, `url()` (displayed as is). Real test: normalized
+     outputs rendered by the front end's Mermaid 12.3 (jsdom, `strict`): no `<a>`, `href`, `<img>`,
+     `<script>`, `on*` attribute, or `style` coming from a label; the two raw bypasses, rendered as
+     controls, do give `<a href>` and `<br style=…image-set…>`. The Scribe's prompt aligned with the
+     grammar. **Round 4 (time and shapes)**: parsing is synchronous in the event loop, it must be
+     linear. The text edges (`-- text -->`) were read by a regular expression with overlapping
+     quantifiers (`A -- ` followed by 3,000 spaces: 28 s, the whole loop blocked). The edges now
+     live in `nodes/mermaid_edges.py`, without backtracking: possessive quantifiers, edge end
+     searched only at the start of a run of `-`, `.`, or `=` (lookbehind), quoted text read before
+     the end; all the grammar's expressions are possessive. Bounds before parsing: 8,000 characters
+     per diagram (`MAX_CODE_CHARS`), 400 per line (`MAX_LINE_CHARS`); labels of 80 characters as
+     before. Timing test (`test_mermaid_speed.py`): each pathological input (edge openers, open
+     labels, `|`, `<`, followed by spaces, `-`, `.`, `=`, `#1`, `<br`, `&`, `;`…) at the maximum
+     admitted size (a line of 400, a board of 6,000) in under 50 ms (best of three measurements),
+     and each regular expression of the three modules on 5,000 repeated characters; the old
+     expression takes 1 s on a 6,000 board bounded to 400 per line, so the bound alone was not
+     enough. Additional admitted shapes: long edges (2 to 8 dashes or `=` signs, 1 to 4 dots),
+     double arrowhead `<-->`, `<-.->`, `<==>`, edge text with isolated `-`, `.`, or `=`
+     (`pré-requis`, `v1.2`), `%%` comment at the end of a line (`%%{` still refused). **Empty
+     label** (`A[""]`, `A["<br>"]`, whitespace): counted as absent, the node or subgraph displays
+     its original identifier (Mermaid and Pele refuse `n1[""]`); we replace rather than refuse, so
+     as not to cost the Scribe a new request. The re-re-read 3 bench (353 outputs in strict Mermaid
+     12.3 and Pele) passes again without danger or error. **To resume elsewhere**: 4.6 implements
+     `save_board` as an **upsert** by `(session, stage)` (the last written wins, to stay aligned
+     with the last `board.update` of a replayed Scribe) and `saved_proposals`; 4.14 makes the “Ask
+     for another round” button follow the `options` of the `choose_path` interrupt (empty at the cap
+     of 8 rounds). Known limits: a replayed `turn`, `round_start`, `round_end`, and Scribe call the
+     model again (no double write); an `another_round` or `to_proposals` command sent between the
+     “another round” resume and the start of the round is ignored too.
+- **Reason** SPEC 3.1 (round 1 then adjustable following rounds, 2 to 3 proposals, choice, mix or
+  return to the debate), 3.2 (permanent commands, message injected at the next round, stopping point
+  no. 2), 3.3 (Mermaid `flowchart`, four types of diagrams, every state recorded), 9.3 (debate
+  rules), 9.4 (no effect before `interrupt()`, replay without double writes), 9.6 (structured
+  outputs, 120 s per node), 17.2 (logs: identifiers), 17.4 (untrusted content); D53, D57, D82, D84.
 
 ## D86
 
-- **Date** : 2026-11-12
-- **Sujet** : Phase 4, tâche 4.5 : port `ProgramStore` et parcours `program_builder` (le Stratège écrit le programme, point d'arrêt n° 3)
-- **Décision** : (1) **Port `ProgramStore`** (`agents/tools/program_port.py`, contrat 6) : `context(user_id, goal_id, proposal_ids, program_id) -> ProgramContext` (objectif, une ou deux `ProposalDraft`, `BudgetView(weekly, cap, weekday, weekend)`, `KnownSkills`, langue des leçons, compte rendu du Conseil, `current_plan` en texte quand `program_id` est donné), `check_draft`, `save_draft(..., revision, start_date, reason) -> DraftSaved(program_id, version, weeks, total_minutes, skipped_modules, moved_tasks)` (idempotent par `(session, revision)` : revision 0 crée le programme, les suivantes une version), `validate` (idempotent). **Les règles de 3.4 vivent dans la feature** (`check_draft`, `schedule` de 4.2), appelées par le port : un seul jeu de règles pour le Stratège et pour les modifications de January. `NO_PROGRAM` lève `program_unavailable` (503) ; champ `AgentPorts.program`, **pas encore branché dans `bootstrap.agent_ports`** (4.7 écrit `AgentProgramStore`, comme D84 pour le Conseil). `FakeProgramStore` (`tests/support/program.py`) appelle les vraies `check_draft`, `schedule` et `next_monday`, vérifie l'utilisateur à chaque appel et rend le plan rangé en texte (`plan_text`) comme plan courant. (2) **Deux re-demandes puis rangement par le code** (D83 §4) : `draft` = `structured_call(PlanDraft)` puis `check_draft` ; des problèmes → le brouillon et la liste (30 lignes au plus) repartent au modèle dans la même conversation ; `MAX_PLAN_ASKS = 3` (une demande, deux re-demandes) ; le troisième brouillon est gardé tel quel (problèmes comptés et journalisés : nombre, session, révision) et `save_draft` le met aux règles (acquis sautés ou réduits à la révision de 20 min, 85 %, pratique et quiz, semaines « Suite »). Délai du nœud `PLAN_TIMEOUT_S = 600` (trois programmes complets au modèle fort). (3) **Le plan est en base, pas dans l'état du graphe** : l'état ne garde que les variables du prompt (`plan_vars`, tirées du contexte au nœud `context`), le dernier brouillon du Stratège (pour `save`), `saved` (`DraftSaved` en JSON), `revision` et `note`. Une révision relit le contexte par le port avec `program_id` (`current_plan`, modifications de January comprises) avant de rappeler le modèle. (4) **Révision = nouvelle version** : `ask_validation` (révision) rend `revision + 1` et la note, retour à `draft` puis `save_draft(revision=n)` ; la feature écrit `plan_versions` et le diff (4.7) ; `reason` = « Première version du Stratège » ou « Révision n : note » (300 caractères). Même programme : `artifact.ready` porte le même `program_id` à chaque version. (5) **Validation** par l'interruption (`finalize` → `validate`, idempotent : un nœud rejoué revalide sans effet de plus) ou par `POST /programs/{id}/validate` (4.7, qui reprend l'interruption avec `"validate"`). (6) **Interruption n° 3** (`ask_validation`, seule dans son nœud, analyse pure ensuite) : charge exacte du brief (`validate_program`, question, option `validate`, champ `note`). Réponses : `"validate"` et `{"action": "validate"}` (note ignorée) ; `{"action": "revise", "note": …}` ; `{"answers": {"note": …}}` = révision (`ValidationAnswer`). Arbitrages : la note est rognée puis **coupée** à 2 000 caractères plutôt que refusée (la saisie de January n'est jamais perdue, comme D84) ; une révision à note vide est acceptée (« rééquilibre le plan courant », utile après des déplacements de January) ; `{"answers": …}` sans `note` texte, ou toute autre forme → question reposée (nouvelle interruption, même charge). (7) **Graphe** : `START → context → draft → save → ask_validation → route_validation` (`validate` → `finalize` → END ; `revise` → `draft` ; invalide → `ask_validation`) ; entrée `ProgramBuilderInput(goal_id (36), proposal_ids (1 à 2), start_date)`, celle que `CouncilStore.start_program` lancera (4.6). `save` publie un `agent.message` du Stratège (semaines, heures planifiées, modules sautés, tâches reportées) puis `artifact.ready {artifact_id: program_id, kind "program", title, url "/apprendre/programme/{id}"}` ; `finalize` : « Programme validé : « titre ». » en message et en `run.completed`. (8) **Prompt `plan`** (`strategist.md`, sans les règles du débat : `_shared/untrusted.md` seulement) : objectif et cadrage (souhaits de January, non encadrés, D84), propositions (deux = « MÉLANGER », sans additionner les charges), compte rendu, budget (jours, samedi, plafond de 85 % en minutes et en heures), acquis (« ne replanifie pas ce qui est acquis »), règles de 3.4 (champs, 15–120 min, verbe d'action, pratique et quiz chaque semaine), référentiel (`skills` avec domaine et synonymes, `edges`), langue des leçons ; en révision, plan courant et note. **Encadrés par `untrusted()`** : propositions et compte rendu (sorties d'agents), plan courant et note de révision (texte saisi puis repris par un modèle). Journaux : identifiants et nombres seulement (testé : ni titre, ni thème, ni note, ni nom de parcours). (9) **Budget impossible** : l'erreur `planning_impossible` (422, « Budget hebdomadaire trop faible pour une pratique et un quiz. ») vient de `schedule` dans `save_draft` et fait échouer la session lisiblement (`run.failed`) ; contrepartie assumée : les trois demandes au modèle ont déjà eu lieu (4.7 peut lever plus tôt dans `context`, sans changer le parcours). Un plan entièrement acquis (`schedule` rend zéro semaine) : le faux port lève `nothing_to_plan` (422) ; même contrat attendu de 4.7. (10) **Rejeu** : `draft` rejoué rappelle le modèle (il n'écrit rien) ; `save` rejoué relit la même version (aucune seconde version, Stratège non rappelé) ; `finalize` rejoué revalide sans effet de plus. Testés par un vrai arrêt du runner en plein `save_draft` et en plein `validate`, puis `recover_on_startup`.
-- **Raison** : SPEC 3.1 (étape 7 : programme puis validation), 3.2 (point d'arrêt n° 3), 3.4 (85 %, disponibilité, acquis, pratique et quiz, tâches de 15 à 120 min avec verbe d'action), 9.4 (aucun effet avant `interrupt()`, rejeu sans double écriture, reprise après redémarrage), 9.6 (sorties structurées), 17.2 (journaux), 17.4 (contenu non fiable) ; D82, D83 §4, D84, D85, plan directeur §1 (un port de plus = un champ).
+- **Date** 2026-11-12
+- **Subject** Phase 4, task 4.5: `ProgramStore` port and `program_builder` flow (the Strategist
+  writes the program, stopping point no. 3)
+- **Decision**
+  1. **`ProgramStore` port** (`agents/tools/program_port.py`, contract 6):
+     `context(user_id, goal_id, proposal_ids, program_id) -> ProgramContext` (goal, one or two
+     `ProposalDraft`s, `BudgetView(weekly, cap, weekday, weekend)`, `KnownSkills`, lesson language,
+     Council minutes, `current_plan` as text when `program_id` is given), `check_draft`,
+     `save_draft(..., revision, start_date, reason) -> DraftSaved(program_id,
+     version, weeks, total_minutes, skipped_modules, moved_tasks)` (idempotent by
+     `(session, revision)`: revision 0 creates the program, the following ones a version),
+     `validate` (idempotent). **The rules of 3.4 live in the feature** (`check_draft`, `schedule` of
+     4.2), called by the port: a single set of rules for the Strategist and for January's
+     modifications. `NO_PROGRAM` raises `program_unavailable` (503); field `AgentPorts.program`,
+     **not yet wired in `bootstrap.agent_ports`** (4.7 writes `AgentProgramStore`, like D84 for the
+     Council). `FakeProgramStore` (`tests/support/program.py`) calls the real `check_draft`,
+     `schedule`, and `next_monday`, checks the user on every call, and returns the sorted plan as
+     text (`plan_text`) as the current plan.
+  2. **Two re-requests then sorting by the code** (D83 §4): `draft` = `structured_call(PlanDraft)`
+     then `check_draft`; problems → the draft and the list (30 lines at most) go back to the model
+     in the same conversation; `MAX_PLAN_ASKS = 3` (one request, two re-requests); the third draft
+     is kept as is (problems counted and logged: number, session, revision) and `save_draft` puts it
+     under the rules (acquired skills skipped or reduced to the 20-minute review, 85%, practice and
+     quiz, “Continued” weeks). Node timeout `PLAN_TIMEOUT_S = 600` (three complete programs on the
+     strong model).
+  3. **The plan is in the database, not in the graph's state**: the state keeps only the prompt
+     variables (`plan_vars`, drawn from the context at the `context` node), the Strategist's last
+     draft (for `save`), `saved` (`DraftSaved` as JSON), `revision`, and `note`. A revision re-reads
+     the context through the port with `program_id` (`current_plan`, January's modifications
+     included) before calling the model again.
+  4. **Revision = new version**: `ask_validation` (revision) returns `revision + 1` and the note,
+     back to `draft` then `save_draft(revision=n)`; the feature writes `plan_versions` and the diff
+     (4.7); `reason` = “Strategist's first version” or “Revision n: note” (300 characters). Same
+     program: `artifact.ready` carries the same `program_id` at each version.
+  5. **Validation** by the interrupt (`finalize` → `validate`, idempotent: a replayed node
+     revalidates with no further effect) or by `POST /programs/{id}/validate` (4.7, which resumes
+     the interrupt with `"validate"`).
+  6. **Interrupt no. 3** (`ask_validation`, alone in its node, pure parsing afterwards): the brief's
+     exact payload (`validate_program`, question, option `validate`, field `note`). Answers:
+     `"validate"` and `{"action": "validate"}` (note ignored); `{"action": "revise", "note": …}`;
+     `{"answers": {"note": …}}` = revision (`ValidationAnswer`). Arbitration: the note is trimmed
+     then **cut** to 2,000 characters rather than refused (January's input is never lost, like D84);
+     a revision with an empty note is accepted (“rebalance the current plan”, useful after January's
+     moves); `{"answers": …}` without a text `note`, or any other shape → the question is asked
+     again (new interrupt, same payload).
+  7. **Graph**: `START → context → draft → save → ask_validation → route_validation` (`validate` →
+     `finalize` → END; `revise` → `draft`; invalid → `ask_validation`); input
+     `ProgramBuilderInput(goal_id (36), proposal_ids (1 to 2), start_date)`, the one that
+     `CouncilStore.start_program` will launch (4.6). `save` publishes a Strategist `agent.message`
+     (weeks, planned hours, skipped modules, carried-over tasks) then `artifact.ready {artifact_id:
+     program_id, kind "program", title, url "/apprendre/programme/{id}"}`; `finalize`: “Program
+     validated: “title”.” as a message and in `run.completed`.
+  8. **`plan` prompt** (`strategist.md`, without the debate rules: `_shared/untrusted.md` only):
+     goal and framing (January's wishes, unframed, D84), proposals (two = “MIX”, without adding the
+     loads), minutes, budget (days, Saturday, 85% cap in minutes and hours), acquired skills (“do
+     not replan what is acquired”), rules of 3.4 (fields, 15–120 min, action verb, practice and quiz
+     every week), reference (`skills` with domain and synonyms, `edges`), lesson language; in
+     revision, current plan and note. **Framed by `untrusted()`**: proposals and minutes (agent
+     outputs), current plan and revision note (typed text then taken up by a model). Logs:
+     identifiers and numbers only (tested: neither title, nor theme, nor note, nor path name).
+  9. **Impossible budget**: the `planning_impossible` error (422, “Weekly budget too low for a
+     practice and a quiz.”) comes from `schedule` in `save_draft` and makes the session fail
+     readably (`run.failed`); accepted counterpart: the three model requests have already happened
+     (4.7 can raise earlier in `context`, without changing the flow). A fully acquired plan
+     (`schedule` returns zero weeks): the fake port raises `nothing_to_plan` (422); same contract
+     expected from 4.7.
+  10. **Replay**: a replayed `draft` calls the model again (it writes nothing); a replayed `save`
+     re-reads the same version (no second version, Strategist not called again); a replayed
+     `finalize` revalidates with no further effect. Tested by a real runner stop in the middle of
+     `save_draft` and in the middle of `validate`, then `recover_on_startup`.
+- **Reason** SPEC 3.1 (step 7: program then validation), 3.2 (stopping point no. 3), 3.4 (85%,
+  availability, acquired skills, practice and quiz, tasks of 15 to 120 min with an action verb), 9.4
+  (no effect before `interrupt()`, replay without double writes, resume after restart), 9.6
+  (structured outputs), 17.2 (logs), 17.4 (untrusted content); D82, D83 §4, D84, D85, master plan §1
+  (one more port = one field).
 
 ## D87
 
-- **Date** : 2026-11-12
-- **Sujet** : Phase 4, tâche 4.6 : feature `learning` (objectifs, propositions, choix du parcours, états du tableau), port `CouncilStore` branché (`AgentCouncilStore`)
-- **Décision** : (1) **`POST /goals` lance le Conseil** (aucune route de session à part) : l'objectif est enregistré et **commité avant** le lancement de `learning_council` (sujet `goal`), car le nœud `context` le relit dans sa propre session ; lancement manqué, **quelle que soit l'erreur** (503 `engine_unavailable`, base, entrée refusée) → l'objectif est retiré (au mieux : un retrait impossible est journalisé) et l'erreur passe, jamais d'objectif orphelin sans Conseil (relecture, round 1). `GoalCreate` : texte rogné de 5 à 500 caractères, poste ≤ 120, `weekly_hours` 1 à 40 (stocké en minutes), échéance passée → 422 `validation_error` (chemins seulement, jamais la saisie). `GoalOut.program_id` / `program_session_id` : dernier programme de l'objectif et sa session, sinon la dernière session `program_builder` lancée (`sessions.service.find_latest_session`, ajouté ; `SessionReadRepository.latest`). (2) **Choix** : `POST /proposals/{id}/choose` (`ChooseRequest(mix_with, start_date)`) sous `LearningRuntime.goal_lock(user, objectif)` : proposition (et `mix_with`) du **dernier lot** de l'objectif ; proposition inconnue ou d'un autre → 404 `proposal_not_found` ; proposition d'un lot précédent → **409 `proposal_outdated`** (arbitrage : un écran périmé, pas une saisie invalide) ; `mix_with` égal, hors du dernier lot ou inconnu → 422 `invalid_mix`. Conseil `waiting_user` sur `choose_path` → **toujours** choix écrit et commité (`write_choice`, la même écriture que `record_choice` du nœud `finalize`) puis reprise par `SessionsService.resume` avec `{"action": "choose"|"mix", "proposal_ids", "start_date"}` ; Conseil qui n'attend pas : même ensemble déjà choisi dans le lot → état rendu sans rien relancer, **`ChooseOut.already_chosen` vrai** (double clic : la première requête a fait passer la session à `running` avant de rendre le verrou ; ou choix après une reprise générique terminée) ; sinon 409 `council_not_waiting` (`details.status`). **Le court-circuit ne vaut que si le Conseil n'attend pas** (relecture, round 1) : un choix resté écrit par une reprise manquée (base verrouillée, arrêt du back entre le commit du choix et la reprise) ne bloque jamais un Conseil qui attend, le clic suivant le reprend. Reprise manquée **pour quelque raison que ce soit** → le choix écrit est effacé (au mieux, journalisé sinon ; `finalize` écrira celui qu'il reçoit) ; question déjà répondue (reprise générique arrivée entre-temps) → 409 `council_not_waiting` avec le statut **relu après l'échec** ; toute autre erreur passe. **`start_date` d'un second clic** (même choix, déjà fait) : ignorée, et la réponse le dit (`already_chosen` vrai : la requête n'a rien changé) ; changer la date de début relève du programme (4.7), pas d'un nouveau choix. **Un seul chemin de lancement** : seul `finalize` lance `program_builder`, par `CouncilStore.start_program` sous le même verrou (programme déjà écrit → sa session ; session `program_builder` ouverte → rendue ; sinon `SessionLauncher.start` avec `{goal_id, proposal_ids dédoublonnés, start_date}`, objectif `chosen`). Verrou propre au processus (un seul worker, comme ceux de la recherche). Lectures sous le verrou en **sessions courtes neuves** (`learning.session_factory`) : la requête qui attendait voit ce que la précédente a commité (pas de copie gardée par la carte d'identité de SQLAlchemy). Fenêtre connue : une reprise générique acceptée dont `finalize` n'a pas encore tourné → le même choix par la route reçoit 409 (le front relit l'état). (3) **`record_choice` marque exactement le choix** dans son lot (les autres propositions du lot ne le sont plus) : rejoué, rien ne change ; un mélange marque ses deux propositions. Propositions d'une autre session ou d'un autre objectif → 404 ; de deux lots → 422 `invalid_mix`. (4) **Port branché** : `AgentCouncilStore(session_factory, launcher, learning)` (`service/store.py`), une session de base courte par appel, commitée, filtre utilisateur partout (objectif d'un autre : 404 `goal_not_found`) ; `save_board` en **upsert par `(session, étape)`** (`scribe_key`, D83 ; le dernier écrit gagne, l'id reste, D85 §11) ; `save_proposals` idempotent par `(session, lot)` (rend le lot écrit) ; `saved_proposals` relit un lot (vide s'il n'existe pas ou n'est pas à l'utilisateur) ; `attach_board` vérifie proposition, objectif (`owned_goal`) et tableau, et que le tableau relève du même objectif que la proposition (sinon 404 `board_not_found`). `bootstrap.agent_ports(memory, research, *, learning)` ; `LearningRuntime(session_factory, launcher)` créé dans `_open_agents` juste après le lanceur, avant les ports (`app.state.learning`). Le port `program` reste non branché (4.7). (5) **Routes hors 14.2** : `GET /goals/{id}`, `GET /goals/{id}/boards` (tous les états, ordre de création), `POST /boards/{id}/edits` (SPEC 3.3 : « chaque état est enregistré », « modifications renvoyées aux agents »). Une retouche = **nouvel état** `author` « user » (`parent_id`, étape, type, titre et Mermaid du parent, `scene` = scène Excalidraw), commité **avant** le message (le bus écrit dans sa propre session) ; Conseil ouvert → `user.message` « [Tableau] {note} » (note rognée, 1 à 2 000), lu au tour suivant comme tout message de January ; Conseil clos, ou qui se ferme entre la lecture et l'envoi (409) → état gardé, aucun message. **Corps plafonné à 2 Mio** sur `POST /api/v1/boards/…` (`BodySizeLimit`, qui gagne `code` et `message` : 413 `board_too_large` « Tableau trop volumineux : 2 Mio au maximum. ») : scène `serializeAsJSON` complète, `files` peut porter une image. (6) **Écarts de structure** : `LearningDep` vit dans `learning/router.py` (comme `ResearchDep` et `MemoryRuntimeDep`) plutôt que dans `core/deps.py`, qui n'importe aucune feature ; fichier de plus `service/proposals.py` (lots, `saved_proposals`, `attach_board`) pour tenir 300 lignes ; `sessions/service.py` déclare `__all__` et réexporte `MessageRequest`, `ResumeRequest`, `SessionView` (contrat 2 : une feature n'importe que le service d'une autre). Journaux : identifiants seulement (utilisateur, objectif, session, état, propositions), jamais un texte d'objectif, une note, un nom de parcours (testé sur les journaux `app`).
-- **Raison** : SPEC 3.1 (objectif puis Conseil, choix, mélange ou retour au débat), 3.2 (point d'arrêt n° 2, rien n'avance sans January), 3.3 (états enregistrés, modifications renvoyées aux agents), 9.4 (rejeu sans double écriture), 13, 14.1 et 14.2 (actions par REST), 17.2 (journaux, 422 sans écho) ; Review Focus n° 2 (double « Choisir », choix et reprise générique : un seul `program_builder`) ; D66, D82, D83, D84, D85 §11, D86.
+- **Date** 2026-11-12
+- **Subject** Phase 4, task 4.6: `learning` feature (goals, proposals, path choice, board states),
+  `CouncilStore` port wired (`AgentCouncilStore`)
+- **Decision**
+  1. **`POST /goals` launches the Council** (no separate session route): the goal is saved and
+     **committed before** launching `learning_council` (subject `goal`), because the `context` node
+     re-reads it in its own session; launch missed, **whatever the error** (503
+     `engine_unavailable`, database, input refused) → the goal is removed (best effort: an
+     impossible removal is logged) and the error passes, never an orphan goal without a Council
+     (re-read, round 1). `GoalCreate`: text trimmed from 5 to 500 characters, job ≤ 120,
+     `weekly_hours` 1 to 40 (stored in minutes), past deadline → 422 `validation_error` (paths only,
+     never the input). `GoalOut.program_id` / `program_session_id`: the goal's last program and its
+     session, otherwise the last `program_builder` session launched
+     (`sessions.service.find_latest_session`, added; `SessionReadRepository.latest`).
+  2. **Choice**: `POST /proposals/{id}/choose` (`ChooseRequest(mix_with, start_date)`) under
+     `LearningRuntime.goal_lock(user, goal)`: proposal (and `mix_with`) from the goal's **last
+     batch**; unknown proposal or another user's → 404 `proposal_not_found`; proposal from a
+     previous batch → **409 `proposal_outdated`** (arbitration: a stale screen, not an invalid
+     input); `mix_with` equal, outside the last batch, or unknown → 422 `invalid_mix`. Council
+     `waiting_user` on `choose_path` → **always** choice written and committed (`write_choice`, the
+     same write as the `finalize` node's `record_choice`) then resumed by `SessionsService.resume`
+     with `{"action": "choose"|"mix", "proposal_ids", "start_date"}`; Council that is not waiting:
+     same set already chosen in the batch → state returned without relaunching anything,
+     **`ChooseOut.already_chosen` true** (double click: the first request moved the session to
+     `running` before releasing the lock; or a choice after a finished generic resume); otherwise
+     409 `council_not_waiting` (`details.status`). **The short circuit applies only if the Council
+     is not waiting** (re-read, round 1): a choice left written by a missed resume (database locked,
+     backend stop between the choice's commit and the resume) never blocks a Council that is
+     waiting, the next click resumes it. Missed resume **for any reason** → the written choice is
+     erased (best effort, logged otherwise; `finalize` will write the one it receives); question
+     already answered (generic resume arrived in the meantime) → 409 `council_not_waiting` with the
+     status **re-read after the failure**; any other error passes. **`start_date` of a second
+     click** (same choice, already made): ignored, and the response says so (`already_chosen` true:
+     the request changed nothing); changing the start date is the program's business (4.7), not a
+     new choice. **A single launch path**: only `finalize` launches `program_builder`, through
+     `CouncilStore.start_program` under the same lock (program already written → its session; open
+     `program_builder` session → returned; otherwise `SessionLauncher.start` with
+     `{goal_id, deduplicated proposal_ids, start_date}`, goal `chosen`). Lock specific to the
+     process (a single worker, like the search ones). Reads under the lock in **fresh short
+     sessions** (`learning.session_factory`): the request that was waiting sees what the previous
+     one committed (no copy kept by SQLAlchemy's identity map). Known window: an accepted generic
+     resume whose `finalize` has not yet run → the same choice through the route receives 409 (the
+     front end re-reads the state).
+  3. **`record_choice` marks exactly the choice** in its batch (the batch's other proposals no
+     longer are): replayed, nothing changes; a mix marks its two proposals. Proposals from another
+     session or another goal → 404; from two batches → 422 `invalid_mix`.
+  4. **Port wired**: `AgentCouncilStore(session_factory, launcher, learning)` (`service/store.py`),
+     a short database session per call, committed, user filter everywhere (another user's goal: 404
+     `goal_not_found`); `save_board` as an **upsert by `(session, step)`** (`scribe_key`, D83; the
+     last written wins, the id stays, D85 §11); `save_proposals` idempotent by `(session, batch)`
+     (returns the written batch); `saved_proposals` re-reads a batch (empty if it does not exist or
+     is not the user's); `attach_board` checks the proposal, the goal (`owned_goal`), and the board,
+     and that the board belongs to the same goal as the proposal (otherwise 404 `board_not_found`).
+     `bootstrap.agent_ports(memory, research, *, learning)`; `LearningRuntime(session_factory,
+     launcher)` created in `_open_agents` just after the launcher, before the ports
+     (`app.state.learning`). The `program` port stays unwired (4.7).
+  5. **Routes outside 14.2**: `GET /goals/{id}`, `GET /goals/{id}/boards` (all states, creation
+     order), `POST /boards/{id}/edits` (SPEC 3.3: “every state is recorded”, “modifications sent
+     back to the agents”). A touch-up = **new state** with `author` “user” (`parent_id`, step, type,
+     title, and Mermaid of the parent, `scene` = Excalidraw scene), committed **before** the message
+     (the bus writes in its own session); open Council → `user.message` “[Board] {note}” (note
+     trimmed, 1 to 2,000), read at the next round like any January message; closed Council, or one
+     that closes between the read and the send (409) → state kept, no message. **Body capped at 2
+     MiB** on `POST /api/v1/boards/…` (`BodySizeLimit`, which gains `code` and `message`: 413
+     `board_too_large` “Board too large: 2 MiB maximum.”): complete `serializeAsJSON` scene, `files`
+     may carry an image.
+  6. **Structure deviations**: `LearningDep` lives in `learning/router.py` (like `ResearchDep` and
+     `MemoryRuntimeDep`) rather than in `core/deps.py`, which imports no feature; one more file
+     `service/proposals.py` (batches, `saved_proposals`, `attach_board`) to stay within 300 lines;
+     `sessions/service.py` declares `__all__` and re-exports `MessageRequest`, `ResumeRequest`,
+     `SessionView` (contract 2: a feature imports only another's service). Logs: identifiers only
+     (user, goal, session, state, proposals), never a goal text, a note, or a path name (tested on
+     the `app` logs).
+- **Reason** SPEC 3.1 (goal then Council, choice, mix or return to the debate), 3.2 (stopping point
+  no. 2, nothing advances without January), 3.3 (recorded states, modifications sent back to the
+  agents), 9.4 (replay without double writes), 13, 14.1, and 14.2 (actions through REST), 17.2
+  (logs, 422 without echo); Review Focus no. 2 (double “Choose”, choice and generic resume: a single
+  `program_builder`); D66, D82, D83, D84, D85 §11, D86.
 
 ## D88
 
-- **Date** : 2026-11-12
-- **Sujet** : Phase 4, tâche 4.7 : feature `program` (programmes, tâches dans le budget, validation, export `.ics`), feature `skills`, reflet des niveaux dans la mémoire, port `ProgramStore` branché (`AgentProgramStore`)
-- **Décision** : (1) **85 %, pratique et quiz vérifiés à chaque modification, sous verrou par programme** (`ProgramRuntime.program_lock(user, programme)`, propre au processus, un seul worker, comme D87) : déplacement ou retouche d'une tâche (`PATCH /tasks/{id}` : jour, durée, titre, statut), ajouts, suppressions et date de début (`PATCH /programs/{id}`, appliqués ensemble : une règle cassée annule tout), validation et écriture d'une version par le Stratège passent sous ce verrou, sur l'état **relu dans une session neuve**. La semaine d'une tâche est celle de son **jour planifié** (sept jours depuis le début de la semaine) : la charge (`WeekOut.load_minutes`) et les règles se lisent sur le calendrier ; une tâche déplacée garde son module (`TaskOut.module_id`) et reste listée sous la semaine de ce module : le contrat le dit (`description` de `TaskOut.module_id`, `TaskOut.planned_date`, `WeekOut.load_minutes`, `WeekOut.modules`), le front place les tâches par `planned_date`. Chaque semaine touchée (ancienne et nouvelle semaine d'un déplacement, semaine d'une durée changée, d'un ajout, d'une suppression) est vérifiée par **la règle unique `rules.week_breaks`** (plafond `cap_minutes` du programme, au moins une pratique, un quiz), que `check_draft` et `week_problems` appellent aussi (D86 §1 : un seul jeu de règles ; les phrases au Stratège viennent de `rules.describe`) ; la première cassée lève `WeekRuleBroken` (422 `week_over_budget` / `week_needs_practice` / `week_needs_quiz`, `details {week_rank, planned_minutes, cap_minutes}` : des nombres, jamais la saisie) ; un jour hors des semaines du programme → 422 `date_outside_program`. Deux déplacements simultanés qui tiennent chacun mais pas ensemble (ou un déplacement et un ajout) : le second voit le premier et reçoit la 422 (testé avec des relectures ralenties ; le test échoue sans le verrou). Le titre d'une tâche ajoutée par January n'est pas soumis à la règle du verbe d'action (sa formulation est la sienne ; la règle reste celle du Stratège). (2) **Dimanche autorisé** pour un déplacement : seule la semaine est bornée par la spec, le jour n'est jamais bloqué (D94 §2). (3) **Routes** : `GET /programs` (hors 14.2 : écran « Programme »), `GET /programs/{id}`, `PATCH /programs/{id}` (ajouts ≤ 20, suppressions ≤ 50, date de début : **brouillon seulement**, sinon 409 `program_validated`, et **un lundi**, sinon 422 `invalid_start_date` ; tout le brouillon est décalé), `POST /programs/{id}/validate` (202), `PATCH /tasks/{id}`, `GET /programs/{id}/export.ics`. Les modifications restent permises sur un programme validé (replanification, F13) ; seule la date de début est figée. Le module d'une tâche ajoutée doit être au programme et non sauté (404 `module_not_found`) ; une tâche inconnue ou d'un autre → 404 `task_not_found`. (4) **`.ics`** : un événement **sur la journée** par tâche (les tâches n'ont pas d'heure) : `DTSTART;VALUE=DATE`, `DTEND` le lendemain, `TRANSP:TRANSPARENT`, `SUMMARY` = titre, `DESCRIPTION` = type, durée, critère de fin, module (et « Déjà acquis : révision »), `UID` « {task_id}@tremplin » (un nouvel import met à jour au lieu de doubler), `PRODID` « -//Tremplin//Programme//FR », `X-WR-CALNAME` = titre ; `text/calendar; charset=utf-8`, `Content-Disposition: attachment; filename="programme.ics"`. `icalendar` 7.3 (API vérifiée dans la documentation actuelle : `Calendar.add`, `Event.add`, `add_component`, `to_ical`, `from_ical`). (5) **Validation** (`validate_program`, idempotente, sous le verrou) : statut `validated`, `validated_at`, **version acceptée** (`accepted_at`) : si les lignes ont bougé depuis la dernière version, une version « Modifications de January » est écrite d'abord (instantané des lignes, différence avec la précédente, budget repris), sinon la version du Stratège est acceptée ; référentiel du Stratège (`SkillsService.upsert_catalog`, relu dans l'instantané de sa dernière version, clé `catalog`), puis compétences des modules planifiés (non sautés) montées à **`en_cours`** (D7), **jamais baissées** ; `commit_validation` (sous le verrou) commite tout cela et rend **toutes les compétences couvertes à leur niveau actuel** (`SkillsService.levels_of`), **branche « déjà validé » comprise** ; `sync_skills` les reflète ensuite **hors du verrou** (la vectorisation d'un acquis créé appelle Ollama ; la validation elle-même reste sérialisée par le verrou) dans l'acquis du même nom normalisé (`reflect_skill_levels`, D6 : créé ou monté, jamais baissé, idempotent, `memory_writes` avec auteur — `strategist` par la session, `user` en ligne —, session et raison). Une panne du reflet est journalisée et **rattrapée par l'appel suivant** : rejeu de `finalize` (port `validate`) ou second « Valider » (route, programme déjà validé) ; testé avec un reflet qui échoue puis un rappel, sans doublon d'acquis ni de journal (fix round 1) ; l'objectif passe à `planned` (`learning.service.goals.mark_planned`). La production des leçons est branchée en 4.10. **Route** : sous le verrou, déjà validé → 202 `{status: validated, session_id: null}` ; règles vérifiées sur l'état courant (422) ; session `program_builder` en attente sur `validate_program` → `SessionsService.resume("validate")`, 202 `{status: draft, session_id}` (le nœud `finalize` valide ensuite par le port, sous le même verrou) ; validation déjà reprise et session encore `running` → même réponse (second clic, `ProgramRuntime.validating`) ; session ouverte pour autre chose (révision en cours, pause) → 409 `program_not_waiting` (`details.status`) ; question déjà répondue entre-temps (`stale_interrupt`) → 409 ; brouillon sans session ouverte (session finie, en échec ou absente) → validation en ligne. (6) **Acquis connus** = maximum, par nom normalisé, entre `user_skills` et les acquis actifs de la mémoire (`memory.service.skill_levels.acquis_levels`, tous les acquis actifs ; ceux de l'Archiviste n'ont pas de ligne `user_skills`). Un reflet lit les acquis **une seule fois par appel** (index par nom normalisé, sans plafond : plus de doublon au-delà de 2 000 acquis). Rendus au Stratège, ils sont désormais **encadrés par `untrusted()`** (`plan_context._known` ; relecture de 4.5 : un titre d'acquis peut venir d'un document importé). (7) **`AgentProgramStore(runtime: ProgramRuntime)`** au lieu de `(session_factory, memory, settings_reader)` : `ProgramRuntime` porte la base, la mémoire et les verrous ; les réglages sont lus par `SettingsService` dans la session de l'appel (la feature `program` importe le service de `settings`, contrat 2). Une session de base courte par appel, commitée ; **propriété vérifiée dans chaque méthode** (relecture de 4.5) : objectif (`goal_not_found`), propositions de cet objectif (`proposal_not_found`), programme de l'objectif pour `context`, programme de la session et de l'utilisateur pour `validate` (`program_not_found`), programme de la session rattaché au même objectif pour `save_draft`. `context` lève `planning_impossible` **avant** tout appel au modèle si le plafond ne tient pas une pratique et un quiz (D86 §9). `save_draft` : idempotent par `(session, revision)` (la version écrite est relue, `DraftSaved` recalculé de son instantané, qui garde `moved_tasks`) ; sinon `schedule` (acquis, 85 %, pratique, quiz), plan vide → 422 `nothing_to_plan` (contrat du faux port) ; revision 0 crée le programme, une révision remplace semaines, modules et tâches (cascade) **sous le verrou du programme** et garde **la date de début du programme** (January a pu la changer) ; `plan_versions` : instantané de D83 plus `budget` (minutes par jour, pour `ProgramOut.weekday_minutes` / `weekend_minutes` : le programme n'a pas de colonnes pour cela), `moved_tasks` et `catalog` ; **différence avec les lignes remplacées** (modifications de January comprises), pas avec la version précédente. Les modifications de January n'écrivent pas de version (la version suit le Stratège ; la validation fixe l'état accepté). Les modules sautés (déjà acquis) sont gardés en lignes `skipped` dans la **première semaine**, sans tâche, avec leurs compétences reprises du brouillon (`ScheduledPlan` ne garde pas leur semaine d'origine). `ProgramOut.diff` : différence de la dernière version, `None` pour la première (tout y est « ajouté »). (8) **Feature `skills`** (`repository.py`, `service.py`) : créations en `INSERT … ON CONFLICT DO NOTHING` (deux validations simultanées ne lèvent pas d'erreur d'unicité ; testé), preuves gardées (20 au plus), `raise_levels` rend les niveaux changés (créés compris). (9) **Écarts de structure** : `ProgramDep` vit dans `program/router.py` (comme `LearningDep`, D87 §6), `core/deps.py` n'est pas modifié ; fichier de plus `service/drafting.py` (écriture d'une version, budget, acquis connus) pour tenir 300 lignes ; `learning.service.proposals.proposal_drafts` (propositions de l'objectif pour le contexte). `bootstrap.agent_ports(memory, research, *, learning, program)` ; `ProgramRuntime(session_factory, memory)` créé dans `_open_agents` avant les ports (`app.state.program`). Journaux : identifiants et nombres seulement (testé : ni titre de tâche, ni titre de programme, ni compétence).
-- **Raison** : SPEC 3.4 (85 %, pratique et quiz chaque semaine, acquis, vues, export `.ics`), 3.1 étape 7 et 3.2 (validation, point d'arrêt n° 3), 4.2 et 13.4 (niveaux, preuves, graphe de compétences), 9.4 (rejeu sans double écriture), 14.2, 17.2 (journaux, 422 sans écho), 17.4 (acquis de la mémoire non fiables) ; Review Focus n° 4 ; D6, D7, D66, D83, D86, D87, D94.
+- **Date** 2026-11-12
+- **Subject** Phase 4, task 4.7: `program` feature (programs, tasks within the budget, validation,
+  `.ics` export), `skills` feature, reflecting levels in memory, `ProgramStore` port wired
+  (`AgentProgramStore`)
+- **Decision**
+  1. **85%, practice, and quiz checked at every modification, under a per-program lock**
+     (`ProgramRuntime.program_lock(user, program)`, specific to the process, a single worker, like
+     D87): moving or touching up a task (`PATCH /tasks/{id}`: day, duration, title, status),
+     additions, deletions, and the start date (`PATCH /programs/{id}`, applied together: one broken
+     rule cancels everything), validation, and the Strategist's writing of a version go under this
+     lock, on the state **re-read in a fresh session**. A task's week is that of its **planned day**
+     (seven days from the start of the week): the load (`WeekOut.load_minutes`) and the rules are
+     read on the calendar; a moved task keeps its module (`TaskOut.module_id`) and stays listed
+     under that module's week: the contract says so (`description` of `TaskOut.module_id`,
+     `TaskOut.planned_date`, `WeekOut.load_minutes`, `WeekOut.modules`), and the front end places
+     tasks by `planned_date`. Each touched week (old and new week of a move, week of a changed
+     duration, an addition, a deletion) is checked by **the single rule `rules.week_breaks`** (the
+     program's `cap_minutes` cap, at least one practice, one quiz), which `check_draft` and
+     `week_problems` also call (D86 §1: a single set of rules; the sentences to the Strategist come
+     from `rules.describe`); the first one broken raises `WeekRuleBroken` (422 `week_over_budget` /
+     `week_needs_practice` / `week_needs_quiz`, `details {week_rank, planned_minutes, cap_minutes}`:
+     numbers, never the input); a day outside the program's weeks → 422 `date_outside_program`. Two
+     simultaneous moves that each hold but not together (or a move and an addition): the second sees
+     the first and receives the 422 (tested with slowed re-reads; the test fails without the lock).
+     The title of a task added by January is not subject to the action-verb rule (its wording is
+     hers; the rule remains the Strategist's).
+  2. **Sunday allowed** for a move: only the week is bounded by the spec, the day is never blocked
+     (D94 §2).
+  3. **Routes**: `GET /programs` (outside 14.2: “Program” screen), `GET /programs/{id}`,
+     `PATCH /programs/{id}` (additions ≤ 20, deletions ≤ 50, start date: **draft only**, otherwise
+     409 `program_validated`, and **a Monday**, otherwise 422 `invalid_start_date`; the whole draft
+     is shifted), `POST /programs/{id}/validate` (202), `PATCH /tasks/{id}`,
+     `GET /programs/{id}/export.ics`. Modifications remain allowed on a validated program
+     (replanning, F13); only the start date is frozen. The module of an added task must be in the
+     program and not skipped (404 `module_not_found`); an unknown task or another user's → 404
+     `task_not_found`.
+  4. **`.ics`**: one **all-day** event per task (tasks have no time): `DTSTART;VALUE=DATE`, `DTEND`
+     the next day, `TRANSP:TRANSPARENT`, `SUMMARY` = title, `DESCRIPTION` = type, duration,
+     completion criterion, module (and “Already acquired: review”), `UID` “{task_id}@tremplin” (a
+     new import updates instead of doubling), `PRODID` “-//Tremplin//Programme//FR”, `X-WR-CALNAME`
+     = title; `text/calendar; charset=utf-8`, `Content-Disposition:
+     attachment; filename="programme.ics"`. `icalendar` 7.3 (API verified in the current
+     documentation: `Calendar.add`, `Event.add`, `add_component`, `to_ical`, `from_ical`).
+  5. **Validation** (`validate_program`, idempotent, under the lock): status `validated`,
+     `validated_at`, **accepted version** (`accepted_at`): if the rows have moved since the last
+     version, a “January's modifications” version is written first (snapshot of the rows, difference
+     with the previous one, budget carried over), otherwise the Strategist's version is accepted;
+     Strategist's reference (`SkillsService.upsert_catalog`, re-read from its last version's
+     snapshot, key `catalog`), then the skills of the planned modules (not skipped) raised to
+     **`en_cours`** (D7), **never lowered**; `commit_validation` (under the lock) commits all this
+     and returns **all the covered skills at their current level** (`SkillsService.levels_of`),
+     **“already validated” branch included**; `sync_skills` then reflects them **outside the lock**
+     (vectorizing a created acquired skill calls Ollama; the validation itself stays serialized by
+     the lock) in the acquired skill of the same normalized name (`reflect_skill_levels`, D6:
+     created or raised, never lowered, idempotent, `memory_writes` with author — `strategist` by the
+     session, `user` online —, session, and reason). A reflection outage is logged and **caught up
+     by the next call**: replay of `finalize` (port `validate`) or a second “Validate” (route,
+     program already validated); tested with a reflection that fails then a recall, without
+     duplicate acquired skill or log (fix round 1); the goal moves to `planned`
+     (`learning.service.goals.mark_planned`). Lesson production is wired in 4.10. **Route**: under
+     the lock, already validated → 202 `{status: validated, session_id: null}`; rules checked on the
+     current state (422); `program_builder` session waiting on `validate_program` →
+     `SessionsService.resume("validate")`, 202 `{status: draft, session_id}` (the `finalize` node
+     then validates through the port, under the same lock); validation already resumed and session
+     still `running` → same response (second click, `ProgramRuntime.validating`); session open for
+     something else (revision in progress, pause) → 409 `program_not_waiting` (`details.status`);
+     question already answered in the meantime (`stale_interrupt`) → 409; draft without an open
+     session (session finished, failed, or absent) → online validation.
+  6. **Known acquired skills** = maximum, by normalized name, between `user_skills` and the active
+     acquired skills of memory (`memory.service.skill_levels.acquis_levels`, all active acquired
+     skills; the Archivist's have no `user_skills` row). A reflection reads the acquired skills
+     **once per call** (index by normalized name, no cap: no more duplicates beyond 2,000 acquired
+     skills). Rendered to the Strategist, they are now **framed by `untrusted()`**
+     (`plan_context._known`; re-read of 4.5: an acquired skill's title may come from an imported
+     document).
+  7. **`AgentProgramStore(runtime: ProgramRuntime)`** instead of `(session_factory, memory,
+     settings_reader)`: `ProgramRuntime` carries the database, memory, and locks; the settings are
+     read by `SettingsService` in the call's session (the `program` feature imports the `settings`
+     service, contract 2). A short database session per call, committed; **ownership checked in each
+     method** (re-read of 4.5): goal (`goal_not_found`), proposals of that goal
+     (`proposal_not_found`), the goal's program for `context`, the session's and user's program for
+     `validate` (`program_not_found`), the session's program attached to the same goal for
+     `save_draft`. `context` raises `planning_impossible` **before** any model call if the cap does
+     not hold a practice and a quiz (D86 §9). `save_draft`: idempotent by `(session, revision)` (the
+     written version is re-read, `DraftSaved` recomputed from its snapshot, which keeps
+     `moved_tasks`); otherwise `schedule` (acquired skills, 85%, practice, quiz), empty plan → 422
+     `nothing_to_plan` (the fake port's contract); revision 0 creates the program, a revision
+     replaces weeks, modules, and tasks (cascade) **under the program's lock** and keeps **the
+     program's start date** (January may have changed it); `plan_versions`: D83's snapshot plus
+     `budget` (minutes per day, for `ProgramOut.weekday_minutes` / `weekend_minutes`: the program
+     has no columns for that), `moved_tasks`, and `catalog`; **difference with the replaced rows**
+     (January's modifications included), not with the previous version. January's modifications
+     write no version (the version follows the Strategist; validation fixes the accepted state).
+     Skipped modules (already acquired) are kept as `skipped` rows in the **first week**, without a
+     task, with their skills taken from the draft (`ScheduledPlan` does not keep their original
+     week). `ProgramOut.diff`: difference of the last version, `None` for the first (everything is
+     “added” there).
+  8. **`skills` feature** (`repository.py`, `service.py`): creations as `INSERT … ON CONFLICT
+     DO NOTHING` (two simultaneous validations raise no uniqueness error; tested), evidence kept (20
+     at most), `raise_levels` returns the changed levels (created included).
+  9. **Structure deviations**: `ProgramDep` lives in `program/router.py` (like `LearningDep`, D87
+     §6), `core/deps.py` is not modified; one more file `service/drafting.py` (writing a version,
+     budget, known acquired skills) to stay within 300 lines;
+     `learning.service.proposals.proposal_drafts` (the goal's proposals for the context).
+     `bootstrap.agent_ports(memory, research, *, learning, program)`;
+     `ProgramRuntime(session_factory, memory)` created in `_open_agents` before the ports
+     (`app.state.program`). Logs: identifiers and numbers only (tested: neither task title, nor
+     program title, nor skill).
+- **Reason** SPEC 3.4 (85%, practice and quiz every week, acquired skills, views, `.ics` export),
+  3.1 step 7 and 3.2 (validation, stopping point no. 3), 4.2 and 13.4 (levels, evidence, skills
+  graph), 9.4 (replay without double writes), 14.2, 17.2 (logs, 422 without echo), 17.4 (memory's
+  acquired skills untrusted); Review Focus no. 4; D6, D7, D66, D83, D86, D87, D94.
 
 ## D89
 
-- **Date** : 2026-11-12
-- **Sujet** : Phase 4, tâche 4.8 : PDF des leçons et du programme (Gotenberg `convert/html`, gabarits, Markdown sûr)
-- **Décision** : (1) **17.4 « HTML nettoyé de tout script » appliqué au contenu** : la leçon (Markdown d'un agent qui a lu des pages web, non fiable) passe par `markdown-it-py` (`commonmark` + tables) puis `nh3.clean` en liste blanche (`ALLOWED_TAGS` du brief ; attributs `href` sur `a`, `id` sur `h2`, `class` restreinte à nos classes par `allowed_classes` ; schémas `http`/`https` seulement, **liens relatifs refusés** (`url_relative="deny"`), `rel="noopener noreferrer"`, commentaires retirés). **Écart avec le brief, arbitré par son propre test** : le brief dit « HTML brut désactivé (échappé) » mais exige `"onerror" not in out.html` pour `<img src=x onerror=alert(1)>` ; un échappement laisserait le mot en texte. Le parseur reconnaît donc le HTML brut (`html: True` **au parseur seulement**) et les jetons `html_inline` / `html_block` sont **rendus vides** : le HTML brut n'est jamais copié ni échappé, il disparaît (plus strict ; le texte entre deux balises reste, inerte). Une image devient son texte de remplacement (`<span class="image-omitted">`), rien n'est chargé ; un lien `javascript:`, `data:`, `vbscript:`, `file:` ou relatif reste du texte ou perd son `href`. Le code (`` ` `` et blocs) reste visible, échappé. Texte coupé à 200 000 caractères. (2) **Mermaid** : un bloc ```` ```mermaid ```` passe par `normalize_mermaid` (grammaire stricte et réémission canonique de D85 §11f) ; **seule la version régénérée** entre dans `<pre class="mermaid">`, au texte échappé ; refusé (`click`, `%%{init}`, `style`, autre type de diagramme…) → encadré `<aside class="diagram-unavailable">` « Schéma indisponible. », **jamais le code d'origine** (écart au brief qui proposait `<pre class="mermaid-source">` : consigne du contrôleur). Les features importent déjà `app.agents` (aucun contrat ne l'interdit) : la grammaire reste dans `app/agents/nodes/`, pas de déplacement. (3) **Seuls nos fichiers figés s'exécutent dans le Chromium de Gotenberg** : `mermaid.min.js` 12.3.0 (même version que le front, téléchargé une fois de jsDelivr, identique octet pour octet à celui de `frontend/node_modules`, SHA-256 `336df803…74b9a3` vérifié à chaque première lecture : `RuntimeError` s'il diffère ; marqué `binary` dans `.gitattributes`) et `render.js` (`securityLevel: "strict"`, `startOnLoad: false`, `suppressErrorRendering`, lit le `textContent`, schéma en erreur → son code réémis, `window.__lessonReady = true` à la fin quoi qu'il arrive) ; `waitForExpression` `window.__lessonReady === true`. **Aucun rendu Mermaid côté serveur n'existe dans la pile** et 3.5 exige le SVG. **Ajouts** : (a) les scripts ne sont joints **que si la leçon a au moins un schéma accepté** ; sinon page sans aucun script ni attente ; (b) **CSP en `<meta>`** : `default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src data:; font-src 'self'; base-uri 'none'; form-action 'none'` (sans script : ni `script-src` ni `unsafe-inline`). Vérifié dans Gotenberg 8.40.0 lancé avec les options durcies de `docker-compose.yml` (conteneur jetable) : nos deux fichiers `file:///tmp/…` passent (`'self'`), un script en ligne, un `fetch` et une image distante sont bloqués. (4) **Second essai sans script** : `RenderFailed` au premier rendu (Gotenberg 503 si l'attente expire, délai, réponse invalide) → même page sans `mermaid.min.js`, `render.js` ni attente, blocs en `<pre class="mermaid-source">` (la version réémise) ; un second échec remonte. Journal : nombre de schémas seulement. (5) **Fournisseur** : `HtmlDocument(index_html, assets, footer_html, wait_for_expression)` (noms de ressources simples `*.css` / `*.js`, `index.html` / `footer.html` / `header.html` réservés : `ValueError`), `HtmlPdfRenderer`, `HTML_RENDER_TIMEOUT_S = 45` ; `GotenbergHtmlRenderer(http, base_url)` : `POST /forms/chromium/convert/html`, fichiers sous `files`, A4 `8.27 × 11.7` pouces, marges `0.6`, `printBackground=true`, `waitForExpression` si fourni. Les règles d'erreur de D72 sont **partagées** : `gotenberg.post_for_pdf` (extrait de `GotenbergRenderer`, comportement inchangé). Contrat d'import 3 étendu à `app.providers.pdf.html`. Documentation Gotenberg vérifiée (context7) : le pied de page est un document complet rendu à part (ni CSS de la page ni JavaScript), classes `pageNumber`, `totalPages`, `title` remplies par Chromium ; vérifié en réel (« titre … n / N »). (6) **Composition** : `PublishingProviders(html_pdf)` (`app.core.providers`), `bootstrap.publishing_providers(settings)` (client `_render_http(45 s)` : ni proxy, ni redirection), `create_app(..., publishing_providers=)` injectable, ouvert dans `_open_external_providers`, `app.state.publishing_providers` ; dépendance `core.deps.PublishingDep` (servira aussi aux leçons en 4.10). Tests : fixtures `fake_html_renderer` et `publishing_providers` (`FakeHtmlRenderer`, `tests/support/memory.py`) injectées dans `app` et `client_google_mode` : aucun test n'atteint Gotenberg ; `tests/providers/pdf/test_html_live.py` (`live`, `GOTENBERG_URL`) passe contre le Gotenberg jetable : schéma en SVG (le texte des nœuds est dans le PDF, le code non), quatre types de tableau du Scribe en SVG, second essai sans script, pied de page. (7) **Gabarits** : paquet `app/templates` (Jinja, échappement automatique partout, `StrictUndefined`) ; `lesson/lesson.html.j2` (titre, sommaire depuis les `h2` ancrés `s<n>-<slug>`, encadrés `callout-key` pour « L'essentiel en 5 lignes » et `callout-warning` pour « Erreurs fréquentes », reconnus sans accents ni casse), `lesson.css` (thème clair, polices de l'image), `footer.html` (titre à gauche, `n / N` à droite) ; libellés `fr` / `en` selon `lesson_language` (toute autre valeur → `fr`, l'attribut `lang` n'accepte que deux lettres). `asset(name)` / `template_file(path)` refusent tout chemin hors de leurs dossiers. (8) **PDF du programme** : `GET /programs/{program_id}/export.pdf` → `application/pdf`, `attachment; filename="programme.pdf"` ; gabarit `program/program.html.j2` + `program.css`, **aucun script** (CSP sans `script-src`), tout texte échappé (titres, critères, compétences : agent ou January) ; semaines (thème, objectif, livrable, charge), modules (compétences, prérequis, « déjà acquis »), tâches par jour (type, durée, critère, fait). **Rendu à la demande** (quelques secondes de Gotenberg, pas un travail d'agent) ; la lecture en base est close (`commit`) avant le rendu ; filtre `user_id` (404 `program_not_found` pour un autre utilisateur, aucun rendu lancé) ; échec → 502 `render_failed` « PDF du programme impossible pour le moment : réessaie dans un instant. » levée `from None` ; journal : identifiant du programme et taille. Contrat OpenAPI et `schema.d.ts` régénérés.
-- **Raison** : SPEC 3.4 (export PDF du programme), 3.5 (PDF A4, gabarit unique, sommaire, encadrés, schémas Mermaid en SVG, numéros de page, thème clair), 17.2 (journaux), 17.4 (HTML de contenu nettoyé de tout script, contenu non fiable) ; Review Focus n° 3 ; D72 (Gotenberg durci, `RenderFailed`), D85 §11f (Mermaid réémis), D88 (feature `program`).
+- **Date** 2026-11-12
+- **Subject** Phase 4, task 4.8: lesson and program PDFs (Gotenberg `convert/html`, templates, safe
+  Markdown)
+- **Decision**
+  1. **17.4 “HTML cleaned of any script” applied to content**: the lesson (Markdown from an agent
+     that read web pages, untrusted) goes through `markdown-it-py` (`commonmark` + tables) then
+     `nh3.clean` as a whitelist (the brief's `ALLOWED_TAGS`; `href` attributes on `a`, `id` on `h2`,
+     `class` restricted to our classes by `allowed_classes`; `http`/`https` schemes only, **relative
+     links refused** (`url_relative="deny"`), `rel="noopener noreferrer"`, comments removed).
+     **Deviation from the brief, arbitrated by its own test**: the brief says “raw HTML disabled
+     (escaped)” but requires `"onerror" not in out.html` for `<img src=x onerror=alert(1)>`;
+     escaping would leave the word as text. The parser therefore recognizes raw HTML (`html: True`
+     **in the parser only**) and the `html_inline` / `html_block` tokens are **rendered empty**: raw
+     HTML is never copied or escaped, it disappears (stricter; the text between two tags stays,
+     inert). An image becomes its alternative text (`<span class="image-omitted">`), nothing is
+     loaded; a `javascript:`, `data:`, `vbscript:`, `file:`, or relative link stays text or loses
+     its `href`. Code (inline and blocks) stays visible, escaped. Text cut at 200,000 characters.
+  2. **Mermaid**: a ```` ```mermaid ```` block goes through `normalize_mermaid` (strict grammar and
+     canonical re-emission of D85 §11f); **only the regenerated version** enters `<pre
+     class="mermaid">`, with escaped text;
+     refused (`click`, `%%{init}`, `style`, another diagram type…) → `<aside
+     class="diagram-unavailable">` box “Diagram unavailable.”,
+     **never the original code** (deviation from the brief, which proposed `<pre
+     class="mermaid-source">`: controller's instruction).
+     The features already import `app.agents` (no contract forbids
+     it): the grammar stays in `app/agents/nodes/`, no move.
+  3. **Only our pinned files run in Gotenberg's Chromium**: `mermaid.min.js` 12.3.0 (same version as
+     the front end, downloaded once from jsDelivr, byte-for-byte identical to the one in
+     `frontend/node_modules`, SHA-256 `336df803…74b9a3` checked at each first read: `RuntimeError`
+     if it differs; marked `binary` in `.gitattributes`) and `render.js` (`securityLevel: "strict"`,
+     `startOnLoad: false`, `suppressErrorRendering`, reads the `textContent`, diagram in error → its
+     re-emitted code, `window.__lessonReady = true` at the end whatever happens);
+     `waitForExpression` `window.__lessonReady === true`. **No server-side Mermaid rendering exists
+     in the stack** and 3.5 requires the SVG. **Additions**: (a) the scripts are attached **only if
+     the lesson has at least one accepted diagram**; otherwise a page with no script and no wait;
+     (b) **CSP as `<meta>`**: `default-src 'none'; script-src 'self'; style-src 'self'
+     'unsafe-inline'; img-src data:; font-src 'self'; base-uri 'none'; form-action 'none'` (without
+     a script: neither `script-src` nor `unsafe-inline`). Verified in Gotenberg 8.40.0 launched with
+     the hardened options of `docker-compose.yml` (throwaway container): our two `file:///tmp/…`
+     files pass (`'self'`), an inline script, a `fetch`, and a remote image are blocked.
+  4. **Second attempt without a script**: `RenderFailed` on the first render (Gotenberg 503 if the
+     wait expires, timeout, invalid response) → same page without `mermaid.min.js`, `render.js`, or
+     wait, blocks as `<pre class="mermaid-source">` (the re-emitted version); a second failure
+     bubbles up. Log: number of diagrams only.
+  5. **Provider**: `HtmlDocument(index_html, assets, footer_html, wait_for_expression)` (simple
+     resource names `*.css` / `*.js`, `index.html` / `footer.html` / `header.html` reserved:
+     `ValueError`), `HtmlPdfRenderer`, `HTML_RENDER_TIMEOUT_S = 45`; `GotenbergHtmlRenderer(http,
+     base_url)`: `POST /forms/chromium/convert/html`, files under `files`, A4 `8.27 × 11.7` inches,
+     margins `0.6`, `printBackground=true`, `waitForExpression` if provided. D72's error rules are
+     **shared**: `gotenberg.post_for_pdf` (extracted from `GotenbergRenderer`, behavior unchanged).
+     Import contract 3 extended to `app.providers.pdf.html`. Gotenberg documentation verified
+     (context7): the footer is a complete document rendered separately (neither the page's CSS nor
+     JavaScript), classes `pageNumber`, `totalPages`, `title` filled by Chromium; verified in
+     practice (“title … n / N”).
+  6. **Composition**: `PublishingProviders(html_pdf)` (`app.core.providers`),
+     `bootstrap.publishing_providers(settings)` (client `_render_http(45 s)`: neither proxy nor
+     redirect), `create_app(..., publishing_providers=)` injectable, opened in
+     `_open_external_providers`, `app.state.publishing_providers`; dependency
+     `core.deps.PublishingDep` (will also serve lessons in 4.10). Tests: fixtures
+     `fake_html_renderer` and `publishing_providers` (`FakeHtmlRenderer`, `tests/support/memory.py`)
+     injected into `app` and `client_google_mode`: no test reaches Gotenberg;
+     `tests/providers/pdf/test_html_live.py` (`live`, `GOTENBERG_URL`) passes against the throwaway
+     Gotenberg: diagram as SVG (the nodes' text is in the PDF, the code is not), the Scribe's four
+     board types as SVG, second attempt without a script, footer.
+  7. **Templates**: package `app/templates` (Jinja, automatic escaping everywhere,
+     `StrictUndefined`); `lesson/lesson.html.j2` (title, table of contents from the anchored `h2`s
+     `s<n>-<slug>`, boxes `callout-key` for “L'essentiel en 5 lignes” (the essentials in 5 lines)
+     and `callout-warning` for “Erreurs fréquentes” (common mistakes), recognized without accents or
+     case), `lesson.css` (light theme, the image's fonts), `footer.html` (title on the left, `n / N`
+     on the right); `fr` / `en` labels according to `lesson_language` (any other value → `fr`, the
+     `lang` attribute accepts only two letters). `asset(name)` / `template_file(path)` refuse any
+     path outside their folders.
+  8. **Program PDF**: `GET /programs/{program_id}/export.pdf` → `application/pdf`,
+     `attachment; filename="programme.pdf"`; template `program/program.html.j2` + `program.css`,
+     **no script** (CSP without `script-src`), all text escaped (titles, criteria, skills: agent or
+     January); weeks (theme, goal, deliverable, load), modules (skills, prerequisites, “already
+     acquired”), tasks by day (type, duration, criterion, done). **Rendered on demand** (a few
+     seconds of Gotenberg, not an agent job); the database read is closed (`commit`) before
+     rendering; `user_id` filter (404 `program_not_found` for another user, no render launched);
+     failure → 502 `render_failed` “Program PDF is impossible for the moment: try again in a
+     moment.” raised `from None`; log: program identifier and size. OpenAPI contract and
+     `schema.d.ts` regenerated.
+- **Reason** SPEC 3.4 (program PDF export), 3.5 (A4 PDF, single template, table of contents, boxes,
+  Mermaid diagrams as SVG, page numbers, light theme), 17.2 (logs), 17.4 (content HTML cleaned of
+  any script, untrusted content); Review Focus no. 3; D72 (hardened Gotenberg, `RenderFailed`), D85
+  §11f (re-emitted Mermaid), D88 (`program` feature).
 
 ## D90
 
-- **Date** : 2026-11-12
-- **Sujet** : Phase 4, tâche 4.9 : port `LessonStore` et parcours `lesson_factory` (Éclaireur, Rédacteur, Vérificateur)
-- **Décision** : (1) **Une session `lesson_factory` par module** (entrée `program_id`, `module_id`, 36 caractères chacun ; sujet `program`), avec les plafonds de session de la phase 3 (12 requêtes, 30 pages) **pour ce seul module** ; aucune interruption. `START → brief → plan → search → read → judge → remember → pick_resources → write → verify → (publish | write | fail_lesson) → next → END`. **Port `LessonStore`** (`agents/tools/lesson_port.py`, contrat 6, champ `AgentPorts.lessons`, valeur « non branché » `NO_LESSONS` : 503 `lessons_unavailable`) : `brief`, `publish` (idempotent par module), `fail`, `next_module(…, exclude_session_id)` ; le port réel est branché en 4.10 (`bootstrap.agent_ports` n'est pas touché ici). (2) **Recherche du module par les nœuds de l'Éclaireur tels quels** : `brief` pose `query` (titre, compétences, thème de la semaine, 300 caractères au plus, coupés à un mot) et `urls` = `seed_urls` (≤ 5 : praticiens et sources du Conseil liés au module, lus en priorité) ; `LessonFactoryState` hérite de `WebResearchState` comme `CouncilState`. **Ressources** (`nodes/scout/resources.py`, mode `resources` de `scout.md`) : candidates = verdicts « kept » de la session (note ≥ 60), jamais une adresse écrite par le modèle ; ≥ 3 candidates → `ResourcePicks` (3 à 6), identifiants hors candidates et doublons retirés, **une seule nouvelle demande** si moins de 3 restent ; < 3 → schéma assoupli (1 à 6) sur les retenues, rien d'inventé. Dans tous les cas où il y en a moins de 3, la remarque « Ressources insuffisantes : n source(s) retenue(s) sur 3 attendues. » est rangée dans `LessonReport.problems` (remarque sans gravité : elle ne bloque pas la publication). **Arbitrage ajouté** : sans aucune source retenue, rien ne peut être sourcé : arête conditionnelle `pick_resources → fail_lesson` (raison fixe « Aucune source fiable… »), le Rédacteur n'est pas appelé. (3) **« Chaque lien répond »** = chaque lien de la leçon (lien Markdown, lien automatique ou adresse nue) est l'adresse d'une page **lue `ok` et retenue (note ≥ 60)** de la session, comparée sans casse de l'hôte, sans `/` final ni fragment ; un marqueur `[n]` sans source de ce numéro est refusé. **« Rien n'est recopié »** = aucun passage de plus de 25 mots (mots séparés par des espaces, sans casse ni ponctuation) identique à une source, hors d'une citation `« … »` suivie de `[n]` ; une citation attribuée de plus de 25 mots est refusée aussi (« citation courte »), une citation sans `[n]` ne protège rien. Les sources de la leçon sont les 8 mieux notées parmi les retenues (numérotées, texte lu ≤ 6 000 caractères), pour borner les prompts ; les ressources, elles, se choisissent parmi toutes les retenues. (4) **Deux révisions au plus** (`MAX_REVISIONS = 2`, trois écritures en tout) : `verify` lance les contrôles déterministes (`check_lesson`) **et** le contrôle des faits (`FactReport`, leçon et sources encadrées par `untrusted()`) à chaque passage, pour que le Rédacteur reçoive tout d'un coup (« Problème : … », « Affirmation non sourcée : … ») ; après la deuxième révision, problèmes restants → `fail_lesson` (raison de 300 caractères au plus ; la leçon est relancée par 4.10, qui borne les essais à 3). **La chaîne continue même après un échec** : `publish` et `fail_lesson` mènent à `next`, qui appelle `next_module(user, programme, exclude_session_id=session)` (le port réel de 4.10 y lance le module suivant, une seule chaîne par programme, et doit être idempotent). Une sortie du Vérificateur invalide après ses essais fait échouer la session (`structured_output_invalid`) plutôt que de publier une leçon non contrôlée : **4.10 doit marquer en échec la leçon d'une session `lesson_factory` qui échoue** (module `generating` sinon). (5) **Structure exacte en 11 sections** (`SECTIONS`) : Objectifs (3 puces au plus), Prérequis, L'essentiel en 5 lignes (exactement 5 puces), Explication, Schémas (au moins un bloc `mermaid` accepté par `normalize_mermaid`, D85 §11f), Exemple travaillé, Erreurs fréquentes, Exercice, Corrigé de l'exercice (séparé de l'exercice), Sources, Auto-évaluation (exactement 5 questions) ; titre `# {titre du module}` ; 1 200 à 2 500 mots, blocs de code exclus, comptés sur le texte des jetons Markdown (`markdown-it-py`, pas d'expression régulière sur le texte brut : un `## ` dans un bloc de code ne compte pas). Section en trop ou dans le désordre : refusée. **Langue** : les titres de section restent **toujours ceux de `SECTIONS`, en français, quelle que soit `lesson_language`** (le contenu suit la langue réglée, termes techniques en anglais) : le rendu de 4.8 (`markdown_to_html`) ne reconnaît ses encadrés que sur « L'essentiel… » et « Erreurs fréquentes » (comparés sans accents ni casse) et le gabarit ne localise que ses propres libellés ; le contrôle de structure l'impose donc au Rédacteur, sans changer le rendu. **Publication** : `artifact.ready {kind "lesson", url "/apprendre/lecons/{id}"}` émis par le nœud `publish` après le port (rejoué : le port rend la même leçon, l'événement n'est émis qu'après son retour) ; journaux : identifiants seulement (session, module, leçon, programme, compteurs), jamais un titre, une adresse ni un extrait. Agents `writer` (niveau fort) et `verifier` (standard). Le contrat OpenAPI n'a pas changé.
-- **Raison** : SPEC 3.5 (une leçon par module, 1 200 à 2 500 mots, structure fixe, faits sourcés, liens qui répondent, absence de recopie), 3.6 (3 à 6 ressources, note ≥ 60), 9.1 (Rédacteur, Vérificateur), 9.4 (rejeu sans double écriture, écritures du port idempotentes par module), 10.3 (seuil 60), 17.2 (journaux), 17.4 (pages, fiche du module et brouillon rendus aux agents comme données) ; D82 (un port de plus = un champ), D84/D85 (nœuds de l'Éclaireur réutilisés, rejeu qui relit le port), D89 (rendu des leçons).
+- **Date** 2026-11-12
+- **Subject** Phase 4, task 4.9: `LessonStore` port and `lesson_factory` flow (Scout, Writer,
+  Verifier)
+- **Decision**
+  1. **One `lesson_factory` session per module** (input `program_id`, `module_id`, 36 characters
+     each; subject `program`), with phase 3's session caps (12 queries, 30 pages) **for that module
+     alone**; no interrupt. `START → brief → plan → search → read → judge
+     → remember → pick_resources → write → verify → (publish | write | fail_lesson) → next → END`.
+     **`LessonStore` port** (`agents/tools/lesson_port.py`, contract 6, field `AgentPorts.lessons`,
+     “not wired” value `NO_LESSONS`: 503 `lessons_unavailable`): `brief`, `publish` (idempotent by
+     module), `fail`, `next_module(…, exclude_session_id)`; the real port is wired in 4.10
+     (`bootstrap.agent_ports` is not touched here).
+  2. **Module search by the Scout's nodes as is**: `brief` sets `query` (title, skills, week's
+     theme, 300 characters at most, cut at a word) and `urls` = `seed_urls` (≤ 5: practitioners and
+     Council sources linked to the module, read first); `LessonFactoryState` inherits from
+     `WebResearchState` like `CouncilState`. **Resources** (`nodes/scout/resources.py`, `resources`
+     mode of `scout.md`): candidates = the session's “kept” verdicts (score ≥ 60), never an address
+     written by the model; ≥ 3 candidates → `ResourcePicks` (3 to 6), identifiers outside the
+     candidates and duplicates removed, **a single new request** if fewer than 3 remain; < 3 →
+     relaxed schema (1 to 6) on the retained ones, nothing invented. In every case where there are
+     fewer than 3, the remark “Insufficient resources: n source(s) retained out of 3 expected.” is
+     placed in `LessonReport.problems` (a non-serious remark: it does not block publication).
+     **Added arbitration**: without any retained source, nothing can be sourced: conditional edge
+     `pick_resources → fail_lesson` (fixed reason “No reliable source…”), the Writer is not called.
+  3. **“Every link responds”** = every link in the lesson (Markdown link, automatic link, or bare
+     address) is the address of a page **read `ok` and retained (score ≥ 60)** in the session,
+     compared without regard to the host's case, trailing `/`, or fragment; a `[n]` marker without a
+     source of that number is refused. **“Nothing is copied”** = no passage of more than 25 words
+     (words separated by spaces, without case or punctuation) identical to a source, outside a
+     quotation `« … »` followed by `[n]`; an attributed quotation of more than 25 words is refused
+     too (“short quotation”), a quotation without `[n]` protects nothing. The lesson's sources are
+     the 8 best-scored among the retained (numbered, text read ≤ 6,000 characters), to bound the
+     prompts; the resources, for their part, are chosen among all the retained.
+  4. **Two revisions at most** (`MAX_REVISIONS = 2`, three writes in all): `verify` runs the
+     deterministic checks (`check_lesson`) **and** the fact check (`FactReport`, lesson and sources
+     framed by `untrusted()`) at each pass, so that the Writer receives everything at once
+     (“Problem: …”, “Unsourced claim: …”); after the second revision, remaining problems →
+     `fail_lesson` (reason of 300 characters at most; the lesson is relaunched by 4.10, which bounds
+     the attempts to 3). **The chain continues even after a failure**: `publish` and `fail_lesson`
+     lead to `next`, which calls `next_module(user, program, exclude_session_id=session)` (4.10's
+     real port launches the next module there, a single chain per program, and must be idempotent).
+     An invalid Verifier output after its retries makes the session fail
+     (`structured_output_invalid`) rather than publishing an unchecked lesson: **4.10 must mark as
+     failed the lesson of a `lesson_factory` session that fails** (module `generating` otherwise).
+  5. **Exact structure in 11 sections** (`SECTIONS`): Objectifs (3 bullets at most), Prérequis,
+     L'essentiel en 5 lignes (exactly 5 bullets), Explication, Schémas (at least one `mermaid` block
+     accepted by `normalize_mermaid`, D85 §11f), Exemple travaillé, Erreurs fréquentes, Exercice,
+     Corrigé de l'exercice (separate from the exercise), Sources, Auto-évaluation (exactly 5
+     questions) (that is: Objectives, Prerequisites, The essentials in 5 lines, Explanation,
+     Diagrams, Worked example, Common mistakes, Exercise, Exercise solution, Sources,
+     Self-assessment); title `# {module title}`; 1,200 to 2,500 words, code blocks excluded, counted
+     on the text of the Markdown tokens (`markdown-it-py`, no regular expression on the raw text: a
+     `## ` inside a code block does not count). Extra or out-of-order section: refused.
+     **Language**: the section titles **always remain those of `SECTIONS`, in French, whatever
+     `lesson_language` is** (the content follows the configured language, technical terms in
+     English): the rendering of 4.8 (`markdown_to_html`) recognizes its boxes only on “L'essentiel…”
+     and “Erreurs fréquentes” (compared without accents or case) and the template localizes only its
+     own labels; the structure check therefore imposes it on the Writer, without changing the
+     rendering. **Publication**: `artifact.ready {kind "lesson", url "/apprendre/lecons/{id}"}`
+     emitted by the `publish` node after the port (replayed: the port returns the same lesson, the
+     event is emitted only after it returns); logs: identifiers only (session, module, lesson,
+     program, counters), never a title, an address, or an excerpt. Agents `writer` (strong tier) and
+     `verifier` (standard). The OpenAPI contract did not change.
+- **Reason** SPEC 3.5 (one lesson per module, 1,200 to 2,500 words, fixed structure, sourced facts,
+  links that respond, no copying), 3.6 (3 to 6 resources, score ≥ 60), 9.1 (Writer, Verifier), 9.4
+  (replay without double writes, port writes idempotent by module), 10.3 (threshold 60), 17.2
+  (logs), 17.4 (pages, module sheet, and draft given to the agents as data); D82 (one more port =
+  one field), D84/D85 (Scout nodes reused, replay that re-reads the port), D89 (lesson rendering).
 
 ## D95
 
-- **Date** : 2026-11-12
-- **Sujet** : Phase 4, tâche 4.14 : écrans Objectifs et Conseil (feature `learning`)
-- **Décision** : (1) **Routes et navigation** : `/apprendre/objectifs` (formulaire + liste), `/apprendre/objectifs/:goalId/conseil` (page à deux zones, `handle: { wide: true }`), `/apprendre/conseil` (redirige, en remplacement dans l'historique, vers le Conseil de l'objectif le plus récent ; sans objectif : état vide « Saisis un objectif » avec action vers les objectifs). Entrées de nav `learn` « Objectifs » (ordre 1) et « Conseil » (ordre 2). (2) **Création et reprise** : `POST /goals` lance le Conseil ; la réponse amorce le cache puis ouvre le Conseil. Le Conseil se retrouve par `council_session_id` de l'objectif (recharger rejoint la même session, le flux rejoue). Formulaire : texte 5 à 500, poste ≤ 120, échéance strictement à venir, heures entières de 1 à 40, champs facultatifs vides envoyés en `null`. (3) **Étape du Conseil** : déduite des événements, sans état à part (`councilStage(events, hasProgram, plannedRounds)`) : cadrage tant que rien d'autre ; recherche dès un outil `web_*` ou `source.found` (seulement avant le débat) ; débat à chaque message `…-tour-n`, `…-positions` ou `…-bilan-n` (le tour = le plus grand n vu) ; propositions dès `proposal.ready` ou la question `choose_path` ; programme dès `moderator-choix` ou quand l'objectif a un programme ou une session de programme ; le dernier événement l'emporte (« autre tour » revient au débat). Tours prévus : `debate_rounds` des réglages (3 par défaut), jamais moins que le tour en cours. (4) **Choix du parcours et autre tour** : « Choisir » / « Mélanger » = `POST /proposals/{id}/choose` (`mix_with`), possibles seulement quand le Conseil attend la question `choose_path` ; « Demander un autre tour » = reprise de cette question avec `"another_round"`, bouton présent seulement si les `options` de la question le proposent (absent au plafond de tours). La question du choix n'a pas de champ libre dans le fil : une carte renvoie à l'onglet Propositions, qui s'ouvre tout seul à l'arrivée à cette étape. Conflits 409 (`proposal_outdated`, `council_not_waiting`) et `already_chosen` : informations (`role="status"`) après relecture des propositions, de l'objectif et du statut de session ; les autres erreurs : alerte. (5) **Cadrage** : « Lancer la recherche » envoie `{ answers }` dès qu'un champ est rempli, `"go"` sinon (les réponses tapées ne sont jamais perdues) ; `InterruptCard` garde l'état de ses champs pour cela. (6) **Rejeu et doublons** : le fil ne garde pas de bulle vide quand un message fini est republié sous le même `message_id`, et un jeton reçu pour un message fini repart de zéro ; `boardsFromEvents` fusionne par `board_id` (à défaut l'étape et le type), la dernière version du Scribe l'emporte, un état de January n'est jamais remplacé ; `sourcesFromEvents` clé `kind:id`. (7) **Sources** : pages et praticiens ne se mélangent ni ne se remplacent (blocs et décomptes séparés, aucun total commun). (8) **Programme** : le Conseil terminé passe à l'étape Programme ; la session `program_session_id` est suivie en direct ; « Voir le programme » apparaît dès `artifact.ready` de genre `program` (adresse interne seulement, sinon `/apprendre/programme/{artifact_id}`) ou, après rechargement, avec `program_id` de l'objectif ; l'objectif est relu toutes les 2 s tant que sa session de programme n'existe pas. (9) **Tableau dans une colonne étroite** : le `Board` se met en page selon la largeur de sa zone (requête de conteneur) ; le canevas est recadré quand un onglet masqué redevient visible et 100 ms après sa création. (10) **Annulation** : « Annuler » demande une confirmation dans la page (`CancelCouncilCard`), jamais `window.confirm`.
-- **Raison** : (1) SPEC 15.1 et 15.2 ; une route peut demander la pleine largeur par `handle`, sans toucher à `AppLayout` pour chaque page. (2) D87 §1 ; les 422 du back ne renvoient jamais la saisie, la validation locale évite l'aller-retour. (3) SPEC 3.1 ; D84/D85 (identifiants de message fixes du Modérateur). (4) D87 §2 (409, `already_chosen`, date de début non changée), D85 (plafond de tours). (5) D84 §cadrage, D93 §2 (précisé). (6) un nœud rejoué republie ses identifiants (D85 §11, D77). (7) SPEC 10.3. (8) D91/D88 (le programme est lancé par `finalize`, un seul chemin de lancement). (9) vérifié dans un vrai navigateur (canevas de 250 px puis vide ou décentré avant correction) ; D92 §2. (10) SPEC 15, comme la démo (D9).
+- **Date** 2026-11-12
+- **Subject** Phase 4, task 4.14: Goals and Council screens (`learning` feature)
+- **Decision**
+  1. **Routes and navigation**: `/apprendre/objectifs` (form + list),
+     `/apprendre/objectifs/:goalId/conseil` (two-zone page, `handle: { wide: true }`),
+     `/apprendre/conseil` (redirects, replacing the history entry, to the most recent goal's
+     Council; without a goal: empty state “Enter a goal” with an action toward the goals). Nav
+     entries `learn` “Goals” (order 1) and “Council” (order 2).
+  2. **Creation and resume**: `POST /goals` launches the Council; the response primes the cache then
+     opens the Council. The Council is found through the goal's `council_session_id` (reloading
+     rejoins the same session, the stream replays). Form: text 5 to 500, job ≤ 120, deadline
+     strictly in the future, whole hours from 1 to 40, empty optional fields sent as `null`.
+  3. **Council stage**: deduced from the events, with no separate state (`councilStage(events,
+     hasProgram, plannedRounds)`): framing as long as nothing else; search from a `web_*` tool or
+     `source.found` (only before the debate); debate at each `…-tour-n`, `…-positions`, or
+     `…-bilan-n` message (the round = the largest n seen); proposals from `proposal.ready` or the
+     `choose_path` question; program from `moderator-choix` or when the goal has a program or a
+     program session; the last event wins (“another round” goes back to the debate). Planned rounds:
+     `debate_rounds` from the settings (3 by default), never fewer than the current round.
+  4. **Path choice and another round**: “Choose” / “Mix” = `POST /proposals/{id}/choose`
+     (`mix_with`), possible only when the Council is waiting on the `choose_path` question; “Ask for
+     another round” = resuming that question with `"another_round"`, button present only if the
+     question's `options` offer it (absent at the round cap). The choice question has no free field
+     in the feed: a card points to the Proposals tab, which opens by itself on arrival at this
+     stage. 409 conflicts (`proposal_outdated`, `council_not_waiting`) and `already_chosen`:
+     information (`role="status"`) after re-reading the proposals, the goal, and the session status;
+     other errors: alert.
+  5. **Framing**: “Start the search” sends `{ answers }` as soon as a field is filled, `"go"`
+     otherwise (typed answers are never lost); `InterruptCard` keeps its fields' state for that.
+  6. **Replay and duplicates**: the feed keeps no empty bubble when a finished message is
+     republished under the same `message_id`, and a token received for a finished message starts
+     again from zero; `boardsFromEvents` merges by `board_id` (failing that the step and type), the
+     Scribe's last version wins, a January state is never replaced; `sourcesFromEvents` key
+     `kind:id`.
+  7. **Sources**: pages and practitioners neither mix nor replace each other (separate blocks and
+     counts, no common total).
+  8. **Program**: once the Council is finished it moves to the Program stage; the
+     `program_session_id` session is followed live; “See the program” appears from `artifact.ready`
+     of kind `program` (internal address only, otherwise `/apprendre/programme/{artifact_id}`) or,
+     after a reload, with the goal's `program_id`; the goal is re-read every 2 s as long as its
+     program session does not exist.
+  9. **Board in a narrow column**: the `Board` lays itself out according to its zone's width
+     (container query); the canvas is reframed when a hidden tab becomes visible again and 100 ms
+     after its creation.
+  10. **Cancellation**: “Cancel” asks for confirmation in the page (`CancelCouncilCard`), never
+     `window.confirm`.
+- **Reason**
+  1. SPEC 15.1 and 15.2; a route can ask for full width through `handle`, without touching
+     `AppLayout` for every page.
+  2. D87 §1; the backend's 422s never return the input, local validation saves the round trip.
+  3. SPEC 3.1; D84/D85 (fixed message identifiers for the Moderator).
+  4. D87 §2 (409, `already_chosen`, start date unchanged), D85 (round cap).
+  5. D84 §framing, D93 §2 (clarified).
+  6. A replayed node republishes its identifiers (D85 §11, D77).
+  7. SPEC 10.3.
+  8. D91/D88 (the program is launched by `finalize`, a single launch path).
+  9. Verified in a real browser (canvas of 250 px then empty or off-center before the fix); D92 §2.
+  10. SPEC 15, like the demo (D9).
 
 ## D91
 
-- **Date** : 2026-11-12
-- **Sujet** : Phase 4, tâche 4.10 : feature `lessons` (leçons, ressources, Bibliothèque), production en chaîne, port `LessonStore` branché (`AgentLessonStore`), tâche planifiée « J-7 », planificateur
-- **Décision** : (1) **Production en chaîne, un module à la fois par programme** (pas de rafale d'appels au modèle) : `ensure_lessons(ctx, user, programme, *, exclude_session_id=None, today=None)` sous `LessonsRuntime.lessons_lock(user, programme)` (propre au processus, un seul worker, comme D87/D88) : programme validé seulement ; une leçon `pending` est créée pour chaque module planifié (non sauté) qui n'en a pas (la liste des leçons montre tout le programme) ; si une session `lesson_factory` est ouverte pour le programme (`sessions.service.list_open_sessions`, nouvelle lecture de TOUTES les sessions ouvertes du sujet, `subject_type = "program"`), hors `exclude_session_id`, rien n'est lancé ; sinon la leçon du premier module dû passe `generating` (essais + 1), la session est lancée par le lanceur (D82) et son id rangé sur la leçon ; lancement refusé (moteur indisponible) : la leçon retrouve son état et ses essais, l'erreur remonte. Relancée par **la validation** (`AgentProgramStore.validate` après `finalize`, et la route quand elle valide en ligne ou trouve le programme déjà validé : `validation.start_production`, hors du verrou du programme, ne lève jamais), par **la fin de chaque leçon** (`next_module` = `ensure_lessons(exclude_session_id=session en cours)`, idempotent : le nœud `next` rejoué trouve la session suivante ouverte et ne lance rien ; rend l'id de la session lancée) et par **la tâche planifiée**. Validation, tâche et fin de leçon simultanées : une seule chaîne (testé avec la lecture des sessions ouvertes ralentie ; le test échoue sans le verrou). (2) **« J-7 »** : module dû = semaine 1 ou 2, ou semaine dont le début ≤ aujourd'hui (UTC) + 7 jours ; non sauté ; leçon ni prête ni en cours ; moins de 3 essais. **Ordre** : modules jamais tentés d'abord, puis ceux en échec, chacun par semaine puis rang (arbitrage : une leçon en échec ne bloque pas la chaîne et ne brûle pas ses essais d'affilée sur une panne passagère). **Écart au brief** : son test « `today = start + 13` → rien » contredit sa propre règle (semaine 3 = `start + 14`, due dès `start + 7`) ; le test vérifie `start + 6` → rien, `start + 7` → lancée. **Tâche** `lessons_due` **toutes les 15 minutes** et au démarrage (correction 1 : l'intervalle de 6 h du plan est abandonné ; la règle J-7 se juge au jour près, donc un passage plus fréquent ne change rien à sa justesse, et il reprend vite une chaîne arrêtée hors du port ; sans rien de dû, un passage ne fait que lire la base, sans écriture, ni lancement, ni appel au modèle (testé) ; le journal d'un passage à vide est au niveau DEBUG), **sans table `jobs`** (phase 8) : l'état des leçons suffit à l'idempotence ; une panne sur un programme est journalisée par son type et n'arrête pas les autres. (3) **`list_programs_due`** (`program.repository.validated_programs`) : **seule lecture sans `user_id` de la phase**, réservée au planificateur (comme D18, D75), identifiants `(utilisateur, programme)` seulement ; toutes les lectures suivantes filtrent par `user_id`. (4) **3 essais par leçon** (`MAX_ATTEMPTS = 3`, comptés au lancement). **Session arrêtée hors du port** (Vérificateur invalide `structured_output_invalid`, quota, annulation, module d'un autre…, reliquat de D90 §4) : au prochain `ensure_lessons`, une leçon `generating` dont la session n'est plus ouverte passe `failed` (« La production de la leçon s'est arrêtée avant la fin : elle sera relancée. ») et compte comme un essai ; la chaîne repart à la prochaine validation, fin d'une autre leçon ou passage de la tâche (15 minutes au plus), sans crochet de fin de session dans le moteur (contrat du moteur inchangé). **À la lecture** (correction 1), sans attendre la tâche et **sans écriture** : `GET /programs/{id}/lessons`, `GET /lessons/{id}` et `GET /programs/{id}` (`lesson_status` des modules) montrent `failed` pour une leçon `generating` dont la session rangée n'est plus ouverte, avec la raison ci-dessus pour la leçon (`lessons.service.status.shown` ; les sessions ouvertes ne sont lues que si une leçon est `generating`). Une leçon `generating` sans session encore rangée est en cours de lancement : elle reste `generating`. La remise en file à la lecture est écartée : une route GET écrirait hors du verrou des leçons, ou devrait le prendre et lancer une session. La base n'est corrigée que sous le verrou, au plus tard au passage suivant de la tâche. Contrat OpenAPI inchangé. (5) **Port réel `AgentLessonStore(LessonsRuntime)`** (un seul objet au lieu des six arguments du brief ; branché par `bootstrap.agent_ports(..., lessons=)`) : `brief` (module de l'utilisateur, sinon 404 `module_not_found` ; titre, compétences, prérequis, semaine, texte de l'objectif, `lesson_language` ; adresses de départ = pages retenues et praticiens de la session du Conseil, ceux dont le titre ou le résumé reprend un mot du module d'abord, puis par note, 5 au plus) ; `publish` : leçon `ready` (Markdown, mots, rapport, session) et ressources **upsert par `(module, url_hash)`**, dont **auteur, date et langue viennent de la ligne `sources`** (le modèle ne donne que type, durée, niveau, raison) ; un choix qui n'est pas une page retenue de la session est ignoré ; leçon déjà prête : rien n'est réécrit, mais les suites manquées sont rattrapées. **Suites**, chacune idempotente, sans transaction pendant le réseau (D66), dont la panne est journalisée par son type sans bloquer la publication : copie locale des PDF libres (`research.service.download.download_pdf` → stockage, catégorie `resources`), sinon `note` = fiche de lecture (résumé de la source, à défaut sa raison) ; une ressource tranchée ne se retente pas ; une copie non gardée (rangée entre-temps par un autre appel, ressource disparue, écriture en échec) est supprimée du disque (correction 1) ; PDF de la leçon (`render_lesson_pdf` → catégorie `lessons` ; `pdf_ok = False` si Gotenberg échoue : la leçon se lit quand même, le rejeu rattrape) ; mémoire `lecon` (titre, Markdown, étiquette = titre du programme, auteur `writer`, dédoublonnée par contenu). `fail` ne touche jamais une leçon prête (raison ≤ 300). (6) **Copie locale** si l'adresse rend un PDF (`application/pdf` seul demandé, signature `%PDF-`) de **20 Mo au plus** sous la **garde SSRF** : `ResearchProviders.fetcher` = un `SafeHttpFetcher` à part (client durci `_reader_http` : transport gardé, ni redirection automatique, ni proxy, ni cookie ; débit par hôte à lui) ; domaine exclu jamais contacté ; toute erreur → `None` ; journaux : utilisateur et code seulement, jamais l'adresse. (7) **Routes** : `GET /programs/{id}/lessons` (hors 14.2, ordre du programme, 404 `program_not_found`), `GET /lessons/{id}` (avec ses ressources), `GET /lessons/{id}/pdf` (404 `lesson_pdf_missing` tant qu'absent), `GET /resources?program_id=&type=&lang=&status=` (Bibliothèque, plus récentes d'abord ; type ou statut hors catalogue : 422 sans écho), `PATCH /resources/{id}` (`to_read` / `read`), `GET /resources/{id}/file` (hors 14.2, copie locale, 404 `resource_file_missing`). Fichiers servis **à leur seul propriétaire** (ligne filtrée par `user_id`, clé de stockage préfixée par l'utilisateur : 404 sinon), `inline`, `X-Content-Type-Options: nosniff`. (8) **Planificateur** : **APScheduler 3.11.3** (dernière version stable, vérifiée sur PyPI et dans la documentation actuelle ; la 4.x est encore en préversion `4.0.0a6`) : `AsyncIOScheduler(timezone=UTC)` dans la boucle du serveur, `add_job(..., "interval", max_instances=1, coalesce=True, misfire_grace_time=None, next_run_time=maintenant si at_startup)` ; chaque tâche enveloppée (exception journalisée par son type, jamais propagée) ; à la sortie `shutdown(wait=False)` (appliqué au tour de boucle suivant en 3.x) puis passages en cours annulés et attendus ; paquet `app.scheduler` (`base.JobSpec` / `JobContext`, `registry.JOBS`, `runner.open_scheduler`, `jobs/lessons_due`), entré dans la pile du lifespan **après le moteur et le lanceur lié** (arrêté avant eux) ; journal `apscheduler` ramené à WARNING ; réglage `scheduler_enabled` (vrai par défaut) : à `false`, le planificateur ne démarre pas ; c'est la valeur de la fixture `settings` des tests, et un test qui en a besoin l'active (correction 1) ; mypy : `apscheduler.*` non typé (`ignore_missing_imports`). (9) **Composition** : `LessonsRuntime(session_factory, launcher, memory, research, storage, publishing)` créé dans `_open_agents` avant les ports (`app.state.lessons`), donné à `ProgramRuntime(..., lessons=)` et à `AgentLessonStore` ; `bootstrap.lessons_runtime`, `bootstrap.scheduler_context`. `app/bootstrap.py` dépassant 300 lignes, la composition du moteur (`run_settings_source`, passerelles, `agent_ports`, `lessons_runtime`, `scheduler_context`) passe dans `app/bootstrap_agents.py`, réexportée par `app.bootstrap` et ajoutée aux modules interdits du contrat 5. **Contrat d'import 8** : `app.features` et `app.agents` n'importent jamais `app.scheduler` ; `app.scheduler` entre dans les sources des contrats 3 et 5 (8 contrats).
-- **Raison** : SPEC 3.5 (leçons en tâche de fond : semaines 1 et 2 tout de suite, les suivantes 7 jours avant leur début ; PDF), 3.6 (3 à 6 ressources, auteur, date, langue, raison, copie locale ou fiche de lecture, Bibliothèque filtrable, statut), 9.4 (rejeu sans double écriture), 13 et 14 (API), 17.2 (journaux), 17.4 (garde SSRF) ; Review Focus n° 5 ; D18, D66, D75, D82, D88, D89, D90.
+- **Date** 2026-11-12
+- **Subject** Phase 4, task 4.10: `lessons` feature (lessons, resources, Library), chained
+  production, `LessonStore` port wired (`AgentLessonStore`), “D-7” scheduled job, scheduler
+- **Decision**
+  1. **Chained production, one module at a time per program** (no burst of model calls):
+     `ensure_lessons(ctx, user, program, *, exclude_session_id=None, today=None)` under
+     `LessonsRuntime.lessons_lock(user, program)` (specific to the process, a single worker, like
+     D87/D88): validated program only; a `pending` lesson is created for each planned (non-skipped)
+     module that has none (the lesson list shows the whole program); if a `lesson_factory` session
+     is open for the program (`sessions.service.list_open_sessions`, a new read of ALL the subject's
+     open sessions, `subject_type = "program"`), outside `exclude_session_id`, nothing is launched;
+     otherwise the lesson of the first due module goes to `generating` (attempts + 1), the session
+     is launched by the launcher (D82) and its id stored on the lesson; launch refused (engine
+     unavailable): the lesson regains its state and its attempts, the error bubbles up. Relaunched
+     by **validation** (`AgentProgramStore.validate` after `finalize`, and the route when it
+     validates online or finds the program already validated: `validation.start_production`, outside
+     the program's lock, never raises), by **the end of each lesson** (`next_module` =
+     `ensure_lessons(exclude_session_id=current session)`, idempotent: the replayed `next` node
+     finds the next session open and launches nothing; returns the id of the session launched), and
+     by **the scheduled job**. Validation, job, and lesson end happening simultaneously: a single
+     chain (tested with the read of open sessions slowed; the test fails without the lock).
+  2. **“D-7”**: due module = week 1 or 2, or a week whose start ≤ today (UTC) + 7 days; not skipped;
+     lesson neither ready nor in progress; fewer than 3 attempts. **Order**: never-attempted modules
+     first, then failed ones, each by week then rank (arbitration: a failed lesson does not block
+     the chain and does not burn its attempts in a row on a passing outage). **Deviation from the
+     brief**: its test “`today = start + 13` → nothing” contradicts its own rule (week 3 =
+     `start + 14`, due from `start + 7`); the test checks `start + 6` → nothing, `start + 7` →
+     launched. **Job** `lessons_due` **every 15 minutes** and at startup (fix 1: the plan's 6 h
+     interval is abandoned; the D-7 rule is judged to the day, so a more frequent pass changes
+     nothing about its correctness, and it quickly resumes a chain stopped outside the port; with
+     nothing due, a pass only reads the database, with no write, no launch, no model call (tested);
+     the log of an empty pass is at DEBUG level), **without a `jobs` table** (phase 8): the lessons'
+     state is enough for idempotence; an outage on one program is logged by its type and does not
+     stop the others.
+  3. **`list_programs_due`** (`program.repository.validated_programs`): **the phase's only read
+     without `user_id`**, reserved for the scheduler (like D18, D75), `(user, program)` identifiers
+     only; all the following reads filter by `user_id`.
+  4. **3 attempts per lesson** (`MAX_ATTEMPTS = 3`, counted at launch). **Session stopped outside
+     the port** (invalid Verifier `structured_output_invalid`, quota, cancellation, another user's
+     module…, D90 §4 leftover): at the next `ensure_lessons`, a `generating` lesson whose session is
+     no longer open goes to `failed` (“The lesson's production stopped before the end: it will be
+     relaunched.”) and counts as an attempt; the chain restarts at the next validation, the end of
+     another lesson, or the job's pass (15 minutes at most), without a session-end hook in the
+     engine (engine contract unchanged). **At read time** (fix 1), without waiting for the job and
+     **without a write**: `GET /programs/{id}/lessons`, `GET /lessons/{id}`, and
+     `GET /programs/{id}` (modules' `lesson_status`) show `failed` for a `generating` lesson whose
+     stored session is no longer open, with the reason above for the lesson
+     (`lessons.service.status.shown`; open sessions are read only if a lesson is `generating`). A
+     `generating` lesson with no session stored yet is being launched: it stays `generating`.
+     Re-queuing at read time is ruled out: a GET route would write outside the lessons' lock, or
+     would have to take it and launch a session. The database is corrected only under the lock, at
+     the job's next pass at the latest. OpenAPI contract unchanged.
+  5. **Real port `AgentLessonStore(LessonsRuntime)`** (a single object instead of the brief's six
+     arguments; wired by `bootstrap.agent_ports(..., lessons=)`): `brief` (the user's module,
+     otherwise 404 `module_not_found`; title, skills, prerequisites, week, goal text,
+     `lesson_language`; starting addresses = retained pages and practitioners from the Council's
+     session, those whose title or summary repeats a word of the module first, then by score, 5 at
+     most); `publish`: lesson `ready` (Markdown, words, report, session) and resources **upsert by
+     `(module, url_hash)`**, whose **author, date, and language come from the `sources` row** (the
+     model gives only type, duration, level, reason); a choice that is not a retained page of the
+     session is ignored; lesson already ready: nothing is rewritten, but the missed follow-ups are
+     caught up. **Follow-ups**, each idempotent, with no transaction during the network (D66), whose
+     outage is logged by its type without blocking publication: local copy of free PDFs
+     (`research.service.download.download_pdf` → storage, category `resources`), otherwise `note` =
+     reading note (the source's summary, failing that its reason); a settled resource is not
+     retried; a copy not kept (stored in the meantime by another call, resource gone, write failing)
+     is deleted from disk (fix 1); the lesson's PDF (`render_lesson_pdf` → category `lessons`;
+     `pdf_ok = False` if Gotenberg fails: the lesson can be read anyway, the replay catches up);
+     `lecon` memory (title, Markdown, tag = the program's title, author `writer`, deduplicated by
+     content). `fail` never touches a ready lesson (reason ≤ 300).
+  6. **Local copy** if the address returns a PDF (`application/pdf` only requested, signature
+     `%PDF-`) of **20 MB at most** under the **SSRF guard**: `ResearchProviders.fetcher` = a
+     separate `SafeHttpFetcher` (hardened client `_reader_http`: guarded transport, no automatic
+     redirect, no proxy, no cookie; its own per-host rate); excluded domain never contacted; any
+     error → `None`; logs: user and code only, never the address.
+  7. **Routes**: `GET /programs/{id}/lessons` (outside 14.2, program order, 404
+     `program_not_found`), `GET /lessons/{id}` (with its resources), `GET /lessons/{id}/pdf` (404
+     `lesson_pdf_missing` while absent), `GET /resources?program_id=&type=&lang=&status=` (Library,
+     most recent first; type or status outside the catalog: 422 without echo),
+     `PATCH /resources/{id}` (`to_read` / `read`), `GET /resources/{id}/file` (outside 14.2, local
+     copy, 404 `resource_file_missing`). Files served **to their owner only** (row filtered by
+     `user_id`, storage key prefixed by the user: 404 otherwise), `inline`, `X-Content-Type-Options:
+     nosniff`.
+  8. **Scheduler**: **APScheduler 3.11.3** (latest stable version, verified on PyPI and in the
+     current documentation; 4.x is still in preview `4.0.0a6`): `AsyncIOScheduler(timezone=UTC)` in
+     the server's loop, `add_job(..., "interval", max_instances=1, coalesce=True,
+     misfire_grace_time=None, next_run_time=now if at_startup)`; each job wrapped (exception logged
+     by its type, never propagated); at exit `shutdown(wait=False)` (applied at the next loop turn
+     in 3.x) then passes in progress cancelled and awaited; package `app.scheduler` (`base.JobSpec`
+     / `JobContext`, `registry.JOBS`, `runner.open_scheduler`, `jobs/lessons_due`), entered in the
+     lifespan stack **after the engine and the bound launcher** (stopped before them); `apscheduler`
+     log brought down to WARNING; setting `scheduler_enabled` (true by default): at `false`, the
+     scheduler does not start; this is the value of the tests' `settings` fixture, and a test that
+     needs it enables it (fix 1); mypy: `apscheduler.*` untyped (`ignore_missing_imports`).
+  9. **Composition**: `LessonsRuntime(session_factory, launcher, memory, research,
+     storage, publishing)` created in `_open_agents` before the ports (`app.state.lessons`), given
+     to `ProgramRuntime(..., lessons=)` and to `AgentLessonStore`; `bootstrap.lessons_runtime`,
+     `bootstrap.scheduler_context`. Since `app/bootstrap.py` exceeded 300 lines, the engine's
+     composition (`run_settings_source`, gateways, `agent_ports`, `lessons_runtime`,
+     `scheduler_context`) moves to `app/bootstrap_agents.py`, re-exported by `app.bootstrap` and
+     added to contract 5's forbidden modules. **Import contract 8**: `app.features` and `app.agents`
+     never import `app.scheduler`; `app.scheduler` enters the sources of contracts 3 and 5 (8
+     contracts).
+- **Reason** SPEC 3.5 (lessons as a background task: weeks 1 and 2 right away, the following ones 7
+  days before their start; PDF), 3.6 (3 to 6 resources, author, date, language, reason, local copy
+  or reading note, filterable Library, status), 9.4 (replay without double writes), 13 and 14 (API),
+  17.2 (logs), 17.4 (SSRF guard); Review Focus no. 5; D18, D66, D75, D82, D88, D89, D90.
 
 ## D96
 
-- **Date** : 2026-11-12
-- **Sujet** : Phase 4, tâche 4.15 : écrans Programme, Leçons et Bibliothèque (features `program` et `lessons`)
-- **Décision** : (1) **Navigation Apprendre** : cinq entrées sous Apprendre (SPEC 15.1) : Objectifs (1), Conseil (2), Programme (3), Leçons (4), Bibliothèque (5). `/apprendre/programme` ouvre le programme le plus récent (`GET /programs`, plus récent d'abord, redirection en remplacement), sans programme : état vide vers le Conseil ; le lien « Voir le programme » de 4.14 (`/apprendre/programme/:id`) est enregistré. Le programme et le lecteur de leçon demandent la pleine largeur (`handle: { wide: true }`). (2) **Placement des tâches et conversions** : `toWeekViews(program, budget)` rassemble toutes les tâches de tous les modules et les place **par `planned_date`** dans la semaine qui porte ce jour (sept jours depuis le lundi) ; elles gardent le titre de leur module d'origine ; la charge d'une semaine est la somme de ses jours ; capacité du jour = `weekday_minutes` (lun.-ven.), `weekend_minutes` (samedi), 0 (dimanche, déplaçable mais signalé chargé) ; plafond = `cap_minutes`. Une tâche ajoutée va dans le premier module non sauté de la semaine du jour choisi (sinon du programme). La différence de version arrive en « module / tâche » sans identifiant : le titre est séparé au premier « / », le jour prévu d'une tâche ajoutée est relu dans le programme, celui d'une tâche retirée est inconnu (`plannedDate: null`, rien n'est affiché). (3) **Retouches du calendrier** : déplacer ou cocher une tâche = `PATCH /tasks/{id}`, **montré tout de suite dans le cache** (`withTaskPatch`) puis relu ; un refus 422 (85 %, pratique, quiz) remet l'état d'avant et affiche le message du serveur en alerte au-dessus des vues ; supprimer et ajouter = `PATCH /programs/{id}` ; le refus d'un ajout s'affiche sous le formulaire, la saisie est gardée. Un programme validé reste modifiable (D88 n° 3). Pas de confirmation avant suppression (jamais de `window.confirm`). (4) **Validation et révision d'un brouillon** : « Valider le programme » = `POST /programs/{id}/validate` (202), jamais une reprise de session ; « Demander une révision » = note obligatoire puis `POST /sessions/{id}/resume` avec `{ interrupt_id, value: { action: "revise", note } }` (forme lue par `parse_validation`), proposée seulement quand la session `program_builder` est en attente de la question `validate_program`. La session est relue (`GET /sessions/{id}`) toutes les 2 s tant qu'elle tourne, avec bandeau « Le Stratège met à jour le programme… » et sans boutons ; à chaque changement de statut le programme est relu (nouvelle version et différence `PlanDiff`, ou programme validé). 409 `program_not_waiting` (second « Valider » pendant une révision, session en pause) et 409 `stale_interrupt` : informations qui disent l'état puis **relisent programme et session** ; 422 de validation : erreur en ligne, programme relu. Brouillon dont la session est terminée ou en échec : « Valider » seul (la route valide en ligne). (5) **Leçons et ressources** : une leçon `pending`, `generating` ou `failed` n'ouvre pas le lecteur : « Leçon en préparation » (en attente : début 7 jours avant la semaine ; en écriture : Rédacteur et Vérificateur, la page se relit seule, toutes les 5 s) ; en échec : la raison du serveur et « Une nouvelle tentative aura lieu automatiquement (3 essais au plus) » (relue toutes les 15 s, comme une leçon en attente). Statuts partout : À venir, En préparation, Prête, Nouvelle tentative prévue. Les ressources s'affichent avec type, langue, durée, niveau, auteur, date, raison ; lien externe en nouvel onglet (`noopener noreferrer nofollow`) seulement si l'adresse est `http(s)` ; « Copie locale (PDF) » (`/resources/{id}/file`) sinon fiche de lecture ; « Lue » / « À lire » par `PATCH /resources/{id}`. Bibliothèque : filtres programme, type, langue (fr, en, es, de), statut envoyés au serveur ; états vides distincts (aucune ressource / aucun résultat avec « Effacer les filtres »). (6) **Calendrier à 1 024 px** : les sept colonnes ont une largeur minimale de 8,5 rem dans un conteneur qui défile horizontalement (focalisable) ; vérifié au clavier jusqu'au dimanche. (7) **Hors périmètre** : « Demander au tuteur » (F14, phase 5) et les notifications de fond « Leçon 3 prête » (fil d'activité, phase 8) restent laissés ; les exports PDF et `.ics` sont de simples liens vers `export.pdf` et `export.ics`.
-- **Raison** : (1) D95 n° 1, SPEC 15.1 ; `eslint-plugin-boundaries` interdit l'import entre features, chaque feature relit donc `GET /programs` elle-même (`lessons/hooks/usePrograms`). (2) D88 (la semaine d'une tâche est celle de son jour ; contrat de `TaskOut` et `WeekOut.modules`), `PlanDiffOut` (chaînes). (3) SPEC 3.4, D88, D94 n° 3. (4) D88 n° 5, D86 (point d'arrêt n° 3), D87 (mêmes conflits au choix du parcours). (5) SPEC 3.5 et 3.6, D91 n° 1 et 7 (états de la leçon, relances automatiques, copie locale, routes), D94 n° 4 (liens externes sûrs). (6) à 1 024 px avec la barre latérale, les colonnes de 95 px coupaient les titres lettre à lettre (constaté dans un vrai navigateur). (7) brief 4.15.
+- **Date** 2026-11-12
+- **Subject** Phase 4, task 4.15: Program, Lessons, and Library screens (`program` and `lessons`
+  features)
+- **Decision**
+  1. **Learn navigation**: five entries under Learn (SPEC 15.1): Goals (1), Council (2), Program
+     (3), Lessons (4), Library (5). `/apprendre/programme` opens the most recent program
+     (`GET /programs`, most recent first, replacing redirect), without a program: empty state toward
+     the Council; the “See the program” link from 4.14 (`/apprendre/programme/:id`) is registered.
+     The program and the lesson reader ask for full width (`handle: { wide: true }`).
+  2. **Task placement and conversions**: `toWeekViews(program, budget)` gathers all the tasks of all
+     the modules and places them **by `planned_date`** in the week that carries that day (seven days
+     from Monday); they keep the title of their original module; a week's load is the sum of its
+     days; a day's capacity = `weekday_minutes` (Mon.-Fri.), `weekend_minutes` (Saturday), 0
+     (Sunday, movable but flagged as loaded); cap = `cap_minutes`. An added task goes into the first
+     non-skipped module of the chosen day's week (otherwise of the program). The version difference
+     arrives as “module / task” without an identifier: the title is split at the first “/”, an added
+     task's planned day is re-read from the program, a removed task's is unknown
+     (`plannedDate: null`, nothing is displayed).
+  3. **Calendar touch-ups**: moving or checking a task = `PATCH /tasks/{id}`, **shown at once in the
+     cache** (`withTaskPatch`) then re-read; a 422 refusal (85%, practice, quiz) restores the
+     previous state and displays the server's message as an alert above the views; deleting and
+     adding = `PATCH /programs/{id}`; an addition's refusal is displayed under the form, the input
+     is kept. A validated program stays editable (D88 no. 3). No confirmation before deletion (never
+     `window.confirm`).
+  4. **Validating and revising a draft**: “Validate the program” = `POST /programs/{id}/validate`
+     (202), never a session resume; “Ask for a revision” = mandatory note then
+     `POST /sessions/{id}/resume` with `{ interrupt_id, value: { action: "revise", note } }` (shape
+     read by `parse_validation`), offered only when the `program_builder` session is waiting on the
+     `validate_program` question. The session is re-read (`GET /sessions/{id}`) every 2 s while it
+     runs, with the banner “The Strategist is updating the program…” and without buttons; at each
+     status change the program is re-read (new version and `PlanDiff` difference, or validated
+     program). 409 `program_not_waiting` (second “Validate” during a revision, session paused) and
+     409 `stale_interrupt`: information that states the state then **re-reads program and session**;
+     validation 422: inline error, program re-read. Draft whose session is finished or failed:
+     “Validate” alone (the route validates online).
+  5. **Lessons and resources**: a `pending`, `generating`, or `failed` lesson does not open the
+     reader: “Lesson in preparation” (pending: starts 7 days before the week; writing: Writer and
+     Verifier, the page re-reads itself every 5 s); failed: the server's reason and “A new attempt
+     will happen automatically (3 attempts at most)” (re-read every 15 s, like a pending lesson).
+     Statuses everywhere: Upcoming, In preparation, Ready, New attempt scheduled. Resources are
+     displayed with type, language, duration, level, author, date, reason; external link in a new
+     tab (`noopener noreferrer nofollow`) only if the address is `http(s)`; “Local copy (PDF)”
+     (`/resources/{id}/file`) otherwise reading note; “Read” / “To read” through
+     `PATCH /resources/{id}`. Library: program, type, language (fr, en, es, de), and status filters
+     sent to the server; distinct empty states (no resource / no result with “Clear filters”).
+  6. **Calendar at 1,024 px**: the seven columns have a minimum width of 8.5 rem in a horizontally
+     scrolling (focusable) container; verified by keyboard up to Sunday.
+  7. **Out of scope**: “Ask the tutor” (F14, phase 5) and the background notifications “Lesson 3
+     ready” (activity feed, phase 8) remain left aside; the PDF and `.ics` exports are simple links
+     to `export.pdf` and `export.ics`.
+- **Reason**
+  1. D95 no. 1, SPEC 15.1; `eslint-plugin-boundaries` forbids imports between features, so each
+     feature re-reads `GET /programs` itself (`lessons/hooks/usePrograms`).
+  2. D88 (a task's week is that of its day; contract of `TaskOut` and `WeekOut.modules`),
+     `PlanDiffOut` (strings).
+  3. SPEC 3.4, D88, D94 no. 3.
+  4. D88 no. 5, D86 (stopping point no. 3), D87 (same conflicts at the path choice).
+  5. SPEC 3.5 and 3.6, D91 no. 1 and 7 (lesson states, automatic retries, local copy, routes), D94
+     no. 4 (safe external links).
+  6. At 1,024 px with the sidebar, the 95 px columns cut titles letter by letter (observed in a real
+     browser).
+  7. Brief 4.15.
 
 ## D97
 
-- **Date** : 2026-11-12
-- **Sujet** : Fin de phase 4 : corrections de la revue finale
-- **Décision** : (1) **I1, relance du Stratège** : `POST /proposals/{id}/choose` sur le même ensemble déjà choisi relance `program_builder` (`launching.retry_program`, sous le verrou de l'objectif) quand il n'y a ni programme ni session `program_builder` ouverte ; la réponse rend alors `already_chosen = false`. Date de début : `start_date` de la requête, sinon celle de l'entrée précédente si c'est encore un lundi à venir, sinon le prochain lundi (défaut du Stratège). **Écart au correctif proposé** : il faut aussi que la session du Conseil soit fermée (`completed`, `failed`, `cancelled`) et qu'aucun Conseil ne soit ouvert pour l'objectif ; sinon `finalize` est en cours et lance lui-même, ou un Conseil relancé ne doit pas voir partir un programme tiré de l'ancien lot. Un autre ensemble reste 409 `council_not_waiting`. Lancement commun au port (`start_program`) et à la route : `launching.launch_program`. (2) **I1, relance du Conseil** : `POST /goals/{id}/council` (202, `GoalStarted`), seulement si la dernière session `learning_council` de l'objectif est `failed` (sinon 409 `council_not_failed`, `details.status` = statut de cette session, `null` s'il n'y en a pas) et si aucun programme n'a été lancé (`goal.status` = `council`, sinon 409 `goal_already_chosen`) ; objectif d'un autre : 404 `goal_not_found`. Sous le verrou de l'objectif : cadrage et compte rendu effacés (le Conseil repart du début), nouvelle session lancée puis rangée dans `council_session_id`. Les lots et tableaux de l'ancien Conseil restent en base ; `latest_batch` ne rend plus un lot dont la session n'est pas le Conseil courant de l'objectif (liste vide, puis 409 `proposal_outdated` au choix d'une ancienne proposition) ; les tableaux gardent leur `session_id`. Nouvelle lecture du service des sessions pour les autres features : `session_facts` (statut, entrée). (3) **I2, HTML brut** : le Vérificateur lit avec la configuration du parseur du rendu (`commonmark`, `html: True`, tables ; l'import direct du module de rendu est interdit aux agents) et refuse tout `html_block` ou `html_inline` hors du code, en un seul problème avec le nombre et le début du premier (40 caractères) ; le Rédacteur corrige en révision. Au rendu, un `html_block` devient du texte échappé dans un `<p>` au lieu d'être jeté ; `html_inline` reste retiré (D89) et `nh3` garde le texte inerte. Le test de la page piégée (D89) vérifie désormais qu'aucune balise ni aucun attribut ne porte un piège : le texte échappé peut en citer. (4) **M1** : le brouillon du Scribe, nettoyé, n'est plus reconstruit par Pydantic ; un titre de moins de 3 caractères et un Mermaid refusé deviennent des problèmes, donc une nouvelle demande. (5) **M3** : `start_date` du choix : un lundi, aujourd'hui ou plus tard, sinon 422 `invalid_start_date` avec `details.fields = ["start_date"]`, sans la valeur ; contrôlé avant toute lecture ou écriture. (6) **M4** : problèmes et affirmations non sourcées rendus au Rédacteur en un seul bloc `untrusted(…, "contrôles du Vérificateur")`. (7) **M5** : `markdown_to_html(…, drop_title=True)`, pour le PDF seulement, retire le premier `# Titre` placé avant toute section (la couverture le porte déjà) ; la vue de l'application lit le Markdown tel quel. (8) **M6** : `GET /resources/{id}/file` sert la copie d'un PDF tiers en `attachment`, avec `Content-Security-Policy: sandbox` en plus si un navigateur l'affichait quand même ; le PDF de la leçon reste `inline`. (9) **Course de lecture** (re-relecture de 4.10) : `status.read_with_open_sessions` lit les sessions ouvertes AVANT les lignes de leçon (liste, leçon, programme) : une leçon finie entre les deux lectures est lue prête. Si une leçon paraît alors interrompue, les sessions sont relues après les lignes : une session lancée entre les deux lectures compte comme ouverte. L'économie de D91 n° 4 (sessions lues seulement si une leçon est `generating`) est abandonnée : une petite lecture de plus par requête. `get_lesson` lit la leçon pour connaître son programme, puis la relit après les sessions. (10) **Texte libre trop long des sorties structurées (GLM)** : un champ de prose dont le texte dépasse son plafond est raccourci au lieu d'être refusé (`app.agents.runtime.prose` : type `Prose`, ou `ShortenToMax()` dans une liste) : coupé à la dernière fin de phrase si elle garde au moins 60 % du plafond, sinon entre deux mots suivi de « … » ; journal INFO avec le champ et les longueurs seulement. Le plafond reste dans le schéma JSON envoyé au modèle, min, bornes numériques, listes et énumérations restent refusées et retentées. Champs concernés : bilan et intention du Modérateur (`RoundReview.summary`, `RoundPlan.intent`), raison et résumé de la note de l'Éclaireur, question de cadrage, rôle d'un praticien, promesse, projet final et compromis d'une proposition, objectif, livrable et critère de fin du programme, raison d'une ressource, résumé d'un concept de l'Archiviste. **Jamais** un identifiant, un nom, une requête, une compétence ni du code (Mermaid) : coupés, ils seraient faux. Commun aux trois fournisseurs (validation Pydantic, pas d'appel au fournisseur). `structured_call` journalise en WARNING chaque essai refusé : agent, étape, numéro d'essai, champ et motif de Pydantic, jamais de valeur ni de contenu. Ni budget de tokens ni `reasoning_content` en cause : rien n'est changé côté fournisseur. (11) **Convergence du Vérificateur** : seules les affirmations factuelles de « L'essentiel en 5 lignes », « Explication », « Exemple travaillé » et « Erreurs fréquentes » sont jugées (prompt) ; le Vérificateur ouvre chaque entrée par le passage fautif entre « » (coupes « ... »). Le code situe le plus long fragment cité, normalisé (casse, espaces, ponctuation, mise en forme, cible des liens), dans un paragraphe de la leçon (`verifier.prune`, parseur du rendu) : une affirmation située seulement hors de ces sections (objectifs, prérequis, schémas, exercice, corrigé, sources, auto-évaluation) est écartée de façon déterministe à chaque contrôle ; introuvable, elle reste. La section n'est **pas** demandée au modèle : la position dans le texte est plus sûre que son étiquette, et le schéma `FactReport` reste une liste de phrases. Après la dernière révision (`revisions = MAX_REVISIONS`), s'il ne reste que des affirmations non sourcées (aucun problème déterministe), le code retire lui-même la phrase qui porte chacune (l'élément de liste entier s'il n'en reste rien ; jamais un titre, un bloc de code ni un tableau), sans appel au modèle, puis rejoue `check_lesson` (structure, nombres, 1 200 mots, liens, marqueurs `[n]`, recopie). Leçon publiée si toutes sont situées et si les contrôles tiennent ; sinon échec, avec pour raison « Retrait impossible : n affirmation(s) … introuvable(s) » ou « Retrait de n phrase(s) … impossible : <problème> ». Les révisions précédentes renvoient toujours les affirmations au Rédacteur. Journal : `Leçon élaguée` avec session, module, nombre de phrases retirées et de problèmes ; `Leçon contrôlée` donne aussi le nombre d'affirmations hors périmètre. Nœud pur, rejoué sans effet de bord. Garde-fous (relecture de eed6fb5) : un fragment présent dans plusieurs phrases est introuvable (échec motivé), un fragment de moins de 6 mots doit couvrir au moins 60 % des mots de sa phrase, le découpage ne coupe ni après une abréviation (« p. ex. », « etc. », « cf. », « env. », « M. », « e.g. », « i.e. », « c.-à-d. ») ni devant une minuscule et garde avec sa phrase un `[n]` placé après le point, un élément de liste vidé part avec sa sous-liste mais jamais s'il porte du code (introuvable), et `_converge` revérifie qu'aucun fragment cité ne reste dans le texte, tableaux compris (« Retrait incomplet »). (12) **Session lancée depuis un nœud** : `SessionRunner._launch` crée la tâche d'une session dans un contexte vierge (`contextvars.Context()`) : lancée par le nœud `next` d'une autre (chaîne des leçons, ou la validation dans `program_builder`), elle héritait de la configuration LangChain de sa lanceuse, donc de son `CostTracker`.
-- **Raison** : revue finale back de la phase 4 (I1, I2, M1, M3 à M6) et re-relecture de 4.10 ; SPEC 3.1, 3.4, 3.5, 3.6, 17.2, 17.4 ; D85, D87, D89, D91. (10) contrôle de fin de phase 4 en réel (GLM 5.3 flash) : le Conseil a échoué au bilan du tour 2 (`RoundReview`, 3 essais refusés) et 4 pages sur 10 sont restées sans note ; le diagnostic rejoué (`glm-structured-debug.md`) montre 0 `content` vide sur 29 appels, `finish_reason = stop` partout, mais des résumés de 408 à 611 caractères pour 400 (10 essais sur 11 refusés) et de 601 à 810 pour 600 ; un nouvel essai ne raccourcit que d'environ 10 %. Après correctif : 14 sur 14 réussis au premier essai, deux fois moins d'appels. (11) contrôle de fin de phase 4 en réel : leçon « Environnement et outils » en échec après 2 révisions avec 0 problème déterministe mais 2, 3 puis 2 affirmations non sourcées ; le point de contrôle montre que le Vérificateur relève à chaque passage des phrases différentes, dont deux présentes, inchangées, dans les trois versions et laissées passer deux fois (non-déterminisme), et une ligne d'objectif ; le Rédacteur corrigeait bien ce qu'on lui signalait. Rejoué sur ce cas (`verifier-converge.md`) : dernier contrôle, 1 affirmation dans le périmètre, retirée (1 phrase), objectif écarté, 1 403 mots, 0 problème : la leçon aurait été publiée. SPEC 3.5 (chaque fait vient d'une source) tenue : un retrait n'ajoute aucun fait. (12) même contrôle : `program_builder` a compté les appels des deux leçons de la chaîne (312 224 tokens, appels datés après sa fin), dépassé son plafond de 300 000, et la leçon suivante a échoué à son premier appel (`token_cap_reached`, 0 token).
-- **Compléments du contrôleur** :
-  - (13) **Front, revue finale** (d619792) :
-    - le tableau reste 250 ms en lecture seule, et la dernière scène vue pendant ce délai sert de référence aux retouches ;
-    - un état retouché reste à l'écran quand le Scribe en publie un nouveau ;
-    - le compteur affiche `min(1 + debate_rounds, 8)` tours ;
-    - « Relancer le Conseil » apparaît dans le fil quand la session est `failed`, et les tableaux sont filtrés par `session_id` ;
-    - « Choisir » sert de « Réessayer » quand `already_chosen=false` ;
-    - les Leçons sont relues tant qu'une leçon est en préparation (au plus 20 × 15 s), le lecteur est relu jusqu'au PDF (au plus 24 fois), et le titre n'est affiché qu'une fois ;
-    - le HTML brut d'une leçon est affiché en texte, jamais interprété.
+- **Date** 2026-11-12
+- **Subject** End of phase 4: fixes from the final review
+- **Decision**
+  1. **I1, Strategist relaunch**: `POST /proposals/{id}/choose` on the same set already chosen
+     relaunches `program_builder` (`launching.retry_program`, under the goal's lock) when there is
+     neither a program nor an open `program_builder` session; the response then returns
+     `already_chosen = false`. Start date: the request's `start_date`, otherwise that of the
+     previous input if it is still a future Monday, otherwise the next Monday (the Strategist's
+     default). **Deviation from the proposed fix**: the Council's session must also be closed
+     (`completed`, `failed`, `cancelled`) and no Council must be open for the goal; otherwise
+     `finalize` is in progress and launches by itself, or a relaunched Council must not see a
+     program drawn from the old batch leave. Another set remains 409 `council_not_waiting`. Launch
+     common to the port (`start_program`) and the route: `launching.launch_program`.
+  2. **I1, Council relaunch**: `POST /goals/{id}/council` (202, `GoalStarted`), only if the goal's
+     last `learning_council` session is `failed` (otherwise 409 `council_not_failed`,
+     `details.status` = that session's status, `null` if there is none) and if no program has been
+     launched (`goal.status` = `council`, otherwise 409 `goal_already_chosen`); another user's goal:
+     404 `goal_not_found`. Under the goal's lock: framing and minutes erased (the Council starts
+     again from the beginning), new session launched then stored in `council_session_id`. The old
+     Council's batches and boards stay in the database; `latest_batch` no longer returns a batch
+     whose session is not the goal's current Council (empty list, then 409 `proposal_outdated` when
+     choosing an old proposal); the boards keep their `session_id`. New read of the sessions service
+     for the other features: `session_facts` (status, input).
+  3. **I2, raw HTML**: the Verifier reads with the rendering parser's configuration (`commonmark`,
+     `html: True`, tables; direct import of the rendering module is forbidden to the agents) and
+     refuses any `html_block` or `html_inline` outside code, as a single problem with the count and
+     the start of the first (40 characters); the Writer corrects in revision. At rendering, an
+     `html_block` becomes escaped text in a `<p>` instead of being discarded; `html_inline` remains
+     removed (D89) and `nh3` keeps the text inert. The booby-trapped page test (D89) now checks that
+     no tag or attribute carries a trap: the escaped text may quote them.
+  4. **M1**: the Scribe's draft, once cleaned, is no longer rebuilt by Pydantic; a title of fewer
+     than 3 characters and a refused Mermaid become problems, hence a new request.
+  5. **M3**: the choice's `start_date`: a Monday, today or later, otherwise 422 `invalid_start_date`
+     with `details.fields = ["start_date"]`, without the value; checked before any read or write.
+  6. **M4**: problems and unsourced claims given back to the Writer in a single block
+     `untrusted(…, "Verifier checks")`.
+  7. **M5**: `markdown_to_html(…, drop_title=True)`, for the PDF only, removes the first `# Title`
+     placed before any section (the cover already carries it); the application's view reads the
+     Markdown as is.
+  8. **M6**: `GET /resources/{id}/file` serves a third party's PDF copy as `attachment`, with
+     `Content-Security-Policy: sandbox` in addition in case a browser displayed it anyway; the
+     lesson's PDF stays `inline`.
+  9. **Read race** (re-read of 4.10): `status.read_with_open_sessions` reads the open sessions
+     BEFORE the lesson rows (list, lesson, program): a lesson finished between the two reads is read
+     as ready. If a lesson then looks interrupted, the sessions are re-read after the rows: a
+     session launched between the two reads counts as open. D91 no. 4's economy (sessions read only
+     if a lesson is `generating`) is abandoned: one more small read per request. `get_lesson` reads
+     the lesson to know its program, then re-reads it after the sessions.
+  10. **Free text too long in structured outputs (GLM)**: a prose field whose text exceeds its cap
+     is shortened instead of being refused (`app.agents.runtime.prose`: type `Prose`, or
+     `ShortenToMax()` in a list): cut at the last sentence end if it keeps at least 60% of the cap,
+     otherwise between two words followed by “…”; INFO log with the field and the lengths only. The
+     cap stays in the JSON schema sent to the model, min, numeric bounds, lists, and enumerations
+     remain refused and retried. Fields concerned: the Moderator's review and intent
+     (`RoundReview.summary`, `RoundPlan.intent`), the Scout's note's reason and summary, framing
+     question, a practitioner's role, a proposal's promise, final project, and trade-off, the
+     program's goal, deliverable, and completion criterion, a resource's reason, an Archivist
+     concept's summary. **Never** an identifier, a name, a query, a skill, or code (Mermaid): cut,
+     they would be wrong. Common to the three providers (Pydantic validation, no provider call).
+     `structured_call` logs at WARNING each refused attempt: agent, step, attempt number, field, and
+     Pydantic's reason, never a value or content. Neither token budget nor `reasoning_content` at
+     issue: nothing changes on the provider side.
+  11. **Verifier convergence**: only the factual claims of “L'essentiel en 5 lignes”, “Explication”,
+     “Exemple travaillé”, and “Erreurs fréquentes” are judged (prompt); the Verifier opens each
+     entry with the faulty passage between « » (cuts “...”). The code locates the longest quoted
+     fragment, normalized (case, spaces, punctuation, formatting, link target), in a paragraph of
+     the lesson (`verifier.prune`, rendering parser): a claim located only outside these sections
+     (objectives, prerequisites, diagrams, exercise, solution, sources, self-assessment) is
+     discarded deterministically at each check; not found, it stays. The section is **not**
+     requested from the model: position in the text is safer than its label, and the `FactReport`
+     schema remains a list of sentences. After the last revision (`revisions = MAX_REVISIONS`), if
+     only unsourced claims remain (no deterministic problem), the code itself removes the sentence
+     that carries each one (the whole list item if nothing remains of it; never a title, a code
+     block, or a table), without a model call, then replays `check_lesson` (structure, numbers,
+     1,200 words, links, `[n]` markers, copying). Lesson published if all are located and the checks
+     hold; otherwise failure, with the reason “Removal impossible: n claim(s) … not found” or
+     “Removal of n sentence(s) … impossible: <problem>”. Previous revisions always send the claims
+     back to the Writer. Log: `Lesson pruned` with session, module, number of sentences removed and
+     of problems; `Lesson checked` also gives the number of out-of-scope claims. Pure node, replayed
+     without side effects. Safeguards (re-read of eed6fb5): a fragment present in several sentences
+     is not found (motivated failure), a fragment of fewer than 6 words must cover at least 60% of
+     its sentence's words, the splitting neither cuts after an abbreviation (“p. ex.”, “etc.”,
+     “cf.”, “env.”, “M.”, “e.g.”, “i.e.”, “c.-à-d.”) nor before a lowercase letter and keeps with
+     its sentence a `[n]` placed after the period, an emptied list item leaves with its sublist but
+     never if it carries code (not found), and `_converge` rechecks that no quoted fragment remains
+     in the text, tables included (“Incomplete removal”).
+  12. **Session launched from a node**: `SessionRunner._launch` creates a session's task in a blank
+     context (`contextvars.Context()`): launched by another session's `next` node (the lessons
+     chain, or validation in `program_builder`), it inherited its launcher's LangChain
+     configuration, hence its `CostTracker`.
+- **Reason** Final backend review of phase 4 (I1, I2, M1, M3 to M6) and re-read of 4.10; SPEC 3.1,
+  3.4, 3.5, 3.6, 17.2, 17.4; D85, D87, D89, D91. (10) end-of-phase 4 check in practice (GLM 5.3
+  flash): the Council failed at round 2's review (`RoundReview`, 3 attempts refused) and 4 pages out
+  of 10 stayed unscored; the replayed diagnostic (`glm-structured-debug.md`) shows 0 empty `content`
+  out of 29 calls, `finish_reason = stop` everywhere, but summaries of 408 to 611 characters for 400
+  (10 attempts out of 11 refused) and of 601 to 810 for 600; a new attempt shortens only by about
+  10%. After the fix: 14 out of 14 succeeded at the first attempt, half as many calls. (11)
+  end-of-phase 4 check in practice: lesson “Environment and tools” failed after 2 revisions with 0
+  deterministic problems but 2, 3, then 2 unsourced claims; the checkpoint shows that the Verifier
+  flags different sentences at each pass, including two present, unchanged, in the three versions
+  and let through twice (non-determinism), and one objective line; the Writer did correct what it
+  was told. Replayed on this case (`verifier-converge.md`): last check, 1 claim within scope,
+  removed (1 sentence), objective discarded, 1,403 words, 0 problems: the lesson would have been
+  published. SPEC 3.5 (every fact comes from a source) held: a removal adds no fact. (12) same
+  check: `program_builder` counted the calls of the chain's two lessons (312,224 tokens, calls dated
+  after its end), exceeded its cap of 300,000, and the next lesson failed at its first call
+  (`token_cap_reached`, 0 tokens).
+- **Controller additions**
+  - (13) **Front end, final review** (d619792):
+    - the board stays read-only for 250 ms, and the last scene seen during that delay serves as the
+      reference for touch-ups;
+    - a touched-up state stays on screen when the Scribe publishes a new one;
+    - the counter displays `min(1 + debate_rounds, 8)` rounds;
+    - “Relaunch the Council” appears in the feed when the session is `failed`, and the boards are
+      filtered by `session_id`;
+    - “Choose” serves as “Retry” when `already_chosen=false`;
+    - the Lessons are re-read as long as a lesson is in preparation (20 × 15 s at most), the reader
+      is re-read until the PDF (24 times at most), and the title is displayed only once;
+    - a lesson's raw HTML is displayed as text, never interpreted.
 
-    Détail : `final-fix-front-report.md`.
-  - (14) **Parcours n° 1 et contrôle** (7931523, 1c2ac56) :
-    - Vite de bout en bout sur le port 5180, API sur 8765 ; chaque débatteur attend 1,5 s pour que le message de January arrive au tour 1 ;
-    - planificateur coupé et santé factice sur le serveur e2e, qui n'est lancé que dans un dossier temporaire ou marqué `.tremplin-e2e`, avec `database_url` explicite ;
-    - Chromium par `channel: "chromium"`, car chrome-headless-shell est bloqué par Windows ;
-    - événements lus par WebSocket ;
-    - nombre de tours vérifié entre 2 et `1 + debate_rounds` ;
-    - une leçon `ready` n'est comptée qu'avec son PDF (le PDF est rendu après le commit du statut).
-  - (15) **Contrôle réel sous Docker** (GLM 5.3 flash, SearXNG, Gotenberg, Ollama, Qdrant) :
-    - 1er essai : le Conseil échoue sur des textes trop longs (n° 10) ;
-    - 2e essai : il passe jusqu'à la validation, puis la leçon de semaine 1 échoue faute de convergence du Vérificateur (n° 11) ;
-    - 3e essai : 8 étapes sur 9, puis le délai total de 1 800 s est dépassé pendant la chaîne des leçons, environ 5 min par leçon en série. Vérifié ensuite sur ce programme : les 5 leçons des semaines 1 et 2 sont `ready` (1 615 à 1 972 mots, PDF de 186 à 257 Ko, 4 à 6 ressources), l'export PDF et l'export `.ics` répondent, et le journal du back (7 626 lignes) ne contient ni URL de page, ni texte d'objectif, ni erreur.
-    - Le délai par défaut de `check_phase4` passe à 3 600 s.
-  - (16) **Docker Compose 5.5** construit avec bake, qui exige `--allow=fs.read`, et `COMPOSE_BAKE=false` n'y change rien. Les images sont donc construites par `docker build -t learning_career_platform-{backend,frontend}:latest`, puis la pile démarre par `docker compose up -d --no-build`.
+    Detail: `final-fix-front-report.md`.
+  - (14) **Flow no. 1 and check** (7931523, 1c2ac56):
+    - Vite end to end on port 5180, API on 8765; each debater waits 1.5 s so that January's message
+      arrives at round 1;
+    - scheduler turned off and fake health on the e2e server, which is launched only in a temporary
+      folder or one marked `.tremplin-e2e`, with an explicit `database_url`;
+    - Chromium through `channel: "chromium"`, because chrome-headless-shell is blocked by Windows;
+    - events read through WebSocket;
+    - number of rounds checked between 2 and `1 + debate_rounds`;
+    - a `ready` lesson is counted only with its PDF (the PDF is rendered after the status commit).
+  - (15) **Real check under Docker** (GLM 5.3 flash, SearXNG, Gotenberg, Ollama, Qdrant):
+    - 1st attempt: the Council fails on texts that are too long (no. 10);
+    - 2nd attempt: it passes up to validation, then the week 1 lesson fails for lack of Verifier
+      convergence (no. 11);
+    - 3rd attempt: 8 steps out of 9, then the total timeout of 1,800 s is exceeded during the
+      lessons chain, about 5 min per lesson in series. Verified afterwards on this program: the 5
+      lessons of weeks 1 and 2 are `ready` (1,615 to 1,972 words, PDFs of 186 to 257 KB, 4 to 6
+      resources), the PDF export and the `.ics` export respond, and the backend's log (7,626 lines)
+      contains neither page URL, nor goal text, nor error.
+    - `check_phase4`'s default timeout goes to 3,600 s.
+  - (16) **Docker Compose 5.5** builds with bake, which requires `--allow=fs.read`, and
+    `COMPOSE_BAKE=false` changes nothing. The images are therefore built by
+    `docker build -t learning_career_platform-{backend,frontend}:latest`, then the stack starts with
+    `docker compose up -d --no-build`.
 
 ## D98
 
