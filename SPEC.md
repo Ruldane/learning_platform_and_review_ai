@@ -314,7 +314,7 @@ font sizes. The screen explains that the app's indicators do not represent a uni
 ### 5.4 Applicant tracking system knowledge
 
 Agents use a dated knowledge base refreshed by web research every 30 days. The initial
-findings come from [Huntr's survey](https://huntr.co/blog/how-applicant-tracking-systems-work).
+findings come from [Huntr's survey][huntr-ats].
 
 - An ATS primarily stores and searches applications. Huntr reported that none of the major
   systems studied automatically rejected a CV based on its content alone.
@@ -915,403 +915,480 @@ frontend/
       capture/  settings/  auth/
 ```
 
-## 13. Modèle de données
+## 13. Data model
 
-La base SQLite porte toutes les données métier et le texte source de la mémoire. Qdrant ne contient que les vecteurs et une copie du payload.
+SQLite holds application data and memory source text. Qdrant stores the vectors and a payload copy.
 
-### 13.1 Règles communes
+### 13.1 Shared rules
 
-- Chaque table a `id` (UUID en texte), `user_id`, `created_at`, `updated_at`. Dates en UTC au format ISO.
-- Toute requête d'un repository filtre par `user_id`, même en mode local à un seul utilisateur.
-- Types limités à ceux de SQLite, données souples en colonnes JSON, pour rester compatible avec D1.
-- Le schéma n'évolue que par migrations Alembic.
-- Les fichiers vivent dans `storage/<user_id>/<type>/`. La base ne stocke que leur chemin.
+- Each table has `id` as a text UUID, `user_id`, `created_at`, and `updated_at`. Store
+  timestamps as ISO dates in UTC.
+- Filter every repository query by `user_id`, including in local single-user mode.
+- Use SQLite types and JSON columns for flexible data to stay compatible with D1.
+- Change the schema through Alembic migrations.
+- Store files under `storage/<user_id>/<type>/` and save only their paths in the database.
 
-### 13.2 Comptes et agents
+### 13.2 Accounts and agents
 
-| Table | Contenu |
+| Table | Contents |
 | --- | --- |
-| `users` | Email, nom, identifiant Google, langue |
-| `user_settings` | Disponibilité, langues, niveaux de modèle, guide de style, horaires des tâches |
-| `api_keys` | Fournisseur, clé chiffrée, 4 derniers caractères, date du dernier test |
-| `sessions` | Graphe exécuté, statut (`running`, `waiting_user`, `completed`, `failed`), objet lié, tokens, coût |
-| `session_events` | Session, `seq`, type, agent, payload, horodatage |
-| `llm_calls` | Session, agent, fournisseur, modèle, tokens entrants et sortants, latence, coût |
-| `jobs` | Tâche planifiée, dernier passage, prochain passage, erreur |
+| `users` | Email, name, Google ID, language |
+| `user_settings` | Availability, languages, model tiers, style guide, scheduled times |
+| `api_keys` | Provider, encrypted key, last four characters, last test time |
+| `sessions` | Graph, status, linked object, tokens, cost |
+| `session_events` | Session, `seq`, type, agent, payload, timestamp |
+| `llm_calls` | Session, agent, provider, model, input and output tokens, latency, cost |
+| `jobs` | Scheduled job, last run, next run, error |
 
-### 13.3 Apprentissage
+Session statuses include `running`, `waiting_user`, `completed`, and `failed`.
 
-| Table | Contenu |
+### 13.3 Learning
+
+| Table | Contents |
 | --- | --- |
-| `goals` | Objectif, poste cible, échéance, statut |
-| `proposals` | Parcours proposés pour un objectif, celui qui a été choisi |
-| `boards` | États successifs du tableau : code Mermaid, scène Excalidraw |
-| `programs` | Objectif, version, statut, date de début, heures par semaine |
-| `weeks` | Rang, thème, objectif, charge, livrable |
-| `modules` | Semaine, titre, compétences visées, leçon liée |
-| `tasks` | Module, titre, type, durée, critère de fin, jour planifié, statut |
-| `lessons` | Module, Markdown, chemin du PDF, statut, nombre de mots |
-| `resources` | Module, type, titre, lien, auteur, date, langue, durée, niveau, raison, score, copie locale |
-| `sources` | Pages et personnes repérées : lien, auteur, langue, date, score, résumé |
-| `plan_versions` | Version du programme, diff, raison, date d'acceptation |
-| `study_sessions` | Début, fin, minutes, mode, résumé |
-| `quizzes`, `quiz_questions`, `quiz_attempts` | Quiz par module, questions, tentatives et notes |
-| `flashcards` | Recto, verso, compétence, intervalle, date d'échéance |
-| `projects` | Brief, lien du rendu, statut, évaluation, brouillons générés |
-| `journal_entries` | Type, texte, liens vers session, capture ou quiz |
+| `goals` | Goal, target role, deadline, status |
+| `proposals` | Proposed paths for a goal and the selected path |
+| `boards` | Mermaid and Excalidraw scene for each board state |
+| `programs` | Goal, version, status, start date, weekly hours |
+| `weeks` | Position, theme, goal, workload, deliverable |
+| `modules` | Week, title, target skills, linked lesson |
+| `tasks` | Module, title, type, duration, criterion, planned day, status |
+| `lessons` | Module, Markdown, PDF path, status, word count |
+| `resources` | Module, metadata, link, selection reason and score, local copy |
+| `sources` | Pages and people with URL, author, language, date, score, and summary |
+| `plan_versions` | Program version, diff, reason, approval date |
+| `study_sessions` | Start, end, minutes, mode, summary |
+| `quizzes`, `quiz_questions`, `quiz_attempts` | Module quizzes, questions, attempts, scores |
+| `flashcards` | Front, back, skill, interval, due date |
+| `projects` | Brief, submission URL, status, assessment, drafts |
+| `journal_entries` | Type, text, links to session, capture, or quiz |
 
-### 13.4 Compétences et mémoire
+Resource metadata includes type, title, author, date, language, duration, and level.
 
-| Table | Contenu |
+### 13.4 Skills and memory
+
+| Table | Contents |
 | --- | --- |
-| `skills` | Nom, domaine, synonymes |
-| `skill_edges` | Lien de prérequis entre deux compétences |
-| `user_skills` | Niveau de maîtrise et preuves, par compétence |
-| `skill_snapshots` | Relevé hebdomadaire des niveaux, pour la courbe de progression |
-| `documents` | Fichier importé : nom, type, chemin, statut, hash |
-| `memory_items` | Élément de mémoire : `kind`, titre, texte, tags, auteur, hash |
-| `memory_chunks` | Fragment d'un élément, avec l'identifiant du vecteur dans Qdrant |
-| `memory_writes` | Journal des écritures : agent, session, raison |
+| `skills` | Name, domain, synonyms |
+| `skill_edges` | Prerequisite relationship between skills |
+| `user_skills` | Mastery level and evidence per skill |
+| `skill_snapshots` | Weekly level snapshots for the progress chart |
+| `documents` | Imported file name, type, path, status, hash |
+| `memory_items` | Entry `kind`, title, text, tags, author, hash |
+| `memory_chunks` | Fragment of an entry with its Qdrant vector ID |
+| `memory_writes` | Write log with agent, session, and reason |
 
-### 13.5 Carrière
+### 13.5 Career
 
-| Table | Contenu |
+| Table | Contents |
 | --- | --- |
-| `master_profile` | Profil maître en JSON, versionné |
-| `cv_templates` | Template HTML et CSS, polices, score de ressemblance, statut |
-| `job_postings` | Lien, lien normalisé, entreprise, intitulé, texte figé, analyse structurée |
-| `companies` | Nom normalisé, dossier entreprise, sources, date de rafraîchissement |
-| `cv_reviews` | Offre, session, indicateurs avant et après |
-| `cv_modifications` | Section, avant, après, raison, type, faits du profil cités, statut |
-| `cv_versions` | Offre, template, contenu JSON, chemin du PDF |
-| `applications` | Offre, statut, date, canal, version du CV, prochaine action |
-| `application_events` | Historique daté d'une candidature |
-| `contacts` | Nom, rôle, lien, candidature liée |
-| `reminders` | Type, échéance, statut, brouillon |
-| `kit_items` | Pièce du kit : type, contenu, statut |
-| `interviews` | Mode, durée, échanges, débrief |
-| `committee_runs` | Version du CV, offre, votes, verdict |
-| `radar_runs` | Poste, zone, offres lues, offres bloquées, classement des compétences |
+| `master_profile` | Versioned master profile JSON |
+| `cv_templates` | HTML and CSS template, fonts, similarity score, status |
+| `job_postings` | URL, normalized URL, company, role, saved text, structured analysis |
+| `companies` | Normalized name, dossier, sources, refresh date |
+| `cv_reviews` | Posting, session, before and after indicators |
+| `cv_modifications` | Section, before and after, reason, type, cited profile facts, status |
+| `cv_versions` | Posting, template, JSON content, PDF path |
+| `applications` | Posting, status, date, channel, CV version, next action |
+| `application_events` | Timestamped application history |
+| `contacts` | Name, role, link, related application |
+| `reminders` | Type, due date, status, draft |
+| `kit_items` | Type, content, and status of each kit item |
+| `interviews` | Mode, duration, messages, debrief |
+| `committee_runs` | CV version, posting, votes, verdict |
+| `radar_runs` | Role, region, read and inaccessible postings, skill ranking |
 
-### 13.6 Système
+### 13.6 System
 
-| Table | Contenu |
+| Table | Contents |
 | --- | --- |
-| `briefs` | Brief du jour en JSON |
-| `web_cache` | Page lue : hash du lien, contenu, date |
+| `briefs` | Daily brief JSON |
+| `web_cache` | URL hash, content, and date for each fetched page |
 
-**Index à créer dès la première migration** : `session_events(session_id, seq)`, `tasks(planned_date)`, `flashcards(due_date)`, `job_postings(url_norm)`, `job_postings(company_norm, title)`, `reminders(due_at, status)`.
+The first migration calls for indexes on `session_events(session_id, seq)`,
+`tasks(planned_date)`, `flashcards(due_date)`, `job_postings(url_norm)`,
+`job_postings(company_norm, title)`, and `reminders(due_at, status)`.
 
 ## 14. API
 
-L'API REST vit sous `/api/v1`. Tout parcours long suit le même contrat : un POST crée une session, un WebSocket diffuse ses événements, un POST répond aux interruptions.
+The REST API lives under `/api/v1`. A POST starts a session, a WebSocket streams its
+events, and a POST answers an interrupt.
 
-### 14.1 Contrat des sessions d'agents
+### 14.1 Agent session contract
 
-| Méthode | Chemin | Rôle |
+| Method | Path | Purpose |
 | --- | --- | --- |
-| POST | `/sessions` | Lance un graphe : `{graph, input}`. Renvoie `session_id` en moins de 2 secondes |
-| GET | `/sessions/{id}` | État, dernier `seq`, interruption en attente |
-| WS | `/sessions/{id}/stream?after_seq=N` | Flux des événements de la section 9.5, avec rejeu |
-| POST | `/sessions/{id}/resume` | Répond à une interruption : `{interrupt_id, value}` |
-| POST | `/sessions/{id}/message` | Message de January pendant un débat |
-| POST | `/sessions/{id}/pause`, `/cancel` | Met en pause ou annule |
-| GET | `/sessions?graph=&status=` | Historique |
+| POST | `/sessions` | Start `{graph, input}` and return `session_id` within two seconds |
+| GET | `/sessions/{id}` | Status, latest `seq`, pending interrupt |
+| WS | `/sessions/{id}/stream?after_seq=N` | Stream and replay events from section 9.5 |
+| POST | `/sessions/{id}/resume` | Answer an interrupt with `{interrupt_id, value}` |
+| POST | `/sessions/{id}/message` | Send January's message during a debate |
+| POST | `/sessions/{id}/pause`, `/cancel` | Pause or cancel |
+| GET | `/sessions?graph=&status=` | Session history |
 
-Le WebSocket ne transporte que des événements du serveur vers le client. Toute action de January passe par REST, pour être journalisée.
+WebSockets carry server events to the client. January's actions use logged REST requests.
 
-### 14.2 Endpoints par domaine
+### 14.2 Endpoints by domain
 
-| Domaine | Endpoints |
-| --- | --- |
-| Objectifs et programme | `GET POST /goals`, `GET /goals/{id}/proposals`, `POST /proposals/{id}/choose`, `GET PATCH /programs/{id}`, `POST /programs/{id}/validate`, `GET /programs/{id}/export.pdf`, `GET /programs/{id}/export.ics`, `PATCH /tasks/{id}` |
-| Leçons et ressources | `GET /lessons/{id}`, `GET /lessons/{id}/pdf`, `GET /resources`, `PATCH /resources/{id}` |
-| Étude | `POST PATCH /study-sessions`, `GET /flashcards/due`, `POST /flashcards/{id}/review`, `GET /quizzes/{id}`, `POST /quizzes/{id}/attempts` |
-| Mémoire | `POST GET /documents`, `GET POST PATCH DELETE /memory/items`, `POST /memory/search`, `GET /memory/map`, `GET /memory/stats`, `POST /memory/reindex`, `GET /memory/export`, `POST /capture` |
-| Compétences | `GET /skills/graph`, `GET /skills/{id}`, `GET /skills/compare`, `GET /skills/history` |
-| Profil et CV | `GET PUT /profile`, `GET POST /cv/templates`, `POST /cv/reviews`, `PATCH /cv/modifications/{id}`, `POST /cv/reviews/{id}/generate`, `GET /cv/versions/{id}/pdf` |
-| Offres | `POST /postings` (lien ou texte, renvoie aussi le résultat du contrôle doublon), `GET /postings/{id}`, `GET /postings/{id}/gap` |
-| Candidatures | `GET POST PATCH /applications`, `POST /applications/{id}/events`, `GET /reminders`, `PATCH /reminders/{id}`, `POST GET /applications/{id}/kit`, `GET /applications/{id}/kit.zip`, `POST /applications/{id}/interviews`, `POST /committee` |
-| Radar et projets | `POST /radar/runs`, `GET /radar/latest`, `GET /projects`, `POST /projects/{id}/submit` |
-| Accueil | `GET /brief/today`, `GET /activity`, `GET /journal` |
-| Réglages | `GET PUT /settings`, `GET POST DELETE /settings/api-keys`, `POST /settings/api-keys/{provider}/test`, `GET /settings/models`, `GET /costs` |
-| Connexion | `GET /auth/google/login`, `GET /auth/google/callback`, `POST /auth/logout`, `GET /auth/me` |
-| Santé | `GET /health` : état de la base, de Qdrant, d'Ollama, de SearXNG, de Gotenberg et de chaque fournisseur LLM |
+The initial design groups routes by domain. See the generated contract for current paths and
+schemas. [OpenAPI contract](contracts/openapi.json)
+
+- **Goals and program.** `GET POST /goals`, `GET /goals/{id}/proposals`,
+  `POST /proposals/{id}/choose`, `GET PATCH /programs/{id}`, `POST /programs/{id}/validate`,
+  `GET /programs/{id}/export.pdf`, `GET /programs/{id}/export.ics`, `PATCH /tasks/{id}`.
+- **Lessons and resources.** `GET /lessons/{id}`, `GET /lessons/{id}/pdf`, `GET /resources`,
+  `PATCH /resources/{id}`.
+- **Study.** `POST PATCH /study-sessions`, `GET /flashcards/due`, `POST /flashcards/{id}/review`,
+  `GET /quizzes/{id}`, `POST /quizzes/{id}/attempts`.
+- **Memory.** `POST GET /documents`, `GET POST PATCH DELETE /memory/items`,
+  `POST /memory/search`, `GET /memory/map`, `GET /memory/stats`, `POST /memory/reindex`,
+  `GET /memory/export`, `POST /capture`.
+- **Skills.** `GET /skills/graph`, `GET /skills/{id}`, `GET /skills/compare`,
+  `GET /skills/history`.
+- **Profile and CV.** `GET PUT /profile`, `GET POST /cv/templates`, `POST /cv/reviews`,
+  `PATCH /cv/modifications/{id}`, `POST /cv/reviews/{id}/generate`,
+  `GET /cv/versions/{id}/pdf`.
+- **Postings.** `POST /postings` accepts a URL or text and returns a duplicate check result.
+  Use `GET /postings/{id}` and `GET /postings/{id}/gap` for details.
+- **Applications.** `GET POST PATCH /applications`, `POST /applications/{id}/events`,
+  `GET /reminders`, `PATCH /reminders/{id}`, `POST GET /applications/{id}/kit`,
+  `GET /applications/{id}/kit.zip`, `POST /applications/{id}/interviews`, `POST /committee`.
+- **Radar and projects.** `POST /radar/runs`, `GET /radar/latest`, `GET /projects`,
+  `POST /projects/{id}/submit`.
+- **Home.** `GET /brief/today`, `GET /activity`, `GET /journal`.
+- **Settings.** `GET PUT /settings`, `GET POST DELETE /settings/api-keys`,
+  `POST /settings/api-keys/{provider}/test`, `GET /settings/models`, `GET /costs`.
+- **Sign-in.** `GET /auth/google/login`, `GET /auth/google/callback`, `POST /auth/logout`,
+  `GET /auth/me`.
+- **Health.** `GET /health` checks the database, Qdrant, Ollama, SearXNG, Gotenberg, and model
+  providers.
 
 ### 14.3 Conventions
 
-- JSON en `snake_case`, documentation OpenAPI servie sur `/api/docs`.
-- Erreurs au format `{error: {code, message, details}}`, avec un message lisible en français.
-- Aucune requête HTTP n'attend la fin d'un travail d'agent. Elle renvoie un `session_id`.
-- `POST /postings` est idempotent sur le lien normalisé.
+- Use `snake_case` in JSON and serve OpenAPI documentation at `/api/docs`.
+- Return errors as `{error: {code, message, details}}` with a readable English message.
+- An HTTP request returns a `session_id` while the agent works in the background.
+- `POST /postings` is idempotent by normalized URL.
 
-## 15. Front end
+## 15. Frontend
 
-Une application d'une page en thème clair, avec une navigation latérale de 8 entrées et un champ de capture global.
+A light-theme single-page app with eight sidebar entries and a global capture field.
 
 ### 15.1 Navigation
 
-| Entrée | Écrans |
+| Entry | Screens |
 | --- | --- |
-| Accueil | Brief du matin, actions rapides, fil d'activité |
-| Apprendre | Objectifs, Conseil, Programme, Leçons, Bibliothèque |
-| Étudier | Session guidée, Révisions, Quiz |
-| Compétences | Carte, radar, progression, Portfolio |
-| Carrière | Profil maître, CV (templates, revues, versions), Offres et écarts, Radar |
-| Candidatures | Kanban, fiche, relances, kit, entretiens, comité |
-| Mémoire | Explorateur, carte 2D, banc d'essai, documents |
-| Réglages | Modèles et clés, disponibilité, style, coûts, journal des agents |
+| Home | Morning Brief, quick actions, activity feed |
+| Learn | Goals, Council, Program, Lessons, Library |
+| Study | Guided sessions, reviews, quizzes |
+| Skills | Map, radar chart, progress, Portfolio |
+| Career | Master profile, CV templates, reviews and versions, postings, gaps, Market Radar |
+| Applications | Kanban, record, follow-ups, kits, interviews, hiring panel |
+| Memory | Explorer, 2D map, query preview, documents |
+| Settings | Models and keys, availability, style, costs, agent log |
 
-### 15.2 Écran Conseil
+### 15.2 Council screen
 
-C'est l'écran vitrine. Il sert aussi au comité de recrutement (F19) avec les mêmes composants.
+The Council and hiring panel (F19) share the same components.
 
-- **Barre d'état en haut.** Étape en cours (Cadrage, Recherche, Débat, Propositions, Programme), tour en cours, tokens et coût estimé.
-- **Colonne gauche, 40 % de la largeur.** Le fil du débat. Une bulle par agent avec avatar, nom, rôle et couleur propre. Le texte s'écrit au fil de l'eau.
-- Chaque bulle montre l'activité de l'agent (réfléchit, cherche, écrit) et ses appels d'outils en pastilles dépliables.
-- Les citations sont des pastilles numérotées qui ouvrent la source.
-- **Zone droite, 60 %.** Trois onglets : Tableau, Sources, Propositions.
-- **Bas de page.** Champ de message et boutons Pause, Relancer un tour, Passer aux propositions.
-- Une interruption s'affiche comme une carte dans le fil, avec la question et ses options. Jamais de boîte de dialogue bloquante du navigateur.
-- Les propositions sont des cartes comparables côte à côte : Choisir, Mélanger, Demander un autre tour.
+- **Status bar.** Current stage (goal, research, debate, proposals, program), round, token
+  count, and estimated cost.
+- **Left column, 40%.** Live debate feed with one bubble per agent, its avatar, name, role,
+  and color.
+- Bubbles show agent activity and expandable tool calls.
+- Numbered citations open their sources.
+- **Right column, 60%.** Tabs for the Whiteboard, Sources, and Proposals.
+- **Footer.** Message field and controls to pause, start another round, or move to proposals.
+- An interrupt appears as an inline card with the question and options.
+- Proposal cards sit side by side. January can choose one, merge paths, or request another round.
 
-### 15.3 Composants clés par écran
+### 15.3 Key screen components
 
-| Écran | Composants |
+| Screen | Components |
 | --- | --- |
-| Programme | `WeekCalendar` avec glisser déposer entre les jours, `TaskList`, `PlanDiff` avant et après |
-| Leçon | Lecteur avec sommaire, progression, « Demander au tuteur » sur un passage sélectionné, téléchargement PDF |
-| CV | `MasterProfileForm`, `TemplateCompare` (original et rendu avec curseur), `ReviewDiff` (accepter ou refuser), jauges avant et après, aperçu PDF |
-| Candidatures | Kanban, tiroir de fiche, `ReminderCard` avec bouton Copier, `DuplicateAlert` |
-| Mémoire | Table filtrable, `VectorMap` (nuage de points zoomable), `SearchBench` |
-| Compétences | `SkillGraph`, `SkillRadar`, `ProgressChart` |
-| Partout | `CommandCapture` (Cmd K), `ActivityFeed`, pastille de coût, voyant de santé des services |
+| Program | Drag-and-drop `WeekCalendar`, `TaskList`, and before-and-after `PlanDiff` |
+| Lesson | Reader, contents, progress, passage questions for the Tutor, and PDF download |
+| CV | `MasterProfileForm`, `TemplateCompare`, `ReviewDiff`, indicators, and PDF preview |
+| Applications | Kanban, record drawer, copyable `ReminderCard`, and `DuplicateAlert` |
+| Memory | Filterable table, zoomable `VectorMap`, and `SearchBench` |
+| Skills | `SkillGraph`, `SkillRadar`, and `ProgressChart` |
+| Global | `CommandCapture` (Cmd+K), `ActivityFeed`, cost badge, and health indicator |
+
+The CV comparison slider shows the original and render. The review diff offers approval
+or refusal for each suggestion. Indicators compare the before and after versions.
 
 ### 15.4 Design
 
-- Thème clair uniquement : fond blanc cassé, texte anthracite, une couleur d'accent, pas de mode sombre.
-- Une couleur fixe par agent, reprise dans les bulles, les annotations du tableau et les journaux.
-- Colonne de lecture des leçons limitée à 72 caractères, corps de 18 px.
-- Animations de moins de 300 ms, désactivées si `prefers-reduced-motion` est actif.
-- Contraste AA, navigation au clavier, focus visible, zones de texte en cours d'écriture annoncées aux lecteurs d'écran.
-- Conçu pour un écran de 1 280 px et plus, utilisable à 1 024 px.
-- Chaque écran a un état vide avec une action proposée, un état de chargement et un état d'erreur avec nouvel essai.
-- Une notification discrète signale le travail de fond (« Leçon 3 prête »).
+- Use one light theme with an off-white background, charcoal text, and one accent color.
+- Give each agent a fixed color across bubbles, board annotations, and logs.
+- Keep lesson text at 18 px and its column to 72 characters.
+- Keep animations under 300 ms and disable them with `prefers-reduced-motion`.
+- Meet AA contrast, support keyboard navigation and visible focus, and announce streaming
+  text to screen readers.
+- Design for screens at least 1,280 px wide and keep the app usable at 1,024 px.
+- Each screen has an empty state with an action, a loading state, and an error state with retry.
+- Unobtrusive notifications announce background results, such as “Lesson 3 ready.”
 
-### 15.5 Premier lancement
+### 15.5 First launch
 
-1. Contrôle de santé des services, avec la progression du téléchargement du modèle d'embedding.
-2. Saisie et test d'une clé API.
-3. Import du CV et de l'export LinkedIn (peut être passé).
-4. Réglage de la disponibilité.
-5. Premier objectif, qui lance le Conseil.
+1. Check service health and show the embedding model download progress.
+2. Enter and test an API key.
+3. Import the CV and LinkedIn export, or skip this step.
+4. Set availability.
+5. Enter the first goal to start the Council.
 
-## 16. Docker en local, puis Cloudflare
+## 16. Local Docker and a future Cloudflare deployment
 
-Une commande, `docker compose up`, lance toute la plateforme. Chaque service local a un équivalent Cloudflare identifié, mais la migration comporte des points non vérifiés, listés en 16.4.
+Run `docker compose up` to start Tremplin. Section 16.3 maps local services to potential
+Cloudflare equivalents. Section 16.4 lists checks needed before a migration.
 
 ### 16.1 Services
 
-| Service | Image | Accès | Rôle |
+| Service | Image | Access | Role |
 | --- | --- | --- | --- |
-| `frontend` | Construite depuis `./frontend` | `http://localhost:5173` | Interface |
-| `backend` | Construite depuis `./backend` | `http://localhost:8000` | API, agents, tâches planifiées |
-| `qdrant` | `qdrant/qdrant` | `http://localhost:6333/dashboard` | Vecteurs et tableau de bord |
-| `ollama` | `ollama/ollama` | Réseau interne | Embeddings |
-| `ollama-init` | `ollama/ollama` | S'arrête après usage | Télécharge `bge-m3` au premier démarrage |
-| `searxng` | `searxng/searxng` | Réseau interne | Recherche web |
-| `gotenberg` | `gotenberg/gotenberg:8` | Réseau interne | HTML vers PDF |
+| `frontend` | Built from `./frontend` | `http://localhost:5173` | Interface |
+| `backend` | Built from `./backend` | `http://localhost:8000` | API, agents, scheduled jobs |
+| `qdrant` | `qdrant/qdrant` | `http://localhost:6333/dashboard` | Vectors and dashboard |
+| `ollama` | `ollama/ollama` | Internal network | Embeddings |
+| `ollama-init` | `ollama/ollama` | Exits after setup | Downloads `bge-m3` |
+| `searxng` | `searxng/searxng` | Internal network | Web search |
+| `gotenberg` | `gotenberg/gotenberg:8` | Internal network | HTML to PDF |
 
-- Volumes nommés : `app_data` (SQLite, checkpoints, fichiers, secret), `qdrant_data`, `ollama_data`.
-- Le back end attend que les quatre services répondent avant de se déclarer prêt. `GET /health` détaille l'état de chacun.
-- Un second fichier, `docker-compose.dev.yml`, ajoute le rechargement à chaud des deux côtés.
-- Sur macOS, Docker n'accède pas au GPU. La variable `OLLAMA_BASE_URL` permet de pointer vers un Ollama installé sur la machine.
+- Named volumes include `app_data` for SQLite, checkpoints, files, and the app secret,
+  `qdrant_data`, and `ollama_data`.
+- The backend reports readiness after the four services respond. `GET /health` shows their status.
+- `docker-compose.dev.yml` adds hot reloading for the frontend and backend.
+- On macOS, set `OLLAMA_BASE_URL` to a host Ollama instance to use the machine's GPU.
 
-### 16.2 Racine du dépôt et démarrage
+### 16.2 Repository root and startup
 
 ```text
 tremplin/
   frontend/
-  backend/             # contient aussi infra/searxng/settings.yml
+  backend/             # Includes infra/searxng/settings.yml
   docker-compose.yml
   docker-compose.dev.yml
   .env.example
   README.md
-  SPEC.md              # ce document
+  SPEC.md
 ```
 
 ```bash
-cp .env.example .env     # y coller au moins une clé LLM
+cp .env.example .env     # Add at least one LLM key
 docker compose up -d
-# ouvrir http://localhost:5173
+# Open http://localhost:5173
 ```
 
 ```bash
-# .env.example : seules les clés sont à remplir
+# Model keys are enough for local mode.
 ANTHROPIC_API_KEY=
 OPENAI_API_KEY=
 ZAI_API_KEY=
-BRAVE_API_KEY=            # optionnel
-AUTH_MODE=local           # local ou google
-GOOGLE_CLIENT_ID=         # requis seulement si AUTH_MODE=google
+BRAVE_API_KEY=            # Optional
+AUTH_MODE=local           # local or google
+GOOGLE_CLIENT_ID=         # Required for AUTH_MODE=google
 GOOGLE_CLIENT_SECRET=
 ```
 
-### 16.3 Correspondance avec Cloudflare
+### 16.3 Cloudflare equivalents
 
-| En local | Sur Cloudflare |
+| Local | Cloudflare |
 | --- | --- |
-| FastAPI dans Docker | [Python Workers](https://developers.cloudflare.com/workers/languages/python/), où FastAPI et LangChain figurent parmi les paquets supportés |
+| FastAPI in Docker | [Python Workers][python-workers] |
 | SQLite | D1 |
 | Qdrant | Vectorize |
-| Ollama avec `bge-m3` | Workers AI avec `@cf/baai/bge-m3` |
-| Volume de fichiers | R2 |
-| WebSocket et état des sessions | Durable Objects |
+| Ollama with `bge-m3` | Workers AI with `@cf/baai/bge-m3` |
+| File volume | R2 |
+| WebSockets and session state | Durable Objects |
 | APScheduler | Cron Triggers |
-| Gotenberg | Browser Rendering, ou génération du PDF dans le navigateur |
-| SearXNG | Crédit mensuel Brave, ou SearXNG hébergé ailleurs |
-| Front servi par le conteneur | Workers Static Assets |
+| Gotenberg | Browser Rendering or client-side PDF generation |
+| SearXNG | Brave monthly credit or a separately hosted SearXNG instance |
+| Frontend container | Workers Static Assets |
 
-Ce qui rend la migration abordable : les interfaces de `providers/`, un schéma limité aux types SQLite, le texte comme source de vérité de la mémoire, et le même modèle d'embedding des deux côtés.
+The initial design identifies Python Workers with FastAPI and LangChain as the backend target.
+Provider interfaces, a SQLite-compatible schema, source text for memory, and a shared embedding
+model make the migration manageable.
 
-### 16.4 Points à tester avant de migrer
+### 16.4 Checks before migrating
 
-Aucun de ces points n'a été vérifié. Ils sont à tester dans une phase dédiée, après le MVP local.
+After the local MVP, verify the following in a dedicated phase.
 
-1. LangGraph et son checkpointer sur Python Workers. Le code y tourne en WebAssembly, et un paquet qui dépend d'extensions natives peut ne pas s'installer.
-2. Le temps CPU par requête du plan gratuit, face au démarrage de Python et à l'import de LangChain.
-3. `pdfplumber`, `pypdfium2` et `trafilatura` en WebAssembly. Repli : déplacer la lecture de PDF dans le navigateur.
-4. La capacité gratuite de Vectorize, environ 4 880 fragments à 1 024 dimensions.
-5. Le quota gratuit quotidien de Workers AI pour les embeddings.
-6. La durée des graphes longs (leçons, radar) face aux limites d'une requête.
+1. LangGraph and its checkpointer on Python Workers. WebAssembly can limit native extensions.
+2. CPU time for Python startup and LangChain imports within free-plan request limits.
+3. `pdfplumber`, `pypdfium2`, and `trafilatura` in WebAssembly. PDF reading could move to the
+   browser if needed.
+4. The free Vectorize capacity, estimated at 4,880 chunks at 1,024 dimensions in the design.
+5. The daily Workers AI embedding quota.
+6. Long-running lesson and radar graphs within request duration limits.
 
-**Repli global** si Python Workers bloque : garder Cloudflare pour le front, D1, Vectorize et R2, et héberger le conteneur du back end ailleurs.
+If Python Workers cannot host the backend, keep the frontend, D1, Vectorize, and R2 on
+Cloudflare and host the backend container separately.
 
-## 17. Connexion Google, sécurité et confidentialité (F7)
+## 17. Google sign-in, security, and privacy (F7)
 
-En local, l'application démarre sans page de connexion, avec un utilisateur unique. La connexion Google s'active par une variable d'environnement, sans changement de code.
+Local mode starts with a single user and opens directly. An environment variable enables Google
+sign-in.
 
-### 17.1 Deux modes
+### 17.1 Authentication modes
 
-| Mode | Comportement |
+| Mode | Behavior |
 | --- | --- |
-| `AUTH_MODE=local` (défaut) | Un utilisateur `local` est créé au premier démarrage. Aucune connexion demandée |
-| `AUTH_MODE=google` | Connexion Google en OAuth 2.0 (code d'autorisation avec PKCE), portées `openid email profile`, un espace par utilisateur |
+| `AUTH_MODE=local` (default) | Creates one `local` user on first launch and opens the workspace |
+| `AUTH_MODE=google` | Gives each user a workspace after Google sign-in |
 
-- Session par cookie `HttpOnly` et `SameSite=Lax`, valable 30 jours.
-- Adresse de retour : `http://localhost:8000/api/v1/auth/google/callback`.
-- Au premier passage en mode Google, le compte qui se connecte peut reprendre les données de l'utilisateur `local`.
-- La variable `ALLOWED_EMAILS` limite les comptes autorisés : liste d'adresses séparées par des virgules (minuscules, espaces ignorés) ; `*` laisse entrer tous les comptes ; en mode Google, vide, le back refuse de démarrer. La reprise des données de l'utilisateur `local` n'est proposée qu'à une adresse nommée dans une liste explicite, jamais avec `*`.
-- Ce mode demande de créer un client OAuth dans la console Google. C'est la seule configuration au delà des clés API, d'où sa désactivation par défaut. Le README décrit les étapes.
+- Google sign-in uses OAuth 2.0 authorization code with PKCE and `openid email profile` scopes.
+- The session cookie uses `HttpOnly` and `SameSite=Lax` and lasts 30 days.
+- The callback is `http://localhost:8000/api/v1/auth/google/callback`.
+- An eligible account can claim the `local` user's data at the first switch to Google mode.
+- `ALLOWED_EMAILS` accepts comma-separated email addresses, lowercased and trimmed. A value
+  of `*` permits any account. An empty list prevents the backend from starting in Google mode.
+  Claiming local data requires an account named in an explicit list.
+- Google mode requires an OAuth client in the Google console. See the [setup guide](README.md).
 
-### 17.2 Isolation et secrets
+### 17.2 Isolation and secrets
 
-- `user_id` sur chaque ligne, filtre `user_id` dans Qdrant, dossier de fichiers par utilisateur.
-- Un test par routeur vérifie qu'un utilisateur ne lit jamais les données d'un autre.
-- Clés API chiffrées en base, jamais journalisées, jamais renvoyées au navigateur.
-- Les journaux citent des identifiants, pas le contenu des CV ni des documents.
+- Each row has `user_id`. Filter Qdrant by `user_id` and store files per user.
+- Test each router for cross-account isolation.
+- Encrypt API keys in the database. Keep the full key out of logs and browser responses.
+- Log IDs and omit CV and document content.
 
-### 17.3 Ce qui sort de la machine
+### 17.3 Data sent outside the computer
 
-| Donnée | Destination |
+| Data | Destination |
 | --- | --- |
-| Prompts, qui peuvent contenir le CV et le profil | Le fournisseur LLM choisi |
-| Requêtes de recherche | Les moteurs interrogés par SearXNG |
-| Tout le reste (base, vecteurs, fichiers, embeddings) | Reste en local |
+| Prompts, which can contain CV and profile content | Selected LLM provider |
+| Search queries | Search engines used by SearXNG |
+| Database, vectors, files, and embeddings | Local machine |
 
-- L'écran de premier lancement l'explique en clair.
-- L'outil de recherche retire nom, email et téléphone des requêtes avant envoi.
-- Les contacts enregistrés se limitent au nom, au rôle et à un lien public.
-- Deux boutons dans les réglages : Exporter toutes mes données, Tout supprimer.
+- First-run setup explains these destinations.
+- The search tool strips names, email addresses, and phone numbers before sending queries.
+- Saved contacts include only name, role, and a public link.
+- Settings provides data export and deletion controls.
 
-### 17.4 Sécurité applicative
+### 17.4 Application security
 
-- **Contenu non fiable.** Les pages web et les documents importés sont traités comme des données. Les prompts les encadrent par des délimiteurs et interdisent de suivre une instruction trouvée dedans.
-- Les agents n'ont que les outils de la section 9 : pas d'accès au système de fichiers ni à un terminal.
-- Le lecteur de pages refuse les adresses privées et tout protocole autre que HTTP et HTTPS.
-- Le HTML envoyé à Gotenberg est nettoyé de tout script.
-- Import de fichiers limité à 20 Mo, avec une liste de types autorisés.
-- CORS limité à l'origine du front.
-- L'application n'envoie jamais de candidature ni de message à la place de January.
+- **Untrusted content.** Prompts delimit web pages and imported documents and instruct agents
+  to treat the contents as data.
+- Agents use the tools in section 9. They have no general filesystem or terminal access.
+- The page reader allows HTTP and HTTPS public addresses only.
+- Remove scripts from HTML sent to Gotenberg.
+- Limit imports to 20 MB and allowlisted file types.
+- Restrict CORS to the frontend origin.
+- January sends her own applications and messages.
 
-## 18. Plan de construction et critères d'acceptation
+## 18. Implementation plan and acceptance criteria
 
-Les 19 features sont dans le MVP, construites en 10 phases. Chaque phase se termine par une application qui démarre et un contrôle précis.
+The MVP covers all 19 features in ten phases. Each phase ends with a working application
+and an acceptance check.
 
 ### 18.1 Phases
 
-| Phase | Contenu | Terminée quand |
-| --- | --- | --- |
-| 0. Socle | Dépôt, Docker Compose, santé des services, SQLite et Alembic, réglages, clés API, fabrique LLM pour les 3 fournisseurs, contrôles de qualité | `docker compose up` donne `/health` au vert, et le test de clé réussit depuis les Réglages |
-| 1. Moteur d'agents | Exécution LangGraph, checkpointer, bus d'événements, WebSocket avec rejeu, interruptions, journal des coûts, graphe de démonstration à 2 agents | Le débat de démonstration s'affiche en direct, s'arrête sur une question, et reprend après un redémarrage du back end |
-| 2. Mémoire (F3) | Embeddings, Qdrant, ingestion, outils mémoire, explorateur | Un PDF importé se retrouve par recherche, et une écriture d'agent s'affiche avec son auteur |
-| 3. Recherche web | SearXNG, lecteur de pages, cache, notation des sources | Une requête renvoie des sources notées et lues, et une page illisible est signalée |
-| 4. Conseil et programme (F1, F2) | Graphe du conseil, tableau, propositions, programme, calendrier, leçons, PDF, ressources | Un objectif mène à un programme validé avec les leçons PDF de 2 semaines |
-| 5. Étude (F9, F13, F14, F15, F18) | Quiz, fiches, session guidée, carte de compétences, replanification, capture, journal | Une session guidée complète met à jour la carte et le planning |
-| 6. CV (F4, F8) | Profil maître, capture du design, revue, génération, analyse d'écart | Une offre collée donne un CV ciblé en PDF dans le design d'origine |
-| 7. Candidatures (F5, F10, F16, F19) | Suivi, relances, alerte doublon, kit, comité, entretien | Le cycle complet d'une candidature fonctionne, alerte doublon comprise |
-| 8. Quotidien (F11, F12, F17) | Radar, brief, projets preuves, fil d'activité, tâches planifiées | Le brief du jour se génère seul et reprend toutes les rubriques |
-| 9. Finitions (F6 avancé, F7) | Connexion Google, export et suppression, premier lancement, tests de bout en bout, README | Les 3 parcours de bout en bout passent |
+- **Phase 0, Foundation.** Set up the repository, Compose, service health, SQLite and Alembic,
+  settings, API keys, the three-provider model factory, and quality checks. After
+  `docker compose up`, `/health` is healthy and the key test in Settings succeeds.
+- **Phase 1, Agent runtime.** Add LangGraph execution, checkpointing, events, WebSocket replay,
+  interrupts, cost logging, and a two-agent demo. The demo debate streams live, pauses for
+  a question, and resumes after a backend restart.
+- **Phase 2, Memory (F3).** Add embeddings, Qdrant, ingestion, memory tools, and exploration.
+  Search finds an imported PDF and the explorer displays an agent write with its author.
+- **Phase 3, Web search.** Add SearXNG, page extraction, caching, and source scoring.
+  A query returns scored sources that were read and identifies unreadable pages.
+- **Phase 4, Council and program (F1, F2).** Add the Council graph, whiteboard, proposals,
+  program, calendar, lessons, PDFs, and resources. A goal yields an approved program with
+  two weeks of lesson PDFs.
+- **Phase 5, Study (F9, F13, F14, F15, F18).** Add quizzes, flashcards, guided study, the skill
+  map, replanning, capture, and journal. A complete guided session updates skills and the plan.
+- **Phase 6, CV (F4, F8).** Add the master profile, capture, review, PDF generation, and skill
+  gap assessment. A pasted posting yields a tailored CV PDF with the original design.
+- **Phase 7, Applications (F5, F10, F16, F19).** Add tracking, follow-ups, duplicate alerts,
+  kits, panels, and interviews. The full application cycle works, including duplicate alerts.
+- **Phase 8, Daily workflow (F11, F12, F17).** Add Radar, the brief, projects, activity, and
+  scheduled jobs. Today's brief runs automatically and contains every section.
+- **Phase 9, Finishing (advanced F6, F7).** Add Google sign-in, export and deletion, onboarding,
+  end-to-end tests, and the README. The three original end-to-end flows pass.
 
-### 18.2 Consignes pour Claude Code
+### 18.2 Implementation instructions
 
-- Lire toute la spec avant de coder, puis avancer phase par phase. À la fin de chaque phase : tests, contrôle de la phase, commit.
-- Ne rien ajouter hors spec.
-- Si une bibliothèque se comporte autrement que décrit ici, suivre sa documentation officielle actuelle et noter l'écart dans `DECISIONS.md`.
-- À vérifier dans la documentation au moment de coder : identifiants de modèles, API de streaming de LangGraph, API des paquets Excalidraw, routes de Gotenberg, adresse de l'API Z.ai.
-- Respecter les règles de découpage de la section 12.2 dès le premier fichier.
-- Tests écrits avec chaque feature : unitaires sur les services, un test d'API par routeur, 3 parcours de bout en bout (conseil complet, revue de CV complète, cycle de candidature avec doublon et relance).
-- Dans les tests, les appels LLM passent par un faux fournisseur déterministe. Aucun test ne dépense de tokens.
+- Read the entire specification and work phase by phase. At each phase end, run tests,
+  check the acceptance criteria, and commit.
+- Keep changes within the specification.
+- If a library behaves differently from the design, follow its current official documentation
+  and record the change in `DECISIONS.md`.
+- At implementation time verify model IDs, LangGraph streaming, Excalidraw APIs, Gotenberg
+  routes, and the Z.ai API URL.
+- Follow the source organization rules in section 12.2 from the first file.
+- Add service unit tests and an API test per router. The three initial end-to-end flows cover
+  the Council, CV review, and application cycle with duplicate alerts and follow-ups.
+- Use a deterministic fake model provider in tests.
 
-### 18.3 Critères d'acceptation par feature
+### 18.3 Feature acceptance criteria
 
-| Feature | Acceptée quand |
-| --- | --- |
-| F1 | Un objectif produit un débat visible de 4 agents sur 3 tours, au moins 8 sources notées, un tableau qui se dessine, et 2 à 3 propositions. Un message envoyé pendant le débat est repris au tour suivant |
-| F2 | Chaque semaine a thème, objectif, livrable et tâches datées, sans dépasser 85 % du budget. Chaque module des 2 premières semaines a sa leçon PDF et 3 à 6 ressources dont les liens répondent |
-| F3 | Un PDF importé se retrouve par recherche sémantique. Une écriture d'agent apparaît avec auteur et raison. Un sujet acquis est sauté dans un nouveau programme |
-| F4 | Chaque modification a avant, après, raison et fait source. Aucune modification acceptée ne contient un fait absent du profil maître. Le PDF garde son nombre de pages et son texte est sélectionnable |
-| F5 | Ajouter une offre déjà postulée déclenche l'alerte avec la date. Une candidature de 7 jours sans réponse fait apparaître une relance avec brouillon |
-| F6 | Passer le niveau `fort` d'Anthropic à GLM change le modèle dès la session suivante, visible dans `llm_calls`. Une clé invalide est signalée par le test |
-| F7 | En mode Google, deux comptes ne voient jamais les données l'un de l'autre |
-| F8 | Une offre produit un score de match et un tableau d'écarts. « Ajouter au planning » crée une proposition de replanification |
-| F9 | Un quiz réussi à 80 % fait passer l'acquis à `valide`. Une fiche ratée revient le lendemain |
-| F10 | Un entretien de 15 minutes pose des questions liées à l'offre et produit un débrief noté |
-| F11 | Un projet validé génère les 4 brouillons et fait passer l'acquis à `prouve` |
-| F12 | Le relevé indique les offres lues et bloquées, et classe les compétences par fréquence |
-| F13 | Après une semaine à moitié faite, le bilan propose un plan qui respecte le budget, avec l'avant et l'après |
-| F14 | Une session guidée enregistre le temps, coche les tâches et crée des fiches depuis les erreurs |
-| F15 | La carte reflète un changement de niveau en moins d'une minute et montre les preuves au clic |
-| F16 | Le kit produit les 7 pièces, toutes modifiables, et l'archive se télécharge |
-| F17 | Le brief du jour existe à l'ouverture et liste bloc, révisions, relances et offres |
-| F18 | Un lien capturé devient un élément de mémoire résumé. Un lien illisible est signalé immédiatement |
-| F19 | Le comité rend 4 votes motivés et 3 changements prioritaires. Une seconde exécution après modification montre l'écart |
+- **F1.** A goal produces a visible three-round debate among four agents, at least eight
+  scored sources, an animated board, and two or three proposals. The next round addresses
+  messages sent during the debate.
+- **F2.** Each week has a theme, goal, deliverable, and dated tasks within 85% of the budget.
+  Each module in the first two weeks has a lesson PDF and three to six working resource links.
+- **F3.** Semantic search finds an imported PDF. Agent writes show author and reason. A new
+  program can skip a topic already learned.
+- **F4.** Each change has before and after text, a reason, and a master profile fact.
+  Accepted changes are grounded in the profile. The PDF preserves page count and selectable text.
+- **F5.** A previously applied-to posting triggers an alert with the date. A week without a
+  reply produces a follow-up draft.
+- **F6.** Switching Strong from Anthropic to GLM changes the next session's model in
+  `llm_calls`. A key test reports an invalid key.
+- **F7.** Google accounts see only their own data.
+- **F8.** A posting produces a match score and gap table. Adding a gap to the schedule
+  creates a replanning proposal.
+- **F9.** A quiz score of 80% moves the skill to `validated`. A missed flashcard returns
+  the following day.
+- **F10.** A 15-minute interview asks posting-related questions and yields a scored debrief.
+- **F11.** An approved project produces four drafts and moves the skill to `proven`.
+- **F12.** The report counts read and blocked postings and ranks skills by frequency.
+- **F13.** After a half-completed week, the review proposes a plan within the budget and
+  shows before and after.
+- **F14.** Guided study records time, checks off tasks, and creates flashcards from mistakes.
+- **F15.** The map reflects a level change within a minute. Clicking a skill shows its evidence.
+- **F16.** The kit produces seven editable items and a downloadable archive.
+- **F17.** Today's brief is available on open with the study block, reviews, follow-ups, and
+  postings.
+- **F18.** A captured URL becomes a summarized memory entry. The app immediately flags
+  unreadable URLs.
+- **F19.** The panel gives four votes with reasons and three priority changes. Running it
+  again after edits shows the difference.
 
-**Critères transverses**
+**Criteria across features**
 
-- Avec une seule clé LLM dans `.env`, `docker compose up` suffit. Aucune autre configuration.
-- Aucun fichier ne dépasse 300 lignes.
-- Une session en cours survit à `docker compose restart backend`.
-- Chaque appel LLM est journalisé avec son coût estimé.
-- Aucun texte généré au nom de January ne contient un fait absent du profil maître ou de la mémoire.
+- One model key in `.env` and `docker compose up` are enough to start locally.
+- Source files stay within 300 lines.
+- A running session survives `docker compose restart backend`.
+- Every LLM call is logged with its estimated cost.
+- Text written on January's behalf draws facts from the master profile or memory.
 
 ## 19. Sources
 
-Faits techniques relevés le 11 novembre 2026, à revérifier dans la documentation au moment de coder.
+The original design recorded these technical references on November 11, 2026.
+Check the docs at implementation time.
 
-**Pages consultées**
+**Pages consulted**
 
-- Tarifs et plan gratuit de Vectorize : [Cloudflare Docs, Vectorize pricing](https://developers.cloudflare.com/vectorize/platform/pricing/)
-- Python sur Workers, paquets FastAPI et LangChain : [Cloudflare Docs, Python Workers](https://developers.cloudflare.com/workers/languages/python/)
-- Interruptions, checkpointer et reprise dans LangGraph : [LangChain Docs, Interrupts](https://docs.langchain.com/oss/python/langgraph/interrupts)
-- SearXNG avec LangChain et activation du format JSON : [LangChain Docs, SearxNG](https://docs.langchain.com/oss/python/integrations/providers/searx)
-- Fin du plan gratuit de Brave Search API : [Implicator](https://www.implicator.ai/brave-drops-free-search-api-tier-puts-all-developers-on-metered-billing/)
-- Conversion de Mermaid en éléments Excalidraw : [Excalidraw Docs, mermaid to excalidraw](https://plus.excalidraw.com/docs/mermaid-to-excalidraw/api)
-- Fonctionnement réel des logiciels de recrutement : [Huntr](https://huntr.co/blog/how-applicant-tracking-systems-work)
+- Free allowance and paid plans. [Vectorize pricing][vectorize-pricing]
+- Python Workers and support for FastAPI and LangChain. [Cloudflare Python Workers][python-workers]
+- LangGraph interrupts, checkpointing, and resume. [LangGraph interrupts][langgraph-interrupts]
+- SearXNG with LangChain and JSON output. [LangChain SearXNG docs][langchain-searxng]
+- Changes to the Brave Search API free tier. [Implicator][brave-api-report]
+- Mermaid conversion to Excalidraw. [Excalidraw conversion API][excalidraw-conversion]
+- Applicant tracking system behavior. [Huntr survey][huntr-ats]
 
-**Repéré par recherche, sans ouvrir la page d'origine**
+**Findings from search results**
 
-- Licence Apache 2.0 et tableau de bord intégré de [Qdrant](https://github.com/qdrant/qdrant).
-- Routes Chromium de [Gotenberg](https://github.com/gotenberg/gotenberg) pour convertir du HTML en PDF.
-- Adresse de l'API Z.ai compatible OpenAI.
-- Caractéristiques de `bge-m3` : 1 024 dimensions, plus de 100 langues, disponible dans Ollama et Workers AI.
+- Apache 2.0 license and built-in dashboard. [Qdrant]
+- Chromium routes for HTML-to-PDF conversion. [Gotenberg]
+- Z.ai's OpenAI-compatible API URL.
+- `bge-m3` uses 1,024 dimensions and supports over 100 languages on Ollama and Workers AI.
+
+[python-workers]: https://developers.cloudflare.com/workers/languages/python/
+[langchain-searxng]: https://docs.langchain.com/oss/python/integrations/providers/searx
+[brave-api-report]:
+  https://www.implicator.ai/brave-drops-free-search-api-tier-puts-all-developers-on-metered-billing/
+[excalidraw-conversion]: https://plus.excalidraw.com/docs/mermaid-to-excalidraw/api
+[huntr-ats]: https://huntr.co/blog/how-applicant-tracking-systems-work

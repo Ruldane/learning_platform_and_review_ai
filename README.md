@@ -43,6 +43,10 @@ link or paste its text, compare its requirements with your profile, then prepare
 targeted application and practice for interviews. Tremplin keeps the original profile
 and application work in your workspace so you can revisit them as your goals change.
 
+On the postings page, **Ask about offers** opens your saved chats. Ask when a posting
+was added, whether you applied, who you have saved as a contact, or which skills to
+work on. The assistant uses the data in your Tremplin workspace.
+
 ```mermaid
 flowchart LR
     Resume["Résumé or LinkedIn profile"] --> Profile["Master profile"]
