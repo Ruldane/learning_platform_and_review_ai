@@ -194,7 +194,7 @@ class QuizStore(Protocol):
 
 
 def quiz_unavailable() -> AppError:
-    return AppError("quiz_unavailable", "Les quiz ne sont pas branchés sur ce moteur.", 503)
+    return AppError("quiz_unavailable", "Quizzes are unavailable in this runtime.", 503)
 
 
 class _NoQuiz:

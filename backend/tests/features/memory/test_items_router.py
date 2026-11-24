@@ -40,7 +40,7 @@ async def test_items_crud_roundtrip(client: httpx.AsyncClient) -> None:
 
     found = (await client.post(SEARCH, json={"query": "scripts API"})).json()
     assert [h["item_id"] for h in found["hits"]] == [created["id"]]
-    assert found["agent_text"].startswith("Mémoire — 1 fragment(s) pour « scripts API » :")
+    assert found["agent_text"].startswith('Memory — 1 chunk(s) for "scripts API":')
 
     assert (await client.delete(f"{API}/{created['id']}")).status_code == 204
     gone = await client.get(f"{API}/{created['id']}")

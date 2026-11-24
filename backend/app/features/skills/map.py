@@ -59,7 +59,7 @@ _EVIDENCE_PAGES: dict[EvidenceKind, str] = {
 
 
 def skill_not_found() -> AppError:
-    return AppError("skill_not_found", "Compétence introuvable.", 404)
+    return AppError("skill_not_found", "Skill not found.", 404)
 
 
 def _demand(demand: dict[str, float], skill: Skill) -> float | None:

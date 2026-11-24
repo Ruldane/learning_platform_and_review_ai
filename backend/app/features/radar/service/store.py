@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 
 def read_limit() -> AppError:
     return AppError(
-        "radar_read_limit", f"Un relevé lit {MAX_READS} pages au plus : plafond atteint.", 409
+        "radar_read_limit", f"This Radar run has reached its limit of {MAX_READS} pages.", 409
     )
 
 

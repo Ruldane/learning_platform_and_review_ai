@@ -70,7 +70,7 @@ async def test_compare_posting_requires_id(
     r = await client.get(f"{API}/skills/compare", params={"target": "posting"})
     assert r.status_code == 422 and r.json()["error"] == {
         "code": "posting_id_required",
-        "message": "Choisis l'offre à comparer.",
+        "message": "Choose the posting to compare.",
         "details": {"fields": ["posting_id"]},
     }
     secret = "offre-secrete-" + "x" * 80

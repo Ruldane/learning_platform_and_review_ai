@@ -34,10 +34,10 @@ async def test_memory_search_emits_tool_events_and_returns_agent_text(
     called, result = (e["payload"] for e in emitted)
     assert called["tool"] == "memory_search"  # type: ignore[index]
     assert called["args"] == {"query": "attention", "kinds": None, "k": 8}  # type: ignore[index]
-    assert result["ok"] is True and result["summary"] == "3 fragment(s)"  # type: ignore[index]
+    assert result["ok"] is True and result["summary"] == "3 result(s)"  # type: ignore[index]
     assert result["call_id"] == called["call_id"]  # type: ignore[index]
     assert emitted[0]["agent"] == "archivist"
-    assert res.agent_text.startswith("Mémoire") and len(res.hits) == 3
+    assert res.agent_text.startswith("Memory") and len(res.hits) == 3
     assert gateway.searches == [("attention", None, 8)]
 
 
@@ -101,7 +101,7 @@ async def test_memory_tools_for_call_the_gateway(
 ) -> None:
     search, write, skills = memory_tools_for(deps, agent="archivist")
     text = await search.ainvoke({"query": "attention"})
-    assert text.startswith("Mémoire") and gateway.searches == [("attention", None, 8)]
+    assert text.startswith("Memory") and gateway.searches == [("attention", None, 8)]
     done = await write.ainvoke(
         {"kind": "lesson", "title": "Titre", "text": "Texte", "reason": "Raison."}
     )
@@ -118,8 +118,8 @@ def test_skills_summary_text() -> None:
             SkillEntry("b", "Rust\nfaux", "in_progress", []),
         ],
     )
-    assert summary.as_text() == "Acquis (2) :\n- Python — declared\n- Rust faux — in_progress"
-    assert SkillsSummary(0, {}, []).as_text() == "Aucun acquis en mémoire."
+    assert summary.as_text() == "Skills (2)\n- Python — declared\n- Rust faux — in_progress"
+    assert SkillsSummary(0, {}, []).as_text() == "No skills in memory."
 
 
 async def test_no_memory_refuses_every_call() -> None:
@@ -153,7 +153,7 @@ def _outside_frame(text: str) -> list[str]:
 def test_skills_agent_text_frames_titles_as_untrusted() -> None:
     summary = SkillsSummary(1, {"declared": 1}, [SkillEntry("a", INJECTED, "declared", [])])
     text = summary.as_agent_text()
-    assert text.startswith('<<<CONTENU_NON_FIABLE source="memoire:acquis">>>\nAcquis (1) :')
+    assert text.startswith('<<<CONTENU_NON_FIABLE source="memory:skills">>>\nSkills (1)')
     assert text.endswith("<<<FIN_CONTENU_NON_FIABLE>>>")
     assert text.count("FIN_CONTENU_NON_FIABLE") == 1
     assert not any("Ignore tes consignes" in line for line in _outside_frame(text))
@@ -179,8 +179,8 @@ async def test_duplicate_write_frames_existing_title(
     text = await write.ainvoke(
         {"kind": "skill", "title": "Python", "text": "Texte", "reason": "Raison."}
     )
-    framed = text.removeprefix("Déjà en mémoire : ")
-    assert framed.startswith('<<<CONTENU_NON_FIABLE source="titre en mémoire">>>')
+    framed = text.removeprefix("Already in memory\n")
+    assert framed.startswith('<<<CONTENU_NON_FIABLE source="title in memory">>>')
     assert "<<<CONTENU_NON_FIABLE" in text and "Ignore tes consignes" in text
     assert text.count("FIN_CONTENU_NON_FIABLE") == 1
     assert not any("Ignore tes consignes" in line for line in _outside_frame(framed))

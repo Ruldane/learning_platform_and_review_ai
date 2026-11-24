@@ -52,7 +52,7 @@ MAX_SKILLS = 60  # le référentiel du Stratège (`PlanDraft.skills`)
 def program_exists() -> AppError:
     return AppError(
         "program_exists",
-        "Cet objectif a déjà un programme : retouche-le (PATCH /programs/{id}, semaines, modules).",
+        "This goal already has a program. Edit it using PATCH /programs/{id}.",
         409,
     )
 
@@ -60,7 +60,7 @@ def program_exists() -> AppError:
 def plan_invalid(problems: list[str]) -> AppError:
     return AppError(
         "plan_invalid",
-        "Le programme ne respecte pas les règles du calendrier : corrige-le et renvoie-le.",
+        "The program does not meet the scheduling rules. Correct it and submit it again.",
         422,
         {"problems": problems},
     )

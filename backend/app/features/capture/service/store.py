@@ -51,11 +51,11 @@ _SOURCE_LABEL = {"url": "Lien capturé", "document": "Document capturé", "text"
 
 
 def document_not_found() -> AppError:
-    return AppError("document_not_found", "Document introuvable.", 404)
+    return AppError("document_not_found", "Document not found.", 404)
 
 
 def document_failed() -> AppError:
-    return AppError("document_failed", "Ce document n'a pas pu être importé.", 409)
+    return AppError("document_failed", "This document could not be imported.", 409)
 
 
 def item_text(digest: CaptureDigest, material: CaptureMaterial) -> str:

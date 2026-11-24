@@ -143,7 +143,7 @@ class _Run:
         async with ctx.session_factory() as db:
             row = await SessionRepository(db, self.user_id).get(self.session_id)
         if row is None:
-            raise AppError("session_not_found", "Session introuvable.", 404)
+            raise AppError("session_not_found", "Session not found.", 404)
         if row.status != "running":
             return None
         settings = await ctx.run_settings.get_run_settings(self.user_id)

@@ -51,8 +51,7 @@ class Node(Protocol):
 def no_text() -> AppError:
     return AppError(
         "profile_no_text",
-        "Aucun texte lisible dans tes documents : exporte ton CV en PDF avec du texte "
-        "sélectionnable, puis réessaie.",
+        "No readable text was found. Export your CV as a PDF with selectable text and try again.",
         422,
     )
 

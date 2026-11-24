@@ -208,7 +208,7 @@ async def test_missing_stored_file_is_a_readable_error(
     done = await reload(db_session_factory, USER, doc.id)
     assert done.error == {
         "code": "document_source_missing",
-        "message": "Fichier ou lien d'origine introuvable : importe ce document de nouveau.",
+        "message": "Original file or link not found: import this document again.",
     }
 
 

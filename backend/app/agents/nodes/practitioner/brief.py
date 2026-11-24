@@ -111,7 +111,9 @@ def make_write(deps: GraphDeps) -> Node:
             await ports.brief_failed(deps.user_id, deps.session_id, project_id, code)
             if timed_out:
                 raise AppError(
-                    "node_timeout", f"L'étape write a dépassé {BUDGET_S:g} secondes.", 504
+                    "node_timeout",
+                    f"Writing the project brief took over {BUDGET_S:g} seconds.",
+                    504,
                 ) from None
             raise
         return {"brief": brief.model_dump()}

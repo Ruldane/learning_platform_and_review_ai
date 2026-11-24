@@ -64,10 +64,10 @@ async def schedule(db: AsyncSession, user_id: str, body: TransferIn, now: dateti
         if chosen.id == body.proof_id:
             break
     else:
-        raise AppError("skill_transfer_proof_not_found", "Preuve de compétence introuvable.", 404)
+        raise AppError("skill_transfer_proof_not_found", "Skill evidence not found.", 404)
     today = await _today(repo.session, repo.user_id, now)
     if body.due_on < today:
-        raise AppError("skill_transfer_date_past", "Choisis aujourd’hui ou une date à venir.", 422)
+        raise AppError("skill_transfer_date_past", "Choose today or a future date.", 422)
     snapshot = chosen.model_dump() | {"ref_id": item["ref_id"]}
     row = await repo.schedule(sid, chosen.id, snapshot, body.due_on)
     return await _view(repo, row, today)
@@ -130,10 +130,10 @@ async def read(db: AsyncSession, user_id: str, transfer_id: str, now: datetime) 
 
 async def require_preparation(repo: Transfers, row: SkillTransfer, now: datetime) -> None:
     if row.due_on > await _today(repo.session, repo.user_id, now):
-        raise AppError("skill_transfer_not_due", "Ce contrôle n’est pas encore à échéance.", 409)
+        raise AppError("skill_transfer_not_due", "This check is not due yet.", 409)
     if row.stage != "scheduled" and await _retry(repo, row) != "prepare":
         raise AppError(
-            "skill_transfer_already_started", "Ce contrôle est déjà préparé ou lancé.", 409
+            "skill_transfer_already_started", "This check is already ready or in progress.", 409
         )
 
 
@@ -142,9 +142,7 @@ async def _require_answer(repo: Transfers, row: SkillTransfer, answer: str) -> N
         return
     if await _retry(repo, row) == "answer" and row.answer == answer:
         return
-    raise AppError(
-        "skill_transfer_answer_locked", "Ce contrôle ne peut pas recevoir cette réponse.", 409
-    )
+    raise AppError("skill_transfer_answer_locked", "This check is not accepting answers.", 409)
 
 
 async def launch(

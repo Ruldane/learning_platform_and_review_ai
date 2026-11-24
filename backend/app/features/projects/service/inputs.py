@@ -66,7 +66,7 @@ async def brief_inputs(rt: ProjectsRuntime, user_id: str, project_id: str) -> Br
         row = await owned(db, user_id, project_id)
         found = await module_of(db, user_id, row)
         if found is None:
-            raise AppError("module_not_found", "Le module de ce projet n'existe plus.", 404)
+            raise AppError("module_not_found", "The module for this project no longer exists.", 404)
         module, week = found
         settings = await SettingsService(db, user_id).get()
         excerpt = await ready_markdown(db, user_id, module.id)

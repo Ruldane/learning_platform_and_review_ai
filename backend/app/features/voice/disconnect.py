@@ -20,7 +20,7 @@ async def until_disconnect[T](receive: Receive, operation: Coroutine[Any, Any, T
         await asyncio.wait((work, closed), return_when=asyncio.FIRST_COMPLETED)
         if work.done():
             return work.result()
-        raise AppError("voice_cancelled", "Opération audio annulée.", 499)
+        raise AppError("voice_cancelled", "Audio operation cancelled.", 499)
     finally:
         work.cancel()
         closed.cancel()

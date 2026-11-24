@@ -65,9 +65,7 @@ def default_paste_title() -> str:
 
 
 def invalid_source() -> AppError:
-    return AppError(
-        "invalid_document_source", "Fournis un fichier, un lien ou un texte (un seul).", 422
-    )
+    return AppError("invalid_document_source", "Provide one file, link, or text entry.", 422)
 
 
 def to_document_out(doc: Document) -> DocumentOut:
@@ -111,7 +109,7 @@ def _from_url(raw: str) -> _Incoming:
 
 def _from_text(text: str, title: str | None) -> _Incoming:
     if len(text) > MAX_PASTE_CHARS:
-        raise AppError("paste_too_long", "Texte trop long : 500 000 caractères au maximum.", 422)
+        raise AppError("paste_too_long", "Text can contain up to 500,000 characters.", 422)
     cleaned = clean_text(text)
     name = clean_display(title) or default_paste_title()
     data = cleaned.encode("utf-8")
@@ -259,11 +257,11 @@ class DocumentService:
         lancement le laisse intact."""
         doc = await self._docs.get(document_id)
         if doc is None:
-            raise AppError("document_not_found", "Document introuvable.", 404)
+            raise AppError("document_not_found", "Document not found.", 404)
         if doc.status != "indexed":
             raise AppError(
                 "document_not_ready",
-                "Le document doit être indexé avant d'être marqué déjà appris.",
+                "You can mark this document as already learned after indexing completes.",
                 409,
             )
         async with self._runtime.learn_lock(self._user_id):

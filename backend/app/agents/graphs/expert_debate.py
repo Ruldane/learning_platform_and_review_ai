@@ -107,7 +107,9 @@ def make_speech(deps: GraphDeps, role: ExpertRole) -> ExpertNode:
         estimated = sum(len(message_text(message).encode()) for message in messages)
         output = min(600, cap - draft.used_tokens - estimated)
         if output < 200:
-            raise AppError("conversation_budget_reached", "Le budget du débat est atteint.", 429)
+            raise AppError(
+                "conversation_budget_reached", "The debate budget has been reached.", 429
+            )
         said = await speak(
             with_output_limit(model, output),
             messages,
@@ -123,7 +125,7 @@ def make_speech(deps: GraphDeps, role: ExpertRole) -> ExpertNode:
         valid = {citation.index for citation in said.citations}
         text = _safe_markers(said.text, valid)
         if not text:
-            raise AppError("debate_speech_empty", "Un expert n’a pas répondu.", 503)
+            raise AppError("debate_speech_empty", "One of the experts did not respond.", 503)
         by_index = {source.index: source for source in sources}
         citations = [
             ExpertCitation(index=index, title=by_index[index].title, url=by_index[index].url)

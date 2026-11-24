@@ -77,7 +77,7 @@ async def _prepare(deps: GraphDeps, transfer_id: str, ctx: TransferContext) -> s
 
 async def _assess(deps: GraphDeps, transfer_id: str, ctx: TransferContext) -> str:
     if ctx.exercise is None or ctx.answer is None:
-        raise AppError("skill_transfer_incomplete", "Le contrôle est incomplet.", 409)
+        raise AppError("skill_transfer_incomplete", "The skill transfer check is incomplete.", 409)
     model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
     grade = await structured_call(
         model,

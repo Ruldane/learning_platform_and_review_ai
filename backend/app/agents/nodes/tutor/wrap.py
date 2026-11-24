@@ -31,9 +31,9 @@ from app.agents.state.study_session import StudySessionState
 from app.agents.tools.study_port import Outcome, StudyFinished, StudyOutcome, exercise_done
 from app.core.errors import AppError
 
-FINISH_QUESTION = "La séance est finie. Termine-la pour enregistrer ton temps et tes acquis."
-FINISH_OPTION = {"value": "finish", "label": "Terminer la session"}
-SUMMARY_REQUEST = "Rédige le bilan."
+FINISH_QUESTION = "Finish the session to save your study time and skill progress."
+FINISH_OPTION = {"value": "finish", "label": "Finish the session"}
+SUMMARY_REQUEST = "Write the session review."
 # Plus court que le plafond du nœud (120 s) : au-delà, le bilan chiffré, jamais `node_timeout`.
 SUMMARY_TIMEOUT_S = 90.0
 LEVEL_NAMES = {
@@ -72,9 +72,9 @@ def outcomes_of(state: StudySessionState) -> list[Outcome]:
 
 def _fallback_summary(state: StudySessionState, outcomes: list[Outcome]) -> str:
     good = sum(1 for o in outcomes if o.verdict == "correct")
-    text = f"Séance terminée : {good} réponse(s) juste(s) sur {len(outcomes)} question(s)."
+    text = f"Study session complete. You answered {good} of {len(outcomes)} questions correctly."
     unchecked = sum(1 for o in state.get("outcomes", []) if o.get("unchecked"))
-    return text + (f" {unchecked} réponse(s) non corrigée(s)." if unchecked else "")
+    return text + (f" I couldn’t check {unchecked} of your answers." if unchecked else "")
 
 
 def make_summarize(deps: GraphDeps) -> Node:
@@ -99,7 +99,7 @@ def make_summarize(deps: GraphDeps) -> Node:
                     prompt,
                     SUMMARY_REQUEST,
                     step="bilan",
-                    intent="je fais le bilan de la séance",
+                    intent="I’m reviewing the session",
                 )
         except (AppError, TimeoutError) as exc:
             code = exc.code if isinstance(exc, AppError) else "timeout"
@@ -113,17 +113,17 @@ def make_summarize(deps: GraphDeps) -> Node:
 
 
 def _closing(summary: str, done: StudyFinished) -> str:
-    tasks = ", ".join(f"« {title} »" for title in done.tasks_done) or "aucune"
+    tasks = ", ".join(f"“{title}”" for title in done.tasks_done) or "none"
     skills = ", ".join(f"{name} ({LEVEL_NAMES.get(level, level)})" for name, level in done.skills)
     lines = [
         summary,
         "",
-        f"Temps enregistré : {done.minutes} min.",
-        f"Tâches cochées : {tasks}.",
-        f"Fiches créées depuis tes erreurs : {done.flashcards_created}.",
+        f"Recorded {done.minutes} min of study time.",
+        f"Tasks completed\n{tasks}.",
+        f"Review cards created from your mistakes\n{done.flashcards_created}.",
     ]
     if skills:
-        lines.append(f"Acquis mis à jour : {skills}.")
+        lines.append(f"Skills updated\n{skills}.")
     return "\n".join(lines)
 
 
@@ -163,7 +163,7 @@ def make_wrap_up(deps: GraphDeps) -> Node:
         title = context_of(state).module_title
         return {
             "finished": _finished_state(done),
-            "summary": f"Session d'étude terminée : « {title} », {done.minutes} min.",
+            "summary": f"Study session complete for “{title}” ({done.minutes} min).",
         }
 
     return wrap_up

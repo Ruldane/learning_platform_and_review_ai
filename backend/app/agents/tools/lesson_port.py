@@ -142,7 +142,7 @@ class LessonStore(Protocol):
 
 
 def lessons_unavailable() -> AppError:
-    return AppError("lessons_unavailable", "Les leçons ne sont pas branchées sur ce moteur.", 503)
+    return AppError("lessons_unavailable", "Lessons are unavailable in this runtime.", 503)
 
 
 class _NoLessons:

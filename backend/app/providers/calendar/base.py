@@ -27,15 +27,15 @@ def same_event(first: CalendarEvent, second: CalendarEvent) -> bool:
 
 
 def unavailable() -> AppError:
-    return AppError("calendar_unavailable", "Google Agenda est temporairement indisponible.", 503)
+    return AppError("calendar_unavailable", "Google Calendar is temporarily unavailable.", 503)
 
 
 def unauthorized() -> AppError:
-    return AppError("calendar_unauthorized", "L’autorisation Agenda doit être renouvelée.", 409)
+    return AppError("calendar_unauthorized", "Reconnect your calendar to renew access.", 409)
 
 
 def conflict() -> AppError:
-    return AppError("calendar_conflict", "Ce créneau n’est plus disponible.", 409)
+    return AppError("calendar_conflict", "This time slot is no longer available.", 409)
 
 
 class CalendarPort(Protocol):

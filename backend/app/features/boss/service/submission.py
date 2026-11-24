@@ -41,7 +41,7 @@ async def launch_review(
             raise AppError("boss_expired", "The challenge time is up.", 409)
         if now < row.change_at:
             raise AppError(
-                "boss_change_pending", "Le client doit te transmettre son changement.", 409
+                "boss_change_pending", "Wait for the client to send the change request.", 409
             )
         project = await IdeService(db, user_id, None, Caller("app", "boss")).get_session(
             row.ide_session_id

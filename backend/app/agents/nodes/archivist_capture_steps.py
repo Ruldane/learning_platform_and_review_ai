@@ -39,7 +39,7 @@ YES_NO: list[dict[str, str]] = [{"value": "yes", "label": "Oui"}, {"value": "no"
 
 
 def document_not_indexed() -> AppError:
-    return AppError("document_not_indexed", "Document pas encore indexé.", 409)
+    return AppError("document_not_indexed", "This document is not indexed yet.", 409)
 
 
 def source_of(state: dict[str, Any]) -> CaptureSource:

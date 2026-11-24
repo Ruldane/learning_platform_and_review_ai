@@ -52,7 +52,7 @@ logger = logging.getLogger(__name__)
 
 
 def version_not_found() -> AppError:
-    return AppError("version_not_found", "Version introuvable.", 404)
+    return AppError("version_not_found", "Version not found.", 404)
 
 
 @dataclass(frozen=True)

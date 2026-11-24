@@ -76,10 +76,10 @@ class SkillsService:
     async def create(self, body: SkillCreate) -> str:
         norm = normalize_skill_name(body.name)
         if not norm:
-            raise AppError("invalid_skill_name", "Nom de compétence invalide.", 422)
+            raise AppError("invalid_skill_name", "Invalid skill name.", 422)
         created = await self._skills.create(body.name, norm, body.domain, body.synonyms)
         if created is None:
-            raise AppError("skill_exists", "Cette compétence existe déjà.", 409)
+            raise AppError("skill_exists", "This skill already exists.", 409)
         return created
 
     async def upsert_catalog(

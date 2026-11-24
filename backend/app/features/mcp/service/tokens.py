@@ -39,9 +39,7 @@ class TokenService:
                     422,
                 )
             if self._known is not None and name not in self._known:
-                raise AppError(
-                    "unknown_feature", f"La feature « {name} » n'expose aucun outil MCP.", 422
-                )
+                raise AppError("unknown_feature", "The selected feature has no MCP tools.", 422)
         return unique
 
     async def create(
@@ -82,4 +80,4 @@ class TokenService:
     async def revoke(self, token_id: str) -> None:
         """Révoque le jeton (404 s'il n'est pas à moi) ; sans effet s'il l'est déjà."""
         if await self._tokens.revoke(token_id, datetime.now(UTC)) is None:
-            raise AppError("not_found", "Ressource introuvable.", 404)
+            raise AppError("not_found", "Resource not found.", 404)

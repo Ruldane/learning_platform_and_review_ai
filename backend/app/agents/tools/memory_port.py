@@ -14,7 +14,7 @@ from app.core.errors import AppError
 
 # Types qu'un agent peut écrire : jamais un `document` (réservé à l'import).
 AgentWritableKind = Literal["skill", "lesson", "source", "posting", "decision"]
-NO_SKILLS = "Aucun acquis en mémoire."
+NO_SKILLS = "No skills in memory."
 
 
 @dataclass(frozen=True)
@@ -74,17 +74,17 @@ class SkillsSummary:
     skills: list[SkillEntry]
 
     def as_text(self) -> str:
-        """« Acquis (3) :\n- Python — declare\n… » ; titres ramenés sur une ligne."""
+        """List the skills with each title condensed to one line."""
         if not self.skills:
             return NO_SKILLS
-        lines = [f"Acquis ({self.total}) :"]
+        lines = [f"Skills ({self.total})"]
         lines += [f"- {_one_line(skill.title)} — {skill.level}" for skill in self.skills]
         return "\n".join(lines)
 
     def as_agent_text(self) -> str:
         """`as_text` encadré comme contenu non fiable (17.4) : un titre d'acquis peut venir d'un
         document importé (Archiviste). À donner tel quel à un agent (prompt, retour d'outil)."""
-        return untrusted(self.as_text(), "memoire:acquis")
+        return untrusted(self.as_text(), "memory:skills")
 
 
 @dataclass(frozen=True)
@@ -111,7 +111,7 @@ class MemoryGateway(Protocol):
 
 
 def memory_unavailable() -> AppError:
-    return AppError("memory_unavailable", "La mémoire n'est pas branchée sur ce moteur.", 503)
+    return AppError("memory_unavailable", "Memory is unavailable in this runtime.", 503)
 
 
 class _NoMemory:

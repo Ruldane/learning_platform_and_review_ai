@@ -29,11 +29,11 @@ TUTOR_CALL_TIMEOUT_S = 105.0
 RECOVERABLE_CODES = frozenset(
     {"llm_timeout", "llm_unavailable", "llm_empty_reply", "structured_output_invalid"}
 )
-UNCHECKED = "Je n'ai pas pu corriger cette réponse, on continue."
-NO_REPLY = "Je n'ai pas pu répondre à ton message, on continue."
-FALLBACK_FINAL_INTRO = "Trois questions pour finir, tirées des objectifs et des sections."
-NO_SOLUTION = "Pas de solution préparée pour cette question : reprends la leçon."
-NO_EXPECTED = "(aucune)"  # donnée neutre ; la consigne est dans le prompt (`check`)
+UNCHECKED = "I couldn’t check this answer. Let’s continue."
+NO_REPLY = "I couldn’t answer your message. Let’s continue."
+FALLBACK_FINAL_INTRO = "Three final questions based on the lesson objectives and sections."
+NO_SOLUTION = "There’s no prepared solution for this question. Review the lesson to try again."
+NO_EXPECTED = "(none)"
 MAX_QUESTION_CHARS = 500
 MAX_EXPECTED_CHARS = 800
 
@@ -71,16 +71,16 @@ def excerpt(text: str, limit: int = MAX_EXPECTED_CHARS) -> str:
 
 def hint_unavailable(level: int, max_hints: int) -> str:
     then = (
-        "Redemande « Je bloque » pour l'indice suivant, ou réponds."
+        "Choose ‘I’m stuck’ for the next hint, or answer the question."
         if level < max_hints
-        else "Tu peux voir la solution, ou répondre."
+        else "You can show the solution or answer the question."
     )
-    return f"Je n'ai pas pu préparer l'indice {level} sur {max_hints}. {then}"
+    return f"I couldn’t prepare hint {level} of {max_hints}. {then}"
 
 
 def section_question(section: LessonSection) -> tuple[str, str]:
     """Question et réponse attendue d'une section, tirées de la leçon."""
-    question = f"Que retiens-tu de la section « {section.title} » ? Dis-le avec tes mots."
+    question = f"What did you learn from “{section.title}”? Explain it in your own words."
     return excerpt(question, MAX_QUESTION_CHARS), excerpt(section.markdown) or section.title
 
 
@@ -88,7 +88,7 @@ def teach_section_as_written(state: StudySessionState) -> tuple[str, str, str]:
     """Message, question et réponse attendue de la section en cours, sans le modèle."""
     section = context_of(state).sections[state["index"]]
     message = (
-        "Je n'ai pas pu préparer cette section : la voici telle qu'écrite dans la leçon.\n\n"
+        "I couldn’t prepare this section. You can read it as written in the lesson.\n\n"
         f"## {section.title}\n\n{section.markdown.strip()}"
     )
     question, expected = section_question(section)
@@ -101,12 +101,15 @@ def final_questions_from_lesson(context: StudyContext, count: int) -> list[dict[
     de section ont une réponse attendue (le début de leur section) : les autres n'en ont pas
     (`""`), jugées d'après toute la leçon, sans fiche ni « solution » étrangère (D115 n° 17)."""
     title = context.module_title
-    candidates = [(f"Explique avec tes mots : {o.strip()}", "") for o in context.objectives]
+    candidates = [
+        (f"How would you explain “{objective.strip()}” in your own words?", "")
+        for objective in context.objectives
+    ]
     candidates += [section_question(s) for s in context.sections]
     candidates += [
-        (f"Qu'as-tu retenu de « {title} » ?", ""),
-        (f"Quelle idée de « {title} » vas-tu appliquer, et comment ?", ""),
-        (f"Quelle erreur éviter avec « {title} », et pourquoi ?", ""),
+        (f"What did you learn from “{title}”?", ""),
+        (f"What idea from “{title}” will you apply, and how?", ""),
+        (f"What mistake should you avoid when applying “{title}”, and why?", ""),
     ]
     finals: list[dict[str, str]] = []
     for question, expected in candidates:

@@ -41,7 +41,7 @@ DAYS_PER_WEEK = 7
 
 
 def program_not_found() -> AppError:
-    return AppError("program_not_found", "Programme introuvable.", 404)
+    return AppError("program_not_found", "Program not found.", 404)
 
 
 @dataclass
@@ -265,7 +265,7 @@ async def list_programs(db: AsyncSession, user_id: str) -> builtins.list[Program
 
 
 def module_not_found() -> AppError:
-    return AppError("module_not_found", "Module introuvable.", 404)
+    return AppError("module_not_found", "Module not found.", 404)
 
 
 async def program_of_module(db: AsyncSession, user_id: str, module_id: str) -> str:

@@ -163,7 +163,9 @@ class AgentQuizStore:
             elif ctx.attempt.status == "graded":
                 saved = saved_of(ctx.attempt)
             else:
-                raise AppError("attempt_not_grading", "Cette tentative n'est plus à noter.", 409)
+                raise AppError(
+                    "attempt_not_grading", "This attempt is no longer awaiting grading.", 409
+                )
             skills = module_skills(ctx) if saved.passed else []
             levels = await SkillsService(db, user_id).levels_of(skills)
             await db.commit()

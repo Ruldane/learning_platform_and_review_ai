@@ -141,9 +141,7 @@ class CvReviewStore(Protocol):
 
 
 def cv_review_unavailable() -> AppError:
-    return AppError(
-        "cv_review_unavailable", "La revue de CV n'est pas branchée sur ce moteur.", 503
-    )
+    return AppError("cv_review_unavailable", "CV reviews are unavailable in this runtime.", 503)
 
 
 class _NoCvReview:

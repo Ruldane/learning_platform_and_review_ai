@@ -31,7 +31,7 @@ MAX_MODULES_PER_WEEK = 4
 
 
 def week_not_found() -> AppError:
-    return AppError("week_not_found", "Semaine introuvable.", 404)
+    return AppError("week_not_found", "Week not found.", 404)
 
 
 def too_many_weeks() -> AppError:

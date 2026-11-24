@@ -174,7 +174,7 @@ async def test_learned_document_missing_document_fails_readably(
     learned = await make_learned_runner([CONCEPTS])
     sid = await _start(learned, user_id, "inconnu")
     row = await wait_status(learned.factory, user_id, sid, "failed")
-    assert row.error == {"code": "document_not_found", "message": "Document introuvable."}
+    assert row.error == {"code": "document_not_found", "message": "Document not found."}
     assert learned.fake.received == []  # aucun appel au modèle
 
 

@@ -34,5 +34,5 @@ class AgentCodeTrialStore:
             if not await repo.save_pleadings(row, session_id, pleadings):
                 await db.refresh(row)
                 if row.session_id != session_id or not row.pleadings:
-                    raise AppError("code_trial_closed", "Cette session ne peut plus publier.", 409)
+                    raise AppError("code_trial_closed", "This session can no longer publish.", 409)
             await db.commit()

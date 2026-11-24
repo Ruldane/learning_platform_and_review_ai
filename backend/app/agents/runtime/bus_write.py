@@ -68,7 +68,7 @@ class EventWriter:
         # (garde ou INSERT), si bien que SQLite applique le délai d'attente au lieu d'échouer.
         async with self._factory() as db:
             if await SessionRepository(db, user_id).get(session_id) is None:
-                raise AppError("session_not_found", "Session introuvable.", status_code=404)
+                raise AppError("session_not_found", "Session not found.", status_code=404)
             return await EventRepository(db, user_id).max_seq(session_id)
 
     async def insert(

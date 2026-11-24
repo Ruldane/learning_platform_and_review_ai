@@ -24,7 +24,7 @@ class VoiceService:
     @asynccontextmanager
     async def _reserve(self, user_id: str) -> AsyncIterator[None]:
         if user_id in self._active:
-            raise AppError("voice_busy", "Une opération audio est déjà en cours.", 409)
+            raise AppError("voice_busy", "An audio operation is already running.", 409)
         self._active.add(user_id)
         try:
             yield
@@ -36,13 +36,13 @@ class VoiceService:
         async with self._reserve(user_id):
             text = (await self.transcription.transcribe(user_id, recording)).strip()
         if not text:
-            raise AppError("voice_no_speech", "Aucune parole reconnue. Tu peux écrire.", 422)
+            raise AppError("voice_no_speech", "No speech detected. You can type your answer.", 422)
         return VoiceTranscript(text=text[:MAX_TRANSCRIPT])
 
     async def speak(self, user_id: str, text: str) -> bytes:
         clean = text.strip()
         if not clean:
-            raise AppError("voice_empty_text", "Le texte à lire est vide.", 422)
+            raise AppError("voice_empty_text", "Enter some text to read aloud.", 422)
         async with self._reserve(user_id):
             pcm = await self.speech.speak(user_id, "coach", clean)
         if not pcm or len(pcm) % PCM_WIDTH or len(pcm) > _MAX_SPOKEN_PCM:

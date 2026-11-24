@@ -104,7 +104,7 @@ async def test_gateway_skills_reads_acquis_levels(
     assert summary.total == 3 and summary.by_level == {"declared": 2, "in_progress": 1}
     assert sorted(s.title for s in summary.skills) == ["Python", "Rust", "SQL"]
     assert {s.title: s.level for s in summary.skills}["SQL"] == "in_progress"
-    assert (await gateway.skills("nobody")).as_text() == "Aucun acquis en mémoire."
+    assert (await gateway.skills("nobody")).as_text() == "No skills in memory."
 
 
 async def test_document_text_returns_first_chunks(

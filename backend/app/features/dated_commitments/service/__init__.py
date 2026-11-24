@@ -29,7 +29,7 @@ def _amount(value: Decimal) -> str:
 async def _owned(db: AsyncSession, user_id: str, commitment_id: str) -> DatedCommitment:
     row = await repository.by_id(db, user_id, commitment_id)
     if row is None:
-        raise AppError("commitment_not_found", "Engagement introuvable.", 404)
+        raise AppError("commitment_not_found", "Commitment not found.", 404)
     return row
 
 

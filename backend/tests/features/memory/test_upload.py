@@ -9,7 +9,7 @@ from app.features.memory.service.upload import classify_url, detect_upload, norm
 from scripts.sample_pdf import make_pdf
 from tests.features.memory.doc_support import make_docx, make_zip
 
-DOCX_INVALID = "Fichier DOCX invalide ou trop volumineux une fois décompressé."
+DOCX_INVALID = "The DOCX file is invalid or too large when decompressed."
 UNSUPPORTED = "Type de fichier non pris en charge : PDF, DOCX, Markdown ou texte uniquement."
 
 

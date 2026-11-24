@@ -63,7 +63,7 @@ async def memory_search(
     except AppError as exc:
         _failed(agent, call_id, "memory_search", exc)
         raise
-    _result(agent, call_id, "memory_search", ok=True, summary=f"{len(found.hits)} fragment(s)")
+    _result(agent, call_id, "memory_search", ok=True, summary=f"{len(found.hits)} result(s)")
     return found
 
 
@@ -78,7 +78,7 @@ async def memory_write(deps: GraphDeps, write: AgentWrite, *, agent: str) -> Wri
     except AppError as exc:
         _failed(agent, call_id, "memory_write", exc)
         raise
-    summary = f"Écrit : {done.title}" if done.created else f"Déjà en mémoire : {done.title}"
+    summary = f"Saved “{done.title}”." if done.created else f"“{done.title}” is already in memory."
     _result(agent, call_id, "memory_write", ok=True, summary=summary)
     if done.created:
         emit(
@@ -103,7 +103,7 @@ async def memory_get_skills(deps: GraphDeps, *, agent: str) -> SkillsSummary:
     except AppError as exc:
         _failed(agent, call_id, "memory_get_skills", exc)
         raise
-    _result(agent, call_id, "memory_get_skills", ok=True, summary=f"{skills.total} acquis")
+    _result(agent, call_id, "memory_get_skills", ok=True, summary=f"{skills.total} skill(s)")
     return skills
 
 
@@ -111,19 +111,19 @@ async def memory_get_skills(deps: GraphDeps, *, agent: str) -> SkillsSummary:
 
 
 class _SearchArgs(BaseModel):
-    query: str = Field(description="Ce qu'on cherche, en une phrase.")
+    query: str = Field(description="What to search for, in one sentence.")
     kinds: list[str] | None = Field(
         default=None,
         description="Kinds to search: document, skill, lesson, source, posting, decision.",
     )
-    k: int = Field(default=DEFAULT_K, ge=1, le=50, description="Nombre de fragments.")
+    k: int = Field(default=DEFAULT_K, ge=1, le=50, description="Number of chunks to return.")
 
 
 class _WriteArgs(BaseModel):
     kind: AgentWritableKind
     title: str = Field(min_length=1, max_length=200)
     text: str = Field(min_length=1)
-    reason: str = Field(min_length=1, description="La raison de l'écriture, en une phrase.")
+    reason: str = Field(min_length=1, description="Why the item should be saved, in one sentence.")
     tags: list[str] = Field(default_factory=list)
     evidence: list[str] = Field(default_factory=list)
     level: Literal["declared", "in_progress"] | None = None
@@ -150,9 +150,9 @@ def memory_tools_for(deps: GraphDeps, *, agent: str) -> list[BaseTool]:
     async def write(**fields: Any) -> str:
         done = await memory_write(deps, _to_write(_WriteArgs(**fields)), agent=agent)
         if not done.created:  # titre lu en mémoire (un document importé a pu le fixer)
-            return f"Déjà en mémoire : {untrusted(done.title, 'titre en mémoire')}"
-        pending = " (à confirmer par January)" if done.status == "pending" else ""
-        return f"Écrit : {done.title}{pending}"
+            return f"Already in memory\n{untrusted(done.title, 'title in memory')}"
+        pending = " (awaiting January’s confirmation)" if done.status == "pending" else ""
+        return f"Saved “{done.title}”{pending}."
 
     async def skills() -> str:
         return (await memory_get_skills(deps, agent=agent)).as_agent_text()
@@ -161,19 +161,19 @@ def memory_tools_for(deps: GraphDeps, *, agent: str) -> list[BaseTool]:
         StructuredTool.from_function(
             coroutine=search,
             name="memory_search",
-            description="Cherche dans la mémoire de January (documents, acquis, leçons…).",
+            description="Search January's memory, including documents, skills, and lessons.",
             args_schema=_SearchArgs,
         ),
         StructuredTool.from_function(
             coroutine=write,
             name="memory_write",
-            description="Écrit un élément en mémoire, avec la raison de l'écriture.",
+            description="Save an item to memory with the reason it should be kept.",
             args_schema=_WriteArgs,
         ),
         StructuredTool.from_function(
             coroutine=skills,
             name="memory_get_skills",
-            description="Liste les acquis de January, avec leur niveau.",
+            description="List January's skills and their current levels.",
             args_schema=_NoArgs,
         ),
     ]

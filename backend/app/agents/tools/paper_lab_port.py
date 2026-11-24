@@ -35,7 +35,7 @@ def cited_course(source: ArticleSource, draft: PaperDraft) -> str:
     """Le cours cite un extrait vérifié du texte remis au Rédacteur."""
     quote = " ".join(draft.source_quote.split())
     if len(quote) < 20 or quote not in " ".join(source.material.split()):
-        raise AppError("paper_lab_citation", "L’extrait cité ne figure pas dans l’article lu.", 422)
+        raise AppError("paper_lab_citation", "The quoted text does not appear in the paper.", 422)
     literal = re.sub(r"([\\\x60*_{}\[\]()<>#!|])", r"\\\1", quote)
     return f"{draft.course}\n\n## Extrait de l’article\n\n> {literal}"
 

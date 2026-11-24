@@ -50,7 +50,7 @@ async def _prepare(deps: GraphDeps, hunt_id: str, context: HuntContext) -> str:
 
 async def _assess(deps: GraphDeps, hunt_id: str, context: HuntContext) -> str:
     if context.errors is None or context.responses is None:
-        raise AppError("lesson_hunt_incomplete", "Il manque les réponses de l’exercice.", 409)
+        raise AppError("lesson_hunt_incomplete", "The exercise answers are missing.", 409)
     model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
     feedback = await structured_call(
         model,

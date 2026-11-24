@@ -115,7 +115,7 @@ class ProjectStore(Protocol):
 
 
 def projects_unavailable() -> AppError:
-    return AppError("projects_unavailable", "Les projets ne sont pas branchés sur ce moteur.", 503)
+    return AppError("projects_unavailable", "Projects are unavailable in this runtime.", 503)
 
 
 class _NoProjects:

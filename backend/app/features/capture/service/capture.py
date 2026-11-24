@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 def invalid_input() -> AppError:
     return AppError(
-        "invalid_input", "Une capture demande une seule source : lien, texte ou document.", 422
+        "invalid_input", "Provide a single link, text entry, or document for the capture.", 422
     )
 
 

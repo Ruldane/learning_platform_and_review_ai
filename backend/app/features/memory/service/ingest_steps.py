@@ -63,7 +63,7 @@ def error_of(exc: AppError) -> dict[str, Any]:
 
 def duplicate_content(item_id: str) -> AppError:
     return AppError(
-        "duplicate_content", "Ce contenu est déjà en mémoire.", 409, details={"item_id": item_id}
+        "duplicate_content", "This content is already in memory.", 409, details={"item_id": item_id}
     )
 
 

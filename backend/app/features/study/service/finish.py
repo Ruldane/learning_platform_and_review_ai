@@ -120,7 +120,7 @@ async def _write(
     ids = [t for t in block if types.get(t) in wanted]  # dans l'ordre du bloc
     done = await tick_tasks(db, rt.program, user_id, ids)
     skills = [str(s) for s in module.skills] if module and _has_trace(minutes, outcome) else []
-    label = f"Session guidée « {title} » ({today:%d/%m})"
+    label = f"Guided study of “{title}” ({today.isoformat()})"
     changed = await SkillsService(db, user_id).raise_levels(
         skills, CEILING, evidence("study", row.id, label, now)
     )
@@ -188,7 +188,7 @@ async def finish_study(
                 result.skills,
                 author="tutor",
                 session_id=session_id,
-                reason=f"Session guidée « {title} »",
+                reason=f"Guided study of “{title}”",
             )
         except Exception:
             logger.warning("Acquis non reflétés après une session guidée : étude %s", study_id)

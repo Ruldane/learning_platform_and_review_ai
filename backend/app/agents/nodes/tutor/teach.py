@@ -51,16 +51,16 @@ from app.core.errors import AppError
 
 FINAL_COUNT = 3
 MAX_MERMAID_CHARS = 2000
-NO_MEMORY_CONTEXT = "Mémoire indisponible pour cette séance."
-TEACH_REQUEST = "Prépare la section."
-REPLY_REQUEST = "Réponds à January."
-FINAL_REQUEST = "Écris les questions finales."
-FINAL_INTRO = "Trois questions pour finir : elles reprennent toute la leçon."
+NO_MEMORY_CONTEXT = "Memory is unavailable for this session."
+TEACH_REQUEST = "Prepare the section."
+REPLY_REQUEST = "Reply to January."
+FINAL_REQUEST = "Write the final questions."
+FINAL_INTRO = "Three final questions cover the whole lesson."
 _FENCE = re.compile(r"^```[a-z]*\s*\n|\n?```\s*$")
 _MODES = {
-    "socratic": "je te guide par des questions : c'est toi qui trouves.",
-    "feynman": "tu m'expliques chaque section avec tes mots, je cherche les trous.",
-    "direct": "je t'explique chaque section, puis je te pose une question.",
+    "socratic": "I’ll guide you with questions so you can find the answers.",
+    "feynman": "Explain each section in your own words and I’ll look for gaps.",
+    "direct": "I’ll explain each section and then ask you a question.",
 }
 
 logger = logging.getLogger(__name__)
@@ -132,15 +132,15 @@ def make_context(deps: GraphDeps) -> Node:
 def _opening(context: StudyContext) -> str:
     objectives = "\n".join(f"- {objective}" for objective in context.objectives)
     return (
-        f"On travaille « {context.module_title} ».\n"
-        + (f"Objectifs de la séance :\n{objectives}\n" if objectives else "")
-        + f"Mode {_mode_name(context.mode)} : {_MODES[context.mode]}\n"
-        "« Je bloque » te donne jusqu'à trois indices, « Passer » saute une question."
+        f"We’ll study “{context.module_title}”.\n"
+        + (f"Session objectives\n{objectives}\n" if objectives else "")
+        + f"{_mode_name(context.mode)} mode. {_MODES[context.mode]}\n"
+        "Choose ‘I’m stuck’ for up to three hints. Choose ‘Skip’ to move to the next question."
     )
 
 
 def _mode_name(mode: str) -> str:
-    return {"socratic": "socratique", "feynman": "Feynman", "direct": "direct"}[mode]
+    return {"socratic": "Socratic", "feynman": "Feynman", "direct": "Direct"}[mode]
 
 
 async def _reply(deps: GraphDeps, state: StudySessionState, notes: list[str], key: str) -> None:
@@ -153,7 +153,7 @@ async def _reply(deps: GraphDeps, state: StudySessionState, notes: list[str], ke
         notes=notes_prompt(notes),
     )
     reply = await try_tutor(
-        deps, TutorReply, prompt, REPLY_REQUEST, step=f"reponse-{key}", intent="je te réponds"
+        deps, TutorReply, prompt, REPLY_REQUEST, step=f"reponse-{key}", intent="I’m replying"
     )
     say(state, reply.message if reply else NO_REPLY, f"{AGENT}-reponse-{key}")
 
@@ -217,7 +217,7 @@ async def _teach_section(
         prompt,
         TEACH_REQUEST,
         step=f"section-{index + 1}",
-        intent="je prépare la section",
+        intent="I’m preparing the section",
     )
     if turn is None:  # la section telle qu'écrite dans la leçon, sans schéma (D115)
         message, question, expected = teach_section_as_written(state)
@@ -233,7 +233,7 @@ def _pose_from_lesson(state: StudySessionState) -> StudySessionState:
     modèle). Question finale : celle de `final_intro`."""
     context, index = context_of(state), state["index"]
     if state["phase"] == "exercise":
-        text = "Place à l'exercice de la leçon : prends ton temps, puis donne ta solution."
+        text = "Try the lesson exercise. Take your time and share your solution when ready."
         say(state, text, f"{AGENT}-exercice")
         return {"question": context.exercise.strip(), "expected": context.solution.strip()}
     final = state["finals"][index]
@@ -280,7 +280,7 @@ def make_final_intro(deps: GraphDeps) -> Node:
             prompt,
             FINAL_REQUEST,
             step="questions-finales",
-            intent="je prépare les trois questions finales",
+            intent="I’m preparing the three final questions",
         )
         if found is None:  # tirées des objectifs et des sections de la leçon (D115)
             say(state, FALLBACK_FINAL_INTRO, f"{AGENT}-final")

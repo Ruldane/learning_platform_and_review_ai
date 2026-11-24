@@ -47,10 +47,10 @@ def test_answer_is_trimmed_and_capped() -> None:
 
 def test_stuck_label_carries_the_count() -> None:
     assert [stuck_label(n) for n in range(4)] == [
-        "Je bloque (1/3)",
-        "Je bloque (2/3)",
-        "Je bloque (3/3)",
-        "Voir la solution",
+        "I’m stuck (1/3)",
+        "I’m stuck (2/3)",
+        "I’m stuck (3/3)",
+        "Show the solution",
     ]
 
 
@@ -89,19 +89,17 @@ async def test_stuck_gives_three_hints_then_solution(make_study_runner: MakeStud
         labels.append(asked["options"][0]["label"])
         assert asked["options"][0]["value"] == "stuck" and asked["options"][1]["value"] == "skip"
         await run.resume("stuck")
-    assert labels == ["Je bloque (1/3)", "Je bloque (2/3)", "Je bloque (3/3)", "Voir la solution"]
+    assert labels == ["I’m stuck (1/3)", "I’m stuck (2/3)", "I’m stuck (3/3)", "Show the solution"]
     hints = run.prompts(HINT_REQUEST)
-    assert ["Indice 1 :" in hints[0], "Indice 2 :" in hints[1], "Indice 3 :" in hints[2]] == [
-        True
-    ] * 3
-    assert "Pense aux exponentielles." in between_untrusted_markers(hints[1], "indices")
+    assert ["Hint 1:" in hints[0], "Hint 2:" in hints[1], "Hint 3:" in hints[2]] == [True] * 3
+    assert "Pense aux exponentielles." in between_untrusted_markers(hints[1], "hints")
     await _end_early(run)
     assert run.store.finished is not None
     first = run.store.finished.outcomes[0]
     assert first.verdict == "revealed" and first.hints == 3
     said = [e["text"] for e in await run.events("agent.message")]
-    assert "Indice 3 sur 3 : Pense aux exponentielles." in said
-    assert "Voici la solution :\n\nDes poids positifs qui somment à 1." in said
+    assert "Hint 3 of 3\n\nPense aux exponentielles." in said
+    assert "Solution\n\nDes poids positifs qui somment à 1." in said
 
 
 async def test_answer_after_a_hint_keeps_the_hint_count(make_study_runner: MakeStudy) -> None:
@@ -166,7 +164,7 @@ async def test_feynman_question_asks_january_to_explain(make_study_runner: MakeS
     )
     await run.wait_question()
     [teach] = run.prompts(TEACH_REQUEST)
-    assert "Mode de la séance : Feynman" in teach
+    assert "Session mode: Feynman" in teach
     assert "demande à January d'expliquer avec ses mots" in teach
 
 
@@ -216,13 +214,13 @@ async def test_lesson_and_answers_are_untrusted(make_study_runner: MakeStudy) ->
     await run.answer(TRAP)
     await run.wait_question()
     teach = run.prompts(TEACH_REQUEST)[0]
-    assert SECTION_TEXTS[0] in between_untrusted_markers(teach, "leçon")
+    assert SECTION_TEXTS[0] in between_untrusted_markers(teach, "lesson")
     assert SECTION_TEXTS[0] not in outside_untrusted_markers(teach)
     assert "Attention Is All You Need" in between_untrusted_markers(teach, "source 1")
     [verdict] = run.prompts(CHECK_REQUEST)
-    assert TRAP in between_untrusted_markers(verdict, "réponse de January")
+    assert TRAP in between_untrusted_markers(verdict, "January's answer")
     assert TRAP not in outside_untrusted_markers(verdict)
-    assert SECTION_TEXTS[0] in between_untrusted_markers(verdict, "leçon")
+    assert SECTION_TEXTS[0] in between_untrusted_markers(verdict, "lesson")
     await _end_early(run, wait=False)
     assert run.store.finished is not None
     assert run.store.finished.outcomes[0].verdict == "wrong"

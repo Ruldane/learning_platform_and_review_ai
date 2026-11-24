@@ -121,7 +121,7 @@ class CaptureStore(Protocol):
 
 
 def capture_unavailable() -> AppError:
-    return AppError("capture_unavailable", "La capture n'est pas branchée sur ce moteur.", 503)
+    return AppError("capture_unavailable", "Capture is unavailable in this runtime.", 503)
 
 
 class _NoCapture:

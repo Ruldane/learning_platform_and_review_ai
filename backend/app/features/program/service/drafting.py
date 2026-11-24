@@ -33,7 +33,7 @@ from app.features.skills.service import SkillsService, higher_level
 
 
 def nothing_to_plan() -> AppError:
-    return AppError("nothing_to_plan", "Tout ce programme est déjà acquis.", 422)
+    return AppError("nothing_to_plan", "You already know everything covered by this program.", 422)
 
 
 async def budget_of(db: AsyncSession, user_id: str, goal_weekly_minutes: int | None) -> Budget:

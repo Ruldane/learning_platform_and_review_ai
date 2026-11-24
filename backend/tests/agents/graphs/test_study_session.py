@@ -59,12 +59,12 @@ async def test_session_walks_sections_exercise_and_final(make_study_runner: Make
     assert outcome.summary == "Bonne séance : la softmax est acquise."
     assert len(run.prompts(FINAL_REQUEST)) == 1  # les questions finales, écrites une fois
     said = await run.events("agent.message")
-    assert said[0]["text"].startswith(f"On travaille « {MODULE} »")
+    assert said[0]["text"].startswith(f"We’ll study “{MODULE}”")
     assert said[1]["citations"][0]["index"] == 1  # « [1] » du message de la section
-    assert "Temps enregistré : 42 min." in said[-1]["text"]
-    assert "Acquis mis à jour : Attention (In progress)." in said[-1]["text"]
+    assert "Recorded 42 min of study time." in said[-1]["text"]
+    assert "Skills updated\nAttention (In progress)." in said[-1]["text"]
     done = (await run.events("run.completed"))[0]["summary"]
-    assert done == f"Session d'étude terminée : « {MODULE} », 42 min."
+    assert done == f"Study session complete for “{MODULE}” (42 min)."
 
 
 async def test_exercise_expected_is_lesson_solution(make_study_runner: MakeStudy) -> None:
@@ -93,7 +93,7 @@ async def test_finish_at_any_question_jumps_to_summary(make_study_runner: MakeSt
     assert outcome is not None and outcome.ended_early and not outcome.exercise_done
     assert [o.phase for o in outcome.outcomes] == ["section"]
     assert await run.kinds() == [TQ, TQ]
-    assert "January a terminé la séance avant" in run.prompts(SUMMARY_REQUEST)[0]
+    assert "January ended the session before" in run.prompts(SUMMARY_REQUEST)[0]
 
 
 async def test_replay_at_question_keeps_question(make_study_runner: MakeStudy) -> None:
@@ -152,7 +152,8 @@ async def test_summary_failure_falls_back_to_counts(
     await run.wait_status("completed")
     assert run.store.finished is not None
     assert (
-        run.store.finished.summary == "Séance terminée : 1 réponse(s) juste(s) sur 1 question(s)."
+        run.store.finished.summary
+        == "Study session complete. You answered 1 of 1 questions correctly."
     )
 
 

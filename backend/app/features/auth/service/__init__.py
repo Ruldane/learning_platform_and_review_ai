@@ -28,5 +28,5 @@ class AuthService:
     async def get_user(self, user_id: str) -> User:
         user = await self._users.get(user_id)
         if user is None:
-            raise AppError("user_not_found", "Utilisateur introuvable.", 404)
+            raise AppError("user_not_found", "User not found.", 404)
         return user

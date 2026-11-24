@@ -23,7 +23,8 @@ Ce fichier guide les agents qui **développent** le dépôt. Un agent qui **pilo
 - **Contrat d'abord.** Une route ou un schéma change : régénérer `contracts/openapi.json`, puis `frontend/src/shared/api/schema.d.ts`, jamais à la main. Les types de l'API ne s'écrivent pas côté front.
 - Toute table : `id` UUID texte, `user_id`, `created_at`, `updated_at` ; schéma modifié par Alembic seulement ; toute requête de repository filtre par `user_id`. Une nouvelle route a un test d'isolation entre deux utilisateurs (`backend/tests/isolation/`).
 - **MCP** : une nouvelle route est déclarée dans `features/<f>/mcp.py` (action, niveau 1 à 3) ou exclue avec un motif ; le garde `backend/tests/mcp/test_coverage_guard.py` échoue sinon. `python -m scripts.mcp_levels` imprime la table des niveaux. Niveau 4 (clés, auth, réglages de modèles, jeton MCP) : jamais exposé.
-- Textes de l'interface en français, centralisés dans `frontend/src/shared/i18n/messages/*.ts` (assemblés par `fr.ts`), jamais en dur dans un composant.
+- Keep interface text in English in `frontend/src/shared/i18n/messages/*.ts`.
+  The `en.ts` module assembles the messages. Components reference their keys.
 
 ## Sécurité et données
 

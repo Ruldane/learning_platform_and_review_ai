@@ -35,7 +35,7 @@ class FakeGateway:
         hits = [
             MemoryHitView(f"i{n}", f"c{n}", "skill", "Attention", "t", 0.8, "user") for n in "123"
         ]
-        return MemorySearchResult(hits, "Mémoire — 3 fragment(s)")
+        return MemorySearchResult(hits, "Memory — 3 chunks")
 
     async def write(
         self, user_id: str, session_id: str, author: str, write: AgentWrite

@@ -80,7 +80,7 @@ async def test_unanswered_check_counts_as_skipped_and_the_session_goes_on(
     assert (await _said(run)).count(UNCHECKED) == QUESTIONS
     # Le bilan sait que January a répondu : « non corrigée », jamais « passée » (m2).
     summary = run.prompts(SUMMARY_REQUEST)[0]
-    assert summary.count(UNCHECKED_LABEL) == QUESTIONS and "passée" not in summary
+    assert summary.count(UNCHECKED_LABEL) == QUESTIONS and ": skipped," not in summary
 
 
 @pytest.mark.parametrize(
@@ -151,15 +151,15 @@ async def test_unanswered_hint_still_counts_then_the_solution_shows(
         asked = await run.wait_question()
         labels.append(asked["options"][0]["label"])
         await run.resume("stuck")
-    assert labels == ["Je bloque (1/3)", "Je bloque (2/3)", "Je bloque (3/3)", "Voir la solution"]
+    assert labels == ["I’m stuck (1/3)", "I’m stuck (2/3)", "I’m stuck (3/3)", "Show the solution"]
     await _end(run)
     assert run.store.finished is not None
     first = run.store.finished.outcomes[0]
     assert (first.verdict, first.hints) == ("revealed", 3)
     said = await _said(run)
-    assert "Je n'ai pas pu préparer l'indice 1 sur 3." in " ".join(said)
-    assert any(t.startswith("Je n'ai pas pu préparer l'indice 3 sur 3. Tu peux voir") for t in said)
-    assert "Voici la solution :\n\nDes poids positifs qui somment à 1." in said
+    assert "I couldn’t prepare hint 1 of 3." in " ".join(said)
+    assert any(msg.startswith("I couldn’t prepare hint 3 of 3. You can show") for msg in said)
+    assert "Solution\n\nDes poids positifs qui somment à 1." in said
     assert run.models.blocked == 3
 
 
@@ -167,9 +167,9 @@ async def test_unanswered_section_is_shown_as_written(make_study_runner: MakeStu
     run = await make_study_runner(_blocking(TEACH_REQUEST))
     asked = await run.wait_question()
     assert asked["question"] == (
-        "Que retiens-tu de la section « L'essentiel en 5 lignes » ? Dis-le avec tes mots."
+        "What did you learn from “L'essentiel en 5 lignes”? Explain it in your own words."
     )
-    section = next(t for t in await _said(run) if "telle qu'écrite dans la leçon" in t)
+    section = next(t for t in await _said(run) if "as written in the lesson" in t)
     assert SECTION_TEXTS[0] in section
     assert await run.events("board.update") == []
     await run.answer("Ma réponse détaillée.")
@@ -189,16 +189,16 @@ async def test_unanswered_final_questions_come_from_the_lesson(
     assert run.store.finished is not None
     finals = [o.question for o in run.store.finished.outcomes if o.phase == "final"]
     assert finals == [
-        "Explique avec tes mots : Expliquer la softmax",
-        "Explique avec tes mots : Lire une tête d'attention",
-        "Que retiens-tu de la section « L'essentiel en 5 lignes » ? Dis-le avec tes mots.",
+        "How would you explain “Expliquer la softmax” in your own words?",
+        "How would you explain “Lire une tête d'attention” in your own words?",
+        "What did you learn from “L'essentiel en 5 lignes”? Explain it in your own words.",
     ]
     expected = [o.expected for o in run.store.finished.outcomes if o.phase == "final"]
     assert expected == ["", "", SECTION_TEXTS[0]]  # seule la question de section a un corrigé
     assert FALLBACK_FINAL_INTRO in await _said(run)
     final_check = run.prompts(CHECK_REQUEST)[3]
-    assert f"Réponse attendue : {NO_EXPECTED}" in final_check  # donnée, pas consigne (N-m1)
-    assert "juge d'après la référence seule" in final_check
+    assert f"Expected answer: {NO_EXPECTED}" in final_check
+    assert "judge based on the reference alone" in final_check
 
 
 async def test_fallback_final_question_reveals_no_foreign_solution_and_makes_no_card(
@@ -222,7 +222,7 @@ async def test_fallback_final_question_reveals_no_foreign_solution_and_makes_no_
     assert [(o.verdict, o.expected) for o in finals[:2]] == [("revealed", ""), ("wrong", "")]
     said = await _said(run)
     assert NO_SOLUTION in said
-    assert not any(t.startswith("Voici la solution") and SECTION_TEXTS[0] in t for t in said)
+    assert not any(t.startswith("Solution") and SECTION_TEXTS[0] in t for t in said)
     row = SimpleNamespace(module_id="module", id="etude")
     cards = _cards(row, finished)  # type: ignore[arg-type]
     assert [c.front for c in cards] == [o.question for o in finished.outcomes[:3]] + [

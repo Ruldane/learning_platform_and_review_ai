@@ -44,18 +44,18 @@ from app.agents.runtime.deps import GraphDeps
 from app.agents.runtime.invoke import node_timeout
 from app.agents.state.study_session import StudySessionState
 
-CHECK_REQUEST = "Évalue la réponse."
-HINT_REQUEST = "Donne l'indice."
-REVEAL_LABEL = "Voir la solution"
-SKIP_OPTION = {"value": "skip", "label": "Passer"}
-ANSWER_FIELD = {"id": "answer", "label": "Ta réponse", "max_length": MAX_ANSWER_CHARS}
+CHECK_REQUEST = "Evaluate the answer."
+HINT_REQUEST = "Give the next hint."
+REVEAL_LABEL = "Show the solution"
+SKIP_OPTION = {"value": "skip", "label": "Skip"}
+ANSWER_FIELD = {"id": "answer", "label": "Your answer", "max_length": MAX_ANSWER_CHARS}
 
 logger = logging.getLogger(__name__)
 
 
 def stuck_label(hints: int) -> str:
     """« Je bloque (n/3) » pour l'indice n à venir ; « Voir la solution » une fois épuisés."""
-    return REVEAL_LABEL if hints >= MAX_HINTS else f"Je bloque ({hints + 1}/{MAX_HINTS})"
+    return REVEAL_LABEL if hints >= MAX_HINTS else f"I’m stuck ({hints + 1}/{MAX_HINTS})"
 
 
 def question_payload(state: StudySessionState) -> dict[str, Any]:
@@ -98,14 +98,14 @@ def _reference(state: StudySessionState) -> str:
     if state["phase"] == "section":
         return lesson_prompt(section_text(context.sections[state["index"]]))
     if state["phase"] == "exercise":
-        return lesson_prompt(f"## Exercice\n\n{context.exercise}")
+        return lesson_prompt(f"## Exercise\n\n{context.exercise}")
     return whole_lesson(context)
 
 
 def _item(state: StudySessionState) -> str:
     """Question et réponse attendue : écrites par le Tuteur ou tirées de la leçon (non fiable)."""
     expected = state["expected"].strip() or NO_EXPECTED  # question finale de repli (D115)
-    text = f"Question : {state['question']}\nRéponse attendue : {expected}"
+    text = f"Question: {state['question']}\nExpected answer: {expected}"
     return untrusted(text, "question")
 
 
@@ -127,7 +127,7 @@ def make_check(deps: GraphDeps) -> Node:
             prompt,
             CHECK_REQUEST,
             step=f"verdict-{_key(state)}",
-            intent="je lis ta réponse",
+            intent="I’m reading your answer",
         )
         # Sans verdict du modèle : `skipped`, ni fiche ni pratique cochée (F13, D115).
         verdict = found.verdict if found else "skipped"
@@ -146,8 +146,8 @@ def make_check(deps: GraphDeps) -> Node:
 
 def _previous(hints: list[str]) -> str:
     if not hints:
-        return "Aucun."
-    return untrusted("\n".join(f"{n}. {h}" for n, h in enumerate(hints, start=1)), "indices")
+        return "None yet."
+    return untrusted("\n".join(f"{n}. {h}" for n, h in enumerate(hints, start=1)), "hints")
 
 
 def make_hint(deps: GraphDeps) -> Node:
@@ -171,13 +171,13 @@ def make_hint(deps: GraphDeps) -> Node:
             prompt,
             HINT_REQUEST,
             step=f"indice-{_key(state)}-{level}",
-            intent="je prépare un indice",
+            intent="I’m preparing a hint",
         )
         message_id = f"tutor-indice-{_key(state)}-{level}"
         if found is None:  # l'indice compte : la solution reste à trois clics, sans le modèle
             say(state, hint_unavailable(level, MAX_HINTS), message_id)
             return {"hints": level, "given_hints": given}
-        say(state, f"Indice {level} sur {MAX_HINTS} : {found.hint}", message_id)
+        say(state, f"Hint {level} of {MAX_HINTS}\n\n{found.hint}", message_id)
         return {"hints": level, "given_hints": [*given, found.hint]}
 
     return hint
@@ -187,7 +187,7 @@ def reveal(state: StudySessionState) -> StudySessionState:
     """Après trois indices : la solution (la réponse attendue), et la question est réglée. Sans
     réponse attendue (question finale de repli) : aucune solution inventée, et aucune fiche."""
     expected = state["expected"].strip()
-    text = f"Voici la solution :\n\n{expected}" if expected else NO_SOLUTION
+    text = f"Solution\n\n{expected}" if expected else NO_SOLUTION
     say(state, text, f"tutor-solution-{_key(state)}")
     return {"outcomes": outcome_record(state, "revealed")}
 

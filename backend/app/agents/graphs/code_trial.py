@@ -40,7 +40,7 @@ def _citations(result: CodeArgument, passages: list[CodePassage]) -> list[CodePa
     if not selected:
         raise AppError(
             "code_trial_citation_missing",
-            "Une plaidoirie doit citer un passage de cette version.",
+            "Each argument must quote a passage from this version.",
             502,
         )
     return selected

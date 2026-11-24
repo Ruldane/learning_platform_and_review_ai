@@ -19,7 +19,7 @@ class ContributionRepository:
         )
         row = (await self._db.scalars(stmt.execution_options(populate_existing=True))).one_or_none()
         if row is None:
-            raise AppError("contribution_not_found", "Dossier de contribution introuvable.", 404)
+            raise AppError("contribution_not_found", "Contribution dossier not found.", 404)
         return row
 
     async def list(self) -> list[Contribution]:

@@ -44,21 +44,20 @@ LAUNCH_FAILED = "Le quiz n'a pas pu être lancé : réessaie dans un instant."
 
 
 def quiz_not_found() -> AppError:
-    return AppError("quiz_not_found", "Quiz introuvable.", 404)
+    return AppError("quiz_not_found", "Quiz not found.", 404)
 
 
 def quiz_draft() -> AppError:
     return AppError(
         "quiz_draft",
-        "Le quiz de ce module est écrit à la main et pas encore complet : ajoute ses questions "
-        "plutôt que de le faire écrire par l'agent.",
+        "This module has a manually written quiz in progress. Add the missing questions.",
         409,
     )
 
 
 def lesson_not_ready() -> AppError:
     return AppError(
-        "lesson_not_ready", "La leçon de ce module n'est pas encore prête : le quiz attendra.", 409
+        "lesson_not_ready", "The module lesson must be ready before you can create its quiz.", 409
     )
 
 

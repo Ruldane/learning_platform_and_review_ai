@@ -84,7 +84,7 @@ async def test_empty_text_marks_error_no_text(
     done = await reload(db_session_factory, USER, doc.id)
     assert done.status == "error" and done.error == {
         "code": "no_text",
-        "message": "Aucun texte trouvé dans ce document (PDF scanné ?).",
+        "message": "No text found in this document (scanned PDF?).",
     }
 
 
@@ -114,7 +114,7 @@ async def test_duplicate_content_marks_error_with_existing_title(
     assert done.status == "error" and done.item_id is None
     assert done.error == {
         "code": "duplicate_content",
-        "message": "Ce contenu est déjà en mémoire.",
+        "message": "This content is already in memory.",
         "item_id": item_id,
     }
     assert "premier" not in str(done.error)  # ni le titre ni le nom de l'existant

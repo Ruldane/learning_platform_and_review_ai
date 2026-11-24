@@ -22,7 +22,7 @@ LABEL_MAX = 120
 
 
 def no_compare_target() -> AppError:
-    message = "Aucun objectif avec un programme : rien à comparer pour l'instant."
+    message = "Create a program for a goal before comparing skills."
     return AppError("no_compare_target", message, 404)
 
 
@@ -82,14 +82,14 @@ async def compare_with_posting(db: AsyncSession, user_id: str, posting_id: str) 
     l'offre n'est pas analysée."""
     found = await posting_skills(db, user_id, posting_id)
     if found is None:
-        message = "Cette offre n'est pas encore analysée : rien à comparer pour l'instant."
+        message = "Analyse this posting before comparing skills."
         raise AppError("no_compare_target", message, 404)
     return await _compare(db, user_id, found.label, found.names)
 
 
 def posting_id_required() -> AppError:
     return AppError(
-        "posting_id_required", "Choisis l'offre à comparer.", 422, {"fields": ["posting_id"]}
+        "posting_id_required", "Choose the posting to compare.", 422, {"fields": ["posting_id"]}
     )
 
 

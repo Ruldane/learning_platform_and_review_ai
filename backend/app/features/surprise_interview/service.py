@@ -35,7 +35,7 @@ from app.features.surprise_interview.schemas import (
 def _unbound() -> AppError:
     return AppError(
         "surprise_telegram_not_authorized",
-        "Ce jeton et cette discussion ne sont pas associés à un entretien surprise actif.",
+        "This token and chat are not linked to an active surprise interview.",
         403,
     )
 
@@ -55,7 +55,9 @@ def _pending(facts: SessionFacts | None) -> SurpriseQuestion | None:
 
 
 def _stale_question() -> AppError:
-    return AppError("surprise_question_changed", "Cette question n’attend plus de réponse.", 409)
+    return AppError(
+        "surprise_question_changed", "This question is no longer accepting answers.", 409
+    )
 
 
 class SurpriseInterviews:
@@ -102,7 +104,7 @@ class SurpriseInterviews:
     async def owned(self, consent: SurpriseSettings, invitation_id: str) -> SurpriseInvitation:
         row = await self.invitations.get(invitation_id)
         if row is None or row.consent_id != consent.consent_id:
-            raise AppError("surprise_invitation_not_found", "Invitation introuvable.", 404)
+            raise AppError("surprise_invitation_not_found", "Invitation not found.", 404)
         return row
 
     def today(self, link: TelegramConnection) -> date:
@@ -117,7 +119,7 @@ class SurpriseInterviews:
             consent, link = await service.consent(chat_id, lock=True)
             fresh = await service.owned(consent, invitation_id)
             if fresh.day != service.today(link):
-                raise AppError("surprise_invitation_expired", "Cette invitation a expiré.", 409)
+                raise AppError("surprise_invitation_expired", "This invitation has expired.", 409)
 
         started = await start_telegram_interview(
             self.rt, self.user, invitation.id, invitation.role, check

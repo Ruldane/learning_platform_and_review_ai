@@ -43,9 +43,7 @@ class KitStore(Protocol):
 
 
 def kit_unavailable() -> AppError:
-    return AppError(
-        "kit_unavailable", "Le kit de candidature n'est pas branché sur ce moteur.", 503
-    )
+    return AppError("kit_unavailable", "Application kits are unavailable in this runtime.", 503)
 
 
 class _NoKit:

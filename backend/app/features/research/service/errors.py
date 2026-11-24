@@ -33,10 +33,8 @@ class NoSearchProvider(AppError):
 
 def empty_query() -> AppError:
     """Requête vide, ou vide une fois nettoyée de toute donnée personnelle : message fixe."""
-    return AppError(
-        "search_query_empty", "Requête vide une fois les données personnelles retirées.", 422
-    )
+    return AppError("search_query_empty", "The query is empty after removing personal data.", 422)
 
 
 def source_not_found() -> AppError:
-    return AppError("source_not_found", "Source introuvable.", 404)
+    return AppError("source_not_found", "Source not found.", 404)

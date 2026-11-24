@@ -142,11 +142,11 @@ def test_a_good_summary_passes_with_or_without_a_block() -> None:
 
 
 def test_option_is_read_by_value_and_label_is_checked() -> None:
-    stuck = {"options": [{"value": "stuck", "label": "Je bloque (1/3)"}]}
+    stuck = {"options": [{"value": "stuck", "label": "I’m stuck (1/3)"}]}
 
-    assert option_value(stuck, "stuck", "Je bloque (1/3)") == "stuck"
+    assert option_value(stuck, "stuck", "I’m stuck (1/3)") == "stuck"
     with pytest.raises(CheckFailed, match="mauvais libellé"):
-        option_value(stuck, "stuck", "Voir la solution")
+        option_value(stuck, "stuck", "Show the solution")
     with pytest.raises(CheckFailed, match="absente"):
         option_value(stuck, "skip")
 

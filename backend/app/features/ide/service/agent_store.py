@@ -162,15 +162,13 @@ class AgentIdeStore:
         )
         sandbox = self._providers.sandbox
         if sandbox is None:
-            raise AppError("sandbox_unavailable", "Le bac à sable n'est pas disponible.", 503)
+            raise AppError("sandbox_unavailable", "The code sandbox is unavailable.", 503)
         try:
             await sandbox.submit(job)
         except ValueError:
             return Verification(False, "refused", "La solution dépasse les limites du bac.")
         except OSError:
-            raise AppError(
-                "sandbox_unavailable", "Le bac à sable n'est pas disponible.", 503
-            ) from None
+            raise AppError("sandbox_unavailable", "The code sandbox is unavailable.", 503) from None
         return await _result(sandbox, job.run_id)
 
     async def save_exercise(
@@ -204,9 +202,7 @@ async def _result(box: CodeSandbox, run_id: str) -> Verification:
         except UnknownRun:
             return Verification(False, "error", "Le bac n'a pas rendu de résultat.")
         except OSError:
-            raise AppError(
-                "sandbox_unavailable", "Le bac à sable n'est pas disponible.", 503
-            ) from None
+            raise AppError("sandbox_unavailable", "The code sandbox is unavailable.", 503) from None
         if progress.result is not None:
             ok = progress.result.status == "done" and progress.result.exit_code == 0
             return Verification(ok, progress.result.status, progress.output)

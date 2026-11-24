@@ -41,7 +41,7 @@ class ExtractedConcepts(BaseModel):
 
 
 def _not_found() -> AppError:
-    return AppError("document_not_found", "Document introuvable.", 404)
+    return AppError("document_not_found", "Document not found.", 404)
 
 
 def make_load_context(deps: GraphDeps) -> Node:

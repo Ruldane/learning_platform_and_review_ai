@@ -90,7 +90,7 @@ def _emit_judged(page: dict[str, Any], verdict: dict[str, Any]) -> None:
 def _page_timeout() -> AppError:
     return AppError(
         PAGE_TIMEOUT_CODE,
-        f"La notation d'une page a dépassé {PAGE_JUDGE_TIMEOUT_S:g} secondes.",
+        f"Scoring the page took over {PAGE_JUDGE_TIMEOUT_S:g} seconds.",
         504,
     )
 

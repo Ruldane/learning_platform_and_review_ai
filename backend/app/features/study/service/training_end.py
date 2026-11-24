@@ -70,7 +70,8 @@ async def _followup(
     result = StudyFinished(minutes, [], count, changed)
     row.minutes, row.worked_minutes = minutes, minutes
     row.status, row.ended_at = "finished", now
-    row.summary = f"Session training terminée. {minutes} min et {count} fiche(s) de révision."
+    card_count_text = f"{count} review card" + ("s" if count != 1 else "")
+    row.summary = f"Training complete. {minutes} min of practice and {card_count_text}."
     row.outcome = {"result": asdict(result)}
     await add_entry(
         db,

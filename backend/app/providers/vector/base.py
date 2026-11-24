@@ -56,7 +56,7 @@ class VectorStoreUnavailable(AppError):
 
     def __init__(self) -> None:
         super().__init__(
-            "memory_unavailable", "La base vectorielle (Qdrant) est indisponible.", status_code=503
+            "memory_unavailable", "The vector database (Qdrant) is unavailable.", status_code=503
         )
 
 

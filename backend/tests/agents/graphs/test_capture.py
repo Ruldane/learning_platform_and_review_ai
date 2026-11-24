@@ -249,7 +249,7 @@ async def test_document_not_indexed_in_time_fails(
     failed = await run.wait_status("failed")
     assert failed.error == {
         "code": "document_not_indexed",
-        "message": "Document pas encore indexé.",
+        "message": "This document is not indexed yet.",
     }
     assert run.models.calls == []
 

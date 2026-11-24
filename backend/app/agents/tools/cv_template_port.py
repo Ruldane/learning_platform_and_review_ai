@@ -96,7 +96,7 @@ class CvTemplateStore(Protocol):
 
 def cv_templates_unavailable() -> AppError:
     return AppError(
-        "cv_templates_unavailable", "Les modèles de CV ne sont pas branchés sur ce moteur.", 503
+        "cv_templates_unavailable", "CV templates are unavailable in this runtime.", 503
     )
 
 

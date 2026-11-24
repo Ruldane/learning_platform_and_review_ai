@@ -154,7 +154,7 @@ async def test_paste_is_json_capped_at_500k_characters(
     too_long = await client.post(f"{API}/text", json={"text": "secret" + "x" * 500_000})
     assert too_long.status_code == 422 and too_long.json()["error"] == {
         "code": "paste_too_long",
-        "message": "Texte trop long : 500 000 caractères au maximum.",
+        "message": "Text can contain up to 500,000 characters.",
         "details": None,
     }
     assert "secret" not in too_long.text

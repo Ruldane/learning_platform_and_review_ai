@@ -29,8 +29,8 @@ MAX_ANSWER_CHARS = 4000
 LESSON_CHARS = 20_000  # une leçon de 2 500 mots tient en entier
 TUTOR_QUESTION = "tutor_question"
 FINISH_SESSION = "finish_session"
-LESSON_LABEL = "leçon"
-ANSWER_LABEL = "réponse de January"
+LESSON_LABEL = "lesson"
+ANSWER_LABEL = "January's answer"
 
 TutorAction = Literal["answer", "stuck", "skip", "finish"]
 
@@ -127,13 +127,13 @@ def lesson_prompt(text: str) -> str:
 
 def whole_lesson(context: StudyContext) -> str:
     parts = [section_text(s) for s in context.sections]
-    parts.append(f"## Exercice\n\n{context.exercise}")
+    parts.append(f"## Exercise\n\n{context.exercise}")
     return lesson_prompt("\n\n".join(parts))
 
 
 def _sources_prompt(sources: list[CitationEntry]) -> str:
     if not sources:
-        return "Aucune source citable : ne mets aucun numéro entre crochets."
+        return "No sources are available to cite. Omit bracketed numbers."
     return "\n".join(
         f"[{s.index}] " + untrusted(" ".join(s.title.split()), f"source {s.index}") for s in sources
     )
@@ -141,8 +141,8 @@ def _sources_prompt(sources: list[CitationEntry]) -> str:
 
 def _module_prompt(context: StudyContext) -> str:
     """Titre et objectifs viennent du programme et de la leçon (sorties d'agents) : encadrés."""
-    lines = [f"Titre : {context.module_title}", "Objectifs :"]
-    lines += [f"- {objective}" for objective in context.objectives] or ["- aucun précisé"]
+    lines = [f"Title: {context.module_title}", "Objectives"]
+    lines += [f"- {objective}" for objective in context.objectives] or ["- None specified"]
     return untrusted("\n".join(lines), "module")
 
 
@@ -212,13 +212,13 @@ def outcome_record(
 
 
 _VERDICTS = {
-    "correct": "juste",
-    "partial": "en partie juste",
-    "wrong": "fausse",
-    "skipped": "passée",
-    "revealed": "solution montrée",
+    "correct": "correct",
+    "partial": "partly correct",
+    "wrong": "incorrect",
+    "skipped": "skipped",
+    "revealed": "solution shown",
 }
-UNCHECKED_LABEL = "répondue, non corrigée (le modèle n'a pas répondu)"
+UNCHECKED_LABEL = "answered, unchecked (the model did not respond)"
 
 
 def _verdict_label(outcome: dict[str, Any]) -> str:
@@ -230,9 +230,9 @@ def outcomes_prompt(state: StudySessionState) -> str:
     une leçon non fiable : encadrées."""
     outcomes = state.get("outcomes", [])
     if not outcomes:
-        return "Aucune question réglée pour l'instant."
+        return "No questions resolved yet."
     lines = [
-        f"- {' '.join(o['question'].split())[:300]} : {_verdict_label(o)}, {o['hints']} indice(s)"
+        f"- {' '.join(o['question'].split())[:300]}: {_verdict_label(o)}, {o['hints']} hint(s)"
         for o in outcomes
     ]
-    return untrusted("\n".join(lines), "séance")
+    return untrusted("\n".join(lines), "session")

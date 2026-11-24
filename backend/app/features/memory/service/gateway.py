@@ -49,7 +49,7 @@ def _kinds(kinds: Sequence[str] | None) -> list[MemoryKind] | None:
     resolved = [current_memory_kind(kind) for kind in kinds]
     if unknown := [kind for kind in resolved if kind not in MEMORY_KINDS]:
         raise AppError(
-            "memory_kind_invalid", "Type de mémoire inconnu.", 422, {"kinds": sorted(set(unknown))}
+            "memory_kind_invalid", "Unknown memory item type.", 422, {"kinds": sorted(set(unknown))}
         )
     return cast(list[MemoryKind], resolved)
 

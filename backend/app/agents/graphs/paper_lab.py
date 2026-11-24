@@ -29,7 +29,7 @@ class PaperLabState(TypedDict, total=False):
 async def _read(deps: GraphDeps, url: str) -> ArticleSource:
     page = await deps.ports.web.read(deps.user_id, deps.session_id, url)
     if page.status != "ok" or len(page.text.strip()) < 100:
-        raise AppError("paper_lab_source", "Le texte de cet article est indisponible.", 422)
+        raise AppError("paper_lab_source", "The text of this paper is unavailable.", 422)
     return ArticleSource(page.url, page.title or "Article source", page.text[:28_000])
 
 

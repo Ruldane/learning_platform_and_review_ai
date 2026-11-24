@@ -26,7 +26,7 @@ async def folders(db: AsyncSession, user_id: str) -> list[FolderOut]:
 async def owned_folder(db: AsyncSession, user_id: str, folder_id: str) -> BrainFolder:
     row = await FolderRepository(db, user_id).get(folder_id)
     if row is None:
-        raise AppError("brain_folder_not_found", "Dossier introuvable.", 404)
+        raise AppError("brain_folder_not_found", "Folder not found.", 404)
     return row
 
 

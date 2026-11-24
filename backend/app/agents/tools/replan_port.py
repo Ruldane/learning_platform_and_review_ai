@@ -251,9 +251,7 @@ class ReplanStore(Protocol):
 
 
 def replan_unavailable() -> AppError:
-    return AppError(
-        "replan_unavailable", "La replanification n'est pas branchée sur ce moteur.", 503
-    )
+    return AppError("replan_unavailable", "Replanning is unavailable in this runtime.", 503)
 
 
 class _NoReplan:

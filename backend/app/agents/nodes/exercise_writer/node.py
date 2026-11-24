@@ -36,8 +36,7 @@ def summary_of(title: str) -> str:
 def unverified() -> AppError:
     return AppError(
         "exercise_unverified",
-        "L'exercice généré n'a pas passé ses propres tests dans le bac à sable : "
-        "relance la génération.",
+        "The generated exercise failed its sandbox tests. Generate it again.",
         502,
     )
 

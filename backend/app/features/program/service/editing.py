@@ -125,12 +125,13 @@ def _shift(loaded: Loaded, patch: ProgramPatch) -> None:
     if start is None or start == program.start_date:
         return
     if program.status != "draft":
-        raise AppError(
-            "program_validated", "La date de début d'un programme validé ne change plus.", 409
-        )
+        raise AppError("program_validated", "A validated program has a fixed start date.", 409)
     if start.weekday() != MONDAY:
         raise AppError(
-            "invalid_start_date", "Un programme commence un lundi.", 422, {"fields": ["start_date"]}
+            "invalid_start_date",
+            "A program must start on a Monday.",
+            422,
+            {"fields": ["start_date"]},
         )
     delta: timedelta = start - program.start_date
     for week in loaded.weeks:

@@ -75,7 +75,7 @@ async def set_reminder(rt: StudyReturnRuntime, user_id: str, day: date | None) -
 
 
 def _plan_required() -> AppError:
-    return AppError("study_return_not_prepared", "Prépare ton bloc de reprise d’abord.", 409)
+    return AppError("study_return_not_prepared", "Prepare your return-to-study block first.", 409)
 
 
 async def link_training(db: AsyncSession, user_id: str, training_id: str) -> None:
