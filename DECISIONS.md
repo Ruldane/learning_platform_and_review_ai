@@ -4329,92 +4329,813 @@ subject, decision, and reason. Historical entries describe the project at the ti
 
 ## D98
 
-- **Date** : 2026-11-12
-- **Sujet** : Phase 5, tâche 5.1 : reliquat de la phase 4, réglages d'étude et temps local
-- **Décision** : (1) **Temps local** : `UserSettings.timezone` (nom IANA, défaut `Europe/Paris`), validé par `zoneinfo` ; un nom inconnu ou mal formé (chemin, vide, plus de 64 caractères) donne 422 `validation_error` avec un message fixe, sans recopier la saisie. `app/core/clock.py` porte tout calcul de jour ou de semaine : `user_zone` (inconnu → Paris), `local_today`, `week_start` (lundi), `local_moment` (instant UTC d'une heure locale, heure d'été comprise), `WEEKDAYS` ; `Weekday` y est déplacé depuis `settings/schemas.py`, qui l'importe (aucun module de `app.core` n'importe une feature). `tzdata` devient une dépendance directe (`tzdata>=2026.6`, déjà présent en transitif). (2) **Cycles d'étude** : `study_work_minutes` (50, de 10 à 120) et `study_break_minutes` (10, de 0 à 60) dans les réglages. Le front reprend les trois champs dans `buildUserSettings` (corps complet du `PUT /settings`) : sans cela, enregistrer la recherche ou les niveaux remettrait le fuseau et le rythme à leur défaut. (3) **Sous-charge** : `UNDERLOAD_SHARE = 0,6` dans `rules.py` (`planning.py` ayant 287 lignes, F23), réexporté par `planning` ; seuil `floor_minutes(cap) = cap × 60 // 100` en entiers (428 pour 714). `check_draft` ajoute « Semaine n : X min prévues, vise au moins Y min. » pour toute semaine sauf la dernière sous le seuil ; la règle reste hors de `week_breaks` (January est libre d'alléger une semaine). Le prompt `plan` du Stratège le dit avec le nombre : « remplis chaque semaine entre 60 % du plafond (au moins Y min) et le plafond, sauf la dernière » ; `BudgetView` gagne `floor_minutes`, calculé par le port (les agents n'importent pas les features). **Écart de forme** : la phrase du plan, « entre 60 % et 85 % du plafond », est corrigée, car le plafond vaut déjà 85 % du budget. Au rangement, `schedule` appelle `pull_forward(weeks, budget, floor_share=0,6)` : pour chaque semaine sauf la dernière, sous le seuil, les tâches de la suivante sont avancées dans leur ordre, jamais son quiz (le dernier) ni sa pratique réservée (la première), sur les jours qui ont la place, du jour de la dernière tâche non réservée jusqu'au jour du quiz, sans dépasser le plafond, tant que la semaine reste sous le seuil ; la première tâche qui ne tient pas arrête l'avance ; une semaine vidée avance à son tour depuis la suivante. Le calcul vit dans `program/service/advance.py` sur un type minimal (`Dated(minutes, day, reserved)`, `WeekSlots`, `plan_advances` → `Advance(source, index, day)`), que 5.9 réutilisera sur les lignes en base (seul `planned_date` change, D88 §1). `packing.pull_forward` applique les déplacements aux `ScheduledWeek` : une tâche avancée garde son module, qui est ajouté à la semaine qui la reçoit sous son titre suivi de « (suite) », ou réutilisé s'il y est déjà (même titre sans « (suite) », mêmes compétences) ; un module vidé quitte sa semaine. `moved_tasks` (les reports) n'en compte pas. **Diagnostic du programme réel** (base Docker de la phase 4, programme `8c0c65fd`, version 1) : la charge manquait **dès le brouillon** (semaine 1 à 255 min, 36 % du plafond de 714 ; les 8 semaines de 225 à 270 min), et `apply_known` l'a encore réduite à 125 min en ramenant ses trois modules, tous connus (`declare`/`en_cours`), à une révision de 20 min. La pratique et le quiz ont été ajoutés ensuite par `ensure_week_rules`. L'autre programme (`fc8a4043`, 16 semaines) était déjà de 195 à 240 min par semaine dans sa version 1. (4) **Titre de révision** : `_review_of` donne « Réviser : {sujet} », où `verbs.review_subject` retire un préfixe de révision déjà présent en tête du titre du module (« Réviser », « Révision de », « Revoir », casse et accents ignorés, avec ou sans « : », suivi d'une espace ou de « : ») et remet une majuscule ; un titre réduit au préfixe reste tel quel. Cas réel : « Réviser : Réviser Python appliqué et appels d'API LLM ». (5) **Objection du Sceptique** : `_OBJECTION` accepte le gras, les listes (`-`, `*`, `1.`, `1)`), le pluriel et toute casse. `cap_words(text, limit, *, keep=)` garde entière la première ligne qui correspond, comptée dans `limit` : ce qui la précède est coupé comme avant dans les mots restants, ce qui la suit est retiré ; une ligne plus longue que `limit` est coupée seule, et si la coupe ordinaire la garde déjà, rien ne change. `speak(..., keep=)` le transmet, et `debate_turn` le passe pour le Sceptique seulement. Son prompt dit : « ta première ligne commence par « Objection : » ». La ligne gardée est celle où la correspondance **finit** : `_OBJECTION` admet des blancs en tête (`^\s*` en MULTILINE), donc, après une ligne vide, sa correspondance commence sur la ligne vide (relecture de 5.1, I1). (6) **Essais de leçon** : `LessonSummaryOut.attempts` (et donc `LessonOut`) expose les essais faits, bornés à 3 (`MAX_LESSON_ATTEMPTS` de `db/models/lessons.py`, repris par `production.MAX_ATTEMPTS` et par le schéma). Un fuseau stocké devenu inconnu retombe sur `Europe/Paris` à la relecture (règle existante de `_parse_stored` : champ invalide → son défaut, nom du champ seul journalisé). Dans `check_phase4`, `lessons_done` compte une leçon `failed` avec moins de 3 essais comme en cours (relancée par la tâche planifiée) et n'échoue qu'à 3 essais.
-- **Raison** : SPEC 3.4 (charge réaliste, 85 %), 3.5 (relances), 9.3 (objection du Sceptique, 150 mots), 11.4 (bilan du dimanche 18 h), F14 (50/10 réglables) ; bilan de la phase 4 (« Points laissés pour plus tard → Phase 5 ») ; scan préalable de la phase 5, F5 (type minimal partagé avec 5.9, module d'origine ajouté à la semaine qui reçoit), F17 (`Weekday` dans `app.core`), F22 (fichiers de test existants : `test_settings_router.py`, `test_council_debate.py`), F23 (règle hors de `planning.py`). Le fuseau est un ajout hors 11.4 : sans lui, « dimanche 18 h » et « le lendemain » n'ont pas de sens sur un serveur UTC. Documentation `zoneinfo` (Python 3.12) : les données viennent d'abord de `TZPATH` (système), puis du paquet `tzdata`, recommandé en dépendance déclarée ; sans les deux, tout `ZoneInfo` lève `ZoneInfoNotFoundError`. Vérifié dans l'image du back (`python:3.12.16-slim-trixie`) : paquet Debian `tzdata 2026f` et paquet Python `tzdata` présents, 599 fuseaux disponibles.
+- **Date** 2026-11-12
+- **Subject** Phase 5, task 5.1: phase 4 leftovers, study settings, and local time
+- **Decision**
+  1. **Local time**: `UserSettings.timezone` (IANA name, default `Europe/Paris`), validated by
+     `zoneinfo`; an unknown or malformed name (path, empty, more than 64 characters) gives 422
+     `validation_error` with a fixed message, without echoing the input. `app/core/clock.py` carries
+     every day or week calculation: `user_zone` (unknown → Paris), `local_today`, `week_start`
+     (Monday), `local_moment` (UTC instant of a local time, daylight saving included), `WEEKDAYS`;
+     `Weekday` moves there from `settings/schemas.py`, which imports it (no `app.core` module
+     imports a feature). `tzdata` becomes a direct dependency (`tzdata>=2026.6`, already present
+     transitively).
+  2. **Study cycles**: `study_work_minutes` (50, from 10 to 120) and `study_break_minutes` (10, from
+     0 to 60) in the settings. The front end carries the three fields in `buildUserSettings`
+     (complete `PUT /settings` body): without that, saving the search or the tiers would reset the
+     time zone and the rhythm to their defaults.
+  3. **Underload**: `UNDERLOAD_SHARE = 0.6` in `rules.py` (`planning.py` having 287 lines, F23),
+     re-exported by `planning`; threshold `floor_minutes(cap) = cap × 60 // 100` in integers (428
+     for 714). `check_draft` adds “Week n: X min planned, aim for at least Y min.” for every week
+     except the last one below the threshold; the rule stays outside `week_breaks` (January is free
+     to lighten a week). The Strategist's `plan` prompt says it with the number: “fill each week
+     between 60% of the cap (at least Y min) and the cap, except the last”; `BudgetView` gains
+     `floor_minutes`, computed by the port (the agents import no features). **Deviation in form**:
+     the plan's sentence, “between 60% and 85% of the cap”, is corrected, because the cap is already
+     85% of the budget. When sorting, `schedule` calls `pull_forward(weeks, budget,
+     floor_share=0.6)`: for each week except the last, under the threshold, the following week's
+     tasks are brought forward in their order, never its quiz (the last) or its reserved practice
+     (the first), onto the days that have room, from the day of the last non-reserved task up to the
+     quiz's day, without exceeding the cap, as long as the week stays under the threshold; the first
+     task that does not fit stops the advance; an emptied week advances in turn from the following
+     one. The calculation lives in `program/service/advance.py` on a minimal type
+     (`Dated(minutes, day, reserved)`, `WeekSlots`, `plan_advances` → `Advance(source, index,
+     day)`), which 5.9 will reuse on the rows in the database (only `planned_date` changes, D88 §1).
+     `packing.pull_forward` applies the moves to the `ScheduledWeek`s: an advanced task keeps its
+     module, which is added to the receiving week under its title followed by “(continued)”, or
+     reused if it is already there (same title without “(continued)”, same skills); an emptied
+     module leaves its week. `moved_tasks` (the carry-overs) does not count them. **Diagnosis of the
+     real program** (phase 4's Docker database, program `8c0c65fd`, version 1): the load was missing
+     **from the draft on** (week 1 at 255 min, 36% of the 714 cap; the 8 weeks from 225 to 270 min),
+     and `apply_known` reduced it further to 125 min by bringing its three modules, all known
+     (`declare`/`en_cours`), down to a 20-minute review. The practice and the quiz were added
+     afterwards by `ensure_week_rules`. The other program (`fc8a4043`, 16 weeks) was already at 195
+     to 240 min per week in its version 1.
+  4. **Review title**: `_review_of` gives “Review: {subject}”, where `verbs.review_subject` removes
+     a review prefix already present at the start of the module's title (“Réviser”, “Révision de”,
+     “Revoir”, case and accents ignored, with or without “:”, followed by a space or “:”) and puts
+     back a capital letter; a title reduced to the prefix stays as is. Real case: “Review: Review
+     applied Python and LLM API calls”.
+  5. **Skeptic's objection**: `_OBJECTION` accepts bold, lists (`-`, `*`, `1.`, `1)`), the plural,
+     and any case. `cap_words(text, limit, *, keep=)` keeps whole the first line that matches,
+     counted in `limit`: what precedes it is cut as before within the remaining words, what follows
+     it is removed; a line longer than `limit` is cut alone, and if the ordinary cut already keeps
+     it, nothing changes. `speak(..., keep=)` passes it on, and `debate_turn` passes it for the
+     Skeptic only. Its prompt says: “your first line begins with “Objection:”.” The kept line is the
+     one where the match **ends**: `_OBJECTION` admits leading whitespace (`^\s*` in MULTILINE), so
+     after an empty line its match starts on the empty line (review of 5.1, I1).
+  6. **Lesson attempts**: `LessonSummaryOut.attempts` (and therefore `LessonOut`) exposes the
+     attempts made, bounded to 3 (`MAX_LESSON_ATTEMPTS` of `db/models/lessons.py`, taken up by
+     `production.MAX_ATTEMPTS` and by the schema). A stored time zone that has become unknown falls
+     back to `Europe/Paris` on re-reading (existing rule of `_parse_stored`: invalid field → its
+     default, only the field's name logged). In `check_phase4`, `lessons_done` counts a `failed`
+     lesson with fewer than 3 attempts as in progress (relaunched by the scheduled job) and fails
+     only at 3 attempts.
+- **Reason** SPEC 3.4 (realistic load, 85%), 3.5 (relaunches), 9.3 (Skeptic's objection, 150 words),
+  11.4 (Sunday 6 pm review), F14 (50/10 adjustable); phase 4 review (“Points left for later → Phase
+  5”); phase 5 preliminary scan, F5 (minimal type shared with 5.9, original module added to the
+  receiving week), F17 (`Weekday` in `app.core`), F22 (existing test files:
+  `test_settings_router.py`, `test_council_debate.py`), F23 (rule outside `planning.py`). The time
+  zone is an addition outside 11.4: without it, “Sunday 6 pm” and “the next day” have no meaning on
+  a UTC server. `zoneinfo` documentation (Python 3.12): data comes first from `TZPATH` (system),
+  then from the `tzdata` package, recommended as a declared dependency; without both, any `ZoneInfo`
+  raises `ZoneInfoNotFoundError`. Verified in the backend image (`python:3.12.16-slim-trixie`):
+  Debian package `tzdata 2026f` and Python package `tzdata` present, 599 time zones available.
 
 ## D99
 
-- **Date** : 2026-11-12
-- **Sujet** : Phase 5, tâche 5.2 : tables de l'étude, révisions espacées, notes, bilan, série, journal
-- **Décision** : (1) **Schéma** : migration `0006` (SQLite, mode batch) crée `quizzes` (un par module, unique), `quiz_questions`, `quiz_attempts`, `flashcards` (unique `(user_id, front_hash)`, index `ix_flashcards_user_due (user_id, due_date)`), `study_sessions`, `journal_entries` (unique `(user_id, ref_key)`, index `(user_id, created_at)`) et `skill_snapshots` (unique `(user_id, week_start)`). Elle ajoute `user_skills.fail_streak` (0) et, à `plan_versions`, `kind` (`build`), `status`, `base_fingerprint`, `review_entry_id`, `week_loads`. Deux index uniques partiels : `uq_study_sessions_open (user_id) WHERE status = 'open'` (une session d'étude ouverte au plus) et, au tranché de F3, `uq_quiz_attempts_grading (user_id, quiz_id) WHERE status = 'grading'` (une seule tentative en cours de notation par quiz ; le second INSERT lèvera `IntegrityError`, que 5.4 traduira en 409 `attempt_in_progress`). (2) **`plan_versions.status`** (F2) : `pending` par défaut ; la migration range les versions de la phase 4 en `accepted` si `accepted_at` est posé, sinon `superseded`. Dès 5.2, `_accept` (validation) passe la version à `accepted` et une nouvelle révision du Stratège, ou une acceptation qui écrit une version de January, passe les `pending` précédents du programme à `superseded` (`PlanVersionRepository.supersede_pending`). `latest()` ne filtre pas encore : 5.9 le fera. (3) **Journal** : seul écrivain `capture.service.journal.add_entry`, `INSERT … ON CONFLICT (user_id, ref_key) DO NOTHING` puis relecture, idempotent, la première écriture gagne ; le bilan hebdomadaire est une entrée `weekly_review` (le « résumé hebdomadaire » de F18) clé par semaine. (4) **File de révision** : 15 min à 30 s la fiche, soit `DAILY_CARDS = 30` ; paliers `INTERVALS = (1, 3, 7, 16, 35)` jours, une erreur ramène au palier 0, demain ; `DEMOTE_AFTER = 2` échecs consécutifs (compteur `fail_streak`). (5) **Notes** : QCM 0 ou 1, ouvertes 0, 0,5 ou 1 ; `score_percent` arrondit au plus proche, **0,5 vers le haut** (12,5 donne 13, pas 12 comme `round`) ; réussite à 80 %. (6) **Preuves structurées** : `Evidence {kind, ref_id, label, at}` dans `core/skills.py` ; `read_evidence` relit les chaînes de la phase 4 comme des preuves `program` sans référence ni date et ignore le reste ; `SkillsService.raise_levels(names, level, evidence)` dédoublonne par `(kind, ref_id)` (sans `ref_id`, par `(kind, label)`), **la première preuve d'un couple est gardée** (un rejeu ne réécrit rien), 20 preuves au plus ; la validation d'un programme écrit `evidence("program", program_id, …)`. (7) **Radar** : moyenne des niveaux par domaine (sans niveau 0, déclaré 25, en cours 50, validé 75, prouvé 100), « Autres » pour un domaine absent, arrondi 0,5 vers le haut, trié par nom sans casse. (8) **Bilan** : `LATE_THRESHOLD = 0,30` strict (« plus de 30 % ») ; `late_twice` : retard > 30 % et semaine précédente > 30 % ; `late` : retard > 0 ; `ahead` : aucun retard et au moins une tâche de la semaine suivante déjà faite ; sinon `on_track` ; un retard prime sur l'avance ; options : `late_twice` → réduire ou repousser, `ahead` → avancer ou approfondir. `review_text` rend « 2 h », « 45 min », « 6 h 30 », « 2 h 05 » et « aucun quiz » sans note. (9) **Types** : `answers`, `results`, `task_ids` sont des listes JSON, `followup`, `outcome`, `levels`, `data` des objets JSON ; `ReplanTrigger`, `ReplanOption`, `ReviewState`, `CardDraft` (verso en `Prose`) et `card_hash` (sha256 du recto sans casse ni espaces en trop) vivent dans `agents/tools/study_schema.py`, `Weekday` restant dans `core/clock.py` (F17). Aucune route : l'OpenAPI est inchangé.
-- **Raison** : SPEC F9, F13, F14, F15, F18, 13.6 (index des fiches) ; plan de la phase 5, tâche 5.2 ; scan préalable F2, F3, F17 ; Review Focus n° 5 (double envoi : l'unicité se garantit par la base, pas par un contrôle avant écriture) ; D5 (index préfixés par l'utilisateur) ; D6 (`user_skills` fait foi) ; D88 (une version non acceptée ne doit pas paraître appliquée).
+- **Date** 2026-11-12
+- **Subject** Phase 5, task 5.2: study tables, spaced reviews, notes, review, streak, journal
+- **Decision**
+  1. **Schema**: migration `0006` (SQLite, batch mode) creates `quizzes` (one per module, unique),
+     `quiz_questions`, `quiz_attempts`, `flashcards` (unique `(user_id, front_hash)`, index
+     `ix_flashcards_user_due (user_id, due_date)`), `study_sessions`, `journal_entries` (unique
+     `(user_id, ref_key)`, index `(user_id, created_at)`), and `skill_snapshots` (unique
+     `(user_id, week_start)`). It adds `user_skills.fail_streak` (0) and, to `plan_versions`, `kind`
+     (`build`), `status`, `base_fingerprint`, `review_entry_id`, `week_loads`. Two partial unique
+     indexes: `uq_study_sessions_open (user_id) WHERE status = 'open'` (at most one open study
+     session) and, as settled in F3, `uq_quiz_attempts_grading (user_id, quiz_id) WHERE
+     status = 'grading'` (a single attempt being graded per quiz; the second INSERT will raise
+     `IntegrityError`, which 5.4 will translate into 409 `attempt_in_progress`).
+  2. **`plan_versions.status`** (F2): `pending` by default; the migration puts phase 4's versions at
+     `accepted` if `accepted_at` is set, otherwise `superseded`. From 5.2 on, `_accept` (validation)
+     moves the version to `accepted` and a new Strategist revision, or an acceptance that writes a
+     January version, moves the program's previous `pending` ones to `superseded`
+     (`PlanVersionRepository.supersede_pending`). `latest()` does not filter yet: 5.9 will.
+  3. **Journal**: sole writer `capture.service.journal.add_entry`, `INSERT … ON CONFLICT
+     (user_id, ref_key) DO NOTHING` then re-read, idempotent, the first write wins; the weekly
+     review is a `weekly_review` entry (F18's “weekly summary”) keyed by week.
+  4. **Review queue**: 15 min at 30 s per card, that is `DAILY_CARDS = 30`; steps
+     `INTERVALS = (1, 3, 7, 16, 35)` days, a mistake brings back to step 0, tomorrow;
+     `DEMOTE_AFTER = 2` consecutive failures (counter `fail_streak`).
+  5. **Scores**: multiple-choice 0 or 1, open-ended 0, 0.5, or 1; `score_percent` rounds to the
+     nearest, **0.5 upward** (12.5 gives 13, not 12 like `round`); pass at 80%.
+  6. **Structured evidence**: `Evidence {kind, ref_id, label, at}` in `core/skills.py`;
+     `read_evidence` re-reads phase 4's strings as `program` evidence with no reference or date and
+     ignores the rest; `SkillsService.raise_levels(names, level, evidence)` deduplicates by
+     `(kind, ref_id)` (without `ref_id`, by `(kind, label)`), **the first evidence of a pair is
+     kept** (a replay rewrites nothing), 20 pieces of evidence at most; a program's validation
+     writes `evidence("program", program_id, …)`.
+  7. **Radar**: average of the levels by domain (without level 0, declared 25, in progress 50,
+     validated 75, proven 100), “Other” for an absent domain, rounded 0.5 upward, sorted by name
+     without case.
+  8. **Review**: `LATE_THRESHOLD = 0.30` strict (“more than 30%”); `late_twice`: delay > 30% and
+     previous week > 30%; `late`: delay > 0; `ahead`: no delay and at least one task of the
+     following week already done; otherwise `on_track`; a delay takes precedence over being ahead;
+     options: `late_twice` → reduce or postpone, `ahead` → advance or deepen. `review_text` renders
+     “2 h”, “45 min”, “6 h 30”, “2 h 05”, and “no quiz” without a score.
+  9. **Types**: `answers`, `results`, `task_ids` are JSON lists, `followup`, `outcome`, `levels`,
+     `data` JSON objects; `ReplanTrigger`, `ReplanOption`, `ReviewState`, `CardDraft` (back in
+     `Prose`), and `card_hash` (sha256 of the front without case or extra spaces) live in
+     `agents/tools/study_schema.py`, `Weekday` remaining in `core/clock.py` (F17). No route: the
+     OpenAPI is unchanged.
+- **Reason** SPEC F9, F13, F14, F15, F18, 13.6 (card indexes); phase 5 plan, task 5.2; preliminary
+  scan F2, F3, F17; Review Focus no. 5 (double send: uniqueness is guaranteed by the database, not
+  by a check before writing); D5 (indexes prefixed by the user); D6 (`user_skills` is
+  authoritative); D88 (a non-accepted version must not look applied).
 
 ## D100
 
-- **Date** : 2026-11-12
-- **Sujet** : Phase 5, tâche 5.3 : l'Examinateur et le parcours `quiz` (écrire, noter)
-- **Décision** : (1) **Un seul parcours `quiz` à deux modes** (`QuizInput.mode`) : `generate` (module → `write` → `save_quiz`, ou `failed`) et `grade` (`load_attempt` → `grade_open` → `save_grades` → `announce`). La route de tentative (5.4) rend la main tout de suite, mais la note des réponses ouvertes demande un modèle : elle tourne donc dans une session d'agents. `generate` exige `quiz_id`, `grade` exige `attempt_id`, sinon 422 `invalid_input` (chemins des champs seulement). Agent `examiner` au niveau `standard`, prompt `examiner.md` à deux modes (`write`, `grade`). (2) **Fiches « depuis les leçons » écrites avec le quiz** : 3 à 6 `CardDraft` dans le même `QuizDraft`, un seul appel. (3) **QCM notés par le code, réponses ouvertes à {0 ; 0,5 ; 1}** : `GradeDraft.score` est un `float` validé sur {0 ; 0,5 ; 1} (le schéma JSON envoyé au modèle garde `{"enum": [0, 0.5, 1]}` ; mypy refuse un `Literal` flottant) ; une autre valeur est refusée par le validateur et redemandée (`structured_call`, deux nouveaux essais) ; les QCM ne sont jamais envoyés au modèle et entrent dans `save_grades` avec leur point et un retour vide (l'explication de la question suffit). Une seule demande pour toutes les réponses ouvertes, aucune s'il n'y en a pas. Une référence inconnue (ou celle d'un QCM) est ignorée, la première note d'une référence gagne ; si des questions restent sans note (oubliées ou renumérotées par le modèle), **une seule nouvelle demande** les nomme (« Ta notation oublie ces questions : q4. ») avec la réponse précédente, comme le Stratège (`MAX_GRADE_ASKS = 2`, revue finale de la phase 5, D115) ; ensuite seulement, une question sans note vaut 0 avec « Réponse non évaluée : relis la correction. ». (4) **Au moins 3 types sur 4** (un module non technique n'a pas de lecture de code) : `quiz_problems` vérifie aussi 3 à 5 choix distincts et un `correct_index` valide pour un QCM, l'extrait pour une lecture de code, ni choix ni index ailleurs ; ses phrases ne citent que des numéros et des nombres, jamais le contenu écrit par le modèle (elles vont au modèle, à `failure_reason` et au fil). Trois brouillons au plus (`MAX_QUIZ_ASKS`) ; ensuite `quiz_failed` avec « Quiz invalide après 3 essais : … » (300 caractères). Un brouillon illisible trois fois (`structured_output_invalid`) fait échouer la session : 5.4 lit alors le quiz en échec d'après la session (comme D91), de même pour une tentative dont la session de notation échoue. (5) **`Prose` et champs refusés** : réponse attendue, critères de la grille (`ShortenToMax` dans la liste), explication et retour sont raccourcis ; énoncé (600), choix (200), code (3 000), compétence, titre du quiz et référence `qN` restent refusés puis redemandés. (6) **Contenu non fiable** : la leçon (`leçon`, 20 000 caractères), le module (`module`), chaque question à noter (`question qN`) et chaque réponse de January (`réponse de January`) passent par `untrusted()` ; le prompt dit qu'une consigne dans une réponse ne change rien à la note. Au tranché de F12, `AttemptToGrade.lesson_markdown` porte la leçon du module, remplie par le port. (7) **Rejeu** : aucun nœud ne pose de question ; `write` et `grade_open` ne touchent aucun port ; `save_quiz` (quiz déjà `ready` → son nombre de questions), `quiz_failed` et `save_grades` (tentative déjà notée → sa note) sont idempotents ; l'annonce vient après le rangement. Journaux : identifiants et nombres seulement. (8) **Fin** : `artifact.ready` `kind: "quiz"`, URL `/etudier/quiz/{quiz_id}` ; résumés « Quiz prêt : « module » », « Quiz en échec : « module » », « Quiz noté : « module », 85 % ». Le port est branché par 5.4 (`AgentPorts.quiz`, `NO_QUIZ` → 503 `quiz_unavailable`) ; l'OpenAPI est inchangé.
-- **Raison** : SPEC F9, 9.1, 9.2, 9.4, 17.2, 17.4 ; plan de la phase 5, tâche 5.3 et Review Focus n° 1 ; scan préalable F12 ; D97 n° 10 (GLM dépasse les plafonds : texte lu raccourci, identifiants et code refusés) ; D86 et D90 (re-demandes avec les problèmes, écritures idempotentes du port).
+- **Date** 2026-11-12
+- **Subject** Phase 5, task 5.3: the Examiner and the `quiz` flow (write, grade)
+- **Decision**
+  1. **A single `quiz` flow with two modes** (`QuizInput.mode`): `generate` (module → `write` →
+     `save_quiz`, or `failed`) and `grade` (`load_attempt` → `grade_open` → `save_grades` →
+     `announce`). The attempt route (5.4) hands control back at once, but grading the open answers
+     requires a model: it therefore runs in an agent session. `generate` requires `quiz_id`, `grade`
+     requires `attempt_id`, otherwise 422 `invalid_input` (field paths only). Agent `examiner` at
+     the `standard` tier, prompt `examiner.md` with two modes (`write`, `grade`).
+  2. **“From the lessons” cards written with the quiz**: 3 to 6 `CardDraft`s in the same
+     `QuizDraft`, a single call.
+  3. **Multiple-choice graded by the code, open answers at {0; 0.5; 1}**: `GradeDraft.score` is a
+     `float` validated against {0; 0.5; 1} (the JSON schema sent to the model keeps
+     `{"enum": [0, 0.5, 1]}`; mypy refuses a float `Literal`); another value is refused by the
+     validator and asked again (`structured_call`, two retries); multiple-choice questions are never
+     sent to the model and enter `save_grades` with their point and an empty feedback (the
+     question's explanation is enough). A single request for all the open answers, none if there are
+     none. An unknown reference (or a multiple-choice question's) is ignored, the first score for a
+     reference wins; if questions remain ungraded (forgotten or renumbered by the model), **a single
+     new request** names them (“Your grading forgot these questions: q4.”) with the previous answer,
+     like the Strategist (`MAX_GRADE_ASKS = 2`, final review of phase 5, D115); only then does an
+     ungraded question count 0 with “Answer not evaluated: review the correction.”.
+  4. **At least 3 types out of 4** (a non-technical module has no code reading): `quiz_problems`
+     also checks 3 to 5 distinct choices and a valid `correct_index` for a multiple-choice question,
+     the excerpt for a code reading, neither choices nor index elsewhere; its sentences cite only
+     numbers and counts, never the content written by the model (they go to the model, to
+     `failure_reason`, and to the feed). Three drafts at most (`MAX_QUIZ_ASKS`); then `quiz_failed`
+     with “Invalid quiz after 3 attempts: …” (300 characters). A draft unreadable three times
+     (`structured_output_invalid`) makes the session fail: 5.4 then reads the quiz as failed from
+     the session (like D91), likewise for an attempt whose grading session fails.
+  5. **`Prose` and refused fields**: expected answer, rubric criteria (`ShortenToMax` in the list),
+     explanation, and feedback are shortened; statement (600), choices (200), code (3,000), skill,
+     quiz title, and the `qN` reference stay refused then asked again.
+  6. **Untrusted content**: the lesson (`leçon`, 20,000 characters), the module (`module`), each
+     question to grade (`question qN`), and each of January's answers (`réponse de January`) go
+     through `untrusted()`; the prompt says that an instruction in an answer changes nothing about
+     the grade. As settled in F12, `AttemptToGrade.lesson_markdown` carries the module's lesson,
+     filled by the port.
+  7. **Replay**: no node asks a question; `write` and `grade_open` touch no port; `save_quiz` (quiz
+     already `ready` → its number of questions), `quiz_failed`, and `save_grades` (attempt already
+     graded → its score) are idempotent; the announcement comes after the storage. Logs: identifiers
+     and numbers only.
+  8. **End**: `artifact.ready` `kind: "quiz"`, URL `/etudier/quiz/{quiz_id}`; summaries “Quiz ready:
+     “module””, “Quiz failed: “module””, “Quiz graded: “module”, 85%”. The port is wired by 5.4
+     (`AgentPorts.quiz`, `NO_QUIZ` → 503 `quiz_unavailable`); the OpenAPI is unchanged.
+- **Reason** SPEC F9, 9.1, 9.2, 9.4, 17.2, 17.4; phase 5 plan, task 5.3 and Review Focus no. 1;
+  preliminary scan F12; D97 no. 10 (GLM exceeds the caps: read text shortened, identifiers and code
+  refused); D86 and D90 (re-requests with the problems, idempotent port writes).
 
 ## D101
 
-- **Date** : 2026-11-12
-- **Sujet** : Phase 5, tâche 5.4 : feature `quiz` (quiz, tentatives, fiches de révision, niveaux), branchée sur le parcours `quiz`
-- **Décision** : (1) **Quiz préparé à la demande** par `POST /modules/{module_id}/quiz` (hors 14.2) : aucun coût pour un module jamais ouvert ; leçon prête exigée (409 `lesson_not_ready`) ; module d'un autre : 404 `module_not_found`. Idempotent sous un verrou par module (`QuizRuntime.quiz_lock`) : quiz prêt → 200 tel quel ; en préparation avec sa session ouverte → 202, même session ; en échec, ou `generating` dont la session est terminale (lu comme D91 : « La préparation du quiz s'est arrêtée avant la fin : relance-la. ») → remis à `generating` et relancé (202, nouvelle session). La ligne est commitée avant `launcher.start` ; un lancement refusé laisse le quiz `failed`. Session `quiz`, sujet `quiz` / `quiz_id`, pour l'écriture comme pour la notation. (2) **Routes** : `GET /programs/{id}/quizzes` (hors 14.2 : un résumé par module non sauté, meilleur score, `retry_on` de la dernière tentative notée sous 80 % tant qu'aucune n'a réussi), `GET /quizzes/{id}` (questions sans `correct_index`, `expected`, grille, explication ni compétence ; aucune question tant que le quiz n'est pas prêt), `POST /quizzes/{id}/attempts` (202), `GET /quizzes/{id}/attempts/{id}` (hors 14.2 : note, corrections et suivi une fois notée seulement ; `correct_answer` = texte du bon choix pour un QCM, réponse attendue sinon), `GET /flashcards/due`, `POST /flashcards/{id}/review`. Objet d'un autre : 404 partout. Une 422 `invalid_answers` (question inconnue ou en double, choix hors des propositions, choix donné à une question qui n'est pas un QCM) ne porte que des chemins (`details.fields` : `answers.3.choice`…), jamais la saisie. (3) **Nouvel essai = même quiz** (F27), permis à J+2 local (409 `retry_too_soon`, `details.retry_on`), ouvert après une réussite. À partir du 2e essai, questions et choix des QCM sont mélangés : ordre déterministe (sha256 du quiz, du numéro d'essai = nombre de tentatives notées, de la question et du rang du choix), identique à la lecture et à l'envoi ; `choice` est le rang affiché, ramené à l'indice d'origine avant d'être rangé. Risque accepté (F27) : les corrigés vus après un échec rendent le quiz plus facile à J+2. Limite : si une notation se termine entre l'affichage du quiz et l'envoi d'un essai, l'ordre affiché n'est plus celui de l'envoi (le front relit le quiz après chaque note). (4) **Concurrence des tentatives** (F3, Review Focus n° 5) : sous un verrou par quiz, toute tentative `grading` dont la session est terminale (`failed`, `cancelled`, ou `completed` sans notes) ou sans session rangée passe à `failed` avant l'INSERT ; une tentative vivante donne 409 `attempt_in_progress` ; si deux envois passent quand même (autre processus), l'index unique partiel `uq_quiz_attempts_grading` lève `IntegrityError`, traduite en la même 409. Les lectures montrent `failed` une tentative ou un quiz dont la session est terminale, sans écrire, dans l'ordre de D97 n° 9 (sessions, puis lignes, puis sessions relues si une ligne paraît interrompue). La liste des quiz lit les sessions `quiz` ouvertes de l'utilisateur en une requête (`list_open_sessions_by_subject`), avant les quiz ; un quiz `generating` sans session rangée (arrêt entre la ligne et le lancement) est lu en échec, pour que « Relancer » reste possible (une tentative `grading` sans session reste en cours de lancement). (5) **Note** (`AgentQuizStore.save_grades`) : verrou du programme pris AVANT la transaction (F4, même ordre que `editing`) ; une transaction gardée par `UPDATE … SET status = 'graded' WHERE status = 'grading'` (rejouée : relue, rien de plus ; comptes de fiches et de tâches gardés dans `followup` pour l'annonce). Le code recalcule le point d'un QCM ; une note ouverte hors de {0 ; 0,5 ; 1} vaut 0, une note absente 0 avec « Réponse non évaluée : relis la correction. ». ≥ 80 % : compétences du module (à défaut, celles des questions) montées à `valide`, preuve `quiz` avec `ref_id = quiz_id` (F21) et libellé « Quiz « {module} » : 85 % (17/11) » (dédoublonnée par `(kind, ref_id)` : la première preuve d'un quiz reste), `fail_streak` remis à 0, reflet dans la mémoire après le commit, hors verrou (auteur `examiner`, rattrapé au rejeu). < 80 % : « Réviser : {compétence} » (`lire`, 20 min, dès demain, compétences faibles, 3 au plus) puis « Refaire le quiz : {module} » (`quiz`, 20 min, au plus tôt J+2) ; `retry_on` = J+2 local même si la tâche n'est pas placée. Toujours : fiches depuis les erreurs (question sous 1 point ; recto = énoncé, suivi du code s'il y en a ; verso = bonne réponse puis explication ; source `quiz`, `source_id` = la tentative, dédoublonnées par `card_hash`, dues demain), tâches « Refaire le quiz » du module cochées (F18), tâche `quiz` de la semaine cochée, ligne de journal `quiz` (`ref_key` « quiz:{tentative} ») : « Quiz « {module} » : 85 % — acquis validés. » ou « … : 60 % — 2 révisions et un nouvel essai le 17/11. ». (6) **Placement dans le budget** (`program/service/followup.py`, verrou tenu par l'appelant) : chaque tâche va au premier jour ≥ `earliest`, jamais un dimanche (SPEC 3.4, dimanche libre), dans une semaine du programme dont `rules.week_breaks` reste vide après l'ajout ; sinon elle n'est pas placée et comptée (`unplaced`). Révisions et nouvel essai sont posés en deux appels (les révisions identiques : les posées sont les premières). `tick_week_quiz` coche les tâches `quiz` (hors « Refaire le quiz ») des modules de la semaine du module quand chaque module non sauté de cette semaine a une tentative notée, réussie ou non ; `tick_tasks(task_ids)` rend les titres cochés (pour 5.6 et 5.11). (7) **Rétrogradation** (`SkillsService.record_review`) : réussite d'une fiche → `fail_streak` 0 ; échec → + 1 ; un acquis `valide` qui atteint `DEMOTE_AFTER = 2` redescend à `en_cours` (`fail_streak` 0), seule baisse admise, reflétée dans la mémoire par `reflect_skill_level(…, allow_lower=True)` (exception unique à D6) ; `ReviewOut.demoted_skill` porte le nom affiché. Une compétence sans niveau n'est pas suivie. (8) **Avis gardé par l'échéance** : `UPDATE … WHERE due_date ≤ aujourd'hui local` ; une fiche non due ou déjà revue (double clic) : 409 `card_not_due` ; inconnue : 404 `card_not_found`. File du jour : fiches dues, les plus en retard d'abord, au plus 30 moins les fiches revues aujourd'hui (`last_reviewed_on`) ; `remaining_due` = fiches dues restées hors de la file. (9) **Temps local** : `QuizRuntime.today` lit le fuseau des réglages (D98) ; `QuizRuntime.now` est l'horloge, remplacée par les tests. (10) **Écriture du quiz** : `save_quiz` gardé par `UPDATE … WHERE status != 'ready'` (le titre du brouillon devient celui du quiz) ; une compétence hors du module est rattachée à la première du module (questions et fiches) ; fiches de la leçon (`source` `lesson`, `source_id` = le quiz) dues demain. `quiz_failed` ne touche jamais un quiz prêt. (11) **Composition** (F23) : `bootstrap_agents.study_runtimes` rend `StudyRuntimes(quiz)` (5.6, 5.9 et 5.11 y ajouteront leur runtime) ; `app.main._compose_features` crée les runtimes des features ; `AgentPorts.quiz` = `AgentQuizStore`. Lecture ajoutée pour les autres features : `lessons.service.lessons.ready_markdown`. (12) **Relecture de 5.3** : le titre du module passe par `untrusted()` à la notation ; un QCM glissé parmi les questions ouvertes n'est jamais envoyé au modèle ; un critère de grille vide est refusé ; D100 n° 3 corrigé (`float` validé, pas un `Literal`). Journaux : identifiants et nombres seulement. Contrat régénéré (`contracts/openapi.json`, `schema.d.ts`).
-- **Raison** : SPEC F9, 4.2, 4.5, 9.4, 13.6, 14.2, 17.2, 17.4 ; plan de la phase 5, tâche 5.4 et Review Focus n° 4 et 5 ; scan préalable F3, F4, F18, F21, F23, F27 ; rapport de 5.3 (session en échec sans `quiz_failed`) et note du contrôleur après sa relecture ; D6, D91, D97 n° 9, D98, D99, D100.
+- **Date** 2026-11-12
+- **Subject** Phase 5, task 5.4: `quiz` feature (quizzes, attempts, review cards, levels), wired to
+  the `quiz` flow
+- **Decision**
+  1. **Quiz prepared on demand** by `POST /modules/{module_id}/quiz` (outside 14.2): no cost for a
+     module never opened; ready lesson required (409 `lesson_not_ready`); another user's module: 404
+     `module_not_found`. Idempotent under a per-module lock (`QuizRuntime.quiz_lock`): quiz ready →
+     200 as is; in preparation with its session open → 202, same session; failed, or `generating`
+     whose session is terminal (read like D91: “The quiz preparation stopped before the end:
+     relaunch it.”) → set back to `generating` and relaunched (202, new session). The row is
+     committed before `launcher.start`; a refused launch leaves the quiz `failed`. `quiz` session,
+     subject `quiz` / `quiz_id`, for writing as for grading.
+  2. **Routes**: `GET /programs/{id}/quizzes` (outside 14.2: one summary per non-skipped module,
+     best score, `retry_on` of the last graded attempt under 80% as long as none has passed),
+     `GET /quizzes/{id}` (questions without `correct_index`, `expected`, rubric, explanation, or
+     skill; no question until the quiz is ready), `POST /quizzes/{id}/attempts` (202),
+     `GET /quizzes/{id}/attempts/{id}` (outside 14.2: score, corrections, and follow-up once graded
+     only; `correct_answer` = the text of the right choice for a multiple-choice question, the
+     expected answer otherwise), `GET /flashcards/due`, `POST /flashcards/{id}/review`. Another
+     user's object: 404 everywhere. A 422 `invalid_answers` (unknown or duplicate question, choice
+     outside the options, choice given to a question that is not multiple-choice) carries only paths
+     (`details.fields`: `answers.3.choice`…), never the input.
+  3. **New attempt = same quiz** (F27), allowed at local D+2 (409 `retry_too_soon`,
+     `details.retry_on`), open after a pass. From the 2nd attempt on, the multiple-choice questions
+     and choices are shuffled: deterministic order (sha256 of the quiz, the attempt number = number
+     of graded attempts, the question, and the choice's rank), identical at reading and at sending;
+     `choice` is the displayed rank, brought back to the original index before being stored.
+     Accepted risk (F27): the solutions seen after a failure make the quiz easier at D+2. Limit: if
+     a grading ends between the display of the quiz and the sending of an attempt, the displayed
+     order is no longer that of the sending (the front end re-reads the quiz after each score).
+  4. **Attempt concurrency** (F3, Review Focus no. 5): under a per-quiz lock, any `grading` attempt
+     whose session is terminal (`failed`, `cancelled`, or `completed` without scores) or without a
+     stored session moves to `failed` before the INSERT; a live attempt gives 409
+     `attempt_in_progress`; if two sends still pass (another process), the partial unique index
+     `uq_quiz_attempts_grading` raises `IntegrityError`, translated into the same 409. Reads show as
+     `failed` an attempt or a quiz whose session is terminal, without writing, in the order of D97
+     no. 9 (sessions, then rows, then sessions re-read if a row looks interrupted). The quiz list
+     reads the user's open `quiz` sessions in one query (`list_open_sessions_by_subject`), before
+     the quizzes; a `generating` quiz without a stored session (stop between the row and the launch)
+     is read as failed, so that “Relaunch” remains possible (a `grading` attempt without a session
+     stays in the course of launching).
+  5. **Score** (`AgentQuizStore.save_grades`): program lock taken BEFORE the transaction (F4, same
+     order as `editing`); one transaction guarded by `UPDATE … SET status = 'graded' WHERE status
+     = 'grading'` (replayed: re-read, nothing more; card and task counts kept in `followup` for the
+     announcement). The code recomputes a multiple-choice question's point; an open score outside
+     {0; 0.5; 1} counts 0, an absent score 0 with “Answer not evaluated: review the correction.”. ≥
+     80%: the module's skills (failing that, those of the questions) raised to `valide`, `quiz`
+     evidence with `ref_id = quiz_id` (F21) and label “Quiz “{module}”: 85% (17/11)” (deduplicated
+     by `(kind, ref_id)`: a quiz's first evidence stays), `fail_streak` reset to 0, reflection in
+     memory after the commit, outside the lock (author `examiner`, caught up on replay). < 80%:
+     “Review: {skill}” (`lire`, 20 min, from tomorrow, weak skills, 3 at most) then “Retake the
+     quiz: {module}” (`quiz`, 20 min, at the earliest D+2); `retry_on` = local D+2 even if the task
+     is not placed. Always: cards from the mistakes (question under 1 point; front = the statement,
+     followed by the code if there is any; back = the right answer then the explanation; source
+     `quiz`, `source_id` = the attempt, deduplicated by `card_hash`, due tomorrow), the module's
+     “Retake the quiz” tasks checked off (F18), the week's `quiz` task checked off, `quiz` journal
+     line (`ref_key` “quiz:{attempt}”): “Quiz “{module}”: 85% — skills validated.” or “… : 60% — 2
+     reviews and a new attempt on 17/11.”.
+  6. **Placement within the budget** (`program/service/followup.py`, lock held by the caller): each
+     task goes to the first day ≥ `earliest`, never a Sunday (SPEC 3.4, Sunday free), in a program
+     week for which `rules.week_breaks` stays empty after the addition; otherwise it is not placed
+     and is counted (`unplaced`). Reviews and the new attempt are placed in two calls (the identical
+     reviews: the ones placed are the first). `tick_week_quiz` checks off the `quiz` tasks
+     (excluding “Retake the quiz”) of the modules of the module's week when every non-skipped module
+     of that week has a graded attempt, passed or not; `tick_tasks(task_ids)` returns the titles
+     checked (for 5.6 and 5.11).
+  7. **Demotion** (`SkillsService.record_review`): a card passed → `fail_streak` 0; failed → + 1; a
+     `valide` skill that reaches `DEMOTE_AFTER = 2` goes back down to `en_cours` (`fail_streak` 0),
+     the only drop allowed, reflected in memory by `reflect_skill_level(…, allow_lower=True)` (the
+     sole exception to D6); `ReviewOut.demoted_skill` carries the displayed name. A skill without a
+     level is not tracked.
+  8. **Review guarded by the due date**: `UPDATE … WHERE due_date ≤ local today`; a card not due or
+     already reviewed (double click): 409 `card_not_due`; unknown: 404 `card_not_found`. Day's
+     queue: due cards, the most overdue first, at most 30 minus the cards reviewed today
+     (`last_reviewed_on`); `remaining_due` = due cards left outside the queue.
+  9. **Local time**: `QuizRuntime.today` reads the time zone from the settings (D98);
+     `QuizRuntime.now` is the clock, replaced by tests.
+  10. **Writing the quiz**: `save_quiz` guarded by `UPDATE … WHERE status != 'ready'` (the draft's
+     title becomes the quiz's); a skill outside the module is attached to the module's first
+     (questions and cards); lesson cards (`source` `lesson`, `source_id` = the quiz) due tomorrow.
+     `quiz_failed` never touches a ready quiz.
+  11. **Composition** (F23): `bootstrap_agents.study_runtimes` returns `StudyRuntimes(quiz)` (5.6,
+     5.9, and 5.11 will add their runtime there); `app.main._compose_features` creates the features'
+     runtimes; `AgentPorts.quiz` = `AgentQuizStore`. Read added for the other features:
+     `lessons.service.lessons.ready_markdown`.
+  12. **Re-read of 5.3**: the module's title goes through `untrusted()` at grading; a
+     multiple-choice question slipped among the open questions is never sent to the model; an empty
+     rubric criterion is refused; D100 no. 3 corrected (validated `float`, not a `Literal`). Logs:
+     identifiers and numbers only. Contract regenerated (`contracts/openapi.json`, `schema.d.ts`).
+- **Reason** SPEC F9, 4.2, 4.5, 9.4, 13.6, 14.2, 17.2, 17.4; phase 5 plan, task 5.4 and Review Focus
+  no. 4 and 5; preliminary scan F3, F4, F18, F21, F23, F27; 5.3's report (failed session without
+  `quiz_failed`) and the controller's note after its re-read; D6, D91, D97 no. 9, D98, D99, D100.
 
 ## D102
 
-- **Date** : 2026-11-13
-- **Sujet** : Phase 5, tâche 5.5 : le Tuteur et le parcours `study_session` (séance d'étude guidée)
-- **Décision** : (1) **Sections enseignées** : les cinq sections de fond de la leçon (3.5), celles présentes parmi L'essentiel, Explication, Schémas, Exemple travaillé, Erreurs fréquentes, dans cet ordre ; le port les donne déjà découpées (`StudyContext.sections`, `LessonSection(title, markdown)`), avec l'exercice, son corrigé, les objectifs et les sources numérotées (`CitationEntry`). Sans section : l'exercice d'abord ; sans exercice : les questions finales. (2) **Déroulé** : une question par section (`TeachTurn`, une demande), l'exercice avec l'énoncé de la leçon pour question et le **corrigé de la leçon** pour réponse attendue (jamais écrit par le modèle), puis 3 questions finales écrites en une fois (`FinalQuestions`, nœud `final_intro`, une seule demande, qui reviennent sur ce que January a manqué). Graphe : `context -> open -> (position)` ; `teach -> ask -> route_answer` ; réponse `check -> advance`, « Je bloque » `hint -> ask` puis `reveal -> advance`, « Passer » `skip -> advance`, « Terminer » `summarize` ; `advance` et `open` vont à `teach`, `final_intro` (questions finales pas encore écrites) ou `ask_finish` ; `ask_finish -> summarize -> wrap_up -> END`. (3) **« Je bloque » et « Passer » sont des options de la question** (`tutor_question`, champ `answer` de 4 000 caractères) ; trois indices gradués (1 une piste, 2 la méthode, 3 presque la réponse, chacun voit les précédents), puis la solution (`revealed`, `hints = 3`). **F15** : le libellé de `stuck` porte le compte : « Je bloque (1/3) », « Je bloque (2/3) », « Je bloque (3/3) », puis « Voir la solution » une fois les indices épuisés ; l'option `skip` (« Passer ») est toujours émise ; le front lit ces libellés et ne compte rien, le back est la seule source. Réponse lue par `parse_tutor_answer` : `{"answers": {"answer": texte}}` (non vide, rogné, coupé à 4 000) → `answer` ; `"stuck"`, `"skip"`, `"finish"` (valeur d'une option, **F13**) ; `{"action": "finish"}` (« Terminer », 5.6) → `finish` ; toute autre forme repose la même question (nouvelle interruption, même texte, mêmes options). (4) **Fin** : la séance ne se termine que par la question `finish_session` (option `finish` « Terminer la session » ; toute autre réponse la repose) ou par `finish` à n'importe quelle question (`ended_early` vrai, la question en cours n'est pas comptée) ; le temps vient du minuteur, la feature le compte (5.6). `summarize` demande le bilan (`SessionSummary`, aucune écriture ; illisible après ses nouveaux essais : bilan chiffré à la place, la séance n'échoue pas à la dernière marche) ; `wrap_up` est la seule écriture du parcours : `StudyStore.finish(user_id, session_id, study_session_id, StudyOutcome)`, idempotent (session d'étude déjà `finished` : relue), puis le message de fin (bilan, minutes, tâches cochées, fiches créées, acquis mis à jour) ; `run.completed` : « Session d'étude terminée : « module », N min. ». **F13** : `StudyOutcome.exercise_done` = au moins un résultat `phase == "exercise"` de verdict `correct` ou `partial` (`revealed` et `skipped` ne cochent pas la pratique ; `study_port.exercise_done`). `Outcome.index` : rang de la section, 0 pour l'exercice, rang de la question finale ; `hints` : indices donnés avant le verdict. (5) **Tableau du Tuteur** : événements `board.update` seulement (`step` tiré de `board_step`, `title` = titre de la section, ni `board_id` ni `kind`), aucune ligne `boards` (liée à un objectif). **Choix Mermaid** : `TeachTurn.mermaid` n'a **pas** de plafond dans le schéma (un refus ferait échouer l'étape, contre « jamais un échec ») ; le code retire un schéma de plus de 2 000 caractères comme un Mermaid invalide (`mermaid_problems`), sans nouvelle demande ; seul le schéma réémis (`normalize_mermaid`) est publié. (6) **Sorties structurées, sans jetons en direct** (fiabilité sur GLM) : `TeachTurn` (message 2 500, question 500 refusée au-delà, attendu 800), `AnswerCheck` (`correct` / `partial` / `wrong`, retour 1 200), `HintTurn` (600), `FinalQuestions` (exactement 3, question 500, attendu 800), `SessionSummary` (700), et `TutorReply` (1 500, ajout) ; tout texte lu passe par `Prose` (raccourci). (7) **Messages de January lus d'abord** : `teach` lit les `user.message` depuis `last_input_seq` ; en section ils entrent dans le prompt de `TeachTurn` (« réponds-y d'abord ») ; à l'exercice et aux questions finales, où rien n'est demandé au modèle, `TutorReply` y répond avant la question. La question posée à l'ouverture (`StudyContext.question`) reçoit sa réponse (`TutorReply`) dans `open`, après le message d'objectif et avant la première section. Notes non encadrées (D53 §5). (8) **Contenus non fiables** (17.4) : sections, énoncé et leçon entière (`leçon`), titre et objectifs (`module`), titres des sources (`source n`), question et réponse attendue (`question`), indices déjà donnés (`indices`), bilan des questions (`séance`) et chaque réponse de January (`réponse de January`, une consigne qu'elle contient ne change pas le verdict). **F24** : le nœud `context` appelle `load_memory_context(deps, objective=module_title, agent="tutor")` et passe `as_prompt()` (déjà encadré) aux prompts d'ouverture, de section, de réponse et des questions finales ; une mémoire indisponible (`AppError`) n'arrête pas la séance (« Mémoire indisponible pour cette séance. », journal : session et code). (9) **Rejeu** : `ask` et `ask_finish` ne font qu'`interrupt()` puis lisent la réponse (purs) ; aucun nœud avant `wrap_up` ne touche un port en écriture ; les messages ont un id fixe par étape (`tutor-section-2`, `tutor-indice-section-1-2`…), donc un nœud rejoué remplace sa bulle (D57). Agent `tutor` au niveau `standard`, prompt `tutor.md` à six tâches (`reply`, `teach`, `check`, `hint`, `final`, `summary`) et trois modes (socratique : des questions qui font trouver ; Feynman : la question demande à January d'expliquer la section avec ses mots ; direct : il explique). Port `AgentPorts.study` (`NO_STUDY` → 503 `study_unavailable`), branché par 5.6 ; l'OpenAPI est inchangé. Journaux : identifiants et nombres seulement.
-- **Raison** : SPEC F14, 9.1, 9.2, 9.4, 9.5, 9.6, 17.2, 17.4 ; plan de la phase 5, tâche 5.5 ; décisions de preflight F13, F15, F24 et la note Mermaid ; D57, D82, D97 n° 10, D100, D110 (n° 4 : le front lit le compte dans le libellé).
+- **Date** 2026-11-13
+- **Subject** Phase 5, task 5.5: the Tutor and the `study_session` flow (guided study session)
+- **Decision**
+  1. **Sections taught**: the lesson's five core sections (3.5), those present among The essentials,
+     Explanation, Diagrams, Worked example, Common mistakes, in that order; the port already gives
+     them split (`StudyContext.sections`, `LessonSection(title, markdown)`), with the exercise, its
+     solution, the objectives, and the numbered sources (`CitationEntry`). Without a section: the
+     exercise first; without an exercise: the final questions.
+  2. **Flow**: one question per section (`TeachTurn`, a single request), the exercise with the
+     lesson's statement as the question and the **lesson's solution** as the expected answer (never
+     written by the model), then 3 final questions written at once (`FinalQuestions`, node
+     `final_intro`, a single request, which return to what January missed). Graph:
+     `context -> open -> (position)`; `teach -> ask -> route_answer`; answer `check -> advance`,
+     “I’m stuck” `hint -> ask` then `reveal -> advance`, “Skip” `skip -> advance`, “Finish”
+     `summarize`; `advance` and `open` go to `teach`, `final_intro` (final questions not yet
+     written), or `ask_finish`; `ask_finish -> summarize -> wrap_up -> END`.
+  3. **“I’m stuck” and “Skip” are options of the question** (`tutor_question`, `answer` field of
+     4,000 characters); three graded hints (1 a lead, 2 the method, 3 almost the answer, each sees
+     the previous ones), then the solution (`revealed`, `hints = 3`). **F15**: the `stuck` label
+     carries the count: “I’m stuck (1/3)”, “I’m stuck (2/3)”, “I’m stuck (3/3)”, then “Show the
+     solution” once the hints are exhausted; the `skip` option (“Skip”) is always emitted; the front
+     end reads these labels and counts nothing, the backend is the only source. Answer read by
+     `parse_tutor_answer`: `{"answers": {"answer": text}}` (non-empty, trimmed, cut to 4,000) →
+     `answer`; `"stuck"`, `"skip"`, `"finish"` (an option's value, **F13**) ; `{"action": "finish"}`
+     (“Finish”, 5.6) → `finish`; any other shape asks the same question again (new interrupt, same
+     text, same options).
+  4. **End**: the session ends only through the `finish_session` question (option `finish` “Finish
+     the session”; any other answer asks it again) or through `finish` at any question
+     (`ended_early` true, the question in progress is not counted); time comes from the timer, the
+     feature counts it (5.6). `summarize` asks for the summary (`SessionSummary`, no write;
+     unreadable after its retries: a numeric summary instead, the session does not fail at the last
+     step); `wrap_up` is the flow's only write: `StudyStore.finish(user_id,
+     session_id, study_session_id, StudyOutcome)`, idempotent (study session already `finished`:
+     re-read), then the end message (summary, minutes, tasks checked, cards created, skills
+     updated); `run.completed`: “Study session finished: “module”, N min.”. **F13**:
+     `StudyOutcome.exercise_done` = at least one result `phase == "exercise"` with verdict `correct`
+     or `partial` (`revealed` and `skipped` do not check off the practice;
+     `study_port.exercise_done`). `Outcome.index`: the section's rank, 0 for the exercise, the final
+     question's rank; `hints`: hints given before the verdict.
+  5. **Tutor's board**: `board.update` events only (`step` drawn from `board_step`, `title` = the
+     section's title, neither `board_id` nor `kind`), no `boards` row (tied to a goal). **Mermaid
+     choice**: `TeachTurn.mermaid` has **no** cap in the schema (a refusal would make the step fail,
+     against “never a failure”); the code removes a diagram of more than 2,000 characters like an
+     invalid Mermaid (`mermaid_problems`), without a new request; only the re-emitted diagram
+     (`normalize_mermaid`) is published.
+  6. **Structured outputs, without live tokens** (reliability on GLM): `TeachTurn` (message 2,500,
+     question 500 refused beyond, expected 800), `AnswerCheck` (`correct` / `partial` / `wrong`,
+     feedback 1,200), `HintTurn` (600), `FinalQuestions` (exactly 3, question 500, expected 800),
+     `SessionSummary` (700), and `TutorReply` (1,500, addition); any read text goes through `Prose`
+     (shortened).
+  7. **January's messages read first**: `teach` reads the `user.message`s from `last_input_seq`; in
+     a section they enter `TeachTurn`'s prompt (“answer it first”); at the exercise and the final
+     questions, where nothing is asked of the model, `TutorReply` answers before the question. The
+     question asked at opening (`StudyContext.question`) receives its answer (`TutorReply`) in
+     `open`, after the goal message and before the first section. Notes unframed (D53 §5).
+  8. **Untrusted contents** (17.4): sections, statement, and the whole lesson (`leçon`), title and
+     objectives (`module`), source titles (`source n`), question and expected answer (`question`),
+     hints already given (`indices`), the questions' summary (`séance`), and each of January's
+     answers (`réponse de January`, an instruction it contains does not change the verdict).
+     **F24**: the `context` node calls `load_memory_context(deps, objective=module_title,
+     agent="tutor")` and passes `as_prompt()` (already framed) to the opening, section, answer, and
+     final-question prompts; an unavailable memory (`AppError`) does not stop the session (“Memory
+     unavailable for this session.”, log: session and code).
+  9. **Replay**: `ask` and `ask_finish` only do `interrupt()` then read the answer (pure); no node
+     before `wrap_up` touches a port for writing; messages have a fixed id per step
+     (`tutor-section-2`, `tutor-indice-section-1-2`…), so a replayed node replaces its bubble (D57).
+     Agent `tutor` at the `standard` tier, prompt `tutor.md` with six tasks (`reply`, `teach`,
+     `check`, `hint`, `final`, `summary`) and three modes (Socratic: questions that lead to finding;
+     Feynman: the question asks January to explain the section in her own words; direct: it
+     explains). Port `AgentPorts.study` (`NO_STUDY` → 503 `study_unavailable`), wired by 5.6; the
+     OpenAPI is unchanged. Logs: identifiers and numbers only.
+- **Reason** SPEC F14, 9.1, 9.2, 9.4, 9.5, 9.6, 17.2, 17.4; phase 5 plan, task 5.5; preflight
+  decisions F13, F15, F24 and the Mermaid note; D57, D82, D97 no. 10, D100, D110 (no. 4: the front
+  end reads the count in the label).
 
 ## D103
 
-- **Date** : 2026-11-13
-- **Sujet** : Phase 5, tâche 5.6 : feature `study` (bloc du jour, départ, fin et abandon d'une session guidée, série), port `StudyStore` réel
-- **Décision** : (1) **Bloc du jour** = tâches `todo` de lecture et de pratique (`lire`, `regarder`, `pratiquer` ; jamais quiz ni projet) datées au plus aujourd'hui (jour local, D98), retards d'abord, d'un module non sauté d'un **programme validé** dont la leçon est prête ; le premier module dans l'ordre (date, rang de module, rang de tâche) donne le bloc, qui réunit toutes ses tâches dues, rangées dans `task_ids` au départ. Une leçon choisie (`lesson_id`) prend les tâches dues de son module seul (aucune tâche à venir cochée en avance). Rien : 404 `no_block_today` « Rien de prévu aujourd'hui : choisis une leçon. ». (2) **Temps** = minuteur du front (`worked_minutes`, travail seul, D110 n° 1), borné par la durée réelle depuis le départ arrondie à la minute supérieure, gardé par la route au « Terminer » seulement ; absent : 0 ; `StudyUpdate.worked_minutes: int | None = Field(default=None, ge=0, le=600)`, accepté aussi pour `cancel`, qui l'ignore (F16). (3) **« Terminer » passe par `PATCH /study-sessions/{id}`** (14.2) : temps gardé PUIS réponse `{"action": "finish"}` à la question en attente, quel que soit son genre (`tutor_question` ou `finish_session`) ; le Tuteur fait son bilan et range la fin par le port. Pendant que le Tuteur écrit (aucune question en attente) : 409 `study_not_waiting`, rien n'est gardé ; fin déjà demandée : état rendu (idempotent) ; temps gardé mais question encore en attente (arrêt du back avant la reprise) : reprise. Session d'agents terminée en route (échec, annulation, introuvable) : la route range elle-même la fin, sans résultat de questions (ni lecture cochée, ni fiche), pour que le temps compte. « Abandonner » (`cancel`) : session `cancelled`, rien d'autre (ni temps, ni tâche, ni fiche, ni journal), puis session d'agents annulée. **Revue finale de la phase 5 (D115)** : une session morte dont le temps a été gardé par « Terminer » (Tuteur arrêté avant de conclure) est rangée de même au départ suivant (`POST /study-sessions`, sous `study_lock` puis `program_lock`, avant l'insertion), jamais annulée ; une reprise refusée remet le temps d'avant ce clic (jamais `None` s'il était déjà gardé) ; `GET /study-sessions/summary` ne rend plus une session morte dans `open_session_id` (même règle `is_dead` que la lecture D91 ; contrat inchangé). (4) **Routes hors 14.2** : `GET /study-sessions/summary` (série, minutes de la semaine locale, minuteur `study_work_minutes` / `study_break_minutes`, session ouverte, bloc du jour ; déclaré avant `/{id}`) et `GET /study-sessions/{id}` (écran de fin : minutes, bilan, tâches cochées, fiches créées, acquis changés). (5) **Série** = jours locaux avec une session terminée (fin `ended_at` lue dans le fuseau de January) ; la série tient jusqu'à hier tant qu'aujourd'hui est vide (`streak`). (6) **Acquis** : compétences du module montées à `en_cours` au plus (jamais `valide`, 4.5 ; jamais baissées), preuve `study` (`ref_id` = la session d'étude), reflet dans la mémoire après le commit, hors du verrou (auteur `tutor`). (7) **Une session ouverte par utilisatrice** (index partiel `uq_study_sessions_open`) et un verrou par utilisatrice (`StudyRuntime.study_lock`, pris avant celui du programme) : même leçon → 200 elle-même, autre leçon → 409 `study_already_open` (`details.study_session_id`) ; une course qui passerait quand même est tranchée par l'index, le second relit. La ligne est commitée AVANT `launcher.start` (D66, D72) ; un lancement refusé la laisse `cancelled` (avec `ended_at`, comme l'annulation d'une session morte au départ : revue finale de la phase 5). (8) **F4** : `finish` prend `program_lock(user, program)` AVANT d'ouvrir sa transaction ; `tick_tasks` et les autres helpers de 5.4 supposent le verrou tenu ; la transaction est gardée par `UPDATE … SET status = 'finished' WHERE status = 'open'` : rejouée (nœud `wrap_up` relancé), elle relit la fin rangée sans rien réécrire ; abandonnée entre-temps : fin vide. (9) **F11** : au départ, une session `open` dont la session d'agents est terminale (`failed`, `cancelled`, `completed`) ou introuvable, ou sans session d'agents (sous le verrou, son lancement s'est arrêté), passe à `cancelled` dans la même transaction que l'insertion de la nouvelle. La lecture suit D91 : une telle session est montrée `interrupted` (valeur de sortie ajoutée à `StudyStatusOut`) sans écriture ; ordre des lectures D97 n° 9 (session d'agents, puis ligne relue). (10) **F13** : la pratique (`pratiquer`) est cochée si `exercise_done` (au moins un résultat `exercise` `correct` ou `partial`) ; `revealed` et `skipped` ne cochent pas ; les lectures (`lire`, `regarder`) si January n'a pas terminé avant la fin (`ended_early` faux). (11) **Fiches** (arbitrage ouvert par 5.5) : une par question `partial`, `wrong` ou `revealed` (recto = question, verso = réponse attendue, source `study`, module de la séance, sans compétence pour ne jamais rétrograder un acquis sur une question qu'on ne sait pas rattacher) ; **jamais pour `skipped`** (January a choisi de passer, rien ne dit qu'elle ne sait pas) ni `correct`. (12) **Sujet de la session d'agents** (arbitrage ouvert par 5.5) : `subject_type = "study_session"`, `subject_id` = l'id de la session d'étude (une session d'agents par séance ; la leçon et le module restent sur la ligne). (13) **Journal** : `study_session`, `ref_key` « study:{id} », texte « Session « {module} » : 45 min, 2 tâches cochées, 3 fiches. » (singulier pour 0 et 1), bilan du Tuteur dans `data.summary`. (14) **m2** (relecture de 5.5) : `FinalQuestions` garde les 3 premières questions quand le modèle en rend plus (validateur `before`, le schéma annonce toujours 3) ; moins de 3 reste un refus redemandé. (15) **m4** : la docstring de `StudyStore` porte ses garanties (404 pour la séance d'une autre, jamais au-delà de `en_cours`, corrigé non vide) et le port réel les tient : un exercice sans corrigé (ou un corrigé sans exercice) est omis du contexte. (16) **Découpe de la leçon** : `lessons.service.sections.lesson_parts` (titres `##` de premier niveau, casse, accents et apostrophe courbe ignorés, préfixes « l'essentiel », « explication », « schéma », « exemple travaillé », « erreurs fréquentes », « exercice », « corrigé » ; un `##` dans un bloc de code n'ouvre rien ; la première de deux sections gagne) et `lesson_sources` (section « Sources », `n. [titre](adresse)`). (17) **Branchement** : `StudyRuntimes.study` (`bootstrap_agents.study_runtimes`, F23), `AgentStudyStore` dans `agent_ports`, `app.state.study` ; `main.py` ne gagne qu'une ligne. (18) **Correctifs de la relecture 5.6 (m1, m2, m3, m9)** : le reflet des acquis dans la mémoire est refait à chaque appel de `finish`, rejeu compris (comme le quiz, D101 n° 5 : il est idempotent et ne baisse jamais un niveau), pour rattraper un arrêt entre le commit et le reflet ; les acquis du module ne montent à `en_cours` que si la séance laisse une trace (au moins une minute gardée, ou au moins un résultat de question, quel qu'en soit le verdict) : une fin rangée par la route sans minuteur ni réponse ne monte rien et n'écrit qu'un journal à 0 min ; le temps déjà gardé n'est jamais écrasé (un « Terminer » sans `worked_minutes`, ou avec moins, garde le plus grand des deux, borné par la durée réelle pour une valeur neuve) ; « Commencer mon bloc » sans bloc du jour lit d'abord la session ouverte : vivante, elle donne 409 `study_already_open` (`details.study_session_id`, aucun bloc n'étant comparable à sa leçon), sinon 404 `no_block_today` ; le contrat OpenAPI ne change pas (mêmes codes d'erreur).
-- **Raison** : SPEC F14, 4.5, 9.4, 14.2, 17.2, 17.4 ; plan de la phase 5, tâche 5.6 et Review Focus n° 2 et 5 ; décisions de preflight F4, F11, F13, F16, F23 ; relecture de 5.5 (m2, m4, points invérifiables) ; D66, D72, D91, D97 n° 9, D98, D101, D102, D110.
+- **Date** 2026-11-13
+- **Subject** Phase 5, task 5.6: `study` feature (day's block, start, end, and abandonment of a
+  guided session, streak), real `StudyStore` port
+- **Decision**
+  1. **Day's block** = `todo` reading and practice tasks (`lire`, `regarder`, `pratiquer`; never
+     quiz or project) dated today at the latest (local day, D98), overdue first, of a non-skipped
+     module of a **validated program** whose lesson is ready; the first module in order (date,
+     module rank, task rank) gives the block, which gathers all its due tasks, stored in `task_ids`
+     at the start. A chosen lesson (`lesson_id`) takes the due tasks of its module alone (no
+     upcoming task checked off in advance). Nothing: 404 `no_block_today` “Nothing planned today:
+     choose a lesson.”.
+  2. **Time** = the front end's timer (`worked_minutes`, work only, D110 no. 1), bounded by the real
+     duration since the start rounded up to the minute, kept by the route at “Finish” only; absent:
+     0; `StudyUpdate.worked_minutes: int | None = Field(default=None, ge=0, le=600)`, also accepted
+     for `cancel`, which ignores it (F16).
+  3. **“Finish” goes through `PATCH /study-sessions/{id}`** (14.2): time kept THEN the answer
+     `{"action": "finish"}` to the pending question, whatever its kind (`tutor_question` or
+     `finish_session`); the Tutor writes its summary and stores the end through the port. While the
+     Tutor is writing (no pending question): 409 `study_not_waiting`, nothing is kept; end already
+     requested: state returned (idempotent); time kept but question still pending (backend stop
+     before the resume): resume. Agent session finished along the way (failure, cancellation, not
+     found): the route stores the end itself, without question results (neither reading checked off
+     nor card), so that the time counts. “Abandon” (`cancel`): session `cancelled`, nothing else (no
+     time, task, card, or journal), then the agent session cancelled. **Final review of phase 5
+     (D115)**: a dead session whose time was kept by “Finish” (Tutor stopped before concluding) is
+     stored the same way at the next start (`POST /study-sessions`, under `study_lock` then
+     `program_lock`, before the insert), never cancelled; a refused resume restores the time from
+     before that click (never `None` if it was already kept); `GET /study-sessions/summary` no
+     longer returns a dead session in `open_session_id` (same `is_dead` rule as D91's read; contract
+     unchanged).
+  4. **Routes outside 14.2**: `GET /study-sessions/summary` (streak, minutes of the local week,
+     `study_work_minutes` / `study_break_minutes` timer, open session, day's block; declared before
+     `/{id}`) and `GET /study-sessions/{id}` (end screen: minutes, summary, tasks checked, cards
+     created, skills changed).
+  5. **Streak** = local days with a finished session (end `ended_at` read in January's time zone);
+     the streak holds until yesterday as long as today is empty (`streak`).
+  6. **Skills**: the module's skills raised to `en_cours` at most (never `valide`, 4.5; never
+     lowered), `study` evidence (`ref_id` = the study session), reflection in memory after the
+     commit, outside the lock (author `tutor`).
+  7. **One open session per user** (partial index `uq_study_sessions_open`) and one lock per user
+     (`StudyRuntime.study_lock`, taken before the program's): same lesson → 200 itself, another
+     lesson → 409 `study_already_open` (`details.study_session_id`); a race that would still pass is
+     settled by the index, the second re-reads. The row is committed BEFORE `launcher.start` (D66,
+     D72); a refused launch leaves it `cancelled` (with `ended_at`, like the cancellation of a dead
+     session at start: final review of phase 5).
+  8. **F4**: `finish` takes `program_lock(user, program)` BEFORE opening its transaction;
+     `tick_tasks` and 5.4's other helpers assume the lock is held; the transaction is guarded by
+     `UPDATE … SET status = 'finished' WHERE status = 'open'`: replayed (`wrap_up` node relaunched),
+     it re-reads the stored end without rewriting anything; abandoned in the meantime: empty end.
+  9. **F11**: at start, an `open` session whose agent session is terminal (`failed`, `cancelled`,
+     `completed`) or not found, or without an agent session (under the lock, its launch stopped),
+     moves to `cancelled` in the same transaction as the new one's insert. The read follows D91:
+     such a session is shown `interrupted` (output value added to `StudyStatusOut`) without a write;
+     read order of D97 no. 9 (agent session, then row re-read).
+  10. **F13**: the practice (`pratiquer`) is checked off if `exercise_done` (at least one `exercise`
+     result `correct` or `partial`); `revealed` and `skipped` do not check off; the readings
+     (`lire`, `regarder`) if January did not finish before the end (`ended_early` false).
+  11. **Cards** (arbitration left open by 5.5): one per `partial`, `wrong`, or `revealed` question
+     (front = question, back = expected answer, source `study`, the session's module, without a
+     skill so as never to demote an acquired skill on a question that cannot be attached); **never
+     for `skipped`** (January chose to skip, nothing says she does not know) or `correct`.
+  12. **Agent session's subject** (arbitration left open by 5.5): `subject_type = "study_session"`,
+     `subject_id` = the study session's id (one agent session per session; the lesson and module
+     stay on the row).
+  13. **Journal**: `study_session`, `ref_key` “study:{id}”, text “Session “{module}”: 45 min, 2
+     tasks checked, 3 cards.” (singular for 0 and 1), the Tutor's summary in `data.summary`.
+  14. **m2** (re-read of 5.5): `FinalQuestions` keeps the first 3 questions when the model returns
+     more (`before` validator, the schema still announces 3); fewer than 3 remains a refusal asked
+     again.
+  15. **m4**: `StudyStore`'s docstring carries its guarantees (404 for another user's session, never
+     beyond `en_cours`, non-empty solution) and the real port holds them: an exercise without a
+     solution (or a solution without an exercise) is omitted from the context.
+  16. **Splitting the lesson**: `lessons.service.sections.lesson_parts` (first-level `##` titles,
+     case, accents, and curly apostrophe ignored, prefixes “l'essentiel”, “explication”, “schéma”,
+     “exemple travaillé”, “erreurs fréquentes”, “exercice”, “corrigé”; a `##` inside a code block
+     opens nothing; the first of two sections wins) and `lesson_sources` (“Sources” section,
+     `n. [title](address)`).
+  17. **Wiring**: `StudyRuntimes.study` (`bootstrap_agents.study_runtimes`, F23), `AgentStudyStore`
+     in `agent_ports`, `app.state.study`; `main.py` gains only one line.
+  18. **Fixes from the 5.6 re-read (m1, m2, m3, m9)**: the reflection of the skills in memory is
+     redone at each `finish` call, replays included (like the quiz, D101 no. 5: it is idempotent and
+     never lowers a level), to catch up a stop between the commit and the reflection; the module's
+     skills rise to `en_cours` only if the session leaves a trace (at least one minute kept, or at
+     least one question result, whatever its verdict): an end stored by the route with neither timer
+     nor answer raises nothing and writes only a 0-min journal; time already kept is never
+     overwritten (a “Finish” without `worked_minutes`, or with less, keeps the larger of the two,
+     bounded by the real duration for a new value); “Start my block” without a day's block first
+     reads the open session: if alive, it gives 409 `study_already_open`
+     (`details.study_session_id`, no block being comparable to its lesson), otherwise 404
+     `no_block_today`; the OpenAPI contract does not change (same error codes).
+- **Reason** SPEC F14, 4.5, 9.4, 14.2, 17.2, 17.4; phase 5 plan, task 5.6 and Review Focus no. 2 and
+  5; preflight decisions F4, F11, F13, F16, F23; re-read of 5.5 (m2, m4, unverifiable points); D66,
+  D72, D91, D97 no. 9, D98, D101, D102, D110.
 
 ## D104
 
-- **Date** : 2026-11-13
-- **Sujet** : Phase 5, tâche 5.7 : essai réel de l'étude
-- **Décision** : Essai réel de l'étude (5.7), le 13/11 avec GLM 5.3 flash sous Docker : `check_phase5 --part etude` passe les 6 étapes dès le premier essai, sans correctif. Session guidée : 2 min 07, 12 reprises, 39 351 tokens en entrée et 4 430 en sortie, 0,025 $. Quiz : 12 questions générées en 38 s (0,006 $), tentative notée en 10 s (0,0035 $) ; les sessions chaînées partent bien d'un compteur vierge. Aucun essai refusé par sortie structurée ; un seul texte raccourci (résumé de séance, 782 caractères pour 700). Journaux : 30 textes du quiz, des explications et du résumé cherchés dans le journal du back, aucun trouvé. Le script répond court : tous les verdicts sont `wrong` et le quiz à 0 %, ce qui exerce les fiches (8 de la séance, 12 du quiz) mais pas le passage à `valide` ni les tâches cochées (aucun bloc dû) : ces deux points restent pour le contrôle final (5.18). Correctifs de la relecture de 5.6 : 226b012 (D103 (18)).
-- **Raison** : plan de la phase 5, tâche 5.7 (essai réel GLM dès le milieu de phase) ; rapport `task-5.7-report.md` ; D97 n° 10 (textes raccourcis), D102, D103.
+- **Date** 2026-11-13
+- **Subject** Phase 5, task 5.7: real study test
+- **Decision** Real study test (5.7), on 13/11 with GLM 5.3 flash under Docker:
+  `check_phase5 --part etude` passes the 6 steps on the first attempt, without a fix. Guided
+  session: 2 min 07, 12 resumes, 39,351 input tokens and 4,430 output tokens, $0.025. Quiz: 12
+  questions generated in 38 s ($0.006), attempt graded in 10 s ($0.0035); the chained sessions do
+  start from a blank counter. No attempt refused by structured output; a single text shortened
+  (session summary, 782 characters for 700). Logs: 30 texts from the quiz, the explanations, and the
+  summary searched for in the backend's log, none found. The script answers briefly: all verdicts
+  are `wrong` and the quiz at 0%, which exercises the cards (8 from the session, 12 from the quiz)
+  but not the move to `valide` or the checked-off tasks (no block due): these two points remain for
+  the final check (5.18). Fixes from the re-read of 5.6: 226b012 (D103 (18)).
+- **Reason** Phase 5 plan, task 5.7 (real GLM test from mid-phase); report `task-5.7-report.md`; D97
+  no. 10 (shortened texts), D102, D103.
 
 ## D105
 
-- **Date** : 2026-11-13
-- **Sujet** : Phase 5, tâche 5.8 : parcours `replan` du Stratège (bilan, options, avant / après)
-- **Décision** : (1) **Retirer et ajouter par référence** : le Stratège ne réécrit pas le plan. Il **retire** et **ajoute** des tâches par référence (`t12` pour une tâche, `m3` pour un module) ; le code range le reste (85 %, pratique, quiz, débordement en semaines « Suite ») : seule voie qui tient le budget avec un modèle qui compte mal. Les ids réels (`TaskRef.task_id`, `ModuleRef.module_id`) ne sont jamais montrés au modèle (F7) ; l'instantané du contexte est gardé dans l'état du graphe et le parcours passe au port sa table « référence → id » (`preview(…, refs=…)`, ajout à l'interface du plan). Une référence bien formée mais inconnue est renvoyée une fois au modèle avec la liste, puis retirée (journal : nombre seulement) ; une référence mal formée est refusée par le schéma et redemandée (`structured_call`). (2) **L'option limite les droits** : réduire le périmètre → retraits seuls ; approfondir → ajouts seuls ; repousser l'échéance, avancer la suite, et sans option → aucun droit, le rangement suffit et le modèle n'écrit qu'un résumé. Le modèle ne reçoit que le schéma de ses droits (`ReplanSummary`, `ReplanDrops`, `ReplanAdds`) et le code vide le reste (`to_draft`), doublons retirés. Le port n'accepte jamais le retrait du dernier quiz ou de la dernière pratique d'une semaine : retrait ignoré et compté (`PreviewSaved.kept`, annoncé à January) (F10). (3) **« Je n'ai que 5 heures »** = champ `available_minutes` (60 à 10 080) : plafond de la semaine en cours = `week_cap(minutes)` = `minutes × 85 // 100`, en entiers (en flottants, `0,85 × 300` donne 254,99… ; ici 255) ; le texte de January (`message`, 1 000 caractères au plus) va au Stratège comme note, encadré par `untrusted()`. (4) **Proposition = version `pending`** : `propose` (modèle) et `preview` (port) sont deux nœuds, pour qu'un `preview` rejoué ne rappelle pas le modèle ; `preview` est idempotent par `(session, revision)`, `apply` et `refuse` par version. Acceptation périmée (lignes changées depuis la proposition, `Applied.stale`) : rien n'est écrit, `STALE_NOTE` est annoncé, le plan est relu et une nouvelle proposition suit (révision + 1). Une note de révision (`{"answers": {"note": …}}`, non vide) donne une nouvelle proposition sur le plan relu, l'option choisie reste. (5) **Sans changement ni option**, la session se termine sans question (« Rien à changer… ») et sans `artifact.ready`. **Rangement impossible** (F10) : `preview` rend une version vide `impossible`, jamais `planning_impossible` ; le parcours finit par « Le plafond de cette semaine ne tient pas une pratique et le quiz. », sans échec de session. (6) **Graphe** : `context` → (options ? `ask_option` : `propose`) ; `ask_option` → `propose` (option non offerte : la question revient) ; `propose` → `preview` → (impossible, ou vide sans option ? `finalize` : `ask_accept`) ; `ask_accept` : accepter → `apply` → (périmée ? `propose` : `finalize`) ; refuser → `refuse` → `finalize` ; note → `propose` ; réponse invalide → `ask_accept`. `ask_option` et `ask_accept` ne font qu'`interrupt()`. Le bilan (texte du code) est annoncé par `context` ; la proposition par `preview` (résumé du Stratège, puis chiffres du code) et `artifact.ready` `{artifact_id: programme, kind: "plan_version", title: "Replanification : …", url: "/apprendre/programme/{id}/replanification"}`. `ReplanInput` : `weekly_review` exige `review_entry_id` (422 `invalid_input`). Le résumé (600) et le critère de fin d'une tâche ajoutée (200) sont `Prose` ; références et titres restent stricts. Prompt `strategist.md`, mode `replan` : plan, message et note encadrés ; l'objectif non encadré (D53 §5, D84), comme pour le mode `plan`.
-- **Raison** : SPEC F13, 3.4, 9.4, 17.2, 17.4 ; plan de la phase 5, tâche 5.8 et Review Focus n° 3 ; décisions de preflight F7, F10 ; D86 (motif du `program_builder`), D97 n° 10 (GLM dépasse les plafonds), D99 (`pending`), D100, D102.
+- **Date** 2026-11-13
+- **Subject** Phase 5, task 5.8: the Strategist's `replan` flow (review, options, before / after)
+- **Decision**
+  1. **Removing and adding by reference**: the Strategist does not rewrite the plan. It **removes**
+     and **adds** tasks by reference (`t12` for a task, `m3` for a module); the code sorts the rest
+     (85%, practice, quiz, overflow into “Continued” weeks): the only way that holds the budget with
+     a model that counts badly. The real ids (`TaskRef.task_id`, `ModuleRef.module_id`) are never
+     shown to the model (F7); the context's snapshot is kept in the graph's state and the flow
+     passes the port its “reference → id” table (`preview(…, refs=…)`, addition to the plan's
+     interface). A well-formed but unknown reference is sent back once to the model with the list,
+     then removed (log: number only); a malformed reference is refused by the schema and asked again
+     (`structured_call`).
+  2. **The option limits the rights**: reduce the scope → removals only; deepen → additions only;
+     push back the deadline, advance what follows, and no option → no rights, the sorting is enough
+     and the model writes only a summary. The model receives only the schema of its rights
+     (`ReplanSummary`, `ReplanDrops`, `ReplanAdds`) and the code empties the rest (`to_draft`),
+     duplicates removed. The port never accepts the removal of a week's last quiz or last practice:
+     removal ignored and counted (`PreviewSaved.kept`, announced to January) (F10).
+  3. **“I only have 5 hours”** = field `available_minutes` (60 to 10,080): the current week's cap =
+     `week_cap(minutes)` = `minutes × 85 // 100`, in integers (in floats, `0.85 × 300` gives
+     254.99…; here 255); January's text (`message`, 1,000 characters at most) goes to the Strategist
+     as a note, framed by `untrusted()`.
+  4. **Proposal = `pending` version**: `propose` (model) and `preview` (port) are two nodes, so that
+     a replayed `preview` does not call the model again; `preview` is idempotent by
+     `(session, revision)`, `apply` and `refuse` by version. Stale acceptance (rows changed since
+     the proposal, `Applied.stale`): nothing is written, `STALE_NOTE` is announced, the plan is
+     re-read, and a new proposal follows (revision + 1). A revision note (`{"answers": {"note":
+     …}}`, non-empty) gives a new proposal on the re-read plan, the chosen option stays.
+  5. **Without a change or an option**, the session ends without a question (“Nothing to change…”)
+     and without `artifact.ready`. **Impossible sorting** (F10): `preview` returns an empty
+     `impossible` version, never `planning_impossible`; the flow ends with “This week's cap does not
+     hold a practice and the quiz.”, without a session failure.
+  6. **Graph**: `context` → (options? `ask_option` : `propose`); `ask_option` → `propose` (option
+     not offered: the question comes back); `propose` → `preview` → (impossible, or empty without an
+     option? `finalize` : `ask_accept`); `ask_accept`: accept → `apply` → (stale? `propose` :
+     `finalize`); refuse → `refuse` → `finalize`; note → `propose`; invalid answer → `ask_accept`.
+     `ask_option` and `ask_accept` only do `interrupt()`. The review (the code's text) is announced
+     by `context`; the proposal by `preview` (the Strategist's summary, then the code's figures) and
+     `artifact.ready` `{artifact_id: program, kind: "plan_version", title: "Replanning: …",
+     url: "/apprendre/programme/{id}/replanification"}`. `ReplanInput`: `weekly_review` requires
+     `review_entry_id` (422 `invalid_input`). The summary (600) and an added task's completion
+     criterion (200) are `Prose`; references and titles stay strict. Prompt `strategist.md`,
+     `replan` mode: plan, message, and note framed; the goal unframed (D53 §5, D84), as for the
+     `plan` mode.
+- **Reason** SPEC F13, 3.4, 9.4, 17.2, 17.4; phase 5 plan, task 5.8 and Review Focus no. 3;
+  preflight decisions F7, F10; D86 (the `program_builder` pattern), D97 no. 10 (GLM exceeds the
+  caps), D99 (`pending`), D100, D102.
 
 ## D106
 
-- **Date** : 2026-11-13
-- **Sujet** : Phase 5, tâche 5.9 : feature `replan` (port réel, routes, bilan hebdomadaire planifié, versions du plan, relevés des compétences)
-- **Décision** : (1) **Versions** : une proposition est une ligne `plan_versions` `kind = "replan"`. `status` gagne deux valeurs closes, `empty` (rien ne bouge, sans option) et `impossible` (`PlanningImpossible` : une semaine ne tient pas sa pratique et son quiz, ou le programme est fini : `ProgramFinished`, gardé dans `snapshot.changes.finished` et rendu par `PreviewSaved.finished` ; le parcours finit alors par « Ton programme est terminé : plus aucune semaine à replanifier. » au lieu du texte du plafond). Une version close n'est jamais `pending` et ne s'applique jamais : `apply` rend `stale = True`, sans erreur (m1, écrit dans les docstrings de `PreviewSaved`, `preview` et `apply` du port). **F10** : une prévisualisation impossible donne cette version close, jamais une 422 dans le graphe. (2) **F2** : `latest()` ne lit que les versions appliquées (`kind = "build"` ou `status = "accepted"`) ; `latest_with_catalog` ne lit que `kind = "build"` (le catalogue des compétences) ; l'instantané d'une replanification garde `budget` (la vue du programme le relit) et range ce qu'il faut appliquer dans `snapshot.changes`. Toute nouvelle version de replanification, même close (`empty`, `impossible`), remplace la proposition `pending` précédente (`superseded`), d'une autre session comprise : aucune proposition ne reste `pending` sans question qui l'attende ; accepter une version remplacée rend `stale = True`. Une proposition `pending` dont la session est close (annulée, en échec, finie ou introuvable) est **lue** `superseded` par `GET /programs/{id}/versions`, sans écriture (D91) ; la ligne reste `pending` jusqu'à la version suivante, qui la remplace (relecture 5.9, I1). (3) **Empreinte** : `base_fingerprint` = sha256 de (tâche, jour, statut, minutes) de toutes les tâches au moment de la proposition. `apply` (port) prend `program_lock` **avant** sa transaction (F4), relit les lignes et compare : différentes (January a bougé une tâche entre-temps), ou un jour que l'acceptation écrirait déjà passé (jour local de January : proposition acceptée trop tard), la version reste `pending` et `apply` rend `stale = True` (le graphe repropose, D105) ; déjà acceptée : `stale = False`, rien n'est réécrit (rejeu). Acceptée : semaines « Suite » et leur module écrits, dates changées, tâches ajoutées au bout de leur module (`next_rank`), tâches retirées supprimées, autres `pending` remplacées, `accepted_at`, `programs.version` = la version. `preview` est idempotent par (session, révision). (4) **F5, rangement** (`program.service.replanning.repack`, pur) : sur les lignes, seul `planned_date` change ; une tâche garde son module. Les tâches faites et celles des jours passés ne bougent pas ; le jour de départ est aujourd'hui (local, D98), ou le lundi suivant s'il ne reste aucune capacité cette semaine (bilan du dimanche) ; les retards des semaines passées passent en tête, puis chaque semaine est rangée par `pack_week` sous son plafond (85 %, minutes déjà faites retirées, jours avant le départ fermés) ; le débordement ouvre des semaines « Suite : {thème} » (module neuf sans compétence, pratique 45 min et quiz 20 min) et `deadline_moved`. **Rangement stable (revue finale de la phase 5, D115)** : une semaine qui ne reçoit ni retard ni ajout garde les dates de ses tâches (déplacements de January compris) tant qu'elles sont dans ses jours encore ouverts et sous son plafond (`replan_stable.keeps_dates` ; la capacité du jour n'est pas revérifiée, comme pour une modification de January) : un bilan « dans les temps » rend donc `empty` ; dans une semaine rangée, une tâche à faire n'est jamais placée avant sa date (`Entry.not_before`, dure pour les autres tâches, préférée seulement pour la pratique et le quiz réservés, qui ne reculent que si leur jour n'a plus de place, un dimanche libre par exemple) ; un « Refaire le quiz » (`rules.RETRY_PREFIX`) ne ferme jamais la semaine à la place de son quiz et n'est jamais avancé par « avancer » (F9 : J+2). **« Repousser l'échéance » (`push_deadline`)** : les semaines rangées descendent à 60 % du plafond (`PUSH_SHARE` = `UNDERLOAD_SHARE`, 428 pour 714), en gardant toujours la place d'une pratique et d'un quiz au-delà des minutes faites et jamais au-delà de 85 % ; le surplus part en semaines « Suite » et l'échéance recule réellement (`deadline_moved`) ; le plafond de January (`week_cap_override`) garde la priorité pour la semaine en cours ; `week_loads` garde le plafond de 85 % comme garde. Le prompt du Stratège le dit (« le code allège les semaines à venir (60 % du plafond au plus)… »). Le plafond de January (`week_cap_override`, 85 % des minutes données) ne vaut que pour la semaine en cours. `advance` réutilise `plan_advances` (part plancher 1,0), en sautant la semaine en cours si January a donné un plafond. Un retrait du dernier quiz ou de la dernière pratique d'une semaine est ignoré et compté (`kept`). Les droits de l'option sont refaits par le port (retrait seulement avec `reduce_scope`, ajout seulement avec `deepen`, `advance`, `push_deadline` ou sans option), une référence inconnue est ignorée et seulement comptée dans les journaux. (5) **Routes** : `POST /programs/{id}/replan` (`ReplanRequest` : `available_minutes` 60 à 10 080, `message` ≤ 1 000 ; 202 `ReplanStarted`), 404 `program_not_found` pour le programme d'une autre, 409 `program_not_validated` pour un brouillon, 409 `replan_open` (`details.session_id`) si une replanification est ouverte ; verrou de lancement par (utilisatrice, programme) ; `GET /programs/{id}/versions` : historique, la plus récente d'abord (`PlanVersionOut` : version, genre, statut, raison, dates, session, texte du bilan, `VersionDiffOut`, `WeekLoadOut`). **F8** : schémas propres à `replan` (`VersionDiffOut`, `VersionMoveOut`), aucun schéma de `program` importé. **`POST /sessions` ne lance jamais `replan`** : 409 `graph_has_route` (`details.graph`, `details.route`) ; le parcours a sa route, qui contrôle le programme et le verrou ; de même `quiz` (« POST /modules/{module_id}/quiz ») et `study_session` (« POST /study-sessions ») depuis la revue finale de la phase 5. La lecture `superseded` d'une version `pending` à session close ne vaut que pour `kind = "replan"` (la version `build` d'un brouillon reste `pending`) ; `PlanStatusOut` et `PlanKindOut` sont les `Literal` du modèle (`PlanStatus`, `PlanKind`), jamais recopiés (contrat inchangé). Sans option, une proposition vide ne dit que « Rien à changer » (le résumé du Stratège n'est plus dit avant). (6) **Bilan hebdomadaire, F1** : `replan.service.weekly.run_weekly_reviews(session_factory, runtime, now)` ; la tâche planifiée `weekly_review` (toutes les 15 min et au démarrage) déballe son contexte (`JobContext.replan`) et passe `datetime.now(UTC)` ; les 8 contrats ne changent pas. Jour du bilan = dernier `weekly_review.day` au plus aujourd'hui chez January, heure `weekly_review.time` dans son fuseau ; semaine relue = `week_start(jour − 6)`. Le bilan est une ligne `weekly_review` du journal, clé « review:{programme}:{semaine} » (une fois), `data` = faits de la semaine, `program_id`, `state`, `ratio` ; le retard de la semaine d'avant vient de son bilan, sinon il est recalculé. Une session `replan` (`trigger = "weekly_review"`, `review_entry_id`) est lancée s'il reste des semaines, si aucune replanification n'est ouverte et si aucune ne l'a déjà été pour ce bilan, quel que soit son sort ; un lancement refusé est repris au passage suivant ; une panne sur un programme n'arrête pas les autres (journal : type d'erreur seulement). (7) **F20** : `skills.service.write_weekly_snapshots(session_factory, now)` (lecture des utilisatrices sans `user_id`, puis tout sous l'utilisatrice) ; la tâche `skill_snapshots` l'appelle ; un relevé par semaine locale, `INSERT … ON CONFLICT DO NOTHING` (le premier passage gagne). (8) **Relecture de 5.8** : m2, le test de l'acceptation périmée change vraiment le plan relu ; **m3**, une note vide repose la question précédée de « Écris ce que tu veux changer. » ; **m4**, une acceptation périmée garde la note de January pour la proposition suivante. (9) **Ligne avant lancement** : la ligne du bilan est commitée avant `launcher.start`. (10) Test `test_retry_too_soon_after_failure` rendu déterministe par le test seul (ordre de mélange figé), sans toucher le code du quiz.
-- **Raison** : SPEC F13, F15, 11.4, 14.2, 17.2, 17.4 ; plan de la phase 5, tâche 5.9 et Review Focus n° 3 et 4 ; décisions de preflight F1, F2, F4, F5, F8, F10, F20 ; relecture de 5.8 (m1 à m4) ; relecture de 5.9 (I1, m3, m4) ; D88, D91, D98, D99, D105.
+- **Date** 2026-11-13
+- **Subject** Phase 5, task 5.9: `replan` feature (real port, routes, scheduled weekly review, plan
+  versions, skill snapshots)
+- **Decision**
+  1. **Versions**: a proposal is a `plan_versions` row with `kind = "replan"`. `status` gains two
+     closed values, `empty` (nothing moves, without an option) and `impossible`
+     (`PlanningImpossible`: a week does not hold its practice and quiz, or the program is finished:
+     `ProgramFinished`, kept in `snapshot.changes.finished` and returned by `PreviewSaved.finished`;
+     the flow then ends with “Your program is finished: no week left to replan.” instead of the cap
+     text). A closed version is never `pending` and is never applied: `apply` returns
+     `stale = True`, without an error (m1, written in the docstrings of the port's `PreviewSaved`,
+     `preview`, and `apply`). **F10**: an impossible preview gives this closed version, never a 422
+     in the graph.
+  2. **F2**: `latest()` reads only the applied versions (`kind = "build"` or `status = "accepted"`);
+     `latest_with_catalog` reads only `kind = "build"` (the skills catalog); a replanning's snapshot
+     keeps `budget` (the program's view re-reads it) and stores what must be applied in
+     `snapshot.changes`. Every new replanning version, even a closed one (`empty`, `impossible`),
+     replaces the previous `pending` proposal (`superseded`), another session's included: no
+     proposal stays `pending` without a question waiting for it; accepting a replaced version
+     returns `stale = True`. A `pending` proposal whose session is closed (cancelled, failed,
+     finished, or not found) is **read** as `superseded` by `GET /programs/{id}/versions`, without a
+     write (D91); the row stays `pending` until the next version, which replaces it (re-read of 5.9,
+     I1).
+  3. **Fingerprint**: `base_fingerprint` = sha256 of (task, day, status, minutes) of all the tasks
+     at the time of the proposal. `apply` (port) takes `program_lock` **before** its transaction
+     (F4), re-reads the rows and compares: different (January moved a task in the meantime), or a
+     day that the acceptance would write already past (January's local day: proposal accepted too
+     late), the version stays `pending` and `apply` returns `stale = True` (the graph proposes
+     again, D105); already accepted: `stale = False`, nothing rewritten (replay). Accepted:
+     “Continued” weeks and their module written, dates changed, tasks added at the end of their
+     module (`next_rank`), removed tasks deleted, other `pending` ones replaced, `accepted_at`,
+     `programs.version` = the version. `preview` is idempotent by (session, revision).
+  4. **F5, sorting** (`program.service.replanning.repack`, pure): on the rows, only `planned_date`
+     changes; a task keeps its module. Tasks done and those of past days do not move; the starting
+     day is today (local, D98), or the following Monday if no capacity remains this week (Sunday
+     review); the delays of past weeks go first, then each week is sorted by `pack_week` under its
+     cap (85%, minutes already done removed, days before the start closed); the overflow opens
+     “Continued: {theme}” weeks (new module without a skill, 45-min practice and 20-min quiz) and
+     `deadline_moved`. **Stable sorting (final review of phase 5, D115)**: a week that receives
+     neither a delay nor an addition keeps its tasks' dates (January's moves included) as long as
+     they are within its still-open days and under its cap (`replan_stable.keeps_dates`; the day's
+     capacity is not rechecked, as for a January modification): an “on track” review therefore
+     returns `empty`; in a sorted week, a task to do is never placed before its date
+     (`Entry.not_before`, hard for the other tasks, merely preferred for the reserved practice and
+     quiz, which move back only if their day has no room left, a free Sunday for example); a “Retake
+     the quiz” (`rules.RETRY_PREFIX`) never closes the week in place of its quiz and is never
+     advanced by “advance” (F9: D+2). **“Push back the deadline” (`push_deadline`)**: the sorted
+     weeks go down to 60% of the cap (`PUSH_SHARE` = `UNDERLOAD_SHARE`, 428 for 714), always keeping
+     room for a practice and a quiz beyond the minutes done and never beyond 85%; the surplus goes
+     into “Continued” weeks and the deadline really moves back (`deadline_moved`); January's cap
+     (`week_cap_override`) keeps priority for the current week; `week_loads` keeps the 85% cap as a
+     guard. The Strategist's prompt says so (“the code lightens the coming weeks (60% of the cap at
+     most)…”). January's cap (`week_cap_override`, 85% of the minutes given) applies only to the
+     current week. `advance` reuses `plan_advances` (floor share 1.0), skipping the current week if
+     January gave a cap. A removal of a week's last quiz or last practice is ignored and counted
+     (`kept`). The option's rights are redone by the port (removal only with `reduce_scope`,
+     addition only with `deepen`, `advance`, `push_deadline`, or without an option), an unknown
+     reference is ignored and only counted in the logs.
+  5. **Routes**: `POST /programs/{id}/replan` (`ReplanRequest`: `available_minutes` 60 to 10,080,
+     `message` ≤ 1,000; 202 `ReplanStarted`), 404 `program_not_found` for another user's program,
+     409 `program_not_validated` for a draft, 409 `replan_open` (`details.session_id`) if a
+     replanning is open; launch lock per (user, program); `GET /programs/{id}/versions`: history,
+     most recent first (`PlanVersionOut`: version, kind, status, reason, dates, session, review
+     text, `VersionDiffOut`, `WeekLoadOut`). **F8**: schemas specific to `replan` (`VersionDiffOut`,
+     `VersionMoveOut`), no `program` schema imported. **`POST /sessions` never launches `replan`**:
+     409 `graph_has_route` (`details.graph`, `details.route`); the flow has its route, which checks
+     the program and the lock; likewise `quiz` (“POST /modules/{module_id}/quiz”) and
+     `study_session` (“POST /study-sessions”) since the final review of phase 5. The `superseded`
+     reading of a `pending` version with a closed session applies only to `kind = "replan"` (a
+     draft's `build` version stays `pending`); `PlanStatusOut` and `PlanKindOut` are the model's
+     `Literal`s (`PlanStatus`, `PlanKind`), never copied (contract unchanged). Without an option, an
+     empty proposal says only “Nothing to change” (the Strategist's summary is no longer said
+     before).
+  6. **Weekly review, F1**: `replan.service.weekly.run_weekly_reviews(session_factory,
+     runtime, now)`; the scheduled job `weekly_review` (every 15 min and at startup) unwraps its
+     context (`JobContext.replan`) and passes `datetime.now(UTC)`; the 8 contracts do not change.
+     Review day = the last `weekly_review.day` at most today in January's time, time
+     `weekly_review.time` in her time zone; week re-read = `week_start(day − 6)`. The review is a
+     `weekly_review` row of the journal, key “review:{program}:{week}” (once), `data` = the week's
+     facts, `program_id`, `state`, `ratio`; the previous week's delay comes from its review,
+     otherwise it is recomputed. A `replan` session (`trigger = "weekly_review"`, `review_entry_id`)
+     is launched if weeks remain, if no replanning is open, and if none has already been launched
+     for this review, whatever its fate; a refused launch is taken up again at the next pass; an
+     outage on one program does not stop the others (log: error type only).
+  7. **F20**: `skills.service.write_weekly_snapshots(session_factory, now)` (read of users without
+     `user_id`, then everything under the user); the `skill_snapshots` job calls it; one snapshot
+     per local week, `INSERT … ON CONFLICT DO NOTHING` (the first pass wins).
+  8. **Re-read of 5.8**: m2, the stale-acceptance test really changes the re-read plan; **m3**, an
+     empty note asks the question again preceded by “Write what you want to change.”; **m4**, a
+     stale acceptance keeps January's note for the next proposal.
+  9. **Row before launch**: the review's row is committed before `launcher.start`.
+  10. Test `test_retry_too_soon_after_failure` made deterministic by the test alone (shuffle order
+     fixed), without touching the quiz code.
+- **Reason** SPEC F13, F15, 11.4, 14.2, 17.2, 17.4; phase 5 plan, task 5.9 and Review Focus no. 3
+  and 4; preflight decisions F1, F2, F4, F5, F8, F10, F20; re-read of 5.8 (m1 to m4); re-read of 5.9
+  (I1, m3, m4); D88, D91, D98, D99, D105.
 
 ## D107
 
-- **Date** : 2026-11-13
-- **Sujet** : Phase 5, tâche 5.10 : carte de compétences (`skills` : graphe, détail, comparaison, courbe)
-- **Décision** : (1) **Routes** (préfixe `/skills`, hors 14.2 sauf l'esprit de F15), routes fixes déclarées avant `/{skill_id}` : `GET /skills/graph` → `SkillGraphOut{nodes: [SkillNodeOut{id, name, domain, level, demand, evidence_count}], edges: [SkillEdgeOut{before_id, after_id}], domains: [DomainScoreOut{domain, score}]}` ; `GET /skills/{skill_id}` → `SkillDetailOut{id, name, domain, synonyms, level, evidence: [EvidenceOut{kind, label, at, url}], postings: [PostingRefOut{id, title, url}], next_action: NextActionOut{kind, label, url} | null}` (404 `skill_not_found`) ; `GET /skills/compare?target=goal&goal_id=` → `CompareOut{target_label, coverage, rows: [CompareRowOut{skill_id, name, domain, mine, target, gap}]}` (404 `goal_not_found`, 404 `no_compare_target`) ; `GET /skills/history?weeks=12` (1 à 52) → `HistoryOut{points: [HistoryPointOut{week_start, counts: LevelCountsOut{declare, en_cours, valide, prouve}, score}]}`. Tout est filtré par `user_id` (compétence ou objectif d'un autre : 404). Une 422 (`weeks` hors bornes ou illisible, `target` inconnu, `goal_id` de plus de 64 caractères) passe par le gestionnaire commun : chemins et messages seulement, jamais la saisie. (2) **Demande du marché et offres vides jusqu'aux phases 8 et 6**, champs présents dans le contrat : `demand` vaut `null` (le front lit 0 à 1 et garde une taille moyenne, D112 n° 2), `postings` vaut `[]`. (3) **Comparaison « poste cible »** = compétences des modules du programme de l'objectif (modules sautés compris : la cible les attend toujours), dans l'ordre du programme, une fois chacune (nom normalisé), attendues au niveau `valide` ; une compétence nommée par un module mais absente du référentiel est omise. Objectif : `goal_id`, sinon le plus récent qui a un programme (brouillon compris) ; sans programme : 404 `no_compare_target`. `gap` = rang de la cible moins le mien (`LEVEL_ORDER`, absente = −1), **non borné** : négatif quand je dépasse la cible (le front lit « 0 ou moins : atteint ») ; `coverage` = part des lignes à `gap ≤ 0`, en %, 0,5 arrondi au-dessus, 0 sans ligne. `target_label` = poste visé de l'objectif, à défaut son texte (120 caractères). « Offre précise » : phase 6 (`target` n'accepte que `goal`). L'objectif est lu par `learning.service.goals` (`get_goal`, `list_goals`), jamais par un repository d'une autre feature (contrat 2). (4) **Radar fourni avec le graphe** (`domain_scores` de D99 n° 7 sur toutes les compétences du référentiel, sans niveau = 0) ; domaine absent affiché « Autres » partout (nœud, détail, ligne de comparaison, radar : `radar.domain_name`). (5) **« Moins d'une minute »** : aucune lecture en cache côté back (tout est relu à chaque requête depuis `user_skills`, qui fait foi, D6) et `Cache-Control: no-store` sur les quatre routes ; le front relit toutes les 30 s. (6) **Prochaine action par niveau** (`map.next_action(level, skill, facts)`, pure ; les faits ne sont lus que pour le niveau qui en a besoin) : absente ou `declare` → `study` « Étudier « {module} » », `/etudier/session?lecon={lesson_id}` (**F9**, lu par 5.16), ou `/etudier/session` si la leçon du module n'est pas prête ; `en_cours` → `quiz` « Passer le quiz « {module} » », `/etudier/quiz/{quiz_id}` si le quiz du module est prêt, sinon `/etudier/quiz` (la liste, où le préparer) ; `valide` → `review` « Réviser les fiches « {compétence} » » vers `/etudier/revisions` si une fiche de la compétence (nom normalisé) est due aujourd'hui (jour local, D98), sinon `project` « Projet preuve (bientôt) » sans `url` ; `prouve` → aucune. Le module est le premier non sauté qui enseigne la compétence dans un programme **validé**, le plus récent d'abord ; sans module, le libellé nomme la compétence. Lectures ajoutées pour la carte : `program.service.skill_modules` (`module_teaching`, `program_skill_names`), `lessons.service.lessons.ready_lesson_id`, `quiz.service.quizzes.ready_quiz_of_module`, `quiz.service.cards.due_skill_names` (`FlashcardRepository.due_skills`). (7) **Preuves** : la plus récente d'abord ; `at` = instant ISO, `null` pour une chaîne de la phase 4 ; adresse par genre : `lesson` → `/apprendre/lecons/{id}`, `quiz` → `/etudier/quiz/{quiz_id}` (**F21** : une preuve par quiz, `ref_id` = le quiz, libellé avec le score et la date, écrit par 5.4), `study` → `/etudier/session/{id}`, `program` → `/apprendre/programme/{id}`, `capture` → `/etudier/journal` ; `project`, `cv` ou sans référence → `null` ; la référence est échappée (`quote`). (8) **Courbe** (**F20** : 5.10 ne fait que lire les relevés écrits par `write_weekly_snapshots` et la tâche `skill_snapshots` de 5.9) : un point par relevé des `weeks` dernières semaines locales (semaine en cours comprise), du plus ancien au plus récent, sans point inventé pour une semaine sans relevé ; le point de la semaine en cours est toujours calculé en direct depuis `user_skills` (son relevé éventuel est ignoré). `score` (arbitrage, le plan ne le définissait pas) = moyenne des scores de niveau (D99 n° 7 : 25, 50, 75, 100) des compétences qui ont un niveau, 0,5 arrondi au-dessus, 0 sans compétence (`radar.mean_score`) : un relevé ne connaît que les compétences notées, le point en direct suit la même règle. Semaine = lundi de la semaine locale (fuseau de `UserSettings.timezone`). (9) **Place des modules** : `map.py`, `history.py`, `compare.py` restent hors de `service.py` (`program.service` importe `skills.service`) ; ils lisent le repository de `skills` et les services des autres features ; `radar.as_level` remplace l'aide privée de `service.py` (valeur inconnue lue `declare`). L'heure des routes vient de la dépendance `router.clock` (remplacée par les tests). Contrat régénéré (`contracts/openapi.json`, `schema.d.ts`).
-- **Raison** : SPEC F15, 4.5, 13.4, 17.2 ; plan de la phase 5, tâche 5.10 ; décisions de preflight F9, F20, F21 et notes (lecture des objectifs par `learning.service`, routes fixes avant `/{skill_id}`) ; D6, D98, D99, D101, D106, D112.
+- **Date** 2026-11-13
+- **Subject** Phase 5, task 5.10: skills map (`skills`: graph, detail, comparison, curve)
+- **Decision**
+  1. **Routes** (prefix `/skills`, outside 14.2 except in the spirit of F15), fixed routes declared
+     before `/{skill_id}`: `GET /skills/graph` → `SkillGraphOut{nodes: [SkillNodeOut{id, name,
+     domain, level, demand, evidence_count}], edges: [SkillEdgeOut{before_id,
+     after_id}], domains: [DomainScoreOut{domain, score}]}`; `GET /skills/{skill_id}` →
+     `SkillDetailOut{id, name, domain, synonyms, level, evidence: [EvidenceOut{kind,
+     label, at, url}], postings: [PostingRefOut{id, title, url}], next_action: NextActionOut{kind,
+     label, url} | null}` (404 `skill_not_found`); `GET /skills/compare?target=goal&goal_id=` →
+     `CompareOut{target_label, coverage, rows: [CompareRowOut{skill_id, name, domain, mine, target,
+     gap}]}` (404 `goal_not_found`, 404 `no_compare_target`); `GET /skills/history?weeks=12` (1 to
+     52) → `HistoryOut{points: [HistoryPointOut{week_start, counts: LevelCountsOut{declare,
+     en_cours, valide, prouve}, score}]}`. Everything is filtered by `user_id` (another user's skill
+     or goal: 404). A 422 (`weeks` out of bounds or unreadable, unknown `target`, `goal_id` of more
+     than 64 characters) goes through the common handler: paths and messages only, never the input.
+  2. **Market demand and postings empty until phases 8 and 6**, fields present in the contract:
+     `demand` is `null` (the front end reads 0 to 1 and keeps a medium size, D112 no. 2), `postings`
+     is `[]`.
+  3. **“Target job” comparison** = skills of the modules of the goal's program (skipped modules
+     included: the target still expects them), in the program's order, each once (normalized name),
+     expected at level `valide`; a skill named by a module but absent from the reference is omitted.
+     Goal: `goal_id`, otherwise the most recent one that has a program (draft included); without a
+     program: 404 `no_compare_target`. `gap` = the target's rank minus mine (`LEVEL_ORDER`, absent =
+     −1), **unbounded**: negative when I exceed the target (the front end reads “0 or less:
+     reached”); `coverage` = share of rows with `gap ≤ 0`, in %, 0.5 rounded up, 0 without a row.
+     `target_label` = the goal's target job, failing that its text (120 characters). “Specific
+     posting”: phase 6 (`target` accepts only `goal`). The goal is read by `learning.service.goals`
+     (`get_goal`, `list_goals`), never by another feature's repository (contract 2).
+  4. **Radar provided with the graph** (`domain_scores` of D99 no. 7 on all the reference's skills,
+     without a level = 0); an absent domain displayed “Other” everywhere (node, detail, comparison
+     row, radar: `radar.domain_name`).
+  5. **“Less than a minute”**: no cached read on the backend side (everything is re-read at each
+     request from `user_skills`, which is authoritative, D6) and `Cache-Control: no-store` on the
+     four routes; the front end re-reads every 30 s.
+  6. **Next action by level** (`map.next_action(level, skill, facts)`, pure; the facts are read only
+     for the level that needs them): absent or `declare` → `study` “Study “{module}””,
+     `/etudier/session?lecon={lesson_id}` (**F9**, read by 5.16), or `/etudier/session` if the
+     module's lesson is not ready; `en_cours` → `quiz` “Take the quiz “{module}””,
+     `/etudier/quiz/{quiz_id}` if the module's quiz is ready, otherwise `/etudier/quiz` (the list,
+     where to prepare it); `valide` → `review` “Review the “{skill}” cards” toward
+     `/etudier/revisions` if a card of the skill (normalized name) is due today (local day, D98),
+     otherwise `project` “Proof project (coming soon)” without `url`; `prouve` → none. The module is
+     the first non-skipped one that teaches the skill in a **validated** program, the most recent
+     first; without a module, the label names the skill. Reads added for the map:
+     `program.service.skill_modules` (`module_teaching`, `program_skill_names`),
+     `lessons.service.lessons.ready_lesson_id`, `quiz.service.quizzes.ready_quiz_of_module`,
+     `quiz.service.cards.due_skill_names` (`FlashcardRepository.due_skills`).
+  7. **Evidence**: the most recent first; `at` = ISO instant, `null` for a phase 4 string; address
+     by kind: `lesson` → `/apprendre/lecons/{id}`, `quiz` → `/etudier/quiz/{quiz_id}` (**F21**: one
+     piece of evidence per quiz, `ref_id` = the quiz, label with the score and the date, written by
+     5.4), `study` → `/etudier/session/{id}`, `program` → `/apprendre/programme/{id}`, `capture` →
+     `/etudier/journal`; `project`, `cv`, or without a reference → `null`; the reference is escaped
+     (`quote`).
+  8. **Curve** (**F20**: 5.10 only reads the snapshots written by `write_weekly_snapshots` and 5.9's
+     `skill_snapshots` job): one point per snapshot of the last `weeks` local weeks (current week
+     included), from oldest to most recent, with no point invented for a week without a snapshot;
+     the current week's point is always computed live from `user_skills` (its possible snapshot is
+     ignored). `score` (arbitration, the plan did not define it) = average of the level scores (D99
+     no. 7: 25, 50, 75, 100) of the skills that have a level, 0.5 rounded up, 0 without a skill
+     (`radar.mean_score`): a snapshot knows only the rated skills, the live point follows the same
+     rule. Week = Monday of the local week (time zone of `UserSettings.timezone`).
+  9. **Placement of the modules**: `map.py`, `history.py`, `compare.py` stay outside `service.py`
+     (`program.service` imports `skills.service`); they read `skills`' repository and the other
+     features' services; `radar.as_level` replaces `service.py`'s private helper (unknown value read
+     as `declare`). The routes' time comes from the `router.clock` dependency (replaced by the
+     tests). Contract regenerated (`contracts/openapi.json`, `schema.d.ts`).
+- **Reason** SPEC F15, 4.5, 13.4, 17.2; phase 5 plan, task 5.10; preflight decisions F9, F20, F21
+  and notes (goals read by `learning.service`, fixed routes before `/{skill_id}`); D6, D98, D99,
+  D101, D106, D112.
 
 ## D108
 
-- **Date** : 2026-11-13
-- **Sujet** : Phase 5, tâche 5.11 : capture rapide par l'Archiviste (parcours `capture`) et journal (`GET /journal`)
-- **Décision** : (1) **Fichier** : un fichier capturé passe d'abord par l'import existant (`POST /documents` : même chaîne d'ingestion, même garde de taille et de type), puis la capture se lance par `document_id`. Le parcours attend l'indexation (`CaptureStore.document`, toutes les 3 s, 90 s au plus), puis `run.failed` `document_not_indexed` « Document pas encore indexé. ». Un import en échec (`error`) donne aussitôt `document_failed` (ajout : il ne serait jamais indexé). Le document importé garde son élément complet ; la capture y ajoute son élément résumé. (2) **« Signalé tout de suite »** : un lien est lu par `web_read` (**F25** : garde SSRF, cache, journal de l'outil gardés), 15 s au plus. Toute issue non lisible (page illisible, adresse refusée à la lecture par la garde, plafond de pages, délai, recherche non branchée) donne, dans le fil de la capture et sans aucun appel au modèle, le message « Je n'arrive pas à lire ce lien. Colle son texte ci-dessous. » puis la question `capture_text` (`fields: [text, requis, 20 000]`, `options: [cancel « Abandonner »]`). Le test vérifie qu'aucun appel au modèle ne précède `interrupt.requested` et que les types hors `tool.*` commencent par `agent.started`, `agent.message`, `interrupt.requested`. **F6** : la borne d'`InterruptField.max_length` passe de 4 000 à 20 000 (défaut 2 000 inchangé ; rien d'autre ne dépendait de 4 000 hors son test, mis à jour ; le front lit la valeur du champ). Le texte collé est coupé à 20 000 ; « Abandonner », un texte vide ou toute autre réponse finit par « Capture abandonnée. », sans rien écrire. Une adresse non HTTP est refusée par la route (422 `invalid_url`, message fixe, sans recopie) ; une adresse qui porte des identifiants : 422 `url_forbidden`. (3) **La capture devient un élément `document` résumé** (4.2 : « pages capturées ») : titre (3 à 120 caractères), cinq lignes au plus (`ShortenToMax`, 200 chacune), « Source : {adresse} » quand il y en a une, étiquettes « capture », titres des modules reliés puis concepts extraits (revue finale de la phase 5 ; bornées par `clean_tags`), auteur `archivist`, raison « Capture rapide de January. », session ; **sans `source_id`**, pour que supprimer la capture ne supprime jamais un document importé (`remove_for_item`). Règle de la mémoire : `WriteDraft.captured` est la seule exception à « un agent n'écrit pas de document » ; seule la feature `capture` la pose (`memory.service.captured.write_capture`), l'outil `memory_write` ne l'a pas. L'élément est indexé après le commit (D66), et l'indexation est refaite au rejeu tant qu'il ne l'est pas. (4) **F14, « j'ai appris »** : dans la transaction du rangement, `SkillsService.raise_levels(concepts, "declare", evidence("capture", journal_entry_id, "Capture « {titre} » (jj/mm)", now))`, jamais plus bas, jamais au-delà du niveau qu'avait la compétence. Après le commit, les niveaux qui font foi (`levels_of`) sont reflétés dans les acquis de la mémoire (`reflect_skill_levels`, auteur `archivist`, D6) ; ce reflet est refait à chaque appel, rejeu compris, et une panne n'est qu'un avertissement. **Arbitrage de sécurité** : `learned` ne vaut que pour une note de January (source `text`, et au plus `NOTE_MAX_CHARS` = 1 000 caractères : un texte plus long est un article collé, présenté au modèle comme « un texte collé » ; `capture_port.is_note`, revue finale de la phase 5). Une page, un document ou le texte collé d'un lien ne déclarent jamais rien, même si le contenu le réclame : le prompt le dit, et le graphe (`clean_digest`) comme le port (`_learned`) le forcent. (5) **F7, liens** : modules non sautés des programmes **validés** (`m1…`, programme le plus récent d'abord) et tâches `todo` datées à ± 7 jours du jour local (`t1…`, par jour puis ordre du programme, 60 au plus). Les ids ne vont jamais au modèle (testé). L'instantané est gardé dans l'état ; `store` le reçoit et résout `covered_task` en `TaskRef` ; `tick_task` reçoit l'id de cet instantané. Le port relit le programme de la tâche (`program.service.followup.program_of_task`, ajouté), prend `program_lock` **avant** sa transaction (F4) et coche par `tick_tasks` (idempotent ; la tâche d'une autre est ignorée). Une référence inconnue (module, tâche) est ignorée ; le journal n'en garde que le nombre. (6) **Proposer** = une question oui / non pour la tâche (`capture_task` : « Cette capture couvre « {tâche} ». La cocher ? »), puis une pour les fiches (`capture_cards` : « Créer ces {n} fiches ? » suivi des rectos, ou « Créer cette fiche ? » pour une seule). Le oui vaut `"yes"`, `{"answer": "yes"}` ou `{"option": "yes"}` ; toute autre réponse vaut non. Les fiches ont la source `capture`, `source_id` = la ligne de journal, le module = le premier module relié, **jamais de compétence** (le nom viendrait d'un contenu non fiable et deux échecs rétrograderaient un acquis : vidée par `clean_digest` et par le port, comme les fiches de session D103 n° 11 ; revue finale de la phase 5) ; elles sont dues demain (jour local) et dédoublonnées par recto. `tick_task` rend un booléen : une tâche retirée entre-temps n'est pas annoncée « cochée ». Un reflet des acquis en échec journalise son type d'erreur. (7) **Journal** : ligne `capture`, clé « capture:{session} » (le rangement est idempotent par session : rejoué, il relit la ligne et n'écrit rien). Texte : « Lien capturé : « {titre} » », « Document capturé : … » ou « Note : … ». `data` contient la source, les ids des modules, les concepts déclarés et la tâche couverte, jamais l'adresse ni le texte. `occurred_on` est le jour local (D98). **`GET /journal` vit dans la feature `capture`** (seule à écrire le journal) : `?kind=&before=&limit=50` (1 à 100), du plus récent au plus ancien (`created_at`, puis ordre d'insertion). `before` = id de la dernière ligne lue, `next_before` = curseur suivant ou `null` ; un curseur qui n'est pas une ligne de January donne 422 `invalid_cursor`. `data` n'est jamais rendu (`JournalEntryOut{id, kind, text, occurred_on, created_at, links}`). Le résumé hebdomadaire est l'entrée `weekly_review` (D106). (8) **Route** : `POST /capture` (`CaptureRequest{url ≤ 2 048, text ≤ 20 000, document_id ≤ 36}`) → 202 `CaptureStarted{session_id}`. Zéro ou plusieurs sources (une chaîne vide compte comme absente) : 422 `invalid_input` ; document d'une autre : 404 `document_not_found` ; longueurs : 422 `validation_error` sans recopie. La route n'écrit aucune ligne avant `launcher.start` (rien à commiter, D66 / D72). **`POST /sessions` ne lance jamais `capture`** : 409 `graph_has_route` (`details.route` = « POST /capture »), comme `replan` (D106). (9) **Rejeu** : `read` ne pose aucune question ; `ask_text`, `ask_task` et `ask_cards` ne font qu'`interrupt()` puis lisent la réponse ; `store`, `tick_task` et `add_cards` sont idempotents ; un arrêt pendant une question ne rappelle ni le modèle ni le rangement (testé). (10) **Écarts de forme** : `CaptureStore.store(…, *, source)` reçoit la source (texte du journal, garde du `learned`) ; la partie pure du parcours vit dans `nodes/archivist_capture_steps.py`, les liens dans `capture/service/links.py` et la mémoire de la capture dans `memory/service/captured.py`. `archivist.md` gagne le mode `capture`, et `learned_document` passe `mode="learned"`. Branchement : `CaptureRuntime` dans `StudyRuntimes`, `AgentCaptureStore` dans `agent_ports`, `app.state.capture` (une ligne dans `main.py`). Contrat régénéré (`contracts/openapi.json`, `schema.d.ts`).
-- **Raison** : SPEC F18, 4.2, 9.4, 10.2, 17.2, 17.4 ; plan de la phase 5, tâche 5.11 et Review Focus n° 1 (page capturée piégée : `test_capture_page_is_untrusted`) ; décisions de preflight F6, F7, F14, F25 et notes (ligne commitée avant le lancement, `graph_has_route`) ; D6, D66, D72, D98, D99, D105, D106, D107.
+- **Date** 2026-11-13
+- **Subject** Phase 5, task 5.11: quick capture by the Archivist (`capture` flow) and the journal
+  (`GET /journal`)
+- **Decision**
+  1. **File**: a captured file first goes through the existing import (`POST /documents`: same
+     ingestion chain, same size and type guard), then the capture is launched by `document_id`. The
+     flow waits for indexing (`CaptureStore.document`, every 3 s, 90 s at most), then `run.failed`
+     `document_not_indexed` “Document not indexed yet.”. A failed import (`error`) immediately gives
+     `document_failed` (addition: it would never be indexed). The imported document keeps its
+     complete item; the capture adds its summary item.
+  2. **“Flagged right away”**: a link is read by `web_read` (**F25**: SSRF guard, cache, tool log
+     kept), 15 s at most. Any unreadable outcome (unreadable page, address refused at reading by the
+     guard, page cap, timeout, search not wired) gives, in the capture's feed and without any model
+     call, the message “I can't read this link. Paste its text below.” then the `capture_text`
+     question (`fields: [text, required, 20,000]`, `options: [cancel “Abandon”]`). The test checks
+     that no model call precedes `interrupt.requested` and that the non-`tool.*` types begin with
+     `agent.started`, `agent.message`, `interrupt.requested`. **F6**: `InterruptField.max_length`'s
+     bound goes from 4,000 to 20,000 (default 2,000 unchanged; nothing else depended on 4,000 apart
+     from its test, updated; the front end reads the field's value). The pasted text is cut to
+     20,000; “Abandon”, an empty text, or any other answer ends with “Capture abandoned.”, writing
+     nothing. A non-HTTP address is refused by the route (422 `invalid_url`, fixed message, without
+     echo); an address that carries credentials: 422 `url_forbidden`.
+  3. **The capture becomes a summarized `document` item** (4.2: “captured pages”): title (3 to 120
+     characters), five lines at most (`ShortenToMax`, 200 each), “Source: {address}” when there is
+     one, tags “capture”, titles of the linked modules then extracted concepts (final review of
+     phase 5; bounded by `clean_tags`), author `archivist`, reason “January's quick capture.”,
+     session; **without `source_id`**, so that deleting the capture never deletes an imported
+     document (`remove_for_item`). Memory rule: `WriteDraft.captured` is the only exception to “an
+     agent does not write a document”; only the `capture` feature sets it
+     (`memory.service.captured.write_capture`), the `memory_write` tool does not have it. The item
+     is indexed after the commit (D66), and indexing is redone on replay as long as it is not done.
+  4. **F14, “I learned”**: in the storage transaction, `SkillsService.raise_levels(concepts,
+     "declare", evidence("capture", journal_entry_id, "Capture “{title}” (dd/mm)", now))`, never
+     lower, never beyond the level the skill had. After the commit, the levels that are
+     authoritative (`levels_of`) are reflected in the memory's acquired skills
+     (`reflect_skill_levels`, author `archivist`, D6); this reflection is redone at each call,
+     replays included, and an outage is only a warning. **Security arbitration**: `learned` applies
+     only to a note from January (source `text`, and at most `NOTE_MAX_CHARS` = 1,000 characters: a
+     longer text is a pasted article, presented to the model as “a pasted text”;
+     `capture_port.is_note`, final review of phase 5). A page, a document, or a link's pasted text
+     never declares anything, even if the content demands it: the prompt says so, and the graph
+     (`clean_digest`) as well as the port (`_learned`) enforce it.
+  5. **F7, links**: non-skipped modules of the **validated** programs (`m1…`, most recent program
+     first) and `todo` tasks dated within ± 7 days of the local day (`t1…`, by day then program
+     order, 60 at most). The ids never go to the model (tested). The snapshot is kept in the state;
+     `store` receives it and resolves `covered_task` into a `TaskRef`; `tick_task` receives the id
+     from this snapshot. The port re-reads the task's program
+     (`program.service.followup.program_of_task`, added), takes `program_lock` **before** its
+     transaction (F4) and checks off through `tick_tasks` (idempotent; another user's task is
+     ignored). An unknown reference (module, task) is ignored; the log keeps only the count.
+  6. **Proposing** = a yes / no question for the task (`capture_task`: “This capture covers
+     “{task}”. Check it off?”), then one for the cards (`capture_cards`: “Create these {n} cards?”
+     followed by the fronts, or “Create this card?” for a single one). Yes is `"yes"`,
+     `{"answer": "yes"}`, or `{"option": "yes"}`; any other answer is no. The cards have source
+     `capture`, `source_id` = the journal row, module = the first linked module, **never a skill**
+     (the name would come from untrusted content and two failures would demote an acquired skill:
+     emptied by `clean_digest` and by the port, like the session cards of D103 no. 11; final review
+     of phase 5); they are due tomorrow (local day) and deduplicated by front. `tick_task` returns a
+     boolean: a task removed in the meantime is not announced “checked”. A failing reflection of the
+     acquired skills logs its error type.
+  7. **Journal**: `capture` row, key “capture:{session}” (storage is idempotent by session:
+     replayed, it re-reads the row and writes nothing). Text: “Link captured: “{title}””, “Document
+     captured: …”, or “Note: …”. `data` contains the source, the module ids, the declared concepts,
+     and the covered task, never the address or the text. `occurred_on` is the local day (D98).
+     **`GET /journal` lives in the `capture` feature** (the only one to write the journal):
+     `?kind=&before=&limit=50` (1 to 100), from most recent to oldest (`created_at`, then insertion
+     order). `before` = id of the last row read, `next_before` = next cursor or `null`; a cursor
+     that is not a row of January's gives 422 `invalid_cursor`. `data` is never rendered
+     (`JournalEntryOut{id, kind, text, occurred_on, created_at, links}`). The weekly summary is the
+     `weekly_review` entry (D106).
+  8. **Route**: `POST /capture` (`CaptureRequest{url ≤ 2,048, text ≤ 20,000, document_id ≤ 36}`) →
+     202 `CaptureStarted{session_id}`. Zero or several sources (an empty string counts as absent):
+     422 `invalid_input`; another user's document: 404 `document_not_found`; lengths: 422
+     `validation_error` without echo. The route writes no row before `launcher.start` (nothing to
+     commit, D66 / D72). **`POST /sessions` never launches `capture`**: 409 `graph_has_route`
+     (`details.route` = “POST /capture”), like `replan` (D106).
+  9. **Replay**: `read` asks no question; `ask_text`, `ask_task`, and `ask_cards` only do
+     `interrupt()` then read the answer; `store`, `tick_task`, and `add_cards` are idempotent; a
+     stop during a question calls neither the model nor the storage again (tested).
+  10. **Deviations in form**: `CaptureStore.store(…, *, source)` receives the source (journal text,
+     `learned` guard); the flow's pure part lives in `nodes/archivist_capture_steps.py`, the links
+     in `capture/service/links.py`, and the capture's memory in `memory/service/captured.py`.
+     `archivist.md` gains the `capture` mode, and `learned_document` passes `mode="learned"`.
+     Wiring: `CaptureRuntime` in `StudyRuntimes`, `AgentCaptureStore` in `agent_ports`,
+     `app.state.capture` (one line in `main.py`). Contract regenerated (`contracts/openapi.json`,
+     `schema.d.ts`).
+- **Reason** SPEC F18, 4.2, 9.4, 10.2, 17.2, 17.4; phase 5 plan, task 5.11 and Review Focus no. 1
+  (booby-trapped captured page: `test_capture_page_is_untrusted`); preflight decisions F6, F7, F14,
+  F25 and notes (row committed before launch, `graph_has_route`); D6, D66, D72, D98, D99, D105,
+  D106, D107.
 
 ## D109
 
-- **Date** : 2026-11-12
-- **Sujet** : Phase 5, tâche 5.12 (front) : socle partagé du front et reliquat de la phase 4 (emplacements de coquille, carte de question repliée, tableau stabilisé, `PlanDiff` partagé)
-- **Décision** (recopiée de la section « Décisions » du rapport `task-5.12-report.md`) :
-  - (1) **Emplacements de coquille** : `FeatureManifest.shell { topbar?, overlay? }` (composants sans propriété). La barre du haut rend chaque `topbar` des `FEATURES` (à gauche du voyant de santé) ; `AppLayout` rend chaque `overlay` après la colonne principale. La capture et la série s'ajoutent par leur manifeste, sans toucher à la mise en page. `ShellSlots` accepte une liste de features en propriété (testabilité), par défaut `FEATURES`.
-  - (2) **Carte de question repliée** après réponse : question, « Réponse envoyée » et réponses saisies dans cet onglet en lecture seule (étiquette + texte, champs vides omis) ; plus aucun champ, option ni texte libre. Une réponse par option ou texte libre n'est pas réaffichée (seuls les champs de cadrage le sont, comme le brief le demande).
-  - (3) **Tableau stabilisé** : `useSettled(done, changeTick)` attend `document.fonts.ready` (considéré prêt si l'API manque) puis `QUIET_MS = 250` sans changement d'Excalidraw ; chaque changement avant ce moment relance l'attente et est transmis comme référence des retouches. Le calme se compte à partir de la résolution des polices (pas depuis le montage) : même 1 s de chargement de polices laisse 250 ms de calme ensuite. Une fois modifiable, le canevas le reste.
-  - (4) **`PlanDiff` et `formatMinutes` dans `shared/`** : `PlanDiff` et ses types dans `shared/session-ui/PlanDiff/` (exportés par l'index), textes sous `session.diff.*` ; `formatMinutes`, `shortDay`, `longDay` (et `parseDay`) dans `shared/lib/format.ts`. Le programme garde `weekdayLabel`, `dayOfMonth`, `dayLoad`. La replanification (5.17) importe `PlanDiff` de `@/shared/session-ui`.
-  - (5) **Dépendances** : `@xyflow/react` ^12.12.1, `elkjs` ^0.12.1, `recharts` ^3.10.1 (pairs React 19 vérifiés dans leurs manifestes).
-- **Raison** : plan de la phase 5, tâche 5.12 ; rapport de la tâche (`.superpowers/sdd/2026-11-12-06-phase-5-etude/task-5.12-report.md`), qui détaille chaque point. Tâche front en vague parallèle : décision recopiée par la tâche back suivante (règle du plan, « Déroulement »).
+- **Date** 2026-11-12
+- **Subject** Phase 5, task 5.12 (front end): shared front-end foundation and phase 4 leftovers
+  (shell slots, collapsed question card, stabilized board, shared `PlanDiff`)
+- **Decision** (copied from the “Decisions” section of the report `task-5.12-report.md`):
+  - (1) **Shell slots**: `FeatureManifest.shell { topbar?, overlay? }` (components without
+    properties). The top bar renders each `topbar` of `FEATURES` (to the left of the health
+    indicator); `AppLayout` renders each `overlay` after the main column. Capture and the streak are
+    added through their manifest, without touching the layout. `ShellSlots` accepts a list of
+    features as a property (testability), `FEATURES` by default.
+  - (2) **Question card collapsed** after an answer: question, “Answer sent”, and the answers typed
+    in this tab as read-only (label + text, empty fields omitted); no more field, option, or free
+    text. An answer by option or free text is not displayed again (only the framing fields are, as
+    the brief asks).
+  - (3) **Stabilized board**: `useSettled(done, changeTick)` waits for `document.fonts.ready`
+    (considered ready if the API is missing) then `QUIET_MS = 250` without an Excalidraw change;
+    each change before that moment restarts the wait and is passed on as the reference for
+    touch-ups. The quiet is counted from the fonts' resolution (not from mounting): even 1 s of font
+    loading leaves 250 ms of quiet afterwards. Once editable, the canvas stays so.
+  - (4) **`PlanDiff` and `formatMinutes` in `shared/`**: `PlanDiff` and its types in
+    `shared/session-ui/PlanDiff/` (exported by the index), texts under `session.diff.*`;
+    `formatMinutes`, `shortDay`, `longDay` (and `parseDay`) in `shared/lib/format.ts`. The program
+    keeps `weekdayLabel`, `dayOfMonth`, `dayLoad`. Replanning (5.17) imports `PlanDiff` from
+    `@/shared/session-ui`.
+  - (5) **Dependencies**: `@xyflow/react` ^12.12.1, `elkjs` ^0.12.1, `recharts` ^3.10.1 (React 19
+    peers verified in their manifests).
+- **Reason** Phase 5 plan, task 5.12; the task's report
+  (`.superpowers/sdd/2026-11-12-06-phase-5-etude/task-5.12-report.md`), which details each point.
+  Front-end task in a parallel wave: decision copied by the next backend task (the plan's rule,
+  “Procedure”).
 
 ## D110
 
