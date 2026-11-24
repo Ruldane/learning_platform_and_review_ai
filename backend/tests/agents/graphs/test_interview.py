@@ -47,10 +47,10 @@ async def test_fifteen_minutes_asks_four_questions_and_debriefs(
     assert [e.index for e in saved.exchanges] == [0, 1, 2, 3]
     assert saved.debrief is not None
     assert set(saved.debrief.scores) == {
-        "clarte",
+        "clarity",
         "structure",
-        "profondeur_technique",
-        "adequation",
+        "technical_depth",
+        "role_fit",
     }
     assert len(saved.debrief.strengths) == 3 and len(saved.debrief.fixes) == 3
     assert len(prompts(run.models, TURN_REQUEST)) == 4

@@ -45,12 +45,18 @@ def exchange(index: int, note: int, **over: Any) -> Exchange:
     fields: dict[str, Any] = {
         "index": index,
         "question": f"Question {index} sur le poste ?",
-        "criterion": "clarte",
-        "source": "offre",
+        "criterion": "clarity",
+        "source": "posting",
         "answer": "Une réponse.",
         "note": note,
     }
     return Exchange(**(fields | over))
+
+
+def test_exchange_reads_the_codes_from_an_old_checkpoint() -> None:
+    previous = exchange(0, 4, criterion="clarte", source="offre")
+    assert (previous.criterion, previous.source) == ("clarity", "posting")
+    assert previous.answer == "Une réponse."
 
 
 def test_registries() -> None:
@@ -113,7 +119,7 @@ def test_cards_cover_the_missed_questions_that_have_points() -> None:
 
 
 def _plan(*texts: str) -> str:
-    questions = [{"text": text, "criterion": "clarte", "source": "cv"} for text in texts]
+    questions = [{"text": text, "criterion": "clarity", "source": "cv"} for text in texts]
     return json.dumps({"questions": questions})
 
 
@@ -141,8 +147,8 @@ def test_turn_decision_bounds() -> None:
 @pytest.mark.parametrize(
     "over",
     [
-        {"scores": {"clarte": 4, "structure": 3, "adequation": 4}},  # un critère manque
-        {"scores": {"clarte": 4, "structure": 3, "profondeur_technique": 6, "adequation": 4}},
+        {"scores": {"clarity": 4, "structure": 3, "role_fit": 4}},  # One score is missing.
+        {"scores": {"clarity": 4, "structure": 3, "technical_depth": 6, "role_fit": 4}},
         {"strengths": ["a", "b"]},
         {"fixes": ["a", "b", "c", "d"]},
     ],

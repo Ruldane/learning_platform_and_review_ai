@@ -8,7 +8,7 @@ données dans l'ordre, la question `i` de la liste des échanges est donc celle 
 
 from typing import Annotated, Literal, Self
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, BeforeValidator, Field, field_validator, model_validator
 
 from app.agents.runtime.prose import Prose, ShortenToMax, shorten
 from app.agents.tools.cv_schema import CvContent, MasterProfileData
@@ -35,19 +35,34 @@ __all__ = [
 ]
 
 QUESTIONS_BY_DURATION = {15: 4, 30: 7, 45: 10}  # questions principales ; une relance au plus
-Criterion = Literal["clarte", "structure", "profondeur", "adequation"]
-QuestionSource = Literal["offre", "dossier", "cv", "ecart", "general"]
-ScoreKey = Literal["clarte", "structure", "profondeur_technique", "adequation"]
-CRITERIA: tuple[Criterion, ...] = ("clarte", "structure", "profondeur", "adequation")
-SCORE_KEYS: tuple[ScoreKey, ...] = ("clarte", "structure", "profondeur_technique", "adequation")
+Criterion = Literal["clarity", "structure", "technical_depth", "role_fit"]
+QuestionSource = Literal["posting", "company_dossier", "cv", "gap", "general"]
+ScoreKey = Criterion
+CRITERIA: tuple[Criterion, ...] = ("clarity", "structure", "technical_depth", "role_fit")
+SCORE_KEYS = CRITERIA
+_LEGACY_CRITERIA = {"clarte": "clarity", "profondeur": "technical_depth", "adequation": "role_fit"}
+_LEGACY_SOURCES = {"offre": "posting", "dossier": "company_dossier", "ecart": "gap"}
+_LEGACY_SCORE_KEYS = {**_LEGACY_CRITERIA, "profondeur_technique": "technical_depth"}
 Point = Annotated[str, Field(min_length=1, max_length=200), ShortenToMax()]
 Sentence = Annotated[str, Field(min_length=1, max_length=300), ShortenToMax()]
 
 
+def _read_criterion(value: object) -> object:
+    return _LEGACY_CRITERIA.get(value, value) if isinstance(value, str) else value
+
+
+def _read_source(value: object) -> object:
+    return _LEGACY_SOURCES.get(value, value) if isinstance(value, str) else value
+
+
+CheckpointCriterion = Annotated[Criterion, BeforeValidator(_read_criterion)]
+CheckpointSource = Annotated[QuestionSource, BeforeValidator(_read_source)]
+
+
 class PlannedQuestion(BaseModel):
     text: Prose = Field(min_length=5, max_length=400)
-    criterion: Criterion
-    source: QuestionSource
+    criterion: CheckpointCriterion
+    source: CheckpointSource
 
 
 class InterviewPlan(BaseModel):
@@ -93,8 +108,8 @@ class Exchange(BaseModel):
 
     index: int = Field(ge=0)
     question: str
-    criterion: Criterion
-    source: QuestionSource
+    criterion: CheckpointCriterion
+    source: CheckpointSource
     answer: str
     follow_up: str | None = None
     follow_up_answer: str | None = None
@@ -119,6 +134,18 @@ class Debrief(BaseModel):
     missed: list[int] = Field(default_factory=list)  # fixé par le code : notes ≤ 2
     expected: list[ExpectedPoints] = Field(default_factory=list)  # une par question ratée
     unrated: list[int] = Field(default_factory=list)  # fixé par le code : réponses non notées
+
+    @field_validator("scores", mode="before")
+    @classmethod
+    def _read_checkpoint_scores(cls, value: object) -> object:
+        if not isinstance(value, dict):
+            return value
+        scores = dict(value)
+        for old, new in _LEGACY_SCORE_KEYS.items():
+            if old in scores:
+                score = scores.pop(old)
+                scores.setdefault(new, score)
+        return scores
 
     @field_validator("scores")
     @classmethod

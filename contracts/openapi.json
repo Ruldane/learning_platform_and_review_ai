@@ -5737,10 +5737,10 @@
             },
             "propertyNames": {
               "enum": [
-                "clarte",
+                "clarity",
                 "structure",
-                "profondeur_technique",
-                "adequation"
+                "technical_depth",
+                "role_fit"
               ]
             },
             "title": "Scores",
@@ -7111,10 +7111,10 @@
           },
           "criterion": {
             "enum": [
-              "clarte",
+              "clarity",
               "structure",
-              "profondeur",
-              "adequation"
+              "technical_depth",
+              "role_fit"
             ],
             "title": "Criterion",
             "type": "string"
@@ -7155,10 +7155,10 @@
           },
           "source": {
             "enum": [
-              "offre",
-              "dossier",
+              "posting",
+              "company_dossier",
               "cv",
-              "ecart",
+              "gap",
               "general"
             ],
             "title": "Source",

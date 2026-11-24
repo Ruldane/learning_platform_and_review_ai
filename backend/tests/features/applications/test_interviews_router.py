@@ -226,8 +226,8 @@ async def test_finished_interview_keeps_its_status(client: httpx.AsyncClient, ap
     assert [e["index"] for e in got["exchanges"]] == [0, 1]
     assert got["debrief"]["missed"] == [0] and got["cards_created"] == 1 and got["flags"] == []
     assert set(got["debrief"]["scores"]) == {
-        "clarte",
+        "clarity",
         "structure",
-        "profondeur_technique",
-        "adequation",
+        "technical_depth",
+        "role_fit",
     }

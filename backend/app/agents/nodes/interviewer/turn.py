@@ -52,10 +52,10 @@ TURN_REQUEST = "Read and score the answer."
 TURN_CALL_TIMEOUT_S = 105.0  # plus court que le plafond d'un nœud (120 s) : le repli s'écrit
 NEUTRAL_NOTE = 3
 CRITERION_LABELS = {
-    "clarte": "clarity",
+    "clarity": "clarity",
     "structure": "structure",
-    "profondeur": "technical depth",
-    "adequation": "fit for the role",
+    "technical_depth": "technical depth",
+    "role_fit": "fit for the role",
 }
 
 logger = logging.getLogger(__name__)

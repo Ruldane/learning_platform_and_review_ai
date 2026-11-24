@@ -24,9 +24,8 @@ ask them (from the welcome to the most demanding).
 - Each question is tied to the position: what the posting asks for, what the company dossier
   says, what the CV sent says, or a known gap between what the position requires and what January
   has already done. A "general" question stays on the profession of the position.
-- For each question: `criterion`, what it mainly exercises: "clarte",
-  "structure", "profondeur" (technical depth) or "adequation" (fit with the position);
-  `source`, where it comes from: "offre", "dossier", "cv", "ecart" or "general".
+- Each question includes a `criterion` ("clarity", "structure", "technical_depth" or "role_fit")
+  and a `source` ("posting", "company_dossier", "cv", "gap" or "general").
 - Assume nothing that the CV and the profile do not say: a question about a gap simply says so
   ("The posting asks for X: how would you go about it?").
 - Answer: `{"questions": [{"text": "…", "criterion": "…", "source": "…"}]}`.
@@ -91,8 +90,8 @@ Comment on her negotiation practice and how she supports her request. The numeri
 role-play and the radar data are displayed separately. Write your comment without any amount.
 {% endif %}
 
-- `scores`: a grade from 1 to 5 for each criterion: "clarte", "structure",
-  "profondeur_technique", "adequation", always all four, based on what the exchanges show.
+- Give a `scores` grade from 1 to 5 for all four criteria based on the exchanges:
+  "clarity", "structure", "technical_depth" and "role_fit".
 - `strengths`: exactly 3 strengths, `fixes`: exactly 3 points to fix, each in one
   precise sentence that refers to what January said (300 characters at most).
 - `weakest_index`: {{ weakest }} (the weakest answer, chosen by the code).

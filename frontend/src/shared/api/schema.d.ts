@@ -9423,7 +9423,7 @@ export interface components {
              * Criterion
              * @enum {string}
              */
-            criterion: "clarte" | "structure" | "profondeur" | "adequation";
+            criterion: "clarity" | "structure" | "technical_depth" | "role_fit";
             /** Follow Up */
             follow_up: string | null;
             /** Follow Up Answer */
@@ -9438,7 +9438,7 @@ export interface components {
              * Source
              * @enum {string}
              */
-            source: "offre" | "dossier" | "cv" | "ecart" | "general";
+            source: "posting" | "company_dossier" | "cv" | "gap" | "general";
             /** Unrated */
             unrated: boolean;
         };

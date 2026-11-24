@@ -130,10 +130,10 @@ export const applicationsInterview = {
     score: "{value} out of 5",
     scoreMissing: "not scored",
     scoreLabel: {
-      clarte: "Clarity",
+      clarity: "Clarity",
       structure: "Structure",
-      profondeur_technique: "Technical depth",
-      adequation: "Fit for the role",
+      technical_depth: "Technical depth",
+      role_fit: "Fit for the role",
     },
     strengths: "Your strengths",
     fixes: "What to fix",

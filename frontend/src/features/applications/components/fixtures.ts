@@ -160,10 +160,10 @@ export function makeExchange(index: number, overrides: Partial<ExchangeView> = {
 export function makeDebrief(overrides: Partial<DebriefDataView> = {}): DebriefDataView {
   return {
     scores: [
-      { key: "clarte", value: 4 },
+      { key: "clarity", value: 4 },
       { key: "structure", value: 3 },
-      { key: "profondeur_technique", value: 2 },
-      { key: "adequation", value: 5 },
+      { key: "technical_depth", value: 2 },
+      { key: "role_fit", value: 5 },
     ],
     strengths: ["Exemples concrets", "Ton posé", "Résultats chiffrés"],
     fixes: ["Structure plus nette", "Plus de détails techniques", "Une conclusion"],

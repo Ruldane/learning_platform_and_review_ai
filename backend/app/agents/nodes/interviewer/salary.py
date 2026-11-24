@@ -54,7 +54,7 @@ def salary_questions(sample: SalarySample, language: str, count: int) -> list[Pl
         )
     remaining = _QUESTIONS[language]
     texts = [first, *remaining[: count - 2], remaining[-1]]
-    return [PlannedQuestion(text=text, criterion="adequation", source="general") for text in texts]
+    return [PlannedQuestion(text=text, criterion="role_fit", source="general") for text in texts]
 
 
 def _recruiter_reply(amount: int, raised: bool, language: str) -> str:

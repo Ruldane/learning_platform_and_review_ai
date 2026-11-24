@@ -37,10 +37,10 @@ describe("DebriefView", () => {
       debrief: {
         ...base.debrief!,
         scores: [
-          { key: "clarte", value: 4 },
+          { key: "clarity", value: 4 },
           { key: "structure", value: null },
-          { key: "profondeur_technique", value: 2 },
-          { key: "adequation", value: 5 },
+          { key: "technical_depth", value: 2 },
+          { key: "role_fit", value: 5 },
         ],
       },
     });

@@ -49,7 +49,7 @@ async def test_nod_resumes_the_exact_question_and_returns_a_three_answer_debrief
         assert (await nod(client, token, "answer", **body)) == {"received": True}
     await wait_status(client, session_id, "completed")
     final = await nod(client, token, "state", invitation_id=invite)
-    assert final["status"] == "done" and final["debrief"]["scores"]["clarte"] == 4
+    assert final["status"] == "done" and final["debrief"]["scores"]["clarity"] == 4
     saved = (await client.get(f"{API}/interviews/{started['interview_id']}")).json()
     assert len(saved["exchanges"]) == 3
     assert all(exchange["follow_up"] is None for exchange in saved["exchanges"])
