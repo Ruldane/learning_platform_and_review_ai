@@ -66,14 +66,14 @@ async def test_zip_contains_pieces_and_pdf(
         'attachment; filename="Kit_Societe_Fictive_Developpeuse_IA.zip"'
     )
     assert r.headers["cache-control"] == "no-store"
-    assert archive.namelist() == [*NAMES, "CV_Camille_Exemple_Societe_Fictive.pdf", "LISEZMOI.txt"]
+    assert archive.namelist() == [*NAMES, "CV_Camille_Exemple_Societe_Fictive.pdf", "README.txt"]
     assert archive.read("CV_Camille_Exemple_Societe_Fictive.pdf") == PDF
     assert text(archive, "02_letter.md") == "Contenu letter\n"
     assert archive.testzip() is None
-    readme = text(archive, "LISEZMOI.txt")
-    assert "Pièces à vérifier avant de les utiliser :\n- aucune" in readme
-    assert "Pièces absentes de l'archive :\n- aucune" in readme
-    assert "CV en PDF : CV_Camille_Exemple_Societe_Fictive.pdf" in readme
+    readme = text(archive, "README.txt")
+    assert "Items to review\n- None" in readme
+    assert "Omitted items\n- None" in readme
+    assert "CV PDF: CV_Camille_Exemple_Societe_Fictive.pdf" in readme
 
 
 async def test_zip_names_to_check_pieces(client: httpx.AsyncClient, app: FastAPI) -> None:
@@ -89,16 +89,12 @@ async def test_zip_names_to_check_pieces(client: httpx.AsyncClient, app: FastAPI
         content="### Quelles sont vos prétentions salariales ?\nÀ remplir par toi",
     )  # fmt: skip
     _, archive = await fetch(client, application_id)
-    readme = text(archive, "LISEZMOI.txt")
+    readme = text(archive, "README.txt")
+    assert "- 02_letter.md (Cover letter): terms absent from your profile: 5, Kubernetes" in readme
+    assert "- 05_form_answers.md (Form answers): salary questions to complete: 1" in readme
     assert (
-        "- 02_letter.md (Lettre de motivation) : termes que ton profil ne dit pas : 5, Kubernetes"
-        in readme
+        "01_cv.md (Tailored résumé)" not in readme and "07_pitch.md (Elevator pitch)" not in readme
     )
-    assert (
-        "- 05_form_answers.md (Réponses aux questions du formulaire) : 1 réponse(s) salariale(s)"
-        in readme
-    )
-    assert "01_cv.md (CV" not in readme and "07_pitch.md (Pitch" not in readme
     assert text(archive, "02_letter.md") == "Lettre à relire\n"  # la pièce à vérifier y figure
 
 
@@ -112,14 +108,11 @@ async def test_zip_omits_missing_and_failed_pieces_and_names_them(
         meta={"error": "Cette pièce a pris trop de temps : relance le kit pour la refaire."},
     )  # fmt: skip
     _, archive = await fetch(client, application_id)
-    assert archive.namelist() == ["02_letter.md", "LISEZMOI.txt"]
-    readme = text(archive, "LISEZMOI.txt")
-    assert (
-        "- 07_pitch.md (Pitch de présentation) : en échec, Cette pièce a pris trop de temps"
-        in readme
-    )
-    assert "- 01_cv.md (CV ciblé) : pas encore produite" in readme
-    assert "- 06_company_brief.md (Dossier de l'entreprise) : pas encore produite" in readme
+    assert archive.namelist() == ["02_letter.md", "README.txt"]
+    readme = text(archive, "README.txt")
+    assert "- 07_pitch.md (Elevator pitch): failed. Cette pièce a pris trop de temps" in readme
+    assert "- 01_cv.md (Tailored résumé): not yet generated" in readme
+    assert "- 06_company_brief.md (Company brief): not yet generated" in readme
 
 
 async def test_zip_without_any_piece_still_explains_itself(
@@ -127,8 +120,8 @@ async def test_zip_without_any_piece_still_explains_itself(
 ) -> None:
     application_id = await ready_application(client, app)
     _, archive = await fetch(client, application_id)
-    assert archive.namelist() == ["LISEZMOI.txt"]
-    assert text(archive, "LISEZMOI.txt").count("pas encore produite") == 7
+    assert archive.namelist() == ["README.txt"]
+    assert text(archive, "README.txt").count("not yet generated") == 7
 
 
 async def test_zip_says_when_the_cv_pdf_cannot_be_attached(
@@ -143,8 +136,8 @@ async def test_zip_says_when_the_cv_pdf_cannot_be_attached(
         meta={"version_id": "disparue"},
     )
     _, archive = await fetch(client, application_id)
-    assert archive.namelist() == ["01_cv.md", "LISEZMOI.txt"]
-    assert "n'a pas pu être jointe" in text(archive, "LISEZMOI.txt")
+    assert archive.namelist() == ["01_cv.md", "README.txt"]
+    assert "The ready CV PDF could not be attached." in text(archive, "README.txt")
 
 
 async def test_zip_filename_is_ascii(client: httpx.AsyncClient, app: FastAPI) -> None:

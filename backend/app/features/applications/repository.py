@@ -19,6 +19,8 @@ from app.db.models.applications import (
 from app.db.models.postings import Company
 from app.db.repository import UserScopedRepository
 
+KIT_COMPLETED_TITLE = "Application kit complete"
+
 
 class ApplicationRepository(UserScopedRepository[Application]):
     model = Application
@@ -131,7 +133,8 @@ class EventRepository(UserScopedRepository[ApplicationEvent]):
             ApplicationEvent.user_id == self.user_id,
             ApplicationEvent.kind == "kit",
             ApplicationEvent.ref_id == session_id,
-            ApplicationEvent.text.like("Kit de candidature terminé%"),
+            ApplicationEvent.text.like(f"{KIT_COMPLETED_TITLE}%")
+            | ApplicationEvent.text.like("Kit de candidature terminé%"),
         )
         return (await self.session.execute(stmt.limit(1))).first() is not None
 

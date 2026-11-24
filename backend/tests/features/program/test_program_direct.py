@@ -256,8 +256,8 @@ async def test_direct_program_breaking_the_rules_is_422_with_the_problems(
     error = r.json()["error"]
     assert error["code"] == "plan_invalid"
     assert error["details"]["problems"] == [
-        "Semaine 1 : 545 min prévues, 357 au plus.",
-        "Semaine 2 : aucun quiz.",
+        "Week 1: 545 min planned. The limit is 357 min.",
+        "Week 2: add a quiz at the end of the week.",
     ]
     assert (await client.get(f"{API}/programs")).json() == []
     await assert_no_agent(app)

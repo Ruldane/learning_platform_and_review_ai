@@ -92,7 +92,7 @@ async def start_kit(rt: ApplicationsRuntime, user_id: str, application_id: str) 
             application_id=row.id,
             kind="kit",
             at=rt.now(),
-            text="Kit de candidature lancé.",
+            text="Application kit started.",
             ref_id=session_id,
         )
         await db.commit()

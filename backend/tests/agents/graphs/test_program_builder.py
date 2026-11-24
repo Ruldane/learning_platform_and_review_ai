@@ -61,14 +61,14 @@ async def test_builder_saves_draft_and_stops_for_validation(
     prompt = c.prompt_of_call(1)
     for expected in (
         "714 min",
-        "au moins 428 min",
+        "at least 428 min",
         "Parcours pratique",
         "Le soir surtout",
-        "en français",
+        "The lesson language is French.",
     ):
         assert expected in prompt
     assert 'source="proposition 1"' in prompt and 'source="compte rendu du Scribe"' in prompt
-    assert "MÉLANGER" not in prompt and len(c.plan_prompts()) == 1  # conforme du premier coup
+    assert "chose to MIX" not in prompt and len(c.plan_prompts()) == 1
     saved = c.store.drafts[0]
     assert str(saved.start_date) == "2026-11-16" and saved.reason == "Première version du Stratège"
 
@@ -77,7 +77,7 @@ async def test_mix_of_two_proposals_is_one_program(make_builder_runner: MakeBuil
     c = await make_builder_runner(mix=True)
     await c.wait_question()
     prompt = c.prompt_of_call(1)
-    assert "MÉLANGER" in prompt and "Parcours pratique" in prompt and "Nom : Socle" in prompt
+    assert "chose to MIX" in prompt and "Parcours pratique" in prompt and "Name: Socle" in prompt
 
 
 async def test_draft_over_budget_is_asked_again_with_problems(
@@ -85,8 +85,8 @@ async def test_draft_over_budget_is_asked_again_with_problems(
 ) -> None:
     c = await make_builder_runner(_models(OVER))
     await c.wait_question()
-    assert "714 au plus" in c.prompt_of_call(2)
-    assert "714 au plus" not in c.prompt_of_call(1)
+    assert "The limit is 714 min." in c.prompt_of_call(2)
+    assert "The limit is 714 min." not in c.prompt_of_call(1)
     assert len(c.plan_prompts()) == 2 and len(c.store.drafts) == 1
     assert [w.theme for w in c.store.drafts[0].draft.weeks] == ["Bases", "Projet"]  # le corrigé
 
@@ -103,7 +103,7 @@ async def test_task_longer_than_every_day_is_returned_to_strategist(
 
     assert len(c.plan_prompts()) == 2
     next_prompt = c.prompt_of_call(2).split(PLAN_REQUEST)[-1]
-    assert "100 minutes" in next_prompt and "90 minutes" in next_prompt
+    assert "100 min" in next_prompt and "the longest slot is 90 min" in next_prompt
     await c.wait_question()
     assert len(c.store.drafts) == 1
     assert all(task.minutes <= 90 for week in c.store.drafts[0].plan.weeks for task in week.tasks)
@@ -135,8 +135,8 @@ async def test_known_skill_reduced_to_review(make_builder_runner: MakeBuilder) -
     known = {"pandas": "declare", "matplotlib": "valide"}
     c = await make_builder_runner(_models(draft), prepare=lambda s: setattr(s, "known", known))
     await c.wait_question()
-    assert "pandas (déclaré)" in c.prompt_of_call(1)
-    assert "ne replanifie pas ce qui est acquis" in c.prompt_of_call(1)
+    assert "pandas (declared)" in c.prompt_of_call(1)
+    assert "do not re-plan what is already acquired" in c.prompt_of_call(1)
     tasks = [t for w in c.store.drafts[0].plan.weeks for t in w.tasks]
     review = [t for t in tasks if t.already_known]
     assert [(t.title, t.minutes) for t in review] == [("Réviser : Manipuler pandas", 20)]
@@ -156,7 +156,7 @@ async def test_revise_note_produces_a_new_version(make_builder_runner: MakeBuild
     assert [d.revision for d in c.store.drafts] == [0, 1]
     last = c.prompt_of_last_plan()
     assert "Moins de vidéos" in last
-    assert "Tâche déplacée par January" in last and "Révision n° 1" in last
+    assert "Tâche déplacée par January" in last and "Revision no. 1" in last
     assert 'source="note de révision de January"' in last and 'source="plan courant"' in last
     assert c.store.contexts == [None, pid]  # le plan courant est relu en base
     assert c.store.drafts[1].reason == "Révision 1 : Moins de vidéos"
@@ -226,7 +226,7 @@ async def test_planning_impossible_fails_readably(make_builder_runner: MakeBuild
     row = await c.wait_status("failed")
     assert row.error is not None and row.error["code"] == "planning_impossible"
     failed = await c.events("run.failed")
-    assert failed[-1]["message"].startswith("Budget hebdomadaire trop faible")
+    assert failed[-1]["message"].startswith("Your weekly budget is too low")
     assert c.store.drafts == [] and await c.events("artifact.ready") == []
 
 

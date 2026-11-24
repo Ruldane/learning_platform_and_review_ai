@@ -23,6 +23,7 @@ from app.db.models.applications import KitKind, KitStatus
 
 __all__ = [
     "KIT_KINDS",
+    "KIT_TITLES",
     "CompanyDossier",
     "CvVersionRef",
     "Draft",
@@ -52,6 +53,15 @@ KIT_KINDS: tuple[KitKind, ...] = (
     "company_brief",
     "pitch",
 )
+KIT_TITLES: dict[KitKind, str] = {
+    "cv": "Tailored résumé",
+    "letter": "Cover letter",
+    "linkedin": "LinkedIn message",
+    "followups": "Follow-ups",
+    "form_answers": "Form answers",
+    "company_brief": "Company brief",
+    "pitch": "Elevator pitch",
+}
 SEPARATOR = "---"
 SALARY_BLANK = "À remplir par toi"
 TO_COMPLETE = "À compléter"

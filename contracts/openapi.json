@@ -30788,7 +30788,7 @@
     },
     "/api/v1/applications/{application_id}/kit.zip": {
       "get": {
-        "description": "Téléchargement (`attachment`) : une pièce par fichier Markdown, le PDF du CV et\n`LISEZMOI.txt`.",
+        "description": "Téléchargement (`attachment`) : une pièce par fichier Markdown, le PDF du CV et\n`README.txt`.",
         "operationId": "get_kit_zip_api_v1_applications__application_id__kit_zip_get",
         "parameters": [
           {

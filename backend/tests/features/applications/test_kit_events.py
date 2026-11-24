@@ -5,6 +5,7 @@ import pytest
 from fastapi import FastAPI
 
 from app.agents.tools.kit_schema import KIT_KINDS
+from app.db.models.applications import ApplicationEvent
 from app.features.postings.service.rules import company_key
 from tests.features.applications.conftest import API
 from tests.features.applications.kit_support import (
@@ -33,7 +34,16 @@ async def test_end_event_enters_the_thread_once_all_seven_are_in(
     await save(app, application_id, KIT_KINDS[-1], status="failed")  # rejeu
     [event] = await kit_events(app, application_id)
     assert event.ref_id == SESSION
-    assert event.text == "Kit de candidature terminé : 5 prête(s), 1 à vérifier, 1 en échec."
+    assert event.text == "Application kit complete: 5 ready, 1 to review, 1 failed."
+    historical = "Kit de candidature terminé : 5 prête(s), 1 à vérifier, 1 en échec."
+    async with app.state.session_factory() as db:
+        stored = await db.get(ApplicationEvent, event.id)
+        assert stored is not None
+        stored.text = historical
+        await db.commit()
+    await save(app, application_id, KIT_KINDS[-1], status="failed")
+    [preserved] = await kit_events(app, application_id)
+    assert preserved.id == event.id and preserved.text == historical
 
 
 async def test_kept_pieces_count_for_the_end_event(client: httpx.AsyncClient, app: FastAPI) -> None:
@@ -46,9 +56,7 @@ async def test_kept_pieces_count_for_the_end_event(client: httpx.AsyncClient, ap
             await save(app, application_id, kind, session=OTHER_SESSION)
     events = await kit_events(app, application_id)
     assert [e.ref_id for e in events] == [SESSION, OTHER_SESSION]
-    assert events[1].text.endswith(
-        "6 prête(s), 0 à vérifier, 0 en échec, 1 gardée(s) telle(s) quelle(s)."
-    )
+    assert events[1].text.endswith("6 ready, 0 to review, 0 failed, 1 kept unchanged.")
 
 
 async def test_end_event_is_written_when_the_last_piece_was_edited_meanwhile(
@@ -68,9 +76,7 @@ async def test_end_event_is_written_when_the_last_piece_was_edited_meanwhile(
     await save(app, application_id, "letter")  # rejeu
     events = await kit_events(app, application_id)
     assert [e.ref_id for e in events] == [OTHER_SESSION, SESSION]
-    assert events[1].text.endswith(
-        "6 prête(s), 0 à vérifier, 0 en échec, 1 gardée(s) telle(s) quelle(s)."
-    )
+    assert events[1].text.endswith("6 ready, 0 to review, 0 failed, 1 kept unchanged.")
 
 
 async def test_non_latin_company_dossier_is_reused_and_keeps_its_sources(

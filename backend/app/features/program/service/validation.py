@@ -52,7 +52,7 @@ class ValidationContext(Protocol):
 def program_busy(status: str) -> AppError:
     return AppError(
         "program_not_waiting",
-        "Le Stratège travaille encore sur ce programme : réessaie dans un instant.",
+        "The Strategist is still working on this program. Try again in a moment.",
         409,
         {"status": status},
     )

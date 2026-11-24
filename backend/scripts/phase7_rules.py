@@ -269,10 +269,10 @@ def check_zip(step: str, body: bytes, items: list[dict[str, Any]]) -> int:
         pdfs = [n for n in names if n.startswith("CV_") and n.endswith(".pdf")]
         if not pdfs or not archive.read(pdfs[0]).startswith(b"%PDF"):
             raise CheckFailed(step, "kit.zip : le PDF du CV manque ou n'est pas un PDF.")
-        readme = archive.read("LISEZMOI.txt").decode("utf-8") if "LISEZMOI.txt" in names else ""
+        readme = archive.read("README.txt").decode("utf-8") if "README.txt" in names else ""
         if not readme:
-            raise CheckFailed(step, "kit.zip : LISEZMOI.txt absent.")
+            raise CheckFailed(step, "Missing README.txt in kit.zip.")
         for rank, item in enumerate(items, 1):
             if item["status"] == "to_check" and f"{rank:02d}_{item['kind']}.md" not in readme:
-                raise CheckFailed(step, f"LISEZMOI.txt : pièce {item['kind']} à vérifier non dite.")
+                raise CheckFailed(step, f"README.txt omits {item['kind']}, which needs review.")
         return len(names)

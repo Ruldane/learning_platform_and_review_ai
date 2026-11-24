@@ -14,7 +14,7 @@ from app.features.program.service.planning import (
 )
 from tests.support.program import MONDAY, full_week, module, plan, task, week
 
-UNDERLOAD = "Semaine 1 : 125 min prévues, vise au moins 428 min."
+UNDERLOAD = "Week 1: 125 min planned. Aim for at least 428 min."
 
 
 def _draft_with_module(title: str, skills: list[str]) -> PlanDraft:

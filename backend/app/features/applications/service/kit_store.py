@@ -43,6 +43,7 @@ from app.core.errors import AppError
 from app.db.models.applications import Application
 from app.db.models.postings import Company
 from app.features.applications.repository import (
+    KIT_COMPLETED_TITLE,
     CompanyRepository,
     ContactRepository,
     EventRepository,
@@ -65,7 +66,6 @@ from app.features.postings.service.runtime import company_lock
 logger = logging.getLogger(__name__)
 
 DOSSIER_MAX_AGE = timedelta(days=30)
-END_TEXT = "Kit de candidature terminé"
 GRAPH = "application_kit"
 SUBJECT = "application_kit"
 
@@ -251,9 +251,9 @@ class AgentKitStore:
         counts = [row.status for row in mine]
         kept = len(done) - len(mine)
         text = (
-            f"{END_TEXT} : {counts.count('ready')} prête(s), "
-            f"{counts.count('to_check')} à vérifier, {counts.count('failed')} en échec"
-            + (f", {kept} gardée(s) telle(s) quelle(s)." if kept else ".")
+            f"{KIT_COMPLETED_TITLE}: {counts.count('ready')} ready, "
+            f"{counts.count('to_check')} to review, {counts.count('failed')} failed"
+            + (f", {kept} kept unchanged." if kept else ".")
         )
         await EventRepository(db, user_id).add(
             application_id=app_row.id, kind="kit", at=self._rt.now(), text=text, ref_id=session_id

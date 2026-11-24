@@ -1,11 +1,10 @@
-"""Verbe d'action en tête d'un titre de tâche (SPEC 3.4) : une règle simple, sans dictionnaire.
-Aussi : le sujet d'une révision, sans le préfixe de révision que le titre du module porte déjà."""
+"""Recognize task titles that start with an action verb and strip review prefixes (SPEC 3.4)."""
 
 import re
 import unicodedata
 
 INFINITIVE_ENDINGS = ("er", "ir", "re", "oir")
-# Formes qui n'ont pas la terminaison d'un infinitif (impératifs usuels des consignes).
+# English verbs and French imperatives used in existing plans.
 ACTION_VERBS = frozenset(
     [
         "lis",
@@ -53,6 +52,62 @@ ACTION_VERBS = frozenset(
         "évalue",
         "présente",
         "rends",
+        "add",
+        "analyse",
+        "analyze",
+        "apply",
+        "build",
+        "calculate",
+        "choose",
+        "code",
+        "compare",
+        "complete",
+        "configure",
+        "connect",
+        "create",
+        "debug",
+        "define",
+        "deploy",
+        "describe",
+        "design",
+        "document",
+        "draw",
+        "evaluate",
+        "explain",
+        "explore",
+        "find",
+        "fix",
+        "generate",
+        "identify",
+        "implement",
+        "inspect",
+        "install",
+        "launch",
+        "measure",
+        "outline",
+        "practice",
+        "practise",
+        "prepare",
+        "publish",
+        "read",
+        "refactor",
+        "reproduce",
+        "research",
+        "review",
+        "run",
+        "solve",
+        "study",
+        "summarise",
+        "summarize",
+        "take",
+        "test",
+        "train",
+        "try",
+        "use",
+        "validate",
+        "verify",
+        "watch",
+        "write",
     ]
 )
 _WORD = re.compile(r"[^\W\d_]+(?:['’-][^\W\d_]+)*")
@@ -73,7 +128,7 @@ def review_subject(title: str) -> str:
 
 
 def has_action_verb(title: str) -> bool:
-    """Le premier mot finit par -er, -ir, -re, -oir ou figure dans `ACTION_VERBS`."""
+    """Match an action verb or a French infinitive in the first word."""
     match = _WORD.match(title.strip())
     if match is None:
         return False

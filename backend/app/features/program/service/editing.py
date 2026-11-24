@@ -39,25 +39,25 @@ class WeekRuleBroken(AppError):
 
 
 def task_not_found() -> AppError:
-    return AppError("task_not_found", "Tâche introuvable.", 404)
+    return AppError("task_not_found", "Task not found.", 404)
 
 
 def module_not_found() -> AppError:
-    return AppError("module_not_found", "Module introuvable.", 404)
+    return AppError("module_not_found", "Module not found.", 404)
 
 
 def _outside(cap: int) -> WeekRuleBroken:
     return WeekRuleBroken(
-        "date_outside_program", "Ce jour est en dehors des semaines du programme.", None, None, cap
+        "date_outside_program", "Choose a day within the program.", None, None, cap
     )
 
 
 _MESSAGES: dict[WeekRule, str] = {
     "week_over_budget": (
-        "{label} dépasserait 85 % de ton budget : {total} min prévues, {cap} au plus."
+        "{label} would exceed 85% of your budget. {total} min planned, limit {cap} min."
     ),
-    "week_needs_practice": "{label} doit garder au moins une tâche de pratique.",
-    "week_needs_quiz": "{label} doit garder son quiz.",
+    "week_needs_practice": "{label} needs at least one practice task.",
+    "week_needs_quiz": "{label} needs a quiz.",
 }
 
 
@@ -73,7 +73,7 @@ def check_weeks(loaded: Loaded, weeks: Iterable[Week | None]) -> None:
         ]
         total = sum(minutes for minutes, _ in tasks)
         for rule in week_breaks(tasks, cap):
-            label = f"La semaine {week.rank}"
+            label = f"Week {week.rank}"
             message = _MESSAGES[rule].format(label=label, total=total, cap=cap)
             raise WeekRuleBroken(rule, message, week, total, cap)
 

@@ -20,19 +20,10 @@ from app.agents.runtime.deps import GraphDeps
 from app.agents.runtime.emit import emit
 from app.agents.runtime.invoke import node_timeout
 from app.agents.state.application_kit import ApplicationKitState
-from app.agents.tools.kit_schema import KIT_KINDS, KitKind, KitStatus
+from app.agents.tools.kit_schema import KIT_KINDS, KIT_TITLES, KitKind, KitStatus
 from app.core.errors import AppError
 
-TITLES: dict[KitKind, str] = {
-    "cv": "CV ciblé",
-    "letter": "Lettre de motivation",
-    "linkedin": "Messages LinkedIn",
-    "followups": "Relances",
-    "form_answers": "Réponses aux questions du formulaire",
-    "company_brief": "Dossier de l'entreprise",
-    "pitch": "Pitch de présentation",
-}
-TIMED_OUT = "Cette pièce a pris trop de temps : relance le kit pour la refaire."
+TIMED_OUT = "This item timed out. Run the kit again to regenerate it."
 
 logger = logging.getLogger(__name__)
 
@@ -83,9 +74,9 @@ async def finish(
         piece.status,
     )
     if piece.status == "failed":
-        say(agent, f"{kind}-echec", f"{TITLES[kind]} : {piece.meta['error']}")
+        say(agent, f"{kind}-echec", f"{KIT_TITLES[kind]}: {piece.meta['error']}")
     else:
-        artifact = {"artifact_id": piece_id, "kind": "kit_item", "title": TITLES[kind]}
+        artifact = {"artifact_id": piece_id, "kind": "kit_item", "title": KIT_TITLES[kind]}
         emit("artifact.ready", artifact, agent=agent)
     return {"outcomes": {kind: piece.status}}
 
@@ -116,9 +107,9 @@ def close(state: ApplicationKitState) -> ApplicationKitState:
     outcomes = list(state.get("outcomes", {}).values())
     kept = len(state.get("keep", []))
     text = (
-        f"Kit de candidature : {len(outcomes) + kept} pièce(s), dont {outcomes.count('ready')} "
-        f"prête(s), {outcomes.count('to_check')} à vérifier, {outcomes.count('failed')} en échec"
-        + (f", {kept} gardée(s) telle(s) quelle(s)." if kept else ".")
+        f"Application kit: {len(outcomes) + kept} items. {outcomes.count('ready')} ready, "
+        f"{outcomes.count('to_check')} to review, {outcomes.count('failed')} failed"
+        + (f", {kept} kept unchanged." if kept else ".")
     )
     say("tracker", "fin", text)
     return {"summary": text}

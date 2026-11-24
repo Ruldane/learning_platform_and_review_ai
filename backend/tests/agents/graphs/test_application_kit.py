@@ -26,7 +26,7 @@ from tests.agents.graphs.review_support import in_untrusted
 from tests.agents.runtime.runner_helpers import wait_until
 from tests.support.kit import APPLICATION_ID, COMPANY, TITLE, FakeKitStore
 
-LETTER_TITLE = "Lettre de motivation"
+LETTER_TITLE = "Cover letter"
 RETRY_MARKER = "N'écris rien qui ne soit pas dans le profil"
 
 
@@ -45,7 +45,7 @@ async def test_kit_produces_seven_pieces(kit_runner: MakeKit, kit_store: FakeKit
     assert {a["artifact_id"] for a in artifacts} == {row.id for row in kit_store.rows.values()}
     assert LETTER_TITLE in await run.titles()
     [done] = await run.events("run.completed")
-    assert "7 pièce(s), dont 7 prête(s)" in done["summary"]
+    assert "7 items. 7 ready" in done["summary"]
     assert (
         len(prompts(run.models, "letter")) == 1
     )  # entreprise et intitulé exacts : jamais signalés
@@ -187,7 +187,7 @@ async def test_kept_piece_is_not_regenerated(kit_runner: MakeKit, kit_store: Fak
     assert kit_store.kinds == set(KIT_KINDS) - {"letter", "pitch"}
     assert len(await run.events("artifact.ready")) == 5
     [done] = await run.events("run.completed")
-    assert "5 pièce(s)" not in done["summary"] and "2 gardée(s)" in done["summary"]
+    assert "7 items. 5 ready" in done["summary"] and "2 kept unchanged" in done["summary"]
 
 
 async def test_every_piece_kept_completes_without_work(
@@ -210,9 +210,9 @@ async def test_failed_piece_does_not_stop_others(
     assert {r.status for k, r in kit_store.rows.items() if k[1] != "letter"} == {"ready"}
     assert len(await run.events("artifact.ready")) == 6  # la pièce en échec n'est pas annoncée
     [done] = await run.events("run.completed")
-    assert "1 en échec" in done["summary"]
+    assert "1 failed" in done["summary"]
     messages = [e["text"] for e in await run.events("agent.message")]
-    assert any(m.startswith(f"{LETTER_TITLE} : ") for m in messages)
+    assert any(m.startswith(f"{LETTER_TITLE}: ") for m in messages)
 
 
 async def test_kit_replay_saves_each_piece_once(
@@ -232,7 +232,7 @@ async def test_kit_replay_saves_each_piece_once(
     await second.wait_status("completed")
     assert len(kit_store.rows) == 7 and kit_store.save_calls >= 8
     [done] = await second.events("run.completed")
-    assert "7 pièce(s), dont 7 prête(s)" in done["summary"]
+    assert "7 items. 7 ready" in done["summary"]
     artifacts = await second.events("artifact.ready")
     assert {a["artifact_id"] for a in artifacts} == {r.id for r in kit_store.rows.values()}
 

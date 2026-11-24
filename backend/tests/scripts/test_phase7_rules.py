@@ -221,7 +221,7 @@ def test_zip_is_readable_with_one_file_per_piece_the_pdf_and_the_readme() -> Non
         f"{rank:02d}_{kind}.md": f"contenu {kind}\n".encode()
         for rank, kind in enumerate(KIT_ORDER, 1)
     }
-    files |= {"CV_Camille.pdf": b"%PDF-1.4", "LISEZMOI.txt": b"- 04_followups.md (Relances)"}
+    files |= {"CV_Camille.pdf": b"%PDF-1.4", "README.txt": b"- 04_followups.md (Follow-ups)"}
 
     assert check_zip("kit", _zip(files), items) == 9
 
@@ -234,8 +234,8 @@ def test_zip_is_readable_with_one_file_per_piece_the_pdf_and_the_readme() -> Non
         _zip({**files, "02_letter.md": b"autre"}),
         without("CV_Camille.pdf"),
         _zip({**files, "CV_Camille.pdf": b"texte"}),
-        without("LISEZMOI.txt"),
-        _zip({**files, "LISEZMOI.txt": b"- aucune"}),
+        without("README.txt"),
+        _zip({**files, "README.txt": b"- None"}),
     ]
     for body in broken:
         with pytest.raises(CheckFailed):

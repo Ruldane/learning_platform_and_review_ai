@@ -258,7 +258,7 @@ export interface paths {
         /**
          * Get Kit Zip
          * @description Téléchargement (`attachment`) : une pièce par fichier Markdown, le PDF du CV et
-         *     `LISEZMOI.txt`.
+         *     `README.txt`.
          */
         get: operations["get_kit_zip_api_v1_applications__application_id__kit_zip_get"];
         put?: never;

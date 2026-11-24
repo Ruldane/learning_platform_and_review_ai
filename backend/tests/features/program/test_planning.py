@@ -34,15 +34,15 @@ def test_check_draft_reports_week_over_cap(budget: Budget) -> None:
     reads = [task("Lire un chapitre", minutes=120)] * 6
     extra = [task("Pratiquer le sujet", "pratiquer", 40), task("Faire le quiz", "quiz", 20)]
     draft = plan([week("Gros", [module("Beaucoup", reads + extra)])])
-    assert "Semaine 1 : 780 min prévues, 714 au plus." in check_draft(draft, budget)
+    assert "Week 1: 780 min planned. The limit is 714 min." in check_draft(draft, budget)
 
 
 def test_check_draft_reports_missing_practice_quiz_and_verb(budget: Budget) -> None:
     draft = plan([week("Bases", [module("Intro", [task("Théorie des graphes", "lire")])])])
     problems = check_draft(draft, budget)
-    assert "Semaine 1 : aucune tâche de pratique." in problems
-    assert "Semaine 1 : aucun quiz." in problems
-    assert any("Théorie des graphes" in p and "verbe d'action" in p for p in problems)
+    assert "Week 1: add at least one practice task." in problems
+    assert "Week 1: add a quiz at the end of the week." in problems
+    assert any("Théorie des graphes" in p and "action verb" in p for p in problems)
 
 
 def test_check_draft_accepts_a_good_week(budget: Budget) -> None:
@@ -51,9 +51,10 @@ def test_check_draft_accepts_a_good_week(budget: Budget) -> None:
 
 def test_action_verbs_by_ending_or_list(budget: Budget) -> None:
     titles = ["Lire la doc", "Regarder la vidéo", "Écrire un test", "Comprendre la boucle"]
-    titles += ["Voir les cas", "Fais un schéma", "Savoir lire"]
+    titles += ["Voir les cas", "Fais un schéma"]
+    titles += ["Read the guide", "Watch the demo", "Code a parser", "Write a test"]
     tasks = [task(t) for t in titles]
-    tasks += [task("Pratiquer le sujet", "pratiquer"), task("Faire le quiz", "quiz")]
+    tasks += [task("Practise the skill", "pratiquer"), task("Take the quiz", "quiz")]
     assert check_draft(plan([week("Bases", [module("Intro", tasks)])]), budget) == []
 
 
@@ -203,7 +204,7 @@ def test_tiny_budget_is_planning_impossible() -> None:
     with pytest.raises(PlanningImpossible) as info:
         schedule(plan([full_week("Alpha", [15])]), tiny, {}, MONDAY)
     assert info.value.code == "planning_impossible" and info.value.status_code == 422
-    assert info.value.message == "Budget hebdomadaire trop faible pour une pratique et un quiz."
+    assert info.value.message == "Your weekly budget is too low for a practice task and a quiz."
 
 
 def test_task_longer_than_any_day_is_impossible() -> None:
@@ -214,7 +215,7 @@ def test_task_longer_than_any_day_is_impossible() -> None:
 
 def test_more_than_52_weeks_is_impossible(budget: Budget) -> None:
     year = plan([full_week(f"Semaine {i}", [120] * 6) for i in range(52)])
-    with pytest.raises(PlanningImpossible, match="52 semaines"):
+    with pytest.raises(PlanningImpossible, match="52 weeks"):
         schedule(year, budget, {}, MONDAY)
 
 
@@ -230,12 +231,12 @@ def test_week_problems(budget: Budget) -> None:
     assert week_problems(ok, MONDAY, budget) == []
     over = [(day, 700, "lire"), (day, 15, "pratiquer"), (day, 20, "quiz")]
     assert week_problems(over, MONDAY, budget) == [
-        "Semaine du 16/11 : 735 min prévues, 714 au plus."
+        "Week of 16/11: 735 min planned. The limit is 714 min."
     ]
     bare = week_problems([(day, 30, "lire")], MONDAY, budget)
     assert bare == [
-        "Semaine du 16/11 : aucune tâche de pratique.",
-        "Semaine du 16/11 : aucun quiz.",
+        "Week of 16/11: add at least one practice task.",
+        "Week of 16/11: add a quiz at the end of the week.",
     ]
 
 

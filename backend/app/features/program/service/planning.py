@@ -54,7 +54,7 @@ _SKILLED = ("valide", "prouve")
 
 class PlanningImpossible(AppError):
     def __init__(
-        self, message: str = "Budget hebdomadaire trop faible pour une pratique et un quiz."
+        self, message: str = "Your weekly budget is too low for a practice task and a quiz."
     ) -> None:
         super().__init__("planning_impossible", message, status_code=422)
 
@@ -154,7 +154,7 @@ def week_problems(
     tasks: Sequence[tuple[date, int, TaskType]], week_start: date, budget: Budget
 ) -> list[str]:
     """Règles vérifiées à chaque modification d'une semaine : charge, pratique, quiz."""
-    label = f"Semaine du {week_start:%d/%m}"
+    label = f"Week of {week_start:%d/%m}"
     pairs = [(minutes, kind) for _, minutes, kind in tasks]
     total, cap = sum(minutes for minutes, _ in pairs), budget.cap_minutes
     return [describe(rule, label, total, cap) for rule in week_breaks(pairs, cap)]
@@ -239,7 +239,7 @@ def _check_fits(weeks: list[WeekDraft], budget: Budget) -> None:
         for task in _week_tasks(week):
             if task.minutes > longest:
                 raise PlanningImpossible(
-                    f"Aucun jour n'a assez de temps pour une tâche de {task.minutes} minutes."
+                    f"No day has enough time for a {task.minutes}-minute task."
                 )
 
 
@@ -263,7 +263,7 @@ def schedule(draft: PlanDraft, budget: Budget, known: KnownSkills, start: date) 
     while len(weeks) < original or carried:
         index = len(weeks)
         if index >= MAX_WEEKS:
-            raise PlanningImpossible("Le programme dépasse 52 semaines avec ce budget.")
+            raise PlanningImpossible("The program exceeds 52 weeks with this budget.")
         if index >= original:
             sources.append(ensure_week_rules(_suite_week(sources[original - 1]), index + 1))
         first_day = start + timedelta(days=7 * index)

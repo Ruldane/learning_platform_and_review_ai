@@ -13,12 +13,12 @@ from app.agents.tools.plan_schema import KnownSkills
 from app.agents.tools.program_port import ProgramContext
 
 _LEVELS = {
-    "declare": "déclaré",
-    "en_cours": "en cours",
-    "valide": "validé",
-    "prouve": "prouvé",
+    "declare": "declared",
+    "en_cours": "in progress",
+    "valide": "validated",
+    "prouve": "proven",
 }
-_LANGUAGES = {"fr": "français", "en": "anglais"}
+_LANGUAGES = {"fr": "French", "en": "English"}
 
 
 def hours(minutes: int) -> str:
@@ -31,7 +31,7 @@ def _known(known: KnownSkills) -> str:
     """Encadrés par `untrusted()` : les noms viennent en partie des acquis de la mémoire (écrits
     par l'Archiviste d'après un document importé ; relecture de 4.5, D88)."""
     if not known:
-        return "Aucun acquis connu."
+        return "No known skills recorded."
     lines = [f"- {name} ({_LEVELS.get(level, level)})" for name, level in sorted(known.items())]
     return untrusted("\n".join(lines), "acquis connus de January")
 
@@ -39,12 +39,12 @@ def _known(known: KnownSkills) -> str:
 def _proposal(rank: int, proposal: ProposalDraft) -> str:
     text = "\n".join(
         [
-            f"Nom : {proposal.name}",
-            f"Promesse : {proposal.promise}",
-            f"Durée : {proposal.duration_weeks} semaines, {proposal.weekly_hours} h par semaine",
-            f"Compétences : {', '.join(proposal.skills)}",
-            f"Projet final : {proposal.final_project}",
-            f"Compromis : {' ; '.join(proposal.tradeoffs)}",
+            f"Name: {proposal.name}",
+            f"Promise: {proposal.promise}",
+            f"Duration: {proposal.duration_weeks} weeks, {proposal.weekly_hours} h per week",
+            f"Skills: {', '.join(proposal.skills)}",
+            f"Final project: {proposal.final_project}",
+            f"Trade-offs: {', '.join(proposal.tradeoffs)}",
         ]
     )
     return untrusted(text, f"proposition {rank}")
@@ -57,9 +57,9 @@ def context_vars(ctx: ProgramContext) -> dict[str, Any]:
     minutes = ctx.council_minutes
     return {
         "goal": goal.text,
-        "target_role": goal.target_role or "non précisé",
-        "deadline": goal.deadline.strftime("%d/%m/%Y") if goal.deadline else "aucune",
-        "framing": "\n".join(framing) or "Aucune réponse de cadrage.",
+        "target_role": goal.target_role or "unspecified",
+        "deadline": goal.deadline.strftime("%d/%m/%Y") if goal.deadline else "none",
+        "framing": "\n".join(framing) or "No framing answers.",
         "weekly_minutes": budget.weekly_minutes,
         "cap_minutes": budget.cap_minutes,
         "cap_hours": hours(budget.cap_minutes),

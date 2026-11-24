@@ -29,8 +29,8 @@ def floor_minutes(cap_minutes: int, share: float = UNDERLOAD_SHARE) -> int:
 
 
 def describe_underload(label: str, total: int, floor: int) -> str:
-    """Phrase rendue au Stratège : « {label} : 125 min prévues, vise au moins 428 min. »"""
-    return f"{label} : {total} min prévues, vise au moins {floor} min."
+    """Describe a draft week below the target load."""
+    return f"{label}: {total} min planned. Aim for at least {floor} min."
 
 
 def week_breaks(tasks: Sequence[tuple[int, TaskType]], cap_minutes: int) -> list[WeekRule]:
@@ -47,9 +47,9 @@ def week_breaks(tasks: Sequence[tuple[int, TaskType]], cap_minutes: int) -> list
 
 
 def describe(rule: WeekRule, label: str, total: int, cap_minutes: int) -> str:
-    """Phrase rendue au Stratège : « {label} : 735 min prévues, 714 au plus. »…"""
+    """Describe the broken rule in a draft or scheduled week."""
     if rule == "week_over_budget":
-        return f"{label} : {total} min prévues, {cap_minutes} au plus."
+        return f"{label}: {total} min planned. The limit is {cap_minutes} min."
     if rule == "week_needs_practice":
-        return f"{label} : aucune tâche de pratique."
-    return f"{label} : aucun quiz."
+        return f"{label}: add at least one practice task."
+    return f"{label}: add a quiz at the end of the week."

@@ -3,7 +3,7 @@
 - un fichier Markdown par pièce rangée, dans l'ordre de F16 : `01_cv.md` … `07_pitch.md` ;
 - le PDF de la version de CV prête, sous son nom (`CV_<Nom>_<Entreprise>_<Poste>.pdf`), si la pièce
   `cv` en désigne une ;
-- `LISEZMOI.txt` : les pièces « à vérifier » avec leurs raisons, et les pièces omises (absentes ou
+- `README.txt` : les pièces « à vérifier » avec leurs raisons, et les pièces omises (absentes ou
   en échec).
 
 Rien n'est envoyé par l'application : January relit puis copie. Journaux : identifiants seulement,
@@ -15,6 +15,7 @@ import zipfile
 from dataclasses import dataclass
 from datetime import datetime
 
+from app.agents.tools.kit_schema import KIT_TITLES
 from app.core.errors import AppError
 from app.db.models.applications import KitItem
 from app.features.applications.repository import KitRepository
@@ -29,16 +30,7 @@ from app.features.portfolio.service.links import approved_link
 
 logger = logging.getLogger(__name__)
 
-TITLES = {
-    "cv": "CV ciblé",
-    "letter": "Lettre de motivation",
-    "linkedin": "Messages LinkedIn",
-    "followups": "Relances",
-    "form_answers": "Réponses aux questions du formulaire",
-    "company_brief": "Dossier de l'entreprise",
-    "pitch": "Pitch de présentation",
-}
-README = "LISEZMOI.txt"
+README = "README.txt"
 _KEPT = ("ready", "to_check")
 _FILE_MODE = 0o100644
 
@@ -62,41 +54,39 @@ def _reasons(row: KitItem) -> str:
     item = item_out(row)
     reasons = []
     if item.flags:
-        reasons.append("termes que ton profil ne dit pas : " + ", ".join(item.flags))
+        reasons.append("terms absent from your profile: " + ", ".join(item.flags))
     if item.salary_fields:
-        reasons.append(f"{item.salary_fields} réponse(s) salariale(s) à remplir par toi")
+        reasons.append(f"salary questions to complete: {item.salary_fields}")
     if has_blank(row.kind, row.content) and not item.salary_fields:
-        reasons.append("réponse(s) à compléter")
-    return "; ".join(reasons) or "à relire avant de l'utiliser"
+        reasons.append("answers to complete")
+    return ", ".join(reasons) or "review before use"
 
 
 def _omitted(entry: Entry) -> str:
     row = entry.row
     if row is not None and row.status == "failed":
-        error = str((row.meta or {}).get("error") or "pièce en échec")
-        return f"- {entry.path} ({entry.title}) : en échec, {error}"
-    return f"- {entry.path} ({entry.title}) : pas encore produite"
+        error = str((row.meta or {}).get("error") or "No error details available.")
+        return f"- {entry.path} ({entry.title}): failed. {error}"
+    return f"- {entry.path} ({entry.title}): not yet generated"
 
 
 def readme(entries: list[Entry], pdf: str | None, pdf_missing: bool) -> str:
-    """Le texte de `LISEZMOI.txt`."""
+    """Build the included README with review reasons and omitted items."""
     lines = [
-        "Kit de candidature",
+        "Application kit",
         "",
-        "Rien n'est envoyé par l'application : relis chaque pièce, puis copie-la.",
+        "Review each item before copying it into your application.",
         "",
-        "Pièces à vérifier avant de les utiliser :",
+        "Items to review",
     ]
     to_check = [e for e in entries if e.row is not None and e.row.status == "to_check"]
-    lines += [f"- {e.path} ({e.title}) : {_reasons(e.row)}" for e in to_check if e.row] or [
-        "- aucune"
-    ]
-    lines += ["", "Pièces absentes de l'archive :"]
-    lines += [_omitted(e) for e in entries if not e.included] or ["- aucune"]
+    lines += [f"- {e.path} ({e.title}): {_reasons(e.row)}" for e in to_check if e.row] or ["- None"]
+    lines += ["", "Omitted items"]
+    lines += [_omitted(e) for e in entries if not e.included] or ["- None"]
     if pdf:
-        lines += ["", f"CV en PDF : {pdf}"]
+        lines += ["", f"CV PDF: {pdf}"]
     elif pdf_missing:
-        lines += ["", "CV en PDF : la version prête n'a pas pu être jointe."]
+        lines += ["", "The ready CV PDF could not be attached."]
     return "\n".join(lines) + "\n"
 
 
@@ -104,7 +94,7 @@ async def _pdf(cv: CvRuntime, user_id: str, version_id: str) -> tuple[str, bytes
     try:
         return await version_pdf(cv, user_id, version_id)
     except AppError:
-        return None  # version supprimée ou PDF plus lisible : dit dans LISEZMOI.txt
+        return None  # The README reports a missing PDF.
 
 
 def _write(files: list[tuple[str, bytes]], now: datetime) -> bytes:
@@ -128,7 +118,7 @@ async def kit_archive(
         name = kit_filename(app_row.company, app_row.title)
         portfolio = await approved_link(db, user_id, "kit", rt.portfolio_origin())
     pieces = {row.kind: row for row in rows}
-    entries = [Entry(file_name(kind), TITLES[kind], pieces.get(kind)) for kind in KIT_ORDER]
+    entries = [Entry(file_name(kind), KIT_TITLES[kind], pieces.get(kind)) for kind in KIT_ORDER]
     files = [
         (e.path, e.row.content.rstrip().encode("utf-8") + b"\n")
         for e in entries
