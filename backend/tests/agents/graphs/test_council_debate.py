@@ -225,7 +225,7 @@ async def test_invalid_board_twice_is_skipped_without_failing(
     await c.to_choice()
     kinds = [x["kind"] for x in await c.events("board.update")]
     assert "domain_map" not in kinds and kinds[0] == "prerequisites"
-    assert sum("Schéma refusé" in call.prompt for call in models.calls) == 1
+    assert sum("Diagram rejected" in call.prompt for call in models.calls) == 1
 
 
 def test_names_other_debater() -> None:
@@ -259,4 +259,4 @@ async def test_board_invalid_once_cleaned_is_asked_again(make_council_runner: Ma
     await c.to_choice()
     kinds = [x["kind"] for x in await c.events("board.update")]
     assert "domain_map" not in kinds and kinds[0] == "prerequisites"
-    assert sum("Schéma refusé" in call.prompt for call in models.calls) == 1
+    assert sum("Diagram rejected" in call.prompt for call in models.calls) == 1

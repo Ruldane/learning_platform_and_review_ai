@@ -32,7 +32,7 @@ from app.core.errors import AppError
 AGENT = "moderator"
 ASKS = 2  # une demande, puis une seule re-demande qui nomme le nombre inventé
 BUDGET_S = 90.0  # plus court que le plafond du nœud : un dépassement vide le conseil, pas le brief
-LANGUAGES = {"fr": "français", "en": "anglais"}
+LANGUAGES = {"fr": "French", "en": "English"}
 
 logger = logging.getLogger(__name__)
 
@@ -152,7 +152,7 @@ async def advise(deps: GraphDeps, ctx: BriefContext) -> list[str] | None:
         AGENT, mode="brief", facts=facts_text(ctx), language=LANGUAGES[ctx.language]
     )
     model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
-    messages: list[BaseMessage] = [SystemMessage(prompt), HumanMessage("Écris le conseil du jour.")]
+    messages: list[BaseMessage] = [SystemMessage(prompt), HumanMessage("Write today's advice.")]
     for ask in range(ASKS):
         advice = await structured_call(
             model,
@@ -160,7 +160,7 @@ async def advise(deps: GraphDeps, ctx: BriefContext) -> list[str] | None:
             messages,
             agent=AGENT,
             step=f"conseil-{ask + 1}",
-            intent="j'écris le conseil du jour",
+            intent="writing today's advice",
         )
         wrong = invented_numbers(advice.sentences, ctx)
         if not wrong:

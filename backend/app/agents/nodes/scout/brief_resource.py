@@ -42,7 +42,7 @@ BUDGET_S = 90.0  # plus court que le plafond du nœud : un dépassement vide la 
 SNIPPET_MAX = 300
 TITLE_MAX = 200
 DATE_MAX = 40
-LANGUAGES = {"fr": "français", "en": "anglais"}
+LANGUAGES = {"fr": "French", "en": "English"}
 # `why` d'un résultat que le modèle n'a pas choisi (le sien était illisible) : dit par le code, pour
 # ne pas prêter au modèle une raison qu'il a donnée à un autre résultat.
 FALLBACK_WHY = {
@@ -71,13 +71,13 @@ def domain_of(url: str) -> str:
 
 
 def results_text(hits: list[WebHit]) -> str:
-    """Les résultats numérotés, encadrés comme contenu non fiable."""
+    """Number the search results and wrap them as untrusted data."""
     lines = []
     for number, hit in enumerate(hits, 1):
-        date = hit.published or "date inconnue"
+        date = hit.published or "date unknown"
         head = f"{number}. {one_line(hit.title)} ({domain_of(hit.url)}, {date})"
         lines.append(f"{head}\n{one_line(hit.snippet)[:SNIPPET_MAX]}")
-    return untrusted("\n\n".join(lines), "résultats")
+    return untrusted("\n\n".join(lines), "search results")
 
 
 async def _choose(
@@ -86,7 +86,7 @@ async def _choose(
     prompt = render_prompt(
         AGENT,
         mode="brief_resource",
-        topic=untrusted(one_line(topic), "sujet du jour"),
+        topic=untrusted(one_line(topic), "topic of the day"),
         count=len(hits),
         results=results_text(hits),
         language=LANGUAGES[ctx.language],
@@ -94,10 +94,10 @@ async def _choose(
     return await structured_call(
         model,
         ResourcePick,
-        [SystemMessage(prompt), HumanMessage("Choisis la ressource du jour.")],
+        [SystemMessage(prompt), HumanMessage("Choose today's resource.")],
         agent=AGENT,
         step="ressource",
-        intent="je choisis la ressource du jour",
+        intent="choosing today's resource",
     )
 
 

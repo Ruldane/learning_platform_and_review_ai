@@ -81,11 +81,11 @@ async def test_council_records_each_verdict_for_its_own_page(
     make_council_runner: MakeCouncil,
 ) -> None:
     run = await make_council_runner(models=PlayedModels())
-    assert "Prépare les questions de cadrage." in await _brief(run)
+    assert "Prepare the framing questions." in await _brief(run)
     await run.resume('{"questions":[]}')
     assert (await _pending(run))["kind"] == "framing"
     await run.resume("go")
-    assert "Prépare les requêtes de recherche." in await _brief(run)
+    assert "Prepare the search queries." in await _brief(run)
     await run.resume('{"queries":[{"text":"ai product engineer","lang":"fr"}]}')
     for index, url in enumerate(URLS[:2]):
         prompt = await _brief(run)
@@ -93,7 +93,7 @@ async def test_council_records_each_verdict_for_its_own_page(
             await run.runner.shutdown()
             run = await make_council_runner(sid=run.sid, models=PlayedModels())
             assert await _brief(run) == prompt
-        assert url in prompt and "Note cette source." in prompt
+        assert url in prompt and "Score this source." in prompt
         assert '<<<CONTENU_NON_FIABLE source="page ' in prompt
         reply = {**json.loads(SCORE_82), "reason": f"Verdict de la page {index}."}
         await run.resume(json.dumps(reply))

@@ -39,7 +39,7 @@ from app.agents.tools.radar_schema import (
 from app.core.errors import AppError
 
 AGENT = "analyst"
-RADAR_REQUEST = "Extrais ces offres du relevé du marché."  # les modèles scriptés s'y reconnaissent
+RADAR_REQUEST = "Extract these postings from the market snapshot."
 INVALID_CODE = "structured_output_invalid"
 MAX_FAILED_BATCHES = 2  # lots en panne du fournisseur après lesquels l'extraction s'arrête
 
@@ -131,7 +131,7 @@ async def _ask(deps: GraphDeps, batch: list[PostingPage]) -> tuple[RadarBatch | 
             [SystemMessage(prompt), HumanMessage(RADAR_REQUEST)],
             agent=AGENT,
             step="extraction",
-            intent="je lis les offres du relevé",
+            intent="reading postings from the market snapshot",
         )
     except AppError as exc:
         if exc.code in MODEL_UNAVAILABLE_CODES:

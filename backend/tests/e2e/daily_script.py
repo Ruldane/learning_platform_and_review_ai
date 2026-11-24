@@ -39,8 +39,8 @@ LONG = 12  # réponses prévues par agent : bien plus que les appels du parcours
 
 # --- Brief -----------------------------------------------------------------------------------
 
-PICK_REQUEST = "Choisis la ressource du jour."  # la demande de l'Éclaireur (`brief_resource.py`)
-ADVICE_REQUEST = "Écris le conseil du jour."  # celle du Modérateur (`moderator_brief.py`)
+PICK_REQUEST = "Choose today's resource."  # The Scout's request.
+ADVICE_REQUEST = "Write today's advice."  # The Moderator's request.
 TOPIC_QUERY = f"{ROLE} actualités"
 PICKED = 2  # le rang du résultat choisi (à partir de 1)
 WHY = "Un état des lieux récent du métier, utile pour ton poste visé."

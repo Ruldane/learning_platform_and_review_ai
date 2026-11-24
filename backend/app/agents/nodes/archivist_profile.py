@@ -35,7 +35,7 @@ from app.agents.tools.profile_port import ProfileSource, SourceKind
 from app.core.errors import AppError
 
 AGENT = "archivist"
-PROFILE_REQUEST = "Établis le profil maître de January à partir de ses documents."
+PROFILE_REQUEST = "Build January's master profile from her documents."
 LOAD_TIMEOUT_S = 180  # deux mises en page de PDF (60 s chacune au plus) et leur lecture
 EXTRACT_TIMEOUT_S = 600  # une longue sortie structurée (GLM), avec ses nouveaux essais
 ARTIFACT_URL = "/career/profile"
@@ -111,7 +111,7 @@ def make_extract(deps: GraphDeps) -> Node:
             [SystemMessage(prompt), HumanMessage(PROFILE_REQUEST)],
             agent=AGENT,
             step="profil",
-            intent="je tire ton profil maître de tes documents",
+            intent="building your master profile from your documents",
         )
         draft = assign_fact_ids(blank_facts(found))
         return {"draft": draft.model_dump(mode="json")}

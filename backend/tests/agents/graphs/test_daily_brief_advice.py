@@ -134,8 +134,8 @@ async def test_english_brief_speaks_english(
     run = await brief_runner(brief_models([pick(1)]))
     await run.wait_status("completed")
     [prompt] = prompts(run.models, "moderator")
-    assert "To review: 12 cards." in prompt and "en anglais" in prompt
-    assert "en anglais" in prompts(run.models, "scout")[0]
+    assert "To review: 12 cards." in prompt and "in English" in prompt
+    assert "in English" in prompts(run.models, "scout")[0]
 
 
 def test_numbers_in_advice() -> None:

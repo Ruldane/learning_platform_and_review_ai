@@ -118,7 +118,7 @@ async def _ask(models: ScriptedModels, agent: str, request: str) -> str:
 async def test_every_call_of_the_journey_has_a_reply() -> None:
     models = ScriptedModels(cv_scripts())
     asked = [
-        ("archivist", "Établis le profil maître de January à partir de ses documents."),
+        ("archivist", "Build January's master profile from her documents."),
         ("designer", SAMPLE_REQUEST),
         ("designer", DRAFT_REQUEST),
         ("analyst", ANALYZE_REQUEST),

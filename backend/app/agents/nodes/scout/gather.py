@@ -64,10 +64,10 @@ def make_plan(deps: GraphDeps) -> Node:
         found = await structured_call(
             model,
             SearchPlan,
-            [SystemMessage(prompt), HumanMessage("Prépare les requêtes de recherche.")],
+            [SystemMessage(prompt), HumanMessage("Prepare the search queries.")],
             agent=AGENT,
             step="plan",
-            intent="je prépare les requêtes",
+            intent="preparing the search queries",
         )
         queries = _fit(found, languages, max(1, limits.max_queries))
         if not queries:  # le modèle n'a rien rendu d'exploitable : la demande elle-même

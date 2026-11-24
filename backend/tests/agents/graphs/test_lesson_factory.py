@@ -95,7 +95,7 @@ async def test_invented_ids_trigger_one_new_ask_then_a_shortfall_note(
     await c.wait_status("completed")
     pub = c.store.published[0]
     assert len(pub.resources) == 1  # jamais de ressource inventée pour compléter
-    assert any("Ressources insuffisantes" in p for p in pub.report.problems)
+    assert any("Too few resources" in p for p in pub.report.problems)
     resource_asks = [p for p in c.prompts_of("scout") if "choose the learning resources" in p]
     assert len(resource_asks) == 2
 
@@ -107,9 +107,7 @@ async def test_fewer_than_three_kept_sources_keeps_them_all_and_flags_it(
     await c.wait_status("completed")
     pub = c.store.published[0]
     assert len(pub.resources) == 2
-    assert pub.report.problems == (
-        "Ressources insuffisantes : 2 source(s) retenue(s) sur 3 attendues.",
-    )
+    assert pub.report.problems == ("Too few resources. Kept 2 of 3 required sources.",)
     assert pub.report.unsupported == ()
 
 

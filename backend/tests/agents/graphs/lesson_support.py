@@ -184,7 +184,7 @@ async def make_lesson_runner(make_web_runner: MakeWeb, user_id: str) -> AsyncIte
         module_id: str = MODULE_ID,
     ) -> Lesson:
         models = LessonModels(picker=picker)
-        models.when("scout", "Note cette source.", *(scores or []), *[SCORE_82] * 20)
+        models.when("scout", "Score this source.", *(scores or []), *[SCORE_82] * 20)
         models.when("writer", "", *(writer or []), *[GOOD_LESSON] * 20)
         models.when("verifier", "", *(verifier or []), *[NO_CLAIM] * 20)
         web = await make_web_runner([], models=models, lessons=store)

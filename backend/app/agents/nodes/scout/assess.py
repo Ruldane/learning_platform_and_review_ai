@@ -37,7 +37,7 @@ PAGE_JUDGE_TIMEOUT_S = 90  # une page trop lente à noter est écartée sans not
 # seule, jamais avec tout le nœud (D82).
 JUDGE_TIMEOUT_S = MAX_PAGES_JUDGED * PAGE_JUDGE_TIMEOUT_S + 60
 # Page dont le modèle n'a rendu aucune note conforme au schéma, ou trop lente (revue phase 3, I2).
-UNSCORED_REASON = "Note impossible à établir."
+UNSCORED_REASON = "This source could not be scored."
 INVALID_OUTPUT_CODE = "structured_output_invalid"
 PAGE_TIMEOUT_CODE = "page_judge_timeout"
 
@@ -46,21 +46,21 @@ REMEMBER_TIMEOUT_S = 300  # une vectorisation par source retenue
 
 
 def _prompt(page: dict[str, Any]) -> str:
-    """Titre, métadonnées et texte viennent du web : chacun est encadré (17.4)."""
+    """Wrap the title, metadata, and page text as untrusted data (SPEC 17.4)."""
     sid = page["source_id"]
     meta = "\n".join(
         [
-            f"Adresse : {page['url']}",
-            f"Auteur : {page['author'] or 'inconnu'}",
-            f"Date de publication : {page['date'] or 'inconnue'}",
-            f"Langue : {page['lang'] or 'inconnue'}",
+            f"URL: {page['url']}",
+            f"Author: {page['author'] or 'unknown'}",
+            f"Publication date: {page['date'] or 'unknown'}",
+            f"Language: {page['lang'] or 'unknown'}",
         ]
     )
     return render_prompt(
         AGENT,
         mode="judge",
-        title=untrusted(page_title(page), f"titre {sid}"),
-        meta=untrusted(meta, f"métadonnées {sid}"),
+        title=untrusted(page_title(page), f"title {sid}"),
+        meta=untrusted(meta, f"metadata {sid}"),
         page=untrusted(page["text"], f"page {sid}"),
         preferred=page["preferred"],
         today=datetime.now(UTC).date().isoformat(),
@@ -106,10 +106,10 @@ async def _score(model: BaseChatModel, page: dict[str, Any]) -> SourceScore | Ap
             return await structured_call(
                 model,
                 SourceScore,
-                [SystemMessage(_prompt(page)), HumanMessage("Note cette source.")],
+                [SystemMessage(_prompt(page)), HumanMessage("Score this source.")],
                 agent=AGENT,
                 step="notation",
-                intent="je note une source",
+                intent="scoring a source",
             )
     except AppError as exc:
         if exc.code != INVALID_OUTPUT_CODE:

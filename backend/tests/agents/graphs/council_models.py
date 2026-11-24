@@ -67,14 +67,14 @@ def proposal(name: str) -> dict[str, Any]:
 
 PROPOSALS = json.dumps({"proposals": [proposal("Parcours pratique"), proposal("Parcours socle")]})
 _DEFAULTS: list[tuple[str, str, str]] = [
-    ("moderator", "Prépare les questions de cadrage.", json.dumps({"questions": []})),
+    ("moderator", "Prepare the framing questions.", json.dumps({"questions": []})),
     ("moderator", "Fixe l'ordre de parole du tour.", ORDER),
     ("moderator", "Fais le point du tour.", REVIEW),
-    ("scout", "Prépare les requêtes de recherche.", PLAN),
-    ("scout", "Note cette source.", SCORE_82),
-    ("scout", "Repère les praticiens.", PEOPLE),
-    ("scribe", "Dessine le tableau.", BOARD),
-    ("scribe", "Rédige le compte rendu.", MINUTES),
+    ("scout", "Prepare the search queries.", PLAN),
+    ("scout", "Score this source.", SCORE_82),
+    ("scout", "Find practitioners.", PEOPLE),
+    ("scribe", "Draw the board.", BOARD),
+    ("scribe", "Write the minutes.", MINUTES),
     ("strategist", "Propose les parcours.", PROPOSALS),
 ]
 

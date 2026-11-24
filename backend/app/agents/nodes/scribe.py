@@ -95,7 +95,7 @@ async def _valid_draft(
                 messages,
                 agent=AGENT,
                 step=f"tableau-{step}",
-                intent="je dessine au tableau",
+                intent="drawing on the board",
             )
         except AppError as exc:
             if exc.code != INVALID_OUTPUT_CODE:
@@ -113,7 +113,9 @@ async def _valid_draft(
             messages = [
                 *messages,
                 AIMessage(json.dumps(shown, ensure_ascii=False)),
-                HumanMessage(f"Schéma refusé :\n{refused}\nRedessine-le en respectant les règles."),
+                HumanMessage(
+                    f"Diagram rejected:\n{refused}\nRedraw it using the supported syntax."
+                ),
             ]
     return None
 
@@ -125,7 +127,7 @@ async def draw(
     `None` si aucun schéma valable n'a été obtenu."""
     messages: list[BaseMessage] = [
         SystemMessage(_board_prompt(state, kind, brief)),
-        HumanMessage("Dessine le tableau."),
+        HumanMessage("Draw the board."),
     ]
     draft = await _valid_draft(deps, messages, step)
     if draft is None:
@@ -195,10 +197,10 @@ def make_minutes(deps: GraphDeps) -> Node:
         model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
         spoken = await speak(
             model,
-            [SystemMessage(prompt), HumanMessage("Rédige le compte rendu.")],
+            [SystemMessage(prompt), HumanMessage("Write the minutes.")],
             agent=AGENT,
             step=f"compte-rendu-{state.get('round', 1)}",
-            intent="je rédige le compte rendu",
+            intent="writing the minutes",
             catalog=citation_entries(state),
             max_words=MINUTES_WORDS,
         )

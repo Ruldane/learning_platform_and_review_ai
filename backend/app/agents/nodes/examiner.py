@@ -39,8 +39,8 @@ from app.agents.tools.quiz_port import (
 MAX_QUIZ_ASKS = 3  # une demande + deux re-demandes avec les problèmes de `quiz_problems`
 MAX_GRADE_ASKS = 2  # une demande + une re-demande si des questions restent sans note
 MISSING_FEEDBACK = "This answer wasn't graded. Review the explanation."
-WRITE_REQUEST = "Écris le quiz du module."
-GRADE_REQUEST = "Note les réponses ouvertes."
+WRITE_REQUEST = "Write the module quiz."
+GRADE_REQUEST = "Grade the free-text answers."
 LESSON_CHARS = 20_000  # une leçon de 2 500 mots tient en entier
 MAX_REASON_CHARS = 300  # `quizzes.failure_reason`
 WRITE_TIMEOUT_S = 600  # trois demandes d'un quiz complet, avec leurs nouveaux essais
@@ -85,7 +85,7 @@ async def _ask_quiz(deps: GraphDeps, prompt: str) -> tuple[QuizDraft, list[str]]
             messages,
             agent=AGENT,
             step=f"quiz-{ask}",
-            intent="j'écris le quiz du module" if ask == 1 else "je corrige le quiz",
+            intent="writing the module quiz" if ask == 1 else "revising the quiz",
         )
         problems = quiz_problems(found)
         if not problems:
@@ -187,7 +187,7 @@ async def _ask_grades(
             messages,
             agent=AGENT,
             step=f"notation-{ask}",
-            intent="je note tes réponses ouvertes" if ask == 1 else "je complète la notation",
+            intent="grading your free-text answers" if ask == 1 else "completing the grading",
         )
         received += found.items
         missing = _grades_by_ref(received, items)[1]

@@ -122,10 +122,10 @@ async def _ask(deps: GraphDeps, state: CouncilState, pages: list[dict[str, Any]]
     return await structured_call(
         model,
         PeopleFound,
-        [SystemMessage(prompt), HumanMessage("Repère les praticiens.")],
+        [SystemMessage(prompt), HumanMessage("Find practitioners.")],
         agent=AGENT,
         step="praticiens",
-        intent="je repère des praticiens",
+        intent="looking for practitioners",
     )
 
 

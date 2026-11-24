@@ -94,7 +94,7 @@ def _board(title: str, nodes: list[str]) -> Reply:
     lines = ["flowchart TD"]
     lines += [f'    N{i}["{label}"]' for i, label in enumerate(nodes)]
     lines += [f"    N{i} --> N{i + 1}" for i in range(len(nodes) - 1)]
-    return expect("Dessine le tableau.", json.dumps({"title": title, "mermaid": "\n".join(lines)}))
+    return expect("Draw the board.", json.dumps({"title": title, "mermaid": "\n".join(lines)}))
 
 
 def _proposal(name: str, weeks: int, project: str) -> dict[str, Any]:
@@ -121,7 +121,7 @@ def _moderator() -> list[Reply]:
     ]
     review = "Fais le point du tour."
     return [
-        _json("Prépare les questions de cadrage.", {"questions": questions}),
+        _json("Prepare the framing questions.", {"questions": questions}),
         order,
         order,
         _json(review, {"stable": False, "summary": "Les positions bougent encore."}),
@@ -133,9 +133,9 @@ def _moderator() -> list[Reply]:
 def _lesson_scout() -> list[Reply]:
     plan = {"queries": [{"text": QUERY, "lang": "fr"}]}
     return [
-        _json("Prépare les requêtes de recherche.", plan),
-        *[expect("Note cette source.", _score) for _ in range(PAGES)],
-        expect("Choisis les ressources.", pick_resources),
+        _json("Prepare the search queries.", plan),
+        *[expect("Score this source.", _score) for _ in range(PAGES)],
+        expect("Choose the resources.", pick_resources),
     ]
 
 
@@ -147,7 +147,7 @@ def _scout() -> list[Reply]:
     research = _lesson_scout()[:-1]  # plan et notes, comme pour une leçon
     return [
         *research,
-        _json("Repère les praticiens.", {"people": people}),
+        _json("Find practitioners.", {"people": people}),
         *[_speech("scout") for _ in range(ROUNDS)],
         *_lesson_scout(),
         *_lesson_scout(),
@@ -159,7 +159,7 @@ def _scribe() -> list[Reply]:
     return [
         _board("Carte du domaine", ["AI product engineer", "API de LLM", "Évaluation"]),
         _board("Prérequis", ["Python", "API de LLM", "Évaluation de LLM"]),
-        expect("Rédige le compte rendu.", minutes),
+        expect("Write the minutes.", minutes),
         _board("Frise du parcours pratique", ["Semaine 1 : API", "Semaine 2 : évaluation"]),
         _board("Frise du parcours socle", ["Bases", "API", "Évaluation", "Projet"]),
         _board("Comparaison des parcours", ["Pratique : 2 semaines", "Socle : 4 semaines"]),
