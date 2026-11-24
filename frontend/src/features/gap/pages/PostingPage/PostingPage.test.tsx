@@ -18,6 +18,12 @@ function setup(api: Parameters<typeof postingsApi>[0] = {}) {
 }
 
 const analyzing = analyzingPosting;
+const ADD = "Add to schedule (1)";
+const PYTHON = "Add Python to the schedule";
+const REMOVE = "Delete posting";
+const RESTART = "Restart analysis";
+const OPEN_REPLAN = "Open replanning";
+const DUPLICATE = "Very close to a posting you've already added.";
 
 describe("PostingPage", () => {
   beforeEach(() => useSessionStore.getState().reset("a1"));
@@ -30,8 +36,8 @@ describe("PostingPage", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("Société Fictive")).toBeInTheDocument();
     expect(await screen.findByText("62/100")).toBeInTheDocument();
-    expect(screen.getByRole("table", { name: "Écart avec l'offre" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Revoir mon CV pour cette offre" })).toHaveAttribute(
+    expect(screen.getByRole("table", { name: "Gap with the posting" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Review my CV for this posting" })).toHaveAttribute(
       "href",
       "/carriere/cv/revue/nouvelle/p1",
     );
@@ -39,34 +45,34 @@ describe("PostingPage", () => {
 
   it("posting title rendered once", async () => {
     setup();
-    await screen.findByRole("region", { name: "Analyse de l'offre" });
+    await screen.findByRole("region", { name: "Posting analysis" });
     expect(screen.getAllByRole("heading", { name: "Ingénieure données" })).toHaveLength(1);
   });
 
   it("offers only the rows that are really missing and sends the ticked skills", async () => {
     const { user, state } = setup();
-    const python = await screen.findByRole("checkbox", { name: "Ajouter Python au planning" });
-    expect(screen.queryByRole("checkbox", { name: "Ajouter SQL au planning" })).toBeNull();
-    expect(screen.queryByRole("checkbox", { name: "Ajouter Go au planning" })).toBeNull();
-    expect(screen.getByText("Déjà acquise")).toBeInTheDocument();
+    const python = await screen.findByRole("checkbox", { name: PYTHON });
+    expect(screen.queryByRole("checkbox", { name: "Add SQL to the schedule" })).toBeNull();
+    expect(screen.queryByRole("checkbox", { name: "Add Go to the schedule" })).toBeNull();
+    expect(screen.getByText("Already acquired")).toBeInTheDocument();
     await user.click(python);
-    await user.click(screen.getByRole("checkbox", { name: "Ajouter Docker au planning" }));
-    await user.click(screen.getByRole("button", { name: "Ajouter au planning (2)" }));
-    expect(await screen.findByText(/Replanification lancée/)).toBeInTheDocument();
+    await user.click(screen.getByRole("checkbox", { name: "Add Docker to the schedule" }));
+    await user.click(screen.getByRole("button", { name: "Add to schedule (2)" }));
+    expect(await screen.findByText(/Replanning started/)).toBeInTheDocument();
     expect(state.plans).toEqual([{ skills: ["Python", "Docker"] }]);
-    await user.click(screen.getByRole("link", { name: "Ouvrir la replanification" }));
-    expect(await screen.findByText("Replanification")).toBeInTheDocument();
+    await user.click(screen.getByRole("link", { name: OPEN_REPLAN }));
+    expect(await screen.findByText("Replan")).toBeInTheDocument();
   });
 
-  it("says in French that there is no program yet and offers to create a goal", async () => {
+  it("explains that an approved program is needed and offers to create a goal", async () => {
     const { user } = setup({
-      plan: () => refusal(409, "no_program", "Message du serveur."),
+      plan: () => refusal(409, "no_program", "Server message."),
     });
-    await user.click(await screen.findByRole("checkbox", { name: "Ajouter Python au planning" }));
-    await user.click(screen.getByRole("button", { name: "Ajouter au planning (1)" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("pas encore de programme validé");
-    await user.click(screen.getByRole("link", { name: "Créer un objectif" }));
-    expect(await screen.findByText("Objectifs")).toBeInTheDocument();
+    await user.click(await screen.findByRole("checkbox", { name: PYTHON }));
+    await user.click(screen.getByRole("button", { name: ADD }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("an approved program yet");
+    await user.click(screen.getByRole("link", { name: "Create a goal" }));
+    expect(await screen.findByText("Goals")).toBeInTheDocument();
   });
 
   it("adds a row outside the scope to the chosen validated program", async () => {
@@ -77,29 +83,29 @@ describe("PostingPage", () => {
         { id: "training", title: "Systèmes de données", status: "validated" },
       ],
     });
-    await user.click(await screen.findByRole("checkbox", { name: "Ajouter SAP au planning" }));
+    await user.click(await screen.findByRole("checkbox", { name: "Add SAP to the schedule" }));
     await screen.findByRole("option", { name: "Systèmes de données" });
     expect(screen.queryByRole("option", { name: "Un brouillon" })).toBeNull();
-    await user.selectOptions(screen.getByRole("combobox", { name: "Programme cible" }), "training");
-    const gap = screen.getByRole("region", { name: "Écart avec ton profil" });
+    await user.selectOptions(screen.getByRole("combobox", { name: "Target program" }), "training");
+    const gap = screen.getByRole("region", { name: "Gap with your profile" });
     await user.selectOptions(
-      within(gap).getByRole("combobox", { name: "Qui fait tourner les agents pour ce lancement" }),
+      within(gap).getByRole("combobox", { name: "Who runs the agents for this launch" }),
       "openai",
     );
-    expect(screen.getByRole("button", { name: /^Je les maîtrise déjà/ })).toBeDisabled();
-    await user.click(screen.getByRole("button", { name: "Ajouter au planning (1)" }));
+    expect(screen.getByRole("button", { name: /^I already know these/ })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: ADD }));
     await waitFor(() => expect(state.plans).toEqual([{ skills: ["SAP"], program_id: "training" }]));
     expect(state.planSources).toEqual(["openai"]);
   });
 
   it("links to the replan already open (409 replan_open)", async () => {
     const { user } = setup({
-      plan: () => refusal(409, "replan_open", "Message du serveur.", { session_id: "r1" }),
+      plan: () => refusal(409, "replan_open", "Server message.", { session_id: "r1" }),
     });
-    await user.click(await screen.findByRole("checkbox", { name: "Ajouter Python au planning" }));
-    await user.click(screen.getByRole("button", { name: "Ajouter au planning (1)" }));
-    expect(await screen.findByText("Une replanification est déjà ouverte.")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Ouvrir la replanification" })).toHaveAttribute(
+    await user.click(await screen.findByRole("checkbox", { name: PYTHON }));
+    await user.click(screen.getByRole("button", { name: ADD }));
+    expect(await screen.findByText("A replanning is already open.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: OPEN_REPLAN })).toHaveAttribute(
       "href",
       "/apprendre/programme/pg1/replanification",
     );
@@ -108,18 +114,18 @@ describe("PostingPage", () => {
   it("rereads the table when a skill is no longer to add (422)", async () => {
     const { user, state } = setup({
       plan: () =>
-        refusal(422, "gap_skill_unknown", "Message du serveur.", { fields: ["skills.0"] }),
+        refusal(422, "gap_skill_unknown", "Server message.", { fields: ["skills.0"] }),
       gaps: [
         gapOut(),
         gapOut({ rows: [gapRow("Python", { action: "in_program", week: 2 }), gapRow("Docker")] }),
       ],
     });
-    await user.click(await screen.findByRole("checkbox", { name: "Ajouter Python au planning" }));
-    await user.click(screen.getByRole("button", { name: "Ajouter au planning (1)" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("n'est plus à ajouter");
+    await user.click(await screen.findByRole("checkbox", { name: PYTHON }));
+    await user.click(screen.getByRole("button", { name: ADD }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("no longer needs adding");
     await waitFor(() => expect(state.reads.gap).toBe(2));
-    expect(await screen.findByText("Dans ton programme, semaine 2")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Ajouter au planning" })).toBeDisabled();
+    expect(await screen.findByText("In your program, week 2")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add to schedule" })).toBeDisabled();
   });
 
   it("shows probable duplicates and marks two postings as distinct", async () => {
@@ -133,26 +139,26 @@ describe("PostingPage", () => {
     const { user, state } = setup({
       postings: [postingOut({ duplicates: [duplicate] }), postingOut()],
     });
-    expect(await screen.findByText("Offre très proche d'une offre déjà ajoutée.")).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "Ce sont deux offres distinctes" }));
+    expect(await screen.findByText(DUPLICATE)).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "These are two different postings" }));
     await waitFor(() => expect(state.distincts).toEqual([{ other_id: "p7" }]));
     await waitFor(() =>
-      expect(screen.queryByText("Offre très proche d'une offre déjà ajoutée.")).toBeNull(),
+      expect(screen.queryByText(DUPLICATE)).toBeNull(),
     );
   });
 
   it("confirms the deletion in the page, never with window.confirm", async () => {
     const confirm = vi.spyOn(window, "confirm");
     const { user, state } = setup();
-    await user.click(await screen.findByRole("button", { name: "Supprimer l'offre" }));
-    const ask = screen.getByRole("group", { name: "Supprimer cette offre ?" });
-    expect(within(ask).getByRole("button", { name: "Annuler" })).toHaveFocus();
+    await user.click(await screen.findByRole("button", { name: REMOVE }));
+    const ask = screen.getByRole("group", { name: "Delete this posting?" });
+    expect(within(ask).getByRole("button", { name: "Cancel" })).toHaveFocus();
     await user.keyboard("{Escape}");
-    expect(screen.queryByRole("group", { name: "Supprimer cette offre ?" })).toBeNull();
+    expect(screen.queryByRole("group", { name: "Delete this posting?" })).toBeNull();
     expect(state.removed).toBe(0);
-    await user.click(screen.getByRole("button", { name: "Supprimer l'offre" }));
-    await user.click(screen.getByRole("button", { name: "Oui, supprimer" }));
-    expect(await screen.findByText("Liste des offres")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: REMOVE }));
+    await user.click(screen.getByRole("button", { name: "Yes, delete" }));
+    expect(await screen.findByText("Postings list")).toBeInTheDocument();
     expect(state.removed).toBe(1);
     expect(confirm).not.toHaveBeenCalled();
   });
@@ -164,16 +170,18 @@ describe("PostingPage", () => {
           status: "rejected",
           title: null,
           analysis: null,
-          failure_reason: "Ce texte décrit une entreprise, pas un poste.",
+          failure_reason: "This text describes a company with no open role.",
         }),
       ],
     });
     expect(
-      await screen.findByRole("heading", { name: "Refusée : ce n'est pas une offre" }),
+      await screen.findByRole("heading", { name: "Rejected: this isn't a job posting" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Ce texte décrit une entreprise, pas un poste.")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Relancer l'analyse" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Supprimer l'offre" })).toBeInTheDocument();
+    expect(
+      screen.getByText("This text describes a company with no open role."),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: RESTART })).toBeNull();
+    expect(screen.getByRole("button", { name: REMOVE })).toBeInTheDocument();
   });
 
   it("relaunches an interrupted analysis", async () => {
@@ -182,42 +190,42 @@ describe("PostingPage", () => {
         postingOut({
           status: "failed",
           analysis: null,
-          failure_reason: "L'analyse s'est arrêtée.",
+          failure_reason: "Posting analysis stopped. Restart the analysis.",
         }),
         analyzing(),
       ],
     });
-    await user.click(await screen.findByRole("button", { name: "Relancer l'analyse" }));
-    expect(await screen.findByText("Analyse en cours…")).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: RESTART }));
+    expect(await screen.findByText("Analyzing…")).toBeInTheDocument();
     expect(state.relaunched).toBe(1);
   });
 
   it("follows the relaunch of an analysis already running (409 gap_in_progress)", async () => {
     const { user } = setup({
       postings: [postingOut({ status: "failed", analysis: null }), analyzing()],
-      relaunch: () => refusal(409, "gap_in_progress", "Message du serveur."),
+      relaunch: () => refusal(409, "gap_in_progress", "This posting is already being analyzed."),
     });
-    await user.click(await screen.findByRole("button", { name: "Relancer l'analyse" }));
-    expect(await screen.findByText("Analyse en cours…")).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: RESTART }));
+    expect(await screen.findByText("Analyzing…")).toBeInTheDocument();
     expect(screen.queryByRole("alert")).toBeNull();
   });
 
   it("waits for a gap being computed, then relaunches a failed one", async () => {
     const { user } = setup({ gaps: [gapOut({ status: "failed", score: null, rows: [] })] });
-    expect(await screen.findByText("L'écart n'a pas pu être calculé.")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Relancer l'analyse" }));
+    expect(await screen.findByText("The gap couldn't be calculated.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: RESTART }));
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Relancer l'analyse" })).toBeEnabled(),
+      expect(screen.getByRole("button", { name: RESTART })).toBeEnabled(),
     );
   });
 
   it("says when the posting does not exist", async () => {
     const { user } = setup({
-      posting: () => refusal(404, "posting_not_found", "Introuvable."),
+      posting: () => refusal(404, "posting_not_found", "Posting not found."),
     });
-    expect(await screen.findByText("Offre introuvable")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Retour aux offres" }));
-    expect(await screen.findByText("Liste des offres")).toBeInTheDocument();
+    expect(await screen.findByText("Posting not found")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Back to postings" }));
+    expect(await screen.findByText("Postings list")).toBeInTheDocument();
   });
 
   it("shows a retryable error", async () => {
@@ -225,12 +233,14 @@ describe("PostingPage", () => {
     const { user } = setup({
       posting: () =>
         failing
-          ? refusal(500, "internal_error", "Panne du serveur.")
+          ? refusal(500, "internal_error", "The server is unavailable.")
           : HttpResponse.json(postingOut()),
     });
-    expect(await screen.findByText("Panne du serveur.", {}, { timeout: 4000 })).toBeInTheDocument();
+    expect(
+      await screen.findByText("The server is unavailable.", {}, { timeout: 4000 }),
+    ).toBeInTheDocument();
     failing = false;
-    await user.click(screen.getByRole("button", { name: "Réessayer" }));
+    await user.click(screen.getByRole("button", { name: "Retry" }));
     expect(
       await screen.findByRole("heading", { level: 1, name: "Ingénieure données" }),
     ).toBeInTheDocument();

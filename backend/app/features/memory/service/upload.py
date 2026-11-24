@@ -125,7 +125,7 @@ def classify_url(url: str) -> Literal["url", "youtube"]:
 
 
 def invalid_url() -> AppError:
-    return AppError("invalid_url", "Lien invalide : une adresse http(s) est attendue.", 422)
+    return AppError("invalid_url", "Enter a valid HTTP or HTTPS link.", 422)
 
 
 def normalize_url(url: str) -> str:

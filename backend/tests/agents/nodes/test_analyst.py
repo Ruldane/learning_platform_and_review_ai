@@ -167,15 +167,13 @@ def test_known_name_of_120_characters_is_accepted() -> None:
 
 def test_gap_text() -> None:
     assert gap_text(GapSaved(62, 10, 4, 2)) == (
-        "Score de match : 62/100. 4 compétences manquent, dont 2 obligatoires."
+        "Match score: 62/100. 4 skills are missing, including 2 required."
     )
     assert gap_text(GapSaved(80, 5, 1, 1)) == (
-        "Score de match : 80/100. 1 compétence manque, dont 1 obligatoire."
+        "Match score: 80/100. 1 skill is missing, including 1 required."
     )
-    assert gap_text(GapSaved(90, 5, 2, 0)) == "Score de match : 90/100. 2 compétences manquent."
-    assert gap_text(GapSaved(100, 5, 0, 0)) == (
-        "Score de match : 100/100. Aucune compétence ne manque."
-    )
+    assert gap_text(GapSaved(90, 5, 2, 0)) == "Match score: 90/100. 2 skills are missing."
+    assert gap_text(GapSaved(100, 5, 0, 0)) == ("Match score: 100/100. No skills are missing.")
 
 
 def test_duplicate_text_prefers_the_surest_then_oldest() -> None:
@@ -187,7 +185,7 @@ def test_duplicate_text_prefers_the_surest_then_oldest() -> None:
         {"level": "probable", "posting_id": "c", "title": None, "company": None,
          "created_at": "2026-11-03T09:00:00+00:00", "score": None},
     ]  # fmt: skip
-    assert duplicate_text(hits) == "Offre proche d'une offre déjà ajoutée le 03/11."
+    assert duplicate_text(hits) == "Similar to a posting you added on 03/11."
     assert duplicate_text([]) is None
 
 

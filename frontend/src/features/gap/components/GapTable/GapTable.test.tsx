@@ -41,24 +41,24 @@ function setup(props: Partial<Parameters<typeof GapTable>[0]> = {}) {
 const rowOf = (skill: string) => screen.getByRole("row", { name: new RegExp(skill) });
 
 describe("GapTable", () => {
-  it("shows the four columns and the action of each row", () => {
+  it("shows the column headers and the action of each row", () => {
     setup();
     const headers = screen.getAllByRole("columnheader").map((header) => header.textContent);
-    expect(headers).toEqual(["Sélection", "Compétence", "Exigée", "Mon niveau", "Action"]);
-    expect(within(rowOf("React")).getByText("Dans ton programme, semaine 4")).toBeInTheDocument();
-    expect(within(rowOf("React")).getByText("Validé")).toBeInTheDocument();
-    expect(within(rowOf("Docker")).getByText("À ajouter")).toBeInTheDocument();
-    expect(within(rowOf("Docker")).getByText("Absent")).toBeInTheDocument();
-    expect(within(rowOf("SAP")).getByText("Hors périmètre")).toBeInTheDocument();
+    expect(headers).toEqual(["Selection", "Skill", "Required", "My level", "Action"]);
+    expect(within(rowOf("React")).getByText("In your program, week 4")).toBeInTheDocument();
+    expect(within(rowOf("React")).getByText("Validated")).toBeInTheDocument();
+    expect(within(rowOf("Docker")).getByText("To add")).toBeInTheDocument();
+    expect(within(rowOf("Docker")).getByText("Missing")).toBeInTheDocument();
+    expect(within(rowOf("SAP")).getByText("Out of scope")).toBeInTheDocument();
   });
 
   it("gives a checkbox to eligible rows and rows outside the scope", () => {
     setup();
     expect(screen.getAllByRole("checkbox").map((box) => box.getAttribute("aria-label"))).toEqual([
-      "Ajouter Docker au planning",
-      "Ajouter SQL au planning",
-      "Ajouter SAP au planning",
-      "Ajouter Kafka au planning",
+      "Add Docker to the schedule",
+      "Add SQL to the schedule",
+      "Add SAP to the schedule",
+      "Add Kafka to the schedule",
     ]);
     expect(within(rowOf("React")).queryByRole("checkbox")).not.toBeInTheDocument();
   });
@@ -71,7 +71,7 @@ describe("GapTable", () => {
         row("SQL", { level: "en_cours" }),
       ],
     });
-    expect(within(rowOf("Go")).getByText("Déjà acquise")).toBeInTheDocument();
+    expect(within(rowOf("Go")).getByText("Already acquired")).toBeInTheDocument();
     expect(within(rowOf("Go")).queryByRole("checkbox")).toBeNull();
     expect(within(rowOf("Rust")).queryByRole("checkbox")).toBeNull();
     expect(within(rowOf("SQL")).getByRole("checkbox")).toBeInTheDocument();
@@ -79,27 +79,27 @@ describe("GapTable", () => {
 
   it("marks the keywords sent by the CV review", () => {
     setup();
-    expect(within(rowOf("Kafka")).getByText("relevé par la revue du CV")).toBeInTheDocument();
+    expect(within(rowOf("Kafka")).getByText("flagged by the CV review")).toBeInTheDocument();
     expect(
-      within(rowOf("Docker")).queryByText("relevé par la revue du CV"),
+      within(rowOf("Docker")).queryByText("flagged by the CV review"),
     ).not.toBeInTheDocument();
   });
 
   it("toggles a skill", async () => {
     const { onToggle } = setup();
-    await userEvent.click(screen.getByRole("checkbox", { name: "Ajouter SQL au planning" }));
+    await userEvent.click(screen.getByRole("checkbox", { name: "Add SQL to the schedule" }));
     expect(onToggle).toHaveBeenCalledExactlyOnceWith("SQL");
   });
 
   it("counts the selection in the button", async () => {
     const { onAddToPlan } = setup({ selected: ["Docker", "SQL", "Kafka"] });
-    await userEvent.click(screen.getByRole("button", { name: "Ajouter au planning (3)" }));
+    await userEvent.click(screen.getByRole("button", { name: "Add to schedule (3)" }));
     expect(onAddToPlan).toHaveBeenCalledTimes(1);
   });
 
   it("disables the button without selection", () => {
     setup();
-    expect(screen.getByRole("button", { name: "Ajouter au planning" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Add to schedule" })).toBeDisabled();
   });
 
   it("locks the other boxes at ten skills", () => {
@@ -109,25 +109,25 @@ describe("GapTable", () => {
     expect(boxes.filter((box) => box.hasAttribute("disabled"))).toHaveLength(2);
     expect(boxes[0]).toBeEnabled();
     expect(boxes[11]).toBeDisabled();
-    expect(screen.getByText("10 compétences au plus par ajout.")).toBeInTheDocument();
+    expect(screen.getByText("10 skills max per addition.")).toBeInTheDocument();
   });
 
   it("locks everything while adding", () => {
     setup({ selected: ["Docker"], adding: true });
-    expect(screen.getByRole("button", { name: "Ajout en cours…" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Adding…" })).toBeDisabled();
     for (const box of screen.getAllByRole("checkbox")) expect(box).toBeDisabled();
   });
 
   it("can be driven with the keyboard only", async () => {
     const { onToggle } = setup();
     await userEvent.tab();
-    expect(screen.getByRole("checkbox", { name: "Ajouter Docker au planning" })).toHaveFocus();
+    expect(screen.getByRole("checkbox", { name: "Add Docker to the schedule" })).toHaveFocus();
     await userEvent.keyboard(" ");
     expect(onToggle).toHaveBeenCalledExactlyOnceWith("Docker");
   });
 
   it("says when there is no row", () => {
     setup({ rows: [] });
-    expect(screen.getByText("Aucune compétence à comparer pour cette offre.")).toBeInTheDocument();
+    expect(screen.getByText("No skills to compare for this posting.")).toBeInTheDocument();
   });
 });

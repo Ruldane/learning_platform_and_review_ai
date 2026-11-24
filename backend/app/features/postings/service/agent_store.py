@@ -45,7 +45,7 @@ from app.features.skills.service import SkillsService
 logger = logging.getLogger(__name__)
 
 AUTHOR = "analyst"
-REASON = "Offre ajoutée par January : copie figée de son texte."
+REASON = "Saved the text of a posting added by January."
 DEFAULT_DOMAIN = "Autres"  # celui que la carte montre pour une compétence sans domaine
 _TITLE_MAX = 200
 _REASON_MAX = 300
@@ -53,7 +53,7 @@ _MIN_DOMAIN = 2
 
 
 def not_analyzed() -> AppError:
-    return AppError("posting_not_analyzed", "Cette offre n'est pas encore analysée.", 409)
+    return AppError("posting_not_analyzed", "This posting has not been analyzed yet.", 409)
 
 
 def _domain(domain: str | None) -> str:

@@ -76,7 +76,7 @@ class UrlForbidden(AppError):
     def __init__(self) -> None:
         super().__init__(
             "url_forbidden",
-            "Adresse refusée : seules les adresses web publiques en http(s) sont acceptées.",
+            "Use a public HTTP or HTTPS link.",
             status_code=422,
         )
 

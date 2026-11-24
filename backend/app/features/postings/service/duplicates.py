@@ -196,7 +196,7 @@ async def shown_duplicates(
 
 
 def not_found() -> AppError:
-    return AppError("posting_not_found", "Offre introuvable.", 404)
+    return AppError("posting_not_found", "Posting not found.", 404)
 
 
 async def mark_distinct(db: AsyncSession, user_id: str, posting_id: str, other_id: str) -> None:

@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 def gap_in_progress() -> AppError:
-    return AppError("gap_in_progress", "L'analyse de cette offre est déjà en cours.", 409)
+    return AppError("gap_in_progress", "This posting is already being analyzed.", 409)
 
 
 async def _set_session(rt: PostingsRuntime, user_id: str, posting_id: str, sid: str | None) -> None:

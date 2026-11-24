@@ -189,7 +189,7 @@ async def test_plan_gap_without_program_is_409(client: httpx.AsyncClient, plan: 
     r = await client.post(f"{API}/postings/{posting_id}/gap/plan", json={"skills": ["LangGraph"]})
     assert r.status_code == 409 and r.json()["error"] == {
         "code": "no_program",
-        "message": "Aucun programme validé : crée d'abord ton programme.",
+        "message": "Create and approve a program before adding skills to your schedule.",
         "details": None,
     }
     other = await client.post(f"{API}/postings/inconnue/gap/plan", json={"skills": ["LangGraph"]})

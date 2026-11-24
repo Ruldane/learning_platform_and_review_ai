@@ -28,10 +28,10 @@ from app.core.skills import normalize_skill_name
 
 AGENT = "analyst"
 # Dernière phrase de chaque demande : les modèles scriptés des tests s'y reconnaissent.
-ANALYZE_REQUEST = "Analyse cette offre."
-MATCH_REQUEST = "Rattache ces besoins au référentiel de January."
-NOT_A_POSTING = "Ce texte ne ressemble pas à une offre d'emploi : aucune analyse n'est lancée."
-TOO_SHORT = "Ce texte est trop court pour une offre d'emploi : aucune analyse n'est lancée."
+ANALYZE_REQUEST = "Analyze this posting."
+MATCH_REQUEST = "Match these requirements against January's skill inventory."
+NOT_A_POSTING = "This text does not look like a job posting."
+TOO_SHORT = "Posting text is too short. Paste the full posting."
 MAX_ANALYZE_ASKS = 3  # une demande + deux re-demandes avec les problèmes de l'analyse
 MAX_POSTING_CHARS = 30_000  # texte de l'offre montré à l'Analyste
 CITATION_CHARS = 120  # longueur d'un extrait cité dans une re-demande
@@ -225,14 +225,14 @@ def _plural(count: int, word: str) -> str:
 
 
 def gap_text(saved: GapSaved) -> str:
-    """« Score de match : 62/100. 4 compétences manquent, dont 2 obligatoires. »"""
-    head = f"Score de match : {saved.score}/100."
+    """Summarize the score and distinguish required skills among those missing."""
+    head = f"Match score: {saved.score}/100."
     if saved.missing == 0:
-        return f"{head} Aucune compétence ne manque."
-    verb = "manquent" if saved.missing > 1 else "manque"
-    text = f"{head} {_plural(saved.missing, 'compétence')} {verb}"
+        return f"{head} No skills are missing."
+    verb = "is" if saved.missing == 1 else "are"
+    text = f"{head} {_plural(saved.missing, 'skill')} {verb} missing"
     if saved.missing_required:
-        text += f", dont {_plural(saved.missing_required, 'obligatoire')}"
+        text += f", including {saved.missing_required} required"
     return f"{text}."
 
 
@@ -245,4 +245,4 @@ def duplicate_text(duplicates: Sequence[dict[str, Any]]) -> str | None:
         return None
     first = min(hits, key=lambda hit: (_DUPLICATE_ORDER[hit.level], hit.created_at))
     day = datetime.fromisoformat(first.created_at).strftime("%d/%m")
-    return f"Offre proche d'une offre déjà ajoutée le {day}."
+    return f"Similar to a posting you added on {day}."

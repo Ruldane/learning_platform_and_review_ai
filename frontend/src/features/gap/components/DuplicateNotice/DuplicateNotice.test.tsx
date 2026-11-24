@@ -29,29 +29,31 @@ describe("DuplicateNotice", () => {
 
   it("says the day for a certain duplicate, without any button", () => {
     setup([make("certain")]);
-    expect(screen.getByText("Tu as déjà ajouté cette offre le 03/11.")).toBeInTheDocument();
+    expect(screen.getByText("You already added this posting on 03/11.")).toBeInTheDocument();
     expect(screen.getByText(/Développeuse front \(Société Fictive\)/)).toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
   it("offers both actions for a probable duplicate", async () => {
     const { onOpen, onDistinct } = setup([make("probable", "p7")]);
-    expect(screen.getByText("Offre très proche d'une offre déjà ajoutée.")).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "Ouvrir" }));
+    expect(screen.getByText("Very close to a posting you've already added.")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Open" }));
     expect(onOpen).toHaveBeenCalledExactlyOnceWith("p7");
-    await userEvent.click(screen.getByRole("button", { name: "Ce sont deux offres distinctes" }));
+    await userEvent.click(screen.getByRole("button", { name: "These are two different postings" }));
     expect(onDistinct).toHaveBeenCalledExactlyOnceWith("p7");
   });
 
   it("only mentions a possible duplicate", () => {
     setup([make("possible")]);
-    expect(screen.getByText("Cette offre ressemble à une offre déjà ajoutée.")).toBeInTheDocument();
+    expect(
+      screen.getByText("This posting looks like one you've already added."),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
   it("describes each button with the offer it concerns", () => {
     setup([make("probable", "p1"), { ...make("probable", "p2"), title: "Autre poste" }]);
-    const [first, second] = screen.getAllByRole("button", { name: "Ouvrir" });
+    const [first, second] = screen.getAllByRole("button", { name: "Open" });
     expect(first).toHaveAccessibleDescription(/Développeuse front/);
     expect(second).toHaveAccessibleDescription(/Autre poste/);
   });

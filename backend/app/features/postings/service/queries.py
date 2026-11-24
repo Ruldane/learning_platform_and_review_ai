@@ -33,15 +33,13 @@ logger = logging.getLogger(__name__)
 
 
 def review_in_progress() -> AppError:
-    return AppError(
-        "review_in_progress", "Une revue de CV de cette offre est en cours : attends sa fin.", 409
-    )
+    return AppError("review_in_progress", "Wait for this posting's CV review to finish.", 409)
 
 
 def posting_has_application(application_id: str) -> AppError:
     return AppError(
         "posting_has_application",
-        "Une candidature cite cette offre : elle ne peut pas être supprimée.",
+        "This posting is linked to an application and cannot be deleted.",
         409,
         {"application_id": application_id},
     )
@@ -50,7 +48,7 @@ def posting_has_application(application_id: str) -> AppError:
 def posting_has_running_work(kind: str) -> AppError:
     return AppError(
         "posting_has_running_work",
-        "Un comité ou un entretien en cours cite cette offre : attends sa fin.",
+        "Wait for the active committee or interview about this posting to finish.",
         409,
         {"kind": kind},
     )
@@ -59,7 +57,7 @@ def posting_has_running_work(kind: str) -> AppError:
 def analysis_in_progress() -> AppError:
     return AppError(
         "analysis_in_progress",
-        "Une analyse de cette offre est en cours : réessaie dans un instant.",
+        "This posting is being analyzed. Try again in a moment.",
         409,
     )
 

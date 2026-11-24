@@ -18,17 +18,19 @@ logger = logging.getLogger(__name__)
 
 
 def gap_skill_unknown(fields: list[str], *, allow_out_of_scope: bool) -> AppError:
-    lines = "« à ajouter » ou « hors périmètre »" if allow_out_of_scope else "« à ajouter »"
+    sections = '"To add" or "Out of scope"' if allow_out_of_scope else '"To add"'
     return AppError(
         "gap_skill_unknown",
-        f"Compétence absente des lignes {lines} de l'écart de cette offre.",
+        f"Select a skill listed under {sections} in this posting's gap analysis.",
         422,
         {"fields": fields},
     )
 
 
 def no_program() -> AppError:
-    return AppError("no_program", "Aucun programme validé : crée d'abord ton programme.", 409)
+    return AppError(
+        "no_program", "Create and approve a program before adding skills to your schedule.", 409
+    )
 
 
 def chosen_skills(

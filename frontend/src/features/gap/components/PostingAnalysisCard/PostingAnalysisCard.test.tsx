@@ -21,21 +21,21 @@ const analysis: PostingAnalysisView = {
 describe("PostingAnalysisCard", () => {
   it("shows what the analysis understood", () => {
     render(<PostingAnalysisCard analysis={analysis} />);
-    const card = screen.getByRole("region", { name: "Analyse de l'offre" });
+    const card = screen.getByRole("region", { name: "Posting analysis" });
     expect(within(card).getByRole("heading", { name: "Développeuse front" })).toBeInTheDocument();
     for (const text of [
-      "Entreprise : Société Fictive",
-      "Niveau : Confirmé",
-      "Lieu : Lyon",
-      "Télétravail : 2 jours par semaine",
+      "Company: Société Fictive",
+      "Level: Mid-level",
+      "Location: Lyon",
+      "Remote work: 2 jours par semaine",
       "Permis B",
       "TypeScript",
       "Git",
     ]) {
       expect(within(card).getByText(text)).toBeInTheDocument();
     }
-    expect(within(card).getByText("Exigée")).toBeInTheDocument();
-    expect(within(card).getByText("Souhaitée")).toBeInTheDocument();
+    expect(within(card).getByText("Required")).toBeInTheDocument();
+    expect(within(card).getByText("Preferred")).toBeInTheDocument();
   });
 
   it("skips what is unknown", () => {
@@ -54,16 +54,16 @@ describe("PostingAnalysisCard", () => {
         }}
       />,
     );
-    expect(screen.getByText("Niveau : Niveau non précisé")).toBeInTheDocument();
-    expect(screen.queryByText(/Entreprise/)).not.toBeInTheDocument();
-    expect(screen.queryByText("Critères éliminatoires")).not.toBeInTheDocument();
-    expect(screen.getByText("Aucune exigence relevée.")).toBeInTheDocument();
+    expect(screen.getByText("Level: Level not specified")).toBeInTheDocument();
+    expect(screen.queryByText(/Company/)).not.toBeInTheDocument();
+    expect(screen.queryByText("Deal-breakers")).not.toBeInTheDocument();
+    expect(screen.getByText("No requirements found.")).toBeInTheDocument();
   });
 
   it("leaves the title out when the page already shows it", () => {
     render(<PostingAnalysisCard analysis={analysis} showTitle={false} />);
     expect(screen.queryByRole("heading", { name: "Développeuse front" })).toBeNull();
-    expect(screen.getByText("Entreprise : Société Fictive")).toBeInTheDocument();
+    expect(screen.getByText("Company: Société Fictive")).toBeInTheDocument();
   });
 
   it("renders the offer text as plain text, never as markup", () => {

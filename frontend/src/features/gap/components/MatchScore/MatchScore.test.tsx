@@ -6,8 +6,8 @@ describe("MatchScore", () => {
   it("shows the score, a gauge and its name", () => {
     render(<MatchScore score={62} />);
     expect(screen.getByText("62/100")).toBeInTheDocument();
-    expect(screen.getByText("Score de match")).toBeInTheDocument();
-    const gauge = screen.getByRole("meter", { name: "Score de match : 62 sur 100" });
+    expect(screen.getByText("Match score")).toBeInTheDocument();
+    const gauge = screen.getByRole("meter", { name: "Match score: 62 out of 100" });
     expect(gauge).toHaveAttribute("aria-valuenow", "62");
     expect(gauge).toHaveAttribute("aria-valuemin", "0");
     expect(gauge).toHaveAttribute("aria-valuemax", "100");
@@ -15,7 +15,7 @@ describe("MatchScore", () => {
 
   it("promises nothing", () => {
     render(<MatchScore score={95} />);
-    expect(screen.getByText(/il ne prédit pas la réponse d'un recruteur/)).toBeInTheDocument();
+    expect(screen.getByText(/doesn't predict a recruiter's answer/)).toBeInTheDocument();
   });
 
   it("keeps the score between 0 and 100", () => {

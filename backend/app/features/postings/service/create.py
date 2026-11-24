@@ -44,7 +44,7 @@ _URL_ERRORS = ("invalid_url", "url_forbidden")
 def posting_source() -> AppError:
     return AppError(
         "posting_source",
-        "Donne soit le lien de l'offre, soit son texte.",
+        "Provide either the posting link or its text.",
         422,
         {"fields": ["url", "text"]},
     )
@@ -53,7 +53,7 @@ def posting_source() -> AppError:
 def posting_unreadable() -> AppError:
     return AppError(
         "posting_unreadable",
-        "Impossible de lire cette offre depuis le lien. Colle son texte.",
+        "This posting could not be read from its link. Paste the posting text instead.",
         422,
         {"fields": ["url"]},
     )
@@ -62,7 +62,7 @@ def posting_unreadable() -> AppError:
 def posting_too_short() -> AppError:
     return AppError(
         "posting_too_short",
-        "Ce texte est trop court pour une offre : colle l'offre complète.",
+        "Posting text is too short. Paste the full posting.",
         422,
         {"fields": ["text"]},
     )
@@ -106,7 +106,7 @@ def source_of(body: PostingIn) -> Source:
                 raise _url_error(exc) from None
             raise
         if len(url) > URL_MAX or len(key) > URL_MAX:
-            raise AppError("invalid_url", "Lien trop long.", 422, {"fields": ["url"]})
+            raise AppError("invalid_url", "The posting link is too long.", 422, {"fields": ["url"]})
         if route_fragment(body.url):  # l'offre est dans l'ancre : la racine du site n'est pas elle
             raise posting_unreadable()
         return Source(url, key, None)

@@ -53,22 +53,21 @@ from app.features.postings.service.runtime import PostingsRuntime
 logger = logging.getLogger(__name__)
 
 TITLE_MAX = 200
-MEMORY_REASON = "Offre écrite directement, sans agent : copie figée de son texte."
+MEMORY_REASON = "Saved the text of a posting entered directly."
 
 
 def posting_analysis_invalid(fields: list[str]) -> AppError:
     """422 : les champs de l'analyse à corriger, jamais leur valeur."""
     return AppError(
         "posting_analysis_invalid",
-        "L'analyse ne tient pas : un mot clé absent du texte de l'offre, ou une exigence "
-        "obligatoire dont la compétence n'est pas dans `skills`.",
+        "A keyword does not appear in the posting, or a required skill is missing from `skills`.",
         422,
         {"fields": fields},
     )
 
 
 def _invalid_url() -> AppError:
-    return AppError("invalid_url", "Lien invalide.", 422, {"fields": ["url"]})
+    return AppError("invalid_url", "Invalid posting link.", 422, {"fields": ["url"]})
 
 
 def _analysis(data: dict[str, object], text: str) -> PostingAnalysis:
@@ -79,7 +78,7 @@ def _analysis(data: dict[str, object], text: str) -> PostingAnalysis:
         fields = sorted({str(error["loc"][0]) for error in exc.errors() if error["loc"]})
         raise AppError(
             "validation_error",
-            "Requête invalide : vérifie les champs signalés.",
+            "Invalid request. Check the highlighted fields.",
             422,
             {"fields": fields or ["body"]},
         ) from None

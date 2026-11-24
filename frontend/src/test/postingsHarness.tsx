@@ -20,13 +20,13 @@ export function renderPosting(
   const view = renderRoutes(
     [
       { path: "/carriere/offres/:postingId", element: makePage(sockets.factory) },
-      { path: "/carriere/offres", element: <p>Liste des offres</p> },
-      { path: "/candidatures/:applicationId", element: <p>Fiche de candidature</p> },
+      { path: "/carriere/offres", element: <p>Postings list</p> },
+      { path: "/candidatures/:applicationId", element: <p>Application details</p> },
       {
         path: "/apprendre/programme/:programId/replanification",
-        element: <p>Replanification</p>,
+        element: <p>Replan</p>,
       },
-      { path: "/apprendre/objectifs", element: <p>Objectifs</p> },
+      { path: "/apprendre/objectifs", element: <p>Goals</p> },
     ],
     "/carriere/offres/p1",
   );

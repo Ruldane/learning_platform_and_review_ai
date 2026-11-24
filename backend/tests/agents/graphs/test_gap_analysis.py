@@ -30,7 +30,7 @@ from tests.support.gap import (
 START = '<<<CONTENU_NON_FIABLE source="offre">>>'
 CITED = '<<<CONTENU_NON_FIABLE source="offre:citations">>>'
 END = "<<<FIN_CONTENU_NON_FIABLE>>>"
-SCORE_TEXT = "Score de match : 62/100. 4 compétences manquent, dont 2 obligatoires."
+SCORE_TEXT = "Match score: 62/100. 4 skills are missing, including 2 required."
 DUPLICATE = DuplicateHit("probable", "p-3", "AI Engineer", None, "2026-11-03T08:00:00+00:00", None)
 
 
@@ -76,7 +76,7 @@ async def test_duplicate_is_announced(gap_runner: MakeGap, gap_store: FakeGapSto
     ]
     run = await gap_runner()
     await run.wait_status("completed")
-    assert await run.said() == [SCORE_TEXT, "Offre proche d'une offre déjà ajoutée le 03/11."]
+    assert await run.said() == [SCORE_TEXT, "Similar to a posting you added on 03/11."]
 
 
 async def test_replay_of_save_analysis_still_announces_duplicate(
@@ -94,7 +94,7 @@ async def test_replay_of_save_analysis_still_announces_duplicate(
     assert await second.runner.recover_on_startup() == [first.sid]
     await second.wait_status("completed")
     assert gap_store.save_analysis_calls == 2
-    assert (await second.said())[-1] == "Offre proche d'une offre déjà ajoutée le 03/11."
+    assert (await second.said())[-1] == "Similar to a posting you added on 03/11."
 
 
 async def test_existing_analysis_is_reused_without_model_call(

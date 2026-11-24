@@ -104,7 +104,7 @@ async def _ask_analysis(deps: GraphDeps, text: str) -> tuple[PostingAnalysis, li
             messages,
             agent=AGENT,
             step=f"analyse-{ask}",
-            intent="j'analyse l'offre" if ask == 1 else "je corrige l'analyse de l'offre",
+            intent="I am analyzing the posting" if ask == 1 else "I am revising the analysis",
         )
         best = better_answer(best, found, analysis_problems(found, text))
         if not best[1]:
@@ -202,7 +202,7 @@ async def _ask_matches(
         [SystemMessage(prompt), HumanMessage(MATCH_REQUEST)],
         agent=AGENT,
         step="rattachement",
-        intent="je rattache les compétences de l'offre aux tiennes",
+        intent="I am matching the posting requirements to your skills",
     )
 
 

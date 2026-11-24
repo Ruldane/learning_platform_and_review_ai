@@ -18,7 +18,7 @@ describe("PostingList", () => {
         <PostingList postings={postings} hrefOf={(id) => `/carriere/offres/${id}`} />
       </MemoryRouter>,
     );
-    const items = within(screen.getByRole("list", { name: "Offres ajoutées" })).getAllByRole(
+    const items = within(screen.getByRole("list", { name: "Added postings" })).getAllByRole(
       "listitem",
     );
     expect(items).toHaveLength(4);
@@ -27,10 +27,10 @@ describe("PostingList", () => {
       "/carriere/offres/p1",
     );
     expect(within(items[0]!).getByText("Société Fictive")).toBeInTheDocument();
-    expect(within(items[0]!).getByText("Match : 62/100")).toBeInTheDocument();
-    expect(within(items[1]!).getByText("Analyse en cours…")).toBeInTheDocument();
-    expect(within(items[1]!).getByRole("link", { name: "Offre sans titre" })).toBeInTheDocument();
-    expect(within(items[2]!).getByText("Refusée : ce n'est pas une offre")).toBeInTheDocument();
-    expect(within(items[3]!).getByText("Analyse interrompue")).toBeInTheDocument();
+    expect(within(items[0]!).getByText("Match: 62/100")).toBeInTheDocument();
+    expect(within(items[1]!).getByText("Analyzing…")).toBeInTheDocument();
+    expect(within(items[1]!).getByRole("link", { name: "Untitled posting" })).toBeInTheDocument();
+    expect(within(items[2]!).getByText("Rejected: this isn't a job posting")).toBeInTheDocument();
+    expect(within(items[3]!).getByText("Analysis interrupted")).toBeInTheDocument();
   });
 });
