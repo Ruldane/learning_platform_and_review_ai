@@ -26,7 +26,9 @@ from app.features.applications.schemas_kit import KitItemOut, KitKind, KitSource
 
 CHECKED: frozenset[str] = frozenset({"letter", "linkedin", "followups", "form_answers", "pitch"})
 _QUESTION = re.compile(r"^### +(.*)$")
-_BLANKS = frozenset({SALARY_BLANK, TO_COMPLETE})
+_SALARY_BLANKS = frozenset({SALARY_BLANK, "À remplir par toi"})
+_BLANKS = _SALARY_BLANKS | {TO_COMPLETE, "À compléter"}
+_NO_QUESTIONS = frozenset({NO_QUESTION, "Aucune question éliminatoire repérée dans l'offre."})
 
 
 def pending_item(kind: KitKind) -> KitItemOut:
@@ -57,7 +59,7 @@ def form_items(content: str) -> list[tuple[str, str]]:
             items[-1][1].append(line)
     if not items:
         text = content.strip()
-        return [("", text)] if text and text != NO_QUESTION else []
+        return [("", text)] if text and text not in _NO_QUESTIONS else []
     return [(question, "\n".join(lines).strip()) for question, lines in items]
 
 
@@ -67,7 +69,7 @@ def form_bodies(content: str) -> list[str]:
 
 def salary_fields(content: str) -> int:
     """Les réponses laissées à January parce qu'elles engagent sa prétention salariale."""
-    return sum(1 for body in form_bodies(content) if body == SALARY_BLANK)
+    return sum(1 for body in form_bodies(content) if body in _SALARY_BLANKS)
 
 
 def words_of(kind: str, content: str) -> int | dict[str, int] | None:

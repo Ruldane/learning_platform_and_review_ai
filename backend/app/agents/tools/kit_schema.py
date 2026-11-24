@@ -63,9 +63,9 @@ KIT_TITLES: dict[KitKind, str] = {
     "pitch": "Elevator pitch",
 }
 SEPARATOR = "---"
-SALARY_BLANK = "À remplir par toi"
-TO_COMPLETE = "À compléter"
-NO_QUESTION = "Aucune question éliminatoire repérée dans l'offre."
+SALARY_BLANK = "For you to fill in"
+TO_COMPLETE = "To complete"
+NO_QUESTION = "No screening questions were found in the posting."
 
 
 def is_separator(line: str) -> bool:

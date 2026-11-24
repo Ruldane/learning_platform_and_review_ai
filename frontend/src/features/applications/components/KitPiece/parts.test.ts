@@ -11,15 +11,15 @@ describe("splitParts", () => {
   it("cuts the follow-ups at the --- line, 7 days first then 14 days", () => {
     const parts = splitParts("followups", "Relance 7\n\n---\n\nRelance 14");
     expect(parts.map((part) => [part.label, part.text])).toEqual([
-      ["Relance à 7 jours", "Relance 7"],
-      ["Relance à 14 jours", "Relance 14"],
+      ["Follow-up after 7 days", "Relance 7"],
+      ["Follow-up after 14 days", "Relance 14"],
     ]);
   });
 
   it("always offers both parts of a two-part piece, even when it is empty", () => {
     expect(splitParts("linkedin", "").map((part) => [part.label, part.text])).toEqual([
-      ["Invitation de connexion", ""],
-      ["Message après connexion", ""],
+      ["Connection request", ""],
+      ["Message after connecting", ""],
     ]);
     expect(splitParts("followups", "Seulement la première")).toHaveLength(2);
   });
@@ -54,8 +54,11 @@ describe("joinParts", () => {
   it("gives back what splitParts read", () => {
     const followups = "Relance 7\n\n---\n\nRelance 14";
     expect(joinParts("followups", splitParts("followups", followups))).toBe(followups);
-    const form = "### Pourquoi nous ?\nParce que.\n\n### Prétentions ?\nÀ remplir par toi";
-    expect(joinParts("form_answers", splitParts("form_answers", form))).toBe(form);
+    for (const blank of ["For you to fill in", "À remplir par toi"]) {
+      const form = `### Pourquoi nous ?\nParce que.\n\n### Prétentions ?\n${blank}`;
+      expect(splitParts("form_answers", form)[1]?.blank).toBe("salary");
+      expect(joinParts("form_answers", splitParts("form_answers", form))).toBe(form);
+    }
   });
 
   it("puts a blank marker back for an empty form answer, and nothing for an empty piece", () => {
@@ -65,7 +68,7 @@ describe("joinParts", () => {
     );
     const emptied = parts.map((part) => (part.key === "q1" ? { ...part, text: "" } : part));
     expect(joinParts("form_answers", emptied)).toBe(
-      "### Prétentions ?\nÀ remplir par toi\n\n### Autre ?\nÀ compléter",
+      "### Prétentions ?\nÀ remplir par toi\n\n### Autre ?\nTo complete",
     );
     expect(joinParts("followups", splitParts("followups", ""))).toBe("");
     expect(joinParts("letter", [{ key: "text", label: null, text: "", blank: null }])).toBe("");

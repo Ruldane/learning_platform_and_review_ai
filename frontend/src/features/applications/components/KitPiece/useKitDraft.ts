@@ -1,9 +1,6 @@
 import { useMemo, useState } from "react";
 import type { KitKindView } from "../viewTypes";
-import { joinParts, splitParts, type Part } from "./parts";
-
-/** Ce que le serveur accepte d'une pièce (`KitPatch.content`). */
-export const MAX_CONTENT = 20_000;
+import { joinParts, MAX_CONTENT, splitParts, type Part } from "./parts";
 
 interface Edit {
   /** Le texte du serveur au moment où January a commencé à modifier. */

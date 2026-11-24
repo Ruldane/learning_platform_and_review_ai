@@ -88,7 +88,7 @@ def test_form_answers_are_fixed_by_the_code() -> None:
     ]
     assert fixed.parts() == {"answer_1": "", "answer_2": "Oui.", "answer_3": "", "answer_4": ""}
     rendered = fixed.render()
-    assert "À remplir par toi" in rendered and rendered.count("À compléter") == 2
+    assert "For you to fill in" in rendered and rendered.count("To complete") == 2
 
 
 def test_english_salary_question_is_emptied_too() -> None:
