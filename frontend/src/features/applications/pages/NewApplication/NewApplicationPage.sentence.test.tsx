@@ -34,38 +34,38 @@ const field = (id: string, label: string, value: string, required = false) => ({
 });
 
 const CONFIRM_FIELDS = [
-  field("company", "Entreprise", "Acme", true),
-  field("title", "Poste", "Data engineer", true),
-  field("status", "Statut", "applied", true),
-  field("applied_on", "Date de candidature (AAAA-MM-JJ)", ""),
-  field("channel", "Canal", "linkedin"),
+  field("company", "Company", "Acme", true),
+  field("title", "Role", "Data engineer", true),
+  field("status", "Status", "applied", true),
+  field("applied_on", "Application date (YYYY-MM-DD)", ""),
+  field("channel", "Channel", "linkedin"),
   field("contact_name", "Contact", ""),
-  field("contact_role", "Rôle du contact", ""),
+  field("contact_role", "Contact role", ""),
   field("notes", "Notes", ""),
 ];
 
-/** La carte de confirmation de l'Assistant de suivi (la page a aussi le formulaire à la main). */
-const confirmation = () => screen.findByRole("region", { name: /Je crée cette fiche/ });
+/** Find the Tracking assistant's confirmation alongside the manual entry form. */
+const confirmation = () => screen.findByRole("region", { name: /Create this application/ });
 
-describe("NewApplicationPage, en une phrase", () => {
+describe("NewApplicationPage, one-sentence entry", () => {
   beforeEach(() => useSessionStore.getState().reset("i1"));
 
   async function askConfirmation(over: Record<string, unknown> = {}) {
     const view = setup();
     await view.user.type(
-      screen.getByLabelText("Ta phrase"),
+      screen.getByLabelText("Your sentence"),
       "J'ai postulé hier chez Acme pour un poste de data engineer",
     );
-    await view.user.click(screen.getByRole("button", { name: "Préparer la fiche" }));
+    await view.user.click(screen.getByRole("button", { name: "Prepare the application" }));
     const stream = await openStream(view.sockets, "i1");
     const e = councilEvents("i1");
     stream.push(
-      e.message("m1", "J'ai lu : Acme, Data engineer.", "tracker"),
+      e.message("m1", "I found a data engineer application at Acme.", "tracker"),
       e.interrupt("application_confirm", "q1", {
-        question: "Je crée cette fiche ?",
+        question: "Create this application ?",
         options: [
-          { value: "create", label: "Créer la fiche" },
-          { value: "cancel", label: "Annuler" },
+          { value: "create", label: "Create application" },
+          { value: "cancel", label: "Cancel" },
         ],
         fields: CONFIRM_FIELDS,
         ...over,
@@ -80,10 +80,10 @@ describe("NewApplicationPage, en une phrase", () => {
       { text: "J'ai postulé hier chez Acme pour un poste de data engineer" },
     ]);
     const card = within(await confirmation());
-    expect(card.getByLabelText("Entreprise")).toHaveValue("Acme");
-    expect(card.getByLabelText("Statut")).toHaveDisplayValue("Postulée");
-    expect(card.getByLabelText("Date de candidature (AAAA-MM-JJ)")).toHaveAccessibleDescription(
-      "Sans date, la fiche prend la date d'aujourd'hui.",
+    expect(card.getByLabelText("Company")).toHaveValue("Acme");
+    expect(card.getByLabelText("Status")).toHaveDisplayValue("Applied");
+    expect(card.getByLabelText("Application date (YYYY-MM-DD)")).toHaveAccessibleDescription(
+      "Without a date, the application uses today's date.",
     );
   });
 
@@ -91,10 +91,10 @@ describe("NewApplicationPage, en une phrase", () => {
     const resumes = recordPosts("/sessions/i1/resume", 200, sessionOut("i1", "running"));
     const { user, stream, e, router } = await askConfirmation();
     const card = within(await confirmation());
-    const company = card.getByLabelText("Entreprise");
+    const company = card.getByLabelText("Company");
     await user.clear(company);
     await user.type(company, "Acme Corp");
-    await user.click(card.getByRole("button", { name: "Créer la fiche" }));
+    await user.click(card.getByRole("button", { name: "Create application" }));
     await waitFor(() => expect(resumes).toHaveLength(1));
     expect(resumes[0]).toEqual({
       interrupt_id: "q1",
@@ -107,20 +107,20 @@ describe("NewApplicationPage, en une phrase", () => {
     await waitFor(() => expect(router.state.location.pathname).toBe("/candidatures/a1"));
   });
 
-  it("offers « autre poste », « Ouvrir » and « Annuler » when the assistant found a duplicate, never « Créer »", async () => {
+  it("offers to open the existing application or confirm a different role", async () => {
     const resumes = recordPosts("/sessions/i1/resume", 200, sessionOut("i1", "running"));
     const { user } = await askConfirmation({
-      question: "Je crée cette fiche ? Attention, tu as déjà une fiche chez Acme.",
+      question: "Create this application ? You already have an application at Acme.",
       options: [
-        { value: "distinct", label: "C'est un autre poste" },
-        { value: "open", label: "Ouvrir la fiche existante" },
-        { value: "cancel", label: "Annuler" },
+        { value: "distinct", label: "It's a different role" },
+        { value: "open", label: "Open the existing application" },
+        { value: "cancel", label: "Cancel" },
       ],
     });
     const card = within(await confirmation());
-    expect(card.getByRole("button", { name: "C'est un autre poste" })).toBeVisible();
-    expect(card.queryByRole("button", { name: "Créer la fiche" })).toBeNull();
-    await user.click(card.getByRole("button", { name: "Ouvrir la fiche existante" }));
+    expect(card.getByRole("button", { name: "It's a different role" })).toBeVisible();
+    expect(card.queryByRole("button", { name: "Create application" })).toBeNull();
+    await user.click(card.getByRole("button", { name: "Open the existing application" }));
     await waitFor(() => expect(resumes).toEqual([{ interrupt_id: "q1", value: "open" }]));
   });
 
@@ -128,44 +128,44 @@ describe("NewApplicationPage, en une phrase", () => {
     recordPosts("/sessions/i1/resume", 200, sessionOut("i1", "running"));
     const { user, stream, e } = await askConfirmation();
     const first = within(await confirmation());
-    await user.clear(first.getByLabelText("Entreprise"));
-    await user.type(first.getByLabelText("Entreprise"), "Acme Corp");
-    await user.type(first.getByLabelText("Date de candidature (AAAA-MM-JJ)"), "2099-01-01");
-    await user.click(first.getByRole("button", { name: "Créer la fiche" }));
-    // Le serveur refuse la date : même question, brouillon d'origine, nouvel identifiant.
+    await user.clear(first.getByLabelText("Company"));
+    await user.type(first.getByLabelText("Company"), "Acme Corp");
+    await user.type(first.getByLabelText("Application date (YYYY-MM-DD)"), "2099-01-01");
+    await user.click(first.getByRole("button", { name: "Create application" }));
+    // The server rejects the date and returns the original draft with a new interrupt ID.
     stream.push(
       e.interrupt("application_confirm", "q2", {
-        question: "Je crée cette fiche ?",
+        question: "Create this application ?",
         options: [
-          { value: "create", label: "Créer la fiche" },
-          { value: "cancel", label: "Annuler" },
+          { value: "create", label: "Create application" },
+          { value: "cancel", label: "Cancel" },
         ],
         fields: CONFIRM_FIELDS,
       }),
     );
-    expect(await screen.findByText(/La date ne peut pas être dans le futur/)).toBeVisible();
+    expect(await screen.findByText(/The date can't be in the future/)).toBeVisible();
     const again = within(
-      (await screen.findAllByRole("region", { name: /Je crée cette fiche/ })).at(-1)!,
+      (await screen.findAllByRole("region", { name: /Create this application/ })).at(-1)!,
     );
-    expect(again.getByLabelText("Entreprise")).toHaveValue("Acme Corp");
-    expect(again.getByLabelText("Date de candidature (AAAA-MM-JJ)")).toHaveValue("2099-01-01");
-    expect(again.getByRole("button", { name: "Créer la fiche" })).toBeEnabled();
+    expect(again.getByLabelText("Company")).toHaveValue("Acme Corp");
+    expect(again.getByLabelText("Application date (YYYY-MM-DD)")).toHaveValue("2099-01-01");
+    expect(again.getByRole("button", { name: "Create application" })).toBeEnabled();
   });
 
-  it("opens the existing fiche the session announces after « Ouvrir »", async () => {
+  it("opens the existing application announced by the session", async () => {
     const { stream, e, router } = await askConfirmation();
     stream.push(e.artifactReady("application", "a9", "/candidatures/a9"));
     await waitFor(() => expect(router.state.location.pathname).toBe("/candidatures/a9"));
   });
 
-  it("lets January fix her sentence once the session is over without a fiche", async () => {
+  it("lets January edit her sentence after the session ends without a record", async () => {
     const { user, stream, e } = await askConfirmation();
-    stream.push(e.failed("Je n'ai pas trouvé l'entreprise ou le poste dans ta phrase."));
+    stream.push(e.failed("Your sentence is missing the company or the role."));
     expect(
-      await screen.findByText("Je n'ai pas trouvé l'entreprise ou le poste dans ta phrase."),
+      await screen.findByText("Your sentence is missing the company or the role."),
     ).toBeVisible();
-    await user.click(await screen.findByRole("button", { name: "Écrire une autre phrase" }));
-    expect(screen.getByLabelText("Ta phrase")).toHaveValue(
+    await user.click(await screen.findByRole("button", { name: "Write another sentence" }));
+    expect(screen.getByLabelText("Your sentence")).toHaveValue(
       "J'ai postulé hier chez Acme pour un poste de data engineer",
     );
   });
@@ -177,18 +177,18 @@ describe("NewApplicationPage, en une phrase", () => {
         if (!first) return HttpResponse.json({ session_id: "i2" }, { status: 202 });
         first = false;
         return HttpResponse.json(
-          apiError("intake_in_progress", "Une saisie est déjà ouverte.", { session_id: "s9" }),
+          apiError("intake_in_progress", "An entry is already open.", { session_id: "s9" }),
           { status: 409 },
         );
       },
     });
-    await user.type(screen.getByLabelText("Ta phrase"), "Une phrase");
-    await user.click(screen.getByRole("button", { name: "Préparer la fiche" }));
-    expect(await screen.findByText(/Une saisie en une phrase est déjà ouverte/)).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "Annuler cette saisie" }));
+    await user.type(screen.getByLabelText("Your sentence"), "Une phrase");
+    await user.click(screen.getByRole("button", { name: "Prepare the application" }));
+    expect(await screen.findByText(/A one-sentence entry is already open/)).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Cancel this entry" }));
     await waitFor(() => expect(state.cancels).toEqual(["s9"]));
-    await waitFor(() => expect(screen.queryByText(/déjà ouverte/)).toBeNull());
-    await user.click(screen.getByRole("button", { name: "Préparer la fiche" }));
+    await waitFor(() => expect(screen.queryByText(/already open/)).toBeNull());
+    await user.click(screen.getByRole("button", { name: "Prepare the application" }));
     await waitFor(() => expect(state.intakes).toHaveLength(2));
   });
 
@@ -196,19 +196,19 @@ describe("NewApplicationPage, en une phrase", () => {
     const { user, sockets } = setup({
       intake: () =>
         HttpResponse.json(
-          apiError("intake_in_progress", "Une saisie est déjà ouverte.", { session_id: "s9" }),
+          apiError("intake_in_progress", "An entry is already open.", { session_id: "s9" }),
           { status: 409 },
         ),
     });
-    await user.type(screen.getByLabelText("Ta phrase"), "Une phrase");
-    await user.click(screen.getByRole("button", { name: "Préparer la fiche" }));
-    await user.click(await screen.findByRole("button", { name: "Reprendre cette saisie" }));
+    await user.type(screen.getByLabelText("Your sentence"), "Une phrase");
+    await user.click(screen.getByRole("button", { name: "Prepare the application" }));
+    await user.click(await screen.findByRole("button", { name: "Resume this entry" }));
     await openStream(sockets, "s9");
   });
 
   it("does not send an empty sentence", async () => {
     const { state } = setup();
-    expect(screen.getByRole("button", { name: "Préparer la fiche" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Prepare the application" })).toBeDisabled();
     expect(state.intakes).toHaveLength(0);
   });
 });

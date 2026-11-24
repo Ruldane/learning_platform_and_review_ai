@@ -1,20 +1,14 @@
-"""La confirmation de la fiche (SPEC 6.3, 9.4, D141) : « Je crée cette fiche ? ».
+"""Confirm the drafted application (SPEC 6.3, 9.4, D141).
 
-`ask_confirm` ne fait qu'`interrupt()` puis relit la réponse (pur) : aucune écriture, aucun appel
-payant ni lecture de port avant l'arrêt, le nœud est rejoué depuis son début à la reprise. La
-question ne dépend que de l'état (le brouillon et les alertes lus avant) : rejouée, elle est la
-même.
+`ask_confirm` interrupts and validates the reply. Replay reconstructs the same question from the
+draft and the strongest duplicate alert in state. The node performs no writes or provider calls.
 
-Question (`kind = "application_confirm"`) : `question` « Je crée cette fiche ? » suivie du message
-de l'alerte la plus forte s'il y en a une ; `fields` pré remplis (`value`) : `company`, `title`,
-`status`, `applied_on` (AAAA-MM-JJ), `channel`, `contact_name`, `contact_role`, `notes` ;
-`options` : sans alerte `create` et `cancel` ; avec une alerte `distinct` (« C'est un autre
-poste »), `open` (« Ouvrir la fiche existante », la plus forte) et `cancel` (comme la route, une
-fiche qui ressemble ne se crée jamais sans « autre poste »).
+The form includes the draft's fields and offers `create` and `cancel` when there are no alerts.
+With an alert, the choices are `distinct`, `open`, and `cancel`.
 
-Réponse : `{"choice": <option>, "fields": {id: texte}}` (`fields` facultatif : le brouillon sert) ou
-l'option seule (`"cancel"`). Une réponse invalide (option absente de la question, champ rejeté,
-date dans le futur) repose la même question sans rien écrire."""
+The reply can be a choice or an object with `choice` and optional `fields`. An invalid choice,
+field, or future application date causes the graph to ask the same question again.
+"""
 
 from typing import Any
 
@@ -31,23 +25,23 @@ from app.agents.tools.applications_port import (
 )
 
 KIND = "application_confirm"
-QUESTION = "Je crée cette fiche ?"
+QUESTION = "Create this application?"
 CREATE, DISTINCT, OPEN, CANCEL = "create", "distinct", "open", "cancel"
 LABELS = {
-    CREATE: "Créer la fiche",
-    DISTINCT: "C'est un autre poste",
-    OPEN: "Ouvrir la fiche existante",
-    CANCEL: "Annuler",
+    CREATE: "Create application",
+    DISTINCT: "It's a different role",
+    OPEN: "Open the existing application",
+    CANCEL: "Cancel",
 }
-# (identifiant, libellé, obligatoire, longueur maximale) : l'ordre du formulaire.
+# Field ID, display label, required flag, and maximum length in form order.
 FIELDS: list[tuple[str, str, bool, int]] = [
-    ("company", "Entreprise", True, COMPANY_MAX),
-    ("title", "Poste", True, TITLE_MAX),
-    ("status", "Statut", True, 16),
-    ("applied_on", "Date de candidature (AAAA-MM-JJ)", False, 10),
-    ("channel", "Canal", False, 16),
+    ("company", "Company", True, COMPANY_MAX),
+    ("title", "Role", True, TITLE_MAX),
+    ("status", "Status", True, 16),
+    ("applied_on", "Application date (YYYY-MM-DD)", False, 10),
+    ("channel", "Channel", False, 16),
     ("contact_name", "Contact", False, CONTACT_MAX),
-    ("contact_role", "Rôle du contact", False, CONTACT_MAX),
+    ("contact_role", "Contact role", False, CONTACT_MAX),
     ("notes", "Notes", False, NOTES_MAX),
 ]
 FIELD_IDS = [name for name, *_ in FIELDS]

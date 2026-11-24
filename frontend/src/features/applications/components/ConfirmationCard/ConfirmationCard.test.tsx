@@ -13,20 +13,20 @@ const field = (id: string, label: string, value: string, required = false) => ({
 });
 
 const CONFIRMATION: ConfirmationView = {
-  question: "Je crée cette fiche ?",
+  question: "Create this application ?",
   fields: [
-    field("company", "Entreprise", "Acme", true),
-    field("title", "Poste", "Data engineer", true),
-    field("status", "Statut", "applied", true),
-    field("applied_on", "Date de candidature (AAAA-MM-JJ)", ""),
-    field("channel", "Canal", "linkedin"),
+    field("company", "Company", "Acme", true),
+    field("title", "Role", "Data engineer", true),
+    field("status", "Status", "applied", true),
+    field("applied_on", "Application date (YYYY-MM-DD)", ""),
+    field("channel", "Channel", "linkedin"),
     field("contact_name", "Contact", ""),
-    field("contact_role", "Rôle du contact", ""),
+    field("contact_role", "Contact role", ""),
     field("notes", "Notes", ""),
   ],
   options: [
-    { value: "create", label: "Créer la fiche" },
-    { value: "cancel", label: "Annuler" },
+    { value: "create", label: "Create application" },
+    { value: "cancel", label: "Cancel" },
   ],
 };
 
@@ -39,32 +39,32 @@ function setup(confirmation = CONFIRMATION, disabled = false) {
 describe("ConfirmationCard", () => {
   it("shows the question and the fields the assistant read, already filled", () => {
     setup();
-    expect(screen.getByText("Je crée cette fiche ?")).toBeInTheDocument();
-    expect(screen.getByLabelText("Entreprise")).toHaveValue("Acme");
-    expect(screen.getByLabelText("Poste")).toHaveValue("Data engineer");
+    expect(screen.getByText("Create this application ?")).toBeInTheDocument();
+    expect(screen.getByLabelText("Company")).toHaveValue("Acme");
+    expect(screen.getByLabelText("Role")).toHaveValue("Data engineer");
   });
 
-  it("shows the status and the channel in French, not as codes", () => {
+  it("shows readable status and channel labels", () => {
     setup();
-    expect(screen.getByLabelText("Statut")).toHaveDisplayValue("Postulée");
-    expect(screen.getByLabelText("Canal")).toHaveDisplayValue("LinkedIn");
+    expect(screen.getByLabelText("Status")).toHaveDisplayValue("Applied");
+    expect(screen.getByLabelText("Channel")).toHaveDisplayValue("LinkedIn");
   });
 
   it("says an empty date means today", () => {
     setup();
-    expect(screen.getByLabelText("Date de candidature (AAAA-MM-JJ)")).toHaveAccessibleDescription(
-      "Sans date, la fiche prend la date d'aujourd'hui.",
+    expect(screen.getByLabelText("Application date (YYYY-MM-DD)")).toHaveAccessibleDescription(
+      "Without a date, the application uses today's date.",
     );
   });
 
   it("sends the choice with the fields as January leaves them", async () => {
     const user = userEvent.setup();
     const onChoose = setup();
-    const company = screen.getByLabelText("Entreprise");
+    const company = screen.getByLabelText("Company");
     await user.clear(company);
     await user.type(company, "Acme Corp");
-    await user.selectOptions(screen.getByLabelText("Statut"), "interview");
-    await user.click(screen.getByRole("button", { name: "Créer la fiche" }));
+    await user.selectOptions(screen.getByLabelText("Status"), "interview");
+    await user.click(screen.getByRole("button", { name: "Create application" }));
     expect(onChoose).toHaveBeenCalledWith(
       "create",
       expect.objectContaining({
@@ -78,9 +78,9 @@ describe("ConfirmationCard", () => {
   it("refuses to create while a required field is empty, but never blocks cancel", async () => {
     const user = userEvent.setup();
     const onChoose = setup();
-    await user.clear(screen.getByLabelText("Poste"));
-    expect(screen.getByRole("button", { name: "Créer la fiche" })).toBeDisabled();
-    await user.click(screen.getByRole("button", { name: "Annuler" }));
+    await user.clear(screen.getByLabelText("Role"));
+    expect(screen.getByRole("button", { name: "Create application" })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
     expect(onChoose).toHaveBeenCalledWith("cancel", {});
   });
 
@@ -88,26 +88,26 @@ describe("ConfirmationCard", () => {
     setup({
       ...CONFIRMATION,
       options: [
-        { value: "distinct", label: "C'est un autre poste" },
-        { value: "open", label: "Ouvrir la fiche existante" },
-        { value: "cancel", label: "Annuler" },
+        { value: "distinct", label: "It's a different role" },
+        { value: "open", label: "Open the existing application" },
+        { value: "cancel", label: "Cancel" },
       ],
     });
-    expect(screen.queryByRole("button", { name: "Créer la fiche" })).toBeNull();
-    expect(screen.getByRole("button", { name: "C'est un autre poste" })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: "Create application" })).toBeNull();
+    expect(screen.getByRole("button", { name: "It's a different role" })).toBeEnabled();
   });
 
-  it("sends the fields with « C'est un autre poste » and none with « Ouvrir »", async () => {
+  it("sends edits for a different role and opens the existing application", async () => {
     const user = userEvent.setup();
     const onChoose = setup({
       ...CONFIRMATION,
       options: [
-        { value: "distinct", label: "C'est un autre poste" },
-        { value: "open", label: "Ouvrir la fiche existante" },
+        { value: "distinct", label: "It's a different role" },
+        { value: "open", label: "Open the existing application" },
       ],
     });
-    await user.click(screen.getByRole("button", { name: "Ouvrir la fiche existante" }));
-    await user.click(screen.getByRole("button", { name: "C'est un autre poste" }));
+    await user.click(screen.getByRole("button", { name: "Open the existing application" }));
+    await user.click(screen.getByRole("button", { name: "It's a different role" }));
     expect(onChoose).toHaveBeenNthCalledWith(1, "open", {});
     expect(onChoose).toHaveBeenNthCalledWith(
       2,
@@ -118,31 +118,33 @@ describe("ConfirmationCard", () => {
 
   it("disables everything when it is answered", () => {
     setup(CONFIRMATION, true);
-    expect(screen.getByLabelText("Entreprise")).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Annuler" })).toBeDisabled();
+    expect(screen.getByLabelText("Company")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
   });
 
   it("refuses a contact role without a contact name, and says why", async () => {
     const user = userEvent.setup();
     const onChoose = setup();
-    await user.type(screen.getByLabelText("Rôle du contact"), "Responsable data");
+    await user.type(screen.getByLabelText("Contact role"), "Responsable data");
     expect(screen.getByLabelText("Contact")).toBeInvalid();
-    expect(screen.getByText("Donne le nom du contact, sinon son rôle est perdu.")).toBeVisible();
-    expect(screen.getByRole("button", { name: "Créer la fiche" })).toBeDisabled();
+    expect(
+      screen.getByText("Give the contact's name, otherwise their role is lost."),
+    ).toBeVisible();
+    expect(screen.getByRole("button", { name: "Create application" })).toBeDisabled();
     await user.type(screen.getByLabelText("Contact"), "Camille");
-    expect(screen.getByRole("button", { name: "Créer la fiche" })).toBeEnabled();
-    await user.click(screen.getByRole("button", { name: "Créer la fiche" }));
+    expect(screen.getByRole("button", { name: "Create application" })).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: "Create application" }));
     expect(onChoose).toHaveBeenCalledTimes(1);
   });
 
   it("does not let a future date be picked", () => {
     setup();
-    const max = screen.getByLabelText("Date de candidature (AAAA-MM-JJ)").getAttribute("max");
+    const max = screen.getByLabelText("Application date (YYYY-MM-DD)").getAttribute("max");
     expect(max).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 
   it("shows why the question is asked again", () => {
-    setup({ ...CONFIRMATION, reason: "La date ne peut pas être dans le futur." });
-    expect(screen.getByRole("alert")).toHaveTextContent("La date ne peut pas être dans le futur.");
+    setup({ ...CONFIRMATION, reason: "The date can't be in the future." });
+    expect(screen.getByRole("alert")).toHaveTextContent("The date can't be in the future.");
   });
 });

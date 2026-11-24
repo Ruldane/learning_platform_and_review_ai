@@ -33,33 +33,18 @@ from app.agents.runtime.invoke import node_timeout
 from app.agents.runtime.structured import structured_call
 from app.agents.state.application_intake import ApplicationIntakeState
 from app.agents.tools.applications_port import COMPANY_MAX, TITLE_MAX, IntakeDraft
+from app.core.clock import WEEKDAYS, english_day
 from app.core.errors import AppError
 
 AGENT = "tracker"
-INTAKE_REQUEST = "Lis la phrase de January et rends la fiche de candidature qu'elle décrit."
-INCOMPLETE = "Je n'ai pas trouvé l'entreprise ou le poste dans ta phrase."
-UNREADABLE = (
-    "Je n'ai pas réussi à lire ta phrase : reformule-la avec l'entreprise, le poste et la date."
-)
-NOTHING_CREATED = "Rien n'a été créé."
+INTAKE_REQUEST = "Read January's sentence and return the application it describes."
+INCOMPLETE = "Your sentence is missing the company or the role."
+UNREADABLE = "Try again with the company, the role, and the date you applied."
+NOTHING_CREATED = "No application was created."
 PARSE_TIMEOUT_S = 300  # trois demandes au plus, chacune avec ses nouveaux essais (GLM)
 CALENDAR_DAYS = 14
-_WEEKDAYS = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
-_MONTHS = [
-    "janvier",
-    "février",
-    "mars",
-    "avril",
-    "mai",
-    "juin",
-    "juillet",
-    "août",
-    "septembre",
-    "octobre",
-    "novembre",
-    "décembre",
-]
-_RELATIVE = {0: "aujourd'hui", 1: "hier", 2: "avant-hier"}
+_WEEKDAYS = tuple(name.capitalize() for name in WEEKDAYS)
+_RELATIVE = {0: "today", 1: "yesterday", 2: "the day before yesterday"}
 
 logger = logging.getLogger(__name__)
 
@@ -69,17 +54,16 @@ class Node(Protocol):
 
 
 def day_label(day: date) -> str:
-    """« dimanche 15 novembre 2026 (2026-11-15) » : le nom du jour et la date, sans ambiguïté."""
-    name = f"{_WEEKDAYS[day.weekday()]} {day.day} {_MONTHS[day.month - 1]} {day.year}"
-    return f"{name} ({day.isoformat()})"
+    """Give the weekday, English date, and unambiguous ISO date."""
+    return f"{_WEEKDAYS[day.weekday()]} {english_day(day)} ({day.isoformat()})"
 
 
 def calendar_lines(today: date) -> list[str]:
-    """Les `CALENDAR_DAYS` derniers jours, du plus récent au plus ancien, avec « hier »."""
+    """List the last `CALENDAR_DAYS` days, starting with today's date."""
     lines = []
     for back in range(CALENDAR_DAYS):
         label = day_label(today - timedelta(days=back))
-        lines.append(f"{_RELATIVE[back]} : {label}" if back in _RELATIVE else label)
+        lines.append(f"{_RELATIVE[back]}: {label}" if back in _RELATIVE else label)
     return lines
 
 
@@ -121,8 +105,8 @@ def reading_schema(today: date, text: str) -> type[IntakeReading]:
         def _not_future(cls, value: date | None) -> date | None:
             if value is not None and value > today:
                 raise ValueError(
-                    f"la date de candidature est dans le futur : aujourd'hui, c'est le "
-                    f"{today.isoformat()} ; résous « hier » ou « lundi dernier » à partir d'elle"
+                    f"The application date is in the future. Today is {today.isoformat()}. "
+                    "Use that date to resolve relative dates such as yesterday or last Monday."
                 )
             return value
 
@@ -131,8 +115,8 @@ def reading_schema(today: date, text: str) -> type[IntakeReading]:
         def _from_the_sentence(cls, value: str | None) -> str | None:
             if value and not _written(value, text):
                 raise ValueError(
-                    "ce champ doit être recopié de la phrase de January, sans rien inventer : "
-                    "laisse-le vide si la phrase ne le dit pas"
+                    "This field must be copied from the sentence. "
+                    "Leave it blank if the sentence doesn't provide it."
                 )
             return value
 
@@ -142,7 +126,7 @@ def reading_schema(today: date, text: str) -> type[IntakeReading]:
 def parse_vars(text: str, today: date, language: str) -> dict[str, object]:
     return {
         "mode": "intake",
-        "phrase": untrusted(text, "phrase de January"),
+        "phrase": untrusted(text, "application sentence"),
         "today_line": day_label(today),
         "calendar": calendar_lines(today),
         "language": language,
@@ -170,7 +154,7 @@ async def _read(deps: GraphDeps, state: ApplicationIntakeState) -> IntakeReading
             [SystemMessage(prompt), HumanMessage(INTAKE_REQUEST)],
             agent=AGENT,
             step="lecture",
-            intent="je lis ta phrase",
+            intent="reading your sentence",
         )
     except AppError as exc:
         if exc.code != "structured_output_invalid":
@@ -252,10 +236,13 @@ def announce(state: ApplicationIntakeState) -> ApplicationIntakeState:
     draft = state["answer"]["draft"]
     info = state.get("info", [])
     text = " ".join(
-        [f"Fiche créée : {draft['company']}, {draft['title']}.", *(i["message"] for i in info)]
+        [
+            f"Application created for {draft['title']} at {draft['company']}.",
+            *(i["message"] for i in info),
+        ]
     )
     _say("fin", text)
-    _artifact(state["application_id"], f"Candidature chez {draft['company']}", info)
+    _artifact(state["application_id"], f"Application at {draft['company']}", info)
     return {"summary": text}
 
 
@@ -264,8 +251,8 @@ def leave(state: ApplicationIntakeState) -> ApplicationIntakeState:
     assert state["answer"] is not None  # garanti par `route_confirm`
     if state["answer"]["choice"] == OPEN:
         application_id = state["alerts"][0]["application_id"]
-        _say("fin", "Voici la fiche existante.")
-        _artifact(application_id, "Fiche existante")
-        return {"application_id": application_id, "summary": "Fiche existante ouverte."}
+        _say("fin", "Here is the existing application.")
+        _artifact(application_id, "Existing application")
+        return {"application_id": application_id, "summary": "Opened the existing application."}
     _say("fin", NOTHING_CREATED)
     return {"summary": NOTHING_CREATED}

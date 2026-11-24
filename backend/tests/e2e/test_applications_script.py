@@ -44,7 +44,7 @@ MANUAL_TITLE = "Développeuse IA (H/F)"  # la fiche manuelle du parcours (préfl
 
 
 def _prompt(today: date = TODAY) -> str:
-    return render_prompt("tracker", **parse_vars(SENTENCE, today, "fr"))
+    return render_prompt("tracker", **parse_vars(SENTENCE, today, "en"))
 
 
 async def _read(today: date = TODAY) -> str:
@@ -75,12 +75,12 @@ async def test_a_reading_the_real_validation_would_refuse_is_caught_here() -> No
     """Garde-fou de ce test : le contrôle des mots de la phrase refuse bien un poste inventé."""
     invented = json.loads(await _read()) | {"title": "Ingénieure produit"}
 
-    with pytest.raises(ValueError, match="recopié de la phrase"):
+    with pytest.raises(ValueError, match="copied from the sentence"):
         reading_schema(TODAY, SENTENCE).model_validate(invented)
 
 
 def test_a_prompt_without_yesterday_fails_naming_the_cause() -> None:
-    with pytest.raises(RuntimeError, match="hier"):
+    with pytest.raises(RuntimeError, match="yesterday"):
         intake_reading([HumanMessage("Rien.")])
 
 

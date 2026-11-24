@@ -35,7 +35,7 @@ async def test_context_is_the_local_day_and_language(
     app: FastAPI, store: AgentApplicationStore, me: str
 ) -> None:
     context = await store.intake_context(me)
-    assert (context.today, context.language) == (date(2026, 11, 15), "fr")
+    assert (context.today, context.language) == (date(2026, 11, 15), "en")
     async with app.state.session_factory() as db:
         settings = SettingsService(db, me)
         await settings.replace((await settings.get()).model_copy(update={"timezone": "Asia/Tokyo"}))

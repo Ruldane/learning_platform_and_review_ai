@@ -268,9 +268,3 @@ async def user_ids(session: AsyncSession) -> builtins.list[str]:
     (every following read filters by `user_id`)."""
     stmt = select(User.id).order_by(User.created_at, literal_column("rowid"))
     return builtins.list((await session.execute(stmt)).scalars().all())
-
-
-async def user_language(session: AsyncSession, user_id: str) -> str:
-    """The language of January's interface (`fr` by default)."""
-    stmt = select(User.language).where(User.id == user_id)
-    return (await session.execute(stmt)).scalar_one_or_none() or "fr"

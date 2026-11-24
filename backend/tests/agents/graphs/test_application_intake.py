@@ -29,7 +29,7 @@ from tests.support.applications import (
     alert,
 )
 
-MISSING = "Je n'ai pas trouvé l'entreprise ou le poste dans ta phrase."
+MISSING = "Your sentence is missing the company or the role."
 
 
 async def test_sentence_becomes_confirmed_application(
@@ -37,8 +37,9 @@ async def test_sentence_becomes_confirmed_application(
 ) -> None:
     run = await intake_runner()
     question = await run.question()
-    assert question["question"] == "Je crée cette fiche ?"
+    assert question["question"] == "Create this application?"
     assert [o["value"] for o in question["options"]] == ["create", "cancel"]
+    assert [o["label"] for o in question["options"]] == ["Create application", "Cancel"]
     values = field_values(question)
     assert values["applied_on"] == "2026-11-14" and values["status"] == "applied"
     assert (values["company"], values["title"]) == ("Société Fictive", "Développeuse IA")
@@ -53,7 +54,7 @@ async def test_sentence_becomes_confirmed_application(
     assert artifact == {
         "artifact_id": application_id,
         "kind": "application",
-        "title": "Candidature chez Société Fictive",
+        "title": "Application at Société Fictive",
         "url": f"/candidatures/{application_id}",
     }
 
@@ -62,9 +63,9 @@ async def test_prompt_gives_today_and_weekdays(intake_runner: MakeIntake) -> Non
     run = await intake_runner()
     await run.question()
     [prompt] = tracker_prompts(run.models)
-    assert "dimanche 15 novembre 2026" in prompt and "(2026-11-15)" in prompt
-    assert "hier : samedi 14 novembre 2026 (2026-11-14)" in prompt
-    assert "lundi 9 novembre 2026 (2026-11-09)" in prompt
+    assert "Sunday 15 November 2026 (2026-11-15)" in prompt
+    assert "yesterday: Saturday 14 November 2026 (2026-11-14)" in prompt
+    assert "Monday 9 November 2026 (2026-11-09)" in prompt
 
 
 async def test_intake_duplicate_shows_alert_in_question(
@@ -73,11 +74,11 @@ async def test_intake_duplicate_shows_alert_in_question(
     intake_store.alerts = [alert(), alert(OTHER_EXISTING_ID, "possible")]
     run = await intake_runner()
     question = await run.question()
-    assert question["question"] == f"Je crée cette fiche ? {ALERT_MESSAGE}"
+    assert question["question"] == f"Create this application? {ALERT_MESSAGE}"
     assert [o["value"] for o in question["options"]] == ["distinct", "open", "cancel"]
     labels = {o["value"]: o["label"] for o in question["options"]}
-    assert labels["distinct"] == "C'est un autre poste"
-    assert labels["open"] == "Ouvrir la fiche existante"
+    assert labels["distinct"] == "It's a different role"
+    assert labels["open"] == "Open the existing application"
     assert intake_store.alert_calls[0].company == "Société Fictive"
 
 
@@ -115,7 +116,7 @@ async def test_intake_cancel_saves_nothing(
     await run.answer({"choice": "cancel"})
     await run.wait_status("completed")
     [done] = await run.events("run.completed")
-    assert done["summary"] == "Rien n'a été créé."
+    assert done["summary"] == "No application was created."
     assert intake_store.save_calls == 0 and await run.events("artifact.ready") == []
 
 
@@ -124,7 +125,7 @@ async def test_future_date_is_asked_again(intake_runner: MakeIntake) -> None:
     question = await run.question()
     assert field_values(question)["applied_on"] == "2026-11-14"
     first, second = tracker_prompts(run.models)
-    assert "dans le futur" not in first and "dans le futur" in second  # refus renvoyé au modèle
+    assert "in the future" not in first and "in the future" in second
 
 
 @pytest.mark.parametrize(
@@ -199,7 +200,7 @@ async def test_unreadable_sentence_fails_with_a_readable_message(
     run = await intake_runner(tracker("pas du json", "toujours pas", "encore pas"))
     row = await run.wait_status("failed")
     assert row.error is not None and row.error["code"] == "intake_unreadable"
-    assert "reformule" in row.error["message"]
+    assert row.error["message"] == "Try again with the company, the role, and the date you applied."
 
 
 async def test_sentence_is_untrusted(intake_runner: MakeIntake) -> None:
@@ -207,7 +208,7 @@ async def test_sentence_is_untrusted(intake_runner: MakeIntake) -> None:
     await run.question()
     [prompt] = tracker_prompts(run.models)
     assert SENTENCE in prompt and in_untrusted(prompt, SENTENCE)
-    assert 'source="phrase de January"' in prompt
+    assert 'source="application sentence"' in prompt
 
 
 def test_graph_is_registered_with_its_own_route() -> None:
@@ -251,7 +252,7 @@ async def test_same_company_information_reaches_january_after_creation(
         }
     ]
     texts = [m["text"] for m in await run.events("agent.message")]
-    assert any(note.message in text and "Fiche créée" in text for text in texts)
+    assert any(note.message in text and "Application created" in text for text in texts)
 
 
 async def test_no_information_leaves_the_artifact_plain(

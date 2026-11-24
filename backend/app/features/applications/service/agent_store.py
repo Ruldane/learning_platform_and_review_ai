@@ -2,7 +2,7 @@
 feature: implementation wired by `bootstrap_agents.agent_ports(..., applications=...)`. Each call
 opens its own short database sessions.
 
-- `intake_context`: January's day (time zone from her settings) and her interface language.
+- `intake_context`: January's day in her time zone and the English interface language.
 - `intake_alerts`: the same rules as manual creation (`match`, 7.1) on January's records, without
   the plain information ("same company within 30 days"); the record being prepared has neither
   link nor posting, only the company and job title count.
@@ -27,7 +27,7 @@ from app.agents.tools.applications_port import (
     IntakeDraft,
 )
 from app.core.clock import local_today
-from app.features.applications.repository import ApplicationRepository, user_language
+from app.features.applications.repository import ApplicationRepository
 from app.features.applications.schemas import AlertOut, ApplicationIn, ContactIn
 from app.features.applications.service.create import create_application
 from app.features.applications.service.matching import Incoming, match
@@ -67,8 +67,7 @@ class AgentApplicationStore:
     async def intake_context(self, user_id: str) -> IntakeContext:
         async with self._factory() as db:
             zone = await zone_of(db, user_id)
-            language = await user_language(db, user_id)
-        return IntakeContext(local_today(zone, self._rt.now()), language)
+        return IntakeContext(local_today(zone, self._rt.now()), "en")
 
     async def _alerts(self, user_id: str, draft: IntakeDraft, *, info: bool) -> list[AlertOut]:
         """The look-alike records (plain information only, or without it)."""

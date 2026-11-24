@@ -39,7 +39,7 @@ def question(**over: str) -> dict[str, Any]:
         "notes": "",
     } | over
     return {
-        "question": "Je crée cette fiche ?",
+        "question": "Create this application?",
         "options": [{"value": "create"}, {"value": "cancel"}],
         "fields": [{"id": name, "value": value} for name, value in values.items()],
     }
@@ -71,7 +71,7 @@ def test_the_shown_question_has_no_alert_and_two_options() -> None:
     with pytest.raises(CheckFailed, match="options inattendues"):
         check_question("une phrase", alert, f"{PREFIX} Cèdre", YESTERDAY)
     asked = question()
-    asked["question"] = "Je crée cette fiche ? Attention, tu as déjà une fiche."
+    asked["question"] = "Create this application? You already have an application."
     with pytest.raises(CheckFailed, match="options inattendues"):
         check_question("une phrase", asked, f"{PREFIX} Cèdre", YESTERDAY)
 
